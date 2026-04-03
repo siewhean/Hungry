@@ -1,0 +1,70 @@
+import { create } from "zustand";
+
+import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import type { DietaryFlag, SearchCategory, SearchFilters, TasteVector } from "@/types/domain";
+
+interface SearchState {
+  filters: SearchFilters;
+  recentSearches: string[];
+  updateQuery: (query: string) => void;
+  toggleCategory: (category: SearchCategory) => void;
+  toggleDietary: (flag: DietaryFlag) => void;
+  setTasteValues: (tasteValues: TasteVector) => void;
+  resetToProfile: (tasteValues: TasteVector) => void;
+  rememberSearch: (query: string) => void;
+}
+
+export const useSearchStore = create<SearchState>((set) => ({
+  filters: {
+    query: "",
+    categories: [],
+    dietaryFlags: [],
+    tasteValues: NEUTRAL_TASTE_VECTOR,
+    radius: 1000,
+  },
+  recentSearches: ["laksa", "chicken rice", "satay"],
+  updateQuery: (query) =>
+    set((state) => ({
+      filters: {
+        ...state.filters,
+        query,
+      },
+    })),
+  toggleCategory: (category) =>
+    set((state) => ({
+      filters: {
+        ...state.filters,
+        categories: state.filters.categories.includes(category)
+          ? state.filters.categories.filter((value) => value !== category)
+          : [...state.filters.categories, category],
+      },
+    })),
+  toggleDietary: (flag) =>
+    set((state) => ({
+      filters: {
+        ...state.filters,
+        dietaryFlags: state.filters.dietaryFlags.includes(flag)
+          ? state.filters.dietaryFlags.filter((value) => value !== flag)
+          : [...state.filters.dietaryFlags, flag],
+      },
+    })),
+  setTasteValues: (tasteValues) =>
+    set((state) => ({
+      filters: {
+        ...state.filters,
+        tasteValues,
+      },
+    })),
+  resetToProfile: (tasteValues) =>
+    set((state) => ({
+      filters: {
+        ...state.filters,
+        tasteValues,
+      },
+    })),
+  rememberSearch: (query) =>
+    set((state) => ({
+      recentSearches: [query, ...state.recentSearches.filter((value) => value !== query)].slice(0, 5),
+    })),
+}));
+

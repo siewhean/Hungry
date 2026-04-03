@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hungry Mobile UX Concept</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Nunito:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+  </head>
+  <body>
+    <div class="ambient ambient-a"></div>
+    <div class="ambient ambient-b"></div>
+    <main class="board">
+      <section class="panel hero-panel">
+        <div class="hero-copy">
+          <p class="eyebrow">Hungry / mobile-first hawker discovery</p>
+          <h1>Reworked UI/UX concept for a dish-first food app, grounded in the PRD, flow spec, and frontend rules.</h1>
+          <p class="hero-text">
+            The design keeps the report-first IA of <strong>Discover</strong>, <strong>Search</strong>,
+            <strong>Reads</strong>, and <strong>Profile</strong>. The landing experience borrows the best social
+            feed behaviors without becoming a creator platform: rich imagery, quick context, local trust, and fast
+            dish decisions.
+          </p>
+          <div class="hero-badges">
+            <span>Discover = landing + map utility</span>
+            <span>Search = dish-first utility</span>
+            <span>Reads = editorial bridge</span>
+            <span>Profile = taste identity</span>
+          </div>
+          <div class="source-stack">
+            <div>
+              <span class="label">Primary sources</span>
+              <p>Hungry PRD, App Flow, Frontend Guidelines</p>
+            </div>
+            <div>
+              <span class="label">Reference inputs</span>
+              <p>Mobbin, 21st.dev, Map UI Patterns, NNGroup, Eleken, Dribbble</p>
+            </div>
+          </div>
+        </div>
+        <div class="hero-aside">
+          <article class="mini-card">
+            <span class="mini-kicker">Visual thesis</span>
+            <p>Warm editorial surfaces, hawker-local trust signals, and image-led appetite cues.</p>
+          </article>
+          <article class="mini-card">
+            <span class="mini-kicker">Content plan</span>
+            <p>Principles, references, foundations, IA, screens, components, and prototype paths.</p>
+          </article>
+          <article class="mini-card">
+            <span class="mini-kicker">Interaction thesis</span>
+            <p>Quick search entry, decisive filters, floor navigation, and review attachment at the dish level.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel split-panel">
+        <div class="section-intro">
+          <p class="section-code">00 Product Principles</p>
+          <h2>What changed from the current app direction</h2>
+          <p>
+            The reports stay authoritative. The Figma concept intentionally removes the extra Home and Maps tabs from
+            the information architecture and folds their strongest ideas into Discover and the building drill-down
+            journey.
+          </p>
+        </div>
+        <div class="principle-grid">
+          <article class="principle-card accent-orange">
+            <h3>Dish-first clarity</h3>
+            <p>Photography, price, taste cues, and recommendation language consistently outrank generic venue chrome.</p>
+          </article>
+          <article class="principle-card accent-amber">
+            <h3>Hawker-local trust</h3>
+            <p>Levels, unit numbers, hygiene grade, closure state, and hours are visible before users commit.</p>
+          </article>
+          <article class="principle-card accent-navy">
+            <h3>Social, not creator-first</h3>
+            <p>Discover feels alive through stories and media rails, but the app still optimizes for eating decisions.</p>
+          </article>
+          <article class="principle-card accent-cream">
+            <h3>Utility under appetite</h3>
+            <p>Search, filters, Decide For Me, drill-down, and review flows are designed to shorten time-to-choice.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-intro">
+          <p class="section-code">01 Reference Board</p>
+          <h2>References translated into product decisions</h2>
+          <p>
+            Each source here informs structure or interaction behavior, not direct visual copying. The goal is to
+            combine proven patterns with a Hungry-specific local identity.
+          </p>
+        </div>
+        <div class="reference-grid">
+          <article class="reference-card keep">
+            <div class="reference-head">
+              <strong>Mobbin</strong>
+              <span class="note">keep</span>
+            </div>
+            <p>Use proven mobile feed, onboarding, search, profile, and editorial reading rhythms.</p>
+          </article>
+          <article class="reference-card adapt">
+            <div class="reference-head">
+              <strong>21st.dev</strong>
+              <span class="note">adapt</span>
+            </div>
+            <p>Borrow component anatomy for tabs, search bars, sliders, chips, bottom sheets, and CTA clusters.</p>
+          </article>
+          <article class="reference-card keep">
+            <div class="reference-head">
+              <strong>Map UI Patterns</strong>
+              <span class="note">keep</span>
+            </div>
+            <p>Use a simple floor-selector and “locate me” mental model for the building and level browsing flow.</p>
+          </article>
+          <article class="reference-card adapt">
+            <div class="reference-head">
+              <strong>NNGroup icon guidance</strong>
+              <span class="note">adapt</span>
+            </div>
+            <p>Pair icons with strong labels in dense mobile contexts. The UI should never rely on icon guessing.</p>
+          </article>
+          <article class="reference-card keep">
+            <div class="reference-head">
+              <strong>Eleken profile patterns</strong>
+              <span class="note">keep</span>
+            </div>
+            <p>Profile emphasizes user identity, saved content, and history before low-value settings clutter.</p>
+          </article>
+          <article class="reference-card keep">
+            <div class="reference-head">
+              <strong>Eleken slider patterns</strong>
+              <span class="note">keep</span>
+            </div>
+            <p>Taste filters use dense but touch-safe controls with visible value markers and grouped states.</p>
+          </article>
+          <article class="reference-card adapt">
+            <div class="reference-head">
+              <strong>Dribbble map + food composition</strong>
+              <span class="note">adapt</span>
+            </div>
+            <p>Take composition energy only: photo-first cards, layered maps, and concise metadata.</p>
+          </article>
+          <article class="reference-card avoid">
+            <div class="reference-head">
+              <strong>Avoid</strong>
+              <span class="note">avoid</span>
+            </div>
+            <p>Purple gradients, glossy delivery-app clichés, dashboard card mosaics, and exact competitor layouts.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel foundations-panel">
+        <div class="section-intro">
+          <p class="section-code">02 Foundations</p>
+          <h2>Token system translated from the frontend guidelines</h2>
+          <p>
+            The concept mirrors the live app token values so the design file and implementation remain aligned.
+          </p>
+        </div>
+        <div class="foundation-grid">
+          <div class="foundation-card">
+            <h3>Colour variables</h3>
+            <div class="swatch-grid">
+              <div class="swatch">
+                <span class="chip chip-orange"></span>
+                <div><strong>Hungry Orange</strong><code>#E8531E</code></div>
+              </div>
+              <div class="swatch">
+                <span class="chip chip-navy"></span>
+                <div><strong>Deep Navy</strong><code>#1A2E44</code></div>
+              </div>
+              <div class="swatch">
+                <span class="chip chip-amber"></span>
+                <div><strong>Hawker Amber</strong><code>#F5A623</code></div>
+              </div>
+              <div class="swatch">
+                <span class="chip chip-soft"></span>
+                <div><strong>Orange Light</strong><code>#FDF0EB</code></div>
+              </div>
+              <div class="swatch">
+                <span class="chip chip-surface"></span>
+                <div><strong>Raised Surface</strong><code>#FAF7F2</code></div>
+              </div>
+              <div class="swatch">
+                <span class="chip chip-teal"></span>
+                <div><strong>Teal Accent</strong><code>#14B8A6</code></div>
+              </div>
+            </div>
+          </div>
+          <div class="foundation-card">
+            <h3>Typography styles</h3>
+            <div class="type-spec">
+              <div>
+                <span class="type-kicker">Display / H1 / Body</span>
+                <p class="type-nunito">Nunito for appetite, hierarchy, and clear utility copy.</p>
+              </div>
+              <div>
+                <span class="type-kicker">Price / Unit / Metadata</span>
+                <p class="type-dm">DM Mono for price strings, unit numbers, and numerical trust details.</p>
+              </div>
+            </div>
+          </div>
+          <div class="foundation-card">
+            <h3>Spacing + surface rules</h3>
+            <ul class="rule-list">
+              <li>8-point spacing scale from 4 to 64.</li>
+              <li>Card radii 8 / 12 / 18 with pill tags at 999.</li>
+              <li>Soft, warm surfaces instead of hard white app chrome.</li>
+              <li>44×44 touch minimum for chips, tabs, and CTA controls.</li>
+            </ul>
+          </div>
+          <div class="foundation-card">
+            <h3>Motion + accessibility</h3>
+            <ul class="rule-list">
+              <li>Quick 100ms press feedback and 250-300ms panels/transitions.</li>
+              <li>Text summaries for taste charts and obvious active states for tabs.</li>
+              <li>Reduce motion when needed. Imagery must aid the decision, not decorate.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-intro">
+          <p class="section-code">03 IA + Flows</p>
+          <h2>Report-first navigation model</h2>
+          <p>
+            The final concept restores the 4-tab IA from the reports. Discover becomes the landing surface and absorbs
+            the strongest social and map entry ideas from the current app direction.
+          </p>
+        </div>
+        <div class="flow-board">
+          <div class="flow-rail">
+            <span class="flow-pill active">Discover</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-pill">Search</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-pill">Reads</span>
+            <span class="flow-arrow">→</span>
+            <span class="flow-pill">Profile</span>
+          </div>
+          <div class="flow-grid">
+            <article class="flow-card">
+              <h3>Guest browse path</h3>
+              <p>Splash → Discover → building drill-down or dish detail → soft gate only when saving or reviewing.</p>
+            </article>
+            <article class="flow-card">
+              <h3>Search-to-dish path</h3>
+              <p>Search → taste filter → results → dish detail → delivery or review entry.</p>
+            </article>
+            <article class="flow-card">
+              <h3>Map/building path</h3>
+              <p>Discover map entry → building → floor selector → stall → dish preview and menu.</p>
+            </article>
+            <article class="flow-card">
+              <h3>Reads bridge</h3>
+              <p>Reads article → featured stall CTA → stall detail, with editorial context still visible.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-intro">
+          <p class="section-code">10 Core Screens</p>
+          <h2>High-fidelity mobile concepts</h2>
+          <p>
+            The screens below are arranged as a single board so they can be captured into Figma cleanly, then split
+            into sections or pages later if needed.
+          </p>
+        </div>
+
+        <div class="screen-group">
+          <div class="group-heading">
+            <h3>Discover + decision support</h3>
+            <p>Landing, nearby context, floor navigation, and recommendation flow.</p>
+          </div>
+          <div class="phone-grid">
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Hungry</span><span>100%</span></div>
+              <div class="phone-body splash">
+                <div class="hero-image" style="background-image:url('https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80')"></div>
+                <div class="screen-fade"></div>
+                <div class="screen-content bottom">
+                  <span class="badge-soft">Singapore hawker discovery</span>
+                  <h4>Hungry</h4>
+                  <p>Find the dish you want before the queue decides for you.</p>
+                </div>
+              </div>
+              <footer>Splash</footer>
+            </article>
+
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Setup</span><span>100%</span></div>
+              <div class="phone-body cream">
+                <div class="screen-content">
+                  <span class="badge-orange">Taste quiz / step 1 of 3</span>
+                  <h4>How do you usually crave your food?</h4>
+                  <p class="muted">Your answers shape recommendations and Decide For Me logic.</p>
+                  <div class="option-stack">
+                    <div class="option-card selected">Fragrant + comforting rice dishes</div>
+                    <div class="option-card">Spicy broth and noodle dishes</div>
+                    <div class="option-card">Grilled skewers and smoky snacks</div>
+                    <div class="option-card">Light soups and peppery broth</div>
+                  </div>
+                  <div class="cta-row">
+                    <button class="btn btn-secondary">Skip</button>
+                    <button class="btn btn-primary">Continue</button>
+                  </div>
+                </div>
+              </div>
+              <footer>Taste quiz onboarding</footer>
+            </article>
+
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Discover</span><span>100%</span></div>
+              <div class="phone-body warm">
+                <div class="screen-content">
+                  <div class="topline">
+                    <div>
+                      <p class="tiny-label">Nearby now</p>
+                      <h4>Tanjong Pagar, 8 min away</h4>
+                    </div>
+                    <span class="avatar-dot"></span>
+                  </div>
+                  <div class="search-shell">Search dishes, stalls, or hawker centres</div>
+                  <div class="cta-banner">
+                    <div>
+                      <span class="tiny-label">Need help choosing?</span>
+                      <strong>Decide For Me</strong>
+                    </div>
+                    <button class="btn btn-navy">Shuffle dish</button>
+                  </div>
+                  <div class="mini-map">
+                    <div class="map-pin pin-a">Maxwell</div>
+                    <div class="map-pin pin-b">Lau Pa Sat</div>
+                    <div class="map-pin pin-c">Amoy</div>
+                  </div>
+                  <div class="section-row">
+                    <span class="section-kicker">Nearby stalls</span>
+                    <a>Open map</a>
+                  </div>
+                  <div class="story-card">
+                    <div class="story-head">
+                      <div class="avatar"></div>
+                      <div>
+                        <strong>Tian Tian Chicken Rice</strong>
+                        <p>Maxwell Food Centre · #01-10 · 180m</p>
+                      </div>
+                    </div>
+                    <div class="media-rail">
+                      <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80" alt="" />
+                      <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80" alt="" />
+                    </div>
+                  </div>
+                  <nav class="bottom-tabs">
+                    <span class="active">Discover</span><span>Search</span><span>Reads</span><span>Profile</span>
+                  </nav>
+                </div>
+              </div>
+              <footer>Discover landing</footer>
+            </article>
+
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Building</span><span>100%</span></div>
+              <div class="phone-body light">
+                <div class="screen-content">
+                  <div class="topline">
+                    <div>
+                      <p class="tiny-label">Building drill-down</p>
+                      <h4>Maxwell Food Centre</h4>
+                    </div>
+                    <span class="pill-grade">3 stalls open</span>
+                  </div>
+                  <div class="search-shell">Search this building</div>
+                  <div class="level-row">
+                    <span class="level-chip active">L1</span>
+                    <span class="level-chip">L2</span>
+                    <span class="level-chip">Locate me</span>
+                  </div>
+                  <div class="floor-card">
+                    <div class="floor-card-top">
+                      <div>
+                        <strong>Tian Tian Chicken Rice</strong>
+                        <p>#01-10 · Grade A · 10:00 AM – 8:00 PM</p>
+                      </div>
+                      <span class="badge-soft">Top dish</span>
+                    </div>
+                    <div class="dish-preview">
+                      <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80" alt="" />
+                      <div>
+                        <strong>Chicken Rice</strong>
+                        <p>Fragrant · Juicy · S$5.50</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="floor-card muted-card">
+                    <strong>Old School Laksa</strong>
+                    <p>#01-37 · Grade B · dine-in only</p>
+                  </div>
+                </div>
+              </div>
+              <footer>Building drill-down</footer>
+            </article>
+
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Pick</span><span>100%</span></div>
+              <div class="phone-body navy">
+                <div class="screen-content">
+                  <span class="badge-soft">Decide For Me / result</span>
+                  <h4 class="light-heading">Chicken Rice, but make it confident.</h4>
+                  <div class="large-media">
+                    <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80" alt="" />
+                  </div>
+                  <div class="result-card">
+                    <strong>Tian Tian Chicken Rice</strong>
+                    <p>Maxwell Food Centre · #01-10 · 180m away</p>
+                    <div class="taste-tags">
+                      <span>Fragrant</span><span>Comforting</span><span>Juicy</span>
+                    </div>
+                    <div class="cta-row">
+                      <button class="btn btn-secondary">Another pick</button>
+                      <button class="btn btn-primary">View dish</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <footer>Decide For Me result</footer>
+            </article>
+          </div>
+        </div>
+
+        <div class="screen-group">
+          <div class="group-heading">
+            <h3>Search + details + review</h3>
+            <p>Search is dish-first. Review stays attached to a chosen dish and stall.</p>
+          </div>
+          <div class="phone-grid">
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Search</span><span>100%</span></div>
+              <div class="phone-body light">
+                <div class="screen-content">
+                  <div class="search-shell active">Search dishes, ingredients, stalls</div>
+                  <div class="chip-row">
+                    <span class="filter-chip active">Chicken rice</span>
+                    <span class="filter-chip">Laksa</span>
+                    <span class="filter-chip">Satay</span>
+                  </div>
+                  <div class="section-row">
+                    <span class="section-kicker">Filter by taste</span>
+                    <a>Open sliders</a>
+                  </div>
+                  <div class="slider-block">
+                    <label>Spicy</label>
+                    <div class="slider-track"><span style="width:72%"></span></div>
+                  </div>
+                  <div class="slider-block">
+                    <label>Rich</label>
+                    <div class="slider-track"><span style="width:55%"></span></div>
+                  </div>
+                  <div class="slider-block">
+                    <label>Aromatic</label>
+                    <div class="slider-track"><span style="width:84%"></span></div>
+                  </div>
+                  <nav class="bottom-tabs">
+                    <span>Discover</span><span class="active">Search</span><span>Reads</span><span>Profile</span>
+                  </nav>
+                </div>
+              </div>
+              <footer>Search idle</footer>
+            </article>
+
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Filter</span><span>100%</span></div>
+              <div class="phone-body overlay-body">
+                <div class="screen-content">
+                  <div class="filter-sheet">
+                    <div class="sheet-handle"></div>
+                    <h4>Taste filter</h4>
+                    <p class="muted">Dial in what you feel like eating right now.</p>
+                    <div class="slider-block"><label>Sweet</label><div class="slider-track"><span style="width:28%"></span></div></div>
+                    <div class="slider-block"><label>Spicy</label><div class="slider-track"><span style="width:76%"></span></div></div>
+                    <div class="slider-block"><label>Sour</label><div class="slider-track"><span style="width:24%"></span></div></div>
+                    <div class="slider-block"><label>Salty</label><div class="slider-track"><span style="width:66%"></span></div></div>
+                    <div class="slider-block"><label>Rich</label><div class="slider-track"><span style="width:88%"></span></div></div>
+                    <div class="slider-block"><label>Aromatic</label><div class="slider-track"><span style="width:71%"></span></div></div>
+                    <div class="cta-row">
+                      <button class="btn btn-secondary">Reset</button>
+                      <button class="btn btn-primary">Show dishes</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <footer>Taste filter sheet</footer>
+            </article>
+
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Results</span><span>100%</span></div>
+              <div class="phone-body cream">
+                <div class="screen-content">
+                  <div class="topline compact">
+                    <div>
+                      <p class="tiny-label">27 matches</p>
+                      <h4>Rich + aromatic nearby</h4>
+                    </div>
+                    <span class="pill-grade">Sort</span>
+                  </div>
+                  <div class="result-list">
+                    <div class="result-item">
+                      <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80" alt="" />
+                      <div>
+                        <strong>Chicken Rice</strong>
+                        <p>Tian Tian · 180m · S$5.50</p>
+                      </div>
+                    </div>
+                    <div class="result-item">
+                      <img src="https://images.unsplash.com/photo-1555126634-323283e090fa?auto=format&fit=crop&w=1200&q=80" alt="" />
+                      <div>
+                        <strong>Laksa</strong>
+                        <p>Old School Laksa · 210m · S$6.00</p>
+                      </div>
+                    </div>
+                    <div class="result-item">
+                      <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80" alt="" />
+                      <div>
+                        <strong>Satay Set</strong>
+                        <p>Satay Street Classics · 320m · S$12.00</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <footer>Search results</footer>
+            </article>
+
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Stall</span><span>100%</span></div>
+              <div class="phone-body light">
+                <div class="stall-hero" style="background-image:url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80')"></div>
+                <div class="screen-content">
+                  <div class="topline">
+                    <div>
+                      <h4>Tian Tian Chicken Rice</h4>
+                      <p class="muted">Maxwell Food Centre · #01-10 · Grade A</p>
+                    </div>
+                    <span class="pill-grade success">Open</span>
+                  </div>
+                  <div class="cta-row">
+                    <button class="btn btn-secondary">Directions</button>
+                    <button class="btn btn-primary">Delivery</button>
+                  </div>
+                  <div class="menu-card">
+                    <strong>Top dishes</strong>
+                    <div class="menu-row"><span>Chicken Rice</span><code>S$5.50</code></div>
+                    <div class="menu-row"><span>Roasted Chicken Rice</span><code>S$6.50</code></div>
+                    <div class="menu-row"><span>Chicken + Bean Sprouts</span><code>S$7.00</code></div>
+                  </div>
+                </div>
+              </div>
+              <footer>Stall detail</footer>
+            </article>
+
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Dish</span><span>100%</span></div>
+              <div class="phone-body light">
+                <div class="dish-hero" style="background-image:url('https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80')"></div>
+                <div class="screen-content">
+                  <span class="badge-orange">Must order</span>
+                  <h4>Chicken Rice</h4>
+                  <div class="price-row"><code>S$5.50</code><span>Tian Tian · 4.8 ★</span></div>
+                  <div class="taste-tags dark-text">
+                    <span>Fragrant</span><span>Comforting</span><span>Juicy</span>
+                  </div>
+                  <div class="radar-card">
+                    <div class="radar"></div>
+                    <div class="radar-copy">
+                      <strong>Taste profile</strong>
+                      <p>Aromatic 9 · Salty 7 · Rich 6</p>
+                    </div>
+                  </div>
+                  <div class="cta-row">
+                    <button class="btn btn-secondary">Save</button>
+                    <button class="btn btn-primary">Write review</button>
+                  </div>
+                </div>
+              </div>
+              <footer>Dish detail</footer>
+            </article>
+
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Review</span><span>100%</span></div>
+              <div class="phone-body cream">
+                <div class="screen-content">
+                  <div class="stepper">
+                    <span class="active"></span><span class="active"></span><span></span>
+                  </div>
+                  <h4>How was the Chicken Rice?</h4>
+                  <div class="stars">★ ★ ★ ★ ★</div>
+                  <p class="muted">Tap the tags that best describe the meal.</p>
+                  <div class="tag-cloud">
+                    <span class="active">Fragrant</span>
+                    <span class="active">Juicy</span>
+                    <span>Salty</span>
+                    <span>Comforting</span>
+                    <span>Dry</span>
+                    <span>Overrated</span>
+                  </div>
+                  <div class="review-box">Silky chicken, strong rice aroma, queue moved quickly.</div>
+                  <div class="cta-row">
+                    <button class="btn btn-secondary">Back</button>
+                    <button class="btn btn-primary">Submit review</button>
+                  </div>
+                </div>
+              </div>
+              <footer>Review rating + compose</footer>
+            </article>
+          </div>
+        </div>
+
+        <div class="screen-group">
+          <div class="group-heading">
+            <h3>Reads + identity</h3>
+            <p>Editorial reading should feed discovery, and Profile should foreground taste identity and saved dishes.</p>
+          </div>
+          <div class="phone-grid">
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Reads</span><span>100%</span></div>
+              <div class="phone-body warm">
+                <div class="screen-content">
+                  <div class="topline">
+                    <div>
+                      <p class="tiny-label">Reads</p>
+                      <h4>Stories worth eating through</h4>
+                    </div>
+                  </div>
+                  <div class="editorial-card large">
+                    <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80" alt="" />
+                    <div>
+                      <span class="tiny-label">Maxwell / lunch guide</span>
+                      <strong>5 stalls to hit when the queue at Tian Tian gets too long</strong>
+                    </div>
+                  </div>
+                  <div class="editorial-card">
+                    <img src="https://images.unsplash.com/photo-1526318472351-c75fcf070305?auto=format&fit=crop&w=1200&q=80" alt="" />
+                    <div>
+                      <span class="tiny-label">Coffee break</span>
+                      <strong>Where kaya toast still feels right before 10 AM</strong>
+                    </div>
+                  </div>
+                  <nav class="bottom-tabs">
+                    <span>Discover</span><span>Search</span><span class="active">Reads</span><span>Profile</span>
+                  </nav>
+                </div>
+              </div>
+              <footer>Reads feed</footer>
+            </article>
+
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Article</span><span>100%</span></div>
+              <div class="phone-body light">
+                <div class="screen-content">
+                  <div class="article-hero" style="background-image:url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80')"></div>
+                  <span class="tiny-label">Reads bridge</span>
+                  <h4>Satay after dark still works because the smoke hits before you see the stall.</h4>
+                  <p class="muted">The article design keeps context, but the bridge back to Hungry remains obvious.</p>
+                  <div class="bridge-card">
+                    <strong>Featured stall: Satay Street Classics</strong>
+                    <p>Lau Pa Sat · #01-22 · delivery available</p>
+                    <button class="btn btn-primary wide">View stall on Hungry</button>
+                  </div>
+                </div>
+              </div>
+              <footer>Reads article bridge</footer>
+            </article>
+
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Profile</span><span>100%</span></div>
+              <div class="phone-body cream">
+                <div class="screen-content">
+                  <div class="profile-head">
+                    <div class="profile-avatar"></div>
+                    <div>
+                      <h4>Siew Hean</h4>
+                      <p class="muted">Taste profile tuned from 24 saves + 12 reviews</p>
+                    </div>
+                  </div>
+                  <div class="taste-profile-card">
+                    <strong>Your taste fingerprint</strong>
+                    <div class="bar-list">
+                      <div><span>Aromatic</span><em style="width:82%"></em></div>
+                      <div><span>Rich</span><em style="width:68%"></em></div>
+                      <div><span>Salty</span><em style="width:61%"></em></div>
+                    </div>
+                  </div>
+                  <div class="profile-links">
+                    <div>Saved dishes</div>
+                    <div>Review history</div>
+                    <div>Settings</div>
+                  </div>
+                </div>
+              </div>
+              <footer>Profile home</footer>
+            </article>
+
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Saved</span><span>100%</span></div>
+              <div class="phone-body light">
+                <div class="screen-content">
+                  <h4>Favourites</h4>
+                  <div class="result-list">
+                    <div class="result-item">
+                      <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80" alt="" />
+                      <div><strong>Chicken Rice</strong><p>Tian Tian · Maxwell</p></div>
+                    </div>
+                    <div class="result-item">
+                      <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80" alt="" />
+                      <div><strong>Satay Set</strong><p>Satay Street Classics · Lau Pa Sat</p></div>
+                    </div>
+                    <div class="result-item">
+                      <img src="https://images.unsplash.com/photo-1526318472351-c75fcf070305?auto=format&fit=crop&w=1200&q=80" alt="" />
+                      <div><strong>Kaya Toast</strong><p>Kopi Club · Lau Pa Sat</p></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <footer>Favourites</footer>
+            </article>
+
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>History</span><span>100%</span></div>
+              <div class="phone-body light">
+                <div class="screen-content">
+                  <h4>Review history</h4>
+                  <div class="history-card">
+                    <strong>Chicken Rice · 5 ★</strong>
+                    <p>Tian Tian · “Silky chicken, strong rice aroma.”</p>
+                  </div>
+                  <div class="history-card">
+                    <strong>Satay Set · 4 ★</strong>
+                    <p>Satay Street Classics · “Smoky and sweet, peanut sauce held up.”</p>
+                  </div>
+                  <div class="history-card">
+                    <strong>Laksa · 4 ★</strong>
+                    <p>Old School Laksa · “Richer than expected, broth worth the queue.”</p>
+                  </div>
+                </div>
+              </div>
+              <footer>Review history</footer>
+            </article>
+
+            <article class="phone">
+              <div class="statusbar"><span>9:41</span><span>Settings</span><span>100%</span></div>
+              <div class="phone-body cream">
+                <div class="screen-content">
+                  <h4>Settings</h4>
+                  <div class="settings-list">
+                    <div><span>Dietary preferences</span><strong>Halal, pork-free</strong></div>
+                    <div><span>Location sharing</span><strong>While using</strong></div>
+                    <div><span>Reads feature</span><strong>Enabled</strong></div>
+                    <div><span>Dark mode</span><strong>System</strong></div>
+                    <div><span>Help and support</span><strong>Open</strong></div>
+                  </div>
+                </div>
+              </div>
+              <footer>Settings</footer>
+            </article>
+
+            <article class="phone compact-phone">
+              <div class="statusbar"><span>9:41</span><span>Empty</span><span>100%</span></div>
+              <div class="phone-body light center-screen">
+                <div class="empty-plate"></div>
+                <h4>No saved dishes yet</h4>
+                <p class="muted">Save dishes from detail screens to train your profile.</p>
+                <button class="btn btn-primary">Explore Discover</button>
+              </div>
+              <footer>Key empty state</footer>
+            </article>
+
+            <article class="phone compact-phone">
+              <div class="statusbar"><span>9:41</span><span>Offline</span><span>100%</span></div>
+              <div class="phone-body navy center-screen">
+                <div class="offline-badge"></div>
+                <h4 class="light-heading">You’re offline</h4>
+                <p class="muted-light">Saved dishes and recent reads stay visible. Live availability will update when you reconnect.</p>
+                <button class="btn btn-secondary light-button">Retry</button>
+              </div>
+              <footer>Key recovery state</footer>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-intro">
+          <p class="section-code">20 Components</p>
+          <h2>Local component system for the Figma file</h2>
+          <p>
+            Because the connected team libraries are generic and not Hungry-specific, the file should ship with its own
+            reusable mobile component set.
+          </p>
+        </div>
+        <div class="component-board">
+          <div class="component-card">
+            <h3>Navigation</h3>
+            <div class="component-row">
+              <span class="component-pill active">Discover</span>
+              <span class="component-pill">Search</span>
+              <span class="component-pill">Reads</span>
+              <span class="component-pill">Profile</span>
+            </div>
+          </div>
+          <div class="component-card">
+            <h3>Search field</h3>
+            <div class="component-search">Search dishes, stalls, or hawker centres</div>
+          </div>
+          <div class="component-card">
+            <h3>Taste tags</h3>
+            <div class="component-row wrap">
+              <span class="tag-sample active">Fragrant</span>
+              <span class="tag-sample">Smoky</span>
+              <span class="tag-sample">Comforting</span>
+              <span class="tag-sample">Peppery</span>
+            </div>
+          </div>
+          <div class="component-card">
+            <h3>Floor selector</h3>
+            <div class="component-row">
+              <span class="level-chip active">L1</span>
+              <span class="level-chip">L2</span>
+              <span class="level-chip">Locate</span>
+            </div>
+          </div>
+          <div class="component-card">
+            <h3>Dish card</h3>
+            <div class="dish-mini">
+              <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80" alt="" />
+              <div>
+                <strong>Chicken Rice</strong>
+                <p>Tian Tian · S$5.50</p>
+              </div>
+            </div>
+          </div>
+          <div class="component-card">
+            <h3>CTA bar</h3>
+            <div class="cta-row">
+              <button class="btn btn-secondary">Save</button>
+              <button class="btn btn-primary">Open stall</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-intro">
+          <p class="section-code">30 Prototype</p>
+          <h2>Main prototype paths to wire in Figma</h2>
+          <p>
+            These are the first-click prototype flows that should be connected once the board is captured and separated
+            into Figma frames.
+          </p>
+        </div>
+        <div class="prototype-grid">
+          <article class="proto-card">
+            <strong>Guest browse</strong>
+            <p>Splash → Discover → story card → Stall Detail → Dish Detail</p>
+          </article>
+          <article class="proto-card">
+            <strong>Search to dish</strong>
+            <p>Search idle → Taste filter → Results → Dish Detail</p>
+          </article>
+          <article class="proto-card">
+            <strong>Building drill-down</strong>
+            <p>Discover map entry → Building → Level chip → Stall → Dish preview</p>
+          </article>
+          <article class="proto-card">
+            <strong>Dish review</strong>
+            <p>Dish Detail → Review rating → Tags and compose → Review History</p>
+          </article>
+          <article class="proto-card">
+            <strong>Reads bridge</strong>
+            <p>Reads feed → Article bridge → Stall Detail</p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

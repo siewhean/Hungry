@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>20 Components</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Nunito:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+  </head>
+  <body>
+    <main class="page page-components">
+      <section class="hero hero-compact glass">
+        <div class="hero-copy">
+          <div>
+            <p class="eyebrow">Hungry / 20 Components</p>
+            <h1>Reusable parts for a tighter, warmer, social-native mobile system.</h1>
+            <p>
+              This page holds the smaller-scale UI kit that supports the prototype: bottom navigation, social post cards,
+              map pins, floor chips, dish and stall cards, taste tags, CTA docks, article cards, and review steps. The
+              palette and type sizes follow the frontend guidelines but with more compact application on screen.
+            </p>
+          </div>
+          <div class="hero-aside">
+            <article class="mini-card">
+              <p class="micro-label">Typography</p>
+              <strong>Nunito + DM Mono</strong>
+              <p>Nunito carries UI copy and hierarchy. DM Mono is reserved for price, floor/unit, and low-level metadata.</p>
+            </article>
+            <article class="mini-card">
+              <p class="micro-label">Shape language</p>
+              <strong>Rounded, but tighter than before</strong>
+              <p>Cards 16–20 radius, sheets 24, more content density, less oversized decorative softness.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel glass">
+        <div class="section-header">
+          <p class="section-label">Tokens</p>
+          <h2>Colour and type scale</h2>
+        </div>
+        <div class="token-grid">
+          <article class="token-card">
+            <strong>Core palette</strong>
+            <div class="swatches">
+              <div class="swatch">
+                <div class="swatch-color" style="background:#E8531E"></div>
+                <div class="swatch-copy"><strong>Hungry Orange</strong><span>#E8531E</span></div>
+              </div>
+              <div class="swatch">
+                <div class="swatch-color" style="background:#1A2E44"></div>
+                <div class="swatch-copy"><strong>Deep Navy</strong><span>#1A2E44</span></div>
+              </div>
+              <div class="swatch">
+                <div class="swatch-color" style="background:#F5A623"></div>
+                <div class="swatch-copy"><strong>Hawker Amber</strong><span>#F5A623</span></div>
+              </div>
+              <div class="swatch">
+                <div class="swatch-color" style="background:#14B8A6"></div>
+                <div class="swatch-copy"><strong>Teal Accent</strong><span>#14B8A6</span></div>
+              </div>
+            </div>
+          </article>
+          <article class="token-card">
+            <strong>Type scale</strong>
+            <div class="type-scale">
+              <div class="type-item"><span class="micro-label">Display</span><strong class="display-type">32 / launch and hero moments</strong></div>
+              <div class="type-item"><span class="micro-label">Heading</span><strong class="h1-type">24 / screen and detail titles</strong></div>
+              <div class="type-item"><span class="micro-label">Subheading</span><strong class="h2-type">20 / section hierarchy</strong></div>
+              <div class="type-item"><span class="micro-label">Body</span><strong class="body-type">14 / dense but readable mobile copy</strong></div>
+              <div class="type-item"><span class="micro-label">Utility</span><strong class="micro-type">11 / prices, floors, counters</strong></div>
+            </div>
+          </article>
+          <article class="token-card">
+            <strong>Spacing + radii</strong>
+            <div class="type-scale">
+              <div class="type-item"><span class="micro-label">Spacing</span><strong>4 / 8 / 12 / 16 / 20 / 24 / 32</strong></div>
+              <div class="type-item"><span class="micro-label">Card radius</span><strong>16–20</strong></div>
+              <div class="type-item"><span class="micro-label">Sheet radius</span><strong>24</strong></div>
+              <div class="type-item"><span class="micro-label">Touch target</span><strong>44×44 minimum</strong></div>
+            </div>
+          </article>
+          <article class="token-card">
+            <strong>Interaction notes</strong>
+            <p>Feed cards open into detail paths, map pins open a sheet, floor chips swap visible rows, and reviews stay dish-attached. The visual system stays warm and local, but the actions stay crisp and fast.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel glass">
+        <div class="section-header">
+          <p class="section-label">Components</p>
+          <h2>Core mobile building blocks</h2>
+        </div>
+        <div class="component-grid">
+          <article class="component-card">
+            <p class="component-kicker">BottomNav</p>
+            <strong>4-tab report-first IA</strong>
+            <div class="bottom-nav" style="margin-top: 12px;">
+              <div class="tab-item active"><div class="tab-icon active">⌂</div><span>Discover</span></div>
+              <div class="tab-item"><div class="tab-icon">⌕</div><span>Search</span></div>
+              <div class="tab-item"><div class="tab-icon">☰</div><span>Reads</span></div>
+              <div class="tab-item"><div class="tab-icon">☺</div><span>Profile</span></div>
+            </div>
+          </article>
+
+          <article class="component-card">
+            <p class="component-kicker">SearchField</p>
+            <strong>Fast entry for dishes, stalls, buildings</strong>
+            <div class="search-bar" style="margin-top: 12px;">
+              <span>⌕</span>
+              <strong>Search dishes, stalls, or buildings</strong>
+              <span class="orange-dot"></span>
+            </div>
+          </article>
+
+          <article class="component-card">
+            <p class="component-kicker">SocialPostCard</p>
+            <strong>Photo / video variants</strong>
+            <article class="story-card" style="margin-top:12px;">
+              <div class="story-head">
+                <div class="story-user">
+                  <div class="avatar"><img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=300&q=80" alt="" /></div>
+                  <div><strong>Tian Tian Chicken Rice</strong><span>Maxwell · 2h ago</span></div>
+                </div>
+                <div class="circle-btn">⋯</div>
+              </div>
+              <div class="media-wrap" style="height:180px;">
+                <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80" alt="" />
+                <div class="media-tag">Photo</div>
+              </div>
+              <div class="story-copy">
+                <h4>Lunch rush favourite, plated and ready in under five minutes.</h4>
+                <div class="reaction-row"><span class="icon">♡</span><span>1.2k</span><span class="icon">◌</span><span>84</span><span class="grow"></span><span>Save</span></div>
+              </div>
+            </article>
+          </article>
+
+          <article class="component-card">
+            <p class="component-kicker">MapPin + BuildingBottomSheet</p>
+            <strong>Spatial browse</strong>
+            <div class="pin-demo">
+              <div class="map-pin orange"></div>
+              <div class="map-pin amber"></div>
+              <div class="map-pin teal"></div>
+            </div>
+            <article class="sheet-card" style="margin-top:12px;">
+              <strong>Maxwell Food Centre</strong>
+              <span>3 active stalls · L1 · open now</span>
+            </article>
+          </article>
+
+          <article class="component-card">
+            <p class="component-kicker">FloorChip</p>
+            <strong>Indoor drill-down selector</strong>
+            <div class="pill-row" style="margin-top:12px;">
+              <span class="floor-chip active">L1</span>
+              <span class="floor-chip">L2</span>
+              <span class="floor-chip">Desserts</span>
+            </div>
+          </article>
+
+          <article class="component-card">
+            <p class="component-kicker">StallCard + DishCard</p>
+            <strong>Operational trust + quick appetite cues</strong>
+            <article class="menu-card" style="margin-top:12px;">
+              <img src="https://images.unsplash.com/photo-1555126634-323283e090fa?auto=format&fit=crop&w=500&q=80" alt="" />
+              <div class="menu-copy">
+                <strong>Old School Laksa</strong>
+                <span>#01-37 · grade B · 210m</span>
+                <div class="pill-row"><span class="chip soft-orange">Laksa</span><span class="chip">Spicy</span></div>
+                <span class="price">S$6.00</span>
+              </div>
+            </article>
+          </article>
+
+          <article class="component-card">
+            <p class="component-kicker">TasteTag + TasteSlider</p>
+            <strong>Compact but expressive preference controls</strong>
+            <div class="pill-row" style="margin-top:12px;">
+              <span class="chip soft-orange">Fragrant</span>
+              <span class="chip soft-orange">Rich</span>
+              <span class="chip">Spicy</span>
+            </div>
+            <div class="slider-row" style="margin-top:12px;">
+              <strong>Rich</strong>
+              <div class="range"><span>0</span><div class="bar"><div class="bar-fill" style="width:78%"></div></div><span>10</span></div>
+            </div>
+          </article>
+
+          <article class="component-card">
+            <p class="component-kicker">CTA Dock</p>
+            <strong>Primary action pairings at the bottom of detail screens</strong>
+            <div class="dock" style="margin-top:12px;">
+              <a class="dock-btn secondary">Directions</a>
+              <a class="dock-btn primary">Order / review</a>
+            </div>
+          </article>
+
+          <article class="component-card">
+            <p class="component-kicker">ArticleCard</p>
+            <strong>Editorial bridge back into product</strong>
+            <article class="article-card" style="margin-top:12px;">
+              <div class="article-body">
+                <span class="micro-label">SethLui · CBD</span>
+                <strong>Late-night satay in the CBD that still feels worth the queue</strong>
+                <p>Article cards stay image-led and always carry a bridge into the mapped stall or dish.</p>
+              </div>
+            </article>
+          </article>
+
+          <article class="component-card">
+            <p class="component-kicker">ReviewStepper</p>
+            <strong>Dish-attached review flow</strong>
+            <div class="review-stepper">
+              <span class="step active">1</span>
+              <span class="step">2</span>
+              <span class="step">3</span>
+            </div>
+            <div class="stars" style="margin-top:12px;">★ ★ ★ ★ ★</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel glass">
+        <div class="section-header">
+          <p class="section-label">Handoff</p>
+          <h2>How this page supports the prototype</h2>
+        </div>
+        <div class="state-grid">
+          <article class="note-card">
+            <strong>Prototype consistency</strong>
+            <p>Bottom nav, card scale, reaction rows, and CTA docks stay visually aligned across Discover, Search, Reads, Profile, and review flows.</p>
+          </article>
+          <article class="note-card">
+            <strong>Map logic</strong>
+            <p>Map pins, building sheet, and floor chips are explicit components so the building → floor → stall relationship stays consistent in design and code.</p>
+          </article>
+          <article class="note-card">
+            <strong>Smaller visual scale</strong>
+            <p>Most elements here are tuned down from the previous board so the screens read like a real product rather than a slide deck.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
+

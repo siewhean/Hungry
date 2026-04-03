@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>00 Direction</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Nunito:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+  </head>
+  <body>
+    <main class="page page-direction">
+      <section class="hero hero-compact glass">
+        <div class="hero-copy">
+          <div>
+            <p class="eyebrow">Hungry / 00 Direction</p>
+            <h1>Replace the oversized concept board with a tighter, image-led mobile product direction.</h1>
+            <p>
+              The reports remain the product source of truth: 4-tab IA, dish-first search, building-level stall browsing,
+              review attached to dish, and a blog bridge back into discovery. The redesign changes presentation, not
+              product logic. Discover becomes the true landing surface by combining social feed energy, quick search,
+              Decide For Me, and full-screen map entry.
+            </p>
+          </div>
+          <div class="kpi-strip">
+            <article class="kpi-card">
+              <p class="micro-label">IA</p>
+              <strong>Discover / Search / Reads / Profile</strong>
+              <span>No separate Home or Maps tab in the concept.</span>
+            </article>
+            <article class="kpi-card">
+              <p class="micro-label">Visual change</p>
+              <strong>Smaller type and denser rhythm</strong>
+              <span>More image, tighter cards, less presentation padding.</span>
+            </article>
+            <article class="kpi-card">
+              <p class="micro-label">Social aspect</p>
+              <strong>Posts, counts, save/share, short-video cues</strong>
+              <span>Alive like a local food feed, not a creator platform.</span>
+            </article>
+          </div>
+        </div>
+        <div class="hero-aside">
+          <article class="mini-card">
+            <p class="micro-label">Source reports</p>
+            <strong>PRD, App Flow, Frontend Guidelines</strong>
+            <p>Dish-first search, hawker centre floor logic, review/history, taste profile, and editorial reads all remain intact.</p>
+          </article>
+          <article class="mini-card">
+            <p class="micro-label">Reference inputs</p>
+            <strong>Mobbin, 21st.dev, Map UI Patterns, NNGroup, Eleken, Dribbble</strong>
+            <p>Used for pattern decisions only. Nothing is copied directly; the references inform spacing, hierarchy, and interaction structure.</p>
+          </article>
+          <article class="mini-card">
+            <p class="micro-label">Product benchmark</p>
+            <strong>Under-60-second path to a dish decision</strong>
+            <p>The redesign makes social content useful only if it gets the user to a dish or stall faster.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel glass">
+        <div class="section-header">
+          <p class="section-label">Design principles</p>
+          <h2>What the redesign optimizes for</h2>
+          <p>The current board reads too large and too generic. The new direction is more grounded, local, compact, and operational.</p>
+        </div>
+        <div class="principles">
+          <article class="principle-card orange">
+            <p class="micro-label">1 / Appetite first</p>
+            <strong>Hero media should earn attention immediately.</strong>
+            <p>Large dish and stall visuals lead screens, but operational metadata stays close to the media so the user can decide fast.</p>
+          </article>
+          <article class="principle-card navy">
+            <p class="micro-label">2 / Trust signals</p>
+            <strong>Unit number, level, hours, grade, and proximity remain visible.</strong>
+            <p>Hawker discovery fails if users cannot understand where a stall is or whether it is open.</p>
+          </article>
+          <article class="principle-card amber">
+            <p class="micro-label">3 / Social but disciplined</p>
+            <strong>Feed interactions support discovery, not vanity.</strong>
+            <p>Reaction counts and comments make the product feel current, but the CTA always bends back toward a dish or stall detail.</p>
+          </article>
+          <article class="principle-card teal">
+            <p class="micro-label">4 / Smaller scale</p>
+            <strong>Typography and shapes now feel like a shipping app.</strong>
+            <p>Display 28–32, headings 20–24, body 13–15, metadata 11–12. Chips and cards are tighter throughout.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel glass">
+        <div class="section-header">
+          <p class="section-label">Reference strip</p>
+          <h2>How the external sources shape the solution</h2>
+          <p>These are abstracted pattern inputs, not visual templates.</p>
+        </div>
+        <div class="reference-strip">
+          <article class="reference-card">
+            <span class="tag keep">keep</span>
+            <strong>Mobbin</strong>
+            <p>Use its strongest mobile feed, onboarding, review, and profile patterns to keep the app visually current and fast to parse.</p>
+          </article>
+          <article class="reference-card">
+            <span class="tag adapt">adapt</span>
+            <strong>21st.dev</strong>
+            <p>Borrow component-level structure for chips, bottom sheets, search bars, and rails, but keep Hungry’s warm local tone instead of generic web polish.</p>
+          </article>
+          <article class="reference-card">
+            <span class="tag keep">keep</span>
+            <strong>Map UI Patterns</strong>
+            <p>Use a full-screen spatial browse with context synchronized into a bottom sheet and a clean indoor selector once a building is chosen.</p>
+          </article>
+          <article class="reference-card">
+            <span class="tag adapt">adapt</span>
+            <strong>NNGroup + Eleken</strong>
+            <p>Favor clear icon labeling, restrained mobile imagery, cleaner profile hierarchy, and slider ergonomics that do not overwhelm the dish search flow.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel glass">
+        <div class="section-header">
+          <p class="section-label">Primary flows</p>
+          <h2>Prototype routes that matter most</h2>
+        </div>
+        <div class="roadmap">
+          <article class="flow-card">
+            <p class="micro-label">Flow 1</p>
+            <strong>Splash → Taste quiz → Discover</strong>
+            <p>First-time entry reaches a live discovery surface quickly instead of dropping into a static utility state.</p>
+          </article>
+          <article class="flow-card">
+            <p class="micro-label">Flow 2</p>
+            <strong>Discover post → Stall detail → Dish detail</strong>
+            <p>Social content resolves into concrete decisions instead of endless feed consumption.</p>
+          </article>
+          <article class="flow-card">
+            <p class="micro-label">Flow 3</p>
+            <strong>Discover → Map → Building → Floor → Stall</strong>
+            <p>Spatial discovery makes hawker centres legible and reduces the “black box” problem identified in the PRD.</p>
+          </article>
+          <article class="flow-card">
+            <p class="micro-label">Flow 4</p>
+            <strong>Search → Filter → Results → Dish detail</strong>
+            <p>Search remains dish-first and compact, with the sliders acting as a real ranking tool.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
+

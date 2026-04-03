@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>10 Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Nunito:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+  </head>
+  <body>
+    <main class="page">
+      <section class="prototype-intro glass">
+        <div>
+          <p class="eyebrow">Hungry / 10 Prototype</p>
+          <h1>Social-native discovery with a real map flow, tighter scale, and dish-first actions.</h1>
+          <p>
+            The landing surface is now Discover, not a static presentation board. Posts, short-video cues, reactions,
+            save/share actions, and local trust metadata sit alongside search, Decide For Me, and building-level map
+            browsing. Every primary flow stays anchored to the reports: Discover, Search, Reads, and Profile.
+          </p>
+        </div>
+        <div class="summary-grid">
+          <article class="summary-card">
+            <p class="micro-label">Visual reset</p>
+            <strong>Smaller type, smaller chips, more image, less dead air.</strong>
+          </article>
+          <article class="summary-card">
+            <p class="micro-label">Maps</p>
+            <strong>Full-screen spatial flow with building pins and indoor level drill-down.</strong>
+          </article>
+          <article class="summary-card">
+            <p class="micro-label">Social</p>
+            <strong>Feed posts, reactions, comments, save/share, but no full creator economy.</strong>
+          </article>
+          <article class="summary-card">
+            <p class="micro-label">Product discipline</p>
+            <strong>Search, reviews, and reads still route back to dishes and stalls fast.</strong>
+          </article>
+        </div>
+      </section>
+
+      <section class="prototype-grid">
+        <div class="column">
+          <div class="cluster-label">
+            <h3>Onboarding → Discover</h3>
+            <span class="micro-label">launch / appetite / social feed</span>
+          </div>
+
+          <div class="phone">
+            <div class="screen soft">
+              <div class="statusbar">
+                <span>9:41</span>
+                <div class="signal">
+                  <span>5G</span>
+                  <div class="battery"><span></span></div>
+                </div>
+              </div>
+              <div class="splash-wrap">
+                <div class="brand-lockup">
+                  <div class="brand-mark">✦</div>
+                  <h2>Hungry</h2>
+                  <p>Find the dish. Not just the restaurant.</p>
+                </div>
+                <div class="cta-stack">
+                  <a class="primary-btn">Use my location</a>
+                  <a class="secondary-btn">Enter an area manually</a>
+                  <p class="support">Singapore first. Hawker centres, food courts, and dish-first discovery.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="phone">
+            <div class="screen soft">
+              <div class="statusbar">
+                <span>9:42</span>
+                <div class="signal">
+                  <span>5G</span>
+                  <div class="battery"><span></span></div>
+                </div>
+              </div>
+              <div class="app-head">
+                <div class="app-title">
+                  <span>Taste quiz / step 2 of 3</span>
+                  <strong>Tell Hungry what you’re usually craving.</strong>
+                </div>
+                <div class="circle-btn">⋯</div>
+              </div>
+              <div class="quiz-grid">
+                <div class="taste-pill">
+                  <strong>Spicy hits</strong>
+                  <div class="range">
+                    <span>Mild</span>
+                    <div class="bar"><div class="bar-fill" style="width: 78%"></div></div>
+                    <span>Shiok</span>
+                  </div>
+                </div>
+                <div class="taste-pill">
+                  <strong>Rich, creamy broths</strong>
+                  <div class="range">
+                    <span>Light</span>
+                    <div class="bar"><div class="bar-fill" style="width: 68%"></div></div>
+                    <span>Heavy</span>
+                  </div>
+                </div>
+                <div class="taste-pill">
+                  <strong>Fragrant rice and aromatics</strong>
+                  <div class="range">
+                    <span>Subtle</span>
+                    <div class="bar"><div class="bar-fill" style="width: 82%"></div></div>
+                    <span>Loud</span>
+                  </div>
+                </div>
+                <div class="taste-pill">
+                  <strong>Sour + bright flavours</strong>
+                  <div class="range">
+                    <span>Low</span>
+                    <div class="bar"><div class="bar-fill" style="width: 38%"></div></div>
+                    <span>High</span>
+                  </div>
+                </div>
+              </div>
+              <div class="pill-row">
+                <span class="chip soft-orange">Laksa</span>
+                <span class="chip soft-amber">Chicken rice</span>
+                <span class="chip">Satay</span>
+                <span class="chip">Fish soup</span>
+              </div>
+              <div class="dock">
+                <a class="dock-btn secondary">Skip</a>
+                <a class="dock-btn primary">Continue</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="phone">
+            <div class="screen discover">
+              <div class="statusbar">
+                <span>12:18</span>
+                <div class="signal">
+                  <span>GPS</span>
+                  <div class="battery"><span></span></div>
+                </div>
+              </div>
+              <div class="app-head">
+                <div class="app-title">
+                  <span>Maxwell / Chinatown</span>
+                  <strong>Makan nearby</strong>
+                </div>
+                <div class="circle-btn">🔔</div>
+              </div>
+              <div class="search-bar">
+                <span>⌕</span>
+                <strong>Search dishes, stalls, or buildings</strong>
+                <span class="orange-dot"></span>
+              </div>
+              <div class="action-row">
+                <article class="action-card primary">
+                  <div>
+                    <p class="micro-label" style="color: rgba(255,255,255,0.72)">Decide For Me</p>
+                    <h4>Pick the best nearby match for my taste.</h4>
+                  </div>
+                  <span class="small">Laksa, satay, or something rich and fast</span>
+                </article>
+                <article class="action-card">
+                  <div>
+                    <p class="micro-label">Map</p>
+                    <h4>Tap buildings and browse by level.</h4>
+                  </div>
+                  <span class="small">114 hawker centres, food courts, malls</span>
+                </article>
+              </div>
+              <div class="pill-row">
+                <span class="chip active">Feed</span>
+                <span class="chip">Nearby</span>
+                <span class="chip">Lunch</span>
+                <span class="chip">Open now</span>
+              </div>
+              <article class="story-card">
+                <div class="story-head">
+                  <div class="story-user">
+                    <div class="avatar"><img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80" alt="" /></div>
+                    <div>
+                      <strong>Tian Tian Chicken Rice</strong>
+                      <span>Maxwell Food Centre · 2h ago</span>
+                    </div>
+                  </div>
+                  <div class="circle-btn">⋯</div>
+                </div>
+                <div class="media-wrap">
+                  <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80" alt="" />
+                  <div class="media-tag">Photo</div>
+                </div>
+                <div class="story-copy">
+                  <h4>Lunch rush favourite, plated and ready in under five minutes.</h4>
+                  <div class="pill-row">
+                    <span class="chip soft-orange">Chicken Rice</span>
+                    <span class="chip">Fragrant</span>
+                    <span class="chip">#01-10</span>
+                  </div>
+                  <div class="reaction-row">
+                    <span class="icon">♡</span><span>1.2k</span>
+                    <span class="icon">◌</span><span>84</span>
+                    <span class="icon">↗</span><span class="grow">Save</span>
+                    <span>5.5 SGD</span>
+                  </div>
+                </div>
+              </article>
+              <div class="bottom-nav">
+                <div class="tab-item active"><div class="tab-icon active">⌂</div><span>Discover</span></div>
+                <div class="tab-item"><div class="tab-icon">⌕</div><span>Search</span></div>
+                <div class="tab-item"><div class="tab-icon">☰</div><span>Reads</span></div>
+                <div class="tab-item"><div class="tab-icon">☺</div><span>Profile</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="phone">
+            <div class="screen discover">
+              <div class="statusbar">
+                <span>12:19</span>
+                <div class="signal">
+                  <span>GPS</span>
+                  <div class="battery"><span></span></div>
+                </div>
+              </div>
+              <div class="app-head">
+                <div class="app-title">
+                  <span>Discover / editorial + social</span>
+                  <strong>What people are eating after office hours</strong>
+                </div>
+                <div class="circle-btn">⌖</div>
+              </div>
+              <article class="story-card">
+                <div class="story-head">
+                  <div class="story-user">
+                    <div class="avatar"><img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80" alt="" /></div>
+                    <div>
+                      <strong>Satay Street Classics</strong>
+                      <span>Lau Pa Sat · 6h ago</span>
+                    </div>
+                  </div>
+                  <div class="circle-btn">⋯</div>
+                </div>
+                <div class="media-wrap tall">
+                  <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80" alt="" />
+                  <div class="media-tag">Reel</div>
+                  <div class="play-chip"><span>▶</span></div>
+                </div>
+                <div class="story-copy">
+                  <h4>Evening skewers coming off the grill for the CBD crowd.</h4>
+                  <p>High smoke, sweet peanut sauce, and one of the easiest late-night picks after Raffles Place.</p>
+                  <div class="reaction-row">
+                    <span class="icon">♡</span><span>872</span>
+                    <span class="icon">◌</span><span>46</span>
+                    <span class="icon">⤴</span><span class="grow">Share</span>
+                    <span>4.8 ★</span>
+                  </div>
+                </div>
+              </article>
+              <article class="tip-card">
+                <div class="tip-badge">Local tip</div>
+                <strong>Best if you want something fast but still feels like a proper dinner.</strong>
+                <p>Queue is shortest before 7pm. If you’re already in the CBD, this is the cleanest “decide now” recommendation in the feed.</p>
+              </article>
+              <div class="bottom-nav">
+                <div class="tab-item active"><div class="tab-icon active">⌂</div><span>Discover</span></div>
+                <div class="tab-item"><div class="tab-icon">⌕</div><span>Search</span></div>
+                <div class="tab-item"><div class="tab-icon">☰</div><span>Reads</span></div>
+                <div class="tab-item"><div class="tab-icon">☺</div><span>Profile</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="phone">
+            <div class="screen">
+              <div class="statusbar">
+                <span>12:21</span>
+                <div class="signal">
+                  <span>5G</span>
+                  <div class="battery"><span></span></div>
+                </div>
+              </div>
+              <div class="detail-title">
+                <div>
+                  <span>Stall detail</span>
+                  <strong>Tian Tian Chicken Rice</strong>
+                </div>
+                <div class="circle-btn">⋯</div>
+              </div>
+              <div class="hero-media">
+                <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80" alt="" />
+                <div class="media-overlay">
+                  <strong>Queue fast, plate faster.</strong>
+                  <span>Maxwell Food Centre · #01-10 · Hygiene A</span>
+                </div>
+              </div>
+              <div class="info-grid">
+                <div class="metric"><small>Grade</small><strong>A</strong></div>
+                <div class="metric"><small>Hours</small><strong>10am–8pm</strong></div>
+                <div class="metric"><small>Unit</small><strong>#01-10</strong></div>
+              </div>
+              <article class="dish-card">
+                <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80" alt="" />
+                <div class="dish-copy">
+                  <strong>Chicken Rice</strong>
+                  <span>Fragrant, juicy, comforting</span>
+                  <span>4.8 ★ · 118 reviews</span>
+                  <span class="price">S$5.50–7.00</span>
+                </div>
+              </article>
+              <article class="dish-card">
+                <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80" alt="" />
+                <div class="dish-copy">
+                  <strong>Roasted set add-on</strong>
+                  <span>Extra skin, darker glaze, heavier finish</span>
+                  <span>Popular at lunch</span>
+                  <span class="price">S$7.50</span>
+                </div>
+              </article>
+              <div class="dock">
+                <a class="dock-btn secondary">Directions</a>
+                <a class="dock-btn primary">Order / save</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="column">
+          <div class="cluster-label">
+            <h3>Map → Building → Dish</h3>
+            <span class="micro-label">spatial browse / floor selector</span>
+          </div>
+
+          <div class="phone">
+            <div class="screen map-screen">
+              <div class="map-canvas"></div>
+              <div class="statusbar">
+                <span>12:23</span>
+                <div class="signal">
+                  <span>GPS</span>
+                  <div class="battery"><span></span></div>
+                </div>
+              </div>
+              <div class="map-title">
+                <div>
+                  <strong>Discover on map</strong>
+                  <span>Tap a building to browse stalls by floor and unit.</span>
+                </div>
+                <div class="map-badge">Nearby now</div>
+              </div>
+              <div class="map-pin orange one"></div>
+              <div class="map-pin teal two"></div>
+              <div class="map-pin amber three"></div>
+              <div class="map-fab">◎</div>
+              <div class="map-sheet">
+                <div class="handle"></div>
+                <div class="sheet-head">
+                  <div>
+                    <span>Selected building</span>
+                    <strong>Maxwell Food Centre</strong>
+                  </div>
+                  <span class="pill navy">3 stalls saved</span>
+                </div>
+                <div class="sheet-meta">
+                  <span class="grade">NEA clean</span>
+                  <span class="pill navy">L1 only</span>
+                  <span class="pill navy">3 active stalls</span>
+                </div>
+                <div class="sheet-card">
+                  <strong>Tian Tian Chicken Rice</strong>
+                  <span>#01-10 · 2 min walk · Best match for fragrant rice cravings</span>
+                </div>
+                <div class="sheet-card">
+                  <strong>Old School Laksa</strong>
+                  <span>#01-37 · spicy / rich / wet-weather pick</span>
+                </div>
+                <div class="dock">
+                  <a class="dock-btn secondary">Keep browsing</a>
+                  <a class="dock-btn primary">Open building</a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="phone">
+            <div class="screen">
+              <div class="statusbar">
+                <span>12:24</span>
+                <div class="signal">
+                  <span>GPS</span>
+                  <div class="battery"><span></span></div>
+                </div>
+              </div>
+              <div class="building-top">
+                <div class="building-name">
+                  <div>
+                    <span>Building drill-down</span>
+                    <strong>Maxwell Food Centre</strong>
+                  </div>
+                  <div class="circle-btn">⌕</div>
+                </div>
+                <div class="inline-search"><span>⌕</span><em>Search on this building</em></div>
+                <div class="floor-row">
+                  <span class="floor-chip active">L1</span>
+                  <span class="floor-chip">L2</span>
+                  <span class="floor-chip">Desserts</span>
+                </div>
+              </div>
+              <article class="menu-card">
+                <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80" alt="" />
+                <div class="menu-copy">
+                  <strong>Tian Tian Chicken Rice</strong>
+                  <span>#01-10 · open until 8pm · grade A</span>
+                  <div class="pill-row">
+                    <span class="chip soft-orange">Chicken Rice</span>
+                    <span class="chip">Fragrant</span>
+                  </div>
+                  <span class="price">Top dish from S$5.50</span>
+                </div>
+              </article>
+              <article class="menu-card">
+                <img src="https://images.unsplash.com/photo-1555126634-323283e090fa?auto=format&fit=crop&w=800&q=80" alt="" />
+                <div class="menu-copy">
+                  <strong>Old School Laksa</strong>
+                  <span>#01-37 · open until 7:30pm · grade B</span>
+                  <div class="pill-row">
+                    <span class="chip soft-orange">Laksa</span>
+                    <span class="chip">Spicy</span>
+                  </div>
+                  <span class="price">Top dish from S$6.00</span>
+                </div>
+              </article>
+              <article class="mini-rail-card">
+                <strong>Menu preview on this floor</strong>
+                <div class="rail">
+                  <div class="rail-item">
+                    <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80" alt="" />
+                    <div class="rail-copy"><strong>Chicken Rice</strong><span>S$5.50</span></div>
+                  </div>
+                  <div class="rail-item">
+                    <img src="https://images.unsplash.com/photo-1555126634-323283e090fa?auto=format&fit=crop&w=800&q=80" alt="" />
+                    <div class="rail-copy"><strong>Laksa</strong><span>S$6.00</span></div>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div class="phone">
+            <div class="screen">
+              <div class="statusbar">
+                <span>12:26</span>
+                <div class="signal">
+                  <span>5G</span>
+                  <div class="battery"><span></span></div>
+                </div>
+              </div>
+              <div class="detail-title">
+                <div>
+                  <span>Dish detail</span>
+                  <strong>Chicken Rice</strong>
+                </div>
+                <div class="circle-btn">♡</div>
+              </div>
+              <div class="hero-media">
+                <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=1200&q=80" alt="" />
+                <div class="media-tag">Must order</div>
+              </div>
+              <div class="detail-title">
+                <div>
+                  <strong style="font-size: 24px">S$5.50</strong>
+                  <span>Tian Tian Chicken Rice · Maxwell #01-10</span>
+                </div>
+                <span class="pill navy">95% taste match</span>
+              </div>
+              <div class="pill-row">
+                <span class="chip soft-orange">Fragrant</span>
+                <span class="chip soft-orange">Juicy</span>
+                <span class="chip">Comforting</span>
+              </div>
+              <article class="taste-chart">
+                <strong>Taste profile</strong>
+                <div class="chart"></div>
+                <div class="pill-row" style="margin-top: 10px">
+                  <span class="chip">Aromatic 9</span>
+                  <span class="chip">Salty 7</span>
+                  <span class="chip">Rich 6</span>
+                </div>
+              </article>
+              <article class="mini-rail-card">
+                <strong>Recent dish notes</strong>
+                <div class="review-list">
+                  <div class="history-row">
+                    <div class="avatar"><img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=400&q=80" alt="" /></div>
+                    <div class="copy">
+                      <strong>Wei Ming</strong>
+                      <span>“The rice stays fragrant even in lunch rush.”</span>
+                    </div>
+                    <div class="rating">5★</div>
+                  </div>
+                </div>
+              </article>
+              <div class="dock">
+                <a class="dock-btn secondary">Save / share</a>
+                <a class="dock-btn primary">Write review</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="phone">
+            <div class="screen">
+              <div class="statusbar">
+                <span>12:27</span>
+                <div class="signal">
+                  <span>5G</span>
+                  <div class="battery"><span></span></div>
+                </div>
+              </div>
+              <div class="search-top">
+                <div class="app-title">
+                  <span>Search</span>
+                  <strong>Find the dish first</strong>
+                </div>
+                <div class="circle-btn">⚙</div>
+              </div>
+              <div class="search-bar">
+                <span>⌕</span>
+                <strong>laksa, chicken rice, satay…</strong>
+                <span>☰</span>
+              </div>
+              <div class="pill-row">
+                <span class="chip active">Local favourites</span>
+                <span class="chip">Noodles</span>
+                <span class="chip">Rice</span>
+                <span class="chip">Late night</span>
+              </div>
+              <article class="filter-sheet">
+                <div class="sheet-head">
+                  <div>
+                    <span>Taste filter</span>
+                    <strong>Shape your shortlist</strong>
+                  </div>
+                  <span class="pill navy">6 sliders</span>
+                </div>
+                <div class="slider-row">
+                  <strong>Spicy</strong>
+                  <div class="range"><span>0</span><div class="bar"><div class="bar-fill" style="width:72%"></div></div><span>10</span></div>
+                </div>
+                <div class="slider-row">
+                  <strong>Rich</strong>
+                  <div class="range"><span>0</span><div class="bar"><div class="bar-fill" style="width:80%"></div></div><span>10</span></div>
+                </div>
+                <div class="slider-row">
+                  <strong>Aromatic</strong>
+                  <div class="range"><span>0</span><div class="bar"><div class="bar-fill" style="width:74%"></div></div><span>10</span></div>
+                </div>
+                <div class="pill-row">
+                  <span class="chip">Halal</span>
+                  <span class="chip">Vegetarian</span>
+                  <span class="chip active">Within 1km</span>
+                </div>
+                <div class="dock">
+                  <a class="dock-btn secondary">Reset</a>
+                  <a class="dock-btn primary">View matches</a>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div class="column">
+          <div class="cluster-label">
+            <h3>Search → Reads → Profile → Review</h3>
+            <span class="micro-label">utility / editorial / personal history</span>
+          </div>
+
+          <div class="phone">
+            <div class="screen">
+              <div class="statusbar">
+                <span>12:30</span>
+                <div class="signal">
+                  <span>5G</span>
+                  <div class="battery"><span></span></div>
+                </div>
+              </div>
+              <div class="detail-title">
+                <div>
+                  <span>Results / 8 dishes nearby</span>
+                  <strong>Laksa near Maxwell</strong>
+                </div>
+                <div class="circle-btn">☰</div>
+              </div>
+              <div class="search-results">
+                <div class="results-row">
+                  <img src="https://images.unsplash.com/photo-1555126634-323283e090fa?auto=format&fit=crop&w=800&q=80" alt="" />
+                  <div class="copy">
+                    <strong>Old School Laksa</strong>
+                    <span>Maxwell Food Centre · #01-37 · 210m</span>
+                    <span>Spicy / rich / creamy · 4.5 ★</span>
+                  </div>
+                  <div class="price">S$6.00</div>
+                </div>
+                <div class="results-row">
+                  <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80" alt="" />
+                  <div class="copy">
+                    <strong>Satay Set</strong>
+                    <span>Lau Pa Sat · 520m · best for evening</span>
+                    <span>Rich / smoky / sweet sauce · 4.8 ★</span>
+                  </div>
+                  <div class="price">S$8.50</div>
+                </div>
+                <div class="results-row">
+                  <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=800&q=80" alt="" />
+                  <div class="copy">
+                    <strong>Chicken Rice</strong>
+                    <span>Maxwell Food Centre · 180m</span>
+                    <span>Aromatic / juicy / comfort pick · 4.8 ★</span>
+                  </div>
+                  <div class="price">S$5.50</div>
+                </div>
+              </div>
+              <div class="bottom-nav">
+                <div class="tab-item"><div class="tab-icon">⌂</div><span>Discover</span></div>
+                <div class="tab-item active"><div class="tab-icon active">⌕</div><span>Search</span></div>
+                <div class="tab-item"><div class="tab-icon">☰</div><span>Reads</span></div>
+                <div class="tab-item"><div class="tab-icon">☺</div><span>Profile</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="phone">
+            <div class="screen soft">
+              <div class="statusbar">
+                <span>12:34</span>
+                <div class="signal">
+                  <span>5G</span>
+                  <div class="battery"><span></span></div>
+                </div>
+              </div>
+              <div class="app-head">
+                <div class="app-title">
+                  <span>Reads</span>
+                  <strong>Local food journalism that drops you back into stalls.</strong>
+                </div>
+                <div class="circle-btn">↻</div>
+              </div>
+              <div class="article-list">
+                <div class="article-row">
+                  <img src="https://images.unsplash.com/photo-1555126634-323283e090fa?auto=format&fit=crop&w=800&q=80" alt="" />
+                  <div class="copy">
+                    <strong>What to eat around Maxwell when you only have 30 minutes</strong>
+                    <span>EatBook · Chinatown</span>
+                    <span>Chicken rice, laksa, quick dessert stops</span>
+                  </div>
+                  <span class="pill navy">Open</span>
+                </div>
+                <div class="article-row">
+                  <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80" alt="" />
+                  <div class="copy">
+                    <strong>Late-night satay in the CBD that still feels worth the queue</strong>
+                    <span>SethLui · CBD</span>
+                    <span>Skewers, peanut sauce, after-hours picks</span>
+                  </div>
+                  <span class="pill navy">Open</span>
+                </div>
+              </div>
+              <article class="article-card">
+                <div class="article-hero">
+                  <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80" alt="" />
+                </div>
+                <div class="article-body">
+                  <span class="micro-label">article bridge</span>
+                  <strong>Satay Street Classics is tagged directly inside the story.</strong>
+                  <p>The editorial layer does not dead-end. Hungry lets the reader jump straight into the mapped stall and its dishes.</p>
+                </div>
+                <div class="bridge-card">
+                  <strong>Open the stall on Hungry</strong>
+                  <span>Lau Pa Sat · #01-22 · satay set from S$8.50</span>
+                  <a class="secondary-btn">View stall and dishes</a>
+                </div>
+              </article>
+              <div class="bottom-nav">
+                <div class="tab-item"><div class="tab-icon">⌂</div><span>Discover</span></div>
+                <div class="tab-item"><div class="tab-icon">⌕</div><span>Search</span></div>
+                <div class="tab-item active"><div class="tab-icon active">☰</div><span>Reads</span></div>
+                <div class="tab-item"><div class="tab-icon">☺</div><span>Profile</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="phone">
+            <div class="screen soft">
+              <div class="statusbar">
+                <span>12:36</span>
+                <div class="signal">
+                  <span>5G</span>
+                  <div class="battery"><span></span></div>
+                </div>
+              </div>
+              <div class="profile-head">
+                <div>
+                  <span>Profile</span>
+                  <strong>Wei Ming</strong>
+                </div>
+                <div class="circle-btn">⚙</div>
+              </div>
+              <article class="profile-card">
+                <div class="avatar-row">
+                  <div class="avatar-lg"><img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=400&q=80" alt="" /></div>
+                  <div>
+                    <strong>Wei Ming</strong>
+                    <p>Likes rich broths, aromatic rice, and evening satay runs.</p>
+                  </div>
+                </div>
+                <div class="stat-row">
+                  <div class="stat"><span class="micro-label">Reviews</span><strong>12</strong></div>
+                  <div class="stat"><span class="micro-label">Stalls</span><strong>8</strong></div>
+                  <div class="stat"><span class="micro-label">Saved</span><strong>2</strong></div>
+                </div>
+                <article class="taste-chart">
+                  <strong>Taste fingerprint</strong>
+                  <div class="chart"></div>
+                </article>
+              </article>
+              <article class="mini-rail-card">
+                <strong>Saved dishes</strong>
+                <div class="rail">
+                  <div class="rail-item">
+                    <img src="https://images.unsplash.com/photo-1555126634-323283e090fa?auto=format&fit=crop&w=800&q=80" alt="" />
+                    <div class="rail-copy"><strong>Laksa</strong><span>Old School Laksa</span></div>
+                  </div>
+                  <div class="rail-item">
+                    <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80" alt="" />
+                    <div class="rail-copy"><strong>Satay Set</strong><span>Satay Street Classics</span></div>
+                  </div>
+                </div>
+              </article>
+              <article class="review-card">
+                <strong>Recent review history</strong>
+                <p>Chicken Rice · 5★ · “Rice stays fragrant even during lunch rush.”</p>
+              </article>
+              <div class="bottom-nav">
+                <div class="tab-item"><div class="tab-icon">⌂</div><span>Discover</span></div>
+                <div class="tab-item"><div class="tab-icon">⌕</div><span>Search</span></div>
+                <div class="tab-item"><div class="tab-icon">☰</div><span>Reads</span></div>
+                <div class="tab-item active"><div class="tab-icon active">☺</div><span>Profile</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="phone">
+            <div class="screen">
+              <div class="statusbar">
+                <span>12:39</span>
+                <div class="signal">
+                  <span>5G</span>
+                  <div class="battery"><span></span></div>
+                </div>
+              </div>
+              <div class="detail-title">
+                <div>
+                  <span>Review flow</span>
+                  <strong>Rate the dish</strong>
+                </div>
+                <div class="circle-btn">×</div>
+              </div>
+              <div class="review-stepper">
+                <span class="step active">1</span>
+                <span class="step">2</span>
+                <span class="step">3</span>
+              </div>
+              <article class="review-card">
+                <strong>Chicken Rice</strong>
+                <p>Tian Tian Chicken Rice · Maxwell Food Centre</p>
+                <div class="stars">★ ★ ★ ★ ★</div>
+                <div class="pill-row">
+                  <span class="chip active">Fragrant</span>
+                  <span class="chip active">Juicy</span>
+                  <span class="chip">Comforting</span>
+                  <span class="chip">Queue worth it</span>
+                </div>
+              </article>
+              <article class="review-card">
+                <strong>Write your review</strong>
+                <div class="text-area">Rice stays fragrant even during lunch rush, and the chicken still feels silky. Easy weekday lunch pick when you want something reliable.</div>
+                <div class="photo-row">
+                  <div class="photo-tile live"><img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=600&q=80" alt="" /></div>
+                  <div class="photo-tile">Add photo</div>
+                  <div class="photo-tile">Add photo</div>
+                </div>
+              </article>
+              <div class="dock">
+                <a class="dock-btn secondary">Back</a>
+                <a class="dock-btn primary">Submit review</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="phone">
+            <div class="screen soft">
+              <div class="statusbar">
+                <span>12:42</span>
+                <div class="signal">
+                  <span>Offline</span>
+                  <div class="battery"><span></span></div>
+                </div>
+              </div>
+              <div class="empty-card">
+                <div class="empty-icon">⌁</div>
+                <strong style="font-size: 20px; color: var(--navy); margin-top: 16px;">Offline, but your shortlists stay readable.</strong>
+                <p style="max-width: 260px; margin-top: 10px;">
+                  Nearby discovery can pause, but saved dishes, recent reviews, and the last viewed stall still stay usable.
+                </p>
+                <div class="cta-stack" style="margin-top: 14px; width: 100%;">
+                  <a class="primary-btn">Retry connection</a>
+                  <a class="secondary-btn">Open saved dishes</a>
+                </div>
+              </div>
+              <article class="settings-card">
+                <div class="settings-row">
+                  <div>
+                    <strong>Offline cache</strong>
+                    <span>Keep recent dish detail and building lists</span>
+                  </div>
+                  <div class="toggle on"></div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
+

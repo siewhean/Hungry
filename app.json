@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Hungry",
+    "slug": "hungry-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "hungry",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.hungry.mobile",
+      "appleTeamId": "94R58J6LA2"
+    },
+    "android": {
+      "package": "app.hungry.mobile"
+    },
+    "experiments": {
+      "typedRoutes": false
+    },
+    "plugins": [
+      "expo-font",
+      "expo-web-browser"
+    ]
+  }
+}
