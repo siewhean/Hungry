@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hungry v2 — Discover &amp; Search (3 Variants)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+</head>
+<body>
+<main class="page">
+
+  <div class="intro-panel">
+    <p class="eyebrow">Hungry v2 / 02 Discover &amp; Search</p>
+    <h1>Three discover directions — from map-first to intent-first.</h1>
+    <p>The current HomeMapScreen has no search bar, a placeholder map, and a disconnected building list. All three variants unify search, discovery, and map into a single coherent surface. The dish section is elevated as first-class content in all variants — not buried in a separate tab. Stall vs user differentiation uses icon + ring cues, not pill labels.</p>
+    <div class="summary-chips">
+      <span class="summary-chip">Dishes section in Discover</span>
+      <span class="summary-chip">Stall vs User visual cues</span>
+      <span class="summary-chip">Decide for Me prominent</span>
+      <span class="summary-chip">No redundant pill buttons</span>
+      <span class="summary-chip">Map entry from search context</span>
+    </div>
+  </div>
+
+  <!-- Audit -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Current Implementation Audit</p>
+      <h2>What's wrong with HomeMapScreen.tsx + Search</h2>
+    </div>
+    <div class="critique-grid">
+      <div class="critique-card">
+        <p class="critique-label">Issue · Lines 99–156</p>
+        <h4>Map is a placeholder rectangle with absolute pins</h4>
+        <p>Zero spatial context. Users cannot infer distance, direction, or density from fixed percentage positions. All 3 variants replace this with a proper styled map surface with roads, blocks, and accurate pins.</p>
+      </div>
+      <div class="critique-card">
+        <p class="critique-label">Issue · Line 107</p>
+        <h4>"Dish pick" is a plain Button — not prominent enough</h4>
+        <p>The "Decide for Me" feature is one of the most valuable differentiators. It should be a visually distinct card, not a small button tucked in a header row. All variants make it a full-width branded card.</p>
+      </div>
+      <div class="critique-card">
+        <p class="critique-label">Missing feature</p>
+        <h4>No search bar on the Discover landing</h4>
+        <p>The Discover tab is the tab users land on after onboarding. It should have a search entry point immediately visible without switching to the Search tab.</p>
+      </div>
+      <div class="critique-card">
+        <p class="critique-label">Missing feature</p>
+        <h4>Dishes not surfaced on Discover — only buildings</h4>
+        <p>Users can't see what food is available until they drill into a building. Variant A and C surface trending dishes directly on the Discover page — dish-first, not venue-first.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── VARIANT A: Unified Discovery ─── -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Variant A — Recommended</p>
+      <h2>Unified Discovery</h2>
+    </div>
+    <div class="variant-block">
+      <div class="variant-meta">
+        <span class="variant-tag recommended">Recommended</span>
+        <h3>Search + intent chips + tap targets + dish scroll — all on one surface</h3>
+        <p>Keeps the map accessible via a dedicated button, but the landing state is about food discovery — not navigation. Intent chips are contextual (not persistent pills). The two large tap targets "Stalls" and "Dishes" are card-sized, not pill-sized.</p>
+        <ul class="feature-list">
+          <li>Sticky search bar + mic at top</li>
+          <li>Intent chips scroll horizontally — situational, not permanent</li>
+          <li>2 large tap targets: Stalls &amp; Dishes (card-sized, not pills)</li>
+          <li>Decide for Me card — gradient orange, prominent</li>
+          <li>Trending dishes horizontal scroll below targets</li>
+          <li>Stall list: orange ring + fork icon vs user grey ring</li>
+          <li>Map enters via icon button — not hidden, not primary</li>
+        </ul>
+      </div>
+      <div class="phones-group">
+        <!-- Phone A1: Landing state -->
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>12:18</span>
+              <div class="signal"><span>GPS</span><div class="battery"><span></span></div></div>
+            </div>
+            <!-- Header -->
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 8px;">
+              <div>
+                <div style="font-size:18px;font-weight:900;color:var(--text);">Discover</div>
+                <div style="font-size:12px;color:var(--text-muted);">Tanjong Pagar · 14 stalls nearby</div>
+              </div>
+              <!-- Map button: icon only, no pill -->
+              <div style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:var(--navy-soft);border-radius:12px;cursor:pointer;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+              </div>
+            </div>
+            <!-- Search bar -->
+            <div class="search-bar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span class="search-placeholder">Dishes, stalls, or hawker centres…</span>
+              <div class="mic-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+              </div>
+            </div>
+            <!-- Intent chips (contextual, not persistent) -->
+            <div class="intent-chips">
+              <div class="intent-chip active">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                Near me
+              </div>
+              <div class="intent-chip">🌶️ Spicy</div>
+              <div class="intent-chip">⭐ Best rated</div>
+              <div class="intent-chip">🏠 Hawker</div>
+              <div class="intent-chip">🎲 Decide for me</div>
+            </div>
+
+            <div class="scroll-content">
+              <!-- Two large tap targets -->
+              <div class="discover-targets">
+                <div class="discover-target">
+                  <div class="discover-target-icon">🏪</div>
+                  <h4>Stalls &amp; Restaurants</h4>
+                  <p>Browse by venue near you</p>
+                </div>
+                <div class="discover-target">
+                  <div class="discover-target-icon">🍜</div>
+                  <h4>Dishes</h4>
+                  <p>Find your craving first</p>
+                </div>
+              </div>
+
+              <!-- Decide for Me card -->
+              <div style="margin:12px 16px 0;">
+                <div class="decide-card">
+                  <div class="decide-icon">🎲</div>
+                  <div class="decide-text">
+                    <div class="decide-title">Decide for Me</div>
+                    <div class="decide-subtitle">Based on your taste profile · 3 dishes ready</div>
+                  </div>
+                  <div class="decide-arrow">›</div>
+                </div>
+              </div>
+
+              <!-- Trending dishes -->
+              <div class="screen-section-heading">
+                <h3>Trending near you</h3>
+                <span class="see-all">See all</span>
+              </div>
+              <div class="dish-scroll">
+                <div class="dish-card-sm">
+                  <div class="dish-img">🍜</div>
+                  <div class="dish-info">
+                    <div class="dish-name">Wanton Mee</div>
+                    <div class="dish-meta">Ah Kow · 80m away</div>
+                    <div class="dish-price">S$4.50</div>
+                  </div>
+                </div>
+                <div class="dish-card-sm">
+                  <div class="dish-img">🍛</div>
+                  <div class="dish-info">
+                    <div class="dish-name">Nasi Lemak</div>
+                    <div class="dish-meta">Bismillah · 120m</div>
+                    <div class="dish-price">S$3.50</div>
+                  </div>
+                </div>
+                <div class="dish-card-sm">
+                  <div class="dish-img">🍱</div>
+                  <div class="dish-info">
+                    <div class="dish-name">Curry Puff</div>
+                    <div class="dish-meta">Old CK · 200m</div>
+                    <div class="dish-price">S$1.50</div>
+                  </div>
+                </div>
+                <div class="dish-card-sm">
+                  <div class="dish-img">🍚</div>
+                  <div class="dish-info">
+                    <div class="dish-name">Chicken Rice</div>
+                    <div class="dish-meta">Tian Tian · 350m</div>
+                    <div class="dish-price">S$5.00</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Nearby stalls -->
+              <div class="screen-section-heading">
+                <h3>Stalls near you</h3>
+                <span class="see-all">Map view</span>
+              </div>
+              <!-- Stall: orange ring + fork = stall account -->
+              <div class="stall-row">
+                <div class="stall-thumb" style="border:2.5px solid var(--orange);border-radius:12px;">🍜</div>
+                <div class="stall-info">
+                  <div class="stall-name">Ah Kow Wanton Mee <span style="color:var(--orange);font-size:10px;">✦</span></div>
+                  <div class="stall-meta">
+                    <span class="open-dot"></span>
+                    Open · closes 2pm · Maxwell #01-77 · 80m
+                  </div>
+                </div>
+                <div class="hygiene-grade">A</div>
+              </div>
+              <!-- User: no special ring -->
+              <div class="stall-row" style="opacity:0.7;">
+                <div class="stall-thumb">🍛</div>
+                <div class="stall-info">
+                  <div class="stall-name">Bismillah Briyani</div>
+                  <div class="stall-meta">
+                    <span class="open-dot"></span>
+                    Open · Tekka Centre #02-35 · 120m
+                  </div>
+                </div>
+                <div class="hygiene-grade">A</div>
+              </div>
+              <div style="height:24px;"></div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="tab-label">Feed</span></div>
+              <div class="tab-item active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><span class="tab-label" style="color:var(--orange);">Discover</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><span class="tab-label">Reads</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="tab-label">Profile</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phone A2: Search active / results state -->
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>12:19</span>
+              <div class="signal"><span>GPS</span><div class="battery"><span></span></div></div>
+            </div>
+            <div style="padding:12px 16px 8px;">
+              <div style="font-size:18px;font-weight:900;color:var(--text);">Discover</div>
+            </div>
+            <!-- Search active state: text entered -->
+            <div class="search-bar" style="background:var(--surface);border-color:var(--orange);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span class="search-placeholder" style="color:var(--text);font-weight:600;">laksa</span>
+              <div style="font-size:16px;color:var(--text-muted);cursor:pointer;">✕</div>
+            </div>
+            <!-- Type filter tabs: All / Dishes / Stalls -->
+            <div class="type-filter-tabs" style="margin-top:8px;">
+              <div class="type-tab">All</div>
+              <div class="type-tab active">Dishes</div>
+              <div class="type-tab">Stalls</div>
+              <div class="type-tab">Reads</div>
+            </div>
+            <div class="scroll-content">
+              <!-- Search results: dishes -->
+              <div class="screen-section-heading" style="padding-top:12px;">
+                <h3>Dishes matching "laksa"</h3>
+                <span class="see-all">8 results</span>
+              </div>
+              <!-- Result rows -->
+              <div class="stall-row">
+                <div class="stall-thumb" style="font-size:28px;">🍜</div>
+                <div class="stall-info">
+                  <div class="stall-name">Katong Laksa</div>
+                  <div class="stall-meta" style="flex-direction:column;align-items:flex-start;gap:2px;">
+                    <span>328 Katong · 1.2km</span>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      <span style="font-size:11px;font-weight:700;color:var(--text);">4.8</span>
+                      <span style="font-size:11px;color:var(--text-muted);">· 312 reviews</span>
+                      <span style="font-size:11px;font-weight:700;color:var(--orange);">S$5.50</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="hygiene-grade">A</div>
+              </div>
+              <div class="stall-row">
+                <div class="stall-thumb" style="font-size:28px;">🍜</div>
+                <div class="stall-info">
+                  <div class="stall-name">Prawn Mee Laksa</div>
+                  <div class="stall-meta" style="flex-direction:column;align-items:flex-start;gap:2px;">
+                    <span>Maxwell #01-14 · 80m</span>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      <span style="font-size:11px;font-weight:700;color:var(--text);">4.5</span>
+                      <span style="font-size:11px;color:var(--text-muted);">· 89 reviews</span>
+                      <span style="font-size:11px;font-weight:700;color:var(--orange);">S$6.00</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="hygiene-grade">A</div>
+              </div>
+              <div class="stall-row">
+                <div class="stall-thumb" style="font-size:28px;">🍜</div>
+                <div class="stall-info">
+                  <div class="stall-name">Coconut Laksa Bowl</div>
+                  <div class="stall-meta" style="flex-direction:column;align-items:flex-start;gap:2px;">
+                    <span>Chinatown Complex · 400m</span>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      <span style="font-size:11px;font-weight:700;color:var(--text);">4.6</span>
+                      <span style="font-size:11px;color:var(--text-muted);">· 204 reviews</span>
+                      <span style="font-size:11px;font-weight:700;color:var(--orange);">S$5.00</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="hygiene-grade b">B</div>
+              </div>
+              <!-- Taste filter quick access -->
+              <div style="margin:8px 16px;padding:12px;background:var(--bg-soft);border-radius:12px;border:1px solid var(--border);">
+                <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;">Filter by taste</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                  <div class="intent-chip" style="padding:5px 10px;font-size:11px;">🌶️ Spicy</div>
+                  <div class="intent-chip active" style="padding:5px 10px;font-size:11px;">🥥 Coconut</div>
+                  <div class="intent-chip" style="padding:5px 10px;font-size:11px;">🍤 Seafood</div>
+                  <div class="intent-chip" style="padding:5px 10px;font-size:11px;">🌿 Herb</div>
+                </div>
+              </div>
+              <div style="height:24px;"></div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="tab-label">Feed</span></div>
+              <div class="tab-item active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><span class="tab-label" style="color:var(--orange);">Discover</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><span class="tab-label">Reads</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="tab-label">Profile</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── VARIANT B: Map-First ─── -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Variant B</p>
+      <h2>Map-First Discovery</h2>
+    </div>
+    <div class="variant-block reverse">
+      <div class="variant-meta">
+        <span class="variant-tag">Spatial discovery</span>
+        <h3>Full-screen map as landing — pull-up sheet reveals food content</h3>
+        <p>For users who think spatially — tourists, office workers exploring the area. The map is the primary surface. A draggable bottom sheet reveals nearby stalls and dishes without leaving the map context. "Decide for Me" is a floating action button that's dismissible.</p>
+        <ul class="feature-list">
+          <li>Full-screen styled map as landing (no blank rectangle)</li>
+          <li>Building pins with type color: orange=hawker, teal=food court, navy=restaurant</li>
+          <li>Pull-up sheet: 3 positions (collapsed / half / full)</li>
+          <li>Search bar embedded in sheet header</li>
+          <li>Decide for Me: floating orange FAB</li>
+          <li>Sheet in full state shows same stall/dish list as Variant A</li>
+        </ul>
+      </div>
+      <div class="phones-group">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar" style="position:absolute;top:0;left:0;right:0;z-index:20;background:transparent;color:white;text-shadow:0 1px 3px rgba(0,0,0,0.5);">
+              <span>12:18</span>
+              <div class="signal"><span>GPS</span><div class="battery"><span style="background:white;"></span></div></div>
+            </div>
+            <!-- Full-screen map surface -->
+            <div class="map-surface" style="flex:1;position:relative;">
+              <!-- Roads -->
+              <div class="map-road-h" style="top:35%;left:0;right:0;"></div>
+              <div class="map-road-h" style="top:62%;left:0;right:0;"></div>
+              <div class="map-road-v" style="left:28%;top:0;bottom:0;"></div>
+              <div class="map-road-v" style="left:65%;top:0;bottom:0;"></div>
+              <!-- Building blocks -->
+              <div class="map-building-block" style="top:10%;left:5%;width:18%;height:22%;"></div>
+              <div class="map-building-block" style="top:10%;left:32%;width:26%;height:20%;"></div>
+              <div class="map-building-block" style="top:42%;left:5%;width:16%;height:16%;"></div>
+              <div class="map-building-block" style="top:42%;left:32%;width:24%;height:20%;"></div>
+              <div class="map-building-block" style="top:10%;left:70%;width:22%;height:18%;"></div>
+              <div class="map-building-block" style="top:42%;left:70%;width:22%;height:22%;"></div>
+              <!-- Building pins -->
+              <div class="map-pin" style="top:18%;left:43%;">
+                <div class="pin-bubble">🍜 Maxwell</div>
+                <div class="pin-tail"></div>
+              </div>
+              <div class="map-pin" style="top:48%;left:43%;">
+                <div class="pin-bubble teal">☕ Chinatown</div>
+                <div class="pin-tail teal"></div>
+              </div>
+              <div class="map-pin" style="top:18%;left:80%;">
+                <div class="pin-bubble navy">🍽️ Amoy St</div>
+                <div class="pin-tail navy"></div>
+              </div>
+              <!-- My location dot -->
+              <div style="position:absolute;top:55%;left:55%;width:14px;height:14px;background:var(--orange);border-radius:50%;border:3px solid white;box-shadow:0 0 0 6px rgba(232,83,30,0.2);"></div>
+              <!-- Decide for Me FAB -->
+              <div style="position:absolute;bottom:200px;right:16px;background:var(--orange);border-radius:999px;padding:10px 16px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(232,83,30,0.4);cursor:pointer;z-index:10;">
+                <span style="font-size:16px;">🎲</span>
+                <span style="font-size:13px;font-weight:700;color:white;">Decide for Me</span>
+              </div>
+              <!-- Bottom sheet (half state) -->
+              <div class="bottom-sheet" style="height:220px;">
+                <div class="sheet-handle"></div>
+                <!-- Search inside sheet -->
+                <div class="search-bar" style="margin:0 16px 8px;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <span class="search-placeholder">Find stalls or dishes…</span>
+                </div>
+                <div class="sheet-title">14 stalls nearby</div>
+                <!-- Stall rows in sheet -->
+                <div class="stall-row" style="padding:8px 16px;">
+                  <div class="stall-thumb" style="width:44px;height:44px;border:2px solid var(--orange);">🍜</div>
+                  <div class="stall-info">
+                    <div class="stall-name" style="font-size:13px;">Ah Kow Wanton Mee <span style="color:var(--orange);font-size:9px;">✦</span></div>
+                    <div class="stall-meta" style="font-size:10px;">Open · Maxwell #01-77 · 80m</div>
+                  </div>
+                  <div class="hygiene-grade" style="font-size:10px;">A</div>
+                </div>
+                <div class="stall-row" style="padding:8px 16px;">
+                  <div class="stall-thumb" style="width:44px;height:44px;">🍛</div>
+                  <div class="stall-info">
+                    <div class="stall-name" style="font-size:13px;">Bismillah Briyani</div>
+                    <div class="stall-meta" style="font-size:10px;">Open · Tekka #02-35 · 120m</div>
+                  </div>
+                  <div class="hygiene-grade" style="font-size:10px;">A</div>
+                </div>
+              </div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="tab-label">Feed</span></div>
+              <div class="tab-item active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div><span class="tab-label" style="color:var(--orange);">Map</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><span class="tab-label">Reads</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="tab-label">Profile</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── VARIANT C: Intent-Based ─── -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Variant C</p>
+      <h2>Intent-Based Discovery</h2>
+    </div>
+    <div class="variant-block">
+      <div class="variant-meta">
+        <span class="variant-tag">AI-first</span>
+        <h3>"What are you craving?" — taste categories lead to filtered results</h3>
+        <p>Directly addresses the problem of decision paralysis. Rather than showing a list of options immediately, it asks the user what kind of food experience they want. The 6 taste tiles are 3D tactile buttons — selecting them filters dishes intelligently. After selection, a results screen with matching dishes appears.</p>
+        <ul class="feature-list">
+          <li>Landing: large "What are you craving?" heading</li>
+          <li>6 taste tiles (3x2): Spicy / Rich / Sweet / Sour / Fresh / Crispy</li>
+          <li>Search bar at top for override</li>
+          <li>Tile selection → results screen: dish cards filtered by taste</li>
+          <li>Country-flag filter: "Popular with 🇰🇷 Koreans" etc.</li>
+          <li>Results cards: dish photo, name, stall, distance, save — no extra pills</li>
+        </ul>
+      </div>
+      <div class="phones-group">
+        <!-- Phone C1: Landing -->
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>12:18</span>
+              <div class="signal"><span>GPS</span><div class="battery"><span></span></div></div>
+            </div>
+            <div style="padding:10px 16px 4px;">
+              <div style="font-size:18px;font-weight:900;color:var(--text);">Discover</div>
+            </div>
+            <div class="search-bar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span class="search-placeholder">Search dishes or stalls…</span>
+              <div class="mic-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div>
+            </div>
+            <div class="scroll-content">
+              <div class="craving-heading">
+                <h2>What are you craving?</h2>
+                <p>Tap a flavour — we'll show the best matches near you</p>
+              </div>
+              <div class="taste-grid">
+                <div class="taste-tile selected">
+                  <div class="taste-emoji">🌶️</div>
+                  <div class="taste-label">Spicy</div>
+                </div>
+                <div class="taste-tile">
+                  <div class="taste-emoji">🍲</div>
+                  <div class="taste-label">Rich &amp; Hearty</div>
+                </div>
+                <div class="taste-tile">
+                  <div class="taste-emoji">🍯</div>
+                  <div class="taste-label">Sweet</div>
+                </div>
+                <div class="taste-tile">
+                  <div class="taste-emoji">🍋</div>
+                  <div class="taste-label">Sour &amp; Bright</div>
+                </div>
+                <div class="taste-tile">
+                  <div class="taste-emoji">🌿</div>
+                  <div class="taste-label">Fresh &amp; Light</div>
+                </div>
+                <div class="taste-tile">
+                  <div class="taste-emoji">🧀</div>
+                  <div class="taste-label">Crispy</div>
+                </div>
+              </div>
+              <!-- Country-based discovery -->
+              <div class="screen-section-heading" style="padding-top:8px;">
+                <h3>Popular with visitors</h3>
+              </div>
+              <div style="display:flex;gap:8px;padding:4px 16px 8px;overflow-x:auto;scrollbar-width:none;">
+                <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--bg-soft);border:1px solid var(--border);border-radius:999px;white-space:nowrap;font-size:12px;font-weight:600;color:var(--text-secondary);cursor:pointer;flex-shrink:0;">🇰🇷 Korean tourists</div>
+                <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--bg-soft);border:1px solid var(--border);border-radius:999px;white-space:nowrap;font-size:12px;font-weight:600;color:var(--text-secondary);cursor:pointer;flex-shrink:0;">🇯🇵 Japanese visitors</div>
+                <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--bg-soft);border:1px solid var(--border);border-radius:999px;white-space:nowrap;font-size:12px;font-weight:600;color:var(--text-secondary);cursor:pointer;flex-shrink:0;">🌏 Locals</div>
+              </div>
+              <!-- Decide for Me card -->
+              <div style="margin:4px 16px 0;">
+                <div class="decide-card">
+                  <div class="decide-icon">🎲</div>
+                  <div class="decide-text">
+                    <div class="decide-title">Decide for Me</div>
+                    <div class="decide-subtitle">Skip the choice — we'll pick based on your taste</div>
+                  </div>
+                  <div class="decide-arrow">›</div>
+                </div>
+              </div>
+              <div style="height:24px;"></div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="tab-label">Feed</span></div>
+              <div class="tab-item active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><span class="tab-label" style="color:var(--orange);">Discover</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><span class="tab-label">Reads</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="tab-label">Profile</span></div>
+            </div>
+          </div>
+        </div>
+        <!-- Phone C2: Results after taste selection -->
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>12:19</span>
+              <div class="signal"><span>GPS</span><div class="battery"><span></span></div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 16px 8px;">
+              <div style="font-size:20px;cursor:pointer;color:var(--text-muted);">‹</div>
+              <div>
+                <div style="font-size:16px;font-weight:800;color:var(--text);">Spicy dishes</div>
+                <div style="font-size:11px;color:var(--text-muted);">8 matches near Tanjong Pagar</div>
+              </div>
+              <div style="margin-left:auto;font-size:12px;font-weight:600;color:var(--orange);cursor:pointer;">Filter</div>
+            </div>
+            <div style="height:1px;background:var(--border);"></div>
+            <div class="scroll-content">
+              <!-- Results grid -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px;">
+                <!-- Dish card (no pill badges) -->
+                <div style="background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-card);border:1px solid var(--border);">
+                  <div style="height:100px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:38px;position:relative;">
+                    🌶️
+                    <div style="position:absolute;top:8px;right:8px;cursor:pointer;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                  </div>
+                  <div style="padding:8px 10px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3;">Mala Xiang Guo</div>
+                    <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Spice Garden · 200m</div>
+                    <div style="font-size:12px;font-weight:700;color:var(--orange);margin-top:3px;">S$8.00+</div>
+                  </div>
+                </div>
+                <div style="background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-card);border:1px solid var(--border);">
+                  <div style="height:100px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:38px;position:relative;">
+                    🍜
+                    <div style="position:absolute;top:8px;right:8px;cursor:pointer;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                  </div>
+                  <div style="padding:8px 10px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3;">Spicy Laksa</div>
+                    <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">328 Katong · 1.2km</div>
+                    <div style="font-size:12px;font-weight:700;color:var(--orange);margin-top:3px;">S$5.50</div>
+                  </div>
+                </div>
+                <div style="background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-card);border:1px solid var(--border);">
+                  <div style="height:100px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:38px;">🍛</div>
+                  <div style="padding:8px 10px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3;">Nasi Lemak Spicy</div>
+                    <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Bismillah · 120m</div>
+                    <div style="font-size:12px;font-weight:700;color:var(--orange);margin-top:3px;">S$3.50</div>
+                  </div>
+                </div>
+                <div style="background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-card);border:1px solid var(--border);">
+                  <div style="height:100px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:38px;">🥘</div>
+                  <div style="padding:8px 10px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3;">Chilli Crab</div>
+                    <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">Long Beach · 2.1km</div>
+                    <div style="font-size:12px;font-weight:700;color:var(--orange);margin-top:3px;">S$45+</div>
+                  </div>
+                </div>
+              </div>
+              <div style="height:24px;"></div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="tab-label">Feed</span></div>
+              <div class="tab-item active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><span class="tab-label" style="color:var(--orange);">Discover</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><span class="tab-label">Reads</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="tab-label">Profile</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>
