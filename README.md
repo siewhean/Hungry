@@ -24,6 +24,7 @@ Hungry is a mock-first Expo + React Native mobile app for dish-first food discov
 
 - Root Expo scaffold, typed domain layer, Zustand stores, and mock repositories are in place
 - Discover, Search, Details, Auth, Onboarding, Profile, Review, Reads, and recovery flows are implemented in the mobile app shell
+- Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
 - `npm run typecheck` and `npx expo-doctor` both pass in the local environment
 
 ## Commands

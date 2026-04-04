@@ -12,6 +12,7 @@
 
 ## Review
 
+- Mock discovery dataset expanded to include additional food courts/hawker centres and their stalls/dishes.
 - `npm run typecheck` passes.
 - `npx expo-doctor` passes after adding `react-native-worklets` and running a dedupe pass.
 - The app is frontend-only and mock-first; no backend or security work was started.
