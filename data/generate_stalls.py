@@ -1,0 +1,408 @@
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+
+wb = Workbook()
+
+# ── Colours ──────────────────────────────────────────────────────────────────
+ORANGE     = "E8531E"
+NAVY       = "1E3A5F"
+TEAL       = "0D9488"
+AMBER      = "D97706"
+LIGHT_GREY = "F5F5F5"
+YELLOW_BG  = "FFF9C4"
+GREEN      = "166534"
+RED_BG     = "FEE2E2"
+
+def hdr(cell, txt, bg=NAVY, fg="FFFFFF", bold=True, sz=11):
+    cell.value = txt
+    cell.font = Font(bold=bold, color=fg, size=sz, name="Arial")
+    cell.fill = PatternFill("solid", fgColor=bg)
+    cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+def cell_val(cell, val, bold=False, color="000000", sz=10, wrap=True, align="left"):
+    cell.value = val
+    cell.font = Font(bold=bold, color=color, size=sz, name="Arial")
+    cell.alignment = Alignment(horizontal=align, vertical="center", wrap_text=wrap)
+
+thin = Side(style="thin", color="D0D0D0")
+border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+def apply_border(ws, min_row, max_row, min_col, max_col):
+    for r in range(min_row, max_row + 1):
+        for c in range(min_col, max_col + 1):
+            ws.cell(row=r, column=c).border = border
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SHEET 1 — Food Stalls & Restaurants
+# ═══════════════════════════════════════════════════════════════════════════════
+ws1 = wb.active
+ws1.title = "Food Stalls & Restaurants"
+ws1.freeze_panes = "A3"
+ws1.row_dimensions[1].height = 14
+ws1.row_dimensions[2].height = 40
+
+COLS = [
+    ("A", "Stall ID",          9),
+    ("B", "Stall / Restaurant Name", 28),
+    ("C", "Stall Type",        14),
+    ("D", "Cuisine",           16),
+    ("E", "Hawker Centre / Building", 26),
+    ("F", "Unit No.",           9),
+    ("G", "Address",           28),
+    ("H", "Postal Code",        9),
+    ("I", "Region",            12),
+    ("J", "Opening Hours",     26),
+    ("K", "Closed Days",       14),
+    ("L", "Signature Dish",    22),
+    ("M", "Menu Items",        40),
+    ("N", "Price Range (SGD)", 14),
+    ("O", "NEA Hygiene Grade", 12),
+    ("P", "Michelin Recognition", 16),
+    ("Q", "Dietary Options",   18),
+    ("R", "Delivery Platforms",16),
+    ("S", "Contact",           14),
+    ("T", "Instagram",         18),
+    ("U", "Notes",             30),
+]
+
+# Title row
+ws1.merge_cells("A1:U1")
+t = ws1["A1"]
+t.value = "🇸🇬 Singapore Food Stalls & Restaurants Database — Hungry App"
+t.font = Font(bold=True, size=14, color="FFFFFF", name="Arial")
+t.fill = PatternFill("solid", fgColor=ORANGE)
+t.alignment = Alignment(horizontal="center", vertical="center")
+
+# Header row
+for col_letter, label, width in COLS:
+    idx = ord(col_letter) - 64
+    hdr(ws1.cell(row=2, column=idx), label)
+    ws1.column_dimensions[col_letter].width = width
+
+stalls = [
+    # Maxwell Food Centre
+    ("SG001","Tian Tian Hainanese Chicken Rice","Hawker Stall","Hainanese","Maxwell Food Centre","#01-10","1 Kadayanallur St","069184","Central","Mon–Sun 10:00–20:00","Tue","Hainanese Chicken Rice","Chicken Rice, Roasted Chicken Rice, Chicken Congee","$3–$6","A","Michelin Bib Gourmand","Halal-friendly","—","6225 5506","@tiantianchickenrice","Featured in CNN Travel, Anthony Bourdain visited"),
+    ("SG002","Chen Mee Chek Minced Meat Noodle","Hawker Stall","Teochew","Maxwell Food Centre","#01-54","1 Kadayanallur St","069184","Central","Mon–Sun 06:00–14:00","Wed","Bak Chor Mee (dry)","Bak Chor Mee Dry/Soup, Fish Ball Noodle","$4–$6","A","—","—","—","—","—","Legendary queue, arrive before 8am"),
+    ("SG003","Jin Hua Sliced Fish Bee Hoon","Hawker Stall","Cantonese","Maxwell Food Centre","#01-77","1 Kadayanallur St","069184","Central","Mon–Sun 07:30–15:00","Thu","Sliced Fish Bee Hoon","Sliced Fish Soup, Mixed Seafood Soup, Prawn Noodles","$4–$7","A","—","—","—","—","—","Milky fish broth, always crowded"),
+    ("SG004","Maxwell Fuzhou Oyster Cake","Hawker Stall","Fuzhou","Maxwell Food Centre","#01-05","1 Kadayanallur St","069184","Central","Mon–Sun 08:00–18:00","—","Oyster Cake","Oyster Cake, Spring Rolls","$1.50–$3","A","—","—","—","—","—","Crispy deep-fried oyster cake unique to Singapore"),
+    # Chinatown Complex
+    ("SG005","Hong Kong Soya Sauce Chicken Rice & Noodle","Hawker Stall","Cantonese","Chinatown Complex Food Centre","#02-126","335 Smith St","050335","Central","Mon–Sun 10:30–20:30","—","Soya Sauce Chicken Rice","Soya Sauce Chicken Rice/Noodle, Char Siew Rice","$2.50–$5","B","Michelin 1 Star","—","—","—","@hawkerchansocial","World's cheapest Michelin-starred meal"),
+    ("SG006","Lian He Ben Ji Claypot Rice","Hawker Stall","Cantonese","Chinatown Complex Food Centre","#02-198/199","335 Smith St","050335","Central","Mon–Sun 17:00–23:00","Tue","Claypot Rice","Claypot Chicken Rice, Waxed Meat Claypot Rice, Frog Porridge","$6–$12","A","Michelin Bib Gourmand","—","—","—","—","Min 30 min wait; firewood charcoal cooking"),
+    ("SG007","Outram Park Fried Kway Teow Mee","Hawker Stall","Teochew","Chinatown Complex Food Centre","#02-17","335 Smith St","050335","Central","Mon–Sun 06:30–15:00","Wed","Char Kway Teow","Char Kway Teow (with/without egg), Oyster Omelette","$4–$6","A","Michelin Bib Gourmand","—","—","—","—","Wok hei king, 3rd-gen hawker"),
+    ("SG008","Chinatown Char Siew Wonton Noodle","Hawker Stall","Cantonese","Chinatown Complex Food Centre","#02-60","335 Smith St","050335","Central","Mon–Sun 07:00–14:00","—","Wonton Noodle","Wonton Noodle Dry/Soup, Char Siew Noodle","$4–$6","A","—","—","—","—","—","Springy handmade noodles"),
+    # Old Airport Road
+    ("SG009","Dong Ji Fried Kway Teow","Hawker Stall","Teochew","Old Airport Road Food Centre","#01-17","51 Old Airport Rd","390051","East","Mon–Sun 11:00–21:00","Wed","Char Kway Teow","Char Kway Teow, Fried Oyster","$4–$6","A","Michelin Bib Gourmand","—","—","—","—","Consistently rated top CKT in Singapore"),
+    ("SG010","Toa Payoh Rojak","Hawker Stall","Singaporean","Old Airport Road Food Centre","#01-75","51 Old Airport Rd","390051","East","Mon–Sun 11:30–21:00","—","Rojak","Rojak, Mee Siam, Laksa","$4–$8","A","—","Vegetarian options","—","—","—","Famous prawn paste rojak"),
+    ("SG011","Meng Kee Char Siew","Hawker Stall","Cantonese","Old Airport Road Food Centre","#01-32","51 Old Airport Rd","390051","East","Mon–Sun 06:00–14:00","Thu","Char Siew Rice","Char Siew Rice, Roasted Duck Rice, BBQ Pork","$4–$8","A","Michelin Bib Gourmand","—","—","—","—","Caramelised char siew, sell out by 10am"),
+    ("SG012","Albert Street Prawn Noodle","Hawker Stall","Hokkien","Old Airport Road Food Centre","#01-94","51 Old Airport Rd","390051","East","Mon–Sun 06:00–14:30","Mon","Prawn Noodle Soup","Prawn Noodle Soup/Dry, Pork Rib Prawn Noodle","$5–$9","A","—","—","—","—","—","Rich crustacean broth, 50-year recipe"),
+    # Newton Food Centre
+    ("SG013","Hup Kee Fried Oyster","Hawker Stall","Teochew","Newton Food Centre","#01-28","500 Clemenceau Ave N","229495","Central","Mon–Sun 17:00–02:00","—","Fried Oyster Omelette","Fried Oyster, Carrot Cake (white/black)","$8–$15","B","—","—","—","—","—","Tourist-favourite, best eaten fresh from wok"),
+    ("SG014","Teck Kee Satay","Hawker Stall","Singaporean","Newton Food Centre","#01-05","500 Clemenceau Ave N","229495","Central","Mon–Sun 17:30–01:00","—","Satay","Chicken Satay, Mutton Satay, Beef Satay","$0.70/stick","B","—","Halal-certified","—","—","—","Classic charcoal satay grilling"),
+    ("SG015","Ng Kee Hokkien Mee","Hawker Stall","Hokkien","Newton Food Centre","#01-53","500 Clemenceau Ave N","229495","Central","Mon–Sun 18:00–02:00","Tue","Hokkien Mee","Hokkien Mee, Fried Carrot Cake","$6–$10","B","—","—","—","—","—","Wet-style Hokkien mee, generous prawns"),
+    # Tekka Centre
+    ("SG016","Allauddin's Briyani","Hawker Stall","North Indian","Tekka Centre","#01-264","665 Buffalo Rd","210665","Central","Mon–Sun 07:00–21:00","—","Mutton Briyani","Mutton Briyani, Chicken Briyani, Fish Briyani","$6–$10","A","—","Halal-certified","—","6295 0627","—","Tekka's most famous briyani, 40+ years"),
+    ("SG017","Norris Road Laksa","Hawker Stall","Nonya","Tekka Centre","#01-329","665 Buffalo Rd","210665","Central","Mon–Sun 08:00–16:00","Thu","Laksa","Laksa, Mee Siam, Lor Mee","$4–$6","A","—","—","—","—","—","Coconut-rich laksa, old-school recipe"),
+    ("SG018","Abdul Karim's Nasi Padang","Hawker Stall","Malay/Indonesian","Tekka Centre","#01-165","665 Buffalo Rd","210665","Central","Mon–Sun 07:00–18:00","—","Nasi Padang","Nasi Padang, Rendang, Sambal Goreng, Gado Gado","$5–$9","A","—","Halal-certified","—","—","—","Over 20 dishes daily"),
+    # Amoy Street
+    ("SG019","Ji Ji Wanton Noodle Specialist","Hawker Stall","Cantonese","Amoy Street Food Centre","#02-97","7 Maxwell Rd","069111","Central","Mon–Sun 07:00–14:30","Sat–Sun","Wonton Noodle","Wonton Noodle, Dry Dumpling Noodle","$3.50–$5","A","Michelin Bib Gourmand","—","—","—","—","Office-hour crowd, weekdays only"),
+    ("SG020","Amoy Street Fried Chee Cheong Fun","Hawker Stall","Cantonese","Amoy Street Food Centre","#01-13","7 Maxwell Rd","069111","Central","Mon–Fri 07:30–14:00","Sat–Sun","Chee Cheong Fun","Chee Cheong Fun (prawn/char siew/plain)","$2.50–$4","A","—","—","—","—","—","Silky smooth rice noodle rolls"),
+    ("SG021","The Famous Sungei Road Trishaw Laksa","Hawker Stall","Nonya","Amoy Street Food Centre","#02-100","7 Maxwell Rd","069111","Central","Mon–Fri 11:00–15:00","Sat–Sun","Katong Laksa","Laksa, Mee Siam","$5–$7","A","Michelin Bib Gourmand","—","—","—","—","Thick spoon-cut bee hoon, Katong style"),
+    # Adam Road
+    ("SG022","Zam Zam Restaurant","Restaurant","Malay","Zam Zam","—","697–699 North Bridge Rd","198675","Central","Mon–Sun 07:00–23:00","—","Murtabak","Murtabak (mutton/chicken/sardine), Briyani, Roti Prata","$4–$15","B","—","Halal-certified","—","6298 6320","@zamzamsg","Since 1908, one of Singapore's oldest Malay restaurants"),
+    ("SG023","Adam Road Nasi Lemak","Hawker Stall","Malay","Adam Road Food Centre","#01-02","2 Adam Rd","289876","Central","Mon–Sun 07:00–17:00","—","Nasi Lemak","Nasi Lemak, Mee Siam, Mee Rebus","$3–$6","A","—","Halal-certified","—","—","—","Coconut rice with sambal, otah, fried chicken"),
+    # Katong / East Coast
+    ("SG024","328 Katong Laksa","Restaurant","Nonya","328 Katong Laksa","—","51 East Coast Rd","428770","East","Mon–Sun 09:00–21:30","—","Katong Laksa","Katong Laksa (small/large), Otah","$7–$12","B","Michelin Bib Gourmand","—","GrabFood, Foodpanda","6732 8163","@328katonglaksa","Spoon-only laksa (noodles pre-cut short)"),
+    ("SG025","Chin Mee Chin Confectionery","Cafe/Bakery","Local Kopi","Chin Mee Chin","—","204 East Coast Rd","428903","East","Tue–Sun 08:30–16:00","Mon","Kaya Toast","Kaya Toast, Soft Boiled Eggs, Hainanese Coffee","$3–$7","B","—","—","—","—","—","1920s-era confectionery, marble tables, ceiling fans"),
+    ("SG026","Rolina Traditional Hainanese Curry Puff","Hawker Stall","Hainanese","Katong Shopping Centre","#B1-16","865 Mountbatten Rd","437844","East","Mon–Sun 09:00–19:00","Tue","Curry Puff","Original Curry Puff, Sardine Curry Puff, Yam Paste","$1.50–$2.50","A","—","—","—","—","—","Spiral pastry, chunky potato filling"),
+    # Geylang
+    ("SG027","Geylang Lor 9 Fresh Frog Legs Congee","Restaurant","Cantonese","Geylang Lor 9","—","Lor 9 Geylang","398822","East","Mon–Sun 18:00–05:00","—","Frog Legs Congee","Frog Legs Congee, Claypot Frog Legs","$12–$20","—","—","—","—","—","—","Late-night institution, fresh live frogs"),
+    ("SG028","Swee Choon Tim Sum Restaurant","Restaurant","Cantonese/Dim Sum","Swee Choon","—","183–191 Jln Besar","208882","Central","Mon, Wed–Sun 11:00–14:30, 18:00–06:00","Tue","Har Gow","Har Gow, Siu Mai, Carrot Cake, Liu Sha Bao","$2–$5/plate","B","—","—","—","6225 7788","@sweechoon","24-hour dim sum on weekends"),
+    # Hawker Chains
+    ("SG029","Ya Kun Kaya Toast","Cafe Chain","Local Kopi","Multiple Locations","—","Various","—","Island-wide","Mon–Sun 07:30–21:30","—","Kaya Toast Set","Kaya Toast, Soft Boiled Eggs, Nanyang Coffee/Tea, Milo","$3–$8","—","—","Vegetarian-friendly","GrabFood, Foodpanda","—","@yakun_sg","70+ outlets island-wide since 1944"),
+    ("SG030","Toast Box","Cafe Chain","Local Kopi","Multiple Locations","—","Various","—","Island-wide","Mon–Sun 07:30–21:00","—","Kaya Butter Toast","Kaya Toast, Laksa, Mee Siam, Teh Tarik","$3–$10","—","—","Vegetarian-friendly","GrabFood, Foodpanda","—","@toastbox_sg","BreadTalk Group chain, 50+ outlets"),
+    ("SG031","Old Chang Kee","Fast Food Chain","Singaporean","Multiple Locations","—","Various","—","Island-wide","Mon–Sun 09:00–22:00","—","Curry Puff","Curry Puff, Otah, Chicken Nuggets, Quail Egg","$1.20–$3","—","—","—","GrabFood","—","@oldchangkeesg","Singapore's iconic curry puff brand since 1956"),
+    ("SG032","Han's Cafe","Cafe Chain","Western/Asian Fusion","Multiple Locations","—","Various","—","Island-wide","Mon–Sun 08:00–22:00","—","Breakfast Set","Breakfast Set, Chicken Chop, Pasta, Local Coffee","$5–$15","—","—","Vegetarian options","GrabFood, Foodpanda","—","—","Family-friendly cafe chain"),
+    # Fine Dining
+    ("SG033","Odette","Fine Dining","Contemporary French","National Gallery Singapore","#01-04","1 St Andrew's Rd","178957","Central","Tue–Sat 12:00–14:00, 18:30–21:30","Sun–Mon","Tasting Menu","8-course tasting menu, seasonal ingredients, local produce","$298–$398/pax","—","Michelin 3 Star","Vegetarian menu available","—","6385 0498","@odetterestaurant","#1 Asia's 50 Best Restaurants 2024"),
+    ("SG034","Les Amis","Fine Dining","Classic French","Shaw Centre","#01-16","1 Scotts Rd","228208","Central","Mon–Sat 12:00–14:30, 19:00–22:00","Sun","French Tasting Menu","6/8-course tasting menu, wine pairing","$218–$338/pax","—","Michelin 3 Star","—","—","6733 2225","@lesamis_sg","30-year legacy fine dining institution"),
+    ("SG035","Jaan by Kirk Westaway","Fine Dining","British Fine Dining","Swissôtel The Stamford","#70-00","2 Stamford Rd","178882","Central","Mon–Sat 12:00–14:00, 19:00–21:30","Sun","British Tasting Menu","6-course lunch, 7-course dinner, Devon cream tea","$168–$248/pax","—","Michelin 1 Star","Vegetarian available","—","6837 3322","@jaanbykirk","70th floor views, British ingredients flown in"),
+    ("SG036","Burnt Ends","Modern BBQ","Australian BBQ","Burnt Ends","—","20 Teck Lim Rd","088391","Central","Tue–Sat 11:45–14:00, 18:00–23:00","Sun–Mon","Dave's Sanger","BBQ Sanger, Smoked Brisket, Onion Rings, Burnt Ends Ice Cream","$40–$120/pax","—","Michelin 1 Star","—","—","9726 2929","@burntends_sg","Dual-cavity oven, wood-fired BBQ, no reservations on weekdays"),
+    ("SG037","Candlenut","Fine Dining","Peranakan","Dempsey Hill","—","17A Dempsey Rd","249676","Central","Tue–Sat 12:00–15:00, 18:00–22:00","Sun–Mon","Kueh Pie Tee","Kueh Pie Tee, Babi Buah Keluak, Blue Swimmer Crab Curry","$88–$158/pax","—","Michelin 1 Star","—","—","1800 304 2288","@candlenutsg","World's first Michelin-starred Peranakan restaurant"),
+    ("SG038","Meta","Fine Dining","Korean-Japanese Fusion","Meta","—","9 Keong Saik Rd","089117","Central","Tue–Sat 12:00–14:30, 18:30–22:00","Sun–Mon","Omakase Menu","Korean-Japanese 5-course omakase, seasonal","$128–$188/pax","—","Michelin 1 Star","—","—","6513 0898","@metarestaurant_sg","Chef Sun Kim's fusion of Korean and Japanese flavours"),
+    # Seafood Restaurants
+    ("SG039","Jumbo Seafood (East Coast)","Seafood Restaurant","Singaporean Seafood","East Coast Seafood Centre","#01-07/08","1220 East Coast Pkwy","468960","East","Mon–Sun 12:00–15:00, 17:00–23:30","—","Chilli Crab","Singapore Chilli Crab, Black Pepper Crab, Cereal Prawns, BBQ Stingray","$80–$200/table","—","—","—","GrabFood","6442 3435","@jumboseafood","Most famous chilli crab destination, tourist staple"),
+    ("SG040","Long Beach Seafood (UDMC)","Seafood Restaurant","Singaporean Seafood","UDMC Seafood Centre","—","1202 East Coast Pkwy","468960","East","Mon–Sun 12:00–15:00, 17:00–23:00","—","Black Pepper Crab","Black Pepper Crab, Chilli Crab, Drunken Prawns","$70–$180/table","B","—","—","—","6448 3636","@longbeachseafood","Inventors of black pepper crab since 1986"),
+    ("SG041","No Signboard Seafood","Seafood Restaurant","Singaporean Seafood","Clarke Quay / Esplanade","—","414 Geylang Rd","389399","East","Mon–Sun 12:00–23:00","—","White Pepper Crab","White Pepper Crab, Chilli Crab, Fried Baby Squid","$60–$160/table","B","—","—","GrabFood, Foodpanda","6842 3415","@nosignboardseafood","Famous white pepper crab, no signboard = word of mouth origins"),
+    # Zi Char
+    ("SG042","Keng Eng Kee Seafood","Zi Char","Cantonese Zi Char","Bukit Merah View","#01-01","Blk 120 Bukit Merah Ln 1","150120","South","Mon–Sun 11:00–14:30, 17:00–23:00","—","Moonlight Horfun","KEK Moonlight Hor Fun, Crispy Cereal Butter Crab, Char Siew","$15–$40/person","B","Michelin Bib Gourmand","—","—","6272 1038","@kengengkee","Zi char legend, moonlight hor fun viral dish"),
+    ("SG043","Kok Sen Restaurant","Zi Char","Hokkien Zi Char","Keong Saik Rd","—","30–32 Keong Saik Rd","089135","Central","Mon–Sat 11:30–14:30, 17:30–22:30","Sun","Prawn Paste Chicken","Big Prawn Hokkien Mee, Prawn Paste Chicken, Crispy Tofu","$12–$35/person","B","Michelin Bib Gourmand","—","—","6223 2005","—","Since 1969, smoky wok hei zi char"),
+    ("SG044","Tze Char Mun Mun","Zi Char","Cantonese Zi Char","Buona Vista","—","Blk 58 Eng Hoon St","160058","Central","Mon–Sun 11:30–14:30, 17:00–22:30","Tue","Salted Egg Prawns","Salted Egg Prawns, Steam Fish, Bitter Gourd Omelette","$10–$30/person","A","—","—","—","—","—","Neighbourhood favourite, generous portions"),
+    # Bakeries / Desserts
+    ("SG045","Bengawan Solo","Bakery/Kueh","Peranakan","Multiple Locations","—","Various","—","Island-wide","Mon–Sun 09:00–20:00","—","Pandan Layer Cake","Pandan Layer Cake, Kueh Lapis, Ondeh Ondeh, Pulut Hitam","$3–$45","—","—","Vegetarian","—","—","@bengawansolo","Singapore's most famous kueh brand since 1979"),
+    ("SG046","Balmoral Bakery","Bakery","Local Bakery","Balmoral","—","22 Balmoral Rd","259802","Central","Mon–Sat 07:00–19:00","Sun","Sausage Roll","Sausage Roll, Chicken Pie, Butter Cake, Cream Puff","$1.50–$5","B","—","—","—","6235 8048","—","1960s HDB-era bakery, unchanged since opening"),
+    ("SG047","Ah Balling Peanut Soup","Hawker Stall","Teochew","Geylang Serai Market","#01-47","1 Geylang Serai","402001","East","Mon–Sun 10:00–20:00","—","Peanut Tang Yuan","Tang Yuan (peanut/sesame), Sweet Peanut Soup, Cheng Tng","$2.50–$4","A","—","Vegetarian-friendly","—","—","—","Handmade glutinous rice balls since 1965"),
+    # Roti Prata
+    ("SG048","The Roti Prata House","Restaurant","Indian Muslim","Upper Thomson","—","246M Upper Thomson Rd","574408","North","Mon–Sun 07:00–01:00","—","Plain Prata","Plain Prata, Cheese Prata, Tissue Prata, Murtabak","$1.20–$8","B","—","Halal-certified","GrabFood","6453 3893","@therotipratahouseSG","24-hour prata, 30+ varieties including durian prata"),
+    ("SG049","Springleaf Prata Place","Restaurant","Indian Muslim","Springleaf","—","1 Thong Soon Ave","787431","North","Mon–Sun 07:00–23:00","—","Spring Onion Prata","Spring Onion Prata, Egg Prata, Garlic Naan","$1.20–$6","A","—","Halal-certified","GrabFood","6456 2089","—","Known for creative toppings, forest edge setting"),
+    ("SG050","Al-Azhar Eating Restaurant","Restaurant","Indian Muslim","Tampines","—","31 Bendemeer Rd","330031","East","Mon–Sun 08:00–23:00","—","Cheese Prata","Cheese Prata, Garlic Prata, Fish Curry, Murtabak","$1.50–$8","B","—","Halal-certified","GrabFood, Foodpanda","6293 0433","—","Decades-old prata institution"),
+    # Bak Kut Teh
+    ("SG051","Song Fa Bak Kut Teh","Restaurant","Hokkien","Clarke Quay / Multiple","#01-01","11 New Bridge Rd","059383","Central","Mon–Sat 09:00–21:30, Sun 08:30–21:30","—","Pork Ribs Soup","Bak Kut Teh, Braised Pork Trotter, You Tiao","$9–$20/person","A","Michelin Bib Gourmand","—","GrabFood","6533 6128","@songfabkt","White pepper Hokkien-style broth, since 1969"),
+    ("SG052","Founder Bak Kut Teh","Restaurant","Hokkien","Balestier","—","347 Balestier Rd","329777","Central","Mon–Sun 07:00–21:30","Tue","BKT with Pork Ribs","Bak Kut Teh, Braised Intestine, Pig Trotters","$9–$18/person","B","—","—","—","6352 6192","—","Since 1978, one of Singapore's oldest BKT shops"),
+    # Chilli Crab & Seafood
+    ("SG053","Palm Beach Seafood","Seafood Restaurant","Singaporean Seafood","One Fullerton","#01-09","1 Fullerton Rd","049213","Central","Mon–Sun 12:00–15:00, 18:00–23:00","—","Chilli Crab","Chilli Crab, Black Pepper Crab, Drunken Prawn","$70–$180/table","—","—","—","—","6336 8118","@palmbeachseafoodSG","Singapore River views, fine-casual seafood dining"),
+    # Hawker 365 / Coffee Shops
+    ("SG054","Tiong Bahru Bakery","Artisan Bakery","French Bakery","Multiple Locations","—","56 Eng Hoon St","160056","Central","Mon–Sun 08:00–20:00","—","Kouign-Amann","Kouign-Amann, Croissant, Tart, Quiche, Coffee","$4–$12","—","—","Vegetarian-friendly","—","—","@tiongbahrubakery","Singapore's iconic French-Singapore pastry shop"),
+    ("SG055","PS. Cafe","Cafe/Restaurant","Modern International","Multiple Locations","—","28B Harding Rd","249549","Central","Mon–Thu 11:00–22:00, Fri 11:00–23:00, Sat 10:00–23:00, Sun 10:00–22:00","—","Truffle Shoestring Fries","Truffle Fries, PS Burger, Eggs Benedict, Chilli Crab Pasta","$20–$60/person","—","—","Vegetarian options","—","6708 9288","@pscafesg","Lifestyle dining brand, multiple premium locations"),
+    ("SG056","Collin's Grille","Casual Dining","Singaporean Western","Multiple Locations","—","Various","—","Island-wide","Mon–Sun 11:00–22:00","—","Mixed Grill","Steak, Mixed Grill, Baked Fish, Ayam Penyet","$15–$40/person","—","—","—","GrabFood, Foodpanda","—","@collinsgrille","Affordable Western food with Asian twists"),
+    # More hawker specialties
+    ("SG057","Selera Rasa Nasi Lemak","Hawker Stall","Malay","Adam Road Food Centre","#01-02","2 Adam Rd","289876","Central","Mon–Sun 07:00–15:00 (sell out)","Tue","Nasi Lemak","Nasi Lemak with Ayam Goreng, Otah, Ikan Bilis","$3–$6","A","—","Halal-certified","—","—","—","Sells out by 10am on weekends"),
+    ("SG058","Lao Ban Soya Beancurd","Hawker Stall","Singaporean","Old Airport Road Food Centre","#01-101","51 Old Airport Rd","390051","East","Mon–Sun 11:00–22:00 (sell out)","Wed","Original Beancurd","Silken Tofu (original/almond/soya), Soya Milk","$1.50–$3","A","—","Vegan-friendly","—","—","—","Silkiest tofu in Singapore, almond flavour is famous"),
+    ("SG059","Beach Road Scissors Cut Curry Rice","Hawker Stall","Hainanese","Beach Road","—","229 Beach Rd","189695","Central","Mon–Sun 10:00–19:00","—","Scissors Cut Curry Rice","Curry Pork Ribs, Curry Chicken, Chap Chye, Braised Pork","$4–$8","B","—","—","—","—","—","Use scissors to cut braised pork, since 1945"),
+    ("SG060","Ghim Moh Road Char Kway Teow","Hawker Stall","Teochew","Ghim Moh Market & Food Centre","#01-17","20 Ghim Moh Rd","270020","West","Mon–Sun 07:00–13:00","Thu","Char Kway Teow","Char Kway Teow, Fried Hokkien Mee","$4–$6","A","—","—","—","—","—","Old Queenstown hawker, pre-9am queue"),
+    # Japanese
+    ("SG061","Shinji by Kanesaka","Fine Dining","Omakase Sushi","Carlton Hotel","—","76 Bras Basah Rd","189558","Central","Mon–Sat 12:00–14:30, 18:00–22:30","Sun","Omakase Sushi","Edomae-style omakase sushi, seasonal fish from Tokyo Tsukiji","$200–$450/pax","—","Michelin 2 Star","—","—","6338 6131","—","Top-tier Edomae sushi from Tokyo master chef"),
+    ("SG062","Sushi Kimura","Fine Dining","Omakase Sushi","Mandarin Gallery","#03-22/23","333A Orchard Rd","238897","Central","Tue–Sun 12:00–14:30, 18:30–22:30","Mon","Omakase","Aged Edomae sushi omakase, specialty aged fish","$280–$380/pax","—","Michelin 1 Star","—","—","6733 5251","@sushikimurasg","Known for aged fish techniques unique in Singapore"),
+    # Korean
+    ("SG063","Nae:um","Fine Dining","Modern Korean","Nae:um","—","76 Peck Seah St","079331","Central","Tue–Sat 12:00–14:30, 18:30–22:00","Sun–Mon","Korean Tasting Menu","8-course modern Korean fine dining with local Singapore ingredients","$228–$288/pax","—","Michelin 1 Star","Vegetarian available","—","8869 6320","@naeum_sg","Chef Louis Han's Korean-Singaporean fusion omakase"),
+    # Coffee/Specialty Drinks
+    ("SG064","Nanyang Old Coffee","Kopitiam","Local Kopi","Chinatown","—","268 South Bridge Rd","058818","Central","Mon–Sun 08:30–17:00","—","Nanyang Coffee","Kopi, Kopi-C, Teh, Kopi Peng, Kaya Toast","$1.50–$5","B","—","Vegetarian-friendly","—","—","—","Traditional sock-filtered coffee, 1936 beans"),
+    ("SG065","Chye Seng Huat Hardware","Specialty Coffee","Specialty Coffee","Jalan Besar","—","150 Tyrwhitt Rd","207563","Central","Tue–Fri 09:00–22:00, Sat–Sun 09:00–18:00","Mon","Single Origin Pour Over","Pour Over, Cold Brew, Espresso, Coffee Flights","$6–$15","—","—","Vegan options","—","6396 0609","@cshcoffee","Singapore's specialty coffee pioneer since 2013"),
+    ("SG066","The Coffee Academics","Specialty Coffee","Specialty Coffee","Multiple Locations","—","Various","—","Island-wide","Mon–Sun 08:00–22:00","—","Specialty Latte","White, Flat White, Cold Brew, Coffee Cocktails","$7–$16","—","—","—","GrabFood","—","@thecoffeeacademics","HK specialty coffee brand with lab-grade brewing"),
+    # Desserts
+    ("SG067","Ice Cream Museum Singapore","Dessert Cafe","Artisan Ice Cream","Dempsey","—","100 Loewen Rd","248837","Central","Mon–Sun 11:00–22:00","—","Local Ice Cream","Tiger Beer Ice Cream, Chilli Crab Ice Cream, Kaya Toast Ice Cream","$8–$20","—","—","Vegan options","—","—","@icecreammuseumsg","Instagram-worthy museum + local flavour ice creams"),
+    ("SG068","Ah Chew Desserts","Dessert Shop","Cantonese","Liang Seah St","—","1 Liang Seah St","189032","Central","Mon–Sun 12:30–23:00","—","Guilin Gao","Guilin Gao (Grass Jelly), Almond Tofu, Red Bean Soup","$3–$8","B","—","Vegan-friendly","—","—","—","Traditional Cantonese sweet soups"),
+    # Thai / Vietnamese
+    ("SG069","Aun's Family Thai Restaurant","Restaurant","Thai","Geylang","—","236 Geylang Rd","389303","East","Mon–Sun 11:00–15:00, 17:00–22:00","—","Tom Yum Seafood","Tom Yum Seafood, Pad Thai, Green Curry, Mango Sticky Rice","$12–$30/person","B","—","—","—","—","—","Authentic Thai home cooking, family-run"),
+    ("SG070","The Pho","Restaurant","Vietnamese","Multiple Locations","—","Various","—","Island-wide","Mon–Sun 11:00–22:00","—","Beef Pho","Beef Pho, Chicken Pho, Banh Mi, Vietnamese Coffee","$10–$20","—","—","Vegetarian available","GrabFood, Foodpanda","—","@thephosg","Popular Vietnamese chain with consistent quality"),
+    # Vegetarian
+    ("SG071","Annalakshmi Temple of Fine Arts","Vegetarian Restaurant","South Indian Vegetarian","Chinatown","—","104 Amoy St","069924","Central","Mon–Fri 11:30–15:00, Tue–Sat 18:00–21:30","Sat–Sun lunch","Thali Set","South Indian Thali, Rasam, Sambar, Idli, Dosa","Pay as you wish","B","—","Fully vegetarian, vegan available","—","6339 9993","—","Run by volunteers, pay-what-you-want concept"),
+    ("SG072","Herbivore","Vegan Restaurant","Japanese Vegan","Bugis","—","414 Bain St #04-65","180414","Central","Mon–Sun 11:30–21:30","—","Vegan Soba","Vegan Ramen, Soba, Rice Bowls, Matcha Desserts","$12–$22","B","—","Fully vegan","—","6337 1688","@herbivore_sg","Japanese-style vegan cuisine"),
+    # Hawker at MRT hubs
+    ("SG073","Pasir Ris Central Hawker Centre","Hawker Centre","Mixed","Pasir Ris Central Hawker Centre","—","110 Pasir Ris Central","519641","East","Mon–Sun 07:00–23:00","—","Multiple","Full spectrum: CKT, noodles, economic rice, rojak, desserts","$3–$8","A","—","Halal stalls available","—","—","—","Newly built NEA hawker, well-ventilated"),
+    ("SG074","Toa Payoh Vista Market","Hawker Centre","Mixed","Toa Payoh Vista Market & Food Centre","—","Blk 127 Lor 1 Toa Payoh","310127","Central","Mon–Sun 06:00–22:00","—","Economic Rice","Economic Rice, Chicken Rice, Char Kway Teow, Mee Soto","$3–$7","A","—","Halal stalls available","—","—","—","Neighbourhood hawker serving 50+ years"),
+    # Laksa specialists
+    ("SG075","Sungei Road Laksa","Hawker Stall","Nonya","Jln Berseh Food Centre","#01-100","166 Jln Besar","208877","Central","Mon–Sun 09:00–17:30","Wed","Laksa","Katong-style Laksa (small/large)","$3–$5","A","Michelin Bib Gourmand","—","—","—","—","Charcoal-cooked laksa, 80-year recipe, very thick coconut gravy"),
+    ("SG076","Depot Road Zhen Shan Mei Claypot Laksa","Hawker Stall","Nonya","ABC Brickworks Market","#01-75","6 Jln Bukit Merah","150006","South","Mon–Sun 10:30–20:00 (sell out)","Wed","Claypot Laksa","Claypot Laksa (small/large)","$4–$6","A","Michelin 1 Star","—","—","—","—","Served in claypot to keep warm, rich coconut broth"),
+    # Noodle specialists
+    ("SG077","Ah Heng Curry Chicken Bee Hoon Mee","Hawker Stall","Nonya","Hong Lim Food Centre","#02-56","531A Upper Cross St","051531","Central","Mon–Sun 08:00–19:30","Wed","Curry Chicken Noodle","Curry Chicken Bee Hoon/Mee/Poh, Mee Rebus","$4–$6","A","Michelin Bib Gourmand","—","—","—","—","Turmeric-yellow broth, generous chicken"),
+    ("SG078","Famous Beef Kway Teow","Hawker Stall","Teochew","Geylang Bahru Hawker Centre","#01-51","69 Geylang Bahru","339567","Central","Mon–Sun 08:00–14:00","Tue","Beef Kway Teow","Beef Kway Teow (dry/soup), Satay Beef Kway Teow","$5–$7","A","—","—","—","—","—","Tender beef slices, clear beef broth"),
+    ("SG079","Hill Street Tai Hwa Pork Noodle","Hawker Stall","Teochew","Crawford Lane","#01-12","466 Crawford Ln","190466","Central","Mon–Sun 09:30–21:00","Tue","Bak Chor Mee","Bak Chor Mee Dry/Soup, Mee Pok","$6–$10","A","Michelin 1 Star","—","—","—","—","Singapore's most famous Bak Chor Mee, 2-hour queues"),
+    ("SG080","Two Chefs Eating Place","Zi Char","Cantonese","Commonwealth","—","Blk 116 Commonwealth Cres","140116","West","Mon–Sun 11:30–14:30, 17:00–22:00","Tue","Butter Milk Pork Ribs","Butter Milk Pork Ribs, White Beehoon, Steamed Fish","$12–$35/person","A","—","—","—","—","—","Famous for creamy butter milk pork ribs"),
+    # More fine dining
+    ("SG081","Zén","Fine Dining","Scandinavian","Zén","—","41 Bukit Pasoh Rd","089855","Central","Tue–Sat 18:30–22:30","Sun–Mon","Scandinavian Tasting Menu","12-course Scandinavian tasting menu, Nordic ingredients","$450–$520/pax","—","Michelin 3 Star","—","—","—","@zensingapore","Sister restaurant of Frantzén Stockholm, 3 floors 3 kitchens"),
+    ("SG082","Cloudstreet","Fine Dining","Modern Australian","Cloudstreet","—","84 Amoy St","069903","Central","Tue–Sat 12:00–14:30, 18:00–22:00","Sun–Mon","Seasonal Tasting Menu","12-course tasting menu, Southeast Asian pantry ingredients","$268–$368/pax","—","Michelin 2 Star","Vegetarian available","—","9627 0337","@cloudstreetsg","Chef Rishi Naleendra, Sri Lankan roots x Australian training"),
+    ("SG083","Labyrinth","Fine Dining","Modern Singaporean","Esplanade Mall","#02-23","8 Raffles Ave","039802","Central","Wed–Sun 12:00–14:30, 18:30–22:00","Mon–Tue","Singapore Tasting Menu","Modern Singaporean 9-course using heirloom local ingredients","$228–$278/pax","—","Michelin 1 Star","Vegetarian available","—","6223 4098","@labyrinthsg","Chef LG Han reimagines hawker classics as fine dining"),
+    # Peranakan
+    ("SG084","Violet Oon Singapore","Restaurant","Peranakan","National Museum / Ion","—","1 St Andrew's Rd #02-01","178957","Central","Mon–Sun 11:00–15:00, 17:30–22:00","—","Buah Keluak Fried Rice","Buah Keluak Fried Rice, Ayam Buah Keluak, Ondeh Ondeh Cake","$25–$65/person","—","—","Vegetarian available","GrabFood","6385 5585","@violetoonsg","Singapore's most celebrated Peranakan chef-restaurateur"),
+    ("SG085","True Blue Cuisine","Restaurant","Peranakan","Armenian Church area","—","47/49 Armenian St","179937","Central","Tue–Sun 11:30–14:30, 18:30–22:00","Mon","Itek Tim","Itek Tim (Duck & Salted Vegetable Soup), Buah Keluak, Otah","$20–$60/person","B","—","—","—","6440 0449","@truebluecuisine","Museum-like Peranakan heritage dining"),
+    # Local Specialties
+    ("SG086","Sin Huat Eating House","Seafood Restaurant","Singaporean Seafood","Geylang","—","659/661 Geylang Rd","389589","East","Mon–Sun 18:00–02:00","—","Crab Bee Hoon","Crab Bee Hoon, Prawn Mee, Stir-Fried Clams","$60–$150/table","—","—","—","—","—","—","Late night dining, Gordon Ramsay visited"),
+    ("SG087","Wee Nam Kee Chicken Rice","Restaurant","Hainanese","Novena / Multiple","—","101 Thomson Rd","307591","Central","Mon–Sun 10:00–22:00","—","Roasted Chicken Rice","Hainanese Chicken Rice, Roasted Chicken Rice, Chicken Congee","$8–$20/person","B","—","—","GrabFood, Foodpanda","6255 6396","@weenaamkee","Air-chilled premium chicken, multiple outlets"),
+    ("SG088","Hong Lim Carrot Cake","Hawker Stall","Teochew","Hong Lim Market","#02-24","531A Upper Cross St","051531","Central","Mon–Sun 07:00–14:00","Wed","Carrot Cake (White)","White Carrot Cake, Black Carrot Cake, Fried Carrot Cake","$3–$5","A","—","—","—","—","—","Best white chai tow kway in Chinatown area"),
+    ("SG089","Tiong Bahru Hainanese Boneless Chicken Rice","Hawker Stall","Hainanese","Tiong Bahru Market","#02-82","30 Seng Poh Rd","168898","Central","Mon–Sun 10:00–20:00","Fri","Boneless Chicken Rice","Boneless Chicken Rice, Roasted Chicken Rice, Chicken Porridge","$4–$7","A","—","—","—","—","—","Completely deboned chicken, rare technique"),
+    ("SG090","Sprout Organic","Vegan Cafe","Plant-based","Holland Village","—","31 Lorong Mambong","277694","West","Mon–Sun 11:00–22:00","—","Jackfruit Nasi Lemak","Jackfruit Rendang Nasi Lemak, Plant-based Laksa, Vegan Kaya Toast","$12–$22","—","—","Fully vegan, gluten-free options","GrabFood","—","@sproutorganic","Singapore plant-based comfort food"),
+    # Fusion / Modern
+    ("SG091","Tippling Club","Fine Dining","Progressive","Tippling Club","—","38 Tanjong Pagar Rd","088461","Central","Tue–Sat 12:00–14:30, 18:00–23:00","Sun–Mon","Tasting Menu","Progressive 10-course with cocktail pairing option","$195–$295/pax","—","Michelin 1 Star","Vegetarian available","—","6475 2217","@tipplingclubsg","Chef Ryan Clift's boundary-pushing molecular gastronomy"),
+    ("SG092","Corner House","Fine Dining","French x Garden","Singapore Botanic Gardens","—","1 Cluny Rd","259569","Central","Tue–Sun 12:00–14:30, 19:00–22:00","Mon","Gastro-Botanica Menu","Botanical 5-course, herb-forward French fine dining","$168–$248/pax","—","Michelin 1 Star","Vegetarian available","—","6469 1000","@cornerhousesg","Inside 100-year-old heritage bungalow in Botanic Gardens"),
+    # Budget eats
+    ("SG093","Chinatown Yong Tau Foo","Hawker Stall","Cantonese","People's Park Food Centre","#01-29","32 New Market Rd","050032","Central","Mon–Sun 09:00–20:00","—","Yong Tau Foo","Yong Tau Foo assorted stuffed tofu & veg, Hakka noodle","$4–$8","A","—","Vegan-friendly","—","—","—","Handmade tofu puffs, braised in dark sauce"),
+    ("SG094","Economic Bee Hoon","Hawker Stall","Singaporean","Various Hawker Centres","#varies","Various","—","Island-wide","Mon–Sun 06:00–11:00","—","Economic Bee Hoon","Fried Bee Hoon with egg, luncheon meat, vegetables","$1.50–$3","A","—","—","—","—","—","Singapore's most affordable breakfast staple"),
+    ("SG095","Lau Pa Sat Satay Street","Hawker","Singaporean","Lau Pa Sat Festival Market","—","18 Raffles Quay","048582","Central","Daily (Satay Street): 19:00–01:00","—","Satay","Chicken, Beef, Mutton, Prawn Satay with peanut sauce & ketupat","$0.60/stick","—","—","Halal-certified","—","—","—","Outdoor satay street, Victorian cast-iron market building"),
+    # Newer popular spots
+    ("SG096","The Coconut Club","Restaurant","Malay","Ann Siang","—","6 Ann Siang Hill","069787","Central","Mon–Sun 11:30–15:00, 18:00–22:00","Wed","Nasi Lemak","Premium Nasi Lemak with Blue Pea Flower Rice, Ayam Goreng, Otah","$18–$35/person","—","Michelin Plate","—","—","9820 1012","@thecoconutclub_sg","Nasi lemak elevated to restaurant-dining standard"),
+    ("SG097","Kin","Restaurant","Modern Peranakan","Robertson Quay","—","6A Jiak Chuan Rd","089260","Central","Tue–Sun 12:00–15:00, 18:00–22:00","Mon","Peranakan Tasting Menu","Modern Peranakan tasting menu, local produce focus","$68–$138/person","—","—","—","—","—","@kin_singapore","New generation Peranakan cooking"),
+    ("SG098","National Kitchen by Violet Oon","Restaurant","Peranakan","National Gallery Singapore","#02-01","1 St Andrew's Rd","178957","Central","Mon–Sun 11:30–14:30, 18:00–22:00","—","Kueh Pie Tee","Kueh Pie Tee, Chicken Buah Keluak, Chap Chye","$20–$60/person","—","—","—","—","6715 9461","@nationalitchensg","Grand colonial setting inside National Gallery"),
+    ("SG099","Hambaobao","Burger Joint","Gourmet Burger","Multiple Locations","—","Various","—","Island-wide","Mon–Sun 11:00–22:00","—","Chilli Crab Burger","Chilli Crab Burger, Black Pepper Chicken, Salted Egg Fries","$12–$22","—","—","—","GrabFood, Foodpanda","—","@hambaobaossg","Singapore-inspired gourmet burgers"),
+    ("SG100","Table65","Restaurant","Global Cuisines / Buffet","Resorts World Sentosa","—","26 Sentosa Gateway","098138","South","Mon–Sun 12:00–15:00, 17:30–22:00","—","Live Cooking Stations","Live cooking buffet: BBQ, Sushi, Indian, Chinese, Desserts","$65–$128/pax","—","—","Vegetarian options","—","6577 6688","@table65singapore","Immersive live-action buffet theatre"),
+    ("SG101","Hawker Chan (Chinatown Point)","Restaurant","Cantonese","Chinatown Point","#02-49","133 New Bridge Rd","059413","Central","Mon–Sun 10:00–20:00","—","Soya Sauce Chicken","Soya Sauce Chicken Rice/Noodle, Char Siew","$3.80–$8","B","Michelin Bib Gourmand","—","GrabFood","—","@hawkerchansg","Restaurant version of Liao Fan Hong Kong Soya Sauce Chicken"),
+    ("SG102","Putien","Restaurant","Fujian/Hinghwa","Multiple Locations","—","127 Kitchener Rd","208514","Central","Mon–Sun 11:30–15:00, 17:30–22:00","—","Fried Heng Hwa Bee Hoon","Heng Hwa Bee Hoon, Oyster Cake, Braised Sliced Pig Intestine","$12–$35/person","B","Michelin 1 Star","—","GrabFood","6295 6358","@putienrestaurant","Rare Hinghwa (Putian) cuisine from Fujian province"),
+]
+
+# Write data rows
+for i, row in enumerate(stalls):
+    r = i + 3
+    fill_color = None
+    stall_type = row[2]
+    if "Fine Dining" in stall_type:
+        fill_color = "FEF3C7"
+    elif "Hawker Stall" in stall_type:
+        fill_color = "F0FDF4"
+    elif "Restaurant" in stall_type:
+        fill_color = "EFF6FF"
+    elif "Chain" in stall_type or "Cafe Chain" in stall_type:
+        fill_color = "F5F3FF"
+
+    for j, val in enumerate(row):
+        c = ws1.cell(row=r, column=j + 1)
+        cell_val(c, val, sz=9)
+        if fill_color:
+            c.fill = PatternFill("solid", fgColor=fill_color)
+        c.border = border
+
+    # Highlight Michelin
+    michelin_cell = ws1.cell(row=r, column=16)
+    if michelin_cell.value and michelin_cell.value != "—":
+        if "3 Star" in str(michelin_cell.value):
+            michelin_cell.fill = PatternFill("solid", fgColor="FEF08A")
+            michelin_cell.font = Font(bold=True, size=9, name="Arial", color="713F12")
+        elif "2 Star" in str(michelin_cell.value):
+            michelin_cell.fill = PatternFill("solid", fgColor="FDE68A")
+            michelin_cell.font = Font(bold=True, size=9, name="Arial", color="92400E")
+        elif "1 Star" in str(michelin_cell.value):
+            michelin_cell.fill = PatternFill("solid", fgColor="FEF3C7")
+            michelin_cell.font = Font(bold=True, size=9, name="Arial", color="B45309")
+        elif "Bib" in str(michelin_cell.value):
+            michelin_cell.fill = PatternFill("solid", fgColor="DCFCE7")
+            michelin_cell.font = Font(bold=True, size=9, name="Arial", color="166534")
+
+# Legend row
+leg_row = len(stalls) + 4
+ws1.cell(row=leg_row, column=1).value = "Legend:"
+ws1.cell(row=leg_row, column=1).font = Font(bold=True, size=9, name="Arial")
+legend_items = [
+    ("B", "Fine Dining", "FEF3C7"),
+    ("D", "Hawker Stall", "F0FDF4"),
+    ("F", "Restaurant", "EFF6FF"),
+    ("H", "Chain", "F5F3FF"),
+]
+for col, label, color in legend_items:
+    c = ws1.cell(row=leg_row, column=ord(col) - 64)
+    c.value = label
+    c.fill = PatternFill("solid", fgColor=color)
+    c.font = Font(size=9, name="Arial")
+    c.border = border
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SHEET 2 — Schema & Field Guide
+# ═══════════════════════════════════════════════════════════════════════════════
+ws2 = wb.create_sheet("Schema & Field Guide")
+ws2.column_dimensions["A"].width = 22
+ws2.column_dimensions["B"].width = 18
+ws2.column_dimensions["C"].width = 14
+ws2.column_dimensions["D"].width = 40
+ws2.column_dimensions["E"].width = 30
+ws2.column_dimensions["F"].width = 22
+ws2.row_dimensions[1].height = 14
+ws2.row_dimensions[2].height = 40
+
+ws2.merge_cells("A1:F1")
+t2 = ws2["A1"]
+t2.value = "Schema & Field Guide — Singapore Food Stalls Database"
+t2.font = Font(bold=True, size=14, color="FFFFFF", name="Arial")
+t2.fill = PatternFill("solid", fgColor=NAVY)
+t2.alignment = Alignment(horizontal="center", vertical="center")
+
+schema_headers = ["Field Name", "Data Type", "Required", "Description", "Example Values", "Source / Notes"]
+for i, h in enumerate(schema_headers):
+    hdr(ws2.cell(row=2, column=i+1), h, bg=TEAL)
+
+fields = [
+    ("Stall ID", "Text (ID)", "Yes", "Unique identifier prefix SG + 3-digit number", "SG001, SG002", "Auto-generated sequential"),
+    ("Stall / Restaurant Name", "Text", "Yes", "Full official trading name of the stall or restaurant", "Tian Tian Hainanese Chicken Rice", "Stall signage / NEA records"),
+    ("Stall Type", "Categorical", "Yes", "Hawker Stall / Restaurant / Fine Dining / Cafe / Chain / Zi Char / Seafood Restaurant", "Hawker Stall", "Based on license type and price tier"),
+    ("Cuisine", "Text", "Yes", "Primary cuisine category; use specific subtype where possible", "Hainanese, Teochew, Peranakan, Modern French", "Chef background / menu content"),
+    ("Hawker Centre / Building", "Text", "Yes", "Name of the food centre, mall, or stand-alone building", "Maxwell Food Centre, Chinatown Point", "NEA Food Centre Directory"),
+    ("Unit No.", "Text", "No", "Stall unit or shop number within the building", "#01-10, #02-126", "NEA / Google Maps"),
+    ("Address", "Text", "Yes", "Street address (not postal code)", "1 Kadayanallur St", "Singapore Land Authority OneMap"),
+    ("Postal Code", "Text (6-digit)", "Yes", "6-digit Singapore postal code", "069184", "Singapore Land Authority"),
+    ("Region", "Categorical", "Yes", "Central / East / West / North / South / North-East", "Central", "URA planning region boundaries"),
+    ("Opening Hours", "Text", "Yes", "Full weekly hours; use 'Mon–Sun' for all-week, else list days", "Mon–Sun 10:00–20:00, Mon–Fri 07:00–14:00", "Google Maps / direct call"),
+    ("Closed Days", "Text", "No", "Days stall is closed; '—' if open daily", "Tue, Wed, Public Holidays", "NEA / operator"),
+    ("Signature Dish", "Text", "Yes", "The dish most associated with or recommended for this stall", "Hainanese Chicken Rice, Claypot Rice", "Media coverage / community votes"),
+    ("Menu Items", "Text (CSV)", "Yes", "Comma-separated list of key menu items (up to 6–8 items)", "Chicken Rice, Roasted Duck, Congee", "Menu boards / stall websites"),
+    ("Price Range (SGD)", "Text", "Yes", "Typical spend per person; use $–$$ for hawker, full range for restaurants", "$3–$6, $80–$200/table, $298–$398/pax", "Google Maps / media"),
+    ("NEA Hygiene Grade", "Categorical", "No", "A / B / C as issued by Singapore NEA (applies to hawker stalls only)", "A, B, C", "NEA SFA GradeSearch portal"),
+    ("Michelin Recognition", "Categorical", "No", "Michelin 1/2/3 Star / Bib Gourmand / Plate / — (none)", "Michelin Bib Gourmand, Michelin 1 Star", "Michelin Guide Singapore 2024"),
+    ("Dietary Options", "Text (CSV)", "No", "Halal-certified / Vegan / Vegetarian / Gluten-free options available", "Halal-certified, Vegetarian options", "Stall / MUIS certification"),
+    ("Delivery Platforms", "Text (CSV)", "No", "GrabFood / Foodpanda / Deliveroo / WhyQ / Oddle; '—' if none", "GrabFood, Foodpanda", "Live check on delivery apps"),
+    ("Contact", "Text", "No", "Phone number; '—' if unlisted", "6225 5506", "Google Maps / official website"),
+    ("Instagram", "Text", "No", "@handle of official account; '—' if none", "@tiantianchickenrice", "Instagram search"),
+    ("Notes", "Text", "No", "Any additional context: history, tips, media coverage, queue info", "Featured in CNN Travel", "Research / community knowledge"),
+]
+
+for i, row in enumerate(fields):
+    r = i + 3
+    for j, val in enumerate(row):
+        c = ws2.cell(row=r, column=j+1)
+        cell_val(c, val, sz=9)
+        if i % 2 == 0:
+            c.fill = PatternFill("solid", fgColor=LIGHT_GREY)
+        c.border = border
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SHEET 3 — Hawker Centres Directory
+# ═══════════════════════════════════════════════════════════════════════════════
+ws3 = wb.create_sheet("Hawker Centres Directory")
+ws3.column_dimensions["A"].width = 8
+ws3.column_dimensions["B"].width = 32
+ws3.column_dimensions["C"].width = 14
+ws3.column_dimensions["D"].width = 28
+ws3.column_dimensions["E"].width = 10
+ws3.column_dimensions["F"].width = 12
+ws3.column_dimensions["G"].width = 16
+ws3.column_dimensions["H"].width = 20
+ws3.row_dimensions[1].height = 14
+ws3.row_dimensions[2].height = 40
+
+ws3.merge_cells("A1:H1")
+t3 = ws3["A1"]
+t3.value = "Singapore Hawker Centres & Food Courts Directory"
+t3.font = Font(bold=True, size=14, color="FFFFFF", name="Arial")
+t3.fill = PatternFill("solid", fgColor=ORANGE)
+t3.alignment = Alignment(horizontal="center", vertical="center")
+
+hc_headers = ["HC ID", "Name", "Region", "Address", "Postal Code", "No. Stalls (est.)", "Nearest MRT", "Notes"]
+for i, h in enumerate(hc_headers):
+    hdr(ws3.cell(row=2, column=i+1), h)
+
+hawker_centres = [
+    ("HC01","Maxwell Food Centre","Central","1 Kadayanallur St","069184","100","Tanjong Pagar (EW)","National icon, tourist destination, Tian Tian chicken rice"),
+    ("HC02","Chinatown Complex Food Centre","Central","335 Smith St","050335","260","Chinatown (EW/NE)","Largest hawker centre in Singapore by stall count"),
+    ("HC03","Old Airport Road Food Centre","East","51 Old Airport Rd","390051","150","Dakota (CC)","One of SG's oldest and most loved hawker centres"),
+    ("HC04","Newton Food Centre","Central","500 Clemenceau Ave N","229495","70","Newton (NS/DT)","Famous tourist spot, alfresco seafood at night"),
+    ("HC05","Tekka Centre (Zhu Jiao Market)","Central","665 Buffalo Rd","210665","200","Little India (NE/DT)","Best Indian and Malay food, wet market below"),
+    ("HC06","Amoy Street Food Centre","Central","7 Maxwell Rd","069111","110","Tanjong Pagar (EW)","CBD lunch crowd, great wonton noodle and laksa"),
+    ("HC07","Lau Pa Sat","Central","18 Raffles Quay","048582","80","Raffles Place (EW/NS)","Victorian cast-iron heritage building; Satay Street at night"),
+    ("HC08","Hong Lim Market & Food Centre","Central","531A Upper Cross St","051531","60","Clarke Quay (NE)","Famous carrot cake and curry chicken noodle"),
+    ("HC09","Adam Road Food Centre","Central","2 Adam Rd","289876","50","Botanic Gardens (CC/DT)","Nasi lemak and prata, Buona Vista expat crowd"),
+    ("HC10","Tiong Bahru Market","Central","30 Seng Poh Rd","168898","80","Tiong Bahru (EW)","Art deco heritage building, chicken rice & carrot cake"),
+    ("HC11","Buona Vista Market","West","36 Malan Rd","109442","60","Buona Vista (EW/CC)","Quieter neighbourhood hawker, good economic rice"),
+    ("HC12","Ghim Moh Market","West","20 Ghim Moh Rd","270020","60","Clementi (EW)","Old Queenstown estate hawker, morning CKT queue"),
+    ("HC13","Clementi 448 Market","West","Blk 448 Clementi Ave 3","120448","70","Clementi (EW)","HDB hawker, popular with NUS students"),
+    ("HC14","Redhill Lane Food Centre","South","79 Redhill Ln","150079","40","Redhill (EW)","Small but excellent zi char and noodle stalls"),
+    ("HC15","Bukit Merah View Market","South","115 Bukit Merah View","152115","80","Redhill/Tiong Bahru","Mixed stalls, notable zi char options"),
+    ("HC16","ABC Brickworks Market","South","6 Jln Bukit Merah","150006","70","Redhill (EW)","Michelin-starred claypot laksa stall"),
+    ("HC17","Toa Payoh Lorong 8 Market","Central","210 Lor 8 Toa Payoh","310210","100","Toa Payoh (NS)","Large residential hawker, popular for mee pok"),
+    ("HC18","Geylang Serai Market","East","1 Geylang Serai","402001","80","Aljunied (EW)","Halal food focus, largest Malay food hub"),
+    ("HC19","Dunman Food Centre","East","271 Onan Rd","424484","60","Paya Lebar (EW/CC)","Eastern residential food centre"),
+    ("HC20","Bedok Interchange Food Centre","East","207 New Upper Changi Rd","460207","80","Bedok (EW)","Popular with late-night crowd, supper scene"),
+    ("HC21","Fengshan Market (Bedok 85)","East","85 Bedok North St 4","460085","50","Bedok (EW)","Famous BBQ seafood and frog porridge at night"),
+    ("HC22","Tampines Round Market","East","137 Tampines St 11","522137","80","Tampines (EW)","Large eastern hawker, family-friendly"),
+    ("HC23","Pasir Ris Central Hawker Centre","East","110 Pasir Ris Central","519641","50","Pasir Ris (EW)","Newly built NEA managed, modern ventilation"),
+    ("HC24","Chong Pang Market","North","105 Yishun Ring Rd","760105","100","Yishun (NS)","Popular northern hawker, satay and seafood"),
+    ("HC25","Sembawang Hills Food Centre","North","590 Upper Thomson Rd","574408","60","—","Upper Thomson prata and supper spots nearby"),
+    ("HC26","Chomp Chomp Food Centre","North","20 Kensington Park Rd","557269","40","Serangoon (NE/CC)","Famous for neighbourhood BBQ, sting ray, satay"),
+    ("HC27","Serangoon Garden Market","North-East","1 Maju Ave","556679","50","Serangoon (NE/CC)","Popular ang moh and local weekend brunch spot"),
+    ("HC28","Berseh Food Centre","Central","166 Jln Besar","208877","60","Farrer Park (NE)","Michelin-starred Sungei Road laksa"),
+    ("HC29","Geylang Bahru Hawker Centre","Central","69 Geylang Bahru","339567","80","Kallang (EW)","HDB residential, good beef kway teow"),
+    ("HC30","Ci Yuan Hawker Centre","North-East","Blk 117 Hougang Ave 1","530117","50","Hougang (NE)","People's Association managed, low prices"),
+    ("HC31","Our Tampines Hub Hawker Centre","East","1 Tampines Walk","528523","50","Tampines (EW)","Integrated community hub hawker"),
+    ("HC32","Kampung Admiralty Hawker Centre","North","676 Woodlands Dr 71","730676","50","Admiralty (NS)","Award-winning integrated hawker in Woodlands"),
+    ("HC33","Bedok North Street 1 (Bedok 209)","East","209 New Upper Changi Rd","460209","40","Bedok (EW)","Known for oyster omelette and prawn noodle"),
+]
+
+for i, row in enumerate(hawker_centres):
+    r = i + 3
+    for j, val in enumerate(row):
+        c = ws3.cell(row=r, column=j+1)
+        cell_val(c, val, sz=9)
+        if i % 2 == 0:
+            c.fill = PatternFill("solid", fgColor=LIGHT_GREY)
+        c.border = border
+
+out = "/Users/Siew Hean/Documents/GitHub/Hungry/.claude/worktrees/peaceful-galileo/data/singapore_food_stalls.xlsx"
+wb.save(out)
+print(f"Saved: {out}")
+print(f"Sheet 1: {len(stalls)} stalls")
+print(f"Sheet 3: {len(hawker_centres)} hawker centres")
