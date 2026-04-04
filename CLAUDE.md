@@ -1,49 +1,94 @@
-# Claude Entrypoint
+# Claude Entrypoint — Hungry
 
-Read `README.md` before planning or coding.
+---
 
-Then read `AGENTS.md` and follow its workflow, including keeping `README.md` updated whenever task context, progress, decisions, or blockers change.
+## Startup Sequence
 
-## Workflow Orchestration
+| Step | Action |
+|------|--------|
+| 1 | Read `README.md` — project state and quick reference map |
+| 2 | Read `AGENTS.md` — master harness dictionary and document TOC |
+| 3 | Read `tasks/todo.md` — current task list |
+| 4 | Read `tasks/lessons.md` — rules from past corrections |
+
+---
+
+## Workflow Rules
+
 ### 1. Plan Mode Default
-- Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
+- Enter plan mode for any non-trivial task (3+ steps or architectural decisions)
 - Use plan mode for verification steps, not just building
-- Write detailed specs upfront to reduce ambiguity
+- Write detailed specs to `tasks/todo.md` upfront to reduce ambiguity
+
 ### 2. Subagent Strategy
 - Use subagents liberally to keep main context window clean
 - Offload research, exploration, and parallel analysis to subagents
 - For complex problems, throw more compute at it via subagents
 - One task per subagent for focused execution
+
 ### 3. Self-Improvement Loop
-- After ANY correction from the user: update 'tasks/lessons.md'
-with the pattern
-- Write rules for yourself that prevent the same mistake
+- After any correction from the user: update `tasks/lessons.md` with the pattern
+- Write rules that prevent the same mistake
 - Ruthlessly iterate on these lessons until mistake rate drops
-- Review lessons at session start for relevant project
+- Review lessons at session start
+
 ### 4. Verification Before Done
 - Never mark a task complete without proving it works
-- Diff behavior between main and your changes when relevant
-- Ask yourself: "Would a staff engineer approve this?"
-- Run tests, check logs, demonstrate correctness
+- Run `npm run typecheck` — must pass
+- Run `npm run test` — must pass
+- Ask: "Would a staff engineer approve this?"
+
 ### 5. Demand Elegance (Balanced)
 - For non-trivial changes: pause and ask "is there a more elegant way?"
-- If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
-- Skip this for simple, obvious fixes - don't over-engineer
-- Challenge your own work before presenting it
-### 6.
-Autonomous Bug Fixing
-- When given a bug report: just fix it. Don't ask for hand-holding
-- Point at logs, errors, failing tests - then resolve them
-- Zero context switching required from the user
+- If a fix feels hacky: implement the elegant solution instead
+- Skip this for simple, obvious fixes — do not over-engineer
+
+### 6. Autonomous Bug Fixing
+- When given a bug report: just fix it — no hand-holding
+- Point at logs, errors, failing tests — then resolve them
 - Go fix failing CI tests without being told how
+
 ### Task Management
-- **PLan First**: Write plan to 'tasks/todo.md" with checkable items
-- **Verify Plan**: Check in before starting implementation
-- **Track Progress**: Mark items complete as you go
-- **ExpLain Changes**: High-level summary at each step
-- **Document Results**: Add review section to 'tasks/todo.md"
-- **Capture Lessons**: Update "tasks/lessons.md' after corrections
+- **Plan first** — write `tasks/todo.md` with checkable items
+- **Verify plan** — check in before implementation
+- **Track progress** — mark items complete as you go
+- **Explain changes** — high-level summary at each step
+- **Document results** — add review section to `tasks/todo.md`
+- **Capture lessons** — update `tasks/lessons.md` after corrections
+
+---
+
 ## Core Principles
-- **Simplicity First**: Make every change as simple as possible. Impact minimal code.
-- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
-- **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
+
+| Principle | Rule |
+|-----------|------|
+| Simplicity first | Make every change as small as possible. Impact minimal code. |
+| No laziness | Find root causes. No temporary fixes. Senior developer standards. |
+| Minimal impact | Changes should only touch what is necessary. Avoid introducing bugs. |
+| Protect working paths | Do not casually refactor: navigation wiring, session store, mock data, domain types, or theme tokens. Treat as protected unless explicitly asked. |
+| Patch, do not churn | On protected paths, use the smallest viable fix. Keep existing behavior unless task explicitly requires change. |
+
+---
+
+## Harness Document Map
+
+| Document | Read before |
+|----------|------------|
+| `tasks/environment.md` | Any code work |
+| `tasks/design-system.md` | Any UI or component work |
+| `tasks/screens.md` | Any screen or navigation work |
+| `tasks/data-contracts.md` | Any data, store, or mock work |
+| `tasks/test-harness.md` | Any feature or bug-fix work |
+
+---
+
+## Session-End Checklist
+
+```
+Before ending any session that changed code:
+  [ ] npm run typecheck — passes
+  [ ] tasks/todo.md — all done items marked [x]
+  [ ] tasks/todo.md — review section written
+  [ ] tasks/lessons.md — corrections recorded
+  [ ] README.md — status updated if progress or decisions changed
+```
