@@ -1,53 +1,201 @@
-import { View } from "react-native";
+import { ScrollView, View } from "react-native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
+import { Image } from "expo-image";
 
 import type { MainTabParamList } from "@/app/navigation/navigationTypes";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getReadsFeed } from "@/features/reads/feed";
-import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
+import { AppText, Badge, Card, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
 type Props = BottomTabScreenProps<MainTabParamList, "Reads">;
 
-const AREAS = ["Nearby", "CBD", "Chinatown"];
+const ATMOSPHERES = [
+  { label: "CANDLELIT", color: "#F5A623" },
+  { label: "INDUSTRIAL", color: "#9CA3AF" },
+  { label: "KINFOLK", color: "#14B8A6" },
+  { label: "BRUTALIST", color: "#6B7280" },
+] as const;
 
 export function ReadsFeedScreen(_: Props) {
-  const { spacing } = useHungryTheme();
+  const { palette, spacing, radii } = useHungryTheme();
   const posts = getReadsFeed();
   const rootNavigation = useNavigation<any>();
 
-  if (!FEATURE_FLAGS.readsEnabled) {
-    return (
-      <Screen title="Reads" subtitle="This tab stays wired but is hidden behind a feature flag until content is ready.">
-        <EmptyState title="Reads is currently paused" body="The tab contract remains intact, but the feed is disabled for release." />
-      </Screen>
-    );
-  }
-
   return (
-    <Screen title="Reads" subtitle="Editorial food picks and blog coverage anchored to the same stall graph.">
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-        {AREAS.map((area) => (
-          <Badge key={area} label={area} tone={area === "Nearby" ? "orange" : "neutral"} />
-        ))}
-      </View>
+    <Screen scroll={false}>
+      <ScrollView
+        contentContainerStyle={{ gap: spacing[6], paddingBottom: spacing[8] }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* ── Article List ── */}
+        <View style={{ gap: spacing[4] }}>
+          <AppText variant="h2">Latest Reads</AppText>
 
-      {posts.map((post) => (
-        <Card key={post.id}>
-          <View style={{ gap: spacing[2] }}>
-            <Badge label={`Near ${post.area}`} tone="amber" />
-            <AppText variant="h3">{post.title}</AppText>
-            <AppText tone="secondary">
-              {post.sourceName} · {post.excerpt}
+          {posts.map((post) => (
+            <Card key={post.id}>
+              <View style={{ flexDirection: "row", gap: spacing[3] }}>
+                <Image
+                  source={{ uri: post.imageUrl }}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: radii.sm,
+                  }}
+                  contentFit="cover"
+                />
+                <View style={{ flex: 1, gap: spacing[1] }}>
+                  <AppText
+                    variant="micro"
+                    tone="accent"
+                    style={{ textTransform: "uppercase" }}
+                  >
+                    {post.sourceName} {"\u00B7"} 8 MIN READ
+                  </AppText>
+                  <AppText variant="h3">{post.title}</AppText>
+                  <AppText
+                    variant="bodySmall"
+                    tone="secondary"
+                    numberOfLines={2}
+                  >
+                    {post.excerpt}
+                  </AppText>
+                </View>
+              </View>
+            </Card>
+          ))}
+        </View>
+
+        {/* ── IN FOCUS — Trending Palettes ── */}
+        <View style={{ gap: spacing[3] }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <AppText variant="h2">IN FOCUS {"\u2014"} Trending Palettes</AppText>
+            <AppText variant="bodySmall" tone="accent">
+              View Archive
             </AppText>
           </View>
-          <Button
-            label="Open article"
-            onPress={() => rootNavigation.navigate("BlogPost", { postId: post.id })}
-          />
-        </Card>
-      ))}
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: spacing[3] }}
+          >
+            {posts.map((post) => (
+              <View
+                key={`focus-${post.id}`}
+                style={{
+                  width: 260,
+                  height: 160,
+                  borderRadius: radii.md,
+                  overflow: "hidden",
+                  backgroundColor: palette.navy,
+                }}
+              >
+                <Image
+                  source={{ uri: post.imageUrl }}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    position: "absolute",
+                    opacity: 0.4,
+                  }}
+                  contentFit="cover"
+                />
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: "flex-end",
+                    padding: spacing[4],
+                  }}
+                >
+                  <Badge label={post.area} tone="orange" />
+                  <AppText
+                    variant="h3"
+                    style={{
+                      color: "#FFFFFF",
+                      marginTop: spacing[1],
+                    }}
+                  >
+                    {post.title}
+                  </AppText>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* ── Explore by Atmosphere ── */}
+        <View style={{ gap: spacing[3] }}>
+          <AppText variant="h2">Explore by Atmosphere</AppText>
+          <AppText variant="bodySmall" tone="secondary">
+            Matching your mood to the table.
+          </AppText>
+
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: spacing[3],
+            }}
+          >
+            {ATMOSPHERES.map((atm) => (
+              <View
+                key={atm.label}
+                style={{
+                  width: "47%",
+                  height: 100,
+                  borderRadius: radii.md,
+                  backgroundColor: palette.navy,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <AppText
+                  variant="micro"
+                  style={{
+                    color: atm.color,
+                    textTransform: "uppercase",
+                    letterSpacing: 2,
+                  }}
+                >
+                  {atm.label}
+                </AppText>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* ── THE LATEST — Recent Dispatches ── */}
+        <View style={{ gap: spacing[3] }}>
+          <AppText variant="h2">THE LATEST {"\u2014"} Recent Dispatches</AppText>
+
+          {posts.slice(0, 1).map((post) => (
+            <Card key={`latest-${post.id}`}>
+              <Image
+                source={{ uri: post.imageUrl }}
+                style={{
+                  width: "100%",
+                  height: 200,
+                  borderRadius: radii.sm,
+                }}
+                contentFit="cover"
+              />
+              <View style={{ gap: spacing[1] }}>
+                <AppText variant="h3">{post.title}</AppText>
+                <AppText variant="bodySmall" tone="secondary">
+                  {post.excerpt}
+                </AppText>
+              </View>
+            </Card>
+          ))}
+        </View>
+      </ScrollView>
     </Screen>
   );
 }

@@ -24,6 +24,7 @@ Hungry is a mock-first Expo + React Native mobile app for dish-first food discov
 
 - Root Expo scaffold, typed domain layer, Zustand stores, and mock repositories are in place
 - Discover, Search, Details, Auth, Onboarding, Profile, Review, Reads, and recovery flows are implemented in the mobile app shell
+- Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
 - `npm run typecheck` and `npx expo-doctor` both pass in the local environment
 
 ## Commands
@@ -41,3 +42,12 @@ Hungry is a mock-first Expo + React Native mobile app for dish-first food discov
 - Reads stays behind a feature flag even though the tab contract exists now.
 - The app is designed to demo end-to-end without backend availability.
 - The `data/` folder also contains the Singapore food-business workbook, a checked-in curated seed snapshot, and the refresh pipeline for rebuilding the database from public datasets plus supplementary hawker- and food-court-source discovery.
+
+## Future Roadmap
+
+See `tasks/todo.md` for the full backlog. Key future features include:
+
+- **Digital Ordering & Payments** — In-app ordering + PayNow/card checkout for hawker centres, food courts, and restaurants. Includes a vendor analytics dashboard (top dishes, peak hours, revenue), real-time crowd/busyness indicators per stall, and queue wait-time estimates. Crowd monitoring is derived from active order volume — no hardware sensors required for the MVP signal.
+- **Interactive Indoor Maps** — SVG floor plans with polygon-level stall selection, open/closed colour coding, and pinch-to-zoom (see `design/figma-v2/building-layout.html` for mockups).
+- **"Decide for Me" AI** — Personalised dish recommendation surfaced prominently in Discover.
+- **Group Wishlists** — Shared save lists for planning meals with friends.

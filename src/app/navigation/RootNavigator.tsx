@@ -15,6 +15,7 @@ import { SplashScreen } from "@/app/screens/SplashScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
 import { HomeMapScreen } from "@/app/screens/discover/HomeMapScreen";
+import { DiscoverHomeScreen } from "@/app/screens/discover/DiscoverHomeScreen";
 import { BuildingDrillDownScreen } from "@/app/screens/discover/BuildingDrillDownScreen";
 import { DecideForMeResultScreen } from "@/app/screens/discover/DecideForMeResultScreen";
 import { DishDetailScreen } from "@/app/screens/detail/DishDetailScreen";
@@ -70,7 +71,7 @@ function MapsNavigator() {
 function DiscoverNavigator() {
   return (
     <DiscoverStack.Navigator screenOptions={{ headerShown: false }}>
-      <DiscoverStack.Screen component={DishSearchScreen} name="DiscoverHome" />
+      <DiscoverStack.Screen component={DiscoverHomeScreen} name="DiscoverHome" />
       <DiscoverStack.Screen component={TasteFilterScreen} name="TasteFilter" />
       <DiscoverStack.Screen component={SearchResultsScreen} name="SearchResults" />
     </DiscoverStack.Navigator>
