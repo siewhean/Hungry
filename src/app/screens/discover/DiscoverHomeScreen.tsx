@@ -120,7 +120,7 @@ export function DiscoverHomeScreen() {
                 paddingVertical: spacing[4],
               },
             ]}
-            onPress={() => navigation.navigate("Maps" as any)}
+            onPress={() => navigation.navigate("MapView")}
           >
             <AppText variant="h3" style={styles.quickAccessLabel}>
               {"\uD83C\uDF7D"} Stalls

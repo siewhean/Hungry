@@ -8,7 +8,7 @@ import { getReadsFeed } from "@/features/reads/feed";
 import { AppText, Badge, Card, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
-type Props = BottomTabScreenProps<MainTabParamList, "Reads">;
+type Props = BottomTabScreenProps<MainTabParamList, "Read">;
 
 const ATMOSPHERES = [
   { label: "CANDLELIT", color: "#F5A623" },

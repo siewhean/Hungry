@@ -9,6 +9,9 @@
 - [x] Implement Auth, Onboarding, Profile, and Review flows
 - [x] Implement Reads and recovery states
 - [x] Run typecheck and record review notes
+- [x] Rebuild Home, Discover, Read, Stall Detail screens from Figma designs
+- [x] Wire navigation to match Figma bottom bar (HOME | DISCOVER | SEARCH | READ | PROFILE)
+- [ ] Import Stitch favourites into Figma "10 Prototype" page (blocked: Stitch API has no favorites endpoint)
 
 ## Review
 

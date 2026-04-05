@@ -24,9 +24,8 @@ export type ReviewStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Discover: undefined;
-  Maps: undefined;
-  Review: undefined;
-  Reads: undefined;
+  Search: undefined;
+  Read: undefined;
   Profile: undefined;
 };
 
@@ -35,6 +34,7 @@ export type RootStackParamList = {
   AuthStack: NavigatorScreenParams<AuthStackParamList>;
   OnboardingStack: NavigatorScreenParams<OnboardingStackParamList>;
   MainTabs: NavigatorScreenParams<MainTabParamList>;
+  MapView: undefined;
   BuildingDrillDown: { buildingId: string };
   DecideForMeResult: undefined;
   SearchResults: undefined;

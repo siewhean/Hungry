@@ -9,13 +9,13 @@ import {
   createNativeStackNavigator,
   type NativeStackScreenProps,
 } from "@react-navigation/native-stack";
-import { Compass, House, MapPinned, NotebookPen, User } from "lucide-react-native";
+import { BookOpen, Compass, House, Search, User } from "lucide-react-native";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
-import { HomeMapScreen } from "@/app/screens/discover/HomeMapScreen";
 import { DiscoverHomeScreen } from "@/app/screens/discover/DiscoverHomeScreen";
+import { HomeMapScreen } from "@/app/screens/discover/HomeMapScreen";
 import { BuildingDrillDownScreen } from "@/app/screens/discover/BuildingDrillDownScreen";
 import { DecideForMeResultScreen } from "@/app/screens/discover/DecideForMeResultScreen";
 import { DishDetailScreen } from "@/app/screens/detail/DishDetailScreen";
@@ -25,6 +25,7 @@ import { StallDetailScreen } from "@/app/screens/detail/StallDetailScreen";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
 import { ProfileStack } from "@/app/screens/profile/ProfileStack";
 import { BlogPostWebViewScreen } from "@/app/screens/reads/BlogPostWebViewScreen";
+import { ReadsFeedScreen } from "@/app/screens/reads/ReadsFeedScreen";
 import { ReviewStack } from "@/app/screens/review/ReviewStack";
 import { DishSearchScreen } from "@/app/screens/search/DishSearchScreen";
 import { SearchResultsScreen } from "@/app/screens/search/SearchResultsScreen";
@@ -40,41 +41,31 @@ import type {
   RootStackParamList,
 } from "./navigationTypes";
 
-type MapsStackParamList = {
-  MapsHome: undefined;
-  BuildingDrillDown: undefined;
-  DecideForMeResult: undefined;
-};
+// ── Stack param lists ────────────────────────────────────────────────────────
 
-type DiscoverStackParamList = {
-  DiscoverHome: undefined;
+type SearchStackParamList = {
+  SearchHome: undefined;
   TasteFilter: undefined;
   SearchResults: undefined;
 };
 
+// ── Stack navigators ─────────────────────────────────────────────────────────
+
 const RootStack = createNativeStackNavigator<RootStackParamList>();
-const MapsStack = createNativeStackNavigator<MapsStackParamList>();
-const DiscoverStack = createNativeStackNavigator<DiscoverStackParamList>();
+const SearchStack = createNativeStackNavigator<SearchStackParamList>();
 const Tabs = createBottomTabNavigator<MainTabParamList>();
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
-function MapsNavigator() {
-  return (
-    <MapsStack.Navigator screenOptions={{ headerShown: false }}>
-      <MapsStack.Screen component={HomeMapScreen} name="MapsHome" />
-      <MapsStack.Screen component={BuildingDrillDownScreen} name="BuildingDrillDown" />
-      <MapsStack.Screen component={DecideForMeResultScreen} name="DecideForMeResult" />
-    </MapsStack.Navigator>
-  );
-}
+// ── Nested navigators ────────────────────────────────────────────────────────
 
-function DiscoverNavigator() {
+/** Search tab: keyword search → taste filter → results */
+function SearchNavigator() {
   return (
-    <DiscoverStack.Navigator screenOptions={{ headerShown: false }}>
-      <DiscoverStack.Screen component={DiscoverHomeScreen} name="DiscoverHome" />
-      <DiscoverStack.Screen component={TasteFilterScreen} name="TasteFilter" />
-      <DiscoverStack.Screen component={SearchResultsScreen} name="SearchResults" />
-    </DiscoverStack.Navigator>
+    <SearchStack.Navigator screenOptions={{ headerShown: false }}>
+      <SearchStack.Screen component={DishSearchScreen} name="SearchHome" />
+      <SearchStack.Screen component={TasteFilterScreen} name="TasteFilter" />
+      <SearchStack.Screen component={SearchResultsScreen} name="SearchResults" />
+    </SearchStack.Navigator>
   );
 }
 
@@ -89,6 +80,8 @@ function BlogPostRouteScreen({
     />
   );
 }
+
+// ── Tab navigator ────────────────────────────────────────────────────────────
 
 function TabNavigator() {
   const { palette, spacing } = useHungryTheme();
@@ -109,24 +102,22 @@ function TabNavigator() {
           paddingTop: spacing[2],
         },
         tabBarIcon: ({ color, size }) => {
-          const Icon =
-            route.name === "Home"
-              ? House
-              : route.name === "Discover"
-                ? Compass
-                : route.name === "Maps"
-                  ? MapPinned
-                  : route.name === "Review"
-                    ? NotebookPen
-                    : User;
+          const icons: Record<string, typeof House> = {
+            Home: House,
+            Discover: Compass,
+            Search: Search,
+            Read: BookOpen,
+            Profile: User,
+          };
+          const Icon = icons[route.name] ?? User;
           return <Icon color={color} size={size} />;
         },
       })}
     >
       <Tabs.Screen component={HomeFeedScreen} name="Home" />
-      <Tabs.Screen component={DiscoverNavigator} name="Discover" />
-      <Tabs.Screen component={MapsNavigator} name="Maps" />
-      <Tabs.Screen component={ReviewStack} name="Review" />
+      <Tabs.Screen component={DiscoverHomeScreen} name="Discover" />
+      <Tabs.Screen component={SearchNavigator} name="Search" />
+      <Tabs.Screen component={ReadsFeedScreen} name="Read" />
       <Tabs.Screen
         component={ProfileStack}
         listeners={{
@@ -143,6 +134,8 @@ function TabNavigator() {
   );
 }
 
+// ── Root navigator ───────────────────────────────────────────────────────────
+
 export function RootNavigator({ theme }: { theme: Theme }) {
   useAppBootstrap();
 
@@ -152,9 +145,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 
   useEffect(() => {
     if (sessionExpired && navigationRef.isReady()) {
-      navigationRef.navigate("AuthStack", {
-        screen: "Login",
-      });
+      navigationRef.navigate("AuthStack", { screen: "Login" });
       dismissSessionExpiry();
     }
   }, [dismissSessionExpiry, sessionExpired]);
@@ -167,10 +158,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={AuthStack} name="AuthStack" />
           <RootStack.Screen component={OnboardingStack} name="OnboardingStack" />
           <RootStack.Screen component={TabNavigator} name="MainTabs" />
+          {/* Overlay screens — accessible from any tab */}
           <RootStack.Screen component={DishDetailScreen} name="DishDetail" />
           <RootStack.Screen component={StallDetailScreen} name="StallDetail" />
           <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           <RootStack.Screen component={ReviewStack} name="ReviewStack" />
+          <RootStack.Screen component={HomeMapScreen} name="MapView" />
+          <RootStack.Screen component={BuildingDrillDownScreen} name="BuildingDrillDown" />
+          <RootStack.Screen component={DecideForMeResultScreen} name="DecideForMeResult" />
           <RootStack.Screen component={OfflineStateScreen} name="Offline" />
           <RootStack.Screen component={NotFoundScreen} name="NotFound" />
         </RootStack.Navigator>
