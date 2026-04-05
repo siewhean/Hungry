@@ -43,6 +43,12 @@ Hungry is a mock-first Expo + React Native mobile app for dish-first food discov
 - The app is designed to demo end-to-end without backend availability.
 - The `data/` folder also contains the Singapore food-business workbook, a checked-in curated seed snapshot, and the refresh pipeline for rebuilding the database from public datasets plus supplementary hawker- and food-court-source discovery.
 
+## Delivery Governance
+
+- Shared task requirements and cross-agent checklist live in `tasks/todo.md`.
+- Claude and Codex should both update `tasks/todo.md` frequently during execution (at minimum once per focused work block and before ending a session).
+- Planning-first execution is required: create/update a scoped mini-plan before non-trivial implementation work, then record verification before checking tasks complete.
+
 ## Future Roadmap
 
 See `tasks/todo.md` for the full backlog. Key future features include:
