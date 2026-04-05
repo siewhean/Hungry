@@ -40,3 +40,12 @@ Hungry is a mock-first Expo + React Native mobile app for dish-first food discov
 - Source-of-truth product requirements currently live in the three Hungry docx files in the repo root.
 - Reads stays behind a feature flag even though the tab contract exists now.
 - The app is designed to demo end-to-end without backend availability.
+
+## Future Roadmap
+
+See `tasks/todo.md` for the full backlog. Key future features include:
+
+- **Digital Ordering & Payments** — In-app ordering + PayNow/card checkout for hawker centres, food courts, and restaurants. Includes a vendor analytics dashboard (top dishes, peak hours, revenue), real-time crowd/busyness indicators per stall, and queue wait-time estimates. Crowd monitoring is derived from active order volume — no hardware sensors required for the MVP signal.
+- **Interactive Indoor Maps** — SVG floor plans with polygon-level stall selection, open/closed colour coding, and pinch-to-zoom (see `design/figma-v2/building-layout.html` for mockups).
+- **"Decide for Me" AI** — Personalised dish recommendation surfaced prominently in Discover.
+- **Group Wishlists** — Shared save lists for planning meals with friends.
