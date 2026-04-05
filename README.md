@@ -33,9 +33,11 @@ Hungry is a mock-first Expo + React Native mobile app for dish-first food discov
 - `npm run ios`
 - `npm run android`
 - `npm run typecheck`
+- `npm run data:enrich`
 
 ## Notes
 
 - Source-of-truth product requirements currently live in the three Hungry docx files in the repo root.
 - Reads stays behind a feature flag even though the tab contract exists now.
 - The app is designed to demo end-to-end without backend availability.
+- The `data/` folder also contains the Singapore food-business workbook, a checked-in curated seed snapshot, and the refresh pipeline for rebuilding the database from public datasets plus supplementary hawker- and food-court-source discovery.
