@@ -38,5 +38,6 @@ Hungry is a mock-first Expo + React Native mobile app for dish-first food discov
 ## Notes
 
 - Source-of-truth product requirements currently live in the three Hungry docx files in the repo root.
+- Added an interview question bank for multi-persona customer and stall-operator research at `Research/agent_interview_question_bank.md`.
 - Reads stays behind a feature flag even though the tab contract exists now.
 - The app is designed to demo end-to-end without backend availability.
