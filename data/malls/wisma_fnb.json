@@ -1,0 +1,578 @@
+[
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "i•tea",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/itea/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Century Bakkwa",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/century-bakkwa/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "LeTAO le chocolat",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/letao-le-chocolate/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Sugarfina",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/sugarfina/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Awfully Chocolate Experience Cafe",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L3",
+    "location_note": "L3",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/awfully-chocolate-experience-cafe/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Chicken Pie Kitchen & Don Signature Crab",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/chicken-pie-kitchen-don-signature-crab/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Happy Lili Cafe",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L1",
+    "location_note": "L1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/happy-lili-cafe/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Gochi-So Shokudo",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L1",
+    "location_note": "L1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/gochi-so-shokudo/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Tun Xiang Hokkien Delights",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L1",
+    "location_note": "L1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/tun-xiang-hokkien-delights/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Fun Toast",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L1",
+    "location_note": "L1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/fun-toast/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Starbucks",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L1",
+    "location_note": "L1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/starbucks/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Tiong Bahru Bakery",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/tiong-bahru-bakery/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Embassy 1967",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L3",
+    "location_note": "L3",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/embassy-1967/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "KOI Express",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/koi-express/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Gokoku Japanese Bakery",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/gokoku-japanese-bakery/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Sushiro",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L2",
+    "location_note": "L2",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/sushiro/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Ben’s Cookies",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/bens-cookies/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "SUBWAY",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/subway/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Nya Nya",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L4",
+    "location_note": "L4",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/nya-nya/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "JOMO",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L2",
+    "location_note": "L2",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/jomo/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "The Coffee Bean & Tea Leaf",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L2",
+    "location_note": "L2",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/the-coffee-bean-tea-leaf/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Paradise Dynasty",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L1",
+    "location_note": "L1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/paradise-dynasty/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Haidilao Hot Pot",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L3",
+    "location_note": "L3",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/haidilao-hot-pot/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Garrett Popcorn Shops ®",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/garrett-popcorn-shops/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "MIKI MIZU",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/miki-mizu/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Food Republic",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L4",
+    "location_note": "L4",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/food-republic/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Famous Amos",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/famous-amos/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Din Tai Fung",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "L4",
+    "location_note": "L4",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/din-tai-fung/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Beryl’s",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/beryls/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Subway Niche",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/subway-niche/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "llaollao",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/llaollao/"
+  },
+  {
+    "operator": "wisma_atria",
+    "mall": "Wisma Atria",
+    "name": "Mr. Coconut",
+    "is_fnb": true,
+    "category": [
+      "Food & Beverages"
+    ],
+    "unit_number": "",
+    "floor_level": "B1",
+    "location_note": "B1",
+    "store_status": "active",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "phone": "",
+    "website": "https://www.wismaonline.com/store/mr-coconut/"
+  }
+]
