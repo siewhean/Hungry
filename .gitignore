@@ -10,3 +10,5 @@ yarn-debug.log*
 yarn-error.log*
 .playwright-browsers/
 scripts/playwright-profile/
+.claude/worktrees/peaceful-galileo/
+.claude/worktrees/priceless-sammet/
