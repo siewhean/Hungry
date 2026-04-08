@@ -7,13 +7,13 @@ import { AppText, Button, Card, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
 interface BlogPostWebViewScreenProps {
-  postId: string;
+  postId?: string;
   onOpenVenue: (venueId: string) => void;
 }
 
 export function BlogPostWebViewScreen({ postId, onOpenVenue }: BlogPostWebViewScreenProps) {
   const { spacing } = useHungryTheme();
-  const post = mockRepository.listBlogPosts().find((item) => item.id === postId);
+  const post = mockRepository.listBlogPosts().find((item) => item.id === postId) ?? mockRepository.listBlogPosts()[0];
 
   useEffect(() => {
     if (!post) {
@@ -22,16 +22,6 @@ export function BlogPostWebViewScreen({ postId, onOpenVenue }: BlogPostWebViewSc
 
     void WebBrowser.openBrowserAsync(post.url);
   }, [post]);
-
-  if (!post) {
-    return (
-      <Screen title="Article unavailable">
-        <Card>
-          <AppText>The selected blog post could not be found.</AppText>
-        </Card>
-      </Screen>
-    );
-  }
 
   return (
     <Screen title="Article view" subtitle="The original article opens in the system browser for this mock build.">
@@ -45,4 +35,3 @@ export function BlogPostWebViewScreen({ postId, onOpenVenue }: BlogPostWebViewSc
     </Screen>
   );
 }
-

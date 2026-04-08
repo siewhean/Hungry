@@ -1,16 +1,11 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
+import type { ReviewStackParamList } from "@/app/navigation/navigationTypes";
 import { ReviewComposeScreen } from "./ReviewComposeScreen";
 import { ReviewHubScreen } from "./ReviewHubScreen";
 import { ReviewRatingScreen } from "./ReviewRatingScreen";
 import { ReviewTagsScreen } from "./ReviewTagsScreen";
-
-export type ReviewStackParamList = {
-  ReviewHub: undefined;
-  ReviewRating: { venueId?: string; dishId?: string } | undefined;
-  ReviewTags: undefined;
-  ReviewCompose: undefined;
-};
+export type { ReviewStackParamList } from "@/app/navigation/navigationTypes";
 
 const Stack = createNativeStackNavigator<ReviewStackParamList>();
 

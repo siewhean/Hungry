@@ -1,4 +1,4 @@
+export * from "./DiscoverHomeScreen";
 export * from "./HomeMapScreen";
-export * from "./BuildingDrillDownScreen";
+export * from "./MapZoomedInScreen";
 export * from "./DecideForMeResultScreen";
-

@@ -1,14 +1,14 @@
-import { ScrollView, View } from "react-native";
-import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
+import { Pressable, ScrollView, View } from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import { Image } from "expo-image";
 
-import type { MainTabParamList } from "@/app/navigation/navigationTypes";
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { getReadsFeed } from "@/features/reads/feed";
 import { AppText, Badge, Card, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
-type Props = BottomTabScreenProps<MainTabParamList, "Reads">;
+type Props = NativeStackScreenProps<RootStackParamList, "ReadsFeed">;
 
 const ATMOSPHERES = [
   { label: "CANDLELIT", color: "#F5A623" },
@@ -33,8 +33,9 @@ export function ReadsFeedScreen(_: Props) {
           <AppText variant="h2">Latest Reads</AppText>
 
           {posts.map((post) => (
-            <Card key={post.id}>
-              <View style={{ flexDirection: "row", gap: spacing[3] }}>
+            <Pressable key={post.id} onPress={() => rootNavigation.navigate("BlogPost", { postId: post.id })}>
+              <Card>
+                <View style={{ flexDirection: "row", gap: spacing[3] }}>
                 <Image
                   source={{ uri: post.imageUrl }}
                   style={{
@@ -61,8 +62,9 @@ export function ReadsFeedScreen(_: Props) {
                     {post.excerpt}
                   </AppText>
                 </View>
-              </View>
-            </Card>
+                </View>
+              </Card>
+            </Pressable>
           ))}
         </View>
 
@@ -87,8 +89,9 @@ export function ReadsFeedScreen(_: Props) {
             contentContainerStyle={{ gap: spacing[3] }}
           >
             {posts.map((post) => (
-              <View
+              <Pressable
                 key={`focus-${post.id}`}
+                onPress={() => rootNavigation.navigate("BlogPost", { postId: post.id })}
                 style={{
                   width: 260,
                   height: 160,
@@ -125,7 +128,7 @@ export function ReadsFeedScreen(_: Props) {
                     {post.title}
                   </AppText>
                 </View>
-              </View>
+              </Pressable>
             ))}
           </ScrollView>
         </View>
@@ -176,7 +179,8 @@ export function ReadsFeedScreen(_: Props) {
           <AppText variant="h2">THE LATEST {"\u2014"} Recent Dispatches</AppText>
 
           {posts.slice(0, 1).map((post) => (
-            <Card key={`latest-${post.id}`}>
+            <Pressable key={`latest-${post.id}`} onPress={() => rootNavigation.navigate("BlogPost", { postId: post.id })}>
+            <Card>
               <Image
                 source={{ uri: post.imageUrl }}
                 style={{
@@ -193,6 +197,7 @@ export function ReadsFeedScreen(_: Props) {
                 </AppText>
               </View>
             </Card>
+            </Pressable>
           ))}
         </View>
       </ScrollView>

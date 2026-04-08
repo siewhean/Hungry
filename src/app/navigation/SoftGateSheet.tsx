@@ -37,9 +37,9 @@ export function SoftGateSheet({ onLogin }: SoftGateSheetProps) {
     >
       <BottomSheetView style={{ flex: 1, gap: spacing[4], padding: spacing[5] }}>
         <View style={{ gap: spacing[2] }}>
-          <AppText variant="h2">Sign in to save favourites and write reviews</AppText>
+          <AppText variant="h2">Keep browsing as a guest or sign in to contribute</AppText>
           <AppText tone="secondary">
-            Hungry keeps browsing open to guests, but contributions and personal picks need an account.
+            Hungry leaves discovery open, but posting, saving, and reviews work best once your profile is active.
           </AppText>
         </View>
         <Button
@@ -49,9 +49,8 @@ export function SoftGateSheet({ onLogin }: SoftGateSheetProps) {
             onLogin();
           }}
         />
-        <Button label="Continue as guest" onPress={hideSoftGate} variant="ghost" />
+        <Button label="Keep exploring as guest" onPress={hideSoftGate} variant="ghost" />
       </BottomSheetView>
     </BottomSheetModal>
   );
 }
-

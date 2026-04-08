@@ -17,6 +17,11 @@ export function ProfileHomeScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
   const signOut = useSessionStore((state) => state.signOut);
   const favourites = profile.favouriteDishIds.map((dishId) => mockRepository.getDishById(dishId)).filter(isDishDetail);
+  const handleSignOut = () => {
+    signOut();
+    const rootNavigation = (navigation.getParent?.()?.getParent?.() ?? navigation) as any;
+    rootNavigation.navigate("MainTabs", { screen: "Discover" });
+  };
 
   return (
     <ProfileScreenShell title="Profile" subtitle="Taste fingerprint, favourites, and settings in one place.">
@@ -30,6 +35,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
             <Badge label={`${profile.stats.stallsVisited} stalls`} tone="amber" />
             <Badge label={`${profile.stats.favouritesCount} favourites`} tone="orange" />
           </View>
+          <Button label="Edit profile" variant="secondary" onPress={() => navigation.navigate("EditProfile")} />
         </View>
       </Card>
       <Card>
@@ -65,7 +71,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
           )}
         </View>
       </Card>
-      <Button label="Log out" variant="destructive" onPress={signOut} />
+      <Button label="Log out" variant="destructive" onPress={handleSignOut} />
     </ProfileScreenShell>
   );
 }

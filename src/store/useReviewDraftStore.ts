@@ -33,12 +33,13 @@ export const useReviewDraftStore = create<ReviewDraftState>((set) => ({
   isSubmitting: false,
   failedPhotoUris: [],
   selectDish: (selectedVenueId, selectedDishId) =>
-    set((state) => ({
+    set(() => ({
       draft: {
-        ...state.draft,
+        ...initialDraft,
         selectedVenueId,
         selectedDishId,
       },
+      failedPhotoUris: [],
     })),
   setRating: (rating) =>
     set((state) => ({

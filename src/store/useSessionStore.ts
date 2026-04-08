@@ -13,16 +13,22 @@ interface SessionState {
   expireSession: () => void;
   dismissSessionExpiry: () => void;
   setReturnRoute: (route?: string) => void;
+  setSkippedTasteQuiz: (skipped: boolean) => void;
   signOut: () => void;
+  clearSession: () => void;
 }
 
-export const useSessionStore = create<SessionState>((set) => ({
+const initialState = {
   isAuthenticated: false,
   isGuest: true,
   hasCompletedOnboarding: false,
   hasSkippedTasteQuiz: true,
   returnRoute: undefined,
   sessionExpired: false,
+} as const;
+
+export const useSessionStore = create<SessionState>((set) => ({
+  ...initialState,
   completeAuth: () =>
     set({
       isAuthenticated: true,
@@ -42,13 +48,7 @@ export const useSessionStore = create<SessionState>((set) => ({
   expireSession: () => set({ sessionExpired: true, isAuthenticated: false, isGuest: true }),
   dismissSessionExpiry: () => set({ sessionExpired: false }),
   setReturnRoute: (returnRoute) => set({ returnRoute }),
-  signOut: () =>
-    set({
-      isAuthenticated: false,
-      isGuest: true,
-      returnRoute: undefined,
-      hasCompletedOnboarding: false,
-      hasSkippedTasteQuiz: true,
-    }),
+  setSkippedTasteQuiz: (hasSkippedTasteQuiz) => set({ hasSkippedTasteQuiz }),
+  signOut: () => set({ ...initialState }),
+  clearSession: () => set({ ...initialState }),
 }));
-

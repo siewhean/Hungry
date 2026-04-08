@@ -18,12 +18,13 @@ export function ReviewTagsScreen({ navigation }: Props) {
   return (
     <ReviewScreenShell
       title="Taste tags"
-      subtitle="Pick the notes that match the dish."
-      stepLabel="SCR-071"
+      subtitle="Select the notes that describe the bite and whether you would recommend it."
+      step={3}
+      total={5}
     >
       <Card>
         <View style={{ gap: 12 }}>
-          <AppText variant="h3">Taste tags</AppText>
+          <AppText variant="h3">How did it taste?</AppText>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {REVIEW_TAGS.map((tag) => (
               <Chip key={tag} label={tag} selected={tags.includes(tag)} onPress={() => toggleTag(tag)} />
@@ -36,9 +37,8 @@ export function ReviewTagsScreen({ navigation }: Props) {
           </View>
         </View>
       </Card>
-      <Button label="Next" onPress={() => navigation.navigate("ReviewCompose")} />
+      <Button label="Next: final comments" onPress={() => navigation.navigate("ReviewCompose")} />
       <Button label="Back" variant="ghost" onPress={() => navigation.goBack()} />
     </ReviewScreenShell>
   );
 }
-

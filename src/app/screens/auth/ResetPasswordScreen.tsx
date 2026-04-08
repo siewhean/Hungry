@@ -24,7 +24,7 @@ export function ResetPasswordScreen({ navigation }: Props) {
 
   const handleReset = handleSubmit(() => {
     showToast({ message: "Password updated. Please log in again.", tone: "success" });
-    navigation.navigate("Login");
+    navigation.navigate("ResetPasswordSuccess");
   });
 
   return (
@@ -38,7 +38,7 @@ export function ResetPasswordScreen({ navigation }: Props) {
       <Input label="Confirm password" secureTextEntry placeholder="Repeat the password" onChangeText={(value) => setValue("confirmPassword", value)} />
       <Button label="Update password" onPress={handleReset} />
       <AppText variant="bodySmall" tone="muted">
-        A successful reset returns the user to log in.
+        A successful reset opens a confirmation screen before sending the user back to log in.
       </AppText>
     </AuthScreenShell>
   );

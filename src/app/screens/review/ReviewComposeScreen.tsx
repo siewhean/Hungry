@@ -4,6 +4,8 @@ import { View } from "react-native";
 
 import { AppText, Button, Card, InlineBanner, Input } from "@/components/ui";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
+import { useProfileStore } from "@/store/useProfileStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { ReviewScreenShell } from "./ReviewScreenShell";
@@ -12,6 +14,8 @@ import type { ReviewStackParamList } from "./ReviewStack";
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewCompose">;
 
 export function ReviewComposeScreen({ navigation }: Props) {
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const draft = useReviewDraftStore((state) => state.draft);
   const failedPhotoUris = useReviewDraftStore((state) => state.failedPhotoUris);
   const addPhoto = useReviewDraftStore((state) => state.addPhoto);
@@ -21,7 +25,10 @@ export function ReviewComposeScreen({ navigation }: Props) {
   const isSubmitting = useReviewDraftStore((state) => state.isSubmitting);
   const setSubmitting = useReviewDraftStore((state) => state.setSubmitting);
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
+  const addReview = useProfileStore((state) => state.addReview);
   const showToast = useUIStore((state) => state.showToast);
+  const showSoftGate = useUIStore((state) => state.showSoftGate);
+  const showReviewSuccess = useUIStore((state) => state.showReviewSuccess);
   const selectedDishId = useReviewDraftStore((state) => state.draft.selectedDishId);
   const dish = useMemo(
     () => mockRepository.getDishById(selectedDishId ?? "") ?? mockRepository.listPopularNearby()[0],
@@ -29,20 +36,41 @@ export function ReviewComposeScreen({ navigation }: Props) {
   );
 
   const handleSubmit = () => {
+    if (!isAuthenticated) {
+      setReturnRoute("Review");
+      showSoftGate();
+      return;
+    }
+
+    const successPayload = {
+      dishName: dish.name,
+      venueName: mockRepository.getVenueById(dish.venueId)?.name ?? "",
+      pointsEarned:
+        15 +
+        draft.selectedTags.length * 4 +
+        (draft.text.trim().length ? 10 : 0) +
+        draft.photos.length * 5,
+      tagCount: draft.selectedTags.length,
+      rating: draft.rating,
+    };
+
     setSubmitting(true);
     setTimeout(() => {
       setSubmitting(false);
+      addReview(dish);
       showToast({ message: "Review saved locally. It appears on your history immediately.", tone: "success" });
+      showReviewSuccess(successPayload);
       resetDraft();
-      navigation.navigate("ReviewHub");
+      navigation.popToTop();
     }, 700);
   };
 
   return (
     <ReviewScreenShell
-      title="Write your review"
-      subtitle="Keep the text short or rely on tags."
-      stepLabel="SCR-072"
+      title="Final notes"
+      subtitle="Add a short comment or keep it lightweight with just the tags."
+      step={4}
+      total={5}
     >
       <Card>
         <View style={{ gap: 12 }}>
@@ -65,7 +93,7 @@ export function ReviewComposeScreen({ navigation }: Props) {
       <Button label="Submit review" loading={isSubmitting} onPress={handleSubmit} />
       <Button label="Back" variant="ghost" onPress={() => navigation.goBack()} />
       <AppText variant="bodySmall" tone="muted">
-        This mock flow preserves state across all three screens.
+        This mock flow preserves state across every step of the quick-review flow.
       </AppText>
     </ReviewScreenShell>
   );

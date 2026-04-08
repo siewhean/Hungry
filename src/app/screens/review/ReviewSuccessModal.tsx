@@ -1,0 +1,91 @@
+import { Modal, Pressable, View } from "react-native";
+import { CheckCircle2, Sparkles, X } from "lucide-react-native";
+
+import { AppText, Badge, Button, Card } from "@/components/ui";
+import { useUIStore } from "@/store/useUIStore";
+import { useHungryTheme } from "@/theme";
+
+interface ReviewSuccessModalProps {
+  onOpenHistory: () => void;
+}
+
+export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
+  const { palette, radii, spacing } = useHungryTheme();
+  const payload = useUIStore((state) => state.reviewSuccess);
+  const hideReviewSuccess = useUIStore((state) => state.hideReviewSuccess);
+
+  return (
+    <Modal animationType="fade" transparent visible={Boolean(payload)} onRequestClose={hideReviewSuccess}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "rgba(17, 24, 39, 0.45)",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: spacing[5],
+        }}
+      >
+        <Card style={{ width: "100%", gap: spacing[4], padding: spacing[5] }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3] }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3], flex: 1 }}>
+              <View
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: palette.successSoft,
+                }}
+              >
+                <CheckCircle2 color={palette.success} size={28} />
+              </View>
+              <View style={{ flex: 1, gap: 4 }}>
+                <AppText variant="h3">Review posted</AppText>
+                <AppText tone="secondary">
+                  {payload?.dishName ?? "Dish review"} · {payload?.venueName ?? "Nearby stall"}
+                </AppText>
+              </View>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              onPress={hideReviewSuccess}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: palette.bgMuted,
+              }}
+            >
+              <X color={palette.text} size={18} />
+            </Pressable>
+          </View>
+
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+            <Badge label={`${payload?.rating ?? 0}/5 rating`} tone="orange" />
+            <Badge label={`${payload?.tagCount ?? 0} taste tags`} tone="amber" />
+            <Badge label={`+${payload?.pointsEarned ?? 0} points`} tone="success" />
+          </View>
+
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+            <Sparkles color={palette.orange} size={16} />
+            <AppText variant="bodySmall" tone="secondary">
+              Your profile and review history have been updated in this mock session.
+            </AppText>
+          </View>
+
+          <Button
+            label="Open review history"
+            onPress={() => {
+              hideReviewSuccess();
+              onOpenHistory();
+            }}
+          />
+          <Button label="Keep exploring" variant="secondary" onPress={hideReviewSuccess} />
+        </Card>
+      </View>
+    </Modal>
+  );
+}

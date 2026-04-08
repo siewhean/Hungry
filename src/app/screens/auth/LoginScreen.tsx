@@ -17,6 +17,7 @@ type FormValues = {
 
 export function LoginScreen({ navigation }: Props) {
   const completeAuth = useSessionStore((state) => state.completeAuth);
+  const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const showToast = useUIStore((state) => state.showToast);
   const { handleSubmit, register, setValue } = useForm<FormValues>({
     defaultValues: {
@@ -30,6 +31,7 @@ export function LoginScreen({ navigation }: Props) {
 
   const handleLogin = handleSubmit(() => {
     completeAuth();
+    completeOnboarding(true);
     showToast({ message: "Welcome back. Your profile is ready.", tone: "success" });
   });
 

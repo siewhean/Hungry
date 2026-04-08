@@ -15,10 +15,11 @@ export function LocationPermissionScreen({ navigation }: Props) {
   const denyLocation = useLocationStore((state) => state.denyLocation);
   const setManualLocation = useLocationStore((state) => state.setManualLocation);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
+  const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
   const [manualLocation, setManualLocationValue] = useState("CBD");
 
   const finish = () => {
-    completeOnboarding(false);
+    completeOnboarding(hasSkippedTasteQuiz);
   };
 
   return (
@@ -70,4 +71,3 @@ export function LocationPermissionScreen({ navigation }: Props) {
     </OnboardingScreenShell>
   );
 }
-

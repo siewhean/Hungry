@@ -1,4 +1,4 @@
-import { ScrollView, Pressable, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { Image } from "expo-image";
 import { Search as SearchIcon } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -21,8 +21,8 @@ export function DishSearchScreen() {
 
   return (
     <Screen
-      title="Discover"
-      subtitle="Search for stalls or dishes, then browse what each stall is sharing."
+      title="Search"
+      subtitle="Search for dishes first, then open the stall only when the result looks worth it."
     >
       <View style={{ gap: spacing[4] }}>
         <Card style={{ gap: spacing[3] }}>
@@ -53,17 +53,17 @@ export function DishSearchScreen() {
               const match = collections[0]?.topDishes[0];
               if (match) {
                 setDecideForMe(match);
-                navigation.getParent()?.getParent()?.navigate("DishDetail", { dishId: match.id });
+                navigation.navigate("DishDetail", { dishId: match.id });
               }
             }}
           />
         </View>
 
-        <ScrollView contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[8] }}>
+        <View style={{ gap: spacing[4], paddingBottom: spacing[8] }}>
           {collections.map((collection) => (
             <Card key={collection.venue.id} style={{ gap: spacing[3], padding: 0, overflow: "hidden" }}>
               <Pressable
-                onPress={() => navigation.getParent()?.getParent()?.navigate("StallDetail", { venueId: collection.venue.id })}
+                onPress={() => navigation.navigate("StallDetail", { venueId: collection.venue.id })}
                 style={{ flexDirection: "row", gap: spacing[3], padding: spacing[4] }}
               >
                 <Image
@@ -92,7 +92,7 @@ export function DishSearchScreen() {
                 {collection.posts.map((post) => (
                   <Pressable
                     key={post.id}
-                    onPress={() => navigation.getParent()?.getParent()?.navigate("DishDetail", { dishId: post.dishIds[0] })}
+                    onPress={() => navigation.navigate("DishDetail", { dishId: post.dishIds[0] })}
                     style={{ gap: spacing[2], width: 220 }}
                   >
                     <Image
@@ -114,7 +114,7 @@ export function DishSearchScreen() {
               </ScrollView>
             </Card>
           ))}
-        </ScrollView>
+        </View>
       </View>
     </Screen>
   );

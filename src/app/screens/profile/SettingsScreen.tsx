@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 import { AppText, Badge, Button, Card, Chip, InlineBanner } from "@/components/ui";
 import { useLocationStore } from "@/store/useLocationStore";
@@ -7,10 +8,16 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
 export function SettingsScreen() {
+  const navigation = useNavigation<any>();
   const signOut = useSessionStore((state) => state.signOut);
   const location = useLocationStore((state) => state.manualLocation);
   const [dietaryEnabled, setDietaryEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const handleSignOut = () => {
+    signOut();
+    const rootNavigation = navigation.getParent?.()?.getParent?.() ?? navigation;
+    rootNavigation.navigate("MainTabs", { screen: "Discover" });
+  };
 
   return (
     <ProfileScreenShell title="Settings" subtitle="Account, privacy, and lightweight preferences.">
@@ -25,8 +32,7 @@ export function SettingsScreen() {
           <InlineBanner tone="info" message="This section is mock-only until backend settings exist." />
         </View>
       </Card>
-      <Button label="Log out" variant="destructive" onPress={signOut} />
+      <Button label="Log out" variant="destructive" onPress={handleSignOut} />
     </ProfileScreenShell>
   );
 }
-
