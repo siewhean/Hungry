@@ -4,6 +4,7 @@ import { View } from "react-native";
 
 import { AppText, Button, Card, InlineBanner, Input } from "@/components/ui";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { ReviewScreenShell } from "./ReviewScreenShell";
@@ -22,6 +23,7 @@ export function ReviewComposeScreen({ navigation }: Props) {
   const setSubmitting = useReviewDraftStore((state) => state.setSubmitting);
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
   const showToast = useUIStore((state) => state.showToast);
+  const addReviewedDish = useProfileStore((state) => state.addReviewedDish);
   const selectedDishId = useReviewDraftStore((state) => state.draft.selectedDishId);
   const dish = useMemo(
     () => mockRepository.getDishById(selectedDishId ?? "") ?? mockRepository.listPopularNearby()[0],
@@ -31,8 +33,10 @@ export function ReviewComposeScreen({ navigation }: Props) {
   const handleSubmit = () => {
     setSubmitting(true);
     setTimeout(() => {
+      // Persist to profile review history
+      addReviewedDish(dish.id);
       setSubmitting(false);
-      showToast({ message: "Review saved locally. It appears on your history immediately.", tone: "success" });
+      showToast({ message: "Review submitted. It appears in your profile history.", tone: "success" });
       resetDraft();
       navigation.navigate("ReviewHub");
     }, 700);
@@ -48,7 +52,14 @@ export function ReviewComposeScreen({ navigation }: Props) {
         <View style={{ gap: 12 }}>
           <AppText variant="h3">{dish.name}</AppText>
           <AppText tone="secondary">The draft stays intact while you move between steps.</AppText>
-          <Input label="Review text" value={draft.text} onChangeText={setText} placeholder="What stood out?" multiline numberOfLines={5} />
+          <Input
+            label="Review text"
+            value={draft.text}
+            onChangeText={setText}
+            placeholder="What stood out?"
+            multiline
+            numberOfLines={5}
+          />
           <Button label="Add demo photo" variant="secondary" onPress={() => addPhoto(`mock-photo-${Date.now()}`)} />
           <Button label="Simulate photo failure" variant="ghost" onPress={() => markPhotoFailed(`failed-${Date.now()}`)} />
           {draft.photos.length ? <AppText tone="muted">Photos attached: {draft.photos.length}</AppText> : null}

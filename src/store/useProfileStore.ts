@@ -8,6 +8,7 @@ interface ProfileState {
   profile: UserProfile;
   syncProfile: (isAuthenticated: boolean) => void;
   toggleFavourite: (dish: DishDetail) => void;
+  addReviewedDish: (dishId: string) => void;
 }
 
 function recalculateTasteVector(profile: UserProfile) {
@@ -64,8 +65,21 @@ export const useProfileStore = create<ProfileState>((set) => ({
         },
       };
     }),
+  addReviewedDish: (dishId) =>
+    set((state) => {
+      if (state.profile.reviewedDishIds.includes(dishId)) return state;
+      return {
+        profile: {
+          ...state.profile,
+          reviewedDishIds: [...state.profile.reviewedDishIds, dishId],
+          stats: {
+            ...state.profile.stats,
+            dishesReviewed: state.profile.stats.dishesReviewed + 1,
+          },
+        },
+      };
+    }),
 }));
 
 export const getTasteSimilarityWithDish = (profile: UserProfile, dish: DishDetail) =>
   Math.round(similarityScore(profile.tasteVector, dish.tasteVector) * 100);
-

@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { View } from "react-native";
 
 import { AppText, Badge, Button, Input } from "@/components/ui";
@@ -18,17 +18,17 @@ type FormValues = {
 export function LoginScreen({ navigation }: Props) {
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const showToast = useUIStore((state) => state.showToast);
-  const { handleSubmit, register, setValue } = useForm<FormValues>({
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({
+    defaultValues: { email: "", password: "" },
   });
 
-  register("email");
-  register("password");
-
-  const handleLogin = handleSubmit(() => {
+  const handleLogin = handleSubmit((values) => {
+    // Mock auth: any non-empty email + password succeeds
+    if (!values.email || !values.password) return;
     completeAuth();
     showToast({ message: "Welcome back. Your profile is ready.", tone: "success" });
   });
@@ -44,18 +44,51 @@ export function LoginScreen({ navigation }: Props) {
         </>
       }
     >
-      <Input
-        autoCapitalize="none"
-        keyboardType="email-address"
-        label="Email"
-        placeholder="weiming@example.com"
-        onChangeText={(value) => setValue("email", value)}
+      <Controller
+        control={control}
+        name="email"
+        rules={{
+          required: "Email is required",
+          pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Enter a valid email address" },
+        }}
+        render={({ field: { onChange, value } }) => (
+          <View style={{ gap: 4 }}>
+            <Input
+              autoCapitalize="none"
+              keyboardType="email-address"
+              label="Email"
+              placeholder="weiming@example.com"
+              value={value}
+              onChangeText={onChange}
+            />
+            {errors.email ? (
+              <AppText variant="bodySmall" style={{ color: "#E53935" }}>
+                {errors.email.message}
+              </AppText>
+            ) : null}
+          </View>
+        )}
       />
-      <Input
-        label="Password"
-        placeholder="••••••••"
-        secureTextEntry
-        onChangeText={(value) => setValue("password", value)}
+      <Controller
+        control={control}
+        name="password"
+        rules={{ required: "Password is required", minLength: { value: 6, message: "Password must be at least 6 characters" } }}
+        render={({ field: { onChange, value } }) => (
+          <View style={{ gap: 4 }}>
+            <Input
+              label="Password"
+              placeholder="••••••••"
+              secureTextEntry
+              value={value}
+              onChangeText={onChange}
+            />
+            {errors.password ? (
+              <AppText variant="bodySmall" style={{ color: "#E53935" }}>
+                {errors.password.message}
+              </AppText>
+            ) : null}
+          </View>
+        )}
       />
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         <Badge label="Remember me" tone="neutral" />

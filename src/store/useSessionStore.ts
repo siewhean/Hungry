@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+import { useProfileStore } from "./useProfileStore";
+
 interface SessionState {
   isAuthenticated: boolean;
   isGuest: boolean;
@@ -23,12 +25,14 @@ export const useSessionStore = create<SessionState>((set) => ({
   hasSkippedTasteQuiz: true,
   returnRoute: undefined,
   sessionExpired: false,
-  completeAuth: () =>
+  completeAuth: () => {
     set({
       isAuthenticated: true,
       isGuest: false,
       sessionExpired: false,
-    }),
+    });
+    useProfileStore.getState().syncProfile(true);
+  },
   completeOnboarding: (skippedQuiz = false) =>
     set({
       hasCompletedOnboarding: true,
@@ -42,13 +46,14 @@ export const useSessionStore = create<SessionState>((set) => ({
   expireSession: () => set({ sessionExpired: true, isAuthenticated: false, isGuest: true }),
   dismissSessionExpiry: () => set({ sessionExpired: false }),
   setReturnRoute: (returnRoute) => set({ returnRoute }),
-  signOut: () =>
+  signOut: () => {
     set({
       isAuthenticated: false,
       isGuest: true,
       returnRoute: undefined,
       hasCompletedOnboarding: false,
       hasSkippedTasteQuiz: true,
-    }),
+    });
+    useProfileStore.getState().syncProfile(false);
+  },
 }));
-
