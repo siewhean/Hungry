@@ -48,7 +48,7 @@ export const singaporeBuildings: SingaporeBuilding[] = [
     address: "1 Kadayanallur Street",
     postalCode: "069184",
     coordinate: { latitude: 1.2803, longitude: 103.8446 },
-    floors: ["L1"],
+    floors: ["L1", "L2"],
     venueCount: 104,
     openStalls: 98,
     totalStalls: 104,

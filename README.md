@@ -16,6 +16,7 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 | Domain types + mock data | `tasks/data-contracts.md` |
 | Testing + feedback loops | `tasks/test-harness.md` |
 | Product requirements (summarised) | `tasks/product-context.md` |
+| Marketing launch kit | `marketing/` |
 | Current task list | `tasks/todo.md` |
 | Past lessons | `tasks/lessons.md` |
 | Product requirements | `Research/01_Product_Requirements_Document_Hungry.docx` |
@@ -84,6 +85,7 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 | Review flow | Done |
 | Reads (feature-flagged) | Done |
 | Offline + NotFound states | Done |
+| Marketing launch kit | Done |
 | Typecheck | Passing |
 | Expo Doctor | Passing |
 | Agent harness docs | Done |
@@ -96,11 +98,16 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 - Mock data lives exclusively in `src/lib/services/mock/data.ts`
 - Design tokens live exclusively in `src/theme/tokens.ts` — never hardcode values
 - The app runs fully without network or backend
+- Signed-out users now enter through auth before the main shell; guest browsing is no longer part of the current runtime flow
+- The old browse-as-guest soft gate has been removed from runtime navigation; protected actions now route directly into auth
 - `Reads` tab is behind `FEATURE_FLAGS.readsEnabled` (default `true`)
 - Map mock mode: set `FEATURE_FLAGS.mockMapboxEnabled = true` for test environments
+- Real map runtime: set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` locally to enable the live Mapbox surface; without it, the map falls back to a static coordinate preview so the repo screens stay inspectable.
 - Root Expo scaffold, typed domain layer, Zustand stores, and mock repositories are in place
 - Discover, Search, Details, Auth, Onboarding, Profile, Review, Reads, and recovery flows are implemented in the mobile app shell
+- The current runtime shell is auth-first. Signed-out users route through Splash into Auth before the main app shell.
 - Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
+- Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and a Maxwell demo building-layout plan with L1/L2 floor switching.
 - `npm run typecheck` and `npx expo-doctor` both pass in the local environment
 
 ## Commands
@@ -119,6 +126,7 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 - Reads stays behind a feature flag even though the tab contract exists now.
 - The app is designed to demo end-to-end without backend availability.
 - The `data/` folder also contains the Singapore food-business workbook, a checked-in curated seed snapshot, and the refresh pipeline for rebuilding the database from public datasets plus supplementary hawker- and food-court-source discovery.
+- The `marketing/` workspace now contains repo-grounded launch materials for positioning, waitlist messaging, social content, video briefs, outreach, and brand rules.
 
 ## Delivery Governance
 

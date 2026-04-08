@@ -2,7 +2,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useForm } from "react-hook-form";
 import { View } from "react-native";
 
-import { AppText, Badge, Button, Input } from "@/components/ui";
+import { AppText, Button, Input } from "@/components/ui";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { AuthScreenShell } from "./AuthScreenShell";
@@ -17,7 +17,6 @@ type FormValues = {
 
 export function LoginScreen({ navigation }: Props) {
   const completeAuth = useSessionStore((state) => state.completeAuth);
-  const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const showToast = useUIStore((state) => state.showToast);
   const { handleSubmit, register, setValue } = useForm<FormValues>({
     defaultValues: {
@@ -31,14 +30,18 @@ export function LoginScreen({ navigation }: Props) {
 
   const handleLogin = handleSubmit(() => {
     completeAuth();
-    completeOnboarding(true);
-    showToast({ message: "Welcome back. Your profile is ready.", tone: "success" });
+    showToast({ message: "Welcome back. Continue setup to unlock your feed.", tone: "success" });
   });
+
+  const handleProviderLogin = (provider: "Google" | "Apple") => {
+    completeAuth();
+    showToast({ message: `${provider} connected. Finish setup to continue.`, tone: "success" });
+  };
 
   return (
     <AuthScreenShell
-      title="Log in"
-      subtitle="Return to your favourites, reviews, and personalised picks."
+      title="Welcome to Hungry"
+      subtitle="Sign in before you browse dishes, save favourites, or write reviews."
       footer={
         <>
           <Button label="Forgot password?" variant="ghost" onPress={() => navigation.navigate("ForgotPassword")} />
@@ -46,6 +49,21 @@ export function LoginScreen({ navigation }: Props) {
         </>
       }
     >
+      <Button
+        label="Continue with Google"
+        variant="secondary"
+        onPress={() => handleProviderLogin("Google")}
+      />
+      <Button
+        label="Continue with Apple"
+        variant="secondary"
+        onPress={() => handleProviderLogin("Apple")}
+      />
+      <View style={{ gap: 8 }}>
+        <AppText variant="micro" tone="muted">
+          OR CONTINUE WITH EMAIL
+        </AppText>
+      </View>
       <Input
         autoCapitalize="none"
         keyboardType="email-address"
@@ -59,13 +77,9 @@ export function LoginScreen({ navigation }: Props) {
         secureTextEntry
         onChangeText={(value) => setValue("password", value)}
       />
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        <Badge label="Remember me" tone="neutral" />
-        <Badge label="Google sign-in shell" tone="info" />
-      </View>
-      <Button label="Log in" onPress={handleLogin} />
+      <Button label="Continue with Email" onPress={handleLogin} />
       <AppText variant="bodySmall" tone="muted">
-        This build keeps the auth surface mock-first while preserving the final mobile flow.
+        Google and Apple remain mock auth actions in this build, but the app flow matches the final product shell.
       </AppText>
     </AuthScreenShell>
   );

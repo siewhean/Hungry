@@ -23,7 +23,7 @@ export interface Bite {
   caption: string; // max 80 chars
   heartCount: number;
   commentCount: number;
-  tasteTag: string; // e.g. "🌶️ Spicy kick"
+  tasteTag: string; // e.g. "Spicy kick"
   createdAt: string;
 }
 

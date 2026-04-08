@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native";
+import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
-import { Compass, MapPinned, Search, Sparkles } from "lucide-react-native";
+import { ChevronRight, Compass, MapPinned, Search } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 
-import { AppText, Badge, Card, Chip, Screen } from "@/components/ui";
+import { AppText, Chip, Input, Screen } from "@/components/ui";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -14,31 +14,29 @@ const FILTER_CHIPS = ["Spicy", "Halal", "Late night", "Cheap"] as const;
 
 export function DiscoverHomeScreen() {
   const navigation = useNavigation<any>();
+  const { width: screenWidth } = useWindowDimensions();
   const { palette, radii, spacing, shadows } = useHungryTheme();
-  const profile = useProfileStore((s) => s.profile);
+  const profile = useProfileStore((state) => state.profile);
   const { popularNearby, setDecideForMe } = useDiscoveryStore();
-
-  const [selectedChips, setSelectedChips] = useState<Set<string>>(new Set(["Spicy"]));
+  const [selectedChips, setSelectedChips] = useState<Set<string>>(new Set());
 
   const buildings = mockRepository.listBuildings();
-  const stallVenues = buildings
+  const recommendedDishes = popularNearby.slice(0, 4);
+  const nearbyVenues = buildings
     .slice(0, 4)
     .map((building) => {
       const venue = mockRepository.listVenuesByBuilding(building.id)[0];
       const topDish = venue ? mockRepository.getDishById(venue.topDishId) : undefined;
-      if (!venue) return null;
-      return { building, venue, topDish };
+      return venue ? { building, venue, topDish } : null;
     })
-    .filter(Boolean) as Array<{
+      .filter(Boolean) as Array<{
     building: (typeof buildings)[number];
     venue: NonNullable<ReturnType<typeof mockRepository.getVenueById>>;
     topDish: ReturnType<typeof mockRepository.getDishById>;
   }>;
+  const recommendedCardWidth = Math.max(212, Math.min(244, screenWidth * 0.62));
 
-  const recommendedDishes = popularNearby.slice(0, 3);
-  const mapBuildings = buildings.slice(0, 3);
-
-  function toggleChip(label: string) {
+  const toggleChip = (label: string) => {
     setSelectedChips((prev) => {
       const next = new Set(prev);
       if (next.has(label)) {
@@ -48,68 +46,60 @@ export function DiscoverHomeScreen() {
       }
       return next;
     });
-  }
+  };
 
-  function handleDecideForMe() {
+  const handleDecideForMe = () => {
     const picked = mockRepository.getDecideForMe(profile.tasteVector);
     if (picked) {
       setDecideForMe(picked);
     }
     navigation.navigate("DecideForMeResult");
-  }
-
-  function formatDistance(meters: number) {
-    if (meters < 1000) return `${meters}m`;
-    return `${(meters / 1000).toFixed(1)}km`;
-  }
+  };
 
   return (
     <Screen scroll={false}>
       <ScrollView
-        style={styles.flex}
-        contentContainerStyle={{ paddingBottom: spacing[8], gap: spacing[5] }}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ gap: spacing[5], paddingBottom: spacing[12] }}
       >
-        <View style={{ gap: spacing[2] }}>
-          <View style={styles.sectionHeader}>
-            <View style={{ flex: 1, gap: spacing[1] }}>
-              <AppText variant="micro" tone="accent" style={styles.sectionEyebrow}>
-                DISCOVER
-              </AppText>
-              <AppText variant="h1">Find what actually sounds good right now.</AppText>
-              <AppText variant="bodySmall" tone="secondary">
-                Search by dish, browse by centre, or let Hungry make the call.
-              </AppText>
-            </View>
-            <Badge label="Near Maxwell" tone="success" />
+        <View
+          style={{
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "space-between",
+          }}
+        >
+          <View style={{ flex: 1, gap: spacing[1] }}>
+            <AppText variant="bodySmall" tone="muted">
+              Tanjong Pagar · 14 stalls nearby
+            </AppText>
+            <AppText variant="h1">Discover</AppText>
+          </View>
+          <View
+            style={{
+              alignItems: "center",
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+              borderRadius: radii.md,
+              borderWidth: 1,
+              height: 40,
+              justifyContent: "center",
+              width: 40,
+            }}
+          >
+            <AppText variant="bodySmall">H</AppText>
           </View>
         </View>
 
-        <View
-          style={[
-            styles.searchBar,
-            {
-              backgroundColor: palette.surfaceRaised,
-              borderColor: palette.border,
-              borderWidth: 1,
-              borderRadius: radii.pill,
-              paddingHorizontal: spacing[4],
-              gap: spacing[2],
-            },
-          ]}
-        >
-          <Search color={palette.textMuted} size={18} />
-          <TextInput
-            placeholder="laksa, briyani, late supper…"
-            placeholderTextColor={palette.textMuted}
-            style={[
-              styles.searchInput,
-              { color: palette.text, fontFamily: "Nunito_400Regular", fontSize: 15 },
-            ]}
-            onFocus={() => navigation.navigate("SearchHome")}
-            onSubmitEditing={() => navigation.navigate("SearchResults")}
-          />
-        </View>
+        <Pressable onPress={() => navigation.navigate("SearchHome")}>
+          <View pointerEvents="none">
+            <Input
+              leftIcon={<Search color={palette.textMuted} size={18} />}
+              placeholder="laksa, briyani, late supper..."
+              editable={false}
+            />
+          </View>
+        </Pressable>
 
         <ScrollView
           horizontal
@@ -126,87 +116,63 @@ export function DiscoverHomeScreen() {
           ))}
         </ScrollView>
 
-        <View style={[styles.quickAccessRow, { gap: spacing[3] }]}>
-          <Pressable
-            style={[
-              styles.quickAccessButton,
-              {
-                borderColor: palette.border,
-                borderRadius: radii.md,
-                paddingVertical: spacing[4],
-              },
-            ]}
-            onPress={() => navigation.navigate("MainTabs", { screen: "Maps" })}
-          >
-            <AppText variant="h3" style={styles.quickAccessLabel}>
-              Stalls
-            </AppText>
-            <AppText variant="bodySmall" tone="secondary">
-              Browse by centre
-            </AppText>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.quickAccessButton,
-              {
-                borderColor: palette.border,
-                borderRadius: radii.md,
-                paddingVertical: spacing[4],
-              },
-            ]}
+        <View style={{ flexDirection: "row", gap: spacing[3] }}>
+          <QuickLinkCard
+            label="Stalls"
+            subtitle="Browse by centre"
+            onPress={() => navigation.navigate("Maps")}
+          />
+          <QuickLinkCard
+            label="Dishes"
+            subtitle="Jump to search"
             onPress={() => navigation.navigate("SearchHome")}
-          >
-            <AppText variant="h3" style={styles.quickAccessLabel}>
-              Dishes
-            </AppText>
-            <AppText variant="bodySmall" tone="secondary">
-              Jump to search
-            </AppText>
-          </Pressable>
+          />
         </View>
 
-        <Pressable onPress={handleDecideForMe}>
-          <Card
-            style={{
+        <Pressable
+          onPress={handleDecideForMe}
+          style={[
+            shadows.card,
+            {
               backgroundColor: palette.orange,
-              borderColor: palette.orange,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: spacing[4],
-            }}
-          >
+              borderRadius: radii.lg,
+              minHeight: 120,
+              overflow: "hidden",
+              padding: spacing[4],
+            },
+          ]}
+        >
+          <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3] }}>
             <View
-              style={[
-                styles.compassIcon,
-                {
-                  backgroundColor: "rgba(255,255,255,0.2)",
-                  borderRadius: radii.pill,
-                },
-              ]}
+              style={{
+                alignItems: "center",
+                backgroundColor: "rgba(255,255,255,0.16)",
+                borderRadius: radii.md,
+                height: 48,
+                justifyContent: "center",
+                width: 48,
+              }}
             >
-              <Compass color={palette.bg} size={28} />
+              <Compass color="#FFFFFF" size={24} />
             </View>
-            <View style={styles.flex}>
-              <AppText variant="h2" tone="inverse">
-                Decide For Me
-              </AppText>
-              <AppText variant="bodySmall" tone="inverse" style={{ opacity: 0.85 }}>
-                Let our AI curator pick your next meal
-              </AppText>
-            </View>
-          </Card>
+            <ChevronRight color="#FFFFFF" size={20} />
+          </View>
+          <View style={{ gap: spacing[1], marginTop: spacing[4] }}>
+            <AppText variant="h2" tone="inverse">
+              Decide For Me
+            </AppText>
+            <AppText variant="bodySmall" tone="inverse">
+              Let Hungry make the call based on your taste profile and what is nearby.
+            </AppText>
+          </View>
         </Pressable>
 
         <View style={{ gap: spacing[3] }}>
-          <View style={styles.sectionHeader}>
-            <View>
-              <AppText variant="micro" tone="accent" style={styles.sectionEyebrow}>
-                TRENDING RIGHT NOW
-              </AppText>
-              <AppText variant="h2">Recommended dishes</AppText>
-            </View>
-            <Sparkles color={palette.orange} size={18} />
-          </View>
+          <SectionHeader
+            title="Recommended dishes"
+            actionLabel="See all"
+            onPress={() => navigation.navigate("SearchResults")}
+          />
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -216,39 +182,39 @@ export function DiscoverHomeScreen() {
               <Pressable
                 key={dish.id}
                 onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
+                style={[
+                  shadows.card,
+                  {
+                    backgroundColor: palette.surface,
+                    borderRadius: radii.lg,
+                    overflow: "hidden",
+                    width: recommendedCardWidth,
+                  },
+                ]}
               >
-                <View
-                  style={[
-                    styles.dishCard,
-                    shadows.card,
-                    {
-                      borderRadius: radii.md,
-                      overflow: "hidden",
-                      width: 214,
-                    },
-                  ]}
-                >
-                  <Image
-                    source={{ uri: dish.imageUrl }}
-                    style={styles.dishImage}
-                    contentFit="cover"
-                  />
+                <Image
+                  source={{ uri: dish.imageUrl }}
+                  style={{ height: 170, width: "100%" }}
+                  contentFit="cover"
+                />
+                <View style={{ gap: spacing[1], padding: spacing[4] }}>
+                  <AppText variant="h3" numberOfLines={1}>
+                    {dish.name}
+                  </AppText>
+                  <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                    {dish.venueName}
+                  </AppText>
                   <View
-                    style={[
-                      styles.dishOverlay,
-                      {
-                        borderBottomLeftRadius: radii.md,
-                        borderBottomRightRadius: radii.md,
-                        padding: spacing[3],
-                        gap: 2,
-                      },
-                    ]}
+                    style={{
+                      alignItems: "center",
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      marginTop: spacing[2],
+                    }}
                   >
-                    <AppText variant="h3" tone="inverse" numberOfLines={1}>
-                      {dish.name}
-                    </AppText>
-                    <AppText variant="bodySmall" tone="inverse" style={{ opacity: 0.84 }}>
-                      {dish.tasteTags.slice(0, 2).join(" · ")}
+                    <AppText variant="price">S${dish.price.toFixed(2)}</AppText>
+                    <AppText variant="bodySmall" tone="secondary">
+                      {dish.rating.toFixed(1)} · {dish.distanceMeters}m
                     </AppText>
                   </View>
                 </View>
@@ -257,227 +223,205 @@ export function DiscoverHomeScreen() {
           </ScrollView>
         </View>
 
-        <Pressable onPress={() => navigation.navigate("Maps" as any)}>
-          <Card
+        <Pressable
+          onPress={() => navigation.navigate("Maps")}
+          style={{
+            backgroundColor: palette.bgSoft,
+            borderRadius: radii.lg,
+            gap: spacing[3],
+            overflow: "hidden",
+            padding: spacing[4],
+          }}
+        >
+          <View
             style={{
-              backgroundColor: palette.surfaceRaised,
-              borderColor: palette.border,
-              gap: spacing[3],
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "space-between",
             }}
           >
-            <View style={styles.sectionHeader}>
-              <View style={{ flex: 1, gap: spacing[1] }}>
-                <AppText variant="micro" tone="accent" style={styles.sectionEyebrow}>
-                  MAP BROWSE
-                </AppText>
-                <AppText variant="h2">Browse by building and floor</AppText>
-                <AppText variant="bodySmall" tone="secondary">
-                  Open the nearby map, tap a hawker centre or food court, then drill into the stalls on each level.
-                </AppText>
-              </View>
-              <MapPinned color={palette.orange} size={22} />
+            <View style={{ flex: 1, gap: spacing[1] }}>
+              <AppText variant="h2">Map browse</AppText>
+              <AppText variant="bodySmall" tone="secondary">
+                Open nearby centres, then zoom into the map for stalls around you.
+              </AppText>
             </View>
-
-            <View style={[styles.mapTeaser, { borderRadius: radii.lg, borderColor: palette.border }]}>
-              {mapBuildings.map((building, index) => (
-                <View
-                  key={building.id}
-                  style={[
-                    styles.mapPin,
-                    {
-                      backgroundColor: building.type === "food_court" ? palette.success : palette.orange,
-                      top: index === 0 ? "22%" : index === 1 ? "52%" : "32%",
-                      left: index === 0 ? "18%" : index === 1 ? "58%" : "72%",
-                    },
-                  ]}
-                />
-              ))}
-              <View style={[styles.mapSheet, shadows.card, { borderRadius: radii.md, padding: spacing[3] }]}>
-                <AppText variant="body">3 centres nearby</AppText>
-                <AppText variant="bodySmall" tone="secondary">
-                  Maxwell, Lau Pa Sat, and Amoy Street
-                </AppText>
-              </View>
+            <MapPinned color={palette.navy} size={20} />
+          </View>
+          <View
+            style={{
+              backgroundColor: palette.bgMuted,
+              borderRadius: radii.lg,
+              height: 172,
+              overflow: "hidden",
+              position: "relative",
+            }}
+          >
+            {buildings.slice(0, 3).map((building, index) => (
+              <View
+                key={building.id}
+                style={{
+                  backgroundColor:
+                    building.type === "food_court" ? palette.navy : palette.textMuted,
+                  borderRadius: radii.pill,
+                  height: 18,
+                  left: index === 0 ? "18%" : index === 1 ? "54%" : "72%",
+                  position: "absolute",
+                  top: index === 0 ? "26%" : index === 1 ? "54%" : "34%",
+                  width: 18,
+                }}
+              />
+            ))}
+            <View
+              style={[
+                shadows.card,
+                {
+                  backgroundColor: palette.surface,
+                  borderColor: palette.border,
+                  borderRadius: radii.md,
+                  borderWidth: 1,
+                  bottom: spacing[3],
+                  left: spacing[3],
+                  padding: spacing[3],
+                  position: "absolute",
+                  right: spacing[3],
+                },
+              ]}
+            >
+              <AppText variant="body">3 centres nearby</AppText>
+              <AppText variant="bodySmall" tone="secondary">
+                Maxwell, Lau Pa Sat, and Amoy Street are all within quick walking distance.
+              </AppText>
             </View>
-          </Card>
+          </View>
         </Pressable>
 
         <View style={{ gap: spacing[3] }}>
-          <View style={styles.sectionHeader}>
-            <AppText variant="h2">Stalls near you</AppText>
-            <Pressable onPress={() => navigation.navigate("MainTabs", { screen: "Maps" })}>
-              <AppText variant="body" tone="accent">
-                View map
-              </AppText>
-            </Pressable>
-          </View>
-
-          {stallVenues.map(({ building, venue, topDish }) => {
-            const displayDish = topDish;
-            const distance = displayDish ? formatDistance(displayDish.distanceMeters) : "";
-
-            return (
-              <Pressable
-                key={venue.id}
-                onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
-              >
-                <Card style={{ padding: 0, overflow: "hidden", gap: 0 }}>
-                  <View
-                    style={[
-                      styles.stallInfoRow,
-                      {
-                        padding: spacing[4],
-                        gap: spacing[3],
-                      },
-                    ]}
-                  >
+          <SectionHeader
+            title="Stalls near you"
+            actionLabel="View map"
+            onPress={() => navigation.navigate("Maps")}
+          />
+          {nearbyVenues.map(({ building, venue, topDish }) => (
+            <Pressable
+              key={venue.id}
+              onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
+              style={[
+                shadows.card,
+                {
+                  backgroundColor: palette.surface,
+                  borderRadius: radii.lg,
+                  overflow: "hidden",
+                },
+              ]}
+            >
+              <View style={{ flexDirection: "row", gap: spacing[3], padding: spacing[4] }}>
+                <Image
+                  source={{ uri: topDish?.imageUrl ?? undefined }}
+                  style={{ borderRadius: radii.md, height: 84, width: 84 }}
+                  contentFit="cover"
+                />
+                <View style={{ flex: 1, gap: spacing[1] }}>
+                  <AppText variant="h3">{venue.name}</AppText>
+                  <AppText variant="bodySmall" tone="secondary">
+                    {building.name} · {venue.floor} {venue.unitNumber}
+                  </AppText>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
                     <View
-                      style={[
-                        styles.stallAvatar,
-                        { backgroundColor: palette.orangeLight, borderRadius: radii.pill },
-                      ]}
-                    >
-                      <AppText variant="h3" tone="accent">
-                        {venue.name.charAt(0)}
-                      </AppText>
-                    </View>
-                    <View style={styles.flex}>
-                      <AppText variant="h3" numberOfLines={1}>
-                        {venue.name}
-                      </AppText>
-                      <AppText variant="bodySmall" tone="secondary">
-                        {building.name} {venue.unitNumber}
-                        {distance ? ` · ${distance}` : ""}
-                      </AppText>
-                    </View>
-                    <Badge label={venue.isOpen ? "Open" : "Closed"} tone={venue.isOpen ? "success" : "warning"} />
-                  </View>
-
-                  {displayDish ? (
-                    <Image
-                      source={{ uri: displayDish.imageUrl }}
-                      style={styles.stallDishImage}
-                      contentFit="cover"
+                      style={{
+                        backgroundColor: venue.isOpen ? palette.success : palette.error,
+                        borderRadius: radii.pill,
+                        height: 8,
+                        width: 8,
+                      }}
                     />
+                    <AppText variant="bodySmall" tone="secondary">
+                      {venue.isOpen ? "Open now" : "Closed"} · {venue.operatingHours}
+                    </AppText>
+                  </View>
+                  {topDish ? (
+                    <View
+                      style={{
+                        alignItems: "center",
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        marginTop: spacing[2],
+                      }}
+                    >
+                      <AppText variant="bodySmall">{topDish.name}</AppText>
+                      <AppText variant="price">S${topDish.price.toFixed(2)}</AppText>
+                    </View>
                   ) : null}
-                </Card>
-              </Pressable>
-            );
-          })}
+                </View>
+              </View>
+            </Pressable>
+          ))}
         </View>
-
-        <Pressable onPress={() => navigation.navigate("ReadsFeed")}>
-          <Card
-            style={{
-              backgroundColor: palette.surfaceRaised,
-              borderColor: palette.border,
-              gap: spacing[2],
-            }}
-          >
-            <AppText variant="micro" tone="accent" style={styles.sectionEyebrow}>
-              READS
-            </AppText>
-            <AppText variant="h2">Open local food stories</AppText>
-            <AppText variant="bodySmall" tone="secondary">
-              Browse article picks, save context for later, then jump back into the relevant stall.
-            </AppText>
-          </Card>
-        </Pressable>
       </ScrollView>
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  searchBar: {
-    alignItems: "center",
-    flexDirection: "row",
-    height: 48,
-  },
-  searchInput: {
-    flex: 1,
-  },
-  quickAccessRow: {
-    flexDirection: "row",
-  },
-  quickAccessButton: {
-    flex: 1,
-    alignItems: "center",
-    gap: 4,
-    borderWidth: 1,
-  },
-  quickAccessLabel: {
-    textAlign: "center",
-  },
-  compassIcon: {
-    alignItems: "center",
-    height: 56,
-    justifyContent: "center",
-    width: 56,
-  },
-  dishCard: {
-    backgroundColor: "#111827",
-  },
-  dishImage: {
-    height: 180,
-    width: "100%",
-  },
-  dishOverlay: {
-    backgroundColor: "rgba(17,24,39,0.46)",
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-  },
-  sectionHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  sectionEyebrow: {
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-  },
-  mapTeaser: {
-    backgroundColor: "#FFFDF9",
-    borderWidth: 1,
-    height: 176,
-    overflow: "hidden",
-    position: "relative",
-  },
-  mapPin: {
-    borderColor: "#FFFFFF",
-    borderRadius: 11,
-    borderWidth: 3,
-    height: 22,
-    position: "absolute",
-    width: 22,
-  },
-  mapSheet: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#E7DED4",
-    borderWidth: 1,
-    bottom: 12,
-    left: 12,
-    position: "absolute",
-    right: 12,
-  },
-  stallInfoRow: {
-    alignItems: "center",
-    flexDirection: "row",
-  },
-  stallAvatar: {
-    alignItems: "center",
-    height: 44,
-    justifyContent: "center",
-    width: 44,
-  },
-  stallDishImage: {
-    height: 140,
-    width: "100%",
-  },
-});
+function QuickLinkCard({
+  label,
+  subtitle,
+  onPress,
+}: {
+  label: string;
+  subtitle: string;
+  onPress: () => void;
+}) {
+  const { palette, radii, spacing } = useHungryTheme();
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        backgroundColor: palette.bgSoft,
+        borderRadius: radii.lg,
+        flex: 1,
+        gap: spacing[1],
+        minHeight: 108,
+        justifyContent: "flex-end",
+        padding: spacing[4],
+      }}
+    >
+      <AppText variant="h3">{label}</AppText>
+      <AppText variant="bodySmall" tone="secondary">
+        {subtitle}
+      </AppText>
+    </Pressable>
+  );
+}
+
+function SectionHeader({
+  title,
+  actionLabel,
+  onPress,
+}: {
+  title: string;
+  actionLabel?: string;
+  onPress?: () => void;
+}) {
+  const { spacing } = useHungryTheme();
+
+  return (
+    <View
+      style={{
+        alignItems: "center",
+        flexDirection: "row",
+        gap: spacing[2],
+        justifyContent: "space-between",
+      }}
+    >
+      <AppText variant="h2">{title}</AppText>
+      {actionLabel && onPress ? (
+        <Pressable onPress={onPress}>
+          <AppText variant="bodySmall" tone="secondary">
+            {actionLabel}
+          </AppText>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}

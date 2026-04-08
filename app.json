@@ -21,6 +21,7 @@
       "typedRoutes": false
     },
     "plugins": [
+      "expo-dev-client",
       "expo-font",
       "expo-web-browser"
     ]

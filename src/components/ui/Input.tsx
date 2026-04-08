@@ -22,13 +22,13 @@ export function Input({ label, helperText, leftIcon, style, ...props }: InputPro
       ) : null}
       <View
         style={[
-          styles.field,
-          {
-            backgroundColor: palette.bgMuted,
+        styles.field,
+        {
+            backgroundColor: palette.surface,
             borderColor: palette.border,
-            borderRadius: radii.sm,
+            borderRadius: radii.lg,
             gap: spacing[2],
-            minHeight: 48,
+            minHeight: 54,
             paddingHorizontal: spacing[4],
           },
         ]}
@@ -41,7 +41,7 @@ export function Input({ label, helperText, leftIcon, style, ...props }: InputPro
             {
               color: palette.text,
               flex: 1,
-              minHeight: 48,
+              minHeight: 54,
               paddingVertical: spacing[3],
             },
             style,

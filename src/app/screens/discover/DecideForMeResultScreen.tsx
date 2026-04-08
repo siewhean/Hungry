@@ -17,7 +17,7 @@ import { Sparkles } from "lucide-react-native";
 
 import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { mockRepository } from "@/lib/services/mock/repositories";
-import { blendedMatchScore, buildTasteVectorFromQuiz, TASTE_EMOJIS } from "@/lib/ai/tasteEngine";
+import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
@@ -28,13 +28,11 @@ import type { TasteVector } from "@/types/domain";
 
 function TasteMiniBar({
   label,
-  emoji,
   userVal,
   dishVal,
   accentColor,
 }: {
   label: string;
-  emoji: string;
   userVal: number;
   dishVal: number;
   accentColor: string;
@@ -46,9 +44,7 @@ function TasteMiniBar({
   return (
     <View style={{ flex: 1, minWidth: "30%", gap: 4 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <AppText variant="micro">
-          {emoji} {label}
-        </AppText>
+        <AppText variant="micro">{label}</AppText>
         <AppText variant="micro" tone="muted">
           {match}%
         </AppText>
@@ -156,10 +152,7 @@ export function DecideForMeResultScreen() {
           title="No match found"
           body="We couldn't find a dish that fits your taste profile right now. Try adjusting your preferences."
         />
-        <Button
-          label="Adjust taste filters"
-          onPress={() => navigation.navigate("TasteFilter")}
-        />
+        <Button label="Back to Discover" onPress={() => navigation.navigate("SearchHome")} />
       </Screen>
     );
   }
@@ -195,7 +188,7 @@ export function DecideForMeResultScreen() {
       : `A decent pick in your area — you may discover something new here.`;
 
   return (
-    <Screen title="Dish Roulette 🎲" subtitle="One dish, picked just for you — based on your taste DNA.">
+    <Screen title="Dish Roulette" subtitle="One dish, picked just for you based on your taste profile.">
       <View style={{ gap: spacing[5] }}>
         <Animated.View
           style={{
@@ -295,14 +288,13 @@ export function DecideForMeResultScreen() {
                 </AppText>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
                   {tasteDims.map((dim) => (
-                    <TasteMiniBar
-                      key={dim.key}
-                      label={dim.label}
-                      emoji={TASTE_EMOJIS[dim.key]}
-                      userVal={profile.tasteVector[dim.key]}
-                      dishVal={dish.tasteVector[dim.key]}
-                      accentColor={palette.orange}
-                    />
+                  <TasteMiniBar
+                    key={dim.key}
+                    label={TASTE_LABELS[dim.key]}
+                    userVal={profile.tasteVector[dim.key]}
+                    dishVal={dish.tasteVector[dim.key]}
+                    accentColor={palette.orange}
+                  />
                   ))}
                 </View>
               </View>
@@ -324,7 +316,7 @@ export function DecideForMeResultScreen() {
           }}
         />
         <Button
-          label="🎲  Try another dish"
+          label="Try another dish"
           variant="ghost"
           onPress={() => {
             const next = mockRepository.getDecideForMe(profile.tasteVector);

@@ -34,7 +34,7 @@ Root Stack (RootNavigator)
 │   │   ├── ReviewRating
 │   │   ├── ReviewTags
 │   │   └── ReviewCompose
-│   └── Profile       → ProfileStack (auth-gated via soft gate)
+│   └── Profile       → ProfileStack (auth-required)
 │       ├── ProfileHome
 │       ├── ProfileScreen
 │       ├── Settings
@@ -263,9 +263,9 @@ Source: `src/app/navigation/navigationTypes.ts`
 | Key | Value |
 |-----|-------|
 | File | `src/app/navigation/SoftGateSheet.tsx` |
-| Purpose | Non-blocking auth prompt — appears as bottom sheet overlay |
+| Purpose | Auth-required prompt — appears as bottom sheet overlay when a signed-out user reaches a protected route |
 | Trigger | `useUIStore.showSoftGate()` |
-| Actions | Login → navigate to `AuthStack/Login` · Continue as guest → dismiss |
+| Actions | Continue with Email / Google / Apple → navigate to `AuthStack/Login` |
 
 ---
 

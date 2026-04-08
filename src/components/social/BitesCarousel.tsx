@@ -26,10 +26,10 @@ const MOCK_BITES: Bite[] = [
     venueName: "Lao Wang Char Kway Teow",
     authorName: "Wei Ming",
     authorAvatarUrl: "https://i.pravatar.cc/64?img=11",
-    caption: "Smoky wok hei, perfectly charred with big juicy cockles 🔥",
+    caption: "Smoky wok hei, perfectly charred with big juicy cockles.",
     heartCount: 284,
     commentCount: 31,
-    tasteTag: "🌶️ Spicy",
+    tasteTag: "Spicy",
     createdAt: "2h ago",
   },
   {
@@ -43,7 +43,7 @@ const MOCK_BITES: Bite[] = [
     caption: "Still the gold standard after 10 years. Not a drop of oil wasted.",
     heartCount: 512,
     commentCount: 68,
-    tasteTag: "🧂 Savory",
+    tasteTag: "Savory",
     createdAt: "4h ago",
   },
   {
@@ -57,7 +57,7 @@ const MOCK_BITES: Bite[] = [
     caption: "D24 and Mao Shan Wang in one bowl. This is it.",
     heartCount: 173,
     commentCount: 22,
-    tasteTag: "🍯 Sweet",
+    tasteTag: "Sweet",
     createdAt: "6h ago",
   },
   {
@@ -71,7 +71,7 @@ const MOCK_BITES: Bite[] = [
     caption: "Thick coconut broth, tons of cockles. Queue was 20min — worth it.",
     heartCount: 349,
     commentCount: 45,
-    tasteTag: "🥩 Rich",
+    tasteTag: "Rich",
     createdAt: "8h ago",
   },
   {
@@ -85,7 +85,7 @@ const MOCK_BITES: Bite[] = [
     caption: "Freshly rolled popiah, good crunch, not stingy with the filling.",
     heartCount: 97,
     commentCount: 11,
-    tasteTag: "🌿 Aromatic",
+    tasteTag: "Aromatic",
     createdAt: "10h ago",
   },
   {
@@ -99,7 +99,7 @@ const MOCK_BITES: Bite[] = [
     caption: "Crispy edges, plump oysters. The chilli here is elite.",
     heartCount: 221,
     commentCount: 28,
-    tasteTag: "🌶️ Spicy",
+    tasteTag: "Spicy",
     createdAt: "12h ago",
   },
 ];
@@ -120,7 +120,7 @@ export function BitesCarousel({ bites = MOCK_BITES, showHeader = true }: BitesCa
     ({ item }: { item: Bite }) => (
       <BiteCard
         bite={item}
-        onPress={() => navigation.navigate("StallDetail", { venueId: item.dishId })}
+        onPress={() => navigation.navigate("DishDetail", { dishId: item.dishId })}
         onDishPress={() => navigation.navigate("DishDetail", { dishId: item.dishId })}
       />
     ),

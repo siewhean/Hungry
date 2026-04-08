@@ -1,9 +1,9 @@
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { Image } from "expo-image";
 import { Search as SearchIcon } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 
-import { AppText, Badge, Button, Card, Input, Screen } from "@/components/ui";
+import { AppText, Button, Input, Screen } from "@/components/ui";
 import { getDiscoverStallCollections, useSearchData } from "@/features/search/search";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -17,104 +17,84 @@ export function DishSearchScreen() {
   const profile = useProfileStore((state) => state.profile);
   const updateQuery = useSearchStore((state) => state.updateQuery);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
-  const collections = getDiscoverStallCollections(profile, filters.query);
+  const collections = getDiscoverStallCollections(profile, filters.query).slice(0, 4);
 
   return (
     <Screen
       title="Search"
-      subtitle="Search for dishes first, then open the stall only when the result looks worth it."
+      subtitle="Search by dish, then decide whether the stall is worth the walk."
     >
       <View style={{ gap: spacing[4] }}>
-        <Card style={{ gap: spacing[3] }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-            <SearchIcon color={palette.orange} size={18} />
-            <AppText variant="h3">Search for food or stalls</AppText>
-          </View>
-          <Input
-            placeholder="Laksa, satay, Tian Tian..."
-            value={filters.query}
-            onChangeText={updateQuery}
-            onSubmitEditing={() => navigation.navigate("SearchResults")}
-          />
-          <Button label="Search results" onPress={() => navigation.navigate("SearchResults")} />
-        </Card>
+        <Input
+          leftIcon={<SearchIcon color={palette.textMuted} size={18} />}
+          placeholder="Laksa, satay, Tian Tian..."
+          value={filters.query}
+          onChangeText={updateQuery}
+          onSubmitEditing={() => navigation.navigate("SearchResults")}
+        />
+        <Button label="View search results" onPress={() => navigation.navigate("SearchResults")} />
+        <Pressable
+          onPress={() => {
+            const match = collections[0]?.topDishes[0];
+            if (match) {
+              setDecideForMe(match);
+              navigation.navigate("DishDetail", { dishId: match.id });
+            }
+          }}
+          style={{
+            backgroundColor: palette.bgSoft,
+            borderRadius: radii.lg,
+            gap: spacing[1],
+            padding: spacing[4],
+          }}
+        >
+          <AppText variant="h3">Suggested for tonight</AppText>
+          <AppText variant="bodySmall" tone="secondary">
+            Start with a strong match first, then widen the search only if you need more options.
+          </AppText>
+        </Pressable>
 
-        <View style={{ flexDirection: "row", gap: spacing[3] }}>
-          <Button
-            label="Nearby stalls"
-            fullWidth={false}
-            onPress={() => updateQuery("")}
-          />
-          <Button
-            label="Dishes you'll like"
-            fullWidth={false}
-            variant="secondary"
-            onPress={() => {
-              const match = collections[0]?.topDishes[0];
-              if (match) {
-                setDecideForMe(match);
-                navigation.navigate("DishDetail", { dishId: match.id });
-              }
-            }}
-          />
-        </View>
-
-        <View style={{ gap: spacing[4], paddingBottom: spacing[8] }}>
+        <View style={{ gap: spacing[3] }}>
+          <AppText variant="h2">Stalls worth checking</AppText>
           {collections.map((collection) => (
-            <Card key={collection.venue.id} style={{ gap: spacing[3], padding: 0, overflow: "hidden" }}>
-              <Pressable
-                onPress={() => navigation.navigate("StallDetail", { venueId: collection.venue.id })}
-                style={{ flexDirection: "row", gap: spacing[3], padding: spacing[4] }}
-              >
+            <Pressable
+              key={collection.venue.id}
+              onPress={() => navigation.navigate("StallDetail", { venueId: collection.venue.id })}
+              style={{
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderRadius: radii.lg,
+                borderWidth: 1,
+                overflow: "hidden",
+              }}
+            >
+              <View style={{ flexDirection: "row", gap: spacing[3], padding: spacing[4] }}>
                 <Image
-                  source={{ uri: collection.posts[0]?.authorAvatarUrl }}
-                  style={{ borderRadius: radii.pill, height: 52, width: 52 }}
+                  source={{ uri: collection.posts[0]?.mediaUrl }}
+                  style={{ borderRadius: radii.md, height: 84, width: 84 }}
                   contentFit="cover"
                 />
-                <View style={{ flex: 1, gap: 4 }}>
-                  <AppText variant="h3">{collection.venue.name}</AppText>
+                <View style={{ flex: 1, gap: spacing[1] }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[2] }}>
+                    <AppText variant="h3" numberOfLines={1} style={{ flex: 1 }}>
+                      {collection.venue.name}
+                    </AppText>
+                    <AppText variant="bodySmall">
+                      {Math.round(collection.affinity * 100)}% match
+                    </AppText>
+                  </View>
                   <AppText variant="bodySmall" tone="secondary">
                     {collection.location} · {collection.venue.floor} {collection.venue.unitNumber}
                   </AppText>
+                  <AppText variant="bodySmall" tone="secondary" numberOfLines={2}>
+                    {collection.topDishes[0]?.name} · {collection.topDishes[0]?.tasteTags.slice(0, 2).join(" · ")}
+                  </AppText>
                 </View>
-                <Badge label={`${Math.round(collection.affinity * 100)}% match`} tone="orange" />
-              </Pressable>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{
-                  gap: spacing[3],
-                  paddingHorizontal: spacing[4],
-                  paddingBottom: spacing[4],
-                }}
-              >
-                {collection.posts.map((post) => (
-                  <Pressable
-                    key={post.id}
-                    onPress={() => navigation.navigate("DishDetail", { dishId: post.dishIds[0] })}
-                    style={{ gap: spacing[2], width: 220 }}
-                  >
-                    <Image
-                      source={{ uri: post.mediaUrl }}
-                      style={{ borderRadius: radii.md, height: 180, width: 220 }}
-                      contentFit="cover"
-                    />
-                    <View style={{ gap: 4 }}>
-                      <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[2] }}>
-                        <Badge label={post.mediaType === "video" ? "Video" : "Photo"} tone="amber" />
-                        <AppText variant="bodySmall" tone="secondary">
-                          {post.createdAt}
-                        </AppText>
-                      </View>
-                      <AppText numberOfLines={2}>{post.caption}</AppText>
-                    </View>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </Card>
+              </View>
+            </Pressable>
           ))}
         </View>
+
       </View>
     </Screen>
   );

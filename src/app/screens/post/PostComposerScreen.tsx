@@ -13,7 +13,6 @@ type Props = NativeStackScreenProps<RootStackParamList, "Post">;
 export function PostComposerScreen({ navigation }: Props) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
-  const showSoftGate = useUIStore((state) => state.showSoftGate);
   const showToast = useUIStore((state) => state.showToast);
   const [caption, setCaption] = useState("");
   const dish = useMemo(() => mockRepository.listPopularNearby()[0], []);
@@ -22,7 +21,7 @@ export function PostComposerScreen({ navigation }: Props) {
   const handlePublish = () => {
     if (!isAuthenticated) {
       setReturnRoute("Post");
-      showSoftGate();
+      navigation.navigate("AuthStack", { screen: "Login" });
       return;
     }
 
@@ -34,7 +33,7 @@ export function PostComposerScreen({ navigation }: Props) {
     <Screen title="Create post" subtitle="Share a quick dish update without turning the app into a creator platform.">
       <Card>
         <View style={{ gap: 12 }}>
-          <Badge label="Photo or video" tone="orange" />
+          <Badge label="Photo or video" tone="neutral" />
           <AppText variant="h3">{dish.name}</AppText>
           <AppText tone="secondary">{venue?.name ?? "Nearby stall"}</AppText>
           <Input
@@ -47,7 +46,7 @@ export function PostComposerScreen({ navigation }: Props) {
           />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {dish.tasteTags.slice(0, 3).map((tag) => (
-              <Badge key={tag} label={tag} tone="amber" />
+              <Badge key={tag} label={tag} tone="neutral" />
             ))}
           </View>
         </View>

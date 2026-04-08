@@ -190,13 +190,13 @@ export function buildTasteVectorFromQuiz(answers: Record<string, number>): Taste
 
 // ─── Display helpers ──────────────────────────────────────────────────────────
 
-export const TASTE_EMOJIS: Record<keyof TasteVector, string> = {
-  sweet: "🍯",
-  spicy: "🌶️",
-  sour: "🍋",
-  salty: "🧂",
-  rich: "🥩",
-  aromatic: "🌿",
+export const TASTE_LABELS: Record<keyof TasteVector, string> = {
+  sweet: "Sweet",
+  spicy: "Spicy",
+  sour: "Sour",
+  salty: "Salty",
+  rich: "Rich",
+  aromatic: "Aromatic",
 };
 
 export const TASTE_COLORS: Record<keyof TasteVector, string> = {

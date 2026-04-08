@@ -19,7 +19,7 @@ import { AppText, Badge, Button, Card, Screen } from "@/components/ui";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { singaporeBuildings } from "@/lib/geo/singaporeBuildings";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
-import { useSessionStore } from "@/store/useSessionStore";
+import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
@@ -116,7 +116,6 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
-  const continueAsGuest = useSessionStore((state) => state.continueAsGuest);
   const clearSession = useSessionStore((state) => state.clearSession);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
 
@@ -125,8 +124,6 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   const setSelectedFloor = useDiscoveryStore((state) => state.setSelectedFloor);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
 
-  // UI
-  const showSoftGate = useUIStore((state) => state.showSoftGate);
   const hideReviewSuccess = useUIStore((state) => state.hideReviewSuccess);
   const showToast = useUIStore((state) => state.showToast);
 
@@ -155,12 +152,11 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   const sampleArticle = useMemo(() => mockRepository.listBlogPosts()[0], []);
 
   // Helpers
-  const resetToGuest = () => {
+  const resetToSignedOut = () => {
     clearSession();
-    continueAsGuest();
     setReturnRoute(undefined);
     hideReviewSuccess();
-    showToast({ message: "Session → Guest", tone: "info" });
+    showToast({ message: "Session reset to signed out.", tone: "info" });
   };
   const resetToAuthIncomplete = () => {
     clearSession();
@@ -196,10 +192,10 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     navigation.navigate("BuildingDrillDown", { buildingId: building.id });
   };
 
-  const openProtected = (returnRoute: string, navigate: () => void) => {
+  const openProtected = (returnRoute: string | PendingRoute, navigate: () => void) => {
     if (!isAuthenticated) {
       setReturnRoute(returnRoute);
-      showSoftGate();
+      navigation.navigate("AuthStack", { screen: "Login" });
       return;
     }
     navigate();
@@ -220,14 +216,14 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
 
   return (
     <Screen
-      title="🛠 Developer Launcher"
-      subtitle={`v0.1.0 · ${isAuthenticated ? "Authenticated" : "Guest"} session`}
+      title="Developer Launcher"
+      subtitle={`v0.1.0 · ${isAuthenticated ? "Authenticated" : "Signed out"} session`}
     >
       <View style={{ gap: spacing[4] }}>
         {/* ── Quick header badges ────────────────────────── */}
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
           <Badge label="DEV ONLY" tone="warning" />
-          <Badge label={isAuthenticated ? "Auth'd" : "Guest"} tone={isAuthenticated ? "success" : "neutral"} />
+          <Badge label={isAuthenticated ? "Authenticated" : "Signed out"} tone={isAuthenticated ? "success" : "neutral"} />
           <Badge
             label={network === "live" ? "Live" : network === "slow" ? "Slow 3G" : "Offline"}
             tone={network === "live" ? "success" : network === "slow" ? "warning" : "error"}
@@ -235,7 +231,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         </View>
 
         <Button
-          label="▶  Open normal app flow (Splash)"
+          label="Open normal app flow"
           onPress={() => navigation.replace("Splash")}
         />
 
@@ -245,7 +241,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           subtitle="Reset session to a known state before testing flows."
           defaultExpanded
         >
-          <LaunchButton label="Guest / signed out" onPress={resetToGuest} />
+          <LaunchButton label="Signed out" onPress={resetToSignedOut} />
           <LaunchButton
             label="Authenticated · onboarding incomplete"
             onPress={resetToAuthIncomplete}
@@ -491,7 +487,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
               Search…
             </AppText>
           </View>
-          <ScrollView style={{ maxHeight: 320 }} nestedScrollEnabled>
+          <ScrollView style={{ maxHeight: 320 }} nestedScrollEnabled showsVerticalScrollIndicator={false}>
             <View style={{ gap: spacing[2] }}>
               {singaporeBuildings.map((building) => (
                 <Pressable
@@ -550,7 +546,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         {/* Safety footer */}
         <View style={{ alignItems: "center", paddingBottom: 40 }}>
           <AppText variant="micro" tone="muted">
-            🛠 Developer launcher — not visible in production builds
+            Developer launcher — not visible in production builds
           </AppText>
         </View>
       </View>

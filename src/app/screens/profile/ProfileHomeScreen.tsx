@@ -20,7 +20,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
   const handleSignOut = () => {
     signOut();
     const rootNavigation = (navigation.getParent?.()?.getParent?.() ?? navigation) as any;
-    rootNavigation.navigate("MainTabs", { screen: "Discover" });
+    rootNavigation.navigate("Splash");
   };
 
   return (
@@ -28,7 +28,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
       <Card>
         <View style={{ gap: 12 }}>
           <AppText variant="h2">{profile.displayName}</AppText>
-          <Badge label={profile.email ? profile.email : "Guest mode"} tone={profile.email ? "success" : "neutral"} />
+          <Badge label={profile.email ? profile.email : "Account required"} tone={profile.email ? "success" : "neutral"} />
           <ProfileRadarChart value={profile.tasteVector} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <Badge label={`${profile.stats.dishesReviewed} reviews`} tone="info" />

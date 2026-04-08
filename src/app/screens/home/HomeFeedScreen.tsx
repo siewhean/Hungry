@@ -1,16 +1,16 @@
 import type { ReactNode } from "react";
 import { useCallback, useMemo } from "react";
-import { FlatList, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { FlatList, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { Bookmark, Heart, MessageCircle, PlayCircle, Plus, Send } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, Card, Screen } from "@/components/ui";
+import { AppText, Card, EmptyState } from "@/components/ui";
 import { BitesCarousel } from "@/components/social";
 import { getHomeFeed, type HomeFeedItem } from "@/features/home/feed";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
-import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
 const IMAGE_HEIGHT = 430;
@@ -18,13 +18,16 @@ const ICON_SIZE = 22;
 
 export function HomeFeedScreen() {
   const navigation = useNavigation<any>();
+  const { width: screenWidth } = useWindowDimensions();
   const { palette, radii, spacing, shadows } = useHungryTheme();
+  const insets = useSafeAreaInsets();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
-  const showSoftGate = useUIStore((state) => state.showSoftGate);
   const profile = useProfileStore((state) => state.profile);
   const feed = getHomeFeed(profile);
   const stories = useMemo(() => feed.slice(0, 5), [feed]);
+  const isCompact = screenWidth < 390;
+  const socialRailWidth = isCompact ? 52 : 56;
 
   const navigateToStall = useCallback(
     (venueId: string) => navigation.navigate("StallDetail", { venueId }),
@@ -105,21 +108,16 @@ export function HomeFeedScreen() {
                       contentFit="cover"
                     />
                   </View>
-                  <View style={styles.flex}>
-                    <AppText variant="micro" tone="inverse">
-                      STALL DROP
-                    </AppText>
-                    <AppText
-                      variant="bodySmall"
-                      tone="inverse"
-                      numberOfLines={1}
-                      style={styles.accountText}
-                    >
-                      {item.authorName}
-                    </AppText>
-                  </View>
+                  <AppText
+                    variant="bodySmall"
+                    tone="inverse"
+                    numberOfLines={1}
+                    style={styles.accountText}
+                  >
+                    {item.authorName}
+                  </AppText>
                 </View>
-                <AppText variant="micro" tone="inverse">
+                <AppText variant="micro" tone="inverse" style={styles.timestamp}>
                   {item.createdAt}
                 </AppText>
               </View>
@@ -130,8 +128,10 @@ export function HomeFeedScreen() {
                   {
                     borderRadius: radii.lg,
                     gap: spacing[2],
+                    bottom: isCompact ? 18 : 20,
                     paddingVertical: spacing[3],
                     right: spacing[4],
+                    width: socialRailWidth,
                   },
                 ]}
               >
@@ -146,7 +146,7 @@ export function HomeFeedScreen() {
                   styles.imageTextOverlay,
                   {
                     left: spacing[4],
-                    right: spacing[4],
+                    right: spacing[4] + socialRailWidth + spacing[3],
                     bottom: spacing[4],
                     gap: spacing[2],
                   },
@@ -160,7 +160,11 @@ export function HomeFeedScreen() {
                 <AppText variant="h1" style={styles.overlayTitle} numberOfLines={2}>
                   {leadDish?.name ?? item.venue.name}
                 </AppText>
-                <AppText variant="bodySmall" style={styles.overlaySubtitle} numberOfLines={2}>
+                <AppText
+                  variant="bodySmall"
+                  style={styles.overlaySubtitle}
+                  numberOfLines={isCompact ? 1 : 2}
+                >
                   {item.caption}
                 </AppText>
               </View>
@@ -214,7 +218,18 @@ export function HomeFeedScreen() {
         </Card>
       );
     },
-    [navigateToDish, navigateToStall, palette.border, palette.orange, radii.lg, radii.pill, shadows.floating, spacing],
+    [
+      isCompact,
+      navigateToDish,
+      navigateToStall,
+      palette.border,
+      palette.orange,
+      radii.lg,
+      radii.pill,
+      shadows.floating,
+      socialRailWidth,
+      spacing,
+    ],
   );
 
   const listHeader = useMemo(
@@ -281,16 +296,23 @@ export function HomeFeedScreen() {
   );
 
   return (
-    <Screen scroll={false}>
-      <View style={{ flex: 1 }}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
+      <View style={{ flex: 1, paddingHorizontal: spacing[5], paddingTop: spacing[3] }}>
         <FlatList
           data={feed}
           keyExtractor={keyExtractor}
           ListHeaderComponent={listHeader}
           renderItem={renderItem}
+          ListEmptyComponent={
+            <EmptyState
+              title="No food stories yet"
+              body="The home feed is ready, but there are no items in the current mock feed."
+            />
+          }
+          style={{ flex: 1 }}
           contentContainerStyle={{
             gap: spacing[5],
-            paddingBottom: spacing[16],
+            paddingBottom: spacing[16] + insets.bottom + 88,
           }}
           showsVerticalScrollIndicator={false}
         />
@@ -299,7 +321,7 @@ export function HomeFeedScreen() {
           onPress={() => {
             if (!isAuthenticated) {
               setReturnRoute("Post");
-              showSoftGate();
+              navigation.navigate("AuthStack", { screen: "Login" });
               return;
             }
             navigation.navigate("Post");
@@ -309,7 +331,7 @@ export function HomeFeedScreen() {
             {
               backgroundColor: palette.orange,
               borderRadius: radii.pill,
-              bottom: spacing[5],
+              bottom: 72 + insets.bottom,
               right: spacing[5],
             },
             shadows.floating,
@@ -321,7 +343,7 @@ export function HomeFeedScreen() {
           </AppText>
         </Pressable>
       </View>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
@@ -347,6 +369,9 @@ function SocialAction({
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   imageContainer: {
     height: IMAGE_HEIGHT,
     width: "100%",
@@ -368,18 +393,22 @@ const styles = StyleSheet.create({
     position: "absolute",
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 12,
+    alignItems: "center",
+    gap: 8,
   },
   accountChip: {
     alignItems: "center",
     borderWidth: 1,
     flexDirection: "row",
     gap: 10,
-    maxWidth: "72%",
+    maxWidth: "54%",
   },
   accountText: {
     fontFamily: "Nunito_600SemiBold",
+  },
+  timestamp: {
+    minWidth: 56,
+    textAlign: "right",
   },
   flex: {
     flex: 1,
@@ -397,12 +426,10 @@ const styles = StyleSheet.create({
   },
   socialRail: {
     position: "absolute",
-    bottom: 20,
     alignItems: "center",
     backgroundColor: "rgba(17,24,39,0.26)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.14)",
-    width: 56,
   },
   socialAction: {
     alignItems: "center",

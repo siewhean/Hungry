@@ -1,18 +1,24 @@
 import { create } from "zustand";
 
+export interface PendingRoute {
+  name: string;
+  params?: Record<string, unknown>;
+}
+
 interface SessionState {
   isAuthenticated: boolean;
-  isGuest: boolean;
   hasCompletedOnboarding: boolean;
   hasSkippedTasteQuiz: boolean;
-  returnRoute?: string;
+  returnRoute?: string | PendingRoute;
   sessionExpired: boolean;
-  completeAuth: () => void;
+  completeAuth: (options?: {
+    completedOnboarding?: boolean;
+    skippedTasteQuiz?: boolean;
+  }) => void;
   completeOnboarding: (skippedQuiz?: boolean) => void;
-  continueAsGuest: () => void;
   expireSession: () => void;
   dismissSessionExpiry: () => void;
-  setReturnRoute: (route?: string) => void;
+  setReturnRoute: (route?: string | PendingRoute) => void;
   setSkippedTasteQuiz: (skipped: boolean) => void;
   signOut: () => void;
   clearSession: () => void;
@@ -20,32 +26,29 @@ interface SessionState {
 
 const initialState = {
   isAuthenticated: false,
-  isGuest: true,
   hasCompletedOnboarding: false,
-  hasSkippedTasteQuiz: true,
+  hasSkippedTasteQuiz: false,
   returnRoute: undefined,
   sessionExpired: false,
 } as const;
 
 export const useSessionStore = create<SessionState>((set) => ({
   ...initialState,
-  completeAuth: () =>
-    set({
+  completeAuth: (options) =>
+    set((state) => ({
       isAuthenticated: true,
-      isGuest: false,
+      hasCompletedOnboarding:
+        options?.completedOnboarding ?? state.hasCompletedOnboarding,
+      hasSkippedTasteQuiz:
+        options?.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
       sessionExpired: false,
-    }),
+    })),
   completeOnboarding: (skippedQuiz = false) =>
     set({
       hasCompletedOnboarding: true,
       hasSkippedTasteQuiz: skippedQuiz,
     }),
-  continueAsGuest: () =>
-    set({
-      isAuthenticated: false,
-      isGuest: true,
-    }),
-  expireSession: () => set({ sessionExpired: true, isAuthenticated: false, isGuest: true }),
+  expireSession: () => set({ sessionExpired: true, isAuthenticated: false }),
   dismissSessionExpiry: () => set({ sessionExpired: false }),
   setReturnRoute: (returnRoute) => set({ returnRoute }),
   setSkippedTasteQuiz: (hasSkippedTasteQuiz) => set({ hasSkippedTasteQuiz }),

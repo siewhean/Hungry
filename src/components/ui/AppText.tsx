@@ -38,7 +38,7 @@ export function AppText({
         : tone === "accent"
           ? palette.orange
           : tone === "inverse"
-            ? palette.bg
+            ? "#FFFFFF"
             : palette.text;
 
   return (
@@ -56,4 +56,3 @@ export function AppText({
     </Text>
   );
 }
-

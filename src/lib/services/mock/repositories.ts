@@ -10,6 +10,23 @@ import type {
   VenueSummary,
 } from "@/types/domain";
 
+const BUILDING_ID_ALIASES: Record<string, string[]> = {
+  "building-maxwell": ["hc-maxwell"],
+  "hc-maxwell": ["building-maxwell"],
+  "building-lau-pa-sat": ["hc-lau-pa-sat"],
+  "hc-lau-pa-sat": ["building-lau-pa-sat"],
+  "building-amoy": ["hc-amoy"],
+  "hc-amoy": ["building-amoy"],
+  "building-old-airport-road": ["hc-old-airport-road"],
+  "hc-old-airport-road": ["building-old-airport-road"],
+  "building-tiong-bahru": ["hc-tiong-bahru"],
+  "hc-tiong-bahru": ["building-tiong-bahru"],
+};
+
+function resolveBuildingIds(buildingId: string) {
+  return new Set([buildingId, ...(BUILDING_ID_ALIASES[buildingId] ?? [])]);
+}
+
 function distanceScore(distanceMeters: number) {
   return Math.max(0, 1 - distanceMeters / 800);
 }
@@ -39,7 +56,8 @@ export const mockRepository = {
     return buildings;
   },
   listVenuesByBuilding(buildingId: string): VenueSummary[] {
-    return venues.filter((venue) => venue.buildingId === buildingId);
+    const buildingIds = resolveBuildingIds(buildingId);
+    return venues.filter((venue) => buildingIds.has(venue.buildingId));
   },
   getVenueById(venueId: string) {
     return venues.find((venue) => venue.id === venueId);

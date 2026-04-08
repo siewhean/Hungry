@@ -227,7 +227,6 @@ interface StallPost {
 ```ts
 interface AppSession {
   isAuthenticated: boolean
-  isGuest: boolean
   hasCompletedOnboarding: boolean
   hasSkippedTasteQuiz: boolean
   returnRoute?: string
@@ -274,7 +273,7 @@ Source: `src/lib/services/mock/data.ts`
 |--------|-------|-------|
 | `blogPosts` | 2 | EatBook, SethLui |
 | `userProfile` | 1 | Demo authenticated user (Wei Ming) |
-| `guestProfile` | 1 | Guest — neutral taste vector, no favourites |
+| `guestProfile` | 1 | Signed-out fallback fixture — neutral taste vector, no favourites |
 | `stallPosts` | 4 | One per open venue |
 
 ---
@@ -285,13 +284,12 @@ Source: `src/lib/services/mock/data.ts`
 
 | Key | Type | Notes |
 |-----|------|-------|
-| `isAuthenticated` | boolean | Guest = false |
-| `isGuest` | boolean | |
+| `isAuthenticated` | boolean | Signed out = false |
 | `hasCompletedOnboarding` | boolean | |
 | `hasSkippedTasteQuiz` | boolean | |
 | `sessionExpired` | boolean | Triggers redirect to Login |
 
-**Actions:** `completeAuth()` · `completeOnboarding(skippedQuiz?)` · `continueAsGuest()` · `expireSession()` · `signOut()` · `setReturnRoute(route?)`
+**Actions:** `completeAuth(options?)` · `completeOnboarding(skippedQuiz?)` · `expireSession()` · `signOut()` · `setReturnRoute(route?)`
 
 ### useProfileStore
 

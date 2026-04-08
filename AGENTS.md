@@ -53,7 +53,7 @@
 | Market | Singapore — hawker centres, food courts, restaurants |
 | Core proposition | **Dish-first** food discovery. Users find dishes they want, not just venues. |
 | Taste model | 6-axis vector: `sweet · spicy · sour · salty · rich · aromatic` (each 0–10) |
-| Auth model | Guest (browse) → soft-gate → Auth → Onboarding → full access |
+| Auth model | Splash → Auth → Onboarding → full access |
 
 ---
 
@@ -80,7 +80,7 @@ Level 4 — Current Sprint Goal
 | Path | Risk |
 |------|------|
 | `src/app/navigation/RootNavigator.tsx` | Navigation wiring — auth gate, tab order, deep links |
-| `src/store/useSessionStore.ts` | Auth state machine — guest/auth/onboarding transitions |
+| `src/store/useSessionStore.ts` | Auth state machine — signed-out/auth/onboarding transitions |
 | `src/lib/services/mock/data.ts` | Single source of fixture truth |
 | `src/types/domain.ts` | Canonical type definitions |
 | `src/theme/tokens.ts` | Design token source of truth |

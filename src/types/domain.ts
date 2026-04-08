@@ -168,8 +168,7 @@ export interface StallPost {
 
 export interface AppSession {
   isAuthenticated: boolean;
-  isGuest: boolean;
   hasCompletedOnboarding: boolean;
   hasSkippedTasteQuiz: boolean;
-  returnRoute?: string;
+  returnRoute?: string | { name: string; params?: Record<string, unknown> };
 }

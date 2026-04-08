@@ -8,7 +8,6 @@ import { AppText, Badge, Card, Input, Screen } from "@/components/ui";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSessionStore } from "@/store/useSessionStore";
-import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { ReviewStackParamList } from "./ReviewStack";
 
@@ -16,9 +15,9 @@ type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewHub">;
 
 export function ReviewHubScreen({ navigation }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
+  const rootNavigation = navigation.getParent()?.getParent();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
-  const showSoftGate = useUIStore((state) => state.showSoftGate);
   const selectDish = useReviewDraftStore((state) => state.selectDish);
   const [query, setQuery] = useState("");
   const venues = mockRepository
@@ -31,9 +30,9 @@ export function ReviewHubScreen({ navigation }: Props) {
   useEffect(() => {
     if (!isAuthenticated) {
       setReturnRoute("Review");
-      showSoftGate();
+      rootNavigation?.navigate("AuthStack", { screen: "Login" });
     }
-  }, [isAuthenticated, setReturnRoute, showSoftGate]);
+  }, [isAuthenticated, rootNavigation, setReturnRoute]);
 
   if (!isAuthenticated) {
     return (
@@ -42,7 +41,7 @@ export function ReviewHubScreen({ navigation }: Props) {
           <View style={{ gap: spacing[3] }}>
             <AppText variant="h3">Reviews need an account</AppText>
             <AppText tone="secondary">
-              Discovery stays open to guests, but posting reviews is only enabled after sign-in.
+              Sign in first, then attach each review to your Hungry profile and review history.
             </AppText>
           </View>
         </Card>
@@ -59,13 +58,16 @@ export function ReviewHubScreen({ navigation }: Props) {
       <FlatList
         data={venues}
         keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[8] }}
         ListHeaderComponent={
           <View style={{ gap: spacing[4], paddingBottom: spacing[4] }}>
             <View
               style={{
                 alignSelf: "flex-start",
-                backgroundColor: palette.orangeLight,
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderWidth: 1,
                 borderRadius: radii.pill,
                 paddingHorizontal: spacing[3],
                 paddingVertical: spacing[1],
@@ -121,7 +123,7 @@ export function ReviewHubScreen({ navigation }: Props) {
                         navigation.navigate("ReviewRating", { venueId: item.id, dishId: dish.id });
                       }}
                     >
-                      <Badge label={dish.name} tone="orange" />
+                      <Badge label={dish.name} tone="neutral" />
                     </Pressable>
                   ))}
                 </View>

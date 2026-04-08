@@ -14,15 +14,23 @@ export function AuthScreenShell({ children, title, subtitle, footer }: PropsWith
   const { spacing } = useHungryTheme();
 
   return (
-    <Screen title={title} subtitle={subtitle} scroll>
-      <View style={{ gap: spacing[4] }}>
-        {children}
+    <Screen scroll>
+      <View style={{ gap: spacing[5] }}>
+        <View style={{ gap: spacing[2] }}>
+          <AppText variant="micro" tone="accent">
+            HUNGRY
+          </AppText>
+          <AppText variant="h1">{title}</AppText>
+          <AppText tone="secondary">{subtitle}</AppText>
+        </View>
+        <View style={{ gap: spacing[4] }}>
+          {children}
+        </View>
         {footer ? <View style={{ gap: spacing[3] }}>{footer}</View> : null}
         <AppText variant="bodySmall" tone="muted">
-          Hungry keeps this flow simple. You can finish setup in a few steps.
+          Hungry keeps this flow simple so you can get into dish discovery quickly.
         </AppText>
       </View>
     </Screen>
   );
 }
-

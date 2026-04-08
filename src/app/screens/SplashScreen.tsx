@@ -92,6 +92,14 @@ export function SplashScreen({ navigation }: Props) {
 
     // Navigate after full animation
     const timer = setTimeout(() => {
+      if (!isAuthenticated) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+        });
+        return;
+      }
+
       if (!hasCompletedOnboarding) {
         navigation.reset({
           index: 0,
@@ -105,14 +113,14 @@ export function SplashScreen({ navigation }: Props) {
         routes: [
           {
             name: "MainTabs",
-            params: { screen: isAuthenticated ? "Discover" : "Discover" },
+            params: { screen: "Discover" },
           },
         ],
       });
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [hasCompletedOnboarding, navigation]);
+  }, [hasCompletedOnboarding, isAuthenticated, navigation]);
 
   return (
     <View style={[styles.root, { backgroundColor: palette.bg }]}>

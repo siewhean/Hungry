@@ -41,7 +41,7 @@ export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<MainTabParamList>;
   ReadsFeed: undefined;
   SearchHome: undefined;
-  MapZoomedIn: undefined;
+  MapZoomedIn: { buildingId?: string } | undefined;
   Post: undefined;
   EditProfile: undefined;
   BuildingDrillDown: { buildingId: string };

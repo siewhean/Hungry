@@ -6,7 +6,7 @@ import { Button, AppText } from "@/components/ui";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
-import type { TasteKey, TasteVector } from "@/types/domain";
+import type { TasteVector } from "@/types/domain";
 import { OnboardingScreenShell } from "./OnboardingScreenShell";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 
@@ -14,32 +14,23 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteQuiz">;
 
 const INITIAL: TasteVector = { sweet: 5, spicy: 6, sour: 4, salty: 5, rich: 6, aromatic: 6 };
 
-const EMOJIS: Record<TasteKey, { low: string; mid: string; high: string }> = {
-  sweet: { low: "🙅", mid: "😐", high: "🍯" },
-  spicy: { low: "😶", mid: "🌶", high: "🔥" },
-  sour: { low: "😐", mid: "🍋", high: "😬" },
-  salty: { low: "💧", mid: "🧂", high: "🫙" },
-  rich: { low: "🥗", mid: "🍲", high: "🧈" },
-  aromatic: { low: "😑", mid: "🌿", high: "💐" },
-};
-
-const QUESTIONS: Record<TasteKey, string> = {
+const QUESTIONS = {
   sweet: "How much do you love sweet food?",
   spicy: "How spicy do you like your food?",
   sour: "Can you handle a strong sour punch?",
   salty: "How salty do you prefer your dishes?",
   rich: "Do you prefer rich, heavy flavours?",
   aromatic: "How important are fragrant herbs and spices?",
-};
+} as const;
 
-const LABELS: Record<TasteKey, [string, string, string]> = {
+const LABELS = {
   sweet: ["Not sweet", "Balanced", "Very sweet"],
   spicy: ["Mild please", "Some heat", "Bring the fire"],
   sour: ["Avoid sour", "A little", "Love it sour"],
   salty: ["Low sodium", "Just right", "Salt everything"],
   rich: ["Light & fresh", "Mix", "Rich & hearty"],
   aromatic: ["Plain", "Moderate", "Very fragrant"],
-};
+} as const;
 
 const STEPS = TASTE_DIMENSIONS.map((d) => d.key);
 
@@ -54,7 +45,6 @@ export function TasteQuizScreen({ navigation }: Props) {
 
   const currentKey = STEPS[step];
   const dimension = TASTE_DIMENSIONS[step];
-  const currentEmoji = EMOJIS[currentKey];
   const [low, mid, high] = LABELS[currentKey];
 
   const progress = (step + 1) / STEPS.length;
@@ -108,10 +98,15 @@ export function TasteQuizScreen({ navigation }: Props) {
 
       {/* Question card */}
       <Animated.View style={[styles.card, { backgroundColor: palette.surface, borderRadius: radii.lg, opacity: fadeAnim }]}>
-        {/* Emoji */}
-        <View style={styles.emojiRow}>
-          <AppText style={styles.emojiLarge}>
-            {currentValue <= 3 ? currentEmoji.low : currentValue <= 6 ? currentEmoji.mid : currentEmoji.high}
+        <View style={styles.legendRow}>
+          <AppText variant="micro" tone="muted">
+            LOW
+          </AppText>
+          <AppText variant="micro" tone="muted">
+            BALANCED
+          </AppText>
+          <AppText variant="micro" tone="muted">
+            HIGH
           </AppText>
         </View>
 
@@ -197,11 +192,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 28,
   },
-  emojiRow: {
-    alignItems: "center",
-  },
-  emojiLarge: {
-    fontSize: 52,
+  legendRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
   },
   question: {
     textAlign: "center",

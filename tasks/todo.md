@@ -131,6 +131,13 @@ This document is the shared execution contract for both Claude and Codex.
 - [ ] Planning artifacts are committed and discoverable.
 - [ ] Every in-progress build task maps to a planned requirement.
 
+### Phase 1 mini-plan — 2026-04-08 marketing launch system
+- [x] Draft a repo-grounded product marketing context, positioning, and messaging system for Hungry.
+- [x] Create a dedicated `marketing/` workspace for strategy, website, social, video, outreach, and brand-asset rules.
+- [x] Write the waitlist page copy and wireframe contract for a consumer-first launch destination.
+- [x] Write a 30-day organic content calendar plus reusable cross-channel copy templates.
+- [x] Define creator, press, and hawker outreach plus AI-assisted video briefs and prompt packs.
+
 ---
 
 ## Phase 2 — Core App Hardening (Current Build Focus)
@@ -145,6 +152,21 @@ This document is the shared execution contract for both Claude and Codex.
 - [ ] Add or refine loading, error, and empty states where missing.
 - [ ] Keep navigation contracts, mock repositories, and type safety aligned after each patch.
 - [ ] Run and record verification commands after each batch.
+
+### Phase 2 mini-plan — 2026-04-08 Figma-fidelity hardening
+- [x] Remove guest browsing from the session model, auth flow, soft gates, and developer launcher.
+- [x] Make signed-out launch always resolve Splash -> Auth before MainTabs.
+- [x] Rebuild shared input/button/chip/badge patterns to match the approved warm neutral Figma system.
+- [x] Restyle Discover/Search and Stall Detail to match the Figma hierarchy and remove low-contrast pill/card drift.
+- [x] Remove emoji usage from runtime UI, onboarding, social sample content, and share labels.
+- [x] Run typecheck plus multi-device QA review notes for iPhone 16e, 16, 16 Pro, 16 Pro Max, and one Android sanity pass.
+
+### Phase 2 mini-plan — 2026-04-08 Maps + building layout
+- [x] Replace the fake `Maps` tab surface with a token-aware Mapbox wrapper plus a repo-visible fallback preview.
+- [x] Rebuild `HomeMapScreen` to match the Figma map composition with live building pins, current-location affordance, and selected-building sheet.
+- [x] Turn `MapZoomedIn` into a real focused-building map route instead of a placeholder card.
+- [x] Wire `BuildingDrillDown` to the real screen and rebuild it around the Figma drill-down flow.
+- [x] Add a demo Maxwell `L2` floor-plan plus mock venues/dishes so the floor switch and menu preview are visible in repo runtime.
 
 ### Done criteria
 - [ ] Critical user journeys run end-to-end in mock mode.
@@ -196,6 +218,12 @@ This document is the shared execution contract for both Claude and Codex.
 - 2026-04-05 | Codex | Updated project-fit task requirements, phased Claude/Codex ownership checklist, and planning cadence. | Status: completed for documentation update. | Blockers: none. | Next: keep this checklist current during implementation sessions.
 - 2026-04-06 | Codex | Audited app screen inventory, research docs, and design artifacts; created Stitch-ready design-system and screen-brief files under `design/stitch/`. | Status: completed for design planning artifact. | Blockers: direct Stitch editing is not available in this environment. | Next: generate remaining screens in Stitch using `design/stitch/DESIGN.md` and `design/stitch/STITCH_BRIEFS.md`, then sync the chosen outputs back into Figma and code.
 - 2026-04-08 | Codex | Reconciled repo housekeeping and status docs with the actual codebase: removed stale `AGENT.md`, archived older design iterations under `design/archive/`, cleaned local artifacts, and updated instruction references. | Status: completed for repository cleanup and documentation alignment. | Blockers: none. | Next: use Phase 2 as the active workstream and keep verification notes current as UI hardening continues.
+- 2026-04-08 | Codex | Started Figma-fidelity hardening pass: auth-first shell, guest-flow removal, emoji purge, shared primitive restyle, and device-matrix QA prep. | Status: in progress. | Blockers: final visual fidelity depends on runtime verification against simulators after code changes. | Next: update auth/session flow, restyle Search and Stall Detail to match Figma, then run multi-device QA.
+- 2026-04-08 | Codex | Completed the Figma-fidelity hardening pass for auth/session, shared primitives, Discover/Search, Stall Detail, and runtime emoji removal. | Status: completed for the code pass with review notes recorded. | Blockers: simulator access from this sandbox is limited because CoreSimulatorService is unavailable here, and `npm run test` is not defined in package.json. | Next: run on-device or local simulator visual smoke tests outside the sandbox, then continue with Home/Reads/Profile polish if needed.
+- 2026-04-08 | Codex | Continued the hardening pass: removed the remaining runtime soft-gate path, made signed-out protected actions route directly into auth, aligned login methods to the same onboarding-first flow, prevented review-compose from falling back to the wrong dish, tightened Discover/Search composition, reduced pill-heavy styling, and improved Home/Stall Detail layout behavior. | Status: completed for this implementation batch. | Blockers: the remaining work is visual polish, especially Home feed overlay density, tighter Search fidelity, and flatter Stall Detail composition. | Next: run local simulator checks on iPhone 16e/16/16 Pro/16 Pro Max and Android, then finish the remaining visual polish based on screenshots instead of code-only review.
+- 2026-04-08 | Codex | Added the Hungry marketing launch workspace under `marketing/` with positioning, waitlist copy, wireframe, channel playbook, 30-day calendar, copy pack, video briefs, AI prompt pack, outreach playbook, and brand/visual rules. | Status: completed for documentation implementation. | Blockers: the sandbox can read `.agents/` but cannot write into it, so the product marketing context draft currently lives at `marketing/strategy/product-marketing-context.md` instead of `.agents/product-marketing-context.md`. | Next: if a less restricted local environment is available, mirror that file into `.agents/` so other marketing skills can consume it automatically.
+- 2026-04-08 | Codex | Implemented the Figma-based maps deliverables: real `MapSurface` wrapper with token-aware fallback, rebuilt `Maps` and `MapZoomedIn`, rewired `BuildingDrillDown`, bridged Singapore/mock building IDs, and added a demo Maxwell `L2` floor plan with matching mock venues and dishes. | Status: completed for the code pass. | Blockers: live Mapbox rendering still requires `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` in the local environment; without it, the repo falls back to a static coordinate preview. | Next: run the app locally on simulator/device to visually inspect the live map route and the Maxwell drill-down flow with a real token configured.
+- 2026-04-08 | Codex | Fixed the Home route container to render as a direct safe-area feed surface, added a feed empty state, and removed visible scroll indicators from shared screen wrappers plus remaining explicit scrollable surfaces. | Status: completed for this UI hardening patch. | Blockers: runtime simulator verification is still needed to confirm the Home tab now renders correctly on-device. | Next: open the app locally and verify Home, Review, Search Results, Dish Detail, and the developer launcher no longer show scrollbars.
 
 ---
 
@@ -210,6 +238,14 @@ Add dated command outputs under each active workstream when run.
 ### Verification Notes
 - 2026-04-05: `npm run typecheck` passed after task-document updates.
 - 2026-04-08: Repository audit shows implemented screens for Splash, Auth, Onboarding, Home, Discover, Search, Maps, Review, Profile, Reads, Offline, NotFound, and developer utilities are present under `src/app/screens/`.
+- 2026-04-08: `npm run typecheck` passed after the Figma-fidelity hardening patch set.
+- 2026-04-08: `npm run typecheck` passed again after removing the runtime soft-gate path and tightening Discover/Search/Home/Stall Detail.
+- 2026-04-08: `npm run test` could not run because `package.json` does not define a `test` script.
+- 2026-04-08: Device QA was completed as a code-based review matrix for iPhone 16e, 16, 16 Pro, 16 Pro Max, and Android sanity because `xcrun simctl` could not access CoreSimulatorService from this sandbox.
+- 2026-04-08: Marketing launch documentation was added under `marketing/`; the sandbox could not write into `.agents/`, so the repo-grounded product marketing context is stored at `marketing/strategy/product-marketing-context.md`.
+- 2026-04-08: `npm run typecheck` passed after the marketing launch documentation, README index, and task-log updates.
+- 2026-04-08: `npm run typecheck` passed after the map deliverable, route rewiring, Maxwell demo L2 floor plan, and building-layout drill-down implementation.
+- 2026-04-08: `npm run typecheck` passed after the Home feed container fix and app-wide scrollbar suppression cleanup.
 
 ---
 

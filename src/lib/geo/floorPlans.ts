@@ -46,6 +46,15 @@ const maxwellL1Stalls: StallPolygon[] = [
   { stallId: "maxwell-15", unitNumber: "#01-95", polygon: stallRect(370, 150, 80, 60), status: "open", label: "Popiah & Kueh Pie Tee" },
 ];
 
+const maxwellL2Stalls: StallPolygon[] = [
+  { stallId: "maxwell-l2-01", unitNumber: "#02-14", polygon: stallRect(20, 20, 110, 70), status: "open", venueId: "venue-maxwell-peanut-pancake", label: "Heritage Peanut Pancake" },
+  { stallId: "maxwell-l2-02", unitNumber: "#02-21", polygon: stallRect(150, 20, 110, 70), status: "open", venueId: "venue-maxwell-porridge", label: "Night Owl Teochew Porridge" },
+  { stallId: "maxwell-l2-03", unitNumber: "#02-28", polygon: stallRect(280, 20, 110, 70), status: "non_food", label: "Drinks Counter" },
+  { stallId: "maxwell-l2-04", unitNumber: "#02-34", polygon: stallRect(20, 110, 110, 70), status: "closed", label: "Pop-up Kiosk" },
+  { stallId: "maxwell-l2-05", unitNumber: "#02-40", polygon: stallRect(150, 110, 110, 70), status: "open", label: "Dessert Prep" },
+  { stallId: "maxwell-l2-06", unitNumber: "#02-48", polygon: stallRect(280, 110, 110, 70), status: "non_food", label: "Seating Deck" },
+];
+
 // ─── Old Airport Road — L1 (larger grid) ─────────────────────────────────────
 
 const oarL1Stalls: StallPolygon[] = [
@@ -153,6 +162,13 @@ export const floorPlans: Record<string, FloorPlan> = {
     canvasWidth: 460,
     canvasHeight: 220,
     stalls: maxwellL1Stalls,
+  },
+  "hc-maxwell:L2": {
+    buildingId: "hc-maxwell",
+    floor: "L2",
+    canvasWidth: 410,
+    canvasHeight: 200,
+    stalls: maxwellL2Stalls,
   },
   "hc-old-airport-road:L1": {
     buildingId: "hc-old-airport-road",

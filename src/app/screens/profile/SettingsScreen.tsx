@@ -16,7 +16,7 @@ export function SettingsScreen() {
   const handleSignOut = () => {
     signOut();
     const rootNavigation = navigation.getParent?.()?.getParent?.() ?? navigation;
-    rootNavigation.navigate("MainTabs", { screen: "Discover" });
+    rootNavigation.navigate("Splash");
   };
 
   return (

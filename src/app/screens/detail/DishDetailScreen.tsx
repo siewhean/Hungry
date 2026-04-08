@@ -20,7 +20,6 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const showSoftGate = useUIStore((state) => state.showSoftGate);
   const showToast = useUIStore((state) => state.showToast);
   const { palette, radii, spacing } = useHungryTheme();
 
@@ -37,13 +36,16 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const handleShare = () => {
     Share.share({
       title: `${dish.name} at ${venue.name}`,
-      message: `Check out ${dish.name} at ${venue.name} (${venue.unitNumber}) on Hungry! 🍽️`,
+      message: `Check out ${dish.name} at ${venue.name} (${venue.unitNumber}) on Hungry.`,
     });
   };
 
   return (
     <Screen scroll={false}>
-      <ScrollView contentContainerStyle={{ gap: spacing[5], paddingBottom: spacing[8] }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ gap: spacing[5], paddingBottom: spacing[8] }}
+      >
         {/* Hero image */}
         <Image
           source={dish.imageUrl}
@@ -139,11 +141,11 @@ export function DishDetailScreen({ navigation, route }: Props) {
         {/* Action buttons */}
         <View style={{ gap: spacing[3] }}>
           <Button
-            label={isSaved ? "❤️  Saved" : "Save favourite"}
+            label={isSaved ? "Saved" : "Save favourite"}
             onPress={() => {
               if (!isAuthenticated) {
-                setReturnRoute("Profile");
-                showSoftGate();
+                setReturnRoute({ name: "DishDetail", params: { dishId: dish.id } });
+                navigation.navigate("AuthStack", { screen: "Login" });
                 return;
               }
               toggleFavourite(dish);
@@ -158,8 +160,14 @@ export function DishDetailScreen({ navigation, route }: Props) {
             variant="secondary"
             onPress={() => {
               if (!isAuthenticated) {
-                setReturnRoute("Review");
-                showSoftGate();
+                setReturnRoute({
+                  name: "ReviewStack",
+                  params: {
+                    screen: "ReviewRating",
+                    params: { venueId: venue.id, dishId: dish.id },
+                  },
+                });
+                navigation.navigate("AuthStack", { screen: "Login" });
                 return;
               }
               navigation.navigate("ReviewStack", {

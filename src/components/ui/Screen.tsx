@@ -26,47 +26,54 @@ export function Screen({
       {scroll ? (
         <ScrollView
           style={styles.flex}
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.content,
             {
+              alignItems: "center",
               paddingHorizontal: spacing[5],
-              paddingBottom: spacing[8],
-              gap: spacing[5],
+              paddingBottom: spacing[12],
+              paddingTop: spacing[3],
             },
           ]}
         >
-          {(title || headerRight) && (
-            <View style={styles.header}>
-              <View style={styles.headerCopy}>
-                {title ? <AppText variant="h1">{title}</AppText> : null}
-                {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}
+          <View style={[styles.inner, { gap: spacing[5] }]}>
+            {(title || headerRight) && (
+              <View style={styles.header}>
+                <View style={styles.headerCopy}>
+                  {title ? <AppText variant="h1">{title}</AppText> : null}
+                  {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}
+                </View>
+                {headerRight}
               </View>
-              {headerRight}
-            </View>
-          )}
-          {children}
+            )}
+            {children}
+          </View>
         </ScrollView>
       ) : (
         <View
           style={[
             styles.flex,
             {
+              alignItems: "center",
               paddingHorizontal: spacing[5],
-              paddingBottom: spacing[8],
-              gap: spacing[5],
+              paddingBottom: spacing[12],
+              paddingTop: spacing[3],
             },
           ]}
         >
-          {(title || headerRight) && (
-            <View style={styles.header}>
-              <View style={styles.headerCopy}>
-                {title ? <AppText variant="h1">{title}</AppText> : null}
-                {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}
+          <View style={[styles.inner, { gap: spacing[5] }]}>
+            {(title || headerRight) && (
+              <View style={styles.header}>
+                <View style={styles.headerCopy}>
+                  {title ? <AppText variant="h1">{title}</AppText> : null}
+                  {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}
+                </View>
+                {headerRight}
               </View>
-              {headerRight}
-            </View>
-          )}
-          {children}
+            )}
+            {children}
+          </View>
         </View>
       )}
     </SafeAreaView>
@@ -82,6 +89,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
+  },
+  inner: {
+    maxWidth: 440,
+    width: "100%",
   },
   header: {
     alignItems: "flex-start",

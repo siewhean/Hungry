@@ -10,6 +10,7 @@ import {
   type NativeStackScreenProps,
 } from "@react-navigation/native-stack";
 import { Compass, House, MapPinned, NotebookPen, User } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
 import { DeveloperLauncherScreen } from "@/app/screens/dev/DeveloperLauncherScreen";
@@ -20,6 +21,7 @@ import { OfflineStateScreen } from "@/app/screens/detail/OfflineStateScreen";
 import { StallDetailScreen } from "@/app/screens/detail/StallDetailScreen";
 import { DiscoverHomeScreen } from "@/app/screens/discover/DiscoverHomeScreen";
 import { DecideForMeResultScreen } from "@/app/screens/discover/DecideForMeResultScreen";
+import { BuildingDrillDownScreen } from "@/app/screens/discover/BuildingDrillDownScreen";
 import { HomeMapScreen } from "@/app/screens/discover/HomeMapScreen";
 import { MapZoomedInScreen } from "@/app/screens/discover/MapZoomedInScreen";
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
@@ -38,15 +40,32 @@ import { DishSearchScreen } from "@/app/screens/search/DishSearchScreen";
 import { SearchResultsScreen } from "@/app/screens/search/SearchResultsScreen";
 import { FloatingToast } from "@/components/ui";
 import { useAppBootstrap } from "@/hooks/useAppBootstrap";
-import { useSessionStore } from "@/store/useSessionStore";
-import { useUIStore } from "@/store/useUIStore";
+import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
-import { SoftGateSheet } from "./SoftGateSheet";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<MainTabParamList>();
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
+const AUTH_REQUIRED_ROUTES = new Set([
+  "MainTabs",
+  "SearchHome",
+  "SearchResults",
+  "ReadsFeed",
+  "MapZoomedIn",
+  "Post",
+  "EditProfile",
+  "BuildingDrillDown",
+  "DecideForMeResult",
+  "TasteFilter",
+  "Favourites",
+  "ReviewHistory",
+  "Settings",
+  "DishDetail",
+  "StallDetail",
+  "BlogPost",
+  "ReviewStack",
+]);
 
 function BlogPostRouteScreen({
   navigation,
@@ -83,9 +102,9 @@ function DeferredRouteScreen({
 
 function TabNavigator() {
   const { palette, spacing } = useHungryTheme();
+  const insets = useSafeAreaInsets();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
-  const showSoftGate = useUIStore((state) => state.showSoftGate);
 
   return (
     <Tabs.Navigator
@@ -94,10 +113,10 @@ function TabNavigator() {
         tabBarActiveTintColor: palette.orange,
         tabBarInactiveTintColor: palette.textMuted,
         tabBarStyle: {
-          backgroundColor: palette.surface,
+          backgroundColor: palette.bg,
           borderTopColor: palette.border,
-          height: 64,
-          paddingBottom: spacing[2],
+          height: 60 + Math.max(insets.bottom, spacing[2]),
+          paddingBottom: Math.max(insets.bottom, spacing[2]),
           paddingTop: spacing[2],
         },
         tabBarIcon: ({ color, size }) => {
@@ -125,7 +144,9 @@ function TabNavigator() {
             if (!isAuthenticated) {
               event.preventDefault();
               setReturnRoute("Review");
-              showSoftGate();
+              if (navigationRef.isReady()) {
+                navigationRef.navigate("AuthStack", { screen: "Login" });
+              }
             }
           },
         }}
@@ -138,7 +159,9 @@ function TabNavigator() {
             if (!isAuthenticated) {
               event.preventDefault();
               setReturnRoute("Profile");
-              showSoftGate();
+              if (navigationRef.isReady()) {
+                navigationRef.navigate("AuthStack", { screen: "Login" });
+              }
             }
           },
         }}
@@ -157,8 +180,16 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
 
-  const openResolvedRoute = (returnRoute?: string) => {
+  const openResolvedRoute = (returnRoute?: string | PendingRoute) => {
     setReturnRoute(undefined);
+
+    if (returnRoute && typeof returnRoute !== "string") {
+      navigationRef.resetRoot({
+        index: 0,
+        routes: [returnRoute as never],
+      });
+      return;
+    }
 
     if (returnRoute === "ReadsFeed") {
       navigationRef.resetRoot({
@@ -226,7 +257,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         return;
       }
 
-      if ((isAuthenticated && hasCompletedOnboarding) || (!isAuthenticated && hasCompletedOnboarding)) {
+      if (isAuthenticated && hasCompletedOnboarding) {
         openResolvedRoute(pendingRoute);
       }
     }
@@ -235,6 +266,42 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       openResolvedRoute(pendingRoute);
     }
   }, [hasCompletedOnboarding, isAuthenticated]);
+
+  useEffect(() => {
+    if (!navigationRef.isReady()) {
+      return;
+    }
+
+    const rootState = navigationRef.getRootState();
+    const currentTopRoute = rootState.routes[rootState.index]?.name;
+
+    if (!isAuthenticated && currentTopRoute && AUTH_REQUIRED_ROUTES.has(currentTopRoute)) {
+      const activeRoute = rootState.routes[rootState.index];
+      const mainTabScreen =
+        activeRoute.name === "MainTabs" &&
+        typeof activeRoute.params === "object" &&
+        activeRoute.params &&
+        "screen" in activeRoute.params
+          ? String(activeRoute.params.screen)
+          : "Discover";
+
+      setReturnRoute(
+        activeRoute.name === "MainTabs"
+          ? mainTabScreen
+          : {
+              name: activeRoute.name,
+              params:
+                typeof activeRoute.params === "object" && activeRoute.params
+                  ? (activeRoute.params as Record<string, unknown>)
+                  : undefined,
+            },
+      );
+      navigationRef.resetRoot({
+        index: 0,
+        routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+      });
+    }
+  }, [isAuthenticated, setReturnRoute]);
 
   return (
     <>
@@ -272,27 +339,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               />
             )}
           />
-          <RootStack.Screen
-            name="BuildingDrillDown"
-            children={({ navigation }) => (
-              <DeferredRouteScreen
-                navigation={navigation}
-                title="Building drill-down is coming later"
-                body="Use Map Browse and the zoomed map for now. The full floor directory will be implemented later."
-              />
-            )}
-          />
+          <RootStack.Screen component={BuildingDrillDownScreen} name="BuildingDrillDown" />
           <RootStack.Screen component={OfflineStateScreen} name="Offline" />
           <RootStack.Screen component={NotFoundScreen} name="NotFound" />
         </RootStack.Navigator>
       </NavigationContainer>
-      <SoftGateSheet
-        onLogin={() => {
-          if (navigationRef.isReady()) {
-            navigationRef.navigate("AuthStack", { screen: "Login" });
-          }
-        }}
-      />
       <ReviewSuccessModal onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
       <FloatingToast />
     </>

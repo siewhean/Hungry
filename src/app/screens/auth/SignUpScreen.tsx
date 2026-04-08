@@ -1,9 +1,7 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useForm } from "react-hook-form";
-import { View } from "react-native";
 
 import { AppText, Button, Input } from "@/components/ui";
-import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { authFieldLabels } from "@/features/auth/authContent";
 import { AuthScreenShell } from "./AuthScreenShell";
@@ -18,10 +16,8 @@ type FormValues = {
 };
 
 export function SignUpScreen({ navigation }: Props) {
-  const continueAsGuest = useSessionStore((state) => state.continueAsGuest);
-  const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const showToast = useUIStore((state) => state.showToast);
-  const { control, handleSubmit, register, setValue } = useForm<FormValues>({
+  const { handleSubmit, register, setValue } = useForm<FormValues>({
     defaultValues: {
       displayName: "",
       email: "",
@@ -39,28 +35,30 @@ export function SignUpScreen({ navigation }: Props) {
   });
 
   const handleGoogle = () => {
-    showToast({ message: "Signed in with Google. Please verify your email.", tone: "success" });
+    showToast({ message: "Google sign-up mocked. Verify the account to continue.", tone: "success" });
     navigation.navigate("EmailVerification");
   };
 
-  const handleGuest = () => {
-    continueAsGuest();
-    completeOnboarding(true);
-    showToast({ message: "Continuing as guest.", tone: "info" });
+  const handleApple = () => {
+    showToast({ message: "Apple sign-up mocked. Verify the account to continue.", tone: "success" });
+    navigation.navigate("EmailVerification");
   };
 
   return (
     <AuthScreenShell
       title="Create account"
-      subtitle="Save favourites, write reviews, and keep your taste profile in sync."
+      subtitle="Create your Hungry account before you start browsing dishes, stalls, and editorial content."
       footer={<Button label="Already have an account? Log in" variant="ghost" onPress={() => navigation.navigate("Login")} />}
     >
+      <Button label="Continue with Google" variant="secondary" onPress={handleGoogle} />
+      <Button label="Continue with Apple" variant="secondary" onPress={handleApple} />
+      <AppText variant="micro" tone="muted">
+        OR CREATE AN ACCOUNT WITH EMAIL
+      </AppText>
       <Input label={authFieldLabels.signUp.displayName} placeholder="Wei Ming" onChangeText={(value) => setValue("displayName", value)} />
       <Input label={authFieldLabels.signUp.email} keyboardType="email-address" autoCapitalize="none" placeholder="weiming@example.com" onChangeText={(value) => setValue("email", value)} />
       <Input label={authFieldLabels.signUp.password} secureTextEntry placeholder="Minimum 8 characters" onChangeText={(value) => setValue("password", value)} />
-      <Button label="Sign up" onPress={handleSignUp} />
-      <Button label="Continue with Google" variant="secondary" onPress={handleGoogle} />
-      <Button label="Continue as guest" variant="ghost" onPress={handleGuest} />
+      <Button label="Create account" onPress={handleSignUp} />
       <AppText variant="bodySmall" tone="muted">
         By continuing, you accept the Hungry terms and privacy policy.
       </AppText>

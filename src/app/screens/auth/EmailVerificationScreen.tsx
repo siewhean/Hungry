@@ -21,7 +21,7 @@ export function EmailVerificationScreen({ navigation }: Props) {
   return (
     <AuthScreenShell
       title="Check your inbox"
-      subtitle="Verify your email before moving on to the onboarding screens."
+      subtitle="Verify your email before Hungry unlocks the onboarding flow."
       footer={<Button label="Back to sign up" variant="ghost" onPress={() => navigation.navigate("SignUp")} />}
     >
       <Card>
@@ -38,4 +38,3 @@ export function EmailVerificationScreen({ navigation }: Props) {
     </AuthScreenShell>
   );
 }
-

@@ -96,7 +96,7 @@ Review Tab
 Profile Tab (unauthenticated)
   [ ] Soft gate appears (bottom sheet)
   [ ] "Log in" navigates to Login screen
-  [ ] "Continue as guest" dismisses gate
+  [ ] Signed-out users cannot bypass auth to reach protected tabs
 
 Auth Flow
   [ ] Login form validates
@@ -159,9 +159,8 @@ describe('useSessionStore', () => {
   beforeEach(() => {
     useSessionStore.setState({
       isAuthenticated: false,
-      isGuest: true,
       hasCompletedOnboarding: false,
-      hasSkippedTasteQuiz: true,
+      hasSkippedTasteQuiz: false,
       sessionExpired: false,
     })
   })
@@ -171,7 +170,6 @@ describe('useSessionStore', () => {
       useSessionStore.getState().completeAuth()
     })
     expect(useSessionStore.getState().isAuthenticated).toBe(true)
-    expect(useSessionStore.getState().isGuest).toBe(false)
   })
 })
 ```

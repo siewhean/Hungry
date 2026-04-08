@@ -14,6 +14,7 @@ import type { ReviewStackParamList } from "./ReviewStack";
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewCompose">;
 
 export function ReviewComposeScreen({ navigation }: Props) {
+  const rootNavigation = navigation.getParent()?.getParent();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const draft = useReviewDraftStore((state) => state.draft);
@@ -27,18 +28,41 @@ export function ReviewComposeScreen({ navigation }: Props) {
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
   const addReview = useProfileStore((state) => state.addReview);
   const showToast = useUIStore((state) => state.showToast);
-  const showSoftGate = useUIStore((state) => state.showSoftGate);
   const showReviewSuccess = useUIStore((state) => state.showReviewSuccess);
   const selectedDishId = useReviewDraftStore((state) => state.draft.selectedDishId);
   const dish = useMemo(
-    () => mockRepository.getDishById(selectedDishId ?? "") ?? mockRepository.listPopularNearby()[0],
+    () => mockRepository.getDishById(selectedDishId ?? ""),
     [selectedDishId],
   );
 
+  if (!dish) {
+    return (
+      <ReviewScreenShell
+        title="Choose a dish first"
+        subtitle="Reviews should stay attached to the exact dish you ate."
+        step={4}
+        total={5}
+      >
+        <Card>
+          <View style={{ gap: 12 }}>
+            <AppText variant="h3">Dish selection is missing</AppText>
+            <AppText tone="secondary">
+              Go back to quick review and pick the exact dish before writing your final notes.
+            </AppText>
+          </View>
+        </Card>
+        <Button label="Back to quick review" onPress={() => navigation.popToTop()} />
+      </ReviewScreenShell>
+    );
+  }
+
   const handleSubmit = () => {
     if (!isAuthenticated) {
-      setReturnRoute("Review");
-      showSoftGate();
+      setReturnRoute({
+        name: "ReviewStack",
+        params: { screen: "ReviewCompose" },
+      });
+      rootNavigation?.navigate("AuthStack", { screen: "Login" });
       return;
     }
 
