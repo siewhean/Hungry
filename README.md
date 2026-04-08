@@ -115,6 +115,7 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 ## Notes
 
 - Source-of-truth product requirements currently live in the three Hungry docx files in the repo root.
+- Added an interview question bank for multi-persona customer and stall-operator research at `Research/agent_interview_question_bank.md`.
 - Reads stays behind a feature flag even though the tab contract exists now.
 - The app is designed to demo end-to-end without backend availability.
 - The `data/` folder also contains the Singapore food-business workbook, a checked-in curated seed snapshot, and the refresh pipeline for rebuilding the database from public datasets plus supplementary hawker- and food-court-source discovery.
