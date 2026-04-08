@@ -20,32 +20,55 @@ export function Screen({
   scroll = true,
 }: PropsWithChildren<ScreenProps>) {
   const { palette, spacing } = useHungryTheme();
-  const Container = scroll ? ScrollView : View;
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
-      <Container
-        style={styles.flex}
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingHorizontal: spacing[5],
-            paddingBottom: spacing[8],
-            gap: spacing[5],
-          },
-        ]}
-      >
-        {(title || headerRight) && (
-          <View style={styles.header}>
-            <View style={styles.headerCopy}>
-              {title ? <AppText variant="h1">{title}</AppText> : null}
-              {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}
+      {scroll ? (
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingHorizontal: spacing[5],
+              paddingBottom: spacing[8],
+              gap: spacing[5],
+            },
+          ]}
+        >
+          {(title || headerRight) && (
+            <View style={styles.header}>
+              <View style={styles.headerCopy}>
+                {title ? <AppText variant="h1">{title}</AppText> : null}
+                {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}
+              </View>
+              {headerRight}
             </View>
-            {headerRight}
-          </View>
-        )}
-        {children}
-      </Container>
+          )}
+          {children}
+        </ScrollView>
+      ) : (
+        <View
+          style={[
+            styles.flex,
+            {
+              paddingHorizontal: spacing[5],
+              paddingBottom: spacing[8],
+              gap: spacing[5],
+            },
+          ]}
+        >
+          {(title || headerRight) && (
+            <View style={styles.header}>
+              <View style={styles.headerCopy}>
+                {title ? <AppText variant="h1">{title}</AppText> : null}
+                {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}
+              </View>
+              {headerRight}
+            </View>
+          )}
+          {children}
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -71,4 +94,3 @@ const styles = StyleSheet.create({
     gap: 6,
   },
 });
-

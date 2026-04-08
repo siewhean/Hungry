@@ -1,10 +1,12 @@
 import { useEffect } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { View } from "react-native";
+import { Image } from "expo-image";
 
 import { AppText, Button, Card } from "@/components/ui";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
+import { useHungryTheme } from "@/theme";
 import { ReviewScreenShell } from "./ReviewScreenShell";
 import { ReviewStars } from "./ReviewStars";
 import type { ReviewStackParamList } from "./ReviewStack";
@@ -12,6 +14,7 @@ import type { ReviewStackParamList } from "./ReviewStack";
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewRating">;
 
 export function ReviewRatingScreen({ navigation, route }: Props) {
+  const { spacing } = useHungryTheme();
   const rating = useReviewDraftStore((state) => state.draft.rating);
   const selectedVenueId = useReviewDraftStore((state) => state.draft.selectedVenueId);
   const selectedDishId = useReviewDraftStore((state) => state.draft.selectedDishId);
@@ -23,28 +26,38 @@ export function ReviewRatingScreen({ navigation, route }: Props) {
   const venue = mockRepository.getVenueById(routeVenueId ?? selectedVenueId ?? dish.venueId);
 
   useEffect(() => {
-    if (routeVenueId && routeDishId) {
-      selectDish(routeVenueId, routeDishId);
+    if (routeDishId) {
+      selectDish(routeVenueId ?? dish.venueId, routeDishId);
     }
-  }, [routeDishId, routeVenueId, selectDish]);
+  }, [dish.venueId, routeDishId, routeVenueId, selectDish]);
 
   return (
     <ReviewScreenShell
       title="Rate the dish"
-      subtitle="Start with the overall score."
-      stepLabel="SCR-070"
+      subtitle="Start with the overall score before you add the taste notes."
+      step={2}
+      total={5}
     >
-      <Card>
-        <View style={{ gap: 12 }}>
+      <Card style={{ padding: 0, overflow: "hidden" }}>
+        {dish.imageUrl ? (
+          <Image
+            source={{ uri: dish.imageUrl }}
+            style={{ width: "100%", height: 188 }}
+            contentFit="cover"
+          />
+        ) : null}
+        <View style={{ gap: 12, padding: spacing[4] }}>
           <AppText variant="h3">{dish.name}</AppText>
           <AppText tone="secondary">{venue?.name}</AppText>
-          <AppText tone="secondary">Your rating is preserved as you move through the review flow.</AppText>
+          <AppText tone="secondary">
+            Your rating stays attached to this dish as you move through the rest of the review flow.
+          </AppText>
           <ReviewStars value={rating} onChange={setRating} />
           <AppText tone="muted">{rating ? `${rating} / 5 selected` : "Tap a star to continue."}</AppText>
         </View>
       </Card>
-      <Button label="Next" onPress={() => navigation.navigate("ReviewTags")} disabled={!rating} />
-      <Button label="Choose another stall" variant="ghost" onPress={() => navigation.navigate("ReviewHub")} />
+      <Button label="Next: taste notes" onPress={() => navigation.navigate("ReviewTags")} disabled={!rating} />
+      <Button label="Choose another dish" variant="ghost" onPress={() => navigation.navigate("ReviewHub")} />
     </ReviewScreenShell>
   );
 }

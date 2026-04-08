@@ -8,6 +8,8 @@ interface ProfileState {
   profile: UserProfile;
   syncProfile: (isAuthenticated: boolean) => void;
   toggleFavourite: (dish: DishDetail) => void;
+  updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email">>) => void;
+  addReview: (dish: DishDetail) => void;
 }
 
 function recalculateTasteVector(profile: UserProfile) {
@@ -64,8 +66,37 @@ export const useProfileStore = create<ProfileState>((set) => ({
         },
       };
     }),
+  updateProfile: (next) =>
+    set((state) => ({
+      profile: {
+        ...state.profile,
+        ...next,
+      },
+    })),
+  addReview: (dish) =>
+    set((state) => {
+      const reviewedDishIds = state.profile.reviewedDishIds.includes(dish.id)
+        ? state.profile.reviewedDishIds
+        : [...state.profile.reviewedDishIds, dish.id];
+      const reviewedVenueIds = new Set(
+        reviewedDishIds
+          .map((dishId) => mockRepository.getDishById(dishId)?.venueId)
+          .filter(Boolean) as string[],
+      );
+
+      return {
+        profile: {
+          ...state.profile,
+          reviewedDishIds,
+          stats: {
+            ...state.profile.stats,
+            dishesReviewed: reviewedDishIds.length,
+            stallsVisited: reviewedVenueIds.size,
+          },
+        },
+      };
+    }),
 }));
 
 export const getTasteSimilarityWithDish = (profile: UserProfile, dish: DishDetail) =>
   Math.round(similarityScore(profile.tasteVector, dish.tasteVector) * 100);
-

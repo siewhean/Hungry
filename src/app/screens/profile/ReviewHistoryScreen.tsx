@@ -15,6 +15,10 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   const history = profile.reviewedDishIds
     .map((dishId) => mockRepository.getDishById(dishId))
     .filter(isDishDetail);
+  const openReviewFlow = () => {
+    const rootNavigation = (navigation.getParent?.()?.getParent?.() ?? navigation) as any;
+    rootNavigation.navigate("ReviewStack", { screen: "ReviewHub" });
+  };
 
   return (
     <ProfileScreenShell title="Review history" subtitle="Submitted reviews stay visible in the mock profile.">
@@ -23,7 +27,7 @@ export function ReviewHistoryScreen({ navigation }: Props) {
           <View style={{ gap: 12 }}>
             <AppText variant="h3">{dish.name}</AppText>
             <AppText tone="secondary">{dish.reviewCount} public reviews on the dish page</AppText>
-            <Button label="Write another review" variant="secondary" onPress={() => navigation.navigate("ReviewFlow")} />
+            <Button label="Write another review" variant="secondary" onPress={openReviewFlow} />
           </View>
         </Card>
       ))}

@@ -6,9 +6,13 @@ export type AuthStackParamList = {
   EmailVerification: { email: string } | undefined;
   ForgotPassword: undefined;
   ResetPassword: undefined;
+  ResetPasswordSuccess: undefined;
 };
 
 export type OnboardingStackParamList = {
+  OnboardingIntro1: undefined;
+  OnboardingIntro2: undefined;
+  OnboardingIntro3: undefined;
   TasteQuiz: undefined;
   DietaryPreferences: undefined;
   LocationPermission: undefined;
@@ -26,15 +30,20 @@ export type MainTabParamList = {
   Discover: undefined;
   Maps: undefined;
   Review: undefined;
-  Reads: undefined;
   Profile: undefined;
 };
 
 export type RootStackParamList = {
+  DeveloperLauncher: undefined;
   Splash: undefined;
   AuthStack: NavigatorScreenParams<AuthStackParamList>;
   OnboardingStack: NavigatorScreenParams<OnboardingStackParamList>;
   MainTabs: NavigatorScreenParams<MainTabParamList>;
+  ReadsFeed: undefined;
+  SearchHome: undefined;
+  MapZoomedIn: undefined;
+  Post: undefined;
+  EditProfile: undefined;
   BuildingDrillDown: { buildingId: string };
   DecideForMeResult: undefined;
   SearchResults: undefined;

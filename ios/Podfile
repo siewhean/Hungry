@@ -59,5 +59,17 @@ target 'Hungry' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
+
+    installer.pods_project.targets.each do |target|
+      next unless target.name == 'EXConstants'
+
+      target.shell_script_build_phases.each do |phase|
+        next unless phase.name == '[CP-User] Generate app.config for prebuilt Constants.manifest'
+
+        # Expo's generated script phase breaks when the project path contains spaces
+        # because bash -c receives an unquoted path after variable expansion.
+        phase.shell_script = 'bash -l -c "\\"$PODS_TARGET_SRCROOT/../scripts/get-app-config-ios.sh\\""'
+      end
+    end
   end
 end

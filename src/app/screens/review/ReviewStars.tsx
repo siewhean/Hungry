@@ -22,7 +22,7 @@ export function ReviewStars({ value, onChange }: ReviewStarsProps) {
             accessibilityRole="button"
             accessibilityLabel={`${index + 1} star`}
             onPress={() => onChange(index + 1)}
-            style={{ padding: 4 }}
+            style={{ alignItems: "center", justifyContent: "center", width: 44, height: 44 }}
           >
             <Star size={28} color={filled ? palette.amber : palette.border} fill={filled ? palette.amber : "transparent"} />
           </Pressable>
@@ -31,4 +31,3 @@ export function ReviewStars({ value, onChange }: ReviewStarsProps) {
     </View>
   );
 }
-
