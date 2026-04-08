@@ -20,8 +20,8 @@ Use these screens as visual anchors. Do not regenerate them first unless you are
 Secondary concept references:
 
 - Reads, search utility, profile, settings, and state screens
-  - `/Users/Siew Hean/Documents/GitHub/Hungry/design/figma-concept/index.html`
-  - `/Users/Siew Hean/Documents/GitHub/Hungry/design/figma-redesign/prototype.html`
+  - `/Users/Siew Hean/Documents/GitHub/Hungry/design/archive/figma-concept/index.html`
+  - `/Users/Siew Hean/Documents/GitHub/Hungry/design/archive/figma-redesign/prototype.html`
 
 ## Screens Still To Design In Stitch
 

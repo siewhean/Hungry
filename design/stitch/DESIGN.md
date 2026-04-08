@@ -27,8 +27,8 @@ Use these project rules as the base context before generating any new screen:
    - `/Users/Siew Hean/Documents/GitHub/Hungry/design/figma-v2/building-layout.html`
    - `/Users/Siew Hean/Documents/GitHub/Hungry/design/figma-v2/stall-detail.html`
    - `/Users/Siew Hean/Documents/GitHub/Hungry/design/figma-v2/quick-review.html`
-   - `/Users/Siew Hean/Documents/GitHub/Hungry/design/figma-concept/index.html`
-   - `/Users/Siew Hean/Documents/GitHub/Hungry/design/figma-redesign/prototype.html`
+   - `/Users/Siew Hean/Documents/GitHub/Hungry/design/archive/figma-concept/index.html`
+   - `/Users/Siew Hean/Documents/GitHub/Hungry/design/archive/figma-redesign/prototype.html`
 
 ## Product Structure
 

@@ -10,5 +10,7 @@ yarn-debug.log*
 yarn-error.log*
 .playwright-browsers/
 scripts/playwright-profile/
-.claude/worktrees/peaceful-galileo/
-.claude/worktrees/priceless-sammet/
+.claude/worktrees/
+scripts/__pycache__/
+ios/.xcode.env.local
+ios/Hungry.xcworkspace/xcuserdata/

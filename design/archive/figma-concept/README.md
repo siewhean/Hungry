@@ -24,7 +24,7 @@ Because the connected Figma workspace is on the Starter plan, the intended multi
 From the repo root:
 
 ```bash
-cd "/Users/Siew Hean/Documents/GitHub/Hungry/design/figma-concept"
+cd "/Users/Siew Hean/Documents/GitHub/Hungry/design/archive/figma-concept"
 python3 -m http.server 4173
 ```
 

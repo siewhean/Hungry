@@ -92,7 +92,7 @@ Before ending any session that changed code:
   [ ] tasks/lessons.md — corrections recorded
   [ ] README.md — status updated if progress or decisions changed
 ```
-Then read `AGENT.md` and follow its workflow, including keeping `README.md` updated whenever task context, progress, decisions, or blockers change.
+Then read `AGENTS.md` and follow its workflow, including keeping `README.md` updated whenever task context, progress, decisions, or blockers change.
 
 ## Mandatory execution workflow for Hungry
 

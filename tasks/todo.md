@@ -17,21 +17,21 @@ This file is the shared execution checklist for both Claude and Codex.
 ## Phase 2. Shared App Foundations
 
 - [x] Build shared theme, tokens, types, stores, and mock services
-- [] Implement navigation shell and guest/auth gating
+- [x] Implement navigation shell and guest/auth gating
 
 ## Phase 3. Core Discovery Experience
 
-- [] Implement Discover and Search flows
-- [] Implement Dish and Stall detail flows
+- [x] Implement Discover and Search flows
+- [x] Implement Dish and Stall detail flows
 
 ## Phase 4. Account and Supporting Flows
 
-- [] Implement Auth, Onboarding, Profile, and Review flows
-- [] Implement Reads and recovery states
+- [x] Implement Auth, Onboarding, Profile, and Review flows
+- [x] Implement Reads and recovery states
 
 ## Phase 5. Verification and Delivery Review
 
-- [] Run typecheck and record review notes
+- [x] Run typecheck and record review notes
 This document is the shared execution contract for both Claude and Codex.
 
 ## Planning + Update Rules (Mandatory)
@@ -138,12 +138,12 @@ This document is the shared execution contract for both Claude and Codex.
 ### Claude primary
 - [ ] Identify highest-risk UX/logic gaps in current implemented flows.
 - [ ] Prioritise bug/quality backlog by user impact.
-- [ ] Define verification matrix for each critical flow.
+- [ ] Define verification matrix for Home, Discover, Search, Maps, Auth, Review, and Profile.
 
 ### Codex primary
 - [ ] Implement high-priority flow fixes with minimal scoped changes.
-- [ ] Add/adjust loading, error, and empty states where missing.
-- [ ] Keep type safety and lint hygiene intact after each patch.
+- [ ] Add or refine loading, error, and empty states where missing.
+- [ ] Keep navigation contracts, mock repositories, and type safety aligned after each patch.
 - [ ] Run and record verification commands after each batch.
 
 ### Done criteria
@@ -195,6 +195,7 @@ This document is the shared execution contract for both Claude and Codex.
 ### Session Entries
 - 2026-04-05 | Codex | Updated project-fit task requirements, phased Claude/Codex ownership checklist, and planning cadence. | Status: completed for documentation update. | Blockers: none. | Next: keep this checklist current during implementation sessions.
 - 2026-04-06 | Codex | Audited app screen inventory, research docs, and design artifacts; created Stitch-ready design-system and screen-brief files under `design/stitch/`. | Status: completed for design planning artifact. | Blockers: direct Stitch editing is not available in this environment. | Next: generate remaining screens in Stitch using `design/stitch/DESIGN.md` and `design/stitch/STITCH_BRIEFS.md`, then sync the chosen outputs back into Figma and code.
+- 2026-04-08 | Codex | Reconciled repo housekeeping and status docs with the actual codebase: removed stale `AGENT.md`, archived older design iterations under `design/archive/`, cleaned local artifacts, and updated instruction references. | Status: completed for repository cleanup and documentation alignment. | Blockers: none. | Next: use Phase 2 as the active workstream and keep verification notes current as UI hardening continues.
 
 ---
 
@@ -208,3 +209,18 @@ Add dated command outputs under each active workstream when run.
 
 ### Verification Notes
 - 2026-04-05: `npm run typecheck` passed after task-document updates.
+- 2026-04-08: Repository audit shows implemented screens for Splash, Auth, Onboarding, Home, Discover, Search, Maps, Review, Profile, Reads, Offline, NotFound, and developer utilities are present under `src/app/screens/`.
+
+---
+
+## Current Execution Split
+
+### Claude Plan
+- [ ] Audit implemented flows against product requirements and design docs.
+- [ ] Produce a prioritized UX and verification backlog for the existing MVP.
+- [ ] Identify missing polish, copy, navigation, and state-handling gaps before new features are added.
+
+### Codex Plan
+- [ ] Execute the highest-priority hardening fixes from Claude's backlog.
+- [ ] Keep repository structure, docs, and navigation/types in sync as features evolve.
+- [ ] Maintain passing typecheck and update verification notes after each implementation batch.

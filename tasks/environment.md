@@ -119,9 +119,9 @@ Configured in: `tsconfig.json` + `babel.config.js`
 │
 ├── Research/                      # Source PRDs + guidelines (.docx, .pdf)
 ├── design/                        # HTML prototypes
-│   ├── figma-concept/             # Initial concept
-│   ├── figma-v2/                  # v2 screens
-│   └── figma-redesign/            # Redesign direction
+│   ├── archive/                   # Archived design iterations
+│   ├── figma-v2/                  # Active v2 screens
+│   └── stitch/                    # Active Stitch briefs + design prompts
 └── data/                          # Raw Singapore stalls data
 ```
 

@@ -232,14 +232,14 @@ Source: `src/theme/tokens.ts → motion`
 
 | Location | Screens covered |
 |----------|----------------|
-| `design/figma-concept/index.html` | Initial concept |
+| `design/archive/figma-concept/index.html` | Archived initial concept |
 | `design/figma-v2/home-feed.html` | Home feed |
 | `design/figma-v2/discover-search.html` | Discover / search |
 | `design/figma-v2/stall-detail.html` | Stall detail |
 | `design/figma-v2/building-layout.html` | Building drill-down |
 | `design/figma-v2/quick-review.html` | Review flow |
-| `design/figma-redesign/prototype.html` | Redesign prototype |
-| `design/figma-redesign/direction.html` | Visual direction |
-| `design/figma-redesign/components.html` | Component showcase |
+| `design/archive/figma-redesign/prototype.html` | Archived redesign prototype |
+| `design/archive/figma-redesign/direction.html` | Archived visual direction |
+| `design/archive/figma-redesign/components.html` | Archived component showcase |
 
 **Rule:** Before building any new screen or major component, open the relevant prototype to check intended layout and visual direction.

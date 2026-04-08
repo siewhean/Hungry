@@ -21,7 +21,7 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 | Product requirements | `Research/01_Product_Requirements_Document_Hungry.docx` |
 | App flow spec | `Research/02_App_Flow_Document_Hungry.docx` |
 | Frontend guidelines | `Research/03_Frontend_Guidelines_Hungry.docx` |
-| UI prototypes | `design/figma-v2/` and `design/figma-redesign/` |
+| UI prototypes | `design/figma-v2/` and `design/stitch/` |
 
 ---
 
