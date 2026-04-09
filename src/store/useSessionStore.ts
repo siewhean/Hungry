@@ -1,5 +1,7 @@
 import { create } from "zustand";
 
+import { useProfileStore } from "./useProfileStore";
+
 export interface PendingRoute {
   name: string;
   params?: Record<string, unknown>;
@@ -34,15 +36,15 @@ const initialState = {
 
 export const useSessionStore = create<SessionState>((set) => ({
   ...initialState,
-  completeAuth: (options) =>
+  completeAuth: (options) => {
     set((state) => ({
       isAuthenticated: true,
-      hasCompletedOnboarding:
-        options?.completedOnboarding ?? state.hasCompletedOnboarding,
-      hasSkippedTasteQuiz:
-        options?.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
+      hasCompletedOnboarding: options?.completedOnboarding ?? state.hasCompletedOnboarding,
+      hasSkippedTasteQuiz: options?.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
       sessionExpired: false,
-    })),
+    }));
+    useProfileStore.getState().syncProfile(true);
+  },
   completeOnboarding: (skippedQuiz = false) =>
     set({
       hasCompletedOnboarding: true,
@@ -52,6 +54,12 @@ export const useSessionStore = create<SessionState>((set) => ({
   dismissSessionExpiry: () => set({ sessionExpired: false }),
   setReturnRoute: (returnRoute) => set({ returnRoute }),
   setSkippedTasteQuiz: (hasSkippedTasteQuiz) => set({ hasSkippedTasteQuiz }),
-  signOut: () => set({ ...initialState }),
-  clearSession: () => set({ ...initialState }),
+  signOut: () => {
+    set({ ...initialState });
+    useProfileStore.getState().syncProfile(false);
+  },
+  clearSession: () => {
+    set({ ...initialState });
+    useProfileStore.getState().syncProfile(false);
+  },
 }));

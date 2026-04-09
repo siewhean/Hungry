@@ -10,6 +10,7 @@ interface ProfileState {
   toggleFavourite: (dish: DishDetail) => void;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email">>) => void;
   addReview: (dish: DishDetail) => void;
+  addReviewedDish: (dishId: string) => void;
 }
 
 function recalculateTasteVector(profile: UserProfile) {
@@ -81,6 +82,31 @@ export const useProfileStore = create<ProfileState>((set) => ({
       const reviewedVenueIds = new Set(
         reviewedDishIds
           .map((dishId) => mockRepository.getDishById(dishId)?.venueId)
+          .filter(Boolean) as string[],
+      );
+
+      return {
+        profile: {
+          ...state.profile,
+          reviewedDishIds,
+          stats: {
+            ...state.profile.stats,
+            dishesReviewed: reviewedDishIds.length,
+            stallsVisited: reviewedVenueIds.size,
+          },
+        },
+      };
+    }),
+  addReviewedDish: (dishId) =>
+    set((state) => {
+      if (state.profile.reviewedDishIds.includes(dishId)) {
+        return state;
+      }
+
+      const reviewedDishIds = [...state.profile.reviewedDishIds, dishId];
+      const reviewedVenueIds = new Set(
+        reviewedDishIds
+          .map((reviewedId) => mockRepository.getDishById(reviewedId)?.venueId)
           .filter(Boolean) as string[],
       );
 

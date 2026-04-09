@@ -3,11 +3,11 @@ import { useMemo } from "react";
 import { View } from "react-native";
 
 import { AppText, Button, Card, InlineBanner, Input } from "@/components/ui";
-import { useReviewDraftStore } from "@/store/useReviewDraftStore";
+import { mockRepository } from "@/lib/services/mock/repositories";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import { mockRepository } from "@/lib/services/mock/repositories";
 import { ReviewScreenShell } from "./ReviewScreenShell";
 import type { ReviewStackParamList } from "./ReviewStack";
 
@@ -27,13 +27,11 @@ export function ReviewComposeScreen({ navigation }: Props) {
   const setSubmitting = useReviewDraftStore((state) => state.setSubmitting);
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
   const addReview = useProfileStore((state) => state.addReview);
+  const addReviewedDish = useProfileStore((state) => state.addReviewedDish);
   const showToast = useUIStore((state) => state.showToast);
   const showReviewSuccess = useUIStore((state) => state.showReviewSuccess);
   const selectedDishId = useReviewDraftStore((state) => state.draft.selectedDishId);
-  const dish = useMemo(
-    () => mockRepository.getDishById(selectedDishId ?? ""),
-    [selectedDishId],
-  );
+  const dish = useMemo(() => mockRepository.getDishById(selectedDishId ?? ""), [selectedDishId]);
 
   if (!dish) {
     return (
@@ -69,19 +67,16 @@ export function ReviewComposeScreen({ navigation }: Props) {
     const successPayload = {
       dishName: dish.name,
       venueName: mockRepository.getVenueById(dish.venueId)?.name ?? "",
-      pointsEarned:
-        15 +
-        draft.selectedTags.length * 4 +
-        (draft.text.trim().length ? 10 : 0) +
-        draft.photos.length * 5,
+      pointsEarned: 15 + draft.selectedTags.length * 4 + (draft.text.trim().length ? 10 : 0) + draft.photos.length * 5,
       tagCount: draft.selectedTags.length,
       rating: draft.rating,
     };
 
     setSubmitting(true);
     setTimeout(() => {
-      setSubmitting(false);
+      addReviewedDish(dish.id);
       addReview(dish);
+      setSubmitting(false);
       showToast({ message: "Review saved locally. It appears on your history immediately.", tone: "success" });
       showReviewSuccess(successPayload);
       resetDraft();

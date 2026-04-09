@@ -41,13 +41,13 @@ export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<MainTabParamList>;
   ReadsFeed: undefined;
   SearchHome: undefined;
+  SearchResults: undefined;
+  TasteFilter: undefined;
   MapZoomedIn: { buildingId?: string } | undefined;
   Post: undefined;
   EditProfile: undefined;
   BuildingDrillDown: { buildingId: string };
   DecideForMeResult: undefined;
-  SearchResults: undefined;
-  TasteFilter: undefined;
   Favourites: undefined;
   ReviewHistory: undefined;
   Settings: undefined;
