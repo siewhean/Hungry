@@ -32,7 +32,7 @@ export function ReviewTagsScreen({ navigation }: Props) {
           </View>
           <Badge label={recommend ? "Would recommend" : "Would not recommend"} tone={recommend ? "success" : "warning"} />
           <View style={{ flexDirection: "row", gap: 8 }}>
-            <Button label="Recommend" variant={recommend ? "primary" : "secondary"} onPress={() => setRecommend(true)} />
+            <Button label="Recommend" variant={recommend ? "primary" : "secondary"} onPress={() => setRecommend(!recommend)} />
             <Button label="Not this time" variant={!recommend ? "primary" : "secondary"} onPress={() => setRecommend(false)} />
           </View>
         </View>

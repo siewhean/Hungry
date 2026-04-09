@@ -15,9 +15,8 @@ export function NotFoundScreen({ navigation, route }: Props) {
           "The frontend flow is wired, but this destination does not exist in the current mock dataset."
         }
         ctaLabel="Go back home"
-        onPress={() => navigation.navigate("MainTabs", { screen: "Discover" })}
+        onPress={() => navigation.navigate("MainTabs", { screen: "Home" })}
       />
     </Screen>
   );
 }
-

@@ -103,11 +103,12 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 - `Reads` tab is behind `FEATURE_FLAGS.readsEnabled` (default `true`)
 - Map mock mode: set `FEATURE_FLAGS.mockMapboxEnabled = true` for test environments
 - Real map runtime: set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` locally to enable the live Mapbox surface; without it, the map falls back to a static coordinate preview so the repo screens stay inspectable.
+- Maps now use a draggable bottom sheet (`16% / 44% / 82%`) and dynamic camera padding; the active pilot directory overlay is Koufu @ JEM (`L2` + `L3`) with official floor-map image backplates, unit-aligned polygons, computed fit-to-viewport scaling, and explicit zoom controls.
 - Root Expo scaffold, typed domain layer, Zustand stores, and mock repositories are in place
 - Discover, Search, Details, Auth, Onboarding, Profile, Review, Reads, and recovery flows are implemented in the mobile app shell
 - The current runtime shell is auth-first. Signed-out users route through Splash into Auth before the main app shell.
 - Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
-- Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and a Maxwell demo building-layout plan with L1/L2 floor switching.
+- Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and polygon-based building directory layouts (including Wisma and JEM mall-style floor overlays with vertical level switching).
 - `npm run typecheck` and `npx expo-doctor` both pass in the local environment
 
 ## Commands

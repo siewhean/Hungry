@@ -1,7 +1,5 @@
 import { PropsWithChildren, createContext, useContext, useMemo } from "react";
-import { useColorScheme } from "react-native";
 import {
-  DarkTheme,
   DefaultTheme,
   ThemeProvider as NavigationThemeProvider,
   type Theme,
@@ -26,8 +24,7 @@ type HungryTheme = {
 const ThemeContext = createContext<HungryTheme | null>(null);
 
 export function HungryThemeProvider({ children }: PropsWithChildren) {
-  const systemScheme = useColorScheme();
-  const colorScheme = systemScheme === "dark" ? "dark" : "light";
+  const colorScheme: "light" = "light";
   const palette = colors[colorScheme];
 
   const [nunitoLoaded] = useNunitoFonts({
@@ -41,7 +38,7 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
   });
 
   const theme = useMemo<Theme>(() => {
-    const base = colorScheme === "dark" ? DarkTheme : DefaultTheme;
+    const base = DefaultTheme;
 
     return {
       ...base,

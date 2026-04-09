@@ -100,7 +100,18 @@ export function ReviewComposeScreen({ navigation }: Props) {
         <View style={{ gap: 12 }}>
           <AppText variant="h3">{dish.name}</AppText>
           <AppText tone="secondary">The draft stays intact while you move between steps.</AppText>
-          <Input label="Review text" value={draft.text} onChangeText={setText} placeholder="What stood out?" multiline numberOfLines={5} />
+          <Input
+            label="Review text"
+            value={draft.text}
+            onChangeText={(text) => setText(text.slice(0, 200))}
+            placeholder="What stood out?"
+            multiline
+            numberOfLines={5}
+            maxLength={200}
+          />
+          <AppText variant="micro" tone="muted">
+            {draft.text.length}/200 characters
+          </AppText>
           <Button label="Add demo photo" variant="secondary" onPress={() => addPhoto(`mock-photo-${Date.now()}`)} />
           <Button label="Simulate photo failure" variant="ghost" onPress={() => markPhotoFailed(`failed-${Date.now()}`)} />
           {draft.photos.length ? <AppText tone="muted">Photos attached: {draft.photos.length}</AppText> : null}

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
 import {
   NavigationContainer,
   createNavigationContainerRef,
@@ -9,7 +10,7 @@ import {
   createNativeStackNavigator,
   type NativeStackScreenProps,
 } from "@react-navigation/native-stack";
-import { Compass, House, MapPinned, NotebookPen, User } from "lucide-react-native";
+import { ArrowLeft, Compass, House, MapPinned, NotebookPen, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
@@ -41,6 +42,7 @@ import { SearchResultsScreen } from "@/app/screens/search/SearchResultsScreen";
 import { FloatingToast } from "@/components/ui";
 import { useAppBootstrap } from "@/hooks/useAppBootstrap";
 import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 
@@ -110,6 +112,7 @@ function TabNavigator() {
     <Tabs.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarActiveTintColor: palette.orange,
         tabBarInactiveTintColor: palette.textMuted,
         tabBarStyle: {
@@ -130,7 +133,7 @@ function TabNavigator() {
                   : route.name === "Review"
                     ? NotebookPen
                     : User;
-          return <Icon color={color} size={size} />;
+          return <Icon color={color} size={Math.max(size + 4, 26)} />;
         },
       })}
     >
@@ -171,6 +174,42 @@ function TabNavigator() {
   );
 }
 
+function GlobalScrollBackButton() {
+  const insets = useSafeAreaInsets();
+  const { palette, radii, shadows, spacing } = useHungryTheme();
+  const scrollBackVisible = useUIStore((state) => state.scrollBackVisible);
+  const resetScrollBack = useUIStore((state) => state.resetScrollBack);
+
+  if (!scrollBackVisible || !navigationRef.isReady() || !navigationRef.canGoBack()) {
+    return null;
+  }
+
+  return (
+    <View pointerEvents="box-none" style={styles.globalBackWrap}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => {
+          navigationRef.goBack();
+          resetScrollBack();
+        }}
+        style={[
+          styles.globalBackButton,
+          {
+            backgroundColor: "rgba(255,255,255,0.95)",
+            borderColor: palette.border,
+            borderRadius: radii.pill,
+            left: spacing[4],
+            top: insets.top + spacing[5],
+          },
+          shadows.floating,
+        ]}
+      >
+        <ArrowLeft color={palette.navy} size={18} />
+      </Pressable>
+    </View>
+  );
+}
+
 export function RootNavigator({ theme }: { theme: Theme }) {
   useAppBootstrap();
 
@@ -179,6 +218,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const sessionExpired = useSessionStore((state) => state.sessionExpired);
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const resetScrollBack = useUIStore((state) => state.resetScrollBack);
 
   const openResolvedRoute = (returnRoute?: string | PendingRoute) => {
     setReturnRoute(undefined);
@@ -225,13 +265,13 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 
     navigationRef.resetRoot({
       index: 0,
-      routes: [{ name: "MainTabs", params: { screen: "Discover" } }],
+      routes: [{ name: "MainTabs", params: { screen: "Home" } }],
     });
   };
 
   useEffect(() => {
     if (sessionExpired && navigationRef.isReady()) {
-      setReturnRoute("Discover");
+      setReturnRoute("Home");
       navigationRef.navigate("AuthStack", {
         screen: "Login",
       });
@@ -283,7 +323,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         activeRoute.params &&
         "screen" in activeRoute.params
           ? String(activeRoute.params.screen)
-          : "Discover";
+          : "Home";
 
       setReturnRoute(
         activeRoute.name === "MainTabs"
@@ -305,9 +345,15 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 
   return (
     <>
-      <NavigationContainer ref={navigationRef} theme={theme}>
+      <NavigationContainer
+        ref={navigationRef}
+        theme={theme}
+        onStateChange={() => {
+          resetScrollBack();
+        }}
+      >
         <RootStack.Navigator
-          initialRouteName={__DEV__ ? "DeveloperLauncher" : "Splash"}
+          initialRouteName="Splash"
           screenOptions={{ headerShown: false }}
         >
           <RootStack.Screen component={DeveloperLauncherScreen} name="DeveloperLauncher" />
@@ -344,8 +390,24 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={NotFoundScreen} name="NotFound" />
         </RootStack.Navigator>
       </NavigationContainer>
+      <GlobalScrollBackButton />
       <ReviewSuccessModal onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
       <FloatingToast />
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  globalBackWrap: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 80,
+  },
+  globalBackButton: {
+    alignItems: "center",
+    borderWidth: 1,
+    height: 40,
+    justifyContent: "center",
+    position: "absolute",
+    width: 40,
+  },
+});

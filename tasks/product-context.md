@@ -76,7 +76,7 @@
 | F-008 | Dish Detail | Photo carousel, taste radar, price, tags, reviews, delivery buttons |
 | F-009 | Stall Detail | Name, floor/unit, hygiene grade, hours, closure notice, all dishes, directions |
 | F-010 | Dish-Level Reviews | Stars (1–5), text, taste tags, photos (up to 5, max 1MB each) |
-| F-011 | Favourites | Saved dishes; updates user taste vector (weighted avg, recency-weighted) |
+| F-011 | Favourites | Saved dishes; updates user taste vector (weighted avg, recency-weighted), and supports saved-list sorting by dish type, rating, taste profile, and location |
 | F-012 | Delivery Deep Links | GrabFood + Foodpanda universal links. Native app if installed, else web. Hidden if no URL. |
 
 ### Secondary Features (V1.1 — Should Have)
@@ -142,6 +142,18 @@
 | Result | Large photo, dish name, stall, floor/unit, taste match % |
 | Time limit | <2 seconds |
 | No match | Expand radius option |
+
+### Favourites Sorting
+
+| Spec | Detail |
+|------|--------|
+| Primary object | Saved dishes in Profile > Favourites |
+| Dish-type grouping | Users can sort or group favourites by dish type, for example Chicken Rice, Nasi Lemak, Laksa |
+| Rating sort | Users can sort favourites by rating, highest to lowest first |
+| Taste-profile sort | Users can sort favourites by strongest taste signal or closest match to their personal taste vector |
+| Location sort | Users can sort favourites by nearest distance or by building / hawker centre |
+| Data dependency | Dish type must be explicit in mock data or derived from canonical dish taxonomy before UI rollout |
+| UX goal | Help users revisit saved dishes by craving, quality, and convenience instead of a flat chronological list |
 
 ### Hygiene Grade Colours
 

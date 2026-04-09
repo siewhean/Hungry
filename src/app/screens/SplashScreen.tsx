@@ -113,7 +113,7 @@ export function SplashScreen({ navigation }: Props) {
         routes: [
           {
             name: "MainTabs",
-            params: { screen: "Discover" },
+            params: { screen: "Home" },
           },
         ],
       });

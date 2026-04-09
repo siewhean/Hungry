@@ -2,6 +2,8 @@ import type { PropsWithChildren, ReactNode } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
 
@@ -20,6 +22,8 @@ export function Screen({
   scroll = true,
 }: PropsWithChildren<ScreenProps>) {
   const { palette, spacing } = useHungryTheme();
+  const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
+  const scrollBackVisible = useUIStore((state) => state.scrollBackVisible);
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
@@ -36,10 +40,19 @@ export function Screen({
               paddingTop: spacing[3],
             },
           ]}
+          onScroll={onScroll}
+          scrollEventThrottle={scrollEventThrottle}
         >
           <View style={[styles.inner, { gap: spacing[5] }]}>
             {(title || headerRight) && (
-              <View style={styles.header}>
+              <View
+                style={[
+                  styles.header,
+                  {
+                    paddingLeft: scrollBackVisible ? spacing[12] : 0,
+                  },
+                ]}
+              >
                 <View style={styles.headerCopy}>
                   {title ? <AppText variant="h1">{title}</AppText> : null}
                   {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}
@@ -64,7 +77,14 @@ export function Screen({
         >
           <View style={[styles.inner, { gap: spacing[5] }]}>
             {(title || headerRight) && (
-              <View style={styles.header}>
+              <View
+                style={[
+                  styles.header,
+                  {
+                    paddingLeft: scrollBackVisible ? spacing[12] : 0,
+                  },
+                ]}
+              >
                 <View style={styles.headerCopy}>
                   {title ? <AppText variant="h1">{title}</AppText> : null}
                   {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}

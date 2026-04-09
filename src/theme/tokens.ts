@@ -1,6 +1,6 @@
 export const colors = {
   light: {
-    bg: "#FFF7EE",
+    bg: "#FFFFFF",
     bgMuted: "#FFFFFF",
     bgSoft: "#F8EFE4",
     surface: "#FFFFFF",
@@ -24,7 +24,7 @@ export const colors = {
     errorSoft: "#FDE3E2",
     info: "#1A2E44",
     infoSoft: "#EAF0F6",
-    mapBg: "#FFF7EE",
+    mapBg: "#FFFFFF",
     mapRoadPrimary: "#FFFFFF",
     mapRoadSecondary: "#E7DED4",
     overlay: "rgba(17, 24, 39, 0.45)",

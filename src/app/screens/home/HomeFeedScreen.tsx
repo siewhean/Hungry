@@ -1,33 +1,37 @@
 import type { ReactNode } from "react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { FlatList, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
-import { Bookmark, Heart, MessageCircle, PlayCircle, Plus, Send } from "lucide-react-native";
+import { Bookmark, Heart, MessageCircle, PlayCircle, Send } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { runOnJS } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, Card, EmptyState } from "@/components/ui";
+import { AppText, EmptyState } from "@/components/ui";
 import { BitesCarousel } from "@/components/social";
 import { getHomeFeed, type HomeFeedItem } from "@/features/home/feed";
+import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 
-const IMAGE_HEIGHT = 430;
-const ICON_SIZE = 22;
+const IMAGE_HEIGHT = 500;
 
 export function HomeFeedScreen() {
   const navigation = useNavigation<any>();
   const { width: screenWidth } = useWindowDimensions();
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { palette, radii, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const profile = useProfileStore((state) => state.profile);
+  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
+  const [likedPostIds, setLikedPostIds] = useState<Record<string, boolean>>({});
+  const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
   const feed = getHomeFeed(profile);
   const stories = useMemo(() => feed.slice(0, 5), [feed]);
   const isCompact = screenWidth < 390;
-  const socialRailWidth = isCompact ? 52 : 56;
 
   const navigateToStall = useCallback(
     (venueId: string) => navigation.navigate("StallDetail", { venueId }),
@@ -39,27 +43,55 @@ export function HomeFeedScreen() {
     [navigation],
   );
 
+  const toggleExpandedPost = useCallback((postId: string) => {
+    setExpandedPostId((current) => (current === postId ? null : postId));
+  }, []);
+
+  const toggleLike = useCallback((postId: string) => {
+    setLikedPostIds((current) => ({
+      ...current,
+      [postId]: !current[postId],
+    }));
+  }, []);
+
   const renderItem = useCallback(
     ({ item, index }: { item: HomeFeedItem; index: number }) => {
       const leadDish = item.dishes[0];
-      const reactionCount = (leadDish?.reviewCount ?? 24) + 36 + index * 4;
+      const isExpanded = expandedPostId === item.id;
+      const isLiked = Boolean(likedPostIds[item.id]);
+      const baseReactionCount = (leadDish?.reviewCount ?? 24) + 36 + index * 4;
+      const reactionCount = baseReactionCount + (isLiked ? 1 : 0);
       const commentCount = Math.max(12, Math.round(reactionCount / 4));
       const bookmarkCount = Math.max(8, Math.round(commentCount / 2));
+      const captionGesture = Gesture.Exclusive(
+        Gesture.Tap()
+          .numberOfTaps(2)
+          .maxDuration(260)
+          .onEnd((_event, success) => {
+            if (success) {
+              runOnJS(toggleLike)(item.id);
+            }
+          }),
+        Gesture.Tap()
+          .maxDuration(260)
+          .onEnd((_event, success) => {
+            if (success) {
+              runOnJS(toggleExpandedPost)(item.id);
+            }
+          }),
+      );
 
       return (
-        <Card
-          style={[
-            shadows.floating,
-            {
-              padding: 0,
-              overflow: "hidden",
-              borderRadius: radii.lg,
-              borderColor: palette.border,
-              marginHorizontal: 0,
-            },
-          ]}
-        >
-          <Pressable onPress={() => navigateToStall(item.venueId)}>
+        <View style={styles.feedItemWrap}>
+          <Pressable
+            onPress={() => {
+              if (leadDish) {
+                navigateToDish(leadDish.id);
+                return;
+              }
+              navigateToStall(item.venueId);
+            }}
+          >
             <View style={styles.imageContainer}>
               <Image
                 source={{ uri: item.mediaUrl }}
@@ -67,108 +99,6 @@ export function HomeFeedScreen() {
                 contentFit="cover"
                 transition={200}
               />
-
-              <View style={styles.gradient} />
-
-              <View
-                style={[
-                  styles.topMetaRow,
-                  {
-                    left: spacing[4],
-                    right: spacing[4],
-                    top: spacing[4],
-                  },
-                ]}
-              >
-                <View
-                  style={[
-                    styles.accountChip,
-                    {
-                      backgroundColor: "rgba(255,255,255,0.16)",
-                      borderColor: "rgba(255,255,255,0.28)",
-                      borderRadius: radii.pill,
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[2],
-                    },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.avatarRing,
-                      {
-                        borderColor: palette.orange,
-                        height: 28,
-                        width: 28,
-                      },
-                    ]}
-                  >
-                    <Image
-                      source={{ uri: item.authorAvatarUrl }}
-                      style={styles.avatarImage}
-                      contentFit="cover"
-                    />
-                  </View>
-                  <AppText
-                    variant="bodySmall"
-                    tone="inverse"
-                    numberOfLines={1}
-                    style={styles.accountText}
-                  >
-                    {item.authorName}
-                  </AppText>
-                </View>
-                <AppText variant="micro" tone="inverse" style={styles.timestamp}>
-                  {item.createdAt}
-                </AppText>
-              </View>
-
-              <View
-                style={[
-                  styles.socialRail,
-                  {
-                    borderRadius: radii.lg,
-                    gap: spacing[2],
-                    bottom: isCompact ? 18 : 20,
-                    paddingVertical: spacing[3],
-                    right: spacing[4],
-                    width: socialRailWidth,
-                  },
-                ]}
-              >
-                <SocialAction icon={<Heart color="#FFFFFF" size={ICON_SIZE} />} count={reactionCount} />
-                <SocialAction icon={<MessageCircle color="#FFFFFF" size={ICON_SIZE} />} count={commentCount} />
-                <SocialAction icon={<Send color="#FFFFFF" size={ICON_SIZE} />} count={6} />
-                <SocialAction icon={<Bookmark color="#FFFFFF" size={ICON_SIZE} />} count={bookmarkCount} />
-              </View>
-
-              <View
-                style={[
-                  styles.imageTextOverlay,
-                  {
-                    left: spacing[4],
-                    right: spacing[4] + socialRailWidth + spacing[3],
-                    bottom: spacing[4],
-                    gap: spacing[2],
-                  },
-                ]}
-              >
-                {leadDish ? (
-                  <AppText variant="bodySmall" style={styles.overlayEyebrow}>
-                    {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
-                  </AppText>
-                ) : null}
-                <AppText variant="h1" style={styles.overlayTitle} numberOfLines={2}>
-                  {leadDish?.name ?? item.venue.name}
-                </AppText>
-                <AppText
-                  variant="bodySmall"
-                  style={styles.overlaySubtitle}
-                  numberOfLines={isCompact ? 1 : 2}
-                >
-                  {item.caption}
-                </AppText>
-              </View>
-
               {item.mediaType === "video" ? (
                 <View style={styles.playButtonContainer}>
                   <View style={styles.playButtonBackdrop}>
@@ -189,52 +119,117 @@ export function HomeFeedScreen() {
               },
             ]}
           >
-            <View style={styles.metaRow}>
-              <AppText variant="bodySmall">{item.authorLocation}</AppText>
-              <AppText variant="bodySmall" tone="muted">
-                Best for {leadDish?.tasteTags.slice(0, 2).join(" · ") ?? "quick picks"}
+            <View style={[styles.textGestureRegion, { gap: spacing[2] }]}>
+              <View style={styles.metaRow}>
+                <AppText variant="bodySmall">{item.authorName} · {item.authorLocation}</AppText>
+                {isLiked ? (
+                  <AppText variant="bodySmall" tone="muted">
+                    Liked
+                  </AppText>
+                ) : null}
+              </View>
+
+              <AppText variant="h2" numberOfLines={2}>
+                {leadDish?.name ?? item.venue.name}
+              </AppText>
+              <GestureDetector gesture={captionGesture}>
+                <View style={styles.captionHitArea}>
+                  <AppText variant="bodySmall" tone="secondary" numberOfLines={isExpanded ? undefined : isCompact ? 2 : 3}>
+                    {item.caption}
+                  </AppText>
+                </View>
+              </GestureDetector>
+              <AppText variant="micro" tone="muted">
+                {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
               </AppText>
             </View>
 
-            {item.dishes.length > 0 ? (
-              <View style={[styles.inlineLinksRow, { gap: spacing[2] }]}>
-                {item.dishes.map((dish, dishIndex) => (
-                  <View key={dish.id} style={styles.inlineLinkWrap}>
-                    <Pressable onPress={() => navigateToDish(dish.id)}>
-                      <AppText variant="bodySmall" tone="accent" style={styles.inlineDishLink}>
-                        {dish.name}
-                      </AppText>
-                    </Pressable>
-                    {dishIndex < item.dishes.length - 1 ? (
-                      <AppText variant="bodySmall" tone="muted">
-                        •
-                      </AppText>
-                    ) : null}
-                  </View>
-                ))}
+            {isExpanded ? (
+              <View style={[styles.quickPostRow, { gap: spacing[2] }]}>
+                <Pressable
+                  onPress={() => {
+                    if (!isAuthenticated) {
+                      setReturnRoute("Review");
+                      navigation.navigate("AuthStack", { screen: "Login" });
+                      return;
+                    }
+                    navigation.navigate("ReviewStack", {
+                      screen: "ReviewRating",
+                      params: { dishId: leadDish?.id, venueId: item.venueId },
+                    });
+                  }}
+                  style={[
+                    styles.quickPostButton,
+                    {
+                      borderColor: palette.border,
+                      borderRadius: radii.pill,
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[2],
+                    },
+                  ]}
+                >
+                  <AppText variant="bodySmall">Quick review</AppText>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    if (!isAuthenticated) {
+                      setReturnRoute("Post");
+                      navigation.navigate("AuthStack", { screen: "Login" });
+                      return;
+                    }
+                    navigation.navigate("Post");
+                  }}
+                  style={[
+                    styles.quickPostButton,
+                    {
+                      borderColor: palette.border,
+                      borderRadius: radii.pill,
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[2],
+                    },
+                  ]}
+                >
+                  <AppText variant="bodySmall">Post</AppText>
+                </Pressable>
               </View>
             ) : null}
+
+            <View style={styles.postFooterRow}>
+              <AppText variant="micro" tone="muted">
+                {item.createdAt}
+              </AppText>
+              <View style={styles.postActionsRow}>
+                <InlineActionMetric icon={<Heart color={isLiked ? palette.error : palette.textMuted} size={14} />} count={reactionCount} />
+                <InlineActionMetric icon={<Send color={palette.textMuted} size={14} />} count={6} />
+                <InlineActionMetric icon={<MessageCircle color={palette.textMuted} size={14} />} count={commentCount} />
+                <InlineActionMetric icon={<Bookmark color={palette.textMuted} size={14} />} count={bookmarkCount} />
+              </View>
+            </View>
           </View>
-        </Card>
+        </View>
       );
     },
     [
+      expandedPostId,
+      isAuthenticated,
       isCompact,
+      likedPostIds,
       navigateToDish,
       navigateToStall,
       palette.border,
-      palette.orange,
-      radii.lg,
-      radii.pill,
-      shadows.floating,
-      socialRailWidth,
+      palette.error,
+      palette.textMuted,
       spacing,
+      setReturnRoute,
+      toggleExpandedPost,
+      toggleLike,
+      navigation,
     ],
   );
 
   const listHeader = useMemo(
     () => (
-      <View style={{ gap: spacing[4], paddingTop: spacing[1] }}>
+      <View style={{ gap: spacing[4], paddingHorizontal: spacing[5], paddingTop: spacing[1] }}>
         <View style={{ gap: spacing[1] }}>
           <AppText variant="micro" tone="accent" style={styles.sectionEyebrow}>
             APPETITE SCROLL
@@ -285,9 +280,6 @@ export function HomeFeedScreen() {
 
         {/* Bites section */}
         <View style={{ gap: spacing[2] }}>
-          <AppText variant="micro" tone="accent" style={styles.sectionEyebrow}>
-            BITES · DISH MICRO-REVIEWS
-          </AppText>
           <BitesCarousel />
         </View>
       </View>
@@ -297,7 +289,7 @@ export function HomeFeedScreen() {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
-      <View style={{ flex: 1, paddingHorizontal: spacing[5], paddingTop: spacing[3] }}>
+      <View style={{ flex: 1, paddingTop: spacing[3] }}>
         <FlatList
           data={feed}
           keyExtractor={keyExtractor}
@@ -312,36 +304,12 @@ export function HomeFeedScreen() {
           style={{ flex: 1 }}
           contentContainerStyle={{
             gap: spacing[5],
-            paddingBottom: spacing[16] + insets.bottom + 88,
+            paddingBottom: spacing[16] + insets.bottom + spacing[6],
           }}
+          onScroll={onScroll}
+          scrollEventThrottle={scrollEventThrottle}
           showsVerticalScrollIndicator={false}
         />
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => {
-            if (!isAuthenticated) {
-              setReturnRoute("Post");
-              navigation.navigate("AuthStack", { screen: "Login" });
-              return;
-            }
-            navigation.navigate("Post");
-          }}
-          style={[
-            styles.fab,
-            {
-              backgroundColor: palette.orange,
-              borderRadius: radii.pill,
-              bottom: 72 + insets.bottom,
-              right: spacing[5],
-            },
-            shadows.floating,
-          ]}
-        >
-          <Plus color="#FFFFFF" size={20} />
-          <AppText variant="bodySmall" tone="inverse" style={styles.fabLabel}>
-            Post
-          </AppText>
-        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -351,7 +319,7 @@ function keyExtractor(item: HomeFeedItem) {
   return item.id;
 }
 
-function SocialAction({
+function InlineActionMetric({
   icon,
   count,
 }: {
@@ -359,9 +327,9 @@ function SocialAction({
   count: number;
 }) {
   return (
-    <View style={styles.socialAction}>
+    <View style={styles.inlineActionMetric}>
       {icon}
-      <AppText variant="micro" tone="inverse">
+      <AppText variant="micro" tone="muted">
         {count}
       </AppText>
     </View>
@@ -372,6 +340,9 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  feedItemWrap: {
+    backgroundColor: "#FFFFFF",
+  },
   imageContainer: {
     height: IMAGE_HEIGHT,
     width: "100%",
@@ -380,75 +351,6 @@ const styles = StyleSheet.create({
   heroImage: {
     height: IMAGE_HEIGHT,
     width: "100%",
-  },
-  gradient: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: IMAGE_HEIGHT * 0.75,
-    backgroundColor: "rgba(0,0,0,0.52)",
-  },
-  topMetaRow: {
-    position: "absolute",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 8,
-  },
-  accountChip: {
-    alignItems: "center",
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 10,
-    maxWidth: "54%",
-  },
-  accountText: {
-    fontFamily: "Nunito_600SemiBold",
-  },
-  timestamp: {
-    minWidth: 56,
-    textAlign: "right",
-  },
-  flex: {
-    flex: 1,
-  },
-  avatarRing: {
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  avatarImage: {
-    height: "100%",
-    width: "100%",
-  },
-  socialRail: {
-    position: "absolute",
-    alignItems: "center",
-    backgroundColor: "rgba(17,24,39,0.26)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
-  },
-  socialAction: {
-    alignItems: "center",
-    gap: 4,
-    width: "100%",
-  },
-  imageTextOverlay: {
-    position: "absolute",
-  },
-  overlayTitle: {
-    color: "#FFFFFF",
-  },
-  overlayEyebrow: {
-    color: "rgba(255,255,255,0.85)",
-    fontFamily: "Nunito_600SemiBold",
-    textTransform: "uppercase",
-  },
-  overlaySubtitle: {
-    color: "rgba(255,255,255,0.85)",
   },
   playButtonContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -464,21 +366,41 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   belowImageSection: {},
+  textGestureRegion: {},
+  quickPostRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  quickPostButton: {
+    borderWidth: 1,
+    minHeight: 36,
+  },
+  captionHitArea: {
+    minHeight: 28,
+    justifyContent: "center",
+    paddingVertical: 4,
+  },
   metaRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 12,
   },
-  inlineLinksRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  inlineLinkWrap: {
-    flexDirection: "row",
+  postFooterRow: {
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
   },
-  inlineDishLink: {
-    fontFamily: "Nunito_600SemiBold",
+  postActionsRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 12,
+    marginLeft: "auto",
+  },
+  inlineActionMetric: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
   },
   storyRing: {
     backgroundColor: "#FFFFFF",
@@ -490,16 +412,5 @@ const styles = StyleSheet.create({
   sectionEyebrow: {
     letterSpacing: 0.8,
     textTransform: "uppercase",
-  },
-  fab: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 8,
-    minHeight: 48,
-    paddingHorizontal: 18,
-    position: "absolute",
-  },
-  fabLabel: {
-    fontFamily: "Nunito_600SemiBold",
   },
 });

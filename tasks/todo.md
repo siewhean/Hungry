@@ -153,6 +153,13 @@ This document is the shared execution contract for both Claude and Codex.
 - [ ] Keep navigation contracts, mock repositories, and type safety aligned after each patch.
 - [ ] Run and record verification commands after each batch.
 
+### Phase 2 mini-plan — 2026-04-09 Favourites sorting and retrieval
+- [ ] Define the Favourites browsing contract for sorting by dish type, rating, taste profile, and location.
+- [ ] Decide whether dish type should be a first-class domain field or a derived taxonomy from existing dish metadata.
+- [ ] Add mock-data and repository support so favourites sorting does not rely on screen-local sorting logic.
+- [ ] Implement Favourites screen controls and empty/sorted states after the contract is approved.
+- [ ] Run `npm run typecheck` after implementation and record verification notes.
+
 ### Phase 2 mini-plan — 2026-04-08 Figma-fidelity hardening
 - [x] Remove guest browsing from the session model, auth flow, soft gates, and developer launcher.
 - [x] Make signed-out launch always resolve Splash -> Auth before MainTabs.
@@ -167,6 +174,34 @@ This document is the shared execution contract for both Claude and Codex.
 - [x] Turn `MapZoomedIn` into a real focused-building map route instead of a placeholder card.
 - [x] Wire `BuildingDrillDown` to the real screen and rebuild it around the Figma drill-down flow.
 - [x] Add a demo Maxwell `L2` floor-plan plus mock venues/dishes so the floor switch and menu preview are visible in repo runtime.
+
+### Phase 2 mini-plan — 2026-04-08 Mall directory floor-map realism
+- [x] Replace the ordered list-first drill-down framing with a directory-map-first screen that syncs polygon selection with stall details.
+- [x] Add realistic custom mall floor maps (Wisma + JEM) with non-grid stall polygons and a Google-style vertical floor selector.
+- [x] Ensure floor switching, polygon highlight, and stall detail overlay work together for mall drill-down navigation.
+- [x] Run `npm run typecheck` and record results with session notes.
+
+### Phase 2 mini-plan — 2026-04-08 Single-mall pilot (Koufu @ JEM)
+- [x] Replace the fixed Maps bottom card with a draggable `@gorhom/bottom-sheet` surface using snap points `16% / 44% / 82%`.
+- [x] Wire map camera padding to bottom-sheet state so selected map pins remain visible above the sheet.
+- [x] Keep real Mapbox as the primary runtime path, with an interactive fallback when token is absent.
+- [x] Ship a JEM-only floor-directory pilot (`L2`, `L3`) with tenant, corridor, and facility polygon layers.
+- [x] Keep non-pilot mall behavior unchanged in this pass and keep route contracts stable.
+- [x] Run `npm run typecheck` and record the result in verification notes.
+
+### Phase 2 mini-plan — 2026-04-08 JEM directory realism pass (official-layout aligned)
+- [x] Replace synthetic JEM polygons with unit footprints traced against official JEM floor-plan images (L2/L3).
+- [x] Add floor-plan background image support in the floor-plan contract and render it in `FloorPlanViewer`.
+- [x] Keep polygon IDs and unit numbers aligned to real tenant units so list and map selections are one-to-one.
+- [x] Keep non-pilot malls untouched while hardening only the JEM pilot.
+- [x] Run `npm run typecheck` and record verification + residual limitations.
+
+### Phase 2 mini-plan — 2026-04-08 Directory map standardization + zoom controls
+- [x] Standardize drill-down map fitting so every mall floor uses a computed fit-to-viewport base scale.
+- [x] Add explicit directory zoom controls (`-`, reset, `+`) so zoom in/out works reliably even when pinch is unavailable.
+- [x] Reduce visual clutter for image-backed floor maps by hiding synthetic corridor overlays and suppressing dense labels at low zoom.
+- [x] Keep polygon/list selection contract unchanged while improving visual alignment readability.
+- [x] Run `npm run typecheck` and record verification notes.
 
 ### Done criteria
 - [ ] Critical user journeys run end-to-end in mock mode.
@@ -224,6 +259,15 @@ This document is the shared execution contract for both Claude and Codex.
 - 2026-04-08 | Codex | Added the Hungry marketing launch workspace under `marketing/` with positioning, waitlist copy, wireframe, channel playbook, 30-day calendar, copy pack, video briefs, AI prompt pack, outreach playbook, and brand/visual rules. | Status: completed for documentation implementation. | Blockers: the sandbox can read `.agents/` but cannot write into it, so the product marketing context draft currently lives at `marketing/strategy/product-marketing-context.md` instead of `.agents/product-marketing-context.md`. | Next: if a less restricted local environment is available, mirror that file into `.agents/` so other marketing skills can consume it automatically.
 - 2026-04-08 | Codex | Implemented the Figma-based maps deliverables: real `MapSurface` wrapper with token-aware fallback, rebuilt `Maps` and `MapZoomedIn`, rewired `BuildingDrillDown`, bridged Singapore/mock building IDs, and added a demo Maxwell `L2` floor plan with matching mock venues and dishes. | Status: completed for the code pass. | Blockers: live Mapbox rendering still requires `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` in the local environment; without it, the repo falls back to a static coordinate preview. | Next: run the app locally on simulator/device to visually inspect the live map route and the Maxwell drill-down flow with a real token configured.
 - 2026-04-08 | Codex | Fixed the Home route container to render as a direct safe-area feed surface, added a feed empty state, and removed visible scroll indicators from shared screen wrappers plus remaining explicit scrollable surfaces. | Status: completed for this UI hardening patch. | Blockers: runtime simulator verification is still needed to confirm the Home tab now renders correctly on-device. | Next: open the app locally and verify Home, Review, Search Results, Dish Detail, and the developer launcher no longer show scrollbars.
+- 2026-04-08 | Codex | Reworked `BuildingDrillDown` into a directory-map-first mall flow with synced polygon selection, selected-stall overlay details, a Google-style vertical floor pill, and realistic custom Wisma/JEM floor plans with alias-aware loading. | Status: completed for this implementation batch. | Blockers: visual parity still needs manual simulator/device confirmation against Figma using real map runtime where applicable. | Next: run local iOS/Android visual QA on mall drill-down flows (Wisma/JEM) and tune spacing/polygon labeling from screenshots.
+- 2026-04-08 | Codex | Implemented the single-mall pilot pass for Koufu @ JEM: fixed `Maps` sheet drag behavior, added dynamic camera padding, and rebuilt JEM L2/L3 floor plans with tenant/corridor/facility polygons plus tenant-list sync. | Status: completed for code + typecheck. | Blockers: visual QA on-device is still needed to tune map-sheet feel and directory readability at runtime densities. | Next: run local simulator checks with a real Mapbox token and review JEM drill-down touch targets on compact and large iPhone screens.
+- 2026-04-08 | Codex | Started the JEM realism correction pass after user feedback: switching to official JEM floor-map references, adding background map rendering support, and re-tracing JEM tenant polygons to match actual unit geometry for L2/L3. | Status: in progress. | Blockers: precise polygon quality depends on manual tracing quality against static mall map assets in this repo pass. | Next: complete polygon/data sync updates, run typecheck, then share what can be visually verified from the app.
+- 2026-04-08 | Codex | Completed JEM realism correction pass: added official JEM L2/L3 map backgrounds, replaced synthetic unit geometry with official-layout-aligned polygons, synced list/map IDs, and tuned JEM directory scale for map readability in drill-down. | Status: completed for implementation + typecheck. | Blockers: unit polygon tracing is still manually authored and may need one more visual pass from simulator screenshots for pixel-level parity. | Next: run on-device visual QA and tighten any outlier polygons based on screenshots.
+- 2026-04-08 | Codex | Implemented directory-map standardization + zoom controls: switched floor maps to computed fit-scale per floor, added explicit zoom controls (`-`, reset, `+`), and reduced overlay clutter on image-backed maps by hiding corridor fills and label density at low zoom. | Status: completed for implementation + typecheck. | Blockers: true 1:1 fidelity for every mall still requires per-mall official floor maps and per-unit tracing pass (data authoring, not renderer logic). | Next: ingest remaining mall floor-map assets and trace unit polygons using the same standardized coordinate contract.
+- 2026-04-09 | Codex | Began the staged UI polish pass for global navigation and Home interactions only: hid tab labels with larger icons, tightened global back-button scroll behavior, removed Home feed card chrome/FAB, fixed Bites routing to real dishes, and added exclusive single/double-tap text gestures for expand/like. | Status: completed for block 1 implementation + typecheck. | Blockers: remaining blocks (Discover, Map, Stall Detail) are intentionally pending user confirmation before implementation. | Next: continue block-by-block after approval.
+- 2026-04-09 | Codex | Closed high-priority QA gaps: made stall-detail community review cards actionable via Quick review/Post selection, removed the Stall Detail open/closed status metadata card, and kept auth-gated routing for both actions. | Status: completed for targeted fixes + typecheck. | Blockers: none for this patch. | Next: continue remaining XML blocks after user confirmation.
+- 2026-04-09 | Codex | Added a product and planning requirement for richer Favourites retrieval: users should be able to sort saved dishes by dish type (for example chicken rice, nasi lemak), rating, taste profile, and location. | Status: completed for documentation update only. | Blockers: the current domain layer does not yet define an explicit dish-type taxonomy for favourites sorting. | Next: decide the dish-type contract, then implement repository-backed sorting in the Favourites flow.
+- 2026-04-09 | Codex | Rebuilt `StallDetailScreen` against Figma node `113:811` composition (top nav, hero overlap, location badge, pricing/rating hierarchy, attribute grid, primary taste-profile CTA, opening-hours split, signature dish tile grid, and community card styling) while preserving review action choices. | Status: completed for visual alignment pass + typecheck. | Blockers: final pixel-level fit still needs simulator screenshot QA. | Next: run device screenshot comparison and tighten spacing/typography deltas if needed.
 
 ---
 
@@ -242,10 +286,17 @@ Add dated command outputs under each active workstream when run.
 - 2026-04-08: `npm run typecheck` passed again after removing the runtime soft-gate path and tightening Discover/Search/Home/Stall Detail.
 - 2026-04-08: `npm run test` could not run because `package.json` does not define a `test` script.
 - 2026-04-08: Device QA was completed as a code-based review matrix for iPhone 16e, 16, 16 Pro, 16 Pro Max, and Android sanity because `xcrun simctl` could not access CoreSimulatorService from this sandbox.
+- 2026-04-08: `npm run typecheck` passed after the JEM official-layout correction pass (background floor map rendering + L2/L3 polygon remap).
+- 2026-04-08: `npm run typecheck` passed after directory map standardization updates (fit-to-viewport scale, zoom controls, and image-map overlay cleanup).
 - 2026-04-08: Marketing launch documentation was added under `marketing/`; the sandbox could not write into `.agents/`, so the repo-grounded product marketing context is stored at `marketing/strategy/product-marketing-context.md`.
 - 2026-04-08: `npm run typecheck` passed after the marketing launch documentation, README index, and task-log updates.
 - 2026-04-08: `npm run typecheck` passed after the map deliverable, route rewiring, Maxwell demo L2 floor plan, and building-layout drill-down implementation.
 - 2026-04-08: `npm run typecheck` passed after the Home feed container fix and app-wide scrollbar suppression cleanup.
+- 2026-04-08: `npm run typecheck` passed after the mall directory-map realism pass (Wisma/JEM custom floor overlays, vertical level pill, and drill-down sync logic).
+- 2026-04-08: `npm run typecheck` passed after the single-mall pilot pass (draggable Maps sheet, dynamic camera padding, and JEM L2/L3 tenant/corridor/facility polygon overlays).
+- 2026-04-09: `npm run typecheck` passed after global navigation and Home interaction updates (tab labels removed, smart back visibility tuning, Home gesture rewiring, and Bites data/routing fixes).
+- 2026-04-09: `npm run typecheck` passed after stall-detail review-card action-sheet wiring and open/closed status-card removal.
+- 2026-04-09: `npm run typecheck` passed after Figma-driven Stall Detail rebuild for node `113:811`.
 
 ---
 

@@ -8,6 +8,8 @@
 import { Pressable, View } from "react-native";
 import { Image } from "expo-image";
 import { Heart, MessageCircle } from "lucide-react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { runOnJS } from "react-native-reanimated";
 
 import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -31,17 +33,36 @@ interface BiteCardProps {
   bite: Bite;
   onPress: () => void;
   onDishPress?: () => void;
+  width?: number;
+  liked?: boolean;
+  onToggleLike?: () => void;
 }
 
-export function BiteCard({ bite, onPress, onDishPress }: BiteCardProps) {
+export function BiteCard({
+  bite,
+  onPress,
+  onDishPress,
+  width = 160,
+  liked = false,
+  onToggleLike,
+}: BiteCardProps) {
   const { palette, radii, spacing } = useHungryTheme();
+  const imageHeight = Math.round(width * 0.76);
+  const captionGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .maxDuration(260)
+    .onEnd((_event, success) => {
+      if (success && onToggleLike) {
+        runOnJS(onToggleLike)();
+      }
+    });
+  const displayHeartCount = bite.heartCount + (liked ? 1 : 0);
 
   return (
-    <Pressable
-      onPress={onPress}
+    <View
       accessibilityLabel={`Bite by ${bite.authorName}: ${bite.dishName}`}
       style={{
-        width: 160,
+        width,
         borderRadius: radii.lg,
         overflow: "hidden",
         backgroundColor: palette.surface,
@@ -50,62 +71,53 @@ export function BiteCard({ bite, onPress, onDishPress }: BiteCardProps) {
       }}
     >
       {/* Dish image */}
-      <View style={{ height: 120, position: "relative" }}>
-        <Image
-          source={{ uri: bite.dishImageUrl }}
-          style={{ width: "100%", height: 120 }}
-          contentFit="cover"
-          transition={200}
-        />
-        {/* Gradient overlay at bottom */}
-        <View
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 56,
-            backgroundColor: "rgba(0,0,0,0.45)",
-          }}
-        />
-        {/* Taste tag chip */}
-        <View
-          style={{
-            position: "absolute",
-            top: spacing[2],
-            left: spacing[2],
-            backgroundColor: `${palette.orange}EE`,
-            borderRadius: radii.pill,
-            paddingHorizontal: spacing[2],
-            paddingVertical: 2,
-          }}
-        >
-          <AppText variant="micro" style={{ color: "#FFFFFF", fontFamily: "Nunito_700Bold" }}>
-            {bite.tasteTag}
-          </AppText>
-        </View>
-        {/* Author avatar */}
-        <View
-          style={{
-            position: "absolute",
-            bottom: -14,
-            right: spacing[2],
-            width: 28,
-            height: 28,
-            borderRadius: 14,
-            borderWidth: 2,
-            borderColor: palette.orange,
-            overflow: "hidden",
-            backgroundColor: palette.surface,
-          }}
-        >
+      <Pressable onPress={onDishPress ?? onPress}>
+        <View style={{ height: imageHeight, position: "relative", backgroundColor: palette.surfaceRaised }}>
           <Image
-            source={{ uri: bite.authorAvatarUrl }}
-            style={{ width: "100%", height: "100%" }}
-            contentFit="cover"
+            source={{ uri: bite.dishImageUrl }}
+            style={{ width: "100%", height: imageHeight }}
+            contentFit="contain"
+            transition={200}
           />
+          {/* Taste tag chip */}
+          <View
+            style={{
+              position: "absolute",
+              top: spacing[2],
+              left: spacing[2],
+              backgroundColor: `${palette.orange}EE`,
+              borderRadius: radii.pill,
+              paddingHorizontal: spacing[2],
+              paddingVertical: 2,
+            }}
+          >
+            <AppText variant="micro" style={{ color: "#FFFFFF", fontFamily: "Nunito_700Bold" }}>
+              {bite.tasteTag}
+            </AppText>
+          </View>
+          {/* Author avatar */}
+          <View
+            style={{
+              position: "absolute",
+              bottom: -14,
+              right: spacing[2],
+              width: 28,
+              height: 28,
+              borderRadius: 14,
+              borderWidth: 2,
+              borderColor: palette.orange,
+              overflow: "hidden",
+              backgroundColor: palette.surface,
+            }}
+          >
+            <Image
+              source={{ uri: bite.authorAvatarUrl }}
+              style={{ width: "100%", height: "100%" }}
+              contentFit="cover"
+            />
+          </View>
         </View>
-      </View>
+      </Pressable>
 
       {/* Content */}
       <View style={{ padding: spacing[3], paddingTop: spacing[4], gap: spacing[2] }}>
@@ -121,14 +133,18 @@ export function BiteCard({ bite, onPress, onDishPress }: BiteCardProps) {
         <AppText variant="micro" tone="muted" numberOfLines={1}>
           {bite.venueName}
         </AppText>
-        <AppText
-          variant="bodySmall"
-          tone="secondary"
-          numberOfLines={2}
-          style={{ lineHeight: 17 }}
-        >
-          {bite.caption}
-        </AppText>
+        <GestureDetector gesture={captionGesture}>
+          <View>
+            <AppText
+              variant="bodySmall"
+              tone="secondary"
+              numberOfLines={3}
+              style={{ lineHeight: 17 }}
+            >
+              {bite.caption}
+            </AppText>
+          </View>
+        </GestureDetector>
 
         {/* Social row */}
         <View
@@ -140,9 +156,9 @@ export function BiteCard({ bite, onPress, onDishPress }: BiteCardProps) {
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Heart size={12} color={palette.error} />
+            <Heart size={12} color={liked ? palette.error : palette.textMuted} />
             <AppText variant="micro" tone="muted">
-              {bite.heartCount}
+              {displayHeartCount}
             </AppText>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -156,6 +172,6 @@ export function BiteCard({ bite, onPress, onDishPress }: BiteCardProps) {
           </AppText>
         </View>
       </View>
-    </Pressable>
+    </View>
   );
 }

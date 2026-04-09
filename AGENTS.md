@@ -182,3 +182,15 @@ Before ending any session that changed code:
   [ ] tasks/lessons.md — any correction recorded
   [ ] README.md — status section updated if progress/decisions changed
 ```
+
+This project is a floor-plan and store-directory tracing tool.
+
+Rules:
+- Geometry is the source of truth.
+- Never store layout edits only as raster pixels.
+- All store units must be saved as polygons or rectangles in JSON.
+- Prefer SVG rendering over canvas bitmap rendering.
+- Keep drawing logic modular.
+- Use OpenCV only for image rectification, not final geometry storage.
+- Add snapping and validation before adding advanced auto-detection.
+- Avoid changing geometry schema without updating import/export logic.

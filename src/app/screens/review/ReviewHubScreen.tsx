@@ -89,46 +89,54 @@ export function ReviewHubScreen({ navigation }: Props) {
         renderItem={({ item }) => {
           const dishes = mockRepository.listDishesByVenue(item.id);
           const leadDish = dishes[0];
+          const handleCardPress = () => {
+            if (!leadDish) {
+              return;
+            }
+            selectDish(item.id, leadDish.id);
+            navigation.navigate("ReviewRating", { venueId: item.id, dishId: leadDish.id });
+          };
 
           return (
-            <Card style={{ padding: 0, overflow: "hidden" }}>
-              {leadDish ? (
-                <Image
-                  source={{ uri: leadDish.imageUrl }}
-                  style={{ width: "100%", height: 132 }}
-                  contentFit="cover"
-                />
-              ) : null}
-              <View style={{ padding: spacing[4], gap: spacing[3] }}>
-                <View style={{ gap: spacing[2] }}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
-                    <View style={{ flex: 1 }}>
-                      <AppText variant="h3">{item.name}</AppText>
-                      <AppText variant="bodySmall" tone="secondary">
-                        {item.floor} {item.unitNumber} · {item.operatingHours}
-                      </AppText>
+            <Pressable onPress={handleCardPress}>
+              <Card style={{ padding: 0, overflow: "hidden" }}>
+                {leadDish ? (
+                  <Image
+                    source={{ uri: leadDish.imageUrl }}
+                    style={{ width: "100%", height: 132 }}
+                    contentFit="cover"
+                  />
+                ) : null}
+                <View style={{ padding: spacing[4], gap: spacing[3] }}>
+                  <View style={{ gap: spacing[2] }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
+                      <View style={{ flex: 1 }}>
+                        <AppText variant="h3">{item.name}</AppText>
+                        <AppText variant="bodySmall" tone="secondary">
+                          {item.floor} {item.unitNumber} · {item.operatingHours}
+                        </AppText>
+                      </View>
                     </View>
-                    <Badge label={item.isOpen ? "Open now" : "Closed"} tone={item.isOpen ? "success" : "warning"} />
+                    <AppText variant="bodySmall" tone="secondary">
+                      Tap this card to start a review with the highlighted dish.
+                    </AppText>
                   </View>
-                  <AppText variant="bodySmall" tone="secondary">
-                    Pick the exact dish you bought to keep the rating and taste tags accurate.
-                  </AppText>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                    {dishes.map((dish) => (
+                      <Pressable
+                        key={dish.id}
+                        onPress={() => {
+                          selectDish(item.id, dish.id);
+                          navigation.navigate("ReviewRating", { venueId: item.id, dishId: dish.id });
+                        }}
+                      >
+                        <Badge label={dish.name} tone="neutral" />
+                      </Pressable>
+                    ))}
+                  </View>
                 </View>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-                  {dishes.map((dish) => (
-                    <Pressable
-                      key={dish.id}
-                      onPress={() => {
-                        selectDish(item.id, dish.id);
-                        navigation.navigate("ReviewRating", { venueId: item.id, dishId: dish.id });
-                      }}
-                    >
-                      <Badge label={dish.name} tone="neutral" />
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-            </Card>
+              </Card>
+            </Pressable>
           );
         }}
       />
