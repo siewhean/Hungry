@@ -134,6 +134,7 @@ These items degrade the user experience but do not fully block flows.
 | P1-45 | Auth | No "show password" toggle on login, signup, or reset password screens | `LoginScreen.tsx`, `SignUpScreen.tsx`, `ResetPasswordScreen.tsx` |
 | P1-46 | Auth | No terms/privacy policy tappable link on signup — only static text | `SignUpScreen.tsx:63` |
 | P1-47 | Search | TasteFilter slider has no `step={1}` — stores float values (e.g. 3.7821) instead of integers | `TasteFilterScreen.tsx:30–31` |
+| P1-48 | Detail | StallDetail hero image-to-text fade still looks inconsistent versus Figma in runtime edge cases; gradient layering/readability needs final visual QA and polish | `StallDetailScreen.tsx` |
 
 ### P2 — Polish / Copy / Consistency
 
@@ -373,6 +374,8 @@ These items affect perceived quality but do not break functionality.
 - 2026-04-09 | Codex | Added a product and planning requirement for richer Favourites retrieval: users should be able to sort saved dishes by dish type (for example chicken rice, nasi lemak), rating, taste profile, and location. | Status: completed for documentation update only. | Blockers: the current domain layer does not yet define an explicit dish-type taxonomy for favourites sorting. | Next: decide the dish-type contract, then implement repository-backed sorting in the Favourites flow.
 - 2026-04-09 | Codex | Rebuilt `StallDetailScreen` against Figma node `113:811` composition (top nav, hero overlap, location badge, pricing/rating hierarchy, attribute grid, primary taste-profile CTA, opening-hours split, signature dish tile grid, and community card styling) while preserving review action choices. | Status: completed for visual alignment pass + typecheck. | Blockers: final pixel-level fit still needs simulator screenshot QA. | Next: run device screenshot comparison and tighten spacing/typography deltas if needed.
 - 2026-04-09 | Codex | Executed backlog batch `P0-04`, `P0-13`, `P1-28`, and pending map polish: auth form validation added across all auth forms, orange badge tone fixed, review recommend default changed to false, and NEA/Hygiene map text removed. Added/ran new TypeScript unit tests and restored `npm test` script. | Status: completed for batch + verification. | Blockers: remaining P0/P1 backlog items still pending and will be handled in next batches. | Next: continue with the next highest-priority P0 flow blockers (onboarding state persistence and detail delivery handoff behavior).
+- 2026-04-09 | Codex | Implemented targeted UI bug-fix batch for onboarding/review/stall detail polish: removed onboarding top-left back icon, hardened global back safe-area behavior to prevent header overlap, removed review flow "Choose another dish", redesigned Recommend UI into a segmented control, set chip borders to primary orange, replaced stall-card opening-hours metric with distance, and rebuilt hero fade using Figma node `113:811` gradient stops. | Status: completed for block 1 (`global_navigation_and_layout` + `review_flow_and_cards`) with verification. | Blockers: `map_and_data_logic` block is intentionally pending next step. | Next: fix map polygon tap hit-testing and strict F&B filtering in building directory list.
+- 2026-04-09 | Codex | Addressed follow-up regressions from screenshot QA: removed non-food units from stall directory list by enforcing venue-backed F&B filtering, and replaced `expo-linear-gradient` usage in Stall Detail with a pure RN layered fade to remove native runtime crash while restoring readable image-to-text transition. | Status: completed + verified. | Blockers: map polygon hit-testing fix still pending in next block. | Next: implement map polygon interaction reliability improvements (`onStallPress` hit target/z-index audit).
 
 ---
 
@@ -403,6 +406,8 @@ Add dated command outputs under each active workstream when run.
 - 2026-04-09: `npm run typecheck` passed after stall-detail review-card action-sheet wiring and open/closed status-card removal.
 - 2026-04-09: `npm run typecheck` passed after Figma-driven Stall Detail rebuild for node `113:811`.
 - 2026-04-09: `npm run typecheck` and `npm test` both passed after auth validation hardening, orange badge-tone fix, review default-recommend change, NEA/Hygiene label removal from map screens, and test harness restoration.
+- 2026-04-09: `npm run typecheck` and `npm test` both passed after onboarding back-button removal, global back safe-area/header spacing hardening, review CTA cleanup + segmented recommend control, chip border-orange update, and Figma-based hero gradient update on Stall Detail.
+- 2026-04-09: `npm run typecheck` and `npm test` both passed after replacing `expo-linear-gradient` with a native-module-free layered fade and applying strict venue-backed filtering for F&B-only stall directory rows.
 - [x] `npm run typecheck` — 2026-04-08
 - [ ] `npx expo-doctor`
 - [x] `npm run test` — 2026-04-09

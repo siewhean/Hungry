@@ -88,8 +88,15 @@ function GlobalScrollBackButton() {
   const { palette, radii, shadows, spacing } = useHungryTheme();
   const scrollBackVisible = useUIStore((state) => state.scrollBackVisible);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
+  const rootState = navigationRef.isReady() ? navigationRef.getRootState() : undefined;
+  const rootRouteName = rootState ? rootState.routes[rootState.index]?.name : undefined;
 
-  if (!scrollBackVisible || !navigationRef.isReady() || !navigationRef.canGoBack()) {
+  if (
+    !scrollBackVisible ||
+    !navigationRef.isReady() ||
+    !navigationRef.canGoBack() ||
+    rootRouteName === "OnboardingStack"
+  ) {
     return null;
   }
 
@@ -108,7 +115,7 @@ function GlobalScrollBackButton() {
             borderColor: palette.border,
             borderRadius: radii.pill,
             left: spacing[4],
-            top: insets.top + spacing[5],
+            top: insets.top + spacing[1],
           },
           shadows.floating,
         ]}

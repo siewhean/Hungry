@@ -2,7 +2,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } f
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft, Clock3, MapPin, Share2, Star, Truck } from "lucide-react-native";
+import { ArrowLeft, MapPin, Share2, Star, Truck } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, EmptyState } from "@/components/ui";
@@ -70,6 +70,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const signatureDishes = withFallbackSignatureDishes(dishes, mockRepository.listPopularNearby());
   const contentWidth = screenWidth - spacing[5] * 2;
   const squareTile = (contentWidth - 4) / 2;
+  const distanceKm = Math.max(0.1, ((leadDish?.distanceMeters ?? 500) / 1000));
+  const distanceLabel = `${distanceKm.toFixed(1)} km away`;
   const quote =
     "A pioneering interpretation of the classic Singaporean wonton noodle, elevated through Japanese ramen techniques and a commitment to artisanal assembly.";
   const deliveryAvailable = venue.deliveryLinks.length > 0;
@@ -118,7 +120,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
         style={[
           styles.topNav,
           {
-            backgroundColor: "rgba(255,247,238,0.92)",
+            backgroundColor: "rgba(255,255,255,0.96)",
             height: topBarHeight,
             paddingTop: insets.top,
             paddingHorizontal: spacing[5],
@@ -148,8 +150,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
             style={{ height: 336, width: "100%" }}
             contentFit="cover"
           />
-          <View style={styles.heroGradient} />
-          <View style={styles.heroBottomFade} />
+          <View pointerEvents="none" style={styles.heroFadeOverlay}>
+            <View style={styles.heroFadeTint} />
+            <View style={styles.heroFadeMid} />
+            <View style={styles.heroFadeStrong} />
+            <View style={styles.heroFadeBase} />
+          </View>
         </View>
 
         <View style={[styles.contentWrap, { marginTop: -112, paddingHorizontal: spacing[5] }]}>
@@ -217,12 +223,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
               ]}
             >
               <View style={styles.infoCardHeader}>
-                <Clock3 color={palette.navy} size={16} />
+                <MapPin color={palette.navy} size={16} />
                 <AppText variant="micro" tone="muted" style={styles.attributeLabel}>
-                  OPENING HOURS
+                  DISTANCE
                 </AppText>
               </View>
-              <AppText variant="body">{venue.operatingHours}</AppText>
+              <AppText variant="h3">{distanceLabel}</AppText>
             </View>
             <View
               style={[
@@ -378,18 +384,33 @@ const styles = StyleSheet.create({
   topNavSpacer: {
     flex: 1,
   },
-  heroGradient: {
-    backgroundColor: "rgba(255,255,255,0.18)",
+  heroFadeOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroFadeTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,248,242,0.08)",
+  },
+  heroFadeMid: {
+    backgroundColor: "rgba(255,248,242,0.28)",
     bottom: 0,
+    height: "52%",
     left: 0,
     position: "absolute",
     right: 0,
-    top: 0,
   },
-  heroBottomFade: {
-    backgroundColor: "rgba(255,255,255,0.94)",
+  heroFadeStrong: {
+    backgroundColor: "rgba(255,248,242,0.58)",
     bottom: 0,
-    height: 136,
+    height: "34%",
+    left: 0,
+    position: "absolute",
+    right: 0,
+  },
+  heroFadeBase: {
+    backgroundColor: "#FFF8F2",
+    bottom: 0,
+    height: "20%",
     left: 0,
     position: "absolute",
     right: 0,

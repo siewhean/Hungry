@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Minus, Plus, RotateCcw, Search, Store } from "lucide-react-native";
+import { ChevronRight, Minus, Plus, RotateCcw, Search } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -154,34 +154,93 @@ function DirectoryFilter({
   );
 }
 
-function StatusBadge({ isOpen }: { isOpen: boolean }) {
+type VenueStatus = "open" | "closing_soon" | "closed";
+
+function parseTimeToMinutes(value: string): number | null {
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
+  if (!match) {
+    return null;
+  }
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const suffix = match[3].toUpperCase();
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return null;
+  }
+
+  const normalizedHours = hours % 12 + (suffix === "PM" ? 12 : 0);
+  return normalizedHours * 60 + minutes;
+}
+
+function isClosingWithinOneHour(operatingHours?: string, now = new Date()): boolean {
+  if (!operatingHours) {
+    return false;
+  }
+
+  const matches = operatingHours.match(/\d{1,2}:\d{2}\s*[AP]M/gi);
+  if (!matches || matches.length === 0) {
+    return false;
+  }
+
+  const closingMinutes = parseTimeToMinutes(matches[matches.length - 1]);
+  if (closingMinutes === null) {
+    return false;
+  }
+
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const diff = closingMinutes - currentMinutes;
+  return diff >= 0 && diff <= 60;
+}
+
+function getVenueStatus(isOpen: boolean, operatingHours?: string): VenueStatus {
+  if (!isOpen) {
+    return "closed";
+  }
+
+  if (isClosingWithinOneHour(operatingHours)) {
+    return "closing_soon";
+  }
+
+  return "open";
+}
+
+function StatusBadge({ status }: { status: VenueStatus }) {
   const { palette, radii, spacing } = useHungryTheme();
-  const statusColor = isOpen ? palette.success : palette.error;
+  const tone =
+    status === "open"
+      ? { dot: palette.success, text: "Open" }
+      : status === "closing_soon"
+        ? { dot: palette.warning, text: "Closing soon" }
+        : { dot: palette.error, text: "Closed" };
 
   return (
     <View
       style={{
         alignItems: "center",
-        alignSelf: "flex-start",
+        alignSelf: "center",
         backgroundColor: palette.surface,
         borderColor: palette.border,
         borderRadius: radii.pill,
         borderWidth: 1,
         flexDirection: "row",
         gap: spacing[1],
+        minHeight: 30,
+        justifyContent: "center",
         paddingHorizontal: spacing[2],
-        paddingVertical: 6,
+        paddingVertical: 0,
       }}
     >
       <View
         style={{
-          backgroundColor: statusColor,
+          backgroundColor: tone.dot,
           borderRadius: radii.pill,
           height: 7,
           width: 7,
         }}
       />
-      <AppText variant="micro">{isOpen ? "Open" : "Closed"}</AppText>
+      <AppText variant="micro">{tone.text}</AppText>
     </View>
   );
 }
@@ -301,6 +360,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
           searchable,
         };
       })
+      .filter((record) => Boolean(record.venue))
       .filter((record) => {
         if (openNowOnly && !record.isOpen) {
           return false;
@@ -338,8 +398,6 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
   }, [floorDirectory, selectedFromStore, selectedStallId]);
 
   const activeStallId = selectedFromStore ?? selectedStallId;
-  const selectedRecord = floorDirectory.find((record) => record.stall.stallId === activeStallId);
-
   const menuPreview = useMemo(
     () =>
       floorDirectory
@@ -389,14 +447,6 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
 
     setSelectedStallId(stall.stallId);
     setHighlightedStallVenueId(stall.venueId);
-  };
-
-  const openSelectedStall = () => {
-    if (!selectedRecord?.venue) {
-      return;
-    }
-
-    navigation.navigate("StallDetail", { venueId: selectedRecord.venue.id });
   };
 
   return (
@@ -524,56 +574,12 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
               </View>
             </View>
 
-            {selectedRecord ? (
-              <View
-                style={{
-                  backgroundColor: palette.surface,
-                  borderColor: palette.border,
-                  borderRadius: 22,
-                  borderWidth: 1,
-                  gap: spacing[3],
-                  paddingHorizontal: spacing[4],
-                  paddingVertical: spacing[4],
-                }}
-              >
-                <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3] }}>
-                  <View style={{ flex: 1, gap: 4 }}>
-                    <AppText variant="h3">{selectedRecord.title}</AppText>
-                    <AppText variant="bodySmall" tone="secondary">
-                      {selectedRecord.unitNumber} · {selectedRecord.descriptor}
-                    </AppText>
-                  </View>
-                  <StatusBadge isOpen={selectedRecord.isOpen} />
-                </View>
-
-                {selectedRecord.dish ? (
-                  <AppText variant="bodySmall" tone="secondary">
-                    {selectedRecord.dish.name} · S${selectedRecord.dish.price.toFixed(2)}
-                  </AppText>
-                ) : null}
-
-                <View style={{ flexDirection: "row", gap: spacing[2] }}>
-                  <Button
-                    label="Open stall details"
-                    onPress={openSelectedStall}
-                    disabled={!selectedRecord.venue}
-                    style={{ flex: 1 }}
-                  />
-                  <Button
-                    label="Highlight in list"
-                    variant="secondary"
-                    onPress={() => setSelectedStallId(selectedRecord.stall.stallId)}
-                    style={{ flex: 1 }}
-                  />
-                </View>
-              </View>
-            ) : null}
-
             <View style={{ gap: spacing[2] }}>
               <AppText variant="h3">Stall directory · {activeFloor}</AppText>
 
               {floorDirectory.map((record) => {
                 const isSelected = activeStallId === record.stall.stallId;
+                const status = getVenueStatus(record.isOpen, record.venue?.operatingHours);
 
                 return (
                   <Pressable
@@ -596,7 +602,27 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                           {record.unitNumber} · {record.descriptor}
                         </AppText>
                       </View>
-                      {record.venue ? <Store color={palette.textMuted} size={15} /> : null}
+                      <StatusBadge status={status} />
+                      <Pressable
+                        accessibilityRole="button"
+                        hitSlop={10}
+                        onPress={() => {
+                          if (record.venue) {
+                            navigation.navigate("StallDetail", { venueId: record.venue.id });
+                          }
+                        }}
+                        style={{
+                          alignItems: "center",
+                          borderColor: palette.border,
+                          borderRadius: radii.pill,
+                          borderWidth: 1,
+                          height: 30,
+                          justifyContent: "center",
+                          width: 30,
+                        }}
+                      >
+                        <ChevronRight color={palette.textMuted} size={16} />
+                      </Pressable>
                     </View>
                   </Pressable>
                 );
@@ -671,40 +697,6 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
           </View>
         </ScrollView>
 
-        <View
-          style={[
-            styles.bottomDock,
-            {
-              backgroundColor: "rgba(255,255,255,0.98)",
-              borderColor: palette.border,
-              paddingBottom: Math.max(insets.bottom, spacing[4]),
-              paddingHorizontal: spacing[5],
-              paddingTop: spacing[3],
-            },
-            shadows.floating,
-          ]}
-        >
-          <View style={{ flexDirection: "row", gap: spacing[2] }}>
-            <Button
-              label="Back to map"
-              variant="secondary"
-              onPress={() => {
-                if (navigation.canGoBack()) {
-                  navigation.goBack();
-                  return;
-                }
-                navigation.navigate("MainTabs", { screen: "Maps" });
-              }}
-              style={{ flex: 1 }}
-            />
-            <Button
-              label="Open selected stall"
-              onPress={openSelectedStall}
-              disabled={!selectedRecord?.venue}
-              style={{ flex: 1 }}
-            />
-          </View>
-        </View>
       </View>
     </SafeAreaView>
   );
@@ -732,8 +724,5 @@ const styles = StyleSheet.create({
   levelPill: {
     position: "absolute",
     gap: 6,
-  },
-  bottomDock: {
-    borderTopWidth: 1,
   },
 });

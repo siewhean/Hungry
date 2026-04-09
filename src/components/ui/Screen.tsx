@@ -50,6 +50,7 @@ export function Screen({
                   styles.header,
                   {
                     paddingLeft: scrollBackVisible ? spacing[12] : 0,
+                    paddingTop: scrollBackVisible ? spacing[8] : 0,
                   },
                 ]}
               >
@@ -82,6 +83,7 @@ export function Screen({
                   styles.header,
                   {
                     paddingLeft: scrollBackVisible ? spacing[12] : 0,
+                    paddingTop: scrollBackVisible ? spacing[8] : 0,
                   },
                 ]}
               >

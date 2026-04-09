@@ -13,7 +13,7 @@
 import { useEffect, useRef } from "react";
 import { Animated, Easing, Pressable, View, StyleSheet, Platform } from "react-native";
 import type { PropsWithChildren } from "react";
-import { ChevronRight, ArrowLeft } from "lucide-react-native";
+import { ChevronRight } from "lucide-react-native";
 
 import { AppText, Button } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -314,17 +314,7 @@ export function OnboardingIntroTemplate({
         <ProgressBar total={totalSteps} current={stepIndex - 1} />
 
         <View style={styles.topRow}>
-          {backScreen ? (
-            <Pressable
-              onPress={() => navigation.navigate(backScreen)}
-              style={styles.backBtn}
-              accessibilityLabel="Go back"
-            >
-              <ArrowLeft size={20} color={palette.textMuted} />
-            </Pressable>
-          ) : (
-            <View style={styles.backBtn} />
-          )}
+          <View style={styles.backBtn} />
 
           <Pressable
             onPress={() => navigation.navigate("TasteQuiz")}

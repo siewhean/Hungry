@@ -57,7 +57,6 @@ export function ReviewRatingScreen({ navigation, route }: Props) {
         </View>
       </Card>
       <Button label="Next: taste notes" onPress={() => navigation.navigate("ReviewTags")} disabled={!rating} />
-      <Button label="Choose another dish" variant="ghost" onPress={() => navigation.navigate("ReviewHub")} />
     </ReviewScreenShell>
   );
 }

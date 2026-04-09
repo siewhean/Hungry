@@ -19,8 +19,8 @@ export function Chip({ label, selected = false, onPress }: ChipProps) {
       style={({ pressed }) => [
         styles.chip,
         {
-          backgroundColor: selected ? palette.surface : palette.bg,
-          borderColor: selected ? palette.navy : palette.border,
+          backgroundColor: selected ? palette.orangeLight : palette.surface,
+          borderColor: palette.orange,
           borderRadius: radii.md,
           minHeight: 44,
           paddingHorizontal: spacing[3],
@@ -29,7 +29,9 @@ export function Chip({ label, selected = false, onPress }: ChipProps) {
         },
       ]}
     >
-      <AppText tone={selected ? "default" : "secondary"}>{label}</AppText>
+      <AppText style={{ color: selected ? palette.orange : palette.textSecondary }}>
+        {label}
+      </AppText>
     </Pressable>
   );
 }
