@@ -8,6 +8,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { FloorPlanViewer } from "@/components/map/FloorPlanViewer";
 import { AppText, Button, Input } from "@/components/ui";
 import { getBuildingVenues } from "@/features/discovery/discovery";
+import { getDirectoryDescriptor } from "@/features/discovery/venueDescriptor";
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { getBuildingById, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
 import { mockRepository } from "@/lib/services/mock/repositories";
@@ -283,11 +284,10 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
         const title = venue?.name ?? stall.label ?? `Unit ${stall.unitNumber}`;
         const unitNumber = venue?.unitNumber ?? stall.unitNumber;
         const isOpen = venue ? venue.isOpen : stall.status === "open";
-        const descriptor = venue
-          ? `${venue.operatingHours} · Hygiene ${venue.hygieneGrade}`
-          : stall.status === "non_food"
-            ? "Facility / seating"
-            : "Independent unit";
+        const descriptor = getDirectoryDescriptor({
+          operatingHours: venue?.operatingHours,
+          isFacility: stall.status === "non_food",
+        });
         const searchable = `${title} ${unitNumber} ${dish?.name ?? ""}`.toLowerCase();
 
         return {

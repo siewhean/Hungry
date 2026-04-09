@@ -4,6 +4,24 @@
 
 ---
 
+## 0. Done (Execution Batches)
+
+### Batch 2026-04-09A — Codex (P0/P1 + pending polish)
+
+| ID | Status | Summary |
+|----|--------|---------|
+| P0-04 | Done | Added shared auth validators and wired required/format/password checks into Login, Sign Up, Forgot Password, and Reset Password forms. |
+| P0-13 | Done | Refactored badge tone mapping and fixed `tone=\"orange\"` to use orange-specific token styling instead of neutral. |
+| P1-28 | Done | Changed review draft default `recommend` to `false` via a shared draft factory used by store init and reset. |
+| POL-2026-04-09-01 | Done | Removed remaining NEA/Hygiene text from active map/drill-down screens (`HomeMapScreen`, `BuildingDrillDownScreen`). |
+
+Verification Note:
+- `npm run typecheck` passed after all code changes.
+- `npm test` passed (11 tests): auth validators, badge tone mapping, review draft defaults, and directory descriptor behavior.
+- Confirmed `rg -n "Hygiene|NEA clean" src/app/screens -S` returns no matches.
+
+---
+
 ## 1. Unchecked Phase 1 & Phase 3 Items
 
 ### Phase 1 — Product + Architecture Planning
@@ -53,7 +71,6 @@ These items break core user journeys or render features non-functional.
 | P0-01 | Onboarding | TasteQuiz results never persisted to `useProfileStore` — user's quiz answers are silently discarded after completing the flow | `TasteQuizScreen.tsx` |
 | P0-02 | Onboarding | DietaryPreferences selections never persisted to any store — dietary flags are discarded on navigation | `DietaryPreferencesScreen.tsx` |
 | P0-03 | Onboarding | LocationPermission `grantLocation()` does not call the system permission API and does not update `currentLocation` to real GPS — hardcoded to Singapore CBD default | `LocationPermissionScreen.tsx`, `useLocationStore.ts` |
-| P0-04 | Auth | No form validation on any auth screen — `useForm` is used but no rules are passed; blank/invalid inputs submit silently | `LoginScreen.tsx`, `SignUpScreen.tsx`, `ForgotPasswordScreen.tsx`, `ResetPasswordScreen.tsx` |
 | P0-05 | Home | "Decide For Me" FAB is absent from HomeFeedScreen — the FAB present is a "Post" action, not the product-spec discovery CTA | `HomeFeedScreen.tsx` |
 | P0-06 | Maps | Map pin colours incorrect — `food_court` uses amber instead of teal; `hawker_centre`/`restaurant` both use navy instead of orange/grey | `HomeMapScreen.tsx:144–149` |
 | P0-07 | Maps | `BuildingPin`, `FloorSelector`, `BuildingLegend`, `MapBottomSheet`, `ClusterPin` components all exist but are never used — HomeMapScreen re-implements its own variants inline | `HomeMapScreen.tsx`, `BuildingDrillDownScreen.tsx` |
@@ -62,7 +79,6 @@ These items break core user journeys or render features non-functional.
 | P0-10 | Detail | DishDetail delivery buttons navigate to NotFound instead of calling `Linking.openURL` | `DishDetailScreen.tsx:125–129` |
 | P0-11 | Detail | StallDetail delivery buttons navigate to NotFound instead of calling `Linking.openURL` | `StallDetailScreen.tsx:361` |
 | P0-12 | Detail | StallDetail directions button navigates to NotFound instead of opening Apple/Google Maps | `StallDetailScreen.tsx:349–350` |
-| P0-13 | Component | Badge `tone="orange"` renders as neutral (same as `tone="neutral"`) — affects all orange badges across Reads, DishDetail, DecideForMe | `Badge.tsx:15` |
 | P0-14 | State | No Zustand `persist` middleware on any store — all auth state, profile, favourites, reviews, and preferences reset on every cold start | `useSessionStore.ts`, `useProfileStore.ts`, `useReviewDraftStore.ts`, `useLocationStore.ts`, `useSearchStore.ts` |
 | P0-15 | Navigation | `SoftGateSheet` referenced in screens.md and product-context.md but does not exist in the codebase — no soft-gate mechanism for unauthenticated users on protected actions | — |
 
@@ -99,7 +115,6 @@ These items degrade the user experience but do not fully block flows.
 | P1-25 | Review | ReviewHub unauthenticated state double-guards: `useEffect` redirect AND conditional render — brief flash of auth-blocked content visible before redirect fires | `ReviewHubScreen.tsx:30–50` |
 | P1-26 | Review | ReviewHub venue picker has no empty state when search returns zero venues | `ReviewHubScreen.tsx` |
 | P1-27 | Review | ReviewRating falls back to `mockRepository.listPopularNearby()[0]` when no dish is selected — shows a random dish instead of an error | `ReviewRatingScreen.tsx:25` |
-| P1-28 | Review | `recommend` toggle defaults to `true` — users who never touch it silently submit "Would recommend" even on a 1-star review | `useReviewDraftStore.ts` |
 | P1-29 | Review | ReviewCompose exposes a "Simulate photo failure" debug button to end users | `ReviewComposeScreen.tsx:105` |
 | P1-30 | Review | No real photo picker — `expo-image-picker` not integrated; only mock URI strings | `ReviewComposeScreen.tsx:104–105` |
 | P1-31 | Profile | FavouritesScreen has no navigation to DishDetail — only a "Remove favourite" action | `FavouritesScreen.tsx` |
@@ -357,6 +372,7 @@ These items affect perceived quality but do not break functionality.
 - 2026-04-09 | Codex | Closed high-priority QA gaps: made stall-detail community review cards actionable via Quick review/Post selection, removed the Stall Detail open/closed status metadata card, and kept auth-gated routing for both actions. | Status: completed for targeted fixes + typecheck. | Blockers: none for this patch. | Next: continue remaining XML blocks after user confirmation.
 - 2026-04-09 | Codex | Added a product and planning requirement for richer Favourites retrieval: users should be able to sort saved dishes by dish type (for example chicken rice, nasi lemak), rating, taste profile, and location. | Status: completed for documentation update only. | Blockers: the current domain layer does not yet define an explicit dish-type taxonomy for favourites sorting. | Next: decide the dish-type contract, then implement repository-backed sorting in the Favourites flow.
 - 2026-04-09 | Codex | Rebuilt `StallDetailScreen` against Figma node `113:811` composition (top nav, hero overlap, location badge, pricing/rating hierarchy, attribute grid, primary taste-profile CTA, opening-hours split, signature dish tile grid, and community card styling) while preserving review action choices. | Status: completed for visual alignment pass + typecheck. | Blockers: final pixel-level fit still needs simulator screenshot QA. | Next: run device screenshot comparison and tighten spacing/typography deltas if needed.
+- 2026-04-09 | Codex | Executed backlog batch `P0-04`, `P0-13`, `P1-28`, and pending map polish: auth form validation added across all auth forms, orange badge tone fixed, review recommend default changed to false, and NEA/Hygiene map text removed. Added/ran new TypeScript unit tests and restored `npm test` script. | Status: completed for batch + verification. | Blockers: remaining P0/P1 backlog items still pending and will be handled in next batches. | Next: continue with the next highest-priority P0 flow blockers (onboarding state persistence and detail delivery handoff behavior).
 
 ---
 
@@ -386,9 +402,10 @@ Add dated command outputs under each active workstream when run.
 - 2026-04-09: `npm run typecheck` passed after global navigation and Home interaction updates (tab labels removed, smart back visibility tuning, Home gesture rewiring, and Bites data/routing fixes).
 - 2026-04-09: `npm run typecheck` passed after stall-detail review-card action-sheet wiring and open/closed status-card removal.
 - 2026-04-09: `npm run typecheck` passed after Figma-driven Stall Detail rebuild for node `113:811`.
+- 2026-04-09: `npm run typecheck` and `npm test` both passed after auth validation hardening, orange badge-tone fix, review default-recommend change, NEA/Hygiene label removal from map screens, and test harness restoration.
 - [x] `npm run typecheck` — 2026-04-08
 - [ ] `npx expo-doctor`
-- [ ] `npm run test` (test script not yet defined in package.json)
+- [x] `npm run test` — 2026-04-09
 
 ---
 

@@ -1,8 +1,11 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
+import { View } from "react-native";
 
 import { AppText, Button, Input } from "@/components/ui";
+import { validateEmail, validatePassword, validateRequired } from "@/features/auth/validation";
 import { useUIStore } from "@/store/useUIStore";
+import { useHungryTheme } from "@/theme";
 import { authFieldLabels } from "@/features/auth/authContent";
 import { AuthScreenShell } from "./AuthScreenShell";
 import type { AuthStackParamList } from "./AuthStack";
@@ -16,18 +19,19 @@ type FormValues = {
 };
 
 export function SignUpScreen({ navigation }: Props) {
+  const { palette } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
-  const { handleSubmit, register, setValue } = useForm<FormValues>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({
     defaultValues: {
       displayName: "",
       email: "",
       password: "",
     },
   });
-
-  register("displayName");
-  register("email");
-  register("password");
 
   const handleSignUp = handleSubmit(() => {
     showToast({ message: "Account created. Please verify your email.", tone: "success" });
@@ -55,9 +59,69 @@ export function SignUpScreen({ navigation }: Props) {
       <AppText variant="micro" tone="muted">
         OR CREATE AN ACCOUNT WITH EMAIL
       </AppText>
-      <Input label={authFieldLabels.signUp.displayName} placeholder="Wei Ming" onChangeText={(value) => setValue("displayName", value)} />
-      <Input label={authFieldLabels.signUp.email} keyboardType="email-address" autoCapitalize="none" placeholder="weiming@example.com" onChangeText={(value) => setValue("email", value)} />
-      <Input label={authFieldLabels.signUp.password} secureTextEntry placeholder="Minimum 8 characters" onChangeText={(value) => setValue("password", value)} />
+      <Controller
+        control={control}
+        name="displayName"
+        rules={{ validate: (value) => validateRequired(value, "Display name") }}
+        render={({ field: { onChange, value } }) => (
+          <View style={{ gap: 4 }}>
+            <Input
+              label={authFieldLabels.signUp.displayName}
+              placeholder="Wei Ming"
+              value={value}
+              onChangeText={onChange}
+            />
+            {errors.displayName ? (
+              <AppText variant="bodySmall" style={{ color: palette.error }}>
+                {errors.displayName.message}
+              </AppText>
+            ) : null}
+          </View>
+        )}
+      />
+      <Controller
+        control={control}
+        name="email"
+        rules={{ validate: validateEmail }}
+        render={({ field: { onChange, value } }) => (
+          <View style={{ gap: 4 }}>
+            <Input
+              label={authFieldLabels.signUp.email}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholder="weiming@example.com"
+              value={value}
+              onChangeText={onChange}
+            />
+            {errors.email ? (
+              <AppText variant="bodySmall" style={{ color: palette.error }}>
+                {errors.email.message}
+              </AppText>
+            ) : null}
+          </View>
+        )}
+      />
+      <Controller
+        control={control}
+        name="password"
+        rules={{ validate: (value) => validatePassword(value, 8) }}
+        render={({ field: { onChange, value } }) => (
+          <View style={{ gap: 4 }}>
+            <Input
+              label={authFieldLabels.signUp.password}
+              secureTextEntry
+              placeholder="Minimum 8 characters"
+              value={value}
+              onChangeText={onChange}
+            />
+            {errors.password ? (
+              <AppText variant="bodySmall" style={{ color: palette.error }}>
+                {errors.password.message}
+              </AppText>
+            ) : null}
+          </View>
+        )}
+      />
       <Button label="Create account" onPress={handleSignUp} />
       <AppText variant="bodySmall" tone="muted">
         By continuing, you accept the Hungry terms and privacy policy.

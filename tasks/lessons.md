@@ -11,3 +11,4 @@
 - For mall drill-down realism, never freehand synthetic grids: anchor polygons to official mall floor-map assets, preserve real unit numbers, and keep list-map IDs one-to-one.
 - For directory maps, rely on computed fit-to-viewport base scale plus explicit zoom controls; fixed hardcoded scale values break cross-mall standardization and make alignment QA unreliable.
 - For mixed single-tap and double-tap UX in feed cards, use exclusive gesture recognizers on the text region so like and expand actions never fire together.
+- For repeated form flows (auth/reset), centralize validation rules in shared helpers and test those helpers directly so every screen stays consistent when requirements change.

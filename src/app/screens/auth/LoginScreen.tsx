@@ -3,8 +3,10 @@ import { Controller, useForm } from "react-hook-form";
 import { View } from "react-native";
 
 import { AppText, Button, Input } from "@/components/ui";
+import { validateEmail, validatePassword } from "@/features/auth/validation";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
+import { useHungryTheme } from "@/theme";
 import { AuthScreenShell } from "./AuthScreenShell";
 import type { AuthStackParamList } from "./AuthStack";
 
@@ -16,6 +18,7 @@ type FormValues = {
 };
 
 export function LoginScreen({ navigation }: Props) {
+  const { palette } = useHungryTheme();
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const showToast = useUIStore((state) => state.showToast);
   const {
@@ -58,10 +61,7 @@ export function LoginScreen({ navigation }: Props) {
       <Controller
         control={control}
         name="email"
-        rules={{
-          required: "Email is required",
-          pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Enter a valid email address" },
-        }}
+        rules={{ validate: validateEmail }}
         render={({ field: { onChange, value } }) => (
           <View style={{ gap: 4 }}>
             <Input
@@ -73,7 +73,7 @@ export function LoginScreen({ navigation }: Props) {
               onChangeText={onChange}
             />
             {errors.email ? (
-              <AppText variant="bodySmall" style={{ color: "#E53935" }}>
+              <AppText variant="bodySmall" style={{ color: palette.error }}>
                 {errors.email.message}
               </AppText>
             ) : null}
@@ -83,7 +83,7 @@ export function LoginScreen({ navigation }: Props) {
       <Controller
         control={control}
         name="password"
-        rules={{ required: "Password is required", minLength: { value: 6, message: "Password must be at least 6 characters" } }}
+        rules={{ validate: (value) => validatePassword(value, 8) }}
         render={({ field: { onChange, value } }) => (
           <View style={{ gap: 4 }}>
             <Input
@@ -94,7 +94,7 @@ export function LoginScreen({ navigation }: Props) {
               onChangeText={onChange}
             />
             {errors.password ? (
-              <AppText variant="bodySmall" style={{ color: "#E53935" }}>
+              <AppText variant="bodySmall" style={{ color: palette.error }}>
                 {errors.password.message}
               </AppText>
             ) : null}

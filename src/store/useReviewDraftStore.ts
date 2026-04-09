@@ -1,16 +1,9 @@
 import { create } from "zustand";
 
+import { createInitialReviewDraft } from "@/features/review/reviewDraft";
 import type { ReviewDraft } from "@/types/domain";
 
-const initialDraft: ReviewDraft = {
-  selectedVenueId: undefined,
-  selectedDishId: undefined,
-  rating: 0,
-  selectedTags: [],
-  recommend: true,
-  text: "",
-  photos: [],
-};
+const initialDraft = createInitialReviewDraft();
 
 interface ReviewDraftState {
   draft: ReviewDraft;
@@ -81,6 +74,6 @@ export const useReviewDraftStore = create<ReviewDraftState>((set) => ({
   markPhotoFailed: (uri) => set((state) => ({ failedPhotoUris: [...state.failedPhotoUris, uri] })),
   clearFailedPhoto: (uri) =>
     set((state) => ({ failedPhotoUris: state.failedPhotoUris.filter((value) => value !== uri) })),
-  resetDraft: () => set({ draft: initialDraft, isSubmitting: false, failedPhotoUris: [] }),
+  resetDraft: () => set({ draft: createInitialReviewDraft(), isSubmitting: false, failedPhotoUris: [] }),
   setSubmitting: (isSubmitting) => set({ isSubmitting }),
 }));

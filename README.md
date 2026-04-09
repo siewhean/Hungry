@@ -89,7 +89,7 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 | Typecheck | Passing |
 | Expo Doctor | Passing |
 | Agent harness docs | Done |
-| Unit tests | Pending |
+| Unit tests | Basic coverage restored (`npm test`) |
 
 ---
 

@@ -296,7 +296,6 @@ export function HomeMapScreen() {
               </View>
 
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2], marginTop: spacing[3] }}>
-                <MetaTag label="NEA clean" />
                 <MetaTag label={activeBuildingRecord.floors.join(" · ")} />
                 <MetaTag label={formatWalkTime(currentLocation, activeBuildingRecord.coordinate)} />
               </View>
