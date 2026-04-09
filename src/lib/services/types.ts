@@ -19,6 +19,8 @@ import type {
 // ─── Floor Plan Types ──────────────────────────────────────────────────────────
 
 export type StallStatus = "open" | "closed" | "non_food";
+export type FloorPolygonKind = "tenant" | "facility" | "corridor";
+export type FacilityType = "lift" | "escalator" | "washroom" | "service";
 
 export interface StallPolygon {
   /** Unique stall id → matches venueId when it's a food stall */
@@ -30,6 +32,10 @@ export interface StallPolygon {
   /** venueId is set only for food stalls */
   venueId?: string;
   label?: string;
+  /** Optional semantic kind for richer mall directory rendering */
+  kind?: FloorPolygonKind;
+  /** Optional facility subtype, used when kind is "facility" */
+  facilityType?: FacilityType;
 }
 
 export interface FloorPlan {
@@ -38,6 +44,11 @@ export interface FloorPlan {
   /** Logical canvas dimensions (SVG viewBox) */
   canvasWidth: number;
   canvasHeight: number;
+  /** Optional reference floor map image rendered beneath polygons */
+  backgroundImage?: {
+    uri: string;
+    opacity?: number;
+  };
   stalls: StallPolygon[];
 }
 

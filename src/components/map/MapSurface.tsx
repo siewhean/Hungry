@@ -204,6 +204,7 @@ export function MapSurface({
   selectedMarkerId,
   currentLocation,
   onMarkerPress,
+  cameraPadding,
 }: MapSurfaceProps) {
   const { palette } = useHungryTheme();
   const shouldUseFallback = FEATURE_FLAGS.mockMapboxEnabled || !MAPBOX_ACCESS_TOKEN;
@@ -254,31 +255,40 @@ export function MapSurface({
           animationDuration={500}
           animationMode="easeTo"
           centerCoordinate={toMapboxPosition(centerCoordinate)}
+          padding={{
+            paddingTop: cameraPadding?.paddingTop ?? 0,
+            paddingBottom: cameraPadding?.paddingBottom ?? 0,
+            paddingLeft: cameraPadding?.paddingLeft ?? 0,
+            paddingRight: cameraPadding?.paddingRight ?? 0,
+          }}
           zoomLevel={zoomLevel}
         />
 
         {markers?.map((marker) => (
-          <MapboxGL.PointAnnotation
+          <MapboxGL.MarkerView
             key={marker.id}
-            id={marker.id}
             coordinate={toMapboxPosition(marker.coordinate)}
-            onSelected={() => onMarkerPress?.(marker.id)}
+            allowOverlap
+            anchor={{ x: 0.5, y: 1 }}
           >
-            <MarkerVisual
-              label={marker.label}
-              accent={marker.accent ?? palette.orange}
-              selected={marker.id === selectedMarkerId}
-            />
-          </MapboxGL.PointAnnotation>
+            <Pressable onPress={() => onMarkerPress?.(marker.id)} style={styles.markerPressable}>
+              <MarkerVisual
+                label={marker.label}
+                accent={marker.accent ?? palette.orange}
+                selected={marker.id === selectedMarkerId}
+              />
+            </Pressable>
+          </MapboxGL.MarkerView>
         ))}
 
         {currentLocation ? (
-          <MapboxGL.PointAnnotation
-            id="current-location"
+          <MapboxGL.MarkerView
             coordinate={toMapboxPosition(currentLocation)}
+            allowOverlap
+            anchor={{ x: 0.5, y: 0.5 }}
           >
             <UserPuck />
-          </MapboxGL.PointAnnotation>
+          </MapboxGL.MarkerView>
         ) : null}
       </MapboxGL.MapView>
     </View>
@@ -292,6 +302,10 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+  },
+  markerPressable: {
+    alignItems: "center",
+    justifyContent: "center",
   },
   road: {
     position: "absolute",

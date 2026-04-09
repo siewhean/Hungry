@@ -21,6 +21,10 @@ const BUILDING_ID_ALIASES: Record<string, string[]> = {
   "hc-old-airport-road": ["building-old-airport-road"],
   "building-tiong-bahru": ["hc-tiong-bahru"],
   "hc-tiong-bahru": ["building-tiong-bahru"],
+  "building-food-republic-wisma": ["fc-food-republic-wisma"],
+  "fc-food-republic-wisma": ["building-food-republic-wisma"],
+  "building-koufu-jem": ["fc-koufu-jem"],
+  "fc-koufu-jem": ["building-koufu-jem"],
 };
 
 function resolveBuildingIds(buildingId: string) {
