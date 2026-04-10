@@ -61,14 +61,17 @@ target 'Hungry' do
     )
 
     installer.pods_project.targets.each do |target|
-      next unless target.name == 'EXConstants'
-
       target.shell_script_build_phases.each do |phase|
-        next unless phase.name == '[CP-User] Generate app.config for prebuilt Constants.manifest'
+        if target.name == 'EXConstants' && phase.name == '[CP-User] Generate app.config for prebuilt Constants.manifest'
+          # Expo's generated script phase breaks when the project path contains spaces
+          # because bash -c receives an unquoted path after variable expansion.
+          phase.shell_script = 'bash -l -c "\\"$PODS_TARGET_SRCROOT/../scripts/get-app-config-ios.sh\\""'
+        end
 
-        # Expo's generated script phase breaks when the project path contains spaces
-        # because bash -c receives an unquoted path after variable expansion.
-        phase.shell_script = 'bash -l -c "\\"$PODS_TARGET_SRCROOT/../scripts/get-app-config-ios.sh\\""'
+        if target.name == 'EXUpdates' && phase.name == '[CP-User] Generate updates resources for expo-updates'
+          # Same issue for expo-updates script on paths containing spaces.
+          phase.shell_script = 'bash -l -c "\\"$PODS_TARGET_SRCROOT/../scripts/create-updates-resources-ios.sh\\""'
+        end
       end
     end
   end
