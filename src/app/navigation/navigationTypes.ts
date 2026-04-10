@@ -13,7 +13,7 @@ export type OnboardingStackParamList = {
   OnboardingIntro1: undefined;
   OnboardingIntro2: undefined;
   OnboardingIntro3: undefined;
-  TasteQuiz: undefined;
+  TasteQuiz: { mode?: "onboarding" | "profile" } | undefined;
   DietaryPreferences: undefined;
   TasteProfileLoading: undefined;
   TasteProfileResult: undefined;

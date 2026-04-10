@@ -1,23 +1,71 @@
+import Constants from "expo-constants";
 import { useState } from "react";
-import { View } from "react-native";
+import { Alert, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AppText, Badge, Button, Card, Chip, InlineBanner } from "@/components/ui";
 import { useLocationStore } from "@/store/useLocationStore";
+import { useProfileStore } from "@/store/useProfileStore";
+import { useReviewDraftStore } from "@/store/useReviewDraftStore";
+import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { hungryPersistStorage } from "@/store/persistStorage";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
 export function SettingsScreen() {
   const navigation = useNavigation<any>();
   const signOut = useSessionStore((state) => state.signOut);
+  const clearSession = useSessionStore((state) => state.clearSession);
   const location = useLocationStore((state) => state.manualLocation);
+  const resetLocationState = useLocationStore((state) => state.resetLocationState);
+  const clearProfile = useProfileStore((state) => state.clearProfile);
+  const clearSearchState = useSearchStore((state) => state.clearSearchState);
+  const resetDraft = useReviewDraftStore((state) => state.resetDraft);
   const [dietaryEnabled, setDietaryEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const appVersion = Constants.expoConfig?.version ?? "0.1.0";
+
+  const purgePersistedAccountData = async () => {
+    await Promise.all([
+      hungryPersistStorage.removeItem("hungry-session-v1"),
+      hungryPersistStorage.removeItem("hungry-profile-v1"),
+      hungryPersistStorage.removeItem("hungry-search-v1"),
+      hungryPersistStorage.removeItem("hungry-review-draft-v1"),
+      hungryPersistStorage.removeItem("hungry-location-v1"),
+    ]);
+  };
+
   const handleSignOut = () => {
     signOut();
     const rootNavigation = getRootNavigation(navigation);
     rootNavigation.navigate("Splash");
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete account",
+      "This removes your local session and profile data on this device.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              await purgePersistedAccountData();
+              clearSession();
+              clearProfile();
+              clearSearchState();
+              resetDraft();
+              resetLocationState();
+              const rootNavigation = getRootNavigation(navigation);
+              rootNavigation.navigate("AuthStack", { screen: "SignUp" });
+            })();
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -30,10 +78,11 @@ export function SettingsScreen() {
             <Chip label="Notifications" selected={notificationsEnabled} onPress={() => setNotificationsEnabled((value) => !value)} />
           </View>
           <Badge label={location ? `Manual location: ${location}` : "Location uses GPS"} tone="neutral" />
-          <InlineBanner tone="info" message="This section is mock-only until backend settings exist." />
+          <InlineBanner tone="info" message={`App version ${appVersion}`} />
         </View>
       </Card>
-      <Button label="Log out" variant="destructive" onPress={handleSignOut} />
+      <Button label="Log out" variant="secondary" onPress={handleSignOut} />
+      <Button label="Delete account" variant="destructive" onPress={handleDeleteAccount} />
     </ProfileScreenShell>
   );
 }

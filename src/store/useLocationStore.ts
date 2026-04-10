@@ -14,6 +14,7 @@ interface LocationState {
   denyLocation: () => void;
   setManualLocation: (label: string) => void;
   setManualSelection: (label: string, coordinate: Coordinate) => void;
+  resetLocationState: () => void;
 }
 
 const defaultLocation = { latitude: 1.2813, longitude: 103.8458 };
@@ -125,6 +126,14 @@ export const useLocationStore = create<LocationState>()(
           manualCoordinate: coordinate,
           currentLocation: coordinate,
           gpsBadgeState: "manual",
+        }),
+      resetLocationState: () =>
+        set({
+          permission: "unknown",
+          currentLocation: defaultLocation,
+          manualLocation: undefined,
+          manualCoordinate: undefined,
+          gpsBadgeState: "live",
         }),
     }),
     {

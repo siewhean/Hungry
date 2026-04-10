@@ -17,6 +17,7 @@ interface ProfileState {
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
   recordReviewEntry: (dishId: string, entry: { rating: number; text: string; tags: string[] }) => void;
+  clearProfile: () => void;
 }
 
 function recalculateTasteVector(profile: UserProfile) {
@@ -156,6 +157,11 @@ export const useProfileStore = create<ProfileState>()(
             },
           },
         })),
+      clearProfile: () =>
+        set({
+          profile: guestProfile,
+          reviewEntries: {},
+        }),
     }),
     {
       name: "hungry-profile-v1",

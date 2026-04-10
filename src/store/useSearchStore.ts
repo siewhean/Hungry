@@ -14,6 +14,7 @@ interface SearchState {
   setTasteValues: (tasteValues: TasteVector) => void;
   resetToProfile: (tasteValues: TasteVector) => void;
   rememberSearch: (query: string) => void;
+  clearSearchState: () => void;
 }
 
 export const useSearchStore = create<SearchState>()(
@@ -70,6 +71,17 @@ export const useSearchStore = create<SearchState>()(
         set((state) => ({
           recentSearches: [query, ...state.recentSearches.filter((value) => value !== query)].slice(0, 5),
         })),
+      clearSearchState: () =>
+        set({
+          filters: {
+            query: "",
+            categories: [],
+            dietaryFlags: [],
+            tasteValues: NEUTRAL_TASTE_VECTOR,
+            radius: 1000,
+          },
+          recentSearches: [],
+        }),
     }),
     {
       name: "hungry-search-v1",

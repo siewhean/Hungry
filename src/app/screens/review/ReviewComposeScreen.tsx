@@ -2,6 +2,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useMemo } from "react";
 import { View } from "react-native";
 
+import { PhotoPicker } from "@/components/review";
 import { AppText, Button, Card, InlineBanner, Input } from "@/components/ui";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -20,6 +21,8 @@ export function ReviewComposeScreen({ navigation }: Props) {
   const draft = useReviewDraftStore((state) => state.draft);
   const failedPhotoUris = useReviewDraftStore((state) => state.failedPhotoUris);
   const addPhoto = useReviewDraftStore((state) => state.addPhoto);
+  const removePhoto = useReviewDraftStore((state) => state.removePhoto);
+  const markPhotoFailed = useReviewDraftStore((state) => state.markPhotoFailed);
   const clearFailedPhoto = useReviewDraftStore((state) => state.clearFailedPhoto);
   const setText = useReviewDraftStore((state) => state.setText);
   const isSubmitting = useReviewDraftStore((state) => state.isSubmitting);
@@ -112,7 +115,12 @@ export function ReviewComposeScreen({ navigation }: Props) {
           <AppText variant="micro" tone="muted">
             {draft.text.length}/200 characters
           </AppText>
-          <Button label="Add demo photo" variant="secondary" onPress={() => addPhoto(`mock-photo-${Date.now()}`)} />
+          <PhotoPicker
+            photos={draft.photos}
+            onAddPhoto={addPhoto}
+            onRemovePhoto={removePhoto}
+            onPhotoError={markPhotoFailed}
+          />
           {draft.photos.length ? <AppText tone="muted">Photos attached: {draft.photos.length}</AppText> : null}
           {failedPhotoUris.length ? (
             <InlineBanner tone="warning" message="One or more photos failed. Remove them or retry later." />

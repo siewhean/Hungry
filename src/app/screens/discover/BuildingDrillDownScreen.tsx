@@ -315,6 +315,10 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
     () => Math.max(220, windowWidth - spacing[5] * 2 - 2),
     [spacing, windowWidth],
   );
+  const directoryGridItemWidth = useMemo(
+    () => Math.max(140, (windowWidth - spacing[5] * 2 - spacing[2]) / 2),
+    [spacing, windowWidth],
+  );
   const fittedDirectoryScale = useMemo(() => {
     const fitHorizontal = (mapViewportWidth - 24) / floorPlan.canvasWidth;
     const fitVertical = (MAP_VIEWPORT_HEIGHT - 24) / floorPlan.canvasHeight;
@@ -361,6 +365,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
         };
       })
       .filter((record) => Boolean(record.venue))
+      .filter((record) => record.stall.status !== "non_food")
       .filter((record) => {
         if (openNowOnly && !record.isOpen) {
           return false;
@@ -576,57 +581,72 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
 
             <View style={{ gap: spacing[2] }}>
               <AppText variant="h3">Stall directory · {activeFloor}</AppText>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                {floorDirectory.map((record) => {
+                  const isSelected = activeStallId === record.stall.stallId;
+                  const status = getVenueStatus(record.isOpen, record.venue?.operatingHours);
 
-              {floorDirectory.map((record) => {
-                const isSelected = activeStallId === record.stall.stallId;
-                const status = getVenueStatus(record.isOpen, record.venue?.operatingHours);
-
-                return (
-                  <Pressable
-                    key={record.stall.stallId}
-                    onPress={() => handleStallSelection(record.stall)}
-                    style={{
-                      backgroundColor: palette.surface,
-                      borderColor: isSelected ? palette.orange : palette.border,
-                      borderRadius: 18,
-                      borderWidth: 1,
-                      gap: 4,
-                      paddingHorizontal: spacing[4],
-                      paddingVertical: spacing[3],
-                    }}
-                  >
-                    <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                      <View style={{ flex: 1, gap: 2 }}>
-                        <AppText variant="h3">{record.title}</AppText>
-                        <AppText variant="bodySmall" tone="secondary">
-                          {record.unitNumber} · {record.descriptor}
-                        </AppText>
+                  return (
+                    <Pressable
+                      key={record.stall.stallId}
+                      onPress={() => handleStallSelection(record.stall)}
+                      style={{
+                        backgroundColor: palette.surface,
+                        borderColor: isSelected ? palette.orange : palette.border,
+                        borderRadius: 18,
+                        borderWidth: 1,
+                        gap: spacing[2],
+                        minHeight: 128,
+                        paddingHorizontal: spacing[3],
+                        paddingVertical: spacing[3],
+                        width: directoryGridItemWidth,
+                      }}
+                    >
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[2] }}>
+                        <View style={{ flex: 1, gap: 2 }}>
+                          <AppText numberOfLines={2} variant="h3">
+                            {record.title}
+                          </AppText>
+                          <AppText variant="bodySmall" tone="secondary">
+                            {record.unitNumber}
+                          </AppText>
+                        </View>
+                        <StatusBadge status={status} />
                       </View>
-                      <StatusBadge status={status} />
-                      <Pressable
-                        accessibilityRole="button"
-                        hitSlop={10}
-                        onPress={() => {
-                          if (record.venue) {
-                            navigation.navigate("StallDetail", { venueId: record.venue.id });
-                          }
-                        }}
-                        style={{
-                          alignItems: "center",
-                          borderColor: palette.border,
-                          borderRadius: radii.pill,
-                          borderWidth: 1,
-                          height: 30,
-                          justifyContent: "center",
-                          width: 30,
-                        }}
-                      >
-                        <ChevronRight color={palette.textMuted} size={16} />
-                      </Pressable>
-                    </View>
-                  </Pressable>
-                );
-              })}
+                      <AppText numberOfLines={1} variant="bodySmall" tone="secondary">
+                        {record.descriptor}
+                      </AppText>
+                      {record.venue?.closureNotice ? (
+                        <AppText numberOfLines={2} variant="micro" style={{ color: palette.warning }}>
+                          {record.venue.closureNotice}
+                        </AppText>
+                      ) : null}
+                      <View style={{ alignItems: "flex-end", marginTop: "auto" }}>
+                        <Pressable
+                          accessibilityRole="button"
+                          hitSlop={10}
+                          onPress={() => {
+                            if (record.venue) {
+                              navigation.navigate("StallDetail", { venueId: record.venue.id });
+                            }
+                          }}
+                          style={{
+                            alignItems: "center",
+                            borderColor: palette.border,
+                            borderRadius: radii.pill,
+                            borderWidth: 1,
+                            height: 30,
+                            justifyContent: "center",
+                            width: 30,
+                          }}
+                        >
+                          <ChevronRight color={palette.textMuted} size={16} />
+                        </Pressable>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
 
               {floorDirectory.length === 0 ? (
                 <View

@@ -17,6 +17,7 @@ interface ReviewDraftState {
   setRecommend: (recommend: boolean) => void;
   setText: (text: string) => void;
   addPhoto: (uri: string) => void;
+  removePhoto: (uri: string) => void;
   markPhotoFailed: (uri: string) => void;
   clearFailedPhoto: (uri: string) => void;
   resetDraft: () => void;
@@ -74,6 +75,14 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
             ...state.draft,
             photos: [...state.draft.photos, uri],
           },
+        })),
+      removePhoto: (uri) =>
+        set((state) => ({
+          draft: {
+            ...state.draft,
+            photos: state.draft.photos.filter((photoUri) => photoUri !== uri),
+          },
+          failedPhotoUris: state.failedPhotoUris.filter((value) => value !== uri),
         })),
       markPhotoFailed: (uri) => set((state) => ({ failedPhotoUris: [...state.failedPhotoUris, uri] })),
       clearFailedPhoto: (uri) =>

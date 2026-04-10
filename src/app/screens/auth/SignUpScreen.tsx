@@ -22,10 +22,16 @@ export function SignUpScreen({ navigation }: Props) {
     defaultValues: { displayName: "", email: "", password: "" },
   });
 
-  const handleSignUp = handleSubmit(() => {
+  const handleSignUp = handleSubmit((values) => {
     showToast({ message: "Account created. Please verify your email.", tone: "success" });
-    navigation.navigate("EmailVerification");
+    navigation.navigate("EmailVerification", { email: values.email });
   });
+
+  const handleProviderContinue = (provider: "google" | "apple") => {
+    const providerEmail = provider === "google" ? "google.user@hungry.sg" : "apple.user@hungry.sg";
+    showToast({ message: `Continue with ${provider === "google" ? "Google" : "Apple"} successful.`, tone: "success" });
+    navigation.navigate("EmailVerification", { email: providerEmail });
+  };
 
   return (
     <SafeAreaView style={{ backgroundColor: "#FFF8F2", flex: 1 }} edges={["top", "left", "right", "bottom"]}>
@@ -45,8 +51,8 @@ export function SignUpScreen({ navigation }: Props) {
         </View>
 
         <View style={{ gap: spacing[2] }}>
-          <Button label="Continue with Google" variant="secondary" onPress={() => navigation.navigate("EmailVerification")} style={{ borderRadius: 24, minHeight: 56 }} />
-          <Button label="Continue with Apple" variant="secondary" onPress={() => navigation.navigate("EmailVerification")} style={{ borderRadius: 24, minHeight: 56 }} />
+          <Button label="Continue with Google" variant="secondary" onPress={() => handleProviderContinue("google")} style={{ borderRadius: 24, minHeight: 56 }} />
+          <Button label="Continue with Apple" variant="secondary" onPress={() => handleProviderContinue("apple")} style={{ borderRadius: 24, minHeight: 56 }} />
         </View>
 
         <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>

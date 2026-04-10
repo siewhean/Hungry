@@ -1,30 +1,19 @@
-/**
- * DecideForMeResultScreen — AI-powered dish roulette with explainability
- *
- * Upgraded with:
- *  - blendedMatchScore from tasteEngine (replaces legacy similarityScore)
- *  - Animated match percentage counter (0 → final value)
- *  - Taste radar mini-bars showing which dimensions matched
- *  - "Why this dish?" explainability text
- *  - Animated entrance for the card
- */
-
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Linking, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Image } from "expo-image";
 import { Sparkles } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 
 import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { findBuildingById } from "@/features/discovery/discovery";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
+import { mockRepository } from "@/lib/services/mock/repositories";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import { findBuildingById } from "@/features/discovery/discovery";
-import type { TasteVector } from "@/types/domain";
-
-// ─── Mini taste bar ───────────────────────────────────────────────────────────
+import type { DietaryFlag, DishDetail, TasteVector } from "@/types/domain";
 
 function TasteMiniBar({
   label,
@@ -42,7 +31,7 @@ function TasteMiniBar({
   const match = Math.round((1 - diff / 10) * 100);
 
   return (
-    <View style={{ flex: 1, minWidth: "30%", gap: 4 }}>
+    <View style={{ flex: 1, gap: 4, minWidth: "30%" }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
         <AppText variant="micro">{label}</AppText>
         <AppText variant="micro" tone="muted">
@@ -51,18 +40,18 @@ function TasteMiniBar({
       </View>
       <View
         style={{
-          height: 4,
-          borderRadius: radii.pill,
           backgroundColor: palette.border,
+          borderRadius: radii.pill,
+          height: 4,
           overflow: "hidden",
         }}
       >
         <View
           style={{
-            width: `${match}%`,
-            height: "100%",
-            borderRadius: radii.pill,
             backgroundColor: match >= 70 ? accentColor : palette.textMuted,
+            borderRadius: radii.pill,
+            height: "100%",
+            width: `${match}%`,
           }}
         />
       </View>
@@ -70,56 +59,86 @@ function TasteMiniBar({
   );
 }
 
-// ─── Match counter animation ──────────────────────────────────────────────────
-
 function AnimatedMatchBadge({ percent }: { percent: number }) {
   const { palette, radii, spacing } = useHungryTheme();
   const counter = useRef(new Animated.Value(0)).current;
-  const counterDisplay = useRef(0);
+  const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
+    counter.setValue(0);
+    const listenerId = counter.addListener(({ value }) => {
+      setDisplayValue(Math.round(value));
+    });
+
     Animated.timing(counter, {
       toValue: percent,
-      duration: 1200,
+      duration: 1000,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
-  }, [percent]);
+
+    return () => {
+      counter.removeListener(listenerId);
+    };
+  }, [counter, percent]);
 
   return (
     <View
       style={{
-        flexDirection: "row",
         alignItems: "center",
-        gap: spacing[2],
+        alignSelf: "flex-start",
         backgroundColor: `${palette.orange}22`,
         borderRadius: radii.pill,
+        flexDirection: "row",
+        gap: spacing[2],
         paddingHorizontal: spacing[3],
         paddingVertical: spacing[2],
-        alignSelf: "flex-start",
       }}
     >
       <Sparkles size={14} color={palette.orange} />
-      <Animated.Text
-        style={{
-          fontSize: 13,
-          fontFamily: "Nunito_800ExtraBold",
-          color: palette.orange,
-        }}
-      >
-        <>{counter.interpolate({ inputRange: [0, percent], outputRange: [0, percent] })}</>
-      </Animated.Text>
-      <AppText
-        variant="bodySmall"
-        style={{ color: palette.orange, fontFamily: "Nunito_700Bold" }}
-      >
-        % taste match
+      <AppText variant="bodySmall" style={{ color: palette.orange, fontFamily: "Nunito_700Bold" }}>
+        {displayValue}% taste match
       </AppText>
     </View>
   );
 }
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
+const RADIUS_STEPS_METERS = [500, 1000, 2000, 4000];
+
+function nextRadius(currentRadius: number) {
+  return RADIUS_STEPS_METERS.find((value) => value > currentRadius);
+}
+
+function getCandidates(tasteVector: TasteVector, dietaryFlags: DietaryFlag[], radius: number) {
+  return mockRepository.searchDishes(
+    {
+      query: "",
+      categories: [],
+      dietaryFlags,
+      tasteValues: tasteVector,
+      radius,
+    },
+    tasteVector,
+  );
+}
+
+function getNextDistinctDish(candidates: DishDetail[], currentDishId?: string, currentIndex = 0) {
+  if (!candidates.length) {
+    return undefined;
+  }
+  if (candidates.length === 1) {
+    return candidates[0];
+  }
+
+  let nextIndex = (currentIndex + 1) % candidates.length;
+  let guard = 0;
+  while (guard < candidates.length && candidates[nextIndex]?.id === currentDishId) {
+    nextIndex = (nextIndex + 1) % candidates.length;
+    guard += 1;
+  }
+
+  return candidates[nextIndex];
+}
 
 export function DecideForMeResultScreen() {
   const navigation = useNavigation<any>();
@@ -127,31 +146,78 @@ export function DecideForMeResultScreen() {
   const profile = useProfileStore((state) => state.profile);
   const selectedDish = useDiscoveryStore((state) => state.decideForMe);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
+  const showToast = useUIStore((state) => state.showToast);
+  const [searchRadius, setSearchRadius] = useState(500);
+  const [resultIndex, setResultIndex] = useState(0);
 
-  const dish = selectedDish ?? mockRepository.getDecideForMe(profile.tasteVector);
+  const candidates = useMemo(
+    () => getCandidates(profile.tasteVector, profile.dietaryPreferences, searchRadius),
+    [profile.dietaryPreferences, profile.tasteVector, searchRadius],
+  );
 
-  // Card entrance animation
+  useEffect(() => {
+    if (!candidates.length) {
+      setResultIndex(0);
+      if (selectedDish) {
+        setDecideForMe(undefined);
+      }
+      return;
+    }
+
+    if (selectedDish) {
+      const selectedIndex = candidates.findIndex((dish) => dish.id === selectedDish.id);
+      if (selectedIndex >= 0) {
+        setResultIndex(selectedIndex);
+        return;
+      }
+    }
+
+    setResultIndex((current) => Math.min(current, candidates.length - 1));
+    const nextDish = candidates[Math.min(resultIndex, candidates.length - 1)];
+    if (nextDish && nextDish.id !== selectedDish?.id) {
+      setDecideForMe(nextDish);
+    }
+  }, [candidates, resultIndex, selectedDish, setDecideForMe]);
+
+  const dish = candidates[resultIndex] ?? selectedDish;
+
   const cardAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    if (dish) {
-      cardAnim.setValue(0);
-      Animated.spring(cardAnim, {
-        toValue: 1,
-        damping: 14,
-        mass: 0.9,
-        stiffness: 140,
-        useNativeDriver: true,
-      }).start();
+    if (!dish) {
+      return;
     }
-  }, [dish?.id]);
+
+    cardAnim.setValue(0);
+    Animated.spring(cardAnim, {
+      damping: 14,
+      mass: 0.9,
+      stiffness: 140,
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  }, [cardAnim, dish?.id]);
+
+  const expandRadius = () => {
+    const target = nextRadius(searchRadius);
+    if (!target) {
+      showToast({ message: "Already searching the widest radius.", tone: "info" });
+      return;
+    }
+    setSearchRadius(target);
+  };
 
   if (!dish) {
+    const upcomingRadius = nextRadius(searchRadius);
     return (
-      <Screen title="Dish Roulette" subtitle="A single dish picked just for you.">
+      <Screen title="Recommended for you" subtitle="A single dish picked for your taste profile.">
         <EmptyState
           title="No match found"
-          body="We couldn't find a dish that fits your taste profile right now. Try adjusting your preferences."
+          body={`No dish fits your current filters within ${(searchRadius / 1000).toFixed(1)} km.`}
         />
+        {upcomingRadius ? (
+          <Button label={`Expand radius to ${(upcomingRadius / 1000).toFixed(1)} km`} onPress={expandRadius} />
+        ) : null}
         <Button label="Back to Discover" onPress={() => navigation.navigate("SearchHome")} />
       </Screen>
     );
@@ -160,8 +226,6 @@ export function DecideForMeResultScreen() {
   const venue = mockRepository.getVenueById(dish.venueId);
   const building = findBuildingById(dish.buildingId);
   const match = Math.round(blendedMatchScore(profile.tasteVector, dish.tasteVector) * 100);
-
-  // Build taste dimension comparison
   const tasteDims: Array<{ key: keyof TasteVector; label: string }> = [
     { key: "sweet", label: "Sweet" },
     { key: "spicy", label: "Spicy" },
@@ -170,25 +234,43 @@ export function DecideForMeResultScreen() {
     { key: "rich", label: "Rich" },
     { key: "aromatic", label: "Aroma" },
   ];
-
-  // Explanation: top matching dims
   const sortedDims = tasteDims
-    .map((d) => ({
-      ...d,
-      diff: Math.abs(profile.tasteVector[d.key] - dish.tasteVector[d.key]),
+    .map((dimension) => ({
+      ...dimension,
+      diff: Math.abs(profile.tasteVector[dimension.key] - dish.tasteVector[dimension.key]),
     }))
-    .sort((a, b) => a.diff - b.diff);
-
+    .sort((left, right) => left.diff - right.diff);
   const topMatch = sortedDims[0];
   const explanation =
     match >= 80
       ? `This dish is dialled in to your taste profile — especially the ${topMatch.label.toLowerCase()}.`
       : match >= 60
-      ? `A solid pick based on your ${topMatch.label.toLowerCase()} and ${sortedDims[1].label.toLowerCase()} preferences.`
-      : `A decent pick in your area — you may discover something new here.`;
+        ? `A strong pick based on your ${topMatch.label.toLowerCase()} and ${sortedDims[1].label.toLowerCase()} preferences.`
+        : `A nearby pick that still aligns with your strongest taste dimensions.`;
+
+  const handleTryAnother = () => {
+    const nextDish = getNextDistinctDish(candidates, dish.id, resultIndex);
+    if (!nextDish || nextDish.id === dish.id) {
+      const upcomingRadius = nextRadius(searchRadius);
+      if (upcomingRadius) {
+        setSearchRadius(upcomingRadius);
+        showToast({ message: `Expanded radius to ${(upcomingRadius / 1000).toFixed(1)} km.`, tone: "info" });
+      } else {
+        showToast({ message: "No other matching dishes right now.", tone: "info" });
+      }
+      return;
+    }
+
+    const nextIndex = candidates.findIndex((candidate) => candidate.id === nextDish.id);
+    if (nextIndex >= 0) {
+      setResultIndex(nextIndex);
+    }
+    setDecideForMe(nextDish);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+  };
 
   return (
-    <Screen title="Dish Roulette" subtitle="One dish, picked just for you based on your taste profile.">
+    <Screen title="Recommended for you" subtitle="One dish picked from your current taste profile.">
       <View style={{ gap: spacing[5] }}>
         <Animated.View
           style={{
@@ -209,41 +291,11 @@ export function DecideForMeResultScreen() {
             ],
           }}
         >
-          <Card style={{ gap: spacing[4], padding: 0, overflow: "hidden" }}>
-            {/* Hero image */}
-            <Image
-              source={{ uri: dish.imageUrl }}
-              style={{ height: 240, width: "100%" }}
-              contentFit="cover"
-            />
+          <Card style={{ gap: spacing[4], overflow: "hidden", padding: 0 }}>
+            <Image source={{ uri: dish.imageUrl }} style={{ height: 240, width: "100%" }} contentFit="cover" />
+            <View style={{ gap: spacing[4], padding: spacing[4] }}>
+              <AnimatedMatchBadge percent={match} />
 
-            <View style={{ padding: spacing[4], gap: spacing[4] }}>
-              {/* Match badge */}
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: spacing[2],
-                  backgroundColor: `${palette.orange}22`,
-                  borderRadius: radii.pill,
-                  paddingHorizontal: spacing[3],
-                  paddingVertical: spacing[2],
-                  alignSelf: "flex-start",
-                }}
-              >
-                <Sparkles size={14} color={palette.orange} />
-                <AppText
-                  style={{
-                    fontSize: 13,
-                    fontFamily: "Nunito_800ExtraBold",
-                    color: palette.orange,
-                  }}
-                >
-                  {match}% taste match
-                </AppText>
-              </View>
-
-              {/* Dish info */}
               <View style={{ gap: spacing[1] }}>
                 <AppText variant="h1">{dish.name}</AppText>
                 <AppText tone="secondary">{venue?.name}</AppText>
@@ -256,24 +308,26 @@ export function DecideForMeResultScreen() {
                 </AppText>
               </View>
 
-              {/* Taste tags */}
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-                {dish.tasteTags.slice(0, 4).map((tag) => (
+                <Badge label={`Radius ${(searchRadius / 1000).toFixed(1)} km`} tone="neutral" />
+                {dish.tasteTags.slice(0, 3).map((tag) => (
                   <Badge key={tag} label={tag} tone="amber" />
                 ))}
               </View>
 
-              {/* AI explanation */}
               <View
                 style={{
                   backgroundColor: palette.surfaceRaised,
+                  borderLeftColor: palette.orange,
+                  borderLeftWidth: 3,
                   borderRadius: radii.md,
                   padding: spacing[3],
-                  borderLeftWidth: 3,
-                  borderLeftColor: palette.orange,
                 }}
               >
-                <AppText variant="micro" style={{ color: palette.orange, fontFamily: "Nunito_700Bold", marginBottom: 4 }}>
+                <AppText
+                  variant="micro"
+                  style={{ color: palette.orange, fontFamily: "Nunito_700Bold", marginBottom: 4 }}
+                >
                   WHY THIS DISH?
                 </AppText>
                 <AppText tone="secondary" style={{ lineHeight: 20 }}>
@@ -281,20 +335,19 @@ export function DecideForMeResultScreen() {
                 </AppText>
               </View>
 
-              {/* Taste dimension bars */}
               <View>
                 <AppText variant="h3" style={{ marginBottom: spacing[3] }}>
                   Taste dimensions
                 </AppText>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
-                  {tasteDims.map((dim) => (
-                  <TasteMiniBar
-                    key={dim.key}
-                    label={TASTE_LABELS[dim.key]}
-                    userVal={profile.tasteVector[dim.key]}
-                    dishVal={dish.tasteVector[dim.key]}
-                    accentColor={palette.orange}
-                  />
+                  {tasteDims.map((dimension) => (
+                    <TasteMiniBar
+                      key={dimension.key}
+                      label={TASTE_LABELS[dimension.key]}
+                      userVal={profile.tasteVector[dimension.key]}
+                      dishVal={dish.tasteVector[dimension.key]}
+                      accentColor={palette.orange}
+                    />
                   ))}
                 </View>
               </View>
@@ -302,27 +355,18 @@ export function DecideForMeResultScreen() {
           </Card>
         </Animated.View>
 
-        {/* Actions */}
-        <Button
-          label="View stall"
-          onPress={() => navigation.navigate("StallDetail", { venueId: dish.venueId })}
-        />
+        <Button label="View stall" onPress={() => navigation.navigate("StallDetail", { venueId: dish.venueId })} />
         <Button
           label="Order now"
           variant="secondary"
           onPress={() => {
             const link = venue?.deliveryLinks[0];
-            if (link) void Linking.openURL(link.nativeUrl || link.webUrl);
+            if (link) {
+              void Linking.openURL(link.nativeUrl || link.webUrl);
+            }
           }}
         />
-        <Button
-          label="Try another dish"
-          variant="ghost"
-          onPress={() => {
-            const next = mockRepository.getDecideForMe(profile.tasteVector);
-            setDecideForMe(next);
-          }}
-        />
+        <Button label="Try another dish" variant="ghost" onPress={handleTryAnother} />
         <Button label="Go back" variant="ghost" onPress={() => navigation.goBack()} />
       </View>
     </Screen>

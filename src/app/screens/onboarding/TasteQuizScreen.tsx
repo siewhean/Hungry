@@ -10,6 +10,7 @@ import { Button, AppText, Card, Input } from "@/components/ui";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { DietaryFlag, TasteVector } from "@/types/domain";
 import type { OnboardingStackParamList } from "./OnboardingStack";
@@ -118,7 +119,7 @@ const DIETARY_OPTIONS: Array<{ value: DietaryFlag; label: string; keywords: stri
   { value: "sulphite_free", label: "Sulphite Free", keywords: ["sulphite", "sulfite"] },
 ];
 
-export function TasteQuizScreen({ navigation }: Props) {
+export function TasteQuizScreen({ navigation, route }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
   const { width } = useWindowDimensions();
   const setTasteVector = useProfileStore((state) => state.setTasteVector);
@@ -126,6 +127,8 @@ export function TasteQuizScreen({ navigation }: Props) {
   const setDietaryPreferences = useProfileStore((state) => state.setDietaryPreferences);
   const setSkippedTasteQuiz = useSessionStore((state) => state.setSkippedTasteQuiz);
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
+  const showToast = useUIStore((state) => state.showToast);
+  const flowMode = route.params?.mode ?? "onboarding";
   const [values, setValues] = useState<TasteVector>(INITIAL);
   const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(profile.dietaryPreferences);
   const [dietaryQuery, setDietaryQuery] = useState("");
@@ -201,6 +204,12 @@ export function TasteQuizScreen({ navigation }: Props) {
   const handleFinish = () => {
     setTasteVector(values);
     setDietaryPreferences(dietaryPreferences);
+    if (flowMode === "profile") {
+      setSkippedTasteQuiz(false);
+      showToast({ message: "Taste profile updated.", tone: "success" });
+      navigation.goBack();
+      return;
+    }
     if (hasSkippedTasteQuiz) {
       navigation.navigate("LocationPermission");
       return;

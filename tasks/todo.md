@@ -151,6 +151,52 @@ Verification Note:
 - `npm run typecheck` passed.
 - `npm run test` passed (16 tests), including new coverage for detail transforms and search sorting.
 
+### Batch 2026-04-10K — Codex (interaction + motion polish)
+
+| ID | Status | Summary |
+|----|--------|---------|
+| POL-2026-04-10-12 | Done | Updated DishDetail gallery indicator from snap-only behavior to continuous scroll-driven movement via `Animated.ScrollView` + interpolated indicator position. |
+| POL-2026-04-10-13 | Done | Updated TasteQuiz card image state from snap-only color/BW toggles to progressive transition during drag using animated grayscale overlay opacity interpolation. |
+| POL-2026-04-10-14 | Done | Increased global typography scale and key icon sizes (tab icons, Home post action icons, stall top action icons) for stronger readability and visual hierarchy. |
+| POL-2026-04-10-15 | Done | Slowed Search screen top-entry transition animation for a clearer screen-appearance motion. |
+
+Verification Note:
+- `npm run typecheck` passed.
+
+### Batch 2026-04-10L — Codex (dev harness + detail layout structure)
+
+| ID | Status | Summary |
+|----|--------|---------|
+| POL-2026-04-10-16 | Done | Restored dev-only startup entry so `__DEV__` opens `DeveloperLauncher` first; release/default flow still starts at Splash. |
+| POL-2026-04-10-17 | Done | Refactored DishDetail screen shell from shared `Screen` wrapper to direct `SafeAreaView + ScrollView` so hero/gallery can render true full-width independent of `Screen` max-width constraints. |
+
+Verification Note:
+- `npm run typecheck` passed.
+
+### Batch 2026-04-10M — Codex (P1/P2 UX + completeness + a11y pass)
+
+| ID | Status | Summary |
+|----|--------|---------|
+| P1-10 | Done | Added Decide-for-Me no-match recovery with explicit radius expansion actions (500m -> 1km -> 2km -> 4km). |
+| P1-11 | Done | Added haptic feedback to Decide-for-Me result transitions and rerolls. |
+| P1-12 | Done | Replaced broken/dead animated badge path with a functional animated taste-match counter that renders correctly. |
+| P1-13 | Done | Updated "Try another dish" to cycle to a distinct next candidate and avoid returning the same dish. |
+| P1-14 | Done | Converted BuildingDrillDown stall directory from single-column list to 2-column responsive card grid. |
+| P1-15 | Done | Added closure notice rendering for venues inside BuildingDrillDown directory cards. |
+| P1-30 | Done | Integrated real photo picker flow with `expo-image-picker` in review compose flow and removed demo-photo-only behavior. |
+| P2-17 | Done | Added resend-code countdown behavior in EmailVerification with disabled resend until timer expiry. |
+| P2-18 | Done | Updated "Change Email Address" path to return to SignUp via back-stack so entered fields are preserved. |
+| P2-27 | Done | Added account deletion action in Settings with explicit destructive confirmation. |
+| P2-28 | Done | Added app version display in Settings. |
+| P2-34 | Done | Removed hardcoded photo placeholder grey in PhotoPicker. |
+| P2-43 | Done | Added alert semantics to FloatingToast (`accessibilityRole` + `accessibilityLiveRegion`). |
+| P2-44 | Done | Added selected-state accessibility semantics to Chip (`accessibilityState.selected`). |
+| P2-45 | Done | Added selected-state accessibility semantics to FloorSelector tabs (`accessibilityState.selected`). |
+
+Verification Note:
+- `npm run typecheck` passed.
+- `npm test -- --runInBand` passed (16 tests).
+
 ---
 
 ## 1. Unchecked Phase 1 & Phase 3 Items
@@ -434,25 +480,25 @@ These items degrade the user experience but do not fully block flows.
 | P1-07 | Detail | ✅ Done (Batch 2026-04-10J): StallDetail now renders colour-coded hygiene grade badge. | `StallDetailScreen.tsx` |
 | P1-08 | Detail | ✅ Done (Batch 2026-04-10J): StallDetail share/favourite actions are implemented. | `StallDetailScreen.tsx` |
 | P1-09 | Detail | ✅ Done (Batch 2026-04-10J): Detail not-found states now render inside `Screen` wrappers. | `DishDetailScreen.tsx`, `StallDetailScreen.tsx` |
-| P1-10 | Discover | DecideForMe screen has no "expand radius" option when no match is found — required by product spec | `DecideForMeResultScreen.tsx` |
-| P1-11 | Discover | DecideForMe has no haptic feedback on result — product spec requires haptic | `DecideForMeResultScreen.tsx` |
-| P1-12 | Discover | DecideForMe `AnimatedMatchBadge` is dead code — defined but never rendered; the `counter.interpolate` return value would render as `[object Object]` if used | `DecideForMeResultScreen.tsx:75–120` |
-| P1-13 | Discover | DecideForMe "Try another dish" can return the same dish — no deduplication | `DecideForMeResultScreen.tsx:319–325` |
-| P1-14 | Discover | BuildingDrillDown stall list is a single-column list, not a grid as specified | `BuildingDrillDownScreen.tsx` |
-| P1-15 | Discover | BuildingDrillDown does not display `venue.closureNotice` | `BuildingDrillDownScreen.tsx` |
+| P1-10 | Discover | ✅ Done (Batch 2026-04-10M): DecideForMe now has no-match radius expansion actions. | `DecideForMeResultScreen.tsx` |
+| P1-11 | Discover | ✅ Done (Batch 2026-04-10M): DecideForMe now triggers haptic feedback on result transitions. | `DecideForMeResultScreen.tsx` |
+| P1-12 | Discover | ✅ Done (Batch 2026-04-10M): AnimatedMatchBadge is now functional and rendered with numeric animation output. | `DecideForMeResultScreen.tsx` |
+| P1-13 | Discover | ✅ Done (Batch 2026-04-10M): Try-another logic now picks a distinct next dish. | `DecideForMeResultScreen.tsx` |
+| P1-14 | Discover | ✅ Done (Batch 2026-04-10M): BuildingDrillDown directory now uses a responsive 2-column grid layout. | `BuildingDrillDownScreen.tsx` |
+| P1-15 | Discover | ✅ Done (Batch 2026-04-10M): BuildingDrillDown now surfaces `venue.closureNotice` in directory cards. | `BuildingDrillDownScreen.tsx` |
 | P1-16 | Home | ✅ Done (Batch 2026-04-10J): HomeFeedScreen now has loading and retry-on-error states before feed render. | `HomeFeedScreen.tsx` |
 | P1-17 | Home | No error boundary on HomeFeedScreen — a child component throw crashes the entire screen | `HomeFeedScreen.tsx` |
 | P1-18 | Search | ✅ Done (Batch 2026-04-10J): SearchResultsScreen now has loading state while results refresh. | `SearchResultsScreen.tsx` |
 | P1-19 | Search | ✅ Done (Batch 2026-04-10J): SearchResultsScreen now supports sort by match, distance, rating, and price. | `SearchResultsScreen.tsx`, `search.ts` |
 | P1-20 | Search | `groupResultsByVenue` is a no-op stub — returns raw results unchanged | `search.ts:27–29` |
 | P1-21 | Search | Discovery feed hardcodes three specific building IDs — ignores other buildings and user proximity | `search.ts:43–45` |
-| P1-22 | Onboarding | `stepLabel` props expose raw developer IDs ("SCR-006", "SCR-008") to end users on remaining onboarding steps | `OnboardingScreenShell.tsx`, `TasteQuizScreen.tsx:79`, `LocationPermissionScreen.tsx:29` |
+| P1-22 | Onboarding | ✅ Done: onboarding no longer exposes raw `SCR-*` developer IDs in runtime UI. | `OnboardingScreenShell.tsx`, `TasteQuizScreen.tsx`, `LocationPermissionScreen.tsx` |
 | P1-24 | Review | ✅ Done: review flow now consistently uses 4-step progress. | `ReviewHubScreen.tsx`, `ReviewTagsScreen.tsx`, `ReviewComposeScreen.tsx` |
 | P1-25 | Review | ✅ Done: unauthenticated review hub now redirects without rendering blocked content. | `ReviewHubScreen.tsx` |
 | P1-26 | Review | ✅ Done: ReviewHub now renders an explicit empty state for zero matching venues. | `ReviewHubScreen.tsx` |
 | P1-27 | Review | ✅ Done: ReviewRating now returns to hub when no valid dish exists (no random fallback). | `ReviewRatingScreen.tsx` |
 | P1-29 | Review | ✅ Done: end-user debug button removed from compose screen. | `ReviewComposeScreen.tsx` |
-| P1-30 | Review | No real photo picker — `expo-image-picker` not integrated; only mock URI strings | `ReviewComposeScreen.tsx:104–105` |
+| P1-30 | Review | ✅ Done (Batch 2026-04-10M): Review compose now uses real image picker integration (`expo-image-picker`). | `ReviewComposeScreen.tsx`, `PhotoPicker.tsx` |
 | P1-31 | Profile | ✅ Done: Favourites cards now navigate to DishDetail from profile flow. | `FavouritesScreen.tsx` |
 | P1-32 | Profile | ✅ Done: Favourites cards now include image, venue, rating, and distance metadata. | `FavouritesScreen.tsx` |
 | P1-33 | Profile | ✅ Done: Review history empty state now uses shared `EmptyState` component. | `ReviewHistoryScreen.tsx` |
@@ -490,24 +536,24 @@ These items affect perceived quality but do not break functionality.
 | P2-12 | Maps | Map bottom sheet open stall count is computed from `.slice(0, 2)` — `openStallCount` is always ≤ 2, falling through to the static field | `HomeMapScreen.tsx:154, 259` |
 | P2-13 | Maps | `BuildingLegend` component not rendered anywhere on the map screen — legend exists but is invisible to users | `HomeMapScreen.tsx` |
 | P2-14 | Maps | `MapSurface` `cameraPadding` prop declared in interface but silently ignored in implementation | `MapSurface.tsx:35–40` |
-| P2-15 | Auth | AuthScreenShell footer copy "Hungry keeps this flow simple so you can get into dish discovery quickly." appears on every auth screen including Reset Password Success — contextually wrong | `AuthScreenShell.tsx:31` |
-| P2-16 | Auth | No logo/brand image on auth screens — only a text "HUNGRY" eyebrow label | `AuthScreenShell.tsx` |
-| P2-17 | Auth | No countdown timer on "Resend email" button — can be tapped repeatedly without rate limiting | `EmailVerificationScreen.tsx` |
-| P2-18 | Auth | "Back to sign up" from EmailVerification loses all filled form state | `EmailVerificationScreen.tsx` |
+| P2-15 | Auth | ✅ Done: active auth routes no longer use `AuthScreenShell`, so the stale footer copy is no longer shown in runtime auth flows. | `AuthScreenShell.tsx`, `AuthStack.tsx` |
+| P2-16 | Auth | Login and signup now use `HungryLogo`, but verification/forgot/reset flows are still mostly text-led rather than using the same brand mark consistently. | `LoginScreen.tsx`, `SignUpScreen.tsx`, `EmailVerificationScreen.tsx`, `ForgotPasswordScreen.tsx`, `ResetPasswordScreen.tsx` |
+| P2-17 | Auth | ✅ Done (Batch 2026-04-10M): Email verification resend now uses countdown + gated resend action. | `EmailVerificationScreen.tsx` |
+| P2-18 | Auth | ✅ Done (Batch 2026-04-10M): Change-email action now returns to existing SignUp instance to preserve entered values. | `EmailVerificationScreen.tsx`, `SignUpScreen.tsx` |
 | P2-21 | Review | ReviewCompose submit toast says "Review saved locally. It appears on your history immediately." — explicitly reveals mock nature to users | `ReviewComposeScreen.tsx:85` |
 | P2-22 | Review | ReviewSuccess modal text: "Your profile and review history have been updated in this mock session." — mock disclosure visible to users | `ReviewSuccessModal.tsx:75` |
 | P2-23 | Profile | FavouritesScreen empty state body: "The list fills up once the detail flow is wired in." — developer-facing copy visible to users | `FavouritesScreen.tsx:35` |
 | P2-24 | Profile | SettingsScreen shows only 2 mock toggles with explicit "This section is mock-only" banner | `SettingsScreen.tsx:32` |
-| P2-25 | Profile | EditProfileScreen has no avatar upload, no dietary preferences edit, no taste quiz redo, no password change | `EditProfileScreen.tsx` |
+| P2-25 | Profile | Partially addressed: dietary preferences editing and taste-quiz redo action added; avatar upload/password-change flows still pending. | `EditProfileScreen.tsx` |
 | P2-26 | Profile | EditProfileScreen explicit mock disclosure: "This mock build keeps profile editing local to the device state." | `EditProfileScreen.tsx:42` |
-| P2-27 | Profile | No account deletion option in SettingsScreen | `SettingsScreen.tsx` |
-| P2-28 | Profile | No app version display in SettingsScreen | `SettingsScreen.tsx` |
+| P2-27 | Profile | ✅ Done (Batch 2026-04-10M): Settings now includes account deletion action with destructive confirmation. | `SettingsScreen.tsx` |
+| P2-28 | Profile | ✅ Done (Batch 2026-04-10M): Settings now shows app version metadata. | `SettingsScreen.tsx` |
 | P2-29 | Profile | `ProfileScreen.tsx` is just a re-export alias for `ProfileHomeScreen` — dead indirection | `ProfileScreen.tsx:1` |
 | P2-30 | Reads | "8 MIN READ" hardcoded on every blog post — `BlogPost` type has no `readTime` field | `ReadsFeedScreen.tsx:54` |
 | P2-31 | Reads | "View Archive" label is non-interactive `AppText` — no `onPress`, no `Pressable` | `ReadsFeedScreen.tsx:82–83` |
 | P2-32 | Reads | Atmosphere grid colours use raw hex values instead of `palette` tokens | `ReadsFeedScreen.tsx:14–17` |
 | P2-33 | Component | `DishCard` image placeholder uses hardcoded `"#E5E7EB"` instead of a palette token | `DishCard.tsx:101` |
-| P2-34 | Component | `PhotoPicker` image placeholder uses hardcoded `"#E5E7EB"` instead of a palette token | `PhotoPicker.tsx:56` |
+| P2-34 | Component | ✅ Done (Batch 2026-04-10M): PhotoPicker no longer hardcodes placeholder grey token. | `PhotoPicker.tsx` |
 | P2-35 | Component | `StallHeader` uses no `useHungryTheme()` — all gap values are magic numbers | `StallHeader.tsx:14–21` |
 | P2-36 | Component | `OperatingHours` does not distinguish open (green) vs closed (red) visually — both use `tone="secondary"` | `OperatingHours.tsx` |
 | P2-37 | Component | Multiple components use inline `fontFamily: "Nunito_700Bold"` instead of typography tokens | `Button.tsx:102`, `ClusterPin.tsx:44`, `ReviewCard.tsx:36`, `DeliveryPlatformButton.tsx:67`, `BiteCard.tsx:116` |
@@ -516,9 +562,9 @@ These items affect perceived quality but do not break functionality.
 | P2-40 | Component | `BiteCard` taste tag text uses hardcoded `"#FFFFFF"` instead of `tone="inverse"` or token | `BiteCard.tsx:83` |
 | P2-41 | Component | `BitesCarousel` contains large inline mock data array — should live in fixture file | `BitesCarousel.tsx` |
 | P2-42 | Component | `useNavigation<any>()` used in multiple files — bypasses type safety | `ReadsFeedScreen.tsx:23`, `SettingsScreen.tsx:11` |
-| P2-43 | A11y | FloatingToast has no `accessibilityRole="alert"` or `accessibilityLiveRegion` — not announced by screen readers | `FloatingToast.tsx` |
-| P2-44 | A11y | Chip has no `accessibilityState={{ selected }}` — screen readers cannot announce selection state | `Chip.tsx` |
-| P2-45 | A11y | FloorSelector tabs have no `accessibilityState={{ selected }}` | `FloorSelector.tsx` |
+| P2-43 | A11y | ✅ Done (Batch 2026-04-10M): FloatingToast now announces as alert with polite live region. | `FloatingToast.tsx` |
+| P2-44 | A11y | ✅ Done (Batch 2026-04-10M): Chip now exposes selected accessibility state. | `Chip.tsx` |
+| P2-45 | A11y | ✅ Done (Batch 2026-04-10M): FloorSelector tabs now expose selected accessibility state. | `FloorSelector.tsx` |
 | P2-46 | A11y | StarRating (non-editable) has no `accessibilityRole`; editable stars lack "X out of Y" context in label | `StarRating.tsx` |
 | P2-47 | A11y | ProfileRadarChart is not screen-reader navigable — no accessible value text for the 6 axes | `ProfileRadarChart.tsx:38` |
 | P2-48 | A11y | MustOrderBadge has no `accessibilityLabel` | `MustOrderBadge.tsx` |
@@ -716,13 +762,14 @@ These items affect perceived quality but do not break functionality.
 - 2026-04-10 | Codex | Executed P1 fidelity/state batch: upgraded DishDetail hero/gallery + radar + price treatment, rewired StallDetail real reviews + closure/hygiene + share/save actions, added Home/Search loading states (+ search sorting), hardened profile root-navigation helpers, and added test coverage for detail transforms and search sorting. | Status: completed + verified. | Blockers: remaining P1 items still open (for example review photo picker and full error-boundary strategy). | Next: continue remaining P1/P2 backlog by priority and keep verification notes synced.
 - 2026-04-10 | Codex | Applied requested UX adjustments: replaced DishDetail radar with taste graph, made gallery carousel full-bleed, removed StallDetail hygiene badge, disabled push animation into Search routes, added top-left back affordance on Search screen, and enabled swipe-down keyboard dismissal on ReviewHub search list. | Status: completed + verified. | Blockers: none for this patch. | Next: run simulator QA to validate search-route feel and review keyboard gesture behavior on device.
 - 2026-04-10 | Codex | Implemented EAS Update baseline to avoid localhost dependency for device usage: added `expo-updates`, created `eas.json` build/channel profiles, enabled runtime update config in `app.json`, enabled iOS updates in `Expo.plist`, and added publish/channel npm scripts. | Status: partially completed (repo-side wiring done). | Blockers: EAS project linking requires user Expo login before setting project ID and update URL. | Next: run `npx eas-cli login` then `npx eas-cli update:configure` once to finalize cloud linkage.
+- 2026-04-10 | Codex | Re-audited the current worktree against the consolidated backlog, confirmed the auth/onboarding progress that had landed in code, marked stale backlog items accordingly, and corrected README/verification status to match the current local command reality. | Status: completed for documentation sync. | Blockers: `npx expo-doctor` is currently blocked locally by npm cache ownership under `/Users/Siew Hean/.npm`. | Next: continue open P1/P2 backlog items and re-run `expo-doctor` after the npm cache permissions issue is fixed.
 
 ---
 
 ## Verification Commands Log
 
 - [x] `npm run typecheck`
-- [x] `npx expo-doctor`
+- [ ] `npx expo-doctor`
 
 Add dated command outputs under each active workstream when run.
 
@@ -758,6 +805,7 @@ Add dated command outputs under each active workstream when run.
 - 2026-04-10: `npm run test` passed after Batch 2026-04-10J (16/16 tests), including new suites for `detailTransforms` and search sorting logic.
 - 2026-04-10: `npm run typecheck` passed after EAS Update baseline wiring.
 - 2026-04-10: `npx expo config --json` confirms runtime update config is active (`runtimeVersion.policy=appVersion`, `updates.enabled=true`, `checkAutomatically=ON_LOAD`).
+- 2026-04-10: Current audit rerun confirms `npm run typecheck` passes and `npm test` passes (11 tests in the current worktree). `npx expo-doctor` is currently blocked in this environment by npm cache ownership errors under `/Users/Siew Hean/.npm`, so it is not counted as green for this audit pass.
 - [x] `npm run typecheck` — 2026-04-08
 - [ ] `npx expo-doctor`
 - [x] `npm run test` — 2026-04-10

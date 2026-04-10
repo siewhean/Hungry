@@ -13,3 +13,6 @@
 - For mixed single-tap and double-tap UX in feed cards, use exclusive gesture recognizers on the text region so like and expand actions never fire together.
 - For repeated form flows (auth/reset), centralize validation rules in shared helpers and test those helpers directly so every screen stays consistent when requirements change.
 - When product direction removes a UX pattern (for example soft-gate browsing), remove both runtime code and stale harness docs in the same batch to avoid backlog drift.
+- If a screen needs true edge-to-edge media, avoid wrapping it in shared max-width containers; use a full-width shell and then apply horizontal padding only to non-hero content blocks.
+- For swipe-driven UI cues (carousel dots, selected-state visuals), bind visuals to live scroll position rather than `onMomentumScrollEnd` so feedback stays continuous during gesture.
+- When syncing local derived selection back into Zustand, guard updates by stable IDs; unconditional `set()` inside effects can create render/update loops even when values look unchanged.

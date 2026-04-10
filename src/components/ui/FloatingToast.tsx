@@ -9,6 +9,16 @@ export function FloatingToast() {
   const toast = useUIStore((state) => state.toast);
   const clearToast = useUIStore((state) => state.clearToast);
   const { palette, radii, shadows, spacing } = useHungryTheme();
+  const tone = toast?.tone ?? "info";
+  const toneBackground =
+    tone === "success"
+      ? palette.success
+      : tone === "warning"
+        ? palette.warningSoft
+        : tone === "error"
+          ? palette.error
+          : palette.navy;
+  const toastTextTone = tone === "warning" ? "default" : "inverse";
 
   useEffect(() => {
     if (!toast) {
@@ -26,18 +36,22 @@ export function FloatingToast() {
   return (
     <View pointerEvents="box-none" style={styles.wrapper}>
       <Pressable
+        accessibilityRole="alert"
+        accessibilityLiveRegion="polite"
         onPress={clearToast}
         style={[
           shadows.floating,
           {
-            backgroundColor: palette.navy,
+            backgroundColor: toneBackground,
+            borderColor: tone === "warning" ? palette.warning : "transparent",
+            borderWidth: tone === "warning" ? 1 : 0,
             borderRadius: radii.md,
             paddingHorizontal: spacing[4],
             paddingVertical: spacing[3],
           },
         ]}
       >
-        <AppText tone="inverse">{toast.message}</AppText>
+        <AppText tone={toastTextTone}>{toast.message}</AppText>
       </Pressable>
     </View>
   );
@@ -49,6 +63,6 @@ const styles = StyleSheet.create({
     left: 16,
     position: "absolute",
     right: 16,
+    zIndex: 30,
   },
 });
-
