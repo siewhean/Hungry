@@ -2,6 +2,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { View } from "react-native";
 
 import { AppText, Badge, Button, Card } from "@/components/ui";
+import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -19,7 +20,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
   const favourites = profile.favouriteDishIds.map((dishId) => mockRepository.getDishById(dishId)).filter(isDishDetail);
   const handleSignOut = () => {
     signOut();
-    const rootNavigation = (navigation.getParent?.()?.getParent?.() ?? navigation) as any;
+    const rootNavigation = getRootNavigation(navigation as any);
     rootNavigation.navigate("Splash");
   };
 

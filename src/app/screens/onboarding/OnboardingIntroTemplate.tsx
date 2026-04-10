@@ -18,6 +18,10 @@ import { ChevronRight } from "lucide-react-native";
 import { AppText, Button } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
+import {
+  ONBOARDING_ACTIONS_BOTTOM_PADDING,
+  ONBOARDING_ACTIONS_GAP,
+} from "./layoutConstants";
 
 // ─── Progress bar ─────────────────────────────────────────────────────────────
 
@@ -310,7 +314,7 @@ export function OnboardingIntroTemplate({
   return (
     <View style={[styles.screen, { backgroundColor: palette.bg }]}>
       {/* ── Top: progress + header ──────────────────────── */}
-      <View style={[styles.topArea, { paddingTop: Platform.OS === "ios" ? 56 : 32 }]}>
+      <View style={[styles.topArea, { paddingTop: Platform.OS === "ios" ? 66 : 36 }]}>
         <ProgressBar total={totalSteps} current={stepIndex - 1} />
 
         <View style={styles.topRow}>
@@ -318,10 +322,10 @@ export function OnboardingIntroTemplate({
 
           <Pressable
             onPress={() => navigation.navigate("TasteQuiz")}
-            style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+            style={{ alignItems: "center", flexDirection: "row", gap: 4, justifyContent: "center", minHeight: 28, minWidth: 52 }}
             accessibilityLabel="Skip onboarding"
           >
-            <AppText variant="bodySmall" tone="muted">
+            <AppText variant="bodySmall" tone="muted" style={{ fontFamily: "Nunito_700Bold" }}>
               Skip
             </AppText>
             <ChevronRight size={14} color={palette.textMuted} />
@@ -382,24 +386,27 @@ export function OnboardingIntroTemplate({
         </Animated.View>
 
         {/* Bullets */}
-        <View style={{ gap: spacing[3], marginBottom: spacing[6] }}>
+        <View style={{ flex: 1, gap: spacing[3], marginBottom: spacing[8] }}>
           {bullets.map((bullet, i) => (
             <BulletItem key={bullet} text={bullet} index={i} />
           ))}
         </View>
 
         {/* CTA */}
-        <Button
-          label={stepIndex < totalSteps ? "Continue" : "Set up my taste"}
-          onPress={() => navigation.navigate(nextScreen)}
-        />
-        {backScreen ? (
+        <View
+          style={{
+            gap: ONBOARDING_ACTIONS_GAP,
+            marginHorizontal: -8,
+            marginTop: spacing[2],
+            paddingBottom: ONBOARDING_ACTIONS_BOTTOM_PADDING + spacing[2],
+          }}
+        >
           <Button
-            label="Back"
-            variant="ghost"
-            onPress={() => navigation.navigate(backScreen)}
+            label={stepIndex < totalSteps ? "Continue" : "Set up my taste"}
+            onPress={() => navigation.navigate(nextScreen)}
           />
-        ) : null}
+          {backScreen ? <Button label="Back" variant="ghost" onPress={() => navigation.navigate(backScreen)} /> : null}
+        </View>
       </View>
     </View>
   );
@@ -442,8 +449,8 @@ const styles = StyleSheet.create({
   },
   illustrationArea: {
     flex: 1,
-    minHeight: 200,
-    maxHeight: 280,
+    minHeight: 156,
+    maxHeight: 208,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -461,10 +468,11 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   contentArea: {
+    flex: 1,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: 28,
-    paddingBottom: Platform.OS === "ios" ? 48 : 32,
+    paddingBottom: 0,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.06,

@@ -59,10 +59,11 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
         id: building.id,
         label: building.name.replace(" Food Centre", ""),
         coordinate: building.coordinate,
-        accent: palette.orange,
+        accent: building.type === "hawker_centre" ? palette.orange : building.type === "food_court" ? palette.teal : palette.textMuted,
+        type: building.type,
       },
     ],
-    [building.coordinate, building.id, building.name, palette.orange],
+    [building.coordinate, building.id, building.name, building.type, palette.orange, palette.teal, palette.textMuted],
   );
 
   const featuredStalls = getBuildingVenues(building.id).filter((venue) => venue.isOpen).slice(0, 3);

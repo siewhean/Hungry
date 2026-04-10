@@ -22,21 +22,31 @@ export function ReviewRatingScreen({ navigation, route }: Props) {
   const setRating = useReviewDraftStore((state) => state.setRating);
   const routeDishId = route.params?.dishId;
   const routeVenueId = route.params?.venueId;
-  const dish = mockRepository.getDishById(routeDishId ?? selectedDishId ?? "") ?? mockRepository.listPopularNearby()[0];
-  const venue = mockRepository.getVenueById(routeVenueId ?? selectedVenueId ?? dish.venueId);
+  const dish = mockRepository.getDishById(routeDishId ?? selectedDishId ?? "");
+  const venue = dish ? mockRepository.getVenueById(routeVenueId ?? selectedVenueId ?? dish.venueId) : undefined;
 
   useEffect(() => {
-    if (routeDishId) {
+    if (!dish) {
+      navigation.navigate("ReviewHub");
+    }
+  }, [dish, navigation]);
+
+  useEffect(() => {
+    if (routeDishId && dish) {
       selectDish(routeVenueId ?? dish.venueId, routeDishId);
     }
-  }, [dish.venueId, routeDishId, routeVenueId, selectDish]);
+  }, [dish, routeDishId, routeVenueId, selectDish]);
+
+  if (!dish || !venue) {
+    return null;
+  }
 
   return (
     <ReviewScreenShell
       title="Rate the dish"
       subtitle="Start with the overall score before you add the taste notes."
       step={2}
-      total={5}
+      total={4}
     >
       <Card style={{ padding: 0, overflow: "hidden" }}>
         {dish.imageUrl ? (

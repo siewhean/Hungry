@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
-import { FlatList, Pressable, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 import { Image } from "expo-image";
 import { useNavigation } from "@react-navigation/native";
 
-import { AppText, EmptyState, Screen } from "@/components/ui";
+import { AppText, Button, EmptyState, Screen } from "@/components/ui";
 import { findBuildingById } from "@/features/discovery/discovery";
-import { getSearchResults, useSearchData } from "@/features/search/search";
+import { getSearchResults, sortSearchResults, type SearchSortMode, useSearchData } from "@/features/search/search";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
@@ -102,10 +102,23 @@ export function SearchResultsScreen() {
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const updateQuery = useSearchStore((state) => state.updateQuery);
   const [displayMode, setDisplayMode] = useState<DisplayMode>("list");
-  const results = useMemo(() => getSearchResults(filters, profile.tasteVector), [filters, profile.tasteVector]);
+  const [sortMode, setSortMode] = useState<SearchSortMode>("best_match");
+  const [isLoading, setIsLoading] = useState(true);
+  const rawResults = useMemo(() => getSearchResults(filters, profile.tasteVector), [filters, profile.tasteVector]);
+  const results = useMemo(() => sortSearchResults(rawResults, sortMode, profile.tasteVector), [profile.tasteVector, rawResults, sortMode]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 160);
+    return () => clearTimeout(timer);
+  }, [results]);
 
   return (
-    <Screen scroll={false} title="Search results" subtitle={`${results.length} dishes matched your current search.`}>
+    <Screen
+      scroll={false}
+      title="Search results"
+      subtitle={isLoading ? "Finding dishes near you…" : `${results.length} dishes matched your current search.`}
+    >
       <View style={{ flex: 1, gap: spacing[4] }}>
         <View
           style={{
@@ -166,7 +179,51 @@ export function SearchResultsScreen() {
           </View>
         ) : null}
 
+        <Button
+          label="Taste filter"
+          variant="secondary"
+          onPress={() => navigation.navigate("TasteFilter")}
+        />
+
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+          {[
+            { label: "Best match", value: "best_match" },
+            { label: "Nearest", value: "distance" },
+            { label: "Top rated", value: "rating" },
+            { label: "Cheapest", value: "price" },
+          ].map((option) => {
+            const selected = sortMode === option.value;
+            return (
+              <Pressable
+                key={option.value}
+                onPress={() => setSortMode(option.value as SearchSortMode)}
+                style={{
+                  borderColor: selected ? palette.orange : palette.border,
+                  borderRadius: radii.pill,
+                  borderWidth: 1,
+                  paddingHorizontal: spacing[3],
+                  paddingVertical: spacing[2],
+                }}
+              >
+                <AppText variant="bodySmall" tone={selected ? "accent" : "secondary"}>
+                  {option.label}
+                </AppText>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {isLoading ? (
+          <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: spacing[8], gap: spacing[2] }}>
+            <ActivityIndicator color={palette.orange} />
+            <AppText variant="bodySmall" tone="secondary">
+              Updating results…
+            </AppText>
+          </View>
+        ) : null}
+
         <FlatList
+          style={{ opacity: isLoading ? 0.35 : 1 }}
           key={displayMode}
           data={results}
           keyExtractor={(item) => item.id}

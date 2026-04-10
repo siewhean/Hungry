@@ -159,7 +159,7 @@ function TabNavigator() {
                     ? NotebookPen
                     : User;
 
-          return <Icon color={color} size={Math.max(size + 4, 26)} />;
+          return <Icon color={color} size={Math.max(size + 7, 30)} />;
         },
       })}
     >
@@ -209,6 +209,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
+
+  const navigateHome = () => {
+    setReturnRoute(undefined);
+    navigationRef.resetRoot({
+      index: 0,
+      routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+    });
+  };
 
   const openResolvedRoute = (returnRoute?: string | PendingRoute) => {
     setReturnRoute(undefined);
@@ -274,8 +282,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 
     const rootState = navigationRef.getRootState();
     const currentTopRoute = rootState.routes[rootState.index]?.name;
-    const pendingRoute = useSessionStore.getState().returnRoute;
-
     if (currentTopRoute === "AuthStack") {
       if (isAuthenticated && !hasCompletedOnboarding) {
         navigationRef.resetRoot({
@@ -286,12 +292,12 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       }
 
       if (isAuthenticated && hasCompletedOnboarding) {
-        openResolvedRoute(pendingRoute);
+        navigateHome();
       }
     }
 
     if (currentTopRoute === "OnboardingStack" && hasCompletedOnboarding) {
-      openResolvedRoute(pendingRoute);
+      navigateHome();
     }
   }, [hasCompletedOnboarding, isAuthenticated]);
 
@@ -341,14 +347,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           resetScrollBack();
         }}
       >
-        <RootStack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+        <RootStack.Navigator initialRouteName={__DEV__ ? "DeveloperLauncher" : "Splash"} screenOptions={{ headerShown: false }}>
           <RootStack.Screen component={DeveloperLauncherScreen} name="DeveloperLauncher" />
           <RootStack.Screen component={SplashScreen} name="Splash" />
           <RootStack.Screen component={AuthStack} name="AuthStack" />
           <RootStack.Screen component={OnboardingStack} name="OnboardingStack" />
           <RootStack.Screen component={TabNavigator} name="MainTabs" />
-          <RootStack.Screen component={DishSearchScreen} name="SearchHome" />
-          <RootStack.Screen component={SearchResultsScreen} name="SearchResults" />
+          <RootStack.Screen component={DishSearchScreen} name="SearchHome" options={{ animation: "none" }} />
+          <RootStack.Screen component={SearchResultsScreen} name="SearchResults" options={{ animation: "none" }} />
           <RootStack.Screen component={TasteFilterScreen} name="TasteFilter" />
           <RootStack.Screen component={ReadsFeedScreen} name="ReadsFeed" />
           <RootStack.Screen component={MapZoomedInScreen} name="MapZoomedIn" />

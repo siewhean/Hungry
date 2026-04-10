@@ -349,9 +349,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           {[
             { label: "Intro 1 — Dish first", screen: "OnboardingIntro1" },
             { label: "Intro 2 — Social cues", screen: "OnboardingIntro2" },
-            { label: "Intro 3 — Personalisation", screen: "OnboardingIntro3" },
             { label: "Taste Quiz", screen: "TasteQuiz" },
-            { label: "Dietary Preferences", screen: "DietaryPreferences" },
             { label: "Location Permission", screen: "LocationPermission" },
           ].map(({ label, screen }) => (
             <LaunchButton

@@ -10,7 +10,7 @@
  *  1800ms – navigate to onboarding or main tabs
  */
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { View, Animated, Easing, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
@@ -27,13 +27,13 @@ export function SplashScreen({ navigation }: Props) {
   const { palette, spacing } = useHungryTheme();
 
   // ── Animated values ───────────────────────────────────────────────────────
-  const logoScale = new Animated.Value(0.4);
-  const logoOpacity = new Animated.Value(0);
-  const suffixTranslateX = new Animated.Value(24);
-  const suffixOpacity = new Animated.Value(0);
-  const taglineOpacity = new Animated.Value(0);
-  const dotScale = new Animated.Value(0.6);
-  const dotOpacity = new Animated.Value(0);
+  const logoScale = useRef(new Animated.Value(0.4)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const suffixTranslateX = useRef(new Animated.Value(24)).current;
+  const suffixOpacity = useRef(new Animated.Value(0)).current;
+  const taglineOpacity = useRef(new Animated.Value(0)).current;
+  const dotScale = useRef(new Animated.Value(0.6)).current;
+  const dotOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Staggered entrance animation

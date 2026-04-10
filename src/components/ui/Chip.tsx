@@ -20,7 +20,7 @@ export function Chip({ label, selected = false, onPress }: ChipProps) {
         styles.chip,
         {
           backgroundColor: selected ? palette.orangeLight : palette.surface,
-          borderColor: palette.orange,
+          borderColor: selected ? palette.orange : "#000000",
           borderRadius: radii.md,
           minHeight: 44,
           paddingHorizontal: spacing[3],

@@ -185,14 +185,14 @@
 
 | Action | Guest | Authenticated |
 |--------|-------|--------------|
-| Browse map | Yes | Yes |
-| Dish/stall detail | Yes | Yes |
-| Search | Yes | Yes |
-| Reads | Yes | Yes |
-| Favourite a dish | No → soft gate | Yes |
-| Write a review | No → soft gate | Yes |
-| View profile | No → soft gate | Yes |
-| Taste profile | No (neutral) | Yes |
+| Browse map | No — redirect to login | Yes |
+| Dish/stall detail | No — redirect to login | Yes |
+| Search | No — redirect to login | Yes |
+| Reads | No — redirect to login | Yes |
+| Favourite a dish | No — redirect to login | Yes |
+| Write a review | No — redirect to login | Yes |
+| View profile | No — redirect to login | Yes |
+| Taste profile | No — redirect to login | Yes |
 
 ---
 

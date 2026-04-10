@@ -1,40 +1,63 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ArrowLeft, CircleAlert, MailCheck } from "lucide-react-native";
 
-import { AppText, Button, Card, InlineBanner } from "@/components/ui";
+import { AppText, Button } from "@/components/ui";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import { AuthScreenShell } from "./AuthScreenShell";
 import type { AuthStackParamList } from "./AuthStack";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "EmailVerification">;
 
-export function EmailVerificationScreen({ navigation }: Props) {
+export function EmailVerificationScreen({ navigation, route }: Props) {
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const showToast = useUIStore((state) => state.showToast);
-
-  const handleVerify = () => {
-    completeAuth();
-    showToast({ message: "Email verified. Continue onboarding.", tone: "success" });
-  };
+  const email = route.params?.email ?? "james.cook@chef.com";
 
   return (
-    <AuthScreenShell
-      title="Check your inbox"
-      subtitle="Verify your email before Hungry unlocks the onboarding flow."
-      footer={<Button label="Back to sign up" variant="ghost" onPress={() => navigation.navigate("SignUp")} />}
-    >
-      <Card>
-        <View style={{ gap: 12 }}>
-          <AppText variant="h3">Verification needed</AppText>
-          <AppText tone="secondary">
-            The mock app keeps this step explicit so the navigator can route to onboarding only after verification.
-          </AppText>
-          <InlineBanner tone="info" message="Tap verify to simulate the email link opening in mobile." />
+    <SafeAreaView style={{ backgroundColor: "#FFF8F2", flex: 1 }} edges={["top", "left", "right", "bottom"]}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 24, paddingVertical: 16 }}>
+        <Pressable onPress={() => navigation.goBack()} style={{ backgroundColor: "#EFE7DE", borderRadius: 20, height: 40, width: 40, alignItems: "center", justifyContent: "center" }}>
+          <ArrowLeft color="#1E1B16" size={18} />
+        </Pressable>
+        <AppText variant="h1">Hungry</AppText>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 24 }}>
+        <View style={{ backgroundColor: "#D1430B", borderRadius: 20, width: 64, height: 64, alignItems: "center", justifyContent: "center" }}>
+          <MailCheck color="#FFFFFF" size={30} />
         </View>
-      </Card>
-      <Button label="Verify email" onPress={handleVerify} />
-      <Button label="Resend email" variant="secondary" onPress={() => showToast({ message: "Verification email resent.", tone: "info" })} />
-    </AuthScreenShell>
+        <AppText variant="display" style={{ marginTop: 12 }}>Verify Your Email</AppText>
+        <AppText tone="secondary" style={{ marginTop: 8, lineHeight: 26 }}>
+          We've sent a 6-digit verification code to <AppText style={{ fontFamily: "Nunito_700Bold" }}>{email}</AppText>. Please enter it below to confirm your account.
+        </AppText>
+
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 28 }}>
+          {["4", "9", "2", "•", "•", "•"].map((digit, index) => (
+            <View key={`${digit}-${index}`} style={{ backgroundColor: "#F4EDE4", borderRadius: 24, flex: 1, height: 50, alignItems: "center", justifyContent: "center" }}>
+              <AppText variant="h2" style={{ color: digit === "•" ? "#6B7280" : "#1E1B16" }}>{digit}</AppText>
+            </View>
+          ))}
+        </View>
+
+        <AppText style={{ color: "#835500", marginTop: 20, textAlign: "center" }}>
+          Didn't receive the code? <AppText style={{ color: "#A93100", fontFamily: "Nunito_700Bold" }}>Resend in 0:54</AppText>
+        </AppText>
+
+        <View style={{ gap: 16, marginTop: 28 }}>
+          <Button label="Verify Account" onPress={() => { completeAuth(); showToast({ message: "Email verified. Continue onboarding.", tone: "success" }); }} style={{ borderRadius: 24, minHeight: 56 }} />
+          <Button label="Change Email Address" variant="secondary" onPress={() => navigation.navigate("SignUp")} style={{ borderRadius: 24, minHeight: 56 }} />
+        </View>
+
+        <View style={{ backgroundColor: "rgba(250,242,233,0.5)", borderRadius: 16, flexDirection: "row", gap: 12, marginTop: 28, padding: 16 }}>
+          <CircleAlert color="#A93100" size={18} />
+          <AppText variant="bodySmall" tone="secondary" style={{ flex: 1 }}>
+            Hungry uses encrypted verification to ensure your culinary journey is safe.
+          </AppText>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }

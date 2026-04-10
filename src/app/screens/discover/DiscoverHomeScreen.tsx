@@ -1,16 +1,23 @@
-import { useState } from "react";
 import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
-import { ChevronRight, Compass, MapPinned, Search } from "lucide-react-native";
+import { ChevronRight, Compass, MapPinned, Search, Shuffle } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 
 import { AppText, Chip, Input, Screen } from "@/components/ui";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
+import type { SearchCategory } from "@/types/domain";
 
 const FILTER_CHIPS = ["Spicy", "Halal", "Late night", "Cheap"] as const;
+const CHIP_TO_CATEGORY: Record<(typeof FILTER_CHIPS)[number], SearchCategory> = {
+  Spicy: "local favourites",
+  Halal: "rice",
+  "Late night": "late night",
+  Cheap: "noodles",
+};
 
 export function DiscoverHomeScreen() {
   const navigation = useNavigation<any>();
@@ -18,7 +25,8 @@ export function DiscoverHomeScreen() {
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
   const { popularNearby, setDecideForMe } = useDiscoveryStore();
-  const [selectedChips, setSelectedChips] = useState<Set<string>>(new Set());
+  const selectedCategories = useSearchStore((state) => state.filters.categories);
+  const toggleCategory = useSearchStore((state) => state.toggleCategory);
 
   const buildings = mockRepository.listBuildings();
   const recommendedDishes = popularNearby.slice(0, 4);
@@ -36,16 +44,9 @@ export function DiscoverHomeScreen() {
   }>;
   const recommendedCardWidth = Math.max(212, Math.min(244, screenWidth * 0.62));
 
-  const toggleChip = (label: string) => {
-    setSelectedChips((prev) => {
-      const next = new Set(prev);
-      if (next.has(label)) {
-        next.delete(label);
-      } else {
-        next.add(label);
-      }
-      return next;
-    });
+  const toggleChip = (label: (typeof FILTER_CHIPS)[number]) => {
+    const category = CHIP_TO_CATEGORY[label];
+    toggleCategory(category);
   };
 
   const handleDecideForMe = () => {
@@ -75,7 +76,10 @@ export function DiscoverHomeScreen() {
             </AppText>
             <AppText variant="h1">Discover</AppText>
           </View>
-          <View
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open Hungry Wheel"
+            onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
             style={{
               alignItems: "center",
               backgroundColor: palette.surface,
@@ -87,8 +91,8 @@ export function DiscoverHomeScreen() {
               width: 40,
             }}
           >
-            <AppText variant="bodySmall">H</AppText>
-          </View>
+            <Shuffle color={palette.navy} size={18} />
+          </Pressable>
         </View>
 
         <Pressable onPress={() => navigation.navigate("SearchHome")}>
@@ -110,7 +114,7 @@ export function DiscoverHomeScreen() {
             <Chip
               key={label}
               label={label}
-              selected={selectedChips.has(label)}
+              selected={selectedCategories.includes(CHIP_TO_CATEGORY[label])}
               onPress={() => toggleChip(label)}
             />
           ))}
@@ -129,43 +133,85 @@ export function DiscoverHomeScreen() {
           />
         </View>
 
-        <Pressable
-          onPress={handleDecideForMe}
-          style={[
-            shadows.card,
-            {
-              backgroundColor: palette.orange,
-              borderRadius: radii.lg,
-              minHeight: 120,
-              overflow: "hidden",
-              padding: spacing[4],
-            },
-          ]}
-        >
-          <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3] }}>
-            <View
-              style={{
-                alignItems: "center",
-                backgroundColor: "rgba(255,255,255,0.16)",
-                borderRadius: radii.md,
-                height: 48,
-                justifyContent: "center",
-                width: 48,
-              }}
-            >
-              <Compass color="#FFFFFF" size={24} />
+        <View style={{ flexDirection: "row", gap: spacing[3] }}>
+          <Pressable
+            onPress={handleDecideForMe}
+            style={[
+              shadows.card,
+              {
+                backgroundColor: palette.orange,
+                borderRadius: radii.lg,
+                flex: 1,
+                minHeight: 156,
+                overflow: "hidden",
+                padding: spacing[4],
+              },
+            ]}
+          >
+            <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3] }}>
+              <View
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "rgba(255,255,255,0.16)",
+                  borderRadius: radii.md,
+                  height: 42,
+                  justifyContent: "center",
+                  width: 42,
+                }}
+              >
+                <Compass color="#FFFFFF" size={20} />
+              </View>
+              <ChevronRight color="#FFFFFF" size={18} />
             </View>
-            <ChevronRight color="#FFFFFF" size={20} />
-          </View>
-          <View style={{ gap: spacing[1], marginTop: spacing[4] }}>
-            <AppText variant="h2" tone="inverse">
-              Decide For Me
-            </AppText>
-            <AppText variant="bodySmall" tone="inverse">
-              Let Hungry make the call based on your taste profile and what is nearby.
-            </AppText>
-          </View>
-        </Pressable>
+            <View style={{ gap: spacing[1], marginTop: spacing[3] }}>
+              <AppText variant="h3" tone="inverse">
+                Decide For Me
+              </AppText>
+              <AppText variant="bodySmall" tone="inverse">
+                Let Hungry pick based on your profile.
+              </AppText>
+            </View>
+          </Pressable>
+
+          <Pressable
+            onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
+            style={[
+              shadows.card,
+              {
+                backgroundColor: palette.navy,
+                borderRadius: radii.lg,
+                flex: 1,
+                minHeight: 156,
+                overflow: "hidden",
+                padding: spacing[4],
+              },
+            ]}
+          >
+            <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3] }}>
+              <View
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "rgba(255,255,255,0.16)",
+                  borderRadius: radii.md,
+                  height: 42,
+                  justifyContent: "center",
+                  width: 42,
+                }}
+              >
+                <Shuffle color="#FFFFFF" size={20} />
+              </View>
+              <ChevronRight color="#FFFFFF" size={18} />
+            </View>
+            <View style={{ gap: spacing[1], marginTop: spacing[3] }}>
+              <AppText variant="h3" tone="inverse">
+                Wheel
+              </AppText>
+              <AppText variant="bodySmall" tone="inverse">
+                Spin with friends and let chance decide.
+              </AppText>
+            </View>
+          </Pressable>
+        </View>
 
         <View style={{ gap: spacing[3] }}>
           <SectionHeader
@@ -262,7 +308,11 @@ export function DiscoverHomeScreen() {
                 key={building.id}
                 style={{
                   backgroundColor:
-                    building.type === "food_court" ? palette.navy : palette.textMuted,
+                    building.type === "hawker_centre"
+                      ? palette.orange
+                      : building.type === "food_court"
+                        ? palette.teal
+                        : palette.textMuted,
                   borderRadius: radii.pill,
                   height: 18,
                   left: index === 0 ? "18%" : index === 1 ? "54%" : "72%",

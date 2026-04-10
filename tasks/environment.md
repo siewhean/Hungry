@@ -84,7 +84,7 @@ Configured in: `tsconfig.json` + `babel.config.js`
 │   │   ├── useProfileStore.ts     # User profile + favourites
 │   │   ├── useReviewDraftStore.ts # Review compose draft
 │   │   ├── useLocationStore.ts    # Device location
-│   │   └── useUIStore.ts          # Toast, soft gate, global UI
+│   │   └── useUIStore.ts          # Toast, review success modal, global UI state
 │   ├── lib/services/mock/
 │   │   ├── data.ts                # ← ALL fixture data (buildings, venues, dishes, etc.)
 │   │   └── repositories.ts        # Mock repository functions (wrap data.ts)

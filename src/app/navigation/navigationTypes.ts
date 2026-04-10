@@ -15,7 +15,10 @@ export type OnboardingStackParamList = {
   OnboardingIntro3: undefined;
   TasteQuiz: undefined;
   DietaryPreferences: undefined;
+  TasteProfileLoading: undefined;
+  TasteProfileResult: undefined;
   LocationPermission: undefined;
+  ManualLocationPicker: undefined;
 };
 
 export type ReviewStackParamList = {

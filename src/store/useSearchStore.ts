@@ -1,7 +1,9 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import type { DietaryFlag, SearchCategory, SearchFilters, TasteVector } from "@/types/domain";
+import { hungryPersistStorage } from "./persistStorage";
 
 interface SearchState {
   filters: SearchFilters;
@@ -14,57 +16,68 @@ interface SearchState {
   rememberSearch: (query: string) => void;
 }
 
-export const useSearchStore = create<SearchState>((set) => ({
-  filters: {
-    query: "",
-    categories: [],
-    dietaryFlags: [],
-    tasteValues: NEUTRAL_TASTE_VECTOR,
-    radius: 1000,
-  },
-  recentSearches: ["laksa", "chicken rice", "satay"],
-  updateQuery: (query) =>
-    set((state) => ({
+export const useSearchStore = create<SearchState>()(
+  persist(
+    (set) => ({
       filters: {
-        ...state.filters,
-        query,
+        query: "",
+        categories: [],
+        dietaryFlags: [],
+        tasteValues: NEUTRAL_TASTE_VECTOR,
+        radius: 1000,
       },
-    })),
-  toggleCategory: (category) =>
-    set((state) => ({
-      filters: {
-        ...state.filters,
-        categories: state.filters.categories.includes(category)
-          ? state.filters.categories.filter((value) => value !== category)
-          : [...state.filters.categories, category],
-      },
-    })),
-  toggleDietary: (flag) =>
-    set((state) => ({
-      filters: {
-        ...state.filters,
-        dietaryFlags: state.filters.dietaryFlags.includes(flag)
-          ? state.filters.dietaryFlags.filter((value) => value !== flag)
-          : [...state.filters.dietaryFlags, flag],
-      },
-    })),
-  setTasteValues: (tasteValues) =>
-    set((state) => ({
-      filters: {
-        ...state.filters,
-        tasteValues,
-      },
-    })),
-  resetToProfile: (tasteValues) =>
-    set((state) => ({
-      filters: {
-        ...state.filters,
-        tasteValues,
-      },
-    })),
-  rememberSearch: (query) =>
-    set((state) => ({
-      recentSearches: [query, ...state.recentSearches.filter((value) => value !== query)].slice(0, 5),
-    })),
-}));
-
+      recentSearches: ["laksa", "chicken rice", "satay"],
+      updateQuery: (query) =>
+        set((state) => ({
+          filters: {
+            ...state.filters,
+            query,
+          },
+        })),
+      toggleCategory: (category) =>
+        set((state) => ({
+          filters: {
+            ...state.filters,
+            categories: state.filters.categories.includes(category)
+              ? state.filters.categories.filter((value) => value !== category)
+              : [...state.filters.categories, category],
+          },
+        })),
+      toggleDietary: (flag) =>
+        set((state) => ({
+          filters: {
+            ...state.filters,
+            dietaryFlags: state.filters.dietaryFlags.includes(flag)
+              ? state.filters.dietaryFlags.filter((value) => value !== flag)
+              : [...state.filters.dietaryFlags, flag],
+          },
+        })),
+      setTasteValues: (tasteValues) =>
+        set((state) => ({
+          filters: {
+            ...state.filters,
+            tasteValues,
+          },
+        })),
+      resetToProfile: (tasteValues) =>
+        set((state) => ({
+          filters: {
+            ...state.filters,
+            tasteValues,
+          },
+        })),
+      rememberSearch: (query) =>
+        set((state) => ({
+          recentSearches: [query, ...state.recentSearches.filter((value) => value !== query)].slice(0, 5),
+        })),
+    }),
+    {
+      name: "hungry-search-v1",
+      storage: hungryPersistStorage,
+      partialize: (state) => ({
+        filters: state.filters,
+        recentSearches: state.recentSearches,
+      }),
+    },
+  ),
+);

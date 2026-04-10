@@ -20,7 +20,6 @@ export function ReviewComposeScreen({ navigation }: Props) {
   const draft = useReviewDraftStore((state) => state.draft);
   const failedPhotoUris = useReviewDraftStore((state) => state.failedPhotoUris);
   const addPhoto = useReviewDraftStore((state) => state.addPhoto);
-  const markPhotoFailed = useReviewDraftStore((state) => state.markPhotoFailed);
   const clearFailedPhoto = useReviewDraftStore((state) => state.clearFailedPhoto);
   const setText = useReviewDraftStore((state) => state.setText);
   const isSubmitting = useReviewDraftStore((state) => state.isSubmitting);
@@ -28,6 +27,7 @@ export function ReviewComposeScreen({ navigation }: Props) {
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
   const addReview = useProfileStore((state) => state.addReview);
   const addReviewedDish = useProfileStore((state) => state.addReviewedDish);
+  const recordReviewEntry = useProfileStore((state) => state.recordReviewEntry);
   const showToast = useUIStore((state) => state.showToast);
   const showReviewSuccess = useUIStore((state) => state.showReviewSuccess);
   const selectedDishId = useReviewDraftStore((state) => state.draft.selectedDishId);
@@ -39,7 +39,7 @@ export function ReviewComposeScreen({ navigation }: Props) {
         title="Choose a dish first"
         subtitle="Reviews should stay attached to the exact dish you ate."
         step={4}
-        total={5}
+        total={4}
       >
         <Card>
           <View style={{ gap: 12 }}>
@@ -76,8 +76,13 @@ export function ReviewComposeScreen({ navigation }: Props) {
     setTimeout(() => {
       addReviewedDish(dish.id);
       addReview(dish);
+      recordReviewEntry(dish.id, {
+        rating: draft.rating,
+        text: draft.text,
+        tags: draft.selectedTags,
+      });
       setSubmitting(false);
-      showToast({ message: "Review saved locally. It appears on your history immediately.", tone: "success" });
+      showToast({ message: "Review submitted.", tone: "success" });
       showReviewSuccess(successPayload);
       resetDraft();
       navigation.popToTop();
@@ -89,7 +94,7 @@ export function ReviewComposeScreen({ navigation }: Props) {
       title="Final notes"
       subtitle="Add a short comment or keep it lightweight with just the tags."
       step={4}
-      total={5}
+      total={4}
     >
       <Card>
         <View style={{ gap: 12 }}>
@@ -108,7 +113,6 @@ export function ReviewComposeScreen({ navigation }: Props) {
             {draft.text.length}/200 characters
           </AppText>
           <Button label="Add demo photo" variant="secondary" onPress={() => addPhoto(`mock-photo-${Date.now()}`)} />
-          <Button label="Simulate photo failure" variant="ghost" onPress={() => markPhotoFailed(`failed-${Date.now()}`)} />
           {draft.photos.length ? <AppText tone="muted">Photos attached: {draft.photos.length}</AppText> : null}
           {failedPhotoUris.length ? (
             <InlineBanner tone="warning" message="One or more photos failed. Remove them or retry later." />
@@ -122,9 +126,6 @@ export function ReviewComposeScreen({ navigation }: Props) {
       </Card>
       <Button label="Submit review" loading={isSubmitting} onPress={handleSubmit} />
       <Button label="Back" variant="ghost" onPress={() => navigation.goBack()} />
-      <AppText variant="bodySmall" tone="muted">
-        This mock flow preserves state across every step of the quick-review flow.
-      </AppText>
     </ReviewScreenShell>
   );
 }

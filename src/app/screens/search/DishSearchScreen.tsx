@@ -1,14 +1,24 @@
-import { Pressable, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { Animated, Easing, Pressable, View } from "react-native";
 import { Image } from "expo-image";
-import { Search as SearchIcon } from "lucide-react-native";
+import { ArrowLeft, Search as SearchIcon } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 
-import { AppText, Button, Input, Screen } from "@/components/ui";
+import { AppText, Button, Chip, Input, Screen } from "@/components/ui";
 import { getDiscoverStallCollections, useSearchData } from "@/features/search/search";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
+import type { SearchCategory } from "@/types/domain";
+
+const SEARCH_CATEGORIES: SearchCategory[] = [
+  "local favourites",
+  "noodles",
+  "rice",
+  "desserts",
+  "late night",
+];
 
 export function DishSearchScreen() {
   const navigation = useNavigation<any>();
@@ -16,21 +26,87 @@ export function DishSearchScreen() {
   const { filters } = useSearchData();
   const profile = useProfileStore((state) => state.profile);
   const updateQuery = useSearchStore((state) => state.updateQuery);
+  const selectedCategories = useSearchStore((state) => state.filters.categories);
+  const toggleCategory = useSearchStore((state) => state.toggleCategory);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const collections = getDiscoverStallCollections(profile, filters.query).slice(0, 4);
+  const entryY = useRef(new Animated.Value(-28)).current;
+  const entryOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+      Animated.parallel([
+        Animated.timing(entryY, {
+          toValue: 0,
+          duration: 260,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(entryOpacity, {
+          toValue: 1,
+          duration: 220,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start();
+  }, [entryOpacity, entryY]);
 
   return (
-    <Screen
-      title="Search"
-      subtitle="Search by dish, then decide whether the stall is worth the walk."
-    >
-      <View style={{ gap: spacing[4] }}>
+    <Screen>
+      <Animated.View
+        style={{
+          gap: spacing[4],
+          opacity: entryOpacity,
+          transform: [{ translateY: entryY }],
+        }}
+      >
+        <View
+          style={{
+            alignItems: "center",
+            flexDirection: "row",
+            gap: spacing[3],
+          }}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            hitSlop={10}
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+                return;
+              }
+              navigation.navigate("MainTabs", { screen: "Discover" });
+            }}
+          >
+            <ArrowLeft color={palette.navy} size={18} />
+          </Pressable>
+          <View style={{ flex: 1 }}>
+            <AppText variant="h1">Search</AppText>
+            <AppText tone="secondary">Search by dish, then decide whether the stall is worth the walk.</AppText>
+          </View>
+        </View>
+
         <Input
           leftIcon={<SearchIcon color={palette.textMuted} size={18} />}
           placeholder="Laksa, satay, Tian Tian..."
           value={filters.query}
           onChangeText={updateQuery}
           onSubmitEditing={() => navigation.navigate("SearchResults")}
+        />
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+          {SEARCH_CATEGORIES.map((category) => (
+            <Chip
+              key={category}
+              label={category}
+              selected={selectedCategories.includes(category)}
+              onPress={() => toggleCategory(category)}
+            />
+          ))}
+        </View>
+        <Button
+          label="Adjust taste filter"
+          variant="secondary"
+          onPress={() => navigation.navigate("TasteFilter")}
         />
         <Button label="View search results" onPress={() => navigation.navigate("SearchResults")} />
         <Pressable
@@ -95,7 +171,7 @@ export function DishSearchScreen() {
           ))}
         </View>
 
-      </View>
+      </Animated.View>
     </Screen>
   );
 }

@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { Search } from "lucide-react-native";
 
-import { AppText, Badge, Card, Input, Screen } from "@/components/ui";
+import { AppText, Badge, Card, EmptyState, Input, Screen } from "@/components/ui";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -35,18 +35,7 @@ export function ReviewHubScreen({ navigation }: Props) {
   }, [isAuthenticated, rootNavigation, setReturnRoute]);
 
   if (!isAuthenticated) {
-    return (
-      <Screen title="Quick review" subtitle="Sign in to attach reviews to your profile.">
-        <Card>
-          <View style={{ gap: spacing[3] }}>
-            <AppText variant="h3">Reviews need an account</AppText>
-            <AppText tone="secondary">
-              Sign in first, then attach each review to your Hungry profile and review history.
-            </AppText>
-          </View>
-        </Card>
-      </Screen>
-    );
+    return null;
   }
 
   return (
@@ -58,6 +47,8 @@ export function ReviewHubScreen({ navigation }: Props) {
       <FlatList
         data={venues}
         keyExtractor={(item) => item.id}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[8] }}
         ListHeaderComponent={
@@ -74,7 +65,7 @@ export function ReviewHubScreen({ navigation }: Props) {
               }}
             >
               <AppText variant="micro" tone="accent" style={{ textTransform: "uppercase" }}>
-                Step 1 of 5
+                Step 1 of 4
               </AppText>
             </View>
             <Input
@@ -139,6 +130,12 @@ export function ReviewHubScreen({ navigation }: Props) {
             </Pressable>
           );
         }}
+        ListEmptyComponent={
+          <EmptyState
+            title="No matching stalls"
+            body="Try a different stall name or clear the search to browse nearby options."
+          />
+        }
       />
     </Screen>
   );

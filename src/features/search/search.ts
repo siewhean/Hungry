@@ -3,6 +3,8 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import type { DishDetail, SearchFilters, StallPost, UserProfile, VenueSummary } from "@/types/domain";
 
+export type SearchSortMode = "best_match" | "distance" | "rating" | "price";
+
 export function useSearchData() {
   const profile = useProfileStore((state) => state.profile);
   const filters = useSearchStore((state) => state.filters);
@@ -17,6 +19,26 @@ export function useSearchData() {
 
 export function getSearchResults(filters: SearchFilters, tasteVector = filters.tasteValues) {
   return mockRepository.searchDishes(filters, tasteVector);
+}
+
+export function sortSearchResults(results: DishDetail[], mode: SearchSortMode, tasteVector: UserProfile["tasteVector"]) {
+  const cloned = [...results];
+
+  if (mode === "distance") {
+    return cloned.sort((left, right) => left.distanceMeters - right.distanceMeters);
+  }
+
+  if (mode === "rating") {
+    return cloned.sort((left, right) => right.rating - left.rating);
+  }
+
+  if (mode === "price") {
+    return cloned.sort((left, right) => left.price - right.price);
+  }
+
+  return cloned.sort(
+    (left, right) => similarityScore(right.tasteVector, tasteVector) - similarityScore(left.tasteVector, tasteVector),
+  );
 }
 
 export function getDecideForMeDish() {

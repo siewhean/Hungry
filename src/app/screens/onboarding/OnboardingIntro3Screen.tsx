@@ -8,15 +8,15 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, "OnboardingIntro3"
 export function OnboardingIntro3Screen({ navigation }: Props) {
   return (
     <OnboardingIntroTemplate
-      title="Faster picks with a taste profile"
-      subtitle="A 60-second setup lets Hungry tune recommendations, Dish Roulette, and search to your real preferences."
+      title="Tune recommendations to your taste"
+      subtitle="A quick taste setup helps Hungry prioritize dishes that fit your cravings and dietary preferences."
       stepIndex={3}
       totalSteps={3}
-      eyebrow="Personalisation"
+      eyebrow="Personalized discovery"
       bullets={[
-        "Rate how much you like sweet, spicy, rich, or aromatic dishes in one quick quiz.",
-        "Set dietary flags once — halal, vegetarian, nut-free — and never see wrong results.",
-        "Share location only when you want nearby ranking and faster map browsing.",
+        "Set your flavor profile in seconds with the taste quiz.",
+        "Choose dietary preferences to keep recommendations relevant.",
+        "Location + taste together gives better dish suggestions instantly.",
       ]}
       navigation={navigation}
       nextScreen="TasteQuiz"
