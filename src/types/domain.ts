@@ -172,3 +172,70 @@ export interface AppSession {
   hasSkippedTasteQuiz: boolean;
   returnRoute?: string | { name: string; params?: Record<string, unknown> };
 }
+
+// ─── Hungry Wheel ────────────────────────────────────────────────────────────
+
+export type WheelSpinMode = "classic" | "elimination";
+export type WheelTriggerMode = "manual" | "countdown" | "scheduled" | "timed_range";
+export type PartyStatus = "lobby" | "spinning" | "resolved";
+
+export type TriggerValue =
+  | { type: "countdown"; durationMs: number }
+  | { type: "scheduled"; scheduledAt: string }
+  | { type: "timed_range"; rangeStart: string; rangeEnd: string };
+
+export interface WheelParty {
+  id: string;
+  code: string;
+  hostUserId: string;
+  status: PartyStatus;
+  spinMode: WheelSpinMode;
+  triggerMode: WheelTriggerMode;
+  triggerValue?: TriggerValue;
+  /** Server-generated seed; every client derives winner from this. */
+  spinSeed?: number;
+  /** Unix ms when the spin animation was broadcast. */
+  spinStartedAt?: number;
+  /** Fixed animation duration shared by all clients (ms). */
+  spinDurationMs: number;
+  winnerEntryId?: string;
+  currentRound: number;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface WheelMember {
+  id: string;
+  partyId: string;
+  userId?: string;
+  displayName: string;
+  avatarUrl?: string;
+  isHost: boolean;
+  isPresent: boolean;
+  joinedAt: string;
+}
+
+export interface WheelEntry {
+  id: string;
+  partyId: string;
+  addedByMemberId: string;
+  venueId: string;
+  buildingId: string;
+  label: string;
+  imageUrl: string;
+  isEliminated: boolean;
+  eliminatedInRound?: number;
+  position: number;
+  addedAt: string;
+}
+
+/** Realtime broadcast event shapes ───────────────────────────────── */
+export type WheelChannelEvent =
+  | { type: "entry_added"; entry: WheelEntry }
+  | { type: "entry_removed"; entryId: string }
+  | { type: "spin_triggered"; seed: number; startedAt: number; activeEntryIds: string[] }
+  | { type: "round_resolved"; eliminatedEntryId: string; nextRound: number }
+  | { type: "party_resolved"; winnerEntryId: string }
+  | { type: "trigger_update"; triggerMode: WheelTriggerMode; triggerValue?: TriggerValue }
+  | { type: "member_joined"; member: WheelMember }
+  | { type: "member_left"; memberId: string };

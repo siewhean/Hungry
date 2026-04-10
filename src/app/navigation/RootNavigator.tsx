@@ -37,6 +37,7 @@ import { BlogPostWebViewScreen } from "@/app/screens/reads/BlogPostWebViewScreen
 import { ReadsFeedScreen } from "@/app/screens/reads/ReadsFeedScreen";
 import { ReviewStack } from "@/app/screens/review/ReviewStack";
 import { ReviewSuccessModal } from "@/app/screens/review/ReviewSuccessModal";
+import { WheelStack } from "@/app/screens/wheel/WheelStack";
 import { DishSearchScreen } from "@/app/screens/search/DishSearchScreen";
 import { SearchResultsScreen } from "@/app/screens/search/SearchResultsScreen";
 import { TasteFilterScreen } from "@/app/screens/search/TasteFilterScreen";
@@ -360,6 +361,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={StallDetailScreen} name="StallDetail" />
           <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           <RootStack.Screen component={ReviewStack} name="ReviewStack" />
+          <RootStack.Screen component={WheelStack} name="WheelStack" />
           <RootStack.Screen component={DecideForMeResultScreen} name="DecideForMeResult" />
           <RootStack.Screen component={BuildingDrillDownScreen} name="BuildingDrillDown" />
           <RootStack.Screen component={OfflineStateScreen} name="Offline" />

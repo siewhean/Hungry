@@ -33,6 +33,13 @@ export type MainTabParamList = {
   Profile: undefined;
 };
 
+export type WheelStackParamList = {
+  WheelHome: undefined;
+  WheelLobby: { partyId: string };
+  WheelSpin: { partyId: string };
+  WheelResult: { partyId: string; winnerEntryId: string };
+};
+
 export type RootStackParamList = {
   DeveloperLauncher: undefined;
   Splash: undefined;
@@ -55,6 +62,7 @@ export type RootStackParamList = {
   StallDetail: { venueId: string };
   BlogPost: { postId: string };
   ReviewStack: NavigatorScreenParams<ReviewStackParamList>;
+  WheelStack: NavigatorScreenParams<WheelStackParamList>;
   Offline: undefined;
   NotFound: { title?: string; body?: string } | undefined;
 };
