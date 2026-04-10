@@ -157,13 +157,146 @@ Verification Note:
 
 ### Phase 1 — Product + Architecture Planning
 
+> P1-01 through P1-04 are completed Claude deliverables. P1-05 through P1-09 remain open for Codex.
+
+---
+
+#### ✅ P1-01 — Mock-First Architecture Strategy
+
+**Service Boundary (the contract):**
+- `src/lib/services/types.ts` — `HungryService` interface; 41 methods across 6 domains (auth, discovery, reviews, profile, social, content, ai)
+- `src/lib/services/mock/mockService.ts` — current implementation; all methods return `Promise.resolve(...)` with fixture data
+- Future: `src/lib/services/supabase/supabaseService.ts` — real implementation, same interface, zero screen changes required
+
+**Decoupling Rules (enforce now):**
+1. Screens import from stores only — never from `mock/data.ts` or `mock/repositories.ts` directly
+2. Stores call `hungryService.method()` — not `mockRepository.method()` directly
+3. Service provider is a single injection point (`src/lib/services/serviceProvider.ts` — Codex to create, P1-05)
+4. Mock service simulates async with `Promise.resolve()` so swap to real async is drop-in
+
+**Swap Path (single-file change):**
+```ts
+// serviceProvider.ts (to create — P1-05)
+import { mockService } from './mock/mockService';
+// import { supabaseService } from './supabase/supabaseService'; // Phase 2 swap
+export const hungryService = mockService;
+```
+
+**State Persistence Gap (open — P0-14):**
+- No Zustand `persist` middleware on any of the 8 stores today
+- Phase 2: add MMKV-backed persist to `useSessionStore`, `useProfileStore`, `useSearchStore`
+- Do NOT persist `useReviewDraftStore` — drafts must reset on cold start by design
+
+---
+
+#### ✅ P1-02 — Feature-Level Definition of Done
+
+| Feature | Definition of Done |
+|---------|-------------------|
+| F-001 Auth | Sign-up routes to onboarding; login routes to MainTabs; inline validation errors with red borders; password visibility toggle present; terms/privacy link tappable; loading state on submit |
+| F-002 Taste Profile | 6 sliders at `step={1}` (integer only); results persisted to `useProfileStore` on submit; skip sets neutral vector (all 5s); no pre-seeded non-neutral defaults on mount |
+| F-003 Location | System permission dialog shown; GPS coords written to `useLocationStore.currentLocation` on grant; manual location entry on deny; fallback does not hardcode "CBD" |
+| F-004 Building Drill-Down | `FloorSelector` component used (not inline pills); stall grid ≥2 columns; `venue.closureNotice` visible via `InlineBanner`; loads <1.5s (mock: instant) |
+| F-005 Dish-First Search | Text matches dish name across all venues; ranked by proximity + rating + cosine taste similarity; results <1s |
+| F-006 Taste-Based Filtering | Navigation path from search/discover to `TasteFilterScreen` exists; `step={1}` on all sliders; "Reset to my profile" restores quiz values; Apply navigates back and results re-sort |
+| F-007 Decide For Me | FAB visible on Home or Discover; shows best dish within 500m by cosine similarity; haptic on result; "Try another" returns different dish; expand radius option on no-match; result <2s |
+| F-008 Dish Detail | Photo carousel uses `DishDetail.gallery`; taste radar chart rendered (`ProfileRadarChart`); price uses `variant="price"` (DM Mono); delivery buttons use brand colors and call `Linking.openURL` |
+| F-009 Stall Detail | Hygiene grade color-coded (A=green, B=amber, C=orange, D=red); directions opens native maps; delivery buttons call `Linking.openURL`; closure notice via `InlineBanner`; reviews from venue data (not hardcoded constant) |
+| F-010 Dish Reviews | Rating required before Next; step counter shows 4 steps (not 5); no debug "Simulate photo failure" button; real photo picker (`expo-image-picker`); success modal shown; draft cleared after submit |
+| F-011 Favourites | Tapping a dish navigates to DishDetail; each card shows image, rating, venue name; `EmptyState` component with CTA; no developer-facing copy visible |
+| F-012 Delivery Deep Links | Buttons visible only when `deliveryLinks` non-empty; taps call `Linking.openURL(nativeUrl)` with `webUrl` fallback; buttons hidden when array is empty |
+
+---
+
+#### ✅ P1-03 — Event Taxonomy
+
+All events follow: `{ event: string, properties: object, user_id?: string, session_id: string, timestamp: ISO8601 }`
+
+**App Lifecycle**
+
+| Event | Trigger | Key Properties |
+|-------|---------|---------------|
+| `app_launched` | Cold start or foreground | `{ is_first_launch: boolean, is_authenticated: boolean }` |
+| `onboarding_started` | First screen after auth | `{}` |
+| `taste_quiz_completed` | Submit on quiz screen | `{ skipped: boolean, vector: TasteVector }` |
+| `dietary_preferences_set` | Submit dietary prefs | `{ flags: DietaryFlag[] }` |
+| `onboarding_completed` | Final onboarding step | `{ has_taste_vector: boolean, has_location: boolean }` |
+
+**Discovery**
+
+| Event | Trigger | Key Properties |
+|-------|---------|---------------|
+| `decide_for_me_triggered` | FAB tap | `{ location_granted: boolean, radius_m: number }` |
+| `decide_for_me_result_shown` | Result card displayed | `{ dish_id: string, match_score: number, distance_m: number }` |
+| `decide_for_me_no_match` | No dish within radius | `{ radius_m: number }` |
+| `decide_for_me_radius_expanded` | Expand radius tapped | `{ new_radius_m: number }` |
+| `map_pin_tapped` | Building pin tapped | `{ building_id: string, building_type: BuildingType }` |
+| `floor_switched` | Floor tab tapped in drilldown | `{ building_id: string, from_floor: string, to_floor: string }` |
+| `stall_tapped` | Stall selected in drilldown | `{ venue_id: string, building_id: string, floor: string }` |
+| `dish_viewed` | Dish detail screen opened | `{ dish_id: string, venue_id: string, source: 'search' \| 'home' \| 'maps' \| 'favourites' \| 'wheel' \| 'stall' }` |
+| `stall_viewed` | Stall detail screen opened | `{ venue_id: string, building_id: string, source: 'maps' \| 'search' \| 'dish_detail' }` |
+| `search_submitted` | Search query submitted | `{ query_length: number, result_count: number, categories_active: number, dietary_flags_active: number }` |
+| `taste_filter_applied` | Apply tapped on TasteFilter | `{ axes_changed: string[], result_count: number }` |
+| `taste_filter_reset` | Reset to profile tapped | `{}` |
+| `category_chip_tapped` | Category chip toggled | `{ category: SearchCategory, selected: boolean }` |
+
+**Engagement**
+
+| Event | Trigger | Key Properties |
+|-------|---------|---------------|
+| `delivery_link_tapped` | Delivery button tapped | `{ dish_id: string, venue_id: string, platform: DeliveryPlatform }` |
+| `directions_tapped` | Directions button tapped | `{ venue_id: string, building_id: string }` |
+| `dish_favourited` | Dish added to favourites | `{ dish_id: string, venue_id: string, source: 'dish_detail' \| 'search' \| 'home' }` |
+| `dish_unfavourited` | Dish removed from favourites | `{ dish_id: string }` |
+| `review_started` | Review flow entered | `{ trigger: 'tab' \| 'dish_detail' \| 'stall_detail' }` |
+| `review_step_completed` | Step N completed | `{ step: 1\|2\|3\|4, step_name: 'venue'\|'rating'\|'tags'\|'compose', has_dish_selected: boolean }` |
+| `review_submitted` | Review successfully submitted | `{ dish_id: string, venue_id: string, rating: number, has_text: boolean, has_photos: boolean, tag_count: number }` |
+| `review_abandoned` | Review flow exited early | `{ at_step: 1\|2\|3\|4 }` |
+| `blog_post_opened` | Reads article link tapped | `{ post_id: string, source_name: string }` |
+
+**Wheel (Multiplayer)**
+
+| Event | Trigger | Key Properties |
+|-------|---------|---------------|
+| `wheel_party_created` | New party created | `{ spin_mode: WheelSpinMode, trigger_mode: WheelTriggerMode }` |
+| `wheel_entry_added` | Item added to wheel | `{ party_id: string, venue_id: string }` |
+| `wheel_spin_triggered` | Spin initiated | `{ party_id: string, entry_count: number, spin_mode: WheelSpinMode }` |
+| `wheel_party_resolved` | Final winner determined | `{ party_id: string, rounds_played: number }` |
+
+**Auth**
+
+| Event | Trigger | Key Properties |
+|-------|---------|---------------|
+| `sign_up_completed` | Auth sign-up done | `{ method: 'email' \| 'google' \| 'apple' }` |
+| `sign_in_completed` | Auth sign-in done | `{ method: 'email' \| 'google' \| 'apple' }` |
+| `sign_out` | User signs out | `{}` |
+| `password_reset_completed` | Password reset success | `{}` |
+
+---
+
+#### ✅ P1-04 — Tradeoffs & Decisions Log
+
+| Decision | Choice Made | Alternative Rejected | Rationale |
+|---------|------------|---------------------|-----------|
+| Data layer | Mock-first with `HungryService` interface | Backend-first with real Supabase | Unblocks frontend build; interface contract enforces clean swap path with zero screen changes |
+| Auth model | Auth-first (mandatory, gated at Splash) | Guest browsing with soft gates | Guest flow added navigation complexity; auth-first ensures taste personalization from first session and cleaner analytics |
+| Taste vector precision | 0–10 integers (sliders) / 0.0–1.0 (PRD stored) | Float-only per PRD | Integer slider steps are intuitive for UX; cosine similarity is scale-invariant so range doesn't affect correctness |
+| Map SDK | Mapbox (`@rnmapbox/maps`) + static fallback | React Native Maps (Google/Apple) | Mapbox supports custom indoor floor-plan styling required for hawker centre drill-down; fallback keeps repo inspectable without token |
+| Indoor map UX | Polygon-first floor viewer with synced list | List-first stall directory | List-first fails directory realism at mall scale; polygon-first mirrors Google/Apple mall UX |
+| Navigation stack | React Navigation v7 (Stack + Tab) | Expo Router (file-based) | Type-safe route params; predictable protected-route pattern; Expo Router auth-gate complexity not worth it at this scale |
+| State management | Zustand | Redux, Context API | Minimal boilerplate; strong TypeScript inference; no Provider wrapping required |
+| Delivery links | GrabFood/Foodpanda deep links | In-app ordering | Ordering is explicit PRD out-of-scope; deep links deliver 80% of user value at 0% logistics complexity |
+| Taste match algorithm | Cosine similarity | Euclidean distance, weighted scoring | Cosine is direction-agnostic; correctly handles users with different absolute intensity levels |
+| `Reads` tab | Feature-flagged (`FEATURE_FLAGS.readsEnabled`) | Always-on | Safe toggle without deploy; flag defined but navigation enforcement still open (P1-42) |
+| Review system | Full mock flow (no backend) | Defer until backend ready | Reviews are core engagement signal; mock flow enables investor demos and tests complete UI/UX contract |
+
+---
+
+#### Open Codex Tasks
+
 | ID | Item | Owner |
 |----|------|-------|
-| P1-01 | Define/refresh architecture notes for mock-first now vs backend-connected later | Claude |
-| P1-02 | Produce feature-level acceptance criteria for critical flows | Claude |
-| P1-03 | Define event taxonomy for future social analytics (events, attributes, ownership) | Claude |
-| P1-04 | Record tradeoffs/decisions directly in README (or linked docs) | Claude |
-| P1-05 | Convert architecture decisions into concrete repository tasks | Codex |
+| P1-05 | Create `src/lib/services/serviceProvider.ts` as the single injection point for `hungryService` | Codex |
 | P1-06 | Create/update typed interfaces and TODO anchors matching planned contracts | Codex |
 | P1-07 | Ensure implementation tasks are granular and checkable in this file | Codex |
 | P1-08 | Planning artifacts committed and discoverable (done criteria) | Both |
@@ -178,11 +311,94 @@ Verification Note:
 
 ### Phase 3 — Data + Analytics Readiness
 
+> P3-01 through P3-03 are completed Claude deliverables. P3-04 through P3-08 remain open for Codex.
+
+---
+
+#### ✅ P3-01 — KPI Definitions
+
+**Business / Retention KPIs**
+
+| KPI | Definition | Year-1 Target |
+|----|-----------|--------------|
+| Daily Active Users (DAU) | Unique users with ≥1 event per calendar day | 5,000 |
+| Monthly Active Users (MAU) | Unique users with ≥1 session in rolling 30 days | 25,000 |
+| DAU/MAU Ratio | Stickiness; higher = more habitual usage | ≥20% |
+| D1 Retention | % new users who return on day 2 | ≥40% |
+| D7 Retention | % new users who return within 7 days | ≥25% |
+| D30 Retention | % new users active within 30 days of signup | ≥15% |
+| Taste Profile Completion Rate | % sign-ups who complete quiz (not skip) | ≥60% |
+
+**Engagement KPIs**
+
+| KPI | Definition |
+|----|-----------|
+| Decide For Me Adoption | % of sessions containing `decide_for_me_triggered` |
+| Review Completion Rate | `review_submitted` / `review_started` |
+| Dish Detail CTR | `dish_viewed` / total results surfaced to user |
+| Delivery Link CTR | `delivery_link_tapped` / `dish_viewed` (dishes with links only) |
+| Favourite Rate | `dish_favourited` / `dish_viewed` |
+| Taste Filter Adoption | % of sessions with `taste_filter_applied` |
+| Wheel Session Rate | `wheel_party_created` per MAU per month |
+| Blog Read-Through Rate | `blog_post_opened` per Reads session |
+
+---
+
+#### ✅ P3-02 — Event-to-Metric Mapping
+
+| KPI | Source Events | Calculation |
+|----|--------------|------------|
+| DAU | `app_launched` | `COUNT(DISTINCT user_id) WHERE event_date = today` |
+| MAU | `app_launched` | `COUNT(DISTINCT user_id) WHERE event_date >= today - 30d` |
+| DAU/MAU | derived | `DAU / MAU` |
+| D1 Retention | `app_launched` | `COUNT(users with event on day N+1) / COUNT(new users on day N)` |
+| D7 Retention | `app_launched` | `COUNT(users with any event in days N+1..N+7) / COUNT(new users on day N)` |
+| Taste Profile Completion | `taste_quiz_completed`, `onboarding_started` | `COUNT(taste_quiz_completed WHERE skipped=false) / COUNT(onboarding_started)` |
+| Decide For Me Adoption | `decide_for_me_triggered`, sessions | `COUNT(DISTINCT session_id with decide_for_me_triggered) / COUNT(DISTINCT session_id)` |
+| Review Completion | `review_started`, `review_submitted` | `COUNT(review_submitted) / COUNT(review_started)` |
+| Delivery Intent | `delivery_link_tapped`, `dish_viewed` | `COUNT(delivery_link_tapped) / COUNT(dish_viewed WHERE dish.deliveryLinks.length > 0)` |
+| Favourite Rate | `dish_favourited`, `dish_viewed` | `COUNT(dish_favourited) / COUNT(dish_viewed)` |
+| Taste Filter Adoption | `taste_filter_applied`, sessions | `COUNT(DISTINCT session_id with taste_filter_applied) / COUNT(DISTINCT session_id)` |
+| Wheel Engagement | `wheel_party_created`, MAU | `COUNT(wheel_party_created) / MAU` per month |
+
+**Data Quality Expectations:**
+- Every event must carry `user_id` (or `anonymous_id` pre-auth), `session_id`, and `timestamp`
+- `dish_id` / `venue_id` in events must resolve against fixtures/database — validate in CI (P3-06)
+- Events are idempotent — duplicate `session_id + event + timestamp` tuples deduplicated at ingestion
+
+---
+
+#### ✅ P3-03 — Phased Rollout Strategy
+
+**Phase 1 — Current (Mock-First, No Backend)**
+- All service calls: `mockService` via `HungryService` interface (`src/lib/services/mock/mockService.ts`)
+- Analytics: events defined in P1-03 taxonomy; Phase 1 implementation is console-log-only sink
+- Feature flags: hardcoded in `src/constants/featureFlags.ts`
+- No state persistence — cold start resets all 8 Zustand stores
+
+**Phase 2 — Backend Integration**
+1. Supabase project: PostgreSQL + PostGIS (buildings/venues/dishes), pgvector (taste vectors), Supabase Auth
+2. Create `src/lib/services/supabase/supabaseService.ts` implementing `HungryService` — same interface, zero screen changes
+3. Update `serviceProvider.ts` (P1-05) to export `supabaseService` — single-file swap
+4. Add Zustand persist middleware (MMKV): `useSessionStore`, `useProfileStore`, `useSearchStore` — resolves P0-14
+5. Real GPS: integrate `expo-location` — resolves P0-03
+6. Real photo picker: integrate `expo-image-picker` — resolves P1-30
+7. Analytics SDK: integrate PostHog or Amplitude; replace console sink with real event batching
+8. Feature flags: migrate to Supabase-backed remote config or LaunchDarkly
+
+**Phase 3 — Analytics & Merchant Layer**
+1. Analytics dashboards: PostHog/Amplitude self-serve using KPIs from P3-01
+2. Event instrumentation: add hooks at service/store boundaries (P3-04, P3-05)
+3. Data quality CI: fixture integrity checks (P3-06) — validate IDs, required fields, taste vector ranges [0–10]
+4. Merchant Business Portal: Next.js web app (separate repo); Verified Stall and Stall Pro tiers
+5. A/B testing: Decide For Me FAB placement, Taste Filter entry point, Home feed ranking variants
+
+---
+
+#### Open Codex Tasks
+
 | ID | Item | Owner |
 |----|------|-------|
-| P3-01 | Specify analytics KPIs and dashboard-ready metric definitions | Claude |
-| P3-02 | Define event-to-metric mapping and data quality expectations | Claude |
-| P3-03 | Propose phased rollout path for backend/event ingestion | Claude |
 | P3-04 | Add event instrumentation hooks in frontend service/store boundaries | Codex |
 | P3-05 | Keep analytics hooks mock-safe (no backend dependency required) | Codex |
 | P3-06 | Add data validation helpers for fixture integrity checks | Codex |
@@ -196,6 +412,8 @@ Verification Note:
 ### P0 — Blocker / Broken Flow
 
 These items break core user journeys or render features non-functional.
+
+> **Recommended execution order:** P0-14 → P0-01+P0-02 → P0-05 → P0-08 → P0-10+P0-11+P0-12 → P0-06 → P0-03 → P0-07 → P0-09 → P0-15
 
 | ID | Area | Issue | File(s) |
 |----|------|-------|---------|
@@ -263,14 +481,12 @@ These items affect perceived quality but do not break functionality.
 | P2-01 | Home | Empty state copy is developer-facing: "The home feed is ready, but there are no items in the current mock feed." | `HomeFeedScreen.tsx:308–310` |
 | P2-02 | Home | Social engagement counts (reactions, comments, shares) are fabricated arithmetic, not real data | `HomeFeedScreen.tsx:45–47` |
 | P2-03 | Home | "Tonight's food stories" heading is hardcoded — does not reflect actual time of day | `HomeFeedScreen.tsx:243` |
-| P2-04 | Home | Hardcoded `paddingBottom: 88` to avoid tab bar — fragile if tab bar height changes | `HomeFeedScreen.tsx:315` |
 | P2-05 | Search | DishSearch "Suggested for tonight" card has no image, no dish name, no pricing — blank CTA box | `DishSearchScreen.tsx:36–55` |
 | P2-06 | Search | SearchResults shows "0 dishes matched your current search" subtitle simultaneously with the empty state — redundant | `SearchResultsScreen.tsx:108` |
 | P2-07 | Search | SearchResults empty state does not suggest clearing taste filters as an action | `SearchResultsScreen.tsx:196–203` |
 | P2-08 | Search | `recentSearches` in `useSearchStore` hardcoded to `["laksa", "chicken rice", "satay"]` on every session — not actual user history | `useSearchStore.ts:25` |
 | P2-09 | Discover | BuildingDrillDown search field placeholder "Search on this building" — grammatically awkward, should be "Search stalls in this building" | `BuildingDrillDownScreen.tsx:192` |
 | P2-10 | Discover | BuildingDrillDown dish carousel always limited to 4 items with no "see more" affordance | `BuildingDrillDownScreen.tsx:372–403` |
-| P2-11 | Maps | Hardcoded disclaimer text visible to users: "This map uses Singapore mock building data and a demo Maxwell drill-down plan." | `HomeMapScreen.tsx:304` |
 | P2-12 | Maps | Map bottom sheet open stall count is computed from `.slice(0, 2)` — `openStallCount` is always ≤ 2, falling through to the static field | `HomeMapScreen.tsx:154, 259` |
 | P2-13 | Maps | `BuildingLegend` component not rendered anywhere on the map screen — legend exists but is invisible to users | `HomeMapScreen.tsx` |
 | P2-14 | Maps | `MapSurface` `cameraPadding` prop declared in interface but silently ignored in implementation | `MapSurface.tsx:35–40` |
@@ -492,6 +708,7 @@ These items affect perceived quality but do not break functionality.
 - 2026-04-09 | Codex | Executed backlog batch `P0-04`, `P0-13`, `P1-28`, and pending map polish: auth form validation added across all auth forms, orange badge tone fixed, review recommend default changed to false, and NEA/Hygiene map text removed. Added/ran new TypeScript unit tests and restored `npm test` script. | Status: completed for batch + verification. | Blockers: remaining P0/P1 backlog items still pending and will be handled in next batches. | Next: continue with the next highest-priority P0 flow blockers (onboarding state persistence and detail delivery handoff behavior).
 - 2026-04-09 | Codex | Implemented targeted UI bug-fix batch for onboarding/review/stall detail polish: removed onboarding top-left back icon, hardened global back safe-area behavior to prevent header overlap, removed review flow "Choose another dish", redesigned Recommend UI into a segmented control, set chip borders to primary orange, replaced stall-card opening-hours metric with distance, and rebuilt hero fade using Figma node `113:811` gradient stops. | Status: completed for block 1 (`global_navigation_and_layout` + `review_flow_and_cards`) with verification. | Blockers: `map_and_data_logic` block is intentionally pending next step. | Next: fix map polygon tap hit-testing and strict F&B filtering in building directory list.
 - 2026-04-09 | Codex | Addressed follow-up regressions from screenshot QA: removed non-food units from stall directory list by enforcing venue-backed F&B filtering, and replaced `expo-linear-gradient` usage in Stall Detail with a pure RN layered fade to remove native runtime crash while restoring readable image-to-text transition. | Status: completed + verified. | Blockers: map polygon hit-testing fix still pending in next block. | Next: implement map polygon interaction reliability improvements (`onStallPress` hit target/z-index audit).
+- 2026-04-10 | Claude | Phase 1 architecture strategy (P1-01), feature-level DoD (P1-02), event taxonomy with 33 named events (P1-03), and tradeoffs/decisions log (P1-04) written. Phase 3 KPI definitions (P3-01), event-to-metric mapping (P3-02), and phased rollout strategy (P3-03) written. Pruned P2-04 (paddingBottom now computed — confirmed in HomeFeedScreen.tsx:307) and P2-11 (map disclaimer text resolved — confirmed in HomeMapScreen.tsx:358-363). P0 items annotated with recommended execution order. | Status: completed. | Blockers: none. | Next: Codex to implement P1-05 (serviceProvider.ts) and P3-04/P3-05 (analytics instrumentation hooks).
 - 2026-04-09 | Codex | Re-synced after user rollback and restored onboarding P0 blockers (`P0-01` to `P0-03`) with safe location-module fallback plus persistence tests. | Status: completed + verified. | Blockers: remaining open P0 items (`P0-05`, `P0-06`, `P0-07`, `P0-08`, `P0-09`, `P0-10`, `P0-11`, `P0-12`, `P0-14`, `P0-15`). | Next: continue with discover/detail P0 route and handoff fixes.
 - 2026-04-10 | Codex | Implemented onboarding visual + UX refresh from Figma node `131:572`, expanded Dietary Preferences into a searchable multi-select list with additional restriction flags, and removed the `SCR-007` pill on the dietary step. | Status: completed + verified. | Blockers: none for this batch. | Next: continue remaining open P0 blockers in discover/detail/state flows.
 - 2026-04-10 | Codex | Closed the remaining P0 backlog: added Home Decide CTA, corrected map pin colour spec, reused shared map components in Maps flow, wired search/discover taste-filter state paths, added external delivery/maps deep links, added Zustand persistence middleware, and removed stale soft-gate doc references. Also installed `@react-native-async-storage/async-storage` and re-ran `pod install` to sync native dependencies. | Status: completed + verified. | Blockers: none for these P0 items. | Next: move to highest-impact P1 UX gaps.
