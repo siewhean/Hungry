@@ -1,5 +1,7 @@
-import { useEffect, useMemo, type PropsWithChildren } from "react";
+import { useEffect, useMemo, useState, type PropsWithChildren } from "react";
 import {
+  GestureResponderEvent,
+  LayoutChangeEvent,
   Pressable,
   StyleSheet,
   View,
@@ -9,9 +11,10 @@ import {
 import MapboxGL from "@rnmapbox/maps";
 
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import type { Coordinate } from "@/types/domain";
+import type { BuildingType, Coordinate } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui";
+import { BuildingPin } from "./BuildingPin";
 
 const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
@@ -22,6 +25,7 @@ export interface MapSurfaceMarker {
   label: string;
   coordinate: Coordinate;
   accent?: string;
+  type?: BuildingType;
 }
 
 interface MapSurfaceProps extends PropsWithChildren {
@@ -32,6 +36,7 @@ interface MapSurfaceProps extends PropsWithChildren {
   selectedMarkerId?: string;
   currentLocation?: Coordinate;
   onMarkerPress?: (markerId: string) => void;
+  onMapPress?: (coordinate: Coordinate) => void;
   cameraPadding?: {
     paddingTop?: number;
     paddingBottom?: number;
@@ -64,16 +69,49 @@ function projectCoordinate(
   };
 }
 
+function unprojectCoordinate(
+  point: { x: number; y: number },
+  frame: { width: number; height: number },
+  bounds: {
+    minLat: number;
+    maxLat: number;
+    minLng: number;
+    maxLng: number;
+  },
+): Coordinate {
+  const lngSpan = Math.max(bounds.maxLng - bounds.minLng, 0.0025);
+  const latSpan = Math.max(bounds.maxLat - bounds.minLat, 0.0025);
+  const xRatio = Math.min(1, Math.max(0, point.x / Math.max(frame.width, 1)));
+  const yRatio = Math.min(1, Math.max(0, point.y / Math.max(frame.height, 1)));
+
+  return {
+    longitude: bounds.minLng + xRatio * lngSpan,
+    latitude: bounds.maxLat - yRatio * latSpan,
+  } as Coordinate;
+}
+
 function MarkerVisual({
   label,
   accent,
   selected,
+  type,
 }: {
   label: string;
   accent: string;
   selected: boolean;
+  type?: BuildingType;
 }) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
+
+  if (type) {
+    return (
+      <BuildingPin
+        name={label}
+        type={type}
+        selected={selected}
+      />
+    );
+  }
 
   return (
     <View style={{ alignItems: "center", gap: spacing[1] }}>
@@ -141,11 +179,13 @@ function FallbackMap({
   selectedMarkerId,
   currentLocation,
   onMarkerPress,
+  onMapPress,
 }: Pick<
   MapSurfaceProps,
-  "centerCoordinate" | "markers" | "selectedMarkerId" | "currentLocation" | "onMarkerPress"
+  "centerCoordinate" | "markers" | "selectedMarkerId" | "currentLocation" | "onMarkerPress" | "onMapPress"
 >) {
   const { palette } = useHungryTheme();
+  const [frame, setFrame] = useState({ width: 1, height: 1 });
   const coordinates = useMemo(
     () => [centerCoordinate, ...(markers ?? []).map((marker) => marker.coordinate), ...(currentLocation ? [currentLocation] : [])],
     [centerCoordinate, currentLocation, markers],
@@ -164,7 +204,27 @@ function FallbackMap({
   }, [coordinates]);
 
   return (
-    <View style={[styles.map, { backgroundColor: palette.bgSoft }]}>
+    <View
+      style={[styles.map, { backgroundColor: palette.bgSoft }]}
+      onLayout={(event: LayoutChangeEvent) => {
+        setFrame({
+          width: event.nativeEvent.layout.width,
+          height: event.nativeEvent.layout.height,
+        });
+      }}
+      onStartShouldSetResponder={() => Boolean(onMapPress)}
+      onResponderRelease={(event: GestureResponderEvent) => {
+        if (!onMapPress) {
+          return;
+        }
+        const coordinate = unprojectCoordinate(
+          { x: event.nativeEvent.locationX, y: event.nativeEvent.locationY },
+          frame,
+          bounds,
+        );
+        onMapPress(coordinate);
+      }}
+    >
       <View style={[styles.road, { backgroundColor: "rgba(255,255,255,0.95)", width: 240, top: 90, left: -20, transform: [{ rotate: "13deg" }] }]} />
       <View style={[styles.road, { backgroundColor: "rgba(255,255,255,0.94)", width: 210, top: 56, right: -32, transform: [{ rotate: "-18deg" }] }]} />
       <View style={[styles.road, { backgroundColor: "rgba(255,255,255,0.92)", width: 300, bottom: 92, left: 24, transform: [{ rotate: "7deg" }] }]} />
@@ -182,6 +242,7 @@ function FallbackMap({
               label={marker.label}
               accent={marker.accent ?? palette.orange}
               selected={marker.id === selectedMarkerId}
+              type={marker.type}
             />
           </Pressable>
         );
@@ -204,6 +265,7 @@ export function MapSurface({
   selectedMarkerId,
   currentLocation,
   onMarkerPress,
+  onMapPress,
   cameraPadding,
 }: MapSurfaceProps) {
   const { palette } = useHungryTheme();
@@ -227,6 +289,7 @@ export function MapSurface({
           selectedMarkerId={selectedMarkerId}
           currentLocation={currentLocation}
           onMarkerPress={onMarkerPress}
+          onMapPress={onMapPress}
         />
         {!MAPBOX_ACCESS_TOKEN ? (
           <View style={[styles.tokenNotice, { backgroundColor: "rgba(255,255,255,0.92)", borderColor: palette.border }]}>
@@ -250,6 +313,10 @@ export function MapSurface({
         pitchEnabled={false}
         rotateEnabled={false}
         scaleBarEnabled={false}
+        onPress={(event) => {
+          const [longitude, latitude] = event.geometry.coordinates as [number, number];
+          onMapPress?.({ latitude, longitude });
+        }}
       >
         <MapboxGL.Camera
           animationDuration={500}
@@ -276,6 +343,7 @@ export function MapSurface({
                 label={marker.label}
                 accent={marker.accent ?? palette.orange}
                 selected={marker.id === selectedMarkerId}
+                type={marker.type}
               />
             </Pressable>
           </MapboxGL.MarkerView>

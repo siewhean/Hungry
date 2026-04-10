@@ -8,3 +8,4 @@ export * from "./FloatingToast";
 export * from "./InlineBanner";
 export * from "./Input";
 export * from "./Screen";
+export * from "./HungryLogo";

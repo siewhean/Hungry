@@ -98,16 +98,16 @@ export const shadows = {
 } as const;
 
 export const typography = {
-  display: { fontSize: 32, lineHeight: 38, fontFamily: "Nunito_700Bold" },
-  h1: { fontSize: 24, lineHeight: 30, fontFamily: "Nunito_700Bold" },
-  h2: { fontSize: 20, lineHeight: 26, fontFamily: "Nunito_600SemiBold" },
-  h3: { fontSize: 17, lineHeight: 22, fontFamily: "Nunito_600SemiBold" },
-  bodyLarge: { fontSize: 17, lineHeight: 24, fontFamily: "Nunito_400Regular" },
-  body: { fontSize: 15, lineHeight: 22, fontFamily: "Nunito_400Regular" },
-  bodySmall: { fontSize: 13, lineHeight: 18, fontFamily: "Nunito_400Regular" },
-  micro: { fontSize: 11, lineHeight: 14, fontFamily: "Nunito_500Medium", letterSpacing: 0.6 },
-  price: { fontSize: 15, lineHeight: 22, fontFamily: "DMMono_400Regular" },
-  code: { fontSize: 13, lineHeight: 18, fontFamily: "DMMono_400Regular" },
+  display: { fontSize: 34, lineHeight: 40, fontFamily: "Nunito_700Bold" },
+  h1: { fontSize: 26, lineHeight: 32, fontFamily: "Nunito_700Bold" },
+  h2: { fontSize: 22, lineHeight: 28, fontFamily: "Nunito_600SemiBold" },
+  h3: { fontSize: 19, lineHeight: 24, fontFamily: "Nunito_600SemiBold" },
+  bodyLarge: { fontSize: 18, lineHeight: 25, fontFamily: "Nunito_400Regular" },
+  body: { fontSize: 16, lineHeight: 23, fontFamily: "Nunito_400Regular" },
+  bodySmall: { fontSize: 14, lineHeight: 20, fontFamily: "Nunito_400Regular" },
+  micro: { fontSize: 12, lineHeight: 15, fontFamily: "Nunito_500Medium", letterSpacing: 0.6 },
+  price: { fontSize: 16, lineHeight: 23, fontFamily: "DMMono_400Regular" },
+  code: { fontSize: 14, lineHeight: 20, fontFamily: "DMMono_400Regular" },
 } as const;
 
 export const motion = {

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
+import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AppText, Badge, Button, Card, Chip, InlineBanner } from "@/components/ui";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -15,7 +16,7 @@ export function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const handleSignOut = () => {
     signOut();
-    const rootNavigation = navigation.getParent?.()?.getParent?.() ?? navigation;
+    const rootNavigation = getRootNavigation(navigation);
     rootNavigation.navigate("Splash");
   };
 

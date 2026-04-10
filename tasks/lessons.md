@@ -12,3 +12,4 @@
 - For directory maps, rely on computed fit-to-viewport base scale plus explicit zoom controls; fixed hardcoded scale values break cross-mall standardization and make alignment QA unreliable.
 - For mixed single-tap and double-tap UX in feed cards, use exclusive gesture recognizers on the text region so like and expand actions never fire together.
 - For repeated form flows (auth/reset), centralize validation rules in shared helpers and test those helpers directly so every screen stays consistent when requirements change.
+- When product direction removes a UX pattern (for example soft-gate browsing), remove both runtime code and stale harness docs in the same batch to avoid backlog drift.

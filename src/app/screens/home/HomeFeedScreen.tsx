@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { useCallback, useMemo, useState } from "react";
-import { FlatList, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { Bookmark, Heart, MessageCircle, PlayCircle, Send } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -26,12 +26,28 @@ export function HomeFeedScreen() {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const profile = useProfileStore((state) => state.profile);
+  const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
+  const [feed, setFeed] = useState<HomeFeedItem[]>([]);
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
   const [likedPostIds, setLikedPostIds] = useState<Record<string, boolean>>({});
   const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
-  const feed = getHomeFeed(profile);
   const stories = useMemo(() => feed.slice(0, 5), [feed]);
   const isCompact = screenWidth < 390;
+
+  const loadFeed = useCallback(() => {
+    try {
+      setFeed(getHomeFeed(profile));
+      setFeedState("ready");
+    } catch {
+      setFeedState("error");
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    setFeedState("loading");
+    const timer = setTimeout(() => loadFeed(), 180);
+    return () => clearTimeout(timer);
+  }, [loadFeed]);
 
   const navigateToStall = useCallback(
     (venueId: string) => navigation.navigate("StallDetail", { venueId }),
@@ -199,10 +215,10 @@ export function HomeFeedScreen() {
                 {item.createdAt}
               </AppText>
               <View style={styles.postActionsRow}>
-                <InlineActionMetric icon={<Heart color={isLiked ? palette.error : palette.textMuted} size={14} />} count={reactionCount} />
-                <InlineActionMetric icon={<Send color={palette.textMuted} size={14} />} count={6} />
-                <InlineActionMetric icon={<MessageCircle color={palette.textMuted} size={14} />} count={commentCount} />
-                <InlineActionMetric icon={<Bookmark color={palette.textMuted} size={14} />} count={bookmarkCount} />
+                <InlineActionMetric icon={<Heart color={isLiked ? palette.error : palette.textMuted} size={22} />} count={reactionCount} />
+                <InlineActionMetric icon={<Send color={palette.textMuted} size={22} />} count={6} />
+                <InlineActionMetric icon={<MessageCircle color={palette.textMuted} size={22} />} count={commentCount} />
+                <InlineActionMetric icon={<Bookmark color={palette.textMuted} size={22} />} count={bookmarkCount} />
               </View>
             </View>
           </View>
@@ -287,6 +303,32 @@ export function HomeFeedScreen() {
     [navigateToStall, palette.orange, radii.pill, spacing, stories],
   );
 
+  if (feedState === "loading") {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
+        <View style={{ alignItems: "center", flex: 1, gap: spacing[3], justifyContent: "center", paddingHorizontal: spacing[5] }}>
+          <ActivityIndicator color={palette.orange} />
+          <AppText tone="secondary">Loading your food feed…</AppText>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (feedState === "error") {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
+        <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: spacing[5] }}>
+          <EmptyState
+            title="Unable to load feed"
+            body="Please try again."
+            ctaLabel="Retry"
+            onPress={loadFeed}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
       <View style={{ flex: 1, paddingTop: spacing[3] }}>
@@ -298,7 +340,7 @@ export function HomeFeedScreen() {
           ListEmptyComponent={
             <EmptyState
               title="No food stories yet"
-              body="The home feed is ready, but there are no items in the current mock feed."
+              body="Nothing to show right now. Try Discover to find dishes nearby."
             />
           }
           style={{ flex: 1 }}
@@ -311,6 +353,7 @@ export function HomeFeedScreen() {
           showsVerticalScrollIndicator={false}
         />
       </View>
+
     </SafeAreaView>
   );
 }

@@ -4,6 +4,7 @@ import Svg, { Circle, Line, Polygon, Text as SvgText } from "react-native-svg";
 
 import { useHungryTheme } from "@/theme";
 import type { TasteVector } from "@/types/domain";
+import { AppText } from "@/components/ui";
 
 interface ProfileRadarChartProps {
   value: TasteVector;
@@ -32,6 +33,7 @@ export function ProfileRadarChart({ value }: ProfileRadarChartProps) {
     const y = center + Math.sin(angle) * radius;
     return `${x},${y}`;
   });
+  const hasSignal = axes.some((axis) => value[axis.key] > 0);
 
   return (
     <View style={{ alignItems: "center" }}>
@@ -54,8 +56,15 @@ export function ProfileRadarChart({ value }: ProfileRadarChartProps) {
             </Fragment>
           );
         })}
-        <Polygon points={points.join(" ")} fill={palette.orangeLight} stroke={palette.orange} strokeWidth={2} />
+        {hasSignal ? (
+          <Polygon points={points.join(" ")} fill={palette.orangeLight} stroke={palette.orange} strokeWidth={2} />
+        ) : null}
       </Svg>
+      {!hasSignal ? (
+        <AppText variant="bodySmall" tone="secondary">
+          Complete the taste quiz to build your flavour profile.
+        </AppText>
+      ) : null}
     </View>
   );
 }

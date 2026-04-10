@@ -8,9 +8,10 @@ interface InputProps extends TextInputProps {
   label?: string;
   helperText?: string;
   leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
 }
 
-export function Input({ label, helperText, leftIcon, style, ...props }: InputProps) {
+export function Input({ label, helperText, leftIcon, rightIcon, style, ...props }: InputProps) {
   const { palette, radii, spacing, typography } = useHungryTheme();
 
   return (
@@ -48,6 +49,7 @@ export function Input({ label, helperText, leftIcon, style, ...props }: InputPro
           ]}
           {...props}
         />
+        {rightIcon ? <View style={styles.iconWrap}>{rightIcon}</View> : null}
       </View>
       {helperText ? <AppText variant="bodySmall" tone="muted">{helperText}</AppText> : null}
     </View>
@@ -56,7 +58,7 @@ export function Input({ label, helperText, leftIcon, style, ...props }: InputPro
 
 const styles = StyleSheet.create({
   container: {
-    gap: 8,
+    gap: 4,
   },
   field: {
     alignItems: "center",

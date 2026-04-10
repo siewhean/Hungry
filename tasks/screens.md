@@ -227,7 +227,7 @@ Source: `src/app/navigation/navigationTypes.ts`
 | Stack | `src/app/screens/profile/ProfileStack.tsx` |
 | Shell | `src/app/screens/profile/ProfileScreenShell.tsx` |
 | Tab icon | `User` (lucide) |
-| Auth gate | Soft gate on tab press — `SoftGateSheet` appears if not authenticated |
+| Auth gate | Tab press redirects signed-out users directly to `AuthStack/Login`; no browse-mode soft gate |
 | Guards | `src/app/screens/profile/profileGuards.ts` |
 | State reads | `useProfileStore`, `useSessionStore` |
 | Key components | `ProfileRadarChart` |
@@ -255,17 +255,6 @@ Source: `src/app/navigation/navigationTypes.ts`
 | WebView screen | `src/app/screens/reads/BlogPostWebViewScreen.tsx` |
 | Content | `src/features/reads/feed.ts` |
 | Note | Reads tab is not in MainTabs by default — access via Home feed or BlogPost modal |
-
----
-
-## SoftGateSheet
-
-| Key | Value |
-|-----|-------|
-| File | `src/app/navigation/SoftGateSheet.tsx` |
-| Purpose | Auth-required prompt — appears as bottom sheet overlay when a signed-out user reaches a protected route |
-| Trigger | `useUIStore.showSoftGate()` |
-| Actions | Continue with Email / Google / Apple → navigate to `AuthStack/Login` |
 
 ---
 

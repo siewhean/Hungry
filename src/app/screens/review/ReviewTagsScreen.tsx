@@ -23,7 +23,7 @@ export function ReviewTagsScreen({ navigation }: Props) {
       title="Taste tags"
       subtitle="Select the notes that describe the bite and whether you would recommend it."
       step={3}
-      total={5}
+      total={4}
     >
       <Card>
         <View style={{ gap: 12 }}>

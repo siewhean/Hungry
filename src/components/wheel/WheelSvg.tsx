@@ -7,10 +7,9 @@
  *
  * Alternates between palette.orange and palette.bgSoft slices.
  * Labels sit along the arc midpoint at typography.micro size.
- * A static logo image is overlaid at the centre.
+ * A static monogram badge is overlaid at the centre.
  */
 
-import { Image } from "expo-image";
 import { View } from "react-native";
 import { G, Path, Svg, Text as SvgText } from "react-native-svg";
 
@@ -21,8 +20,6 @@ interface Props {
   entries: WheelEntry[];
   size?: number;
 }
-
-const LOGO = require("../../../assets/icon.png");
 
 function polarToCartesian(
   cx: number,
@@ -138,9 +135,22 @@ export function WheelSvg({ entries, size = 300 }: Props) {
           backgroundColor: palette.surface,
           borderWidth: 2,
           borderColor: palette.border,
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
-        <Image source={LOGO} style={{ width: logoSize, height: logoSize }} contentFit="cover" />
+        <Svg width={logoSize} height={logoSize}>
+          <SvgText
+            x={logoSize / 2}
+            y={logoSize / 2 + 5}
+            fill={palette.orange}
+            fontSize={logoSize * 0.46}
+            fontWeight="700"
+            textAnchor="middle"
+          >
+            H
+          </SvgText>
+        </Svg>
       </View>
     </View>
   );
