@@ -249,23 +249,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       <View style={{ flex: 1, overflow: "hidden", paddingTop: spacing[4] }}>
         <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", minHeight: 36, paddingHorizontal: spacing[5] }}>
           <View style={{ width: 36 }} />
-          {!inDietaryStep ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                setSkippedTasteQuiz(true);
-                setPhase("dietary");
-              }}
-              style={{ alignItems: "center", flexDirection: "row", gap: spacing[1], justifyContent: "center", minHeight: 28, minWidth: 52 }}
-            >
-              <AppText variant="bodySmall" tone="muted" style={{ fontFamily: "Nunito_700Bold" }}>
-                Skip
-              </AppText>
-              <ChevronRight color={palette.textMuted} size={14} />
-            </Pressable>
-          ) : (
-            <View style={{ width: 52 }} />
-          )}
+          <View style={{ width: 52 }} />
         </View>
         <View style={{ gap: spacing[2] }}>
           {inDietaryStep ? (
@@ -547,7 +531,15 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                     style={{ width: BACK_BUTTON_WIDTH }}
                   />
                 ) : (
-                  <View style={{ width: BACK_BUTTON_WIDTH }} />
+                  <Button
+                    label="Skip"
+                    variant="ghost"
+                    onPress={() => {
+                      setSkippedTasteQuiz(true);
+                      setPhase("dietary");
+                    }}
+                    style={{ width: BACK_BUTTON_WIDTH }}
+                  />
                 )}
                 <Button
                   label="Next"

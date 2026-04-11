@@ -1,8 +1,9 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronRight, Minus, Plus, RotateCcw, Search } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { FloorPlanViewer } from "@/components/map/FloorPlanViewer";
@@ -110,7 +111,7 @@ function FloorToggle({
         borderColor: selected ? palette.navy : palette.border,
         borderRadius: radii.pill,
         borderWidth: 1,
-        minHeight: 36,
+        minHeight: 44,
         minWidth: 44,
         justifyContent: "center",
         paddingHorizontal: spacing[2],
@@ -143,6 +144,8 @@ function DirectoryFilter({
         borderColor: selected ? palette.navy : palette.border,
         borderRadius: radii.pill,
         borderWidth: 1,
+        minHeight: 44,
+        justifyContent: "center",
         paddingHorizontal: spacing[3],
         paddingVertical: spacing[2],
       }}
@@ -264,9 +267,9 @@ function ZoomControlButton({
         borderColor: palette.border,
         borderRadius: radii.pill,
         borderWidth: 1,
-        height: 34,
+        height: 44,
         justifyContent: "center",
-        width: 34,
+        width: 44,
       }}
     >
       {children}
@@ -284,6 +287,9 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
   const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
   const setSelectedFloor = useDiscoveryStore((state) => state.setSelectedFloor);
   const setHighlightedStallVenueId = useDiscoveryStore((state) => state.setHighlightedStallVenueId);
+
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const snapPoints = useMemo(() => ["40%", "90%"], []);
 
   const [stallQuery, setStallQuery] = useState("");
   const [dessertsOnly, setDessertsOnly] = useState(false);
@@ -313,10 +319,6 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
   );
   const mapViewportWidth = useMemo(
     () => Math.max(220, windowWidth - spacing[5] * 2 - 2),
-    [spacing, windowWidth],
-  );
-  const directoryGridItemWidth = useMemo(
-    () => Math.max(140, (windowWidth - spacing[5] * 2 - spacing[2]) / 2),
     [spacing, windowWidth],
   );
   const fittedDirectoryScale = useMemo(() => {
@@ -452,7 +454,22 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
 
     setSelectedStallId(stall.stallId);
     setHighlightedStallVenueId(stall.venueId);
+
+    requestAnimationFrame(() => {
+      bottomSheetModalRef.current?.present();
+    });
   };
+
+  const activeRecord = useMemo(() => {
+    return floorDirectory.find((r) => r.stall.stallId === activeStallId);
+  }, [floorDirectory, activeStallId]);
+
+  const renderBackdrop = useCallback(
+    (props: any) => (
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
+    ),
+    [],
+  );
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
@@ -534,7 +551,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                       borderRadius: radii.lg,
                       padding: spacing[1],
                       left: spacing[3],
-                      top: spacing[3],
+                      bottom: spacing[3],
                     },
                     shadows.floating,
                   ]}
@@ -562,7 +579,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                       borderRadius: radii.lg,
                       padding: spacing[1],
                       right: spacing[3],
-                      top: spacing[3],
+                      bottom: spacing[3],
                     },
                     shadows.floating,
                   ]}
@@ -581,7 +598,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
 
             <View style={{ gap: spacing[2] }}>
               <AppText variant="h3">Stall directory · {activeFloor}</AppText>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+              <View style={{ gap: spacing[2] }}>
                 {floorDirectory.map((record) => {
                   const isSelected = activeStallId === record.stall.stallId;
                   const status = getVenueStatus(record.isOpen, record.venue?.operatingHours);
@@ -593,56 +610,53 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                       style={{
                         backgroundColor: palette.surface,
                         borderColor: isSelected ? palette.orange : palette.border,
-                        borderRadius: 18,
+                        borderRadius: 12,
                         borderWidth: 1,
-                        gap: spacing[2],
-                        minHeight: 128,
+                        gap: 4,
+                        minHeight: 56,
                         paddingHorizontal: spacing[3],
-                        paddingVertical: spacing[3],
-                        width: directoryGridItemWidth,
+                        paddingVertical: 6,
+                        width: "100%",
                       }}
                     >
-                      <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[2] }}>
-                        <View style={{ flex: 1, gap: 2 }}>
-                          <AppText numberOfLines={2} variant="h3">
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[2], alignItems: "center" }}>
+                        <View style={{ flex: 1, gap: 1 }}>
+                          <AppText numberOfLines={1} variant="h3">
                             {record.title}
                           </AppText>
                           <AppText variant="bodySmall" tone="secondary">
                             {record.unitNumber}
                           </AppText>
                         </View>
-                        <StatusBadge status={status} />
+                        <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                          <StatusBadge status={status} />
+                          <Pressable
+                            accessibilityRole="button"
+                            hitSlop={10}
+                            onPress={() => {
+                              if (record.venue) {
+                                navigation.navigate("StallDetail", { venueId: record.venue.id });
+                              }
+                            }}
+                            style={{
+                              alignItems: "center",
+                              borderColor: palette.border,
+                              borderRadius: radii.pill,
+                              borderWidth: 1,
+                              height: 26,
+                              justifyContent: "center",
+                              width: 26,
+                            }}
+                          >
+                            <ChevronRight color={palette.textMuted} size={13} />
+                          </Pressable>
+                        </View>
                       </View>
-                      <AppText numberOfLines={1} variant="bodySmall" tone="secondary">
-                        {record.descriptor}
-                      </AppText>
                       {record.venue?.closureNotice ? (
                         <AppText numberOfLines={2} variant="micro" style={{ color: palette.warning }}>
                           {record.venue.closureNotice}
                         </AppText>
                       ) : null}
-                      <View style={{ alignItems: "flex-end", marginTop: "auto" }}>
-                        <Pressable
-                          accessibilityRole="button"
-                          hitSlop={10}
-                          onPress={() => {
-                            if (record.venue) {
-                              navigation.navigate("StallDetail", { venueId: record.venue.id });
-                            }
-                          }}
-                          style={{
-                            alignItems: "center",
-                            borderColor: palette.border,
-                            borderRadius: radii.pill,
-                            borderWidth: 1,
-                            height: 30,
-                            justifyContent: "center",
-                            width: 30,
-                          }}
-                        >
-                          <ChevronRight color={palette.textMuted} size={16} />
-                        </Pressable>
-                      </View>
                     </Pressable>
                   );
                 })}
@@ -716,11 +730,99 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
             ) : null}
           </View>
         </ScrollView>
+        </View>
 
-      </View>
-    </SafeAreaView>
-  );
-}
+        <BottomSheetModal
+        ref={bottomSheetModalRef}
+        index={0}
+        snapPoints={snapPoints}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={{ backgroundColor: palette.surface }}
+        handleIndicatorStyle={{ backgroundColor: palette.border }}
+        >
+        <BottomSheetScrollView
+          contentContainerStyle={{
+            padding: spacing[5],
+            paddingBottom: insets.bottom + spacing[8],
+            gap: spacing[4],
+          }}
+        >
+          {activeRecord?.venue ? (
+            <>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3] }}>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <AppText variant="bodySmall" tone="muted">
+                    {activeRecord.unitNumber} · {activeFloor}
+                  </AppText>
+                  <AppText variant="h1">{activeRecord.title}</AppText>
+                  <StatusBadge status={getVenueStatus(activeRecord.isOpen, activeRecord.venue.operatingHours)} />
+                </View>
+                <Button
+                  label="View full stall"
+                  variant="primary"
+                  onPress={() => {
+                    bottomSheetModalRef.current?.dismiss();
+                    navigation.navigate("StallDetail", { venueId: activeRecord.venue!.id });
+                  }}
+                />
+              </View>
+
+              <AppText tone="secondary">{activeRecord.descriptor}</AppText>
+
+              {activeRecord.dish ? (
+                <View style={{ gap: spacing[3] }}>
+                  <AppText variant="h3">Signature dish</AppText>
+                  <Pressable
+                    onPress={() => {
+                      bottomSheetModalRef.current?.dismiss();
+                      navigation.navigate("DishDetail", { dishId: activeRecord.dish!.id });
+                    }}
+                    style={{
+                      backgroundColor: palette.bgSoft,
+                      borderColor: palette.border,
+                      borderRadius: 18,
+                      borderWidth: 1,
+                      padding: spacing[4],
+                      flexDirection: "row",
+                      gap: spacing[3],
+                    }}
+                  >
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <AppText variant="h3">{activeRecord.dish.name}</AppText>
+                      <AppText variant="price" style={{ color: palette.orange }}>
+                        S${activeRecord.dish.price.toFixed(2)}
+                      </AppText>
+                      <AppText variant="micro" tone="muted">
+                        Rated {activeRecord.dish.rating.toFixed(1)} ★
+                      </AppText>
+                    </View>
+                    <ChevronRight color={palette.textMuted} size={20} />
+                  </Pressable>
+                </View>
+              ) : null}
+
+              <View style={{ gap: spacing[3] }}>
+                <AppText variant="h3">Information</AppText>
+                <View style={{ gap: spacing[2] }}>
+                  <AppText variant="bodySmall" tone="secondary">
+                    Operating Hours: {activeRecord.venue.operatingHours}
+                  </AppText>
+                </View>
+              </View>
+            </>
+          ) : (
+            <View style={{ paddingVertical: spacing[12] }}>
+              <AppText variant="h3" style={{ textAlign: "center" }}>No stall selected</AppText>
+              <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
+                Tap a stall on the map to see details.
+              </AppText>
+            </View>
+          )}
+        </BottomSheetScrollView>
+        </BottomSheetModal>
+        </SafeAreaView>
+        );
+        }
 
 const styles = StyleSheet.create({
   safeArea: {

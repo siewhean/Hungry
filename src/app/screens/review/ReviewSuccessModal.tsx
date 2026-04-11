@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Modal, Pressable, View } from "react-native";
 import { CheckCircle2, Sparkles, X } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 
 import { AppText, Badge, Button, Card } from "@/components/ui";
 import { useUIStore } from "@/store/useUIStore";
@@ -13,6 +15,12 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
   const { palette, radii, spacing } = useHungryTheme();
   const payload = useUIStore((state) => state.reviewSuccess);
   const hideReviewSuccess = useUIStore((state) => state.hideReviewSuccess);
+
+  useEffect(() => {
+    if (payload) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [payload]);
 
   return (
     <Modal animationType="fade" transparent visible={Boolean(payload)} onRequestClose={hideReviewSuccess}>

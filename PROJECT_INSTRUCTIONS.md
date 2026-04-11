@@ -6,6 +6,15 @@
 - Avoid editing unrelated sections when fixing an issue.
 - Prefer simple, direct solutions over broad rewrites.
 - Record recurring guidance as explicit project instructions when it becomes a stable rule.
+- After every implementation batch, or whenever a task is completed, update `tasks/todo.md` so progress, status, and follow-up notes stay current.
+
+## Design Workflow
+
+- Before implementing any UI, identify the governing design source first: Figma, `design/` prototype, or an approved design file in `Research/`.
+- Do not implement or restyle a screen from memory, guesswork, or code-only intuition when a design file exists.
+- If no design file exists for the requested UI, stop and create or confirm the design direction before implementation.
+- Every shipped UI change should be traceable back to a concrete design artifact.
+- Run a design review against the approved design source before considering UI work complete.
 
 ## Design Philosophy
 

@@ -7,7 +7,7 @@ import {
 import { useFonts as useNunitoFonts, Nunito_400Regular, Nunito_500Medium, Nunito_600SemiBold, Nunito_700Bold } from "@expo-google-fonts/nunito";
 import { useFonts as useMonoFonts, DMMono_400Regular } from "@expo-google-fonts/dm-mono";
 
-import { colors, motion, radii, shadows, spacing, typography } from "./tokens";
+import { colors, motion, radii, shadows, spacing, typography, zIndex } from "./tokens";
 
 type HungryTheme = {
   colorScheme: "light" | "dark";
@@ -18,6 +18,7 @@ type HungryTheme = {
   shadows: typeof shadows;
   typography: typeof typography;
   motion: typeof motion;
+  zIndex: typeof zIndex;
   fontsLoaded: boolean;
 };
 
@@ -64,6 +65,7 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
       shadows,
       typography,
       motion,
+      zIndex,
       fontsLoaded: nunitoLoaded && monoLoaded,
     }),
     [colorScheme, theme, palette, nunitoLoaded, monoLoaded],

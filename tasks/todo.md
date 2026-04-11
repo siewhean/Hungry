@@ -197,6 +197,53 @@ Verification Note:
 - `npm run typecheck` passed.
 - `npm test -- --runInBand` passed (16 tests).
 
+### Batch 2026-04-11A — Codex (targeted UX/runtime regression fixes)
+
+| ID | Status | Summary |
+|----|--------|---------|
+| HOTFIX-2026-04-11-01 | Done | BuildingDrillDown directory switched back from 2-column cards to full-width list rows per latest UX direction. |
+| HOTFIX-2026-04-11-02 | Done | Review photo picker now uses an inline add-photo icon tile instead of a dedicated action button. |
+| HOTFIX-2026-04-11-03 | Done | Photo picker launch config hardened (`MediaTypeOptions.Images`) to avoid picker-runtime crashes on iOS. |
+| HOTFIX-2026-04-11-04 | Done | Profile persistence fixed by preventing bootstrap profile re-sync on initial mount (sync now only runs on auth-state transitions). |
+| HOTFIX-2026-04-11-05 | Done | Home feed post actions wired end-to-end: like toggles state, bookmark toggles favourites, share opens native share sheet, comments route into review flow. |
+
+Verification Note:
+- `npm run typecheck` passed.
+- `npm test -- --runInBand` passed (16 tests).
+
+### Batch 2026-04-11B — Codex (home interactions + persistence + review media stability)
+
+| ID | Status | Summary |
+|----|--------|---------|
+| HOTFIX-2026-04-11-06 | Done | BuildingDrillDown directory rows compacted (reduced row height/padding) for denser list scanning. |
+| HOTFIX-2026-04-11-07 | Done | Home feed removed the inline `Liked` text status and kept icon-only reaction feedback. |
+| HOTFIX-2026-04-11-08 | Done | Home feed save action now toggles favourites without feed reload-refresh side effects. |
+| HOTFIX-2026-04-11-09 | Done | Home feed comment action now opens a dimmed, draggable bottom comments sheet (half-height entry, expandable). |
+| HOTFIX-2026-04-11-10 | Done | Review photo picker hardened with lazy native-module loading and graceful unavailable-module fallback (warning toast) to prevent hard crashes. |
+| HOTFIX-2026-04-11-11 | Done | App bootstrap profile sync adjusted to avoid wiping persisted dietary/profile edits on cold start. |
+
+Verification Note:
+- `npm run typecheck` passed.
+- `npm test -- --runInBand` passed (16 tests).
+- `npx pod-install ios` executed successfully; `ExpoImagePicker` confirmed in `ios/Podfile.lock` and `ios/Pods/Manifest.lock`.
+
+### Batch 2026-04-11C — Codex (P0 crash + interaction/layout follow-up)
+
+| ID | Status | Summary |
+|----|--------|---------|
+| P0-16 | Done | Added-photo crash hardening completed; moved photo picker to safe lazy native-module load path and retained inline icon-tile UX. |
+| P0-17 | Done | Persisted profile edits now survive relaunch by guarding bootstrap profile sync against first-mount hydration overwrite. |
+| HOTFIX-2026-04-11-12 | Done | Home feed interaction metrics now bind to real per-post state (likes/comments/saves/shares) with no hardcoded counts. |
+| HOTFIX-2026-04-11-13 | Done | Save icon default is now off (`false`) and save toggling no longer triggers feed refresh behavior. |
+| HOTFIX-2026-04-11-14 | Done | Comment icon now opens a dimmed draggable bottom comments sheet instead of redirecting to review flow. |
+| HOTFIX-2026-04-11-15 | Done | Map bottom-sheet duplicate card structure removed; sheet body now renders as single edge-to-edge surface. |
+| HOTFIX-2026-04-11-16 | Done | Profile header updated to left-anchored avatar + adjacent username/email row. |
+| HOTFIX-2026-04-11-17 | Done | BuildingDrillDown list rows compacted further to reduce excess vertical whitespace. |
+
+Verification Note:
+- `npm run typecheck` passed.
+- `npm test -- --runInBand` passed (16 tests).
+
 ---
 
 ## 1. Unchecked Phase 1 & Phase 3 Items
@@ -463,7 +510,8 @@ These items break core user journeys or render features non-functional.
 
 | ID | Area | Issue | File(s) |
 |----|------|-------|---------|
-| — | — | No open P0 blockers after Batch 2026-04-10I. | — |
+| P0-16 | Review | ✅ Done (Batch 2026-04-11C): **Bug: App crashes when clicking Add Photo.** Fixed by guarding the add-photo path with lazy native-module load + graceful fallback; iOS pods synced for `ExpoImagePicker`. | `PhotoPicker.tsx`, iOS native modules |
+| P0-17 | Profile | ✅ Done (Batch 2026-04-11C): **Bug: Profile dietary preferences reset after relaunch.** Fixed by preventing bootstrap re-sync from wiping hydrated profile state. | `useAppBootstrap.ts`, `useProfileStore.ts` |
 
 ### P1 — UX / UI Degradation
 
@@ -486,6 +534,8 @@ These items degrade the user experience but do not fully block flows.
 | P1-13 | Discover | ✅ Done (Batch 2026-04-10M): Try-another logic now picks a distinct next dish. | `DecideForMeResultScreen.tsx` |
 | P1-14 | Discover | ✅ Done (Batch 2026-04-10M): BuildingDrillDown directory now uses a responsive 2-column grid layout. | `BuildingDrillDownScreen.tsx` |
 | P1-15 | Discover | ✅ Done (Batch 2026-04-10M): BuildingDrillDown now surfaces `venue.closureNotice` in directory cards. | `BuildingDrillDownScreen.tsx` |
+| P1-43 | Discover | Map screen bottom sheet still leaves an oversized blank gap at the bottom; sheet height/padding needs tightening. | `HomeMapScreen.tsx` |
+| P1-44 | Discover | Map bottom sheet card still has rounded bottom corners; bottom edge should be square. | `HomeMapScreen.tsx` |
 | P1-16 | Home | ✅ Done (Batch 2026-04-10J): HomeFeedScreen now has loading and retry-on-error states before feed render. | `HomeFeedScreen.tsx` |
 | P1-17 | Home | No error boundary on HomeFeedScreen — a child component throw crashes the entire screen | `HomeFeedScreen.tsx` |
 | P1-18 | Search | ✅ Done (Batch 2026-04-10J): SearchResultsScreen now has loading state while results refresh. | `SearchResultsScreen.tsx` |
@@ -818,3 +868,5 @@ Add dated command outputs under each active workstream when run.
 - P0 items should be addressed before any new feature work.
 - The verification matrix should be used as the acceptance gate for Phase 2 "done criteria".
 - Future phases (6–10: Ordering, Payments, Vendor Analytics, Crowd Signals, Platform Data) remain unchanged and are tracked in the original phase definitions.
+- 2026-04-11 | Codex | Tightened project design governance: added explicit design-source gating to `PROJECT_INSTRUCTIONS.md`, `AGENTS.md`, `tasks/design-system.md`, and `tasks/lessons.md` so UI implementation must start from the approved design artifact and be checked back against it before completion. | Status: completed for documentation update. | Blockers: installing the referenced `sn-ui-checklist` skill globally into `~/.codex/skills/` is blocked by sandbox permissions in this environment. | Next: run the provided local copy command outside the sandbox to make the skill reusable across all projects.
+- 2026-04-11 | Codex | Executed Master Design Plan (Batch 2026-04-11D): Phase 1 (Ergonomics + Polish), Phase 2 (Immersive Home Feed + Bites), and Phase 3 (Contextual Bottom Sheets). Verified type-safety and core interactions. | Status: completed + verified. | Blockers: none. | Next: continue with remaining P1/P2 items in the consolidated backlog.

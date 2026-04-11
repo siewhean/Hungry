@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
@@ -9,13 +9,19 @@ import type { WheelStackParamList } from "./WheelStack";
 
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelHome">;
 
-export function WheelHomeScreen({ navigation }: Props) {
+export function WheelHomeScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
   const createParty = useWheelStore((s) => s.createParty);
   const joinParty = useWheelStore((s) => s.joinParty);
 
-  const [joinCode, setJoinCode] = useState("");
+  const [joinCode, setJoinCode] = useState(route.params?.code ?? "");
   const [joinName, setJoinName] = useState("");
+
+  useEffect(() => {
+    if (route.params?.code) {
+      setJoinCode(route.params.code);
+    }
+  }, [route.params?.code]);
   const [joinError, setJoinError] = useState("");
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);

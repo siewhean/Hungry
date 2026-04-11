@@ -243,3 +243,15 @@ Source: `src/theme/tokens.ts → motion`
 | `design/archive/figma-redesign/components.html` | Archived component showcase |
 
 **Rule:** Before building any new screen or major component, open the relevant prototype to check intended layout and visual direction.
+
+---
+
+## Design File Gate
+
+| Rule | Detail |
+|------|--------|
+| Source-first implementation | Every new screen, component refresh, or layout rewrite must begin from the relevant design file. |
+| Accepted sources | Figma, `design/` HTML prototypes, or approved files under `Research/`. |
+| No blind implementation | If a design artifact exists, do not implement from verbal summary alone. |
+| Missing artifact behavior | If the requested UI has no design file, create or confirm the design direction before writing production UI code. |
+| Completion criteria | A UI change is only complete after checking the built result back against the design source. |

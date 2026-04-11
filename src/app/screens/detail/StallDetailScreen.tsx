@@ -5,7 +5,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { ArrowLeft, Heart, MapPin, Share2, Star, Truck } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, EmptyState, InlineBanner, Screen } from "@/components/ui";
+import { AppText, EmptyState, InlineBanner, Screen, FAB, Button } from "@/components/ui";
 import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -200,7 +200,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: spacing[12], paddingTop: topBarHeight }}
+        contentContainerStyle={{ paddingBottom: spacing[16] + 80, paddingTop: topBarHeight }}
       >
         <View>
           <Image
@@ -417,6 +417,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
           </View>
         </View>
       </ScrollView>
+      <FAB>
+        <Button
+          fullWidth={false}
+          label="Write a review"
+          onPress={openReviewChoice}
+        />
+      </FAB>
     </SafeAreaView>
   );
 }
@@ -436,9 +443,9 @@ const styles = StyleSheet.create({
   },
   iconTouch: {
     alignItems: "center",
-    height: 28,
+    height: 44,
     justifyContent: "center",
-    width: 28,
+    width: 44,
   },
   topNavSpacer: {
     flex: 1,

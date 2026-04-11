@@ -3,6 +3,9 @@ PODS:
     - ExpoModulesCore
   - EXConstants (18.0.13):
     - ExpoModulesCore
+  - EXImageLoader (6.0.0):
+    - ExpoModulesCore
+    - React-Core
   - EXJSONUtils (0.15.0)
   - EXManifests (1.0.10):
     - ExpoModulesCore
@@ -217,7 +220,7 @@ PODS:
     - SDWebImageAVIFCoder (~> 0.11.0)
     - SDWebImageSVGCoder (~> 1.7.0)
     - SDWebImageWebPCoder (~> 0.14.6)
-  - ExpoImagePicker (55.0.18):
+  - ExpoImagePicker (17.0.10):
     - ExpoModulesCore
   - ExpoKeepAwake (15.0.8):
     - ExpoModulesCore
@@ -2381,6 +2384,7 @@ PODS:
 DEPENDENCIES:
   - EASClient (from `../node_modules/expo-eas-client/ios`)
   - EXConstants (from `../node_modules/expo-constants/ios`)
+  - EXImageLoader (from `../node_modules/expo-image-loader/ios`)
   - EXJSONUtils (from `../node_modules/expo-json-utils/ios`)
   - EXManifests (from `../node_modules/expo-manifests/ios`)
   - Expo (from `../node_modules/expo`)
@@ -2501,6 +2505,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-eas-client/ios"
   EXConstants:
     :path: "../node_modules/expo-constants/ios"
+  EXImageLoader:
+    :path: "../node_modules/expo-image-loader/ios"
   EXJSONUtils:
     :path: "../node_modules/expo-json-utils/ios"
   EXManifests:
@@ -2702,6 +2708,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   EASClient: ed58524bf0bb6375fbf106e1877ab9ac4ce24623
   EXConstants: 3feb66fd1d94202fc1f0946d74e029d8b224b60e
+  EXImageLoader: e501c001bc40b8326605e82e6e80363c80fe06b5
   EXJSONUtils: 1d3e4590438c3ee593684186007028a14b3686cd
   EXManifests: 83ef0844fcf06d6099b12a7bdbd7d36fc0e1dd16
   Expo: 7f5e64b5d18096dcec86814764b526b0cb97811c
@@ -2714,7 +2721,7 @@ SPEC CHECKSUMS:
   ExpoFont: c625dbd97ed57e9089b172b2a7bb99003d074664
   ExpoHaptics: 7240781406f4563c3f4eb1e72864302a8c643fd0
   ExpoImage: f6bcd30bb98d4c484869668fbc32834bb3ee5bfb
-  ExpoImagePicker: a2166588c8ee535bac8d39fb61705fa2c30a7535
+  ExpoImagePicker: 115fada5d2e90bf900dea64151953ca39f67b47b
   ExpoKeepAwake: 44bf6715bc1d2ddb17afe19d927cd039cda123f0
   ExpoLinearGradient: 814a21fc4056c3cf606e4f19e31e47074c5b5a86
   ExpoLinking: ebf543fd411d56375cb4eee07f6ab4e31c7ad959

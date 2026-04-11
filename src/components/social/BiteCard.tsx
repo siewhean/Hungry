@@ -5,11 +5,18 @@
  * Compact format: 160×220 portrait card.
  */
 
-import { Pressable, View } from "react-native";
+import { Pressable, View, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { Heart, MessageCircle } from "lucide-react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { runOnJS } from "react-native-reanimated";
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withSpring,
+} from "react-native-reanimated";
 
 import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -36,6 +43,7 @@ interface BiteCardProps {
   width?: number;
   liked?: boolean;
   onToggleLike?: () => void;
+  onCommentPress?: () => void;
 }
 
 export function BiteCard({
@@ -45,17 +53,34 @@ export function BiteCard({
   width = 160,
   liked = false,
   onToggleLike,
+  onCommentPress,
 }: BiteCardProps) {
   const { palette, radii, spacing } = useHungryTheme();
   const imageHeight = Math.round(width * 0.76);
+
+  const heartScale = useSharedValue(0);
+  const animatedHeartStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: heartScale.value }],
+    opacity: heartScale.value > 0 ? 1 : 0,
+  }));
+
+  const playHeartAnimation = () => {
+    heartScale.value = withSequence(
+      withSpring(1.5, { damping: 12, stiffness: 200 }),
+      withDelay(500, withSpring(0)),
+    );
+  };
+
   const captionGesture = Gesture.Tap()
     .numberOfTaps(2)
     .maxDuration(260)
     .onEnd((_event, success) => {
       if (success && onToggleLike) {
+        runOnJS(playHeartAnimation)();
         runOnJS(onToggleLike)();
       }
     });
+
   const displayHeartCount = bite.heartCount + (liked ? 1 : 0);
 
   return (
@@ -79,6 +104,15 @@ export function BiteCard({
             contentFit="contain"
             transition={200}
           />
+          {/* Animated Heart Pop Overlay */}
+          <View
+            style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center" }]}
+            pointerEvents="none"
+          >
+            <Animated.View style={animatedHeartStyle}>
+              <Heart size={48} color={palette.error} fill={palette.error} />
+            </Animated.View>
+          </View>
           {/* Taste tag chip */}
           <View
             style={{
@@ -95,16 +129,18 @@ export function BiteCard({
               {bite.tasteTag}
             </AppText>
           </View>
-          {/* Author avatar */}
+        </View>
+      </Pressable>
+
+      {/* Content */}
+      <View style={{ padding: spacing[3], gap: spacing[2] }}>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
           <View
             style={{
-              position: "absolute",
-              bottom: -14,
-              right: spacing[2],
-              width: 28,
-              height: 28,
-              borderRadius: 14,
-              borderWidth: 2,
+              width: 26,
+              height: 26,
+              borderRadius: 13,
+              borderWidth: 1.5,
               borderColor: palette.orange,
               overflow: "hidden",
               backgroundColor: palette.surface,
@@ -116,11 +152,11 @@ export function BiteCard({
               contentFit="cover"
             />
           </View>
+          <AppText variant="bodySmall" numberOfLines={1} style={{ fontFamily: "Nunito_700Bold", flex: 1 }}>
+            {bite.authorName}
+          </AppText>
         </View>
-      </Pressable>
 
-      {/* Content */}
-      <View style={{ padding: spacing[3], paddingTop: spacing[4], gap: spacing[2] }}>
         <Pressable onPress={onDishPress ?? onPress}>
           <AppText
             variant="h3"
@@ -151,22 +187,32 @@ export function BiteCard({
           style={{
             flexDirection: "row",
             alignItems: "center",
-            gap: spacing[3],
+            gap: spacing[2],
             marginTop: spacing[1],
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Heart size={12} color={liked ? palette.error : palette.textMuted} />
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={10}
+            onPress={onToggleLike}
+            style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+          >
+            <Heart size={18} color={liked ? palette.error : palette.textMuted} />
             <AppText variant="micro" tone="muted">
               {displayHeartCount}
             </AppText>
-          </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <MessageCircle size={12} color={palette.textMuted} />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={10}
+            onPress={onCommentPress ?? onPress}
+            style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+          >
+            <MessageCircle size={18} color={palette.textMuted} />
             <AppText variant="micro" tone="muted">
               {bite.commentCount}
             </AppText>
-          </View>
+          </Pressable>
           <AppText variant="micro" tone="muted" style={{ marginLeft: "auto" }}>
             {bite.createdAt}
           </AppText>

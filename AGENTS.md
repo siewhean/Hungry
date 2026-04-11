@@ -194,3 +194,14 @@ Rules:
 - Use OpenCV only for image rectification, not final geometry storage.
 - Add snapping and validation before adding advanced auto-detection.
 - Avoid changing geometry schema without updating import/export logic.
+---
+
+## 11. Design Source Gating (mandatory)
+
+| Rule | Detail |
+|------|--------|
+| Design-first | Before implementing or changing UI, open the governing design source first: Figma, `design/` prototype, or approved research/design file. |
+| No code-first guessing | If a design file exists, do not improvise the UI from existing code or memory. |
+| Missing design | If no design file exists for the requested screen/component, stop and define the design before implementation. |
+| Verification | UI work is not complete until the implementation is checked back against the design artifact. |
+| Review standard | Run the approved design checklist skill or equivalent structured visual review before considering the screen done. |

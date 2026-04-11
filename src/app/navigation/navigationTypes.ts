@@ -35,9 +35,8 @@ export type MainTabParamList = {
   Review: undefined;
   Profile: undefined;
 };
-
 export type WheelStackParamList = {
-  WheelHome: undefined;
+  WheelHome: { code?: string } | undefined;
   WheelLobby: { partyId: string };
   WheelSpin: { partyId: string };
   WheelResult: { partyId: string; winnerEntryId: string };

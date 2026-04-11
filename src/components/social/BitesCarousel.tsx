@@ -96,6 +96,7 @@ export function BitesCarousel({ bites, showHeader = true }: BitesCarouselProps) 
         }
         onPress={() => navigation.navigate("DishDetail", { dishId: item.dishId })}
         onDishPress={() => navigation.navigate("DishDetail", { dishId: item.dishId })}
+        onCommentPress={() => navigation.navigate("DishDetail", { dishId: item.dishId })}
       />
     ),
     [cardWidth, likedBites, navigation],

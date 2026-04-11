@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import * as Linking from "expo-linking";
+import { useEffect, useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import {
   NavigationContainer,
@@ -142,7 +143,8 @@ function TabNavigator() {
         tabBarInactiveTintColor: palette.textMuted,
         tabBarStyle: {
           backgroundColor: palette.bg,
-          borderTopColor: palette.border,
+          borderTopColor: route.name === "Discover" || route.name === "Maps" ? "transparent" : palette.border,
+          borderTopWidth: route.name === "Discover" || route.name === "Maps" ? 0 : StyleSheet.hairlineWidth,
           height: 60 + Math.max(insets.bottom, spacing[2]),
           paddingBottom: Math.max(insets.bottom, spacing[2]),
           paddingTop: spacing[2],
@@ -209,6 +211,24 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
+
+  const prefix = Linking.createURL("/");
+  const linking = useMemo(
+    () => ({
+      prefixes: [prefix, "hungry://", "https://hungry.sg"],
+      config: {
+        screens: {
+          WheelStack: {
+            path: "join/:code",
+            screens: {
+              WheelHome: "",
+            },
+          },
+        },
+      },
+    }),
+    [prefix],
+  );
 
   const navigateHome = () => {
     setReturnRoute(undefined);
@@ -343,6 +363,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       <NavigationContainer
         ref={navigationRef}
         theme={theme}
+        linking={linking}
         onStateChange={() => {
           resetScrollBack();
         }}

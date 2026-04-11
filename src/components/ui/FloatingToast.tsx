@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import * as Haptics from "expo-haptics";
 
 import { useHungryTheme } from "@/theme";
 import { useUIStore } from "@/store/useUIStore";
@@ -10,6 +11,31 @@ export function FloatingToast() {
   const clearToast = useUIStore((state) => state.clearToast);
   const { palette, radii, shadows, spacing } = useHungryTheme();
   const tone = toast?.tone ?? "info";
+
+  useEffect(() => {
+    if (!toast) {
+      return;
+    }
+
+    // Trigger haptic feedback based on toast tone
+    if (tone === "success") {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else if (tone === "error") {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } else if (tone === "warning") {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+
+    const timer = setTimeout(() => clearToast(), 2500);
+    return () => clearTimeout(timer);
+  }, [toast, clearToast, tone]);
+
+  if (!toast) {
+    return null;
+  }
+
   const toneBackground =
     tone === "success"
       ? palette.success
@@ -19,19 +45,6 @@ export function FloatingToast() {
           ? palette.error
           : palette.navy;
   const toastTextTone = tone === "warning" ? "default" : "inverse";
-
-  useEffect(() => {
-    if (!toast) {
-      return;
-    }
-
-    const timer = setTimeout(() => clearToast(), 2500);
-    return () => clearTimeout(timer);
-  }, [toast, clearToast]);
-
-  if (!toast) {
-    return null;
-  }
 
   return (
     <View pointerEvents="box-none" style={styles.wrapper}>

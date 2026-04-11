@@ -11,10 +11,12 @@ import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { hungryPersistStorage } from "@/store/persistStorage";
+import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
 export function SettingsScreen() {
   const navigation = useNavigation<any>();
+  const { spacing } = useHungryTheme();
   const signOut = useSessionStore((state) => state.signOut);
   const clearSession = useSessionStore((state) => state.clearSession);
   const location = useLocationStore((state) => state.manualLocation);
@@ -27,6 +29,10 @@ export function SettingsScreen() {
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
 
   const purgePersistedAccountData = async () => {
+    if (!hungryPersistStorage) {
+      return;
+    }
+
     await Promise.all([
       hungryPersistStorage.removeItem("hungry-session-v1"),
       hungryPersistStorage.removeItem("hungry-profile-v1"),
@@ -71,11 +77,19 @@ export function SettingsScreen() {
   return (
     <ProfileScreenShell title="Settings" subtitle="Account, privacy, and lightweight preferences.">
       <Card>
-        <View style={{ gap: 12 }}>
+        <View style={{ gap: spacing[3] }}>
           <AppText variant="h3">Preferences</AppText>
-          <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-            <Chip label="Dietary filters" selected={dietaryEnabled} onPress={() => setDietaryEnabled((value) => !value)} />
-            <Chip label="Notifications" selected={notificationsEnabled} onPress={() => setNotificationsEnabled((value) => !value)} />
+          <View style={{ flexDirection: "row", gap: spacing[2], flexWrap: "wrap" }}>
+            <Chip
+              label="Dietary filters"
+              selected={dietaryEnabled}
+              onPress={() => setDietaryEnabled((value) => !value)}
+            />
+            <Chip
+              label="Notifications"
+              selected={notificationsEnabled}
+              onPress={() => setNotificationsEnabled((value) => !value)}
+            />
           </View>
           <Badge label={location ? `Manual location: ${location}` : "Location uses GPS"} tone="neutral" />
           <InlineBanner tone="info" message={`App version ${appVersion}`} />

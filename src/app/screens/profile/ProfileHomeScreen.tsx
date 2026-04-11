@@ -7,6 +7,7 @@ import { mockRepository } from "@/lib/services/mock/repositories";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { profileSections } from "@/features/profile/profileContent";
+import { useHungryTheme } from "@/theme";
 import { isDishDetail } from "./profileGuards";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import { ProfileRadarChart } from "./ProfileRadarChart";
@@ -15,6 +16,7 @@ import type { ProfileStackParamList } from "./ProfileStack";
 type Props = NativeStackScreenProps<ProfileStackParamList, "ProfileHome">;
 
 export function ProfileHomeScreen({ navigation }: Props) {
+  const { palette, spacing, radii } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
   const signOut = useSessionStore((state) => state.signOut);
   const favourites = profile.favouriteDishIds.map((dishId) => mockRepository.getDishById(dishId)).filter(isDishDetail);
@@ -23,15 +25,42 @@ export function ProfileHomeScreen({ navigation }: Props) {
     const rootNavigation = getRootNavigation(navigation as any);
     rootNavigation.navigate("Splash");
   };
+  const initials = profile.displayName
+    .split(" ")
+    .map((part) => part.trim().charAt(0))
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   return (
     <ProfileScreenShell title="Profile" subtitle="Taste fingerprint, favourites, and settings in one place.">
       <Card>
-        <View style={{ gap: 12 }}>
-          <AppText variant="h2">{profile.displayName}</AppText>
-          <Badge label={profile.email ? profile.email : "Account required"} tone={profile.email ? "success" : "neutral"} />
+        <View style={{ gap: spacing[3] }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
+            <View
+              style={{
+                alignItems: "center",
+                backgroundColor: palette.orangeLight,
+                borderRadius: radii.pill,
+                height: 48,
+                justifyContent: "center",
+                width: 48,
+              }}
+            >
+              <AppText variant="bodySmall" style={{ color: palette.orange, fontFamily: "Nunito_700Bold" }}>
+                {initials || "U"}
+              </AppText>
+            </View>
+            <View style={{ flex: 1, gap: spacing[1] }}>
+              <AppText variant="h2">{profile.displayName}</AppText>
+              <AppText variant="bodySmall" tone="secondary">
+                {profile.email || "Account required"}
+              </AppText>
+            </View>
+          </View>
           <ProfileRadarChart value={profile.tasteVector} />
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             <Badge label={`${profile.stats.dishesReviewed} reviews`} tone="info" />
             <Badge label={`${profile.stats.stallsVisited} stalls`} tone="amber" />
             <Badge label={`${profile.stats.favouritesCount} favourites`} tone="orange" />
@@ -40,7 +69,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
         </View>
       </Card>
       <Card>
-        <View style={{ gap: 12 }}>
+        <View style={{ gap: spacing[3] }}>
           <AppText variant="h3">Quick access</AppText>
           {profileSections.slice(1).map((section) => (
             <Button
@@ -58,7 +87,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
         </View>
       </Card>
       <Card>
-        <View style={{ gap: 12 }}>
+        <View style={{ gap: spacing[3] }}>
           <AppText variant="h3">Favourite dishes</AppText>
           {favourites.length ? (
             favourites.slice(0, 2).map((dish) => (

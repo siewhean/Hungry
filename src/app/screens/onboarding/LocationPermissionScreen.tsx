@@ -173,15 +173,11 @@ export function LocationPermissionScreen({ navigation }: Props) {
           onPress={allowDeviceLocation}
           style={shadows.floating}
         />
-        <Pressable
-          accessibilityRole="button"
+        <Button
+          label="Enter Manually"
+          variant="secondary"
           onPress={() => navigation.navigate("ManualLocationPicker")}
-          style={{ alignItems: "center", justifyContent: "center", minHeight: 48 }}
-        >
-          <AppText variant="body" style={{ color: palette.orangeDark, fontFamily: "Nunito_600SemiBold" }}>
-            Enter Manually
-          </AppText>
-        </Pressable>
+        />
       </View>
     </SafeAreaView>
   );

@@ -1,11 +1,10 @@
 import { Pressable, StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
 import { Camera } from "lucide-react-native";
-import * as ImagePicker from "expo-image-picker";
 
 import { useHungryTheme } from "@/theme";
 import { useUIStore } from "@/store/useUIStore";
-import { AppText, Button, Card } from "../ui";
+import { AppText, Card } from "../ui";
 
 interface PhotoPickerProps {
   photos: string[];
@@ -13,6 +12,14 @@ interface PhotoPickerProps {
   onAddPhoto?: (uri: string) => void;
   onRemovePhoto?: (uri: string) => void;
   onPhotoError?: (uri: string) => void;
+}
+
+function loadImagePickerModule() {
+  try {
+    return require("expo-image-picker");
+  } catch {
+    return null;
+  }
 }
 
 export function PhotoPicker({
@@ -31,15 +38,21 @@ export function PhotoPicker({
     }
 
     try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const imagePicker = loadImagePickerModule();
+      if (!imagePicker) {
+        showToast({ message: "Photo picker is unavailable. Please reinstall the app build.", tone: "warning" });
+        return;
+      }
+
+      const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
         showToast({ message: "Photos permission is required to attach images.", tone: "warning" });
         return;
       }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
+      const result = await imagePicker.launchImageLibraryAsync({
         allowsEditing: true,
-        mediaTypes: ["images"],
+        mediaTypes: imagePicker.MediaTypeOptions.Images,
         quality: 0.82,
         selectionLimit: 1,
       });
@@ -59,18 +72,38 @@ export function PhotoPicker({
 
   return (
     <View style={{ gap: spacing[3] }}>
-      <Button
-        label={photos.length >= maxPhotos ? "Photo limit reached" : "Add photo"}
-        onPress={handleAddPhoto}
-        disabled={!canAddPhoto}
-      />
       <View style={styles.grid}>
         {photos.map((uri) => (
           <Pressable key={uri} onPress={() => onRemovePhoto?.(uri)} style={styles.photoWrap}>
             <Image source={{ uri }} style={[styles.photo, { borderRadius: radii.sm }]} contentFit="cover" />
           </Pressable>
         ))}
-        {photos.length === 0 ? (
+        {canAddPhoto ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Add photo"
+            onPress={handleAddPhoto}
+            style={({ pressed }) => [
+              styles.photoWrap,
+              {
+                alignItems: "center",
+                backgroundColor: palette.bgMuted,
+                borderColor: palette.border,
+                borderRadius: radii.sm,
+                borderStyle: "dashed",
+                borderWidth: 1,
+                justifyContent: "center",
+                opacity: pressed ? 0.85 : 1,
+              },
+            ]}
+          >
+            <Camera size={18} color={palette.textMuted} />
+            <AppText variant="bodySmall" tone="secondary">
+              Add photo
+            </AppText>
+          </Pressable>
+        ) : null}
+        {photos.length === 0 && !canAddPhoto ? (
           <Card style={{ alignItems: "center", backgroundColor: palette.bgMuted, borderStyle: "dashed", gap: 8 }}>
             <Camera size={18} color={palette.textMuted} />
             <AppText variant="bodySmall" tone="secondary">

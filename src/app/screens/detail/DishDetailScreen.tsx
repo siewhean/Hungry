@@ -11,7 +11,7 @@ import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileS
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import { AppText, Badge, Button, Card, EmptyState, InlineBanner } from "@/components/ui";
+import { AppText, Badge, Button, Card, EmptyState, InlineBanner, FAB } from "@/components/ui";
 import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 
@@ -27,10 +27,19 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
   const { width: viewportWidth } = useWindowDimensions();
   const heroScrollX = useRef(new Animated.Value(0)).current;
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const venue = useMemo(() => (dish ? mockRepository.getVenueById(dish.venueId) : undefined), [dish]);
   const tasteMatch = useMemo(() => (dish ? getTasteSimilarityWithDish(profile, dish) : 0), [profile, dish]);
   const gallery = useMemo(() => (dish ? buildDishGallery(dish) : []), [dish]);
+
+  const maxTasteScore = useMemo(() => {
+    if (!dish) {
+      return 0;
+    }
+    return Math.max(...TASTE_DIMENSIONS.map((d) => dish.tasteVector[d.key] ?? 0));
+  }, [dish]);
+
   const heroWidth = Math.round(viewportWidth);
   const indicatorDotSize = 7;
   const indicatorStep = 14;
@@ -56,12 +65,36 @@ export function DishDetailScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["top", "left", "right"]}>
-      <ScrollView
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: spacing[5], paddingBottom: spacing[8] }}
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: true,
+        })}
+        contentContainerStyle={{ gap: spacing[5], paddingBottom: spacing[16] + 120 }}
       >
         {/* Hero image carousel */}
-        <View style={{ width: heroWidth }}>
+        <Animated.View
+          style={{
+            width: heroWidth,
+            transform: [
+              {
+                scale: scrollY.interpolate({
+                  inputRange: [-150, 0],
+                  outputRange: [1.6, 1],
+                  extrapolate: "clamp",
+                }),
+              },
+              {
+                translateY: scrollY.interpolate({
+                  inputRange: [-150, 0, 150],
+                  outputRange: [-75, 0, 50],
+                  extrapolate: "clamp",
+                }),
+              },
+            ],
+          }}
+        >
           <Animated.ScrollView
             horizontal
             pagingEnabled
@@ -152,7 +185,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
               </View>
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         <View style={{ gap: spacing[5], paddingHorizontal: spacing[5] }}>
           {/* Badges & title */}
@@ -180,12 +213,18 @@ export function DishDetailScreen({ navigation, route }: Props) {
             <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
               {TASTE_DIMENSIONS.map((dimension) => {
                 const score = dish.tasteVector[dimension.key] ?? 0;
+                const isDominant = score === maxTasteScore && score > 0;
                 const progressWidth = `${Math.max(0, Math.min(100, Math.round((score / 10) * 100)))}%` as const;
 
                 return (
                   <View key={dimension.key} style={{ gap: spacing[1] }}>
                     <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                      <AppText variant="bodySmall">{dimension.label}</AppText>
+                      <AppText
+                        variant="bodySmall"
+                        style={{ fontFamily: isDominant ? "Nunito_700Bold" : "Nunito_400Regular" }}
+                      >
+                        {dimension.label}
+                      </AppText>
                       <AppText variant="micro" tone="secondary">
                         {score.toFixed(1)}
                       </AppText>
@@ -200,7 +239,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
                     >
                       <View
                         style={{
-                          backgroundColor: palette.orange,
+                          backgroundColor: isDominant ? palette.orange : palette.orangeLight,
                           borderRadius: radii.pill,
                           height: "100%",
                           width: progressWidth,
@@ -241,47 +280,6 @@ export function DishDetailScreen({ navigation, route }: Props) {
             )}
           </Card>
 
-          {/* Action buttons */}
-          <View style={{ gap: spacing[3] }}>
-            <Button
-              label={isSaved ? "Saved" : "Save favourite"}
-              onPress={() => {
-                if (!isAuthenticated) {
-                  setReturnRoute({ name: "DishDetail", params: { dishId: dish.id } });
-                  navigation.navigate("AuthStack", { screen: "Login" });
-                  return;
-                }
-                toggleFavourite(dish);
-                showToast({
-                  message: isSaved ? "Removed from favourites." : "Saved to favourites!",
-                  tone: "success",
-                });
-              }}
-            />
-            <Button
-              label="Write a review"
-              variant="secondary"
-              onPress={() => {
-                if (!isAuthenticated) {
-                  setReturnRoute({
-                    name: "ReviewStack",
-                    params: {
-                      screen: "ReviewRating",
-                      params: { venueId: venue.id, dishId: dish.id },
-                    },
-                  });
-                  navigation.navigate("AuthStack", { screen: "Login" });
-                  return;
-                }
-                navigation.navigate("ReviewStack", {
-                  screen: "ReviewRating",
-                  params: { venueId: venue.id, dishId: dish.id },
-                });
-              }}
-            />
-            <Button label="Share this dish" variant="ghost" onPress={handleShare} />
-          </View>
-
           {/* Reviews */}
           <Card>
             <AppText variant="h3">Recent reviews</AppText>
@@ -305,7 +303,48 @@ export function DishDetailScreen({ navigation, route }: Props) {
             )}
           </Card>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
+      <FAB>
+        <Button
+          fullWidth={false}
+          label={isSaved ? "Saved" : "Save favourite"}
+          variant={isSaved ? "secondary" : "primary"}
+          onPress={() => {
+            if (!isAuthenticated) {
+              setReturnRoute({ name: "DishDetail", params: { dishId: dish.id } });
+              navigation.navigate("AuthStack", { screen: "Login" });
+              return;
+            }
+            toggleFavourite(dish);
+            showToast({
+              message: isSaved ? "Removed from favourites." : "Saved to favourites!",
+              tone: "success",
+            });
+          }}
+        />
+        <Button
+          fullWidth={false}
+          label="Write a review"
+          variant="secondary"
+          onPress={() => {
+            if (!isAuthenticated) {
+              setReturnRoute({
+                name: "ReviewStack",
+                params: {
+                  screen: "ReviewRating",
+                  params: { venueId: venue.id, dishId: dish.id },
+                },
+              });
+              navigation.navigate("AuthStack", { screen: "Login" });
+              return;
+            }
+            navigation.navigate("ReviewStack", {
+              screen: "ReviewRating",
+              params: { venueId: venue.id, dishId: dish.id },
+            });
+          }}
+        />
+      </FAB>
     </SafeAreaView>
   );
 }

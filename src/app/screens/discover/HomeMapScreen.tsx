@@ -11,7 +11,6 @@ import {
   BuildingLegend,
   ClusterPin,
   FloorSelector,
-  MapBottomSheet,
   MapSurface,
   type MapSurfaceMarker,
 } from "@/components/map";
@@ -154,17 +153,17 @@ export function HomeMapScreen() {
 
   const [cameraCenter, setCameraCenter] = useState<Coordinate>(activeBuildingRecord.coordinate);
   const [sheetIndex, setSheetIndex] = useState(1);
-  const snapPoints = useMemo(() => ["16%", "44%", "82%"], []);
+  const snapPoints = useMemo(() => ["16%", "36%", "74%"], []);
   const mapBottomPadding = useMemo(() => {
     if (sheetIndex <= 0) {
       return 172;
     }
 
     if (sheetIndex === 1) {
-      return 320;
+      return 276;
     }
 
-    return 520;
+    return 456;
   }, [sheetIndex]);
   const cameraPadding = useMemo(
     () => ({
@@ -275,23 +274,35 @@ export function HomeMapScreen() {
               borderColor: palette.border,
               borderTopLeftRadius: 28,
               borderTopRightRadius: 28,
+              borderBottomLeftRadius: 0,
+              borderBottomRightRadius: 0,
               borderWidth: 1,
+              borderBottomWidth: 0,
             }}
-            handleIndicatorStyle={{ backgroundColor: palette.border }}
+            handleStyle={{ height: 0, paddingTop: 0, paddingBottom: 0 }}
+            handleIndicatorStyle={{ opacity: 0 }}
             style={[styles.sheetOverlay, shadows.floating]}
           >
             <BottomSheetScrollView
               contentContainerStyle={{
-                paddingBottom: Math.max(insets.bottom + spacing[6], spacing[8]),
-                paddingHorizontal: spacing[5],
+                paddingBottom: Math.max(insets.bottom + spacing[3], spacing[4]),
                 paddingTop: spacing[3],
+                paddingHorizontal: spacing[5],
               }}
               showsVerticalScrollIndicator={false}
             >
-              <MapBottomSheet
-                title={activeBuildingRecord.name}
-                subtitle={activeBuildingRecord.address}
-                headerRight={(
+              <View
+                style={{
+                  gap: spacing[3],
+                }}
+              >
+                <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[2] }}>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <AppText variant="h3">{activeBuildingRecord.name}</AppText>
+                    <AppText variant="bodySmall" tone="secondary">
+                      {activeBuildingRecord.address}
+                    </AppText>
+                  </View>
                   <View
                     style={{
                       backgroundColor: palette.surfaceRaised,
@@ -306,8 +317,8 @@ export function HomeMapScreen() {
                       {Math.max(openStallCount, activeBuildingRecord.openStalls)} active stalls
                     </AppText>
                   </View>
-                )}
-              >
+                </View>
+
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
                   <MetaTag label={formatWalkTime(currentLocation, activeBuildingRecord.coordinate)} />
                 </View>
@@ -320,7 +331,8 @@ export function HomeMapScreen() {
 
                 <BuildingLegend />
 
-                <View style={{ gap: spacing[2] }}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                  <View style={{ gap: spacing[2], width: "100%" }}>
                   {activeStalls.map((venue) => (
                     <ActiveStallRow
                       key={venue.id}
@@ -341,9 +353,10 @@ export function HomeMapScreen() {
                     >
                       <AppText variant="bodySmall" tone="secondary">
                         No active stalls available in this view right now.
-                      </AppText>
-                    </View>
-                  ) : null}
+                        </AppText>
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
 
                 <View style={{ flexDirection: "row", gap: spacing[2] }}>
@@ -373,13 +386,13 @@ export function HomeMapScreen() {
                   onPress={() => handleBuildingSelect(PILOT_MALL_ID)}
                 />
 
-                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], paddingBottom: spacing[1] }}>
                   <Navigation size={14} color={palette.textMuted} />
                   <AppText variant="bodySmall" tone="muted">
                     Map supports live Mapbox when token is set and includes a pilot directory flow for Koufu @ JEM.
                   </AppText>
                 </View>
-              </MapBottomSheet>
+              </View>
             </BottomSheetScrollView>
           </BottomSheet>
         </View>
