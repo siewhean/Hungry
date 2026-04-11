@@ -113,7 +113,7 @@ const MOCK_BITES_FEED: Bite[] = [
     buildingId: "building-old-airport-road",
     buildingName: "Old Airport Road Food Centre",
     photoUrl: "https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=800",
-    caption: "Smoky wok hei, perfectly charred with big juicy cockles 🔥",
+    caption: "Smoky wok hei, perfectly charred with big juicy cockles.",
     tasteStamp: { sweet: 1, spicy: 5, sour: 1, salty: 7, rich: 7, aromatic: 6 },
     cravingCount: 284,
     savedCount: 41,

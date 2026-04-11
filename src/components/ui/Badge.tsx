@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { useHungryTheme } from "@/theme";
@@ -7,9 +8,10 @@ import { getBadgeToneStyles, type BadgeTone } from "./badgeTones";
 interface BadgeProps {
   label: string;
   tone?: BadgeTone;
+  rightIcon?: ReactNode;
 }
 
-export function Badge({ label, tone = "neutral" }: BadgeProps) {
+export function Badge({ label, tone = "neutral", rightIcon }: BadgeProps) {
   const { palette, radii, spacing } = useHungryTheme();
   const toneStyles = getBadgeToneStyles(palette, tone);
 
@@ -22,6 +24,9 @@ export function Badge({ label, tone = "neutral" }: BadgeProps) {
           borderColor: toneStyles.border,
           borderRadius: radii.md,
           borderWidth: 1,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: spacing[1],
           paddingHorizontal: spacing[2],
           paddingVertical: spacing[1],
         },
@@ -30,6 +35,7 @@ export function Badge({ label, tone = "neutral" }: BadgeProps) {
       <AppText variant="micro" style={{ color: toneStyles.text }}>
         {label}
       </AppText>
+      {rightIcon}
     </View>
   );
 }

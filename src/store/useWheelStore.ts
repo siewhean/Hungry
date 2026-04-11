@@ -10,6 +10,7 @@ import type {
   WheelSpinMode,
   WheelTriggerMode,
   TriggerValue,
+  DietaryFlag,
 } from "@/types/domain";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -45,12 +46,14 @@ interface WheelState {
   createParty(
     spinMode: WheelSpinMode,
     triggerMode: WheelTriggerMode,
-    triggerValue?: TriggerValue
+    triggerValue?: TriggerValue,
+    dietaryPreferences?: DietaryFlag[]
   ): Promise<WheelParty>;
-  joinParty(code: string, displayName: string, avatarUrl?: string): Promise<void>;
+  joinParty(code: string, displayName: string, avatarUrl?: string, dietaryPreferences?: DietaryFlag[]): Promise<void>;
   addEntry(venueId: string, buildingId: string, label: string, imageUrl: string): void;
   removeEntry(entryId: string): void;
   updateTrigger(triggerMode: WheelTriggerMode, triggerValue?: TriggerValue): void;
+  updateEntryLimit(limit: number): void;
   triggerSpin(): void;
   leaveParty(): void;
   reset(): void;
@@ -165,7 +168,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
 
   // ── createParty ─────────────────────────────────────────────────────────────
 
-  async createParty(spinMode, triggerMode, triggerValue) {
+  async createParty(spinMode, triggerMode, triggerValue, dietaryPreferences) {
     const partyId = generateId();
     const code = generateCode();
     const memberId = generateId();
@@ -192,6 +195,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
       displayName: "You",
       isHost: true,
       isPresent: true,
+      dietaryPreferences,
       joinedAt: now,
     };
 
@@ -220,7 +224,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
 
   // ── joinParty ───────────────────────────────────────────────────────────────
 
-  async joinParty(code, displayName, avatarUrl) {
+  async joinParty(code, displayName, avatarUrl, dietaryPreferences) {
     const found = mockPartyStore.get(code.toUpperCase());
     if (!found) {
       set({ connectionError: `No party found with code ${code}` });
@@ -234,6 +238,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
       partyId: party.id,
       displayName,
       avatarUrl,
+      dietaryPreferences,
       isHost: false,
       isPresent: true,
       joinedAt: nowIso(),
@@ -268,6 +273,14 @@ export const useWheelStore = create<WheelState>((set, get) => ({
   addEntry(venueId, buildingId, label, imageUrl) {
     const { party, myMemberId, entries, _channel } = get();
     if (!party || !myMemberId || !_channel) return;
+
+    if (party.maxEntriesPerMember) {
+      const myEntriesCount = entries.filter((e) => e.addedByMemberId === myMemberId).length;
+      if (myEntriesCount >= party.maxEntriesPerMember) {
+        set({ connectionError: `Limit reached: Max ${party.maxEntriesPerMember} entries per person.` });
+        return;
+      }
+    }
 
     const entry: WheelEntry = {
       id: generateId(),
@@ -316,6 +329,16 @@ export const useWheelStore = create<WheelState>((set, get) => ({
       party: state.party ? { ...state.party, triggerMode, triggerValue } : state.party,
     }));
     _channel.broadcast({ type: "trigger_update", triggerMode, triggerValue });
+  },
+
+  updateEntryLimit(limit) {
+    const { _channel } = get();
+    if (!_channel) return;
+    set((state) => ({
+      party: state.party ? { ...state.party, maxEntriesPerMember: limit } : state.party,
+    }));
+    // Note: In a real app, we'd add an 'update_limit' event to WheelChannelEvent. 
+    // For this sprint, we'll reuse trigger_update or mock it.
   },
 
   // ── triggerSpin ─────────────────────────────────────────────────────────────

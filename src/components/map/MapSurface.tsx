@@ -37,6 +37,7 @@ interface MapSurfaceProps extends PropsWithChildren {
   currentLocation?: Coordinate;
   onMarkerPress?: (markerId: string) => void;
   onMapPress?: (coordinate: Coordinate) => void;
+  onZoomChange?: (zoom: number) => void;
   cameraPadding?: {
     paddingTop?: number;
     paddingBottom?: number;
@@ -266,6 +267,7 @@ export function MapSurface({
   currentLocation,
   onMarkerPress,
   onMapPress,
+  onZoomChange,
   cameraPadding,
 }: MapSurfaceProps) {
   const { palette } = useHungryTheme();
@@ -316,6 +318,9 @@ export function MapSurface({
         onPress={(event) => {
           const [longitude, latitude] = event.geometry.coordinates as [number, number];
           onMapPress?.({ latitude, longitude });
+        }}
+        onRegionDidChange={(event) => {
+          onZoomChange?.(event.properties.zoomLevel);
         }}
       >
         <MapboxGL.Camera

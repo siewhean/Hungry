@@ -38,6 +38,7 @@ import { BlogPostWebViewScreen } from "@/app/screens/reads/BlogPostWebViewScreen
 import { ReadsFeedScreen } from "@/app/screens/reads/ReadsFeedScreen";
 import { ReviewStack } from "@/app/screens/review/ReviewStack";
 import { ReviewSuccessModal } from "@/app/screens/review/ReviewSuccessModal";
+import { QuickReviewModal } from "@/app/screens/review/QuickReviewModal";
 import { WheelStack } from "@/app/screens/wheel/WheelStack";
 import { DishSearchScreen } from "@/app/screens/search/DishSearchScreen";
 import { SearchResultsScreen } from "@/app/screens/search/SearchResultsScreen";
@@ -143,8 +144,9 @@ function TabNavigator() {
         tabBarInactiveTintColor: palette.textMuted,
         tabBarStyle: {
           backgroundColor: palette.bg,
-          borderTopColor: route.name === "Discover" || route.name === "Maps" ? "transparent" : palette.border,
-          borderTopWidth: route.name === "Discover" || route.name === "Maps" ? 0 : StyleSheet.hairlineWidth,
+          borderTopColor: palette.border,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          elevation: 8,
           height: 60 + Math.max(insets.bottom, spacing[2]),
           paddingBottom: Math.max(insets.bottom, spacing[2]),
           paddingTop: spacing[2],
@@ -396,6 +398,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />
+      <QuickReviewModal />
       <ReviewSuccessModal onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
       <FloatingToast />
     </>

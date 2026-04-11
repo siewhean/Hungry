@@ -6,6 +6,8 @@ import { ManualLocationPickerScreen } from "./ManualLocationPickerScreen";
 import { OnboardingIntro1Screen } from "./OnboardingIntro1Screen";
 import { OnboardingIntro2Screen } from "./OnboardingIntro2Screen";
 import { OnboardingIntro3Screen } from "./OnboardingIntro3Screen";
+import { CuisineSelectionScreen } from "./CuisineSelectionScreen";
+import { FoodSelectionScreen } from "./FoodSelectionScreen";
 import { TasteQuizScreen } from "./TasteQuizScreen";
 import { TasteProfileLoadingScreen } from "./TasteProfileLoadingScreen";
 import { TasteProfileResultScreen } from "./TasteProfileResultScreen";
@@ -19,6 +21,8 @@ export function OnboardingStack() {
       <Stack.Screen name="OnboardingIntro1" component={OnboardingIntro1Screen} />
       <Stack.Screen name="OnboardingIntro2" component={OnboardingIntro2Screen} />
       <Stack.Screen name="OnboardingIntro3" component={OnboardingIntro3Screen} />
+      <Stack.Screen name="CuisineSelection" component={CuisineSelectionScreen} />
+      <Stack.Screen name="FoodSelection" component={FoodSelectionScreen} />
       <Stack.Screen name="TasteQuiz" component={TasteQuizScreen} />
       <Stack.Screen name="TasteProfileLoading" component={TasteProfileLoadingScreen} />
       <Stack.Screen name="TasteProfileResult" component={TasteProfileResultScreen} />

@@ -86,6 +86,7 @@ export interface VenueSummary {
   floor: string;
   hygieneGrade: HygieneGrade;
   isOpen: boolean;
+  liveCrowd?: "low" | "medium" | "high";
   topDishId: string;
   operatingHours: string;
   closureNotice?: string;
@@ -107,6 +108,7 @@ export interface DishSummary {
   reviewCount: number;
   price: number;
   priceRange: string;
+  liveCrowd?: "low" | "medium" | "high";
   tasteTags: string[];
   tasteVector: TasteVector;
   dietaryFlags: DietaryFlag[];
@@ -155,6 +157,8 @@ export interface UserProfile {
     stallsVisited: number;
     favouritesCount: number;
   };
+  leftHandedMode?: boolean;
+  onboardingSelectedDishIds?: string[];
 }
 
 export interface ReviewDraft {
@@ -222,6 +226,7 @@ export interface WheelParty {
   /** Fixed animation duration shared by all clients (ms). */
   spinDurationMs: number;
   winnerEntryId?: string;
+  maxEntriesPerMember?: number;
   currentRound: number;
   createdAt: string;
   expiresAt: string;
@@ -233,6 +238,7 @@ export interface WheelMember {
   userId?: string;
   displayName: string;
   avatarUrl?: string;
+  dietaryPreferences?: DietaryFlag[];
   isHost: boolean;
   isPresent: boolean;
   joinedAt: string;

@@ -1,9 +1,12 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ChevronRight, Minus, Plus, RotateCcw, Search } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, Minus, Plus, RotateCcw, Search, Star, Utensils } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { FloorPlanViewer } from "@/components/map/FloorPlanViewer";
@@ -21,260 +24,32 @@ import type { DishDetail } from "@/types/domain";
 type Props = NativeStackScreenProps<RootStackParamList, "BuildingDrillDown">;
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
-const MAP_VIEWPORT_HEIGHT = 332;
+const MAP_VIEWPORT_HEIGHT = 220;
 const DIRECTORY_ZOOM_MIN = 0.16;
 const DIRECTORY_ZOOM_MAX = 2.2;
-
-const BUILDING_ID_ALIASES: Record<string, string[]> = {
-  "building-maxwell": ["hc-maxwell"],
-  "building-lau-pa-sat": ["hc-lau-pa-sat"],
-  "building-amoy": ["hc-amoy"],
-  "building-old-airport-road": ["hc-old-airport-road"],
-  "building-tiong-bahru": ["hc-tiong-bahru"],
-  "building-food-republic-wisma": ["fc-food-republic-wisma"],
-  "building-koufu-jem": ["fc-koufu-jem"],
-};
-
-function normalizeBuildingName(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
-}
 
 function resolveBuilding(buildingId?: string, selectedName?: string) {
   if (buildingId) {
     const direct = getBuildingById(buildingId);
-    if (direct) {
-      return direct;
-    }
-
-    for (const alias of BUILDING_ID_ALIASES[buildingId] ?? []) {
-      const byAlias = getBuildingById(alias);
-      if (byAlias) {
-        return byAlias;
-      }
-    }
+    if (direct) return direct;
   }
-
   if (selectedName) {
-    const normalizedTarget = normalizeBuildingName(selectedName);
-    const byName = singaporeBuildings.find(
-      (building) => normalizeBuildingName(building.name) === normalizedTarget,
-    );
-    if (byName) {
-      return byName;
-    }
+    const byName = singaporeBuildings.find(b => b.name === selectedName);
+    if (byName) return byName;
   }
-
   return getBuildingById(DEFAULT_BUILDING_ID)!;
 }
 
-function isDessertDish(dishId?: string) {
-  if (!dishId) {
-    return false;
-  }
-
-  const dish = mockRepository.getDishById(dishId);
-  if (!dish) {
-    return false;
-  }
-
-  const haystack = `${dish.name} ${dish.tasteTags.join(" ")}`.toLowerCase();
-  return ["dessert", "sweet", "cheng tng", "pancake", "ice", "toast", "kueh"].some((token) =>
-    haystack.includes(token),
-  );
-}
-
-function isDessertLabel(label: string) {
-  const normalized = label.toLowerCase();
-  return ["dessert", "ice", "cake", "sweet", "kueh", "pastry", "bakery"].some((token) =>
-    normalized.includes(token),
-  );
-}
-
-function FloorToggle({
-  floor,
-  selected,
-  onPress,
-}: {
-  floor: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  const { palette, radii, spacing } = useHungryTheme();
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={{
-        alignItems: "center",
-        backgroundColor: selected ? palette.navy : palette.surface,
-        borderColor: selected ? palette.navy : palette.border,
-        borderRadius: radii.pill,
-        borderWidth: 1,
-        minHeight: 44,
-        minWidth: 44,
-        justifyContent: "center",
-        paddingHorizontal: spacing[2],
-        paddingVertical: spacing[1],
-      }}
-    >
-      <AppText variant="micro" style={{ color: selected ? palette.surface : palette.text }}>
-        {floor}
-      </AppText>
-    </Pressable>
-  );
-}
-
-function DirectoryFilter({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  const { palette, radii, spacing } = useHungryTheme();
-
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        backgroundColor: selected ? palette.bgSoft : palette.surface,
-        borderColor: selected ? palette.navy : palette.border,
-        borderRadius: radii.pill,
-        borderWidth: 1,
-        minHeight: 44,
-        justifyContent: "center",
-        paddingHorizontal: spacing[3],
-        paddingVertical: spacing[2],
-      }}
-    >
-      <AppText variant="micro" style={{ color: selected ? palette.navy : palette.text }}>
-        {label}
-      </AppText>
-    </Pressable>
-  );
+function isDessertDish(dishName: string) {
+  const haystack = dishName.toLowerCase();
+  return ["dessert", "sweet", "cheng tng", "pancake", "ice", "toast", "kueh"].some(t => haystack.includes(t));
 }
 
 type VenueStatus = "open" | "closing_soon" | "closed";
 
-function parseTimeToMinutes(value: string): number | null {
-  const match = value.trim().match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
-  if (!match) {
-    return null;
-  }
-
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  const suffix = match[3].toUpperCase();
-
-  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
-    return null;
-  }
-
-  const normalizedHours = hours % 12 + (suffix === "PM" ? 12 : 0);
-  return normalizedHours * 60 + minutes;
-}
-
-function isClosingWithinOneHour(operatingHours?: string, now = new Date()): boolean {
-  if (!operatingHours) {
-    return false;
-  }
-
-  const matches = operatingHours.match(/\d{1,2}:\d{2}\s*[AP]M/gi);
-  if (!matches || matches.length === 0) {
-    return false;
-  }
-
-  const closingMinutes = parseTimeToMinutes(matches[matches.length - 1]);
-  if (closingMinutes === null) {
-    return false;
-  }
-
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const diff = closingMinutes - currentMinutes;
-  return diff >= 0 && diff <= 60;
-}
-
 function getVenueStatus(isOpen: boolean, operatingHours?: string): VenueStatus {
-  if (!isOpen) {
-    return "closed";
-  }
-
-  if (isClosingWithinOneHour(operatingHours)) {
-    return "closing_soon";
-  }
-
-  return "open";
-}
-
-function StatusBadge({ status }: { status: VenueStatus }) {
-  const { palette, radii, spacing } = useHungryTheme();
-  const tone =
-    status === "open"
-      ? { dot: palette.success, text: "Open" }
-      : status === "closing_soon"
-        ? { dot: palette.warning, text: "Closing soon" }
-        : { dot: palette.error, text: "Closed" };
-
-  return (
-    <View
-      style={{
-        alignItems: "center",
-        alignSelf: "center",
-        backgroundColor: palette.surface,
-        borderColor: palette.border,
-        borderRadius: radii.pill,
-        borderWidth: 1,
-        flexDirection: "row",
-        gap: spacing[1],
-        minHeight: 30,
-        justifyContent: "center",
-        paddingHorizontal: spacing[2],
-        paddingVertical: 0,
-      }}
-    >
-      <View
-        style={{
-          backgroundColor: tone.dot,
-          borderRadius: radii.pill,
-          height: 7,
-          width: 7,
-        }}
-      />
-      <AppText variant="micro">{tone.text}</AppText>
-    </View>
-  );
-}
-
-function ZoomControlButton({
-  onPress,
-  children,
-}: {
-  onPress: () => void;
-  children: ReactNode;
-}) {
-  const { palette, radii } = useHungryTheme();
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={{
-        alignItems: "center",
-        backgroundColor: palette.surface,
-        borderColor: palette.border,
-        borderRadius: radii.pill,
-        borderWidth: 1,
-        height: 44,
-        justifyContent: "center",
-        width: 44,
-      }}
-    >
-      {children}
-    </Pressable>
-  );
+  if (!isOpen) return "closed";
+  return "open"; // Simplified for layout match
 }
 
 export function BuildingDrillDownScreen({ navigation, route }: Props) {
@@ -292,559 +67,184 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
   const snapPoints = useMemo(() => ["40%", "90%"], []);
 
   const [stallQuery, setStallQuery] = useState("");
-  const [dessertsOnly, setDessertsOnly] = useState(false);
-  const [openNowOnly, setOpenNowOnly] = useState(false);
-  const [selectedStallId, setSelectedStallId] = useState<string | undefined>(undefined);
-
-  const building = useMemo(
-    () => resolveBuilding(route.params?.buildingId, selectedBuilding?.name),
-    [route.params?.buildingId, selectedBuilding?.name],
-  );
+  const building = useMemo(() => resolveBuilding(route.params?.buildingId, selectedBuilding?.name), [route.params?.buildingId, selectedBuilding?.name]);
 
   useEffect(() => {
     setSelectedBuilding(toSummary(building));
-    if (!building.floors.includes(selectedFloor)) {
-      setSelectedFloor(building.floors[0]);
-    }
+    if (!building.floors.includes(selectedFloor)) setSelectedFloor(building.floors[0]);
   }, [building, selectedFloor, setSelectedBuilding, setSelectedFloor]);
 
   const activeFloor = building.floors.includes(selectedFloor) ? selectedFloor : building.floors[0];
-
   const buildingVenues = useMemo(() => getBuildingVenues(building.id), [building.id]);
-  const venueById = useMemo(() => new Map(buildingVenues.map((venue) => [venue.id, venue])), [buildingVenues]);
+  const venueById = useMemo(() => new Map(buildingVenues.map(v => [v.id, v])), [buildingVenues]);
 
-  const floorPlan = useMemo(
-    () => getFloorPlan(building.id, activeFloor, building.openStalls, building.totalStalls),
-    [activeFloor, building.id, building.openStalls, building.totalStalls],
-  );
-  const mapViewportWidth = useMemo(
-    () => Math.max(220, windowWidth - spacing[5] * 2 - 2),
-    [spacing, windowWidth],
-  );
-  const fittedDirectoryScale = useMemo(() => {
-    const fitHorizontal = (mapViewportWidth - 24) / floorPlan.canvasWidth;
-    const fitVertical = (MAP_VIEWPORT_HEIGHT - 24) / floorPlan.canvasHeight;
-    const fitScale = Math.min(fitHorizontal, fitVertical);
-    return Number(
-      Math.max(DIRECTORY_ZOOM_MIN, Math.min(1, fitScale)).toFixed(3),
-    );
-  }, [floorPlan.canvasHeight, floorPlan.canvasWidth, mapViewportWidth]);
-  const [directoryScale, setDirectoryScale] = useState(fittedDirectoryScale);
-  const tenantPolygons = useMemo(
-    () => floorPlan.stalls.filter((stall) => (stall.kind ?? "tenant") === "tenant"),
-    [floorPlan.stalls],
-  );
-
-  useEffect(() => {
-    setDirectoryScale(fittedDirectoryScale);
-  }, [fittedDirectoryScale, activeFloor, building.id]);
+  const floorPlan = useMemo(() => getFloorPlan(building.id, activeFloor, building.openStalls, building.totalStalls), [activeFloor, building.id]);
+  const tenantPolygons = useMemo(() => floorPlan.stalls.filter(s => (s.kind ?? "tenant") === "tenant"), [floorPlan.stalls]);
 
   const floorDirectory = useMemo(() => {
     const query = stallQuery.trim().toLowerCase();
-
-    return tenantPolygons
-      .map((stall) => {
-        const venue = stall.venueId ? venueById.get(stall.venueId) : undefined;
-        const dish = venue ? mockRepository.getDishById(venue.topDishId) : undefined;
-        const title = venue?.name ?? stall.label ?? `Unit ${stall.unitNumber}`;
-        const unitNumber = venue?.unitNumber ?? stall.unitNumber;
-        const isOpen = venue ? venue.isOpen : stall.status === "open";
-        const descriptor = getDirectoryDescriptor({
-          operatingHours: venue?.operatingHours,
-          isFacility: stall.status === "non_food",
-        });
-        const searchable = `${title} ${unitNumber} ${dish?.name ?? ""}`.toLowerCase();
-
-        return {
-          stall,
-          venue,
-          dish,
-          title,
-          unitNumber,
-          isOpen,
-          descriptor,
-          searchable,
-        };
-      })
-      .filter((record) => Boolean(record.venue))
-      .filter((record) => record.stall.status !== "non_food")
-      .filter((record) => {
-        if (openNowOnly && !record.isOpen) {
-          return false;
-        }
-
-        if (dessertsOnly) {
-          const isDessert = isDessertDish(record.venue?.topDishId) || isDessertLabel(record.title);
-          if (!isDessert) {
-            return false;
-          }
-        }
-
-        if (query && !record.searchable.includes(query)) {
-          return false;
-        }
-
-        return true;
-      });
-  }, [dessertsOnly, openNowOnly, stallQuery, tenantPolygons, venueById]);
-
-  const selectedFromStore = useMemo(
-    () => tenantPolygons.find((stall) => stall.venueId === highlightedStallVenueId)?.stallId,
-    [highlightedStallVenueId, tenantPolygons],
-  );
-
-  useEffect(() => {
-    if (selectedFromStore) {
-      setSelectedStallId(selectedFromStore);
-      return;
-    }
-
-    if (!floorDirectory.some((record) => record.stall.stallId === selectedStallId)) {
-      setSelectedStallId(floorDirectory[0]?.stall.stallId);
-    }
-  }, [floorDirectory, selectedFromStore, selectedStallId]);
-
-  const activeStallId = selectedFromStore ?? selectedStallId;
-  const menuPreview = useMemo(
-    () =>
-      floorDirectory
-        .map((record) => record.dish)
-        .filter((dish): dish is DishDetail => Boolean(dish))
-        .slice(0, 4),
-    [floorDirectory],
-  );
-
-  const handleFloorChange = (floor: string) => {
-    setSelectedFloor(floor);
-    setSelectedStallId(undefined);
-    setHighlightedStallVenueId(undefined);
-  };
-
-  const zoomInDirectory = () => {
-    setDirectoryScale((current) =>
-      Math.min(
-        DIRECTORY_ZOOM_MAX,
-        Number((current * 1.2).toFixed(3)),
-      ),
-    );
-  };
-
-  const zoomOutDirectory = () => {
-    setDirectoryScale((current) =>
-      Math.max(
-        DIRECTORY_ZOOM_MIN,
-        Number((current / 1.2).toFixed(3)),
-      ),
-    );
-  };
-
-  const resetDirectoryZoom = () => {
-    setDirectoryScale(fittedDirectoryScale);
-  };
-
-  const zoomPercent = Math.max(
-    10,
-    Math.round((directoryScale / Math.max(fittedDirectoryScale, 0.0001)) * 100),
-  );
+    return tenantPolygons.map(stall => {
+      const venue = stall.venueId ? venueById.get(stall.venueId) : undefined;
+      const dish = venue ? mockRepository.getDishById(venue.topDishId) : undefined;
+      const title = venue?.name ?? stall.label ?? `Unit ${stall.unitNumber}`;
+      return { stall, venue, dish, title, isOpen: venue?.isOpen ?? stall.status === "open", searchable: `${title} ${dish?.name ?? ""}`.toLowerCase() };
+    }).filter(r => r.venue && (!query || r.searchable.includes(query)));
+  }, [stallQuery, tenantPolygons, venueById]);
 
   const handleStallSelection = (stall: StallPolygon) => {
-    if ((stall.kind ?? "tenant") !== "tenant") {
-      return;
-    }
-
-    setSelectedStallId(stall.stallId);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedFloor(activeFloor); // Ensure we stay on floor
     setHighlightedStallVenueId(stall.venueId);
-
-    requestAnimationFrame(() => {
-      bottomSheetModalRef.current?.present();
-    });
+    bottomSheetModalRef.current?.present();
   };
 
-  const activeRecord = useMemo(() => {
-    return floorDirectory.find((r) => r.stall.stallId === activeStallId);
-  }, [floorDirectory, activeStallId]);
-
-  const renderBackdrop = useCallback(
-    (props: any) => (
-      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
-    ),
-    [],
-  );
+  const activeRecord = useMemo(() => floorDirectory.find(r => r.stall.venueId === highlightedStallVenueId), [floorDirectory, highlightedStallVenueId]);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
-      <View style={styles.screen}>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={{
-            paddingHorizontal: spacing[5],
-            paddingTop: spacing[3],
-            paddingBottom: Math.max(insets.bottom + 132, spacing[12]),
-          }}
-          showsVerticalScrollIndicator={false}
+    <View style={{ flex: 1, backgroundColor: palette.bg }}>
+      {/* Hero Image Section */}
+      <View style={{ height: 200, width: "100%", position: "relative" }}>
+        <Image source={{ uri: "https://images.unsplash.com/photo-1555392858-45cbb51dd14e?auto=format&fit=crop&w=800&q=80" }} style={StyleSheet.absoluteFill} contentFit="cover" />
+        <LinearGradient colors={["rgba(0,0,0,0.4)", "transparent", "rgba(0,0,0,0.8)"]} style={StyleSheet.absoluteFill} />
+        
+        {/* Back Button */}
+        <Pressable 
+          onPress={() => navigation.goBack()} 
+          style={{ position: "absolute", top: insets.top + 10, left: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: "rgba(0,0,0,0.3)", alignItems: "center", justifyContent: "center" }}
         >
-          <View style={{ gap: spacing[4] }}>
-            <View style={{ gap: spacing[1] }}>
-              <AppText variant="bodySmall" tone="muted">
-                Building directory
-              </AppText>
-              <AppText variant="h1">{building.name}</AppText>
-              <AppText variant="bodySmall" tone="secondary">
-                Browse realistic floor overlays, select a unit polygon, then open the stall details.
-              </AppText>
+          <ChevronLeft color="#FFFFFF" size={24} />
+        </Pressable>
+
+        {/* Building Info Overlay */}
+        <View style={{ position: "absolute", bottom: 16, left: 16, right: 16 }}>
+          <AppText variant="h2" tone="inverse">{building.name}</AppText>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 4 }}>
+            <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)" }}>1 Kadayanallur St · {building.totalStalls} stalls</AppText>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Star color="#F59E0B" fill="#F59E0B" size={12} />
+              <AppText variant="micro" style={{ color: "rgba(255,255,255,0.9)", fontWeight: "700" }}>4.6</AppText>
             </View>
-
-            <Input
-              label=""
-              placeholder="Search unit, stall, or dish"
-              value={stallQuery}
-              onChangeText={setStallQuery}
-              leftIcon={<Search color={palette.textMuted} size={18} />}
-            />
-
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-              <DirectoryFilter
-                label="Open now"
-                selected={openNowOnly}
-                onPress={() => setOpenNowOnly((current) => !current)}
-              />
-              <DirectoryFilter
-                label="Desserts"
-                selected={dessertsOnly}
-                onPress={() => setDessertsOnly((current) => !current)}
-              />
-            </View>
-
-            <View
-              style={{
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                borderRadius: 24,
-                borderWidth: 1,
-                overflow: "hidden",
-              }}
-            >
-              <View style={{ gap: 4, paddingHorizontal: spacing[4], paddingTop: spacing[4] }}>
-                <AppText variant="h3">Store directory map</AppText>
-                <AppText variant="bodySmall" tone="secondary">
-                  Floor {activeFloor} · tap a stall polygon to inspect that unit.
-                </AppText>
-              </View>
-
-              <View style={styles.mapViewport}>
-                <FloorPlanViewer
-                  floorPlan={floorPlan}
-                  selectedStallId={activeStallId}
-                  onStallPress={handleStallSelection}
-                  scale={directoryScale}
-                  showLegend={false}
-                  showStatsBar={false}
-                  viewportHeight={MAP_VIEWPORT_HEIGHT}
-                />
-
-                <View
-                  style={[
-                    styles.zoomPill,
-                    {
-                      backgroundColor: "rgba(255,255,255,0.96)",
-                      borderColor: palette.border,
-                      borderRadius: radii.lg,
-                      padding: spacing[1],
-                      left: spacing[3],
-                      bottom: spacing[3],
-                    },
-                    shadows.floating,
-                  ]}
-                >
-                  <ZoomControlButton onPress={zoomOutDirectory}>
-                    <Minus color={palette.navy} size={15} />
-                  </ZoomControlButton>
-                  <ZoomControlButton onPress={resetDirectoryZoom}>
-                    <RotateCcw color={palette.navy} size={14} />
-                  </ZoomControlButton>
-                  <ZoomControlButton onPress={zoomInDirectory}>
-                    <Plus color={palette.navy} size={15} />
-                  </ZoomControlButton>
-                  <AppText variant="micro" style={{ color: palette.textMuted }}>
-                    {zoomPercent}%
-                  </AppText>
-                </View>
-
-                <View
-                  style={[
-                    styles.levelPill,
-                    {
-                      backgroundColor: "rgba(255,255,255,0.96)",
-                      borderColor: palette.border,
-                      borderRadius: radii.lg,
-                      padding: spacing[1],
-                      right: spacing[3],
-                      bottom: spacing[3],
-                    },
-                    shadows.floating,
-                  ]}
-                >
-                  {building.floors.map((floor) => (
-                    <FloorToggle
-                      key={floor}
-                      floor={floor}
-                      selected={floor === activeFloor}
-                      onPress={() => handleFloorChange(floor)}
-                    />
-                  ))}
-                </View>
-              </View>
-            </View>
-
-            <View style={{ gap: spacing[2] }}>
-              <AppText variant="h3">Stall directory · {activeFloor}</AppText>
-              <View style={{ gap: spacing[2] }}>
-                {floorDirectory.map((record) => {
-                  const isSelected = activeStallId === record.stall.stallId;
-                  const status = getVenueStatus(record.isOpen, record.venue?.operatingHours);
-
-                  return (
-                    <Pressable
-                      key={record.stall.stallId}
-                      onPress={() => handleStallSelection(record.stall)}
-                      style={{
-                        backgroundColor: palette.surface,
-                        borderColor: isSelected ? palette.orange : palette.border,
-                        borderRadius: 12,
-                        borderWidth: 1,
-                        gap: 4,
-                        minHeight: 56,
-                        paddingHorizontal: spacing[3],
-                        paddingVertical: 6,
-                        width: "100%",
-                      }}
-                    >
-                      <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[2], alignItems: "center" }}>
-                        <View style={{ flex: 1, gap: 1 }}>
-                          <AppText numberOfLines={1} variant="h3">
-                            {record.title}
-                          </AppText>
-                          <AppText variant="bodySmall" tone="secondary">
-                            {record.unitNumber}
-                          </AppText>
-                        </View>
-                        <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                          <StatusBadge status={status} />
-                          <Pressable
-                            accessibilityRole="button"
-                            hitSlop={10}
-                            onPress={() => {
-                              if (record.venue) {
-                                navigation.navigate("StallDetail", { venueId: record.venue.id });
-                              }
-                            }}
-                            style={{
-                              alignItems: "center",
-                              borderColor: palette.border,
-                              borderRadius: radii.pill,
-                              borderWidth: 1,
-                              height: 26,
-                              justifyContent: "center",
-                              width: 26,
-                            }}
-                          >
-                            <ChevronRight color={palette.textMuted} size={13} />
-                          </Pressable>
-                        </View>
-                      </View>
-                      {record.venue?.closureNotice ? (
-                        <AppText numberOfLines={2} variant="micro" style={{ color: palette.warning }}>
-                          {record.venue.closureNotice}
-                        </AppText>
-                      ) : null}
-                    </Pressable>
-                  );
-                })}
-              </View>
-
-              {floorDirectory.length === 0 ? (
-                <View
-                  style={{
-                    backgroundColor: palette.surface,
-                    borderColor: palette.border,
-                    borderRadius: 18,
-                    borderWidth: 1,
-                    paddingHorizontal: spacing[4],
-                    paddingVertical: spacing[4],
-                  }}
-                >
-                  <AppText variant="h3">No units match this filter</AppText>
-                  <AppText variant="bodySmall" tone="secondary">
-                    Clear the search or switch levels to inspect more units.
-                  </AppText>
-                </View>
-              ) : null}
-            </View>
-
-            {menuPreview.length > 0 ? (
-              <View
-                style={{
-                  backgroundColor: palette.surface,
-                  borderColor: palette.border,
-                  borderRadius: 22,
-                  borderWidth: 1,
-                  gap: spacing[3],
-                  paddingHorizontal: spacing[4],
-                  paddingVertical: spacing[4],
-                }}
-              >
-                <AppText variant="h3">Menu preview on this level</AppText>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ gap: spacing[3] }}
-                >
-                  {menuPreview.map((dish) => (
-                    <Pressable
-                      key={dish.id}
-                      onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
-                      style={{
-                        backgroundColor: palette.bgSoft,
-                        borderColor: palette.border,
-                        borderRadius: 16,
-                        borderWidth: 1,
-                        gap: 3,
-                        minWidth: 164,
-                        paddingHorizontal: spacing[3],
-                        paddingVertical: spacing[3],
-                      }}
-                    >
-                      <AppText variant="h3" numberOfLines={1}>
-                        {dish.name}
-                      </AppText>
-                      <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-                        {dish.venueName}
-                      </AppText>
-                      <AppText variant="price" style={{ color: palette.orange }}>
-                        S${dish.price.toFixed(2)}
-                      </AppText>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              </View>
-            ) : null}
           </View>
+        </View>
+      </View>
+
+      {/* Search Bar */}
+      <View style={{ padding: 16, paddingBottom: 8 }}>
+        <Input 
+          placeholder="Find a stall or dish here…" 
+          value={stallQuery} 
+          onChangeText={setStallQuery} 
+          leftIcon={<Search color={palette.textMuted} size={18} />} 
+        />
+      </View>
+
+      {/* Floor Selector Tab Strip */}
+      <View style={{ borderBottomWidth: 1, borderBottomColor: palette.border }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+          {building.floors.map(f => {
+            const selected = f === activeFloor;
+            return (
+              <Pressable 
+                key={f} 
+                onPress={() => { void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSelectedFloor(f); }}
+                style={{ paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 2, borderBottomColor: selected ? palette.orange : "transparent" }}
+              >
+                <AppText style={{ color: selected ? palette.orange : palette.textSecondary, fontWeight: selected ? "700" : "400" }}>{f}</AppText>
+              </Pressable>
+            );
+          })}
         </ScrollView>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
+        {/* Floor Map Section */}
+        <View style={{ padding: 16 }}>
+          <AppText variant="h3" style={{ marginBottom: 8 }}>{activeFloor} Floor Plan</AppText>
+          <View style={{ backgroundColor: palette.surface, borderRadius: 12, borderWidth: 1, borderColor: palette.border, overflow: "hidden" }}>
+            <FloorPlanViewer
+              floorPlan={floorPlan}
+              selectedStallId={tenantPolygons.find(p => p.venueId === highlightedStallVenueId)?.stallId}
+              onStallPress={handleStallSelection}
+              scale={0.8}
+              showLegend={false}
+              viewportHeight={MAP_VIEWPORT_HEIGHT}
+            />
+          </View>
         </View>
 
-        <BottomSheetModal
+        {/* Stall List */}
+        <View style={{ paddingHorizontal: 16 }}>
+          <AppText variant="h3" style={{ marginBottom: 12 }}>Stalls on {activeFloor}</AppText>
+          <View style={{ gap: 8 }}>
+            {floorDirectory.map(r => (
+              <Pressable
+                key={r.stall.stallId}
+                onPress={() => handleStallSelection(r.stall)}
+                style={[
+                  shadows.card,
+                  { backgroundColor: palette.surface, borderRadius: 12, padding: 12, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: highlightedStallVenueId === r.venue?.id ? 1 : 0, borderColor: palette.orange }
+                ]}
+              >
+                <View style={{ width: 48, height: 48, borderRadius: 8, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: palette.orange }}>
+                  <Utensils color={palette.orange} size={20} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <AppText variant="bodySmall" style={{ fontWeight: "700" }}>{r.title}</AppText>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: r.isOpen ? palette.success : palette.error }} />
+                    <AppText variant="micro" tone="secondary">{r.isOpen ? "Open" : "Closed"} · #{r.stall.unitNumber} · Local</AppText>
+                  </View>
+                </View>
+                <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}>
+                  <AppText style={{ fontSize: 10, fontWeight: "700" }}>A</AppText>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Detail Bottom Sheet */}
+      <BottomSheetModal
         ref={bottomSheetModalRef}
         index={0}
         snapPoints={snapPoints}
-        backdropComponent={renderBackdrop}
+        backdropComponent={props => <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />}
         backgroundStyle={{ backgroundColor: palette.surface }}
-        handleIndicatorStyle={{ backgroundColor: palette.border }}
-        >
-        <BottomSheetScrollView
-          contentContainerStyle={{
-            padding: spacing[5],
-            paddingBottom: insets.bottom + spacing[8],
-            gap: spacing[4],
-          }}
-        >
+      >
+        <BottomSheetScrollView contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 20, gap: 16 }}>
           {activeRecord?.venue ? (
             <>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3] }}>
-                <View style={{ flex: 1, gap: 4 }}>
-                  <AppText variant="bodySmall" tone="muted">
-                    {activeRecord.unitNumber} · {activeFloor}
-                  </AppText>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <View style={{ flex: 1 }}>
+                  <AppText variant="micro" tone="secondary">{activeRecord.stall.unitNumber} · {activeFloor}</AppText>
                   <AppText variant="h1">{activeRecord.title}</AppText>
-                  <StatusBadge status={getVenueStatus(activeRecord.isOpen, activeRecord.venue.operatingHours)} />
                 </View>
-                <Button
-                  label="View full stall"
-                  variant="primary"
-                  onPress={() => {
-                    bottomSheetModalRef.current?.dismiss();
-                    navigation.navigate("StallDetail", { venueId: activeRecord.venue!.id });
-                  }}
-                />
+                <Button label="View full" variant="primary" onPress={() => { bottomSheetModalRef.current?.dismiss(); navigation.navigate("StallDetail", { venueId: activeRecord.venue!.id }); }} />
               </View>
-
-              <AppText tone="secondary">{activeRecord.descriptor}</AppText>
-
-              {activeRecord.dish ? (
-                <View style={{ gap: spacing[3] }}>
-                  <AppText variant="h3">Signature dish</AppText>
-                  <Pressable
-                    onPress={() => {
-                      bottomSheetModalRef.current?.dismiss();
-                      navigation.navigate("DishDetail", { dishId: activeRecord.dish!.id });
-                    }}
-                    style={{
-                      backgroundColor: palette.bgSoft,
-                      borderColor: palette.border,
-                      borderRadius: 18,
-                      borderWidth: 1,
-                      padding: spacing[4],
-                      flexDirection: "row",
-                      gap: spacing[3],
-                    }}
-                  >
-                    <View style={{ flex: 1, gap: 2 }}>
-                      <AppText variant="h3">{activeRecord.dish.name}</AppText>
-                      <AppText variant="price" style={{ color: palette.orange }}>
-                        S${activeRecord.dish.price.toFixed(2)}
-                      </AppText>
-                      <AppText variant="micro" tone="muted">
-                        Rated {activeRecord.dish.rating.toFixed(1)} ★
-                      </AppText>
-                    </View>
-                    <ChevronRight color={palette.textMuted} size={20} />
-                  </Pressable>
-                </View>
-              ) : null}
-
-              <View style={{ gap: spacing[3] }}>
-                <AppText variant="h3">Information</AppText>
-                <View style={{ gap: spacing[2] }}>
-                  <AppText variant="bodySmall" tone="secondary">
-                    Operating Hours: {activeRecord.venue.operatingHours}
-                  </AppText>
-                </View>
-              </View>
+              {activeRecord.dish && (
+                <Pressable 
+                  onPress={() => { bottomSheetModalRef.current?.dismiss(); navigation.navigate("DishDetail", { dishId: activeRecord.dish!.id }); }}
+                  style={{ backgroundColor: palette.bgSoft, padding: 16, borderRadius: 12, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: palette.border }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <AppText variant="h3">{activeRecord.dish.name}</AppText>
+                    <AppText variant="price" style={{ color: palette.orange }}>S${activeRecord.dish.price.toFixed(2)}</AppText>
+                  </View>
+                  <ChevronRight color={palette.textMuted} size={20} />
+                </Pressable>
+              )}
             </>
           ) : (
-            <View style={{ paddingVertical: spacing[12] }}>
-              <AppText variant="h3" style={{ textAlign: "center" }}>No stall selected</AppText>
-              <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-                Tap a stall on the map to see details.
-              </AppText>
+            <View style={{ alignItems: "center", gap: spacing[4], paddingVertical: spacing[8] }}>
+              <Utensils color={palette.border} size={48} />
+              <AppText style={{ textAlign: "center", color: palette.textMuted }}>No stall selected</AppText>
             </View>
           )}
         </BottomSheetScrollView>
-        </BottomSheetModal>
-        </SafeAreaView>
-        );
-        }
+      </BottomSheetModal>
+    </View>
+  );
+}
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  screen: {
-    flex: 1,
-  },
-  scroll: {
-    flex: 1,
-  },
-  mapViewport: {
-    marginTop: 12,
-    position: "relative",
-  },
-  zoomPill: {
-    alignItems: "center",
-    gap: 6,
-    position: "absolute",
-  },
-  levelPill: {
-    position: "absolute",
-    gap: 6,
-  },
-});
+const styles = StyleSheet.create({});

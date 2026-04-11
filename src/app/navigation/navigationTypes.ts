@@ -13,6 +13,8 @@ export type OnboardingStackParamList = {
   OnboardingIntro1: undefined;
   OnboardingIntro2: undefined;
   OnboardingIntro3: undefined;
+  CuisineSelection: undefined;
+  FoodSelection: { cuisines: string[] };
   TasteQuiz: { mode?: "onboarding" | "profile" } | undefined;
   DietaryPreferences: undefined;
   TasteProfileLoading: undefined;
@@ -53,7 +55,7 @@ export type RootStackParamList = {
   SearchResults: undefined;
   TasteFilter: undefined;
   MapZoomedIn: { buildingId?: string } | undefined;
-  Post: undefined;
+  Post: { venueId?: string; dishId?: string } | undefined;
   EditProfile: undefined;
   BuildingDrillDown: { buildingId: string };
   DecideForMeResult: undefined;
