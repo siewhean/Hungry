@@ -19,7 +19,8 @@ export function Card({ children, style }: PropsWithChildren<CardProps>) {
           backgroundColor: palette.surface,
           borderColor: palette.border,
           borderRadius: radii.lg,
-          padding: spacing[4],
+          padding: spacing[5],
+          gap: spacing[4],
         },
         style,
       ]}
@@ -32,6 +33,5 @@ export function Card({ children, style }: PropsWithChildren<CardProps>) {
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    gap: 12,
   },
 });

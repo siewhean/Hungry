@@ -4,6 +4,7 @@ export * from "./Button";
 export * from "./Card";
 export * from "./Chip";
 export * from "./EmptyState";
+export * from "./FAB";
 export * from "./FloatingToast";
 export * from "./InlineBanner";
 export * from "./Input";
