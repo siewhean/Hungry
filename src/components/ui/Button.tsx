@@ -1,4 +1,5 @@
-import { ActivityIndicator, Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { type ReactNode } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import type { PressableProps } from "react-native";
 
 import { useHungryTheme } from "@/theme";
@@ -11,6 +12,7 @@ interface ButtonProps extends Omit<PressableProps, "style"> {
   variant?: ButtonVariant;
   loading?: boolean;
   fullWidth?: boolean;
+  leftIcon?: ReactNode;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -20,6 +22,7 @@ export function Button({
   loading = false,
   disabled,
   fullWidth = true,
+  leftIcon,
   style,
   ...props
 }: ButtonProps) {
@@ -28,12 +31,12 @@ export function Button({
 
   const variantStyle: Record<ButtonVariant, ViewStyle> = {
     primary: {
-      backgroundColor: palette.orange,
+      backgroundColor: "#FFFFFF",
       borderColor: palette.orange,
-      borderWidth: 1,
+      borderWidth: 2,
     },
     secondary: {
-      backgroundColor: palette.surface,
+      backgroundColor: "#FFFFFF",
       borderColor: palette.border,
       borderWidth: 1,
     },
@@ -43,9 +46,9 @@ export function Button({
       borderWidth: 1,
     },
     destructive: {
-      backgroundColor: palette.error,
+      backgroundColor: "#FFFFFF",
       borderColor: palette.error,
-      borderWidth: 1,
+      borderWidth: 2,
     },
   };
 
@@ -65,28 +68,28 @@ export function Button({
           width: fullWidth ? "100%" : undefined,
           transform: [{ translateY: pressed ? 1 : 0 }],
         },
-        pressed && variant === "secondary"
-          ? { backgroundColor: palette.surfaceRaised }
-          : null,
-        pressed && variant === "ghost"
-          ? { backgroundColor: palette.surfaceRaised }
-          : null,
+        pressed ? { backgroundColor: palette.bgSoft } : null,
         style,
       ]}
       {...props}
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "primary" || variant === "destructive" ? "#FFFFFF" : palette.text}
+          color={variant === "destructive" ? palette.error : palette.orange}
         />
       ) : (
-        <AppText
-          variant="body"
-          style={styles.label}
-          tone={variant === "primary" || variant === "destructive" ? "inverse" : "default"}
-        >
-          {label}
-        </AppText>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          {leftIcon}
+          <AppText
+            variant="body"
+            style={[
+              styles.label,
+              { color: variant === "destructive" ? palette.error : variant === "primary" ? palette.orange : palette.text }
+            ]}
+          >
+            {label}
+          </AppText>
+        </View>
       )}
     </Pressable>
   );

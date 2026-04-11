@@ -9,4 +9,5 @@ export * from "./FloatingToast";
 export * from "./InlineBanner";
 export * from "./Input";
 export * from "./Screen";
+export * from "./Skeleton";
 export * from "./HungryLogo";

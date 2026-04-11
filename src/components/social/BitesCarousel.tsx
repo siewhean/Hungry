@@ -6,7 +6,7 @@
  */
 
 import { useCallback, useMemo, useState } from "react";
-import { FlatList, Pressable, View, useWindowDimensions } from "react-native";
+import { Animated, FlatList, Pressable, View, useWindowDimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { ChevronRight } from "lucide-react-native";
 
@@ -135,7 +135,7 @@ export function BitesCarousel({ bites, showHeader = true }: BitesCarouselProps) 
         </View>
       ) : null}
 
-      <FlatList
+      <Animated.FlatList
         data={biteData}
         keyExtractor={(item) => item.id}
         renderItem={renderBite}

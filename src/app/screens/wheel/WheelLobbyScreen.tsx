@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { FlatList, Pressable, Share, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Copy, Trash2 } from "lucide-react-native";
+import { Copy, Trash2, PlusCircle, Play } from "lucide-react-native";
 
-import { AppText, Badge, Button, Card, Screen } from "@/components/ui";
+import { AppText, Badge, Button, Card, Screen, Chip } from "@/components/ui";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
@@ -21,6 +21,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
   const myMemberId = useWheelStore((s) => s.myMemberId);
   const removeEntry = useWheelStore((s) => s.removeEntry);
   const leaveParty = useWheelStore((s) => s.leaveParty);
+  const updateEntryLimit = useWheelStore((s) => s.updateEntryLimit);
 
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -126,6 +127,28 @@ export function WheelLobbyScreen({ navigation }: Props) {
           <MemberAvatarRow members={members} />
         </View>
 
+        {/* Host Controls: Entry Limit */}
+        {isHost && (
+          <Card style={{ marginBottom: spacing[4], padding: spacing[3] }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+              <View style={{ gap: 2, flex: 1 }}>
+                <AppText style={{ fontWeight: "700" }}>Entries per Person</AppText>
+                <AppText variant="micro" tone="secondary">Prevent any member from dominating the wheel</AppText>
+              </View>
+              <View style={{ flexDirection: "row", gap: spacing[2] }}>
+                {[3, 5, 0].map((limit) => (
+                  <Chip
+                    key={limit}
+                    label={limit === 0 ? "Any" : limit.toString()}
+                    selected={(party.maxEntriesPerMember ?? 0) === limit}
+                    onPress={() => updateEntryLimit(limit)}
+                  />
+                ))}
+              </View>
+            </View>
+          </Card>
+        )}
+
         {/* Entries list */}
         <Card style={{ flex: 1, padding: 0, overflow: "hidden", marginBottom: spacing[4] }}>
           <View
@@ -160,22 +183,31 @@ export function WheelLobbyScreen({ navigation }: Props) {
 
         {/* Actions */}
         <View style={{ gap: spacing[3] }}>
-          <Button label="Add option" onPress={() => setAddSheetOpen(true)} variant="secondary" />
+          <Button 
+            label="Add Option" 
+            onPress={() => setAddSheetOpen(true)} 
+            variant="secondary" 
+            leftIcon={<PlusCircle size={18} color={palette.text} />}
+          />
           {isHost && (
             <Button
-              label="Spin the wheel"
+              label="Spin the Wheel"
               onPress={handleSpin}
               disabled={!canSpin}
+              variant="primary"
+              leftIcon={<Play size={18} color={canSpin ? palette.orange : palette.textMuted} />}
             />
           )}
           {!isHost && (
-            <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-              Waiting for the host to start the spin…
-            </AppText>
+            <View style={{ backgroundColor: palette.bgSoft, paddingVertical: spacing[3], borderRadius: radii.md, alignItems: "center" }}>
+              <AppText variant="bodySmall" tone="secondary" style={{ fontWeight: "600" }}>
+                Waiting for the host to start the spin…
+              </AppText>
+            </View>
           )}
-          <Pressable onPress={handleLeave}>
-            <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-              Leave party
+          <Pressable onPress={handleLeave} style={{ paddingVertical: spacing[2] }}>
+            <AppText variant="bodySmall" tone="accent" style={{ textAlign: "center", fontWeight: "700" }}>
+              LEAVE PARTY
             </AppText>
           </Pressable>
         </View>

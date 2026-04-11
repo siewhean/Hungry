@@ -107,37 +107,38 @@ export function StallDetailScreen({ navigation, route }: Props) {
     void openExternal(primaryDeliveryLink.nativeUrl, primaryDeliveryLink.webUrl);
   };
 
+  const showQuickReview = useUIStore((state) => state.showQuickReview);
+
   const openReviewChoice = () => {
     Alert.alert("Share your review", "Choose how you want to continue.", [
       {
         text: "Quick review",
         onPress: () => {
           if (!isAuthenticated) {
-            setReturnRoute({
-              name: "ReviewStack",
-              params: {
-                screen: "ReviewRating",
-                params: { venueId: venue.id, dishId: leadDish?.id },
-              },
-            });
+            setReturnRoute("Home"); // Simplified return route
             navigation.navigate("AuthStack", { screen: "Login" });
             return;
           }
-          navigation.navigate("ReviewStack", {
-            screen: "ReviewRating",
-            params: { venueId: venue.id, dishId: leadDish?.id },
+          showQuickReview({
+            venueId: venue.id,
+            venueName: venue.name,
+            dishId: leadDish?.id,
+            dishName: leadDish?.name,
           });
         },
       },
       {
-        text: "Post",
+        text: "Post update",
         onPress: () => {
           if (!isAuthenticated) {
             setReturnRoute("Post");
             navigation.navigate("AuthStack", { screen: "Login" });
             return;
           }
-          navigation.navigate("Post");
+          navigation.navigate("Post", {
+            venueId: venue.id,
+            dishId: leadDish?.id,
+          });
         },
       },
       { text: "Cancel", style: "cancel" },

@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View } from "react-native";
-import { Heart } from "lucide-react-native";
+import { Heart, Star } from "lucide-react-native";
 import { Image } from "expo-image";
 
 import type { DishDetail } from "@/types/domain";
@@ -77,7 +77,11 @@ export function DishCard({ dish, variant = "horizontal", favourited = false, onP
           </View>
           <View style={styles.rowWrap}>
             <AppText variant="price">S${dish.price.toFixed(2)}</AppText>
-            <Badge label={`${dish.rating.toFixed(1)} ★`} tone="amber" />
+            <Badge 
+              label={dish.rating.toFixed(1)} 
+              tone="amber" 
+              rightIcon={<Star color={palette.amber} fill={palette.amber} size={10} />}
+            />
             <AppText variant="bodySmall" tone="secondary">
               {Math.round(dish.distanceMeters)} m away
             </AppText>

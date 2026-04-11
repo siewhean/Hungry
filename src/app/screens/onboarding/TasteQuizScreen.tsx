@@ -7,6 +7,8 @@ import { Easing } from "react-native";
 import { Check, ChevronRight, Search } from "lucide-react-native";
 
 import { Button, AppText, Card, Input } from "@/components/ui";
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as any;
+import { mockRepository } from "@/lib/services/mock/repositories";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -202,7 +204,34 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   };
 
   const handleFinish = () => {
-    setTasteVector(values);
+    let finalValues = values;
+
+    // Blend with selected dishes from earlier onboarding steps
+    if (profile.onboardingSelectedDishIds && profile.onboardingSelectedDishIds.length > 0) {
+      const selectedDishes = profile.onboardingSelectedDishIds
+        .map((id) => mockRepository.getDishById(id))
+        .filter(Boolean);
+
+      if (selectedDishes.length > 0) {
+        const avgVector: TasteVector = { sweet: 0, spicy: 0, sour: 0, salty: 0, rich: 0, aromatic: 0 };
+        selectedDishes.forEach((d) => {
+          Object.keys(avgVector).forEach((key) => {
+            (avgVector as any)[key] += (d!.tasteVector as any)[key];
+          });
+        });
+        Object.keys(avgVector).forEach((key) => {
+          (avgVector as any)[key] /= selectedDishes.length;
+        });
+
+        const blended: TasteVector = { sweet: 0, spicy: 0, sour: 0, salty: 0, rich: 0, aromatic: 0 };
+        Object.keys(blended).forEach((key) => {
+          (blended as any)[key] = Math.round(((avgVector as any)[key] + (values as any)[key]) / 2);
+        });
+        finalValues = blended;
+      }
+    }
+
+    setTasteVector(finalValues);
     setDietaryPreferences(dietaryPreferences);
     if (flowMode === "profile") {
       setSkippedTasteQuiz(false);
@@ -362,11 +391,11 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                 transform: [{ translateX: optionsSlideAnim }],
               }}
             >
-              <FlatList
-                ref={carouselRef}
+              <AnimatedFlatList
+                ref={carouselRef as any}
                 horizontal
                 data={[0, 1, 2]}
-                keyExtractor={(item) => `${item}`}
+                keyExtractor={(item: number) => `${item}`}
                 showsHorizontalScrollIndicator={false}
                 snapToAlignment="center"
                 snapToOffsets={snapOffsets}
@@ -382,7 +411,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                 style={{ overflow: "visible", width: "100%" }}
                 contentContainerStyle={{ paddingHorizontal: horizontalPadding + spacing[2], paddingTop: spacing[2] }}
                 ItemSeparatorComponent={() => <View style={{ width: CARD_GAP }} />}
-                getItemLayout={(_, index) => ({
+                getItemLayout={(_: any, index: number) => ({
                   index,
                   length: SNAP_INTERVAL,
                   offset: SNAP_INTERVAL * index,
@@ -403,7 +432,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                   [{ nativeEvent: { contentOffset: { x: quizScrollX } } }],
                   { useNativeDriver: true },
                 )}
-                onMomentumScrollEnd={(event) => {
+                onMomentumScrollEnd={(event: any) => {
                   const index = Math.max(0, Math.min(2, Math.round(event.nativeEvent.contentOffset.x / SNAP_INTERVAL)));
                   const exactOffset = index * SNAP_INTERVAL;
                   if (Math.abs(event.nativeEvent.contentOffset.x - exactOffset) > 0.5) {
@@ -418,7 +447,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                     setAnsweredKeys((previous) => ({ ...previous, [currentKey]: true }));
                   }
                 }}
-                renderItem={({ item: index }) => {
+                renderItem={({ item: index }: any) => {
                   const isSelected = snappedIndex === index;
                   const bwOpacity = quizScrollX.interpolate({
                     inputRange: [

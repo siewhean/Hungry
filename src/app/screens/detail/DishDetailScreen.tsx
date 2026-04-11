@@ -1,3 +1,4 @@
+import { Star } from "lucide-react-native";
 import { Animated, ScrollView, Share, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { useMemo, useRef } from "react";
@@ -202,9 +203,15 @@ export function DishDetailScreen({ navigation, route }: Props) {
             {venue.name} · {venue.unitNumber}
           </AppText>
           <AppText variant="price">{dish.priceRange}</AppText>
-          <AppText tone="secondary">
-            Rated {dish.rating.toFixed(1)} ★ from {dish.reviewCount} reviews
-          </AppText>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <AppText tone="secondary">
+              Rated {dish.rating.toFixed(1)}
+            </AppText>
+            <Star color={palette.amber} fill={palette.amber} size={14} />
+            <AppText tone="secondary">
+              from {dish.reviewCount} reviews
+            </AppText>
+          </View>
           </View>
 
           {/* Taste graph + tags */}
@@ -288,9 +295,12 @@ export function DishDetailScreen({ navigation, route }: Props) {
                 <View key={review.id} style={{ gap: spacing[2] }}>
                   <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                     <AppText variant="bodyLarge">{review.authorName}</AppText>
-                    <AppText tone="muted" variant="bodySmall">
-                      {review.rating}/5 ★
-                    </AppText>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+                      <AppText tone="muted" variant="bodySmall">
+                        {review.rating}/5
+                      </AppText>
+                      <Star color={palette.amber} fill={palette.amber} size={12} />
+                    </View>
                   </View>
                   <AppText tone="secondary" variant="bodySmall">
                     {review.createdAt}

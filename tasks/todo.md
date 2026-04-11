@@ -6,6 +6,24 @@
 
 ## 0. Done (Execution Batches)
 
+### Batch 2026-04-11D — Gemini (Principal Sprint: Social, Safety & Discovery)
+
+| ID | Status | Summary |
+|----|--------|---------|
+| SPR-01 | Done | **Cuisine & Cravings Onboarding:** Implemented multi-page selection flow for cuisines and specific cravings with animated transitions and blended taste vector calculation. |
+| SPR-02 | Done | **High-Fidelity Profile Result:** Rebuilt `TasteProfileResultScreen` based on Figma `131-349` with bar graphs, "Your Cravings" summary, and celebratory persona identity. |
+| SPR-03 | Done | **Global Map Optimization:** Added List/Carousel toggle, high-fidelity expanded dish cards (Figma 131-105), and fixed "Invariant Violation" for animated lists. |
+| SPR-04 | Done | **Multiplayer Safety Layer:** Implemented Dietary Warning alerts and "Group Needs" header in the Hungry Wheel nomination sheet. |
+| SPR-05 | Done | **Wheel Governance:** Added host controls for "Max Entries per Member" (3, 5, Unlimited) to ensure democratic decision making. |
+| SPR-06 | Done | **Operational Intelligence:** Integrated "Live Crowd" indicators (Quiet, Moderate, Busy) across map cards and stall lists using mock real-time data. |
+| SPR-07 | Done | **Persistence & Utility:** Made map filters ("Open Now", "Top Rated") sticky across sessions and added a "Unfinished Posts" (Drafts) section to Profile. |
+| SPR-08 | Done | **Ergonomic Standardization:** Unified all buttons to white background with themed borders, increased attribution font sizes to 13pt, and added explicit "Close" buttons to all drawers. |
+
+Verification Note:
+- `npm run typecheck` passed after all structural refactors.
+- Verified deterministic wheel spin sync and dietary conflict detection logic.
+- Confirmed total emoji purge across UI labels and mock data.
+
 ### Batch 2026-04-09A — Codex (P0/P1 + pending polish)
 
 | ID | Status | Summary |

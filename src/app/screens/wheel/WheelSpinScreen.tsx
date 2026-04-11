@@ -32,7 +32,7 @@ const WHEEL_SIZE = 300;
 const SPIN_DURATION = 4000;
 
 export function WheelSpinScreen({ navigation }: Props) {
-  const { palette, spacing } = useHungryTheme();
+  const { palette, spacing, radii } = useHungryTheme();
 
   const party = useWheelStore((s) => s.party);
   const members = useWheelStore((s) => s.members);
@@ -171,29 +171,33 @@ export function WheelSpinScreen({ navigation }: Props) {
           <Pressable
             onPress={triggerSpin}
             disabled={!canSpin}
-            style={{
+            style={({ pressed }) => ({
               flexDirection: "row",
               alignItems: "center",
               gap: spacing[2],
-              backgroundColor: canSpin ? palette.orange : palette.bgSoft,
-              paddingHorizontal: spacing[6],
+              backgroundColor: "#FFFFFF",
+              borderColor: canSpin ? palette.orange : palette.border,
+              borderWidth: 2,
+              paddingHorizontal: spacing[8],
               paddingVertical: spacing[4],
               borderRadius: 999,
               opacity: canSpin ? 1 : 0.5,
-            }}
+              transform: [{ translateY: pressed && canSpin ? 1 : 0 }],
+            })}
           >
-            <Play size={20} color={canSpin ? "#FFFFFF" : palette.textMuted} />
+            <Play size={20} color={canSpin ? palette.orange : palette.textMuted} fill={canSpin ? palette.orange : "transparent"} />
             <AppText
-              variant="h3"
-              style={{ color: canSpin ? "#FFFFFF" : palette.textMuted }}
+              style={{ color: canSpin ? palette.orange : palette.textMuted, fontWeight: "800", fontSize: 18 }}
             >
               {spinning ? "Spinning…" : "Spin the wheel"}
             </AppText>
           </Pressable>
         ) : (
-          <AppText tone="secondary" style={{ textAlign: "center" }}>
-            {spinning ? "Spinning…" : "Waiting for the host to spin…"}
-          </AppText>
+          <View style={{ backgroundColor: palette.bgSoft, paddingHorizontal: spacing[6], paddingVertical: spacing[3], borderRadius: radii.pill }}>
+            <AppText tone="secondary" style={{ textAlign: "center", fontWeight: "600" }}>
+              {spinning ? "Spinning…" : "Waiting for the host to spin…"}
+            </AppText>
+          </View>
         )}
       </View>
     </View>

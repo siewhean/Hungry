@@ -17,6 +17,8 @@ interface ProfileState {
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
   recordReviewEntry: (dishId: string, entry: { rating: number; text: string; tags: string[] }) => void;
+  setLeftHandedMode: (enabled: boolean) => void;
+  setOnboardingSelectedDishIds: (dishIds: string[]) => void;
   clearProfile: () => void;
 }
 
@@ -155,6 +157,20 @@ export const useProfileStore = create<ProfileState>()(
               text: entry.text.trim(),
               createdAt: new Date().toISOString(),
             },
+          },
+        })),
+      setLeftHandedMode: (enabled) =>
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            leftHandedMode: enabled,
+          },
+        })),
+      setOnboardingSelectedDishIds: (dishIds) =>
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            onboardingSelectedDishIds: dishIds,
           },
         })),
       clearProfile: () =>
