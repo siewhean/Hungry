@@ -241,7 +241,7 @@ export function HomeMapScreen() {
           <View style={{ gap: spacing[4], paddingBottom: insets.bottom + spacing[4], paddingHorizontal: 16 }}>
             <View style={{ width: "100%", height: 240, borderRadius: 32, overflow: "hidden", position: "relative" }}>
               <Image source={{ uri: selectedDish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
-              <View style={[{ position: "absolute", top: 16, right: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center", ...shadows.floating }]}>
+              <View style={[{ position: "absolute", top: 16, right: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" }, shadows.floating]}>
                 <Heart color={palette.error} size={22} fill={palette.error} />
               </View>
               <View style={{ position: "absolute", bottom: 16, left: 16, backgroundColor: "#FACC15", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14 }}>
@@ -279,7 +279,7 @@ export function HomeMapScreen() {
                 <AppText style={{ fontSize: 16, fontWeight: "700", color: "#1F2937" }}>View Menu</AppText>
               </Pressable>
               <Pressable 
-                style={[{ flex: 1, height: 56, borderRadius: 28, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center", ...shadows.floating }]}
+                style={[{ flex: 1, height: 56, borderRadius: 28, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center" }, shadows.floating]}
               >
                 <AppText style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>Reserve Now</AppText>
               </Pressable>
@@ -353,13 +353,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   floatingButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "absolute",
-    zIndex: 30,
+    width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center", position: "absolute", zIndex: 30,
   },
   animatedCard: {
     position: "absolute",

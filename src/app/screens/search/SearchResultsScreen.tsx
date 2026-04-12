@@ -221,7 +221,7 @@ export function SearchResultsScreen() {
           keyExtractor={(item) => item.id}
           numColumns={displayMode === "grid" ? 2 : 1}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ gap: 16, paddingBottom: 24 }}
+          contentContainerStyle={{ gap: 16, paddingBottom: spacing[24] }}
           columnWrapperStyle={displayMode === "grid" ? { justifyContent: "space-between" } : undefined}
           renderItem={({ item }) =>
             displayMode === "list" ? (

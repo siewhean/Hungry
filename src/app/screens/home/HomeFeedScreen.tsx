@@ -283,7 +283,7 @@ export function HomeFeedScreen() {
         renderItem={renderItem}
         ListHeaderComponent={renderHeader}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing[16] }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing[24] }}
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
         removeClippedSubviews

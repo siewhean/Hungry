@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { FlatList, Pressable, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Search, FileEdit, Clock } from "lucide-react-native";
 
@@ -16,7 +15,6 @@ type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewHub">;
 
 export function ReviewHubScreen({ navigation }: Props) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
-  const insets = useSafeAreaInsets();
   const rootNavigation = navigation.getParent()?.getParent();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
@@ -55,7 +53,7 @@ export function ReviewHubScreen({ navigation }: Props) {
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[12] }}
+        contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[20] }}
         ListHeaderComponent={
           <View style={{ gap: spacing[4], paddingBottom: spacing[4] }}>
             <View

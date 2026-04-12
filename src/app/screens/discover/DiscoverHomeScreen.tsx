@@ -56,7 +56,7 @@ export function DiscoverHomeScreen() {
     <Screen scroll={false}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: spacing[6], paddingBottom: spacing[12] }}
+        contentContainerStyle={{ gap: spacing[6], paddingBottom: spacing[24] }}
       >
         {/* Dynamic Location Header */}
         <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[2] }}>

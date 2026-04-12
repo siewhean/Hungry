@@ -35,7 +35,7 @@ export function ReadsFeedScreen(_: Props) {
   return (
     <Screen scroll={false}>
       <ScrollView
-        contentContainerStyle={{ gap: spacing[6], paddingBottom: spacing[8] }}
+        contentContainerStyle={{ gap: spacing[6], paddingBottom: spacing[2] }}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Article List ── */}

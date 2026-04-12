@@ -77,14 +77,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
           />
           <Pressable 
             onPress={() => navigation.goBack()}
-            style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center", ...shadows.floating }]}
+            style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" }, shadows.floating]}
           >
             <ChevronLeft color={palette.text} size={24} />
           </Pressable>
           <View style={{ flex: 1 }} />
           <Pressable 
             onPress={handleShare}
-            style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center", ...shadows.floating }]}
+            style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" }, shadows.floating]}
           >
             <Share2 color={palette.text} size={20} />
           </Pressable>
