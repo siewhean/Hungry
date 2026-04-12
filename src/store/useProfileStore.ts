@@ -174,7 +174,7 @@ export const useProfileStore = create<ProfileState>()(
       clearProfile: () =>
         set({
           profile: getDataRepository().getProfile(false),
-          reviewEntries: {},
+          reviewEntries: {  },
         }),
     }),
     {

@@ -576,7 +576,7 @@ All events follow: `{ event: string, properties: object, user_id?: string, sessi
 1. Supabase project: PostgreSQL + PostGIS (buildings/venues/dishes), pgvector (taste vectors), Supabase Auth
 2. Create `src/lib/services/supabase/supabaseService.ts` implementing `HungryService` — same interface, zero screen changes
 3. Update `serviceProvider.ts` (P1-05) to export `supabaseService` — single-file swap
-4. Extend persistence parity for live provider cutover (baseline persist is already active in mock phase)
+4. Add MMKV-backed persist to `useSessionStore`, `useProfileStore`, `useSearchStore` — resolves P0-14
 5. Harden live GPS integration and fallback telemetry (baseline `expo-location` integration already shipped)
 6. Harden native media integration and upload pipeline (baseline `expo-image-picker` flow already shipped)
 7. Analytics SDK: integrate PostHog or Amplitude; replace console sink with real event batching
@@ -773,7 +773,6 @@ These items affect perceived quality but do not break functionality.
 
 ---
 
-### Claude primary
 ---
 
 ## 4. Phase 4 — Ordering + Payments Preparation (Future)
@@ -843,19 +842,6 @@ These items affect perceived quality but do not break functionality.
 
 ---
 
-- 2026-04-08: `npm run test` could not run because `package.json` does not define a `test` script.
-- 2026-04-08: Device QA was completed as a code-based review matrix for iPhone 16e, 16, 16 Pro, 16 Pro Max, and Android sanity because `xcrun simctl` could not access CoreSimulatorService from this sandbox.
-- 2026-04-08: `npm run typecheck` passed after the JEM official-layout correction pass (background floor map rendering + L2/L3 polygon remap).
-- 2026-04-08: Marketing launch documentation was added under `marketing/`; the sandbox could not write into `.agents/`, so the repo-grounded product marketing context is stored at `marketing/strategy/product-marketing-context.md`.
-- 2026-04-08: `npm run typecheck` passed after the marketing launch documentation, README index, and task-log updates.
-- 2026-04-08: `npm run typecheck` passed after the map deliverable, route rewiring, Maxwell demo L2 floor plan, and building-layout drill-down implementation.
-- 2026-04-08: `npm run typecheck` passed after the Home feed container fix and app-wide scrollbar suppression cleanup.
-- 2026-04-08: `npm run typecheck` passed after the mall directory-map realism pass (Wisma/JEM custom floor overlays, vertical level pill, and drill-down sync logic).
-- 2026-04-08: `npm run typecheck` passed after the single-mall pilot pass (draggable Maps sheet, dynamic camera padding, and JEM L2/L3 tenant/corridor/facility polygon overlays).
-- 2026-04-09: `npm run typecheck` passed after global navigation and Home interaction updates (tab labels removed, smart back visibility tuning, Home gesture rewiring, and Bites data/routing fixes).
-- 2026-04-09: `npm run typecheck` passed after stall-detail review-card action-sheet wiring and open/closed status-card removal.
-- 2026-04-09: `npm run typecheck` passed after Figma-driven Stall Detail rebuild for node `113:811`.
-- 2026-04-09: `npm run typecheck` and `npm test` both passed after auth validation hardening, orange badge-tone fix, review default-recommend change, NEA/Hygiene label removal from map screens, and test harness restoration.
 ## 6. Verification Commands Log
 
 - [x] `npm run typecheck` — 2026-04-13

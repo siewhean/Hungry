@@ -318,7 +318,7 @@ export function HomeMapScreen() {
           <View style={{ height: 200 }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[4], paddingHorizontal: spacing[4] }}>
               {areaPopularDishes.map((dish) => (
-                <Pressable key={dish.id} onPress={() => handleCardPress(dish)} style={[{ ...shadows.floating, backgroundColor: "#FFFFFF", borderRadius: 24, overflow: "hidden", width: 280 }]}>
+                <Pressable key={dish.id} onPress={() => handleCardPress(dish)} style={[{ backgroundColor: "#FFFFFF", borderRadius: 24, overflow: "hidden", width: 280 }, shadows.floating]}>
                   <View style={{ height: 140 }}>
                     <Image source={{ uri: dish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
                     {dish.liveCrowd && (

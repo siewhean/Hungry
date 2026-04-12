@@ -110,7 +110,7 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
 
       <Pressable 
         onPress={() => navigation.goBack()} 
-        style={{ position: "absolute", top: insets.top + 10, left: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center", ...shadows.floating }}
+        style={[{ position: "absolute", top: insets.top + 10, left: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center" }, shadows.floating]}
       >
         <ChevronLeft color={palette.text} size={24} />
       </Pressable>
