@@ -85,7 +85,8 @@ export function BiteCard({
 
   return (
     <View
-      accessibilityLabel={`Bite by ${bite.authorName}: ${bite.dishName}`}
+      accessibilityRole="button"
+      accessibilityLabel={`View ${bite.dishName} details by ${bite.authorName}`}
       style={{
         width,
         borderRadius: radii.lg,
@@ -185,6 +186,7 @@ export function BiteCard({
         {/* Social row */}
         <View
           style={{
+            direction: "ltr",
             flexDirection: "row",
             alignItems: "center",
             gap: spacing[2],

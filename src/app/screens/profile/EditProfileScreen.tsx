@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { View } from "react-native";
+import { View, Pressable } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { ChevronRight, Camera } from "lucide-react-native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AppText, Button, Card, Chip, Input } from "@/components/ui";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
+import { useHungryTheme } from "@/theme";
 import type { DietaryFlag } from "@/types/domain";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
@@ -28,6 +30,7 @@ export function EditProfileScreen({ navigation }: Props) {
   const updateProfile = useProfileStore((state) => state.updateProfile);
   const setDietaryPreferences = useProfileStore((state) => state.setDietaryPreferences);
   const showToast = useUIStore((state) => state.showToast);
+  const { palette, spacing, radii } = useHungryTheme();
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [email, setEmail] = useState(profile.email);
   const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(profile.dietaryPreferences);
@@ -39,7 +42,23 @@ export function EditProfileScreen({ navigation }: Props) {
   };
 
   return (
-    <ProfileScreenShell title="Edit profile" subtitle="Keep the basics current while the rest of the profile stays lightweight.">
+    <ProfileScreenShell title="Edit profile" subtitle="Changes to your profile are saved locally on this device.">
+      <View style={{ alignItems: "center", marginBottom: spacing[2] }}>
+        <Pressable 
+          style={{ position: "relative" }}
+          onPress={() => showToast({ message: "Avatar upload coming soon.", tone: "info" })}
+        >
+          <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            <AppText style={{ fontSize: 32, fontWeight: "700", color: palette.orange }}>
+              {displayName.charAt(0).toUpperCase()}
+            </AppText>
+          </View>
+          <View style={{ position: "absolute", bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#FFFFFF" }}>
+            <Camera size={16} color="#FFFFFF" />
+          </View>
+        </Pressable>
+      </View>
+
       <Card>
         <View style={{ gap: 12 }}>
           <Input label="Display name" value={displayName} onChangeText={setDisplayName} />
@@ -50,6 +69,14 @@ export function EditProfileScreen({ navigation }: Props) {
             value={email}
             onChangeText={setEmail}
           />
+          <Pressable 
+            onPress={() => showToast({ message: "Password change flow coming soon.", tone: "info" })}
+            style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: spacing[2] }}
+          >
+            <AppText style={{ fontWeight: "600" }}>Change Password</AppText>
+            <ChevronRight size={18} color={palette.textMuted} />
+          </Pressable>
+
           <AppText variant="h3">Dietary preferences</AppText>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {EDITABLE_DIETARY_OPTIONS.map((option) => (

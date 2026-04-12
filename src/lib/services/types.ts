@@ -9,12 +9,27 @@ import type {
   BlogPost,
   BuildingSummary,
   DishDetail,
+  DietaryFlag,
   SearchFilters,
   StallPost,
   TasteVector,
   UserProfile,
   VenueSummary,
 } from "@/types/domain";
+
+export interface DataRepository {
+  getProfile(isAuthenticated: boolean): UserProfile;
+  listBuildings(): BuildingSummary[];
+  listVenuesByBuilding(buildingId: string): VenueSummary[];
+  getVenueById(venueId: string): VenueSummary | undefined;
+  getDishById(dishId: string): DishDetail | undefined;
+  listDishesByVenue(venueId: string): DishDetail[];
+  listPopularNearby(): DishDetail[];
+  searchDishes(filters: SearchFilters, tasteProfile: TasteVector): DishDetail[];
+  getDecideForMe(tasteProfile: TasteVector): DishDetail | undefined;
+  listBlogPosts(): BlogPost[];
+  listStallPosts(): StallPost[];
+}
 
 // ─── Floor Plan Types ──────────────────────────────────────────────────────────
 
@@ -135,6 +150,18 @@ export interface Session {
   profile: UserProfile;
 }
 
+export type AuthProvider = "email" | "google" | "apple";
+
+export interface SubmitReviewInput {
+  dishId: string;
+  venueId: string;
+  rating: number;
+  text: string;
+  tags: string[];
+  photos: string[];
+  // TODO(api): include upload references (asset ids / signed urls) once media service is wired.
+}
+
 // ─── Building Detail ──────────────────────────────────────────────────────────
 
 export interface BuildingDetail extends BuildingSummary {
@@ -156,6 +183,7 @@ export interface HungryService {
     signUp(email: string, password: string, name: string): Promise<Session>;
     signIn(email: string, password: string): Promise<Session>;
     signInWithGoogle(): Promise<Session>;
+    signInWithApple(): Promise<Session>;
     signOut(): Promise<void>;
     forgotPassword(email: string): Promise<void>;
     resetPassword(token: string, password: string): Promise<void>;
@@ -182,20 +210,14 @@ export interface HungryService {
   reviews: {
     getReviewsForDish(dishId: string): Promise<DishDetail["reviews"]>;
     getUserReviews(userId: string): Promise<DishDetail["reviews"]>;
-    submitReview(draft: {
-      dishId: string;
-      venueId: string;
-      rating: number;
-      text: string;
-      tags: string[];
-      photos: string[];
-    }): Promise<void>;
+    submitReview(draft: SubmitReviewInput): Promise<void>;
   };
 
   // Profile
   profile: {
     getProfile(): Promise<UserProfile>;
     updateProfile(updates: Partial<UserProfile>): Promise<UserProfile>;
+    updateDietaryPreferences(flags: DietaryFlag[]): Promise<void>;
     getGuestProfile(): Promise<UserProfile>;
     toggleFavourite(dishId: string): Promise<boolean>;
     getFavouriteDishIds(): Promise<string[]>;

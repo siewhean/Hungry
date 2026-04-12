@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
+import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
+import { CircleCheck, CircleAlert, TriangleAlert, Info } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
 import { useUIStore } from "@/store/useUIStore";
@@ -9,15 +11,12 @@ import { AppText } from "./AppText";
 export function FloatingToast() {
   const toast = useUIStore((state) => state.toast);
   const clearToast = useUIStore((state) => state.clearToast);
-  const { palette, radii, shadows, spacing } = useHungryTheme();
+  const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const tone = toast?.tone ?? "info";
 
   useEffect(() => {
-    if (!toast) {
-      return;
-    }
+    if (!toast) return;
 
-    // Trigger haptic feedback based on toast tone
     if (tone === "success") {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } else if (tone === "error") {
@@ -28,44 +27,48 @@ export function FloatingToast() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
-    const timer = setTimeout(() => clearToast(), 2500);
+    const timer = setTimeout(() => clearToast(), 3500);
     return () => clearTimeout(timer);
   }, [toast, clearToast, tone]);
 
-  if (!toast) {
-    return null;
-  }
+  if (!toast) return null;
 
-  const toneBackground =
-    tone === "success"
-      ? palette.success
-      : tone === "warning"
-        ? palette.warningSoft
-        : tone === "error"
-          ? palette.error
-          : palette.navy;
-  const toastTextTone = tone === "warning" ? "default" : "inverse";
+  const toneConfig = {
+    success: { bg: palette.orange, icon: CircleCheck, color: "#FFFFFF" },
+    warning: { bg: palette.amber, icon: TriangleAlert, color: "#FFFFFF" },
+    error: { bg: palette.error, icon: CircleAlert, color: "#FFFFFF" },
+    info: { bg: palette.navy, icon: Info, color: "#FFFFFF" },
+  }[tone] || { bg: palette.navy, icon: Info, color: "#FFFFFF" };
+
+  const Icon = toneConfig.icon;
 
   return (
-    <View pointerEvents="box-none" style={styles.wrapper}>
-      <Pressable
-        accessibilityRole="alert"
-        accessibilityLiveRegion="polite"
-        onPress={clearToast}
-        style={[
-          shadows.floating,
-          {
-            backgroundColor: toneBackground,
-            borderColor: tone === "warning" ? palette.warning : "transparent",
-            borderWidth: tone === "warning" ? 1 : 0,
-            borderRadius: radii.md,
-            paddingHorizontal: spacing[4],
-            paddingVertical: spacing[3],
-          },
-        ]}
+    <View pointerEvents="box-none" style={[styles.wrapper, { zIndex: zIndex.toast }]}>
+      <Animated.View 
+        entering={FadeInDown.duration(250)} 
+        exiting={FadeOutUp.duration(250)}
       >
-        <AppText tone={toastTextTone}>{toast.message}</AppText>
-      </Pressable>
+        <Pressable
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+          onPress={clearToast}
+          style={[
+            shadows.floating,
+            {
+              backgroundColor: toneConfig.bg,
+              borderRadius: radii.md,
+              paddingHorizontal: spacing[4],
+              paddingVertical: spacing[3],
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing[3],
+            },
+          ]}
+        >
+          <Icon size={20} color={toneConfig.color} />
+          <AppText style={{ color: toneConfig.color, fontWeight: "700", flex: 1 }}>{toast.message}</AppText>
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }

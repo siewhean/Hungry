@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { createInitialReviewDraft } from "@/features/review/reviewDraft";
 import type { ReviewDraft } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
@@ -31,14 +32,21 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
       isSubmitting: false,
       failedPhotoUris: [],
       selectDish: (selectedVenueId, selectedDishId) =>
-        set(() => ({
-          draft: {
-            ...initialDraft,
-            selectedVenueId,
-            selectedDishId,
-          },
-          failedPhotoUris: [],
-        })),
+        set(() => {
+          trackAnalyticsEvent("review_started", {
+            trigger: "review_flow",
+            venue_id: selectedVenueId,
+            dish_id: selectedDishId,
+          });
+          return {
+            draft: {
+              ...initialDraft,
+              selectedVenueId,
+              selectedDishId,
+            },
+            failedPhotoUris: [],
+          };
+        }),
       setRating: (rating) =>
         set((state) => ({
           draft: {

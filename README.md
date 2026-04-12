@@ -114,7 +114,9 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 - In `__DEV__`, app now boots into the Developer Launcher to speed QA state setup (signed out / onboarding incomplete / onboarding complete presets).
 - Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
 - Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and polygon-based building directory layouts (including Wisma and JEM mall-style floor overlays with vertical level switching).
-- Current audit status: `npm run typecheck` passes and `npm test` passes; `npx expo-doctor` is currently blocked locally by npm cache ownership errors under `/Users/Siew Hean/.npm`
+- **Design Specifications** — Comprehensive visual, UX, and accessibility specs for all remaining backlog items are now available in `docs/audit/`. These serve as the authoritative implementation guide for Batch 1–8.
+- Current audit status: `npm run typecheck` passes, `npm test` passes, and `npx expo-doctor --verbose` passes (16/16) when run with a writable npm cache path.
+
 
 ## Commands
 

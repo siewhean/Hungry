@@ -10,14 +10,15 @@ interface DeliveryPlatformButtonProps {
   compact?: boolean;
 }
 
-const platformMeta = {
+const platformMeta: Record<string, { label: string; color: string }> = {
   grabfood: { label: "Order on GrabFood", color: "#00B14F" },
   foodpanda: { label: "Order on Foodpanda", color: "#D70F64" },
-} as const;
+  deliveroo: { label: "Order on Deliveroo", color: "#00CCBC" },
+};
 
 export function DeliveryPlatformButton({ link, compact = false }: DeliveryPlatformButtonProps) {
-  const { radii, spacing } = useHungryTheme();
-  const meta = platformMeta[link.platform];
+  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const meta = platformMeta[link.platform] ?? { label: `Order on ${link.platform}`, color: palette.surface };
 
   const handlePress = async () => {
     try {
@@ -35,8 +36,9 @@ export function DeliveryPlatformButton({ link, compact = false }: DeliveryPlatfo
       style={({ pressed }) => [
         styles.button,
         {
+          ...shadows.card,
           backgroundColor: meta.color,
-          borderRadius: radii.sm,
+          borderRadius: radii.pill,
           opacity: pressed ? 0.9 : 1,
           paddingHorizontal: spacing[4],
           paddingVertical: compact ? spacing[2] : spacing[3],
@@ -44,10 +46,15 @@ export function DeliveryPlatformButton({ link, compact = false }: DeliveryPlatfo
       ]}
     >
       <View style={styles.row}>
-        <AppText variant="body" tone="inverse" style={styles.label} numberOfLines={1}>
+        <AppText 
+          variant="body" 
+          tone={platformMeta[link.platform] ? "inverse" : "default"} 
+          style={styles.label} 
+          numberOfLines={1}
+        >
           {meta.label}
         </AppText>
-        <ExternalLink size={16} color="#FFFFFF" />
+        <ExternalLink size={16} color={platformMeta[link.platform] ? "#FFFFFF" : palette.text} />
       </View>
     </Pressable>
   );

@@ -29,6 +29,7 @@ export function TasteFilterScreen() {
               <Slider
                 minimumValue={0}
                 maximumValue={10}
+                step={1}
                 minimumTrackTintColor={palette.orange}
                 maximumTrackTintColor={palette.border}
                 thumbTintColor={palette.orange}
@@ -40,6 +41,10 @@ export function TasteFilterScreen() {
                   })
                 }
               />
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: -4 }}>
+                <AppText variant="micro" tone="secondary">LOW</AppText>
+                <AppText variant="micro" tone="secondary">HIGH</AppText>
+              </View>
             </View>
           ))}
         </Card>

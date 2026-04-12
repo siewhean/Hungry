@@ -1,13 +1,12 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Pressable, ScrollView, View } from "react-native";
 import { Image } from "expo-image";
-import { ChevronRight, Settings, Star, Utensils, Heart, Edit2, Share2, BarChart3, FileEdit, Clock } from "lucide-react-native";
+import { ChevronRight, Settings, Star, Utensils, Heart, Edit2, Share2, BarChart3 } from "lucide-react-native";
 
 import { AppText, Badge, Card, Button } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { useProfileStore } from "@/store/useProfileStore";
-import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useHungryTheme } from "@/theme";
 import { isDishDetail } from "./profileGuards";
 import { ProfileScreenShell } from "./ProfileScreenShell";
@@ -19,7 +18,6 @@ type Props = NativeStackScreenProps<ProfileStackParamList, "ProfileHome">;
 export function ProfileHomeScreen({ navigation }: Props) {
   const { palette, spacing, radii, shadows } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
-  const draft = useReviewDraftStore((state) => state.draft);
   const favourites = profile.favouriteDishIds.map((dishId) => mockRepository.getDishById(dishId)).filter(isDishDetail);
   
   const initials = profile.displayName
@@ -30,99 +28,60 @@ export function ProfileHomeScreen({ navigation }: Props) {
     .join("")
     .toUpperCase();
 
-  const hasActiveDraft = !!(draft.selectedDishId || draft.text || draft.photos.length > 0);
-
   return (
-    <ProfileScreenShell title="Profile">
+    <ProfileScreenShell title="Profile" subtitle="Taste fingerprint, favourites, and settings in one place.">
       <View style={{ gap: spacing[6], paddingBottom: spacing[8] }}>
         
         {/* Profile Header Block */}
-        <View style={{ alignItems: "center", gap: spacing[4], paddingTop: spacing[2] }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[4], marginBottom: spacing[2] }}>
           <View style={{ position: "relative" }}>
             <View
               style={[
-                shadows.floating,
+                shadows.card,
                 {
                   alignItems: "center",
                   backgroundColor: palette.orangeLight,
-                  borderRadius: 60,
-                  height: 120,
+                  borderRadius: radii.pill,
+                  height: 80,
                   justifyContent: "center",
-                  width: 120,
-                  borderWidth: 4,
+                  width: 80,
+                  borderWidth: 2,
                   borderColor: "#FFFFFF",
                 }
               ]}
             >
-              <AppText style={{ color: palette.orange, fontSize: 36, fontWeight: "900" }}>
+              <AppText style={{ color: palette.orange, fontSize: 24, fontWeight: "800" }}>
                 {initials || "U"}
               </AppText>
             </View>
             <Pressable 
               onPress={() => navigation.navigate("EditProfile")}
               style={{ 
-                position: "absolute", bottom: 0, right: 0, 
-                backgroundColor: palette.orange, width: 36, height: 36, 
-                borderRadius: 18, alignItems: "center", justifyContent: "center",
-                borderWidth: 3, borderColor: "#FFFFFF"
+                position: "absolute", bottom: -4, right: -4, 
+                backgroundColor: palette.orange, width: 28, height: 28, 
+                borderRadius: 14, alignItems: "center", justifyContent: "center",
+                borderWidth: 2, borderColor: "#FFFFFF"
               }}
             >
-              <Edit2 color="#FFFFFF" size={16} />
+              <Edit2 color="#FFFFFF" size={14} />
             </Pressable>
           </View>
 
-          <View style={{ alignItems: "center", gap: 2 }}>
-            <AppText style={{ fontSize: 28, fontWeight: "900", color: palette.text }}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <AppText style={{ fontSize: 24, fontWeight: "900", color: palette.text }}>
               {profile.displayName}
             </AppText>
             <AppText variant="bodySmall" tone="secondary">
               Level 12 • Foodie Scout
             </AppText>
           </View>
-
-          <View style={{ flexDirection: "row", gap: spacing[3], marginTop: spacing[2] }}>
-            <StatBlock label="Reviews" value={profile.stats.dishesReviewed} icon={<Star size={14} color={palette.orange} />} />
-            <StatBlock label="Stalls" value={profile.stats.stallsVisited} icon={<Utensils size={14} color={palette.orange} />} />
-            <StatBlock label="Favourites" value={profile.stats.favouritesCount} icon={<Heart size={14} color={palette.orange} />} />
-          </View>
         </View>
 
-        {/* Drafts Section - NEW */}
-        {hasActiveDraft && (
-          <View style={{ gap: spacing[3] }}>
-            <AppText variant="h2" style={{ paddingHorizontal: spacing[1] }}>Unfinished Posts</AppText>
-            <Pressable 
-              onPress={() => {
-                const rootNav = getRootNavigation(navigation as any);
-                rootNav.navigate("ReviewStack", { screen: "PostComposer" });
-              }}
-              style={({ pressed }) => [
-                shadows.card,
-                { 
-                  backgroundColor: pressed ? palette.bgSoft : palette.surface, 
-                  borderRadius: 20, 
-                  padding: spacing[4],
-                  borderWidth: 1,
-                  borderColor: palette.orange,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: spacing[3]
-                }
-              ]}
-            >
-              <View style={{ backgroundColor: palette.orangeLight, width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" }}>
-                <FileEdit size={20} color={palette.orange} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <AppText style={{ fontWeight: "700" }}>Continue Review</AppText>
-                <AppText variant="micro" tone="secondary">
-                  {draft.selectedDishId ? mockRepository.getDishById(draft.selectedDishId)?.name : "Unnamed Dish"} • Saved just now
-                </AppText>
-              </View>
-              <Clock size={16} color={palette.textMuted} />
-            </Pressable>
-          </View>
-        )}
+        <View style={{ flexDirection: "row", gap: spacing[3] }}>
+          <StatBlock label="Reviews" value={profile.stats.dishesReviewed} icon={<Star size={14} color={palette.orange} />} />
+          <StatBlock label="Stalls" value={profile.stats.stallsVisited} icon={<Utensils size={14} color={palette.orange} />} />
+          <StatBlock label="Saved" value={profile.stats.favouritesCount} icon={<Heart size={14} color={palette.orange} />} />
+        </View>
 
         {/* Taste Fingerprint Section */}
         <View style={{ gap: spacing[4] }}>
@@ -197,7 +156,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
         {/* Favourites Preview */}
         <View style={{ gap: spacing[4] }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing[1] }}>
-            <AppText variant="h2">Recently Favourited</AppText>
+            <AppText variant="h2">Recently saved</AppText>
             <Pressable onPress={() => navigation.navigate("Favourites")}>
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>SEE ALL</AppText>
             </Pressable>
@@ -259,7 +218,7 @@ function StatBlock({ label, value, icon }: { label: string; value: number; icon:
       paddingVertical: spacing[3], 
       paddingHorizontal: spacing[4], 
       alignItems: "center",
-      minWidth: 90,
+      flex: 1,
       gap: 2
     }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>

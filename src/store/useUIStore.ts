@@ -1,73 +1,72 @@
 import { create } from "zustand";
 
-interface ToastPayload {
+export type ToastTone = "success" | "error" | "info" | "warning";
+
+export interface ToastPayload {
   message: string;
-  tone?: "info" | "success" | "warning" | "error";
+  tone?: ToastTone;
+  duration?: number;
 }
 
-interface ReviewSuccessPayload {
-  dishName: string;
-  venueName: string;
-  pointsEarned: number;
-  tagCount: number;
-  rating: number;
-}
-
-interface QuickReviewPayload {
+export interface QuickReviewPayload {
   venueId: string;
   venueName: string;
   dishId?: string;
   dishName?: string;
 }
 
+export interface ReviewSuccessPayload {
+  dishName: string;
+  venueName: string;
+  xpEarned: number;
+  pointsEarned?: number;
+  tagCount?: number;
+  rating?: number;
+}
+
 interface UIState {
-  offline: boolean;
-  toast?: ToastPayload;
-  reviewSuccess?: ReviewSuccessPayload;
-  quickReview?: QuickReviewPayload;
-  scrollBackVisible: boolean;
-  lastScrollY: number;
-  setOffline: (offline: boolean) => void;
-  showToast: (toast: ToastPayload) => void;
+  toast: ToastPayload | null;
+  showToast: (payload: ToastPayload) => void;
+  hideToast: () => void;
   clearToast: () => void;
-  showReviewSuccess: (payload: ReviewSuccessPayload) => void;
-  hideReviewSuccess: () => void;
+  lastScrollY: number;
+  isHeaderCollapsed: boolean;
+  scrollBackVisible: boolean;
+  registerScrollForBack: (y: number) => void;
+  resetScrollBack: () => void;
+  quickReview: QuickReviewPayload | null;
   showQuickReview: (payload: QuickReviewPayload) => void;
   hideQuickReview: () => void;
-  setScrollBackVisible: (visible: boolean) => void;
-  registerScrollForBack: (offsetY: number) => void;
-  resetScrollBack: () => void;
+  reviewSuccess: ReviewSuccessPayload | null;
+  showReviewSuccess: (payload: ReviewSuccessPayload) => void;
+  hideReviewSuccess: () => void;
+  isOffline: boolean;
+  setOffline: (offline: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
-  offline: false,
-  toast: undefined,
-  reviewSuccess: undefined,
-  quickReview: undefined,
-  scrollBackVisible: false,
+  toast: null,
+  showToast: (payload) => set({ toast: payload }),
+  hideToast: () => set({ toast: null }),
+  clearToast: () => set({ toast: null }),
   lastScrollY: 0,
-  setOffline: (offline) => set({ offline }),
-  showToast: (toast) => set({ toast }),
-  clearToast: () => set({ toast: undefined }),
-  showReviewSuccess: (reviewSuccess) => set({ reviewSuccess }),
-  hideReviewSuccess: () => set({ reviewSuccess: undefined }),
-  showQuickReview: (quickReview) => set({ quickReview }),
-  hideQuickReview: () => set({ quickReview: undefined }),
-  setScrollBackVisible: (visible) => set({ scrollBackVisible: visible }),
-  registerScrollForBack: (offsetY) =>
+  isHeaderCollapsed: false,
+  scrollBackVisible: false,
+  registerScrollForBack: (y) => {
     set((state) => {
-      const y = Math.max(0, offsetY);
-      const delta = y - state.lastScrollY;
-
-      if (delta < 0) {
-        return { scrollBackVisible: true, lastScrollY: y };
-      }
-
-      if (delta > 0) {
-        return { scrollBackVisible: false, lastScrollY: y };
-      }
-
-      return { lastScrollY: y };
-    }),
-  resetScrollBack: () => set({ scrollBackVisible: false, lastScrollY: 0 }),
+      const diff = y - state.lastScrollY;
+      const isHeaderCollapsed = y > 60 && diff > 0;
+      const scrollBackVisible = y > 300 && diff < -20;
+      return { lastScrollY: y, isHeaderCollapsed, scrollBackVisible };
+    });
+  },
+  resetScrollBack: () => set({ scrollBackVisible: false }),
+  quickReview: null,
+  showQuickReview: (payload) => set({ quickReview: payload }),
+  hideQuickReview: () => set({ quickReview: null }),
+  reviewSuccess: null,
+  showReviewSuccess: (payload) => set({ reviewSuccess: payload }),
+  hideReviewSuccess: () => set({ reviewSuccess: null }),
+  isOffline: false,
+  setOffline: (offline) => set({ isOffline: offline }),
 }));

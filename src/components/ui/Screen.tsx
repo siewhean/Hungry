@@ -1,6 +1,6 @@
 import type { PropsWithChildren, ReactNode } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { useUIStore } from "@/store/useUIStore";
@@ -22,6 +22,7 @@ export function Screen({
   scroll = true,
 }: PropsWithChildren<ScreenProps>) {
   const { palette, spacing } = useHungryTheme();
+  const insets = useSafeAreaInsets();
   const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
   const scrollBackVisible = useUIStore((state) => state.scrollBackVisible);
 

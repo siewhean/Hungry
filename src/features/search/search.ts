@@ -1,4 +1,4 @@
-import { mockRepository, similarityScore } from "@/lib/services/mock/repositories";
+import { getDataRepository, getSimilarityScore } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import type { DishDetail, SearchFilters, StallPost, UserProfile, VenueSummary } from "@/types/domain";
@@ -18,7 +18,7 @@ export function useSearchData() {
 }
 
 export function getSearchResults(filters: SearchFilters, tasteVector = filters.tasteValues) {
-  return mockRepository.searchDishes(filters, tasteVector);
+  return getDataRepository().searchDishes(filters, tasteVector);
 }
 
 export function sortSearchResults(results: DishDetail[], mode: SearchSortMode, tasteVector: UserProfile["tasteVector"]) {
@@ -37,13 +37,13 @@ export function sortSearchResults(results: DishDetail[], mode: SearchSortMode, t
   }
 
   return cloned.sort(
-    (left, right) => similarityScore(right.tasteVector, tasteVector) - similarityScore(left.tasteVector, tasteVector),
+    (left, right) => getSimilarityScore(right.tasteVector, tasteVector) - getSimilarityScore(left.tasteVector, tasteVector),
   );
 }
 
 export function getDecideForMeDish() {
   const profile = useProfileStore.getState().profile;
-  return mockRepository.getDecideForMe(profile.tasteVector);
+  return getDataRepository().getDecideForMe(profile.tasteVector);
 }
 
 export function groupResultsByVenue(results: DishDetail[]) {
@@ -59,18 +59,19 @@ export interface DiscoverStallCollection {
 }
 
 export function getDiscoverStallCollections(profile: UserProfile, query: string) {
+  const repository = getDataRepository();
   const normalizedQuery = query.trim().toLowerCase();
 
-  const collections = mockRepository
+  const collections = repository
     .listVenuesByBuilding("building-maxwell")
-    .concat(mockRepository.listVenuesByBuilding("building-lau-pa-sat"))
-    .concat(mockRepository.listVenuesByBuilding("building-amoy"))
+    .concat(repository.listVenuesByBuilding("building-lau-pa-sat"))
+    .concat(repository.listVenuesByBuilding("building-amoy"))
     .map((venue) => {
-      const posts = mockRepository.listStallPosts().filter((post) => post.venueId === venue.id);
-      const topDishes = mockRepository.listDishesByVenue(venue.id);
-      const building = mockRepository.listBuildings().find((item) => item.id === venue.buildingId);
+      const posts = repository.listStallPosts().filter((post) => post.venueId === venue.id);
+      const topDishes = repository.listDishesByVenue(venue.id);
+      const building = repository.listBuildings().find((item) => item.id === venue.buildingId);
       const affinity =
-        topDishes.length > 0 ? similarityScore(topDishes[0].tasteVector, profile.tasteVector) : 0;
+        topDishes.length > 0 ? getSimilarityScore(topDishes[0].tasteVector, profile.tasteVector) : 0;
 
       return {
         venue,

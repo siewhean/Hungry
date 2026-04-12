@@ -1,9 +1,9 @@
-import { Star } from "lucide-react-native";
-import { Animated, ScrollView, Share, View, useWindowDimensions } from "react-native";
+import { Animated, ScrollView, Share, View, useWindowDimensions, Pressable, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { useMemo, useRef } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { Star } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { mockRepository } from "@/lib/services/mock/repositories";
@@ -12,7 +12,7 @@ import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileS
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import { AppText, Badge, Button, Card, EmptyState, InlineBanner, FAB } from "@/components/ui";
+import { AppText, Badge, Button, Card, EmptyState, InlineBanner } from "@/components/ui";
 import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 
@@ -25,8 +25,9 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const showToast = useUIStore((state) => state.showToast);
-  const { palette, radii, spacing } = useHungryTheme();
-  const { width: viewportWidth } = useWindowDimensions();
+  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const heroScrollX = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -35,13 +36,12 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const gallery = useMemo(() => (dish ? buildDishGallery(dish) : []), [dish]);
 
   const maxTasteScore = useMemo(() => {
-    if (!dish) {
-      return 0;
-    }
-    return Math.max(...TASTE_DIMENSIONS.map((d) => dish.tasteVector[d.key] ?? 0));
+    if (!dish) return 0;
+    const scores = TASTE_DIMENSIONS.map((d) => dish.tasteVector[d.key] ?? 0);
+    if (scores.length === 0) return 0;
+    return Math.max(...scores);
   }, [dish]);
 
-  const heroWidth = Math.round(viewportWidth);
   const indicatorDotSize = 7;
   const indicatorStep = 14;
   const indicatorTrackWidth = Math.max(indicatorDotSize, indicatorDotSize + Math.max(0, gallery.length - 1) * indicatorStep);
@@ -57,304 +57,216 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const deliveryAvailable = venue.deliveryLinks.length > 0;
   const isSaved = profile.favouriteDishIds.includes(dish.id);
 
-  const handleShare = () => {
-    Share.share({
-      title: `${dish.name} at ${venue.name}`,
-      message: `Check out ${dish.name} at ${venue.name} (${venue.unitNumber}) on Hungry.`,
-    });
-  };
-
   return (
     <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["top", "left", "right"]}>
-      <Animated.ScrollView
-        showsVerticalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-          useNativeDriver: true,
-        })}
-        contentContainerStyle={{ gap: spacing[5], paddingBottom: spacing[16] + 120 }}
-      >
-        {/* Hero image carousel */}
-        <Animated.View
-          style={{
-            width: heroWidth,
-            transform: [
-              {
-                scale: scrollY.interpolate({
-                  inputRange: [-150, 0],
-                  outputRange: [1.6, 1],
-                  extrapolate: "clamp",
-                }),
-              },
-              {
-                translateY: scrollY.interpolate({
-                  inputRange: [-150, 0, 150],
-                  outputRange: [-75, 0, 50],
-                  extrapolate: "clamp",
-                }),
-              },
-            ],
-          }}
+      <View style={{ flex: 1 }}>
+        <Animated.ScrollView
+          showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+            useNativeDriver: true,
+          })}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
         >
-          <Animated.ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            decelerationRate="fast"
-            bounces={false}
-            automaticallyAdjustContentInsets={false}
-            contentInsetAdjustmentBehavior="never"
-            scrollEventThrottle={16}
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { x: heroScrollX } } }],
-              { useNativeDriver: true },
-            )}
-            snapToInterval={heroWidth}
-            snapToAlignment="start"
-            style={{ width: heroWidth }}
-          >
-            {gallery.map((uri) => (
-              <Image
-                key={uri}
-                source={uri}
-                style={{ height: 300, width: heroWidth }}
-                contentFit="cover"
-              />
-            ))}
-          </Animated.ScrollView>
-          <View
-            pointerEvents="none"
-            style={{
-              alignItems: "center",
-              bottom: spacing[3],
-              left: 0,
-              position: "absolute",
-              right: 0,
-            }}
-          >
-            <View
-              style={{
-                alignItems: "center",
-                backgroundColor: "rgba(255,255,255,0.82)",
-                borderRadius: radii.pill,
-                justifyContent: "center",
-                paddingHorizontal: spacing[2],
-                paddingVertical: 7,
-              }}
+          {/* Hero image carousel - Fixed 4:3 Aspect Ratio */}
+          <View style={{ width: screenWidth, height: screenWidth * 0.75, position: "relative", overflow: "hidden" }}>
+            <Animated.ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              decelerationRate="fast"
+              bounces={false}
+              scrollEventThrottle={16}
+              onScroll={Animated.event(
+                [{ nativeEvent: { contentOffset: { x: heroScrollX } } }],
+                { useNativeDriver: true },
+              )}
+              snapToInterval={screenWidth}
+              snapToAlignment="start"
+              style={{ width: screenWidth, height: "100%" }}
             >
-              <View
-                style={{
-                  height: indicatorDotSize,
-                  position: "relative",
-                  width: indicatorTrackWidth,
-                }}
-              >
-                {gallery.map((uri, index) => (
-                  <View
-                    key={`${uri}-${index}`}
+              {gallery.map((uri) => (
+                <Image
+                  key={uri}
+                  source={uri}
+                  style={{ height: "100%", width: screenWidth }}
+                  contentFit="cover"
+                />
+              ))}
+            </Animated.ScrollView>
+
+            {/* Rating Pill - Floating in bottom-right of image */}
+            <View style={{ position: "absolute", bottom: spacing[3], right: spacing[4] }}>
+              <View style={[{ backgroundColor: palette.amber, borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 6, flexDirection: "row", alignItems: "center", gap: 4 }, shadows.floating]}>
+                <Star color="#FFFFFF" fill="#FFFFFF" size={14} />
+                <AppText style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 15 }}>{dish.rating.toFixed(1)}</AppText>
+              </View>
+            </View>
+
+            {/* Page Indicators */}
+            <View pointerEvents="none" style={{ alignItems: "center", bottom: 12, left: 0, position: "absolute", right: 0 }}>
+              <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.2)", borderRadius: radii.pill, paddingHorizontal: 8, paddingVertical: 6 }}>
+                <View style={{ height: indicatorDotSize, position: "relative", width: indicatorTrackWidth }}>
+                  {gallery.map((uri, index) => (
+                    <View key={`${uri}-${index}`} style={{ backgroundColor: "rgba(255,255,255,0.4)", borderRadius: radii.pill, height: indicatorDotSize, left: index * indicatorStep, position: "absolute", top: 0, width: indicatorDotSize }} />
+                  ))}
+                  <Animated.View
                     style={{
-                      backgroundColor: palette.border,
+                      backgroundColor: "#FFFFFF",
                       borderRadius: radii.pill,
                       height: indicatorDotSize,
-                      left: index * indicatorStep,
+                      left: 0,
                       position: "absolute",
                       top: 0,
-                      width: indicatorDotSize,
-                    }}
-                  />
-                ))}
-                <Animated.View
-                  style={{
-                    backgroundColor: palette.orange,
-                    borderRadius: radii.pill,
-                    height: indicatorDotSize,
-                    left: 0,
-                    position: "absolute",
-                    top: 0,
-                    transform: [
-                      {
+                      transform: [{
                         translateX: heroScrollX.interpolate({
-                          inputRange: [0, Math.max(1, gallery.length - 1) * heroWidth],
+                          inputRange: [0, Math.max(1, gallery.length - 1) * screenWidth],
                           outputRange: [0, Math.max(0, gallery.length - 1) * indicatorStep],
                           extrapolate: "clamp",
                         }),
-                      },
-                    ],
-                    width: indicatorDotSize,
-                  }}
-                />
-              </View>
-            </View>
-          </View>
-        </Animated.View>
-
-        <View style={{ gap: spacing[5], paddingHorizontal: spacing[5] }}>
-          {/* Badges & title */}
-          <View style={{ gap: spacing[3] }}>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-            {dish.mustOrder ? <Badge label="Must order" tone="amber" /> : null}
-            <Badge label={`${tasteMatch}% taste match`} tone="orange" />
-            {dish.availabilityFlags.map((flag) => (
-              <Badge key={flag} label={flag} tone="neutral" />
-            ))}
-          </View>
-          <AppText variant="h1">{dish.name}</AppText>
-          <AppText tone="secondary">
-            {venue.name} · {venue.unitNumber}
-          </AppText>
-          <AppText variant="price">{dish.priceRange}</AppText>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <AppText tone="secondary">
-              Rated {dish.rating.toFixed(1)}
-            </AppText>
-            <Star color={palette.amber} fill={palette.amber} size={14} />
-            <AppText tone="secondary">
-              from {dish.reviewCount} reviews
-            </AppText>
-          </View>
-          </View>
-
-          {/* Taste graph + tags */}
-          <View>
-            <AppText variant="h3">Taste profile</AppText>
-            <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
-              {TASTE_DIMENSIONS.map((dimension) => {
-                const score = dish.tasteVector[dimension.key] ?? 0;
-                const isDominant = score === maxTasteScore && score > 0;
-                const progressWidth = `${Math.max(0, Math.min(100, Math.round((score / 10) * 100)))}%` as const;
-
-                return (
-                  <View key={dimension.key} style={{ gap: spacing[1] }}>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                      <AppText
-                        variant="bodySmall"
-                        style={{ fontFamily: isDominant ? "Nunito_700Bold" : "Nunito_400Regular" }}
-                      >
-                        {dimension.label}
-                      </AppText>
-                      <AppText variant="micro" tone="secondary">
-                        {score.toFixed(1)}
-                      </AppText>
-                    </View>
-                    <View
-                      style={{
-                        backgroundColor: palette.border,
-                        borderRadius: radii.pill,
-                        height: 8,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <View
-                        style={{
-                          backgroundColor: isDominant ? palette.orange : palette.orangeLight,
-                          borderRadius: radii.pill,
-                          height: "100%",
-                          width: progressWidth,
-                        }}
-                      />
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2], marginTop: spacing[3] }}>
-              {dish.tasteTags.map((tag) => (
-                <Badge key={tag} label={tag} tone="orange" />
-              ))}
-            </View>
-          </View>
-
-          {/* Closure notice */}
-          {venue.closureNotice ? <InlineBanner message={venue.closureNotice} tone="warning" /> : null}
-
-          {/* Order / delivery */}
-          <Card>
-            <AppText variant="h3">Order now</AppText>
-            {deliveryAvailable ? (
-              <View style={{ gap: spacing[3] }}>
-                {venue.deliveryLinks.map((link) => (
-                  <DeliveryPlatformButton
-                    key={link.platform}
-                    link={link}
+                      }],
+                      width: indicatorDotSize,
+                    }}
                   />
-                ))}
-              </View>
-            ) : (
-              <EmptyState
-                title="Dine-in only"
-                body="This stall has no verified delivery links yet."
-              />
-            )}
-          </Card>
-
-          {/* Reviews */}
-          <Card>
-            <AppText variant="h3">Recent reviews</AppText>
-            {dish.reviews.length ? (
-              dish.reviews.map((review) => (
-                <View key={review.id} style={{ gap: spacing[2] }}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <AppText variant="bodyLarge">{review.authorName}</AppText>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
-                      <AppText tone="muted" variant="bodySmall">
-                        {review.rating}/5
-                      </AppText>
-                      <Star color={palette.amber} fill={palette.amber} size={12} />
-                    </View>
-                  </View>
-                  <AppText tone="secondary" variant="bodySmall">
-                    {review.createdAt}
-                  </AppText>
-                  <AppText>{review.text}</AppText>
                 </View>
-              ))
-            ) : (
-              <AppText tone="secondary">No reviews yet. Be the first!</AppText>
-            )}
-          </Card>
-        </View>
-      </Animated.ScrollView>
-      <FAB>
-        <Button
-          fullWidth={false}
-          label={isSaved ? "Saved" : "Save favourite"}
-          variant={isSaved ? "secondary" : "primary"}
-          onPress={() => {
-            if (!isAuthenticated) {
-              setReturnRoute({ name: "DishDetail", params: { dishId: dish.id } });
-              navigation.navigate("AuthStack", { screen: "Login" });
-              return;
-            }
-            toggleFavourite(dish);
-            showToast({
-              message: isSaved ? "Removed from favourites." : "Saved to favourites!",
-              tone: "success",
-            });
+              </View>
+            </View>
+          </View>
+
+          <View style={{ gap: spacing[5], paddingHorizontal: spacing[5], paddingTop: spacing[5] }}>
+            {/* Title & Trust */}
+            <View style={{ gap: spacing[1] }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2], marginBottom: spacing[1] }}>
+                <Badge label={`${tasteMatch}% match`} tone="orange" />
+                {dish.mustOrder && <Badge label="Must Order" tone="amber" />}
+              </View>
+              <AppText variant="h1" style={{ fontSize: 28 }}>{dish.name}</AppText>
+              <AppText variant="bodyLarge" tone="secondary">{venue.name} · {venue.unitNumber}</AppText>
+              <AppText variant="price" style={{ fontSize: 20, color: palette.orange }}>{dish.priceRange}</AppText>
+            </View>
+
+            {/* Taste graph */}
+            <View>
+              <AppText variant="h3">Taste Profile</AppText>
+              <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
+                {TASTE_DIMENSIONS.map((dimension) => {
+                  const score = dish.tasteVector[dimension.key] ?? 0;
+                  const isDominant = score === maxTasteScore && score > 0;
+                  const progressWidth = `${Math.max(0, Math.min(100, Math.round((score / 10) * 100)))}%` as const;
+
+                  return (
+                    <View key={dimension.key} style={{ gap: spacing[1] }}>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                        <AppText variant="bodySmall" style={{ fontWeight: isDominant ? "700" : "400" }}>{dimension.label}</AppText>
+                        <AppText variant="micro" tone="secondary">{score.toFixed(1)}</AppText>
+                      </View>
+                      <View style={{ backgroundColor: palette.border, borderRadius: radii.pill, height: 8, overflow: "hidden" }}>
+                        <View style={{ backgroundColor: isDominant ? palette.orange : palette.orangeLight, borderRadius: radii.pill, height: "100%", width: progressWidth }} />
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Closure notice */}
+            {venue.closureNotice ? <InlineBanner message={venue.closureNotice} tone="warning" /> : null}
+
+            {/* Order / delivery */}
+            <Card>
+              <AppText variant="h3">Order Now</AppText>
+              {deliveryAvailable ? (
+                <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
+                  {venue.deliveryLinks.map((link) => (
+                    <DeliveryPlatformButton key={link.platform} link={link} />
+                  ))}
+                </View>
+              ) : (
+                <EmptyState title="Dine-in only" body="This stall has no verified delivery links yet." />
+              )}
+            </Card>
+
+            {/* Reviews */}
+            <View style={{ gap: spacing[4] }}>
+              <AppText variant="h2">Community Reviews</AppText>
+              {dish.reviews.length ? (
+                dish.reviews.map((review) => (
+                  <Card key={review.id} style={{ gap: spacing[2] }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+                        <Star color={palette.amber} fill={palette.amber} size={12} />
+                        <AppText variant="micro" style={{ fontWeight: "700" }}>{review.rating}</AppText>
+                      </View>
+                    </View>
+                    <AppText variant="bodySmall" tone="secondary">{review.text}</AppText>
+                  </Card>
+                ))
+              ) : (
+                <AppText tone="secondary">No reviews yet. Be the first!</AppText>
+              )}
+            </View>
+          </View>
+        </Animated.ScrollView>
+
+        {/* CTA Dock - Horizontally Aligned Sticky Bottom */}
+        <View 
+          style={{ 
+            position: "absolute", 
+            bottom: 0, 
+            left: 0, 
+            right: 0, 
+            backgroundColor: palette.bg, 
+            paddingHorizontal: spacing[4], 
+            paddingTop: spacing[3],
+            paddingBottom: Math.max(insets.bottom, spacing[4]),
+            flexDirection: "row",
+            gap: spacing[3],
+            borderTopWidth: 1,
+            borderTopColor: palette.border
           }}
-        />
-        <Button
-          fullWidth={false}
-          label="Write a review"
-          variant="secondary"
-          onPress={() => {
-            if (!isAuthenticated) {
-              setReturnRoute({
-                name: "ReviewStack",
-                params: {
-                  screen: "ReviewRating",
-                  params: { venueId: venue.id, dishId: dish.id },
-                },
+        >
+          <Button
+            style={{ flex: 2 }}
+            label={isSaved ? "Saved" : "Save Favorite"}
+            variant={isSaved ? "secondary" : "primary"}
+            onPress={() => {
+              if (!isAuthenticated) {
+                setReturnRoute({ name: "DishDetail", params: { dishId: dish.id } });
+                navigation.navigate("AuthStack", { screen: "Login" });
+                return;
+              }
+              toggleFavourite(dish);
+              showToast({
+                message: isSaved ? "Removed from favourites." : "Saved to favourites!",
+                tone: "success",
               });
-              navigation.navigate("AuthStack", { screen: "Login" });
-              return;
-            }
-            navigation.navigate("ReviewStack", {
-              screen: "ReviewRating",
-              params: { venueId: venue.id, dishId: dish.id },
-            });
-          }}
-        />
-      </FAB>
+            }}
+          />
+          <Button
+            style={{ flex: 1 }}
+            label="Review"
+            variant="secondary"
+            onPress={() => {
+              if (!isAuthenticated) {
+                setReturnRoute({
+                  name: "ReviewStack",
+                  params: {
+                    screen: "ReviewRating",
+                    params: { venueId: venue.id, dishId: dish.id },
+                  },
+                });
+                navigation.navigate("AuthStack", { screen: "Login" });
+                return;
+              }
+              navigation.navigate("ReviewStack", {
+                screen: "ReviewRating",
+                params: { venueId: venue.id, dishId: dish.id },
+              });
+            }}
+          />
+        </View>
+      </View>
     </SafeAreaView>
   );
 }

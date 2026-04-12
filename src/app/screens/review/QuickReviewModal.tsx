@@ -44,14 +44,15 @@ export function QuickReviewModal() {
         <QuickReviewSheet 
           venueName={payload.venueName} 
           dishName={payload.dishName}
-          onSuccess={() => {
+          onSuccess={(data) => {
             hideQuickReview();
             showReviewSuccess({
               venueName: payload.venueName,
               dishName: payload.dishName ?? "Dish",
-              rating: 5,
-              pointsEarned: 25,
-              tagCount: 3,
+              rating: data.rating,
+              pointsEarned: 10 + data.tagCount * 2,
+              xpEarned: 10 + data.tagCount * 2,
+              tagCount: data.tagCount,
             });
           }}
         />

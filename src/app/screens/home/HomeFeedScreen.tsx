@@ -9,7 +9,6 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics";
 
 import { AppText, Button, EmptyState, Skeleton } from "@/components/ui";
-const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as any;
 import { BitesCarousel } from "@/components/social";
 import { getHomeFeed, type HomeFeedItem } from "@/features/home/feed";
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
@@ -53,12 +52,16 @@ type InteractionState = {
 export function HomeFeedScreen() {
   const navigation = useNavigation<any>();
   const { width: screenWidth } = useWindowDimensions();
-  const { palette, spacing } = useHungryTheme();
+  const { palette, spacing, radii } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const leftHandedMode = useProfileStore((state) => state.profile.leftHandedMode ?? false);
   const profile = useProfileStore((state) => state.profile);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
   const [feed, setFeed] = useState<HomeFeedItem[]>([]);
+  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
+
   const [interactionByPostId, setInteractionByPostId] = useState<Record<string, InteractionState>>({});
 
   const loadFeed = useCallback(async () => {
@@ -103,11 +106,12 @@ export function HomeFeedScreen() {
     });
   };
 
-  const openComments = useCallback(() => {
-    commentSheetRef.current?.present();
+  const openComments = useCallback((item: HomeFeedItem) => {
+    commentsSheetRef.current?.present();
   }, []);
 
-  const commentSheetRef = useRef<BottomSheetModal>(null);
+  const commentsSheetRef = useRef<BottomSheetModal>(null);
+  const commentSnapPoints = useMemo(() => ["60%", "90%"], []);
   const renderCommentBackdrop = useCallback(
     (props: any) => <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />,
     [],
@@ -121,19 +125,26 @@ export function HomeFeedScreen() {
     navigation.navigate("DishDetail", { dishId });
   }, [navigation]);
 
+  const getGreeting = useCallback(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return `Good morning, ${profile.displayName.split(" ")[0]}`;
+    if (hour < 17) return "Hungry for lunch?";
+    return "Suggested for dinner";
+  }, [profile.displayName]);
+
   const renderHeader = useCallback(() => {
     return (
       <View style={{ gap: spacing[6], paddingBottom: spacing[4] }}>
         <View style={{ paddingHorizontal: spacing[4], paddingBottom: spacing[2], flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <View>
-            <AppText style={{ fontSize: 24, fontWeight: "900", color: palette.orange }}>Hungry</AppText>
+            <AppText style={{ fontSize: 24, fontWeight: "900", color: palette.orange }}>{getGreeting()}</AppText>
             <AppText variant="bodySmall" tone="secondary">Tanjong Pagar · 14 nearby</AppText>
           </View>
           <Pressable 
-            onPress={() => navigation.navigate("WheelStack")}
+            onPress={() => navigation.navigate("DirectMessages")}
             style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}
           >
-            <Compass color={palette.orange} size={24} />
+            <Send color={palette.orange} size={24} />
           </Pressable>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[4] }}>
@@ -148,23 +159,27 @@ export function HomeFeedScreen() {
         </ScrollView>
       </View>
     );
-  }, [feed, palette, spacing, navigation]);
+  }, [feed, palette, spacing, navigation, getGreeting]);
 
   const renderItem = useCallback(
     ({ item }: { item: HomeFeedItem }) => {
       const interaction = interactionByPostId[item.id] ?? {
         liked: false, saved: false, likeCount: 12, saveCount: 4, shareCount: 2, commentCount: 3,
       };
-      const imageHeight = screenWidth / (4 / 5);
+      const isLiked = interaction.liked;
+      const isSaved = interaction.saved;
+
+      const imageAspectRatio = 4 / 5;
+      const imageHeight = screenWidth / imageAspectRatio;
 
       return (
         <View style={{ marginBottom: spacing[8], backgroundColor: palette.bg }}>
           {/* Top Bar: Author & Location */}
           <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: spacing[4], paddingVertical: spacing[3], gap: spacing[3] }}>
-            <Image source={{ uri: item.authorAvatarUrl }} style={{ width: 36, height: 36, borderRadius: 18 }} />
+            <Image source={{ uri: item.authorAvatarUrl }} style={{ width: 40, height: 40, borderRadius: 20 }} />
             <View style={{ flex: 1 }}>
-              <AppText style={{ fontFamily: "Nunito_700Bold", fontSize: 14 }}>{item.authorName}</AppText>
-              <AppText variant="micro" tone="secondary">{item.authorLocation}</AppText>
+              <AppText style={{ fontFamily: "Nunito_700Bold", fontSize: 16 }}>{item.authorName}</AppText>
+              <AppText style={{ fontSize: 12, color: palette.textSecondary }}>{item.authorLocation}</AppText>
             </View>
             <MoreHorizontal color={palette.textMuted} size={20} />
           </View>
@@ -190,30 +205,39 @@ export function HomeFeedScreen() {
               style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: spacing[3] }}
             >
               <MapPin color={palette.orange} size={16} style={{ marginRight: 4 }} />
-              <AppText style={{ fontFamily: "Nunito_700Bold", color: palette.text, fontSize: 13 }} numberOfLines={1}>
+              <AppText style={{ fontFamily: "Nunito_700Bold", color: palette.text, fontSize: 15 }} numberOfLines={1}>
                 {item.venue.buildingId.replace("hc-", "").replace("fc-", "").replace("building-", "").replace("-", " ").toUpperCase()}
               </AppText>
             </Pressable>
 
             {/* Right side: Interaction Icons */}
             <View style={{ flexDirection: leftHandedMode ? "row-reverse" : "row", alignItems: "center", gap: spacing[4], flexShrink: 0 }}>
-              <Pressable onPress={() => toggleSave(item.id)}>
-                <Bookmark color={interaction.saved ? palette.orange : palette.text} fill={interaction.saved ? palette.orange : "transparent"} size={24} />
-              </Pressable>
-              <Pressable onPress={openComments}>
-                <MessageCircle color={palette.text} size={24} />
-              </Pressable>
-              <Pressable onPress={() => toggleLike(item.id)}>
-                <Heart color={interaction.liked ? palette.error : palette.text} fill={interaction.liked ? palette.error : "transparent"} size={24} />
-              </Pressable>
+              <View style={{ alignItems: "center" }}>
+                <Pressable onPress={() => toggleSave(item.id)}>
+                  <Bookmark color={isSaved ? palette.orange : palette.text} fill={isSaved ? palette.orange : "transparent"} size={24} />
+                </Pressable>
+                <AppText variant="micro" tone="secondary" style={{ marginTop: 2 }}>{interaction.saveCount}</AppText>
+              </View>
+              <View style={{ alignItems: "center" }}>
+                <Pressable onPress={() => openComments(item)}>
+                  <MessageCircle color={palette.text} size={24} />
+                </Pressable>
+                <AppText variant="micro" tone="secondary" style={{ marginTop: 2 }}>{interaction.commentCount}</AppText>
+              </View>
+              <View style={{ alignItems: "center" }}>
+                <Pressable onPress={() => toggleLike(item.id)}>
+                  <Heart color={isLiked ? palette.error : palette.text} fill={isLiked ? palette.error : "transparent"} size={24} />
+                </Pressable>
+                <AppText variant="micro" tone="secondary" style={{ marginTop: 2 }}>{interaction.likeCount}</AppText>
+              </View>
             </View>
           </View>
 
           {/* Caption & Metadata */}
           <View style={{ paddingHorizontal: spacing[4], gap: spacing[1] }}>
-            <AppText variant="bodySmall" style={{ lineHeight: 20 }}>
-              <AppText style={{ fontFamily: "Nunito_700Bold", fontSize: 13 }}>{item.authorName} </AppText>
-              <AppText style={{ fontSize: 13 }}>{item.caption}</AppText>
+            <AppText style={{ lineHeight: 22, fontSize: 15 }}>
+              <AppText style={{ fontFamily: "Nunito_700Bold", fontSize: 15 }}>{item.authorName} </AppText>
+              <AppText style={{ fontSize: 15 }}>{item.caption}</AppText>
             </AppText>
             <AppText variant="micro" tone="muted">{item.createdAt}</AppText>
           </View>
@@ -240,7 +264,12 @@ export function HomeFeedScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top", "left", "right"]}>
         <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: spacing[5] }}>
-          <EmptyState title="Unable to load feed" body="Please try again." ctaLabel="Retry" onPress={loadFeed} />
+          <EmptyState 
+            title="Something went wrong" 
+            body="We couldn't load your feed right now. Please check your connection and try again." 
+            ctaLabel="Retry" 
+            onPress={loadFeed} 
+          />
         </View>
       </SafeAreaView>
     );
@@ -248,7 +277,7 @@ export function HomeFeedScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top", "left", "right"]}>
-      <AnimatedFlatList
+      <Animated.FlatList
         data={feed}
         keyExtractor={(item: HomeFeedItem) => item.id}
         renderItem={renderItem}
@@ -261,12 +290,18 @@ export function HomeFeedScreen() {
         maxToRenderPerBatch={3}
         initialNumToRender={2}
         windowSize={5}
+        ListEmptyComponent={
+          <EmptyState
+            title="Feed is taking a break"
+            body="We're still gathering the latest food stories for you. Check back shortly for new recommendations near you!"
+          />
+        }
       />
 
       <BottomSheetModal
-        ref={commentSheetRef}
+        ref={commentsSheetRef}
         index={0}
-        snapPoints={["60%", "90%"]}
+        snapPoints={commentSnapPoints}
         backdropComponent={renderCommentBackdrop}
         backgroundStyle={{ backgroundColor: palette.surface }}
         handleIndicatorStyle={{ backgroundColor: palette.border }}

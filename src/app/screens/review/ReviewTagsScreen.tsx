@@ -11,12 +11,13 @@ import type { ReviewStackParamList } from "./ReviewStack";
 
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewTags">;
 
-export function ReviewTagsScreen({ navigation }: Props) {
+export function ReviewTagsScreen({ navigation, route }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
   const tags = useReviewDraftStore((state) => state.draft.selectedTags);
   const recommend = useReviewDraftStore((state) => state.draft.recommend);
   const toggleTag = useReviewDraftStore((state) => state.toggleTag);
   const setRecommend = useReviewDraftStore((state) => state.setRecommend);
+  const { venueId, dishId } = route.params;
 
   return (
     <ReviewScreenShell
@@ -96,7 +97,7 @@ export function ReviewTagsScreen({ navigation }: Props) {
           </View>
         </View>
       </Card>
-      <Button label="Next: final comments" onPress={() => navigation.navigate("ReviewCompose")} />
+      <Button label="Next: final comments" onPress={() => navigation.navigate("ReviewCompose", { venueId, dishId })} />
       <Button label="Back" variant="ghost" onPress={() => navigation.goBack()} />
     </ReviewScreenShell>
   );

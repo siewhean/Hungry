@@ -2,21 +2,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions, Animated, PanResponder } from "react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
-import { LocateFixed, Map as MapIcon, Navigation, ChevronRight, Star, Search, Filter, Utensils, Info, Heart, X, Users } from "lucide-react-native";
+import { LocateFixed, Map as MapIcon, ChevronRight, Star, Search, Filter, Utensils, Heart, X } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { MapSurface, type MapSurfaceMarker } from "@/components/map";
-import { AppText, Button, Chip, Badge } from "@/components/ui";
-import { getBuildingVenues } from "@/features/discovery/discovery";
+import { MapSurface, type MapSurfaceMarker, BuildingLegend } from "@/components/map";
+import { AppText, Chip } from "@/components/ui";
 import { getBuildingById, getNearestBuildings, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme } from "@/theme";
-import type { Coordinate, VenueSummary, DishDetail } from "@/types/domain";
+import type { DishDetail } from "@/types/domain";
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
 
@@ -44,10 +43,9 @@ export function HomeMapScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const { palette, radii, spacing, shadows } = useHungryTheme();
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { width: screenWidth } = useWindowDimensions();
   
   const currentLocation = useLocationStore((state) => state.currentLocation);
-  const gpsBadgeState = useLocationStore((state) => state.gpsBadgeState);
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
   const mapFilters = useDiscoveryStore((state) => state.mapFilters);
@@ -83,9 +81,8 @@ export function HomeMapScreen() {
   const [selectedDish, setSelectedDish] = useState<DishDetail | null>(null);
   const [displayMode, setDisplayMode] = useState<"carousel" | "list">("carousel");
 
-  // --- MANUAL ANIMATED CARD LOGIC ---
-  const PEEK_HEIGHT = 250; // Increased to clear tab bar
-  const FULL_HEIGHT = 560; 
+  const PEEK_HEIGHT = 240; 
+  const FULL_HEIGHT = 600; 
 
   const animatedHeight = useRef(new Animated.Value(PEEK_HEIGHT)).current;
 
@@ -129,8 +126,9 @@ export function HomeMapScreen() {
       accent: b.type === "hawker_centre" ? palette.orange : palette.teal,
       type: b.type,
     }));
-    if (currentZoom > 17) {
-      const stallMarkers = mockRepository.listVenuesByBuilding(activeBuildingRecord.id).map(v => ({
+    if (currentZoom > 16.5) {
+      const venues = mockRepository.listVenuesByBuilding(activeBuildingRecord.id);
+      const stallMarkers = venues.map(v => ({
         id: `stall-${v.id}`,
         label: v.name,
         coordinate: {
@@ -144,6 +142,10 @@ export function HomeMapScreen() {
     return bMarkers;
   }, [palette, visibleBuildings, currentZoom, activeBuildingRecord]);
 
+  const cameraPadding = useMemo(() => ({
+    paddingBottom: (selectedDish || displayMode === "list") ? 300 : 260
+  }), [selectedDish, displayMode]);
+
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
       <MapSurface
@@ -151,6 +153,7 @@ export function HomeMapScreen() {
         centerCoordinate={activeBuildingRecord.coordinate}
         zoomLevel={currentZoom}
         markers={markers}
+        cameraPadding={cameraPadding}
         onMapPress={() => {
           setSelectedDish(null);
           snapTo(PEEK_HEIGHT);
@@ -162,7 +165,7 @@ export function HomeMapScreen() {
       <SafeAreaView style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 20 }} edges={["top"]}>
         <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[2], gap: spacing[3] }}>
           <View style={{ flexDirection: "row", gap: spacing[2], alignItems: "center" }}>
-            <Pressable onPress={() => navigation.navigate("SearchHome")} style={[styles.searchBar, shadows.floating, { backgroundColor: palette.surface, borderRadius: radii.pill, flex: 1 }]}>
+            <Pressable onPress={() => navigation.navigate("SearchHome")} style={[styles.searchBar, { backgroundColor: palette.surface, borderRadius: radii.pill, flex: 1, ...shadows.floating }]}>
               <Search color={palette.textMuted} size={20} />
               <AppText tone="secondary" style={{ flex: 1 }}>Search dishes or stalls...</AppText>
               <View style={{ width: 1, height: 20, backgroundColor: palette.border }} />
@@ -174,7 +177,7 @@ export function HomeMapScreen() {
                 setDisplayMode(next);
                 void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
-              style={[shadows.floating, { width: 52, height: 52, borderRadius: 26, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center" }]}
+              style={[{ width: 52, height: 52, borderRadius: 26, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center", ...shadows.floating }]}
             >
               {displayMode === "carousel" ? <Utensils color={palette.orange} size={22} /> : <MapIcon color={palette.orange} size={22} />}
             </Pressable>
@@ -189,7 +192,7 @@ export function HomeMapScreen() {
             <Chip 
               label="Hawker" 
               selected={mapFilters.hawkerOnly} 
-              onPress={() => toggleMapFilter("nearMe")} 
+              onPress={() => toggleMapFilter("hawkerOnly")} 
             />
             <Chip label="Top Rated" selected={mapFilters.topRated} onPress={() => toggleMapFilter("topRated")} />
             <Chip label="Open Now" selected={mapFilters.openNow} onPress={() => toggleMapFilter("openNow")} />
@@ -197,31 +200,33 @@ export function HomeMapScreen() {
         </View>
       </SafeAreaView>
 
-      <Pressable onPress={() => setSelectedBuilding(toSummary(getBuildingById(DEFAULT_BUILDING_ID)!))} style={[styles.floatingButton, { bottom: PEEK_HEIGHT + 20, right: spacing[4], backgroundColor: palette.surface }, shadows.floating]}>
+      <Pressable onPress={() => setSelectedBuilding(toSummary(getBuildingById(DEFAULT_BUILDING_ID)!))} style={[styles.floatingButton, { bottom: PEEK_HEIGHT + spacing[6], right: spacing[4], backgroundColor: palette.surface, ...shadows.floating }]}>
         <LocateFixed color={palette.orange} size={24} />
       </Pressable>
+
+      {/* Floating Legend */}
+      <View style={{ position: "absolute", bottom: PEEK_HEIGHT + spacing[4], left: spacing[4], zIndex: 20 }}>
+        <BuildingLegend />
+      </View>
 
       <Animated.View 
         {...panResponder.panHandlers}
         style={[
           styles.animatedCard, 
-          shadows.floating, 
           { 
-            backgroundColor: (selectedDish || displayMode === "list") ? "#FFFFFF" : "transparent",
+            backgroundColor: "#FFFFFF",
             height: animatedHeight,
             zIndex: 50,
-            elevation: 10,
-            bottom: 0, // Increased clearance
+            bottom: 0,
             paddingHorizontal: (selectedDish || displayMode === "list") ? 16 : 0,
-            borderTopLeftRadius: 40,
-            borderTopRightRadius: 40,
-            borderRadius: (selectedDish || displayMode === "list") ? 40 : 0,
+            borderTopLeftRadius: radii.xl,
+            borderTopRightRadius: radii.xl,
+            ...shadows.floating,
           }
         ]}
       >
-        {/* Handle Bar / Close Header */}
         <View style={{ width: "100%", height: 40, alignItems: "center", justifyContent: "center", position: "relative" }}>
-          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: palette.border, opacity: (selectedDish || displayMode === "list") ? 1 : 0 }} />
+          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: palette.border }} />
           {selectedDish && (
             <Pressable 
               onPress={() => { setSelectedDish(null); snapTo(PEEK_HEIGHT); }}
@@ -233,10 +238,10 @@ export function HomeMapScreen() {
         </View>
 
         {selectedDish ? (
-          <View style={{ gap: spacing[4], paddingBottom: insets.bottom + 20 }}>
+          <View style={{ gap: spacing[4], paddingBottom: insets.bottom + spacing[4], paddingHorizontal: 16 }}>
             <View style={{ width: "100%", height: 240, borderRadius: 32, overflow: "hidden", position: "relative" }}>
               <Image source={{ uri: selectedDish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
-              <View style={{ position: "absolute", top: 16, right: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center", ...shadows.floating }}>
+              <View style={[{ position: "absolute", top: 16, right: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center", ...shadows.floating }]}>
                 <Heart color={palette.error} size={22} fill={palette.error} />
               </View>
               <View style={{ position: "absolute", bottom: 16, left: 16, backgroundColor: "#FACC15", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14 }}>
@@ -258,20 +263,11 @@ export function HomeMapScreen() {
                 </View>
               </View>
               <AppText style={{ fontSize: 16, color: palette.textSecondary }}>
-                {selectedDish.venueName} • {(selectedDish.distanceMeters / 1609).toFixed(1)} miles
-              </AppText>
-            </View>
-
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View style={{ width: 36, height: 32, borderRadius: 18, borderWidth: 3, borderColor: "#FFFFFF", backgroundColor: "#E5E7EB" }} />
-                <View style={{ width: 36, height: 32, borderRadius: 18, borderWidth: 3, borderColor: "#FFFFFF", backgroundColor: "#D1D5DB", marginLeft: -14 }} />
-                <View style={{ width: 36, height: 32, borderRadius: 18, borderWidth: 3, borderColor: "#FFFFFF", backgroundColor: palette.orangeLight, marginLeft: -14, alignItems: "center", justifyContent: "center" }}>
-                  <AppText style={{ fontSize: 10, fontWeight: "800", color: palette.orange }}>+12</AppText>
-                </View>
-              </View>
-              <AppText variant="bodySmall" style={{ flex: 1, color: "#4B5563", fontStyle: "italic", lineHeight: 18 }}>
-                "Best {selectedDish.name.toLowerCase()} in the city, hands down."
+                {selectedDish.venueName} • {(() => {
+                  const venues = mockRepository.listVenuesByBuilding(activeBuildingRecord.id);
+                  const openCount = venues.filter(v => v.isOpen).length;
+                  return openCount > 0 ? `${openCount} stalls open now` : "Building currently closed";
+                })()}
               </AppText>
             </View>
 
@@ -283,7 +279,7 @@ export function HomeMapScreen() {
                 <AppText style={{ fontSize: 16, fontWeight: "700", color: "#1F2937" }}>View Menu</AppText>
               </Pressable>
               <Pressable 
-                style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center", ...shadows.floating }}
+                style={[{ flex: 1, height: 56, borderRadius: 28, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center", ...shadows.floating }]}
               >
                 <AppText style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>Reserve Now</AppText>
               </Pressable>
@@ -322,7 +318,7 @@ export function HomeMapScreen() {
           <View style={{ height: 200 }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[4], paddingHorizontal: spacing[4] }}>
               {areaPopularDishes.map((dish) => (
-                <Pressable key={dish.id} onPress={() => handleCardPress(dish)} style={[shadows.floating, styles.carouselCard]}>
+                <Pressable key={dish.id} onPress={() => handleCardPress(dish)} style={[{ ...shadows.floating, backgroundColor: "#FFFFFF", borderRadius: 24, overflow: "hidden", width: 280 }]}>
                   <View style={{ height: 140 }}>
                     <Image source={{ uri: dish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
                     {dish.liveCrowd && (
@@ -370,10 +366,4 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
-  carouselCard: {
-    width: 280,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    overflow: "hidden",
-  }
 });

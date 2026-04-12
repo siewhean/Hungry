@@ -1,11 +1,11 @@
-import { Pressable, ScrollView, View, useWindowDimensions, Animated } from "react-native";
+import type { ReactNode } from "react";
+import { useMemo, useState } from "react";
+import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
-import { ChevronRight, Map, MapPinned, Search, Shuffle, Star, Flame, Home, Compass, Utensils } from "lucide-react-native";
+import { ChevronRight, Compass, MapPinned, Search, Shuffle, Star, Flame, Home, Compass as CompassIcon, Utensils } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useMemo, type ReactNode, useRef } from "react";
-import * as Haptics from "expo-haptics";
 
-import { AppText, Button, Chip, Input, Screen } from "@/components/ui";
+import { AppText, Chip, Input, Screen } from "@/components/ui";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -13,20 +13,12 @@ import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
 import type { SearchCategory } from "@/types/domain";
 
-type IntentChip = {
-  label: string;
-  icon?: ReactNode;
-  category?: SearchCategory;
-  action?: "decide";
-};
-
-const INTENT_CHIPS: IntentChip[] = [
-  { label: "Near me", icon: <MapPinned size={14} /> },
-  { label: "Spicy", category: "local favourites", icon: <Flame size={14} /> },
-  { label: "Best rated", category: "rice", icon: <Star size={14} /> },
-  { label: "Hawker", category: "noodles", icon: <Home size={14} /> },
-  { label: "Decide for me", action: "decide", icon: <Compass size={14} /> },
-];
+const INTENT_CHIPS = [
+  { id: "spicy", label: "Spicy", category: "local favourites" },
+  { id: "halal", label: "Halal", category: "rice" },
+  { id: "late", label: "Late night", category: "late night" },
+  { id: "cheap", label: "Value", category: "noodles" },
+] as const;
 
 export function DiscoverHomeScreen() {
   const navigation = useNavigation<any>();
@@ -37,27 +29,22 @@ export function DiscoverHomeScreen() {
   const selectedCategories = useSearchStore((state) => state.filters.categories);
   const toggleCategory = useSearchStore((state) => state.toggleCategory);
 
-  const buildings = mockRepository.listBuildings();
   const recommendedDishes = popularNearby.slice(0, 4);
-  const nearbyVenues = buildings
+  const nearbyVenues = mockRepository.listBuildings()
     .slice(0, 4)
     .map((building) => {
-      const venue = mockRepository.listVenuesByBuilding(building.id)[0];
+      const venues = mockRepository.listVenuesByBuilding(building.id);
+      const venue = venues[0];
       const topDish = venue ? mockRepository.getDishById(venue.topDishId) : undefined;
       return venue ? { building, venue, topDish } : null;
     })
     .filter(Boolean) as Array<{
-    building: (typeof buildings)[number];
+    building: any;
     venue: NonNullable<ReturnType<typeof mockRepository.getVenueById>>;
     topDish: ReturnType<typeof mockRepository.getDishById>;
   }>;
 
-  const nearestBuilding = useMemo(() => buildings[0], [buildings]);
-
-  const searchBarAnim = useRef(new Animated.Value(0)).current;
-
   const handleDecideForMe = () => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const picked = mockRepository.getDecideForMe(profile.tasteVector);
     if (picked) {
       setDecideForMe(picked);
@@ -67,162 +54,131 @@ export function DiscoverHomeScreen() {
 
   return (
     <Screen scroll={false}>
-      {/* Header */}
-      <View style={{ paddingLeft: spacing[2], paddingRight: spacing[4], paddingTop: spacing[3], paddingBottom: spacing[1], backgroundColor: palette.bg }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <AppText variant="h1">Discover</AppText>
-          <Pressable
-            onPress={() => navigation.navigate("Maps")}
-            style={{
-              width: 44, height: 44, borderRadius: radii.md, backgroundColor: palette.orangeLight,
-              alignItems: "center", justifyContent: "center",
-            }}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ gap: spacing[6], paddingBottom: spacing[12] }}
+      >
+        {/* Dynamic Location Header */}
+        <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[2] }}>
+          <AppText variant="micro" tone="accent" style={{ letterSpacing: 1, marginBottom: 2 }}>
+            YOU ARE AT
+          </AppText>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <AppText variant="h1" style={{ fontSize: 28 }}>Tanjong Pagar</AppText>
+            <Pressable 
+              onPress={() => navigation.navigate("Maps")}
+              style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: palette.orangeLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radii.pill }}
+            >
+              <MapPinned color={palette.orange} size={14} />
+              <AppText variant="micro" style={{ color: palette.orange, fontWeight: "700" }}>MAP</AppText>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Search Bar Entry */}
+        <View style={{ paddingHorizontal: spacing[4] }}>
+          <Pressable 
+            onPress={() => navigation.navigate("SearchHome")}
+            style={[
+              shadows.card,
+              {
+                backgroundColor: palette.surface,
+                borderRadius: radii.md,
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: spacing[4],
+                height: 52,
+                gap: spacing[3],
+                borderWidth: 1,
+                borderColor: palette.border,
+              }
+            ]}
           >
-            <Map color={palette.orange} size={20} />
+            <Search color={palette.textMuted} size={20} />
+            <AppText tone="secondary" style={{ flex: 1 }}>Search dishes, stalls or vibes...</AppText>
           </Pressable>
         </View>
-        
-        <Pressable 
-          onPress={() => navigation.navigate("Maps")}
-          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1], marginTop: 2, marginBottom: spacing[1] }}
-        >
-          <AppText variant="bodySmall" style={{ color: palette.orange, fontWeight: "700" }}>
-            Maxwell Food Centre • 42 stalls nearby
-          </AppText>
-          <ChevronRight color={palette.orange} size={14} />
-        </Pressable>
-      </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: spacing[5], paddingBottom: spacing[12] }}>
-        
-        {/* Search Bar */}
-        <Pressable 
-          onPress={() => {
-            Animated.timing(searchBarAnim, {
-              toValue: 1,
-              duration: 200,
-              useNativeDriver: true,
-            }).start(() => {
-              navigation.navigate("SearchHome");
-              searchBarAnim.setValue(0);
-            });
-          }} 
-          style={{ paddingHorizontal: spacing[4] }}
+        {/* Intent Chips with Icons */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: spacing[2], paddingHorizontal: spacing[4] }}
         >
-          <Animated.View style={{ 
-            transform: [{ scale: searchBarAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.02] }) }],
-            opacity: searchBarAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0.9] })
-          }}>
-            <View pointerEvents="none">
-              <Input
-                leftIcon={<Search color={palette.textMuted} size={18} />}
-                placeholder="Dishes, stalls, or centres…"
-                editable={false}
+          {INTENT_CHIPS.map((chip) => {
+            const isActive = selectedCategories.includes(chip.category as SearchCategory);
+            return (
+              <Chip
+                key={chip.id}
+                label={chip.label}
+                selected={isActive}
+                onPress={() => toggleCategory(chip.category as SearchCategory)}
+                leftIcon={chip.id === "spicy" ? <Flame size={14} color={isActive ? palette.orange : palette.textSecondary} /> : 
+                          chip.id === "halal" ? <Home size={14} color={isActive ? palette.orange : palette.textSecondary} /> :
+                          chip.id === "late" ? <Compass size={14} color={isActive ? palette.orange : palette.textSecondary} /> :
+                          <Utensils size={14} color={isActive ? palette.orange : palette.textSecondary} />}
               />
-            </View>
-          </Animated.View>
-        </Pressable>
-
-        {/* Intent Chips */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[2], paddingHorizontal: spacing[4] }}>
-          {INTENT_CHIPS.map((chip) => (
-            <Chip
-              key={chip.label}
-              label={chip.label}
-              leftIcon={chip.icon}
-              selected={chip.category ? selectedCategories.includes(chip.category) : false}
-              onPress={() => {
-                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                if (chip.category) toggleCategory(chip.category);
-                else if (chip.action === "decide") handleDecideForMe();
-              }}
-            />
-          ))}
+            );
+          })}
         </ScrollView>
 
-        {/* Two large targets */}
+        {/* Proactive Selection Grid */}
         <View style={{ flexDirection: "row", gap: spacing[3], paddingHorizontal: spacing[4] }}>
-          <QuickLinkCard
-            label="Stalls"
-            subtitle="Browse by venue"
-            icon={<Utensils size={24} color={palette.orange} />}
-            onPress={() => navigation.navigate("Maps")}
-          />
-          <QuickLinkCard
-            label="Dishes"
-            subtitle="Find cravings first"
-            icon={<Search size={24} color={palette.orange} />}
-            onPress={() => navigation.navigate("SearchHome")}
-          />
-        </View>
-
-        {/* Decide for Me prominent card */}
-        <View style={{ paddingHorizontal: spacing[4], gap: spacing[3] }}>
           <Pressable
             onPress={handleDecideForMe}
             style={[
               shadows.card,
               {
-                backgroundColor: palette.orangeLight,
-                borderColor: palette.orange,
-                borderWidth: 1,
+                backgroundColor: palette.orange,
                 borderRadius: radii.lg,
-                flexDirection: "row",
-                alignItems: "center",
+                flex: 1,
                 padding: spacing[4],
-                gap: spacing[4],
+                minHeight: 120,
+                justifyContent: "space-between",
               },
             ]}
           >
-            <View style={{ backgroundColor: palette.orange, width: 48, height: 48, borderRadius: radii.md, alignItems: "center", justifyContent: "center" }}>
-              <Shuffle color="#FFFFFF" size={24} />
+            <Shuffle color="#FFFFFF" size={24} />
+            <View>
+              <AppText variant="h3" tone="inverse">Decide For Me</AppText>
+              <AppText variant="micro" tone="inverse" style={{ opacity: 0.8 }}>Single-player pick</AppText>
             </View>
-            <View style={{ flex: 1 }}>
-              <AppText variant="h3">Decide for Me</AppText>
-              <AppText variant="bodySmall" tone="secondary">Single-player choice engine</AppText>
-            </View>
-            <ChevronRight color={palette.orange} size={20} />
           </Pressable>
 
           <Pressable
-            onPress={() => navigation.navigate("WheelStack")}
+            onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
             style={[
               shadows.card,
               {
-                backgroundColor: palette.bgSoft,
-                borderColor: palette.border,
-                borderWidth: 1,
+                backgroundColor: palette.navy,
                 borderRadius: radii.lg,
-                flexDirection: "row",
-                alignItems: "center",
+                flex: 1,
                 padding: spacing[4],
-                gap: spacing[4],
+                minHeight: 120,
+                justifyContent: "space-between",
               },
             ]}
           >
-            <View style={{ backgroundColor: palette.navy, width: 48, height: 48, borderRadius: radii.md, alignItems: "center", justifyContent: "center" }}>
-              <Compass color="#FFFFFF" size={24} />
+            <Compass color="#FFFFFF" size={24} />
+            <View>
+              <AppText variant="h3" tone="inverse">Hungry Wheel</AppText>
+              <AppText variant="micro" tone="inverse" style={{ opacity: 0.8 }}>Party mode</AppText>
             </View>
-            <View style={{ flex: 1 }}>
-              <AppText variant="h3">Hungry Wheel</AppText>
-              <AppText variant="bodySmall" tone="secondary">Group dining decision party</AppText>
-            </View>
-            <ChevronRight color={palette.textMuted} size={20} />
           </Pressable>
         </View>
 
-        {/* Trending dishes */}
+        {/* Recommended Dishes (Carousel) */}
         <View style={{ gap: spacing[3] }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing[4] }}>
-            <AppText variant="h2">Trending near you</AppText>
+            <AppText variant="h2">Trending Nearby</AppText>
             <Pressable onPress={() => navigation.navigate("SearchResults")}>
-              <AppText variant="bodySmall" tone="secondary">See all</AppText>
+              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>SEE ALL</AppText>
             </Pressable>
           </View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[4] }}
+            contentContainerStyle={{ gap: spacing[4], paddingHorizontal: spacing[4] }}
           >
             {recommendedDishes.map((dish) => (
               <Pressable
@@ -234,95 +190,69 @@ export function DiscoverHomeScreen() {
                     backgroundColor: palette.surface,
                     borderRadius: radii.lg,
                     overflow: "hidden",
-                    width: 160,
+                    width: screenWidth * 0.65,
                   },
                 ]}
               >
-                <Image source={{ uri: dish.imageUrl }} style={{ height: 120, width: "100%" }} contentFit="cover" />
-                <View style={{ padding: spacing[3], gap: spacing[1] }}>
+                <Image source={{ uri: dish.imageUrl }} style={{ height: 160, width: "100%" }} contentFit="cover" />
+                <View style={{ padding: spacing[3], gap: 2 }}>
                   <AppText variant="h3" numberOfLines={1}>{dish.name}</AppText>
-                  <AppText variant="micro" tone="secondary" numberOfLines={1}>{dish.venueName}</AppText>
-                  <AppText variant="price" style={{ color: palette.orange }}>S${dish.price.toFixed(2)}</AppText>
+                  <AppText variant="micro" tone="secondary">{dish.venueName}</AppText>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 4 }}>
+                    <AppText variant="price" style={{ color: palette.orange }}>S${dish.price.toFixed(2)}</AppText>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+                      <Star color={palette.amber} size={12} fill={palette.amber} />
+                      <AppText variant="micro" style={{ fontWeight: "700" }}>{dish.rating.toFixed(1)}</AppText>
+                    </View>
+                  </View>
                 </View>
               </Pressable>
             ))}
           </ScrollView>
         </View>
 
-        {/* Stalls near you */}
-        <View style={{ gap: spacing[3], paddingHorizontal: spacing[4] }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <AppText variant="h2">Stalls near you</AppText>
+        {/* Stalls Near You (Horizontal Selection) */}
+        <View style={{ gap: spacing[3] }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing[4] }}>
+            <AppText variant="h2">Stalls Near You</AppText>
             <Pressable onPress={() => navigation.navigate("Maps")}>
-              <AppText variant="bodySmall" tone="secondary">Map view</AppText>
+              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>VIEW MAP</AppText>
             </Pressable>
           </View>
-          {nearbyVenues.map(({ building, venue, topDish }) => (
-            <Pressable
-              key={venue.id}
-              onPress={() => navigation.navigate("MapZoomedIn", { buildingId: building.id })}
-              style={[
-                shadows.card,
-                {
-                  backgroundColor: palette.surface,
-                  borderRadius: radii.lg,
-                  padding: spacing[3],
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: spacing[3],
-                },
-              ]}
-            >
-              <View style={{ position: "relative" }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[4] }}
+          >
+            {nearbyVenues.map(({ venue, topDish }) => (
+              <Pressable
+                key={venue.id}
+                onPress={() => navigation.navigate("MapZoomedIn", { buildingId: venue.buildingId })}
+                style={[
+                  shadows.card,
+                  {
+                    backgroundColor: palette.surface,
+                    borderRadius: radii.lg,
+                    width: 160,
+                    padding: spacing[3],
+                    gap: spacing[2],
+                  },
+                ]}
+              >
                 <Image
-                  source={{ uri: topDish?.imageUrl ?? undefined }}
-                  style={{ borderRadius: radii.md, height: 64, width: 64, borderWidth: 2, borderColor: palette.orange }}
+                  source={{ uri: topDish?.imageUrl }}
+                  style={{ borderRadius: radii.md, height: 100, width: "100%" }}
                   contentFit="cover"
                 />
-                <View style={{ position: "absolute", bottom: -2, right: -2, backgroundColor: palette.bg, borderRadius: 8, padding: 1 }}>
-                  <Utensils color={palette.orange} size={8} />
+                <View style={{ gap: 2 }}>
+                  <AppText variant="bodySmall" style={{ fontWeight: "700" }} numberOfLines={1}>{venue.name}</AppText>
+                  <AppText variant="micro" tone="secondary" numberOfLines={1}>{venue.unitNumber} · {venue.operatingHours.split("–")[0]}</AppText>
                 </View>
-              </View>
-              <View style={{ flex: 1, gap: 2 }}>
-                <AppText variant="h3">{venue.name}</AppText>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: venue.isOpen ? palette.success : palette.error }} />
-                  <AppText variant="micro" tone="secondary">{venue.isOpen ? "Open" : "Closed"} · {building.name} · 80m</AppText>
-                </View>
-              </View>
-              <View style={{ backgroundColor: palette.bgSoft, width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" }}>
-                <AppText style={{ fontSize: 12, fontWeight: "700" }}>A</AppText>
-              </View>
-            </Pressable>
-          ))}
+              </Pressable>
+            ))}
+          </ScrollView>
         </View>
       </ScrollView>
     </Screen>
-  );
-}
-
-function QuickLinkCard({ label, subtitle, icon, onPress }: { label: string; subtitle: string; icon: ReactNode; onPress: () => void }) {
-  const { palette, radii, spacing, shadows } = useHungryTheme();
-  return (
-    <Pressable
-      onPress={() => { void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onPress(); }}
-      style={[
-        shadows.card,
-        {
-          backgroundColor: palette.surface,
-          borderRadius: radii.lg,
-          flex: 1,
-          padding: spacing[4],
-          gap: spacing[2],
-          minHeight: 120,
-        },
-      ]}
-    >
-      <View style={{ marginBottom: spacing[1] }}>{icon}</View>
-      <View>
-        <AppText variant="h3">{label}</AppText>
-        <AppText variant="micro" tone="secondary">{subtitle}</AppText>
-      </View>
-    </Pressable>
   );
 }

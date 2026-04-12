@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import type { BuildingSummary, DishDetail } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
 
@@ -39,11 +40,30 @@ export const useDiscoveryStore = create<DiscoveryState>()(
       selectedBuilding: undefined,
       selectedFloor: "L1",
       highlightedStallVenueId: undefined,
-      popularNearby: mockRepository.listPopularNearby(),
+      popularNearby: getDataRepository().listPopularNearby(),
       decideForMe: undefined,
       mapFilters: initialFilters,
-      setSelectedBuilding: (selectedBuilding) => set({ selectedBuilding }),
-      setSelectedFloor: (selectedFloor) => set({ selectedFloor }),
+      setSelectedBuilding: (selectedBuilding) => {
+        set({ selectedBuilding });
+        if (selectedBuilding) {
+          trackAnalyticsEvent("map_pin_tapped", {
+            building_id: selectedBuilding.id,
+            building_type: selectedBuilding.type,
+          });
+        }
+      },
+      setSelectedFloor: (selectedFloor) => {
+        set((state) => {
+          if (state.selectedBuilding && state.selectedFloor !== selectedFloor) {
+            trackAnalyticsEvent("floor_switched", {
+              building_id: state.selectedBuilding.id,
+              from_floor: state.selectedFloor,
+              to_floor: selectedFloor,
+            });
+          }
+          return { selectedFloor };
+        });
+      },
       setHighlightedStallVenueId: (highlightedStallVenueId) => set({ highlightedStallVenueId }),
       setDecideForMe: (decideForMe) => set({ decideForMe }),
       toggleMapFilter: (filter) =>

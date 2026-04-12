@@ -1,74 +1,50 @@
 import { useEffect, useRef } from "react";
-import { Animated, StyleSheet, View, type ViewStyle, type DimensionValue } from "react-native";
+import { Animated, type DimensionValue, type StyleProp, type ViewStyle } from "react-native";
+
 import { useHungryTheme } from "@/theme";
 
 interface SkeletonProps {
-  width?: DimensionValue;
-  height?: DimensionValue;
+  width?: number | string;
+  height?: number | string;
   borderRadius?: number;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
-/**
- * Skeleton — Themed placeholder for loading states.
- * Uses a shimmer animation to indicate progress.
- */
-export function Skeleton({ width, height, borderRadius, style }: SkeletonProps) {
-  const { palette, radii } = useHungryTheme();
-  const shimmerValue = useRef(new Animated.Value(0)).current;
+export function Skeleton({ width = "100%", height = 20, borderRadius = 8, style }: SkeletonProps) {
+  const { palette } = useHungryTheme();
+  const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
-    const animation = Animated.loop(
+    Animated.loop(
       Animated.sequence([
-        Animated.timing(shimmerValue, {
-          toValue: 1,
-          duration: 1000,
+        Animated.timing(opacity, {
+          toValue: 0.7,
+          duration: 800,
           useNativeDriver: true,
         }),
-        Animated.timing(shimmerValue, {
-          toValue: 0,
-          duration: 1000,
+        Animated.timing(opacity, {
+          toValue: 0.3,
+          duration: 800,
           useNativeDriver: true,
         }),
-      ])
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [shimmerValue]);
-
-  const opacity = shimmerValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.3, 0.7],
-  });
+      ]),
+    ).start();
+  }, [opacity]);
 
   return (
-    <View
+    <Animated.View
+      accessibilityLabel="Loading content"
+      accessibilityRole="progressbar"
       style={[
-        styles.container,
         {
-          width: width ?? ("100%" as DimensionValue),
-          height: height ?? (20 as DimensionValue),
-          borderRadius: borderRadius ?? radii.md,
-          backgroundColor: palette.bgMuted,
+          width: width as DimensionValue,
+          height: height as DimensionValue,
+          backgroundColor: palette.border,
+          borderRadius,
+          opacity,
         },
         style,
       ]}
-    >
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          {
-            backgroundColor: palette.border,
-            opacity,
-          },
-        ]}
-      />
-    </View>
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    overflow: "hidden",
-  },
-});

@@ -66,7 +66,7 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
 
   const handleNext = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const updatedAccumulated = [...new Set([...accumulatedSelectedIds, ...currentCuisineSelectedIds])];
+    const updatedAccumulated = [...new Set([...(accumulatedSelectedIds || []), ...(currentCuisineSelectedIds || [])])];
     
     if (currentIndex < selectedCuisines.length - 1) {
       setAccumulatedSelectedIds(updatedAccumulated);

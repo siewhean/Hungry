@@ -11,7 +11,7 @@ import { useUIStore } from "@/store/useUIStore";
 interface QuickReviewSheetProps {
   venueName: string;
   dishName?: string;
-  onSuccess: () => void;
+  onSuccess: (data: { rating: number; tagCount: number }) => void;
 }
 
 export const QuickReviewSheet = ({ venueName, dishName, onSuccess }: QuickReviewSheetProps) => {
@@ -29,7 +29,7 @@ export const QuickReviewSheet = ({ venueName, dishName, onSuccess }: QuickReview
 
   const handleSubmit = () => {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    onSuccess();
+    onSuccess({ rating, tagCount: selectedTags.length });
   };
 
   return (

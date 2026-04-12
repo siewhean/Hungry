@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { FlatList, Pressable, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { Camera, Search, Star } from "lucide-react-native";
+import { Search, FileEdit, Clock } from "lucide-react-native";
 
-import { AppText, Badge, Button, Card, EmptyState, Input, Screen } from "@/components/ui";
+import { AppText, Badge, Card, EmptyState, Input, Screen } from "@/components/ui";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSessionStore } from "@/store/useSessionStore";
-import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { ReviewStackParamList } from "./ReviewStack";
 
@@ -16,11 +16,12 @@ type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewHub">;
 
 export function ReviewHubScreen({ navigation }: Props) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
-  const rootNavigation = navigation.getParent()?.getParent() as any;
+  const insets = useSafeAreaInsets();
+  const rootNavigation = navigation.getParent()?.getParent();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
-  const showQuickReview = useUIStore((state) => state.showQuickReview);
-  
+  const selectDish = useReviewDraftStore((state) => state.selectDish);
+  const draft = useReviewDraftStore((state) => state.draft);
   const [query, setQuery] = useState("");
   const venues = mockRepository
     .listBuildings()
@@ -28,6 +29,8 @@ export function ReviewHubScreen({ navigation }: Props) {
     .filter((venue) =>
       `${venue.name} ${venue.unitNumber}`.toLowerCase().includes(query.trim().toLowerCase()),
     );
+
+  const hasActiveDraft = !!(draft.selectedDishId || draft.text || draft.photos.length > 0);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -42,8 +45,8 @@ export function ReviewHubScreen({ navigation }: Props) {
 
   return (
     <Screen
-      title="Share your meal"
-      subtitle="Choose a stall to share a quick text update or a full media post."
+      title="Quick review"
+      subtitle="Start with the exact dish so every review stays attached to what you actually ate."
       scroll={false}
     >
       <FlatList
@@ -52,9 +55,77 @@ export function ReviewHubScreen({ navigation }: Props) {
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[8] }}
+        contentContainerStyle={{ gap: spacing[4], paddingBottom: insets.bottom + spacing[12] }}
         ListHeaderComponent={
-          <View style={{ paddingBottom: spacing[2] }}>
+          <View style={{ gap: spacing[4], paddingBottom: spacing[4] }}>
+            <View
+              style={{
+                alignSelf: "flex-start",
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderWidth: 1,
+                borderRadius: radii.pill,
+                paddingHorizontal: spacing[3],
+                paddingVertical: spacing[1],
+              }}
+            >
+              <AppText variant="micro" tone="accent" style={{ textTransform: "uppercase" }}>
+                Step 1 of 4
+              </AppText>
+            </View>
+
+            {hasActiveDraft && (
+              <View style={{ gap: spacing[3], marginBottom: spacing[2] }}>
+                <AppText variant="h3">Continue your draft</AppText>
+                <Pressable
+                  onPress={() => {
+                    if (draft.selectedVenueId && draft.selectedDishId) {
+                      navigation.navigate("ReviewRating", { 
+                        venueId: draft.selectedVenueId, 
+                        dishId: draft.selectedDishId 
+                      });
+                    }
+                  }}
+                  style={({ pressed }) => [
+                    {
+                      ...shadows.card,
+                      backgroundColor: pressed ? palette.bgSoft : palette.surface,
+                      borderRadius: 20,
+                      padding: spacing[4],
+                      borderWidth: 1,
+                      borderColor: palette.orange,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: spacing[3],
+                    },
+                  ]}
+                >
+                  <View
+                    style={{
+                      backgroundColor: palette.orangeLight,
+                      width: 40,
+                      height: 40,
+                      borderRadius: 12,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <FileEdit size={20} color={palette.orange} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <AppText style={{ fontWeight: "700" }}>Resume Review</AppText>
+                    <AppText variant="micro" tone="secondary">
+                      {draft.selectedDishId
+                        ? mockRepository.getDishById(draft.selectedDishId)?.name
+                        : "Unnamed Dish"}{" "}
+                      • Saved just now
+                    </AppText>
+                  </View>
+                  <Clock size={16} color={palette.textMuted} />
+                </Pressable>
+              </View>
+            )}
+
             <Input
               label="Search for a stall"
               placeholder="Tian Tian, Satay Street..."
@@ -67,52 +138,54 @@ export function ReviewHubScreen({ navigation }: Props) {
         renderItem={({ item }) => {
           const dishes = mockRepository.listDishesByVenue(item.id);
           const leadDish = dishes[0];
+          const handleCardPress = () => {
+            if (!leadDish) {
+              return;
+            }
+            selectDish(item.id, leadDish.id);
+            navigation.navigate("ReviewRating", { venueId: item.id, dishId: leadDish.id });
+          };
 
           return (
-            <Card style={{ padding: spacing[3], gap: spacing[3] }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-                <Image
-                  source={{ uri: leadDish?.imageUrl }}
-                  style={{ width: 64, height: 64, borderRadius: radii.md }}
-                  contentFit="cover"
-                />
-                <View style={{ flex: 1 }}>
-                  <AppText variant="h3">{item.name}</AppText>
-                  <AppText variant="bodySmall" tone="secondary">
-                    {item.floor} {item.unitNumber}
-                  </AppText>
+            <Pressable onPress={handleCardPress}>
+              <Card style={{ padding: 0, overflow: "hidden" }}>
+                {leadDish ? (
+                  <Image
+                    source={{ uri: leadDish.imageUrl }}
+                    style={{ width: "100%", height: 132 }}
+                    contentFit="cover"
+                  />
+                ) : null}
+                <View style={{ padding: spacing[4], gap: spacing[3] }}>
+                  <View style={{ gap: spacing[2] }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
+                      <View style={{ flex: 1 }}>
+                        <AppText variant="h3">{item.name}</AppText>
+                        <AppText variant="bodySmall" tone="secondary">
+                          {item.floor} {item.unitNumber} · {item.operatingHours}
+                        </AppText>
+                      </View>
+                    </View>
+                    <AppText variant="bodySmall" tone="secondary">
+                      Tap this card to start a review with the highlighted dish.
+                    </AppText>
+                  </View>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                    {dishes.map((dish) => (
+                      <Pressable
+                        key={dish.id}
+                        onPress={() => {
+                          selectDish(item.id, dish.id);
+                          navigation.navigate("ReviewRating", { venueId: item.id, dishId: dish.id });
+                        }}
+                      >
+                        <Badge label={dish.name} tone="neutral" />
+                      </Pressable>
+                    ))}
+                  </View>
                 </View>
-              </View>
-
-              <View style={{ flexDirection: "row", gap: spacing[2] }}>
-                <Button 
-                  label="Quick review" 
-                  variant="secondary" 
-                  fullWidth={false}
-                  leftIcon={<Star size={16} color={palette.orange} fill={palette.orange} />}
-                  onPress={() => {
-                    showQuickReview({
-                      venueId: item.id,
-                      venueName: item.name,
-                      dishId: leadDish?.id,
-                      dishName: leadDish?.name,
-                    });
-                  }} 
-                />
-                <Button 
-                  label="Post update" 
-                  variant="ghost" 
-                  fullWidth={false}
-                  leftIcon={<Camera size={16} color={palette.textMuted} />}
-                  onPress={() => {
-                    rootNavigation?.navigate("Post", {
-                      venueId: item.id,
-                      dishId: leadDish?.id,
-                    });
-                  }} 
-                />
-              </View>
-            </Card>
+              </Card>
+            </Pressable>
           );
         }}
         ListEmptyComponent={

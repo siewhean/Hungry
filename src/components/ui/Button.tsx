@@ -12,8 +12,9 @@ interface ButtonProps extends Omit<PressableProps, "style"> {
   variant?: ButtonVariant;
   loading?: boolean;
   fullWidth?: boolean;
-  leftIcon?: ReactNode;
   style?: StyleProp<ViewStyle>;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
 }
 
 export function Button({
@@ -22,8 +23,9 @@ export function Button({
   loading = false,
   disabled,
   fullWidth = true,
-  leftIcon,
   style,
+  leftIcon,
+  rightIcon,
   ...props
 }: ButtonProps) {
   const { palette, radii, spacing } = useHungryTheme();
@@ -31,12 +33,12 @@ export function Button({
 
   const variantStyle: Record<ButtonVariant, ViewStyle> = {
     primary: {
-      backgroundColor: "#FFFFFF",
+      backgroundColor: palette.orange,
       borderColor: palette.orange,
-      borderWidth: 2,
+      borderWidth: 1,
     },
     secondary: {
-      backgroundColor: "#FFFFFF",
+      backgroundColor: palette.surface,
       borderColor: palette.border,
       borderWidth: 1,
     },
@@ -46,9 +48,9 @@ export function Button({
       borderWidth: 1,
     },
     destructive: {
-      backgroundColor: "#FFFFFF",
+      backgroundColor: palette.error,
       borderColor: palette.error,
-      borderWidth: 2,
+      borderWidth: 1,
     },
   };
 
@@ -60,7 +62,7 @@ export function Button({
         styles.base,
         variantStyle[variant],
         {
-          borderRadius: radii.md,
+          borderRadius: radii.pill,
           minHeight: 52,
           opacity: isDisabled ? 0.5 : 1,
           paddingHorizontal: spacing[4],
@@ -68,27 +70,31 @@ export function Button({
           width: fullWidth ? "100%" : undefined,
           transform: [{ translateY: pressed ? 1 : 0 }],
         },
-        pressed ? { backgroundColor: palette.bgSoft } : null,
+        pressed && variant === "secondary"
+          ? { backgroundColor: palette.surfaceRaised }
+          : null,
+        pressed && variant === "ghost"
+          ? { backgroundColor: palette.surfaceRaised }
+          : null,
         style,
       ]}
       {...props}
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "destructive" ? palette.error : palette.orange}
+          color={variant === "primary" || variant === "destructive" ? "#FFFFFF" : palette.text}
         />
       ) : (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           {leftIcon}
           <AppText
-            variant="body"
-            style={[
-              styles.label,
-              { color: variant === "destructive" ? palette.error : variant === "primary" ? palette.orange : palette.text }
-            ]}
+            variant="h3"
+            style={styles.label}
+            tone={variant === "primary" || variant === "destructive" ? "inverse" : "default"}
           >
             {label}
           </AppText>
+          {rightIcon}
         </View>
       )}
     </Pressable>

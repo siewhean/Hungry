@@ -11,7 +11,7 @@ import {
   createNativeStackNavigator,
   type NativeStackScreenProps,
 } from "@react-navigation/native-stack";
-import { ArrowLeft, Compass, House, MapPinned, NotebookPen, User } from "lucide-react-native";
+import { ArrowLeft, Compass, House, MapPinned, NotebookPen, User, BookOpenText } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
@@ -27,6 +27,7 @@ import { DiscoverHomeScreen } from "@/app/screens/discover/DiscoverHomeScreen";
 import { HomeMapScreen } from "@/app/screens/discover/HomeMapScreen";
 import { MapZoomedInScreen } from "@/app/screens/discover/MapZoomedInScreen";
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
+import { DirectMessagesScreen } from "@/app/screens/home/DirectMessagesScreen";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
 import { PostComposerScreen } from "@/app/screens/post/PostComposerScreen";
 import { EditProfileScreen } from "@/app/screens/profile/EditProfileScreen";
@@ -48,6 +49,7 @@ import { useAppBootstrap } from "@/hooks/useAppBootstrap";
 import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -114,13 +116,13 @@ function GlobalScrollBackButton() {
         style={[
           styles.globalBackButton,
           {
+            ...shadows.floating,
             backgroundColor: "rgba(255,255,255,0.95)",
             borderColor: palette.border,
             borderRadius: radii.pill,
             left: spacing[4],
             top: insets.top + spacing[1],
           },
-          shadows.floating,
         ]}
       >
         <ArrowLeft color={palette.navy} size={18} />
@@ -144,9 +146,8 @@ function TabNavigator() {
         tabBarInactiveTintColor: palette.textMuted,
         tabBarStyle: {
           backgroundColor: palette.bg,
-          borderTopColor: palette.border,
-          borderTopWidth: StyleSheet.hairlineWidth,
-          elevation: 8,
+          borderTopColor: route.name === "Discover" || route.name === "Maps" ? "transparent" : palette.border,
+          borderTopWidth: route.name === "Discover" || route.name === "Maps" ? 0 : StyleSheet.hairlineWidth,
           height: 60 + Math.max(insets.bottom, spacing[2]),
           paddingBottom: Math.max(insets.bottom, spacing[2]),
           paddingTop: spacing[2],
@@ -159,9 +160,11 @@ function TabNavigator() {
                 ? Compass
                 : route.name === "Maps"
                   ? MapPinned
-                  : route.name === "Review"
-                    ? NotebookPen
-                    : User;
+                  : route.name === "Reads"
+                    ? BookOpenText
+                    : route.name === "Review"
+                      ? NotebookPen
+                      : User;
 
           return <Icon color={color} size={Math.max(size + 7, 30)} />;
         },
@@ -170,6 +173,9 @@ function TabNavigator() {
       <Tabs.Screen component={HomeFeedScreen} name="Home" />
       <Tabs.Screen component={DiscoverHomeScreen} name="Discover" />
       <Tabs.Screen component={HomeMapScreen} name="Maps" />
+      {FEATURE_FLAGS.readsEnabled && (
+        <Tabs.Screen component={ReadsFeedScreen} name="Reads" />
+      )}
       <Tabs.Screen
         component={ReviewStack}
         listeners={{
@@ -379,7 +385,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={DishSearchScreen} name="SearchHome" options={{ animation: "none" }} />
           <RootStack.Screen component={SearchResultsScreen} name="SearchResults" options={{ animation: "none" }} />
           <RootStack.Screen component={TasteFilterScreen} name="TasteFilter" />
-          <RootStack.Screen component={ReadsFeedScreen} name="ReadsFeed" />
           <RootStack.Screen component={MapZoomedInScreen} name="MapZoomedIn" />
           <RootStack.Screen component={PostComposerScreen} name="Post" />
           <RootStack.Screen component={EditProfileScreen} name="EditProfile" />
@@ -391,6 +396,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           <RootStack.Screen component={ReviewStack} name="ReviewStack" />
           <RootStack.Screen component={WheelStack} name="WheelStack" />
+          <RootStack.Screen component={DirectMessagesScreen} name="DirectMessages" />
           <RootStack.Screen component={DecideForMeResultScreen} name="DecideForMeResult" />
           <RootStack.Screen component={BuildingDrillDownScreen} name="BuildingDrillDown" />
           <RootStack.Screen component={OfflineStateScreen} name="Offline" />

@@ -80,7 +80,7 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
             <Sparkles color={palette.orange} size={16} />
             <AppText variant="bodySmall" tone="secondary">
-              Your profile and review history have been updated in this mock session.
+              Profile updated. Your review has been added to your history.
             </AppText>
           </View>
 

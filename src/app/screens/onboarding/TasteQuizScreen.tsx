@@ -7,8 +7,6 @@ import { Easing } from "react-native";
 import { Check, ChevronRight, Search } from "lucide-react-native";
 
 import { Button, AppText, Card, Input } from "@/components/ui";
-const AnimatedFlatList = Animated.createAnimatedComponent(FlatList) as any;
-import { mockRepository } from "@/lib/services/mock/repositories";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -204,34 +202,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   };
 
   const handleFinish = () => {
-    let finalValues = values;
-
-    // Blend with selected dishes from earlier onboarding steps
-    if (profile.onboardingSelectedDishIds && profile.onboardingSelectedDishIds.length > 0) {
-      const selectedDishes = profile.onboardingSelectedDishIds
-        .map((id) => mockRepository.getDishById(id))
-        .filter(Boolean);
-
-      if (selectedDishes.length > 0) {
-        const avgVector: TasteVector = { sweet: 0, spicy: 0, sour: 0, salty: 0, rich: 0, aromatic: 0 };
-        selectedDishes.forEach((d) => {
-          Object.keys(avgVector).forEach((key) => {
-            (avgVector as any)[key] += (d!.tasteVector as any)[key];
-          });
-        });
-        Object.keys(avgVector).forEach((key) => {
-          (avgVector as any)[key] /= selectedDishes.length;
-        });
-
-        const blended: TasteVector = { sweet: 0, spicy: 0, sour: 0, salty: 0, rich: 0, aromatic: 0 };
-        Object.keys(blended).forEach((key) => {
-          (blended as any)[key] = Math.round(((avgVector as any)[key] + (values as any)[key]) / 2);
-        });
-        finalValues = blended;
-      }
-    }
-
-    setTasteVector(finalValues);
+    setTasteVector(values);
     setDietaryPreferences(dietaryPreferences);
     if (flowMode === "profile") {
       setSkippedTasteQuiz(false);
@@ -391,7 +362,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                 transform: [{ translateX: optionsSlideAnim }],
               }}
             >
-              <AnimatedFlatList
+              <Animated.FlatList
                 ref={carouselRef as any}
                 horizontal
                 data={[0, 1, 2]}

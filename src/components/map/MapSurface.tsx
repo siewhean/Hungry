@@ -96,13 +96,16 @@ function MarkerVisual({
   accent,
   selected,
   type,
+  zoomLevel = 15,
 }: {
   label: string;
   accent: string;
   selected: boolean;
   type?: BuildingType;
+  zoomLevel?: number;
 }) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
+  const showLabel = selected || zoomLevel >= 15.5;
 
   if (type) {
     return (
@@ -123,8 +126,8 @@ function MarkerVisual({
             backgroundColor: accent,
             borderColor: selected ? palette.surface : `${accent}40`,
             borderRadius: radii.md,
-            width: selected ? 40 : 34,
-            height: selected ? 40 : 34,
+            width: selected ? 44 : 36,
+            height: selected ? 44 : 36,
           },
           selected ? shadows.floating : undefined,
         ]}
@@ -133,26 +136,31 @@ function MarkerVisual({
           style={{
             backgroundColor: palette.surface,
             borderRadius: radii.pill,
-            width: 10,
-            height: 10,
+            width: 12,
+            height: 12,
           }}
         />
       </View>
-      {selected ? (
+      {showLabel ? (
         <View
           style={{
-            backgroundColor: "rgba(255,255,255,0.94)",
-            borderColor: palette.border,
+            backgroundColor: selected ? palette.surface : "rgba(255,255,255,0.85)",
+            borderColor: selected ? palette.orange : palette.border,
             borderRadius: radii.pill,
             borderWidth: 1,
             paddingHorizontal: spacing[2],
             paddingVertical: 4,
             minWidth: 84,
+            ...shadows.floating,
           }}
         >
           <AppText
             variant="micro"
-            style={{ color: palette.text, fontFamily: "Nunito_700Bold", textAlign: "center" }}
+            style={{ 
+              color: palette.text, 
+              fontFamily: selected ? "Nunito_800ExtraBold" : "Nunito_700Bold", 
+              textAlign: "center" 
+            }}
             numberOfLines={1}
           >
             {label}
@@ -168,8 +176,8 @@ function UserPuck() {
 
   return (
     <View style={styles.userPuckOuter}>
-      <View style={[styles.userPuckHalo, { backgroundColor: `${palette.navy}18` }]} />
-      <View style={[styles.userPuckInner, { backgroundColor: palette.navy, borderColor: palette.surface }]} />
+      <View style={[styles.userPuckHalo, { backgroundColor: `${palette.navy}12`, width: 36, height: 36, borderRadius: 18 }]} />
+      <View style={[styles.userPuckInner, { backgroundColor: palette.navy, borderColor: palette.surface, width: 14, height: 14, borderRadius: 7 }]} />
     </View>
   );
 }
@@ -181,14 +189,28 @@ function FallbackMap({
   currentLocation,
   onMarkerPress,
   onMapPress,
+  cameraPadding,
 }: Pick<
   MapSurfaceProps,
-  "centerCoordinate" | "markers" | "selectedMarkerId" | "currentLocation" | "onMarkerPress" | "onMapPress"
+  "centerCoordinate" | "markers" | "selectedMarkerId" | "currentLocation" | "onMarkerPress" | "onMapPress" | "cameraPadding"
 >) {
   const { palette } = useHungryTheme();
   const [frame, setFrame] = useState({ width: 1, height: 1 });
+
+  // Apply padding to the map container to simulate camera offset
+  const containerStyle = useMemo(() => ({
+    paddingTop: cameraPadding?.paddingTop ?? 0,
+    paddingBottom: cameraPadding?.paddingBottom ?? 0,
+    paddingLeft: cameraPadding?.paddingLeft ?? 0,
+    paddingRight: cameraPadding?.paddingRight ?? 0,
+  }), [cameraPadding]);
+
   const coordinates = useMemo(
-    () => [centerCoordinate, ...(markers ?? []).map((marker) => marker.coordinate), ...(currentLocation ? [currentLocation] : [])],
+    () => [
+      centerCoordinate,
+      ...(Array.isArray(markers) ? markers.map((marker) => marker.coordinate) : []),
+      ...(currentLocation ? [currentLocation] : []),
+    ],
     [centerCoordinate, currentLocation, markers],
   );
 
@@ -196,17 +218,26 @@ function FallbackMap({
     const latitudes = coordinates.map((item) => item.latitude);
     const longitudes = coordinates.map((item) => item.longitude);
 
+    if (latitudes.length === 0 || longitudes.length === 0) {
+      return {
+        minLat: centerCoordinate.latitude - 0.004,
+        maxLat: centerCoordinate.latitude + 0.004,
+        minLng: centerCoordinate.longitude - 0.004,
+        maxLng: centerCoordinate.longitude + 0.004,
+      };
+    }
+
     return {
       minLat: Math.min(...latitudes) - 0.004,
       maxLat: Math.max(...latitudes) + 0.004,
       minLng: Math.min(...longitudes) - 0.004,
       maxLng: Math.max(...longitudes) + 0.004,
     };
-  }, [coordinates]);
+  }, [coordinates, centerCoordinate]);
 
   return (
     <View
-      style={[styles.map, { backgroundColor: palette.bgSoft }]}
+      style={[styles.map, { backgroundColor: palette.bgSoft }, containerStyle]}
       onLayout={(event: LayoutChangeEvent) => {
         setFrame({
           width: event.nativeEvent.layout.width,
@@ -292,6 +323,7 @@ export function MapSurface({
           currentLocation={currentLocation}
           onMarkerPress={onMarkerPress}
           onMapPress={onMapPress}
+          cameraPadding={cameraPadding}
         />
         {!MAPBOX_ACCESS_TOKEN ? (
           <View style={[styles.tokenNotice, { backgroundColor: "rgba(255,255,255,0.92)", borderColor: palette.border }]}>
@@ -319,8 +351,10 @@ export function MapSurface({
           const [longitude, latitude] = event.geometry.coordinates as [number, number];
           onMapPress?.({ latitude, longitude });
         }}
-        onRegionDidChange={(event) => {
-          onZoomChange?.(event.properties.zoomLevel);
+        onRegionDidChange={(feature) => {
+          if (onZoomChange) {
+            onZoomChange(feature.properties.zoomLevel);
+          }
         }}
       >
         <MapboxGL.Camera
@@ -343,12 +377,13 @@ export function MapSurface({
             allowOverlap
             anchor={{ x: 0.5, y: 1 }}
           >
-            <Pressable onPress={() => onMarkerPress?.(marker.id)} style={styles.markerPressable}>
+            <Pressable onPress={() => onMarkerPress?.(marker.id)} style={[styles.markerPressable, { minWidth: 44, minHeight: 44 }]}>
               <MarkerVisual
                 label={marker.label}
                 accent={marker.accent ?? palette.orange}
                 selected={marker.id === selectedMarkerId}
                 type={marker.type}
+                zoomLevel={zoomLevel}
               />
             </Pressable>
           </MapboxGL.MarkerView>

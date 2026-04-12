@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { DietaryFlag, SearchCategory, SearchFilters, TasteVector } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
 
@@ -36,41 +37,70 @@ export const useSearchStore = create<SearchState>()(
           },
         })),
       toggleCategory: (category) =>
-        set((state) => ({
-          filters: {
-            ...state.filters,
-            categories: state.filters.categories.includes(category)
-              ? state.filters.categories.filter((value) => value !== category)
-              : [...state.filters.categories, category],
-          },
-        })),
+        set((state) => {
+          const selected = !state.filters.categories.includes(category);
+          trackAnalyticsEvent("category_chip_tapped", {
+            category,
+            selected,
+          });
+          return {
+            filters: {
+              ...state.filters,
+              categories: state.filters.categories.includes(category)
+                ? state.filters.categories.filter((value) => value !== category)
+                : [...state.filters.categories, category],
+            },
+          };
+        }),
       toggleDietary: (flag) =>
-        set((state) => ({
-          filters: {
-            ...state.filters,
-            dietaryFlags: state.filters.dietaryFlags.includes(flag)
-              ? state.filters.dietaryFlags.filter((value) => value !== flag)
-              : [...state.filters.dietaryFlags, flag],
-          },
-        })),
+        set((state) => {
+          const selected = !state.filters.dietaryFlags.includes(flag);
+          trackAnalyticsEvent("dietary_chip_tapped", {
+            flag,
+            selected,
+          });
+          return {
+            filters: {
+              ...state.filters,
+              dietaryFlags: state.filters.dietaryFlags.includes(flag)
+                ? state.filters.dietaryFlags.filter((value) => value !== flag)
+                : [...state.filters.dietaryFlags, flag],
+            },
+          };
+        }),
       setTasteValues: (tasteValues) =>
-        set((state) => ({
-          filters: {
-            ...state.filters,
-            tasteValues,
-          },
-        })),
+        set((state) => {
+          trackAnalyticsEvent("taste_filter_applied", {
+            source: "set_taste_values",
+          });
+          return {
+            filters: {
+              ...state.filters,
+              tasteValues,
+            },
+          };
+        }),
       resetToProfile: (tasteValues) =>
-        set((state) => ({
-          filters: {
-            ...state.filters,
-            tasteValues,
-          },
-        })),
+        set((state) => {
+          trackAnalyticsEvent("taste_filter_applied", {
+            source: "reset_to_profile",
+          });
+          return {
+            filters: {
+              ...state.filters,
+              tasteValues,
+            },
+          };
+        }),
       rememberSearch: (query) =>
-        set((state) => ({
-          recentSearches: [query, ...state.recentSearches.filter((value) => value !== query)].slice(0, 5),
-        })),
+        set((state) => {
+          trackAnalyticsEvent("search_submitted", {
+            query_length: query.trim().length,
+          });
+          return {
+            recentSearches: [query, ...state.recentSearches.filter((value) => value !== query)].slice(0, 5),
+          };
+        }),
       clearSearchState: () =>
         set({
           filters: {

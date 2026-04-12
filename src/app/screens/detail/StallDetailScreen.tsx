@@ -2,429 +2,238 @@ import { Alert, Linking, Platform, Pressable, ScrollView, Share, StyleSheet, Vie
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft, Heart, MapPin, Share2, Star, Truck } from "lucide-react-native";
+import { ArrowLeft, Heart, MapPin, Share2, Star, Truck, ChevronLeft } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, EmptyState, InlineBanner, Screen, FAB, Button } from "@/components/ui";
+import { AppText, EmptyState, InlineBanner, Screen, FAB, Button, Card } from "@/components/ui";
 import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
 import { mockRepository } from "@/lib/services/mock/repositories";
+import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { useProfileStore } from "@/store/useProfileStore";
-import { useSessionStore } from "@/store/useSessionStore";
-import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import type { DishDetail } from "@/types/domain";
+import { isDishDetail } from "../profile/profileGuards";
 
 type Props = NativeStackScreenProps<RootStackParamList, "StallDetail">;
 
-function withFallbackSignatureDishes(dishes: DishDetail[], fallbacks: DishDetail[]) {
-  const shortlist = [...dishes];
-  let idx = 0;
-  while (shortlist.length < 4 && idx < fallbacks.length) {
-    const candidate = fallbacks[idx];
-    if (!shortlist.some((dish) => dish.id === candidate.id)) {
-      shortlist.push(candidate);
-    }
-    idx += 1;
-  }
-  return shortlist.slice(0, 4);
-}
-
 export function StallDetailScreen({ navigation, route }: Props) {
-  const venue = mockRepository.getVenueById(route.params?.venueId ?? "");
-  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const venueId = route.params?.venueId ?? "";
+  const venue = mockRepository.getVenueById(venueId);
+  const building = venue ? getBuildingById(venue.buildingId) : undefined;
+  const dishes = venue ? mockRepository.listDishesByVenue(venue.id) : [];
+  const leadDish = dishes[0];
+
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
-  const showToast = useUIStore((state) => state.showToast);
-  const { palette, radii, spacing } = useHungryTheme();
-  const insets = useSafeAreaInsets();
+  const { palette, spacing, radii, shadows } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   if (!venue) {
     return (
-      <Screen scroll={false}>
-        <EmptyState
-          title="Stall not found"
-          body="This stall could not be found in the current fixture set."
-        />
-      </Screen>
+      <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top", "left", "right"]}>
+        <EmptyState title="Stall not found" body="The stall you are looking for does not exist in our current directory." />
+      </SafeAreaView>
     );
   }
 
-  const dishes = mockRepository.listDishesByVenue(venue.id);
-  const leadDish = dishes[0] ?? mockRepository.listPopularNearby()[0];
-  const building = mockRepository.listBuildings().find((item) => item.id === venue.buildingId);
-  const signatureDishes = withFallbackSignatureDishes(dishes, mockRepository.listPopularNearby());
-  const squareTile = screenWidth / 2;
-  const distanceKm = Math.max(0.1, ((leadDish?.distanceMeters ?? 500) / 1000));
-  const distanceLabel = `${distanceKm.toFixed(1)} km away`;
-  const deliveryAvailable = venue.deliveryLinks.length > 0;
-  const topBarHeight = insets.top + 56;
-  const buildingCoordinate = building?.coordinate;
-  const primaryDeliveryLink = venue.deliveryLinks[0];
+  const distanceLabel = leadDish
+    ? leadDish.distanceMeters > 1000 
+      ? `${(leadDish.distanceMeters / 1000).toFixed(1)}km away`
+      : `${leadDish.distanceMeters}m away`
+    : "Check Map";
+
   const communityReviews = deriveStallCommunityReviews(dishes);
-  const isSaved = leadDish ? profile.favouriteDishIds.includes(leadDish.id) : false;
-
-  const openExternal = async (primary: string, fallback?: string) => {
-    try {
-      await Linking.openURL(primary);
-      return;
-    } catch {
-      if (!fallback) {
-        showToast({ message: "Unable to open external link right now.", tone: "warning" });
-        return;
-      }
-    }
-
-    try {
-      await Linking.openURL(fallback);
-    } catch {
-      showToast({ message: "Unable to open external link right now.", tone: "warning" });
-    }
-  };
-
-  const handleOpenDirections = () => {
-    if (!buildingCoordinate) {
-      showToast({ message: "Map directions are unavailable for this stall.", tone: "warning" });
-      return;
-    }
-
-    const query = encodeURIComponent(`${venue.name}, ${building?.name ?? "Singapore"}`);
-    const destination = `${buildingCoordinate.latitude},${buildingCoordinate.longitude}`;
-    const primary =
-      Platform.OS === "ios"
-        ? `http://maps.apple.com/?ll=${destination}&q=${query}`
-        : `https://www.google.com/maps/search/?api=1&query=${destination}`;
-    const fallback = `https://www.google.com/maps/search/?api=1&query=${query}`;
-    void openExternal(primary, fallback);
-  };
-
-  const handleOpenDelivery = () => {
-    if (!primaryDeliveryLink) {
-      showToast({ message: "No delivery link is available for this stall yet.", tone: "info" });
-      return;
-    }
-    void openExternal(primaryDeliveryLink.nativeUrl, primaryDeliveryLink.webUrl);
-  };
-
-  const showQuickReview = useUIStore((state) => state.showQuickReview);
-
-  const openReviewChoice = () => {
-    Alert.alert("Share your review", "Choose how you want to continue.", [
-      {
-        text: "Quick review",
-        onPress: () => {
-          if (!isAuthenticated) {
-            setReturnRoute("Home"); // Simplified return route
-            navigation.navigate("AuthStack", { screen: "Login" });
-            return;
-          }
-          showQuickReview({
-            venueId: venue.id,
-            venueName: venue.name,
-            dishId: leadDish?.id,
-            dishName: leadDish?.name,
-          });
-        },
-      },
-      {
-        text: "Post update",
-        onPress: () => {
-          if (!isAuthenticated) {
-            setReturnRoute("Post");
-            navigation.navigate("AuthStack", { screen: "Login" });
-            return;
-          }
-          navigation.navigate("Post", {
-            venueId: venue.id,
-            dishId: leadDish?.id,
-          });
-        },
-      },
-      { text: "Cancel", style: "cancel" },
-    ]);
-  };
 
   const handleShare = async () => {
     try {
       await Share.share({
-        title: `${venue.name} · ${building?.name ?? "Hungry"}`,
-        message: `Check out ${venue.name} at ${building?.name ?? "this food centre"} (${venue.unitNumber}) on Hungry.`,
+        message: `Check out ${venue.name} at ${building?.name ?? "Hungry"}!`,
+        url: `https://hungry.sg/stall/${venue.id}`,
       });
-    } catch {
-      showToast({ message: "Unable to share this stall right now.", tone: "warning" });
+    } catch (error) {
+      console.error("Sharing failed", error);
     }
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }} edges={["left", "right"]}>
-      <View
-        style={[
-          styles.topNav,
-          {
-            backgroundColor: "rgba(255,255,255,0.96)",
-            height: topBarHeight,
-            paddingTop: insets.top,
-            paddingHorizontal: spacing[5],
-          },
-        ]}
-      >
-        <Pressable hitSlop={10} onPress={() => navigation.goBack()} style={styles.iconTouch}>
-          <ArrowLeft color={palette.navy} size={21} />
-        </Pressable>
-        <View style={styles.topNavSpacer} />
-        {leadDish ? (
-          <Pressable
-            hitSlop={10}
-            onPress={() => {
-              if (!isAuthenticated) {
-                setReturnRoute({ name: "StallDetail", params: { venueId: venue.id } });
-                navigation.navigate("AuthStack", { screen: "Login" });
-                return;
-              }
-              toggleFavourite(leadDish);
-              showToast({ message: isSaved ? "Removed from favourites." : "Saved to favourites.", tone: "success" });
-            }}
-            style={styles.iconTouch}
-          >
-            <Heart color={palette.navy} fill={isSaved ? palette.navy : "transparent"} size={20} />
-          </Pressable>
-        ) : null}
-        <Pressable
-          hitSlop={10}
-          onPress={handleShare}
-          style={styles.iconTouch}
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["left", "right"]}>
+      <View style={{ flex: 1 }}>
+        <View
+          style={[
+            styles.topNav,
+            {
+              backgroundColor: "transparent",
+              height: insets.top + 56,
+              paddingTop: insets.top,
+              paddingHorizontal: spacing[4],
+              borderBottomWidth: 0,
+            },
+          ]}
         >
-          <Share2 color={palette.navy} size={20} />
-        </Pressable>
-      </View>
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: spacing[16] + 80, paddingTop: topBarHeight }}
-      >
-        <View>
-          <Image
-            source={{ uri: leadDish?.imageUrl }}
-            style={{ height: 336, width: "100%" }}
-            contentFit="cover"
+          <LinearGradient
+            colors={["rgba(0,0,0,0.3)", "transparent"]}
+            style={[StyleSheet.absoluteFill, { height: 100 }]}
           />
+          <Pressable 
+            onPress={() => navigation.goBack()}
+            style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center", ...shadows.floating }]}
+          >
+            <ChevronLeft color={palette.text} size={24} />
+          </Pressable>
+          <View style={{ flex: 1 }} />
+          <Pressable 
+            onPress={handleShare}
+            style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center", ...shadows.floating }]}
+          >
+            <Share2 color={palette.text} size={20} />
+          </Pressable>
         </View>
 
-        <View style={[styles.contentWrap, { marginTop: -112, paddingHorizontal: spacing[5] }]}>
-          <View
-            style={[
-              styles.locationBadge,
-              {
-                backgroundColor: "rgba(232,83,30,0.10)",
-                borderColor: "rgba(232,83,30,0.20)",
-                borderRadius: radii.pill,
-                paddingHorizontal: spacing[3],
-                paddingVertical: 6,
-              },
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        >
+          {/* Hero image - 4:3 Ratio */}
+          <View style={{ width: screenWidth, height: screenWidth * 0.75, position: "relative" }}>
+            <Image
+              source={{ uri: leadDish?.imageUrl }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+            />
+            <LinearGradient
+              colors={["transparent", palette.bg]}
+              style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80 }}
+            />
+            {/* Rating Pill - Floating */}
+            <View style={{ position: "absolute", bottom: -spacing[2], right: spacing[4] }}>
+              <View style={[{ backgroundColor: palette.amber, borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 6, flexDirection: "row", alignItems: "center", gap: 4, ...shadows.floating }]}>
+                <Star color="#FFFFFF" fill="#FFFFFF" size={14} />
+                <AppText style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 15 }}>{(leadDish?.rating ?? 4.8).toFixed(1)}</AppText>
+              </View>
+            </View>
+          </View>
+
+          <View style={{ gap: spacing[6], paddingHorizontal: spacing[5], paddingTop: spacing[5] }}>
+            {/* Header Content */}
+            <View style={{ gap: spacing[1] }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                <MapPin color={palette.orange} size={14} />
+                <AppText variant="micro" style={{ color: palette.orange, fontWeight: "700", textTransform: "uppercase" }}>
+                  {building?.name ?? "Food Centre"}
+                </AppText>
+              </View>
+              <AppText variant="h1" style={{ fontSize: 28 }}>{venue.name}</AppText>
+              <AppText variant="bodyLarge" tone="secondary">{venue.unitNumber} · {distanceLabel}</AppText>
+            </View>
+
+            {/* Attributes */}
+            <View style={{ flexDirection: "row", gap: spacing[3] }}>
+              <Card style={{ flex: 1, padding: spacing[4], gap: 4 }}>
+                <AppText variant="micro" tone="secondary" style={{ letterSpacing: 0.5 }}>OPERATING</AppText>
+                <AppText variant="bodyLarge" style={{ fontWeight: "700" }}>Open Now</AppText>
+                <AppText variant="micro" tone="secondary">{venue.operatingHours.split(" – ")[0]}</AppText>
+              </Card>
+              <Card style={{ flex: 1, padding: spacing[4], gap: 4 }}>
+                <AppText variant="micro" tone="secondary" style={{ letterSpacing: 0.5 }}>HYGIENE</AppText>
+                <AppText variant="bodyLarge" style={{ fontWeight: "700" }}>Grade {venue.hygieneGrade}</AppText>
+                <AppText variant="micro" tone="secondary">NEA Certified</AppText>
+              </Card>
+            </View>
+
+            {/* Dishes Grid */}
+            <View style={{ gap: spacing[4] }}>
+              <AppText variant="h2">Signature Dishes</AppText>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
+                {dishes.map((dish) => (
+                  <Pressable
+                    key={dish.id}
+                    onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
+                    style={{ width: (screenWidth - spacing[5] * 2 - spacing[3]) / 2 }}
+                  >
+                    <View style={{ gap: spacing[2] }}>
+                      <Image
+                        source={{ uri: dish.imageUrl }}
+                        style={{ width: "100%", height: 120, borderRadius: radii.lg }}
+                        contentFit="cover"
+                      />
+                      <View style={{ gap: 2 }}>
+                        <AppText variant="body" style={{ fontWeight: "700" }} numberOfLines={1}>
+                          {dish.name}
+                        </AppText>
+                        <AppText variant="price" style={{ color: palette.orange }}>
+                          {dish.priceRange}
+                        </AppText>
+                      </View>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
+            {/* Community Reviews */}
+            <View style={{ gap: spacing[4] }}>
+              <AppText variant="h2">Recent Reviews</AppText>
+              {communityReviews.length > 0 ? (
+                communityReviews.map((review) => (
+                  <View key={review.id} style={styles.communityReview}>
+                    <View style={styles.communityUser}>
+                      <Image
+                        source={{ uri: review.avatarUrl }}
+                        style={styles.avatar}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
+                        <View style={styles.communityStars}>
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              size={12}
+                              color={i < review.rating ? palette.amber : palette.border}
+                              fill={i < review.rating ? palette.amber : "transparent"}
+                            />
+                          ))}
+                        </View>
+                      </View>
+                      <AppText variant="micro" tone="muted">{review.createdAt}</AppText>
+                    </View>
+                    <AppText variant="bodySmall" tone="secondary" style={{ marginTop: 8 }}>
+                      {review.text}
+                    </AppText>
+                  </View>
+                ))
+              ) : (
+                <AppText tone="secondary">No community reviews yet.</AppText>
+              )}
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Floating Save Button */}
+        <FAB>
+          <Pressable
+            onPress={() => {
+              if (leadDish) {
+                toggleFavourite(leadDish);
+              }
+            }}
+            style={({ pressed }) => [
+              { 
+                width: 56, 
+                height: 56, 
+                borderRadius: 28, 
+                backgroundColor: palette.orange, 
+                alignItems: "center", 
+                justifyContent: "center",
+                opacity: pressed ? 0.9 : 1,
+                ...shadows.floating,
+              }
             ]}
           >
-            <MapPin color={palette.orange} size={12} />
-            <AppText variant="micro" tone="accent" style={styles.locationText}>
-              {(building?.name ?? "Food Centre").toUpperCase()}
-            </AppText>
-          </View>
-
-          <View style={styles.titleRow}>
-            <View style={{ flex: 1, gap: spacing[2] }}>
-              <AppText variant="display" style={{ color: "#1E1B16" }}>
-                {venue.name}
-              </AppText>
-              <View style={styles.ratingRow}>
-                {[0, 1, 2, 3, 4].map((idx) => (
-                  <Star
-                    key={idx}
-                    color={palette.orange}
-                    fill={(leadDish?.rating ?? 4.8) >= idx + 1 ? palette.orange : "transparent"}
-                    size={14}
-                  />
-                ))}
-                <AppText variant="bodySmall" tone="secondary">
-                  {(leadDish?.rating ?? 4.8).toFixed(1)}
-                </AppText>
-              </View>
-            </View>
-            <View style={styles.priceBlock}>
-              <AppText variant="h1" tone="accent">
-                $$
-              </AppText>
-              <AppText variant="micro" tone="secondary" style={styles.priceLabel}>
-                PRICING
-              </AppText>
-            </View>
-          </View>
-          {venue.closureNotice ? <InlineBanner message={venue.closureNotice} tone="warning" /> : null}
-
-          <View style={styles.attributeGrid}>
-            <Pressable
-              onPress={handleOpenDirections}
-              style={[
-                styles.attributeCard,
-                {
-                  backgroundColor: "#FFFFFF",
-                  borderColor: "rgba(30,27,22,0.08)",
-                  borderRadius: 20,
-                  padding: 16,
-                },
-              ]}
-            >
-              <View style={styles.infoCardHeader}>
-                <MapPin color={palette.navy} size={16} />
-                <AppText variant="micro" tone="muted" style={styles.attributeLabel}>
-                  DISTANCE
-                </AppText>
-              </View>
-              <AppText variant="h3">{distanceLabel}</AppText>
-            </Pressable>
-            <Pressable
-              onPress={deliveryAvailable ? handleOpenDelivery : undefined}
-              style={[
-                styles.attributeCard,
-                {
-                  backgroundColor: "#FFFFFF",
-                  borderColor: "rgba(30,27,22,0.08)",
-                  borderRadius: 20,
-                  opacity: deliveryAvailable ? 1 : 0.7,
-                  padding: 16,
-                },
-              ]}
-            >
-              <View style={styles.infoCardHeader}>
-                <Truck color={palette.navy} size={16} />
-                <AppText variant="micro" tone="muted" style={styles.attributeLabel}>
-                  ORDERING
-                </AppText>
-              </View>
-              <AppText variant="h3" tone={deliveryAvailable ? "accent" : "secondary"}>
-                {deliveryAvailable ? "Delivery available" : "Dine-in only"}
-              </AppText>
-            </Pressable>
-          </View>
-
-          <View style={{ gap: spacing[2], paddingTop: spacing[4] }}>
-            <AppText variant="micro" tone="muted" style={styles.sectionLabel}>
-              OPENING HOURS
-            </AppText>
-            <View style={styles.hoursRow}>
-              <View style={styles.hoursColumn}>
-                <AppText variant="h3">Mon - Fri</AppText>
-                <AppText variant="bodySmall" tone="secondary">
-                  {venue.operatingHours}
-                </AppText>
-              </View>
-              <View style={styles.hoursColumn}>
-                <AppText variant="h3">Sat - Sun</AppText>
-                <AppText variant="bodySmall" tone="secondary" style={{ fontStyle: "italic" }}>
-                  Closed
-                </AppText>
-              </View>
-            </View>
-          </View>
-
-          <View style={{ gap: spacing[3], paddingTop: spacing[6] }}>
-            <View style={styles.sectionHeaderRow}>
-              <AppText variant="h1">Signature Dishes</AppText>
-              <Pressable
-                onPress={() =>
-                  navigation.navigate("NotFound", {
-                    title: "Menu preview mocked",
-                    body: "The full menu route will be linked in production.",
-                  })
-                }
-                style={styles.viewMenuLink}
-              >
-                <AppText variant="micro" style={styles.viewMenuText}>
-                  VIEW FULL MENU
-                </AppText>
-              </Pressable>
-            </View>
-
-            <View style={[styles.signatureGrid, { marginHorizontal: -spacing[5], width: screenWidth }]}>
-              {signatureDishes.map((dish) => (
-                <Pressable
-                  key={dish.id}
-                  onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
-                  style={{ width: squareTile }}
-                >
-                  <Image source={{ uri: dish.imageUrl }} style={{ height: squareTile, width: "100%" }} contentFit="cover" />
-                  <View style={{ gap: spacing[1], paddingHorizontal: spacing[3], paddingVertical: spacing[2] }}>
-                    <AppText variant="h3" numberOfLines={2}>
-                      {dish.name}
-                    </AppText>
-                    <AppText variant="bodySmall" tone="secondary">
-                      SGD {dish.price.toFixed(2)}
-                    </AppText>
-                  </View>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          <View style={{ gap: spacing[4], paddingTop: spacing[5] }}>
-            <AppText variant="h1">From the Community</AppText>
-            {communityReviews.length ? communityReviews.map((review) => (
-              <Pressable
-                key={review.id}
-                onPress={openReviewChoice}
-                style={[
-                  styles.communityCard,
-                  {
-                    backgroundColor: "#FFFFFF",
-                    borderColor: "rgba(30,27,22,0.05)",
-                    borderRadius: 24,
-                    padding: spacing[4],
-                  },
-                ]}
-              >
-                <View style={styles.communityHeader}>
-                  <View style={styles.communityUser}>
-                    <Image source={{ uri: review.avatarUrl }} style={styles.avatar} contentFit="cover" />
-                    <View>
-                      <AppText variant="body">{review.authorName}</AppText>
-                      <AppText variant="micro" tone="secondary">
-                        {review.role}
-                      </AppText>
-                    </View>
-                  </View>
-                  <View style={styles.communityStars}>
-                    {[0, 1, 2, 3, 4].map((idx) => (
-                      <Star
-                        key={idx}
-                        color={palette.orange}
-                        fill={review.rating >= idx + 1 ? palette.orange : "transparent"}
-                        size={11}
-                      />
-                    ))}
-                  </View>
-                </View>
-                <AppText variant="bodySmall" tone="secondary">
-                  "{review.text}"
-                </AppText>
-                <AppText variant="micro" tone="muted">
-                  {review.dishName} · {review.createdAt}
-                </AppText>
-              </Pressable>
-            )) : (
-              <EmptyState
-                title="No reviews yet"
-                body="Be the first to add a review for this stall."
-              />
-            )}
-          </View>
-        </View>
-      </ScrollView>
-      <FAB>
-        <Button
-          fullWidth={false}
-          label="Write a review"
-          onPress={openReviewChoice}
-        />
-      </FAB>
+            <Heart color="#FFFFFF" fill={profile.favouriteDishIds.includes(leadDish?.id ?? "") ? "#FFFFFF" : "transparent"} />
+          </Pressable>
+        </FAB>
+      </View>
     </SafeAreaView>
   );
 }
@@ -432,126 +241,17 @@ export function StallDetailScreen({ navigation, route }: Props) {
 const styles = StyleSheet.create({
   topNav: {
     alignItems: "center",
-    borderBottomColor: "rgba(30,27,22,0.05)",
-    borderBottomWidth: 1,
     flexDirection: "row",
-    justifyContent: "space-between",
     left: 0,
     position: "absolute",
     right: 0,
     top: 0,
-    zIndex: 20,
+    zIndex: 10,
   },
-  iconTouch: {
-    alignItems: "center",
-    height: 44,
-    justifyContent: "center",
-    width: 44,
-  },
-  topNavSpacer: {
-    flex: 1,
-  },
-  contentWrap: {
-    alignSelf: "center",
-    maxWidth: 460,
-    width: "100%",
-  },
-  locationBadge: {
-    alignItems: "center",
-    alignSelf: "flex-start",
-    borderWidth: 1,
-    flexDirection: "row",
-    gap: 8,
-  },
-  locationText: {
-    fontFamily: "Nunito_700Bold",
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-  },
-  titleRow: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: 12,
-    justifyContent: "space-between",
-    marginTop: 14,
-  },
-  ratingRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 2,
-  },
-  priceBlock: {
-    alignItems: "flex-end",
-    minWidth: 56,
-    paddingTop: 6,
-  },
-  priceLabel: {
-    letterSpacing: 1,
-  },
-  attributeGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginTop: 8,
-  },
-  attributeCard: {
-    borderWidth: 1,
-    minHeight: 86,
-    width: "48%",
-  },
-  infoCardHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 6,
-    marginBottom: 8,
-  },
-  attributeLabel: {
-    letterSpacing: 1,
-  },
-  sectionLabel: {
-    letterSpacing: 1,
-  },
-  hoursRow: {
-    flexDirection: "row",
-    gap: 28,
-  },
-  hoursColumn: {
-    flex: 1,
-    gap: 4,
-  },
-  sectionHeaderRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  viewMenuLink: {
-    borderBottomColor: "#E8531E",
-    borderBottomWidth: 2,
-    paddingBottom: 4,
-  },
-  viewMenuText: {
-    color: "#1E1B16",
-    fontFamily: "Nunito_700Bold",
-    letterSpacing: 1,
-  },
-  signatureGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 0,
-  },
-  signatureImage: {
-    height: "100%",
-    width: "100%",
-  },
-  communityCard: {
-    borderWidth: 1,
-    gap: 12,
-  },
-  communityHeader: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
+  communityReview: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
   },
   communityUser: {
     alignItems: "center",

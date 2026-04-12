@@ -15,7 +15,6 @@ import { G, Path, Svg, Text as SvgText } from "react-native-svg";
 
 import { useHungryTheme } from "@/theme";
 import type { WheelEntry } from "@/types/domain";
-import { HungryLogo } from "../ui/HungryLogo";
 
 interface Props {
   entries: WheelEntry[];
@@ -55,7 +54,7 @@ function truncateLabel(label: string, maxChars: number): string {
 }
 
 export function WheelSvg({ entries, size = 300 }: Props) {
-  const { palette, shadows } = useHungryTheme();
+  const { palette } = useHungryTheme();
 
   const active = entries.filter((e) => !e.isEliminated);
   const cx = size / 2;
@@ -132,15 +131,26 @@ export function WheelSvg({ entries, size = 300 }: Props) {
           width: logoSize,
           height: logoSize,
           borderRadius: logoSize / 2,
-          backgroundColor: "#FFFFFF",
+          overflow: "hidden",
+          backgroundColor: palette.surface,
           borderWidth: 2,
           borderColor: palette.border,
           alignItems: "center",
           justifyContent: "center",
-          ...shadows.floating,
         }}
       >
-        <HungryLogo size={logoSize * 0.8} showWordmark={false} />
+        <Svg width={logoSize} height={logoSize}>
+          <SvgText
+            x={logoSize / 2}
+            y={logoSize / 2 + 5}
+            fill={palette.orange}
+            fontSize={logoSize * 0.46}
+            fontWeight="700"
+            textAnchor="middle"
+          >
+            H
+          </SvgText>
+        </Svg>
       </View>
     </View>
   );

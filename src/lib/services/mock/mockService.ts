@@ -11,6 +11,7 @@ import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { blogPosts, buildings, dishes, guestProfile, stallPosts, userProfile, venues } from "./data";
 import { mockRepository, similarityScore } from "./repositories";
+import { assertFixtureBundleValid } from "./validation";
 import type {
   Bite,
   BiteDraft,
@@ -21,9 +22,11 @@ import type {
   RecommendationResult,
   SearchResult,
   Session,
+  SubmitReviewInput,
 } from "@/lib/services/types";
 import type {
   BlogPost,
+  DietaryFlag,
   DishDetail,
   SearchFilters,
   TasteVector,
@@ -62,6 +65,11 @@ function matchReason(userVec: TasteVector, dishVec: TasteVector): string {
 let _profile: UserProfile = { ...guestProfile };
 let _isAuthenticated = false;
 const _biteReactions: Record<string, { cravings: Set<string>; saves: Set<string> }> = {};
+
+if (typeof __DEV__ !== "undefined" && __DEV__) {
+  // TODO(api): keep fixture validation while mock mode is active; remove once backend contracts are fully live.
+  assertFixtureBundleValid();
+}
 
 // ─── Mock session ─────────────────────────────────────────────────────────────
 
@@ -113,7 +121,7 @@ const MOCK_BITES_FEED: Bite[] = [
     buildingId: "building-old-airport-road",
     buildingName: "Old Airport Road Food Centre",
     photoUrl: "https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=800",
-    caption: "Smoky wok hei, perfectly charred with big juicy cockles.",
+    caption: "Smoky wok hei, perfectly charred with big juicy cockles 🔥",
     tasteStamp: { sweet: 1, spicy: 5, sour: 1, salty: 7, rich: 7, aromatic: 6 },
     cravingCount: 284,
     savedCount: 41,
@@ -253,6 +261,12 @@ export const hungryService: HungryService = {
       return resolve(mockSession(_profile));
     },
 
+    async signInWithApple() {
+      _isAuthenticated = true;
+      _profile = { ...userProfile };
+      return resolve(mockSession(_profile));
+    },
+
     async signOut() {
       _isAuthenticated = false;
       _profile = { ...guestProfile };
@@ -359,7 +373,7 @@ export const hungryService: HungryService = {
       return resolve(reviews);
     },
 
-    async submitReview(draft) {
+    async submitReview(draft: SubmitReviewInput) {
       // Mock: persist the reviewed dish into the in-memory profile
       if (!_profile.reviewedDishIds.includes(draft.dishId)) {
         _profile = {
@@ -385,6 +399,11 @@ export const hungryService: HungryService = {
     async updateProfile(updates) {
       _profile = { ..._profile, ...updates } as UserProfile;
       return resolve({ ..._profile });
+    },
+
+    async updateDietaryPreferences(flags: DietaryFlag[]) {
+      _profile = { ..._profile, dietaryPreferences: flags };
+      return resolve(undefined);
     },
 
     async getGuestProfile() {

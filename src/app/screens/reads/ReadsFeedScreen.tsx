@@ -1,26 +1,36 @@
 import { Pressable, ScrollView, View } from "react-native";
+import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
+import type { CompositeScreenProps } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import { Image } from "expo-image";
 
-import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { getReadsFeed } from "@/features/reads/feed";
 import { AppText, Badge, Card, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
-type Props = NativeStackScreenProps<RootStackParamList, "ReadsFeed">;
+type Props = CompositeScreenProps<
+  BottomTabScreenProps<MainTabParamList, "Reads">,
+  NativeStackScreenProps<RootStackParamList>
+>;
 
 const ATMOSPHERES = [
-  { label: "CANDLELIT", color: "#F5A623" },
-  { label: "INDUSTRIAL", color: "#9CA3AF" },
-  { label: "KINFOLK", color: "#14B8A6" },
-  { label: "BRUTALIST", color: "#6B7280" },
+  { label: "CANDLELIT", color: "amber" },
+  { label: "INDUSTRIAL", color: "textMuted" },
+  { label: "KINFOLK", color: "teal" },
+  { label: "BRUTALIST", color: "text" },
 ] as const;
 
 export function ReadsFeedScreen(_: Props) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { palette, spacing, radii, shadows } = useHungryTheme();
   const posts = getReadsFeed();
   const rootNavigation = useNavigation<any>();
+
+  const getReadTime = (post: any) => {
+    const words = post.title.length + post.excerpt.length;
+    return `${Math.max(3, Math.ceil(words / 20))} MIN READ`;
+  };
 
   return (
     <Screen scroll={false}>
@@ -51,7 +61,7 @@ export function ReadsFeedScreen(_: Props) {
                     tone="accent"
                     style={{ textTransform: "uppercase" }}
                   >
-                    {post.sourceName} {"\u00B7"} 8 MIN READ
+                    {post.sourceName} {"\u00B7"} {getReadTime(post)}
                   </AppText>
                   <AppText variant="h3">{post.title}</AppText>
                   <AppText
@@ -75,12 +85,27 @@ export function ReadsFeedScreen(_: Props) {
               flexDirection: "row",
               justifyContent: "space-between",
               alignItems: "center",
+              paddingHorizontal: spacing[1],
             }}
           >
             <AppText variant="h2">IN FOCUS {"\u2014"} Trending Palettes</AppText>
-            <AppText variant="bodySmall" tone="accent">
-              View Archive
-            </AppText>
+            <Pressable 
+              style={({ pressed }) => [
+                { 
+                  backgroundColor: pressed ? palette.bgSoft : palette.surface,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: radii.pill,
+                  borderWidth: 1,
+                  borderColor: palette.border
+                },
+                shadows.card
+              ]}
+            >
+              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                VIEW ARCHIVE
+              </AppText>
+            </Pressable>
           </View>
 
           <ScrollView
@@ -154,17 +179,21 @@ export function ReadsFeedScreen(_: Props) {
                   width: "47%",
                   height: 100,
                   borderRadius: radii.md,
-                  backgroundColor: palette.navy,
+                  backgroundColor: palette.surface,
+                  borderColor: palette.border,
+                  borderWidth: 1,
                   justifyContent: "center",
                   alignItems: "center",
+                  ...shadows.card,
                 }}
               >
                 <AppText
                   variant="micro"
                   style={{
-                    color: atm.color,
+                    color: (palette as any)[atm.color] ?? palette.text,
                     textTransform: "uppercase",
                     letterSpacing: 2,
+                    fontWeight: "700",
                   }}
                 >
                   {atm.label}

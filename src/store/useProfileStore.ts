@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { guestProfile, userProfile } from "@/lib/services/mock/data";
-import { mockRepository, similarityScore } from "@/lib/services/mock/repositories";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { getDataRepository, getSimilarityScore } from "@/lib/services/serviceProvider";
 import type { DietaryFlag, DishDetail, TasteVector, UserProfile } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
 
@@ -23,59 +23,60 @@ interface ProfileState {
 }
 
 function recalculateTasteVector(profile: UserProfile) {
+  const repository = getDataRepository();
   const favourites = profile.favouriteDishIds
-    .map((dishId) => mockRepository.getDishById(dishId))
-    .filter(Boolean) as DishDetail[];
+    .map((id) => repository.getDishById(id))
+    .filter((d): d is DishDetail => !!d);
 
-  if (!favourites.length) {
-    return profile.tasteVector;
-  }
+  if (favourites.length === 0) return profile.tasteVector;
 
-  const next = { sweet: 0, spicy: 0, sour: 0, salty: 0, rich: 0, aromatic: 0 };
+  const newVector: TasteVector = { sweet: 0, spicy: 0, sour: 0, salty: 0, rich: 0, aromatic: 0 };
   favourites.forEach((dish) => {
-    next.sweet += dish.tasteVector.sweet;
-    next.spicy += dish.tasteVector.spicy;
-    next.sour += dish.tasteVector.sour;
-    next.salty += dish.tasteVector.salty;
-    next.rich += dish.tasteVector.rich;
-    next.aromatic += dish.tasteVector.aromatic;
+    Object.keys(newVector).forEach((key) => {
+      (newVector as any)[key] += (dish.tasteVector as any)[key];
+    });
   });
 
-  return {
-    sweet: next.sweet / favourites.length,
-    spicy: next.spicy / favourites.length,
-    sour: next.sour / favourites.length,
-    salty: next.salty / favourites.length,
-    rich: next.rich / favourites.length,
-    aromatic: next.aromatic / favourites.length,
-  };
+  Object.keys(newVector).forEach((key) => {
+    (newVector as any)[key] = Math.round((newVector as any)[key] / favourites.length);
+  });
+
+  return newVector;
 }
 
 export const useProfileStore = create<ProfileState>()(
   persist(
-    (set) => ({
-      profile: guestProfile,
+    (set, get) => ({
+      profile: getDataRepository().getProfile(false),
       reviewEntries: {},
-      syncProfile: (isAuthenticated) => set({ profile: isAuthenticated ? userProfile : guestProfile }),
+      syncProfile: (isAuthenticated) => {
+        set({ profile: getDataRepository().getProfile(isAuthenticated) });
+      },
       toggleFavourite: (dish) =>
         set((state) => {
-          const favouriteDishIds = state.profile.favouriteDishIds.includes(dish.id)
-            ? state.profile.favouriteDishIds.filter((dishId) => dishId !== dish.id)
+          const isFavourite = state.profile.favouriteDishIds.includes(dish.id);
+          const nextIds = isFavourite
+            ? state.profile.favouriteDishIds.filter((id) => id !== dish.id)
             : [...state.profile.favouriteDishIds, dish.id];
 
-          const profile = {
+          trackAnalyticsEvent(isFavourite ? "dish_unfavourited" : "dish_favourited", {
+            dish_id: dish.id,
+            venue_id: dish.venueId,
+          });
+
+          const nextProfile = {
             ...state.profile,
-            favouriteDishIds,
+            favouriteDishIds: nextIds,
             stats: {
               ...state.profile.stats,
-              favouritesCount: favouriteDishIds.length,
+              favouritesCount: nextIds.length,
             },
           };
 
           return {
             profile: {
-              ...profile,
-              tasteVector: recalculateTasteVector(profile),
+              ...nextProfile,
+              tasteVector: recalculateTasteVector(nextProfile),
             },
           };
         }),
@@ -87,29 +88,35 @@ export const useProfileStore = create<ProfileState>()(
           },
         })),
       setTasteVector: (tasteVector) =>
-        set((state) => ({
-          profile: {
-            ...state.profile,
-            tasteVector,
-          },
-        })),
+        set((state) => {
+          trackAnalyticsEvent("taste_quiz_completed", {
+            skipped: false,
+            vector: tasteVector,
+          });
+          return {
+            profile: {
+              ...state.profile,
+              tasteVector,
+            },
+          };
+        }),
       setDietaryPreferences: (dietaryPreferences) =>
-        set((state) => ({
-          profile: {
-            ...state.profile,
-            dietaryPreferences,
-          },
-        })),
+        set((state) => {
+          trackAnalyticsEvent("dietary_preferences_set", {
+            flags: dietaryPreferences,
+          });
+          return {
+            profile: {
+              ...state.profile,
+              dietaryPreferences,
+            },
+          };
+        }),
       addReview: (dish) =>
         set((state) => {
           const reviewedDishIds = state.profile.reviewedDishIds.includes(dish.id)
             ? state.profile.reviewedDishIds
             : [...state.profile.reviewedDishIds, dish.id];
-          const reviewedVenueIds = new Set(
-            reviewedDishIds
-              .map((dishId) => mockRepository.getDishById(dishId)?.venueId)
-              .filter(Boolean) as string[],
-          );
 
           return {
             profile: {
@@ -118,23 +125,15 @@ export const useProfileStore = create<ProfileState>()(
               stats: {
                 ...state.profile.stats,
                 dishesReviewed: reviewedDishIds.length,
-                stallsVisited: reviewedVenueIds.size,
               },
             },
           };
         }),
       addReviewedDish: (dishId) =>
         set((state) => {
-          if (state.profile.reviewedDishIds.includes(dishId)) {
-            return state;
-          }
-
-          const reviewedDishIds = [...state.profile.reviewedDishIds, dishId];
-          const reviewedVenueIds = new Set(
-            reviewedDishIds
-              .map((reviewedId) => mockRepository.getDishById(reviewedId)?.venueId)
-              .filter(Boolean) as string[],
-          );
+          const reviewedDishIds = state.profile.reviewedDishIds.includes(dishId)
+            ? state.profile.reviewedDishIds
+            : [...state.profile.reviewedDishIds, dishId];
 
           return {
             profile: {
@@ -143,7 +142,6 @@ export const useProfileStore = create<ProfileState>()(
               stats: {
                 ...state.profile.stats,
                 dishesReviewed: reviewedDishIds.length,
-                stallsVisited: reviewedVenueIds.size,
               },
             },
           };
@@ -175,7 +173,7 @@ export const useProfileStore = create<ProfileState>()(
         })),
       clearProfile: () =>
         set({
-          profile: guestProfile,
+          profile: getDataRepository().getProfile(false),
           reviewEntries: {},
         }),
     }),
@@ -191,4 +189,4 @@ export const useProfileStore = create<ProfileState>()(
 );
 
 export const getTasteSimilarityWithDish = (profile: UserProfile, dish: DishDetail) =>
-  Math.round(similarityScore(profile.tasteVector, dish.tasteVector) * 100);
+  Math.round(getSimilarityScore(profile.tasteVector, dish.tasteVector) * 100);

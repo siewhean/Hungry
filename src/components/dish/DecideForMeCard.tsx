@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, View } from "react-native";
-import { Sparkles, Star } from "lucide-react-native";
+import { Sparkles } from "lucide-react-native";
 import { Image } from "expo-image";
 
 import type { DishDetail } from "@/types/domain";
@@ -46,11 +46,7 @@ export function DecideForMeCard({ dish, matchScore, onOrder, onReroll, onDismiss
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         <AppText variant="price">S${dish.price.toFixed(2)}</AppText>
-        <Badge 
-          label={dish.rating.toFixed(1)} 
-          tone="amber" 
-          rightIcon={<Star color={palette.amber} fill={palette.amber} size={10} />} 
-        />
+        <Badge label={`${dish.rating.toFixed(1)} ★`} tone="amber" />
         {dish.mustOrder ? <MustOrderBadge /> : null}
       </View>
 

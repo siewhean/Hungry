@@ -401,7 +401,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           />
           <LaunchButton
             label="Read feed"
-            onPress={() => navigation.navigate("ReadsFeed")}
+            onPress={() => navigation.navigate("MainTabs", { screen: "Reads" })}
           />
           <LaunchButton
             label="Article"
@@ -429,7 +429,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             label="Profile"
             onPress={() =>
               openProtected("Profile", () =>
-                navigation.navigate("MainTabs", { screen: "Profile" })
+                navigation.navigate("MainTabs", { screen: "Profile", params: { screen: "ProfileHome" } })
               )
             }
           />

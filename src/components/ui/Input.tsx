@@ -7,11 +7,13 @@ import { AppText } from "./AppText";
 interface InputProps extends TextInputProps {
   label?: string;
   helperText?: string;
+  errorText?: string;
+  error?: boolean;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
 }
 
-export function Input({ label, helperText, leftIcon, rightIcon, style, ...props }: InputProps) {
+export function Input({ label, helperText, errorText, error, leftIcon, rightIcon, style, ...props }: InputProps) {
   const { palette, radii, spacing, typography } = useHungryTheme();
 
   return (
@@ -23,11 +25,11 @@ export function Input({ label, helperText, leftIcon, rightIcon, style, ...props 
       ) : null}
       <View
         style={[
-        styles.field,
-        {
+          styles.field,
+          {
             backgroundColor: palette.surface,
-            borderColor: palette.border,
-            borderRadius: radii.lg,
+            borderColor: error ? palette.error : palette.border,
+            borderRadius: radii.md,
             gap: spacing[2],
             minHeight: 54,
             paddingHorizontal: spacing[4],
@@ -51,7 +53,15 @@ export function Input({ label, helperText, leftIcon, rightIcon, style, ...props 
         />
         {rightIcon ? <View style={styles.iconWrap}>{rightIcon}</View> : null}
       </View>
-      {helperText ? <AppText variant="bodySmall" tone="muted">{helperText}</AppText> : null}
+      {error && errorText ? (
+        <AppText variant="micro" style={{ color: palette.error }} accessibilityLiveRegion="polite">
+          {errorText}
+        </AppText>
+      ) : helperText ? (
+        <AppText variant="bodySmall" tone="muted">
+          {helperText}
+        </AppText>
+      ) : null}
     </View>
   );
 }

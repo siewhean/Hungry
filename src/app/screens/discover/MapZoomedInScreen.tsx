@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, StyleSheet, View, useWindowDimensions, Animated, ScrollView } from "react-native";
+import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronLeft, Navigation, Store, Star } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { MapSurface, type MapSurfaceMarker } from "@/components/map/MapSurface";
 import { AppText, Button, Card, Badge } from "@/components/ui";
 import { getBuildingVenues } from "@/features/discovery/discovery";
 import { getBuildingById, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
-import { mockRepository } from "@/lib/services/mock/repositories";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme } from "@/theme";
@@ -33,7 +33,6 @@ function resolveBuilding(buildingId?: string, selectedName?: string) {
 export function MapZoomedInScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const { palette, radii, spacing, shadows } = useHungryTheme();
-  const { height: screenHeight } = useWindowDimensions();
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
@@ -49,7 +48,7 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
   useEffect(() => {
     setSelectedBuilding(toSummary(building));
     setSelectedFloor(building.floors[0]);
-  }, [building]);
+  }, [building, setSelectedBuilding, setSelectedFloor]);
 
   const markers = useMemo<MapSurfaceMarker[]>(
     () => {
@@ -61,7 +60,7 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
         type: building.type,
       };
 
-      if (currentZoom > 17.5) {
+      if (currentZoom > 17.0) {
         const stallMarkers = getBuildingVenues(building.id).map(v => ({
           id: `stall-${v.id}`,
           label: v.name,
@@ -80,23 +79,10 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
   );
 
   const featuredStalls = getBuildingVenues(building.id).filter((v) => v.isOpen).slice(0, 3);
-
-  // --- MANUAL ANIMATED CARD LOGIC ---
-  const PEEK_HEIGHT = 300; 
-  const FULL_HEIGHT = screenHeight * 0.65;
-  const animatedHeight = useRef(new Animated.Value(PEEK_HEIGHT)).current;
-
-  const snapTo = (height: number) => {
-    Animated.spring(animatedHeight, {
-      toValue: height,
-      useNativeDriver: false,
-      tension: 50,
-      friction: 8,
-    }).start();
-  };
+  const bottomSheetRef = useRef<BottomSheet>(null);
 
   useEffect(() => {
-    snapTo(PEEK_HEIGHT);
+    bottomSheetRef.current?.snapToIndex(1);
   }, []);
 
   const handleMarkerPress = (id: string) => {
@@ -105,7 +91,7 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
       navigation.navigate("StallDetail", { venueId });
       return;
     }
-    snapTo(FULL_HEIGHT);
+    bottomSheetRef.current?.snapToIndex(1);
   };
 
   return (
@@ -118,38 +104,26 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
         selectedMarkerId={building.id}
         currentLocation={currentLocation}
         onMarkerPress={handleMarkerPress}
-        onMapPress={() => snapTo(PEEK_HEIGHT)}
+        onMapPress={() => bottomSheetRef.current?.snapToIndex(1)}
         onZoomChange={setCurrentZoom}
       />
 
-      {/* Floating Back Button */}
       <Pressable 
         onPress={() => navigation.goBack()} 
-        style={{ position: "absolute", top: insets.top + 10, left: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center", zIndex: 30, ...shadows.floating }}
+        style={{ position: "absolute", top: insets.top + 10, left: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center", ...shadows.floating }}
       >
         <ChevronLeft color={palette.text} size={24} />
       </Pressable>
 
-      <Animated.View
-        style={[
-          styles.animatedCard,
-          shadows.floating,
-          {
-            backgroundColor: palette.surface,
-            height: animatedHeight,
-            zIndex: 50,
-            elevation: 10,
-            bottom: 12, // Clearance for tab bar
-            paddingHorizontal: 16,
-            borderRadius: 40,
-          }
-        ]}
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={1}
+        snapPoints={["2%", "35%", "60%"]}
+        enablePanDownToClose={false}
+        backgroundStyle={{ backgroundColor: palette.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28 }}
+        handleIndicatorStyle={{ backgroundColor: palette.border, width: 40 }}
       >
-        <View style={{ width: "100%", height: 32, alignItems: "center", justifyContent: "center" }}>
-          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: palette.border }} />
-        </View>
-
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 20, paddingTop: 10 }}>
+        <BottomSheetScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20, paddingHorizontal: 20, paddingTop: spacing[6] }}>
           <View style={{ gap: 16 }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
               <View style={{ flex: 1, gap: 2 }}>
@@ -189,18 +163,8 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
               onPress={() => navigation.navigate("BuildingDrillDown", { buildingId: building.id })}
             />
           </View>
-        </ScrollView>
-      </Animated.View>
+        </BottomSheetScrollView>
+      </BottomSheet>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  animatedCard: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-  }
-});

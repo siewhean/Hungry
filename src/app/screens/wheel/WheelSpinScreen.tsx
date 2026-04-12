@@ -18,6 +18,7 @@ import { useEffect, useRef } from "react";
 import { Animated, Easing, Pressable, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Play } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 
 import { AppText } from "@/components/ui";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
@@ -32,7 +33,7 @@ const WHEEL_SIZE = 300;
 const SPIN_DURATION = 4000;
 
 export function WheelSpinScreen({ navigation }: Props) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
 
   const party = useWheelStore((s) => s.party);
   const members = useWheelStore((s) => s.members);
@@ -42,9 +43,44 @@ export function WheelSpinScreen({ navigation }: Props) {
 
   const spinAnim = useRef(new Animated.Value(0)).current;
   const isSpinning = useRef(false);
+  const lastHapticAngle = useRef(0);
 
   const activeEntries = entries.filter((e) => !e.isEliminated);
   const isHost = members.find((m) => m.id === myMemberId)?.isHost ?? false;
+
+  // Track animation for haptics
+  useEffect(() => {
+    const segmentAngle = 360 / Math.max(1, activeEntries.length);
+    
+    // We expect totalRotation to be around 5 * 360 = 1800+ degrees.
+    // The animation is Easing.out(Easing.cubic), so speed is high at first.
+    
+    const listenerId = spinAnim.addListener(({ value }) => {
+      const currentSegment = Math.floor(value / segmentAngle);
+      const lastSegment = Math.floor(lastHapticAngle.current / segmentAngle);
+
+      if (currentSegment !== lastSegment) {
+        lastHapticAngle.current = value;
+        
+        // Intensity logic: 
+        // 1. Initial burst (first 2 full rotations): Heavy
+        // 2. Middle phase (rotations 3-4): Medium
+        // 3. Final slowdown (rotation 5+): Light
+        
+        if (value < 720) {
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        } else if (value < 1440) {
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        } else {
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+      }
+    });
+
+    return () => {
+      spinAnim.removeListener(listenerId);
+    };
+  }, [activeEntries.length]);
 
   // Watch for spin_triggered event — party.spinSeed is set when it fires.
   useEffect(() => {
@@ -67,6 +103,7 @@ export function WheelSpinScreen({ navigation }: Props) {
     const timer = setTimeout(() => {
       isSpinning.current = true;
       spinAnim.setValue(0);
+      lastHapticAngle.current = 0;
 
       Animated.timing(spinAnim, {
         toValue: totalRotation,
@@ -171,33 +208,29 @@ export function WheelSpinScreen({ navigation }: Props) {
           <Pressable
             onPress={triggerSpin}
             disabled={!canSpin}
-            style={({ pressed }) => ({
+            style={{
               flexDirection: "row",
               alignItems: "center",
               gap: spacing[2],
-              backgroundColor: "#FFFFFF",
-              borderColor: canSpin ? palette.orange : palette.border,
-              borderWidth: 2,
-              paddingHorizontal: spacing[8],
+              backgroundColor: canSpin ? palette.orange : palette.bgSoft,
+              paddingHorizontal: spacing[6],
               paddingVertical: spacing[4],
               borderRadius: 999,
               opacity: canSpin ? 1 : 0.5,
-              transform: [{ translateY: pressed && canSpin ? 1 : 0 }],
-            })}
+            }}
           >
-            <Play size={20} color={canSpin ? palette.orange : palette.textMuted} fill={canSpin ? palette.orange : "transparent"} />
+            <Play size={20} color={canSpin ? "#FFFFFF" : palette.textMuted} />
             <AppText
-              style={{ color: canSpin ? palette.orange : palette.textMuted, fontWeight: "800", fontSize: 18 }}
+              variant="h3"
+              style={{ color: canSpin ? "#FFFFFF" : palette.textMuted }}
             >
               {spinning ? "Spinning…" : "Spin the wheel"}
             </AppText>
           </Pressable>
         ) : (
-          <View style={{ backgroundColor: palette.bgSoft, paddingHorizontal: spacing[6], paddingVertical: spacing[3], borderRadius: radii.pill }}>
-            <AppText tone="secondary" style={{ textAlign: "center", fontWeight: "600" }}>
-              {spinning ? "Spinning…" : "Waiting for the host to spin…"}
-            </AppText>
-          </View>
+          <AppText tone="secondary" style={{ textAlign: "center" }}>
+            {spinning ? "Spinning…" : "Waiting for the host to spin…"}
+          </AppText>
         )}
       </View>
     </View>

@@ -155,26 +155,22 @@ export function WheelResultModal({ navigation, route }: Props) {
             {/* Primary: go to stall */}
             <Pressable
               onPress={handleStallDetail}
-              style={({ pressed }) => [
-                {
-                  backgroundColor: "#FFFFFF",
-                  borderColor: palette.orange,
-                  borderWidth: 2,
-                  paddingVertical: spacing[4],
-                  borderRadius: radii.pill,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: spacing[2],
-                  transform: [{ translateY: pressed ? 1 : 0 }],
-                }
-              ]}
+              style={{
+                backgroundColor: palette.orange,
+                paddingVertical: spacing[4],
+                borderRadius: radii.pill,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: spacing[2],
+              }}
             >
-              <Navigation size={18} color={palette.orange} fill={palette.orange} />
+              <Navigation size={16} color="#FFFFFF" />
               <AppText
-                style={{ color: palette.orange, fontWeight: "800", fontSize: 18 }}
+                variant="h3"
+                style={{ color: "#FFFFFF" }}
               >
-                View Stall Details
+                View stall
               </AppText>
             </Pressable>
 
@@ -182,28 +178,23 @@ export function WheelResultModal({ navigation, route }: Props) {
             {isElimination && remainingActive > 2 ? (
               <Pressable
                 onPress={handleSpinAgain}
-                style={({ pressed }) => [
-                  {
-                    backgroundColor: "#FFFFFF",
-                    borderColor: palette.border,
-                    borderWidth: 1,
-                    paddingVertical: spacing[4],
-                    borderRadius: radii.pill,
-                    alignItems: "center",
-                    transform: [{ translateY: pressed ? 1 : 0 }],
-                  }
-                ]}
+                style={{
+                  backgroundColor: palette.bgSoft,
+                  paddingVertical: spacing[4],
+                  borderRadius: radii.pill,
+                  alignItems: "center",
+                }}
               >
-                <AppText style={{ color: palette.text, fontWeight: "700", fontSize: 16 }}>
-                  Next Round ({remainingActive - 1} left)
+                <AppText variant="h3" tone="secondary">
+                  Next round ({remainingActive - 1} left)
                 </AppText>
               </Pressable>
             ) : null}
 
             {/* Done / disband */}
             <Pressable onPress={handleDone} style={{ alignItems: "center", paddingVertical: spacing[2] }}>
-              <AppText variant="bodySmall" tone="accent" style={{ fontWeight: "700" }}>
-                {isClassic ? "SPIN AGAIN" : "DONE — DISBAND PARTY"}
+              <AppText variant="bodySmall" tone="secondary">
+                {isClassic ? "Spin again" : "Done — disband party"}
               </AppText>
             </Pressable>
           </View>

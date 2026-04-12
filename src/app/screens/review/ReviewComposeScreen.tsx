@@ -2,6 +2,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useMemo } from "react";
 import { View } from "react-native";
 
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { PhotoPicker } from "@/components/review";
 import { AppText, Button, Card, InlineBanner, Input } from "@/components/ui";
 import { mockRepository } from "@/lib/services/mock/repositories";
@@ -71,6 +72,7 @@ export function ReviewComposeScreen({ navigation }: Props) {
       dishName: dish.name,
       venueName: mockRepository.getVenueById(dish.venueId)?.name ?? "",
       pointsEarned: 15 + draft.selectedTags.length * 4 + (draft.text.trim().length ? 10 : 0) + draft.photos.length * 5,
+      xpEarned: 15 + draft.selectedTags.length * 4 + (draft.text.trim().length ? 10 : 0) + draft.photos.length * 5,
       tagCount: draft.selectedTags.length,
       rating: draft.rating,
     };
@@ -84,8 +86,16 @@ export function ReviewComposeScreen({ navigation }: Props) {
         text: draft.text,
         tags: draft.selectedTags,
       });
+      trackAnalyticsEvent("review_submitted", {
+        dish_id: dish.id,
+        venue_id: dish.venueId,
+        rating: draft.rating,
+        has_text: Boolean(draft.text.trim()),
+        has_photos: draft.photos.length > 0,
+        tag_count: draft.selectedTags.length,
+      });
       setSubmitting(false);
-      showToast({ message: "Review submitted.", tone: "success" });
+      showToast({ message: "Review posted! Your feedback helps other foodies find the best dishes in Singapore.", tone: "success" });
       showReviewSuccess(successPayload);
       resetDraft();
       navigation.popToTop();

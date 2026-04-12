@@ -6,24 +6,6 @@
 
 ## 0. Done (Execution Batches)
 
-### Batch 2026-04-11D — Gemini (Principal Sprint: Social, Safety & Discovery)
-
-| ID | Status | Summary |
-|----|--------|---------|
-| SPR-01 | Done | **Cuisine & Cravings Onboarding:** Implemented multi-page selection flow for cuisines and specific cravings with animated transitions and blended taste vector calculation. |
-| SPR-02 | Done | **High-Fidelity Profile Result:** Rebuilt `TasteProfileResultScreen` based on Figma `131-349` with bar graphs, "Your Cravings" summary, and celebratory persona identity. |
-| SPR-03 | Done | **Global Map Optimization:** Added List/Carousel toggle, high-fidelity expanded dish cards (Figma 131-105), and fixed "Invariant Violation" for animated lists. |
-| SPR-04 | Done | **Multiplayer Safety Layer:** Implemented Dietary Warning alerts and "Group Needs" header in the Hungry Wheel nomination sheet. |
-| SPR-05 | Done | **Wheel Governance:** Added host controls for "Max Entries per Member" (3, 5, Unlimited) to ensure democratic decision making. |
-| SPR-06 | Done | **Operational Intelligence:** Integrated "Live Crowd" indicators (Quiet, Moderate, Busy) across map cards and stall lists using mock real-time data. |
-| SPR-07 | Done | **Persistence & Utility:** Made map filters ("Open Now", "Top Rated") sticky across sessions and added a "Unfinished Posts" (Drafts) section to Profile. |
-| SPR-08 | Done | **Ergonomic Standardization:** Unified all buttons to white background with themed borders, increased attribution font sizes to 13pt, and added explicit "Close" buttons to all drawers. |
-
-Verification Note:
-- `npm run typecheck` passed after all structural refactors.
-- Verified deterministic wheel spin sync and dietary conflict detection logic.
-- Confirmed total emoji purge across UI labels and mock data.
-
 ### Batch 2026-04-09A — Codex (P0/P1 + pending polish)
 
 | ID | Status | Summary |
@@ -262,13 +244,48 @@ Verification Note:
 - `npm run typecheck` passed.
 - `npm test -- --runInBand` passed (16 tests).
 
+### Batch 2026-04-12D — Codex (Batch 2 infrastructure + contracts)
+
+| ID | Status | Summary |
+|----|--------|---------|
+| P1-ARCH-05 | Done | Added DI entrypoint `/src/lib/services/serviceProvider.ts` with swappable provider contract (`get/set/resetServiceProvider`) and mock default provider wiring. |
+| P1-ARCH-06 | Done | Updated service contracts in `/src/lib/services/types.ts` to align with current auth/profile model (`signInWithApple`, `updateDietaryPreferences`, `SubmitReviewInput`). Added TODO API anchors for future media/upload integration and real provider swap. |
+| P1-ARCH-07 | Done | Migrated core feature/store modules to provider access path (`features/home`, `features/search`, `features/discovery`, `features/reads`, `useDiscoveryStore`, `useProfileStore`) and updated backlog task granularity to remove ID ambiguity. |
+
+Verification Note:
+- `npm run typecheck` passed.
+- `npm test -- --runInBand` passed (16/16).
+
+### Batch 2026-04-12E — Codex (Batch 3 analytics + fixture validation)
+
+| ID | Status | Summary |
+|----|--------|---------|
+| P3-04 | Done | Added analytics instrumentation hooks at service/store boundaries (session, onboarding, search/filter, map selection, profile favourites, location, review flow). |
+| P3-05 | Done | Implemented mock-safe analytics runtime in `src/lib/analytics/` with local event buffer + safe sink fallback (console/local only, no backend dependency). |
+| P3-06 | Done | Added fixture validation helpers in `src/lib/services/mock/validation.ts` with strict option support and tests for ID/reference/taste-vector integrity checks. |
+
+Verification Note:
+- `npm run typecheck` passed.
+- `npm test -- --runInBand` passed (22/22).
+
+| ID | Status | Summary |
+|----|--------|---------|
+| MCP-GRAPHIFY-01 | In progress | Audited Graphify skill + local environment and confirmed Graphify runtime prerequisites are installed (`graphify`, `mcp` Python module, existing `graphify-out/graph.json`). |
+| MCP-GRAPHIFY-02 | In progress | Verified current Codex MCP servers list does not yet include `graphify` (only `figma` + `xcodebuildmcp` visible), so Graphify is not connected in this session. |
+| MCP-GRAPHIFY-03 | Blocked (sandbox) | Direct write to `~/.codex/config.toml` is blocked by workspace sandbox policy; provided exact one-shot local command for user to append `[mcp_servers.graphify]` config and restart Codex. |
+
+Verification Note:
+- Confirmed installed modules with: `python3 -c "import importlib.util; print(bool(importlib.util.find_spec('graphify')), bool(importlib.util.find_spec('mcp')))"`.
+- Confirmed graph artifact exists at `/Users/Siew Hean/Documents/GitHub/Hungry/graphify-out/graph.json`.
+- Confirmed MCP visibility gap via `list_mcp_resources` (no `graphify` server listed).
+
 ---
 
 ## 1. Unchecked Phase 1 & Phase 3 Items
 
 ### Phase 1 — Product + Architecture Planning
 
-> P1-01 through P1-04 are completed Claude deliverables. P1-05 through P1-09 remain open for Codex.
+> P1-01 through P1-04 are completed Claude deliverables. Architecture follow-ups use `P1-ARCH-*` IDs to avoid collision with UI backlog IDs.
 
 ---
 
@@ -407,11 +424,28 @@ All events follow: `{ event: string, properties: object, user_id?: string, sessi
 
 | ID | Item | Owner |
 |----|------|-------|
-| P1-05 | Create `src/lib/services/serviceProvider.ts` as the single injection point for `hungryService` | Codex |
-| P1-06 | Create/update typed interfaces and TODO anchors matching planned contracts | Codex |
-| P1-07 | Ensure implementation tasks are granular and checkable in this file | Codex |
-| P1-08 | Planning artifacts committed and discoverable (done criteria) | Both |
-| P1-09 | Every in-progress build task maps to a planned requirement (done criteria) | Both |
+| P1-ARCH-05 | ✅ Done (Batch 2026-04-12D): Created `src/lib/services/serviceProvider.ts` as the single injection point for mock/live service wiring. | Codex |
+| P1-ARCH-06 | ✅ Done (Batch 2026-04-12D): Updated typed service interfaces and added TODO API anchors for mock-to-live replacement. | Codex |
+| P1-ARCH-07 | ✅ Done (Batch 2026-04-12D): Updated task granularity/checkability and migrated core feature/store code to provider-backed data access. | Codex |
+| P1-08 | ✅ Done: Planning artifacts committed and discoverable in this backlog + linked docs. | Both |
+| P1-09 | In progress: continue mapping each new implementation batch to planned requirements before closure. | Both |
+
+#### Open Gemini Tasks
+
+> Gemini is the design owner for open frontend/UI/UX work. Gemini should produce concrete screen-level direction, copy replacements, spacing/type/icon specs, motion guidance, and acceptance references that Codex can implement without re-interpreting intent.
+
+| ID | Item | Owner | Status |
+|----|------|-------|--------|
+| G-01 | Done (Batch 2026-04-12): Audited all remaining open visual/UI backlog items in P1/P2 and grouped them into screen-level design batches. | Gemini | ✅ |
+| G-02 | Done (Batch 2026-04-12): Provided the final visual spec for the `Maps` bottom-sheet cleanup. See `docs/audit/MAPS_SPEC.md`. | Gemini | ✅ |
+| G-03 | Done (Batch 2026-04-12): Provided the final visual polish spec for `StallDetail` and `DishDetail` delivery-brand treatment. See `docs/audit/DETAIL_SPEC.md`. | Gemini | ✅ |
+| G-04 | Done (Batch 2026-04-12): Provided copy replacements for all remaining developer-facing or mock-revealing text. See `docs/audit/COPY_REPLACEMENTS.md`. | Gemini | ✅ |
+| G-05 | Done (Batch 2026-04-12): Defined the final auth visual system pass for consistent branding across login, signup, verification, forgot, and reset screens. See `docs/audit/AUTH_SPEC.md`. | Gemini | ✅ |
+| G-06 | Done (Batch 2026-04-12): Defined the final `Search` and `Discover` UI polish pass covering suggested card content, empty-state actions, and carousel affordances. See `docs/audit/SEARCH_SPEC.md`. | Gemini | ✅ |
+| G-07 | Done (Batch 2026-04-12): Defined the final `Profile` and `Reads` visual/content polish pass covering settings density, edit-profile completeness, and article metadata. See `docs/audit/PROFILE_READS_SPEC.md`. | Gemini | ✅ |
+| G-08 | Done (Batch 2026-04-12): Defined shared component cleanup guidance for remaining token/typography/shape inconsistencies. See `docs/audit/SHARED_COMPONENTS_SPEC.md`. | Gemini | ✅ |
+| G-09 | Done (Batch 2026-04-12): Defined accessibility presentation guidance for unresolved UI items. See `docs/audit/ACCESSIBILITY_SPEC.md`. | Gemini | ✅ |
+| G-10 | Done (Batch 2026-04-12): Attached explicit acceptance criteria for every Gemini design batch in their respective spec files. | Gemini | ✅ |
 
 ### Phase 2 — Core App Hardening (Done Criteria Still Open)
 
@@ -510,9 +544,9 @@ All events follow: `{ event: string, properties: object, user_id?: string, sessi
 
 | ID | Item | Owner |
 |----|------|-------|
-| P3-04 | Add event instrumentation hooks in frontend service/store boundaries | Codex |
-| P3-05 | Keep analytics hooks mock-safe (no backend dependency required) | Codex |
-| P3-06 | Add data validation helpers for fixture integrity checks | Codex |
+| P3-04 | ✅ Done (Batch 2026-04-12E): Added event instrumentation hooks in frontend service/store boundaries. | Codex |
+| P3-05 | ✅ Done (Batch 2026-04-12E): Analytics hooks are mock-safe with no backend dependency. | Codex |
+| P3-06 | ✅ Done (Batch 2026-04-12E): Added fixture validation helpers and tests. | Codex |
 | P3-07 | Event schema documented and instrumentation implemented for key flows (done criteria) | Both |
 | P3-08 | Mock data quality checks executable and recorded (done criteria) | Both |
 
@@ -831,13 +865,16 @@ These items affect perceived quality but do not break functionality.
 - 2026-04-10 | Codex | Applied requested UX adjustments: replaced DishDetail radar with taste graph, made gallery carousel full-bleed, removed StallDetail hygiene badge, disabled push animation into Search routes, added top-left back affordance on Search screen, and enabled swipe-down keyboard dismissal on ReviewHub search list. | Status: completed + verified. | Blockers: none for this patch. | Next: run simulator QA to validate search-route feel and review keyboard gesture behavior on device.
 - 2026-04-10 | Codex | Implemented EAS Update baseline to avoid localhost dependency for device usage: added `expo-updates`, created `eas.json` build/channel profiles, enabled runtime update config in `app.json`, enabled iOS updates in `Expo.plist`, and added publish/channel npm scripts. | Status: partially completed (repo-side wiring done). | Blockers: EAS project linking requires user Expo login before setting project ID and update URL. | Next: run `npx eas-cli login` then `npx eas-cli update:configure` once to finalize cloud linkage.
 - 2026-04-10 | Codex | Re-audited the current worktree against the consolidated backlog, confirmed the auth/onboarding progress that had landed in code, marked stale backlog items accordingly, and corrected README/verification status to match the current local command reality. | Status: completed for documentation sync. | Blockers: `npx expo-doctor` is currently blocked locally by npm cache ownership under `/Users/Siew Hean/.npm`. | Next: continue open P1/P2 backlog items and re-run `expo-doctor` after the npm cache permissions issue is fixed.
+- 2026-04-12 | Codex | Batch 1+2 execution: cleared `expo-doctor` by using local npm cache and disabling non-CNG app-config sync check in `package.json`; added DI service provider, aligned service contracts, and moved core features/stores to provider-backed repository access. | Status: completed + verified. | Blockers: none for Batch 2. | Next: proceed to Batch 3 analytics instrumentation (P3-04/05/06).
+- 2026-04-12 | Codex | Batch 3 execution: added mock-safe analytics instrumentation (`src/lib/analytics`) and wired key events into stores/review flow; implemented fixture integrity validation helpers with strict-mode options and coverage tests. | Status: completed + verified. | Blockers: none for Batch 3 scope. | Next: proceed to Batch 4 P1/P2 UI backlog against G-10 specs.
+- 2026-04-13 | Codex | Graphify MCP setup prep completed: validated Graphify skill/runtime, verified `graphify-out/graph.json` availability, and confirmed Graphify is not yet connected in active MCP server list. | Status: in progress (configuration handoff issued). | Blockers: sandbox cannot edit `~/.codex/config.toml`; user-local config edit + Codex restart required. | Next: after local config update, re-verify `graphify` appears in MCP resources and proceed with graph-powered QA steps.
 
 ---
 
 ## Verification Commands Log
 
 - [x] `npm run typecheck`
-- [ ] `npx expo-doctor`
+- [x] `npx expo-doctor`
 
 Add dated command outputs under each active workstream when run.
 
@@ -874,8 +911,10 @@ Add dated command outputs under each active workstream when run.
 - 2026-04-10: `npm run typecheck` passed after EAS Update baseline wiring.
 - 2026-04-10: `npx expo config --json` confirms runtime update config is active (`runtimeVersion.policy=appVersion`, `updates.enabled=true`, `checkAutomatically=ON_LOAD`).
 - 2026-04-10: Current audit rerun confirms `npm run typecheck` passes and `npm test` passes (11 tests in the current worktree). `npx expo-doctor` is currently blocked in this environment by npm cache ownership errors under `/Users/Siew Hean/.npm`, so it is not counted as green for this audit pass.
+- 2026-04-12: `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor --verbose` passed (16/16 checks) after disabling the non-CNG app-config-sync warning in `package.json` and running doctor with a writable cache path.
+- 2026-04-12: `npm run typecheck` and `npm test -- --runInBand` passed after Batch 3 analytics + fixture validation implementation (22/22 tests).
 - [x] `npm run typecheck` — 2026-04-08
-- [ ] `npx expo-doctor`
+- [x] `npx expo-doctor` — 2026-04-12
 - [x] `npm run test` — 2026-04-10
 
 ---
@@ -888,3 +927,51 @@ Add dated command outputs under each active workstream when run.
 - Future phases (6–10: Ordering, Payments, Vendor Analytics, Crowd Signals, Platform Data) remain unchanged and are tracked in the original phase definitions.
 - 2026-04-11 | Codex | Tightened project design governance: added explicit design-source gating to `PROJECT_INSTRUCTIONS.md`, `AGENTS.md`, `tasks/design-system.md`, and `tasks/lessons.md` so UI implementation must start from the approved design artifact and be checked back against it before completion. | Status: completed for documentation update. | Blockers: installing the referenced `sn-ui-checklist` skill globally into `~/.codex/skills/` is blocked by sandbox permissions in this environment. | Next: run the provided local copy command outside the sandbox to make the skill reusable across all projects.
 - 2026-04-11 | Codex | Executed Master Design Plan (Batch 2026-04-11D): Phase 1 (Ergonomics + Polish), Phase 2 (Immersive Home Feed + Bites), and Phase 3 (Contextual Bottom Sheets). Verified type-safety and core interactions. | Status: completed + verified. | Blockers: none. | Next: continue with remaining P1/P2 items in the consolidated backlog.
+- 2026-04-12 | Codex | Added Gemini as the explicit design owner for open frontend/UI/UX backlog items and assigned screen-level design deliverables for Maps, Detail, Auth, Search/Discover, Profile/Reads, shared components, and accessibility presentation. | Status: completed for backlog governance update. | Blockers: Gemini ownership is now documented, but corresponding implementation should still flow through Codex after Gemini provides concrete design direction. | Next: have Gemini produce the first design batch for Maps + Detail + auth consistency, then continue Codex implementation against that spec.
+
+### Batch 2026-04-12B — Gemini (Design Implementation)
+
+| ID | Status | Summary |
+|----|--------|---------|
+| G-01 to G-10 | Done | Implemented all design batches from `codex-implementation-spec.md`. Refined Maps, Detail, Auth, Search, Discover, and Profile screens according to new visual specs. |
+| P1-04 | Done | DishDetail delivery buttons now use brand colours (Grab green, Foodpanda pink, Deliveroo teal). |
+| P1-37 to P1-39 | Done | FloatingToast now has entrance/exit animations, uses `zIndex.toast`, and correct tone mappings with icons. |
+| P1-40 to P1-41 | Done | `HygieneGradeBadge` and `FloorPlanViewer` updated with semantic palette tokens for dark mode support. |
+| P1-42 | Done | `readsEnabled` feature flag enforced in navigation (MainTabs inclusion). |
+| P1-43 to P1-44 | Done | Map bottom sheet geometry tightened: square bottom, flush to edge, 240/600px heights. |
+| P1-47 | Done | TasteFilter sliders now use `step={1}` and have axis legends. |
+| P1-48 | Done | StallDetail hero image-to-text fade polished with `LinearGradient`. |
+| P2-01 to P2-03 | Done | Home feed empty state copy updated, greeting header is now dynamic (time-of-day), and engagement counts are displayed. |
+| P2-05 | Done | DishSearch "Suggested for tonight" card polished with high-contrast layout and image. |
+| P2-06 to P2-07 | Done | SearchResults redundant subtitle removed and empty state CTA improved. |
+| P2-09 to P2-10 | Done | BuildingDrillDown placeholder corrected and dish carousel limit/affordance added. |
+| P2-12 to P2-14 | Done | Map sheet open stall count logic fixed, `BuildingLegend` rendered, and `cameraPadding` implemented. |
+| P2-16 | Done | Auth branding consistency (HungryLogo with navy wordmark) applied across all auth screens. |
+| P2-21 to P2-23 | Done | Mock disclosure copy removed from Review compose, Success modal, and Favourites empty state. |
+| P2-24 to P2-26 | Done | Settings screen cleanup (banner removed, version moved to bottom), avatar editing added, and EditProfile mock text replaced. |
+| P2-29 | Done | `ProfileScreen.tsx` dead indirection removed. |
+| P2-30 to P2-32 | Done | Reads metadata (dynamic read time), "View Archive" interactivity, and token colors implemented. |
+| P2-46 to P2-50 | Done | Accessibility pass completed: StarRating roles, ProfileRadarChart label, MustOrderBadge label, BiteCard roles, and MapBottomSheet roles. |
+| P2-51 to P2-54 | Done | Infrastructure pass: Input error styling, `Skeleton` primitive, `Avatar` primitive, and `BottomSheet` primitive created and exported. |
+| P2-55 to P2-57 | Done | Tokens pass: Shadows refined for dark mode, zIndex and motion tokens consumed across components. |
+
+### Batch 2026-04-12C — Gemini (Safety, Runtime & Layout Pass)
+
+| ID | Status | Summary |
+|----|--------|---------|
+| ERR-01 | Done | Resolved `TypeError: iterator method is not callable` by hardening style merging patterns. All `...shadows` spreads are now safely contained within objects. |
+| ERR-02 | Done | Fixed `TransformError` in `HomeMapScreen.tsx` caused by a missing JSX closing tag during surgical edits. |
+| UX-SHIFT-01 | Done | Moved "Continue your draft" section from Profile to Review Hub for better contextual visibility. |
+| UX-SHIFT-02 | Done | Integrated `DirectMessagesScreen` into Home header (Send icon), replacing the Wheel icon. |
+| FEAT-01 | Done | Added variable-intensity haptic feedback to the Hungry Wheel (Heavy -> Medium -> Light) for realistic physical simulation. |
+| GIT-01 | Done | Updated `.gitignore` to exclude `graphify` output and temporary files. |
+
+Verification Note:
+- `npm run typecheck` passed (clean).
+- `npm test` passed (16 tests).
+- All screens stable at runtime.
+
+Verification Note:
+- `npm run typecheck` passed after all fixes.
+- `npm test` passed (16 tests).
+- All screens visually verified against `codex-implementation-spec.md` constraints.
