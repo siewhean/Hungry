@@ -37,7 +37,7 @@ export function Screen({
             {
               alignItems: "center",
               paddingHorizontal: spacing[5],
-              paddingBottom: spacing[12],
+              paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[12],
               paddingTop: spacing[3],
             },
           ]}
@@ -72,7 +72,7 @@ export function Screen({
             {
               alignItems: "center",
               paddingHorizontal: spacing[5],
-              paddingBottom: spacing[12],
+              paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[4],
               paddingTop: spacing[3],
             },
           ]}

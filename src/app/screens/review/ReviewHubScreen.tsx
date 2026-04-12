@@ -55,7 +55,7 @@ export function ReviewHubScreen({ navigation }: Props) {
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: spacing[4], paddingBottom: insets.bottom + spacing[12] }}
+        contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[12] }}
         ListHeaderComponent={
           <View style={{ gap: spacing[4], paddingBottom: spacing[4] }}>
             <View
