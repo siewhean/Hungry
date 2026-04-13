@@ -3,15 +3,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, FlatList, Pressable, ScrollView, Share, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { Bookmark, Compass, Heart, MessageCircle, MoreHorizontal, PlayCircle, Send, User, Utensils, MapPin, Star } from "lucide-react-native";
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, FeedErrorBoundary, FeedStateView, Skeleton } from "@/components/ui";
 import { BitesCarousel } from "@/components/social";
 import { getHomeFeed, type HomeFeedItem, type HomeFeedSection } from "@/features/home/feed";
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
+import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
+import { getDataRepository } from "@/lib/services/serviceProvider";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -38,13 +43,25 @@ type InteractionState = {
   shareCount: number;
   commentCount: number;
 };
+type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function HomeFeedScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<RootNavigation>();
+  const repository = getDataRepository();
   const { width: screenWidth } = useWindowDimensions();
   const { palette, spacing, radii, shadows } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const manualLocation = useLocationStore((state) => state.manualLocation);
+  
+  const nearbyBuildings = useMemo(
+    () => getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 3, 14),
+    [currentLocation.latitude, currentLocation.longitude],
+  );
+  const locationLabel = manualLocation ?? nearbyBuildings[0]?.name ?? "Nearby";
+  const nearbyCount = nearbyBuildings.length || repository.listBuildings().length;
+
   const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
   const [sections, setSections] = useState<HomeFeedSection[]>([]);
 
@@ -92,17 +109,6 @@ export function HomeFeedScreen() {
     });
   }, []);
 
-  const openComments = useCallback((item: HomeFeedItem) => {
-    commentsSheetRef.current?.present();
-  }, []);
-
-  const commentsSheetRef = useRef<BottomSheetModal>(null);
-  const commentSnapPoints = useMemo(() => ["60%", "90%"], []);
-  const renderCommentBackdrop = useCallback(
-    (props: any) => <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} />,
-    [],
-  );
-
   const navigateToDish = useCallback((dishId: string) => {
     navigation.navigate("DishDetail", { dishId });
   }, [navigation]);
@@ -119,7 +125,7 @@ export function HomeFeedScreen() {
     const isLateNight = hour >= 22 || hour < 4;
     return {
       bg: isLateNight ? palette.navy : palette.bg,
-      text: isLateNight ? "#FFFFFF" : palette.text, // Kept white for dark mode contrast
+      text: isLateNight ? palette.white : palette.text, // Kept white for dark mode contrast
       cardBg: isLateNight ? "rgba(255,255,255,0.05)" : palette.surface,
       secondaryText: isLateNight ? "rgba(255,255,255,0.6)" : palette.textSecondary,
       isLateNight,
@@ -131,20 +137,22 @@ export function HomeFeedScreen() {
       <View style={{ gap: spacing[6], paddingBottom: spacing[4], paddingTop: spacing[2] }}>
         <View style={{ paddingHorizontal: spacing[4], paddingBottom: spacing[2], flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <View>
-            <AppText style={{ fontSize: 24, fontWeight: "900", color: themeTints.isLateNight ? "#FFFFFF" : palette.orange }}>{getGreeting()}</AppText>
-            <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>Tanjong Pagar · 14 nearby</AppText>
+            <AppText style={{ fontSize: 24, fontWeight: "900", color: themeTints.isLateNight ? palette.white : palette.orange }}>{getGreeting()}</AppText>
+            <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>{`${locationLabel} · ${nearbyCount} nearby`}</AppText>
           </View>
-          <Pressable 
-            onPress={() => navigation.navigate("DirectMessages")}
-            style={{ width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}
-          >
-            <Send color={palette.orange} size={24} />
-          </Pressable>
+          {FEATURE_FLAGS.directMessagesEnabled ? (
+            <Pressable 
+              onPress={() => navigation.navigate("DirectMessages")}
+              style={{ width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}
+            >
+              <Send color={palette.orange} size={24} />
+            </Pressable>
+          ) : null}
         </View>
         <BitesCarousel />
       </View>
     );
-  }, [palette, spacing, navigation, getGreeting, themeTints, radii]);
+  }, [palette, spacing, navigation, getGreeting, themeTints, radii, locationLabel, nearbyCount]);
 
   const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
 
@@ -179,13 +187,13 @@ export function HomeFeedScreen() {
             onPress={() => toggleLike(item.id)}
             style={{ width: 36, height: 36, borderRadius: radii.pill, backgroundColor: themeTints.isLateNight ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", alignItems: "center", justifyContent: "center" }}
           >
-            <Heart color={isLiked ? palette.error : (themeTints.isLateNight ? "#FFFFFF" : palette.text)} fill={isLiked ? palette.error : "transparent"} size={18} />
+            <Heart color={isLiked ? palette.error : (themeTints.isLateNight ? palette.white : palette.text)} fill={isLiked ? palette.error : "transparent"} size={18} />
           </Pressable>
           <Pressable 
             onPress={() => toggleSave(item.id)}
             style={{ width: 36, height: 36, borderRadius: radii.pill, backgroundColor: themeTints.isLateNight ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", alignItems: "center", justifyContent: "center" }}
           >
-            <Bookmark color={isSaved ? palette.orange : (themeTints.isLateNight ? "#FFFFFF" : palette.text)} fill={isSaved ? palette.orange : "transparent"} size={18} />
+            <Bookmark color={isSaved ? palette.orange : (themeTints.isLateNight ? palette.white : palette.text)} fill={isSaved ? palette.orange : "transparent"} size={18} />
           </Pressable>
         </View>
 
@@ -282,19 +290,6 @@ export function HomeFeedScreen() {
           )}
         </Animated.ScrollView>
 
-        <BottomSheetModal
-          ref={commentsSheetRef}
-          index={0}
-          snapPoints={commentSnapPoints}
-          backdropComponent={renderCommentBackdrop}
-          backgroundStyle={{ backgroundColor: palette.surface }}
-          handleIndicatorStyle={{ backgroundColor: palette.border }}
-        >
-          <BottomSheetScrollView contentContainerStyle={{ padding: spacing[5], gap: spacing[4] }}>
-            <AppText variant="h2">Comments</AppText>
-            <AppText tone="secondary">Community discussions coming soon.</AppText>
-          </BottomSheetScrollView>
-        </BottomSheetModal>
       </FeedErrorBoundary>
     </SafeAreaView>
   );

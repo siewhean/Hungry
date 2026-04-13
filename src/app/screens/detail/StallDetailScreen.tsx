@@ -8,7 +8,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, EmptyState, InlineBanner, Screen, FAB, Button, Card } from "@/components/ui";
 import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
@@ -18,9 +18,10 @@ type Props = NativeStackScreenProps<RootStackParamList, "StallDetail">;
 
 export function StallDetailScreen({ navigation, route }: Props) {
   const venueId = route.params?.venueId ?? "";
-  const venue = mockRepository.getVenueById(venueId);
+  const repository = getDataRepository();
+  const venue = repository.getVenueById(venueId);
   const building = venue ? getBuildingById(venue.buildingId) : undefined;
-  const dishes = venue ? mockRepository.listDishesByVenue(venue.id) : [];
+  const dishes = venue ? repository.listDishesByVenue(venue.id) : [];
   const leadDish = dishes[0];
 
   const profile = useProfileStore((state) => state.profile);
@@ -93,7 +94,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + spacing[20] }}
         >
           {/* Hero image - 4:3 Ratio */}
           <View style={{ width: screenWidth, height: screenWidth * 0.75, position: "relative" }}>
@@ -158,8 +159,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         style={{ width: "100%", height: 120, borderRadius: radii.lg }}
                         contentFit="cover"
                       />
-                      <View style={{ gap: 2 }}>
-                        <AppText variant="body" style={{ fontWeight: "700" }} numberOfLines={1}>
+                      <View style={{ gap: spacing[1] }}>
+                        <AppText variant="bodyBold" numberOfLines={1}>
                           {dish.name}
                         </AppText>
                         <AppText variant="price" style={{ color: palette.orange }}>
@@ -177,15 +178,30 @@ export function StallDetailScreen({ navigation, route }: Props) {
               <AppText variant="h2">Recent Reviews</AppText>
               {communityReviews.length > 0 ? (
                 communityReviews.map((review) => (
-                  <View key={review.id} style={styles.communityReview}>
-                    <View style={styles.communityUser}>
+                  <View key={review.id} style={{
+                    paddingVertical: spacing[3],
+                    borderBottomWidth: 1,
+                    borderBottomColor: palette.border,
+                  }}>
+                    <View style={{
+                      alignItems: "center",
+                      flexDirection: "row",
+                      gap: spacing[3],
+                    }}>
                       <Image
                         source={{ uri: review.avatarUrl }}
-                        style={styles.avatar}
+                        style={{
+                          borderRadius: radii.pill,
+                          height: 40,
+                          width: 40,
+                        }}
                       />
                       <View style={{ flex: 1 }}>
                         <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
-                        <View style={styles.communityStars}>
+                        <View style={{
+                          flexDirection: "row",
+                          gap: spacing[0.5],
+                        }}>
                           {Array.from({ length: 5 }).map((_, i) => (
                             <Star
                               key={i}
@@ -198,7 +214,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       </View>
                       <AppText variant="micro" tone="muted">{review.createdAt}</AppText>
                     </View>
-                    <AppText variant="bodySmall" tone="secondary" style={{ marginTop: 8 }}>
+                    <AppText variant="bodySmall" tone="secondary" style={{ marginTop: spacing[2] }}>
                       {review.text}
                     </AppText>
                   </View>
@@ -222,7 +238,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               { 
                 width: 56, 
                 height: 56, 
-                borderRadius: 28, 
+                borderRadius: radii.pill, 
                 backgroundColor: palette.orange, 
                 alignItems: "center", 
                 justifyContent: "center",
@@ -231,7 +247,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               }
             ]}
           >
-            <Heart color="#FFFFFF" fill={profile.favouriteDishIds.includes(leadDish?.id ?? "") ? "#FFFFFF" : "transparent"} />
+            <Heart color={palette.textOnPrimary} fill={profile.favouriteDishIds.includes(leadDish?.id ?? "") ? palette.textOnPrimary : "transparent"} />
           </Pressable>
         </FAB>
       </View>
@@ -247,24 +263,5 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 0,
-  },
-  communityReview: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
-  },
-  communityUser: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-  },
-  avatar: {
-    borderRadius: 20,
-    height: 40,
-    width: 40,
-  },
-  communityStars: {
-    flexDirection: "row",
-    gap: 2,
   },
 });

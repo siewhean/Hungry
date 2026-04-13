@@ -218,10 +218,10 @@ export function WheelSpinScreen({ navigation }: Props) {
               opacity: canSpin ? 1 : 0.5,
             }}
           >
-            <Play size={20} color={canSpin ? "#FFFFFF" : palette.textMuted} />
+            <Play size={20} color={canSpin ? palette.textOnPrimary : palette.textMuted} />
             <AppText
               variant="h3"
-              style={{ color: canSpin ? "#FFFFFF" : palette.textMuted }}
+              style={{ color: canSpin ? palette.textOnPrimary : palette.textMuted }}
             >
               {spinning ? "Spinning…" : "Spin the wheel"}
             </AppText>

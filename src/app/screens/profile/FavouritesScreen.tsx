@@ -5,7 +5,7 @@ import { Heart, Star } from "lucide-react-native";
 
 import { AppText, Button, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { isDishDetail } from "./profileGuards";
@@ -18,7 +18,8 @@ export function FavouritesScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const { palette, radii, spacing, shadows } = useHungryTheme();
-  const dishes = profile.favouriteDishIds.map((dishId) => mockRepository.getDishById(dishId)).filter(isDishDetail);
+  const repository = getDataRepository();
+  const dishes = profile.favouriteDishIds.map((dishId) => repository.getDishById(dishId)).filter(isDishDetail);
   const rootNavigation = getRootNavigation(navigation as any);
 
   return (
@@ -26,7 +27,7 @@ export function FavouritesScreen({ navigation }: Props) {
       {dishes.length ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: spacing[4] }}>
           {dishes.map((dish) => {
-            const venue = mockRepository.getVenueById(dish.venueId);
+            const venue = repository.getVenueById(dish.venueId);
             return (
               <Pressable 
                 key={dish.id} 

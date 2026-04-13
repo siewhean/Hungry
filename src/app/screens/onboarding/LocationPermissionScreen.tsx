@@ -91,7 +91,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
         >
           <ArrowLeft color={palette.orange} size={22} />
         </Pressable>
-        <AppText variant="h2" style={{ color: palette.orange, fontFamily: "Nunito_700Bold" }}>
+        <AppText variant="h2" style={{ color: palette.orange, fontWeight: "700" }}>
           Hungry
         </AppText>
         <View style={{ width: 40 }} />
@@ -136,7 +136,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
               }}
             >
               <MapPin color={palette.orangeDark} size={14} />
-              <AppText variant="micro" style={{ fontFamily: "Nunito_700Bold", textAlign: "center" }}>
+              <AppText variant="micro" style={{ fontWeight: "700", textAlign: "center" }}>
                 Singapore Food Trail
               </AppText>
             </View>

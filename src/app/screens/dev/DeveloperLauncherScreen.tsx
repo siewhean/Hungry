@@ -16,7 +16,7 @@ import { ChevronDown, ChevronRight, FlaskConical, Wifi, WifiOff, Zap } from "luc
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, Screen } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { singaporeBuildings } from "@/lib/geo/singaporeBuildings";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
@@ -111,6 +111,7 @@ function LaunchButton({ label, onPress }: { label: string; onPress: () => void }
 
 export function DeveloperLauncherScreen({ navigation }: Props) {
   const { palette, spacing, radii } = useHungryTheme();
+  const repository = getDataRepository();
 
   // Session
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -143,13 +144,13 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   }, [buildingSearch]);
 
   // Sample data
-  const sampleDish = useMemo(() => mockRepository.listPopularNearby()[0], []);
-  const sampleBuilding = useMemo(() => mockRepository.listBuildings()[0], []);
+  const sampleDish = useMemo(() => repository.listPopularNearby()[0], [repository]);
+  const sampleBuilding = useMemo(() => repository.listBuildings()[0], [repository]);
   const sampleVenue = useMemo(
-    () => mockRepository.listVenuesByBuilding(sampleBuilding.id)[0],
-    [sampleBuilding.id]
+    () => repository.listVenuesByBuilding(sampleBuilding.id)[0],
+    [sampleBuilding.id, repository]
   );
-  const sampleArticle = useMemo(() => mockRepository.listBlogPosts()[0], []);
+  const sampleArticle = useMemo(() => repository.listBlogPosts()[0], [repository]);
 
   // Helpers
   const resetToSignedOut = () => {
@@ -204,14 +205,14 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   // Data inspector stats
   const stats = useMemo(
     () => ({
-      buildings: mockRepository.listBuildings().length,
+      buildings: repository.listBuildings().length,
       sgBuildings: singaporeBuildings.length,
-      venues: mockRepository.listBuildings().flatMap((b) =>
-        mockRepository.listVenuesByBuilding(b.id)
+      venues: repository.listBuildings().flatMap((b) =>
+        repository.listVenuesByBuilding(b.id)
       ).length,
-      articles: mockRepository.listBlogPosts().length,
+      articles: repository.listBlogPosts().length,
     }),
-    []
+    [repository]
   );
 
   return (
@@ -386,7 +387,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           <LaunchButton
             label="What to eat? (Dish Roulette)"
             onPress={() => {
-              const dish = mockRepository.getDecideForMe({ sweet: 3, spicy: 3, sour: 3, salty: 3, rich: 3, aromatic: 3 });
+              const dish = repository.getDecideForMe({ sweet: 3, spicy: 3, sour: 3, salty: 3, rich: 3, aromatic: 3 });
               if (dish) setDecideForMe(dish);
               navigation.navigate("DecideForMeResult");
             }}
@@ -528,7 +529,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
               { label: "SG dataset buildings", value: stats.sgBuildings },
               { label: "Mock venues/stalls", value: stats.venues },
               { label: "Blog articles", value: stats.articles },
-              { label: "Total dishes", value: mockRepository.listPopularNearby().length },
+              { label: "Total dishes", value: repository.listPopularNearby().length },
             ].map(({ label, value }) => (
               <View
                 key={label}

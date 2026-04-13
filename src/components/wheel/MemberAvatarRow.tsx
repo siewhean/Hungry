@@ -36,7 +36,7 @@ export function MemberAvatarRow({ members, maxVisible = 8 }: Props) {
           <AppText
             variant="micro"
             style={{
-              color: member.isHost ? "#FFFFFF" : palette.text,
+              color: member.isHost ? palette.textOnDark : palette.text,
               fontFamily: "Nunito_700Bold",
             }}
           >

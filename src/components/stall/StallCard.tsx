@@ -60,7 +60,7 @@ export function StallCard({ venue, topDish, onPress }: StallCardProps) {
   );
 }
 
-const createStyles = (spacing: ReturnType<typeof useHungryTheme>["spacing"]) => StyleSheet.create({
+const createStyles = (spacing: any) => StyleSheet.create({
   row: {
     flexDirection: "row",
   },

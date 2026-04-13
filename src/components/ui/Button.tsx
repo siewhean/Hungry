@@ -82,7 +82,7 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "primary" || variant === "destructive" ? "#FFFFFF" : palette.text}
+          color={variant === "primary" || variant === "destructive" ? palette.white : palette.text}
         />
       ) : (
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>

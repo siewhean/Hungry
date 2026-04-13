@@ -1,21 +1,25 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Animated, PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
-import { Heart, X, Info, ChevronLeft, Sparkles } from "lucide-react-native";
+import { Heart, X, ChevronLeft, Sparkles } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, HungryLogo } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
 
 const SWIPE_THRESHOLD = 120;
+type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function CraveScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<RootNavigation>();
+  const repository = getDataRepository();
   const insets = useSafeAreaInsets();
   const { palette, spacing, radii, shadows, motion, zIndex } = useHungryTheme();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
@@ -24,9 +28,9 @@ export function CraveScreen() {
 
   // Get a set of appealing dishes for swiping
   const [dishes, setDishes] = useState<DishDetail[]>(() => {
-    return mockRepository.listBuildings()
-      .flatMap(b => mockRepository.listVenuesByBuilding(b.id))
-      .flatMap(v => mockRepository.listDishesByVenue(v.id))
+    return repository.listBuildings()
+      .flatMap((b) => repository.listVenuesByBuilding(b.id))
+      .flatMap((v) => repository.listDishesByVenue(v.id))
       .sort(() => Math.random() - 0.5)
       .slice(0, 20);
   });
@@ -121,15 +125,13 @@ export function CraveScreen() {
         {/* Header */}
         <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: spacing[4], paddingVertical: spacing[2], justifyContent: "space-between" }}>
           <Pressable onPress={() => navigation.goBack()} style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
-            <ChevronLeft color="#FFFFFF" size={28} />
+            <ChevronLeft color={palette.white} size={28} />
           </Pressable>
           <View style={{ alignItems: "center" }}>
-            <AppText style={{ color: "#FFFFFF", fontWeight: "900", fontSize: 18, letterSpacing: 1 }}>CRAVE</AppText>
+            <AppText style={{ color: palette.textOnDark, fontWeight: "900", fontSize: 18, letterSpacing: 1 }}>CRAVE</AppText>
             <AppText variant="micro" style={{ color: "rgba(255,255,255,0.6)" }}>SWIPE TO BUILD PROFILE</AppText>
           </View>
-          <Pressable style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
-            <Info color="#FFFFFF" size={20} />
-          </Pressable>
+          <View style={{ width: 40, height: 40 }} />
         </View>
 
         <View style={{ flex: 1, padding: spacing[4], justifyContent: "center" }}>
@@ -149,6 +151,7 @@ export function CraveScreen() {
               styles.card,
               {
                 backgroundColor: palette.surface,
+                borderRadius: radii.xxl,
                 transform: [
                   { translateX: position.x },
                   { translateY: position.y },
@@ -198,15 +201,15 @@ export function CraveScreen() {
               <AppText style={{ color: palette.error, fontWeight: "900", fontSize: 32 }}>PASS</AppText>
             </Animated.View>
 
-            <View style={styles.cardInfo}>
-              <View style={{ gap: 2 }}>
-                <AppText style={{ color: "#FFFFFF", fontSize: 28, fontWeight: "900" }}>{currentDish.name}</AppText>
+            <View style={[styles.cardInfo, { padding: spacing[6] }]}>
+              <View style={{ gap: spacing[0.5] }}>
+                <AppText style={{ color: palette.textOnDark, fontSize: 28, fontWeight: "900" }}>{currentDish.name}</AppText>
                 <AppText style={{ color: "rgba(255,255,255,0.8)", fontSize: 16, fontWeight: "600" }}>{currentDish.venueName}</AppText>
               </View>
               <View style={{ flexDirection: "row", gap: spacing[2], marginTop: spacing[2] }}>
                 {currentDish.tasteTags.slice(0, 3).map(tag => (
-                  <View key={tag} style={{ backgroundColor: "rgba(255,255,255,0.2)", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 }}>
-                    <AppText variant="micro" style={{ color: "#FFFFFF", fontWeight: "700" }}>{tag.toUpperCase()}</AppText>
+                  <View key={tag} style={{ backgroundColor: "rgba(255,255,255,0.2)", paddingHorizontal: spacing[2.5], paddingVertical: spacing[1], borderRadius: radii.sm }}>
+                    <AppText variant="micro" style={{ color: palette.textOnDark, fontWeight: "700" }}>{tag.toUpperCase()}</AppText>
                   </View>
                 ))}
               </View>
@@ -219,8 +222,16 @@ export function CraveScreen() {
           <Pressable 
             onPress={swipeLeft}
             style={({ pressed }) => [
-              styles.actionButton, 
-              { backgroundColor: "rgba(255,255,255,0.1)", borderColor: palette.error, borderWidth: 2, borderRadius: radii.pill },
+              { 
+                width: 72,
+                height: 72,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "rgba(255,255,255,0.1)", 
+                borderColor: palette.error, 
+                borderWidth: 2, 
+                borderRadius: radii.pill 
+              },
               pressed && { opacity: 0.7 }
             ]}
           >
@@ -230,12 +241,18 @@ export function CraveScreen() {
           <Pressable 
             onPress={swipeRight}
             style={({ pressed }) => [
-              styles.actionButton, 
-              { backgroundColor: palette.orange, borderRadius: radii.pill },
+              { 
+                width: 72,
+                height: 72,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: palette.orange, 
+                borderRadius: radii.pill 
+              },
               pressed && { scale: 0.9, opacity: 0.9 }
             ]}
           >
-            <Heart color="#FFFFFF" fill="#FFFFFF" size={32} />
+            <Heart color={palette.white} fill={palette.white} size={32} />
           </Pressable>
         </View>
       </SafeAreaView>
@@ -246,7 +263,6 @@ export function CraveScreen() {
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    borderRadius: 32, // Intentional large radius for card-stack aesthetic
     overflow: "hidden",
     position: "relative",
   },
@@ -255,17 +271,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 24, // Intentional padding for readability
     backgroundColor: "rgba(0,0,0,0.45)",
   },
   overlayLabel: {
     position: "absolute",
     borderWidth: 4,
   },
-  actionButton: {
-    width: 72,
-    height: 72,
-    alignItems: "center",
-    justifyContent: "center",
-  }
 });

@@ -6,7 +6,7 @@ import { ChevronRight, Settings, Star, Utensils, Heart, Edit2, Share2, BarChart3
 
 import { AppText, Badge, Card, Button } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { isDishDetail } from "./profileGuards";
@@ -19,7 +19,9 @@ type Props = NativeStackScreenProps<ProfileStackParamList, "ProfileHome">;
 export function ProfileHomeScreen({ navigation }: Props) {
   const { palette, spacing, radii, shadows } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
-  const favourites = profile.favouriteDishIds.map((dishId) => mockRepository.getDishById(dishId)).filter(isDishDetail);
+  const repository = getDataRepository();
+  const rootNavigation = getRootNavigation(navigation as any);
+  const favourites = profile.favouriteDishIds.map((dishId) => repository.getDishById(dishId)).filter(isDishDetail);
   
   const initials = profile.displayName
     .split(" ")
@@ -88,7 +90,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
               {profile.displayName}
             </AppText>
             <AppText variant="bodySmall" tone="secondary">
-              Level 12 • Foodie Scout
+              {`${profile.stats.dishesReviewed} reviews · ${profile.stats.stallsVisited} stalls visited`}
             </AppText>
           </View>
         </View>
@@ -109,11 +111,11 @@ export function ProfileHomeScreen({ navigation }: Props) {
             </Pressable>
           </View>
           
-          <Pressable 
-            style={({ pressed }) => [
+          <View
+            style={[
               shadows.card,
               { 
-                backgroundColor: pressed ? palette.bgSoft : palette.surface, 
+                backgroundColor: palette.surface,
                 borderRadius: radii.xl, 
                 padding: spacing[5],
                 borderWidth: 1,
@@ -130,7 +132,6 @@ export function ProfileHomeScreen({ navigation }: Props) {
                 <AppText style={{ fontWeight: "700", fontSize: 16 }}>Detailed Analysis</AppText>
                 <AppText variant="micro" tone="secondary">Updated based on your last 5 reviews</AppText>
               </View>
-              <ChevronRight size={20} color={palette.textMuted} />
             </View>
 
             <View style={{ gap: spacing[2] }}>
@@ -141,10 +142,10 @@ export function ProfileHomeScreen({ navigation }: Props) {
 
             <View style={{ backgroundColor: palette.bgSoft, padding: spacing[3], borderRadius: radii.md }}>
               <AppText variant="bodySmall" tone="secondary" style={{ lineHeight: 18 }}>
-                Your profile leans heavily towards <AppText style={{ fontWeight: "700", color: palette.text }}>Spicy</AppText> flavours. You've discovered <AppText style={{ fontWeight: "700", color: palette.text }}>8 new stalls</AppText> this month, putting you in the <AppText style={{ fontWeight: "700", color: palette.orange }}>top 5%</AppText> of explorers in Tanjong Pagar.
+                Your profile leans heavily towards <AppText style={{ fontWeight: "700", color: palette.text }}>Spicy</AppText> flavours. You have reviewed <AppText style={{ fontWeight: "700", color: palette.text }}>{profile.stats.dishesReviewed} dishes</AppText> and visited <AppText style={{ fontWeight: "700", color: palette.text }}>{profile.stats.stallsVisited} stalls</AppText>. Keep exploring to sharpen your taste fingerprint.
               </AppText>
             </View>
-          </Pressable>
+          </View>
         </View>
 
         {/* Quick Access List */}
@@ -183,6 +184,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
               {favourites.slice(0, 4).map((dish) => (
                 <Pressable 
                   key={dish.id}
+                  onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
                   style={[
                     shadows.card,
                     { width: 160, backgroundColor: palette.surface, borderRadius: radii.lg, overflow: "hidden" }

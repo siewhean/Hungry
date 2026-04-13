@@ -330,7 +330,7 @@ export function OnboardingIntroTemplate({
             style={{ alignItems: "center", flexDirection: "row", gap: 4, justifyContent: "center", minHeight: 28, minWidth: 52 }}
             accessibilityLabel="Skip onboarding"
           >
-            <AppText variant="bodySmall" tone="muted" style={{ fontFamily: "Nunito_700Bold" }}>
+            <AppText variant="bodySmallBold" tone="muted">
               Skip
             </AppText>
             <ChevronRight size={14} color={palette.textMuted} />

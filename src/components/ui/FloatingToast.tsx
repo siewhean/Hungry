@@ -34,11 +34,12 @@ export function FloatingToast() {
   if (!toast) return null;
 
   const toneConfig = {
-    success: { bg: palette.orange, icon: CircleCheck, color: "#FFFFFF" },
-    warning: { bg: palette.amber, icon: TriangleAlert, color: "#FFFFFF" },
-    error: { bg: palette.error, icon: CircleAlert, color: "#FFFFFF" },
-    info: { bg: palette.navy, icon: Info, color: "#FFFFFF" },
-  }[tone] || { bg: palette.navy, icon: Info, color: "#FFFFFF" };
+    success: { bg: palette.orange, icon: CircleCheck, color: palette.textOnPrimary },
+    warning: { bg: palette.amber, icon: TriangleAlert, color: palette.textOnPrimary },
+    error: { bg: palette.error, icon: CircleAlert, color: palette.textOnPrimary },
+    info: { bg: palette.navy, icon: Info, color: palette.textOnPrimary },
+  }[tone] || { bg: palette.navy, icon: Info, color: palette.textOnPrimary };
+
 
   const Icon = toneConfig.icon;
 

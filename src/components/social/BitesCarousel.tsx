@@ -8,8 +8,10 @@
 import { useCallback, useMemo, useState } from "react";
 import { FlatList, Pressable, View, useWindowDimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ChevronRight } from "lucide-react-native";
 
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText } from "@/components/ui";
 import { createDefaultBites, type HomeBite } from "@/features/home/bites";
 import { useHungryTheme } from "@/theme";
@@ -23,9 +25,11 @@ interface BitesCarouselProps {
   showHeader?: boolean;
 }
 
+type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
+
 export function BitesCarousel({ bites, showHeader = true }: BitesCarouselProps) {
   const { palette, spacing } = useHungryTheme();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<RootNavigation>();
   const { width: screenWidth } = useWindowDimensions();
   const [likedBites, setLikedBites] = useState<Record<string, boolean>>({});
   const fallbackBites = useMemo(() => createDefaultBites(), []);

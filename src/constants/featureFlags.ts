@@ -3,5 +3,6 @@ export const FEATURE_FLAGS = {
   notificationsEnabled: false,
   mockMapboxEnabled: false,
   hungryWheelEnabled: true,
+  directMessagesEnabled: false,
 } as const;
 

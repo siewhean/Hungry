@@ -4,14 +4,18 @@ import { Animated, Pressable, ScrollView, View, useWindowDimensions } from "reac
 import { Image } from "expo-image";
 import { ChevronRight, Compass, MapPinned, Search, Shuffle, Star, Flame, Home, Compass as CompassIcon, Utensils } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Chip, Input, Screen } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
+import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
-import type { SearchCategory } from "@/types/domain";
+import type { DishDetail, SearchCategory, VenueSummary } from "@/types/domain";
 
 const INTENT_CHIPS = [
   { id: "spicy", label: "Spicy", category: "local favourites" },
@@ -19,22 +23,33 @@ const INTENT_CHIPS = [
   { id: "late", label: "Late night", category: "late night" },
   { id: "cheap", label: "Value", category: "noodles" },
 ] as const;
+type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function DiscoverHomeScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<RootNavigation>();
+  const repository = getDataRepository();
   const { width: screenWidth } = useWindowDimensions();
   const { palette, radii, spacing, shadows, motion } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const manualLocation = useLocationStore((state) => state.manualLocation);
   const { popularNearby, setDecideForMe } = useDiscoveryStore();
   const selectedCategories = useSearchStore((state) => state.filters.categories);
   const toggleCategory = useSearchStore((state) => state.toggleCategory);
+  
+  const nearbyBuildings = useMemo(
+    () => getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 3, 14),
+    [currentLocation.latitude, currentLocation.longitude],
+  );
+  const discoverLocationLabel = manualLocation ?? nearbyBuildings[0]?.name ?? "Nearby";
+  const discoverNearbyCount = nearbyBuildings.length || repository.listBuildings().length;
 
   const themeTints = useMemo(() => {
     const hour = new Date().getHours();
     const isLateNight = hour >= 22 || hour < 4;
     return {
       bg: isLateNight ? palette.navy : palette.bg,
-      text: isLateNight ? "#FFFFFF" : palette.text,
+      text: isLateNight ? palette.white : palette.text,
       cardBg: isLateNight ? "rgba(255,255,255,0.05)" : palette.surface,
       secondaryText: isLateNight ? "rgba(255,255,255,0.6)" : palette.textSecondary,
       isLateNight,
@@ -91,22 +106,22 @@ export function DiscoverHomeScreen() {
   }, [resetIdleTimer]);
 
   const recommendedDishes = popularNearby.slice(0, 4);
-  const nearbyVenues = mockRepository.listBuildings()
+  const nearbyVenues = repository.listBuildings()
     .slice(0, 4)
     .map((building) => {
-      const venues = mockRepository.listVenuesByBuilding(building.id);
+      const venues = repository.listVenuesByBuilding(building.id);
       const venue = venues[0];
-      const topDish = venue ? mockRepository.getDishById(venue.topDishId) : undefined;
+      const topDish = venue ? repository.getDishById(venue.topDishId) : undefined;
       return venue ? { building, venue, topDish } : null;
     })
     .filter(Boolean) as Array<{
     building: any;
-    venue: NonNullable<ReturnType<typeof mockRepository.getVenueById>>;
-    topDish: ReturnType<typeof mockRepository.getDishById>;
+    venue: VenueSummary;
+    topDish: DishDetail | undefined;
   }>;
 
   const handleDecideForMe = () => {
-    const picked = mockRepository.getDecideForMe(profile.tasteVector);
+    const picked = repository.getDecideForMe(profile.tasteVector);
     if (picked) {
       setDecideForMe(picked);
     }
@@ -123,17 +138,20 @@ export function DiscoverHomeScreen() {
       >
         {/* Dynamic Location Header */}
         <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[2] }}>
-          <AppText variant="micro" style={{ color: themeTints.isLateNight ? "#FFFFFF" : palette.orange, letterSpacing: 1, marginBottom: 2, opacity: 0.8 }}>
+          <AppText variant="micro" style={{ color: themeTints.isLateNight ? palette.white : palette.orange, letterSpacing: 1, marginBottom: 2, opacity: 0.8 }}>
             YOU ARE AT
           </AppText>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <AppText variant="h1" style={{ fontSize: 28, color: themeTints.text }}>Tanjong Pagar</AppText>
+            <View style={{ flex: 1 }}>
+              <AppText variant="h1" style={{ fontSize: 28, color: themeTints.text }} numberOfLines={1}>{discoverLocationLabel}</AppText>
+              <AppText variant="micro" style={{ color: themeTints.secondaryText }}>{`${discoverNearbyCount} nearby`}</AppText>
+            </View>
             <Pressable 
-              onPress={() => navigation.navigate("Maps")}
-              style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: themeTints.isLateNight ? "rgba(255,255,255,0.1)" : palette.orangeLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radii.pill }}
+              onPress={() => navigation.navigate("MainTabs", { screen: "Maps" })}
+              style={{ flexDirection: "row", alignItems: "center", gap: spacing[1], backgroundColor: themeTints.isLateNight ? "rgba(255,255,255,0.1)" : palette.orangeLight, paddingHorizontal: spacing[3], paddingVertical: spacing[1.5], borderRadius: radii.pill }}
             >
-              <MapPinned color={themeTints.isLateNight ? "#FFFFFF" : palette.orange} size={14} />
-              <AppText variant="micro" style={{ color: themeTints.isLateNight ? "#FFFFFF" : palette.orange, fontWeight: "700" }}>MAP</AppText>
+              <MapPinned color={themeTints.isLateNight ? palette.white : palette.orange} size={14} />
+              <AppText variant="micro" style={{ color: themeTints.isLateNight ? palette.white : palette.orange, fontWeight: "700" }}>MAP</AppText>
             </Pressable>
           </View>
         </View>
@@ -151,13 +169,13 @@ export function DiscoverHomeScreen() {
                 alignItems: "center",
                 paddingHorizontal: spacing[4],
                 height: 52,
-                gap: spacing[3],
+                gap: spacing[2],
                 borderWidth: themeTints.isLateNight ? 0 : 1,
                 borderColor: palette.border,
               }
             ]}
           >
-            <Search color={themeTints.isLateNight ? "#FFFFFF" : palette.textMuted} size={20} />
+            <Search color={themeTints.isLateNight ? palette.white : palette.textMuted} size={20} />
             <AppText style={{ flex: 1, color: themeTints.secondaryText }}>Search dishes, stalls or vibes...</AppText>
           </Pressable>
         </View>
@@ -202,7 +220,7 @@ export function DiscoverHomeScreen() {
                   },
                 ]}
               >
-                <Shuffle color="#FFFFFF" size={24} />
+                <Shuffle color={palette.white} size={24} />
                 <View>
                   <AppText variant="h3" tone="inverse">Decide For Me</AppText>
                   <AppText variant="micro" tone="inverse" style={{ opacity: 0.8 }}>Single-player pick</AppText>
@@ -224,7 +242,7 @@ export function DiscoverHomeScreen() {
                 },
               ]}
             >
-              <Compass color="#FFFFFF" size={24} />
+              <Compass color={palette.white} size={24} />
               <View>
                 <AppText variant="h3" tone="inverse">Hungry Wheel</AppText>
                 <AppText variant="micro" tone="inverse" style={{ opacity: 0.8 }}>Party mode</AppText>
@@ -249,14 +267,14 @@ export function DiscoverHomeScreen() {
               },
             ]}
           >
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center" }}>
-              <Flame color="#FFFFFF" size={24} />
+            <View style={{ width: 48, height: 48, borderRadius: radii.pill, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center" }}>
+              <Flame color={palette.white} size={24} />
             </View>
             <View style={{ flex: 1 }}>
               <AppText variant="h3" style={{ color: themeTints.text }}>Daily Crave</AppText>
               <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>Swipe to build your profile</AppText>
             </View>
-            <ChevronRight color={themeTints.isLateNight ? "#FFFFFF" : palette.textMuted} size={20} />
+            <ChevronRight color={themeTints.isLateNight ? palette.white : palette.textMuted} size={20} />
           </Pressable>
         </View>
 
@@ -310,7 +328,7 @@ export function DiscoverHomeScreen() {
         <View style={{ gap: spacing[3] }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing[4] }}>
             <AppText variant="h2" style={{ color: themeTints.text }}>Stalls Near You</AppText>
-            <Pressable onPress={() => navigation.navigate("Maps")}>
+            <Pressable onPress={() => navigation.navigate("MainTabs", { screen: "Maps" })}>
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>VIEW MAP</AppText>
             </Pressable>
           </View>

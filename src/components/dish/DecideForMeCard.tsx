@@ -64,7 +64,7 @@ export function DecideForMeCard({ dish, matchScore, onOrder, onReroll, onDismiss
   );
 }
 
-const createStyles = (spacing: ReturnType<typeof useHungryTheme>["spacing"]) => StyleSheet.create({
+const createStyles = (spacing: any) => StyleSheet.create({
   header: {
     flexDirection: "row",
     gap: spacing[3],

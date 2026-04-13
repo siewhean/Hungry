@@ -3,7 +3,9 @@ import { Animated, Easing, Pressable, View } from "react-native";
 import { Image } from "expo-image";
 import { ArrowLeft, Search as SearchIcon } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, Chip, Input, Screen } from "@/components/ui";
 import { getDiscoverStallCollections, useSearchData } from "@/features/search/search";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
@@ -19,9 +21,10 @@ const SEARCH_CATEGORIES: SearchCategory[] = [
   "desserts",
   "late night",
 ];
+type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function DishSearchScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<RootNavigation>();
   const { motion, palette, radii, spacing, shadows } = useHungryTheme();
   const { filters } = useSearchData();
   const profile = useProfileStore((state) => state.profile);

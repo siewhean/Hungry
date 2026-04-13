@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Linking, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { Sparkles } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { findBuildingById } from "@/features/discovery/discovery";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
+import type { DataRepository } from "@/lib/services/types";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -96,7 +99,7 @@ function AnimatedMatchBadge({ percent }: { percent: number }) {
       }}
     >
       <Sparkles size={14} color={palette.orange} />
-      <AppText variant="bodySmall" style={{ color: palette.orange, fontFamily: "Nunito_700Bold" }}>
+      <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
         {displayValue}% taste match
       </AppText>
     </View>
@@ -104,13 +107,19 @@ function AnimatedMatchBadge({ percent }: { percent: number }) {
 }
 
 const RADIUS_STEPS_METERS = [500, 1000, 2000, 4000];
+type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 function nextRadius(currentRadius: number) {
   return RADIUS_STEPS_METERS.find((value) => value > currentRadius);
 }
 
-function getCandidates(tasteVector: TasteVector, dietaryFlags: DietaryFlag[], radius: number) {
-  return mockRepository.searchDishes(
+function getCandidates(
+  repository: DataRepository,
+  tasteVector: TasteVector,
+  dietaryFlags: DietaryFlag[],
+  radius: number,
+) {
+  return repository.searchDishes(
     {
       query: "",
       categories: [],
@@ -141,7 +150,8 @@ function getNextDistinctDish(candidates: DishDetail[], currentDishId?: string, c
 }
 
 export function DecideForMeResultScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<RootNavigation>();
+  const repository = getDataRepository();
   const { palette, spacing, radii } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
   const selectedDish = useDiscoveryStore((state) => state.decideForMe);
@@ -151,8 +161,8 @@ export function DecideForMeResultScreen() {
   const [resultIndex, setResultIndex] = useState(0);
 
   const candidates = useMemo(
-    () => getCandidates(profile.tasteVector, profile.dietaryPreferences, searchRadius),
-    [profile.dietaryPreferences, profile.tasteVector, searchRadius],
+    () => getCandidates(repository, profile.tasteVector, profile.dietaryPreferences, searchRadius),
+    [profile.dietaryPreferences, profile.tasteVector, repository, searchRadius],
   );
 
   useEffect(() => {
@@ -223,7 +233,7 @@ export function DecideForMeResultScreen() {
     );
   }
 
-  const venue = mockRepository.getVenueById(dish.venueId);
+  const venue = repository.getVenueById(dish.venueId);
   const building = findBuildingById(dish.buildingId);
   const match = Math.round(blendedMatchScore(profile.tasteVector, dish.tasteVector) * 100);
   const tasteDims: Array<{ key: keyof TasteVector; label: string }> = [
@@ -326,7 +336,7 @@ export function DecideForMeResultScreen() {
               >
                 <AppText
                   variant="micro"
-                  style={{ color: palette.orange, fontFamily: "Nunito_700Bold", marginBottom: 4 }}
+                  style={{ color: palette.orange, fontWeight: "700", marginBottom: spacing[1] }}
                 >
                   WHY THIS DISH?
                 </AppText>

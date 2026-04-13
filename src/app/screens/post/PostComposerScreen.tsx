@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, Input, Screen } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -16,9 +16,10 @@ export function PostComposerScreen({ navigation }: Props) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
+  const repository = getDataRepository();
   const [caption, setCaption] = useState("");
-  const dish = useMemo(() => mockRepository.listPopularNearby()[0], []);
-  const venue = useMemo(() => mockRepository.getVenueById(dish.venueId), [dish.venueId]);
+  const dish = useMemo(() => repository.listPopularNearby()[0], [repository]);
+  const venue = useMemo(() => repository.getVenueById(dish.venueId), [dish.venueId, repository]);
 
   const handlePublish = () => {
     if (!isAuthenticated) {

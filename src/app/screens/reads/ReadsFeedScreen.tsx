@@ -209,7 +209,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
                   <AppText
                     variant="h3"
                     style={{
-                      color: "#FFFFFF",
+                      color: palette.textOnDark,
                       marginTop: spacing[1],
                     }}
                   >

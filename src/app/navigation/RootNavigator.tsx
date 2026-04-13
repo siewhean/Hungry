@@ -379,7 +379,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         }}
       >
         <RootStack.Navigator initialRouteName={__DEV__ ? "DeveloperLauncher" : "Splash"} screenOptions={{ headerShown: false }}>
-          <RootStack.Screen component={DeveloperLauncherScreen} name="DeveloperLauncher" />
+          {__DEV__ ? <RootStack.Screen component={DeveloperLauncherScreen} name="DeveloperLauncher" /> : null}
           <RootStack.Screen component={SplashScreen} name="Splash" />
           <RootStack.Screen component={AuthStack} name="AuthStack" />
           <RootStack.Screen component={OnboardingStack} name="OnboardingStack" />
@@ -398,7 +398,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           <RootStack.Screen component={ReviewStack} name="ReviewStack" />
           <RootStack.Screen component={WheelStack} name="WheelStack" />
-          <RootStack.Screen component={DirectMessagesScreen} name="DirectMessages" />
+          {FEATURE_FLAGS.directMessagesEnabled ? <RootStack.Screen component={DirectMessagesScreen} name="DirectMessages" /> : null}
           <RootStack.Screen component={CraveScreen} name="Crave" />
           <RootStack.Screen component={DecideForMeResultScreen} name="DecideForMeResult" />
           <RootStack.Screen component={BuildingDrillDownScreen} name="BuildingDrillDown" />

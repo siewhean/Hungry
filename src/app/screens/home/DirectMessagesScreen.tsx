@@ -27,9 +27,9 @@ export function DirectMessagesScreen() {
             <ChevronLeft color={palette.text} size={28} />
           </Pressable>
           <AppText variant="h2">Messages</AppText>
-          <Pressable>
+          <View style={{ width: 24, height: 24 }}>
             <Edit3 color={palette.text} size={24} />
-          </Pressable>
+          </View>
         </View>
 
         {/* Search */}
@@ -42,7 +42,7 @@ export function DirectMessagesScreen() {
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[4] }}>
           {MOCK_CHATS.map((chat) => (
-            <Pressable 
+            <View
               key={chat.id} 
               style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}
             >
@@ -56,7 +56,7 @@ export function DirectMessagesScreen() {
                   {chat.lastMessage}
                 </AppText>
               </View>
-            </Pressable>
+            </View>
           ))}
 
           {MOCK_CHATS.length === 0 && (

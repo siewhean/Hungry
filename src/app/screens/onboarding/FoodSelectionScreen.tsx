@@ -6,7 +6,7 @@ import { Check, ArrowLeft } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 
 import { AppText, Button, Screen } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
@@ -31,6 +31,7 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
   const { motion, palette, spacing, radii, shadows } = useHungryTheme();
   const setOnboardingSelectedDishIds = useProfileStore((s) => s.setOnboardingSelectedDishIds);
   const selectedCuisines = route.params.cuisines;
+  const repository = getDataRepository();
 
   const [currentIndex, setCurrentCuisineIndex] = useState(0);
   const [accumulatedSelectedIds, setAccumulatedSelectedIds] = useState<string[]>([]);
@@ -44,8 +45,8 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
 
   const filteredDishes = useMemo(() => {
     const dishIds = CUISINE_MAP[currentCuisineId] || [];
-    return dishIds.map(id => mockRepository.getDishById(id)).filter(Boolean) as DishDetail[];
-  }, [currentCuisineId]);
+    return dishIds.map((id) => repository.getDishById(id)).filter(Boolean) as DishDetail[];
+  }, [currentCuisineId, repository]);
 
   // Trigger transition animation when cuisine changes
   useEffect(() => {

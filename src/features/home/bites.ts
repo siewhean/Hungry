@@ -1,4 +1,4 @@
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 
 export interface HomeBite {
   id: string;
@@ -16,11 +16,12 @@ export interface HomeBite {
 }
 
 export function createDefaultBites(): HomeBite[] {
-  const postDrivenBites = mockRepository
+  const repository = getDataRepository();
+  const postDrivenBites = repository
     .listStallPosts()
     .flatMap((post, index) =>
       post.dishIds
-        .map((dishId) => mockRepository.getDishById(dishId))
+        .map((dishId) => repository.getDishById(dishId))
         .filter((dish): dish is NonNullable<typeof dish> => Boolean(dish))
         .map((dish) => ({
           id: `bite-${post.id}-${dish.id}`,
@@ -38,7 +39,7 @@ export function createDefaultBites(): HomeBite[] {
         })),
     );
 
-  const nearbyBites = mockRepository.listPopularNearby().map((dish, index) => ({
+  const nearbyBites = repository.listPopularNearby().map((dish, index) => ({
     id: `bite-nearby-${dish.id}`,
     dishId: dish.id,
     dishName: dish.name,

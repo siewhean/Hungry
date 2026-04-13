@@ -11,7 +11,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { MapSurface, type MapSurfaceMarker, BuildingLegend } from "@/components/map";
 import { AppText, Chip } from "@/components/ui";
 import { getBuildingById, getNearestBuildings, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme } from "@/theme";
@@ -24,9 +24,9 @@ function CrowdIndicator({ level }: { level?: "low" | "medium" | "high" }) {
   if (!level) return null;
 
   const config = {
-    low: { color: "#10B981", label: "Fast", icon: <Zap size={10} color="#10B981" fill="#10B981" /> },
-    medium: { color: "#F59E0B", label: "Moderate", icon: null },
-    high: { color: "#EF4444", label: "Trending", icon: <Flame size={10} color="#EF4444" fill="#EF4444" /> },
+    low: { color: palette.statusFast, label: "Fast", icon: <Zap size={10} color={palette.statusFast} fill={palette.statusFast} /> },
+    medium: { color: palette.statusModerate, label: "Moderate", icon: null },
+    high: { color: palette.statusBusy, label: "Trending", icon: <Flame size={10} color={palette.statusBusy} fill={palette.statusBusy} /> },
   };
 
   const { color, label, icon } = config[level];
@@ -42,6 +42,7 @@ function CrowdIndicator({ level }: { level?: "low" | "medium" | "high" }) {
 
 export function HomeMapScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const repository = getDataRepository();
   const insets = useSafeAreaInsets();
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
@@ -71,12 +72,12 @@ export function HomeMapScreen() {
   }, [activeBuildingRecord, currentLocation]);
 
   const areaPopularDishes = useMemo(() => {
-    const allVenues = visibleBuildings.flatMap(b => mockRepository.listVenuesByBuilding(b.id));
+    const allVenues = visibleBuildings.flatMap((b) => repository.listVenuesByBuilding(b.id));
     return allVenues
-      .map(v => mockRepository.getDishById(v.topDishId))
+      .map((v) => repository.getDishById(v.topDishId))
       .filter((d): d is DishDetail => !!d)
       .slice(0, 10);
-  }, [visibleBuildings]);
+  }, [repository, visibleBuildings]);
 
   const [currentZoom, setCurrentZoom] = useState(15.5);
   const [selectedDish, setSelectedDish] = useState<DishDetail | null>(null);
@@ -128,7 +129,7 @@ export function HomeMapScreen() {
       type: b.type,
     }));
     if (currentZoom > 16.5) {
-      const venues = mockRepository.listVenuesByBuilding(activeBuildingRecord.id);
+      const venues = repository.listVenuesByBuilding(activeBuildingRecord.id);
       const stallMarkers = venues.map(v => ({
         id: `stall-${v.id}`,
         label: v.name,
@@ -141,7 +142,7 @@ export function HomeMapScreen() {
       return [...bMarkers, ...stallMarkers];
     }
     return bMarkers;
-  }, [palette, visibleBuildings, currentZoom, activeBuildingRecord]);
+  }, [palette, repository, visibleBuildings, currentZoom, activeBuildingRecord]);
 
   const cameraPadding = useMemo(() => ({
     paddingBottom: (selectedDish || displayMode === "list") ? 300 : 260
@@ -265,7 +266,7 @@ export function HomeMapScreen() {
               </View>
               <AppText style={{ fontSize: 16, color: palette.textSecondary }}>
                 {selectedDish.venueName} • {(() => {
-                  const venues = mockRepository.listVenuesByBuilding(activeBuildingRecord.id);
+                  const venues = repository.listVenuesByBuilding(activeBuildingRecord.id);
                   const openCount = venues.filter(v => v.isOpen).length;
                   return openCount > 0 ? `${openCount} stalls open now` : "Building currently closed";
                 })()}
@@ -280,6 +281,7 @@ export function HomeMapScreen() {
                 <AppText style={{ fontSize: 16, fontWeight: "700", color: palette.text }}>View Menu</AppText>
               </Pressable>
               <Pressable 
+                onPress={() => navigation.navigate("StallDetail", { venueId: selectedDish.venueId })}
                 style={[{ flex: 1, height: 56, borderRadius: radii.pill, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center" }, shadows.floating]}
               >
                 <AppText style={{ fontSize: 16, fontWeight: "700", color: palette.surface }}>Reserve Now</AppText>
@@ -289,7 +291,7 @@ export function HomeMapScreen() {
         ) : displayMode === "list" ? (
           <ScrollView contentContainerStyle={{ paddingHorizontal: spacing[5], gap: spacing[4], paddingBottom: insets.bottom + spacing[12] }}>
             <AppText variant="h2" style={{ marginBottom: spacing[2] }}>Nearby Stalls</AppText>
-            {visibleBuildings.flatMap(b => mockRepository.listVenuesByBuilding(b.id)).map((venue) => (
+            {visibleBuildings.flatMap((b) => repository.listVenuesByBuilding(b.id)).map((venue) => (
               <Pressable
                 key={venue.id}
                 onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}

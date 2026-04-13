@@ -95,7 +95,7 @@ export function DishCard({ dish, variant = "horizontal", favourited = false, onP
   );
 }
 
-const createStyles = (spacing: ReturnType<typeof useHungryTheme>["spacing"]) => StyleSheet.create({
+const createStyles = (spacing: any) => StyleSheet.create({
   content: {
     alignItems: "flex-start",
   },

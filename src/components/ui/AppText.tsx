@@ -40,7 +40,7 @@ export function AppText({
         : tone === "accent"
           ? palette.orange
           : tone === "inverse"
-            ? "#FFFFFF"
+            ? palette.textOnDark
             : palette.text;
 
   return (

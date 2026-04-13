@@ -431,8 +431,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                   });
                   return (
                     <View style={{ alignItems: "center", width: CARD_WIDTH }}>
-                      <Pressable
-                        disabled
+                      <View
                         style={[
                           isSelected ? { ...styles.whiteGlow, shadowColor: palette.surface } : null,
                           {
@@ -465,11 +464,11 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                             style={{ height: "100%", width: "100%" }}
                           />
                         </Animated.View>
-                      </Pressable>
+                      </View>
                       <AppText
                         variant={isSelected ? "h3" : "body"}
                         tone={isSelected ? "default" : "secondary"}
-                        style={{ fontFamily: "Nunito_700Bold", marginTop: spacing[2], textAlign: "center", width: "100%" }}
+                        style={{ fontWeight: "700", marginTop: spacing[2], textAlign: "center", width: "100%" }}
                       >
                         {labels[index]}
                       </AppText>

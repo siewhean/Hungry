@@ -14,7 +14,7 @@ import { Image } from "expo-image";
 import { MapPin, Navigation } from "lucide-react-native";
 
 import { AppText, Badge } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
@@ -26,14 +26,15 @@ type Props = NativeStackScreenProps<WheelStackParamList, "WheelResult">;
 export function WheelResultModal({ navigation, route }: Props) {
   const { palette, spacing, radii, shadows, motion } = useHungryTheme();
   const { winnerEntryId, partyId } = route.params;
+  const repository = getDataRepository();
 
   const party = useWheelStore((s) => s.party);
   const entries = useWheelStore((s) => s.entries);
   const resetParty = useWheelStore((s) => s.reset);
 
   const winnerEntry = entries.find((e) => e.id === winnerEntryId);
-  const venue = winnerEntry ? mockRepository.getVenueById(winnerEntry.venueId) : undefined;
-  const dishes = winnerEntry ? mockRepository.listDishesByVenue(winnerEntry.venueId) : [];
+  const venue = winnerEntry ? repository.getVenueById(winnerEntry.venueId) : undefined;
+  const dishes = winnerEntry ? repository.listDishesByVenue(winnerEntry.venueId) : [];
   const heroDish = dishes[0];
 
   // Spring scale-in card entrance

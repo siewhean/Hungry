@@ -12,7 +12,7 @@ import { getBuildingVenues } from "@/features/discovery/discovery";
 import { getDirectoryDescriptor } from "@/features/discovery/venueDescriptor";
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { getBuildingById, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import type { StallPolygon } from "@/lib/services/types";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useHungryTheme } from "@/theme";
@@ -67,12 +67,12 @@ function resolveBuilding(buildingId?: string, selectedName?: string) {
   return getBuildingById(DEFAULT_BUILDING_ID)!;
 }
 
-function isDessertDish(dishId?: string) {
+function isDessertDish(dishId: string | undefined, getDishById: (dishId: string) => DishDetail | undefined) {
   if (!dishId) {
     return false;
   }
 
-  const dish = mockRepository.getDishById(dishId);
+  const dish = getDishById(dishId);
   if (!dish) {
     return false;
   }
@@ -280,6 +280,7 @@ function ZoomControlButton({
 export function BuildingDrillDownScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
+  const repository = getDataRepository();
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const selectedFloor = useDiscoveryStore((state) => state.selectedFloor);
@@ -345,7 +346,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
     return tenantPolygons
       .map((stall) => {
         const venue = stall.venueId ? venueById.get(stall.venueId) : undefined;
-        const dish = venue ? mockRepository.getDishById(venue.topDishId) : undefined;
+        const dish = venue ? repository.getDishById(venue.topDishId) : undefined;
         const title = venue?.name ?? stall.label ?? `Unit ${stall.unitNumber}`;
         const unitNumber = venue?.unitNumber ?? stall.unitNumber;
         const isOpen = venue ? venue.isOpen : stall.status === "open";
@@ -374,7 +375,8 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
         }
 
         if (dessertsOnly) {
-          const isDessert = isDessertDish(record.venue?.topDishId) || isDessertLabel(record.title);
+          const isDessert =
+            isDessertDish(record.venue?.topDishId, repository.getDishById) || isDessertLabel(record.title);
           if (!isDessert) {
             return false;
           }
@@ -386,7 +388,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
 
         return true;
       });
-  }, [dessertsOnly, openNowOnly, stallQuery, tenantPolygons, venueById]);
+  }, [dessertsOnly, openNowOnly, repository, stallQuery, tenantPolygons, venueById]);
 
   const selectedFromStore = useMemo(
     () => tenantPolygons.find((stall) => stall.venueId === highlightedStallVenueId)?.stallId,
@@ -695,7 +697,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
               >
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                   <AppText variant="h3">Menu preview on this level</AppText>
-                  <Pressable>
+                  <Pressable onPress={() => navigation.navigate("SearchResults")}>
                     <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>VIEW ALL</AppText>
                   </Pressable>
                 </View>

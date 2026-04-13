@@ -21,7 +21,7 @@ export function NotFoundScreen({ navigation, route }: Props) {
     <SafeAreaView style={{ backgroundColor: palette.bgSoft, flex: 1 }} edges={["top", "left", "right", "bottom"]}>
       <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: spacing[6] }}>
         <View style={{ alignItems: "center", gap: spacing[5] }}>
-          <AppText style={{ color: `${palette.orange}15`, fontFamily: "Nunito_700Bold", fontSize: 96, lineHeight: 96 }}>404</AppText>
+          <AppText style={{ color: `${palette.orange}15`, fontWeight: "700", fontSize: 96, lineHeight: 96 }}>404</AppText>
           <View style={{ alignItems: "center", backgroundColor: palette.bgMuted, borderRadius: radii.pill, height: 60, justifyContent: "center", marginTop: -54, width: 60 }}>
             <UtensilsCrossed color={palette.orange} size={26} />
           </View>

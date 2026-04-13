@@ -3,7 +3,7 @@ import { View } from "react-native";
 
 import { AppText, Button, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { isDishDetail } from "./profileGuards";
 import { ProfileScreenShell } from "./ProfileScreenShell";
@@ -14,8 +14,9 @@ type Props = NativeStackScreenProps<ProfileStackParamList, "ReviewHistory">;
 export function ReviewHistoryScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
   const reviewEntries = useProfileStore((state) => state.reviewEntries);
+  const repository = getDataRepository();
   const history = profile.reviewedDishIds
-    .map((dishId) => mockRepository.getDishById(dishId))
+    .map((dishId) => repository.getDishById(dishId))
     .filter(isDishDetail);
 
   const openReviewFlow = () => {

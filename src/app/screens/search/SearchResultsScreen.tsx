@@ -2,21 +2,25 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 import { Image } from "expo-image";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Star } from "lucide-react-native";
 
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, EmptyState, Screen, Chip } from "@/components/ui";
 import { findBuildingById } from "@/features/discovery/discovery";
 import { getSearchResults, sortSearchResults, type SearchSortMode, useSearchData } from "@/features/search/search";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
 
 type DisplayMode = "list" | "grid";
+type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 function SearchResultListCard({ dish, onPress }: { dish: DishDetail; onPress: () => void }) {
+  const repository = getDataRepository();
   const { palette, radii, spacing, shadows } = useHungryTheme();
-  const venue = mockRepository.getVenueById(dish.venueId);
+  const venue = repository.getVenueById(dish.venueId);
   const building = findBuildingById(dish.buildingId);
 
   return (
@@ -69,6 +73,7 @@ function SearchResultListCard({ dish, onPress }: { dish: DishDetail; onPress: ()
 }
 
 function SearchResultGridCard({ dish, onPress }: { dish: DishDetail; onPress: () => void }) {
+  const repository = getDataRepository();
   const { palette, radii, spacing, shadows } = useHungryTheme();
 
   return (
@@ -91,7 +96,7 @@ function SearchResultGridCard({ dish, onPress }: { dish: DishDetail; onPress: ()
             {dish.name}
           </AppText>
           <AppText variant="micro" tone="secondary" numberOfLines={1}>
-            {mockRepository.getVenueById(dish.venueId)?.name}
+            {repository.getVenueById(dish.venueId)?.name}
           </AppText>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: spacing[1] }}>
             <AppText style={{ color: palette.orange, fontWeight: "800", fontSize: 13 }}>S${dish.price.toFixed(2)}</AppText>
@@ -107,7 +112,7 @@ function SearchResultGridCard({ dish, onPress }: { dish: DishDetail; onPress: ()
 }
 
 export function SearchResultsScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<RootNavigation>();
   const { palette, radii, spacing } = useHungryTheme();
   const { profile, filters, recentSearches } = useSearchData();
   const rememberSearch = useSearchStore((state) => state.rememberSearch);

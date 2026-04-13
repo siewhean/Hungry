@@ -106,7 +106,7 @@ export function Screen({
   );
 }
 
-const createStyles = (spacing: ReturnType<typeof useHungryTheme>["spacing"]) => StyleSheet.create({
+const createStyles = (spacing: any) => StyleSheet.create({
   safeArea: {
     flex: 1,
   },

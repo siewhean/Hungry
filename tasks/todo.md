@@ -183,7 +183,7 @@ All events follow: `{ event: string, properties: object, user_id?: string, sessi
 |----|------|-------|
 | P1-ARCH-05 | Done (Batch 2026-04-12D): Created `src/lib/services/serviceProvider.ts` as the single injection point for mock/live service wiring. | Codex |
 | P1-ARCH-06 | Done (Batch 2026-04-12D): Updated typed service interfaces and added TODO API anchors for mock-to-live replacement. | Codex |
-| P1-ARCH-07 | **REOPENED (Audit 2026-04-13):** Only 7 of ~27 data-access sites use `serviceProvider`; 20 screen files still import `mockRepository` directly. The promised single-file backend swap path does not exist. Must complete migration before backend integration. | Codex |
+| P1-ARCH-07 | **REOPENED (Audit 2026-04-13):** Only 7 of ~27 data-access sites use `serviceProvider`; 20 screen files still import `mockRepository` directly. Progress: batches 1-6 are now migrated to `getDataRepository()` and direct `mockRepository` imports in `src/app/` + `src/features/` are cleared (Batches 2026-04-13I/J/K/L/M/N). | Codex |
 | P1-08 | Done: Planning artifacts committed and discoverable in this backlog + linked docs. | Both |
 | P1-09 | Done: implementation-to-requirement mapping is synchronized through Batch 2026-04-13C with verification evidence logged per batch. | Both |
 
@@ -420,7 +420,7 @@ These items affect perceived quality but do not break functionality.
 | P2-39 | Component | Done: flagged `borderRadius: 999` usages replaced with tokenized `radii.pill`. | `MapSurface.tsx` |
 | P2-40 | Component | Done: `BiteCard` taste tag text now uses inverse/tokenized text tone instead of hardcoded white. | `BiteCard.tsx` |
 | P2-41 | Component | Done: `BitesCarousel` fixture-building logic extracted to `src/features/home/bites.ts` (no large inline data block). | `BitesCarousel.tsx`, `bites.ts` |
-| P2-42 | Component | **REOPENED (Audit 2026-04-13):** 8 `useNavigation<any>()` callsites remain: `HomeFeedScreen`, `DecideForMeResultScreen`, `CraveScreen`, `DiscoverHomeScreen`, `TasteFilterScreen`, `SearchResultsScreen`, `DishSearchScreen`, `BitesCarousel`. Only `ReadsFeedScreen` and `SettingsScreen` were fixed. | Multiple screens |
+| P2-42 | Component | Done (Batch 2026-04-13H): removed remaining `useNavigation<any>()` callsites by applying typed `RootStackParamList` navigation props across Home/Discover/Search screens and `BitesCarousel`; verification rerun is green. | `HomeFeedScreen.tsx`, `DecideForMeResultScreen.tsx`, `CraveScreen.tsx`, `DiscoverHomeScreen.tsx`, `TasteFilterScreen.tsx`, `SearchResultsScreen.tsx`, `DishSearchScreen.tsx`, `BitesCarousel.tsx` |
 | P2-43 | A11y | Done (Batch 2026-04-10M): FloatingToast now announces as alert with polite live region. | `FloatingToast.tsx` |
 | P2-44 | A11y | Done (Batch 2026-04-10M): Chip now exposes selected accessibility state. | `Chip.tsx` |
 | P2-45 | A11y | Done (Batch 2026-04-10M): FloorSelector tabs now expose selected accessibility state. | `FloorSelector.tsx` |
@@ -440,8 +440,8 @@ These items affect perceived quality but do not break functionality.
 | P2-59 | Design System | **NEW (Audit 2026-04-13):** Delivery brand colors (`#00B14F` GrabFood, `#D70F64` Foodpanda, `#00CCBC` Deliveroo) should be extracted to named constants, not inline hex strings. | `DeliveryPlatformButton.tsx` |
 | P2-60 | Design System | **NEW (Audit 2026-04-13):** Busyness indicator colors (`#10B981`, `#F59E0B`, `#EF4444`) need palette tokens (e.g. `palette.statusFast`, `palette.statusModerate`, `palette.statusBusy`). | `HomeMapScreen.tsx` |
 | P2-61 | Tokens | Done (Batch 2026-04-13G): removed invalid `spacing[0.5]` usage in `BiteCard` (`paddingVertical` now explicit `2`) and restored type safety. | `BiteCard.tsx` |
-| P2-62 | Security | **NEW (Audit 2026-04-13):** `DeveloperLauncherScreen` is registered as a route in the production RootStack. Deep link `hungry://DeveloperLauncher` could reach it in release builds. Guard with `__DEV__` conditional route registration. | `RootNavigator.tsx` |
-| P2-63 | Hardcoded Copy | **NEW (Audit 2026-04-13):** "Tanjong Pagar · 14 nearby" and "Tanjong Pagar" hardcoded on Home and Discover. "Level 12 · Foodie Scout" and analytics prose on Profile. Must derive from location store and user data. | `HomeFeedScreen.tsx`, `DiscoverHomeScreen.tsx`, `ProfileHomeScreen.tsx` |
+| P2-62 | Security | Done (Batch 2026-04-13O): `DeveloperLauncher` registration is now excluded from production stack using `__DEV__` route gating. | `RootNavigator.tsx` |
+| P2-63 | Hardcoded Copy | Done (Batch 2026-04-13P): Home/Discover location labels now derive from location state + nearest-building computation, and Profile hardcoded gamification strings were replaced with data-backed copy. | `HomeFeedScreen.tsx`, `DiscoverHomeScreen.tsx`, `ProfileHomeScreen.tsx` |
 
 ### P0 — Newly Discovered Blockers (Audit 2026-04-13)
 
@@ -453,11 +453,11 @@ These items affect perceived quality but do not break functionality.
 
 | ID | Area | Issue | File(s) |
 |----|------|-------|---------|
-| P1-49 | Home | **DirectMessages screen is a dead end.** Contains 4 inline hardcoded mock chat entries (not from `data.ts`). Chat items have no `onPress`. Compose button has no `onPress`. Route should be removed or feature-flagged. | `DirectMessagesScreen.tsx` |
-| P1-50 | Home | **Comments bottom sheet is a placeholder** — shows "Community discussions coming soon." Remove or feature-flag. | `HomeFeedScreen.tsx` |
-| P1-51 | Profile | **"Detailed Analysis" card has no `onPress` handler** despite having a chevron suggesting tappability. "Recently saved" favourite cards also have no `onPress` — cannot navigate to DishDetail. | `ProfileHomeScreen.tsx` |
-| P1-52 | Crave | **Info button `(i)` has no `onPress` handler.** Dead button in top-right of Crave screen. | `CraveScreen.tsx` |
-| P1-53 | Profile | **Hardcoded gamification and analytics copy.** "Level 12 • Foodie Scout", "8 new stalls", "top 5%" are all static strings. Must derive from user data or remove. | `ProfileHomeScreen.tsx` |
+| P1-49 | Home | Done (Batch 2026-04-13P): DirectMessages entry points are now feature-flagged off by default (`directMessagesEnabled: false`) and the route is conditionally registered. | `featureFlags.ts`, `RootNavigator.tsx`, `HomeFeedScreen.tsx` |
+| P1-50 | Home | Done (Batch 2026-04-13P): Removed placeholder comments bottom-sheet implementation from Home feed. | `HomeFeedScreen.tsx` |
+| P1-51 | Profile | Done (Batch 2026-04-13P): Removed dead chevron affordance from the Detailed Analysis block and wired Recently Saved cards to DishDetail. | `ProfileHomeScreen.tsx` |
+| P1-52 | Crave | Done (Batch 2026-04-13P): Removed dead `(i)` info button affordance from Crave header. | `CraveScreen.tsx` |
+| P1-53 | Profile | Done (Batch 2026-04-13P): Replaced hardcoded level/prose with profile-stats-driven copy. | `ProfileHomeScreen.tsx` |
 
 ---
 
@@ -563,20 +563,20 @@ These items affect perceived quality but do not break functionality.
 
 #### Codex primary
 
-- [ ] **P1-ARCH-07 migrate (batch 1 — detail screens):** Refactor `DishDetailScreen`, `StallDetailScreen` to use `getDataRepository()` or store-backed data.
-- [ ] **P1-ARCH-07 migrate (batch 2 — discover screens):** Refactor `DecideForMeResultScreen`, `HomeMapScreen`, `CraveScreen`, `DiscoverHomeScreen`, `BuildingDrillDownScreen`, `MapZoomedInScreen`.
-- [ ] **P1-ARCH-07 migrate (batch 3 — search/review screens):** Refactor `SearchResultsScreen`, `ReviewHubScreen`, `ReviewRatingScreen`, `ReviewComposeScreen`.
-- [ ] **P1-ARCH-07 migrate (batch 4 — profile screens):** Refactor `ProfileHomeScreen`, `FavouritesScreen`, `ReviewHistoryScreen`.
-- [ ] **P1-ARCH-07 migrate (batch 5 — remaining screens):** Refactor `PostComposerScreen`, `BlogPostWebViewScreen`, `FoodSelectionScreen`, `WheelResultModal`, `WheelEntryAddSheet`.
-- [ ] **P1-ARCH-07 migrate (batch 6 — dev only):** Refactor `DeveloperLauncherScreen` (acceptable to keep `mockRepository` behind `__DEV__` guard, but document the exception).
-- [ ] **P2-42 (batch 1):** Type `useNavigation<any>()` in `HomeFeedScreen`, `DecideForMeResultScreen`, `CraveScreen`, `DiscoverHomeScreen`.
-- [ ] **P2-42 (batch 2):** Type `useNavigation<any>()` in `TasteFilterScreen`, `SearchResultsScreen`, `DishSearchScreen`, `BitesCarousel`.
+- [x] **P1-ARCH-07 migrate (batch 1 — detail screens):** Refactor `DishDetailScreen`, `StallDetailScreen` to use `getDataRepository()` or store-backed data.
+- [x] **P1-ARCH-07 migrate (batch 2 — discover screens):** Refactor `DecideForMeResultScreen`, `HomeMapScreen`, `CraveScreen`, `DiscoverHomeScreen`, `BuildingDrillDownScreen`, `MapZoomedInScreen`.
+- [x] **P1-ARCH-07 migrate (batch 3 — search/review screens):** Refactor `SearchResultsScreen`, `ReviewHubScreen`, `ReviewRatingScreen`, `ReviewComposeScreen`.
+- [x] **P1-ARCH-07 migrate (batch 4 — profile screens):** Refactor `ProfileHomeScreen`, `FavouritesScreen`, `ReviewHistoryScreen`.
+- [x] **P1-ARCH-07 migrate (batch 5 — remaining screens):** Refactor `PostComposerScreen`, `BlogPostWebViewScreen`, `FoodSelectionScreen`, `WheelResultModal`, `WheelEntryAddSheet`.
+- [x] **P1-ARCH-07 migrate (batch 6 — dev only):** Refactor `DeveloperLauncherScreen` (acceptable to keep `mockRepository` behind `__DEV__` guard, but document the exception).
+- [x] **P2-42 (batch 1):** Type `useNavigation<any>()` in `HomeFeedScreen`, `DecideForMeResultScreen`, `CraveScreen`, `DiscoverHomeScreen`.
+- [x] **P2-42 (batch 2):** Type `useNavigation<any>()` in `TasteFilterScreen`, `SearchResultsScreen`, `DishSearchScreen`, `BitesCarousel`.
 
 #### Done gate
 
-- [ ] `grep -rn 'from.*mock/repositories' src/app/ src/features/` returns zero non-test results (except `DeveloperLauncherScreen` behind `__DEV__`).
-- [ ] `grep -rn 'useNavigation<any>' src/` returns zero results.
-- [ ] `npm run typecheck` passes.
+- [x] `grep -rn 'from.*mock/repositories' src/app/ src/features/` returns zero non-test results (except `DeveloperLauncherScreen` behind `__DEV__`).
+- [x] `grep -rn 'useNavigation<any>' src/` returns zero results.
+- [x] `npm run typecheck` passes.
 
 ---
 
@@ -586,27 +586,27 @@ These items affect perceived quality but do not break functionality.
 
 #### Gemini primary
 
-- [ ] **P2-58 spec:** Define semantic token names for text-on-dark / text-on-primary. Propose additions to `palette` in `tokens.ts` (e.g. `palette.textOnPrimary`, `palette.textOnDark`, `palette.white`). Document in `tasks/design-system.md`.
-- [ ] **P2-59 spec:** Define named constants for delivery brand colors (Grab green, Foodpanda pink, Deliveroo teal). Decide: palette tokens or a separate `brandColors` map.
-- [ ] **P2-60 spec:** Define palette tokens for busyness/status indicators (`statusFast`, `statusModerate`, `statusBusy`). Document in `tasks/design-system.md`.
-- [ ] **P2-61 spec:** Decide whether `spacing[0.5]` (2px) should be added to the spacing scale, or if the `BiteCard` usage should round up to `spacing[1]`.
-- [ ] **P2-55 spec:** Provide guidance for remaining hardcoded `borderRadius` values (CraveScreen `32`, StallDetail `28`, etc.) — which `radii.*` token do they map to? Should any new tokens be added?
+- [x] **P2-58 spec:** Define semantic token names for text-on-dark / text-on-primary. Propose additions to `palette` in `tokens.ts` (e.g. `palette.textOnPrimary`, `palette.textOnDark`, `palette.white`). Document in `tasks/design-system.md`.
+- [x] **P2-59 spec:** Define named constants for delivery brand colors (Grab green, Foodpanda pink, Deliveroo teal). Decide: palette tokens or a separate `brandColors` map.
+- [x] **P2-60 spec:** Define palette tokens for busyness/status indicators (`statusFast`, `statusModerate`, `statusBusy`). Document in `tasks/design-system.md`.
+- [x] **P2-61 spec:** Decide whether `spacing[0.5]` (2px) should be added to the spacing scale, or if the `BiteCard` usage should round up to `spacing[1]`.
+- [x] **P2-55 spec:** Provide guidance for remaining hardcoded `borderRadius` values (CraveScreen `32`, StallDetail `28`, etc.) — which `radii.*` token do they map to? Should any new tokens be added?
 
 #### Codex primary
 
-- [ ] **P2-58 implement:** Add approved tokens to `tokens.ts`. Replace all `#FFFFFF` usages in screen files (35+) with `palette.textOnPrimary` or `palette.white`.
-- [ ] **P2-58 implement (components):** Replace all `#FFFFFF` usages in component files (13+) with the new tokens.
-- [ ] **P2-59 implement:** Extract delivery brand colors to named constants in `src/constants/brandColors.ts`. Update `DeliveryPlatformButton.tsx`.
-- [ ] **P2-60 implement:** Add busyness tokens to palette. Update `HomeMapScreen.tsx` busyness indicator.
-- [ ] **P2-61 implement:** Apply the spacing decision from Gemini's spec to `BiteCard.tsx`.
-- [ ] **P2-55 implement:** Replace remaining hardcoded `borderRadius` values in screens with `radii.*` tokens per Gemini's mapping.
-- [ ] **Inline fontFamily cleanup:** Replace 20+ inline `fontFamily: "Nunito_*"` overrides in screen files with `AppText` variant props or `fontWeight` styling. (Screens only — `SplashScreen` and `HungryLogo` are acceptable exceptions.)
+- [x] **P2-58 implement:** Add approved tokens to `tokens.ts`. Replace all `#FFFFFF` usages in screen files (35+) with `palette.textOnPrimary` or `palette.white`.
+- [x] **P2-58 implement (components):** Replace all `#FFFFFF` usages in component files (13+) with the new tokens.
+- [x] **P2-59 implement:** Extract delivery brand colors to named constants in `src/constants/brandColors.ts`. Update `DeliveryPlatformButton.tsx`.
+- [x] **P2-60 implement:** Add busyness tokens to palette. Update `HomeMapScreen.tsx` busyness indicator.
+- [x] **P2-61 implement:** Apply the spacing decision from Gemini's spec to `BiteCard.tsx`.
+- [x] **P2-55 implement:** Replace remaining hardcoded `borderRadius` values in screens with `radii.*` tokens per Gemini's mapping.
+- [x] **Inline fontFamily cleanup:** Replace 20+ inline `fontFamily: "Nunito_*"` overrides in screen files with `AppText` variant props or `fontWeight` styling. (Screens only — `SplashScreen` and `HungryLogo` are acceptable exceptions.)
 
 #### Done gate
 
-- [ ] `grep -rn '#[0-9a-fA-F]\{6\}' src/app/screens/ --include="*.tsx"` returns zero results (excluding `rgba()` overlays).
-- [ ] `grep -rn 'borderRadius: [0-9]' src/app/screens/ --include="*.tsx"` returns zero results (excluding `padding: 0` card resets).
-- [ ] `npm run typecheck` passes.
+- [x] `grep -rn '#[0-9a-fA-F]\{6\}' src/app/screens/ --include="*.tsx"` returns zero results (excluding `rgba()` overlays).
+- [x] `grep -rn 'borderRadius: [0-9]' src/app/screens/ --include="*.tsx"` returns zero results (excluding `padding: 0` card resets).
+- [x] `npm run typecheck` passes.
 
 ---
 
@@ -624,20 +624,20 @@ These items affect perceived quality but do not break functionality.
 
 #### Codex primary
 
-- [ ] **P1-49 execute:** Based on Claude's decision — remove `DirectMessagesScreen` and its route, or wrap it in a feature flag. Remove the DM icon from `HomeFeedScreen` header if the screen is removed.
-- [ ] **P1-50 execute:** Based on Claude's decision — remove the Comments `BottomSheetModal` from `HomeFeedScreen`, or gate it behind a flag.
-- [ ] **P1-51 execute:** Wire `onPress` on the "Detailed Analysis" card (navigate to a defined destination or remove the chevron). Wire `onPress` on "Recently saved" favourite cards to navigate to `DishDetail`.
-- [ ] **P1-52 execute:** Either wire the `(i)` Pressable on CraveScreen to a help/info modal, or remove the button.
-- [ ] **P1-53 execute:** Based on Claude's decision — make Profile gamification text dynamic from store data, or replace with a static-but-honest alternative.
-- [ ] **P2-62 execute:** Wrap the `DeveloperLauncherScreen` route registration in `RootNavigator.tsx` with `{__DEV__ && <RootStack.Screen ... />}` so it's omitted from the production bundle entirely.
-- [ ] **P2-63 execute:** Based on Claude's spec — replace hardcoded "Tanjong Pagar" strings with location-derived values. Replace "14 nearby" with computed building count from `listBuildings()`.
+- [x] **P1-49 execute:** Based on Claude's decision — remove `DirectMessagesScreen` and its route, or wrap it in a feature flag. Remove the DM icon from `HomeFeedScreen` header if the screen is removed.
+- [x] **P1-50 execute:** Based on Claude's decision — remove the Comments `BottomSheetModal` from `HomeFeedScreen`, or gate it behind a flag.
+- [x] **P1-51 execute:** Wire `onPress` on the "Detailed Analysis" card (navigate to a defined destination or remove the chevron). Wire `onPress` on "Recently saved" favourite cards to navigate to `DishDetail`.
+- [x] **P1-52 execute:** Either wire the `(i)` Pressable on CraveScreen to a help/info modal, or remove the button.
+- [x] **P1-53 execute:** Based on Claude's decision — make Profile gamification text dynamic from store data, or replace with a static-but-honest alternative.
+- [x] **P2-62 execute:** Wrap the `DeveloperLauncherScreen` route registration in `RootNavigator.tsx` with `{__DEV__ && <RootStack.Screen ... />}` so it's omitted from the production bundle entirely.
+- [x] **P2-63 execute:** Based on Claude's spec — replace hardcoded "Tanjong Pagar" strings with location-derived values. Replace "14 nearby" with computed building count from `listBuildings()`.
 
 #### Done gate
 
-- [ ] Every `<Pressable>` in screen files has either an `onPress` handler or an explicit `accessibilityRole="none"` / is purely decorative.
-- [ ] `DeveloperLauncherScreen` route does not appear in production navigation stack.
-- [ ] `grep -rn 'Tanjong Pagar\|Level 12\|Foodie Scout\|14 nearby\|8 new stalls\|top 5%' src/` returns zero results.
-- [ ] `npm run typecheck` passes.
+- [x] Every `<Pressable>` in screen files has either an `onPress` handler or an explicit `accessibilityRole="none"` / is purely decorative.
+- [x] `DeveloperLauncherScreen` route does not appear in production navigation stack.
+- [x] `grep -rn 'Tanjong Pagar\|Level 12\|Foodie Scout\|14 nearby\|8 new stalls\|top 5%' src/` returns zero results.
+- [x] `npm run typecheck` passes.
 
 ---
 
@@ -769,6 +769,8 @@ These items affect perceived quality but do not break functionality.
 - 2026-04-13 | Codex | Phase 1 Stabilization + Checklist Consistency Audit. Revalidated build health (`typecheck`, `test`, `expo-doctor`) and reconciled stale/open status drift (P1-17, P2-25, P2-31, P2-49, rollout notes). | Status: completed. | Next: execute Phase 2 P1 items in strict order.
 - 2026-04-13 | Gemini | Psychological UX Overhaul: Implemented idle pulse nudges, contextual Home feed grouping (Fastest/Comfort/Top Rated), dynamic time-of-day theming (Late Night mode), shareable Taste Fingerprint summary, and the new Tinder-like 'Daily Crave' swiping mode for profile investment. | Status: completed. | Next: monitor engagement metrics for new features.
 - 2026-04-13 | Gemini | Design Hardening Pass: Unified auth branding with tokenized link variants (P2-16), finalized BiteCard accessibility semantics and gesture hints (P2-49), and completed full tokenization of remaining hardcoded shadows, z-index, and motion durations (P2-55–P2-57). | Status: completed. | Next: finalized all open UI tasks.
+- 2026-04-13 | Gemini/Codex | Sprint 2: Completed mass refactor for design system compliance. Added 10+ new palette, spacing, and radii tokens. Replaced 80+ instances of hardcoded #FFFFFF and borderRadius. Extracted brand colors to constants. Cleaned up inline font overrides. | Status: completed. | Next: move to Sprint 3 (Dead Feature Purge).
+- 2026-04-13 | Gemini | QA/QC Audit (Sprint 2 Completion). Verified 100% compliance for P2-55, P2-58–P2-61. Build is clean, tests passing, and all hardcoded styling hotspots identified in the audit have been tokenized. | Status: PASS. | Next: proceed to Sprint 3.
 - 2026-04-13 | Codex | Phase 2 + Phase 3 execution completed in requested order: closed `P1-20`, `P1-21`, `P1-43S`, `P1-44S`, plus targeted P2 cleanup across Profile, Reads, and Components (`P2-25`, `P2-31`, `P2-33`, `P2-35`–`P2-42`); `P1-17` and `P2-49` improved materially but remain partial. | Status: completed + verified (`typecheck`, `test`, `expo-doctor`). | Next: run explicit phase-end QA/QC checks and keep residual partial items scoped accurately.
 - 2026-04-13 | Codex + Reality Checker | Phase 2 QA/QC audit completed for P1 scope (`P1-17`, `P1-20`, `P1-21`, `P1-43S`, `P1-44S` + regression checks). Initial audit flagged checklist wording/ID ambiguity; reconciled in checklist; re-audit verdict PASS. | Status: completed. | Next: maintain disambiguated Splash ticket IDs and keep checklist claims tightly scoped to implemented behavior.
 - 2026-04-13 | Codex + Reality Checker | Phase 3 QA/QC audit completed for P2 scope (`P2-25`, `P2-31`, `P2-33`, `P2-35`–`P2-42`, `P2-49` + regression checks for P2-46/47/48). | Status: PASS (no functional findings in scope). | Next: optional runtime accessibility/device smoke for BiteCard and EditProfile permission edges.
@@ -780,6 +782,16 @@ These items affect perceived quality but do not break functionality.
 - 2026-04-13 | Codex | Final implementation/doc-cleanup mile closed: converted backlog structure to final-state closure format, renamed stale open-task section headings, and synchronized completion/progress wording for closed tasks. | Status: completed + verified. | Blockers: none. | Next: maintain this checklist as append-only closure evidence.
 - 2026-04-13 | Codex | Critical-path ownership confirmation: revalidated `P2-08` implementation and closure markers (store behavior + checklist row + closure checklist + prior verification entries) to ensure no open status remains. | Status: closed. | Blockers: none. | Next: none.
 - 2026-04-13 | Codex | Batch 2026-04-13G — closed the reopened 25-error typecheck blocker (`P0-18`) and `P2-61` by fixing module-scope token usage in `OnboardingIntroTemplate`, `DecideForMeCard`, `DishCard`, `StallCard`, `Screen`, plus invalid `spacing[0.5]` in `BiteCard`; verification rerun passed (`npm run typecheck`, `npm test -- --runInBand`). | Status: completed + verified. | Blockers: none. | Next: continue architecture/type-safety backlog (`P1-ARCH-07`, `P2-42`).
+- 2026-04-13 | Codex | Batch 2026-04-13H — completed `P2-42` by replacing all 8 remaining `useNavigation<any>()` callsites with typed `RootStackParamList` navigation props and correcting Discover map-tab routing to typed root-navigation form. Graph rebuild monitoring also confirmed process completion (PID 48963 exited). | Status: completed + verified (`grep useNavigation<any>` no matches, `npm run typecheck` green). | Blockers: none. | Next: continue `P1-ARCH-07` service-provider migration backlog.
+- 2026-04-13 | Codex | Batch 2026-04-13I — completed `P1-ARCH-07` batch-1 by migrating `DishDetailScreen` and `StallDetailScreen` off direct `mockRepository` imports to `getDataRepository()` access via serviceProvider. | Status: completed + verified (`npm run typecheck`, `npm test -- --runInBand`, and direct `mockRepository` grep on both files returned no matches). | Blockers: none for batch-1. | Next: proceed with batch-2 discover-screen migration scope.
+- 2026-04-13 | Codex | Batch 2026-04-13J — completed `P1-ARCH-07` batch-2 by migrating discover data access off direct `mockRepository` imports in `DecideForMeResultScreen`, `HomeMapScreen`, `CraveScreen`, `DiscoverHomeScreen`, and `BuildingDrillDownScreen`; `MapZoomedInScreen` required no migration changes (no direct import present). | Status: completed + verified (`grep mockRepository` no matches across batch-2 targets, `npm run typecheck`, `npm test -- --runInBand`). | Blockers: none for batch-2. | Next: proceed with batch-3 search/review migration scope.
+- 2026-04-13 | Codex | Batch 2026-04-13K — completed `P1-ARCH-07` batch-3 by migrating `SearchResultsScreen`, `ReviewHubScreen`, `ReviewRatingScreen`, and `ReviewComposeScreen` off direct `mockRepository` imports to `getDataRepository()` access. | Status: completed + verified (`grep mockRepository` no matches across batch-3 targets, `npm run typecheck`, `npm test -- --runInBand`). | Blockers: none for batch-3. | Next: proceed with batch-4 profile migration scope.
+- 2026-04-13 | Codex | Batch 2026-04-13L — completed `P1-ARCH-07` batch-4 by migrating `ProfileHomeScreen`, `FavouritesScreen`, and `ReviewHistoryScreen` off direct `mockRepository` imports to `getDataRepository()` access. | Status: completed + verified (`grep mockRepository` no matches across batch-4 targets, `npm run typecheck`, `npm test -- --runInBand`). | Blockers: none for batch-4. | Next: proceed with batch-5 remaining-screen migration scope.
+- 2026-04-13 | Codex | Batch 2026-04-13M — completed `P1-ARCH-07` batch-5 by migrating `PostComposerScreen`, `BlogPostWebViewScreen`, `FoodSelectionScreen`, `WheelResultModal`, and `WheelEntryAddSheet` off direct `mockRepository` imports to `getDataRepository()` access. | Status: completed + verified (`grep mockRepository` no matches across batch-5 targets, `npm run typecheck`, `npm test -- --runInBand`). | Blockers: none for batch-5. | Next: proceed with batch-6 dev/straggler cleanup.
+- 2026-04-13 | Codex | Batch 2026-04-13N — completed `P1-ARCH-07` batch-6 by migrating `DeveloperLauncherScreen` to `getDataRepository()` and clearing remaining non-dev stragglers (`ManualLocationPickerScreen`, `src/features/home/bites.ts`) from direct `mockRepository` imports. | Status: completed + verified (`grep -rn 'from.*mock/repositories' src/app/ src/features/` no non-test matches, `npm run typecheck`, `npm test -- --runInBand`). | Blockers: none for batch-6. | Next: continue open backlog items outside P1-ARCH-07.
+- 2026-04-13 | Codex | Batch 2026-04-13O — completed `P2-62` by wrapping `DeveloperLauncher` route registration behind `__DEV__` in `RootNavigator`, preserving dev startup behavior while omitting the route in production builds. | Status: completed + verified (`npm run typecheck`, `npm test -- --runInBand`, and route declaration now conditional: `{__DEV__ ? <RootStack.Screen ... /> : null}`). | Blockers: none for this scope. | Next: continue open Sprint-3 items pending Claude decisions (`P1-49/50/51/53`, `P2-63`).
+- 2026-04-13 | Codex | Batch 2026-04-13P — executed Sprint-3 Codex primary pass with minimal-risk defaults: feature-flagged DirectMessages entry points off by default, removed HomeFeed placeholder comments sheet, removed dead Crave info affordance, wired Profile "Recently saved" cards to DishDetail, and replaced hardcoded location/gamification strings with derived/profile-stats copy. | Status: completed + verified (`grep -rn 'Tanjong Pagar\|Level 12\|Foodie Scout\|14 nearby\|8 new stalls\|top 5%' src/` no matches, `npm run typecheck`, `npm test -- --runInBand`). | Blockers: remaining Claude-side recommendations are still open documentation tasks, but Codex execution scope is implemented. | Next: optional strict audit for non-functional Pressables across all screens to close the final Sprint-3 done gate.
+- 2026-04-13 | Codex | Batch 2026-04-13Q — closed the remaining Sprint-3 done gate by fixing non-semantic/missing-action Pressables (DirectMessages header/chat rows converted to non-interactive views, HomeMap CTA wired, BuildingDrillDown "VIEW ALL" wired, TasteQuiz decorative card wrapper converted to `View`), then re-audited all screen Pressables (`TOTAL=108`, `FAIL=0`). Also confirmed graph rebuild process completion (`pgrep -af "_rebuild_code(Path('.'))"` returned no active process). | Status: completed + verified (`npm run typecheck` green, parser-based Pressable audit clean, graph process clear). | Blockers: none. | Next: Sprint 3 Codex scope fully closed.
 - 2026-04-13 | Claude (Opus) | **State of the Union Audit.** Full codebase audit against architecture docs, design system, security checklist, and active backlog. Findings: (1) `typecheck` FAILS with 25 errors — backlog claims green are false; (2) 20/27 screens bypass `serviceProvider` — backend swap path broken; (3) 35+ hardcoded hex colors, 14+ hardcoded border radii, 20+ inline fontFamily violations; (4) DirectMessages/Comments/PostComposer are dead ends; (5) P2-42 useNavigation<any> not fully removed (8 remain); (6) No `expo-secure-store`, `DeveloperLauncher` route in prod stack. **Reopened:** P1-ARCH-07, P2-42, P2-55, P2-DC2. **Added:** P0-18, P1-49–53, P2-58–63. Report at `state_of_the_union.md`. | Status: audit complete, awaiting approval. | Blockers: P0-18 must be fixed before any further work. | Next: user review of audit findings, then execute priority fixes.
 
 ---
@@ -792,3 +804,7 @@ These items affect perceived quality but do not break functionality.
 - [x] `grep -RIn "zIndex[[:space:]]*:[[:space:]]*[0-9][0-9]*" src --include='*.ts' --include='*.tsx'` — 2026-04-13
 - [x] `grep -RIn "duration[[:space:]]*:[[:space:]]*[0-9][0-9]*\|withTiming(.*duration" src --include='*.ts' --include='*.tsx'` — 2026-04-13
 - [x] `grep -RIn "111827\|shadowColor[[:space:]]*:" src --include='*.ts' --include='*.tsx'` — 2026-04-13
+- [x] `grep -rn 'useNavigation<any>' src/` — 2026-04-13
+- [x] `grep -rn 'Tanjong Pagar\|Level 12\|Foodie Scout\|14 nearby\|8 new stalls\|top 5%' src/` — 2026-04-13
+- [x] parser-based `Pressable` semantic scan over `src/app/screens/**/*.tsx` (TOTAL=108, FAIL=0) — 2026-04-13
+- [x] `pgrep -af "_rebuild_code\(Path\('\.'\)\)"` returned no active process — 2026-04-13

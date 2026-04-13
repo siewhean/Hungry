@@ -15,7 +15,7 @@ import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 
 import { AppText, Badge, Card, Input } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
@@ -58,7 +58,8 @@ function VenueRow({
   matchScore?: number;
 }) {
   const { palette, spacing, radii } = useHungryTheme();
-  const dishes = mockRepository.listDishesByVenue(venue.id);
+  const repository = getDataRepository();
+  const dishes = repository.listDishesByVenue(venue.id);
   const hero = dishes[0];
   const isHighMatch = matchScore > 120;
 
@@ -99,8 +100,8 @@ function VenueRow({
           </View>
         )}
         {isHighMatch && (
-          <View style={{ position: "absolute", top: -6, left: -6, backgroundColor: palette.orange, borderRadius: 10, width: 20, height: 20, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: palette.surface }}>
-            <Sparkles size={10} color={palette.surface} />
+          <View style={{ position: "absolute", top: -6, left: -6, backgroundColor: palette.orange, borderRadius: radii.pill, width: 20, height: 20, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: palette.surface }}>
+            <Sparkles size={10} color={palette.textOnPrimary} />
           </View>
         )}
       </View>
@@ -127,6 +128,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   const entries = useWheelStore((s) => s.entries);
   const members = useWheelStore((s) => s.members);
   const profile = useProfileStore((s) => s.profile);
+  const repository = getDataRepository();
 
   // Group dietary summary
   const groupDietaryRestrictions = useMemo(() => {
@@ -142,7 +144,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   const addedVenueIds = new Set(entries.map((e) => e.venueId));
 
   function addVenue(venue: VenueSummary) {
-    const dishes = mockRepository.listDishesByVenue(venue.id);
+    const dishes = repository.listDishesByVenue(venue.id);
     const venueDish = dishes[0];
     
     // Conflict detection
@@ -183,9 +185,9 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
 
   function addRandom() {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const all = mockRepository
+    const all = repository
       .listBuildings()
-      .flatMap((b) => mockRepository.listVenuesByBuilding(b.id))
+      .flatMap((b) => repository.listVenuesByBuilding(b.id))
       .filter((v) => !addedVenueIds.has(v.id));
     if (all.length === 0) return;
     const pick = all[Math.floor(Math.random() * all.length)];
@@ -195,17 +197,17 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   // ── Venue list for search + category ─────────────────────────────────────
 
   const allVenues = useMemo(() => {
-    return mockRepository
+    return repository
       .listBuildings()
       .flatMap((b) =>
-        mockRepository.listVenuesByBuilding(b.id).map((v) => ({ 
+        repository.listVenuesByBuilding(b.id).map((v) => ({ 
           ...v, 
           buildingId: b.id,
-          matchScore: calculateMatchScore(mockRepository.listDishesByVenue(v.id)[0], profile.tasteVector)
+          matchScore: calculateMatchScore(repository.listDishesByVenue(v.id)[0], profile.tasteVector)
         }))
       )
       .sort((a, b) => b.matchScore - a.matchScore);
-  }, [profile.tasteVector]);
+  }, [profile.tasteVector, repository]);
 
   const searchResults = useMemo(() => 
     tab === "search" && query.trim()
@@ -217,23 +219,23 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   const categoryResults = useMemo(() => 
     tab === "category" && selectedCategory
       ? allVenues.filter((v) => {
-          const dishes = mockRepository.listDishesByVenue(v.id);
+          const dishes = repository.listDishesByVenue(v.id);
           return dishes.some((d) => d.tasteTags.includes(selectedCategory));
         })
       : [],
-    [allVenues, tab, selectedCategory]
+    [allVenues, tab, selectedCategory, repository]
   );
 
   const favouriteVenues = useMemo(() => 
     tab === "favourites" && profile
       ? profile.favouriteDishIds
-          .map((dishId) => mockRepository.getDishById(dishId))
+          .map((dishId) => repository.getDishById(dishId))
           .filter(Boolean)
           .map((dish) => allVenues.find((v) => v.id === dish!.venueId))
           .filter((v): v is (typeof allVenues)[0] & { matchScore: number } => v !== undefined)
           .filter((v, i, arr) => arr.findIndex((x) => x.id === v.id) === i)
       : [],
-    [allVenues, tab, profile]
+    [allVenues, tab, profile, repository]
   );
 
   const tabs: { id: Tab; label: string; icon: any }[] = [
@@ -257,8 +259,8 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
       <View
         style={{
           backgroundColor: palette.bg,
-          borderTopLeftRadius: 32,
-          borderTopRightRadius: 32,
+          borderTopLeftRadius: radii.xxl,
+          borderTopRightRadius: radii.xxl,
           height: "80%",
           ...shadows.floating,
         }}
@@ -308,7 +310,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 style={{
                   paddingHorizontal: spacing[4],
                   paddingVertical: spacing[2],
-                  borderRadius: 12,
+                  borderRadius: radii.md,
                   backgroundColor: tab === t.id ? palette.orangeLight : palette.bgSoft,
                   borderWidth: 1,
                   borderColor: tab === t.id ? palette.orange : palette.border,
@@ -440,7 +442,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                       <AppText
                         variant="bodySmall"
                         style={{
-                          color: selectedCategory === cat ? "#FFFFFF" : palette.text,
+                          color: selectedCategory === cat ? palette.textOnDark : palette.text,
                           textTransform: "capitalize",
                           fontWeight: selectedCategory === cat ? "700" : "500"
                         }}

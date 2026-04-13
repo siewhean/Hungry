@@ -5,7 +5,7 @@ import { Image } from "expo-image";
 import { Search, FileEdit, Clock } from "lucide-react-native";
 
 import { AppText, Badge, Card, EmptyState, Input, Screen } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
@@ -14,6 +14,7 @@ import type { ReviewStackParamList } from "./ReviewStack";
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewHub">;
 
 export function ReviewHubScreen({ navigation }: Props) {
+  const repository = getDataRepository();
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const rootNavigation = navigation.getParent()?.getParent();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -21,9 +22,9 @@ export function ReviewHubScreen({ navigation }: Props) {
   const selectDish = useReviewDraftStore((state) => state.selectDish);
   const draft = useReviewDraftStore((state) => state.draft);
   const [query, setQuery] = useState("");
-  const venues = mockRepository
+  const venues = repository
     .listBuildings()
-    .flatMap((building) => mockRepository.listVenuesByBuilding(building.id))
+    .flatMap((building) => repository.listVenuesByBuilding(building.id))
     .filter((venue) =>
       `${venue.name} ${venue.unitNumber}`.toLowerCase().includes(query.trim().toLowerCase()),
     );
@@ -114,7 +115,7 @@ export function ReviewHubScreen({ navigation }: Props) {
                     <AppText style={{ fontWeight: "700" }}>Resume Review</AppText>
                     <AppText variant="micro" tone="secondary">
                       {draft.selectedDishId
-                        ? mockRepository.getDishById(draft.selectedDishId)?.name
+                        ? repository.getDishById(draft.selectedDishId)?.name
                         : "Unnamed Dish"}{" "}
                       • Saved just now
                     </AppText>
@@ -134,7 +135,7 @@ export function ReviewHubScreen({ navigation }: Props) {
           </View>
         }
         renderItem={({ item }) => {
-          const dishes = mockRepository.listDishesByVenue(item.id);
+          const dishes = repository.listDishesByVenue(item.id);
           const leadDish = dishes[0];
           const handleCardPress = () => {
             if (!leadDish) {

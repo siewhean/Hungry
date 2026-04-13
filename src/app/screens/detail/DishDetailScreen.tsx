@@ -6,7 +6,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { Star } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -20,7 +20,8 @@ type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">;
 
 export function DishDetailScreen({ navigation, route }: Props) {
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
-  const dish = mockRepository.getDishById(route.params?.dishId ?? "");
+  const repository = getDataRepository();
+  const dish = repository.getDishById(route.params?.dishId ?? "");
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -31,7 +32,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const heroScrollX = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  const venue = useMemo(() => (dish ? mockRepository.getVenueById(dish.venueId) : undefined), [dish]);
+  const venue = useMemo(() => (dish ? repository.getVenueById(dish.venueId) : undefined), [dish, repository]);
   const tasteMatch = useMemo(() => (dish ? getTasteSimilarityWithDish(profile, dish) : 0), [profile, dish]);
   const gallery = useMemo(() => (dish ? buildDishGallery(dish) : []), [dish]);
 
@@ -98,8 +99,8 @@ export function DishDetailScreen({ navigation, route }: Props) {
             {/* Rating Pill - Floating in bottom-right of image */}
             <View style={{ position: "absolute", bottom: spacing[3], right: spacing[4] }}>
               <View style={[{ backgroundColor: palette.amber, borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 6, flexDirection: "row", alignItems: "center", gap: 4 }, shadows.floating]}>
-                <Star color="#FFFFFF" fill="#FFFFFF" size={14} />
-                <AppText style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 15 }}>{dish.rating.toFixed(1)}</AppText>
+                <Star color={palette.white} fill={palette.white} size={14} />
+                <AppText style={{ color: palette.white, fontWeight: "800", fontSize: 15 }}>{dish.rating.toFixed(1)}</AppText>
               </View>
             </View>
 
@@ -112,7 +113,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
                   ))}
                   <Animated.View
                     style={{
-                      backgroundColor: "#FFFFFF",
+                      backgroundColor: palette.white,
                       borderRadius: radii.pill,
                       height: indicatorDotSize,
                       left: 0,

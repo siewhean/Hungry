@@ -1,6 +1,7 @@
 import { Linking, Pressable, StyleSheet, View } from "react-native";
 import { ExternalLink } from "lucide-react-native";
 
+import { BRAND_COLORS } from "@/constants/brandColors";
 import type { DeliveryLink } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "../ui";
@@ -11,9 +12,9 @@ interface DeliveryPlatformButtonProps {
 }
 
 const platformMeta: Record<string, { label: string; color: string }> = {
-  grabfood: { label: "Order on GrabFood", color: "#00B14F" },
-  foodpanda: { label: "Order on Foodpanda", color: "#D70F64" },
-  deliveroo: { label: "Order on Deliveroo", color: "#00CCBC" },
+  grabfood: { label: "Order on GrabFood", color: BRAND_COLORS.grab },
+  foodpanda: { label: "Order on Foodpanda", color: BRAND_COLORS.foodpanda },
+  deliveroo: { label: "Order on Deliveroo", color: BRAND_COLORS.deliveroo },
 };
 
 export function DeliveryPlatformButton({ link, compact = false }: DeliveryPlatformButtonProps) {
@@ -53,7 +54,7 @@ export function DeliveryPlatformButton({ link, compact = false }: DeliveryPlatfo
         >
           {meta.label}
         </AppText>
-        <ExternalLink size={16} color={platformMeta[link.platform] ? "#FFFFFF" : palette.text} />
+        <ExternalLink size={16} color={platformMeta[link.platform] ? palette.white : palette.text} />
       </View>
     </Pressable>
   );

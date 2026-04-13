@@ -8,6 +8,12 @@ export const colors = {
     text: "#1A2E44",
     textSecondary: "#41566F",
     textMuted: "#6F7D8D",
+    white: "#FFFFFF",
+    textOnPrimary: "#FFFFFF",
+    textOnDark: "#FFFFFF",
+    statusFast: "#10B981",
+    statusModerate: "#F59E0B",
+    statusBusy: "#EF4444",
     border: "#E7DED4",
     orange: "#E8531E",
     orangeDark: "#CD0302",
@@ -38,6 +44,12 @@ export const colors = {
     text: "#F9FAFB",
     textSecondary: "#D1D5DB",
     textMuted: "#9CA3AF",
+    white: "#FFFFFF",
+    textOnPrimary: "#FFFFFF",
+    textOnDark: "#FFFFFF",
+    statusFast: "#10B981",
+    statusModerate: "#F59E0B",
+    statusBusy: "#EF4444",
     border: "#374151",
     orange: "#E8531E",
     orangeDark: "#F06A34",
@@ -62,8 +74,11 @@ export const colors = {
 } as const;
 
 export const spacing = {
+  0.5: 2,
   1: 4,
+  1.5: 6,
   2: 8,
+  2.5: 10,
   3: 12,
   4: 16,
   5: 20,
@@ -80,6 +95,7 @@ export const radii = {
   md: 12,
   lg: 18,
   xl: 24,
+  xxl: 32,
   pill: 999,
 } as const;
 

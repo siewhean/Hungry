@@ -5,7 +5,7 @@ import { View } from "react-native";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { PhotoPicker } from "@/components/review";
 import { AppText, Button, Card, InlineBanner, Input } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -17,6 +17,7 @@ import type { ReviewStackParamList } from "./ReviewStack";
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewCompose">;
 
 export function ReviewComposeScreen({ navigation }: Props) {
+  const repository = getDataRepository();
   const { spacing } = useHungryTheme();
   const rootNavigation = navigation.getParent()?.getParent();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -37,7 +38,7 @@ export function ReviewComposeScreen({ navigation }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const showReviewSuccess = useUIStore((state) => state.showReviewSuccess);
   const selectedDishId = useReviewDraftStore((state) => state.draft.selectedDishId);
-  const dish = useMemo(() => mockRepository.getDishById(selectedDishId ?? ""), [selectedDishId]);
+  const dish = useMemo(() => repository.getDishById(selectedDishId ?? ""), [repository, selectedDishId]);
 
   if (!dish) {
     return (
@@ -72,7 +73,7 @@ export function ReviewComposeScreen({ navigation }: Props) {
 
     const successPayload = {
       dishName: dish.name,
-      venueName: mockRepository.getVenueById(dish.venueId)?.name ?? "",
+      venueName: repository.getVenueById(dish.venueId)?.name ?? "",
       pointsEarned: 15 + draft.selectedTags.length * 4 + (draft.text.trim().length ? 10 : 0) + draft.photos.length * 5,
       xpEarned: 15 + draft.selectedTags.length * 4 + (draft.text.trim().length ? 10 : 0) + draft.photos.length * 5,
       tagCount: draft.selectedTags.length,
