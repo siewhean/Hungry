@@ -40,7 +40,7 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
                 style={{
                   width: 56,
                   height: 56,
-                  borderRadius: 28,
+                  borderRadius: radii.pill,
                   alignItems: "center",
                   justifyContent: "center",
                   backgroundColor: palette.successSoft,
@@ -48,7 +48,7 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
               >
                 <CheckCircle2 color={palette.success} size={28} />
               </View>
-              <View style={{ flex: 1, gap: 4 }}>
+              <View style={{ flex: 1, gap: spacing[1] }}>
                 <AppText variant="h3">Review posted</AppText>
                 <AppText tone="secondary">
                   {payload?.dishName ?? "Dish review"} · {payload?.venueName ?? "Nearby stall"}
@@ -61,7 +61,7 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
               style={{
                 width: 44,
                 height: 44,
-                borderRadius: 22,
+                borderRadius: radii.pill,
                 alignItems: "center",
                 justifyContent: "center",
                 backgroundColor: palette.bgMuted,

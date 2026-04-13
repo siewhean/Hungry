@@ -18,7 +18,6 @@ import {
 type Props = NativeStackScreenProps<OnboardingStackParamList, "LocationPermission">;
 
 const HERO_ILLUSTRATION = "https://www.figma.com/api/mcp/asset/c29e48d7-30d6-42f9-a46e-9d8c5419d602";
-const DESCRIPTION_COLOR = "#5A4139";
 
 const FEATURE_ROWS = [
   {
@@ -111,7 +110,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
             style={[
               shadows.floating,
               {
-                backgroundColor: "#08131E",
+                backgroundColor: palette.navy,
                 borderRadius: radii.lg,
                 height: 152,
                 maxWidth: 188,
@@ -148,7 +147,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
           <AppText variant="h2" style={{ textAlign: "center" }}>
             Discover the best bites{"\n"}around you.
           </AppText>
-          <AppText variant="bodySmall" style={{ color: DESCRIPTION_COLOR, textAlign: "center" }}>
+          <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
             Allowing location helps Hungry curate{"\n"}the perfect experience for your palate.
           </AppText>
         </View>
@@ -223,10 +222,10 @@ function FeatureCard({
         <Icon color={palette[iconTone]} size={20} />
       </View>
       <View style={{ flex: 1, gap: spacing[1] }}>
-        <AppText variant="body" style={{ fontFamily: "Nunito_700Bold" }}>
+        <AppText variant="bodyBold">
           {title}
         </AppText>
-        <AppText variant="micro" style={{ color: DESCRIPTION_COLOR }}>
+        <AppText variant="micro" tone="secondary">
           {description}
         </AppText>
       </View>

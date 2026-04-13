@@ -47,7 +47,36 @@ export function getDecideForMeDish() {
 }
 
 export function groupResultsByVenue(results: DishDetail[]) {
-  return results;
+  const repository = getDataRepository();
+  const grouped = new Map<string, DishDetail[]>();
+
+  for (const dish of results) {
+    const venueResults = grouped.get(dish.venueId) ?? [];
+    venueResults.push(dish);
+    grouped.set(dish.venueId, venueResults);
+  }
+
+  return Array.from(grouped.entries())
+    .map(([venueId, dishesByVenue]) => {
+      const venue = repository.getVenueById(venueId);
+      if (!venue) {
+        return undefined;
+      }
+
+      return {
+        venue,
+        dishes: dishesByVenue.sort((left, right) => right.rating - left.rating),
+        minDistanceMeters: Math.min(...dishesByVenue.map((dish) => dish.distanceMeters)),
+        bestRating: Math.max(...dishesByVenue.map((dish) => dish.rating)),
+      };
+    })
+    .filter((group): group is { venue: VenueSummary; dishes: DishDetail[]; minDistanceMeters: number; bestRating: number } => Boolean(group))
+    .sort((left, right) => {
+      if (left.minDistanceMeters !== right.minDistanceMeters) {
+        return left.minDistanceMeters - right.minDistanceMeters;
+      }
+      return right.bestRating - left.bestRating;
+    });
 }
 
 export interface DiscoverStallCollection {
@@ -61,27 +90,42 @@ export interface DiscoverStallCollection {
 export function getDiscoverStallCollections(profile: UserProfile, query: string) {
   const repository = getDataRepository();
   const normalizedQuery = query.trim().toLowerCase();
+  const posts = repository.listStallPosts();
+  const buildings = repository.listBuildings();
+  const seenVenues = new Set<string>();
+  const collections: Array<DiscoverStallCollection & { nearestDistanceMeters: number }> = [];
 
-  const collections = repository
-    .listVenuesByBuilding("building-maxwell")
-    .concat(repository.listVenuesByBuilding("building-lau-pa-sat"))
-    .concat(repository.listVenuesByBuilding("building-amoy"))
-    .map((venue) => {
-      const posts = repository.listStallPosts().filter((post) => post.venueId === venue.id);
+  for (const building of buildings) {
+    const venues = repository.listVenuesByBuilding(building.id);
+
+    for (const venue of venues) {
+      if (seenVenues.has(venue.id)) {
+        continue;
+      }
+      seenVenues.add(venue.id);
+
+      const venuePosts = posts.filter((post) => post.venueId === venue.id);
+      if (!venuePosts.length) {
+        continue;
+      }
+
       const topDishes = repository.listDishesByVenue(venue.id);
-      const building = repository.listBuildings().find((item) => item.id === venue.buildingId);
       const affinity =
         topDishes.length > 0 ? getSimilarityScore(topDishes[0].tasteVector, profile.tasteVector) : 0;
+      const nearestDistanceMeters = topDishes.length
+        ? Math.min(...topDishes.map((dish) => dish.distanceMeters))
+        : Number.MAX_SAFE_INTEGER;
 
-      return {
+      collections.push({
         venue,
-        location: building?.name ?? "Singapore",
-        posts,
+        location: building.name,
+        posts: venuePosts,
         topDishes,
         affinity,
-      } satisfies DiscoverStallCollection;
-    })
-    .filter((item) => item.posts.length > 0);
+        nearestDistanceMeters,
+      });
+    }
+  }
 
   return collections
     .filter((item) => {
@@ -92,5 +136,17 @@ export function getDiscoverStallCollections(profile: UserProfile, query: string)
       const haystack = `${item.venue.name} ${item.location} ${item.topDishes.map((dish) => dish.name).join(" ")}`.toLowerCase();
       return haystack.includes(normalizedQuery);
     })
-    .sort((left, right) => right.affinity - left.affinity);
+    .sort((left, right) => {
+      const leftProximityScore = Math.max(0, 1 - left.nearestDistanceMeters / 2500);
+      const rightProximityScore = Math.max(0, 1 - right.nearestDistanceMeters / 2500);
+      const leftScore = left.affinity * 0.7 + leftProximityScore * 0.3;
+      const rightScore = right.affinity * 0.7 + rightProximityScore * 0.3;
+
+      if (rightScore !== leftScore) {
+        return rightScore - leftScore;
+      }
+
+      return left.nearestDistanceMeters - right.nearestDistanceMeters;
+    })
+    .map(({ nearestDistanceMeters: _nearestDistanceMeters, ...collection }) => collection);
 }

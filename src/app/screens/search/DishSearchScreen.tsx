@@ -22,7 +22,7 @@ const SEARCH_CATEGORIES: SearchCategory[] = [
 
 export function DishSearchScreen() {
   const navigation = useNavigation<any>();
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { motion, palette, radii, spacing, shadows } = useHungryTheme();
   const { filters } = useSearchData();
   const profile = useProfileStore((state) => state.profile);
   const updateQuery = useSearchStore((state) => state.updateQuery);
@@ -37,18 +37,18 @@ export function DishSearchScreen() {
       Animated.parallel([
         Animated.timing(entryY, {
           toValue: 0,
-          duration: 260,
+          duration: motion.screenTransition,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(entryOpacity, {
           toValue: 1,
-          duration: 220,
+          duration: motion.screenTransition,
           easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
       ]).start();
-  }, [entryOpacity, entryY]);
+  }, [entryOpacity, entryY, motion.screenTransition]);
 
   return (
     <Screen>
@@ -129,7 +129,7 @@ export function DishSearchScreen() {
           ]}
         >
           <View style={{ flexDirection: "row", gap: spacing[4], padding: spacing[4] }}>
-            <View style={{ flex: 1, gap: 2 }}>
+          <View style={{ flex: 1, gap: spacing[1] }}>
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>SUGGESTED FOR TONIGHT</AppText>
               <AppText variant="h2" style={{ marginTop: spacing[1] }}>
                 Craving {collections[0]?.topDishes[0]?.name ?? "something special"}?
@@ -137,7 +137,7 @@ export function DishSearchScreen() {
               <AppText variant="bodySmall" tone="secondary" style={{ marginTop: spacing[1] }}>
                 Best match within 2km. Start strong, widen later if needed.
               </AppText>
-              <View style={{ alignSelf: "flex-start", marginTop: spacing[3], backgroundColor: palette.orangeLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radii.pill }}>
+              <View style={{ alignSelf: "flex-start", marginTop: spacing[3], backgroundColor: palette.orangeLight, paddingHorizontal: spacing[3], paddingVertical: spacing[2], borderRadius: radii.pill }}>
                 <AppText variant="micro" style={{ color: palette.orange, fontWeight: "700" }}>BROWSE DISH</AppText>
               </View>
             </View>

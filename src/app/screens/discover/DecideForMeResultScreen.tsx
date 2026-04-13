@@ -26,12 +26,12 @@ function TasteMiniBar({
   dishVal: number;
   accentColor: string;
 }) {
-  const { palette, radii } = useHungryTheme();
+  const { palette, radii, spacing } = useHungryTheme();
   const diff = Math.abs(userVal - dishVal);
   const match = Math.round((1 - diff / 10) * 100);
 
   return (
-    <View style={{ flex: 1, gap: 4, minWidth: "30%" }}>
+    <View style={{ flex: 1, gap: spacing[1], minWidth: "30%" }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
         <AppText variant="micro">{label}</AppText>
         <AppText variant="micro" tone="muted">
@@ -60,7 +60,7 @@ function TasteMiniBar({
 }
 
 function AnimatedMatchBadge({ percent }: { percent: number }) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { palette, radii, spacing, motion } = useHungryTheme();
   const counter = useRef(new Animated.Value(0)).current;
   const [displayValue, setDisplayValue] = useState(0);
 
@@ -72,7 +72,7 @@ function AnimatedMatchBadge({ percent }: { percent: number }) {
 
     Animated.timing(counter, {
       toValue: percent,
-      duration: 1000,
+      duration: motion.decideForMeCounter,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
@@ -80,7 +80,7 @@ function AnimatedMatchBadge({ percent }: { percent: number }) {
     return () => {
       counter.removeListener(listenerId);
     };
-  }, [counter, percent]);
+  }, [counter, motion.decideForMeCounter, percent]);
 
   return (
     <View

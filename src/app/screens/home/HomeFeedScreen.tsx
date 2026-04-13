@@ -2,15 +2,15 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, FlatList, Pressable, ScrollView, Share, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
-import { Bookmark, Compass, Heart, MessageCircle, MoreHorizontal, PlayCircle, Send, User, Utensils, MapPin } from "lucide-react-native";
+import { Bookmark, Compass, Heart, MessageCircle, MoreHorizontal, PlayCircle, Send, User, Utensils, MapPin, Star } from "lucide-react-native";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
-import { AppText, Button, EmptyState, Skeleton } from "@/components/ui";
+import { AppText, Button, FeedErrorBoundary, FeedStateView, Skeleton } from "@/components/ui";
 import { BitesCarousel } from "@/components/social";
-import { getHomeFeed, type HomeFeedItem } from "@/features/home/feed";
+import { getHomeFeed, type HomeFeedItem, type HomeFeedSection } from "@/features/home/feed";
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -19,23 +19,13 @@ import { useHungryTheme } from "@/theme";
 
 function FeedSkeleton() {
   const { spacing, radii, palette } = useHungryTheme();
-  const { width } = useWindowDimensions();
-  const imageHeight = width / (4 / 5);
-
   return (
-    <View style={{ gap: spacing[4], backgroundColor: palette.bg, marginBottom: spacing[8] }}>
-      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: spacing[4], gap: spacing[3] }}>
-        <Skeleton width={40} height={40} borderRadius={20} />
-        <View style={{ gap: spacing[1], flex: 1 }}>
-          <Skeleton width="40%" height={14} />
-          <Skeleton width="30%" height={12} />
-        </View>
-      </View>
-      <Skeleton height={imageHeight} borderRadius={0} />
-      <View style={{ paddingHorizontal: spacing[4], gap: spacing[3] }}>
-        <Skeleton width="70%" height={14} />
-        <Skeleton width="50%" height={12} />
-      </View>
+    <View style={{ gap: spacing[6], padding: spacing[4] }}>
+      <Skeleton width="60%" height={24} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[4] }}>
+        <Skeleton width={280} height={200} borderRadius={radii.lg} />
+        <Skeleton width={280} height={200} borderRadius={radii.lg} />
+      </ScrollView>
     </View>
   );
 }
@@ -52,15 +42,11 @@ type InteractionState = {
 export function HomeFeedScreen() {
   const navigation = useNavigation<any>();
   const { width: screenWidth } = useWindowDimensions();
-  const { palette, spacing, radii } = useHungryTheme();
+  const { palette, spacing, radii, shadows } = useHungryTheme();
   const insets = useSafeAreaInsets();
-  const leftHandedMode = useProfileStore((state) => state.profile.leftHandedMode ?? false);
   const profile = useProfileStore((state) => state.profile);
-  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
-  const [feed, setFeed] = useState<HomeFeedItem[]>([]);
-  const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
+  const [sections, setSections] = useState<HomeFeedSection[]>([]);
 
   const [interactionByPostId, setInteractionByPostId] = useState<Record<string, InteractionState>>({});
 
@@ -68,7 +54,7 @@ export function HomeFeedScreen() {
     setFeedState("loading");
     try {
       const data = await getHomeFeed(profile);
-      setFeed(data);
+      setSections(data);
       setFeedState("ready");
     } catch {
       setFeedState("error");
@@ -79,11 +65,11 @@ export function HomeFeedScreen() {
     void loadFeed();
   }, [loadFeed]);
 
-  const toggleLike = (postId: string) => {
+  const toggleLike = useCallback((postId: string) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setInteractionByPostId((prev) => {
       const current = prev[postId] ?? {
-        liked: false, saved: false, likeCount: 0, saveCount: 0, shareCount: 0, commentCount: 0,
+        liked: false, saved: false, likeCount: 12, saveCount: 4, shareCount: 2, commentCount: 3,
       };
       const isLiked = !current.liked;
       return {
@@ -91,9 +77,9 @@ export function HomeFeedScreen() {
         [postId]: { ...current, liked: isLiked, likeCount: isLiked ? current.likeCount + 1 : Math.max(0, current.likeCount - 1) },
       };
     });
-  };
+  }, []);
 
-  const toggleSave = (postId: string) => {
+  const toggleSave = useCallback((postId: string) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setInteractionByPostId((prev) => {
       const current = prev[postId] ?? {
@@ -104,7 +90,7 @@ export function HomeFeedScreen() {
         [postId]: { ...current, saved: !current.saved },
       };
     });
-  };
+  }, []);
 
   const openComments = useCallback((item: HomeFeedItem) => {
     commentsSheetRef.current?.present();
@@ -117,10 +103,6 @@ export function HomeFeedScreen() {
     [],
   );
 
-  const navigateToStall = useCallback((venueId: string) => {
-    navigation.navigate("StallDetail", { venueId });
-  }, [navigation]);
-
   const navigateToDish = useCallback((dishId: string) => {
     navigation.navigate("DishDetail", { dishId });
   }, [navigation]);
@@ -132,185 +114,188 @@ export function HomeFeedScreen() {
     return "Suggested for dinner";
   }, [profile.displayName]);
 
+  const themeTints = useMemo(() => {
+    const hour = new Date().getHours();
+    const isLateNight = hour >= 22 || hour < 4;
+    return {
+      bg: isLateNight ? palette.navy : palette.bg,
+      text: isLateNight ? "#FFFFFF" : palette.text, // Kept white for dark mode contrast
+      cardBg: isLateNight ? "rgba(255,255,255,0.05)" : palette.surface,
+      secondaryText: isLateNight ? "rgba(255,255,255,0.6)" : palette.textSecondary,
+      isLateNight,
+    };
+  }, [palette]);
+
   const renderHeader = useCallback(() => {
     return (
-      <View style={{ gap: spacing[6], paddingBottom: spacing[4] }}>
+      <View style={{ gap: spacing[6], paddingBottom: spacing[4], paddingTop: spacing[2] }}>
         <View style={{ paddingHorizontal: spacing[4], paddingBottom: spacing[2], flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <View>
-            <AppText style={{ fontSize: 24, fontWeight: "900", color: palette.orange }}>{getGreeting()}</AppText>
-            <AppText variant="bodySmall" tone="secondary">Tanjong Pagar · 14 nearby</AppText>
+            <AppText style={{ fontSize: 24, fontWeight: "900", color: themeTints.isLateNight ? "#FFFFFF" : palette.orange }}>{getGreeting()}</AppText>
+            <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>Tanjong Pagar · 14 nearby</AppText>
           </View>
           <Pressable 
             onPress={() => navigation.navigate("DirectMessages")}
-            style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}
+            style={{ width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}
           >
             <Send color={palette.orange} size={24} />
           </Pressable>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[4] }}>
-          {feed.slice(0, 5).map((item) => (
-            <Pressable key={`story-${item.id}`} style={{ alignItems: "center", gap: spacing[1] }}>
-              <View style={{ width: 68, height: 68, borderRadius: 34, borderWidth: 2, borderColor: palette.orange, padding: 2 }}>
-                <Image source={{ uri: item.authorAvatarUrl }} style={{ width: "100%", height: "100%", borderRadius: 30 }} contentFit="cover" />
-              </View>
-              <AppText variant="micro" numberOfLines={1} style={{ width: 68, textAlign: "center" }}>{item.authorName.split(" ")[0]}</AppText>
-            </Pressable>
-          ))}
-        </ScrollView>
+        <BitesCarousel />
       </View>
     );
-  }, [feed, palette, spacing, navigation, getGreeting]);
-
-  const renderItem = useCallback(
-    ({ item }: { item: HomeFeedItem }) => {
-      const interaction = interactionByPostId[item.id] ?? {
-        liked: false, saved: false, likeCount: 12, saveCount: 4, shareCount: 2, commentCount: 3,
-      };
-      const isLiked = interaction.liked;
-      const isSaved = interaction.saved;
-
-      const imageAspectRatio = 4 / 5;
-      const imageHeight = screenWidth / imageAspectRatio;
-
-      return (
-        <View style={{ marginBottom: spacing[8], backgroundColor: palette.bg }}>
-          {/* Top Bar: Author & Location */}
-          <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: spacing[4], paddingVertical: spacing[3], gap: spacing[3] }}>
-            <Image source={{ uri: item.authorAvatarUrl }} style={{ width: 40, height: 40, borderRadius: 20 }} />
-            <View style={{ flex: 1 }}>
-              <AppText style={{ fontFamily: "Nunito_700Bold", fontSize: 16 }}>{item.authorName}</AppText>
-              <AppText style={{ fontSize: 12, color: palette.textSecondary }}>{item.authorLocation}</AppText>
-            </View>
-            <MoreHorizontal color={palette.textMuted} size={20} />
-          </View>
-
-          {/* Media */}
-          <Pressable onPress={() => navigateToDish(item.dishIds[0])}>
-            <Image source={{ uri: item.mediaUrl }} style={{ width: screenWidth, height: imageHeight }} contentFit="cover" />
-          </Pressable>
-
-          {/* Interaction Bar */}
-          <View
-            style={{
-              flexDirection: leftHandedMode ? "row-reverse" : "row",
-              alignItems: "center",
-              paddingHorizontal: spacing[4],
-              paddingVertical: spacing[3],
-              justifyContent: "space-between",
-            }}
-          >
-            {/* Left side: Location with Icon */}
-            <Pressable 
-              onPress={() => navigation.navigate("MapZoomedIn", { buildingId: item.venue.buildingId })}
-              style={{ flexDirection: "row", alignItems: "center", flex: 1, marginRight: spacing[3] }}
-            >
-              <MapPin color={palette.orange} size={16} style={{ marginRight: 4 }} />
-              <AppText style={{ fontFamily: "Nunito_700Bold", color: palette.text, fontSize: 15 }} numberOfLines={1}>
-                {item.venue.buildingId.replace("hc-", "").replace("fc-", "").replace("building-", "").replace("-", " ").toUpperCase()}
-              </AppText>
-            </Pressable>
-
-            {/* Right side: Interaction Icons */}
-            <View style={{ flexDirection: leftHandedMode ? "row-reverse" : "row", alignItems: "center", gap: spacing[4], flexShrink: 0 }}>
-              <View style={{ alignItems: "center" }}>
-                <Pressable onPress={() => toggleSave(item.id)}>
-                  <Bookmark color={isSaved ? palette.orange : palette.text} fill={isSaved ? palette.orange : "transparent"} size={24} />
-                </Pressable>
-                <AppText variant="micro" tone="secondary" style={{ marginTop: 2 }}>{interaction.saveCount}</AppText>
-              </View>
-              <View style={{ alignItems: "center" }}>
-                <Pressable onPress={() => openComments(item)}>
-                  <MessageCircle color={palette.text} size={24} />
-                </Pressable>
-                <AppText variant="micro" tone="secondary" style={{ marginTop: 2 }}>{interaction.commentCount}</AppText>
-              </View>
-              <View style={{ alignItems: "center" }}>
-                <Pressable onPress={() => toggleLike(item.id)}>
-                  <Heart color={isLiked ? palette.error : palette.text} fill={isLiked ? palette.error : "transparent"} size={24} />
-                </Pressable>
-                <AppText variant="micro" tone="secondary" style={{ marginTop: 2 }}>{interaction.likeCount}</AppText>
-              </View>
-            </View>
-          </View>
-
-          {/* Caption & Metadata */}
-          <View style={{ paddingHorizontal: spacing[4], gap: spacing[1] }}>
-            <AppText style={{ lineHeight: 22, fontSize: 15 }}>
-              <AppText style={{ fontFamily: "Nunito_700Bold", fontSize: 15 }}>{item.authorName} </AppText>
-              <AppText style={{ fontSize: 15 }}>{item.caption}</AppText>
-            </AppText>
-            <AppText variant="micro" tone="muted">{item.createdAt}</AppText>
-          </View>
-        </View>
-      );
-    },
-    [interactionByPostId, leftHandedMode, navigateToDish, palette, screenWidth, spacing, navigation, openComments, toggleLike, toggleSave],
-  );
+  }, [palette, spacing, navigation, getGreeting, themeTints, radii]);
 
   const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
 
+  const renderFeedCard = useCallback((item: HomeFeedItem) => {
+    const interaction = interactionByPostId[item.id] ?? {
+      liked: false, saved: false, likeCount: 12, saveCount: 4, shareCount: 2, commentCount: 3,
+    };
+    const isLiked = interaction.liked;
+    const isSaved = interaction.saved;
+
+    return (
+      <Pressable 
+        key={item.id}
+        onPress={() => navigateToDish(item.dishIds[0])}
+        style={[
+          shadows.card,
+          { 
+            backgroundColor: themeTints.cardBg, 
+            borderRadius: radii.lg, 
+            width: 300, 
+            overflow: "hidden",
+            borderWidth: themeTints.isLateNight ? 0 : 1,
+            borderColor: palette.border,
+          }
+        ]}
+      >
+        <Image source={{ uri: item.mediaUrl }} style={{ width: "100%", height: 180 }} contentFit="cover" />
+        
+        {/* Interaction Overlay */}
+        <View style={{ position: "absolute", top: spacing[3], right: spacing[3], gap: spacing[2] }}>
+          <Pressable 
+            onPress={() => toggleLike(item.id)}
+            style={{ width: 36, height: 36, borderRadius: radii.pill, backgroundColor: themeTints.isLateNight ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", alignItems: "center", justifyContent: "center" }}
+          >
+            <Heart color={isLiked ? palette.error : (themeTints.isLateNight ? "#FFFFFF" : palette.text)} fill={isLiked ? palette.error : "transparent"} size={18} />
+          </Pressable>
+          <Pressable 
+            onPress={() => toggleSave(item.id)}
+            style={{ width: 36, height: 36, borderRadius: radii.pill, backgroundColor: themeTints.isLateNight ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.9)", alignItems: "center", justifyContent: "center" }}
+          >
+            <Bookmark color={isSaved ? palette.orange : (themeTints.isLateNight ? "#FFFFFF" : palette.text)} fill={isSaved ? palette.orange : "transparent"} size={18} />
+          </Pressable>
+        </View>
+
+        <View style={{ padding: spacing[3], gap: spacing[1] }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <AppText style={{ fontWeight: "800", fontSize: 16, flex: 1, color: themeTints.text }} numberOfLines={1}>{item.dishes[0]?.name ?? item.caption}</AppText>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+              <Star color={palette.amber} fill={palette.amber} size={14} />
+              <AppText style={{ fontWeight: "700", fontSize: 14, color: themeTints.text }}>{(item.dishes[0]?.rating ?? 4.5).toFixed(1)}</AppText>
+            </View>
+          </View>
+          <AppText variant="micro" style={{ color: themeTints.secondaryText }} numberOfLines={1}>{item.authorName} · {item.authorLocation}</AppText>
+          
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginTop: spacing[2] }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1], backgroundColor: themeTints.isLateNight ? "rgba(255,255,255,0.1)" : palette.bgSoft, paddingHorizontal: spacing[2], paddingVertical: spacing[1], borderRadius: radii.sm }}>
+              <MessageCircle color={themeTints.secondaryText} size={12} />
+              <AppText variant="micro" style={{ color: themeTints.secondaryText }}>{interaction.commentCount}</AppText>
+            </View>
+            {item.dishes[0]?.price && (
+              <AppText variant="price" style={{ color: palette.orange, fontSize: 14 }}>S${item.dishes[0].price.toFixed(2)}</AppText>
+            )}
+          </View>
+        </View>
+      </Pressable>
+    );
+  }, [interactionByPostId, navigateToDish, shadows.card, themeTints, radii, palette.border, palette.error, palette.text, palette.orange, palette.amber, palette.bgSoft, spacing, toggleLike, toggleSave]);
+
   if (feedState === "loading") {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top", "left", "right"]}>
-        <ScrollView scrollEnabled={false}>
-          <FeedSkeleton />
-          <FeedSkeleton />
-        </ScrollView>
+      <SafeAreaView style={{ flex: 1, backgroundColor: themeTints.bg }} edges={["top", "left", "right"]}>
+        <FeedErrorBoundary onRetry={() => { void loadFeed(); }}>
+          <ScrollView scrollEnabled={false}>
+            {renderHeader()}
+            <FeedSkeleton />
+            <FeedSkeleton />
+          </ScrollView>
+        </FeedErrorBoundary>
       </SafeAreaView>
     );
   }
 
   if (feedState === "error") {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top", "left", "right"]}>
-        <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: spacing[5] }}>
-          <EmptyState 
-            title="Something went wrong" 
-            body="We couldn't load your feed right now. Please check your connection and try again." 
-            ctaLabel="Retry" 
-            onPress={loadFeed} 
+      <SafeAreaView style={{ flex: 1, backgroundColor: themeTints.bg }} edges={["top", "left", "right"]}>
+        <FeedErrorBoundary onRetry={() => { void loadFeed(); }}>
+          <FeedStateView
+            state="error"
+            title="Something went wrong"
+            body="We couldn't load your feed right now. Please check your connection and try again."
+            ctaLabel="Retry"
+            onPress={loadFeed}
           />
-        </View>
+        </FeedErrorBoundary>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top", "left", "right"]}>
-      <Animated.FlatList
-        data={feed}
-        keyExtractor={(item: HomeFeedItem) => item.id}
-        renderItem={renderItem}
-        ListHeaderComponent={renderHeader}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing[24] }}
-        onScroll={onScroll}
-        scrollEventThrottle={scrollEventThrottle}
-        removeClippedSubviews
-        maxToRenderPerBatch={3}
-        initialNumToRender={2}
-        windowSize={5}
-        ListEmptyComponent={
-          <EmptyState
-            title="Feed is taking a break"
-            body="We're still gathering the latest food stories for you. Check back shortly for new recommendations near you!"
-          />
-        }
-      />
-
-      <BottomSheetModal
-        ref={commentsSheetRef}
-        index={0}
-        snapPoints={commentSnapPoints}
-        backdropComponent={renderCommentBackdrop}
-        backgroundStyle={{ backgroundColor: palette.surface }}
-        handleIndicatorStyle={{ backgroundColor: palette.border }}
+    <SafeAreaView style={{ flex: 1, backgroundColor: themeTints.bg }} edges={["top", "left", "right"]}>
+      <FeedErrorBoundary
+        onRetry={() => { void loadFeed(); }}
+        title="Feed temporarily unavailable"
+        body="A display issue occurred while rendering this feed. Please retry."
       >
-        <BottomSheetScrollView contentContainerStyle={{ padding: spacing[5], gap: spacing[4] }}>
-          <AppText variant="h2">Comments</AppText>
-          <AppText tone="secondary">Community discussions coming soon.</AppText>
-        </BottomSheetScrollView>
-      </BottomSheetModal>
+        <Animated.ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: insets.bottom + spacing[24] }}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+        >
+          {renderHeader()}
+
+          {sections.map((section) => (
+            <View key={section.title} style={{ marginBottom: spacing[4] }}>
+              <View style={{ paddingHorizontal: spacing[4], paddingVertical: spacing[3] }}>
+                <AppText variant="h2" style={{ color: themeTints.text }}>{section.title}</AppText>
+              </View>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false} 
+                contentContainerStyle={{ gap: spacing[4], paddingHorizontal: spacing[4], paddingBottom: spacing[2] }}
+              >
+                {section.items.map((item) => renderFeedCard(item))}
+              </ScrollView>
+            </View>
+          ))}
+
+          {sections.length === 0 && (
+            <FeedStateView
+              state="empty"
+              title="Feed is taking a break"
+              body="We're still gathering the latest food stories for you. Check back shortly for new recommendations near you!"
+            />
+          )}
+        </Animated.ScrollView>
+
+        <BottomSheetModal
+          ref={commentsSheetRef}
+          index={0}
+          snapPoints={commentSnapPoints}
+          backdropComponent={renderCommentBackdrop}
+          backgroundStyle={{ backgroundColor: palette.surface }}
+          handleIndicatorStyle={{ backgroundColor: palette.border }}
+        >
+          <BottomSheetScrollView contentContainerStyle={{ padding: spacing[5], gap: spacing[4] }}>
+            <AppText variant="h2">Comments</AppText>
+            <AppText tone="secondary">Community discussions coming soon.</AppText>
+          </BottomSheetScrollView>
+        </BottomSheetModal>
+      </FeedErrorBoundary>
     </SafeAreaView>
   );
 }

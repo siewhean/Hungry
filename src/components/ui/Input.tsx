@@ -68,7 +68,7 @@ export function Input({ label, helperText, errorText, error, leftIcon, rightIcon
 
 const styles = StyleSheet.create({
   container: {
-    gap: 4,
+    gap: 4, // Intional small gap for label proximity
   },
   field: {
     alignItems: "center",

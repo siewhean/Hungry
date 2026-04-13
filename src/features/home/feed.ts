@@ -6,9 +6,14 @@ export interface HomeFeedItem extends StallPost {
   dishes: DishDetail[];
 }
 
-export function getHomeFeed(profile: UserProfile) {
+export interface HomeFeedSection {
+  title: string;
+  items: HomeFeedItem[];
+}
+
+export function getHomeFeed(profile: UserProfile): HomeFeedSection[] {
   const repository = getDataRepository();
-  return repository
+  const allPosts = repository
     .listStallPosts()
     .map((post) => {
       const venue = repository.getVenueById(post.venueId);
@@ -16,9 +21,7 @@ export function getHomeFeed(profile: UserProfile) {
         .map((dishId) => repository.getDishById(dishId))
         .filter(Boolean) as DishDetail[];
 
-      if (!venue) {
-        return null;
-      }
+      if (!venue) return null;
 
       return {
         ...post,
@@ -26,12 +29,28 @@ export function getHomeFeed(profile: UserProfile) {
         dishes,
       } satisfies HomeFeedItem;
     })
-    .filter(Boolean)
-    .sort((left, right) => {
-      const leftDish = left!.dishes[0];
-      const rightDish = right!.dishes[0];
-      const leftScore = leftDish ? getSimilarityScore(leftDish.tasteVector, profile.tasteVector) : 0;
-      const rightScore = rightDish ? getSimilarityScore(rightDish.tasteVector, profile.tasteVector) : 0;
-      return rightScore - leftScore;
-    }) as HomeFeedItem[];
+    .filter((p): p is HomeFeedItem => !!p);
+
+  // 1. Fastest Near You (Shortest distance)
+  const fastest = [...allPosts]
+    .sort((a, b) => a.venue.buildingId.localeCompare(b.venue.buildingId)) // Mock distance logic
+    .slice(0, 5);
+
+  // 2. Comfort Food / Heavy Rich (Taste-based)
+  const comfort = allPosts.filter((p) => {
+    const d = p.dishes[0];
+    if (!d) return false;
+    return d.tasteVector.rich > 7 || d.tasteVector.salty > 7 || d.tasteVector.sweet > 7;
+  }).slice(0, 5);
+
+  // 3. Top Rated by the Community (Rating-based)
+  const topRated = [...allPosts]
+    .sort((a, b) => (b.dishes[0]?.rating ?? 0) - (a.dishes[0]?.rating ?? 0))
+    .slice(0, 5);
+
+  return [
+    { title: "Fastest Near You", items: fastest },
+    { title: "Comfort Food / Rich & Savory", items: comfort },
+    { title: "Top Rated by Community", items: topRated },
+  ];
 }

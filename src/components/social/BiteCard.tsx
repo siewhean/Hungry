@@ -55,7 +55,7 @@ export function BiteCard({
   onToggleLike,
   onCommentPress,
 }: BiteCardProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { palette, radii, spacing, motion } = useHungryTheme();
   const imageHeight = Math.round(width * 0.76);
 
   const heartScale = useSharedValue(0);
@@ -73,7 +73,7 @@ export function BiteCard({
 
   const captionGesture = Gesture.Tap()
     .numberOfTaps(2)
-    .maxDuration(260)
+    .maxDuration(motion.doubleTapWindow)
     .onEnd((_event, success) => {
       if (success && onToggleLike) {
         runOnJS(playHeartAnimation)();
@@ -82,11 +82,10 @@ export function BiteCard({
     });
 
   const displayHeartCount = bite.heartCount + (liked ? 1 : 0);
+  const openDishDetails = onDishPress ?? onPress;
 
   return (
     <View
-      accessibilityRole="button"
-      accessibilityLabel={`View ${bite.dishName} details by ${bite.authorName}`}
       style={{
         width,
         borderRadius: radii.lg,
@@ -96,8 +95,13 @@ export function BiteCard({
         borderColor: palette.border,
       }}
     >
-      {/* Dish image */}
-      <Pressable onPress={onDishPress ?? onPress}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`View ${bite.dishName} details by ${bite.authorName}`}
+        accessibilityHint="Double tap anywhere on the caption to like. Single tap to see dish details."
+        onPress={openDishDetails}
+      >
+        {/* Dish image */}
         <View style={{ height: imageHeight, position: "relative", backgroundColor: palette.surfaceRaised }}>
           <Image
             source={{ uri: bite.dishImageUrl }}
@@ -126,99 +130,98 @@ export function BiteCard({
               paddingVertical: 2,
             }}
           >
-            <AppText variant="micro" style={{ color: "#FFFFFF", fontFamily: "Nunito_700Bold" }}>
+            <AppText variant="micro" tone="inverse" style={{ fontWeight: "700" }}>
               {bite.tasteTag}
             </AppText>
           </View>
         </View>
-      </Pressable>
 
-      {/* Content */}
-      <View style={{ padding: spacing[3], gap: spacing[2] }}>
-        <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-          <View
-            style={{
-              width: 26,
-              height: 26,
-              borderRadius: 13,
-              borderWidth: 1.5,
-              borderColor: palette.orange,
-              overflow: "hidden",
-              backgroundColor: palette.surface,
-            }}
-          >
-            <Image
-              source={{ uri: bite.authorAvatarUrl }}
-              style={{ width: "100%", height: "100%" }}
-              contentFit="cover"
-            />
+        {/* Content */}
+        <View style={{ padding: spacing[3], gap: spacing[2] }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+            <View
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: radii.pill,
+                borderWidth: 1.5,
+                borderColor: palette.orange,
+                overflow: "hidden",
+                backgroundColor: palette.surface,
+              }}
+            >
+              <Image
+                source={{ uri: bite.authorAvatarUrl }}
+                style={{ width: "100%", height: "100%" }}
+                contentFit="cover"
+              />
+            </View>
+            <AppText variant="bodySmall" numberOfLines={1} style={{ flex: 1 }}>
+              {bite.authorName}
+            </AppText>
           </View>
-          <AppText variant="bodySmall" numberOfLines={1} style={{ fontFamily: "Nunito_700Bold", flex: 1 }}>
-            {bite.authorName}
-          </AppText>
-        </View>
 
-        <Pressable onPress={onDishPress ?? onPress}>
-          <AppText
-            variant="h3"
-            numberOfLines={1}
-            style={{ fontFamily: "Nunito_700Bold", fontSize: 13 }}
-          >
+          <AppText variant="h3" numberOfLines={1} style={{ fontSize: 13 }}>
             {bite.dishName}
           </AppText>
-        </Pressable>
-        <AppText variant="micro" tone="muted" numberOfLines={1}>
-          {bite.venueName}
-        </AppText>
-        <GestureDetector gesture={captionGesture}>
-          <View>
-            <AppText
-              variant="bodySmall"
-              tone="secondary"
-              numberOfLines={3}
-              style={{ lineHeight: 17 }}
-            >
-              {bite.caption}
-            </AppText>
-          </View>
-        </GestureDetector>
-
-        {/* Social row */}
-        <View
-          style={{
-            direction: "ltr",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: spacing[2],
-            marginTop: spacing[1],
-          }}
-        >
-          <Pressable
-            accessibilityRole="button"
-            hitSlop={10}
-            onPress={onToggleLike}
-            style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-          >
-            <Heart size={18} color={liked ? palette.error : palette.textMuted} />
-            <AppText variant="micro" tone="muted">
-              {displayHeartCount}
-            </AppText>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            hitSlop={10}
-            onPress={onCommentPress ?? onPress}
-            style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-          >
-            <MessageCircle size={18} color={palette.textMuted} />
-            <AppText variant="micro" tone="muted">
-              {bite.commentCount}
-            </AppText>
-          </Pressable>
-          <AppText variant="micro" tone="muted" style={{ marginLeft: "auto" }}>
-            {bite.createdAt}
+          <AppText variant="micro" tone="muted" numberOfLines={1}>
+            {bite.venueName}
           </AppText>
+          <GestureDetector gesture={captionGesture}>
+            <View>
+              <AppText
+                variant="bodySmall"
+                tone="secondary"
+                numberOfLines={3}
+                style={{ lineHeight: 17 }}
+              >
+                {bite.caption}
+              </AppText>
+            </View>
+          </GestureDetector>
         </View>
+      </Pressable>
+
+      {/* Social row */}
+      <View
+        style={{
+          direction: "ltr",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: spacing[2],
+          marginTop: spacing[1],
+          paddingHorizontal: spacing[3],
+          paddingBottom: spacing[3],
+        }}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${liked ? "Unlike" : "Like"} ${bite.dishName}`}
+          accessibilityState={{ selected: liked }}
+          hitSlop={10}
+          onPress={onToggleLike}
+          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+        >
+          <Heart size={18} color={liked ? palette.error : palette.textMuted} />
+          <AppText variant="micro" tone="muted">
+            {displayHeartCount}
+          </AppText>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Open comments for ${bite.dishName}`}
+          hitSlop={10}
+          onPress={onCommentPress ?? onPress}
+          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+        >
+          <MessageCircle size={18} color={palette.textMuted} />
+          <AppText variant="micro" tone="muted">
+            {bite.commentCount}
+          </AppText>
+        </Pressable>
+        <AppText variant="micro" tone="muted" style={{ marginLeft: "auto" }}>
+          {bite.createdAt}
+        </AppText>
       </View>
     </View>
   );

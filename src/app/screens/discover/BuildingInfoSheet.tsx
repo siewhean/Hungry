@@ -47,21 +47,25 @@ function StatPill({
   icon,
   label,
   palette,
+  radii,
+  spacing,
 }: {
   icon: React.ReactNode;
   label: string;
   palette: any;
+  radii: any;
+  spacing: any;
 }) {
   return (
     <View
       style={{
         alignItems: "center",
         backgroundColor: palette.bgSoft,
-        borderRadius: 12,
+        borderRadius: radii.md,
         flexDirection: "row",
-        gap: 6,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        gap: spacing[1],
+        paddingHorizontal: spacing[3],
+        paddingVertical: spacing[2],
       }}
     >
       {icon}
@@ -129,7 +133,7 @@ export function BuildingInfoSheet({ buildingId, onDismiss, onDrillDown }: Buildi
               {building.type === "food_court" && <Badge label="Aircon" tone="info" />}
             </View>
             <AppText variant="h1">{building.name}</AppText>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
               <MapPin size={14} color={palette.textMuted} />
               <AppText tone="secondary" variant="bodySmall">
                 {building.address}
@@ -141,22 +145,30 @@ export function BuildingInfoSheet({ buildingId, onDismiss, onDrillDown }: Buildi
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             <StatPill
               palette={palette}
+              radii={radii}
+              spacing={spacing}
               icon={<Layers size={14} color={palette.orange} />}
               label={`${floorCount} floor${floorCount > 1 ? "s" : ""}`}
             />
             <StatPill
               palette={palette}
+              radii={radii}
+              spacing={spacing}
               icon={<UtensilsCrossed size={14} color={palette.orange} />}
               label={`${stallCount > 0 ? stallCount : "50+"} stalls`}
             />
             <StatPill
               palette={palette}
+              radii={radii}
+              spacing={spacing}
               icon={<Star size={14} color={palette.orange} />}
               label={`${mockRating} avg`}
             />
             {building.operatingHours ? (
               <StatPill
                 palette={palette}
+                radii={radii}
+                spacing={spacing}
                 icon={<Clock size={14} color={palette.orange} />}
                 label={building.operatingHours}
               />
@@ -186,7 +198,7 @@ export function BuildingInfoSheet({ buildingId, onDismiss, onDrillDown }: Buildi
                     paddingVertical: spacing[3],
                   }}
                 >
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
                     <Building2 size={16} color={palette.orange} />
                     <AppText>{floor}</AppText>
                   </View>

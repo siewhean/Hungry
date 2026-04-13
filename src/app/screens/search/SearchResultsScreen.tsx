@@ -54,8 +54,8 @@ function SearchResultListCard({ dish, onPress }: { dish: DishDetail; onPress: ()
               {building?.name}
               {venue ? ` · ${venue.floor} ${venue.unitNumber}` : ""}
             </AppText>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginTop: spacing[1] }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
                 <Star color={palette.amber} fill={palette.amber} size={12} />
                 <AppText variant="micro" style={{ fontWeight: "700" }}>{dish.rating.toFixed(1)}</AppText>
               </View>
@@ -93,9 +93,9 @@ function SearchResultGridCard({ dish, onPress }: { dish: DishDetail; onPress: ()
           <AppText variant="micro" tone="secondary" numberOfLines={1}>
             {mockRepository.getVenueById(dish.venueId)?.name}
           </AppText>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: spacing[1] }}>
             <AppText style={{ color: palette.orange, fontWeight: "800", fontSize: 13 }}>S${dish.price.toFixed(2)}</AppText>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
               <Star color={palette.amber} fill={palette.amber} size={10} />
               <AppText variant="micro" style={{ fontWeight: "700" }}>{dish.rating.toFixed(1)}</AppText>
             </View>

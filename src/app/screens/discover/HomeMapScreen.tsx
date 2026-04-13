@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions, Animated, PanResponder } from "react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
-import { LocateFixed, Map as MapIcon, ChevronRight, Star, Search, Filter, Utensils, Heart, X } from "lucide-react-native";
+import { LocateFixed, Map as MapIcon, ChevronRight, Star, Search, Filter, Utensils, Heart, X, Flame, Zap } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
@@ -20,20 +20,21 @@ import type { DishDetail } from "@/types/domain";
 const DEFAULT_BUILDING_ID = "hc-maxwell";
 
 function CrowdIndicator({ level }: { level?: "low" | "medium" | "high" }) {
-  const { palette } = useHungryTheme();
+  const { palette, spacing, radii } = useHungryTheme();
   if (!level) return null;
 
   const config = {
-    low: { color: "#10B981", label: "Quiet" },
-    medium: { color: "#F59E0B", label: "Moderate" },
-    high: { color: "#EF4444", label: "Busy" },
+    low: { color: "#10B981", label: "Fast", icon: <Zap size={10} color="#10B981" fill="#10B981" /> },
+    medium: { color: "#F59E0B", label: "Moderate", icon: null },
+    high: { color: "#EF4444", label: "Trending", icon: <Flame size={10} color="#EF4444" fill="#EF4444" /> },
   };
 
-  const { color, label } = config[level];
+  const { color, label, icon } = config[level];
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${color}15`, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
-      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }} />
+    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1], backgroundColor: `${color}15`, paddingHorizontal: spacing[2], paddingVertical: spacing[1], borderRadius: radii.sm }}>
+      {icon}
+      {!icon && <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }} />}
       <AppText style={{ color, fontSize: 10, fontWeight: "800", textTransform: "uppercase" }}>{label}</AppText>
     </View>
   );
@@ -42,7 +43,7 @@ function CrowdIndicator({ level }: { level?: "low" | "medium" | "high" }) {
 export function HomeMapScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   
   const currentLocation = useLocationStore((state) => state.currentLocation);
@@ -162,7 +163,7 @@ export function HomeMapScreen() {
       />
 
       {/* Top Floating UI */}
-      <SafeAreaView style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 20 }} edges={["top"]}>
+      <SafeAreaView style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: zIndex.overlay }} edges={["top"]}>
         <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[2], gap: spacing[3] }}>
           <View style={{ flexDirection: "row", gap: spacing[2], alignItems: "center" }}>
             <Pressable onPress={() => navigation.navigate("SearchHome")} style={[styles.searchBar, { backgroundColor: palette.surface, borderRadius: radii.pill, flex: 1, ...shadows.floating }]}>
@@ -200,12 +201,12 @@ export function HomeMapScreen() {
         </View>
       </SafeAreaView>
 
-      <Pressable onPress={() => setSelectedBuilding(toSummary(getBuildingById(DEFAULT_BUILDING_ID)!))} style={[styles.floatingButton, { bottom: PEEK_HEIGHT + spacing[6], right: spacing[4], backgroundColor: palette.surface, ...shadows.floating }]}>
+      <Pressable onPress={() => setSelectedBuilding(toSummary(getBuildingById(DEFAULT_BUILDING_ID)!))} style={[styles.floatingButton, { bottom: PEEK_HEIGHT + spacing[6], right: spacing[4], backgroundColor: palette.surface, zIndex: zIndex.fab, ...shadows.floating }]}>
         <LocateFixed color={palette.orange} size={24} />
       </Pressable>
 
       {/* Floating Legend */}
-      <View style={{ position: "absolute", bottom: PEEK_HEIGHT + spacing[4], left: spacing[4], zIndex: 20 }}>
+      <View style={{ position: "absolute", bottom: PEEK_HEIGHT + spacing[4], left: spacing[4], zIndex: zIndex.overlay }}>
         <BuildingLegend />
       </View>
 
@@ -214,11 +215,11 @@ export function HomeMapScreen() {
         style={[
           styles.animatedCard, 
           { 
-            backgroundColor: "#FFFFFF",
+            backgroundColor: palette.surface,
             height: animatedHeight,
-            zIndex: 50,
+            zIndex: zIndex.sheet,
             bottom: 0,
-            paddingHorizontal: (selectedDish || displayMode === "list") ? 16 : 0,
+            paddingHorizontal: (selectedDish || displayMode === "list") ? spacing[4] : 0,
             borderTopLeftRadius: radii.xl,
             borderTopRightRadius: radii.xl,
             ...shadows.floating,
@@ -226,11 +227,11 @@ export function HomeMapScreen() {
         ]}
       >
         <View style={{ width: "100%", height: 40, alignItems: "center", justifyContent: "center", position: "relative" }}>
-          <View style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: palette.border }} />
+          <View style={{ width: 40, height: 4, borderRadius: radii.pill, backgroundColor: palette.border }} />
           {selectedDish && (
             <Pressable 
               onPress={() => { setSelectedDish(null); snapTo(PEEK_HEIGHT); }}
-              style={{ position: "absolute", right: spacing[4], top: 8, width: 32, height: 32, borderRadius: 16, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}
+              style={{ position: "absolute", right: spacing[4], top: 8, width: 32, height: 32, borderRadius: radii.pill, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}
             >
               <X color={palette.text} size={18} />
             </Pressable>
@@ -238,28 +239,28 @@ export function HomeMapScreen() {
         </View>
 
         {selectedDish ? (
-          <View style={{ gap: spacing[4], paddingBottom: insets.bottom + spacing[4], paddingHorizontal: 16 }}>
-            <View style={{ width: "100%", height: 240, borderRadius: 32, overflow: "hidden", position: "relative" }}>
+          <View style={{ gap: spacing[4], paddingBottom: insets.bottom + spacing[4], paddingHorizontal: spacing[4] }}>
+            <View style={{ width: "100%", height: 240, borderRadius: radii.xl, overflow: "hidden", position: "relative" }}>
               <Image source={{ uri: selectedDish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
-              <View style={[{ position: "absolute", top: 16, right: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" }, shadows.floating]}>
+              <View style={[{ position: "absolute", top: spacing[4], right: spacing[4], width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center" }, shadows.floating]}>
                 <Heart color={palette.error} size={22} fill={palette.error} />
               </View>
-              <View style={{ position: "absolute", bottom: 16, left: 16, backgroundColor: "#FACC15", paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14 }}>
-                <AppText style={{ color: "#1A2E44", fontSize: 11, fontWeight: "800" }}>TRENDING NOW</AppText>
+              <View style={{ position: "absolute", bottom: spacing[4], left: spacing[4], backgroundColor: palette.amber, paddingHorizontal: spacing[3], paddingVertical: spacing[2], borderRadius: radii.md }}>
+                <AppText style={{ color: palette.navy, fontSize: 11, fontWeight: "800" }}>TRENDING NOW</AppText>
               </View>
               {selectedDish.liveCrowd && (
-                <View style={{ position: "absolute", bottom: 16, right: 16 }}>
+                <View style={{ position: "absolute", bottom: spacing[4], right: spacing[4] }}>
                   <CrowdIndicator level={selectedDish.liveCrowd} />
                 </View>
               )}
             </View>
 
-            <View style={{ gap: 2 }}>
+            <View style={{ gap: spacing[1] }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <AppText style={{ fontSize: 26, fontWeight: "900", color: "#1A2E44", flex: 1, lineHeight: 30 }}>{selectedDish.name}</AppText>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
+                <AppText style={{ fontSize: 26, fontWeight: "900", color: palette.text, flex: 1, lineHeight: 30 }}>{selectedDish.name}</AppText>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1], marginTop: 4 }}>
                   <Star color={palette.amber} fill={palette.amber} size={18} />
-                  <AppText style={{ fontSize: 20, fontWeight: "800", color: "#1A2E44" }}>{selectedDish.rating.toFixed(1)}</AppText>
+                  <AppText style={{ fontSize: 20, fontWeight: "800", color: palette.text }}>{selectedDish.rating.toFixed(1)}</AppText>
                 </View>
               </View>
               <AppText style={{ fontSize: 16, color: palette.textSecondary }}>
@@ -274,19 +275,19 @@ export function HomeMapScreen() {
             <View style={{ flexDirection: "row", gap: spacing[3], marginTop: spacing[1] }}>
               <Pressable 
                 onPress={() => navigation.navigate("DishDetail", { dishId: selectedDish.id })}
-                style={{ flex: 1, height: 56, borderRadius: 28, backgroundColor: "#F3F4F6", alignItems: "center", justifyContent: "center" }}
+                style={{ flex: 1, height: 56, borderRadius: radii.pill, backgroundColor: palette.surfaceRaised, alignItems: "center", justifyContent: "center" }}
               >
-                <AppText style={{ fontSize: 16, fontWeight: "700", color: "#1F2937" }}>View Menu</AppText>
+                <AppText style={{ fontSize: 16, fontWeight: "700", color: palette.text }}>View Menu</AppText>
               </Pressable>
               <Pressable 
-                style={[{ flex: 1, height: 56, borderRadius: 28, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center" }, shadows.floating]}
+                style={[{ flex: 1, height: 56, borderRadius: radii.pill, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center" }, shadows.floating]}
               >
-                <AppText style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>Reserve Now</AppText>
+                <AppText style={{ fontSize: 16, fontWeight: "700", color: palette.surface }}>Reserve Now</AppText>
               </Pressable>
             </View>
           </View>
         ) : displayMode === "list" ? (
-          <ScrollView contentContainerStyle={{ paddingHorizontal: spacing[5], gap: spacing[4], paddingBottom: insets.bottom + 40 }}>
+          <ScrollView contentContainerStyle={{ paddingHorizontal: spacing[5], gap: spacing[4], paddingBottom: insets.bottom + spacing[12] }}>
             <AppText variant="h2" style={{ marginBottom: spacing[2] }}>Nearby Stalls</AppText>
             {visibleBuildings.flatMap(b => mockRepository.listVenuesByBuilding(b.id)).map((venue) => (
               <Pressable
@@ -294,16 +295,16 @@ export function HomeMapScreen() {
                 onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
                 style={{
                   backgroundColor: palette.bgSoft,
-                  borderRadius: 16,
-                  padding: 12,
+                  borderRadius: radii.md,
+                  padding: spacing[3],
                   flexDirection: "row",
                   alignItems: "center",
-                  gap: 12,
+                  gap: spacing[3],
                   borderWidth: 1,
                   borderColor: palette.border,
                 }}
               >
-                <View style={{ flex: 1, gap: 2 }}>
+                <View style={{ flex: 1, gap: spacing[1] }}>
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                     <AppText variant="h3">{venue.name}</AppText>
                     <CrowdIndicator level={venue.liveCrowd} />
@@ -318,7 +319,7 @@ export function HomeMapScreen() {
           <View style={{ height: 200 }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[4], paddingHorizontal: spacing[4] }}>
               {areaPopularDishes.map((dish) => (
-                <Pressable key={dish.id} onPress={() => handleCardPress(dish)} style={[{ backgroundColor: "#FFFFFF", borderRadius: 24, overflow: "hidden", width: 280 }, shadows.floating]}>
+                <Pressable key={dish.id} onPress={() => handleCardPress(dish)} style={[{ backgroundColor: palette.surface, borderRadius: radii.xl, overflow: "hidden", width: 280 }, shadows.floating]}>
                   <View style={{ height: 140 }}>
                     <Image source={{ uri: dish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
                     {dish.liveCrowd && (
@@ -327,7 +328,7 @@ export function HomeMapScreen() {
                       </View>
                     )}
                   </View>
-                  <View style={{ padding: spacing[3], gap: 2 }}>
+                  <View style={{ padding: spacing[3], gap: spacing[1] }}>
                     <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                       <AppText style={{ fontWeight: "800", flex: 1 }} numberOfLines={1}>{dish.name}</AppText>
                       <AppText style={{ color: palette.orange, fontWeight: "800" }}>S${Math.round(dish.price)}</AppText>
@@ -348,12 +349,17 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 16, // Maintained for search bar aesthetic
     height: 52,
-    gap: 8,
+    gap: 8, // Maintained for search bar aesthetic
   },
   floatingButton: {
-    width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center", position: "absolute", zIndex: 30,
+    width: 52, 
+    height: 52, 
+    borderRadius: 26, // Half of 52 for pill shape
+    alignItems: "center", 
+    justifyContent: "center", 
+    position: "absolute",
   },
   animatedCard: {
     position: "absolute",

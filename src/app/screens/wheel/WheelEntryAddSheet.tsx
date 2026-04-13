@@ -99,14 +99,14 @@ function VenueRow({
           </View>
         )}
         {isHighMatch && (
-          <View style={{ position: "absolute", top: -6, left: -6, backgroundColor: palette.orange, borderRadius: 10, width: 20, height: 20, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#FFFFFF" }}>
-            <Sparkles size={10} color="#FFFFFF" />
+          <View style={{ position: "absolute", top: -6, left: -6, backgroundColor: palette.orange, borderRadius: 10, width: 20, height: 20, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: palette.surface }}>
+            <Sparkles size={10} color={palette.surface} />
           </View>
         )}
       </View>
       
-      <View style={{ flex: 1, gap: 2 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+      <View style={{ flex: 1, gap: spacing[1] }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
           <AppText style={{ fontWeight: "700", fontSize: 16 }}>{venue.name}</AppText>
           {isHighMatch && <Badge label="BEST MATCH" tone="orange" />}
         </View>
@@ -114,7 +114,7 @@ function VenueRow({
           {venue.floor} {venue.unitNumber} • {hero?.tasteTags.slice(0, 2).join(", ")}
         </AppText>
       </View>
-      <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: palette.orangeLight, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ width: 32, height: 32, borderRadius: radii.pill, backgroundColor: palette.orangeLight, alignItems: "center", justifyContent: "center" }}>
         <Plus size={16} color={palette.orange} />
       </View>
     </Pressable>
@@ -285,7 +285,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               </View>
             )}
           </View>
-          <Pressable onPress={onClose} hitSlop={12} style={{ backgroundColor: palette.bgSoft, width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" }}>
+          <Pressable onPress={onClose} hitSlop={12} style={{ backgroundColor: palette.bgSoft, width: 32, height: 32, borderRadius: radii.pill, alignItems: "center", justifyContent: "center" }}>
             <X size={18} color={palette.text} />
           </Pressable>
         </View>
@@ -377,10 +377,10 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
 
           {tab === "random" && (
             <View style={{ padding: spacing[8], gap: spacing[6], alignItems: "center" }}>
-              <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}>
+              <View style={{ width: 80, height: 80, borderRadius: radii.pill, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}>
                 <Compass color={palette.orange} size={40} />
               </View>
-              <View style={{ gap: 2, alignItems: "center" }}>
+              <View style={{ gap: spacing[1], alignItems: "center" }}>
                 <AppText style={{ fontSize: 20, fontWeight: "800" }}>Surprise Me!</AppText>
                 <AppText style={{ textAlign: "center", paddingHorizontal: spacing[4] }} tone="secondary">
                   Can't decide? Let us pick a random nearby stall for your group.
@@ -390,7 +390,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 onPress={addRandom}
                 style={({ pressed }) => [
                   {
-                    backgroundColor: "#FFFFFF",
+                    backgroundColor: palette.surface,
                     borderColor: palette.orange,
                     borderWidth: 2,
                     paddingHorizontal: spacing[8],

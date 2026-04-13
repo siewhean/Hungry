@@ -33,7 +33,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
             width: 40,
           }}
         >
-          <AppText variant="bodySmall" style={{ color: palette.orange, fontFamily: "Nunito_700Bold" }}>
+          <AppText variant="bodySmall" style={{ color: palette.orange, fontWeight: "700" }}>
             {initials}
           </AppText>
         </View>

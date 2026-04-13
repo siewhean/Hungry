@@ -28,7 +28,7 @@ const CUISINE_MAP: Record<string, string[]> = {
 };
 
 export function FoodSelectionScreen({ navigation, route }: Props) {
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { motion, palette, spacing, radii, shadows } = useHungryTheme();
   const setOnboardingSelectedDishIds = useProfileStore((s) => s.setOnboardingSelectedDishIds);
   const selectedCuisines = route.params.cuisines;
 
@@ -52,10 +52,18 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
     fadeAnim.setValue(0);
     slideAnim.setValue(10);
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true })
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: motion.onboardingSlide,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: motion.onboardingSlide,
+        useNativeDriver: true,
+      })
     ]).start();
-  }, [currentIndex]);
+  }, [currentIndex, fadeAnim, motion.onboardingSlide, slideAnim]);
 
   const toggle = (id: string) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -98,7 +106,7 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
       }
     >
       <View style={{ flex: 1, gap: spacing[6] }}>
-        <View style={{ height: 4, backgroundColor: palette.bgSoft, borderRadius: 2, overflow: "hidden" }}>
+        <View style={{ height: 4, backgroundColor: palette.bgSoft, borderRadius: radii.pill, overflow: "hidden" }}>
           <View style={{ 
             height: "100%", 
             width: `${((currentIndex + 1) / selectedCuisines.length) * 100}%`, 
@@ -126,7 +134,7 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
                     { 
                       width: "47%", 
                       backgroundColor: palette.surface, 
-                      borderRadius: 24, 
+                      borderRadius: radii.lg, 
                       overflow: "hidden",
                       borderWidth: 2,
                       borderColor: isSelected ? palette.orange : palette.border,
@@ -136,16 +144,16 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
                   <View style={{ height: 120, width: "100%", position: "relative" }}>
                     <Image source={{ uri: dish.imageUrl }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
                     <View style={{ 
-                      position: "absolute", top: 8, right: 8, 
-                      width: 28, height: 28, borderRadius: 14, 
+                      position: "absolute", top: spacing[2], right: spacing[2], 
+                      width: 28, height: 28, borderRadius: radii.pill, 
                       backgroundColor: isSelected ? palette.orange : "rgba(255,255,255,0.8)", 
                       alignItems: "center", justifyContent: "center" 
                     }}>
-                      {isSelected && <Check size={16} color="#FFFFFF" strokeWidth={3} />}
+                      {isSelected && <Check size={16} color={palette.surface} strokeWidth={3} />}
                     </View>
                   </View>
-                  <View style={{ padding: spacing[3], gap: 2 }}>
-                    <AppText style={{ fontWeight: "800", fontSize: 14 }} numberOfLines={1}>{dish.name}</AppText>
+                  <View style={{ padding: spacing[3], gap: spacing[1] }}>
+                    <AppText variant="bodyBold" numberOfLines={1}>{dish.name}</AppText>
                     <AppText variant="micro" tone="secondary" numberOfLines={1}>{dish.venueName}</AppText>
                   </View>
                 </Pressable>

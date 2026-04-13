@@ -27,9 +27,9 @@ export function ReviewTagsScreen({ navigation, route }: Props) {
       total={4}
     >
       <Card>
-        <View style={{ gap: 12 }}>
+        <View style={{ gap: spacing[3] }}>
           <AppText variant="h3">How did it taste?</AppText>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             {REVIEW_TAGS.map((tag) => (
               <Chip key={tag} label={tag} selected={tags.includes(tag)} onPress={() => toggleTag(tag)} />
             ))}

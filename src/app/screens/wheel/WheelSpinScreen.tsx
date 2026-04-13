@@ -30,10 +30,9 @@ import type { WheelStackParamList } from "./WheelStack";
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelSpin">;
 
 const WHEEL_SIZE = 300;
-const SPIN_DURATION = 4000;
 
 export function WheelSpinScreen({ navigation }: Props) {
-  const { palette, spacing } = useHungryTheme();
+  const { motion, palette, radii, spacing, zIndex } = useHungryTheme();
 
   const party = useWheelStore((s) => s.party);
   const members = useWheelStore((s) => s.members);
@@ -107,7 +106,7 @@ export function WheelSpinScreen({ navigation }: Props) {
 
       Animated.timing(spinAnim, {
         toValue: totalRotation,
-        duration: SPIN_DURATION,
+        duration: motion.wheelSpin,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }).start(({ finished }) => {
@@ -133,7 +132,7 @@ export function WheelSpinScreen({ navigation }: Props) {
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [party?.spinSeed, party?.spinStartedAt]);
+  }, [motion.wheelSpin, party?.spinSeed, party?.spinStartedAt]);
 
   const rotation = spinAnim.interpolate({
     inputRange: [0, 360],
@@ -148,7 +147,7 @@ export function WheelSpinScreen({ navigation }: Props) {
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
       {/* Member row */}
-      <View style={{ paddingTop: 60, paddingHorizontal: spacing[4], paddingBottom: spacing[4] }}>
+      <View style={{ paddingTop: spacing[12], paddingHorizontal: spacing[4], paddingBottom: spacing[4] }}>
         <MemberAvatarRow members={members} />
       </View>
 
@@ -159,14 +158,14 @@ export function WheelSpinScreen({ navigation }: Props) {
           style={{
             width: 0,
             height: 0,
-            borderLeftWidth: 10,
-            borderRightWidth: 10,
-            borderBottomWidth: 20,
+            borderLeftWidth: spacing[3],
+            borderRightWidth: spacing[3],
+            borderBottomWidth: spacing[5],
             borderLeftColor: "transparent",
             borderRightColor: "transparent",
             borderBottomColor: palette.orange,
             marginBottom: -2,
-            zIndex: 1,
+            zIndex: zIndex.map,
           }}
         />
 
@@ -199,7 +198,7 @@ export function WheelSpinScreen({ navigation }: Props) {
       <View
         style={{
           paddingHorizontal: spacing[4],
-          paddingBottom: 48,
+          paddingBottom: spacing[12],
           alignItems: "center",
           gap: spacing[3],
         }}
@@ -215,7 +214,7 @@ export function WheelSpinScreen({ navigation }: Props) {
               backgroundColor: canSpin ? palette.orange : palette.bgSoft,
               paddingHorizontal: spacing[6],
               paddingVertical: spacing[4],
-              borderRadius: 999,
+              borderRadius: radii.pill,
               opacity: canSpin ? 1 : 0.5,
             }}
           >

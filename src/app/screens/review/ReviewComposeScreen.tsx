@@ -10,12 +10,14 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
+import { useHungryTheme } from "@/theme";
 import { ReviewScreenShell } from "./ReviewScreenShell";
 import type { ReviewStackParamList } from "./ReviewStack";
 
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewCompose">;
 
 export function ReviewComposeScreen({ navigation }: Props) {
+  const { spacing } = useHungryTheme();
   const rootNavigation = navigation.getParent()?.getParent();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
@@ -46,7 +48,7 @@ export function ReviewComposeScreen({ navigation }: Props) {
         total={4}
       >
         <Card>
-          <View style={{ gap: 12 }}>
+          <View style={{ gap: spacing[3] }}>
             <AppText variant="h3">Dish selection is missing</AppText>
             <AppText tone="secondary">
               Go back to quick review and pick the exact dish before writing your final notes.
@@ -110,7 +112,7 @@ export function ReviewComposeScreen({ navigation }: Props) {
       total={4}
     >
       <Card>
-        <View style={{ gap: 12 }}>
+        <View style={{ gap: spacing[3] }}>
           <AppText variant="h3">{dish.name}</AppText>
           <AppText tone="secondary">The draft stays intact while you move between steps.</AppText>
           <Input
@@ -135,7 +137,7 @@ export function ReviewComposeScreen({ navigation }: Props) {
           {failedPhotoUris.length ? (
             <InlineBanner tone="warning" message="One or more photos failed. Remove them or retry later." />
           ) : null}
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: spacing[2] }}>
             {failedPhotoUris.map((uri) => (
               <Button key={uri} label={`Retry ${uri}`} variant="ghost" onPress={() => clearFailedPhoto(uri)} />
             ))}

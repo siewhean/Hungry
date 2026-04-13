@@ -6,6 +6,12 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { DietaryFlag, SearchCategory, SearchFilters, TasteVector } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
 
+const MAX_RECENT_SEARCHES = 5;
+
+function normalizeSearchQuery(query: string) {
+  return query.trim().replace(/\s+/g, " ");
+}
+
 interface SearchState {
   filters: SearchFilters;
   recentSearches: string[];
@@ -28,7 +34,7 @@ export const useSearchStore = create<SearchState>()(
         tasteValues: NEUTRAL_TASTE_VECTOR,
         radius: 1000,
       },
-      recentSearches: ["laksa", "chicken rice", "satay"],
+      recentSearches: [],
       updateQuery: (query) =>
         set((state) => ({
           filters: {
@@ -94,11 +100,22 @@ export const useSearchStore = create<SearchState>()(
         }),
       rememberSearch: (query) =>
         set((state) => {
+          const normalizedQuery = normalizeSearchQuery(query);
+          if (!normalizedQuery) {
+            return state;
+          }
+
           trackAnalyticsEvent("search_submitted", {
-            query_length: query.trim().length,
+            query_length: normalizedQuery.length,
           });
+
           return {
-            recentSearches: [query, ...state.recentSearches.filter((value) => value !== query)].slice(0, 5),
+            recentSearches: [
+              normalizedQuery,
+              ...state.recentSearches.filter(
+                (value) => value.toLowerCase() !== normalizedQuery.toLowerCase(),
+              ),
+            ].slice(0, MAX_RECENT_SEARCHES),
           };
         }),
       clearSearchState: () =>

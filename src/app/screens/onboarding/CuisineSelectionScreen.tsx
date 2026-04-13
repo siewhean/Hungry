@@ -65,12 +65,12 @@ export function CuisineSelectionScreen({ navigation }: Props) {
                 ]}
               >
                 <View style={{
-                  width: 24, height: 24, borderRadius: 12,
+                  width: 24, height: 24, borderRadius: radii.pill,
                   backgroundColor: isSelected ? palette.orange : palette.bgSoft,
                   alignItems: "center", justifyContent: "center",
-                  position: "absolute", top: 8, right: 8
+                  position: "absolute", top: spacing[2], right: spacing[2]
                 }}>
-                  {isSelected && <Check size={14} color="#FFFFFF" strokeWidth={3} />}
+                  {isSelected && <Check size={14} color={palette.surface} strokeWidth={3} />}
                 </View>
                 <AppText style={{ 
                   fontWeight: isSelected ? "800" : "600", 

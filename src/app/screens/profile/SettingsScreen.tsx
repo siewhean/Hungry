@@ -2,8 +2,10 @@ import Constants from "expo-constants";
 import { useState } from "react";
 import { Alert, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, Chip, InlineBanner } from "@/components/ui";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -15,7 +17,7 @@ import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
 export function SettingsScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { spacing } = useHungryTheme();
   const signOut = useSessionStore((state) => state.signOut);
   const clearSession = useSessionStore((state) => state.clearSession);

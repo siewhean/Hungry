@@ -32,18 +32,18 @@ function ProgressBar({
   total: number;
   current: number;
 }) {
-  const { palette, radii } = useHungryTheme();
+  const { motion, palette, radii } = useHungryTheme();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     anim.setValue(0);
     Animated.timing(anim, {
       toValue: 1,
-      duration: 500,
+      duration: motion.onboardingSegmentFill,
       easing: Easing.out(Easing.quad),
       useNativeDriver: false,
     }).start();
-  }, [current]);
+  }, [current, motion.onboardingSegmentFill]);
 
   return (
     <View style={styles.progressRow}>
@@ -222,18 +222,18 @@ function SlideIllustration({
 // ─── Bullet item ──────────────────────────────────────────────────────────────
 
 function BulletItem({ text, index }: { text: string; index: number }) {
-  const { palette, spacing } = useHungryTheme();
+  const { motion, palette, spacing, radii } = useHungryTheme();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(anim, {
       toValue: 1,
-      duration: 320,
-      delay: 200 + index * 100,
+      duration: motion.onboardingBulletEnter,
+      delay: motion.buttonPress * 2 + index * motion.buttonPress,
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, []);
+  }, [index, motion.buttonPress, motion.onboardingBulletEnter]);
 
   return (
     <Animated.View
@@ -254,7 +254,7 @@ function BulletItem({ text, index }: { text: string; index: number }) {
       <View
         style={{
           backgroundColor: palette.orange,
-          borderRadius: 999,
+          borderRadius: radii.pill,
           height: 7,
           marginTop: 9,
           width: 7,
@@ -296,7 +296,7 @@ export function OnboardingIntroTemplate({
   nextScreen,
   backScreen,
 }: OnboardingIntroTemplateProps) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { motion, palette, radii, spacing, shadows, zIndex } = useHungryTheme();
 
   const headlineAnim = useRef(new Animated.Value(0)).current;
 
@@ -304,17 +304,22 @@ export function OnboardingIntroTemplate({
     headlineAnim.setValue(0);
     Animated.timing(headlineAnim, {
       toValue: 1,
-      duration: 380,
-      delay: 80,
+      duration: motion.onboardingHeadlineEnter,
+      delay: motion.buttonPress,
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, [stepIndex]);
+  }, [headlineAnim, motion.buttonPress, motion.onboardingHeadlineEnter, stepIndex]);
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.bg }]}>
       {/* ── Top: progress + header ──────────────────────── */}
-      <View style={[styles.topArea, { paddingTop: Platform.OS === "ios" ? 66 : 36 }]}>
+      <View
+        style={[
+          styles.topArea,
+          { paddingTop: Platform.OS === "ios" ? 66 : 36, zIndex: zIndex.overlay },
+        ]}
+      >
         <ProgressBar total={totalSteps} current={stepIndex - 1} />
 
         <View style={styles.topRow}>
@@ -343,7 +348,7 @@ export function OnboardingIntroTemplate({
       </Pressable>
 
       {/* ── Content ─────────────────────────────────────── */}
-      <View style={[styles.contentArea, { backgroundColor: palette.surface }]}>
+      <View style={[styles.contentArea, { backgroundColor: palette.surface, ...shadows.bottomSheet }]}>
         {/* Eyebrow */}
         <View
           style={{
@@ -421,11 +426,10 @@ const styles = StyleSheet.create({
   topArea: {
     paddingHorizontal: 20,
     gap: 12,
-    zIndex: 10,
   },
   progressRow: {
     flexDirection: "row",
-    gap: 6,
+    gap: 4,
     height: 3,
   },
   progressTrack: {
@@ -473,18 +477,13 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 28,
     padding: 28,
     paddingBottom: 0,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 8,
   },
   // Bowl illustration
   bowl: {
     width: 100,
     height: 60,
     borderWidth: 3,
-    borderRadius: 50,
+    borderRadius: 999,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
     overflow: "hidden",
@@ -503,7 +502,7 @@ const styles = StyleSheet.create({
   steamLine: {
     width: 3,
     height: 20,
-    borderRadius: 2,
+    borderRadius: 999,
     opacity: 0.8,
   },
   // Map pin illustration
@@ -514,21 +513,21 @@ const styles = StyleSheet.create({
   mapPin: {
     width: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
   },
   mapPinDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: 999,
   },
   // Bite cards
   biteCard: {
     position: "absolute",
     width: 100,
     height: 64,
-    borderRadius: 16,
+    borderRadius: 18,
   },
   // Hex grid
   hexGrid: {

@@ -1,5 +1,6 @@
+import { useCallback } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View, Share } from "react-native";
 import { Image } from "expo-image";
 import { ChevronRight, Settings, Star, Utensils, Heart, Edit2, Share2, BarChart3 } from "lucide-react-native";
 
@@ -28,6 +29,21 @@ export function ProfileHomeScreen({ navigation }: Props) {
     .join("")
     .toUpperCase();
 
+  const handleShareTaste = useCallback(async () => {
+    const topTastes = Object.entries(profile.tasteVector)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 3)
+      .map(([key, val]) => `${key.charAt(0).toUpperCase() + key.slice(1)} (${Math.round((val / 10) * 100)}%)`);
+
+    const message = `Check out my Taste Fingerprint on Hungry! 🍜\n\nMy top traits:\n${topTastes.join("\n")}\n\nDiscover your own at hungry.sg`;
+    
+    try {
+      await Share.share({ message });
+    } catch (error) {
+      console.error("Error sharing taste fingerprint:", error);
+    }
+  }, [profile.tasteVector]);
+
   return (
     <ProfileScreenShell title="Profile" subtitle="Taste fingerprint, favourites, and settings in one place.">
       <View style={{ gap: spacing[6], paddingBottom: spacing[8] }}>
@@ -46,7 +62,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
                   justifyContent: "center",
                   width: 80,
                   borderWidth: 2,
-                  borderColor: "#FFFFFF",
+                  borderColor: palette.surface,
                 }
               ]}
             >
@@ -57,17 +73,17 @@ export function ProfileHomeScreen({ navigation }: Props) {
             <Pressable 
               onPress={() => navigation.navigate("EditProfile")}
               style={{ 
-                position: "absolute", bottom: -4, right: -4, 
+                position: "absolute", bottom: -spacing[1], right: -spacing[1], 
                 backgroundColor: palette.orange, width: 28, height: 28, 
-                borderRadius: 14, alignItems: "center", justifyContent: "center",
-                borderWidth: 2, borderColor: "#FFFFFF"
+                borderRadius: radii.pill, alignItems: "center", justifyContent: "center",
+                borderWidth: 2, borderColor: palette.surface
               }}
             >
-              <Edit2 color="#FFFFFF" size={14} />
+              <Edit2 color={palette.surface} size={14} />
             </Pressable>
           </View>
 
-          <View style={{ flex: 1, gap: 2 }}>
+          <View style={{ flex: 1, gap: spacing[1] }}>
             <AppText style={{ fontSize: 24, fontWeight: "900", color: palette.text }}>
               {profile.displayName}
             </AppText>
@@ -87,7 +103,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
         <View style={{ gap: spacing[4] }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing[1] }}>
             <AppText variant="h2">Taste Fingerprint</AppText>
-            <Pressable style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Pressable onPress={handleShareTaste} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
               <Share2 size={16} color={palette.orange} />
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>SHARE</AppText>
             </Pressable>
@@ -98,7 +114,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
               shadows.card,
               { 
                 backgroundColor: pressed ? palette.bgSoft : palette.surface, 
-                borderRadius: 24, 
+                borderRadius: radii.xl, 
                 padding: spacing[5],
                 borderWidth: 1,
                 borderColor: palette.border,
@@ -107,7 +123,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
             ]}
           >
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-              <View style={{ backgroundColor: palette.orangeLight, width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" }}>
+              <View style={{ backgroundColor: palette.orangeLight, width: 40, height: 40, borderRadius: radii.pill, alignItems: "center", justifyContent: "center" }}>
                 <BarChart3 size={20} color={palette.orange} />
               </View>
               <View style={{ flex: 1 }}>
@@ -123,7 +139,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
               <TasteBar label="Sweet" value={profile.tasteVector.sweet} max={10} color="#10B981" />
             </View>
 
-            <View style={{ backgroundColor: palette.bgSoft, padding: spacing[3], borderRadius: 12 }}>
+            <View style={{ backgroundColor: palette.bgSoft, padding: spacing[3], borderRadius: radii.md }}>
               <AppText variant="bodySmall" tone="secondary" style={{ lineHeight: 18 }}>
                 Your profile leans heavily towards <AppText style={{ fontWeight: "700", color: palette.text }}>Spicy</AppText> flavours. You've discovered <AppText style={{ fontWeight: "700", color: palette.text }}>8 new stalls</AppText> this month, putting you in the <AppText style={{ fontWeight: "700", color: palette.orange }}>top 5%</AppText> of explorers in Tanjong Pagar.
               </AppText>
@@ -169,12 +185,12 @@ export function ProfileHomeScreen({ navigation }: Props) {
                   key={dish.id}
                   style={[
                     shadows.card,
-                    { width: 160, backgroundColor: palette.surface, borderRadius: 20, overflow: "hidden" }
+                    { width: 160, backgroundColor: palette.surface, borderRadius: radii.lg, overflow: "hidden" }
                   ]}
                 >
                   <Image source={{ uri: dish.imageUrl }} style={{ width: "100%", height: 110 }} contentFit="cover" />
-                  <View style={{ padding: spacing[3], gap: 2 }}>
-                    <AppText variant="bodySmall" style={{ fontWeight: "700" }} numberOfLines={1}>{dish.name}</AppText>
+                  <View style={{ padding: spacing[3], gap: spacing[1] }}>
+                    <AppText variant="bodyBold" numberOfLines={1}>{dish.name}</AppText>
                     <AppText variant="micro" tone="secondary">S${dish.price.toFixed(2)}</AppText>
                   </View>
                 </Pressable>
@@ -193,35 +209,35 @@ export function ProfileHomeScreen({ navigation }: Props) {
 }
 
 function TasteBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
-  const { palette } = useHungryTheme();
+  const { palette, spacing, radii } = useHungryTheme();
   const width = `${(value / max) * 100}%` as any;
   
   return (
-    <View style={{ gap: 4 }}>
+    <View style={{ gap: spacing[1] }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <AppText variant="micro" style={{ fontWeight: "700" }}>{label}</AppText>
         <AppText variant="micro" tone="secondary">{value.toFixed(1)}</AppText>
       </View>
-      <View style={{ height: 6, backgroundColor: palette.border, borderRadius: 3, overflow: "hidden" }}>
-        <View style={{ height: "100%", width, backgroundColor: color, borderRadius: 3 }} />
+      <View style={{ height: 6, backgroundColor: palette.border, borderRadius: radii.pill, overflow: "hidden" }}>
+        <View style={{ height: "100%", width, backgroundColor: color, borderRadius: radii.pill }} />
       </View>
     </View>
   );
 }
 
 function StatBlock({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
-  const { palette, spacing } = useHungryTheme();
+  const { palette, spacing, radii } = useHungryTheme();
   return (
     <View style={{ 
       backgroundColor: palette.bgSoft, 
-      borderRadius: 16, 
+      borderRadius: radii.lg, 
       paddingVertical: spacing[3], 
       paddingHorizontal: spacing[4], 
       alignItems: "center",
       flex: 1,
-      gap: 2
+      gap: spacing[1]
     }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
         {icon}
         <AppText style={{ fontSize: 18, fontWeight: "900", color: palette.text }}>{value}</AppText>
       </View>
@@ -231,7 +247,7 @@ function StatBlock({ label, value, icon }: { label: string; value: number; icon:
 }
 
 function MenuRow({ label, icon, onPress }: { label: string; icon: React.ReactNode; onPress: () => void }) {
-  const { palette, spacing } = useHungryTheme();
+  const { palette, spacing, radii } = useHungryTheme();
   return (
     <Pressable 
       onPress={onPress}
@@ -240,7 +256,7 @@ function MenuRow({ label, icon, onPress }: { label: string; icon: React.ReactNod
           flexDirection: "row",
           alignItems: "center",
           backgroundColor: pressed ? palette.bgSoft : palette.surface,
-          borderRadius: 16,
+          borderRadius: radii.lg,
           padding: spacing[4],
           gap: spacing[3],
           borderWidth: 1,

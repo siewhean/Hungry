@@ -172,12 +172,12 @@ function MarkerVisual({
 }
 
 function UserPuck() {
-  const { palette } = useHungryTheme();
+  const { palette, radii } = useHungryTheme();
 
   return (
     <View style={styles.userPuckOuter}>
-      <View style={[styles.userPuckHalo, { backgroundColor: `${palette.navy}12`, width: 36, height: 36, borderRadius: 18 }]} />
-      <View style={[styles.userPuckInner, { backgroundColor: palette.navy, borderColor: palette.surface, width: 14, height: 14, borderRadius: 7 }]} />
+      <View style={[styles.userPuckHalo, { backgroundColor: `${palette.navy}12`, borderRadius: radii.pill, height: 36, width: 36 }]} />
+      <View style={[styles.userPuckInner, { backgroundColor: palette.navy, borderColor: palette.surface, borderRadius: radii.pill, height: 14, width: 14 }]} />
     </View>
   );
 }
@@ -194,7 +194,7 @@ function FallbackMap({
   MapSurfaceProps,
   "centerCoordinate" | "markers" | "selectedMarkerId" | "currentLocation" | "onMarkerPress" | "onMapPress" | "cameraPadding"
 >) {
-  const { palette } = useHungryTheme();
+  const { palette, radii } = useHungryTheme();
   const [frame, setFrame] = useState({ width: 1, height: 1 });
 
   // Apply padding to the map container to simulate camera offset
@@ -257,10 +257,55 @@ function FallbackMap({
         onMapPress(coordinate);
       }}
     >
-      <View style={[styles.road, { backgroundColor: "rgba(255,255,255,0.95)", width: 240, top: 90, left: -20, transform: [{ rotate: "13deg" }] }]} />
-      <View style={[styles.road, { backgroundColor: "rgba(255,255,255,0.94)", width: 210, top: 56, right: -32, transform: [{ rotate: "-18deg" }] }]} />
-      <View style={[styles.road, { backgroundColor: "rgba(255,255,255,0.92)", width: 300, bottom: 92, left: 24, transform: [{ rotate: "7deg" }] }]} />
-      <View style={[styles.verticalRoad, { backgroundColor: "rgba(255,255,255,0.94)", left: "52%" }]} />
+      <View
+        style={[
+          styles.road,
+          {
+            backgroundColor: palette.mapRoadPrimary,
+            borderRadius: radii.pill,
+            left: -20,
+            top: 90,
+            transform: [{ rotate: "13deg" }],
+            width: 240,
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.road,
+          {
+            backgroundColor: palette.mapRoadSecondary,
+            borderRadius: radii.pill,
+            right: -32,
+            top: 56,
+            transform: [{ rotate: "-18deg" }],
+            width: 210,
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.road,
+          {
+            backgroundColor: palette.mapRoadPrimary,
+            borderRadius: radii.pill,
+            bottom: 92,
+            left: 24,
+            transform: [{ rotate: "7deg" }],
+            width: 300,
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.verticalRoad,
+          {
+            backgroundColor: palette.mapRoadSecondary,
+            borderRadius: radii.pill,
+            left: "52%",
+          },
+        ]}
+      />
 
       {markers?.map((marker) => {
         const position = projectCoordinate(marker.coordinate, bounds);
@@ -418,14 +463,12 @@ const styles = StyleSheet.create({
   road: {
     position: "absolute",
     height: 18,
-    borderRadius: 999,
   },
   verticalRoad: {
     position: "absolute",
     top: 56,
     bottom: 56,
     width: 12,
-    borderRadius: 999,
   },
   absoluteMarker: {
     position: "absolute",
@@ -448,12 +491,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: 22,
     height: 22,
-    borderRadius: 999,
   },
   userPuckInner: {
     width: 12,
     height: 12,
-    borderRadius: 999,
     borderWidth: 2,
   },
   tokenNotice: {

@@ -14,6 +14,7 @@ interface StallCardProps {
 
 export function StallCard({ venue, topDish, onPress }: StallCardProps) {
   const { palette, spacing } = useHungryTheme();
+  const styles = createStyles(spacing);
 
   return (
     <Card style={{ padding: spacing[3] }}>
@@ -28,8 +29,8 @@ export function StallCard({ venue, topDish, onPress }: StallCardProps) {
           },
         ]}
       >
-        <View style={{ flex: 1, gap: 8 }}>
-          <View style={{ gap: 4 }}>
+        <View style={{ flex: 1, gap: spacing[2] }}>
+          <View style={{ gap: spacing[1] }}>
             <AppText variant="h3">{venue.name}</AppText>
             <AppText variant="bodySmall" tone="secondary">
               {venue.unitNumber} · {venue.floor}
@@ -59,19 +60,19 @@ export function StallCard({ venue, topDish, onPress }: StallCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (spacing: ReturnType<typeof useHungryTheme>["spacing"]) => StyleSheet.create({
   row: {
     flexDirection: "row",
   },
   metaRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: spacing[2],
   },
   infoRow: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 6,
+    gap: spacing[1],
   },
 });
 

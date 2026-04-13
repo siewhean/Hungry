@@ -46,10 +46,10 @@ export function DirectMessagesScreen() {
               key={chat.id} 
               style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}
             >
-              <Image source={{ uri: chat.avatar }} style={{ width: 56, height: 56, borderRadius: 28 }} />
-              <View style={{ flex: 1, gap: 2 }}>
+              <Image source={{ uri: chat.avatar }} style={{ width: 56, height: 56, borderRadius: radii.pill }} />
+              <View style={{ flex: 1, gap: spacing[1] }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <AppText style={{ fontWeight: "700", fontSize: 16 }}>{chat.name}</AppText>
+                  <AppText variant="bodyBold">{chat.name}</AppText>
                   <AppText variant="micro" tone="secondary">{chat.time}</AppText>
                 </View>
                 <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>

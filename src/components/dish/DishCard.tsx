@@ -16,6 +16,7 @@ interface DishCardProps {
 
 export function DishCard({ dish, variant = "horizontal", favourited = false, onPress, onFavouritePress }: DishCardProps) {
   const { palette, radii, spacing } = useHungryTheme();
+  const styles = createStyles(spacing);
 
   const isHorizontal = variant === "horizontal";
 
@@ -46,6 +47,7 @@ export function DishCard({ dish, variant = "horizontal", favourited = false, onP
           style={[
             styles.image,
             {
+              backgroundColor: palette.bgSoft,
               borderRadius: radii.sm,
               height: isHorizontal ? 88 : 140,
               width: isHorizontal ? 88 : "100%",
@@ -93,28 +95,26 @@ export function DishCard({ dish, variant = "horizontal", favourited = false, onP
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (spacing: ReturnType<typeof useHungryTheme>["spacing"]) => StyleSheet.create({
   content: {
     alignItems: "flex-start",
   },
-  image: {
-    backgroundColor: "#E5E7EB",
-  },
+  image: {},
   row: {
     alignItems: "flex-start",
     flexDirection: "row",
-    gap: 8,
+    gap: spacing[2],
     justifyContent: "space-between",
   },
   rowWrap: {
     alignItems: "center",
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: spacing[2],
   },
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 6,
+    gap: spacing[1],
   },
 });

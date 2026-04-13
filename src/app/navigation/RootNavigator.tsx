@@ -26,6 +26,7 @@ import { DecideForMeResultScreen } from "@/app/screens/discover/DecideForMeResul
 import { DiscoverHomeScreen } from "@/app/screens/discover/DiscoverHomeScreen";
 import { HomeMapScreen } from "@/app/screens/discover/HomeMapScreen";
 import { MapZoomedInScreen } from "@/app/screens/discover/MapZoomedInScreen";
+import { CraveScreen } from "@/app/screens/discover/CraveScreen";
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
 import { DirectMessagesScreen } from "@/app/screens/home/DirectMessagesScreen";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
@@ -90,7 +91,7 @@ function BlogPostRouteScreen({
 
 function GlobalScrollBackButton() {
   const insets = useSafeAreaInsets();
-  const { palette, radii, shadows, spacing } = useHungryTheme();
+  const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const scrollBackVisible = useUIStore((state) => state.scrollBackVisible);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
   const rootState = navigationRef.isReady() ? navigationRef.getRootState() : undefined;
@@ -117,11 +118,12 @@ function GlobalScrollBackButton() {
           styles.globalBackButton,
           {
             ...shadows.floating,
-            backgroundColor: "rgba(255,255,255,0.95)",
+            backgroundColor: palette.surface,
             borderColor: palette.border,
             borderRadius: radii.pill,
             left: spacing[4],
             top: insets.top + spacing[1],
+            zIndex: zIndex.globalBack,
           },
         ]}
       >
@@ -397,6 +399,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={ReviewStack} name="ReviewStack" />
           <RootStack.Screen component={WheelStack} name="WheelStack" />
           <RootStack.Screen component={DirectMessagesScreen} name="DirectMessages" />
+          <RootStack.Screen component={CraveScreen} name="Crave" />
           <RootStack.Screen component={DecideForMeResultScreen} name="DecideForMeResult" />
           <RootStack.Screen component={BuildingDrillDownScreen} name="BuildingDrillDown" />
           <RootStack.Screen component={OfflineStateScreen} name="Offline" />
@@ -414,7 +417,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 const styles = StyleSheet.create({
   globalBackWrap: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 80,
   },
   globalBackButton: {
     alignItems: "center",

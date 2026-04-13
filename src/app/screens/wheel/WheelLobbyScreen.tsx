@@ -64,7 +64,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
           style={{
             width: 8,
             height: 8,
-            borderRadius: 4,
+            borderRadius: radii.pill,
             backgroundColor: palette.orange,
           }}
         />

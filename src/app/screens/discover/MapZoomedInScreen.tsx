@@ -110,7 +110,7 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
 
       <Pressable 
         onPress={() => navigation.goBack()} 
-        style={[{ position: "absolute", top: insets.top + 10, left: 16, width: 44, height: 44, borderRadius: 22, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center" }, shadows.floating]}
+        style={[{ position: "absolute", top: insets.top + spacing[2], left: spacing[4], width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center" }, shadows.floating]}
       >
         <ChevronLeft color={palette.text} size={24} />
       </Pressable>
@@ -120,36 +120,36 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
         index={1}
         snapPoints={["2%", "35%", "60%"]}
         enablePanDownToClose={false}
-        backgroundStyle={{ backgroundColor: palette.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28 }}
+        backgroundStyle={{ backgroundColor: palette.surface, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl }}
         handleIndicatorStyle={{ backgroundColor: palette.border, width: 40 }}
       >
-        <BottomSheetScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20, paddingHorizontal: 20, paddingTop: spacing[6] }}>
-          <View style={{ gap: 16 }}>
+        <BottomSheetScrollView contentContainerStyle={{ paddingBottom: insets.bottom + spacing[5], paddingHorizontal: spacing[5], paddingTop: spacing[6] }}>
+          <View style={{ gap: spacing[4] }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <View style={{ flex: 1, gap: 2 }}>
+              <View style={{ flex: 1, gap: spacing[1] }}>
                 <AppText variant="h2">{building.name}</AppText>
                 <AppText variant="bodySmall" tone="secondary">{building.address}</AppText>
               </View>
               <Badge label="Open" tone="success" />
             </View>
 
-            <View style={{ gap: 8 }}>
+            <View style={{ gap: spacing[2] }}>
               {featuredStalls.map((venue) => (
                 <Pressable
                   key={venue.id}
                   onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
                   style={{
                     backgroundColor: palette.bgSoft,
-                    borderRadius: 16,
-                    padding: 12,
+                    borderRadius: radii.md,
+                    padding: spacing[3],
                     flexDirection: "row",
                     alignItems: "center",
-                    gap: 12,
+                    gap: spacing[3],
                     borderWidth: 1,
                     borderColor: palette.border,
                   }}
                 >
-                  <View style={{ flex: 1, gap: 2 }}>
+                  <View style={{ flex: 1, gap: spacing[1] }}>
                     <AppText variant="h3">{venue.name}</AppText>
                     <AppText variant="micro" tone="secondary">{venue.unitNumber} · {venue.operatingHours}</AppText>
                   </View>

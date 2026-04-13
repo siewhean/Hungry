@@ -10,7 +10,9 @@ type Variant =
   | "h3"
   | "bodyLarge"
   | "body"
+  | "bodyBold"
   | "bodySmall"
+  | "bodySmallBold"
   | "micro"
   | "price"
   | "code";

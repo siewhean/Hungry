@@ -11,66 +11,15 @@ import { useNavigation } from "@react-navigation/native";
 import { ChevronRight } from "lucide-react-native";
 
 import { AppText } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { createDefaultBites, type HomeBite } from "@/features/home/bites";
 import { useHungryTheme } from "@/theme";
-import { BiteCard, type Bite } from "./BiteCard";
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-// In production this would come from the API / discovery store
-
-function createDefaultBites(): Bite[] {
-  const postDrivenBites = mockRepository
-    .listStallPosts()
-    .flatMap((post, index) =>
-      post.dishIds
-        .map((dishId) => mockRepository.getDishById(dishId))
-        .filter((dish): dish is NonNullable<typeof dish> => Boolean(dish))
-        .map((dish) => ({
-          id: `bite-${post.id}-${dish.id}`,
-          dishId: dish.id,
-          dishName: dish.name,
-          dishImageUrl: dish.imageUrl,
-          venueName: dish.venueName,
-          authorName: post.authorName,
-          authorAvatarUrl: post.authorAvatarUrl,
-          caption: post.caption,
-          heartCount: 140 + index * 22,
-          commentCount: 20 + index * 4,
-          tasteTag: dish.tasteTags[0] ?? "Popular",
-          createdAt: post.createdAt,
-        })),
-    );
-
-  const nearbyBites = mockRepository.listPopularNearby().map((dish, index) => ({
-    id: `bite-nearby-${dish.id}`,
-    dishId: dish.id,
-    dishName: dish.name,
-    dishImageUrl: dish.imageUrl,
-    venueName: dish.venueName,
-    authorName: dish.venueName,
-    authorAvatarUrl: dish.imageUrl,
-    caption: `Community pick: ${dish.name} at ${dish.venueName}.`,
-    heartCount: 100 + index * 17,
-    commentCount: 14 + index * 3,
-    tasteTag: dish.tasteTags[0] ?? "Popular",
-    createdAt: "Today",
-  }));
-
-  const uniqueByDishId = new Set<string>();
-  return [...postDrivenBites, ...nearbyBites].filter((bite) => {
-    if (uniqueByDishId.has(bite.dishId)) {
-      return false;
-    }
-    uniqueByDishId.add(bite.dishId);
-    return true;
-  });
-}
+import { BiteCard } from "./BiteCard";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface BitesCarouselProps {
   /** Optional override for the bites data (e.g. from API) */
-  bites?: Bite[];
+  bites?: HomeBite[];
   showHeader?: boolean;
 }
 
@@ -86,7 +35,7 @@ export function BitesCarousel({ bites, showHeader = true }: BitesCarouselProps) 
   const snapInterval = cardWidth + spacing[3];
 
   const renderBite = useCallback(
-    ({ item }: { item: Bite }) => (
+    ({ item }: { item: HomeBite }) => (
       <BiteCard
         bite={item}
         width={cardWidth}

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
-import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { ChevronRight, Compass, MapPinned, Search, Shuffle, Star, Flame, Home, Compass as CompassIcon, Utensils } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -23,11 +23,72 @@ const INTENT_CHIPS = [
 export function DiscoverHomeScreen() {
   const navigation = useNavigation<any>();
   const { width: screenWidth } = useWindowDimensions();
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { palette, radii, spacing, shadows, motion } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
   const { popularNearby, setDecideForMe } = useDiscoveryStore();
   const selectedCategories = useSearchStore((state) => state.filters.categories);
   const toggleCategory = useSearchStore((state) => state.toggleCategory);
+
+  const themeTints = useMemo(() => {
+    const hour = new Date().getHours();
+    const isLateNight = hour >= 22 || hour < 4;
+    return {
+      bg: isLateNight ? palette.navy : palette.bg,
+      text: isLateNight ? "#FFFFFF" : palette.text,
+      cardBg: isLateNight ? "rgba(255,255,255,0.05)" : palette.surface,
+      secondaryText: isLateNight ? "rgba(255,255,255,0.6)" : palette.textSecondary,
+      isLateNight,
+    };
+  }, [palette]);
+
+  const sortedChips = useMemo(() => {
+    if (themeTints.isLateNight) {
+      return [...INTENT_CHIPS].sort((a, b) => (a.id === "late" ? -1 : b.id === "late" ? 1 : 0));
+    }
+    return INTENT_CHIPS;
+  }, [themeTints.isLateNight]);
+
+  // ─── Idle Pulse Animation (Psychological Nudge) ───────────────────────────
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isPulsing, setIsPulsing] = useState(false);
+
+  const startPulse = useCallback(() => {
+    setIsPulsing(true);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.05,
+          duration: motion.idlePulse,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: motion.idlePulse,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [pulseAnim, motion.idlePulse]);
+
+  const resetIdleTimer = useCallback(() => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    if (isPulsing) {
+      pulseAnim.stopAnimation();
+      pulseAnim.setValue(1);
+      setIsPulsing(false);
+    }
+    idleTimerRef.current = setTimeout(() => {
+      startPulse();
+    }, 7000); // 7 seconds of inactivity
+  }, [isPulsing, pulseAnim, startPulse]);
+
+  useEffect(() => {
+    resetIdleTimer();
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, [resetIdleTimer]);
 
   const recommendedDishes = popularNearby.slice(0, 4);
   const nearbyVenues = mockRepository.listBuildings()
@@ -53,24 +114,26 @@ export function DiscoverHomeScreen() {
   };
 
   return (
-    <Screen scroll={false}>
+    <Screen scroll={false} style={{ backgroundColor: themeTints.bg }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ gap: spacing[6], paddingBottom: spacing[24] }}
+        onScroll={resetIdleTimer}
+        scrollEventThrottle={16}
       >
         {/* Dynamic Location Header */}
         <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[2] }}>
-          <AppText variant="micro" tone="accent" style={{ letterSpacing: 1, marginBottom: 2 }}>
+          <AppText variant="micro" style={{ color: themeTints.isLateNight ? "#FFFFFF" : palette.orange, letterSpacing: 1, marginBottom: 2, opacity: 0.8 }}>
             YOU ARE AT
           </AppText>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <AppText variant="h1" style={{ fontSize: 28 }}>Tanjong Pagar</AppText>
+            <AppText variant="h1" style={{ fontSize: 28, color: themeTints.text }}>Tanjong Pagar</AppText>
             <Pressable 
               onPress={() => navigation.navigate("Maps")}
-              style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: palette.orangeLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radii.pill }}
+              style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: themeTints.isLateNight ? "rgba(255,255,255,0.1)" : palette.orangeLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radii.pill }}
             >
-              <MapPinned color={palette.orange} size={14} />
-              <AppText variant="micro" style={{ color: palette.orange, fontWeight: "700" }}>MAP</AppText>
+              <MapPinned color={themeTints.isLateNight ? "#FFFFFF" : palette.orange} size={14} />
+              <AppText variant="micro" style={{ color: themeTints.isLateNight ? "#FFFFFF" : palette.orange, fontWeight: "700" }}>MAP</AppText>
             </Pressable>
           </View>
         </View>
@@ -82,20 +145,20 @@ export function DiscoverHomeScreen() {
             style={[
               shadows.card,
               {
-                backgroundColor: palette.surface,
+                backgroundColor: themeTints.cardBg,
                 borderRadius: radii.md,
                 flexDirection: "row",
                 alignItems: "center",
                 paddingHorizontal: spacing[4],
                 height: 52,
                 gap: spacing[3],
-                borderWidth: 1,
+                borderWidth: themeTints.isLateNight ? 0 : 1,
                 borderColor: palette.border,
               }
             ]}
           >
-            <Search color={palette.textMuted} size={20} />
-            <AppText tone="secondary" style={{ flex: 1 }}>Search dishes, stalls or vibes...</AppText>
+            <Search color={themeTints.isLateNight ? "#FFFFFF" : palette.textMuted} size={20} />
+            <AppText style={{ flex: 1, color: themeTints.secondaryText }}>Search dishes, stalls or vibes...</AppText>
           </Pressable>
         </View>
 
@@ -105,7 +168,7 @@ export function DiscoverHomeScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ gap: spacing[2], paddingHorizontal: spacing[4] }}
         >
-          {INTENT_CHIPS.map((chip) => {
+          {sortedChips.map((chip) => {
             const isActive = selectedCategories.includes(chip.category as SearchCategory);
             return (
               <Chip
@@ -113,57 +176,87 @@ export function DiscoverHomeScreen() {
                 label={chip.label}
                 selected={isActive}
                 onPress={() => toggleCategory(chip.category as SearchCategory)}
-                leftIcon={chip.id === "spicy" ? <Flame size={14} color={isActive ? palette.orange : palette.textSecondary} /> : 
-                          chip.id === "halal" ? <Home size={14} color={isActive ? palette.orange : palette.textSecondary} /> :
-                          chip.id === "late" ? <Compass size={14} color={isActive ? palette.orange : palette.textSecondary} /> :
-                          <Utensils size={14} color={isActive ? palette.orange : palette.textSecondary} />}
+                leftIcon={chip.id === "spicy" ? <Flame size={14} color={isActive ? palette.orange : themeTints.secondaryText} /> : 
+                          chip.id === "halal" ? <Home size={14} color={isActive ? palette.orange : themeTints.secondaryText} /> :
+                          chip.id === "late" ? <Compass size={14} color={isActive ? palette.orange : themeTints.secondaryText} /> :
+                          <Utensils size={14} color={isActive ? palette.orange : themeTints.secondaryText} />}
               />
             );
           })}
         </ScrollView>
 
         {/* Proactive Selection Grid */}
-        <View style={{ flexDirection: "row", gap: spacing[3], paddingHorizontal: spacing[4] }}>
-          <Pressable
-            onPress={handleDecideForMe}
-            style={[
-              shadows.card,
-              {
-                backgroundColor: palette.orange,
-                borderRadius: radii.lg,
-                flex: 1,
-                padding: spacing[4],
-                minHeight: 120,
-                justifyContent: "space-between",
-              },
-            ]}
-          >
-            <Shuffle color="#FFFFFF" size={24} />
-            <View>
-              <AppText variant="h3" tone="inverse">Decide For Me</AppText>
-              <AppText variant="micro" tone="inverse" style={{ opacity: 0.8 }}>Single-player pick</AppText>
-            </View>
-          </Pressable>
+        <View style={{ gap: spacing[3], paddingHorizontal: spacing[4] }}>
+          <View style={{ flexDirection: "row", gap: spacing[3] }}>
+            <Animated.View style={{ flex: 1, transform: [{ scale: pulseAnim }] }}>
+              <Pressable
+                onPress={handleDecideForMe}
+                style={[
+                  shadows.card,
+                  {
+                    backgroundColor: palette.orange,
+                    borderRadius: radii.lg,
+                    padding: spacing[4],
+                    minHeight: 120,
+                    justifyContent: "space-between",
+                  },
+                ]}
+              >
+                <Shuffle color="#FFFFFF" size={24} />
+                <View>
+                  <AppText variant="h3" tone="inverse">Decide For Me</AppText>
+                  <AppText variant="micro" tone="inverse" style={{ opacity: 0.8 }}>Single-player pick</AppText>
+                </View>
+              </Pressable>
+            </Animated.View>
 
+            <Pressable
+              onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
+              style={[
+                shadows.card,
+                {
+                  backgroundColor: themeTints.isLateNight ? "rgba(255,255,255,0.15)" : palette.navy,
+                  borderRadius: radii.lg,
+                  flex: 1,
+                  padding: spacing[4],
+                  minHeight: 120,
+                  justifyContent: "space-between",
+                },
+              ]}
+            >
+              <Compass color="#FFFFFF" size={24} />
+              <View>
+                <AppText variant="h3" tone="inverse">Hungry Wheel</AppText>
+                <AppText variant="micro" tone="inverse" style={{ opacity: 0.8 }}>Party mode</AppText>
+              </View>
+            </Pressable>
+          </View>
+
+          {/* New psychological ownership hook: Daily Crave */}
           <Pressable
-            onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
+            onPress={() => navigation.navigate("Crave")}
             style={[
               shadows.card,
               {
-                backgroundColor: palette.navy,
+                backgroundColor: themeTints.isLateNight ? "rgba(255,255,255,0.05)" : palette.bgSoft,
                 borderRadius: radii.lg,
-                flex: 1,
                 padding: spacing[4],
-                minHeight: 120,
-                justifyContent: "space-between",
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacing[4],
+                borderWidth: 1,
+                borderColor: palette.border,
               },
             ]}
           >
-            <Compass color="#FFFFFF" size={24} />
-            <View>
-              <AppText variant="h3" tone="inverse">Hungry Wheel</AppText>
-              <AppText variant="micro" tone="inverse" style={{ opacity: 0.8 }}>Party mode</AppText>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center" }}>
+              <Flame color="#FFFFFF" size={24} />
             </View>
+            <View style={{ flex: 1 }}>
+              <AppText variant="h3" style={{ color: themeTints.text }}>Daily Crave</AppText>
+              <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>Swipe to build your profile</AppText>
+            </View>
+            <ChevronRight color={themeTints.isLateNight ? "#FFFFFF" : palette.textMuted} size={20} />
           </Pressable>
         </View>
 
@@ -187,22 +280,24 @@ export function DiscoverHomeScreen() {
                 style={[
                   shadows.card,
                   {
-                    backgroundColor: palette.surface,
+                    backgroundColor: themeTints.cardBg,
                     borderRadius: radii.lg,
                     overflow: "hidden",
                     width: screenWidth * 0.65,
+                    borderWidth: themeTints.isLateNight ? 0 : 1,
+                    borderColor: palette.border,
                   },
                 ]}
               >
                 <Image source={{ uri: dish.imageUrl }} style={{ height: 160, width: "100%" }} contentFit="cover" />
-                <View style={{ padding: spacing[3], gap: 2 }}>
-                  <AppText variant="h3" numberOfLines={1}>{dish.name}</AppText>
-                  <AppText variant="micro" tone="secondary">{dish.venueName}</AppText>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 4 }}>
+                <View style={{ padding: spacing[3], gap: spacing[1] }}>
+                  <AppText variant="h3" numberOfLines={1} style={{ color: themeTints.text }}>{dish.name}</AppText>
+                  <AppText variant="micro" style={{ color: themeTints.secondaryText }}>{dish.venueName}</AppText>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: spacing[1] }}>
                     <AppText variant="price" style={{ color: palette.orange }}>S${dish.price.toFixed(2)}</AppText>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
                       <Star color={palette.amber} size={12} fill={palette.amber} />
-                      <AppText variant="micro" style={{ fontWeight: "700" }}>{dish.rating.toFixed(1)}</AppText>
+                      <AppText variant="micro" style={{ fontWeight: "700", color: themeTints.text }}>{dish.rating.toFixed(1)}</AppText>
                     </View>
                   </View>
                 </View>
@@ -214,7 +309,7 @@ export function DiscoverHomeScreen() {
         {/* Stalls Near You (Horizontal Selection) */}
         <View style={{ gap: spacing[3] }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing[4] }}>
-            <AppText variant="h2">Stalls Near You</AppText>
+            <AppText variant="h2" style={{ color: themeTints.text }}>Stalls Near You</AppText>
             <Pressable onPress={() => navigation.navigate("Maps")}>
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>VIEW MAP</AppText>
             </Pressable>
@@ -231,11 +326,13 @@ export function DiscoverHomeScreen() {
                 style={[
                   shadows.card,
                   {
-                    backgroundColor: palette.surface,
+                    backgroundColor: themeTints.cardBg,
                     borderRadius: radii.lg,
                     width: 160,
                     padding: spacing[3],
                     gap: spacing[2],
+                    borderWidth: themeTints.isLateNight ? 0 : 1,
+                    borderColor: palette.border,
                   },
                 ]}
               >
@@ -244,9 +341,9 @@ export function DiscoverHomeScreen() {
                   style={{ borderRadius: radii.md, height: 100, width: "100%" }}
                   contentFit="cover"
                 />
-                <View style={{ gap: 2 }}>
-                  <AppText variant="bodySmall" style={{ fontWeight: "700" }} numberOfLines={1}>{venue.name}</AppText>
-                  <AppText variant="micro" tone="secondary" numberOfLines={1}>{venue.unitNumber} · {venue.operatingHours.split("–")[0]}</AppText>
+                <View style={{ gap: spacing[1] }}>
+                  <AppText variant="bodySmall" style={{ fontWeight: "700", color: themeTints.text }} numberOfLines={1}>{venue.name}</AppText>
+                  <AppText variant="micro" style={{ color: themeTints.secondaryText }} numberOfLines={1}>{venue.unitNumber} · {venue.operatingHours.split("–")[0]}</AppText>
                 </View>
               </Pressable>
             ))}

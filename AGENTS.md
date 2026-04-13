@@ -151,6 +151,7 @@ ALWAYS:
   - Keep mock data in data.ts
   - Keep types in domain.ts
   - Mark tasks in tasks/todo.md as you progress
+  - If a task is completed, immediately update that task's status/progress in tasks/todo.md in the same work session
   - Record lessons in tasks/lessons.md after any correction
 ```
 
@@ -178,6 +179,7 @@ See `tasks/test-harness.md` for patterns and examples.
 Before ending any session that changed code:
   [ ] npm run typecheck — passes
   [ ] tasks/todo.md — all done items marked [x]
+  [ ] tasks/todo.md — each completed task has updated progress/status notes
   [ ] tasks/todo.md — review section added
   [ ] tasks/lessons.md — any correction recorded
   [ ] README.md — status section updated if progress/decisions changed

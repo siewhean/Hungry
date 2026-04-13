@@ -52,7 +52,7 @@ export function LoginScreen({ navigation }: Props) {
         <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "center", marginTop: spacing[2] }}>
           <AppText tone="secondary">New to Hungry? </AppText>
           <Pressable onPress={() => navigation.navigate("SignUp")}>
-            <AppText tone="accent" style={{ fontFamily: "Nunito_700Bold" }}>Create account</AppText>
+            <AppText variant="bodyBold" tone="accent">Create account</AppText>
           </Pressable>
         </View>
       }
@@ -82,7 +82,7 @@ export function LoginScreen({ navigation }: Props) {
             name="password"
             rules={{ validate: (value) => validatePassword(value, 8) }}
             render={({ field: { onChange, value } }) => (
-              <View style={{ gap: 2 }}>
+              <View style={{ gap: spacing[1] }}>
                 <Input
                   placeholder="Password"
                   secureTextEntry={!showPassword}

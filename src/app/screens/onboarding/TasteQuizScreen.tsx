@@ -120,7 +120,7 @@ const DIETARY_OPTIONS: Array<{ value: DietaryFlag; label: string; keywords: stri
 ];
 
 export function TasteQuizScreen({ navigation, route }: Props) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { motion, palette, radii, spacing } = useHungryTheme();
   const { width } = useWindowDimensions();
   const setTasteVector = useProfileStore((state) => state.setTasteVector);
   const profile = useProfileStore((state) => state.profile);
@@ -178,7 +178,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
     optionsSlideAnim.setValue(0);
     Animated.timing(optionsSlideAnim, {
       toValue: exitTo,
-      duration: 480,
+      duration: motion.onboardingStep,
       easing: Easing.linear,
       useNativeDriver: true,
     }).start(() => {
@@ -191,7 +191,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
         });
         Animated.timing(optionsSlideAnim, {
           toValue: 0,
-          duration: 480,
+          duration: motion.onboardingStep,
           easing: Easing.linear,
           useNativeDriver: true,
         }).start(() => {
@@ -239,10 +239,10 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   useEffect(() => {
     Animated.timing(progressAnim, {
       toValue: inDietaryStep ? totalSteps : step + 1,
-      duration: 260,
+      duration: motion.onboardingProgress,
       useNativeDriver: false,
     }).start();
-  }, [inDietaryStep, progressAnim, step, totalSteps]);
+  }, [inDietaryStep, motion.onboardingProgress, progressAnim, step, totalSteps]);
 
   return (
     <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1, overflow: "hidden" }} edges={["top", "left", "right", "bottom"]}>
@@ -434,7 +434,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                       <Pressable
                         disabled
                         style={[
-                          isSelected ? styles.whiteGlow : null,
+                          isSelected ? { ...styles.whiteGlow, shadowColor: palette.surface } : null,
                           {
                             backgroundColor: palette.bg,
                             borderRadius: radii.pill,
@@ -567,7 +567,6 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   whiteGlow: {
-    shadowColor: "#FFFFFF",
     shadowOpacity: 0.95,
     shadowRadius: 22,
     shadowOffset: { width: 0, height: 0 },

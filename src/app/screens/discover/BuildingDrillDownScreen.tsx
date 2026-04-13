@@ -519,12 +519,12 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
               style={{
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
-                borderRadius: 24,
+                borderRadius: radii.xl,
                 borderWidth: 1,
                 overflow: "hidden",
               }}
             >
-              <View style={{ gap: 4, paddingHorizontal: spacing[4], paddingTop: spacing[4] }}>
+              <View style={{ gap: spacing[1], paddingHorizontal: spacing[4], paddingTop: spacing[4] }}>
                 <AppText variant="h3">Store directory map</AppText>
                 <AppText variant="bodySmall" tone="secondary">
                   Floor {activeFloor} · tap a stall polygon to inspect that unit.
@@ -610,12 +610,12 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                       style={{
                         backgroundColor: palette.surface,
                         borderColor: isSelected ? palette.orange : palette.border,
-                        borderRadius: 12,
+                        borderRadius: radii.md,
                         borderWidth: 1,
-                        gap: 4,
+                        gap: spacing[1],
                         minHeight: 56,
                         paddingHorizontal: spacing[3],
-                        paddingVertical: 6,
+                        paddingVertical: spacing[2],
                         width: "100%",
                       }}
                     >
@@ -628,7 +628,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                             {record.unitNumber}
                           </AppText>
                         </View>
-                        <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                        <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
                           <StatusBadge status={status} />
                           <Pressable
                             accessibilityRole="button"
@@ -667,7 +667,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                   style={{
                     backgroundColor: palette.surface,
                     borderColor: palette.border,
-                    borderRadius: 18,
+                    borderRadius: radii.lg,
                     borderWidth: 1,
                     paddingHorizontal: spacing[4],
                     paddingVertical: spacing[4],
@@ -686,7 +686,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                 style={{
                   backgroundColor: palette.surface,
                   borderColor: palette.border,
-                  borderRadius: 22,
+                  borderRadius: radii.xl,
                   borderWidth: 1,
                   gap: spacing[3],
                   paddingHorizontal: spacing[4],
@@ -711,9 +711,9 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                       style={{
                         backgroundColor: palette.bgSoft,
                         borderColor: palette.border,
-                        borderRadius: 16,
+                        borderRadius: radii.lg,
                         borderWidth: 1,
-                        gap: 3,
+                        gap: spacing[1],
                         minWidth: 164,
                         paddingHorizontal: spacing[3],
                         paddingVertical: spacing[3],
@@ -785,14 +785,14 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                     style={{
                       backgroundColor: palette.bgSoft,
                       borderColor: palette.border,
-                      borderRadius: 18,
+                      borderRadius: radii.lg,
                       borderWidth: 1,
                       padding: spacing[4],
                       flexDirection: "row",
                       gap: spacing[3],
                     }}
                   >
-                    <View style={{ flex: 1, gap: 2 }}>
+                    <View style={{ flex: 1, gap: spacing[1] }}>
                       <AppText variant="h3">{activeRecord.dish.name}</AppText>
                       <AppText variant="price" style={{ color: palette.orange }}>
                         S${activeRecord.dish.price.toFixed(2)}

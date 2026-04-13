@@ -9,17 +9,17 @@ import type { OnboardingStackParamList } from "./OnboardingStack";
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileLoading">;
 
 export function TasteProfileLoadingScreen({ navigation }: Props) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { motion, palette, radii, spacing } = useHungryTheme();
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(progress, {
       toValue: 1,
-      duration: 1600,
+      duration: motion.onboardingLoading,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start(() => navigation.replace("TasteProfileResult"));
-  }, [navigation, progress]);
+  }, [motion.onboardingLoading, navigation, progress]);
 
   return (
     <View style={{ alignItems: "center", backgroundColor: palette.bg, flex: 1, justifyContent: "center", padding: spacing[6] }}>

@@ -49,7 +49,6 @@ export function DeliveryPlatformButton({ link, compact = false }: DeliveryPlatfo
         <AppText 
           variant="body" 
           tone={platformMeta[link.platform] ? "inverse" : "default"} 
-          style={styles.label} 
           numberOfLines={1}
         >
           {meta.label}
@@ -69,9 +68,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     justifyContent: "center",
-  },
-  label: {
-    fontFamily: "Nunito_600SemiBold",
   },
 });
 

@@ -51,7 +51,7 @@ export function SignUpScreen({ navigation }: Props) {
           <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "center" }}>
             <AppText tone="secondary">Already have an account? </AppText>
             <Pressable onPress={() => navigation.navigate("Login")}>
-              <AppText tone="accent" style={{ fontFamily: "Nunito_700Bold" }}>Log in</AppText>
+              <AppText variant="bodyBold" tone="accent">Log in</AppText>
             </Pressable>
           </View>
         </View>
@@ -75,7 +75,7 @@ export function SignUpScreen({ navigation }: Props) {
             name="displayName"
             rules={{ validate: (value) => validateRequired(value, "Display name") }}
             render={({ field: { onChange, value } }) => (
-              <View style={{ gap: 4 }}>
+              <View style={{ gap: spacing[1] }}>
                 <Input 
                   placeholder="Full Name" 
                   value={value} 
@@ -91,7 +91,7 @@ export function SignUpScreen({ navigation }: Props) {
             name="email"
             rules={{ validate: validateEmail }}
             render={({ field: { onChange, value } }) => (
-              <View style={{ gap: 4 }}>
+              <View style={{ gap: spacing[1] }}>
                 <Input 
                   placeholder="Email Address" 
                   value={value} 
@@ -109,7 +109,7 @@ export function SignUpScreen({ navigation }: Props) {
             name="password"
             rules={{ validate: (value) => validatePassword(value, 8) }}
             render={({ field: { onChange, value } }) => (
-              <View style={{ gap: 2 }}>
+              <View style={{ gap: spacing[1] }}>
                 <Input
                   placeholder="Create Password"
                   value={value}

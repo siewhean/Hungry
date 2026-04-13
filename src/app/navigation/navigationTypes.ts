@@ -71,6 +71,7 @@ export type RootStackParamList = {
   ReviewStack: NavigatorScreenParams<ReviewStackParamList>;
   WheelStack: NavigatorScreenParams<WheelStackParamList>;
   DirectMessages: undefined;
+  Crave: undefined;
   Offline: undefined;
   NotFound: { title?: string; body?: string } | undefined;
   Post: { venueId?: string; dishId?: string } | undefined;

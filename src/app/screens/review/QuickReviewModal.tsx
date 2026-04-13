@@ -6,7 +6,7 @@ import { useHungryTheme } from "@/theme";
 import { QuickReviewSheet } from "./QuickReviewSheet";
 
 export function QuickReviewModal() {
-  const { palette } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
   const payload = useUIStore((state) => state.quickReview);
   const hideQuickReview = useUIStore((state) => state.hideQuickReview);
   const showReviewSuccess = useUIStore((state) => state.showReviewSuccess);
@@ -40,7 +40,7 @@ export function QuickReviewModal() {
       backgroundStyle={{ backgroundColor: palette.surface }}
       handleIndicatorStyle={{ backgroundColor: palette.border }}
     >
-      <BottomSheetView style={{ padding: 20 }}>
+      <BottomSheetView style={{ padding: spacing[5] }}>
         <QuickReviewSheet 
           venueName={payload.venueName} 
           dishName={payload.dishName}

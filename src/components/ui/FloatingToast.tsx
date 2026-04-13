@@ -11,7 +11,7 @@ import { AppText } from "./AppText";
 export function FloatingToast() {
   const toast = useUIStore((state) => state.toast);
   const clearToast = useUIStore((state) => state.clearToast);
-  const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
+  const { motion, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const tone = toast?.tone ?? "info";
 
   useEffect(() => {
@@ -27,9 +27,9 @@ export function FloatingToast() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
-    const timer = setTimeout(() => clearToast(), 3500);
+    const timer = setTimeout(() => clearToast(), motion.toastAutoDismiss);
     return () => clearTimeout(timer);
-  }, [toast, clearToast, tone]);
+  }, [toast, clearToast, motion.toastAutoDismiss, tone]);
 
   if (!toast) return null;
 
@@ -45,8 +45,8 @@ export function FloatingToast() {
   return (
     <View pointerEvents="box-none" style={[styles.wrapper, { zIndex: zIndex.toast }]}>
       <Animated.View 
-        entering={FadeInDown.duration(250)} 
-        exiting={FadeOutUp.duration(250)}
+        entering={FadeInDown.duration(motion.toast)}
+        exiting={FadeOutUp.duration(motion.toast)}
       >
         <Pressable
           accessibilityRole="alert"
@@ -79,6 +79,5 @@ const styles = StyleSheet.create({
     left: 16,
     position: "absolute",
     right: 16,
-    zIndex: 30,
   },
 });

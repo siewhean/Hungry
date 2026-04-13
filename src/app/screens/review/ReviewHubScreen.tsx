@@ -88,7 +88,7 @@ export function ReviewHubScreen({ navigation }: Props) {
                     {
                       ...shadows.card,
                       backgroundColor: pressed ? palette.bgSoft : palette.surface,
-                      borderRadius: 20,
+                      borderRadius: radii.lg,
                       padding: spacing[4],
                       borderWidth: 1,
                       borderColor: palette.orange,
@@ -103,7 +103,7 @@ export function ReviewHubScreen({ navigation }: Props) {
                       backgroundColor: palette.orangeLight,
                       width: 40,
                       height: 40,
-                      borderRadius: 12,
+                      borderRadius: radii.md,
                       alignItems: "center",
                       justifyContent: "center",
                     }}
@@ -156,7 +156,7 @@ export function ReviewHubScreen({ navigation }: Props) {
                 ) : null}
                 <View style={{ padding: spacing[4], gap: spacing[3] }}>
                   <View style={{ gap: spacing[2] }}>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3] }}>
                       <View style={{ flex: 1 }}>
                         <AppText variant="h3">{item.name}</AppText>
                         <AppText variant="bodySmall" tone="secondary">

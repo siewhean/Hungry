@@ -47,17 +47,17 @@ export function FavouritesScreen({ navigation }: Props) {
                   <Image source={{ uri: dish.imageUrl }} style={{ width: "100%", height: "100%" }} contentFit="cover" />
                   <Pressable 
                     onPress={() => toggleFavourite(dish)}
-                    style={{ position: "absolute", top: 8, right: 8, width: 32, height: 32, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.9)", alignItems: "center", justifyContent: "center" }}
+                    style={{ position: "absolute", top: spacing[2], right: spacing[2], width: 32, height: 32, borderRadius: radii.pill, backgroundColor: "rgba(255,255,255,0.9)", alignItems: "center", justifyContent: "center" }}
                   >
                     <Heart size={16} color={palette.error} fill={palette.error} />
                   </Pressable>
                 </View>
-                <View style={{ padding: spacing[3], gap: 2 }}>
-                  <AppText style={{ fontWeight: "800", fontSize: 14 }} numberOfLines={1}>{dish.name}</AppText>
+                <View style={{ padding: spacing[3], gap: spacing[1] }}>
+                  <AppText variant="bodyBold" numberOfLines={1}>{dish.name}</AppText>
                   <AppText variant="micro" tone="secondary" numberOfLines={1}>{venue?.name}</AppText>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: spacing[1] }}>
                     <AppText style={{ color: palette.orange, fontWeight: "800", fontSize: 13 }}>S${dish.price.toFixed(2)}</AppText>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
                       <Star color={palette.amber} fill={palette.amber} size={10} />
                       <AppText variant="micro" style={{ fontWeight: "700" }}>{dish.rating.toFixed(1)}</AppText>
                     </View>

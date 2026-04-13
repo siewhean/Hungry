@@ -11,7 +11,7 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ width = "100%", height = 20, borderRadius = 8, style }: SkeletonProps) {
-  const { palette } = useHungryTheme();
+  const { motion, palette } = useHungryTheme();
   const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
@@ -19,17 +19,17 @@ export function Skeleton({ width = "100%", height = 20, borderRadius = 8, style 
       Animated.sequence([
         Animated.timing(opacity, {
           toValue: 0.7,
-          duration: 800,
+          duration: Math.round(motion.skeleton / 2),
           useNativeDriver: true,
         }),
         Animated.timing(opacity, {
           toValue: 0.3,
-          duration: 800,
+          duration: Math.round(motion.skeleton / 2),
           useNativeDriver: true,
         }),
       ]),
     ).start();
-  }, [opacity]);
+  }, [motion.skeleton, opacity]);
 
   return (
     <Animated.View

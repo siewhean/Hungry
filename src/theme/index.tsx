@@ -27,6 +27,23 @@ const ThemeContext = createContext<HungryTheme | null>(null);
 export function HungryThemeProvider({ children }: PropsWithChildren) {
   const colorScheme: "light" = "light";
   const palette = colors[colorScheme];
+  const themedShadows = useMemo(
+    () => ({
+      card: {
+        ...shadows.card,
+        shadowColor: palette.navy,
+      },
+      floating: {
+        ...shadows.floating,
+        shadowColor: palette.navy,
+      },
+      bottomSheet: {
+        ...shadows.bottomSheet,
+        shadowColor: palette.navy,
+      },
+    }),
+    [palette],
+  );
 
   const [nunitoLoaded] = useNunitoFonts({
     Nunito_400Regular,
@@ -62,13 +79,13 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
       palette,
       spacing,
       radii,
-      shadows,
+      shadows: themedShadows,
       typography,
       motion,
       zIndex,
       fontsLoaded: nunitoLoaded && monoLoaded,
     }),
-    [colorScheme, theme, palette, nunitoLoaded, monoLoaded],
+    [colorScheme, theme, palette, themedShadows, nunitoLoaded, monoLoaded],
   );
 
   return (

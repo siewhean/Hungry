@@ -25,7 +25,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
@@ -68,23 +68,24 @@ export function StallDetailScreen({ navigation, route }: Props) {
               paddingTop: insets.top,
               paddingHorizontal: spacing[4],
               borderBottomWidth: 0,
+              zIndex: zIndex.overlay,
             },
           ]}
         >
           <LinearGradient
-            colors={["rgba(0,0,0,0.3)", "transparent"]}
+            colors={[palette.overlay, "transparent"]}
             style={[StyleSheet.absoluteFill, { height: 100 }]}
           />
           <Pressable 
             onPress={() => navigation.goBack()}
-            style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" }, shadows.floating]}
+            style={[{ width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center" }, shadows.floating]}
           >
             <ChevronLeft color={palette.text} size={24} />
           </Pressable>
           <View style={{ flex: 1 }} />
           <Pressable 
             onPress={handleShare}
-            style={[{ width: 44, height: 44, borderRadius: 22, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" }, shadows.floating]}
+            style={[{ width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center" }, shadows.floating]}
           >
             <Share2 color={palette.text} size={20} />
           </Pressable>
@@ -102,14 +103,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
               contentFit="cover"
             />
             <LinearGradient
-              colors={["transparent", palette.bg]}
+              colors={[`${palette.bg}00`, `${palette.bg}B3`, palette.bg]}
               style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80 }}
             />
             {/* Rating Pill - Floating */}
             <View style={{ position: "absolute", bottom: -spacing[2], right: spacing[4] }}>
-              <View style={[{ backgroundColor: palette.amber, borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 6, flexDirection: "row", alignItems: "center", gap: 4, ...shadows.floating }]}>
-                <Star color="#FFFFFF" fill="#FFFFFF" size={14} />
-                <AppText style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 15 }}>{(leadDish?.rating ?? 4.8).toFixed(1)}</AppText>
+              <View style={[{ backgroundColor: palette.amber, borderRadius: radii.pill, paddingHorizontal: spacing[3], paddingVertical: spacing[2], flexDirection: "row", alignItems: "center", gap: spacing[1], ...shadows.floating }]}>
+                <Star color={palette.surface} fill={palette.surface} size={14} />
+                <AppText style={{ color: palette.surface, fontWeight: "800", fontSize: 15 }}>{(leadDish?.rating ?? 4.8).toFixed(1)}</AppText>
               </View>
             </View>
           </View>
@@ -117,7 +118,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
           <View style={{ gap: spacing[6], paddingHorizontal: spacing[5], paddingTop: spacing[5] }}>
             {/* Header Content */}
             <View style={{ gap: spacing[1] }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginBottom: spacing[1] }}>
                 <MapPin color={palette.orange} size={14} />
                 <AppText variant="micro" style={{ color: palette.orange, fontWeight: "700", textTransform: "uppercase" }}>
                   {building?.name ?? "Food Centre"}
@@ -129,12 +130,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
             {/* Attributes */}
             <View style={{ flexDirection: "row", gap: spacing[3] }}>
-              <Card style={{ flex: 1, padding: spacing[4], gap: 4 }}>
+              <Card style={{ flex: 1, padding: spacing[4], gap: spacing[1] }}>
                 <AppText variant="micro" tone="secondary" style={{ letterSpacing: 0.5 }}>OPERATING</AppText>
                 <AppText variant="bodyLarge" style={{ fontWeight: "700" }}>Open Now</AppText>
                 <AppText variant="micro" tone="secondary">{venue.operatingHours.split(" – ")[0]}</AppText>
               </Card>
-              <Card style={{ flex: 1, padding: spacing[4], gap: 4 }}>
+              <Card style={{ flex: 1, padding: spacing[4], gap: spacing[1] }}>
                 <AppText variant="micro" tone="secondary" style={{ letterSpacing: 0.5 }}>HYGIENE</AppText>
                 <AppText variant="bodyLarge" style={{ fontWeight: "700" }}>Grade {venue.hygieneGrade}</AppText>
                 <AppText variant="micro" tone="secondary">NEA Certified</AppText>
@@ -246,7 +247,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     top: 0,
-    zIndex: 10,
   },
   communityReview: {
     paddingVertical: 12,

@@ -85,11 +85,10 @@ export function Button({
           color={variant === "primary" || variant === "destructive" ? "#FFFFFF" : palette.text}
         />
       ) : (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
           {leftIcon}
           <AppText
             variant="h3"
-            style={styles.label}
             tone={variant === "primary" || variant === "destructive" ? "inverse" : "default"}
           >
             {label}
@@ -106,8 +105,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
-  },
-  label: {
-    fontFamily: "Nunito_600SemiBold",
   },
 });

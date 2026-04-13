@@ -24,7 +24,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelResult">;
 
 export function WheelResultModal({ navigation, route }: Props) {
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { palette, spacing, radii, shadows, motion } = useHungryTheme();
   const { winnerEntryId, partyId } = route.params;
 
   const party = useWheelStore((s) => s.party);
@@ -50,11 +50,11 @@ export function WheelResultModal({ navigation, route }: Props) {
       }),
       Animated.timing(opacityAnim, {
         toValue: 1,
-        duration: 200,
+        duration: motion.modalEnter,
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [motion.modalEnter, opacityAnim, scaleAnim]);
 
   function handleStallDetail() {
     if (!winnerEntry) return;
@@ -165,10 +165,10 @@ export function WheelResultModal({ navigation, route }: Props) {
                 gap: spacing[2],
               }}
             >
-              <Navigation size={16} color="#FFFFFF" />
+              <Navigation size={16} color={palette.surface} />
               <AppText
                 variant="h3"
-                style={{ color: "#FFFFFF" }}
+                tone="inverse"
               >
                 View stall
               </AppText>

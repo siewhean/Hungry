@@ -85,18 +85,25 @@ export const radii = {
 
 export const shadows = {
   card: {
-    shadowColor: "#111827",
+    shadowColor: "transparent" as string,
     shadowOpacity: 0.05,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 6 },
     elevation: 2,
   },
   floating: {
-    shadowColor: "#111827",
+    shadowColor: "transparent" as string,
     shadowOpacity: 0.1,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 },
     elevation: 4,
+  },
+  bottomSheet: {
+    shadowColor: "transparent" as string,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: -4 },
+    elevation: 8,
   },
 } as const;
 
@@ -107,7 +114,9 @@ export const typography = {
   h3: { fontSize: 19, lineHeight: 24, fontFamily: "Nunito_600SemiBold" },
   bodyLarge: { fontSize: 18, lineHeight: 26, fontFamily: "Nunito_400Regular" },
   body: { fontSize: 16, lineHeight: 24, fontFamily: "Nunito_400Regular" },
+  bodyBold: { fontSize: 16, lineHeight: 24, fontFamily: "Nunito_700Bold" },
   bodySmall: { fontSize: 14, lineHeight: 22, fontFamily: "Nunito_400Regular" },
+  bodySmallBold: { fontSize: 14, lineHeight: 22, fontFamily: "Nunito_700Bold" },
   micro: { fontSize: 12, lineHeight: 16, fontFamily: "Nunito_500Medium", letterSpacing: 0.6 },
   price: { fontSize: 16, lineHeight: 24, fontFamily: "DMMono_400Regular" },
   code: { fontSize: 14, lineHeight: 22, fontFamily: "DMMono_400Regular" },
@@ -118,14 +127,36 @@ export const motion = {
   screenTransition: 250,
   sheet: 300,
   toast: 250,
+  toastAutoDismiss: 3500,
   skeleton: 1500,
+  modalEnter: 200,
+  splashFast: 200,
+  splashMedium: 280,
+  splashReveal: 400,
+  splashDot: 260,
+  splashTotal: 2000,
+  decideForMeCounter: 1000,
+  onboardingLoading: 1600,
+  onboardingSlide: 300,
+  onboardingStep: 480,
+  onboardingProgress: 260,
+  onboardingSegmentFill: 500,
+  onboardingBulletEnter: 320,
+  onboardingHeadlineEnter: 380,
+  wheelSpin: 4000,
+  craveSwipe: 250,
+  idlePulse: 800,
+  microInteraction: 200,
+  doubleTapWindow: 260,
 } as const;
 
 export const zIndex = {
   map: 1,
   overlay: 10,
+  sheet: 20,
   fab: 20,
   toast: 30,
+  globalBack: 40,
 } as const;
 
 export type HungryPalette = (typeof colors)[keyof typeof colors];
