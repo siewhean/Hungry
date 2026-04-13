@@ -1,575 +1,223 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, FlatList, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Image } from "expo-image";
-import { Easing } from "react-native";
-import { Check, ChevronRight, Search } from "lucide-react-native";
+import { useRef, useState } from "react";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 
-import { Button, AppText, Card, Input } from "@/components/ui";
-import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
+import { Button, AppText } from "@/components/ui";
+import { TASTE_DIMENSIONS } from "@/constants/taste";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
-import type { DietaryFlag, TasteVector } from "@/types/domain";
+import type { TasteVector } from "@/types/domain";
+import { OnboardingScreenShell } from "./OnboardingScreenShell";
 import type { OnboardingStackParamList } from "./OnboardingStack";
-import {
-  ONBOARDING_ACTIONS_BOTTOM_PADDING,
-  ONBOARDING_ACTIONS_GAP,
-  ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
-} from "./layoutConstants";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteQuiz">;
 
-const INITIAL: TasteVector = NEUTRAL_TASTE_VECTOR;
+const INITIAL: TasteVector = { sweet: 5, spicy: 5, sour: 5, salty: 5, rich: 5, aromatic: 5 };
 
 const QUESTIONS = {
-  sweet: "Pick your sweetness mood",
-  spicy: "How spicy tonight?",
-  sour: "How much tang do you want?",
-  salty: "Salt profile for this meal",
-  rich: "How rich should it feel?",
-  aromatic: "How fragrant should it be?",
+  sweet: "How much do you love sweet food?",
+  spicy: "How spicy do you like your food?",
+  sour: "Can you handle a strong sour punch?",
+  salty: "How salty do you prefer your dishes?",
+  rich: "Do you prefer rich, heavy flavours?",
+  aromatic: "How important are fragrant herbs and spices?",
 } as const;
 
-const CHOICE_IMAGES = {
-  sweet: [
-    "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1495147466023-ac5c588e2e94?auto=format&fit=crop&w=800&q=80",
-  ],
-  spicy: [
-    "https://images.unsplash.com/photo-1617692855027-33b14f061079?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1583032015879-e5022cb87c3b?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=800&q=80",
-  ],
-  sour: [
-    "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1505252585461-04db1eb84625?auto=format&fit=crop&w=800&q=80",
-  ],
-  salty: [
-    "https://images.unsplash.com/photo-1516684669134-de6f7c473a2a?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1541544741938-0af808871cc0?auto=format&fit=crop&w=800&q=80",
-  ],
-  rich: [
-    "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=80",
-  ],
-  aromatic: [
-    "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=800&q=80",
-  ],
+const LABELS = {
+  sweet: ["Not sweet", "Balanced", "Very sweet"],
+  spicy: ["Mild please", "Some heat", "Bring the fire"],
+  sour: ["Avoid sour", "A little", "Love it sour"],
+  salty: ["Low sodium", "Just right", "Salt everything"],
+  rich: ["Light & fresh", "Mix", "Rich & hearty"],
+  aromatic: ["Plain", "Moderate", "Very fragrant"],
 } as const;
-
-function toBwVariant(url: string) {
-  return `${url}&sat=-100`;
-}
 
 const STEPS = TASTE_DIMENSIONS.map((d) => d.key);
 
 const OPTIONS = [2, 5, 8] as const;
-const BACK_BUTTON_WIDTH = "30%" as const;
-const PRIMARY_BUTTON_WIDTH = "54%" as const;
-const ACTIONS_FOOTER_HEIGHT = 124;
-const OPTIONS_VERTICAL_GAP_UNITS = 6;
-
-const LABELS = {
-  sweet: ["Light", "Balanced", "Sweet-forward"],
-  spicy: ["Mild", "Medium", "Fiery"],
-  sour: ["Subtle", "Balanced", "Punchy"],
-  salty: ["Light", "Balanced", "Bold"],
-  rich: ["Light", "Balanced", "Rich"],
-  aromatic: ["Subtle", "Balanced", "Intense"],
-} as const;
-
-const DIETARY_OPTIONS: Array<{ value: DietaryFlag; label: string; keywords: string[] }> = [
-  { value: "vegetarian", label: "Vegetarian", keywords: ["veg"] },
-  { value: "vegan", label: "Vegan", keywords: ["plant"] },
-  { value: "halal", label: "Halal", keywords: ["muslim", "halal"] },
-  { value: "gluten_free", label: "Gluten Free", keywords: ["gluten", "wheat"] },
-  { value: "dairy_free", label: "Dairy Free", keywords: ["milk", "lactose"] },
-  { value: "egg_free", label: "Egg Free", keywords: ["egg"] },
-  { value: "nut_free", label: "Nut Free", keywords: ["nut", "peanut", "almond"] },
-  { value: "peanut_free", label: "Peanut Free", keywords: ["peanut"] },
-  { value: "shellfish_free", label: "Shellfish Free", keywords: ["shrimp", "prawn", "shellfish"] },
-  { value: "soy_free", label: "Soy Free", keywords: ["soy", "tofu"] },
-  { value: "sesame_free", label: "Sesame Free", keywords: ["sesame"] },
-  { value: "pork_free", label: "Pork Free", keywords: ["pork"] },
-  { value: "pescatarian", label: "Pescatarian", keywords: ["fish"] },
-  { value: "kosher", label: "Kosher", keywords: ["jewish", "kosher"] },
-  { value: "keto", label: "Keto", keywords: ["keto", "ketogenic"] },
-  { value: "paleo", label: "Paleo", keywords: ["paleo"] },
-  { value: "low_carb", label: "Low Carb", keywords: ["carb"] },
-  { value: "low_sodium", label: "Low Sodium", keywords: ["salt", "sodium"] },
-  { value: "low_sugar", label: "Low Sugar", keywords: ["sugar"] },
-  { value: "diabetic_friendly", label: "Diabetic Friendly", keywords: ["diabetic", "diabetes", "glycemic"] },
-  { value: "fodmap_friendly", label: "FODMAP Friendly", keywords: ["fodmap", "ibs"] },
-  { value: "beef_free", label: "Beef Free", keywords: ["beef"] },
-  { value: "allium_free", label: "Allium Free", keywords: ["onion", "garlic", "allium"] },
-  { value: "fish_free", label: "Fish Free", keywords: ["fish"] },
-  { value: "mollusc_free", label: "Mollusc Free", keywords: ["mollusc", "clam", "oyster", "mussel"] },
-  { value: "celery_free", label: "Celery Free", keywords: ["celery"] },
-  { value: "mustard_free", label: "Mustard Free", keywords: ["mustard"] },
-  { value: "lupin_free", label: "Lupin Free", keywords: ["lupin"] },
-  { value: "sulphite_free", label: "Sulphite Free", keywords: ["sulphite", "sulfite"] },
-];
 
 export function TasteQuizScreen({ navigation }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
-  const { width } = useWindowDimensions();
-  const setTasteVector = useProfileStore((state) => state.setTasteVector);
-  const profile = useProfileStore((state) => state.profile);
-  const setDietaryPreferences = useProfileStore((state) => state.setDietaryPreferences);
   const setSkippedTasteQuiz = useSessionStore((state) => state.setSkippedTasteQuiz);
-  const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
+  const updateTasteVector = useProfileStore((state) => state.updateTasteVector);
   const [values, setValues] = useState<TasteVector>(INITIAL);
-  const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(profile.dietaryPreferences);
-  const [dietaryQuery, setDietaryQuery] = useState("");
   const [step, setStep] = useState(0);
-  const [phase, setPhase] = useState<"taste" | "dietary">("taste");
-  const [answeredKeys, setAnsweredKeys] = useState<Record<string, boolean>>({});
-  const [snappedIndex, setSnappedIndex] = useState(1);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const optionsSlideAnim = useRef(new Animated.Value(0)).current;
-  const progressAnim = useRef(new Animated.Value(1)).current;
-  const quizScrollX = useRef(new Animated.Value(0)).current;
-  const carouselRef = useRef<FlatList<number> | null>(null);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
   const currentKey = STEPS[step];
-  const labels = LABELS[currentKey];
-  const choiceImages = CHOICE_IMAGES[currentKey];
-  const totalSteps = STEPS.length + 1;
+  const dimension = TASTE_DIMENSIONS[step];
+  const [low, mid, high] = LABELS[currentKey];
 
-  const CARD_WIDTH = 220;
-  const CARD_HEIGHT = 298;
-  const CARD_GAP = spacing[8];
-  const SNAP_INTERVAL = CARD_WIDTH + CARD_GAP;
-  const horizontalPadding = Math.max(0, (width - CARD_WIDTH) / 2);
-  const snapOffsets = useMemo(() => [0, SNAP_INTERVAL, SNAP_INTERVAL * 2], [SNAP_INTERVAL]);
+  const progress = (step + 1) / STEPS.length;
 
-  useEffect(() => {
-    const offset = SNAP_INTERVAL;
-    requestAnimationFrame(() => {
-      carouselRef.current?.scrollToOffset({ animated: false, offset });
-      quizScrollX.setValue(offset);
-    });
-    const id = setTimeout(() => {
-      carouselRef.current?.scrollToOffset({ animated: false, offset });
-      quizScrollX.setValue(offset);
-    }, 60);
-    return () => clearTimeout(id);
-  }, [SNAP_INTERVAL, step, width, quizScrollX]);
+  const animateNext = (nextStep: number) => {
+    Animated.sequence([
+      Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+    ]).start();
+    setStep(nextStep);
+  };
 
-  const animateStep = (nextStep: number, direction: "forward" | "backward") => {
-    if (isTransitioning) {
-      return;
+  const selectValue = (value: number) => {
+    setValues((prev) => ({ ...prev, [currentKey]: value }));
+    if (step < STEPS.length - 1) {
+      animateNext(step + 1);
     }
-    const offscreenDistance = width + CARD_WIDTH + CARD_GAP;
-    const exitTo = direction === "forward" ? -offscreenDistance : offscreenDistance;
-    const enterFrom = direction === "forward" ? offscreenDistance : -offscreenDistance;
-    setIsTransitioning(true);
-    optionsSlideAnim.setValue(0);
-    Animated.timing(optionsSlideAnim, {
-      toValue: exitTo,
-      duration: 480,
-      easing: Easing.linear,
-      useNativeDriver: true,
-    }).start(() => {
-      setStep(nextStep);
-      setSnappedIndex(1);
-      optionsSlideAnim.setValue(enterFrom);
-      setTimeout(() => {
-        requestAnimationFrame(() => {
-          carouselRef.current?.scrollToOffset({ animated: false, offset: SNAP_INTERVAL });
-        });
-        Animated.timing(optionsSlideAnim, {
-          toValue: 0,
-          duration: 480,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }).start(() => {
-          setIsTransitioning(false);
-        });
-      }, 0);
-    });
   };
 
   const handleFinish = () => {
-    setTasteVector(values);
-    setDietaryPreferences(dietaryPreferences);
-    if (hasSkippedTasteQuiz) {
-      navigation.navigate("LocationPermission");
-      return;
-    }
+    updateTasteVector(values);
     setSkippedTasteQuiz(false);
-    navigation.navigate("TasteProfileLoading");
+    navigation.navigate("DietaryPreferences");
   };
 
   const isLast = step === STEPS.length - 1;
-  const inDietaryStep = phase === "dietary";
   const currentValue = values[currentKey];
-  const hasRestrictions = dietaryPreferences.length > 0;
-  const dietaryPrimaryLabel = hasRestrictions ? "Continue" : "I have no restrictions";
-  const normalizedDietaryQuery = dietaryQuery.trim().toLowerCase();
-  const filteredDietaryOptions = DIETARY_OPTIONS.filter((option) => {
-    if (!normalizedDietaryQuery) return true;
-    const haystack = `${option.label} ${option.keywords.join(" ")}`.toLowerCase();
-    return haystack.includes(normalizedDietaryQuery);
-  });
-
-  const toggleDietary = (flag: DietaryFlag) => {
-    setDietaryPreferencesState((current) =>
-      current.includes(flag) ? current.filter((value) => value !== flag) : [...current, flag],
-    );
-  };
-
-  useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: inDietaryStep ? totalSteps : step + 1,
-      duration: 260,
-      useNativeDriver: false,
-    }).start();
-  }, [inDietaryStep, progressAnim, step, totalSteps]);
 
   return (
-    <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1, overflow: "hidden" }} edges={["top", "left", "right", "bottom"]}>
-      <View style={{ flex: 1, overflow: "hidden", paddingTop: spacing[4] }}>
-        <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", minHeight: 36, paddingHorizontal: spacing[5] }}>
-          <View style={{ width: 36 }} />
-          {!inDietaryStep ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                setSkippedTasteQuiz(true);
-                setPhase("dietary");
-              }}
-              style={{ alignItems: "center", flexDirection: "row", gap: spacing[1], justifyContent: "center", minHeight: 28, minWidth: 52 }}
-            >
-              <AppText variant="bodySmall" tone="muted" style={{ fontFamily: "Nunito_700Bold" }}>
-                Skip
-              </AppText>
-              <ChevronRight color={palette.textMuted} size={14} />
-            </Pressable>
-          ) : (
-            <View style={{ width: 52 }} />
-          )}
-        </View>
-        <View style={{ gap: spacing[2] }}>
-          {inDietaryStep ? (
-            <AppText variant="h1" style={{ textAlign: "center" }}>
-              Any dietary{"\n"}restrictions?
-            </AppText>
-          ) : (
-            <AppText variant="h1" style={{ textAlign: "center" }}>
-              What are you{"\n"}
-              <AppText variant="h1" style={{ color: palette.orange }}>
-                craving
-              </AppText>{" "}
-              tonight?
-            </AppText>
-          )}
-        </View>
-
-        <View style={{ flex: 1, gap: spacing[4], paddingTop: spacing[4] }}>
-          <AppText variant="h2" style={{ textAlign: "center" }}>
-            {inDietaryStep ? "Dietary preferences" : QUESTIONS[currentKey]}
-          </AppText>
-          <AppText variant="bodySmall" tone="muted" style={{ textAlign: "center" }}>
-            Question {inDietaryStep ? totalSteps : step + 1} of {totalSteps}
-          </AppText>
-          <View style={[styles.progressTrack, { backgroundColor: palette.border, marginHorizontal: spacing[6] }]}>
-            <Animated.View
-              style={[
-                styles.progressFill,
-                {
-                  backgroundColor: palette.orange,
-                  borderRadius: radii.pill,
-                  width: progressAnim.interpolate({
-                    inputRange: [1, totalSteps],
-                    outputRange: [`${100 / totalSteps}%`, "100%"],
-                    extrapolate: "clamp",
-                  }),
-                },
-              ]}
-            />
-          </View>
-
-          {inDietaryStep ? (
-            <View style={{ flex: 1, paddingBottom: ACTIONS_FOOTER_HEIGHT + spacing[6], paddingHorizontal: spacing[5] }}>
-              <Card style={{ flex: 1, gap: spacing[2], padding: spacing[3] }}>
-                <AppText variant="h3">Select any that apply</AppText>
-                <Input
-                  placeholder="Search dietary restrictions"
-                  value={dietaryQuery}
-                  onChangeText={setDietaryQuery}
-                  leftIcon={<Search color={palette.textMuted} size={16} />}
-                />
-                <ScrollView
-                  style={{ flex: 1 }}
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={{ gap: spacing[2], paddingBottom: spacing[6], paddingTop: spacing[1] }}
-                >
-                  {filteredDietaryOptions.map((option) => {
-                    const isSelected = dietaryPreferences.includes(option.value);
-                    return (
-                      <Pressable
-                        key={option.value}
-                        onPress={() => toggleDietary(option.value)}
-                        style={{
-                          alignItems: "center",
-                          backgroundColor: isSelected ? palette.orangeLight : palette.surface,
-                          borderColor: isSelected ? palette.orange : palette.border,
-                          borderRadius: radii.lg,
-                          borderWidth: 1,
-                          flexDirection: "row",
-                          gap: spacing[3],
-                          minHeight: 52,
-                          paddingHorizontal: spacing[4],
-                          paddingVertical: spacing[2],
-                        }}
-                      >
-                        <View
-                          style={{
-                            alignItems: "center",
-                            backgroundColor: isSelected ? palette.orange : "transparent",
-                            borderColor: isSelected ? palette.orange : palette.border,
-                            borderRadius: radii.pill,
-                            borderWidth: 1,
-                            height: 20,
-                            justifyContent: "center",
-                            width: 20,
-                          }}
-                        >
-                          {isSelected ? <Check color={palette.surface} size={12} /> : null}
-                        </View>
-                        <AppText style={{ flex: 1 }}>{option.label}</AppText>
-                      </Pressable>
-                    );
-                  })}
-                  {!filteredDietaryOptions.length ? (
-                    <AppText tone="secondary" variant="bodySmall">
-                      No matching restrictions found.
-                    </AppText>
-                  ) : null}
-                </ScrollView>
-              </Card>
-            </View>
-          ) : (
-            <Animated.View
-              style={{
-                flex: 1,
-                justifyContent: "center",
-                overflow: "visible",
-                paddingBottom: ACTIONS_FOOTER_HEIGHT + spacing[OPTIONS_VERTICAL_GAP_UNITS],
-                paddingTop: spacing[OPTIONS_VERTICAL_GAP_UNITS],
-                transform: [{ translateX: optionsSlideAnim }],
-              }}
-            >
-              <FlatList
-                ref={carouselRef}
-                horizontal
-                data={[0, 1, 2]}
-                keyExtractor={(item) => `${item}`}
-                showsHorizontalScrollIndicator={false}
-                snapToAlignment="center"
-                snapToOffsets={snapOffsets}
-                decelerationRate="fast"
-                disableIntervalMomentum
-                bounces={false}
-                overScrollMode="never"
-                initialNumToRender={3}
-                maxToRenderPerBatch={3}
-                windowSize={3}
-                removeClippedSubviews={false}
-                scrollEventThrottle={16}
-                style={{ overflow: "visible", width: "100%" }}
-                contentContainerStyle={{ paddingHorizontal: horizontalPadding + spacing[2], paddingTop: spacing[2] }}
-                ItemSeparatorComponent={() => <View style={{ width: CARD_GAP }} />}
-                getItemLayout={(_, index) => ({
-                  index,
-                  length: SNAP_INTERVAL,
-                  offset: SNAP_INTERVAL * index,
-                })}
-                onLayout={() => {
-                  requestAnimationFrame(() => {
-                    carouselRef.current?.scrollToOffset({ animated: false, offset: SNAP_INTERVAL });
-                    quizScrollX.setValue(SNAP_INTERVAL);
-                  });
-                }}
-                onScrollToIndexFailed={() => {
-                  requestAnimationFrame(() => {
-                    carouselRef.current?.scrollToOffset({ animated: false, offset: SNAP_INTERVAL });
-                    quizScrollX.setValue(SNAP_INTERVAL);
-                  });
-                }}
-                onScroll={Animated.event(
-                  [{ nativeEvent: { contentOffset: { x: quizScrollX } } }],
-                  { useNativeDriver: true },
-                )}
-                onMomentumScrollEnd={(event) => {
-                  const index = Math.max(0, Math.min(2, Math.round(event.nativeEvent.contentOffset.x / SNAP_INTERVAL)));
-                  const exactOffset = index * SNAP_INTERVAL;
-                  if (Math.abs(event.nativeEvent.contentOffset.x - exactOffset) > 0.5) {
-                    carouselRef.current?.scrollToOffset({ animated: false, offset: exactOffset });
-                  }
-                  const option = OPTIONS[index];
-                  setSnappedIndex(index);
-                  if (values[currentKey] !== option) {
-                    const next = { ...values, [currentKey]: option };
-                    setValues(next);
-                    setTasteVector(next);
-                    setAnsweredKeys((previous) => ({ ...previous, [currentKey]: true }));
-                  }
-                }}
-                renderItem={({ item: index }) => {
-                  const isSelected = snappedIndex === index;
-                  const bwOpacity = quizScrollX.interpolate({
-                    inputRange: [
-                      (index - 1) * SNAP_INTERVAL,
-                      index * SNAP_INTERVAL,
-                      (index + 1) * SNAP_INTERVAL,
-                    ],
-                    outputRange: [1, 0, 1],
-                    extrapolate: "clamp",
-                  });
-                  return (
-                    <View style={{ alignItems: "center", width: CARD_WIDTH }}>
-                      <Pressable
-                        disabled
-                        style={[
-                          isSelected ? styles.whiteGlow : null,
-                          {
-                            backgroundColor: palette.bg,
-                            borderRadius: radii.pill,
-                            height: CARD_HEIGHT,
-                            justifyContent: "center",
-                            overflow: "hidden",
-                            width: CARD_WIDTH,
-                          },
-                        ]}
-                      >
-                        <Image
-                          source={{ uri: choiceImages[index] }}
-                          contentFit="cover"
-                          contentPosition="center"
-                          style={{ height: "100%", width: "100%" }}
-                        />
-                        <Animated.View
-                          pointerEvents="none"
-                          style={{
-                            ...StyleSheet.absoluteFillObject,
-                            opacity: bwOpacity,
-                          }}
-                        >
-                          <Image
-                            source={{ uri: toBwVariant(choiceImages[index]) }}
-                            contentFit="cover"
-                            contentPosition="center"
-                            style={{ height: "100%", width: "100%" }}
-                          />
-                        </Animated.View>
-                      </Pressable>
-                      <AppText
-                        variant={isSelected ? "h3" : "body"}
-                        tone={isSelected ? "default" : "secondary"}
-                        style={{ fontFamily: "Nunito_700Bold", marginTop: spacing[2], textAlign: "center", width: "100%" }}
-                      >
-                        {labels[index]}
-                      </AppText>
-                    </View>
-                  );
-                }}
-              />
-            </Animated.View>
-          )}
-        </View>
-
+    <OnboardingScreenShell
+      title="Taste quiz"
+      subtitle="Six questions — tell us your flavour DNA."
+      stepLabel="Step 1 of 3"
+    >
+      {/* Progress bar */}
+      <View style={styles.progressTrack}>
         <View
-          style={{
-            bottom: ONBOARDING_ACTIONS_BOTTOM_PADDING + spacing[2],
-            gap: ONBOARDING_ACTIONS_GAP,
-            left: ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
-            position: "absolute",
-            right: ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
-          }}
-        >
-          {inDietaryStep ? (
-            <View style={{ gap: ONBOARDING_ACTIONS_GAP }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3], justifyContent: "center" }}>
-                <Button
-                  label="Back"
-                  variant="secondary"
-                  onPress={() => setPhase("taste")}
-                  style={{ width: BACK_BUTTON_WIDTH }}
-                />
-                <Button label={dietaryPrimaryLabel} onPress={handleFinish} style={{ width: PRIMARY_BUTTON_WIDTH }} />
-              </View>
-              <View style={{ minHeight: 44 }} />
-            </View>
-          ) : isLast ? (
-            <View style={{ gap: ONBOARDING_ACTIONS_GAP }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3], justifyContent: "center" }}>
-                <Button
-                  label="Back"
-                  variant="secondary"
-                  onPress={() => animateStep(step - 1, "backward")}
-                  style={{ width: BACK_BUTTON_WIDTH }}
-                />
-                <Button
-                  label="Next"
-                  onPress={() => setPhase("dietary")}
-                  style={{ width: PRIMARY_BUTTON_WIDTH }}
-                />
-              </View>
-              <View style={{ minHeight: 44 }} />
-            </View>
-          ) : (
-            <View style={{ gap: ONBOARDING_ACTIONS_GAP }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3], justifyContent: "center" }}>
-                {step > 0 ? (
-                  <Button
-                    label="Back"
-                    variant="secondary"
-                    onPress={() => animateStep(step - 1, "backward")}
-                    style={{ width: BACK_BUTTON_WIDTH }}
-                  />
-                ) : (
-                  <View style={{ width: BACK_BUTTON_WIDTH }} />
-                )}
-                <Button
-                  label="Next"
-                  onPress={() => animateStep(step + 1, "forward")}
-                  variant="primary"
-                  style={{ width: PRIMARY_BUTTON_WIDTH }}
-                />
-              </View>
-              <View style={{ minHeight: 44 }} />
-            </View>
-          )}
-        </View>
+          style={[
+            styles.progressFill,
+            {
+              backgroundColor: palette.orange,
+              borderRadius: radii.pill,
+              width: `${progress * 100}%`,
+            },
+          ]}
+        />
       </View>
-    </SafeAreaView>
+
+      <AppText variant="micro" tone="muted" style={{ textAlign: "right" }}>
+        {step + 1} / {STEPS.length}
+      </AppText>
+
+      {/* Question card */}
+      <Animated.View style={[styles.card, { backgroundColor: palette.surface, borderRadius: radii.lg, opacity: fadeAnim }]}>
+        <View style={styles.legendRow}>
+          <AppText variant="micro" tone="muted">
+            LOW
+          </AppText>
+          <AppText variant="micro" tone="muted">
+            BALANCED
+          </AppText>
+          <AppText variant="micro" tone="muted">
+            HIGH
+          </AppText>
+        </View>
+
+        <AppText variant="h2" style={styles.question}>
+          {QUESTIONS[currentKey]}
+        </AppText>
+
+        <AppText tone="muted" variant="bodySmall" style={styles.dimName}>
+          {dimension.label}
+        </AppText>
+
+        {/* Choice buttons */}
+        <View style={styles.optionRow}>
+          {OPTIONS.map((opt, i) => {
+            const isSelected = currentValue === opt;
+            return (
+              <Pressable
+                key={opt}
+                onPress={() => selectValue(opt)}
+                style={[
+                  styles.optionChip,
+                  {
+                    backgroundColor: isSelected ? palette.orange : palette.bgSoft,
+                    borderColor: isSelected ? palette.orange : palette.border,
+                    borderRadius: radii.lg,
+                  },
+                ]}
+              >
+                <AppText
+                  variant="bodySmall"
+                  style={{ color: isSelected ? "#FFFFFF" : palette.text, textAlign: "center" }}
+                >
+                  {i === 0 ? low : i === 1 ? mid : high}
+                </AppText>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Animated.View>
+
+      {/* Navigation buttons */}
+      <View style={{ gap: spacing[3] }}>
+        {isLast ? (
+          <Button label="Build my taste profile →" onPress={handleFinish} />
+        ) : (
+          <Button
+            label="Next"
+            onPress={() => animateNext(step + 1)}
+            variant="secondary"
+          />
+        )}
+        {step > 0 && (
+          <Button label="Back" variant="ghost" onPress={() => animateNext(step - 1)} />
+        )}
+        <Button
+          label="Skip quiz"
+          variant="ghost"
+          onPress={() => {
+            setSkippedTasteQuiz(true);
+            navigation.navigate("DietaryPreferences");
+          }}
+        />
+      </View>
+    </OnboardingScreenShell>
   );
 }
 
 const styles = StyleSheet.create({
   progressTrack: {
-    borderRadius: 999,
+    backgroundColor: "#E5E7EB",
+    borderRadius: 4,
     height: 6,
     overflow: "hidden",
   },
   progressFill: {
     height: "100%",
   },
-  whiteGlow: {
-    shadowColor: "#FFFFFF",
-    shadowOpacity: 0.95,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 10,
+  card: {
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.06)",
+    gap: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 28,
+  },
+  legendRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  question: {
+    textAlign: "center",
+  },
+  dimName: {
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  optionRow: {
+    flexDirection: "row",
+    gap: 10,
+    width: "100%",
+  },
+  optionChip: {
+    alignItems: "center",
+    borderWidth: 1.5,
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 14,
   },
 });

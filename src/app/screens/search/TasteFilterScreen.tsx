@@ -29,6 +29,7 @@ export function TasteFilterScreen() {
               <Slider
                 minimumValue={0}
                 maximumValue={10}
+                step={1}
                 minimumTrackTintColor={palette.orange}
                 maximumTrackTintColor={palette.border}
                 thumbTintColor={palette.orange}

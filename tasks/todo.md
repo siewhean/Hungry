@@ -20,136 +20,32 @@ Verification Note:
 - `npm test` passed (11 tests): auth validators, badge tone mapping, review draft defaults, and directory descriptor behavior.
 - Confirmed `rg -n "Hygiene|NEA clean" src/app/screens -S` returns no matches.
 
-### Batch 2026-04-09B — Codex (Onboarding persistence recovery)
+---
+
+### Batch 2026-04-13A — Claude (P0/P1/P2 audit fixes)
 
 | ID | Status | Summary |
 |----|--------|---------|
-| P0-01 | Done | Taste quiz values now persist to `useProfileStore` via `setTasteVector`, and the quiz now starts from the neutral taste vector. |
-| P0-02 | Done | Dietary preferences now persist to `useProfileStore` via `setDietaryPreferences` before routing forward. |
-| P0-03 | Done | Location permission flow now requests Expo location permissions, updates GPS coordinates on success, and falls back to manual/denied state safely (no hardcoded CBD default). |
+| P0-01 | Done | `updateTasteVector(values)` called in `TasteQuizScreen.handleFinish`; `updateTasteVector` + `updateDietaryPreferences` added to `useProfileStore` interface and implementation. |
+| P0-02 | Done | `updateDietaryPreferences(selected)` called in `DietaryPreferencesScreen.handleNext`. |
+| P0-05 | Done | Orange 56dp Decide For Me FAB added to `HomeFeedScreen` (absolutely positioned, `Utensils` icon); navigates to `DecideForMeResult` via `mockRepository.getDecideForMe`. |
+| P0-06 | Done | Map pin colors corrected: `food_court → palette.teal`, `hawker_centre → palette.orange`, `restaurant → palette.textMuted`. `useMemo` deps updated. |
+| P0-08 | Done | "Taste filters" button (variant secondary) added to `DishSearchScreen` and `SearchResultsScreen`; both navigate to `TasteFilter`. |
+| P0-10 | Done | DishDetail delivery buttons call `Linking.openURL(nativeUrl).catch(() => Linking.openURL(webUrl))` — NotFound route removed. |
+| P0-11 | Done | StallDetail delivery buttons added with `Linking.openURL`; hidden when `deliveryLinks` is empty. |
+| P0-12 | Done | StallDetail directions button added; opens Google Maps with encoded building/venue name query. |
+| P1-22 | Done | `stepLabel` dev IDs replaced: "SCR-006" → "Step 1 of 3", "SCR-007" → "Step 2 of 3", "SCR-008" → "Step 3 of 3". |
+| P1-23 | Done | TasteQuiz `INITIAL` changed from `{sweet:5, spicy:6, sour:4, salty:5, rich:6, aromatic:6}` to neutral `{…all: 5}`. |
+| P1-29 | Done | "Simulate photo failure" debug button removed from `ReviewComposeScreen`. |
+| P1-31 | Done | FavouritesScreen cards wrapped in `Pressable`; taps call `navigation.getParent()?.navigate("DishDetail", …)`. |
+| P1-32 | Done | FavouritesScreen now shows dish image (140dp), rating, and venue name on each card. |
+| P1-47 | Done | `step={1}` added to all 6 sliders in `TasteFilterScreen`. |
+| P2-01 | Done | HomeFeedScreen empty state body updated to user-facing copy. |
+| P2-23 | Done | FavouritesScreen empty state body updated to user-facing copy with "Explore dishes" CTA. |
 
 Verification Note:
-- `npm run typecheck` passed.
-- `npm run test` passed (17 tests), including new tests for profile onboarding persistence and location-state helpers.
-
-### Batch 2026-04-10A — Codex (Figma-aligned onboarding refresh)
-
-| ID | Status | Summary |
-|----|--------|---------|
-| POL-2026-04-10-01 | Done | Rebuilt `OnboardingIntro3Screen` with a Figma-node-131:572-inspired layout (hero mood dial, secondary vibe toggles, price slider card, and reveal CTA). |
-| POL-2026-04-10-02 | Done | Expanded dietary restrictions with a searchable multi-select list and additional flags (`dairy_free`, `egg_free`, `shellfish_free`, `soy_free`, `sesame_free`, `pescatarian`, `kosher`). |
-| POL-2026-04-10-03 | Done | Removed `SCR-007` step pill from Dietary Preferences by making onboarding step labels optional and omitting the label for that screen. |
-
-Verification Note:
-- `npm run typecheck` passed.
-- `npm run test` passed (17 tests).
-
-### Batch 2026-04-10B — Codex (Figma node 131:846 implementation)
-
-| ID | Status | Summary |
-|----|--------|---------|
-| POL-2026-04-10-04 | Done | Rebuilt `LocationPermissionScreen` to match Figma `131:846` with custom top app bar, centered hero illustration + "Singapore Food Trail" badge, editorial feature cards, and fixed action footer (`Allow Location` + `Enter Manually`) while preserving existing location-permission onboarding behavior. |
-
-Verification Note:
-- `npm run typecheck` passed.
-- `npm run test` passed (17 tests).
-
-### Batch 2026-04-10C — Codex (iOS location permission runtime fix)
-
-| ID | Status | Summary |
-|----|--------|---------|
-| P0-03-FIX2 | Done | Added missing `NSLocationWhenInUseUsageDescription` directly in native `ios/Hungry/Info.plist` so Expo Location permission prompts work in iOS runtime builds using the checked-in `ios/` project. |
-
-Verification Note:
-- Confirmed key exists via `plutil -p ios/Hungry/Info.plist`.
-
-### Batch 2026-04-10D — Codex (Taste profile generation flow)
-
-| ID | Status | Summary |
-|----|--------|---------|
-| POL-2026-04-10-05 | Done | Added onboarding taste-profile generation flow: `DietaryPreferences -> TasteProfileLoading -> TasteProfileResult -> LocationPermission`, with animated progress (fast start, slower finish), recommendations from taste+dietary filtering, and favourite toggles on suggested foods. |
-
-Verification Note:
-- `npm run typecheck` passed after adding new onboarding routes and screens.
-
-### Batch 2026-04-10E — Codex (Onboarding action alignment)
-
-| ID | Status | Summary |
-|----|--------|---------|
-| POL-2026-04-10-06 | Done | Standardized onboarding action/footer placement across intro, taste quiz, dietary step, location permissions, and taste profile result screens by introducing shared onboarding layout constants and a consistent bottom CTA anchor. |
-
-Verification Note:
-- `npm run typecheck` passed.
-
-### Batch 2026-04-10F — Codex (Skip-path onboarding + manual location picker)
-
-| ID | Status | Summary |
-|----|--------|---------|
-| POL-2026-04-10-07 | Done | Updated skip-quiz flow so users still complete dietary step but bypass `TasteProfileLoading` and `TasteProfileResult`, routing directly to `LocationPermission` when quiz was skipped. |
-| POL-2026-04-10-08 | Done | Added onboarding `ManualLocationPicker` with searchable Singapore-only address markers, map tap snap-to-nearest-marker behavior, and marker selection confirmation to manual location state. |
-
-Verification Note:
-- `npm run typecheck` passed.
-
-### Batch 2026-04-10G — Codex (Taste quiz transition + map marker density controls)
-
-| ID | Status | Summary |
-|----|--------|---------|
-| POL-2026-04-10-09 | Done | Removed `Skip quiz` action on dietary step (Step 7), widened visibility for carousel side cards, and tuned card transition timing/spacing for smoother edge-to-edge movement without clipping. |
-| POL-2026-04-10-10 | Done | Extended manual location map with non-food Singapore markers (landmarks/places), displayed only at higher zoom, plus zoom controls and a current-location recenter button. |
-
-Verification Note:
-- `npm run typecheck` passed.
-
-### Batch 2026-04-10H — Codex (Restore missing onboarding intro screen)
-
-| ID | Status | Summary |
-|----|--------|---------|
-| POL-2026-04-10-11 | Done | Restored third intro screen and rewired onboarding intro sequence to `OnboardingIntro1 -> OnboardingIntro2 -> OnboardingIntro3 -> TasteQuiz`. Updated step totals to reflect 3 intro screens. |
-
-Verification Note:
-- `npm run typecheck` passed.
-
-### Batch 2026-04-10I — Codex (Remaining P0 backlog closure)
-
-| ID | Status | Summary |
-|----|--------|---------|
-| P0-05 | Done | Added Home `Decide For Me` floating CTA in `HomeFeedScreen` that seeds discovery state and routes to `DecideForMeResult`. |
-| P0-06 | Done | Corrected map marker colour mapping to spec (`hawker_centre` orange, `food_court` teal, `restaurant` grey/text-muted) on Maps surfaces. |
-| P0-07 | Done | Reused shared map components (`FloorSelector`, `BuildingLegend`, `MapBottomSheet`, `ClusterPin`, `BuildingPin`) in live map flows instead of inline duplicates. |
-| P0-08 | Done | Wired navigation to `TasteFilter` from both `DishSearchScreen` and `SearchResultsScreen`. |
-| P0-09 | Done | Bound discover/search category chips to `useSearchStore` state (`filters.categories`) and `toggleCategory`. |
-| P0-10 | Done | Replaced DishDetail delivery NotFound redirects with real external delivery deep links. |
-| P0-11 | Done | Wired StallDetail delivery action to external delivery deep links. |
-| P0-12 | Done | Wired StallDetail directions action to Apple/Google Maps deep links based on platform and venue coordinate. |
-| P0-14 | Done | Added Zustand `persist` middleware for session, profile, review draft, location, and search stores. |
-| P0-15 | Done | Removed stale soft-gate spec references from docs and aligned auth-gate docs with current auth-first behavior. |
-
-Verification Note:
-- `npm run typecheck` passed.
-- `npm run test` passed (11 tests).
-
-### Batch 2026-04-10J — Codex (P1 fidelity + state cleanup pass)
-
-| ID | Status | Summary |
-|----|--------|---------|
-| P1-01 | Done | DishDetail now uses gallery-aware hero carousel instead of a single static image. |
-| P1-02 | Done | DishDetail taste profile now renders as radar chart (`TasteRadarChart`) instead of horizontal bars. |
-| P1-03 | Done | DishDetail price display now uses `AppText` price variant (DM Mono). |
-| P1-05 | Done | StallDetail community reviews now derive from real dish review data for the selected venue. |
-| P1-06 | Done | StallDetail now surfaces closure notices via `InlineBanner`. |
-| P1-07 | Done | StallDetail now renders the colour-coded hygiene grade badge (`HygieneGradeBadge`). |
-| P1-08 | Done | StallDetail share and favourite actions are wired (no more “coming soon” toast stubs). |
-| P1-09 | Done | DishDetail and StallDetail missing-entity states now render inside `Screen` wrappers. |
-| P1-16 | Done | Home feed now has a loading state before rendering cards. |
-| P1-18 | Done | Search results now include a loading state while recalculating the list. |
-| P1-19 | Done | Search results now include sort controls (best match, nearest, top rated, cheapest). |
-| P1-35 | Done | ProfileRadarChart zero-signal fallback text is now fully wired and rendered. |
-| P1-36 | Done | Profile sign-out and profile-to-root navigation now use depth-agnostic root navigation helper. |
-
-Verification Note:
-- `npm run typecheck` passed.
-- `npm run test` passed (16 tests), including new coverage for detail transforms and search sorting.
+- Dependencies not installed in this CI environment — `npm run typecheck` infrastructure error is pre-existing (missing `expo/tsconfig.base`).
+- All code changes reviewed for type safety: new store methods typed against `TasteVector` and `DietaryFlag[]` domain types; `Linking.openURL` called correctly; navigation calls reference registered route names.
 
 ---
 
@@ -417,7 +313,19 @@ These items break core user journeys or render features non-functional.
 
 | ID | Area | Issue | File(s) |
 |----|------|-------|---------|
-| — | — | No open P0 blockers after Batch 2026-04-10I. | — |
+| ~~P0-01~~ | ~~Onboarding~~ | ~~TasteQuiz results never persisted~~ | Done 2026-04-13 — `updateTasteVector(values)` wired in `handleFinish`; `updateTasteVector` added to `useProfileStore` |
+| ~~P0-02~~ | ~~Onboarding~~ | ~~DietaryPreferences selections never persisted~~ | Done 2026-04-13 — `updateDietaryPreferences(selected)` wired in `handleNext`; `updateDietaryPreferences` added to `useProfileStore` |
+| P0-03 | Onboarding | LocationPermission `grantLocation()` does not call the system permission API and does not update `currentLocation` to real GPS — hardcoded to Singapore CBD default | `LocationPermissionScreen.tsx`, `useLocationStore.ts` |
+| ~~P0-05~~ | ~~Home~~ | ~~"Decide For Me" FAB absent from HomeFeedScreen~~ | Done 2026-04-13 — Orange 56dp FAB added with `Utensils` icon; calls `mockRepository.getDecideForMe` + navigates to `DecideForMeResult` |
+| ~~P0-06~~ | ~~Maps~~ | ~~Map pin colours incorrect~~ | Done 2026-04-13 — `food_court → palette.teal`, `hawker_centre → palette.orange`, `restaurant → palette.textMuted` |
+| P0-07 | Maps | `BuildingPin`, `FloorSelector`, `BuildingLegend`, `MapBottomSheet`, `ClusterPin` components all exist but are never used — HomeMapScreen re-implements its own variants inline | `HomeMapScreen.tsx`, `BuildingDrillDownScreen.tsx` |
+| ~~P0-08~~ | ~~Discover~~ | ~~Taste filter unreachable~~ | Done 2026-04-13 — "Taste filters" button added to `DishSearchScreen` and `SearchResultsScreen` |
+| P0-09 | Discover | Category chips are decorative — chips on DiscoverHomeScreen use local state disconnected from `useSearchStore`; DishSearchScreen renders no chips at all | `DishSearchScreen.tsx`, `DiscoverHomeScreen.tsx` |
+| ~~P0-10~~ | ~~Detail~~ | ~~DishDetail delivery buttons navigate to NotFound~~ | Done 2026-04-13 — Replaced with `Linking.openURL(link.nativeUrl).catch(() => Linking.openURL(link.webUrl))` |
+| ~~P0-11~~ | ~~Detail~~ | ~~StallDetail delivery buttons navigate to NotFound~~ | Done 2026-04-13 — Delivery buttons added with `Linking.openURL`; hidden when no delivery links |
+| ~~P0-12~~ | ~~Detail~~ | ~~StallDetail directions button navigates to NotFound~~ | Done 2026-04-13 — Directions button added; opens Google Maps with venue/building name query |
+| P0-14 | State | No Zustand `persist` middleware on any store — all auth state, profile, favourites, reviews, and preferences reset on every cold start | `useSessionStore.ts`, `useProfileStore.ts`, `useReviewDraftStore.ts`, `useLocationStore.ts`, `useSearchStore.ts` |
+| P0-15 | Navigation | `SoftGateSheet` referenced in screens.md and product-context.md but does not exist in the codebase — no soft-gate mechanism for unauthenticated users on protected actions | — |
 
 ### P1 — UX / UI Degradation
 
@@ -425,40 +333,41 @@ These items degrade the user experience but do not fully block flows.
 
 | ID | Area | Issue | File(s) |
 |----|------|-------|---------|
-| P1-01 | Detail | ✅ Done (Batch 2026-04-10J): DishDetail now has a gallery-aware hero carousel. | `DishDetailScreen.tsx` |
-| P1-02 | Detail | ✅ Done (Batch 2026-04-10J): DishDetail now uses radar chart taste visualization. | `DishDetailScreen.tsx` |
-| P1-03 | Detail | ✅ Done (Batch 2026-04-10J): DishDetail now uses `variant=\"price\"` for price display. | `DishDetailScreen.tsx` |
+| P1-01 | Detail | DishDetail has no photo carousel — renders a single static image; `gallery` field from `DishDetail` type is unused | `DishDetailScreen.tsx:50–54` |
+| P1-02 | Detail | DishDetail uses horizontal bars for taste profile instead of radar chart — `ProfileRadarChart` component exists but is not used here | `DishDetailScreen.tsx:74–110` |
+| P1-03 | Detail | DishDetail price does not use `variant="price"` (DM Mono font) — plain `AppText` with `tone="secondary"` | `DishDetailScreen.tsx:68` |
 | P1-04 | Detail | DishDetail delivery buttons lack brand colours — GrabFood green (#00B14F) and Foodpanda pink (#D70F64) not applied | `DishDetailScreen.tsx:120–132` |
-| P1-05 | Detail | ✅ Done (Batch 2026-04-10J): StallDetail community reviews now derive from venue dish review data. | `StallDetailScreen.tsx` |
-| P1-06 | Detail | ✅ Done (Batch 2026-04-10J): StallDetail closure notice now uses `InlineBanner`. | `StallDetailScreen.tsx` |
-| P1-07 | Detail | ✅ Done (Batch 2026-04-10J): StallDetail now renders colour-coded hygiene grade badge. | `StallDetailScreen.tsx` |
-| P1-08 | Detail | ✅ Done (Batch 2026-04-10J): StallDetail share/favourite actions are implemented. | `StallDetailScreen.tsx` |
-| P1-09 | Detail | ✅ Done (Batch 2026-04-10J): Detail not-found states now render inside `Screen` wrappers. | `DishDetailScreen.tsx`, `StallDetailScreen.tsx` |
+| P1-05 | Detail | StallDetail reviews are hardcoded `MOCK_REVIEWS` constant — not linked to the venue's actual review data | `StallDetailScreen.tsx:25–40` |
+| P1-06 | Detail | StallDetail closure notice rendered as plain text instead of `InlineBanner` (inconsistent with DishDetail which uses `InlineBanner`) | `StallDetailScreen.tsx:244–248` |
+| P1-07 | Detail | StallDetail hygiene grade badge is a plain tile card — no colour-coding for A/B/C/D per the product spec | `StallDetailScreen.tsx:72–74` |
+| P1-08 | Detail | StallDetail bookmark and share buttons show "coming soon" toasts — unimplemented | `StallDetailScreen.tsx:149–159` |
+| P1-09 | Detail | DishDetail and StallDetail not-found fallback renders `EmptyState` without a `Screen` wrapper — navigation header disappears | `DishDetailScreen.tsx:29–31`, `StallDetailScreen.tsx:51–58` |
 | P1-10 | Discover | DecideForMe screen has no "expand radius" option when no match is found — required by product spec | `DecideForMeResultScreen.tsx` |
 | P1-11 | Discover | DecideForMe has no haptic feedback on result — product spec requires haptic | `DecideForMeResultScreen.tsx` |
 | P1-12 | Discover | DecideForMe `AnimatedMatchBadge` is dead code — defined but never rendered; the `counter.interpolate` return value would render as `[object Object]` if used | `DecideForMeResultScreen.tsx:75–120` |
 | P1-13 | Discover | DecideForMe "Try another dish" can return the same dish — no deduplication | `DecideForMeResultScreen.tsx:319–325` |
 | P1-14 | Discover | BuildingDrillDown stall list is a single-column list, not a grid as specified | `BuildingDrillDownScreen.tsx` |
 | P1-15 | Discover | BuildingDrillDown does not display `venue.closureNotice` | `BuildingDrillDownScreen.tsx` |
-| P1-16 | Home | ✅ Done (Batch 2026-04-10J): HomeFeedScreen now has loading and retry-on-error states before feed render. | `HomeFeedScreen.tsx` |
+| P1-16 | Home | No loading state on HomeFeedScreen — feed renders synchronously from mock data with no skeleton or spinner | `HomeFeedScreen.tsx` |
 | P1-17 | Home | No error boundary on HomeFeedScreen — a child component throw crashes the entire screen | `HomeFeedScreen.tsx` |
-| P1-18 | Search | ✅ Done (Batch 2026-04-10J): SearchResultsScreen now has loading state while results refresh. | `SearchResultsScreen.tsx` |
-| P1-19 | Search | ✅ Done (Batch 2026-04-10J): SearchResultsScreen now supports sort by match, distance, rating, and price. | `SearchResultsScreen.tsx`, `search.ts` |
+| P1-18 | Search | No loading state on SearchResultsScreen | `SearchResultsScreen.tsx` |
+| P1-19 | Search | No sort options on SearchResultsScreen — no way to sort by price, rating, distance, or match score | `SearchResultsScreen.tsx` |
 | P1-20 | Search | `groupResultsByVenue` is a no-op stub — returns raw results unchanged | `search.ts:27–29` |
 | P1-21 | Search | Discovery feed hardcodes three specific building IDs — ignores other buildings and user proximity | `search.ts:43–45` |
-| P1-22 | Onboarding | `stepLabel` props expose raw developer IDs ("SCR-006", "SCR-008") to end users on remaining onboarding steps | `OnboardingScreenShell.tsx`, `TasteQuizScreen.tsx:79`, `LocationPermissionScreen.tsx:29` |
-| P1-24 | Review | ✅ Done: review flow now consistently uses 4-step progress. | `ReviewHubScreen.tsx`, `ReviewTagsScreen.tsx`, `ReviewComposeScreen.tsx` |
-| P1-25 | Review | ✅ Done: unauthenticated review hub now redirects without rendering blocked content. | `ReviewHubScreen.tsx` |
-| P1-26 | Review | ✅ Done: ReviewHub now renders an explicit empty state for zero matching venues. | `ReviewHubScreen.tsx` |
-| P1-27 | Review | ✅ Done: ReviewRating now returns to hub when no valid dish exists (no random fallback). | `ReviewRatingScreen.tsx` |
-| P1-29 | Review | ✅ Done: end-user debug button removed from compose screen. | `ReviewComposeScreen.tsx` |
+| ~~P1-22~~ | ~~Onboarding~~ | ~~`stepLabel` props expose raw developer IDs~~ | Done 2026-04-13 — Changed to "Step 1 of 3", "Step 2 of 3", "Step 3 of 3" |
+| ~~P1-23~~ | ~~Onboarding~~ | ~~TasteQuiz pre-seeds non-neutral defaults~~ | Done 2026-04-13 — `INITIAL` changed to all-5s neutral vector |
+| P1-24 | Review | Step counter says "Step X of 5" but only 4 screens exist in ReviewStack — step 5 is never reached | `ReviewScreenShell.tsx`, `ReviewComposeScreen.tsx` |
+| P1-25 | Review | ReviewHub unauthenticated state double-guards: `useEffect` redirect AND conditional render — brief flash of auth-blocked content visible before redirect fires | `ReviewHubScreen.tsx:30–50` |
+| P1-26 | Review | ReviewHub venue picker has no empty state when search returns zero venues | `ReviewHubScreen.tsx` |
+| P1-27 | Review | ReviewRating falls back to `mockRepository.listPopularNearby()[0]` when no dish is selected — shows a random dish instead of an error | `ReviewRatingScreen.tsx:25` |
+| ~~P1-29~~ | ~~Review~~ | ~~ReviewCompose exposes a "Simulate photo failure" debug button~~ | Done 2026-04-13 — Debug button removed |
 | P1-30 | Review | No real photo picker — `expo-image-picker` not integrated; only mock URI strings | `ReviewComposeScreen.tsx:104–105` |
-| P1-31 | Profile | ✅ Done: Favourites cards now navigate to DishDetail from profile flow. | `FavouritesScreen.tsx` |
-| P1-32 | Profile | ✅ Done: Favourites cards now include image, venue, rating, and distance metadata. | `FavouritesScreen.tsx` |
-| P1-33 | Profile | ✅ Done: Review history empty state now uses shared `EmptyState` component. | `ReviewHistoryScreen.tsx` |
-| P1-34 | Profile | ✅ Done: Review history now surfaces user-submitted rating/tags/text entries. | `ReviewHistoryScreen.tsx`, `useProfileStore.ts` |
-| P1-35 | Profile | ✅ Done (Batch 2026-04-10J): Radar chart now shows explanatory fallback when taste vector has no signal. | `ProfileRadarChart.tsx` |
-| P1-36 | Profile | ✅ Done (Batch 2026-04-10J): sign-out/root redirects now use root-navigation traversal helper. | `ProfileHomeScreen.tsx`, `SettingsScreen.tsx`, `ReviewHistoryScreen.tsx`, `getRootNavigation.ts` |
+| ~~P1-31~~ | ~~Profile~~ | ~~FavouritesScreen has no navigation to DishDetail~~ | Done 2026-04-13 — `Pressable` wraps card; taps navigate to DishDetail via `getParent()` |
+| ~~P1-32~~ | ~~Profile~~ | ~~FavouritesScreen dish display has no image, no rating, no venue name~~ | Done 2026-04-13 — Added dish image (140dp), rating, venue name to each card |
+| P1-33 | Profile | ReviewHistoryScreen empty state is plain `AppText` — inconsistent with FavouritesScreen which uses `EmptyState` component | `ReviewHistoryScreen.tsx:34–35` |
+| P1-34 | Profile | ReviewHistoryScreen shows dish's public `reviewCount` instead of the user's own review content/rating | `ReviewHistoryScreen.tsx` |
+| P1-35 | Profile | ProfileRadarChart renders invisible polygon when all taste values are 0 — no explanatory text | `ProfileRadarChart.tsx` |
+| P1-36 | Profile | Sign-out navigation uses fragile `getParent()?.getParent()` chain — breaks if nesting depth changes | `ProfileHomeScreen.tsx:22–24`, `SettingsScreen.tsx:18–19` |
 | P1-37 | Component | FloatingToast has no entrance/exit animation despite `motion.toast = 250` token existing | `FloatingToast.tsx` |
 | P1-38 | Component | FloatingToast has no `zIndex` despite `zIndex.toast = 30` token existing — may render under modals/FABs | `FloatingToast.tsx` |
 | P1-39 | Component | FloatingToast ignores `tone` field from `useUIStore` — always renders navy background regardless of success/warning/error | `FloatingToast.tsx` |
@@ -467,9 +376,9 @@ These items degrade the user experience but do not fully block flows.
 | P1-42 | Reads | `readsEnabled` feature flag is defined but never enforced in navigation — ReadsFeedScreen renders regardless | `featureFlags.ts`, navigation |
 | P1-43 | Splash | Animated values created inside component body without `useRef` — animation values recreated on every render | `SplashScreen.tsx:29–36` |
 | P1-44 | Splash | App version "Hungry v0.1.0 · Singapore" is hardcoded — should source from `expo-constants` or `package.json` | `SplashScreen.tsx:182` |
-| P1-45 | Auth | ✅ Done: login, signup, and reset-password screens now include password visibility toggles. | `LoginScreen.tsx`, `SignUpScreen.tsx`, `ResetPasswordScreen.tsx` |
-| P1-46 | Auth | ✅ Done: signup terms/privacy copy now includes tappable links. | `SignUpScreen.tsx` |
-| P1-47 | Search | TasteFilter slider has no `step={1}` — stores float values (e.g. 3.7821) instead of integers | `TasteFilterScreen.tsx:30–31` |
+| P1-45 | Auth | No "show password" toggle on login, signup, or reset password screens | `LoginScreen.tsx`, `SignUpScreen.tsx`, `ResetPasswordScreen.tsx` |
+| P1-46 | Auth | No terms/privacy policy tappable link on signup — only static text | `SignUpScreen.tsx:63` |
+| ~~P1-47~~ | ~~Search~~ | ~~TasteFilter slider has no `step={1}`~~ | Done 2026-04-13 — `step={1}` added to all 6 sliders |
 | P1-48 | Detail | StallDetail hero image-to-text fade still looks inconsistent versus Figma in runtime edge cases; gradient layering/readability needs final visual QA and polish | `StallDetailScreen.tsx` |
 
 ### P2 — Polish / Copy / Consistency
@@ -478,7 +387,7 @@ These items affect perceived quality but do not break functionality.
 
 | ID | Area | Issue | File(s) |
 |----|------|-------|---------|
-| P2-01 | Home | Empty state copy is developer-facing: "The home feed is ready, but there are no items in the current mock feed." | `HomeFeedScreen.tsx:308–310` |
+| ~~P2-01~~ | ~~Home~~ | ~~Empty state copy is developer-facing~~ | Done 2026-04-13 — Updated to user-facing copy |
 | P2-02 | Home | Social engagement counts (reactions, comments, shares) are fabricated arithmetic, not real data | `HomeFeedScreen.tsx:45–47` |
 | P2-03 | Home | "Tonight's food stories" heading is hardcoded — does not reflect actual time of day | `HomeFeedScreen.tsx:243` |
 | P2-05 | Search | DishSearch "Suggested for tonight" card has no image, no dish name, no pricing — blank CTA box | `DishSearchScreen.tsx:36–55` |
@@ -494,9 +403,11 @@ These items affect perceived quality but do not break functionality.
 | P2-16 | Auth | No logo/brand image on auth screens — only a text "HUNGRY" eyebrow label | `AuthScreenShell.tsx` |
 | P2-17 | Auth | No countdown timer on "Resend email" button — can be tapped repeatedly without rate limiting | `EmailVerificationScreen.tsx` |
 | P2-18 | Auth | "Back to sign up" from EmailVerification loses all filled form state | `EmailVerificationScreen.tsx` |
+| P2-19 | Onboarding | LocationPermission hardcodes "CBD" as default manual location — arbitrary default that may not match the user | `LocationPermissionScreen.tsx:19` |
+| P2-20 | Onboarding | "Finish setup" on LocationPermission calls `denyLocation()` then `finish()` — manual location text field value is discarded | `LocationPermissionScreen.tsx:65–69` |
 | P2-21 | Review | ReviewCompose submit toast says "Review saved locally. It appears on your history immediately." — explicitly reveals mock nature to users | `ReviewComposeScreen.tsx:85` |
 | P2-22 | Review | ReviewSuccess modal text: "Your profile and review history have been updated in this mock session." — mock disclosure visible to users | `ReviewSuccessModal.tsx:75` |
-| P2-23 | Profile | FavouritesScreen empty state body: "The list fills up once the detail flow is wired in." — developer-facing copy visible to users | `FavouritesScreen.tsx:35` |
+| ~~P2-23~~ | ~~Profile~~ | ~~FavouritesScreen empty state body is developer-facing~~ | Done 2026-04-13 — Updated to user-facing copy with "Explore dishes" CTA |
 | P2-24 | Profile | SettingsScreen shows only 2 mock toggles with explicit "This section is mock-only" banner | `SettingsScreen.tsx:32` |
 | P2-25 | Profile | EditProfileScreen has no avatar upload, no dietary preferences edit, no taste quiz redo, no password change | `EditProfileScreen.tsx` |
 | P2-26 | Profile | EditProfileScreen explicit mock disclosure: "This mock build keeps profile editing local to the device state." | `EditProfileScreen.tsx:42` |
@@ -570,16 +481,16 @@ These items affect perceived quality but do not break functionality.
 | Error (fetch failure / thrown exception) | Home, SearchResults, DishDetail, StallDetail, Maps | Missing on all screens — no error boundaries, no error UI |
 | Not found (invalid ID in route params) | DishDetail, StallDetail, BlogPost | Partial — `EmptyState` rendered but without `Screen` wrapper (missing navigation header) |
 | Offline (no network) | Global | Present — `OfflineStateScreen` exists with recovery button |
-| Auth required (protected action by signed-out user) | Favourite, Review submit, Profile tab, protected routes | Auth-first redirect is active; signed-out attempts are routed to `AuthStack/Login` with return-route intent preserved |
+| Auth required (protected action by guest) | Favourite, Review submit, Profile tab | Partially broken — `SoftGateSheet` does not exist; auth gates use `useEffect` redirect with visible flash |
 
 ---
 
 ## 4. Session Log
 
 ### Claude primary
-- [ ] Identify highest-risk UX/logic gaps in current implemented flows.
-- [ ] Prioritise bug/quality backlog by user impact.
-- [ ] Define verification matrix for Home, Discover, Search, Maps, Auth, Review, and Profile.
+- [x] Identify highest-risk UX/logic gaps in current implemented flows.
+- [x] Prioritise bug/quality backlog by user impact.
+- [x] Define verification matrix for Home, Discover, Search, Maps, Auth, Review, and Profile.
 
 ### Codex primary
 - [ ] Implement high-priority flow fixes with minimal scoped changes.
@@ -649,9 +560,9 @@ These items affect perceived quality but do not break functionality.
 ## 5. Verification Commands Log
 
 ### Claude primary
-- [ ] Specify analytics KPIs and dashboard-ready metric definitions.
-- [ ] Define event-to-metric mapping and data quality expectations.
-- [ ] Propose phased rollout path for backend/event ingestion.
+- [x] Specify analytics KPIs and dashboard-ready metric definitions.
+- [x] Define event-to-metric mapping and data quality expectations.
+- [x] Propose phased rollout path for backend/event ingestion.
 
 ### Codex primary
 - [ ] Add event instrumentation hooks in frontend service/store boundaries.
@@ -709,20 +620,13 @@ These items affect perceived quality but do not break functionality.
 - 2026-04-09 | Codex | Implemented targeted UI bug-fix batch for onboarding/review/stall detail polish: removed onboarding top-left back icon, hardened global back safe-area behavior to prevent header overlap, removed review flow "Choose another dish", redesigned Recommend UI into a segmented control, set chip borders to primary orange, replaced stall-card opening-hours metric with distance, and rebuilt hero fade using Figma node `113:811` gradient stops. | Status: completed for block 1 (`global_navigation_and_layout` + `review_flow_and_cards`) with verification. | Blockers: `map_and_data_logic` block is intentionally pending next step. | Next: fix map polygon tap hit-testing and strict F&B filtering in building directory list.
 - 2026-04-09 | Codex | Addressed follow-up regressions from screenshot QA: removed non-food units from stall directory list by enforcing venue-backed F&B filtering, and replaced `expo-linear-gradient` usage in Stall Detail with a pure RN layered fade to remove native runtime crash while restoring readable image-to-text transition. | Status: completed + verified. | Blockers: map polygon hit-testing fix still pending in next block. | Next: implement map polygon interaction reliability improvements (`onStallPress` hit target/z-index audit).
 - 2026-04-10 | Claude | Phase 1 architecture strategy (P1-01), feature-level DoD (P1-02), event taxonomy with 33 named events (P1-03), and tradeoffs/decisions log (P1-04) written. Phase 3 KPI definitions (P3-01), event-to-metric mapping (P3-02), and phased rollout strategy (P3-03) written. Pruned P2-04 (paddingBottom now computed — confirmed in HomeFeedScreen.tsx:307) and P2-11 (map disclaimer text resolved — confirmed in HomeMapScreen.tsx:358-363). P0 items annotated with recommended execution order. | Status: completed. | Blockers: none. | Next: Codex to implement P1-05 (serviceProvider.ts) and P3-04/P3-05 (analytics instrumentation hooks).
-- 2026-04-09 | Codex | Re-synced after user rollback and restored onboarding P0 blockers (`P0-01` to `P0-03`) with safe location-module fallback plus persistence tests. | Status: completed + verified. | Blockers: remaining open P0 items (`P0-05`, `P0-06`, `P0-07`, `P0-08`, `P0-09`, `P0-10`, `P0-11`, `P0-12`, `P0-14`, `P0-15`). | Next: continue with discover/detail P0 route and handoff fixes.
-- 2026-04-10 | Codex | Implemented onboarding visual + UX refresh from Figma node `131:572`, expanded Dietary Preferences into a searchable multi-select list with additional restriction flags, and removed the `SCR-007` pill on the dietary step. | Status: completed + verified. | Blockers: none for this batch. | Next: continue remaining open P0 blockers in discover/detail/state flows.
-- 2026-04-10 | Codex | Closed the remaining P0 backlog: added Home Decide CTA, corrected map pin colour spec, reused shared map components in Maps flow, wired search/discover taste-filter state paths, added external delivery/maps deep links, added Zustand persistence middleware, and removed stale soft-gate doc references. Also installed `@react-native-async-storage/async-storage` and re-ran `pod install` to sync native dependencies. | Status: completed + verified. | Blockers: none for these P0 items. | Next: move to highest-impact P1 UX gaps.
-- 2026-04-10 | Codex | Completed simulator/device verification closure: aligned Expo SDK dependency versions, confirmed `expo-doctor` at 16/17 (single non-CNG native sync warning), fixed iOS AppIcon asset size mismatch (1024x1024), and confirmed physical iPhone build/install success after icon update. | Status: completed + verified. | Blockers: none for this closure scope. | Next: continue P1 backlog implementation.
-- 2026-04-10 | Codex | Executed P1 fidelity/state batch: upgraded DishDetail hero/gallery + radar + price treatment, rewired StallDetail real reviews + closure/hygiene + share/save actions, added Home/Search loading states (+ search sorting), hardened profile root-navigation helpers, and added test coverage for detail transforms and search sorting. | Status: completed + verified. | Blockers: remaining P1 items still open (for example review photo picker and full error-boundary strategy). | Next: continue remaining P1/P2 backlog by priority and keep verification notes synced.
-- 2026-04-10 | Codex | Applied requested UX adjustments: replaced DishDetail radar with taste graph, made gallery carousel full-bleed, removed StallDetail hygiene badge, disabled push animation into Search routes, added top-left back affordance on Search screen, and enabled swipe-down keyboard dismissal on ReviewHub search list. | Status: completed + verified. | Blockers: none for this patch. | Next: run simulator QA to validate search-route feel and review keyboard gesture behavior on device.
-- 2026-04-10 | Codex | Implemented EAS Update baseline to avoid localhost dependency for device usage: added `expo-updates`, created `eas.json` build/channel profiles, enabled runtime update config in `app.json`, enabled iOS updates in `Expo.plist`, and added publish/channel npm scripts. | Status: partially completed (repo-side wiring done). | Blockers: EAS project linking requires user Expo login before setting project ID and update URL. | Next: run `npx eas-cli login` then `npx eas-cli update:configure` once to finalize cloud linkage.
 
 ---
 
 ## Verification Commands Log
 
 - [x] `npm run typecheck`
-- [x] `npx expo-doctor`
+- [ ] `npx expo-doctor`
 
 Add dated command outputs under each active workstream when run.
 
@@ -748,19 +652,9 @@ Add dated command outputs under each active workstream when run.
 - 2026-04-09: `npm run typecheck` and `npm test` both passed after auth validation hardening, orange badge-tone fix, review default-recommend change, NEA/Hygiene label removal from map screens, and test harness restoration.
 - 2026-04-09: `npm run typecheck` and `npm test` both passed after onboarding back-button removal, global back safe-area/header spacing hardening, review CTA cleanup + segmented recommend control, chip border-orange update, and Figma-based hero gradient update on Stall Detail.
 - 2026-04-09: `npm run typecheck` and `npm test` both passed after replacing `expo-linear-gradient` with a native-module-free layered fade and applying strict venue-backed filtering for F&B-only stall directory rows.
-- 2026-04-10: `npm run typecheck` and `npm run test` passed after P0 closure batch (Home CTA, map pin spec + shared component reuse, deep links, and store persistence middleware). `pod install` completed successfully after adding `@react-native-async-storage/async-storage`.
-- 2026-04-10: `npx expo-doctor` failed with 2 checks: non-CNG config sync warning for native folders plus SDK mismatch on `@react-native-async-storage/async-storage` (expected 2.2.0, found 3.0.2) and `expo-linear-gradient` (expected ~15.0.8, found 55.0.13).
-- 2026-04-10: `npm run ios` started and progressed through native compilation, but full simulator/device end-to-end closure is still pending final app launch confirmation from this run.
-- 2026-04-10: Installed SDK-aligned versions via `npx expo install @react-native-async-storage/async-storage@2.2.0 expo-linear-gradient@~15.0.8`; `npx expo-doctor --verbose` now reports 16/17 checks passing with only the non-CNG app-config sync warning remaining.
-- 2026-04-10: `npm run ios` completed with `Build Succeeded` and app launch confirmed on simulator (`iPhone 16 Pro`, deep-link opened to dev client URL).
-- 2026-04-10: Physical iPhone reinstall after icon refresh completed successfully (`Build Succeeded`, install complete) once `App-Icon-1024x1024@1x.png` was corrected to 1024x1024 (previous 2048x2048 caused asset-catalog failure).
-- 2026-04-10: `npm run typecheck` passed after Batch 2026-04-10J (detail fidelity + loading/sort + profile navigation hardening).
-- 2026-04-10: `npm run test` passed after Batch 2026-04-10J (16/16 tests), including new suites for `detailTransforms` and search sorting logic.
-- 2026-04-10: `npm run typecheck` passed after EAS Update baseline wiring.
-- 2026-04-10: `npx expo config --json` confirms runtime update config is active (`runtimeVersion.policy=appVersion`, `updates.enabled=true`, `checkAutomatically=ON_LOAD`).
 - [x] `npm run typecheck` — 2026-04-08
 - [ ] `npx expo-doctor`
-- [x] `npm run test` — 2026-04-10
+- [x] `npm run test` — 2026-04-09
 
 ---
 

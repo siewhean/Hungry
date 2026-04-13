@@ -7,14 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import {
-  BuildingLegend,
-  ClusterPin,
-  FloorSelector,
-  MapBottomSheet,
-  MapSurface,
-  type MapSurfaceMarker,
-} from "@/components/map";
+import { MapSurface, type MapSurfaceMarker } from "@/components/map/MapSurface";
 import { AppText, Button } from "@/components/ui";
 import { getBuildingVenues } from "@/features/discovery/discovery";
 import {
@@ -67,16 +60,6 @@ function MetaTag({ label }: { label: string }) {
       </AppText>
     </View>
   );
-}
-
-function getMarkerAccent(type: "hawker_centre" | "food_court" | "restaurant", palette: ReturnType<typeof useHungryTheme>["palette"]) {
-  if (type === "hawker_centre") {
-    return palette.orange;
-  }
-  if (type === "food_court") {
-    return palette.teal;
-  }
-  return palette.textMuted;
 }
 
 function ActiveStallRow({
@@ -190,10 +173,16 @@ export function HomeMapScreen() {
         id: building.id,
         label: building.name.replace(" Food Centre", "").replace(" Festival Market", ""),
         coordinate: building.coordinate,
-        accent: getMarkerAccent(building.type, palette),
-        type: building.type,
+        accent:
+          building.id === activeBuildingRecord.id
+            ? palette.orange
+            : building.type === "food_court"
+              ? palette.teal
+              : building.type === "hawker_centre"
+                ? palette.orange
+                : palette.textMuted,
       })),
-    [palette, visibleBuildings],
+    [activeBuildingRecord.id, palette.orange, palette.teal, palette.textMuted, visibleBuildings],
   );
 
   const activeStalls = useMemo(
@@ -261,10 +250,6 @@ export function HomeMapScreen() {
             <LocateFixed color={palette.surface} size={18} />
           </Pressable>
 
-          <View style={[styles.clusterPinWrap, { left: spacing[4], top: spacing[4] }]}>
-            <ClusterPin count={visibleBuildings.length} onPress={() => setCameraCenter(activeBuildingRecord.coordinate)} />
-          </View>
-
           <BottomSheet
             index={1}
             snapPoints={snapPoints}
@@ -288,98 +273,96 @@ export function HomeMapScreen() {
               }}
               showsVerticalScrollIndicator={false}
             >
-              <MapBottomSheet
-                title={activeBuildingRecord.name}
-                subtitle={activeBuildingRecord.address}
-                headerRight={(
+              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3], marginTop: spacing[1] }}>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <AppText variant="h1">{activeBuildingRecord.name}</AppText>
+                  <AppText variant="bodySmall" tone="secondary">
+                    {activeBuildingRecord.address}
+                  </AppText>
+                </View>
+                <View
+                  style={{
+                    backgroundColor: palette.surfaceRaised,
+                    borderColor: palette.border,
+                    borderRadius: radii.pill,
+                    borderWidth: 1,
+                    paddingHorizontal: spacing[3],
+                    paddingVertical: spacing[2],
+                    alignSelf: "flex-start",
+                  }}
+                >
+                  <AppText variant="micro" style={{ color: palette.text }}>
+                    {Math.max(openStallCount, activeBuildingRecord.openStalls)} active stalls
+                  </AppText>
+                </View>
+              </View>
+
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2], marginTop: spacing[3] }}>
+                <MetaTag label={activeBuildingRecord.floors.join(" · ")} />
+                <MetaTag label={formatWalkTime(currentLocation, activeBuildingRecord.coordinate)} />
+              </View>
+
+              <View style={{ gap: spacing[2], marginTop: spacing[4] }}>
+                {activeStalls.map((venue) => (
+                  <ActiveStallRow
+                    key={venue.id}
+                    venue={venue}
+                    onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
+                  />
+                ))}
+                {activeStalls.length === 0 ? (
                   <View
                     style={{
-                      backgroundColor: palette.surfaceRaised,
+                      backgroundColor: palette.surface,
                       borderColor: palette.border,
-                      borderRadius: radii.pill,
+                      borderRadius: radii.lg,
                       borderWidth: 1,
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[2],
+                      paddingHorizontal: spacing[4],
+                      paddingVertical: spacing[3],
                     }}
                   >
-                    <AppText variant="micro" style={{ color: palette.text }}>
-                      {Math.max(openStallCount, activeBuildingRecord.openStalls)} active stalls
+                    <AppText variant="bodySmall" tone="secondary">
+                      No active stalls available in this view right now.
                     </AppText>
                   </View>
-                )}
-              >
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-                  <MetaTag label={formatWalkTime(currentLocation, activeBuildingRecord.coordinate)} />
-                </View>
+                ) : null}
+              </View>
 
-                <FloorSelector
-                  floors={activeBuildingRecord.floors}
-                  selectedFloor={selectedFloor}
-                  onSelectFloor={(floor) => setSelectedFloor(floor)}
+              <View style={{ flexDirection: "row", gap: spacing[2], marginTop: spacing[4] }}>
+                <Button
+                  label="View floors"
+                  onPress={() => {
+                    setSelectedBuilding(toSummary(activeBuildingRecord));
+                    setSelectedFloor(activeBuildingRecord.floors[0]);
+                    navigation.navigate("BuildingDrillDown", { buildingId: activeBuildingRecord.id });
+                  }}
+                  style={{ flex: 1 }}
                 />
+                <Button
+                  label="Zoom in"
+                  variant="secondary"
+                  onPress={() => {
+                    setSelectedBuilding(toSummary(activeBuildingRecord));
+                    navigation.navigate("MapZoomedIn", { buildingId: activeBuildingRecord.id });
+                  }}
+                  style={{ flex: 1 }}
+                />
+              </View>
 
-                <BuildingLegend />
-
-                <View style={{ gap: spacing[2] }}>
-                  {activeStalls.map((venue) => (
-                    <ActiveStallRow
-                      key={venue.id}
-                      venue={venue}
-                      onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
-                    />
-                  ))}
-                  {activeStalls.length === 0 ? (
-                    <View
-                      style={{
-                        backgroundColor: palette.surface,
-                        borderColor: palette.border,
-                        borderRadius: radii.lg,
-                        borderWidth: 1,
-                        paddingHorizontal: spacing[4],
-                        paddingVertical: spacing[3],
-                      }}
-                    >
-                      <AppText variant="bodySmall" tone="secondary">
-                        No active stalls available in this view right now.
-                      </AppText>
-                    </View>
-                  ) : null}
-                </View>
-
-                <View style={{ flexDirection: "row", gap: spacing[2] }}>
-                  <Button
-                    label="View floors"
-                    onPress={() => {
-                      setSelectedBuilding(toSummary(activeBuildingRecord));
-                      setSelectedFloor(activeBuildingRecord.floors[0]);
-                      navigation.navigate("BuildingDrillDown", { buildingId: activeBuildingRecord.id });
-                    }}
-                    style={{ flex: 1 }}
-                  />
-                  <Button
-                    label="Zoom in"
-                    variant="secondary"
-                    onPress={() => {
-                      setSelectedBuilding(toSummary(activeBuildingRecord));
-                      navigation.navigate("MapZoomedIn", { buildingId: activeBuildingRecord.id });
-                    }}
-                    style={{ flex: 1 }}
-                  />
-                </View>
-
+              <View style={{ marginTop: spacing[2] }}>
                 <Button
                   label="Focus pilot mall: Koufu @ JEM"
                   variant="secondary"
                   onPress={() => handleBuildingSelect(PILOT_MALL_ID)}
                 />
+              </View>
 
-                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-                  <Navigation size={14} color={palette.textMuted} />
-                  <AppText variant="bodySmall" tone="muted">
-                    Map supports live Mapbox when token is set and includes a pilot directory flow for Koufu @ JEM.
-                  </AppText>
-                </View>
-              </MapBottomSheet>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginTop: spacing[3] }}>
+                <Navigation size={14} color={palette.textMuted} />
+                <AppText variant="bodySmall" tone="muted">
+                  Map supports live Mapbox when token is set and includes a pilot directory flow for Koufu @ JEM.
+                </AppText>
+              </View>
             </BottomSheetScrollView>
           </BottomSheet>
         </View>
@@ -404,10 +387,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     position: "absolute",
     width: 48,
-    zIndex: 2,
-  },
-  clusterPinWrap: {
-    position: "absolute",
     zIndex: 2,
   },
   sheetOverlay: {
