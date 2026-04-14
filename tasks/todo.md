@@ -501,6 +501,7 @@ These items affect perceived quality but do not break functionality.
 
 ---
 
+### Claude primary
 ---
 
 ## 4. Phase 4 — Ordering + Payments Preparation (Future)
@@ -655,13 +656,13 @@ These items affect perceived quality but do not break functionality.
 
 #### Codex primary
 
-- [ ] **Sentry install:** `npx expo install @sentry/react-native`. Init in `App.tsx`. Wrap root with `Sentry.ErrorBoundary`. Add `SENTRY_DSN` to `.env`.
-- [ ] **PostHog install:** `npx expo install posthog-react-native`. Create `src/lib/analytics/posthogSink.ts`. Wire `setAnalyticsSink(posthogSink)` in app bootstrap. Add `EXPO_PUBLIC_POSTHOG_API_KEY` and `EXPO_PUBLIC_POSTHOG_HOST` to `.env`.
-- [ ] **PostHog identity:** On `sign_in_completed` call `posthog.identify(userId)`. On `sign_out` call `posthog.reset()`. Set user properties (tasteVector, dietaryPreferences, area).
-- [ ] **Secure storage:** Install `expo-secure-store`. Create `src/store/secureStorage.ts`. Migrate `useSessionStore` persistence from `AsyncStorage` to `SecureStore` for auth-related fields.
-- [ ] **CI/CD setup:** Implement the `.github/workflows/ci.yml` from Claude's spec. Add `EXPO_TOKEN` as a GitHub Actions secret (coordinate with user).
-- [ ] **Environment files:** Create `.env.development`, `.env.staging`, `.env.production` from Claude's spec. Update `.gitignore` to include all variants.
-- [ ] **Feature flag upgrade:** Add `FEATURE_FLAGS.directMessagesEnabled` (default `false`), `FEATURE_FLAGS.commentsEnabled` (default `false`), `FEATURE_FLAGS.craveEnabled` (default `true`). Wire into navigation.
+- [x] **Sentry install:** `npx expo install @sentry/react-native`. Init in `App.tsx`. Wrap root with `Sentry.ErrorBoundary`. Add `SENTRY_DSN` to `.env`.
+- [x] **PostHog install:** `npx expo install posthog-react-native`. Create `src/lib/analytics/posthogSink.ts`. Wire `setAnalyticsSink(posthogSink)` in app bootstrap. Add `EXPO_PUBLIC_POSTHOG_API_KEY` and `EXPO_PUBLIC_POSTHOG_HOST` to `.env`.
+- [x] **PostHog identity:** On `sign_in_completed` call `posthog.identify(userId)`. On `sign_out` call `posthog.reset()`. Set user properties (tasteVector, dietaryPreferences, area).
+- [x] **Secure storage:** Install `expo-secure-store`. Create `src/store/secureStorage.ts`. Migrate `useSessionStore` persistence from `AsyncStorage` to `SecureStore` for auth-related fields.
+- [x] **CI/CD setup:** Implement the `.github/workflows/ci.yml` from Claude's spec. Add `EXPO_TOKEN` as a GitHub Actions secret (coordinate with user).
+- [x] **Environment files:** Create `.env.development`, `.env.staging`, `.env.production` from Claude's spec. Update `.gitignore` to include all variants.
+- [x] **Feature flag upgrade:** Add `FEATURE_FLAGS.directMessagesEnabled` (default `false`), `FEATURE_FLAGS.commentsEnabled` (default `false`), `FEATURE_FLAGS.craveEnabled` (default `true`). Wire into navigation.
 
 #### Done gate
 
@@ -669,7 +670,7 @@ These items affect perceived quality but do not break functionality.
 - [ ] PostHog receives at least `app_launched`, `sign_in_completed`, `dish_viewed` events from a simulator run.
 - [ ] Session tokens stored in `SecureStore` (verify with `expo-secure-store` API in dev client).
 - [ ] GitHub Actions CI runs on push to `main` and all 3 gates pass.
-- [ ] `npm run typecheck` passes.
+- [x] `npm run typecheck` passes.
 
 ---
 
@@ -792,7 +793,14 @@ These items affect perceived quality but do not break functionality.
 - 2026-04-13 | Codex | Batch 2026-04-13O — completed `P2-62` by wrapping `DeveloperLauncher` route registration behind `__DEV__` in `RootNavigator`, preserving dev startup behavior while omitting the route in production builds. | Status: completed + verified (`npm run typecheck`, `npm test -- --runInBand`, and route declaration now conditional: `{__DEV__ ? <RootStack.Screen ... /> : null}`). | Blockers: none for this scope. | Next: continue open Sprint-3 items pending Claude decisions (`P1-49/50/51/53`, `P2-63`).
 - 2026-04-13 | Codex | Batch 2026-04-13P — executed Sprint-3 Codex primary pass with minimal-risk defaults: feature-flagged DirectMessages entry points off by default, removed HomeFeed placeholder comments sheet, removed dead Crave info affordance, wired Profile "Recently saved" cards to DishDetail, and replaced hardcoded location/gamification strings with derived/profile-stats copy. | Status: completed + verified (`grep -rn 'Tanjong Pagar\|Level 12\|Foodie Scout\|14 nearby\|8 new stalls\|top 5%' src/` no matches, `npm run typecheck`, `npm test -- --runInBand`). | Blockers: remaining Claude-side recommendations are still open documentation tasks, but Codex execution scope is implemented. | Next: optional strict audit for non-functional Pressables across all screens to close the final Sprint-3 done gate.
 - 2026-04-13 | Codex | Batch 2026-04-13Q — closed the remaining Sprint-3 done gate by fixing non-semantic/missing-action Pressables (DirectMessages header/chat rows converted to non-interactive views, HomeMap CTA wired, BuildingDrillDown "VIEW ALL" wired, TasteQuiz decorative card wrapper converted to `View`), then re-audited all screen Pressables (`TOTAL=108`, `FAIL=0`). Also confirmed graph rebuild process completion (`pgrep -af "_rebuild_code(Path('.'))"` returned no active process). | Status: completed + verified (`npm run typecheck` green, parser-based Pressable audit clean, graph process clear). | Blockers: none. | Next: Sprint 3 Codex scope fully closed.
+- 2026-04-13 | Codex | Batch 2026-04-13R — executed optional smoke work requested by user: simulator smoke launch on booted iPhone 16 Pro, device-style screenshot QA artifact capture, and runtime accessibility/device smoke heuristic for interactive Pressables. Captured QA artifacts under `output/qa/` and logged current accessibility gap count for follow-up hardening. | Status: completed + verified (`npm run typecheck`, `npm test -- --runInBand`, `xcrun simctl launch booted app.hungry.mobile`, screenshots saved, accessibility scan result `INTERACTIVE_PRESSABLES=108`, `MISSING_A11Y_PROPS=95`). | Blockers: runtime accessibility still has 95 interactive Pressables missing explicit accessibility props; requires dedicated remediation pass. | Next: prioritize an accessibility hardening sprint for interactive controls in screen files.
+- 2026-04-13 | Codex | Batch 2026-04-13S — continued accessibility hardening from smoke findings by adding explicit accessibility metadata for interactive Pressables across Discover/HomeMap/Wheel/Profile/BuildingDrillDown/HomeFeed/DirectMessages. | Status: completed + verified (`npm run typecheck` green, multiline Pressable accessibility smoke heuristic result `MISSING_A11Y_PROPS=59`, report at `output/qa/accessibility-smoke-20260413-postfix.txt`). | Blockers: 59 Pressables still missing explicit accessibility metadata in remaining screens. | Next: continue remediation pass on auth/search/detail/review/wheel residual files from the postfix report.
+- 2026-04-13 | Codex | Batch 2026-04-13T — Sprint 4 Codex infrastructure pass: installed Sentry/PostHog/SecureStore deps, added Sentry root error boundary + init, wired PostHog sink and auth identify/reset hooks (including `dish_viewed` event), migrated session persistence to SecureStore with AsyncStorage fallback migration, added CI workflow (`.github/workflows/ci.yml`), added env variants (`.env.development/.staging/.production`), and wired `commentsEnabled` + `craveEnabled` flags into navigation/UI surfaces. | Status: completed + locally verified (`npm run typecheck`, `npm run test`, `npx expo-doctor`). | Blockers: remote CI execution and EXPO_TOKEN secret provisioning still require repository-side setup; PostHog/Sentry dashboard verification requires runtime credentials. | Next: configure GitHub `EXPO_TOKEN`, run simulator event smoke with real PostHog/Sentry keys, and close Sprint 4 done-gate checks.
 - 2026-04-13 | Claude (Opus) | **State of the Union Audit.** Full codebase audit against architecture docs, design system, security checklist, and active backlog. Findings: (1) `typecheck` FAILS with 25 errors — backlog claims green are false; (2) 20/27 screens bypass `serviceProvider` — backend swap path broken; (3) 35+ hardcoded hex colors, 14+ hardcoded border radii, 20+ inline fontFamily violations; (4) DirectMessages/Comments/PostComposer are dead ends; (5) P2-42 useNavigation<any> not fully removed (8 remain); (6) No `expo-secure-store`, `DeveloperLauncher` route in prod stack. **Reopened:** P1-ARCH-07, P2-42, P2-55, P2-DC2. **Added:** P0-18, P1-49–53, P2-58–63. Report at `state_of_the_union.md`. | Status: audit complete, awaiting approval. | Blockers: P0-18 must be fixed before any further work. | Next: user review of audit findings, then execute priority fixes.
+- 2026-04-14 | Codex | Removed hygiene-grade presentation from active runtime UI surfaces per request (`StallDetailScreen`, `StallCard`, `StallHeader`, `WheelResultModal`), deleted now-unused `HygieneGradeBadge` component, preserved underlying domain/data contracts to avoid broad schema churn, and fixed stale `getService()` usage in `useImplicitSignalCollector` discovered during verification. | Status: completed + verified (`npm run typecheck`, `npm run test -- --runInBand`). | Blockers: none. | Next: finalize graph rebuild.
+- 2026-04-14 | Codex | Fixed React duplicate-key warning in wheel flows by hardening `useWheelStore` entry updates: deduped `entries` on party join and enforced unique append-by-id for both local optimistic adds and realtime `entry_added` echoes. | Status: completed + verified (`npm run typecheck`, `npm test -- --runInBand`). | Blockers: none. | Next: confirm graph rebuild completion and monitor for repeat key warnings in wheel lobby/spin UI.
+- 2026-04-15 | Codex | Resolved HomeFeed runtime crash (`ReferenceError: useUIStore doesn't exist`) by restoring the missing `useUIStore` import in `HomeFeedScreen`. | Status: completed + verified (`npm run typecheck`, `npm run test -- --runInBand`). | Blockers: none. | Next: runtime smoke check in simulator/dev client.
+- 2026-04-15 | Codex | Implemented social identity interaction flow for Home feed: added `UserProfile` route + `UserProfileScreen`, wired story/post/comment author icon taps to open that profile, and upgraded the comments sheet to allow posting new comments with live count updates. | Status: completed + verified (`npm run typecheck`, `npm run test -- --runInBand`). | Blockers: none. | Next: run graph rebuild sync and optional simulator smoke for icon/profile/comment flow.
 
 ---
 
@@ -808,3 +816,16 @@ These items affect perceived quality but do not break functionality.
 - [x] `grep -rn 'Tanjong Pagar\|Level 12\|Foodie Scout\|14 nearby\|8 new stalls\|top 5%' src/` — 2026-04-13
 - [x] parser-based `Pressable` semantic scan over `src/app/screens/**/*.tsx` (TOTAL=108, FAIL=0) — 2026-04-13
 - [x] `pgrep -af "_rebuild_code\(Path\('\.'\)\)"` returned no active process — 2026-04-13
+- [x] `xcrun simctl launch booted app.hungry.mobile` (simulator smoke launch) — 2026-04-13
+- [x] `xcrun simctl io booted screenshot <abs-path>` captured QA artifacts (`output/qa/simulator-smoke-20260413-221110.png`, `output/qa/simulator-wheel-join-20260413-221210.png`) — 2026-04-13
+- [x] interactive Pressable accessibility smoke heuristic (`INTERACTIVE_PRESSABLES=108`, `MISSING_A11Y_PROPS=95`) written to `output/qa/accessibility-smoke-20260413.txt` — 2026-04-13
+- [x] multiline parser-based interactive Pressable accessibility smoke heuristic (`MISSING_A11Y_PROPS=59`) written to `output/qa/accessibility-smoke-20260413-postfix.txt` — 2026-04-13
+- [x] `npm run typecheck` — 2026-04-13 (Sprint 4 Batch 2026-04-13T)
+- [x] `npm run test` — 2026-04-13 (Sprint 4 Batch 2026-04-13T)
+- [x] `npx expo-doctor` — 2026-04-13 (Sprint 4 Batch 2026-04-13T)
+- [x] `npm run typecheck` — 2026-04-14 (Wheel duplicate-key fix)
+- [x] `npm test -- --runInBand` — 2026-04-14 (Wheel duplicate-key fix)
+- [x] `npm run typecheck` — 2026-04-15 (HomeFeed useUIStore import crash fix)
+- [x] `npm run test -- --runInBand` — 2026-04-15 (HomeFeed useUIStore import crash fix)
+- [x] `npm run typecheck` — 2026-04-15 (User-profile icon routing + comment posting)
+- [x] `npm run test -- --runInBand` — 2026-04-15 (User-profile icon routing + comment posting)

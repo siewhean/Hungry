@@ -12,7 +12,7 @@ import { useHungryTheme } from "@/theme";
 import type { BlogPost } from "@/types/domain";
 
 type Props = CompositeScreenProps<
-  BottomTabScreenProps<MainTabParamList, "Reads">,
+  BottomTabScreenProps<MainTabParamList, "Review">,
   NativeStackScreenProps<RootStackParamList>
 >;
 
@@ -51,7 +51,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
     return (
       <Screen scroll={false}>
         <FeedErrorBoundary onRetry={loadPosts}>
-          <FeedStateView state="loading" loadingMessage="Loading reads..." />
+          <FeedStateView state="loading" loadingMessage="Loading reviews..." />
         </FeedErrorBoundary>
       </Screen>
     );
@@ -63,7 +63,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
         <FeedErrorBoundary onRetry={loadPosts}>
           <FeedStateView
             state="error"
-            title="Unable to load reads"
+            title="Unable to load reviews"
             body="Please try again."
             ctaLabel="Retry"
             onPress={loadPosts}
@@ -79,8 +79,8 @@ export function ReadsFeedScreen({ navigation }: Props) {
         <FeedErrorBoundary onRetry={loadPosts}>
           <FeedStateView
             state="empty"
-            title="No reads yet"
-            body="New editorial stories will appear here soon."
+            title="No reviews yet"
+            body="New editorial review stories will appear here soon."
           />
         </FeedErrorBoundary>
       </Screen>
@@ -91,8 +91,8 @@ export function ReadsFeedScreen({ navigation }: Props) {
     <Screen scroll={false}>
       <FeedErrorBoundary
         onRetry={loadPosts}
-        title="Reads display issue"
-        body="We hit an unexpected rendering issue in the reads feed. Please retry."
+        title="Review display issue"
+        body="We hit an unexpected rendering issue in the review feed. Please retry."
       >
         <ScrollView
           contentContainerStyle={{ gap: spacing[6], paddingBottom: spacing[2] }}
@@ -100,7 +100,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
         >
         {/* ── Article List ── */}
         <View style={{ gap: spacing[4] }}>
-          <AppText variant="h2">Latest Reads</AppText>
+          <AppText variant="h2">Latest Review Stories</AppText>
 
           {posts.map((post) => (
             <Pressable key={post.id} onPress={() => navigation.navigate("BlogPost", { postId: post.id })}>

@@ -24,6 +24,8 @@ export interface ReviewSuccessPayload {
   rating?: number;
 }
 
+export type ThemePreference = "automatic" | "light" | "dark";
+
 interface UIState {
   toast: ToastPayload | null;
   showToast: (payload: ToastPayload) => void;
@@ -42,6 +44,8 @@ interface UIState {
   hideReviewSuccess: () => void;
   isOffline: boolean;
   setOffline: (offline: boolean) => void;
+  themePreference: ThemePreference;
+  setThemePreference: (preference: ThemePreference) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -69,4 +73,6 @@ export const useUIStore = create<UIState>((set) => ({
   hideReviewSuccess: () => set({ reviewSuccess: null }),
   isOffline: false,
   setOffline: (offline) => set({ isOffline: offline }),
+  themePreference: "automatic",
+  setThemePreference: (themePreference) => set({ themePreference }),
 }));

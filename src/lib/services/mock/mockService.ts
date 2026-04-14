@@ -16,10 +16,15 @@ import type {
   Bite,
   BiteDraft,
   BuildingDetail,
+  ExplicitFeedbackInput,
+  ExtendedRecommendationContext,
   HungryService,
+  ImplicitSignalInput,
   QuizAnswer,
+  RankedRecommendation,
   RecommendationContext,
   RecommendationResult,
+  ScenarioQuizAnswer,
   SearchResult,
   Session,
   SubmitReviewInput,
@@ -28,11 +33,23 @@ import type {
   BlogPost,
   DietaryFlag,
   DishDetail,
+  HawkerTasteTag,
   SearchFilters,
+  TasteProfile,
   TasteVector,
   UserProfile,
   VenueSummary,
 } from "@/types/domain";
+import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
+import {
+  runRecommendationPipeline,
+  processExplicitFeedback as processExplicitFeedbackCore,
+  processImplicitFeedback as processImplicitFeedbackCore,
+} from "@/lib/ai/tasteEngine";
+import type {
+  ExplicitFeedbackEvent,
+  ImplicitSignal,
+} from "@/lib/ai/tasteEngine";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -435,6 +452,15 @@ export const hungryService: HungryService = {
       _profile = { ..._profile, tasteVector: vector };
       return resolve(undefined);
     },
+
+    async updateTasteProfile(profile) {
+      _profile = {
+        ..._profile,
+        tasteVector: profile.vector,
+        tasteProfile: profile,
+      };
+      return resolve(undefined);
+    },
   },
 
   // ── Social (Bites) ──────────────────────────────────────────────────────────
@@ -508,6 +534,7 @@ export const hungryService: HungryService = {
   // ── AI ───────────────────────────────────────────────────────────────────────
 
   ai: {
+    // Legacy methods (backward-compatible)
     computeTasteVector(answers: QuizAnswer[]): TasteVector {
       const result: TasteVector = { ...NEUTRAL_TASTE_VECTOR };
       for (const answer of answers) {
@@ -547,5 +574,132 @@ export const hungryService: HungryService = {
       const score = Math.round(cosine(userVector, dishVector) * 100);
       return `${score}% taste match — ${matchReason(userVector, dishVector)}`;
     },
+
+    // Extended — Scenario Quiz
+    computeTasteProfile(answers: ScenarioQuizAnswer[]): TasteProfile {
+      return computeTasteProfileFromQuiz(answers);
+    },
+
+    // Extended — Full Recommendation Pipeline
+    async getContextualRecommendations(
+      ctx: ExtendedRecommendationContext
+    ): Promise<RankedRecommendation[]> {
+      const pipelineResults = runRecommendationPipeline(
+        dishes,
+        {
+          userVector: ctx.tasteProfile.vector,
+          dietaryFlags: ctx.dietaryFlags,
+          neophiliaIndex: ctx.tasteProfile.neophiliaIndex,
+          latitude: ctx.latitude,
+          longitude: ctx.longitude,
+          radiusMeters: ctx.radiusMeters,
+          excludeDishIds: ctx.excludeDishIds,
+        }
+      );
+
+      // Map pipeline results back to RankedRecommendation (with full DishDetail)
+      const results: RankedRecommendation[] = pipelineResults
+        .map((pr) => {
+          const dish = dishes.find((d) => d.id === pr.dishId);
+          if (!dish) return null;
+          return {
+            dish,
+            matchScore: pr.score,
+            matchPercent: pr.matchPercent,
+            matchReason: pr.explanation,
+            isSerendipitous: pr.isSerendipitous,
+          };
+        })
+        .filter((r): r is RankedRecommendation => r !== null);
+
+      return resolve(results);
+    },
+
+    // Extended — Feedback Processing
+    async processExplicitFeedback(
+      feedback: ExplicitFeedbackInput
+    ): Promise<TasteVector> {
+      const dish = dishes.find((d) => d.id === feedback.dishId);
+      if (!dish) return resolve(_profile.tasteVector);
+
+      // Map input to core feedback event
+      let feedbackType: ExplicitFeedbackEvent["type"] = "rating_3_star";
+      if (feedback.feedbackType === "rating" && feedback.rating !== undefined) {
+        const ratingMap: Record<number, ExplicitFeedbackEvent["type"]> = {
+          5: "rating_5_star",
+          4: "rating_4_star",
+          3: "rating_3_star",
+          2: "rating_2_star",
+          1: "rating_1_star",
+        };
+        feedbackType = ratingMap[feedback.rating] ?? "rating_3_star";
+      } else if (feedback.feedbackType === "save") {
+        feedbackType = "saved";
+      } else if (feedback.feedbackType === "unsave") {
+        feedbackType = "unsaved";
+      } else if (feedback.feedbackType === "hawker_tag") {
+        feedbackType = "hawker_tag_positive";
+      }
+
+      const updatedVector = processExplicitFeedbackCore(_profile.tasteVector, {
+        type: feedbackType,
+        dishVector: dish.tasteVector,
+        hawkerTags: feedback.hawkerTags,
+      });
+
+      _profile = { ..._profile, tasteVector: updatedVector };
+      return resolve(updatedVector);
+    },
+
+    async processImplicitFeedback(
+      signals: ImplicitSignalInput[]
+    ): Promise<TasteVector> {
+      const coreSignals: ImplicitSignal[] = signals
+        .map((s) => {
+          const dish = dishes.find((d) => d.id === s.dishId);
+          if (!dish) return null;
+          return {
+            type: s.type,
+            dishVector: dish.tasteVector,
+            timestamp: s.timestamp,
+          };
+        })
+        .filter((s): s is ImplicitSignal => s !== null);
+
+      const updatedVector = processImplicitFeedbackCore(
+        _profile.tasteVector,
+        coreSignals
+      );
+      _profile = { ..._profile, tasteVector: updatedVector };
+      return resolve(updatedVector);
+    },
+
+    // Extended — Community Calibration
+    async getTagSuggestions(dishId: string): Promise<HawkerTasteTag[]> {
+      const dish = dishes.find((d) => d.id === dishId);
+      if (!dish) return resolve([]);
+
+      // Mock heuristic: suggest tags based on the dish's taste vector
+      const suggestions: HawkerTasteTag[] = [];
+      if (dish.tasteVector.aromatic >= 7) suggestions.push("wok_hei");
+      if (dish.tasteVector.rich >= 7) suggestions.push("lemak");
+      if (dish.tasteVector.spicy >= 7) suggestions.push("hiam");
+      if (dish.tasteVector.rich >= 6 && dish.tasteVector.salty >= 6)
+        suggestions.push("sedap");
+      if (dish.tasteVector.salty >= 7 && dish.tasteVector.aromatic >= 6)
+        suggestions.push("shiok");
+
+      // Always suggest at most 3
+      return resolve(suggestions.slice(0, 3));
+    },
+
+    async submitCommunityTags(
+      _dishId: string,
+      _tags: HawkerTasteTag[]
+    ): Promise<void> {
+      // Mock: no-op — in production updates the dish's community taste vector
+      return resolve(undefined);
+    },
   },
 };
+

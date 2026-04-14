@@ -79,8 +79,9 @@ export const QuickReviewSheet = ({ venueName, dishName, onSuccess }: QuickReview
           style={[
             styles.input,
             { 
-              backgroundColor: palette.bgSoft, 
+              backgroundColor: palette.surface, 
               borderColor: palette.border, 
+              borderWidth: 1,
               borderRadius: radii.md,
               color: palette.text,
               padding: spacing[3],

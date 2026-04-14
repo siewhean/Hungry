@@ -123,7 +123,7 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
         backgroundStyle={{ backgroundColor: palette.surface, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl }}
         handleIndicatorStyle={{ backgroundColor: palette.border, width: 40 }}
       >
-        <BottomSheetScrollView contentContainerStyle={{ paddingBottom: insets.bottom + spacing[5], paddingHorizontal: spacing[5], paddingTop: spacing[6] }}>
+        <BottomSheetScrollView contentContainerStyle={{ paddingBottom: insets.bottom + spacing[5], paddingHorizontal: spacing[3], paddingTop: spacing[6] }}>
           <View style={{ gap: spacing[4] }}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
               <View style={{ flex: 1, gap: spacing[1] }}>

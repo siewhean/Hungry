@@ -41,7 +41,7 @@ export function DeliveryPlatformButton({ link, compact = false }: DeliveryPlatfo
           backgroundColor: meta.color,
           borderRadius: radii.pill,
           opacity: pressed ? 0.9 : 1,
-          paddingHorizontal: spacing[4],
+          paddingHorizontal: spacing[3],
           paddingVertical: compact ? spacing[2] : spacing[3],
         },
       ]}

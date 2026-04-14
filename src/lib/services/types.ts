@@ -10,8 +10,11 @@ import type {
   BuildingSummary,
   DishDetail,
   DietaryFlag,
+  DishSummary,
+  HawkerTasteTag,
   SearchFilters,
   StallPost,
+  TasteProfile,
   TasteVector,
   UserProfile,
   VenueSummary,
@@ -133,6 +136,43 @@ export interface RecommendationResult {
   matchReason: string; // "Rich & aromatic — matches your taste profile"
 }
 
+// ─── Extended AI Types ────────────────────────────────────────────────────────
+
+export interface ScenarioQuizAnswer {
+  scenarioId: string;
+  selectedOptionId: string;
+}
+
+export interface ExtendedRecommendationContext {
+  tasteProfile: TasteProfile;
+  dietaryFlags: DietaryFlag[];
+  latitude?: number;
+  longitude?: number;
+  radiusMeters?: number;
+  excludeDishIds?: string[];
+}
+
+export interface RankedRecommendation {
+  dish: DishDetail;
+  matchScore: number;
+  matchPercent: number;
+  matchReason: string;
+  isSerendipitous: boolean;
+}
+
+export interface ExplicitFeedbackInput {
+  dishId: string;
+  feedbackType: "rating" | "save" | "unsave" | "hawker_tag";
+  rating?: number;
+  hawkerTags?: HawkerTasteTag[];
+}
+
+export interface ImplicitSignalInput {
+  type: "category_click" | "dwell_time" | "photo_zoom" | "ignored_recommendation" | "rapid_scroll_past";
+  dishId: string;
+  timestamp: number;
+}
+
 // ─── Search Types ─────────────────────────────────────────────────────────────
 
 export interface SearchResult {
@@ -222,6 +262,7 @@ export interface HungryService {
     toggleFavourite(dishId: string): Promise<boolean>;
     getFavouriteDishIds(): Promise<string[]>;
     updateTasteVector(vector: TasteVector): Promise<void>;
+    updateTasteProfile(profile: TasteProfile): Promise<void>;
   };
 
   // Social (Bites)
@@ -240,6 +281,7 @@ export interface HungryService {
 
   // AI
   ai: {
+    // Legacy (backward-compatible)
     computeTasteVector(answers: QuizAnswer[]): TasteVector;
     getSmartRecommendations(ctx: RecommendationContext): Promise<RecommendationResult[]>;
     adjustCommunityTasteVector(
@@ -250,5 +292,28 @@ export interface HungryService {
       userVector: TasteVector,
       dishVector: TasteVector
     ): string;
+
+    // Extended — Scenario Quiz
+    computeTasteProfile(answers: ScenarioQuizAnswer[]): TasteProfile;
+
+    // Extended — Full Recommendation Pipeline
+    getContextualRecommendations(
+      ctx: ExtendedRecommendationContext
+    ): Promise<RankedRecommendation[]>;
+
+    // Extended — Feedback Processing
+    processExplicitFeedback(
+      feedback: ExplicitFeedbackInput
+    ): Promise<TasteVector>;
+    processImplicitFeedback(
+      signals: ImplicitSignalInput[]
+    ): Promise<TasteVector>;
+
+    // Extended — Community Calibration
+    getTagSuggestions(dishId: string): Promise<HawkerTasteTag[]>;
+    submitCommunityTags(
+      dishId: string,
+      tags: HawkerTasteTag[]
+    ): Promise<void>;
   };
 }

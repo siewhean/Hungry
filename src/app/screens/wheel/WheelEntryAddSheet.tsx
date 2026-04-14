@@ -65,6 +65,8 @@ function VenueRow({
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Add ${venue.name} to wheel`}
       onPress={onAdd}
       style={({ pressed }) => [
         {
@@ -253,6 +255,8 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
       onRequestClose={onClose}
     >
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Close add option sheet"
         style={{ flex: 1, backgroundColor: palette.overlay }}
         onPress={onClose}
       />
@@ -287,7 +291,13 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               </View>
             )}
           </View>
-          <Pressable onPress={onClose} hitSlop={12} style={{ backgroundColor: palette.bgSoft, width: 32, height: 32, borderRadius: radii.pill, alignItems: "center", justifyContent: "center" }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss add option sheet"
+            onPress={onClose}
+            hitSlop={12}
+            style={{ backgroundColor: palette.bgSoft, width: 32, height: 32, borderRadius: radii.pill, alignItems: "center", justifyContent: "center" }}
+          >
             <X size={18} color={palette.text} />
           </Pressable>
         </View>
@@ -298,7 +308,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{
-              paddingHorizontal: spacing[4],
+              paddingHorizontal: spacing[3],
               paddingVertical: spacing[4],
               gap: spacing[2],
             }}
@@ -306,9 +316,11 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
             {tabs.map((t) => (
               <Pressable
                 key={t.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Switch to ${t.label} tab`}
                 onPress={() => { setTab(t.id); void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
                 style={{
-                  paddingHorizontal: spacing[4],
+                  paddingHorizontal: spacing[3],
                   paddingVertical: spacing[2],
                   borderRadius: radii.md,
                   backgroundColor: tab === t.id ? palette.orangeLight : palette.bgSoft,
@@ -340,7 +352,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
         <View style={{ flex: 1 }}>
           {tab === "search" && (
             <>
-              <View style={{ paddingHorizontal: spacing[5], paddingBottom: spacing[4] }}>
+              <View style={{ paddingHorizontal: spacing[3], paddingBottom: spacing[4] }}>
                 <Input
                   placeholder="Find a specific stall..."
                   value={query}
@@ -384,11 +396,13 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               </View>
               <View style={{ gap: spacing[1], alignItems: "center" }}>
                 <AppText style={{ fontSize: 20, fontWeight: "800" }}>Surprise Me!</AppText>
-                <AppText style={{ textAlign: "center", paddingHorizontal: spacing[4] }} tone="secondary">
+                <AppText style={{ textAlign: "center", paddingHorizontal: spacing[3] }} tone="secondary">
                   Can't decide? Let us pick a random nearby stall for your group.
                 </AppText>
               </View>
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Pick a random stall for me"
                 onPress={addRandom}
                 style={({ pressed }) => [
                   {
@@ -417,19 +431,21 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={{
-                    paddingHorizontal: spacing[5],
+                    paddingHorizontal: spacing[3],
                     gap: spacing[2],
                   }}
                 >
                   {CATEGORIES.map((cat) => (
                     <Pressable
                       key={cat}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${cat} category`}
                       onPress={() => {
                         setSelectedCategory(selectedCategory === cat ? null : cat);
                         void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       }}
                       style={{
-                        paddingHorizontal: spacing[4],
+                        paddingHorizontal: spacing[3],
                         paddingVertical: spacing[2],
                         borderRadius: radii.pill,
                         backgroundColor:

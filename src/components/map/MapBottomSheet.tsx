@@ -28,7 +28,7 @@ export function MapBottomSheet({
         borderBottomRightRadius: 0,
         gap: spacing[3],
         marginTop: -spacing[2],
-        paddingHorizontal: spacing[4],
+        paddingHorizontal: spacing[3],
         paddingTop: spacing[3],
       }}
     >

@@ -12,6 +12,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
@@ -26,6 +27,8 @@ export function SettingsScreen() {
   const clearProfile = useProfileStore((state) => state.clearProfile);
   const clearSearchState = useSearchStore((state) => state.clearSearchState);
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
+  const themePreference = useUIStore((state) => state.themePreference);
+  const setThemePreference = useUIStore((state) => state.setThemePreference);
   const leftHandedMode = useProfileStore((state) => state.profile.leftHandedMode ?? false);
   const setLeftHandedMode = useProfileStore((state) => state.setLeftHandedMode);
   const [dietaryEnabled, setDietaryEnabled] = useState(true);
@@ -81,25 +84,49 @@ export function SettingsScreen() {
   return (
     <ProfileScreenShell title="Settings" subtitle="Account, privacy, and lightweight preferences.">
       <Card>
-        <View style={{ gap: spacing[3] }}>
-          <AppText variant="h3">Preferences</AppText>
-          <View style={{ flexDirection: "row", gap: spacing[2], flexWrap: "wrap" }}>
-            <Chip
-              label="Dietary filters"
-              selected={dietaryEnabled}
-              onPress={() => setDietaryEnabled((value) => !value)}
-            />
-            <Chip
-              label="Notifications"
-              selected={notificationsEnabled}
-              onPress={() => setNotificationsEnabled((value) => !value)}
-            />
-            <Chip
-              label="Left-handed mode"
-              selected={leftHandedMode}
-              onPress={() => setLeftHandedMode(!leftHandedMode)}
-            />
+        <View style={{ gap: spacing[4] }}>
+          <View style={{ gap: spacing[3] }}>
+            <AppText variant="h3">Preferences</AppText>
+            <View style={{ flexDirection: "row", gap: spacing[2], flexWrap: "wrap" }}>
+              <Chip
+                label="Dietary filters"
+                selected={dietaryEnabled}
+                onPress={() => setDietaryEnabled((value) => !value)}
+              />
+              <Chip
+                label="Notifications"
+                selected={notificationsEnabled}
+                onPress={() => setNotificationsEnabled((value) => !value)}
+              />
+              <Chip
+                label="Left-handed mode"
+                selected={leftHandedMode}
+                onPress={() => setLeftHandedMode(!leftHandedMode)}
+              />
+            </View>
           </View>
+
+          <View style={{ gap: spacing[3] }}>
+            <AppText variant="h3">Appearance</AppText>
+            <View style={{ flexDirection: "row", gap: spacing[2], flexWrap: "wrap" }}>
+              <Chip
+                label="Automatic"
+                selected={themePreference === "automatic"}
+                onPress={() => setThemePreference("automatic")}
+              />
+              <Chip
+                label="Light"
+                selected={themePreference === "light"}
+                onPress={() => setThemePreference("light")}
+              />
+              <Chip
+                label="Dark"
+                selected={themePreference === "dark"}
+                onPress={() => setThemePreference("dark")}
+              />
+            </View>
+          </View>
+
           <Badge label={location ? `Manual location: ${location}` : "Location uses GPS"} tone="neutral" />
         </View>
       </Card>

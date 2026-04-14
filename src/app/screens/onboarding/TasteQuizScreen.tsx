@@ -247,7 +247,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   return (
     <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1, overflow: "hidden" }} edges={["top", "left", "right", "bottom"]}>
       <View style={{ flex: 1, overflow: "hidden", paddingTop: spacing[4] }}>
-        <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", minHeight: 36, paddingHorizontal: spacing[5] }}>
+        <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", minHeight: 36, paddingHorizontal: spacing[3] }}>
           <View style={{ width: 36 }} />
           <View style={{ width: 52 }} />
         </View>
@@ -292,7 +292,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
           </View>
 
           {inDietaryStep ? (
-            <View style={{ flex: 1, paddingBottom: ACTIONS_FOOTER_HEIGHT + spacing[6], paddingHorizontal: spacing[5] }}>
+            <View style={{ flex: 1, paddingBottom: ACTIONS_FOOTER_HEIGHT + spacing[6], paddingHorizontal: spacing[3] }}>
               <Card style={{ flex: 1, gap: spacing[2], padding: spacing[3] }}>
                 <AppText variant="h3">Select any that apply</AppText>
                 <Input
@@ -321,7 +321,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                           flexDirection: "row",
                           gap: spacing[3],
                           minHeight: 52,
-                          paddingHorizontal: spacing[4],
+                          paddingHorizontal: spacing[3],
                           paddingVertical: spacing[2],
                         }}
                       >

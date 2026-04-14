@@ -374,7 +374,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           <LaunchButton label="Search" onPress={() => navigation.navigate("SearchHome")} />
           <LaunchButton
             label="Map Browse"
-            onPress={() => navigation.navigate("MainTabs", { screen: "Maps" })}
+            onPress={() => navigation.navigate("DiscoverMap")}
           />
           <LaunchButton
             label="Floor Plan — Maxwell Food Centre"
@@ -401,8 +401,8 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             onPress={() => navigation.navigate("DishDetail", { dishId: sampleDish.id })}
           />
           <LaunchButton
-            label="Read feed"
-            onPress={() => navigation.navigate("MainTabs", { screen: "Reads" })}
+            label="Review feed"
+            onPress={() => navigation.navigate("MainTabs", { screen: "Review" })}
           />
           <LaunchButton
             label="Article"
@@ -461,7 +461,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           <LaunchButton
             label="Quick Review"
             onPress={() =>
-              openProtected("Review", () =>
+              openProtected("Rate", () =>
                 navigation.navigate("ReviewStack", { screen: "ReviewHub" })
               )
             }

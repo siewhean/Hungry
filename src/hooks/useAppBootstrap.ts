@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
-import { trackAnalyticsEvent } from "@/lib/analytics";
+import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
+import { posthogSink } from "@/lib/analytics/posthogSink";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 
@@ -9,6 +10,16 @@ export function useAppBootstrap() {
   const syncProfile = useProfileStore((state) => state.syncProfile);
   const previousAuth = useRef<boolean | undefined>(undefined);
   const hasTrackedLaunch = useRef(false);
+  const hasConfiguredAnalyticsSink = useRef(false);
+
+  useEffect(() => {
+    if (hasConfiguredAnalyticsSink.current) {
+      return;
+    }
+
+    setAnalyticsSink(posthogSink);
+    hasConfiguredAnalyticsSink.current = true;
+  }, []);
 
   useEffect(() => {
     if (hasTrackedLaunch.current) {

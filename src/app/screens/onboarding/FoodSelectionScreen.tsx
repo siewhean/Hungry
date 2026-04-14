@@ -147,7 +147,7 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
                     <View style={{ 
                       position: "absolute", top: spacing[2], right: spacing[2], 
                       width: 28, height: 28, borderRadius: radii.pill, 
-                      backgroundColor: isSelected ? palette.orange : "rgba(255,255,255,0.8)", 
+                      backgroundColor: isSelected ? palette.orange : palette.surfaceTranslucent, 
                       alignItems: "center", justifyContent: "center" 
                     }}>
                       {isSelected && <Check size={16} color={palette.surface} strokeWidth={3} />}

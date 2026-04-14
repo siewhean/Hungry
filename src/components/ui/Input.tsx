@@ -32,7 +32,7 @@ export function Input({ label, helperText, errorText, error, leftIcon, rightIcon
             borderRadius: radii.md,
             gap: spacing[2],
             minHeight: 54,
-            paddingHorizontal: spacing[4],
+            paddingHorizontal: spacing[3],
           },
         ]}
       >

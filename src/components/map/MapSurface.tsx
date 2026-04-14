@@ -144,7 +144,7 @@ function MarkerVisual({
       {showLabel ? (
         <View
           style={{
-            backgroundColor: selected ? palette.surface : "rgba(255,255,255,0.85)",
+            backgroundColor: selected ? palette.surface : palette.surfaceTranslucent,
             borderColor: selected ? palette.orange : palette.border,
             borderRadius: radii.pill,
             borderWidth: 1,
@@ -371,7 +371,7 @@ export function MapSurface({
           cameraPadding={cameraPadding}
         />
         {!MAPBOX_ACCESS_TOKEN ? (
-          <View style={[styles.tokenNotice, { backgroundColor: "rgba(255,255,255,0.92)", borderColor: palette.border }]}>
+          <View style={[styles.tokenNotice, { backgroundColor: palette.surfaceTranslucent, borderColor: palette.border }]}>
             <AppText variant="micro" style={{ color: palette.textMuted }}>
               Set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` to enable the live map.
             </AppText>

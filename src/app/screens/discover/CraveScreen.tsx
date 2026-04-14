@@ -123,7 +123,7 @@ export function CraveScreen() {
     <View style={{ flex: 1, backgroundColor: palette.navy }}>
       <SafeAreaView style={{ flex: 1 }} edges={["top", "left", "right"]}>
         {/* Header */}
-        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: spacing[4], paddingVertical: spacing[2], justifyContent: "space-between" }}>
+        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: spacing[3], paddingVertical: spacing[2], justifyContent: "space-between" }}>
           <Pressable onPress={() => navigation.goBack()} style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
             <ChevronLeft color={palette.white} size={28} />
           </Pressable>
@@ -173,7 +173,7 @@ export function CraveScreen() {
                   top: 40,
                   opacity: likeOpacity,
                   transform: [{ rotate: "15deg" }],
-                  paddingHorizontal: spacing[4],
+                  paddingHorizontal: spacing[3],
                   paddingVertical: spacing[2],
                   borderRadius: radii.md,
                   zIndex: zIndex.overlay,
@@ -191,7 +191,7 @@ export function CraveScreen() {
                   top: 40,
                   opacity: passOpacity,
                   transform: [{ rotate: "-15deg" }],
-                  paddingHorizontal: spacing[4],
+                  paddingHorizontal: spacing[3],
                   paddingVertical: spacing[2],
                   borderRadius: radii.md,
                   zIndex: zIndex.overlay,

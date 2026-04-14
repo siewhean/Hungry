@@ -165,15 +165,22 @@ export function HomeMapScreen() {
 
       {/* Top Floating UI */}
       <SafeAreaView style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: zIndex.overlay }} edges={["top"]}>
-        <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[2], gap: spacing[3] }}>
+        <View style={{ paddingHorizontal: spacing[3], paddingTop: spacing[2], gap: spacing[3] }}>
           <View style={{ flexDirection: "row", gap: spacing[2], alignItems: "center" }}>
-            <Pressable onPress={() => navigation.navigate("SearchHome")} style={[styles.searchBar, { backgroundColor: palette.surface, borderRadius: radii.pill, flex: 1, ...shadows.floating }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Search dishes or stalls"
+              onPress={() => navigation.navigate("SearchHome")}
+              style={[styles.searchBar, { backgroundColor: palette.surface, borderRadius: radii.pill, flex: 1, ...shadows.floating }]}
+            > 
               <Search color={palette.textMuted} size={20} />
               <AppText tone="secondary" style={{ flex: 1 }}>Search dishes or stalls...</AppText>
               <View style={{ width: 1, height: 20, backgroundColor: palette.border }} />
               <Filter color={palette.orange} size={20} />
             </Pressable>
             <Pressable 
+              accessibilityRole="button"
+              accessibilityLabel={displayMode === "carousel" ? "Switch to list view" : "Switch to carousel view"}
               onPress={() => {
                 const next = displayMode === "carousel" ? "list" : "carousel";
                 setDisplayMode(next);
@@ -202,7 +209,12 @@ export function HomeMapScreen() {
         </View>
       </SafeAreaView>
 
-      <Pressable onPress={() => setSelectedBuilding(toSummary(getBuildingById(DEFAULT_BUILDING_ID)!))} style={[styles.floatingButton, { bottom: PEEK_HEIGHT + spacing[6], right: spacing[4], backgroundColor: palette.surface, zIndex: zIndex.fab, ...shadows.floating }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Recenter map to default building"
+        onPress={() => setSelectedBuilding(toSummary(getBuildingById(DEFAULT_BUILDING_ID)!))}
+        style={[styles.floatingButton, { bottom: PEEK_HEIGHT + spacing[6], right: spacing[4], backgroundColor: palette.surface, zIndex: zIndex.fab, ...shadows.floating }]}
+      > 
         <LocateFixed color={palette.orange} size={24} />
       </Pressable>
 
@@ -231,6 +243,8 @@ export function HomeMapScreen() {
           <View style={{ width: 40, height: 4, borderRadius: radii.pill, backgroundColor: palette.border }} />
           {selectedDish && (
             <Pressable 
+              accessibilityRole="button"
+              accessibilityLabel="Close dish details"
               onPress={() => { setSelectedDish(null); snapTo(PEEK_HEIGHT); }}
               style={{ position: "absolute", right: spacing[4], top: 8, width: 32, height: 32, borderRadius: radii.pill, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}
             >
@@ -240,7 +254,7 @@ export function HomeMapScreen() {
         </View>
 
         {selectedDish ? (
-          <View style={{ gap: spacing[4], paddingBottom: insets.bottom + spacing[4], paddingHorizontal: spacing[4] }}>
+          <View style={{ gap: spacing[4], paddingBottom: insets.bottom + spacing[4], paddingHorizontal: spacing[3] }}>
             <View style={{ width: "100%", height: 240, borderRadius: radii.xl, overflow: "hidden", position: "relative" }}>
               <Image source={{ uri: selectedDish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
               <View style={[{ position: "absolute", top: spacing[4], right: spacing[4], width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center" }, shadows.floating]}>
@@ -275,12 +289,16 @@ export function HomeMapScreen() {
 
             <View style={{ flexDirection: "row", gap: spacing[3], marginTop: spacing[1] }}>
               <Pressable 
+                accessibilityRole="button"
+                accessibilityLabel={`View menu for ${selectedDish.name}`}
                 onPress={() => navigation.navigate("DishDetail", { dishId: selectedDish.id })}
                 style={{ flex: 1, height: 56, borderRadius: radii.pill, backgroundColor: palette.surfaceRaised, alignItems: "center", justifyContent: "center" }}
               >
                 <AppText style={{ fontSize: 16, fontWeight: "700", color: palette.text }}>View Menu</AppText>
               </Pressable>
               <Pressable 
+                accessibilityRole="button"
+                accessibilityLabel={`Open stall details for ${selectedDish.venueName}`}
                 onPress={() => navigation.navigate("StallDetail", { venueId: selectedDish.venueId })}
                 style={[{ flex: 1, height: 56, borderRadius: radii.pill, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center" }, shadows.floating]}
               >
@@ -289,11 +307,13 @@ export function HomeMapScreen() {
             </View>
           </View>
         ) : displayMode === "list" ? (
-          <ScrollView contentContainerStyle={{ paddingHorizontal: spacing[5], gap: spacing[4], paddingBottom: insets.bottom + spacing[12] }}>
+          <ScrollView contentContainerStyle={{ paddingHorizontal: spacing[3], gap: spacing[4], paddingBottom: insets.bottom + spacing[12] }}>
             <AppText variant="h2" style={{ marginBottom: spacing[2] }}>Nearby Stalls</AppText>
             {visibleBuildings.flatMap((b) => repository.listVenuesByBuilding(b.id)).map((venue) => (
               <Pressable
                 key={venue.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${venue.name} stall details`}
                 onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
                 style={{
                   backgroundColor: palette.bgSoft,
@@ -319,9 +339,15 @@ export function HomeMapScreen() {
           </ScrollView>
         ) : (
           <View style={{ height: 200 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[4], paddingHorizontal: spacing[4] }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[4], paddingHorizontal: spacing[3] }}>
               {areaPopularDishes.map((dish) => (
-                <Pressable key={dish.id} onPress={() => handleCardPress(dish)} style={[{ backgroundColor: palette.surface, borderRadius: radii.xl, overflow: "hidden", width: 280 }, shadows.floating]}>
+                <Pressable
+                  key={dish.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Preview ${dish.name} at ${dish.venueName}`}
+                  onPress={() => handleCardPress(dish)}
+                  style={[{ backgroundColor: palette.surface, borderRadius: radii.xl, overflow: "hidden", width: 280 }, shadows.floating]}
+                > 
                   <View style={{ height: 140 }}>
                     <Image source={{ uri: dish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
                     {dish.liveCrowd && (

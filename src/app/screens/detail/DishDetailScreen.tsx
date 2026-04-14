@@ -1,11 +1,12 @@
 import { Animated, ScrollView, Share, View, useWindowDimensions, Pressable, StyleSheet } from "react-native";
 import { Image } from "expo-image";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Star } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
@@ -31,6 +32,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const heroScrollX = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
+  const lastTrackedDishId = useRef<string | null>(null);
 
   const venue = useMemo(() => (dish ? repository.getVenueById(dish.venueId) : undefined), [dish, repository]);
   const tasteMatch = useMemo(() => (dish ? getTasteSimilarityWithDish(profile, dish) : 0), [profile, dish]);
@@ -46,6 +48,23 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const indicatorDotSize = 7;
   const indicatorStep = 14;
   const indicatorTrackWidth = Math.max(indicatorDotSize, indicatorDotSize + Math.max(0, gallery.length - 1) * indicatorStep);
+
+  useEffect(() => {
+    if (!dish || lastTrackedDishId.current === dish.id) {
+      return;
+    }
+
+    lastTrackedDishId.current = dish.id;
+    trackAnalyticsEvent(
+      "dish_viewed",
+      {
+        dish_id: dish.id,
+        venue_id: dish.venueId,
+        building_id: dish.buildingId,
+      },
+      isAuthenticated ? { userId: profile.id } : undefined,
+    );
+  }, [dish, isAuthenticated, profile.id]);
 
   if (!dish || !venue) {
     return (
@@ -96,8 +115,15 @@ export function DishDetailScreen({ navigation, route }: Props) {
               ))}
             </Animated.ScrollView>
 
-            {/* Rating Pill - Floating in bottom-right of image */}
-            <View style={{ position: "absolute", bottom: spacing[3], right: spacing[4] }}>
+            {/* Rating Pill - Floating in bottom corners of image */}
+            <View 
+              style={{ 
+                position: "absolute", 
+                bottom: spacing[3], 
+                left: profile.leftHandedMode ? spacing[4] : undefined,
+                right: profile.leftHandedMode ? undefined : spacing[4] 
+              }}
+            >
               <View style={[{ backgroundColor: palette.amber, borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 6, flexDirection: "row", alignItems: "center", gap: 4 }, shadows.floating]}>
                 <Star color={palette.white} fill={palette.white} size={14} />
                 <AppText style={{ color: palette.white, fontWeight: "800", fontSize: 15 }}>{dish.rating.toFixed(1)}</AppText>
@@ -134,7 +160,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
             </View>
           </View>
 
-          <View style={{ gap: spacing[5], paddingHorizontal: spacing[5], paddingTop: spacing[5] }}>
+          <View style={{ gap: spacing[5], paddingHorizontal: spacing[3], paddingTop: spacing[5] }}>
             {/* Title & Trust */}
             <View style={{ gap: spacing[1] }}>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2], marginBottom: spacing[1] }}>
@@ -218,7 +244,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
             left: 0, 
             right: 0, 
             backgroundColor: palette.bg, 
-            paddingHorizontal: spacing[4], 
+            paddingHorizontal: spacing[3], 
             paddingTop: spacing[3],
             paddingBottom: Math.max(insets.bottom, spacing[4]),
             flexDirection: "row",

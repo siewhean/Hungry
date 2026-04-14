@@ -31,6 +31,21 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+function appendEntryUnique(entries: WheelEntry[], entry: WheelEntry): WheelEntry[] {
+  return entries.some((existing) => existing.id === entry.id) ? entries : [...entries, entry];
+}
+
+function dedupeEntries(entries: WheelEntry[]): WheelEntry[] {
+  const seen = new Set<string>();
+  return entries.filter((entry) => {
+    if (seen.has(entry.id)) {
+      return false;
+    }
+    seen.add(entry.id);
+    return true;
+  });
+}
+
 // ─── Store Definition ───────────────────────────────────────────────────────
 
 interface WheelState {
@@ -156,7 +171,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     set({
       party,
       members: found.members,
-      entries: found.entries,
+      entries: dedupeEntries(found.entries),
       myMemberId: memberId,
       _channel: channel,
     });
@@ -193,7 +208,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     _channel.broadcast({ type: "entry_added", entry });
 
     // Update local state immediately
-    set((state) => ({ entries: [...state.entries, entry] }));
+    set((state) => ({ entries: appendEntryUnique(state.entries, entry) }));
   },
 
   // ── removeEntry ────────────────────────────────────────────────────────────
@@ -260,7 +275,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
   _onEvent(event) {
     switch (event.type) {
       case "entry_added":
-        set((state) => ({ entries: [...state.entries, event.entry] }));
+        set((state) => ({ entries: appendEntryUnique(state.entries, event.entry) }));
         break;
       case "entry_removed":
         set((state) => ({ entries: state.entries.filter((e) => e.id !== event.entryId) }));

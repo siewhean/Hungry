@@ -31,7 +31,7 @@ export function FeedStateView({
           flex: 1,
           gap: spacing[2],
           justifyContent: "center",
-          paddingHorizontal: spacing[5],
+          paddingHorizontal: spacing[3],
         }}
       >
         <ActivityIndicator color={palette.orange} />
@@ -45,7 +45,7 @@ export function FeedStateView({
       style={{
         flex: 1,
         justifyContent: "center",
-        paddingHorizontal: spacing[5],
+        paddingHorizontal: spacing[3],
       }}
     >
       <EmptyState

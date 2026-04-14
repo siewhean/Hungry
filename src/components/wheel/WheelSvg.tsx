@@ -56,7 +56,13 @@ function truncateLabel(label: string, maxChars: number): string {
 export function WheelSvg({ entries, size = 300 }: Props) {
   const { palette } = useHungryTheme();
 
-  const active = entries.filter((e) => !e.isEliminated);
+  const active = Array.from(
+    new Map(
+      entries
+        .filter((entry) => !entry.isEliminated)
+        .map((entry) => [entry.id, entry] as const)
+    ).values()
+  );
   const cx = size / 2;
   const cy = size / 2;
   const r = size / 2 - 4; // 4px inset keeps the border from clipping

@@ -6,7 +6,7 @@ import type {
   UserProfile,
   VenueSummary,
 } from "@/types/domain";
-import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 
 const FOOD_1 =
   "https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800";
@@ -314,6 +314,7 @@ export const guestProfile: UserProfile = {
   displayName: "Guest",
   email: "",
   tasteVector: NEUTRAL_TASTE_VECTOR,
+  tasteProfile: NEUTRAL_TASTE_PROFILE,
   dietaryPreferences: [],
   favouriteDishIds: [],
   reviewedDishIds: [],
@@ -335,6 +336,14 @@ export const userProfile: UserProfile = {
     salty: 6,
     rich: 7,
     aromatic: 9,
+  },
+  tasteProfile: {
+    vector: { sweet: 4, spicy: 8, sour: 3, salty: 6, rich: 7, aromatic: 9 },
+    bitterTolerance: 6,
+    fatAffinity: 7,
+    textureArchetype: "cruncher",
+    neophiliaIndex: 8,
+    spiceSeeking: 9,
   },
   dietaryPreferences: ["pork_free"],
   favouriteDishIds: ["dish-chicken-rice", "dish-ban-mian"],

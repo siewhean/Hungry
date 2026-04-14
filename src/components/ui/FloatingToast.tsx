@@ -58,7 +58,7 @@ export function FloatingToast() {
             {
               backgroundColor: toneConfig.bg,
               borderRadius: radii.md,
-              paddingHorizontal: spacing[4],
+              paddingHorizontal: spacing[3],
               paddingVertical: spacing[3],
               flexDirection: "row",
               alignItems: "center",

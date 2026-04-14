@@ -11,9 +11,9 @@ export interface HomeFeedSection {
   items: HomeFeedItem[];
 }
 
-export function getHomeFeed(profile: UserProfile): HomeFeedSection[] {
+function buildHomeFeedItems(profile: UserProfile): HomeFeedItem[] {
   const repository = getDataRepository();
-  const allPosts = repository
+  return repository
     .listStallPosts()
     .map((post) => {
       const venue = repository.getVenueById(post.venueId);
@@ -29,7 +29,22 @@ export function getHomeFeed(profile: UserProfile): HomeFeedSection[] {
         dishes,
       } satisfies HomeFeedItem;
     })
-    .filter((p): p is HomeFeedItem => !!p);
+    .filter((p): p is HomeFeedItem => !!p)
+    .sort((left, right) => {
+      const leftDish = left.dishes[0];
+      const rightDish = right.dishes[0];
+      const leftScore = leftDish ? getSimilarityScore(leftDish.tasteVector, profile.tasteVector) : 0;
+      const rightScore = rightDish ? getSimilarityScore(rightDish.tasteVector, profile.tasteVector) : 0;
+      return rightScore - leftScore;
+    });
+}
+
+export function getHomeSocialFeed(profile: UserProfile): HomeFeedItem[] {
+  return buildHomeFeedItems(profile);
+}
+
+export function getHomeFeed(profile: UserProfile): HomeFeedSection[] {
+  const allPosts = buildHomeFeedItems(profile);
 
   // 1. Fastest Near You (Shortest distance)
   const fastest = [...allPosts]

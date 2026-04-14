@@ -33,7 +33,7 @@ export function ReviewHubScreen({ navigation }: Props) {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setReturnRoute("Review");
+      setReturnRoute("Rate");
       rootNavigation?.navigate("AuthStack", { screen: "Login" });
     }
   }, [isAuthenticated, rootNavigation, setReturnRoute]);

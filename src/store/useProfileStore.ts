@@ -3,16 +3,20 @@ import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getDataRepository, getSimilarityScore } from "@/lib/services/serviceProvider";
-import type { DietaryFlag, DishDetail, TasteVector, UserProfile } from "@/types/domain";
+import type { DietaryFlag, DishDetail, TasteProfile, TasteVector, UserProfile } from "@/types/domain";
+import { NEUTRAL_TASTE_PROFILE } from "@/constants/taste";
 import { hungryPersistStorage } from "./persistStorage";
 
 interface ProfileState {
   profile: UserProfile;
+  /** Extended taste profile with psychometric secondary axes */
+  tasteProfile: TasteProfile;
   reviewEntries: Record<string, { rating: number; text: string; tags: string[]; createdAt: string }>;
   syncProfile: (isAuthenticated: boolean) => void;
   toggleFavourite: (dish: DishDetail) => void;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email">>) => void;
   setTasteVector: (tasteVector: TasteVector) => void;
+  setTasteProfile: (tasteProfile: TasteProfile) => void;
   setDietaryPreferences: (dietaryPreferences: DietaryFlag[]) => void;
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
@@ -48,6 +52,7 @@ export const useProfileStore = create<ProfileState>()(
   persist(
     (set, get) => ({
       profile: getDataRepository().getProfile(false),
+      tasteProfile: NEUTRAL_TASTE_PROFILE,
       reviewEntries: {},
       syncProfile: (isAuthenticated) => {
         set({ profile: getDataRepository().getProfile(isAuthenticated) });
@@ -98,6 +103,27 @@ export const useProfileStore = create<ProfileState>()(
               ...state.profile,
               tasteVector,
             },
+            tasteProfile: {
+              ...state.tasteProfile,
+              vector: tasteVector,
+            },
+          };
+        }),
+      setTasteProfile: (tasteProfile) =>
+        set((state) => {
+          trackAnalyticsEvent("taste_quiz_completed", {
+            skipped: false,
+            vector: tasteProfile.vector,
+            neophiliaIndex: tasteProfile.neophiliaIndex,
+            textureArchetype: tasteProfile.textureArchetype,
+          });
+          return {
+            profile: {
+              ...state.profile,
+              tasteVector: tasteProfile.vector,
+              tasteProfile,
+            },
+            tasteProfile,
           };
         }),
       setDietaryPreferences: (dietaryPreferences) =>
@@ -174,7 +200,8 @@ export const useProfileStore = create<ProfileState>()(
       clearProfile: () =>
         set({
           profile: getDataRepository().getProfile(false),
-          reviewEntries: {  },
+          tasteProfile: NEUTRAL_TASTE_PROFILE,
+          reviewEntries: {},
         }),
     }),
     {
@@ -182,6 +209,7 @@ export const useProfileStore = create<ProfileState>()(
       storage: hungryPersistStorage,
       partialize: (state) => ({
         profile: state.profile,
+        tasteProfile: state.tasteProfile,
         reviewEntries: state.reviewEntries,
       }),
     },

@@ -48,9 +48,8 @@ export type WheelStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Discover: undefined;
-  Maps: undefined;
   Review: undefined;
-  Reads: undefined;
+  Rate: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 
@@ -64,6 +63,7 @@ export type RootStackParamList = {
   SearchHome: undefined;
   SearchResults: undefined;
   TasteFilter: undefined;
+  DiscoverMap: undefined;
   DecideForMeResult: undefined;
   BuildingDrillDown: { buildingId: string };
   MapZoomedIn: { buildingId: string };
@@ -72,6 +72,7 @@ export type RootStackParamList = {
   WheelStack: NavigatorScreenParams<WheelStackParamList>;
   DirectMessages: undefined;
   Crave: undefined;
+  UserProfile: { authorName: string; authorAvatarUrl?: string; authorLocation?: string };
   Offline: undefined;
   NotFound: { title?: string; body?: string } | undefined;
   Post: { venueId?: string; dishId?: string } | undefined;

@@ -22,8 +22,12 @@ export function DirectMessagesScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
       <View style={{ flex: 1 }}>
         {/* Header */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing[4], paddingVertical: spacing[3] }}>
-          <Pressable onPress={() => navigation.goBack()}>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing[3], paddingVertical: spacing[3] }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            onPress={() => navigation.goBack()}
+          >
             <ChevronLeft color={palette.text} size={28} />
           </Pressable>
           <AppText variant="h2">Messages</AppText>
@@ -33,14 +37,14 @@ export function DirectMessagesScreen() {
         </View>
 
         {/* Search */}
-        <View style={{ paddingHorizontal: spacing[4], marginBottom: spacing[4] }}>
+        <View style={{ paddingHorizontal: spacing[3], marginBottom: spacing[4] }}>
           <Input 
             placeholder="Search messages..." 
             leftIcon={<Search color={palette.textMuted} size={18} />}
           />
         </View>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[4] }}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing[3], gap: spacing[4] }}>
           {MOCK_CHATS.map((chat) => (
             <View
               key={chat.id} 

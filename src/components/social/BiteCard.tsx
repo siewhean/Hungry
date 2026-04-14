@@ -20,6 +20,7 @@ import Animated, {
 
 import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { useProfileStore } from "@/store/useProfileStore";
 
 export interface Bite {
   id: string;
@@ -56,6 +57,7 @@ export function BiteCard({
   onCommentPress,
 }: BiteCardProps) {
   const { palette, radii, spacing, motion } = useHungryTheme();
+  const leftHandedMode = useProfileStore((state) => state.profile.leftHandedMode);
   const imageHeight = Math.round(width * 0.76);
 
   const heartScale = useSharedValue(0);
@@ -186,7 +188,7 @@ export function BiteCard({
       <View
         style={{
           direction: "ltr",
-          flexDirection: "row",
+          flexDirection: leftHandedMode ? "row-reverse" : "row",
           alignItems: "center",
           gap: spacing[2],
           marginTop: spacing[1],
@@ -202,7 +204,7 @@ export function BiteCard({
           onPress={onToggleLike}
           style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
         >
-          <Heart size={18} color={liked ? palette.error : palette.textMuted} />
+          <Heart size={18} color={liked ? palette.error : palette.textMuted} fill={liked ? palette.error : "transparent"} />
           <AppText variant="micro" tone="muted">
             {displayHeartCount}
           </AppText>
@@ -219,7 +221,7 @@ export function BiteCard({
             {bite.commentCount}
           </AppText>
         </Pressable>
-        <AppText variant="micro" tone="muted" style={{ marginLeft: "auto" }}>
+        <AppText variant="micro" tone="muted" style={{ marginLeft: leftHandedMode ? 0 : "auto", marginRight: leftHandedMode ? "auto" : 0 }}>
           {bite.createdAt}
         </AppText>
       </View>

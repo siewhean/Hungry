@@ -194,7 +194,7 @@ export function BuildingInfoSheet({ buildingId, onDismiss, onDrillDown }: Buildi
                     borderRadius: radii.md,
                     flexDirection: "row",
                     justifyContent: "space-between",
-                    paddingHorizontal: spacing[4],
+                    paddingHorizontal: spacing[3],
                     paddingVertical: spacing[3],
                   }}
                 >

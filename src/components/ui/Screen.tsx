@@ -39,7 +39,7 @@ export function Screen({
             styles.content,
             {
               alignItems: "center",
-              paddingHorizontal: spacing[5],
+              paddingHorizontal: spacing[3],
               paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[12],
               paddingTop: spacing[3],
             },
@@ -74,7 +74,7 @@ export function Screen({
             styles.flex,
             {
               alignItems: "center",
-              paddingHorizontal: spacing[5],
+              paddingHorizontal: spacing[3],
               paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[4],
               paddingTop: spacing[3],
             },

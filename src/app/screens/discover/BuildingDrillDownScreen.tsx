@@ -138,6 +138,8 @@ function DirectoryFilter({
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
       onPress={onPress}
       style={{
         backgroundColor: selected ? palette.bgSoft : palette.surface,
@@ -479,7 +481,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={{
-            paddingHorizontal: spacing[5],
+            paddingHorizontal: spacing[3],
             paddingTop: spacing[3],
             paddingBottom: Math.max(insets.bottom + 132, spacing[12]),
           }}
@@ -526,7 +528,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                 overflow: "hidden",
               }}
             >
-              <View style={{ gap: spacing[1], paddingHorizontal: spacing[4], paddingTop: spacing[4] }}>
+              <View style={{ gap: spacing[1], paddingHorizontal: spacing[3], paddingTop: spacing[4] }}>
                 <AppText variant="h3">Store directory map</AppText>
                 <AppText variant="bodySmall" tone="secondary">
                   Floor {activeFloor} · tap a stall polygon to inspect that unit.
@@ -548,7 +550,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                   style={[
                     styles.zoomPill,
                     {
-                      backgroundColor: "rgba(255,255,255,0.96)",
+                      backgroundColor: palette.surfaceTranslucent,
                       borderColor: palette.border,
                       borderRadius: radii.lg,
                       padding: spacing[1],
@@ -576,7 +578,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                   style={[
                     styles.levelPill,
                     {
-                      backgroundColor: "rgba(255,255,255,0.96)",
+                      backgroundColor: palette.surfaceTranslucent,
                       borderColor: palette.border,
                       borderRadius: radii.lg,
                       padding: spacing[1],
@@ -608,6 +610,8 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                   return (
                     <Pressable
                       key={record.stall.stallId}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${record.title} ${record.unitNumber}`}
                       onPress={() => handleStallSelection(record.stall)}
                       style={{
                         backgroundColor: palette.surface,
@@ -634,6 +638,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                           <StatusBadge status={status} />
                           <Pressable
                             accessibilityRole="button"
+                            accessibilityLabel={`Open ${record.title} stall details`}
                             hitSlop={10}
                             onPress={() => {
                               if (record.venue) {
@@ -671,7 +676,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                     borderColor: palette.border,
                     borderRadius: radii.lg,
                     borderWidth: 1,
-                    paddingHorizontal: spacing[4],
+                    paddingHorizontal: spacing[3],
                     paddingVertical: spacing[4],
                   }}
                 >
@@ -691,13 +696,17 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                   borderRadius: radii.xl,
                   borderWidth: 1,
                   gap: spacing[3],
-                  paddingHorizontal: spacing[4],
+                  paddingHorizontal: spacing[3],
                   paddingVertical: spacing[4],
                 }}
               >
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                   <AppText variant="h3">Menu preview on this level</AppText>
-                  <Pressable onPress={() => navigation.navigate("SearchResults")}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="View all menu items"
+                    onPress={() => navigation.navigate("SearchResults")}
+                  >
                     <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>VIEW ALL</AppText>
                   </Pressable>
                 </View>
@@ -709,6 +718,8 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                   {menuPreview.map((dish) => (
                     <Pressable
                       key={dish.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${dish.name} details`}
                       onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
                       style={{
                         backgroundColor: palette.bgSoft,
@@ -780,6 +791,8 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                 <View style={{ gap: spacing[3] }}>
                   <AppText variant="h3">Signature dish</AppText>
                   <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open signature dish ${activeRecord.dish.name}`}
                     onPress={() => {
                       bottomSheetModalRef.current?.dismiss();
                       navigation.navigate("DishDetail", { dishId: activeRecord.dish!.id });

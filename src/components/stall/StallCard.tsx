@@ -4,7 +4,6 @@ import { Clock3, MapPinned } from "lucide-react-native";
 import type { VenueSummary, DishSummary } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
 import { AppText, Badge, Card } from "../ui";
-import { HygieneGradeBadge } from "./HygieneGradeBadge";
 
 interface StallCardProps {
   venue: VenueSummary;
@@ -37,7 +36,6 @@ export function StallCard({ venue, topDish, onPress }: StallCardProps) {
             </AppText>
           </View>
           <View style={styles.metaRow}>
-            <HygieneGradeBadge grade={venue.hygieneGrade} />
             <Badge label={venue.isOpen ? "Open" : "Closed"} tone={venue.isOpen ? "success" : "warning"} />
           </View>
           <View style={styles.infoRow}>

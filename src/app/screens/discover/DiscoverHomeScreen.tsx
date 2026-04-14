@@ -10,6 +10,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Chip, Input, Screen } from "@/components/ui";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -137,7 +138,7 @@ export function DiscoverHomeScreen() {
         scrollEventThrottle={16}
       >
         {/* Dynamic Location Header */}
-        <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[2] }}>
+        <View style={{ paddingTop: spacing[2] }}>
           <AppText variant="micro" style={{ color: themeTints.isLateNight ? palette.white : palette.orange, letterSpacing: 1, marginBottom: 2, opacity: 0.8 }}>
             YOU ARE AT
           </AppText>
@@ -147,7 +148,9 @@ export function DiscoverHomeScreen() {
               <AppText variant="micro" style={{ color: themeTints.secondaryText }}>{`${discoverNearbyCount} nearby`}</AppText>
             </View>
             <Pressable 
-              onPress={() => navigation.navigate("MainTabs", { screen: "Maps" })}
+              accessibilityRole="button"
+              accessibilityLabel="Open map view"
+              onPress={() => navigation.navigate("DiscoverMap")}
               style={{ flexDirection: "row", alignItems: "center", gap: spacing[1], backgroundColor: themeTints.isLateNight ? "rgba(255,255,255,0.1)" : palette.orangeLight, paddingHorizontal: spacing[3], paddingVertical: spacing[1.5], borderRadius: radii.pill }}
             >
               <MapPinned color={themeTints.isLateNight ? palette.white : palette.orange} size={14} />
@@ -157,8 +160,10 @@ export function DiscoverHomeScreen() {
         </View>
 
         {/* Search Bar Entry */}
-        <View style={{ paddingHorizontal: spacing[4] }}>
+        <View style={{ }}>
           <Pressable 
+            accessibilityRole="button"
+            accessibilityLabel="Search dishes stalls or vibes"
             onPress={() => navigation.navigate("SearchHome")}
             style={[
               shadows.card,
@@ -167,7 +172,7 @@ export function DiscoverHomeScreen() {
                 borderRadius: radii.md,
                 flexDirection: "row",
                 alignItems: "center",
-                paddingHorizontal: spacing[4],
+                paddingHorizontal: spacing[3],
                 height: 52,
                 gap: spacing[2],
                 borderWidth: themeTints.isLateNight ? 0 : 1,
@@ -184,7 +189,7 @@ export function DiscoverHomeScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: spacing[2], paddingHorizontal: spacing[4] }}
+          contentContainerStyle={{ gap: spacing[2] }}
         >
           {sortedChips.map((chip) => {
             const isActive = selectedCategories.includes(chip.category as SearchCategory);
@@ -204,10 +209,12 @@ export function DiscoverHomeScreen() {
         </ScrollView>
 
         {/* Proactive Selection Grid */}
-        <View style={{ gap: spacing[3], paddingHorizontal: spacing[4] }}>
+        <View style={{ gap: spacing[3] }}>
           <View style={{ flexDirection: "row", gap: spacing[3] }}>
             <Animated.View style={{ flex: 1, transform: [{ scale: pulseAnim }] }}>
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Decide for me"
                 onPress={handleDecideForMe}
                 style={[
                   shadows.card,
@@ -229,6 +236,8 @@ export function DiscoverHomeScreen() {
             </Animated.View>
 
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open hungry wheel"
               onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
               style={[
                 shadows.card,
@@ -251,49 +260,59 @@ export function DiscoverHomeScreen() {
           </View>
 
           {/* New psychological ownership hook: Daily Crave */}
-          <Pressable
-            onPress={() => navigation.navigate("Crave")}
-            style={[
-              shadows.card,
-              {
-                backgroundColor: themeTints.isLateNight ? "rgba(255,255,255,0.05)" : palette.bgSoft,
-                borderRadius: radii.lg,
-                padding: spacing[4],
-                flexDirection: "row",
-                alignItems: "center",
-                gap: spacing[4],
-                borderWidth: 1,
-                borderColor: palette.border,
-              },
-            ]}
-          >
-            <View style={{ width: 48, height: 48, borderRadius: radii.pill, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center" }}>
-              <Flame color={palette.white} size={24} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <AppText variant="h3" style={{ color: themeTints.text }}>Daily Crave</AppText>
-              <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>Swipe to build your profile</AppText>
-            </View>
-            <ChevronRight color={themeTints.isLateNight ? palette.white : palette.textMuted} size={20} />
-          </Pressable>
+          {FEATURE_FLAGS.craveEnabled ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open daily crave"
+              onPress={() => navigation.navigate("Crave")}
+              style={[
+                shadows.card,
+                {
+                  backgroundColor: themeTints.isLateNight ? "rgba(255,255,255,0.05)" : palette.bgSoft,
+                  borderRadius: radii.lg,
+                  padding: spacing[4],
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing[4],
+                  borderWidth: 1,
+                  borderColor: palette.border,
+                },
+              ]}
+            >
+              <View style={{ width: 48, height: 48, borderRadius: radii.pill, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center" }}>
+                <Flame color={palette.white} size={24} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <AppText variant="h3" style={{ color: themeTints.text }}>Daily Crave</AppText>
+                <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>Swipe to build your profile</AppText>
+              </View>
+              <ChevronRight color={themeTints.isLateNight ? palette.white : palette.textMuted} size={20} />
+            </Pressable>
+          ) : null}
         </View>
 
         {/* Recommended Dishes (Carousel) */}
         <View style={{ gap: spacing[3] }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing[4] }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <AppText variant="h2">Trending Nearby</AppText>
-            <Pressable onPress={() => navigation.navigate("SearchResults")}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="See all trending nearby dishes"
+              onPress={() => navigation.navigate("SearchResults")}
+            >
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>SEE ALL</AppText>
             </Pressable>
           </View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: spacing[4], paddingHorizontal: spacing[4] }}
+            contentContainerStyle={{ gap: spacing[4] }}
           >
             {recommendedDishes.map((dish) => (
               <Pressable
                 key={dish.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${dish.name} at ${dish.venueName}`}
                 onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
                 style={[
                   shadows.card,
@@ -326,20 +345,26 @@ export function DiscoverHomeScreen() {
 
         {/* Stalls Near You (Horizontal Selection) */}
         <View style={{ gap: spacing[3] }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing[4] }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <AppText variant="h2" style={{ color: themeTints.text }}>Stalls Near You</AppText>
-            <Pressable onPress={() => navigation.navigate("MainTabs", { screen: "Maps" })}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="View stalls on map"
+              onPress={() => navigation.navigate("DiscoverMap")}
+            >
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>VIEW MAP</AppText>
             </Pressable>
           </View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[4] }}
+            contentContainerStyle={{ gap: spacing[3] }}
           >
             {nearbyVenues.map(({ venue, topDish }) => (
               <Pressable
                 key={venue.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${venue.name} in map zoomed view`}
                 onPress={() => navigation.navigate("MapZoomedIn", { buildingId: venue.buildingId })}
                 style={[
                   shadows.card,

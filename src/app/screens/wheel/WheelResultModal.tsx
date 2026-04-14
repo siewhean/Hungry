@@ -8,12 +8,13 @@
  */
 
 import { useEffect, useRef } from "react";
-import { Animated, Pressable, View } from "react-native";
+import { Animated, Pressable, View, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import { MapPin, Navigation } from "lucide-react-native";
+import { MapPin, Navigation, Trophy, RotateCcw, CheckCircle2 } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
-import { AppText, Badge } from "@/components/ui";
+import { AppText, Button } from "@/components/ui";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
@@ -25,7 +26,7 @@ type Props = NativeStackScreenProps<WheelStackParamList, "WheelResult">;
 
 export function WheelResultModal({ navigation, route }: Props) {
   const { palette, spacing, radii, shadows, motion } = useHungryTheme();
-  const { winnerEntryId, partyId } = route.params;
+  const { winnerEntryId } = route.params;
   const repository = getDataRepository();
 
   const party = useWheelStore((s) => s.party);
@@ -59,7 +60,6 @@ export function WheelResultModal({ navigation, route }: Props) {
 
   function handleStallDetail() {
     if (!winnerEntry) return;
-    // Navigate to root StallDetail — get the root navigator from the stack parent
     const rootNav = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
     rootNav?.navigate("StallDetail", { venueId: winnerEntry.venueId });
   }
@@ -82,121 +82,115 @@ export function WheelResultModal({ navigation, route }: Props) {
     <View
       style={{
         flex: 1,
-        backgroundColor: palette.overlay,
-        justifyContent: "flex-end",
+        backgroundColor: "transparent",
+        justifyContent: "center",
+        padding: spacing[4],
       }}
     >
-      <Pressable style={{ flex: 1 }} onPress={() => {}} />
-
+      <LinearGradient
+        colors={[palette.overlay, "rgba(0,0,0,0.9)"]}
+        style={StyleSheet.absoluteFill}
+      />
+      
       <Animated.View
         style={{
-          backgroundColor: palette.bg,
-          borderTopLeftRadius: radii.lg,
-          borderTopRightRadius: radii.lg,
+          backgroundColor: palette.surface,
+          borderRadius: radii.xl,
+          overflow: "hidden",
           transform: [{ scale: scaleAnim }],
           opacity: opacityAnim,
           ...shadows.floating,
+          borderWidth: 1,
+          borderColor: palette.orange,
         }}
       >
-        {/* Hero image */}
-        {heroDish?.imageUrl ? (
-          <Image
-            source={{ uri: heroDish.imageUrl }}
-            style={{
-              width: "100%",
-              height: 220,
-              borderTopLeftRadius: radii.lg,
-              borderTopRightRadius: radii.lg,
-            }}
-            contentFit="cover"
-          />
-        ) : (
-          <View
-            style={{
-              width: "100%",
-              height: 220,
-              backgroundColor: palette.bgSoft,
-              borderTopLeftRadius: radii.lg,
-              borderTopRightRadius: radii.lg,
-              alignItems: "center",
-              justifyContent: "center",
+        {/* Winner Header Badge */}
+        <View style={{ position: "absolute", top: spacing[4], left: spacing[4], zIndex: 10 }}>
+          <LinearGradient
+            colors={[palette.amber, "#F59E0B"]}
+            style={{ 
+              flexDirection: "row", 
+              alignItems: "center", 
+              gap: 6, 
+              paddingHorizontal: spacing[3], 
+              paddingVertical: spacing[1.5], 
+              borderRadius: radii.pill,
+              ...shadows.card
             }}
           >
-            <AppText variant="display" style={{ color: palette.orange }}>
-              🎉
-            </AppText>
-          </View>
-        )}
+            <Trophy size={14} color={palette.white} />
+            <AppText variant="micro" style={{ color: palette.white, fontWeight: "900" }}>WINNER</AppText>
+          </LinearGradient>
+        </View>
+
+        {/* Hero image */}
+        <View style={{ height: 240, width: "100%", position: "relative" }}>
+          {heroDish?.imageUrl ? (
+            <Image
+              source={{ uri: heroDish.imageUrl }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }]}>
+              <AppText variant="display" style={{ color: palette.orange }}>🎉</AppText>
+            </View>
+          )}
+          <LinearGradient
+            colors={["rgba(0,0,0,0.4)", "transparent", "rgba(0,0,0,0.6)"]}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
 
         {/* Content */}
-        <View style={{ padding: spacing[4], gap: spacing[4] }}>
-          {/* Winner label */}
-          <View style={{ gap: spacing[1] }}>
-            <AppText variant="micro" tone="secondary" style={{ textTransform: "uppercase" }}>
-              {isClassic ? "Your group is going to" : `Round ${party?.currentRound} winner`}
+        <View style={{ padding: spacing[5], gap: spacing[5] }}>
+          <View style={{ gap: spacing[1], alignItems: "center" }}>
+            <AppText variant="micro" tone="accent" style={{ fontWeight: "800", textTransform: "uppercase", letterSpacing: 1 }}>
+              {isClassic ? "Your next stop is..." : `The Last One Standing`}
             </AppText>
-            <AppText variant="h1">{winnerEntry?.label ?? "—"}</AppText>
+            <AppText variant="h1" style={{ textAlign: "center", fontSize: 28 }}>{winnerEntry?.label ?? "—"}</AppText>
 
             {venue ? (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-                <MapPin size={14} color={palette.textMuted} />
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginTop: spacing[1] }}>
+                <MapPin size={14} color={palette.orange} />
                 <AppText variant="bodySmall" tone="secondary">
                   {venue.floor} {venue.unitNumber}
                 </AppText>
-                <Badge
-                  label={venue.hygieneGrade}
-                  tone={venue.hygieneGrade === "A" ? "success" : "neutral"}
-                />
               </View>
             ) : null}
           </View>
 
           {/* CTA dock */}
           <View style={{ gap: spacing[3] }}>
-            {/* Primary: go to stall */}
-            <Pressable
+            <Button
+              label="View Stall Details"
               onPress={handleStallDetail}
-              style={{
-                backgroundColor: palette.orange,
-                paddingVertical: spacing[4],
-                borderRadius: radii.pill,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: spacing[2],
-              }}
-            >
-              <Navigation size={16} color={palette.surface} />
-              <AppText
-                variant="h3"
-                tone="inverse"
-              >
-                View stall
-              </AppText>
-            </Pressable>
+              leftIcon={<Navigation size={18} color={palette.white} />}
+            />
 
-            {/* Elimination mode: continue or finish */}
             {isElimination && remainingActive > 2 ? (
-              <Pressable
+              <Button
+                label={`Next Round (${remainingActive - 1} left)`}
                 onPress={handleSpinAgain}
-                style={{
-                  backgroundColor: palette.bgSoft,
-                  paddingVertical: spacing[4],
-                  borderRadius: radii.pill,
-                  alignItems: "center",
-                }}
-              >
-                <AppText variant="h3" tone="secondary">
-                  Next round ({remainingActive - 1} left)
-                </AppText>
-              </Pressable>
+                variant="secondary"
+                leftIcon={<RotateCcw size={18} color={palette.text} />}
+              />
             ) : null}
 
-            {/* Done / disband */}
-            <Pressable onPress={handleDone} style={{ alignItems: "center", paddingVertical: spacing[2] }}>
-              <AppText variant="bodySmall" tone="secondary">
-                {isClassic ? "Spin again" : "Done — disband party"}
-              </AppText>
+            <Pressable 
+              onPress={handleDone} 
+              style={({ pressed }) => ({ 
+                alignItems: "center", 
+                paddingVertical: spacing[2],
+                opacity: pressed ? 0.7 : 1
+              })}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                <CheckCircle2 size={14} color={palette.textMuted} />
+                <AppText variant="bodySmallBold" tone="muted" style={{ textTransform: "uppercase", letterSpacing: 1 }}>
+                  {isClassic ? "Done" : "Disband Party"}
+                </AppText>
+              </View>
             </Pressable>
           </View>
         </View>

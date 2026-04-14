@@ -4,5 +4,7 @@ export const FEATURE_FLAGS = {
   mockMapboxEnabled: false,
   hungryWheelEnabled: true,
   directMessagesEnabled: false,
+  commentsEnabled: true,
+  craveEnabled: true,
 } as const;
 

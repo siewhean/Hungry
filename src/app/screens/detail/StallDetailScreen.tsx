@@ -67,7 +67,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               backgroundColor: "transparent",
               height: insets.top + 56,
               paddingTop: insets.top,
-              paddingHorizontal: spacing[4],
+              paddingHorizontal: spacing[3],
               borderBottomWidth: 0,
               zIndex: zIndex.overlay,
             },
@@ -108,7 +108,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
               style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80 }}
             />
             {/* Rating Pill - Floating */}
-            <View style={{ position: "absolute", bottom: -spacing[2], right: spacing[4] }}>
+            <View 
+              style={{ 
+                position: "absolute", 
+                bottom: -spacing[2], 
+                left: profile.leftHandedMode ? spacing[4] : undefined,
+                right: profile.leftHandedMode ? undefined : spacing[4] 
+              }}
+            >
               <View style={[{ backgroundColor: palette.amber, borderRadius: radii.pill, paddingHorizontal: spacing[3], paddingVertical: spacing[2], flexDirection: "row", alignItems: "center", gap: spacing[1], ...shadows.floating }]}>
                 <Star color={palette.surface} fill={palette.surface} size={14} />
                 <AppText style={{ color: palette.surface, fontWeight: "800", fontSize: 15 }}>{(leadDish?.rating ?? 4.8).toFixed(1)}</AppText>
@@ -116,7 +123,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
             </View>
           </View>
 
-          <View style={{ gap: spacing[6], paddingHorizontal: spacing[5], paddingTop: spacing[5] }}>
+          <View style={{ gap: spacing[6], paddingHorizontal: spacing[3], paddingTop: spacing[5] }}>
             {/* Header Content */}
             <View style={{ gap: spacing[1] }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginBottom: spacing[1] }}>
@@ -135,11 +142,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 <AppText variant="micro" tone="secondary" style={{ letterSpacing: 0.5 }}>OPERATING</AppText>
                 <AppText variant="bodyLarge" style={{ fontWeight: "700" }}>Open Now</AppText>
                 <AppText variant="micro" tone="secondary">{venue.operatingHours.split(" – ")[0]}</AppText>
-              </Card>
-              <Card style={{ flex: 1, padding: spacing[4], gap: spacing[1] }}>
-                <AppText variant="micro" tone="secondary" style={{ letterSpacing: 0.5 }}>HYGIENE</AppText>
-                <AppText variant="bodyLarge" style={{ fontWeight: "700" }}>Grade {venue.hygieneGrade}</AppText>
-                <AppText variant="micro" tone="secondary">NEA Certified</AppText>
               </Card>
             </View>
 

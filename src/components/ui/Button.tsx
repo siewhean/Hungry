@@ -65,7 +65,7 @@ export function Button({
           borderRadius: radii.pill,
           minHeight: 52,
           opacity: isDisabled ? 0.5 : 1,
-          paddingHorizontal: spacing[4],
+          paddingHorizontal: spacing[3],
           paddingVertical: spacing[3],
           width: fullWidth ? "100%" : undefined,
           transform: [{ translateY: pressed ? 1 : 0 }],

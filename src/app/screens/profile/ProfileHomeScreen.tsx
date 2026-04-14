@@ -17,7 +17,7 @@ import type { TasteVector } from "@/types/domain";
 type Props = NativeStackScreenProps<ProfileStackParamList, "ProfileHome">;
 
 export function ProfileHomeScreen({ navigation }: Props) {
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { palette, spacing, radii, shadows, colorScheme } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
   const repository = getDataRepository();
   const rootNavigation = getRootNavigation(navigation as any);
@@ -73,6 +73,8 @@ export function ProfileHomeScreen({ navigation }: Props) {
               </AppText>
             </View>
             <Pressable 
+              accessibilityRole="button"
+              accessibilityLabel="Edit profile"
               onPress={() => navigation.navigate("EditProfile")}
               style={{ 
                 position: "absolute", bottom: -spacing[1], right: -spacing[1], 
@@ -105,7 +107,12 @@ export function ProfileHomeScreen({ navigation }: Props) {
         <View style={{ gap: spacing[4] }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing[1] }}>
             <AppText variant="h2">Taste Fingerprint</AppText>
-            <Pressable onPress={handleShareTaste} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Share taste fingerprint"
+              onPress={handleShareTaste}
+              style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+            >
               <Share2 size={16} color={palette.orange} />
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>SHARE</AppText>
             </Pressable>
@@ -136,11 +143,11 @@ export function ProfileHomeScreen({ navigation }: Props) {
 
             <View style={{ gap: spacing[2] }}>
               <TasteBar label="Spicy" value={profile.tasteVector.spicy} max={10} color={palette.orange} />
-              <TasteBar label="Salty" value={profile.tasteVector.salty} max={10} color="#3B82F6" />
-              <TasteBar label="Sweet" value={profile.tasteVector.sweet} max={10} color="#10B981" />
+              <TasteBar label="Salty" value={profile.tasteVector.salty} max={10} color={palette.info} />
+              <TasteBar label="Sweet" value={profile.tasteVector.sweet} max={10} color={palette.statusFast} />
             </View>
 
-            <View style={{ backgroundColor: palette.bgSoft, padding: spacing[3], borderRadius: radii.md }}>
+            <View style={{ backgroundColor: colorScheme === "dark" ? palette.surfaceRaised : palette.bgSoft, padding: spacing[3], borderRadius: radii.md }}>
               <AppText variant="bodySmall" tone="secondary" style={{ lineHeight: 18 }}>
                 Your profile leans heavily towards <AppText style={{ fontWeight: "700", color: palette.text }}>Spicy</AppText> flavours. You have reviewed <AppText style={{ fontWeight: "700", color: palette.text }}>{profile.stats.dishesReviewed} dishes</AppText> and visited <AppText style={{ fontWeight: "700", color: palette.text }}>{profile.stats.stallsVisited} stalls</AppText>. Keep exploring to sharpen your taste fingerprint.
               </AppText>
@@ -174,7 +181,11 @@ export function ProfileHomeScreen({ navigation }: Props) {
         <View style={{ gap: spacing[4] }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing[1] }}>
             <AppText variant="h2">Recently saved</AppText>
-            <Pressable onPress={() => navigation.navigate("Favourites")}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="View all favourites"
+              onPress={() => navigation.navigate("Favourites")}
+            >
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>SEE ALL</AppText>
             </Pressable>
           </View>
@@ -184,6 +195,8 @@ export function ProfileHomeScreen({ navigation }: Props) {
               {favourites.slice(0, 4).map((dish) => (
                 <Pressable 
                   key={dish.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${dish.name} details`}
                   onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
                   style={[
                     shadows.card,
@@ -228,13 +241,13 @@ function TasteBar({ label, value, max, color }: { label: string; value: number; 
 }
 
 function StatBlock({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { palette, spacing, radii, colorScheme } = useHungryTheme();
   return (
     <View style={{ 
-      backgroundColor: palette.bgSoft, 
+      backgroundColor: colorScheme === "dark" ? palette.surfaceRaised : palette.bgSoft, 
       borderRadius: radii.lg, 
       paddingVertical: spacing[3], 
-      paddingHorizontal: spacing[4], 
+      paddingHorizontal: spacing[3], 
       alignItems: "center",
       flex: 1,
       gap: spacing[1]
@@ -252,6 +265,8 @@ function MenuRow({ label, icon, onPress }: { label: string; icon: React.ReactNod
   const { palette, spacing, radii } = useHungryTheme();
   return (
     <Pressable 
+      accessibilityRole="button"
+      accessibilityLabel={label}
       onPress={onPress}
       style={({ pressed }) => [
         {

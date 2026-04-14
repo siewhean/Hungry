@@ -1,3 +1,4 @@
+import { View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 
@@ -7,13 +8,14 @@ import { RootNavigator } from "@/app/navigation/RootNavigator";
 
 export function AppBody() {
   useAppBootstrap();
-  const themeContext = useHungryTheme();
-  const { colorScheme, theme } = themeContext;
+  const { colorScheme, theme, palette } = useHungryTheme();
 
   return (
-    <BottomSheetModalProvider>
-      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-      <RootNavigator theme={theme} />
-    </BottomSheetModalProvider>
+    <View style={{ flex: 1, backgroundColor: palette.bg }}>
+      <BottomSheetModalProvider>
+        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+        <RootNavigator theme={theme} />
+      </BottomSheetModalProvider>
+    </View>
   );
 }

@@ -21,7 +21,7 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
   const buildings = repository.listBuildings().slice(0, 10);
 
   return (
-    <View style={{ backgroundColor: palette.bg, flex: 1, paddingHorizontal: spacing[4], paddingTop: spacing[6] }}>
+    <View style={{ backgroundColor: palette.bg, flex: 1, paddingHorizontal: spacing[3], paddingTop: spacing[6] }}>
       <View style={{ alignItems: "center", flexDirection: "row", marginBottom: spacing[4] }}>
         <Pressable onPress={() => navigation.goBack()} style={{ marginRight: spacing[3], padding: spacing[2] }}>
           <ArrowLeft color={palette.navy} size={18} />

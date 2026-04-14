@@ -74,7 +74,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
           flexDirection: "row",
           justifyContent: "space-between",
           minHeight: 64,
-          paddingHorizontal: spacing[4],
+          paddingHorizontal: spacing[3],
           paddingVertical: spacing[3],
         }}
       >
@@ -101,7 +101,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
         style={{
           flex: 1,
           gap: spacing[3],
-          paddingHorizontal: spacing[5],
+          paddingHorizontal: spacing[3],
           paddingTop: spacing[3],
         }}
       >
@@ -123,7 +123,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
             <View
               style={{
                 alignItems: "center",
-                backgroundColor: "rgba(255,255,255,0.92)",
+                backgroundColor: palette.surfaceTranslucent,
                 borderRadius: radii.pill,
                 bottom: spacing[4],
                 flexDirection: "row",

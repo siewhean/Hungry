@@ -15,6 +15,48 @@ export interface TasteVector {
   aromatic: number;
 }
 
+// ─── Extended AI Taste Model ─────────────────────────────────────────────────
+
+/** Oral processing style — which mechanical texture satisfies the user most */
+export type TextureArchetype = "cruncher" | "chewer" | "smoother" | "mixed";
+
+/**
+ * Extended taste profile — wraps the core 6-axis vector with psychometric
+ * secondary axes derived from the scenario-based onboarding quiz and refined
+ * by ongoing user behaviour.
+ */
+export interface TasteProfile {
+  /** Core 6-axis taste preference, 0–10 per axis */
+  vector: TasteVector;
+  /** Bitter tolerance: 0 = supertaster (extreme aversion) → 10 = non-taster (high tolerance) */
+  bitterTolerance: number;
+  /** Fat/richness affinity: 0 = light/clean preference → 10 = heavy/lemak craving */
+  fatAffinity: number;
+  /** Texture archetype: which oral processing style satisfies this user most */
+  textureArchetype: TextureArchetype;
+  /** Neophilia index: 0 = strong neophobe (safe choices) → 10 = extreme neophiliac (seeks novelty) */
+  neophiliaIndex: number;
+  /** Spice-seeking threshold: 0 = zero capsaicin tolerance → 10 = extreme heat seeker */
+  spiceSeeking: number;
+}
+
+/**
+ * Localized hawker taste tags — the semantic bridge between community
+ * reviews and AI vector updates. Maps Singlish food vocabulary to
+ * quantifiable AI signals.
+ */
+export type HawkerTasteTag =
+  | "wok_hei" // breath of the wok — smoky, charred, fleeting aroma
+  | "lemak" // rich, creamy, coconut-milk-based mouthcoating
+  | "qq" // springy, bouncy, elastic texture (fishballs, tapioca, noodles)
+  | "jelak" // excessively rich/sweet — cloying, overwhelming
+  | "hiam" // intense, aggressive, lingering spiciness
+  | "gao" // thick, concentrated, heavily reduced
+  | "chao_ta" // burnt, scorched, charred (desirable or undesirable)
+  | "shiok" // intensely satisfying, perfect balance
+  | "sedap" // deeply delicious, umami-rich
+  | "power"; // exceptionally strong flavor, standout dish
+
 export type BuildingType = "hawker_centre" | "food_court" | "restaurant";
 export type HygieneGrade = "A" | "B" | "C" | "D";
 export type DeliveryPlatform = "grabfood" | "foodpanda";
@@ -149,6 +191,8 @@ export interface UserProfile {
   displayName: string;
   email: string;
   tasteVector: TasteVector;
+  /** Extended psychometric taste profile (populated after scenario quiz) */
+  tasteProfile?: TasteProfile;
   dietaryPreferences: DietaryFlag[];
   favouriteDishIds: string[];
   reviewedDishIds: string[];
