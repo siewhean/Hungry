@@ -25,3 +25,4 @@ src/graphify-out/
 .env.staging.local
 .env.production.local
 .env.local
+.DerivedData/
