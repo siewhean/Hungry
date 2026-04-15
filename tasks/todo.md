@@ -661,11 +661,11 @@ These items affect perceived quality but do not break functionality.
 
 #### Claude primary
 
-- [x] **CI/CD pipeline:** Wrote `.github/workflows/ci.yml` with typecheck → test → expo-doctor → EAS build gates; documented and ratified in `tasks/Roadmap/production-infrastructure.md` §2.
-- [x] **Environment strategy:** Defined `.env.development`, `.env.staging`, `.env.production` variable sets; full variable catalogue, routing rules, and `.gitignore` additions documented in `tasks/Roadmap/production-infrastructure.md` §1.
-- [x] **Sentry init plan:** Defined DSN placement, per-surface error boundary strategy, source map upload hooks, and PII-scrubbing `beforeSend`; documented in `tasks/Roadmap/production-infrastructure.md` §3.
-- [x] **PostHog init plan:** Defined project setup, API key placement, identity linking strategy, and must-ship core funnel events from P1-03; documented in `tasks/Roadmap/production-infrastructure.md` §4.
-- [x] **Launch readiness checklist:** Drafted Privacy Policy/ToS plus App Store and Play Store submission requirements (screenshots, ratings, keywords), and captured pre-launch smoke tests in `tasks/Roadmap/production-infrastructure.md` §5.
+- [x] **CI/CD pipeline:** Write `.github/workflows/ci.yml` with typecheck → test → expo-doctor → EAS build gates.
+- [x] **Environment strategy:** Define `.env.development`, `.env.staging`, `.env.production` variable sets. Document which variables go where.
+- [x] **Sentry init plan:** Define the Sentry DSN placement, error boundary strategy, and source map upload hook for EAS builds.
+- [x] **PostHog init plan:** Define the PostHog project setup, API key placement, identity linking strategy, and the core funnel events that must ship for launch (from P1-03 taxonomy).
+- [x] **Launch readiness checklist:** Draft Privacy Policy and Terms of Service requirements. List App Store / Play Store submission requirements (screenshots, ratings, keywords, etc.).
 
 #### Codex primary
 
