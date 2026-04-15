@@ -19,3 +19,7 @@
 - Do not reapply default mock profile data on app bootstrap when persisted profile state exists; only run profile sync when auth state actually changes.
 - For optional native modules in Expo Dev Client, avoid hard imports in leaf UI components that can crash the app on stale binaries; use lazy module loading with graceful fallback messaging until the app is rebuilt.
 - When a design artifact exists, implementation must start from that file and end with a design-source check; code-first improvisation causes drift.
+- Never read theme tokens (`spacing`, `radii`, `palette`) at module scope inside `StyleSheet.create()`. Always access them inside the component body via `useHungryTheme()` — module-scope access runs before the theme provider mounts and causes TypeScript errors.
+- All data access in `src/app/` and `src/features/` must go through `getDataRepository()` or `getHungryService()` from `serviceProvider.ts`. Never import from `src/lib/services/mock/` directly in screen or feature files — doing so silently breaks the mock-to-Supabase swap path.
+- Any persisted Zustand state keyed by user identity (reviewEntries, favourites, tasteVector) must be cleared in `clearProfile()`. `clearProfile()` must always be called from `signOut()`, not `syncProfile(false)` alone.
+- No backlog item is done until `npm run typecheck` passes AND a verification command is recorded in Section 5 (Session Log) of `tasks/todo.md` with the agent name and date. "Done" without evidence is status inflation.

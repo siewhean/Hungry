@@ -774,12 +774,88 @@ These items affect perceived quality but do not break functionality.
 
 ---
 
+## Sprint 6 — Tooling, Hygiene & Error Boundaries (2026-04-15)
+
+> **Source:** Chief of Staff audit by Claude (Sonnet 4.6). See `tasks/Roadmap/chief-of-staff-report-2026-04-15.md` for full findings.
+> **Rule:** No item may be marked `[x]` without a verification step recorded in Section 5 (Session Log).
+> **Agents:** **[Codex]** = execution. **[Claude]** = planning/docs. **[Gemini]** = design/copy.
+
+---
+
+### Tooling & Developer Experience
+
+#### Codex primary
+
+- [ ] **TOOL-01 — Install ESLint + Prettier:** Install `eslint`, `prettier`, `eslint-config-expo`, `@typescript-eslint/eslint-plugin`, `@typescript-eslint/parser` as devDeps. Create `.eslintrc.json` and `.prettierrc`. Add `"lint": "eslint src/ --ext .ts,.tsx"`, `"format": "prettier --write src/"`, `"format:check": "prettier --check src/"`, `"lint:fix": "eslint src/ --ext .ts,.tsx --fix"` scripts to `package.json`. Include a `no-restricted-syntax` rule that flags hardcoded hex color literals.
+- [ ] **TOOL-02 — Add lint gate to CI:** Add `npm run lint` and `npm run format:check` steps to the `quality-gates` job in `.github/workflows/ci.yml`, after the existing typecheck step.
+- [ ] **TOOL-03 — Pre-commit hooks:** Install `husky` and `lint-staged`. Configure lint-staged to run `eslint --fix` and `prettier --write` on staged `.ts`/`.tsx` files.
+- [ ] **TOOL-04 — Create `.env.example`:** Copy `.env.development` and strip all real values; leave placeholder comments (`# Your Mapbox public token here`). Commit to repo root.
+
+#### Done gate
+
+- [ ] `npm run lint` exits 0 with zero errors.
+- [ ] `npm run format:check` exits 0 with zero formatting issues.
+- [ ] `git commit` triggers lint-staged and blocks on lint failure.
+- [ ] `.env.example` exists at repo root with all variable names documented.
+
+---
+
+### Dead Code Removal
+
+#### Codex primary
+
+- [ ] **DEAD-01 — Delete `HomeMapScreen (1).tsx`:** Remove `src/app/screens/discover/HomeMapScreen (1).tsx`. Verify no imports reference this file.
+- [ ] **DEAD-02 — Delete `BuildingInfoSheet.tsx`:** Remove `src/app/screens/discover/BuildingInfoSheet.tsx`. Verify not exported in `discover/index.ts`.
+- [ ] **DEAD-03 — Delete `DiscoverTabScreen.tsx`:** Remove `src/app/screens/discover/DiscoverTabScreen.tsx`. Verify not exported in `discover/index.ts`.
+- [ ] **DEAD-04 — Delete `.tmp_todo_current.md`:** Remove `.tmp_todo_current.md` from repo root.
+
+#### Done gate
+
+- [ ] `find src/ -name "*HomeMapScreen*"` returns exactly one result.
+- [ ] `find src/ -name "BuildingInfoSheet*"` returns zero results.
+- [ ] `find src/ -name "DiscoverTabScreen*"` returns zero results.
+- [ ] `ls .tmp_todo_current.md` returns "No such file".
+- [ ] `npm run typecheck` passes.
+
+---
+
+### Error Boundary Coverage
+
+> **Goal:** Cover auth and detail screens so uncaught errors degrade gracefully instead of crashing the full app.
+> **Note:** `FeedErrorBoundary` already exists in `src/components/ui/FeedErrorBoundary.tsx` — use it; do not create a new component.
+
+#### Gemini primary
+
+- [ ] **ERR-00 spec:** Define fallback copy and visual design for auth-screen error states and detail-screen error states. Specify what message and CTA to show when `FeedErrorBoundary` catches on each screen group.
+
+#### Codex primary
+
+- [ ] **ERR-01 — Auth screen boundaries:** Wrap `LoginScreen`, `SignUpScreen`, `ForgotPasswordScreen`, `EmailVerificationScreen`, `ResetPasswordScreen` with `FeedErrorBoundary`. Use Gemini's fallback copy spec.
+- [ ] **ERR-02 — Detail screen boundaries:** Wrap `DishDetailScreen` and `StallDetailScreen` with `FeedErrorBoundary`. Fallback: "Couldn't load this dish — try again."
+
+#### Done gate
+
+- [ ] Manual crash test: trigger a JS throw in `LoginScreen` render — app shows fallback UI, does not white-screen.
+- [ ] Manual crash test: trigger a JS throw in `DishDetailScreen` render — app shows fallback UI.
+- [ ] `npm run typecheck` passes.
+
+---
+
+### Documentation & Lessons
+
+#### Claude primary
+
+- [x] **LES-01 — Add 4 missing lessons to `tasks/lessons.md`:** Token scope, service provider bypass, state persistence after sign-out, backlog verification gate. *(Done 2026-04-15 — lessons appended)*
+- [ ] **DOC-01 — Document feature flags in README:** Add a "Feature Flags" section to `README.md` documenting `HUNGRY_DATA_SOURCE`, `FEATURE_FLAGS.directMessagesEnabled`, `FEATURE_FLAGS.commentsEnabled`, `FEATURE_FLAGS.craveEnabled`, and how to toggle them for development.
+
+---
+
 ## 5. Shared Session Log (Claude + Codex must append)
 
 - [x] Session log maintained with: date, actor (Claude/Codex), tasks touched, status, blockers, next step.
 
 ### Session Entries
-
+- 2026-04-15 | Claude | Chief of Staff audit: repo-wide dead code, harness gaps, backlog integrity, and production roadmap assessment. Created `tasks/Roadmap/chief-of-staff-report-2026-04-15.md`. Added Sprint 6 (TOOL-01/02/03/04, DEAD-01/02/03/04, ERR-01/02, DOC-01, LES-01) to backlog with Codex/Gemini/Claude delegation. Appended 4 missing lessons to `tasks/lessons.md` (token scope, service provider bypass, sign-out state persistence, backlog verification gate). | Status: documentation complete. | Blockers: none. | Next: Codex to execute Sprint 6 TOOL items first (ESLint/Prettier install), then DEAD items, then ERR items. Claude to handle DOC-01.
 - 2026-04-05 | Codex | Updated project-fit task requirements, phased Claude/Codex ownership checklist, and planning cadence. | Status: completed for documentation update. | Blockers: none. | Next: keep this checklist current during implementation sessions.
 - 2026-04-06 | Codex | Audited app screen inventory, research docs, and design artifacts; created Stitch-ready design-system and screen-brief files under `design/stitch/`. | Status: completed for design planning artifact. | Blockers: direct Stitch editing is not available in this environment. | Next: generate remaining screens in Stitch using `design/stitch/DESIGN.md` and `design/stitch/STITCH_BRIEFS.md`, then sync the chosen outputs back into Figma and code.
 - 2026-04-08 | Codex | Reconciled repo housekeeping and status docs with the actual codebase: removed stale `AGENT.md`, archived older design iterations under `design/archive/`, cleaned local artifacts, and updated instruction references. | Status: completed for repository cleanup and documentation alignment. | Blockers: none. | Next: use Phase 2 as the active workstream and keep verification notes current as UI hardening continues.
