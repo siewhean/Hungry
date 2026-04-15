@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { createInitialReviewDraft } from "@/features/review/reviewDraft";
 import type { ReviewDraft } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
@@ -17,6 +18,7 @@ interface ReviewDraftState {
   setRecommend: (recommend: boolean) => void;
   setText: (text: string) => void;
   addPhoto: (uri: string) => void;
+  removePhoto: (uri: string) => void;
   markPhotoFailed: (uri: string) => void;
   clearFailedPhoto: (uri: string) => void;
   resetDraft: () => void;
@@ -30,14 +32,21 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
       isSubmitting: false,
       failedPhotoUris: [],
       selectDish: (selectedVenueId, selectedDishId) =>
-        set(() => ({
-          draft: {
-            ...initialDraft,
-            selectedVenueId,
-            selectedDishId,
-          },
-          failedPhotoUris: [],
-        })),
+        set(() => {
+          trackAnalyticsEvent("review_started", {
+            trigger: "review_flow",
+            venue_id: selectedVenueId,
+            dish_id: selectedDishId,
+          });
+          return {
+            draft: {
+              ...initialDraft,
+              selectedVenueId,
+              selectedDishId,
+            },
+            failedPhotoUris: [],
+          };
+        }),
       setRating: (rating) =>
         set((state) => ({
           draft: {
@@ -74,6 +83,14 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
             ...state.draft,
             photos: [...state.draft.photos, uri],
           },
+        })),
+      removePhoto: (uri) =>
+        set((state) => ({
+          draft: {
+            ...state.draft,
+            photos: state.draft.photos.filter((photoUri) => photoUri !== uri),
+          },
+          failedPhotoUris: state.failedPhotoUris.filter((value) => value !== uri),
         })),
       markPhotoFailed: (uri) => set((state) => ({ failedPhotoUris: [...state.failedPhotoUris, uri] })),
       clearFailedPhoto: (uri) =>

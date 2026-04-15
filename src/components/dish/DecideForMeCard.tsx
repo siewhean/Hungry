@@ -17,6 +17,7 @@ interface DecideForMeCardProps {
 
 export function DecideForMeCard({ dish, matchScore, onOrder, onReroll, onDismiss }: DecideForMeCardProps) {
   const { palette, radii, spacing } = useHungryTheme();
+  const styles = createStyles(spacing);
 
   return (
     <Card style={{ gap: spacing[4] }}>
@@ -28,7 +29,7 @@ export function DecideForMeCard({ dish, matchScore, onOrder, onReroll, onDismiss
             {dish.venueName} · {dish.unitNumber} · {dish.floor}
           </AppText>
         </View>
-        <View style={{ alignItems: "flex-end", gap: 6 }}>
+        <View style={{ alignItems: "flex-end", gap: spacing[1] }}>
           <Sparkles size={18} color={palette.orange} />
           <AppText variant="h2" tone="accent">
             {matchScore}%
@@ -38,13 +39,13 @@ export function DecideForMeCard({ dish, matchScore, onOrder, onReroll, onDismiss
 
       <Image
         source={{ uri: dish.imageUrl }}
-        style={{ borderRadius: radii.sm, height: 180, width: "100%" }}
+        style={{ borderRadius: radii.md, height: 180, width: "100%" }}
         contentFit="cover"
         placeholder={dish.blurhash}
         transition={180}
       />
 
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
         <AppText variant="price">S${dish.price.toFixed(2)}</AppText>
         <Badge label={`${dish.rating.toFixed(1)} ★`} tone="amber" />
         {dish.mustOrder ? <MustOrderBadge /> : null}
@@ -55,7 +56,7 @@ export function DecideForMeCard({ dish, matchScore, onOrder, onReroll, onDismiss
         <View style={styles.secondaryRow}>
           <Button label="Try again" variant="secondary" fullWidth={false} onPress={onReroll} disabled={!onReroll} />
           <Pressable accessibilityRole="button" onPress={onDismiss} disabled={!onDismiss}>
-            <AppText tone="accent">Dismiss</AppText>
+            <AppText variant="bodyBold" tone="accent">Dismiss</AppText>
           </Pressable>
         </View>
       </View>
@@ -63,23 +64,23 @@ export function DecideForMeCard({ dish, matchScore, onOrder, onReroll, onDismiss
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (spacing: any) => StyleSheet.create({
   header: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing[3],
     justifyContent: "space-between",
   },
   headerCopy: {
     flex: 1,
-    gap: 6,
+    gap: spacing[1],
   },
   actions: {
-    gap: 12,
+    gap: spacing[3],
   },
   secondaryRow: {
     alignItems: "center",
     flexDirection: "row",
-    gap: 12,
+    gap: spacing[3],
     justifyContent: "space-between",
   },
 });

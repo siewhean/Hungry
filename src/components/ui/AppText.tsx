@@ -10,7 +10,9 @@ type Variant =
   | "h3"
   | "bodyLarge"
   | "body"
+  | "bodyBold"
   | "bodySmall"
+  | "bodySmallBold"
   | "micro"
   | "price"
   | "code";
@@ -38,7 +40,7 @@ export function AppText({
         : tone === "accent"
           ? palette.orange
           : tone === "inverse"
-            ? "#FFFFFF"
+            ? palette.textOnDark
             : palette.text;
 
   return (

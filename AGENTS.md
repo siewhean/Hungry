@@ -151,6 +151,7 @@ ALWAYS:
   - Keep mock data in data.ts
   - Keep types in domain.ts
   - Mark tasks in tasks/todo.md as you progress
+  - If a task is completed, immediately update that task's status/progress in tasks/todo.md in the same work session
   - Record lessons in tasks/lessons.md after any correction
 ```
 
@@ -178,6 +179,7 @@ See `tasks/test-harness.md` for patterns and examples.
 Before ending any session that changed code:
   [ ] npm run typecheck — passes
   [ ] tasks/todo.md — all done items marked [x]
+  [ ] tasks/todo.md — each completed task has updated progress/status notes
   [ ] tasks/todo.md — review section added
   [ ] tasks/lessons.md — any correction recorded
   [ ] README.md — status section updated if progress/decisions changed
@@ -194,3 +196,14 @@ Rules:
 - Use OpenCV only for image rectification, not final geometry storage.
 - Add snapping and validation before adding advanced auto-detection.
 - Avoid changing geometry schema without updating import/export logic.
+---
+
+## 11. Design Source Gating (mandatory)
+
+| Rule | Detail |
+|------|--------|
+| Design-first | Before implementing or changing UI, open the governing design source first: Figma, `design/` prototype, or approved research/design file. |
+| No code-first guessing | If a design file exists, do not improvise the UI from existing code or memory. |
+| Missing design | If no design file exists for the requested screen/component, stop and define the design before implementation. |
+| Verification | UI work is not complete until the implementation is checked back against the design artifact. |
+| Review standard | Run the approved design checklist skill or equivalent structured visual review before considering the screen done. |

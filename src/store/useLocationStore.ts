@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { Coordinate } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
 
@@ -14,6 +15,7 @@ interface LocationState {
   denyLocation: () => void;
   setManualLocation: (label: string) => void;
   setManualSelection: (label: string, coordinate: Coordinate) => void;
+  resetLocationState: () => void;
 }
 
 const defaultLocation = { latitude: 1.2813, longitude: 103.8458 };
@@ -84,6 +86,10 @@ export const useLocationStore = create<LocationState>()(
           const Location = loadExpoLocationModule();
           if (!Location) {
             set(getDeniedLocationState(options?.manualLocation));
+            trackAnalyticsEvent("location_permission_result", {
+              result: "denied",
+              reason: "module_unavailable",
+            });
             return false;
           }
 
@@ -105,26 +111,46 @@ export const useLocationStore = create<LocationState>()(
             manualLocation: normalizeManualLocationLabel(options?.manualLocation),
             manualCoordinate: undefined,
           });
+          trackAnalyticsEvent("location_permission_result", { result: "granted" });
           return true;
         } catch {
           set(getDeniedLocationState(options?.manualLocation));
+          trackAnalyticsEvent("location_permission_result", { result: "denied", reason: "exception" });
           return false;
         }
       },
-      denyLocation: () => set({ permission: "denied", gpsBadgeState: "denied", manualCoordinate: undefined }),
+      denyLocation: () => {
+        set({ permission: "denied", gpsBadgeState: "denied", manualCoordinate: undefined });
+        trackAnalyticsEvent("location_permission_result", { result: "denied", source: "manual_deny" });
+      },
       setManualLocation: (label) =>
         set({
           manualLocation: normalizeManualLocationLabel(label),
           manualCoordinate: undefined,
           gpsBadgeState: "manual",
         }),
-      setManualSelection: (label, coordinate) =>
+      setManualSelection: (label, coordinate) => {
         set({
           permission: "denied",
           manualLocation: normalizeManualLocationLabel(label),
           manualCoordinate: coordinate,
           currentLocation: coordinate,
           gpsBadgeState: "manual",
+        });
+        trackAnalyticsEvent("location_permission_result", {
+          result: "manual_selection",
+          label,
+          latitude: coordinate.latitude,
+          longitude: coordinate.longitude,
+        });
+      },
+      resetLocationState: () =>
+        set({
+          permission: "unknown",
+          currentLocation: defaultLocation,
+          manualLocation: undefined,
+          manualCoordinate: undefined,
+          gpsBadgeState: "live",
         }),
     }),
     {

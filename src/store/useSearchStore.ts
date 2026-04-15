@@ -2,8 +2,15 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { DietaryFlag, SearchCategory, SearchFilters, TasteVector } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
+
+const MAX_RECENT_SEARCHES = 5;
+
+function normalizeSearchQuery(query: string) {
+  return query.trim().replace(/\s+/g, " ");
+}
 
 interface SearchState {
   filters: SearchFilters;
@@ -14,6 +21,7 @@ interface SearchState {
   setTasteValues: (tasteValues: TasteVector) => void;
   resetToProfile: (tasteValues: TasteVector) => void;
   rememberSearch: (query: string) => void;
+  clearSearchState: () => void;
 }
 
 export const useSearchStore = create<SearchState>()(
@@ -26,7 +34,7 @@ export const useSearchStore = create<SearchState>()(
         tasteValues: NEUTRAL_TASTE_VECTOR,
         radius: 1000,
       },
-      recentSearches: ["laksa", "chicken rice", "satay"],
+      recentSearches: [],
       updateQuery: (query) =>
         set((state) => ({
           filters: {
@@ -35,41 +43,92 @@ export const useSearchStore = create<SearchState>()(
           },
         })),
       toggleCategory: (category) =>
-        set((state) => ({
-          filters: {
-            ...state.filters,
-            categories: state.filters.categories.includes(category)
-              ? state.filters.categories.filter((value) => value !== category)
-              : [...state.filters.categories, category],
-          },
-        })),
+        set((state) => {
+          const selected = !state.filters.categories.includes(category);
+          trackAnalyticsEvent("category_chip_tapped", {
+            category,
+            selected,
+          });
+          return {
+            filters: {
+              ...state.filters,
+              categories: state.filters.categories.includes(category)
+                ? state.filters.categories.filter((value) => value !== category)
+                : [...state.filters.categories, category],
+            },
+          };
+        }),
       toggleDietary: (flag) =>
-        set((state) => ({
-          filters: {
-            ...state.filters,
-            dietaryFlags: state.filters.dietaryFlags.includes(flag)
-              ? state.filters.dietaryFlags.filter((value) => value !== flag)
-              : [...state.filters.dietaryFlags, flag],
-          },
-        })),
+        set((state) => {
+          const selected = !state.filters.dietaryFlags.includes(flag);
+          trackAnalyticsEvent("dietary_chip_tapped", {
+            flag,
+            selected,
+          });
+          return {
+            filters: {
+              ...state.filters,
+              dietaryFlags: state.filters.dietaryFlags.includes(flag)
+                ? state.filters.dietaryFlags.filter((value) => value !== flag)
+                : [...state.filters.dietaryFlags, flag],
+            },
+          };
+        }),
       setTasteValues: (tasteValues) =>
-        set((state) => ({
-          filters: {
-            ...state.filters,
-            tasteValues,
-          },
-        })),
+        set((state) => {
+          trackAnalyticsEvent("taste_filter_applied", {
+            source: "set_taste_values",
+          });
+          return {
+            filters: {
+              ...state.filters,
+              tasteValues,
+            },
+          };
+        }),
       resetToProfile: (tasteValues) =>
-        set((state) => ({
-          filters: {
-            ...state.filters,
-            tasteValues,
-          },
-        })),
+        set((state) => {
+          trackAnalyticsEvent("taste_filter_applied", {
+            source: "reset_to_profile",
+          });
+          return {
+            filters: {
+              ...state.filters,
+              tasteValues,
+            },
+          };
+        }),
       rememberSearch: (query) =>
-        set((state) => ({
-          recentSearches: [query, ...state.recentSearches.filter((value) => value !== query)].slice(0, 5),
-        })),
+        set((state) => {
+          const normalizedQuery = normalizeSearchQuery(query);
+          if (!normalizedQuery) {
+            return state;
+          }
+
+          trackAnalyticsEvent("search_submitted", {
+            query_length: normalizedQuery.length,
+          });
+
+          return {
+            recentSearches: [
+              normalizedQuery,
+              ...state.recentSearches.filter(
+                (value) => value.toLowerCase() !== normalizedQuery.toLowerCase(),
+              ),
+            ].slice(0, MAX_RECENT_SEARCHES),
+          };
+        }),
+      clearSearchState: () =>
+        set({
+          filters: {
+            query: "",
+            categories: [],
+            dietaryFlags: [],
+            tasteValues: NEUTRAL_TASTE_VECTOR,
+            radius: 1000,
+          },
+          recentSearches: [],
+        }),
     }),
     {
       name: "hungry-search-v1",

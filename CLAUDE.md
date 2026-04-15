@@ -101,3 +101,12 @@ Then read `AGENTS.md` and follow its workflow, including keeping `README.md` upd
 3. Update checklist status frequently (at least once per focused work block, and always before ending a session).
 4. Do not mark tasks done without recording a verification step.
 5. Append a concise entry in the shared session log section of `tasks/todo.md` with date, actor, status, blockers, and next step.
+
+## graphify
+
+This project has a graphify knowledge graph at graphify-out/.
+
+Rules:
+- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
+- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
+- After modifying code files in this session, run `python3 -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"` to keep the graph current

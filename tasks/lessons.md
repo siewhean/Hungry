@@ -13,3 +13,9 @@
 - For mixed single-tap and double-tap UX in feed cards, use exclusive gesture recognizers on the text region so like and expand actions never fire together.
 - For repeated form flows (auth/reset), centralize validation rules in shared helpers and test those helpers directly so every screen stays consistent when requirements change.
 - When product direction removes a UX pattern (for example soft-gate browsing), remove both runtime code and stale harness docs in the same batch to avoid backlog drift.
+- If a screen needs true edge-to-edge media, avoid wrapping it in shared max-width containers; use a full-width shell and then apply horizontal padding only to non-hero content blocks.
+- For swipe-driven UI cues (carousel dots, selected-state visuals), bind visuals to live scroll position rather than `onMomentumScrollEnd` so feedback stays continuous during gesture.
+- When syncing local derived selection back into Zustand, guard updates by stable IDs; unconditional `set()` inside effects can create render/update loops even when values look unchanged.
+- Do not reapply default mock profile data on app bootstrap when persisted profile state exists; only run profile sync when auth state actually changes.
+- For optional native modules in Expo Dev Client, avoid hard imports in leaf UI components that can crash the app on stale binaries; use lazy module loading with graceful fallback messaging until the app is rebuilt.
+- When a design artifact exists, implementation must start from that file and end with a design-source check; code-first improvisation causes drift.

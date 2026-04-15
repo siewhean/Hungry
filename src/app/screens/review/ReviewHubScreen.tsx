@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { FlatList, Pressable, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import { Search } from "lucide-react-native";
+import { Search, FileEdit, Clock } from "lucide-react-native";
 
 import { AppText, Badge, Card, EmptyState, Input, Screen } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
@@ -14,22 +14,26 @@ import type { ReviewStackParamList } from "./ReviewStack";
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewHub">;
 
 export function ReviewHubScreen({ navigation }: Props) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const repository = getDataRepository();
+  const { palette, radii, spacing, shadows } = useHungryTheme();
   const rootNavigation = navigation.getParent()?.getParent();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const selectDish = useReviewDraftStore((state) => state.selectDish);
+  const draft = useReviewDraftStore((state) => state.draft);
   const [query, setQuery] = useState("");
-  const venues = mockRepository
+  const venues = repository
     .listBuildings()
-    .flatMap((building) => mockRepository.listVenuesByBuilding(building.id))
+    .flatMap((building) => repository.listVenuesByBuilding(building.id))
     .filter((venue) =>
       `${venue.name} ${venue.unitNumber}`.toLowerCase().includes(query.trim().toLowerCase()),
     );
 
+  const hasActiveDraft = !!(draft.selectedDishId || draft.text || draft.photos.length > 0);
+
   useEffect(() => {
     if (!isAuthenticated) {
-      setReturnRoute("Review");
+      setReturnRoute("Rate");
       rootNavigation?.navigate("AuthStack", { screen: "Login" });
     }
   }, [isAuthenticated, rootNavigation, setReturnRoute]);
@@ -50,7 +54,7 @@ export function ReviewHubScreen({ navigation }: Props) {
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[8] }}
+        contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[20] }}
         ListHeaderComponent={
           <View style={{ gap: spacing[4], paddingBottom: spacing[4] }}>
             <View
@@ -68,6 +72,59 @@ export function ReviewHubScreen({ navigation }: Props) {
                 Step 1 of 4
               </AppText>
             </View>
+
+            {hasActiveDraft && (
+              <View style={{ gap: spacing[3], marginBottom: spacing[2] }}>
+                <AppText variant="h3">Continue your draft</AppText>
+                <Pressable
+                  onPress={() => {
+                    if (draft.selectedVenueId && draft.selectedDishId) {
+                      navigation.navigate("ReviewRating", { 
+                        venueId: draft.selectedVenueId, 
+                        dishId: draft.selectedDishId 
+                      });
+                    }
+                  }}
+                  style={({ pressed }) => [
+                    {
+                      ...shadows.card,
+                      backgroundColor: pressed ? palette.bgSoft : palette.surface,
+                      borderRadius: radii.lg,
+                      padding: spacing[4],
+                      borderWidth: 1,
+                      borderColor: palette.orange,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: spacing[3],
+                    },
+                  ]}
+                >
+                  <View
+                    style={{
+                      backgroundColor: palette.orangeLight,
+                      width: 40,
+                      height: 40,
+                      borderRadius: radii.md,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <FileEdit size={20} color={palette.orange} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <AppText style={{ fontWeight: "700" }}>Resume Review</AppText>
+                    <AppText variant="micro" tone="secondary">
+                      {draft.selectedDishId
+                        ? repository.getDishById(draft.selectedDishId)?.name
+                        : "Unnamed Dish"}{" "}
+                      • Saved just now
+                    </AppText>
+                  </View>
+                  <Clock size={16} color={palette.textMuted} />
+                </Pressable>
+              </View>
+            )}
+
             <Input
               label="Search for a stall"
               placeholder="Tian Tian, Satay Street..."
@@ -78,7 +135,7 @@ export function ReviewHubScreen({ navigation }: Props) {
           </View>
         }
         renderItem={({ item }) => {
-          const dishes = mockRepository.listDishesByVenue(item.id);
+          const dishes = repository.listDishesByVenue(item.id);
           const leadDish = dishes[0];
           const handleCardPress = () => {
             if (!leadDish) {
@@ -100,7 +157,7 @@ export function ReviewHubScreen({ navigation }: Props) {
                 ) : null}
                 <View style={{ padding: spacing[4], gap: spacing[3] }}>
                   <View style={{ gap: spacing[2] }}>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3] }}>
                       <View style={{ flex: 1 }}>
                         <AppText variant="h3">{item.name}</AppText>
                         <AppText variant="bodySmall" tone="secondary">

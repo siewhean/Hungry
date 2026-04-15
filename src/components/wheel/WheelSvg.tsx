@@ -56,7 +56,13 @@ function truncateLabel(label: string, maxChars: number): string {
 export function WheelSvg({ entries, size = 300 }: Props) {
   const { palette } = useHungryTheme();
 
-  const active = entries.filter((e) => !e.isEliminated);
+  const active = Array.from(
+    new Map(
+      entries
+        .filter((entry) => !entry.isEliminated)
+        .map((entry) => [entry.id, entry] as const)
+    ).values()
+  );
   const cx = size / 2;
   const cy = size / 2;
   const r = size / 2 - 4; // 4px inset keeps the border from clipping
@@ -89,8 +95,9 @@ export function WheelSvg({ entries, size = 300 }: Props) {
             const startAngle = i * segmentAngle;
             const endAngle = startAngle + segmentAngle;
             const midAngle = startAngle + segmentAngle / 2;
-            const fill = i % 2 === 0 ? palette.orange : palette.bgSoft;
-            const textFill = i % 2 === 0 ? "#FFFFFF" : palette.text;
+            const fill = i % 2 === 0 ? palette.orange : palette.surface;
+            const textFill = i % 2 === 0 ? palette.textOnDark : palette.text;
+
 
             const labelPt = polarToCartesian(cx, cy, labelRadius, midAngle);
             const labelAngle = midAngle - 90; // rotate text to sit along arc

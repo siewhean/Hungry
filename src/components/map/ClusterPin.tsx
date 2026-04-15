@@ -26,7 +26,7 @@ export function ClusterPin({ count, onPress }: ClusterPinProps) {
         },
       ]}
     >
-      <AppText variant="bodySmall" tone="inverse" style={styles.label}>
+      <AppText variant="bodySmall" tone="inverse">
         {count}
       </AppText>
     </Pressable>
@@ -39,9 +39,6 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: "center",
     width: 40,
-  },
-  label: {
-    fontFamily: "Nunito_700Bold",
   },
 });
 

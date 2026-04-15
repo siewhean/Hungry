@@ -1,15 +1,19 @@
 import { View } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, Card, Screen } from "@/components/ui";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
 
+type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
+
 export function TasteFilterScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<RootNavigation>();
   const { palette, spacing } = useHungryTheme();
   const filters = useSearchStore((state) => state.filters);
   const setTasteValues = useSearchStore((state) => state.setTasteValues);
@@ -41,6 +45,10 @@ export function TasteFilterScreen() {
                   })
                 }
               />
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: -4 }}>
+                <AppText variant="micro" tone="secondary">LOW</AppText>
+                <AppText variant="micro" tone="secondary">HIGH</AppText>
+              </View>
             </View>
           ))}
         </Card>

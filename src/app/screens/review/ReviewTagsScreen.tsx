@@ -11,12 +11,13 @@ import type { ReviewStackParamList } from "./ReviewStack";
 
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewTags">;
 
-export function ReviewTagsScreen({ navigation }: Props) {
+export function ReviewTagsScreen({ navigation, route }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
   const tags = useReviewDraftStore((state) => state.draft.selectedTags);
   const recommend = useReviewDraftStore((state) => state.draft.recommend);
   const toggleTag = useReviewDraftStore((state) => state.toggleTag);
   const setRecommend = useReviewDraftStore((state) => state.setRecommend);
+  const { venueId, dishId } = route.params;
 
   return (
     <ReviewScreenShell
@@ -26,9 +27,9 @@ export function ReviewTagsScreen({ navigation }: Props) {
       total={4}
     >
       <Card>
-        <View style={{ gap: 12 }}>
+        <View style={{ gap: spacing[3] }}>
           <AppText variant="h3">How did it taste?</AppText>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             {REVIEW_TAGS.map((tag) => (
               <Chip key={tag} label={tag} selected={tags.includes(tag)} onPress={() => toggleTag(tag)} />
             ))}
@@ -96,7 +97,7 @@ export function ReviewTagsScreen({ navigation }: Props) {
           </View>
         </View>
       </Card>
-      <Button label="Next: final comments" onPress={() => navigation.navigate("ReviewCompose")} />
+      <Button label="Next: final comments" onPress={() => navigation.navigate("ReviewCompose", { venueId, dishId })} />
       <Button label="Back" variant="ghost" onPress={() => navigation.goBack()} />
     </ReviewScreenShell>
   );

@@ -1,398 +1,397 @@
-import { useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions, Animated, PanResponder } from "react-native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
-import { LocateFixed, Navigation } from "lucide-react-native";
+import { LocateFixed, Map as MapIcon, ChevronRight, Star, Search, Filter, Utensils, Heart, X, Flame, Zap } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { Image } from "expo-image";
+import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { MapSurface, type MapSurfaceMarker } from "@/components/map/MapSurface";
-import { AppText, Button } from "@/components/ui";
-import { getBuildingVenues } from "@/features/discovery/discovery";
-import {
-  getBuildingById,
-  getNearestBuildings,
-  singaporeBuildings,
-  toSummary,
-} from "@/lib/geo/singaporeBuildings";
+import { MapSurface, type MapSurfaceMarker, BuildingLegend } from "@/components/map";
+import { AppText, Chip } from "@/components/ui";
+import { getBuildingById, getNearestBuildings, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme } from "@/theme";
-import type { Coordinate, VenueSummary } from "@/types/domain";
+import type { DishDetail } from "@/types/domain";
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
-const PILOT_MALL_ID = "fc-koufu-jem";
 
-function distanceMeters(from: Coordinate, to: Coordinate) {
-  const earthRadius = 6371e3;
-  const lat1 = (from.latitude * Math.PI) / 180;
-  const lat2 = (to.latitude * Math.PI) / 180;
-  const deltaLat = ((to.latitude - from.latitude) * Math.PI) / 180;
-  const deltaLng = ((to.longitude - from.longitude) * Math.PI) / 180;
-  const a =
-    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
-  return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+function CrowdIndicator({ level }: { level?: "low" | "medium" | "high" }) {
+  const { palette, spacing, radii } = useHungryTheme();
+  if (!level) return null;
 
-function formatWalkTime(from: Coordinate, to: Coordinate) {
-  const minutes = Math.max(2, Math.round(distanceMeters(from, to) / 78));
-  return `${minutes} min walk`;
-}
+  const config = {
+    low: { color: palette.statusFast, label: "Fast", icon: <Zap size={10} color={palette.statusFast} fill={palette.statusFast} /> },
+    medium: { color: palette.statusModerate, label: "Moderate", icon: null },
+    high: { color: palette.statusBusy, label: "Trending", icon: <Flame size={10} color={palette.statusBusy} fill={palette.statusBusy} /> },
+  };
 
-function MetaTag({ label }: { label: string }) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { color, label, icon } = config[level];
 
   return (
-    <View
-      style={{
-        backgroundColor: palette.surfaceRaised,
-        borderColor: palette.border,
-        borderRadius: radii.pill,
-        borderWidth: 1,
-        paddingHorizontal: spacing[3],
-        paddingVertical: spacing[2],
-      }}
-    >
-      <AppText variant="micro" style={{ color: palette.text }}>
-        {label}
-      </AppText>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1], backgroundColor: `${color}15`, paddingHorizontal: spacing[2], paddingVertical: spacing[1], borderRadius: radii.sm }}>
+      {icon}
+      {!icon && <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }} />}
+      <AppText style={{ color, fontSize: 10, fontWeight: "800", textTransform: "uppercase" }}>{label}</AppText>
     </View>
-  );
-}
-
-function ActiveStallRow({
-  venue,
-  onPress,
-}: {
-  venue: VenueSummary;
-  onPress: () => void;
-}) {
-  const { palette, radii, spacing } = useHungryTheme();
-
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        backgroundColor: palette.surface,
-        borderColor: palette.border,
-        borderRadius: radii.lg,
-        borderWidth: 1,
-        paddingHorizontal: spacing[4],
-        paddingVertical: spacing[3],
-        gap: 4,
-      }}
-    >
-      <AppText variant="h3">{venue.name}</AppText>
-      <AppText variant="bodySmall" tone="secondary">
-        {venue.unitNumber} · {venue.operatingHours}
-      </AppText>
-    </Pressable>
   );
 }
 
 export function HomeMapScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const repository = getDataRepository();
   const insets = useSafeAreaInsets();
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  
   const currentLocation = useLocationStore((state) => state.currentLocation);
-  const gpsBadgeState = useLocationStore((state) => state.gpsBadgeState);
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
-  const selectedFloor = useDiscoveryStore((state) => state.selectedFloor);
   const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
-  const setSelectedFloor = useDiscoveryStore((state) => state.setSelectedFloor);
-  const setHighlightedStallVenueId = useDiscoveryStore((state) => state.setHighlightedStallVenueId);
-
-  const nearestBuildings = useMemo(
-    () => getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 5, 8),
-    [currentLocation.latitude, currentLocation.longitude],
-  );
-  const pilotBuilding = useMemo(() => getBuildingById(PILOT_MALL_ID), []);
+  const mapFilters = useDiscoveryStore((state) => state.mapFilters);
+  const toggleMapFilter = useDiscoveryStore((state) => state.toggleMapFilter);
 
   const activeBuildingRecord = useMemo(() => {
-    const directMatch = selectedBuilding?.id ? getBuildingById(selectedBuilding.id) : undefined;
-    if (directMatch) {
-      return directMatch;
-    }
-
     const nameMatch = selectedBuilding?.name
-      ? singaporeBuildings.find((building) => building.name === selectedBuilding.name)
+      ? singaporeBuildings.find((b) => b.name === selectedBuilding.name)
       : undefined;
     return nameMatch ?? getBuildingById(DEFAULT_BUILDING_ID)!;
   }, [selectedBuilding]);
 
   const visibleBuildings = useMemo(() => {
-    const combined = [activeBuildingRecord, ...nearestBuildings, ...(pilotBuilding ? [pilotBuilding] : [])];
+    const nearest = getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 5, 8);
+    const combined = [activeBuildingRecord, ...nearest];
     const seen = new Set<string>();
-
-    return combined.filter((building) => {
-      if (seen.has(building.id)) {
-        return false;
-      }
-      seen.add(building.id);
+    return combined.filter((b) => {
+      if (seen.has(b.id)) return false;
+      seen.add(b.id);
       return true;
     });
-  }, [activeBuildingRecord, nearestBuildings, pilotBuilding]);
+  }, [activeBuildingRecord, currentLocation]);
 
-  const [cameraCenter, setCameraCenter] = useState<Coordinate>(activeBuildingRecord.coordinate);
-  const [sheetIndex, setSheetIndex] = useState(1);
-  const snapPoints = useMemo(() => ["16%", "44%", "82%"], []);
-  const mapBottomPadding = useMemo(() => {
-    if (sheetIndex <= 0) {
-      return 172;
-    }
+  const areaPopularDishes = useMemo(() => {
+    const allVenues = visibleBuildings.flatMap((b) => repository.listVenuesByBuilding(b.id));
+    return allVenues
+      .map((v) => repository.getDishById(v.topDishId))
+      .filter((d): d is DishDetail => !!d)
+      .slice(0, 10);
+  }, [repository, visibleBuildings]);
 
-    if (sheetIndex === 1) {
-      return 320;
-    }
+  const [currentZoom, setCurrentZoom] = useState(15.5);
+  const [selectedDish, setSelectedDish] = useState<DishDetail | null>(null);
+  const [displayMode, setDisplayMode] = useState<"carousel" | "list">("carousel");
 
-    return 520;
-  }, [sheetIndex]);
-  const cameraPadding = useMemo(
-    () => ({
-      paddingTop: spacing[4],
-      paddingLeft: spacing[4],
-      paddingRight: spacing[4],
-      paddingBottom: mapBottomPadding + Math.max(insets.bottom, spacing[3]),
-    }),
-    [insets.bottom, mapBottomPadding, spacing],
-  );
+  const PEEK_HEIGHT = 240; 
+  const FULL_HEIGHT = 600; 
 
-  useEffect(() => {
-    setSelectedBuilding(toSummary(activeBuildingRecord));
-    if (!activeBuildingRecord.floors.includes(selectedFloor)) {
-      setSelectedFloor(activeBuildingRecord.floors[0]);
-    }
-    setCameraCenter(activeBuildingRecord.coordinate);
-  }, [activeBuildingRecord, selectedFloor, setSelectedBuilding, setSelectedFloor]);
+  const animatedHeight = useRef(new Animated.Value(PEEK_HEIGHT)).current;
 
-  const markers = useMemo<MapSurfaceMarker[]>(
-    () =>
-      visibleBuildings.map((building) => ({
-        id: building.id,
-        label: building.name.replace(" Food Centre", "").replace(" Festival Market", ""),
-        coordinate: building.coordinate,
-        accent:
-          building.id === activeBuildingRecord.id
-            ? palette.orange
-            : building.type === "food_court"
-              ? palette.teal
-              : building.type === "hawker_centre"
-                ? palette.orange
-                : palette.textMuted,
-      })),
-    [activeBuildingRecord.id, palette.orange, palette.teal, palette.textMuted, visibleBuildings],
-  );
-
-  const activeStalls = useMemo(
-    () => getBuildingVenues(activeBuildingRecord.id).filter((venue) => venue.isOpen).slice(0, 2),
-    [activeBuildingRecord.id],
-  );
-
-  const openStallCount = activeStalls.length;
-  const handleBuildingSelect = (buildingId: string, options?: { openDirectory?: boolean }) => {
-    const building = getBuildingById(buildingId);
-    if (!building) {
-      return;
-    }
-
-    setSelectedBuilding(toSummary(building));
-    setSelectedFloor(building.floors[0]);
-    setHighlightedStallVenueId(undefined);
-    setCameraCenter(building.coordinate);
-
-    if (options?.openDirectory) {
-      navigation.navigate("BuildingDrillDown", { buildingId: building.id });
-    }
+  const snapTo = (height: number) => {
+    Animated.spring(animatedHeight, {
+      toValue: height,
+      useNativeDriver: false,
+      tension: 50,
+      friction: 8,
+    }).start();
   };
 
+  const handleCardPress = (dish: DishDetail) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setSelectedDish(dish);
+    snapTo(FULL_HEIGHT);
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 10,
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 50) {
+          setSelectedDish(null);
+          snapTo(PEEK_HEIGHT);
+        }
+      },
+    })
+  ).current;
+
+  useEffect(() => {
+    snapTo(PEEK_HEIGHT);
+  }, []);
+
+  const markers = useMemo<MapSurfaceMarker[]>(() => {
+    const bMarkers = visibleBuildings.map((b) => ({
+      id: b.id,
+      label: b.name.replace(" Food Centre", ""),
+      coordinate: b.coordinate,
+      accent: b.type === "hawker_centre" ? palette.orange : palette.teal,
+      type: b.type,
+    }));
+    if (currentZoom > 16.5) {
+      const venues = repository.listVenuesByBuilding(activeBuildingRecord.id);
+      const stallMarkers = venues.map(v => ({
+        id: `stall-${v.id}`,
+        label: v.name,
+        coordinate: {
+          latitude: activeBuildingRecord.coordinate.latitude + (Math.random() - 0.5) * 0.0005,
+          longitude: activeBuildingRecord.coordinate.longitude + (Math.random() - 0.5) * 0.0005,
+        },
+        accent: palette.orange,
+      }));
+      return [...bMarkers, ...stallMarkers];
+    }
+    return bMarkers;
+  }, [palette, repository, visibleBuildings, currentZoom, activeBuildingRecord]);
+
+  const cameraPadding = useMemo(() => ({
+    paddingBottom: (selectedDish || displayMode === "list") ? 300 : 260
+  }), [selectedDish, displayMode]);
+
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
-      <View style={styles.screen}>
-        <View style={{ paddingHorizontal: spacing[5], paddingTop: spacing[2], gap: spacing[1] }}>
-          <AppText variant="bodySmall" tone="muted">
-            Map
-          </AppText>
-          <AppText variant="display">Discover on map</AppText>
-          <AppText variant="bodySmall" tone="secondary">
-            Tap a building, see what is open, then drill into levels and unit numbers.
-          </AppText>
-        </View>
+    <View style={{ flex: 1, backgroundColor: palette.bg }}>
+      <MapSurface
+        style={StyleSheet.absoluteFill}
+        centerCoordinate={activeBuildingRecord.coordinate}
+        zoomLevel={currentZoom}
+        markers={markers}
+        cameraPadding={cameraPadding}
+        onMapPress={() => {
+          setSelectedDish(null);
+          snapTo(PEEK_HEIGHT);
+        }}
+        onZoomChange={setCurrentZoom}
+      />
 
-        <View style={{ flex: 1, marginTop: spacing[4] }}>
-          <MapSurface
-            style={styles.mapSurface}
-            centerCoordinate={cameraCenter}
-            zoomLevel={15.35}
-            markers={markers}
-            selectedMarkerId={activeBuildingRecord.id}
-            cameraPadding={cameraPadding}
-            currentLocation={gpsBadgeState === "live" ? currentLocation : undefined}
-            onMarkerPress={(buildingId) =>
-              handleBuildingSelect(buildingId, { openDirectory: true })
-            }
-          />
-
-          <Pressable
-            onPress={() => setCameraCenter(currentLocation)}
-            style={[
-              styles.recenterButton,
-              {
-                backgroundColor: palette.orange,
-                borderRadius: radii.lg,
-                right: spacing[4],
-                top: spacing[4],
-              },
-              shadows.floating,
-            ]}
-          >
-            <LocateFixed color={palette.surface} size={18} />
-          </Pressable>
-
-          <BottomSheet
-            index={1}
-            snapPoints={snapPoints}
-            onChange={(index) => setSheetIndex(Math.max(0, index))}
-            enablePanDownToClose={false}
-            backgroundStyle={{
-              backgroundColor: "rgba(255,255,255,0.98)",
-              borderColor: palette.border,
-              borderTopLeftRadius: 28,
-              borderTopRightRadius: 28,
-              borderWidth: 1,
-            }}
-            handleIndicatorStyle={{ backgroundColor: palette.border }}
-            style={[styles.sheetOverlay, shadows.floating]}
-          >
-            <BottomSheetScrollView
-              contentContainerStyle={{
-                paddingBottom: Math.max(insets.bottom + spacing[6], spacing[8]),
-                paddingHorizontal: spacing[5],
-                paddingTop: spacing[3],
+      {/* Top Floating UI */}
+      <SafeAreaView style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: zIndex.overlay }} edges={["top"]}>
+        <View style={{ paddingHorizontal: spacing[3], paddingTop: spacing[2], gap: spacing[3] }}>
+          <View style={{ flexDirection: "row", gap: spacing[2], alignItems: "center" }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Search dishes or stalls"
+              onPress={() => navigation.navigate("SearchHome")}
+              style={[styles.searchBar, { backgroundColor: palette.surface, borderRadius: radii.pill, flex: 1, ...shadows.floating }]}
+            > 
+              <Search color={palette.textMuted} size={20} />
+              <AppText tone="secondary" style={{ flex: 1 }}>Search dishes or stalls...</AppText>
+              <View style={{ width: 1, height: 20, backgroundColor: palette.border }} />
+              <Filter color={palette.orange} size={20} />
+            </Pressable>
+            <Pressable 
+              accessibilityRole="button"
+              accessibilityLabel={displayMode === "carousel" ? "Switch to list view" : "Switch to carousel view"}
+              onPress={() => {
+                const next = displayMode === "carousel" ? "list" : "carousel";
+                setDisplayMode(next);
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
-              showsVerticalScrollIndicator={false}
+              style={[{ width: 52, height: 52, borderRadius: 26, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center", ...shadows.floating }]}
             >
-              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3], marginTop: spacing[1] }}>
-                <View style={{ flex: 1, gap: 4 }}>
-                  <AppText variant="h1">{activeBuildingRecord.name}</AppText>
-                  <AppText variant="bodySmall" tone="secondary">
-                    {activeBuildingRecord.address}
-                  </AppText>
-                </View>
-                <View
-                  style={{
-                    backgroundColor: palette.surfaceRaised,
-                    borderColor: palette.border,
-                    borderRadius: radii.pill,
-                    borderWidth: 1,
-                    paddingHorizontal: spacing[3],
-                    paddingVertical: spacing[2],
-                    alignSelf: "flex-start",
-                  }}
-                >
-                  <AppText variant="micro" style={{ color: palette.text }}>
-                    {Math.max(openStallCount, activeBuildingRecord.openStalls)} active stalls
-                  </AppText>
-                </View>
-              </View>
-
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2], marginTop: spacing[3] }}>
-                <MetaTag label={activeBuildingRecord.floors.join(" · ")} />
-                <MetaTag label={formatWalkTime(currentLocation, activeBuildingRecord.coordinate)} />
-              </View>
-
-              <View style={{ gap: spacing[2], marginTop: spacing[4] }}>
-                {activeStalls.map((venue) => (
-                  <ActiveStallRow
-                    key={venue.id}
-                    venue={venue}
-                    onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
-                  />
-                ))}
-                {activeStalls.length === 0 ? (
-                  <View
-                    style={{
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      borderRadius: radii.lg,
-                      borderWidth: 1,
-                      paddingHorizontal: spacing[4],
-                      paddingVertical: spacing[3],
-                    }}
-                  >
-                    <AppText variant="bodySmall" tone="secondary">
-                      No active stalls available in this view right now.
-                    </AppText>
-                  </View>
-                ) : null}
-              </View>
-
-              <View style={{ flexDirection: "row", gap: spacing[2], marginTop: spacing[4] }}>
-                <Button
-                  label="View floors"
-                  onPress={() => {
-                    setSelectedBuilding(toSummary(activeBuildingRecord));
-                    setSelectedFloor(activeBuildingRecord.floors[0]);
-                    navigation.navigate("BuildingDrillDown", { buildingId: activeBuildingRecord.id });
-                  }}
-                  style={{ flex: 1 }}
-                />
-                <Button
-                  label="Zoom in"
-                  variant="secondary"
-                  onPress={() => {
-                    setSelectedBuilding(toSummary(activeBuildingRecord));
-                    navigation.navigate("MapZoomedIn", { buildingId: activeBuildingRecord.id });
-                  }}
-                  style={{ flex: 1 }}
-                />
-              </View>
-
-              <View style={{ marginTop: spacing[2] }}>
-                <Button
-                  label="Focus pilot mall: Koufu @ JEM"
-                  variant="secondary"
-                  onPress={() => handleBuildingSelect(PILOT_MALL_ID)}
-                />
-              </View>
-
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginTop: spacing[3] }}>
-                <Navigation size={14} color={palette.textMuted} />
-                <AppText variant="bodySmall" tone="muted">
-                  Map supports live Mapbox when token is set and includes a pilot directory flow for Koufu @ JEM.
-                </AppText>
-              </View>
-            </BottomSheetScrollView>
-          </BottomSheet>
+              {displayMode === "carousel" ? <Utensils color={palette.orange} size={22} /> : <MapIcon color={palette.orange} size={22} />}
+            </Pressable>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[2] }}>
+            <Chip 
+              label="Near me" 
+              selected={mapFilters.nearMe} 
+              onPress={() => toggleMapFilter("nearMe")}
+              leftIcon={<LocateFixed size={14} color={mapFilters.nearMe ? palette.orange : palette.textMuted} />} 
+            />
+            <Chip 
+              label="Hawker" 
+              selected={mapFilters.hawkerOnly} 
+              onPress={() => toggleMapFilter("hawkerOnly")} 
+            />
+            <Chip label="Top Rated" selected={mapFilters.topRated} onPress={() => toggleMapFilter("topRated")} />
+            <Chip label="Open Now" selected={mapFilters.openNow} onPress={() => toggleMapFilter("openNow")} />
+          </ScrollView>
         </View>
+      </SafeAreaView>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Recenter map to default building"
+        onPress={() => setSelectedBuilding(toSummary(getBuildingById(DEFAULT_BUILDING_ID)!))}
+        style={[styles.floatingButton, { bottom: PEEK_HEIGHT + spacing[6], right: spacing[4], backgroundColor: palette.surface, zIndex: zIndex.fab, ...shadows.floating }]}
+      > 
+        <LocateFixed color={palette.orange} size={24} />
+      </Pressable>
+
+      {/* Floating Legend */}
+      <View style={{ position: "absolute", bottom: PEEK_HEIGHT + spacing[4], left: spacing[4], zIndex: zIndex.overlay }}>
+        <BuildingLegend />
       </View>
-    </SafeAreaView>
+
+      <Animated.View 
+        {...panResponder.panHandlers}
+        style={[
+          styles.animatedCard, 
+          { 
+            backgroundColor: palette.surface,
+            height: animatedHeight,
+            zIndex: zIndex.sheet,
+            bottom: 0,
+            paddingHorizontal: (selectedDish || displayMode === "list") ? spacing[4] : 0,
+            borderTopLeftRadius: radii.xl,
+            borderTopRightRadius: radii.xl,
+            ...shadows.floating,
+          }
+        ]}
+      >
+        <View style={{ width: "100%", height: 40, alignItems: "center", justifyContent: "center", position: "relative" }}>
+          <View style={{ width: 40, height: 4, borderRadius: radii.pill, backgroundColor: palette.border }} />
+          {selectedDish && (
+            <Pressable 
+              accessibilityRole="button"
+              accessibilityLabel="Close dish details"
+              onPress={() => { setSelectedDish(null); snapTo(PEEK_HEIGHT); }}
+              style={{ position: "absolute", right: spacing[4], top: 8, width: 32, height: 32, borderRadius: radii.pill, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}
+            >
+              <X color={palette.text} size={18} />
+            </Pressable>
+          )}
+        </View>
+
+        {selectedDish ? (
+          <View style={{ gap: spacing[4], paddingBottom: insets.bottom + spacing[4], paddingHorizontal: spacing[3] }}>
+            <View style={{ width: "100%", height: 240, borderRadius: radii.xl, overflow: "hidden", position: "relative" }}>
+              <Image source={{ uri: selectedDish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+              <View style={[{ position: "absolute", top: spacing[4], right: spacing[4], width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center" }, shadows.floating]}>
+                <Heart color={palette.error} size={22} fill={palette.error} />
+              </View>
+              <View style={{ position: "absolute", bottom: spacing[4], left: spacing[4], backgroundColor: palette.amber, paddingHorizontal: spacing[3], paddingVertical: spacing[2], borderRadius: radii.md }}>
+                <AppText style={{ color: palette.navy, fontSize: 11, fontWeight: "800" }}>TRENDING NOW</AppText>
+              </View>
+              {selectedDish.liveCrowd && (
+                <View style={{ position: "absolute", bottom: spacing[4], right: spacing[4] }}>
+                  <CrowdIndicator level={selectedDish.liveCrowd} />
+                </View>
+              )}
+            </View>
+
+            <View style={{ gap: spacing[1] }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <AppText style={{ fontSize: 26, fontWeight: "900", color: palette.text, flex: 1, lineHeight: 30 }}>{selectedDish.name}</AppText>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1], marginTop: 4 }}>
+                  <Star color={palette.amber} fill={palette.amber} size={18} />
+                  <AppText style={{ fontSize: 20, fontWeight: "800", color: palette.text }}>{selectedDish.rating.toFixed(1)}</AppText>
+                </View>
+              </View>
+              <AppText style={{ fontSize: 16, color: palette.textSecondary }}>
+                {selectedDish.venueName} • {(() => {
+                  const venues = repository.listVenuesByBuilding(activeBuildingRecord.id);
+                  const openCount = venues.filter(v => v.isOpen).length;
+                  return openCount > 0 ? `${openCount} stalls open now` : "Building currently closed";
+                })()}
+              </AppText>
+            </View>
+
+            <View style={{ flexDirection: "row", gap: spacing[3], marginTop: spacing[1] }}>
+              <Pressable 
+                accessibilityRole="button"
+                accessibilityLabel={`View menu for ${selectedDish.name}`}
+                onPress={() => navigation.navigate("DishDetail", { dishId: selectedDish.id })}
+                style={{ flex: 1, height: 56, borderRadius: radii.pill, backgroundColor: palette.surfaceRaised, alignItems: "center", justifyContent: "center" }}
+              >
+                <AppText style={{ fontSize: 16, fontWeight: "700", color: palette.text }}>View Menu</AppText>
+              </Pressable>
+              <Pressable 
+                accessibilityRole="button"
+                accessibilityLabel={`Open stall details for ${selectedDish.venueName}`}
+                onPress={() => navigation.navigate("StallDetail", { venueId: selectedDish.venueId })}
+                style={[{ flex: 1, height: 56, borderRadius: radii.pill, backgroundColor: palette.orange, alignItems: "center", justifyContent: "center" }, shadows.floating]}
+              >
+                <AppText style={{ fontSize: 16, fontWeight: "700", color: palette.surface }}>Reserve Now</AppText>
+              </Pressable>
+            </View>
+          </View>
+        ) : displayMode === "list" ? (
+          <ScrollView contentContainerStyle={{ paddingHorizontal: spacing[3], gap: spacing[4], paddingBottom: insets.bottom + spacing[12] }}>
+            <AppText variant="h2" style={{ marginBottom: spacing[2] }}>Nearby Stalls</AppText>
+            {visibleBuildings.flatMap((b) => repository.listVenuesByBuilding(b.id)).map((venue) => (
+              <Pressable
+                key={venue.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${venue.name} stall details`}
+                onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
+                style={{
+                  backgroundColor: palette.bgSoft,
+                  borderRadius: radii.md,
+                  padding: spacing[3],
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing[3],
+                  borderWidth: 1,
+                  borderColor: palette.border,
+                }}
+              >
+                <View style={{ flex: 1, gap: spacing[1] }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <AppText variant="h3">{venue.name}</AppText>
+                    <CrowdIndicator level={venue.liveCrowd} />
+                  </View>
+                  <AppText variant="micro" tone="secondary">{venue.floor} {venue.unitNumber} · {venue.operatingHours}</AppText>
+                </View>
+                <ChevronRight size={16} color={palette.orange} />
+              </Pressable>
+            ))}
+          </ScrollView>
+        ) : (
+          <View style={{ height: 200 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[4], paddingHorizontal: spacing[3] }}>
+              {areaPopularDishes.map((dish) => (
+                <Pressable
+                  key={dish.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Preview ${dish.name} at ${dish.venueName}`}
+                  onPress={() => handleCardPress(dish)}
+                  style={[{ backgroundColor: palette.surface, borderRadius: radii.xl, overflow: "hidden", width: 280 }, shadows.floating]}
+                > 
+                  <View style={{ height: 140 }}>
+                    <Image source={{ uri: dish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+                    {dish.liveCrowd && (
+                      <View style={{ position: "absolute", top: 10, right: 10 }}>
+                        <CrowdIndicator level={dish.liveCrowd} />
+                      </View>
+                    )}
+                  </View>
+                  <View style={{ padding: spacing[3], gap: spacing[1] }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                      <AppText style={{ fontWeight: "800", flex: 1 }} numberOfLines={1}>{dish.name}</AppText>
+                      <AppText style={{ color: palette.orange, fontWeight: "800" }}>S${Math.round(dish.price)}</AppText>
+                    </View>
+                    <AppText variant="micro" tone="secondary">{dish.venueName}</AppText>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+      </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  screen: {
-    flex: 1,
-  },
-  mapSurface: {
-    flex: 1,
-  },
-  recenterButton: {
+  searchBar: {
+    flexDirection: "row",
     alignItems: "center",
-    height: 48,
-    justifyContent: "center",
-    position: "absolute",
-    width: 48,
-    zIndex: 2,
+    paddingHorizontal: 16, // Maintained for search bar aesthetic
+    height: 52,
+    gap: 8, // Maintained for search bar aesthetic
   },
-  sheetOverlay: {
-    left: 0,
+  floatingButton: {
+    width: 52, 
+    height: 52, 
+    borderRadius: 26, // Half of 52 for pill shape
+    alignItems: "center", 
+    justifyContent: "center", 
     position: "absolute",
+  },
+  animatedCard: {
+    position: "absolute",
+    left: 0,
     right: 0,
-    bottom: 0,
   },
 });

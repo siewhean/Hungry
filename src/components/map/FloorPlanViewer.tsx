@@ -37,8 +37,8 @@ function getStallVisual(stall: StallPolygon, isSelected: boolean, palette: Retur
 
   if (kind === "corridor") {
     return {
-      fill: palette.surface,
-      fillOpacity: 0.15,
+      fill: palette.bgSoft,
+      fillOpacity: 1,
       stroke: palette.border,
       labelColor: palette.textMuted,
       strokeWidth: 0.9,
@@ -48,8 +48,8 @@ function getStallVisual(stall: StallPolygon, isSelected: boolean, palette: Retur
   if (kind === "facility") {
     return {
       fill: palette.surfaceRaised,
-      fillOpacity: 0.2,
-      stroke: palette.navy,
+      fillOpacity: 1,
+      stroke: palette.border,
       labelColor: palette.navy,
       strokeWidth: 1.25,
     };
@@ -57,39 +57,29 @@ function getStallVisual(stall: StallPolygon, isSelected: boolean, palette: Retur
 
   if (isSelected) {
     return {
-      fill: palette.orange,
-      fillOpacity: 0.2,
+      fill: palette.orangeLight,
+      fillOpacity: 1,
       stroke: palette.orange,
       labelColor: palette.orange,
-      strokeWidth: 1.8,
+      strokeWidth: 2,
     };
   }
 
   if (stall.status === "closed") {
     return {
-      fill: palette.error,
-      fillOpacity: 0.03,
+      fill: palette.bgSoft,
+      fillOpacity: 1,
       stroke: palette.error,
       labelColor: palette.error,
       strokeWidth: 1,
     };
   }
 
-  if (stall.status === "non_food") {
-    return {
-      fill: palette.surfaceRaised,
-      fillOpacity: 0.08,
-      stroke: palette.border,
-      labelColor: palette.textMuted,
-      strokeWidth: 1,
-    };
-  }
-
   return {
-    fill: palette.success,
-    fillOpacity: 0.02,
-    stroke: palette.success,
-    labelColor: palette.success,
+    fill: palette.surface,
+    fillOpacity: 1,
+    stroke: palette.border,
+    labelColor: palette.text,
     strokeWidth: 1,
   };
 }

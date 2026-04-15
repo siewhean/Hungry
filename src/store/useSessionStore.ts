@@ -1,8 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { identifyPostHogUser, resetPostHogUser } from "@/lib/analytics/posthogSink";
+import type { AuthProvider } from "@/lib/services/types";
 import { useProfileStore } from "./useProfileStore";
-import { hungryPersistStorage } from "./persistStorage";
+import { useLocationStore } from "./useLocationStore";
+import { hungrySecurePersistStorage } from "./secureStorage";
 
 export interface PendingRoute {
   name: string;
@@ -19,6 +23,7 @@ interface SessionState {
   completeAuth: (options?: {
     completedOnboarding?: boolean;
     skippedTasteQuiz?: boolean;
+    authProvider?: AuthProvider;
   }) => void;
   completeOnboarding: (skippedQuiz?: boolean) => void;
   expireSession: () => void;
@@ -51,29 +56,59 @@ export const useSessionStore = create<SessionState>()(
           sessionExpired: false,
         }));
         useProfileStore.getState().syncProfile(true);
+        const profile = useProfileStore.getState().profile;
+        const location = useLocationStore.getState();
+        const area =
+          location.manualLocation ??
+          `${location.currentLocation.latitude.toFixed(4)},${location.currentLocation.longitude.toFixed(4)}`;
+        identifyPostHogUser(profile.id, {
+          tasteVector: profile.tasteVector,
+          dietaryPreferences: profile.dietaryPreferences,
+          area,
+        });
+        trackAnalyticsEvent("sign_in_completed", {
+          method: options?.authProvider ?? "email",
+          has_completed_onboarding: options?.completedOnboarding ?? false,
+          skipped_taste_quiz: options?.skippedTasteQuiz ?? false,
+        }, { userId: profile.id });
       },
-      completeOnboarding: (skippedQuiz = false) =>
+      completeOnboarding: (skippedQuiz = false) => {
         set({
           hasCompletedOnboarding: true,
           hasSkippedTasteQuiz: skippedQuiz,
-        }),
-      expireSession: () => set({ sessionExpired: true, isAuthenticated: false }),
+        });
+        trackAnalyticsEvent("onboarding_completed", {
+          skipped_quiz: skippedQuiz,
+        });
+      },
+      expireSession: () => {
+        const profileId = useProfileStore.getState().profile.id;
+        set({ sessionExpired: true, isAuthenticated: false });
+        resetPostHogUser();
+        trackAnalyticsEvent("sign_out", { reason: "session_expired" }, { userId: profileId });
+      },
       dismissSessionExpiry: () => set({ sessionExpired: false }),
       setReturnRoute: (returnRoute) => set({ returnRoute }),
       setSkippedTasteQuiz: (hasSkippedTasteQuiz) => set({ hasSkippedTasteQuiz }),
       signOut: () => {
+        const profileId = useProfileStore.getState().profile.id;
         set({ ...initialState });
         useProfileStore.getState().syncProfile(false);
+        resetPostHogUser();
+        trackAnalyticsEvent("sign_out", { reason: "manual" }, { userId: profileId });
       },
       clearSession: () => {
+        const profileId = useProfileStore.getState().profile.id;
         set({ ...initialState });
         useProfileStore.getState().syncProfile(false);
+        resetPostHogUser();
+        trackAnalyticsEvent("sign_out", { reason: "clear_session" }, { userId: profileId });
       },
       markHydrated: () => set({ hasHydrated: true }),
     }),
     {
       name: "hungry-session-v1",
-      storage: hungryPersistStorage,
+      storage: hungrySecurePersistStorage,
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
         hasCompletedOnboarding: state.hasCompletedOnboarding,

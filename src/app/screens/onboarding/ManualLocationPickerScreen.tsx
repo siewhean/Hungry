@@ -3,7 +3,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { ArrowLeft, MapPin } from "lucide-react-native";
 
 import { AppText, Button, Card, Input } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
@@ -13,14 +13,15 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, "ManualLocationPic
 
 export function ManualLocationPickerScreen({ navigation }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
+  const repository = getDataRepository();
   const setManualSelection = useLocationStore((state) => state.setManualSelection);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
 
-  const buildings = mockRepository.listBuildings().slice(0, 10);
+  const buildings = repository.listBuildings().slice(0, 10);
 
   return (
-    <View style={{ backgroundColor: palette.bg, flex: 1, paddingHorizontal: spacing[4], paddingTop: spacing[6] }}>
+    <View style={{ backgroundColor: palette.bg, flex: 1, paddingHorizontal: spacing[3], paddingTop: spacing[6] }}>
       <View style={{ alignItems: "center", flexDirection: "row", marginBottom: spacing[4] }}>
         <Pressable onPress={() => navigation.goBack()} style={{ marginRight: spacing[3], padding: spacing[2] }}>
           <ArrowLeft color={palette.navy} size={18} />
@@ -46,7 +47,7 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
               <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
                 <MapPin color={palette.orange} size={16} />
                 <View style={{ flex: 1, gap: spacing[1] }}>
-                  <AppText variant="body" style={{ fontFamily: "Nunito_700Bold" }}>
+                  <AppText variant="bodyBold">
                     {building.name}
                   </AppText>
                   <AppText variant="bodySmall" tone="secondary">
