@@ -674,6 +674,36 @@ These items affect perceived quality but do not break functionality.
 
 ---
 
+### Sprint 1–4 Audit Findings (2026-04-15)
+
+> **Source:** Full code audit against all sprint deliverables. Every item below was verified against actual file contents before being logged. Severity: **HIGH** = runtime breakage, **MEDIUM** = architectural debt / silent failure, **LOW** = design system consistency.
+
+#### HIGH
+
+- [ ] **AUD-01 — `ReadsFeed` route undefined** `src/app/navigation/RootNavigator.tsx:63,261–264` — `"ReadsFeed"` appears in `AUTH_REQUIRED_ROUTES` and `openResolvedRoute()`, but is never declared in `RootStackParamList` (`navigationTypes.ts`). If a user's `returnRoute` is ever set to `"ReadsFeed"` (e.g. from a deep link or post-auth redirect), the app will crash at runtime with an unknown route error. Fix: add `ReadsFeed: undefined` to `RootStackParamList`, or remove the three `ReadsFeed` references from `RootNavigator.tsx`.
+
+#### MEDIUM
+
+- [ ] **AUD-02 — `reviewEntries` not cleared on sign-out** `src/store/useSessionStore.ts:93–96` / `useProfileStore.ts:200–205` — `signOut()` calls `syncProfile(false)` which resets the profile object, but never calls `clearProfile()`. The `reviewEntries` map (persisted via `hungryPersistStorage`) survives sign-out and will be visible to the next user on a shared device. Fix: call `useProfileStore.getState().clearProfile()` inside `signOut()` alongside `syncProfile(false)`.
+
+- [ ] **AUD-03 — Sentry DSN env fallback is dead code** `App.tsx:10` — `process.env.SENTRY_DSN` (no `EXPO_PUBLIC_` prefix) is never bundled into the React Native JS bundle; it will always be `undefined`. The `??` fallback silently always uses `EXPO_PUBLIC_SENTRY_DSN`, making the first read misleading dead code. Fix: remove the `process.env.SENTRY_DSN` half and use `process.env.EXPO_PUBLIC_SENTRY_DSN` directly.
+
+- [ ] **AUD-04 — CI pipeline has no lint gate** `.github/workflows/ci.yml` — The `quality-gates` job runs typecheck → test → expo-doctor but has no ESLint step. Lint errors silently pass CI. Fix: add `npm run lint` as a step (after verifying/adding the `lint` script to `package.json`).
+
+- [ ] **AUD-05 — `navigation as any` in ProfileHomeScreen** `src/app/screens/profile/ProfileHomeScreen.tsx:23` — `getRootNavigation(navigation as any)` casts away type safety on the navigation prop. If the prop type or `getRootNavigation` signature changes, this will fail silently at runtime. Fix: cast to `NativeStackNavigationProp<ProfileStackParamList>` (the actual prop type from the screen's `NativeStackScreenProps`).
+
+#### LOW
+
+- [ ] **AUD-06 — `borderRadius: 999` instead of `radii.pill`** `src/app/screens/onboarding/OnboardingIntroTemplate.tsx:487,506,517,524` and `TasteQuizScreen.tsx:561` — Sprint 2 replaced hardcoded radii in most screens but these five instances were missed. Fix: replace with `radii.pill` from `useHungryTheme()`.
+
+- [ ] **AUD-07 — Hardcoded `#FFFFFF` in LoginScreen** `src/app/screens/auth/LoginScreen.tsx:113` — `color="#FFFFFF"` on the `ArrowRight` icon. Sprint 2 replaced `#FFFFFF` in 35+ places but missed this one. Fix: `color={palette.white}`.
+
+- [ ] **AUD-08 — Gradient uses hardcoded hex matching an existing token** `src/app/screens/wheel/WheelResultModal.tsx:110` — `colors={[palette.amber, "#F59E0B"]}` — `#F59E0B` is identical to `palette.amber`. Fix: `colors={[palette.amber, palette.amber]}` or simplify to a solid color.
+
+- [ ] **AUD-09 — `dataRepository` Proxy undocumented as deprecated** `src/lib/services/serviceProvider.ts:52–63` — The Proxy is a compatibility shim for legacy call sites migrating off direct mock imports. The comment says "legacy callsites" but there is no explicit deprecation notice telling future contributors to use `getDataRepository()` instead. Fix: add `@deprecated Use getDataRepository() directly.` JSDoc to the `dataRepository` export.
+
+---
+
 ### Sprint 5 — Backend Migration (Supabase)
 
 > **Goal:** Implement the live data layer and swap the service provider from mock to Supabase.
