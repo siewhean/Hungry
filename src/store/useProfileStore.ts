@@ -4,8 +4,15 @@ import { guestProfile, userProfile } from "@/lib/services/mock/data";
 import { mockRepository, similarityScore } from "@/lib/services/mock/repositories";
 import type { DietaryFlag, DishDetail, TasteVector, UserProfile } from "@/types/domain";
 
+interface ReviewEntry {
+  rating: number;
+  text: string;
+  tags: string[];
+}
+
 interface ProfileState {
   profile: UserProfile;
+  reviewEntries: Record<string, ReviewEntry>;
   syncProfile: (isAuthenticated: boolean) => void;
   toggleFavourite: (dish: DishDetail) => void;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email">>) => void;
@@ -13,6 +20,7 @@ interface ProfileState {
   updateDietaryPreferences: (flags: DietaryFlag[]) => void;
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
+  recordReviewEntry: (dishId: string, entry: ReviewEntry) => void;
 }
 
 function recalculateTasteVector(profile: UserProfile) {
@@ -46,6 +54,7 @@ function recalculateTasteVector(profile: UserProfile) {
 
 export const useProfileStore = create<ProfileState>((set) => ({
   profile: guestProfile,
+  reviewEntries: {},
   syncProfile: (isAuthenticated) => set({ profile: isAuthenticated ? userProfile : guestProfile }),
   toggleFavourite: (dish) =>
     set((state) => {
@@ -138,6 +147,10 @@ export const useProfileStore = create<ProfileState>((set) => ({
         },
       };
     }),
+  recordReviewEntry: (dishId, entry) =>
+    set((state) => ({
+      reviewEntries: { ...state.reviewEntries, [dishId]: entry },
+    })),
 }));
 
 export const getTasteSimilarityWithDish = (profile: UserProfile, dish: DishDetail) =>
