@@ -2857,6 +2857,10 @@ SPEC CHECKSUMS:
   Turf: c9eb11a65d96af58cac523460fd40fec5061b081
   Yoga: 3fd22c2cae22d7a2b0f0b538f55f7c2a17dc94d5
 
+<<<<<<< Updated upstream
 PODFILE CHECKSUM: 9fb52d2d7e1408f79f16f9dcc3f80267418de86e
+=======
+PODFILE CHECKSUM: f95515cb18e36dc7d5f2873a6e574cfafaa7d745
+>>>>>>> Stashed changes
 
 COCOAPODS: 1.16.1

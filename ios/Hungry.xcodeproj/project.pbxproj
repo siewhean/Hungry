@@ -378,6 +378,7 @@
 					"$(inherited)",
 					"-ObjC",
 					"-lc++",
+					"-Wl,-no_warn_duplicate_libraries",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = app.hungry.mobile;
@@ -411,6 +412,7 @@
 					"$(inherited)",
 					"-ObjC",
 					"-lc++",
+					"-Wl,-no_warn_duplicate_libraries",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = app.hungry.mobile;

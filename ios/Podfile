@@ -12,6 +12,24 @@ def ccache_enabled?(podfile_properties)
   podfile_properties['apple.ccacheEnabled'] == 'true'
 end
 
+def append_build_flag!(build_settings, key, flag)
+  current = build_settings[key]
+  values =
+    case current
+    when Array
+      current
+    when String
+      current.split(' ')
+    when nil
+      ['$(inherited)']
+    else
+      Array(current)
+    end
+
+  values << flag unless values.include?(flag)
+  build_settings[key] = values
+end
+
 ENV['RCT_NEW_ARCH_ENABLED'] ||= '0' if podfile_properties['newArchEnabled'] == 'false'
 ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] ||= podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
 ENV['RCT_USE_RN_DEP'] ||= '1' if podfile_properties['ios.buildReactNativeFromSource'] != 'true' && podfile_properties['newArchEnabled'] != 'false'
@@ -62,6 +80,15 @@ target 'Hungry' do
     )
 
     installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        deployment_target = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+        if deployment_target && Gem::Version.new(deployment_target) < Gem::Version.new('12.0')
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+        end
+
+        append_build_flag!(config.build_settings, 'OTHER_LIBTOOLFLAGS', '-no_warning_for_no_symbols')
+      end
+
       target.shell_script_build_phases.each do |phase|
         if target.name == 'EXConstants' && phase.name == '[CP-User] Generate app.config for prebuilt Constants.manifest'
           # Expo's generated script phase breaks when the project path contains spaces
@@ -73,7 +100,24 @@ target 'Hungry' do
           # Same issue for expo-updates script on paths containing spaces.
           phase.shell_script = 'bash -l -c "\\"$PODS_TARGET_SRCROOT/../scripts/create-updates-resources-ios.sh\\""'
         end
+
+        if (target.name == 'hermes-engine' && phase.name == '[CP-User] [Hermes] Replace Hermes for the right configuration, if needed') ||
+           (target.name == 'EXUpdates' && phase.name == '[CP-User] Generate updates resources for expo-updates')
+          phase.always_out_of_date = '1' if phase.respond_to?(:always_out_of_date=)
+        end
       end
+    end
+
+    installer.aggregate_targets.each do |aggregate_target|
+      aggregate_target.user_project.native_targets.each do |native_target|
+        next unless native_target.name == 'Hungry'
+
+        native_target.build_configurations.each do |config|
+          append_build_flag!(config.build_settings, 'OTHER_LDFLAGS', '-Wl,-no_warn_duplicate_libraries')
+        end
+      end
+
+      aggregate_target.user_project.save
     end
   end
 end
