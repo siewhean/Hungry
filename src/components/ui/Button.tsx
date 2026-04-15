@@ -77,23 +77,15 @@ export function Button({
           width: fullWidth ? "100%" : undefined,
           transform: [{ translateY: pressed ? 1 : 0 }],
         },
-        pressed && variant === "secondary"
-          ? { backgroundColor: palette.surfaceRaised }
-          : null,
-        pressed && variant === "ghost"
-          ? { backgroundColor: palette.surfaceRaised }
-          : null,
+        pressed && variant === "secondary" ? { backgroundColor: palette.surfaceRaised } : null,
+        pressed && variant === "ghost" ? { backgroundColor: palette.surfaceRaised } : null,
         style,
       ]}
       {...props}
     >
       {loading ? (
         <ActivityIndicator
-          color={
-            variant === "primary" || variant === "destructive"
-              ? palette.white
-              : palette.text
-          }
+          color={variant === "primary" || variant === "destructive" ? palette.white : palette.text}
         />
       ) : (
         <View
@@ -106,11 +98,7 @@ export function Button({
           {leftIcon}
           <AppText
             variant="h3"
-            tone={
-              variant === "primary" || variant === "destructive"
-                ? "inverse"
-                : "default"
-            }
+            tone={variant === "primary" || variant === "destructive" ? "inverse" : "default"}
           >
             {label}
           </AppText>

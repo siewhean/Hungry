@@ -2,12 +2,15 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import {
-  processExplicitFeedback,
-  type ExplicitFeedbackEvent,
-} from "@/lib/ai/tasteEngine";
+import { processExplicitFeedback, type ExplicitFeedbackEvent } from "@/lib/ai/tasteEngine";
 import { getDataRepository, getSimilarityScore } from "@/lib/services/serviceProvider";
-import type { DietaryFlag, DishDetail, TasteProfile, TasteVector, UserProfile } from "@/types/domain";
+import type {
+  DietaryFlag,
+  DishDetail,
+  TasteProfile,
+  TasteVector,
+  UserProfile,
+} from "@/types/domain";
 import { NEUTRAL_TASTE_PROFILE } from "@/constants/taste";
 import { hungryPersistStorage } from "./persistStorage";
 
@@ -15,7 +18,10 @@ interface ProfileState {
   profile: UserProfile;
   /** Extended taste profile with psychometric secondary axes */
   tasteProfile: TasteProfile;
-  reviewEntries: Record<string, { rating: number; text: string; tags: string[]; createdAt: string }>;
+  reviewEntries: Record<
+    string,
+    { rating: number; text: string; tags: string[]; createdAt: string }
+  >;
   syncProfile: (isAuthenticated: boolean) => void;
   toggleFavourite: (dish: DishDetail) => void;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email">>) => void;
@@ -24,7 +30,10 @@ interface ProfileState {
   setDietaryPreferences: (dietaryPreferences: DietaryFlag[]) => void;
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
-  recordReviewEntry: (dishId: string, entry: { rating: number; text: string; tags: string[] }) => void;
+  recordReviewEntry: (
+    dishId: string,
+    entry: { rating: number; text: string; tags: string[] },
+  ) => void;
   setLeftHandedMode: (enabled: boolean) => void;
   setOnboardingSelectedDishIds: (dishIds: string[]) => void;
   clearProfile: () => void;
@@ -65,9 +74,7 @@ function bumpRecommendationSignals(
       signalCount: 0,
     } as const);
   return {
-    confidence: clampConfidence(
-      previous.confidence + FEEDBACK_CONFIDENCE_DELTAS[feedbackType],
-    ),
+    confidence: clampConfidence(previous.confidence + FEEDBACK_CONFIDENCE_DELTAS[feedbackType]),
     signalCount: previous.signalCount + 1,
     lastSignalAt: new Date().toISOString(),
   };
@@ -88,17 +95,12 @@ export const useProfileStore = create<ProfileState>()(
           const nextIds = isFavourite
             ? state.profile.favouriteDishIds.filter((id) => id !== dish.id)
             : [...state.profile.favouriteDishIds, dish.id];
-          const feedbackType: ExplicitFeedbackEvent["type"] = isFavourite
-            ? "unsaved"
-            : "saved";
-          const updatedTasteVector = processExplicitFeedback(
-            state.profile.tasteVector,
-            {
-              type: feedbackType,
-              dishVector: dish.tasteVector,
-              timestamp: Date.now(),
-            },
-          );
+          const feedbackType: ExplicitFeedbackEvent["type"] = isFavourite ? "unsaved" : "saved";
+          const updatedTasteVector = processExplicitFeedback(state.profile.tasteVector, {
+            type: feedbackType,
+            dishVector: dish.tasteVector,
+            timestamp: Date.now(),
+          });
 
           trackAnalyticsEvent(isFavourite ? "dish_unfavourited" : "dish_favourited", {
             dish_id: dish.id,
@@ -113,10 +115,7 @@ export const useProfileStore = create<ProfileState>()(
               favouritesCount: nextIds.length,
             },
             tasteVector: updatedTasteVector,
-            recommendationSignals: bumpRecommendationSignals(
-              state.profile,
-              feedbackType,
-            ),
+            recommendationSignals: bumpRecommendationSignals(state.profile, feedbackType),
           };
 
           return {
@@ -231,14 +230,11 @@ export const useProfileStore = create<ProfileState>()(
           }
 
           const feedbackType = getRatingFeedbackType(entry.rating);
-          const updatedTasteVector = processExplicitFeedback(
-            state.profile.tasteVector,
-            {
-              type: feedbackType,
-              dishVector: dish.tasteVector,
-              timestamp: Date.now(),
-            },
-          );
+          const updatedTasteVector = processExplicitFeedback(state.profile.tasteVector, {
+            type: feedbackType,
+            dishVector: dish.tasteVector,
+            timestamp: Date.now(),
+          });
 
           return {
             reviewEntries: {
@@ -252,10 +248,7 @@ export const useProfileStore = create<ProfileState>()(
             profile: {
               ...state.profile,
               tasteVector: updatedTasteVector,
-              recommendationSignals: bumpRecommendationSignals(
-                state.profile,
-                feedbackType,
-              ),
+              recommendationSignals: bumpRecommendationSignals(state.profile, feedbackType),
             },
             tasteProfile: {
               ...state.tasteProfile,

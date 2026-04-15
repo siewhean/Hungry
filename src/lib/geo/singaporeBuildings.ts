@@ -17,12 +17,7 @@ import type { BuildingDetail, FloorPlan } from "@/lib/services/types";
 
 // ─── Type Helpers ─────────────────────────────────────────────────────────────
 
-export type SingaporeRegion =
-  | "central"
-  | "north"
-  | "north_east"
-  | "east"
-  | "west";
+export type SingaporeRegion = "central" | "north" | "north_east" | "east" | "west";
 
 export interface SingaporeBuilding extends Omit<BuildingDetail, "heroDishId"> {
   heroDishId?: string;
@@ -97,7 +92,8 @@ export const singaporeBuildings: SingaporeBuilding[] = [
     avgRating: 4.2,
     operatingHours: "24 hours (Satay Street 7PM–1AM)",
     famousDishes: ["Satay", "Stingray", "Oyster Omelette"],
-    description: "Victorian cast-iron market in the heart of the CBD. Satay Street at night is iconic.",
+    description:
+      "Victorian cast-iron market in the heart of the CBD. Satay Street at night is iconic.",
   },
   {
     id: "hc-chinatown-complex",
@@ -227,7 +223,7 @@ export const singaporeBuildings: SingaporeBuilding[] = [
     neaCode: "CP0010",
     address: "70 Zion Road",
     postalCode: "247780",
-    coordinate: { latitude: 1.2914, longitude: 103.8300 },
+    coordinate: { latitude: 1.2914, longitude: 103.83 },
     floors: ["L1"],
     venueCount: 65,
     openStalls: 50,
@@ -250,7 +246,7 @@ export const singaporeBuildings: SingaporeBuilding[] = [
     neaCode: "NE0001",
     address: "20 Kensington Park Road",
     postalCode: "557269",
-    coordinate: { latitude: 1.3594, longitude: 103.8730 },
+    coordinate: { latitude: 1.3594, longitude: 103.873 },
     floors: ["L1"],
     venueCount: 53,
     openStalls: 45,
@@ -270,7 +266,7 @@ export const singaporeBuildings: SingaporeBuilding[] = [
     neaCode: "E0001",
     address: "209 New Upper Changi Road",
     postalCode: "460209",
-    coordinate: { latitude: 1.3240, longitude: 103.9302 },
+    coordinate: { latitude: 1.324, longitude: 103.9302 },
     floors: ["L1"],
     venueCount: 82,
     openStalls: 70,
@@ -598,7 +594,7 @@ export const singaporeBuildings: SingaporeBuilding[] = [
     region: "central",
     address: "1 HarbourFront Walk, #B2-01",
     postalCode: "098585",
-    coordinate: { latitude: 1.2644, longitude: 103.8220 },
+    coordinate: { latitude: 1.2644, longitude: 103.822 },
     floors: ["B2"],
     venueCount: 30,
     openStalls: 28,
@@ -677,7 +673,7 @@ export function getBuildingsByRegion(region: SingaporeRegion): SingaporeBuilding
 
 /** Filter buildings by type */
 export function getBuildingsByType(
-  type: "hawker_centre" | "food_court" | "kopitiam"
+  type: "hawker_centre" | "food_court" | "kopitiam",
 ): SingaporeBuilding[] {
   return singaporeBuildings.filter((b) => b.type === type);
 }
@@ -687,7 +683,7 @@ export function getNearestBuildings(
   lat: number,
   lng: number,
   radiusKm = 5,
-  limit = 20
+  limit = 20,
 ): SingaporeBuilding[] {
   const R = 6371; // Earth radius in km
   return singaporeBuildings

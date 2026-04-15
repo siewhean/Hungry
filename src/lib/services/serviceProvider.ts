@@ -1,6 +1,9 @@
 import type { TasteVector } from "@/types/domain";
 import { hungryService as mockHungryService } from "@/lib/services/mock/mockService";
-import { mockRepository as mockRepositorySource, similarityScore as mockSimilarityScore } from "@/lib/services/mock/repositories";
+import {
+  mockRepository as mockRepositorySource,
+  similarityScore as mockSimilarityScore,
+} from "@/lib/services/mock/repositories";
 import type { DataRepository, HungryService } from "@/lib/services/types";
 
 const mockRepository: DataRepository = mockRepositorySource;

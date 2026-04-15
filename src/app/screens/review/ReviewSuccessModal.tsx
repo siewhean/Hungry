@@ -23,7 +23,12 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
   }, [payload]);
 
   return (
-    <Modal animationType="fade" transparent visible={Boolean(payload)} onRequestClose={hideReviewSuccess}>
+    <Modal
+      animationType="fade"
+      transparent
+      visible={Boolean(payload)}
+      onRequestClose={hideReviewSuccess}
+    >
       <View
         style={{
           flex: 1,

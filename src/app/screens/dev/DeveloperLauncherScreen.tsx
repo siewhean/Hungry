@@ -12,14 +12,7 @@
 import { useState, useMemo } from "react";
 import { Pressable, ScrollView, Switch, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import {
-  ChevronDown,
-  ChevronRight,
-  FlaskConical,
-  Wifi,
-  WifiOff,
-  Zap,
-} from "lucide-react-native";
+import { ChevronDown, ChevronRight, FlaskConical, Wifi, WifiOff, Zap } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, Screen } from "@/components/ui";
@@ -115,20 +108,12 @@ function CollapsibleSection({
         )}
       </Pressable>
 
-      {expanded ? (
-        <View style={{ gap: 10, marginTop: 14 }}>{children}</View>
-      ) : null}
+      {expanded ? <View style={{ gap: 10, marginTop: 14 }}>{children}</View> : null}
     </Card>
   );
 }
 
-function LaunchButton({
-  label,
-  onPress,
-}: {
-  label: string;
-  onPress: () => void;
-}) {
+function LaunchButton({ label, onPress }: { label: string; onPress: () => void }) {
   return <Button label={label} variant="secondary" onPress={onPress} />;
 }
 
@@ -141,16 +126,12 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   // Session
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const completeAuth = useSessionStore((state) => state.completeAuth);
-  const completeOnboarding = useSessionStore(
-    (state) => state.completeOnboarding,
-  );
+  const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const clearSession = useSessionStore((state) => state.clearSession);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
 
   // Discovery
-  const setSelectedBuilding = useDiscoveryStore(
-    (state) => state.setSelectedBuilding,
-  );
+  const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
   const setSelectedFloor = useDiscoveryStore((state) => state.setSelectedFloor);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
 
@@ -159,8 +140,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
 
   // Feature flags
   const [flags, setFlags] = useState<FeatureFlags>(DEFAULT_FLAGS);
-  const toggleFlag = (key: FlagKey) =>
-    setFlags((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggleFlag = (key: FlagKey) => setFlags((prev) => ({ ...prev, [key]: !prev[key] }));
 
   // Network
   const [network, setNetwork] = useState<"live" | "slow" | "offline">("live");
@@ -170,28 +150,17 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   const filteredBuildings = useMemo(() => {
     if (!buildingSearch.trim()) return singaporeBuildings.slice(0, 10);
     const q = buildingSearch.toLowerCase();
-    return singaporeBuildings
-      .filter((b) => b.name.toLowerCase().includes(q))
-      .slice(0, 10);
+    return singaporeBuildings.filter((b) => b.name.toLowerCase().includes(q)).slice(0, 10);
   }, [buildingSearch]);
 
   // Sample data
-  const sampleDish = useMemo(
-    () => repository.listPopularNearby()[0],
-    [repository],
-  );
-  const sampleBuilding = useMemo(
-    () => repository.listBuildings()[0],
-    [repository],
-  );
+  const sampleDish = useMemo(() => repository.listPopularNearby()[0], [repository]);
+  const sampleBuilding = useMemo(() => repository.listBuildings()[0], [repository]);
   const sampleVenue = useMemo(
     () => repository.listVenuesByBuilding(sampleBuilding.id)[0],
     [sampleBuilding.id, repository],
   );
-  const sampleArticle = useMemo(
-    () => repository.listBlogPosts()[0],
-    [repository],
-  );
+  const sampleArticle = useMemo(() => repository.listBlogPosts()[0], [repository]);
 
   // Helpers
   const resetToSignedOut = () => {
@@ -237,10 +206,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     navigation.navigate("BuildingDrillDown", { buildingId: building.id });
   };
 
-  const openProtected = (
-    returnRoute: string | PendingRoute,
-    navigate: () => void,
-  ) => {
+  const openProtected = (returnRoute: string | PendingRoute, navigate: () => void) => {
     if (!isAuthenticated) {
       setReturnRoute(returnRoute);
       navigation.navigate("AuthStack", { screen: "Login" });
@@ -254,9 +220,8 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     () => ({
       buildings: repository.listBuildings().length,
       sgBuildings: singaporeBuildings.length,
-      venues: repository
-        .listBuildings()
-        .flatMap((b) => repository.listVenuesByBuilding(b.id)).length,
+      venues: repository.listBuildings().flatMap((b) => repository.listVenuesByBuilding(b.id))
+        .length,
       articles: repository.listBlogPosts().length,
     }),
     [repository],
@@ -269,36 +234,19 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     >
       <View style={{ gap: spacing[4] }}>
         {/* ── Quick header badges ────────────────────────── */}
-        <View
-          style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}
-        >
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
           <Badge label="DEV ONLY" tone="warning" />
           <Badge
             label={isAuthenticated ? "Authenticated" : "Signed out"}
             tone={isAuthenticated ? "success" : "neutral"}
           />
           <Badge
-            label={
-              network === "live"
-                ? "Live"
-                : network === "slow"
-                  ? "Slow 3G"
-                  : "Offline"
-            }
-            tone={
-              network === "live"
-                ? "success"
-                : network === "slow"
-                  ? "warning"
-                  : "error"
-            }
+            label={network === "live" ? "Live" : network === "slow" ? "Slow 3G" : "Offline"}
+            tone={network === "live" ? "success" : network === "slow" ? "warning" : "error"}
           />
         </View>
 
-        <Button
-          label="Open normal app flow"
-          onPress={() => navigation.replace("Splash")}
-        />
+        <Button label="Open normal app flow" onPress={() => navigation.replace("Splash")} />
 
         {/* ── Session Presets ────────────────────────────── */}
         <CollapsibleSection
@@ -311,10 +259,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             label="Authenticated · onboarding incomplete"
             onPress={resetToAuthIncomplete}
           />
-          <LaunchButton
-            label="Authenticated · onboarding complete"
-            onPress={resetToAuthComplete}
-          />
+          <LaunchButton label="Authenticated · onboarding complete" onPress={resetToAuthComplete} />
         </CollapsibleSection>
 
         {/* ── Feature Flags ──────────────────────────────── */}
@@ -355,20 +300,11 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             {NETWORK_PRESETS.map((preset) => {
               const icon =
                 preset.id === "live" ? (
-                  <Zap
-                    size={14}
-                    color={network === preset.id ? "#fff" : palette.textMuted}
-                  />
+                  <Zap size={14} color={network === preset.id ? "#fff" : palette.textMuted} />
                 ) : preset.id === "slow" ? (
-                  <Wifi
-                    size={14}
-                    color={network === preset.id ? "#fff" : palette.textMuted}
-                  />
+                  <Wifi size={14} color={network === preset.id ? "#fff" : palette.textMuted} />
                 ) : (
-                  <WifiOff
-                    size={14}
-                    color={network === preset.id ? "#fff" : palette.textMuted}
-                  />
+                  <WifiOff size={14} color={network === preset.id ? "#fff" : palette.textMuted} />
                 );
 
               return (
@@ -386,12 +322,8 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 6,
-                    backgroundColor:
-                      network === preset.id
-                        ? palette.orange
-                        : palette.surfaceRaised,
-                    borderColor:
-                      network === preset.id ? palette.orange : palette.border,
+                    backgroundColor: network === preset.id ? palette.orange : palette.surfaceRaised,
+                    borderColor: network === preset.id ? palette.orange : palette.border,
                     borderWidth: 1,
                     borderRadius: radii.md,
                     paddingVertical: spacing[3],
@@ -423,9 +355,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             <LaunchButton
               key={label}
               label={label}
-              onPress={() =>
-                navigation.navigate("AuthStack", { screen: screen as any })
-              }
+              onPress={() => navigation.navigate("AuthStack", { screen: screen as any })}
             />
           ))}
         </CollapsibleSection>
@@ -458,18 +388,10 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           />
           <LaunchButton
             label="Discover"
-            onPress={() =>
-              navigation.navigate("MainTabs", { screen: "Discover" })
-            }
+            onPress={() => navigation.navigate("MainTabs", { screen: "Discover" })}
           />
-          <LaunchButton
-            label="Search"
-            onPress={() => navigation.navigate("SearchHome")}
-          />
-          <LaunchButton
-            label="Map Browse"
-            onPress={() => navigation.navigate("DiscoverMap")}
-          />
+          <LaunchButton label="Search" onPress={() => navigation.navigate("SearchHome")} />
+          <LaunchButton label="Map Browse" onPress={() => navigation.navigate("DiscoverMap")} />
           <LaunchButton
             label="Floor Plan — Maxwell Food Centre"
             onPress={() => openBuilding("hc-maxwell")}
@@ -495,38 +417,25 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           />
           <LaunchButton
             label="Stall Detail"
-            onPress={() =>
-              navigation.navigate("StallDetail", { venueId: sampleVenue.id })
-            }
+            onPress={() => navigation.navigate("StallDetail", { venueId: sampleVenue.id })}
           />
           <LaunchButton
             label="Dish Detail"
-            onPress={() =>
-              navigation.navigate("DishDetail", { dishId: sampleDish.id })
-            }
+            onPress={() => navigation.navigate("DishDetail", { dishId: sampleDish.id })}
           />
           <LaunchButton
             label="Review feed"
-            onPress={() =>
-              navigation.navigate("MainTabs", { screen: "Review" })
-            }
+            onPress={() => navigation.navigate("MainTabs", { screen: "Review" })}
           />
           <LaunchButton
             label="Article"
-            onPress={() =>
-              navigation.navigate("BlogPost", { postId: sampleArticle.id })
-            }
+            onPress={() => navigation.navigate("BlogPost", { postId: sampleArticle.id })}
           />
           <LaunchButton
             label="Post composer"
-            onPress={() =>
-              openProtected("Post", () => navigation.navigate("Post"))
-            }
+            onPress={() => openProtected("Post", () => navigation.navigate("Post"))}
           />
-          <LaunchButton
-            label="Offline screen"
-            onPress={() => navigation.navigate("Offline")}
-          />
+          <LaunchButton label="Offline screen" onPress={() => navigation.navigate("Offline")} />
           <LaunchButton
             label="Not found"
             onPress={() =>
@@ -553,39 +462,27 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           />
           <LaunchButton
             label="Edit Profile"
-            onPress={() =>
-              openProtected("EditProfile", () =>
-                navigation.navigate("EditProfile"),
-              )
-            }
+            onPress={() => openProtected("EditProfile", () => navigation.navigate("EditProfile"))}
           />
           <LaunchButton
             label="Favourites"
-            onPress={() =>
-              openProtected("Favourites", () =>
-                navigation.navigate("Favourites"),
-              )
-            }
+            onPress={() => openProtected("Favourites", () => navigation.navigate("Favourites"))}
           />
           <LaunchButton
             label="Review History"
             onPress={() =>
-              openProtected("ReviewHistory", () =>
-                navigation.navigate("ReviewHistory"),
-              )
+              openProtected("ReviewHistory", () => navigation.navigate("ReviewHistory"))
             }
           />
           <LaunchButton
             label="Settings"
-            onPress={() =>
-              openProtected("Settings", () => navigation.navigate("Settings"))
-            }
+            onPress={() => openProtected("Settings", () => navigation.navigate("Settings"))}
           />
           <LaunchButton
             label="Quick Review"
             onPress={() =>
               openProtected("Rate", () =>
-                navigation.navigate("ReviewStack", { screen: "ReviewHub" }),
+                navigation.navigate("ReviewStack", { screen: "ReviewMain" }),
               )
             }
           />
@@ -639,8 +536,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                       {building.name}
                     </AppText>
                     <AppText variant="micro" tone="muted">
-                      {building.venueCount} stalls ·{" "}
-                      {building.floors.join(", ")}
+                      {building.venueCount} stalls · {building.floors.join(", ")}
                     </AppText>
                   </View>
                   <Badge
@@ -674,9 +570,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                 }}
               >
                 <AppText tone="secondary">{label}</AppText>
-                <AppText style={{ fontFamily: "DMMono_400Regular" }}>
-                  {value}
-                </AppText>
+                <AppText style={{ fontFamily: "DMMono_400Regular" }}>{value}</AppText>
               </View>
             ))}
           </View>

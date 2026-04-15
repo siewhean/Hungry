@@ -11,19 +11,14 @@ interface FABProps {
   offset?: number;
 }
 
-export function FAB({
-  children,
-  position,
-  style,
-  offset,
-}: PropsWithChildren<FABProps>) {
+export function FAB({ children, position, style, offset }: PropsWithChildren<FABProps>) {
   const { spacing, zIndex } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const leftHandedMode = useProfileStore((state) => state.profile.leftHandedMode);
-  
+
   // Default to Trailing if right-handed, Leading if left-handed
   const effectivePosition = position ?? (leftHandedMode ? "bottomLeading" : "bottomTrailing");
-  
+
   const bottomOffset = (offset ?? spacing[5]) + insets.bottom;
 
   const positionStyle: ViewStyle = {
@@ -43,12 +38,7 @@ export function FAB({
   return (
     <View
       pointerEvents="box-none"
-      style={[
-        styles.container,
-        { zIndex: zIndex.fab },
-        positionStyle,
-        style,
-      ]}
+      style={[styles.container, { zIndex: zIndex.fab }, positionStyle, style]}
     >
       {children}
     </View>

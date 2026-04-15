@@ -4,7 +4,7 @@ import { Pressable, View } from "react-native";
 import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react-native";
 import { useState } from "react";
 
-import { AppText, Button, Input } from "@/components/ui";
+import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { validateEmail, validatePassword } from "@/features/auth/validation";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -24,7 +24,7 @@ export function LoginScreen({ navigation }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const showToast = useUIStore((state) => state.showToast);
-  
+
   const {
     control,
     handleSubmit,
@@ -45,85 +45,114 @@ export function LoginScreen({ navigation }: Props) {
   };
 
   return (
-    <AuthScreenShell
-      title="Welcome back"
-      subtitle="Your digital maître d' awaits."
-      footer={
-        <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "center", marginTop: spacing[2] }}>
-          <AppText tone="secondary">New to Hungry? </AppText>
-          <Pressable onPress={() => navigation.navigate("SignUp")}>
-            <AppText variant="bodyBold" tone="accent">Create account</AppText>
-          </Pressable>
-        </View>
-      }
+    <FeedErrorBoundary
+      title="Sign in unavailable"
+      body="Couldn't load sign in right now. Please retry."
     >
-      <View style={{ gap: spacing[4] }}>
-        <View style={{ gap: spacing[2] }}>
-          <Controller
-            control={control}
-            name="email"
-            rules={{ validate: validateEmail }}
-            render={({ field: { onChange, value } }) => (
-              <Input
-                autoCapitalize="none"
-                keyboardType="email-address"
-                placeholder="Email Address"
-                value={value}
-                onChangeText={onChange}
-                leftIcon={<Mail color={palette.textMuted} size={18} />}
-                error={!!errors.email}
-                errorText={errors.email?.message}
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="password"
-            rules={{ validate: (value) => validatePassword(value, 8) }}
-            render={({ field: { onChange, value } }) => (
-              <View style={{ gap: spacing[1] }}>
+      <AuthScreenShell
+        title="Welcome back"
+        subtitle="Your digital maître d' awaits."
+        footer={
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              marginTop: spacing[2],
+            }}
+          >
+            <AppText tone="secondary">New to Hungry? </AppText>
+            <Pressable onPress={() => navigation.navigate("SignUp")}>
+              <AppText variant="bodyBold" tone="accent">
+                Create account
+              </AppText>
+            </Pressable>
+          </View>
+        }
+      >
+        <View style={{ gap: spacing[4] }}>
+          <View style={{ gap: spacing[2] }}>
+            <Controller
+              control={control}
+              name="email"
+              rules={{ validate: validateEmail }}
+              render={({ field: { onChange, value } }) => (
                 <Input
-                  placeholder="Password"
-                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  placeholder="Email Address"
                   value={value}
                   onChangeText={onChange}
-                  leftIcon={<Lock color={palette.textMuted} size={18} />}
-                  rightIcon={(
-                    <Pressable onPress={() => setShowPassword((current) => !current)} hitSlop={8}>
-                      {showPassword ? <EyeOff color={palette.textMuted} size={18} /> : <Eye color={palette.textMuted} size={18} />}
-                    </Pressable>
-                  )}
-                  error={!!errors.password}
-                  errorText={errors.password?.message}
+                  leftIcon={<Mail color={palette.textMuted} size={18} />}
+                  error={!!errors.email}
+                  errorText={errors.email?.message}
                 />
-                <View style={{ alignItems: "flex-end" }}>
-                  <Pressable onPress={() => navigation.navigate("ForgotPassword")}>
-                    <AppText variant="micro" tone="accent">Forget Password?</AppText>
-                  </Pressable>
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="password"
+              rules={{ validate: (value) => validatePassword(value, 8) }}
+              render={({ field: { onChange, value } }) => (
+                <View style={{ gap: spacing[1] }}>
+                  <Input
+                    placeholder="Password"
+                    secureTextEntry={!showPassword}
+                    value={value}
+                    onChangeText={onChange}
+                    leftIcon={<Lock color={palette.textMuted} size={18} />}
+                    rightIcon={
+                      <Pressable onPress={() => setShowPassword((current) => !current)} hitSlop={8}>
+                        {showPassword ? (
+                          <EyeOff color={palette.textMuted} size={18} />
+                        ) : (
+                          <Eye color={palette.textMuted} size={18} />
+                        )}
+                      </Pressable>
+                    }
+                    error={!!errors.password}
+                    errorText={errors.password?.message}
+                  />
+                  <View style={{ alignItems: "flex-end" }}>
+                    <Pressable onPress={() => navigation.navigate("ForgotPassword")}>
+                      <AppText variant="micro" tone="accent">
+                        Forget Password?
+                      </AppText>
+                    </Pressable>
+                  </View>
                 </View>
-              </View>
-            )}
+              )}
+            />
+          </View>
+
+          <Button
+            label="Sign In"
+            onPress={handleLogin}
+            rightIcon={<ArrowRight size={18} color={palette.white} />}
           />
-        </View>
 
-        <Button 
-          label="Sign In" 
-          onPress={handleLogin} 
-          rightIcon={<ArrowRight size={18} color={palette.white} />}
-        />
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              gap: spacing[3],
+              marginVertical: spacing[2],
+            }}
+          >
+            <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+            <AppText variant="micro" tone="muted">
+              OR CONTINUE WITH
+            </AppText>
+            <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+          </View>
 
-        <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3], marginVertical: spacing[2] }}>
-          <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
-          <AppText variant="micro" tone="muted">OR CONTINUE WITH</AppText>
-          <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+          <View style={{ gap: spacing[3] }}>
+            <Button label="Sign in with Google" variant="secondary" onPress={handleProviderLogin} />
+            <Button label="Sign in with Apple" variant="secondary" onPress={handleProviderLogin} />
+          </View>
         </View>
-
-        <View style={{ gap: spacing[3] }}>
-          <Button label="Sign in with Google" variant="secondary" onPress={handleProviderLogin} />
-          <Button label="Sign in with Apple" variant="secondary" onPress={handleProviderLogin} />
-        </View>
-      </View>
-    </AuthScreenShell>
+      </AuthScreenShell>
+    </FeedErrorBoundary>
   );
 }

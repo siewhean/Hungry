@@ -67,11 +67,7 @@ export function DecideForMeCard({
             onPress={onReroll}
             disabled={!onReroll}
           />
-          <Pressable
-            accessibilityRole="button"
-            onPress={onDismiss}
-            disabled={!onDismiss}
-          >
+          <Pressable accessibilityRole="button" onPress={onDismiss} disabled={!onDismiss}>
             <AppText variant="bodyBold" tone="accent">
               Dismiss
             </AppText>

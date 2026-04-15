@@ -13,15 +13,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  Bookmark,
-  Heart,
-  MessageCircle,
-  PlayCircle,
-  Send,
-  Star,
-  X,
-} from "lucide-react-native";
+import { Bookmark, Heart, MessageCircle, PlayCircle, Send, Star, X } from "lucide-react-native";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -30,10 +22,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -122,34 +111,27 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
 
-  const [feedState, setFeedState] = useState<"loading" | "ready" | "error">(
-    "loading",
-  );
+  const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
   const [sections, setSections] = useState<HomeFeedSection[]>([]);
   const [socialFeed, setSocialFeed] = useState<HomeFeedItem[]>([]);
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
-  const [activeCommentItem, setActiveCommentItem] =
-    useState<HomeFeedItem | null>(null);
+  const [activeCommentItem, setActiveCommentItem] = useState<HomeFeedItem | null>(null);
   const [draftComment, setDraftComment] = useState("");
-  const [localCommentsByPostId, setLocalCommentsByPostId] = useState<
-    Record<string, FeedComment[]>
-  >({});
+  const [localCommentsByPostId, setLocalCommentsByPostId] = useState<Record<string, FeedComment[]>>(
+    {},
+  );
   const [localRepliesByCommentId, setLocalRepliesByCommentId] = useState<
     Record<string, FeedReply[]>
   >({});
-  const [activeReplyCommentId, setActiveReplyCommentId] = useState<
-    string | null
-  >(null);
-  const [draftReplyByCommentId, setDraftReplyByCommentId] = useState<
-    Record<string, string>
-  >({});
+  const [activeReplyCommentId, setActiveReplyCommentId] = useState<string | null>(null);
+  const [draftReplyByCommentId, setDraftReplyByCommentId] = useState<Record<string, string>>({});
   const commentsSheetRef = useRef<BottomSheetModal>(null);
   const commentInputRef = useRef<any>(null);
   const commentSnapPoints = useMemo(() => ["50%", "88%"], []);
 
-  const [interactionByPostId, setInteractionByPostId] = useState<
-    Record<string, InteractionState>
-  >({});
+  const [interactionByPostId, setInteractionByPostId] = useState<Record<string, InteractionState>>(
+    {},
+  );
 
   const loadFeed = useCallback(async () => {
     setFeedState("loading");
@@ -160,10 +142,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       setSocialFeed(socialData);
       setInteractionByPostId((current) => {
         const next = { ...current };
-        const allItems = [
-          ...socialData,
-          ...data.flatMap((section) => section.items),
-        ];
+        const allItems = [...socialData, ...data.flatMap((section) => section.items)];
 
         allItems.forEach((item) => {
           if (next[item.id]) {
@@ -210,9 +189,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         [postId]: {
           ...current,
           liked: isLiked,
-          likeCount: isLiked
-            ? current.likeCount + 1
-            : Math.max(0, current.likeCount - 1),
+          likeCount: isLiked ? current.likeCount + 1 : Math.max(0, current.likeCount - 1),
         },
       };
     });
@@ -287,15 +264,15 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       return [];
     }
 
-    const seededComments: FeedComment[] = (
-      activeCommentItem.dishes[0]?.reviews ?? []
-    ).map((review) => ({
-      id: review.id,
-      authorName: review.authorName,
-      authorAvatarUrl: undefined,
-      text: review.text,
-      createdAt: review.createdAt,
-    }));
+    const seededComments: FeedComment[] = (activeCommentItem.dishes[0]?.reviews ?? []).map(
+      (review) => ({
+        id: review.id,
+        authorName: review.authorName,
+        authorAvatarUrl: undefined,
+        text: review.text,
+        createdAt: review.createdAt,
+      }),
+    );
 
     const local = localCommentsByPostId[activeCommentItem.id] ?? [];
     return [...seededComments, ...local];
@@ -321,10 +298,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
     setLocalCommentsByPostId((prev) => ({
       ...prev,
-      [activeCommentItem.id]: [
-        ...(prev[activeCommentItem.id] ?? []),
-        newComment,
-      ],
+      [activeCommentItem.id]: [...(prev[activeCommentItem.id] ?? []), newComment],
     }));
 
     setInteractionByPostId((prev) => {
@@ -445,19 +419,14 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               </View>
             ) : null}
             <View style={{ gap: spacing[1], paddingHorizontal: spacing[3] }}>
-              <AppText
-                variant="micro"
-                tone="accent"
-                style={styles.sectionEyebrow}
-              >
+              <AppText variant="micro" tone="accent" style={styles.sectionEyebrow}>
                 APPETITE SCROLL
               </AppText>
               <AppText variant="h2" style={{ color: themeTints.text }}>
                 Tonight&apos;s food stories
               </AppText>
               <AppText variant="bodySmall" tone="secondary">
-                Browse what stalls are pushing out right now, then jump straight
-                into the dish.
+                Browse what stalls are pushing out right now, then jump straight into the dish.
               </AppText>
             </View>
 
@@ -473,11 +442,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 <Pressable
                   key={story.id}
                   onPress={() =>
-                    openUserProfile(
-                      story.authorName,
-                      story.authorAvatarUrl,
-                      story.authorLocation,
-                    )
+                    openUserProfile(story.authorName, story.authorAvatarUrl, story.authorLocation)
                   }
                   style={{ width: 78, gap: spacing[2], alignItems: "center" }}
                 >
@@ -497,11 +462,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       contentFit="cover"
                     />
                   </View>
-                  <AppText
-                    variant="micro"
-                    style={styles.storyLabel}
-                    numberOfLines={2}
-                  >
+                  <AppText variant="micro" style={styles.storyLabel} numberOfLines={2}>
                     {story.venue.name}
                   </AppText>
                 </Pressable>
@@ -566,11 +527,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               {item.mediaType === "video" ? (
                 <View pointerEvents="none" style={styles.playButtonContainer}>
                   <View style={styles.playButtonBackdrop}>
-                    <PlayCircle
-                      color={palette.white}
-                      size={54}
-                      strokeWidth={1.4}
-                    />
+                    <PlayCircle color={palette.white} size={54} strokeWidth={1.4} />
                   </View>
                 </View>
               ) : null}
@@ -589,9 +546,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   style={[
                     styles.overlayTopRow,
                     {
-                      flexDirection: profile.leftHandedMode
-                        ? "row-reverse"
-                        : "row",
+                      flexDirection: profile.leftHandedMode ? "row-reverse" : "row",
                     },
                   ]}
                   pointerEvents="box-none"
@@ -601,9 +556,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       styles.textOverlay,
                       {
                         gap: spacing[1],
-                        alignItems: profile.leftHandedMode
-                          ? "flex-end"
-                          : "flex-start",
+                        alignItems: profile.leftHandedMode ? "flex-end" : "flex-start",
                         marginRight: profile.leftHandedMode ? 0 : 12,
                         marginLeft: profile.leftHandedMode ? 12 : 0,
                       },
@@ -628,11 +581,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                           )
                         }
                       >
-                        <Avatar
-                          uri={item.authorAvatarUrl}
-                          name={item.authorName}
-                          size={30}
-                        />
+                        <Avatar uri={item.authorAvatarUrl} name={item.authorName} size={30} />
                       </Pressable>
                       <Pressable
                         accessibilityRole="button"
@@ -649,9 +598,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                           variant="micro"
                           style={{
                             color: "rgba(255,255,255,0.9)",
-                            textAlign: profile.leftHandedMode
-                              ? "right"
-                              : "left",
+                            textAlign: profile.leftHandedMode ? "right" : "left",
                           }}
                         >
                           {item.authorName} · {item.authorLocation}
@@ -675,15 +622,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                         textAlign: profile.leftHandedMode ? "right" : "left",
                       }}
                     >
-                      {item.venue.name} · {item.venue.floor}{" "}
-                      {item.venue.unitNumber}
+                      {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
                     </AppText>
                   </View>
 
-                  <View
-                    style={[styles.sideActions, { gap: spacing[4] }]}
-                    pointerEvents="box-none"
-                  >
+                  <View style={[styles.sideActions, { gap: spacing[4] }]} pointerEvents="box-none">
                     <Pressable hitSlop={10} onPress={() => toggleLike(item.id)}>
                       <VerticalActionMetric
                         icon={
@@ -742,9 +685,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   style={[
                     styles.captionOverlay,
                     {
-                      alignItems: profile.leftHandedMode
-                        ? "flex-end"
-                        : "flex-start",
+                      alignItems: profile.leftHandedMode ? "flex-end" : "flex-start",
                     },
                   ]}
                 >
@@ -767,9 +708,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       {
                         gap: spacing[2],
                         marginTop: spacing[3],
-                        flexDirection: profile.leftHandedMode
-                          ? "row-reverse"
-                          : "row",
+                        flexDirection: profile.leftHandedMode ? "row-reverse" : "row",
                       },
                     ]}
                   >
@@ -784,7 +723,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                         }
 
                         navigation.navigate("ReviewStack", {
-                          screen: "ReviewRating",
+                          screen: "ReviewMain",
                           params: {
                             dishId: item.dishes[0]?.id,
                             venueId: item.venueId,
@@ -802,10 +741,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                         },
                       ]}
                     >
-                      <AppText
-                        variant="bodySmall"
-                        style={{ color: palette.white }}
-                      >
+                      <AppText variant="bodySmall" style={{ color: palette.white }}>
                         Quick review
                       </AppText>
                     </Pressable>
@@ -834,10 +770,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                         },
                       ]}
                     >
-                      <AppText
-                        variant="bodySmall"
-                        style={{ color: palette.white }}
-                      >
+                      <AppText variant="bodySmall" style={{ color: palette.white }}>
                         Post
                       </AppText>
                     </Pressable>
@@ -959,11 +892,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               accessibilityRole="button"
               accessibilityLabel={`Open ${item.authorName} profile`}
               onPress={() =>
-                openUserProfile(
-                  item.authorName,
-                  item.authorAvatarUrl,
-                  item.authorLocation,
-                )
+                openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
               }
             >
               <AppText
@@ -995,18 +924,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 }}
               >
                 <MessageCircle color={themeTints.secondaryText} size={12} />
-                <AppText
-                  variant="micro"
-                  style={{ color: themeTints.secondaryText }}
-                >
+                <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
                   {interaction.commentCount}
                 </AppText>
               </View>
               {item.dishes[0]?.price && (
-                <AppText
-                  variant="price"
-                  style={{ color: palette.orange, fontSize: 14 }}
-                >
+                <AppText variant="price" style={{ color: palette.orange, fontSize: 14 }}>
                   S${item.dishes[0].price.toFixed(2)}
                 </AppText>
               )}
@@ -1249,9 +1172,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                         Replying to{" "}
                         <AppText variant="micro" style={{ fontWeight: "700" }}>
                           {
-                            commentsForActiveItem.find(
-                              (c) => c.id === activeReplyCommentId,
-                            )?.authorName
+                            commentsForActiveItem.find((c) => c.id === activeReplyCommentId)
+                              ?.authorName
                           }
                         </AppText>
                       </AppText>
@@ -1270,11 +1192,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     <View style={{ flex: 1 }}>
                       <Input
                         ref={commentInputRef}
-                        placeholder={
-                          activeReplyCommentId
-                            ? "Write a reply..."
-                            : "Add a comment..."
-                        }
+                        placeholder={activeReplyCommentId ? "Write a reply..." : "Add a comment..."}
                         value={draftComment}
                         onChangeText={setDraftComment}
                         multiline
@@ -1290,10 +1208,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                         opacity: draftComment.trim().length ? 1 : 0.5,
                       }}
                     >
-                      <AppText
-                        variant="bodyBold"
-                        style={{ color: palette.orange }}
-                      >
+                      <AppText variant="bodyBold" style={{ color: palette.orange }}>
                         Post
                       </AppText>
                     </Pressable>
@@ -1322,10 +1237,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             >
               {commentsForActiveItem.length ? (
                 commentsForActiveItem.map((comment) => (
-                  <View
-                    key={comment.id}
-                    style={{ gap: spacing[3], marginBottom: spacing[5] }}
-                  >
+                  <View key={comment.id} style={{ gap: spacing[3], marginBottom: spacing[5] }}>
                     <View style={{ flexDirection: "row", gap: spacing[3] }}>
                       <Pressable
                         onPress={() =>
@@ -1336,11 +1248,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                           )
                         }
                       >
-                        <Avatar
-                          uri={comment.authorAvatarUrl}
-                          name={comment.authorName}
-                          size={36}
-                        />
+                        <Avatar uri={comment.authorAvatarUrl} name={comment.authorName} size={36} />
                       </Pressable>
                       <View style={{ flex: 1, gap: 2 }}>
                         <View
@@ -1350,9 +1258,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                             gap: spacing[2],
                           }}
                         >
-                          <AppText variant="bodySmallBold">
-                            {comment.authorName}
-                          </AppText>
+                          <AppText variant="bodySmallBold">{comment.authorName}</AppText>
                           <AppText variant="micro" tone="muted">
                             {formatTimeAgo(comment.createdAt)}
                           </AppText>
@@ -1379,53 +1285,42 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                         </Pressable>
 
                         {/* Replies */}
-                        {(localRepliesByCommentId[comment.id] ?? []).length >
-                          0 && (
-                          <View
-                            style={{ gap: spacing[3], marginTop: spacing[3] }}
-                          >
-                            {(localRepliesByCommentId[comment.id] ?? []).map(
-                              (reply) => (
-                                <View
-                                  key={reply.id}
-                                  style={{
-                                    flexDirection: "row",
-                                    gap: spacing[3],
-                                  }}
-                                >
-                                  <Avatar
-                                    uri={reply.authorAvatarUrl}
-                                    name={reply.authorName}
-                                    size={24}
-                                  />
-                                  <View style={{ flex: 1, gap: 2 }}>
-                                    <View
-                                      style={{
-                                        flexDirection: "row",
-                                        alignItems: "center",
-                                        gap: spacing[2],
-                                      }}
-                                    >
-                                      <AppText
-                                        variant="micro"
-                                        style={{ fontWeight: "700" }}
-                                      >
-                                        {reply.authorName}
-                                      </AppText>
-                                      <AppText variant="micro" tone="muted">
-                                        {formatTimeAgo(reply.createdAt)}
-                                      </AppText>
-                                    </View>
-                                    <AppText
-                                      variant="bodySmall"
-                                      style={{ lineHeight: 16 }}
-                                    >
-                                      {reply.text}
+                        {(localRepliesByCommentId[comment.id] ?? []).length > 0 && (
+                          <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
+                            {(localRepliesByCommentId[comment.id] ?? []).map((reply) => (
+                              <View
+                                key={reply.id}
+                                style={{
+                                  flexDirection: "row",
+                                  gap: spacing[3],
+                                }}
+                              >
+                                <Avatar
+                                  uri={reply.authorAvatarUrl}
+                                  name={reply.authorName}
+                                  size={24}
+                                />
+                                <View style={{ flex: 1, gap: 2 }}>
+                                  <View
+                                    style={{
+                                      flexDirection: "row",
+                                      alignItems: "center",
+                                      gap: spacing[2],
+                                    }}
+                                  >
+                                    <AppText variant="micro" style={{ fontWeight: "700" }}>
+                                      {reply.authorName}
+                                    </AppText>
+                                    <AppText variant="micro" tone="muted">
+                                      {formatTimeAgo(reply.createdAt)}
                                     </AppText>
                                   </View>
+                                  <AppText variant="bodySmall" style={{ lineHeight: 16 }}>
+                                    {reply.text}
+                                  </AppText>
                                 </View>
-                              ),
-                            )}
+                              </View>
+                            ))}
                           </View>
                         )}
                       </View>
@@ -1476,21 +1371,14 @@ function VerticalActionMetric({
   return (
     <View style={{ alignItems: "center", gap: 4 }}>
       {icon}
-      <AppText
-        variant="micro"
-        style={{ color: palette.white, fontWeight: "600" }}
-      >
+      <AppText variant="micro" style={{ color: palette.white, fontWeight: "600" }}>
         {count}
       </AppText>
     </View>
   );
 }
 
-const createStyles = ({
-  palette,
-  spacing,
-  radii,
-}: ReturnType<typeof useHungryTheme>) =>
+const createStyles = ({ palette, spacing, radii }: ReturnType<typeof useHungryTheme>) =>
   StyleSheet.create({
     safeArea: {
       flex: 1,

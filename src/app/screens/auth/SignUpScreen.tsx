@@ -4,7 +4,7 @@ import { Linking, Pressable, View } from "react-native";
 import { Eye, EyeOff, User, Mail, Lock } from "lucide-react-native";
 import { useState } from "react";
 
-import { AppText, Button, Input } from "@/components/ui";
+import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { validateEmail, validatePassword, validateRequired } from "@/features/auth/validation";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -18,7 +18,11 @@ export function SignUpScreen({ navigation }: Props) {
   const { palette, spacing } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
   const showToast = useUIStore((state) => state.showToast);
-  const { control, handleSubmit, formState: { errors } } = useForm<FormValues>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({
     defaultValues: { displayName: "", email: "", password: "" },
   });
 
@@ -29,107 +33,163 @@ export function SignUpScreen({ navigation }: Props) {
 
   const handleProviderContinue = (provider: "google" | "apple") => {
     const providerEmail = provider === "google" ? "google.user@hungry.sg" : "apple.user@hungry.sg";
-    showToast({ message: `Continue with ${provider === "google" ? "Google" : "Apple"} successful.`, tone: "success" });
+    showToast({
+      message: `Continue with ${provider === "google" ? "Google" : "Apple"} successful.`,
+      tone: "success",
+    });
     navigation.navigate("EmailVerification", { email: providerEmail });
   };
 
   return (
-    <AuthScreenShell
-      title="Create account"
-      subtitle="Join our community of food lovers."
-      footer={
-        <View style={{ alignItems: "center", gap: spacing[4] }}>
-          <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", justifyContent: "center" }}>
-            <AppText variant="micro" tone="secondary" style={{ textAlign: "center" }}>
-              By creating an account, you agree to Hungry's{" "}
-              <AppText variant="micro" tone="accent" onPress={() => void Linking.openURL("https://hungry.sg/terms")}>Terms of Service</AppText>
-              {" "}and{" "}
-              <AppText variant="micro" tone="accent" onPress={() => void Linking.openURL("https://hungry.sg/privacy")}>Privacy Policy</AppText>.
-            </AppText>
-          </View>
-
-          <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "center" }}>
-            <AppText tone="secondary">Already have an account? </AppText>
-            <Pressable onPress={() => navigation.navigate("Login")}>
-              <AppText variant="bodyBold" tone="accent">Log in</AppText>
-            </Pressable>
-          </View>
-        </View>
-      }
+    <FeedErrorBoundary
+      title="Sign-up unavailable"
+      body="Couldn't load account creation right now. Please retry."
     >
-      <View style={{ gap: spacing[4] }}>
-        <View style={{ gap: spacing[3] }}>
-          <Button label="Continue with Google" variant="secondary" onPress={() => handleProviderContinue("google")} />
-          <Button label="Continue with Apple" variant="secondary" onPress={() => handleProviderContinue("apple")} />
-        </View>
+      <AuthScreenShell
+        title="Create account"
+        subtitle="Join our community of food lovers."
+        footer={
+          <View style={{ alignItems: "center", gap: spacing[4] }}>
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                flexWrap: "wrap",
+                justifyContent: "center",
+              }}
+            >
+              <AppText variant="micro" tone="secondary" style={{ textAlign: "center" }}>
+                By creating an account, you agree to Hungry's{" "}
+                <AppText
+                  variant="micro"
+                  tone="accent"
+                  onPress={() => void Linking.openURL("https://hungry.sg/terms")}
+                >
+                  Terms of Service
+                </AppText>{" "}
+                and{" "}
+                <AppText
+                  variant="micro"
+                  tone="accent"
+                  onPress={() => void Linking.openURL("https://hungry.sg/privacy")}
+                >
+                  Privacy Policy
+                </AppText>
+                .
+              </AppText>
+            </View>
 
-        <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
-          <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
-          <AppText variant="micro" tone="muted">OR REGISTER WITH EMAIL</AppText>
-          <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
-        </View>
+            <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "center" }}>
+              <AppText tone="secondary">Already have an account? </AppText>
+              <Pressable onPress={() => navigation.navigate("Login")}>
+                <AppText variant="bodyBold" tone="accent">
+                  Log in
+                </AppText>
+              </Pressable>
+            </View>
+          </View>
+        }
+      >
+        <View style={{ gap: spacing[4] }}>
+          <View style={{ gap: spacing[3] }}>
+            <Button
+              label="Continue with Google"
+              variant="secondary"
+              onPress={() => handleProviderContinue("google")}
+            />
+            <Button
+              label="Continue with Apple"
+              variant="secondary"
+              onPress={() => handleProviderContinue("apple")}
+            />
+          </View>
 
-        <View style={{ gap: spacing[2] }}>
-          <Controller
-            control={control}
-            name="displayName"
-            rules={{ validate: (value) => validateRequired(value, "Display name") }}
-            render={({ field: { onChange, value } }) => (
-              <View style={{ gap: spacing[1] }}>
-                <Input 
-                  placeholder="Full Name" 
-                  value={value} 
-                  onChangeText={onChange}
-                  leftIcon={<User color={palette.textMuted} size={18} />}
-                />
-                {errors.displayName ? <AppText variant="bodySmall" style={{ color: palette.error }}>{errors.displayName.message}</AppText> : null}
-              </View>
-            )}
-          />
-          <Controller
-            control={control}
-            name="email"
-            rules={{ validate: validateEmail }}
-            render={({ field: { onChange, value } }) => (
-              <View style={{ gap: spacing[1] }}>
-                <Input 
-                  placeholder="Email Address" 
-                  value={value} 
-                  onChangeText={onChange}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  leftIcon={<Mail color={palette.textMuted} size={18} />}
-                />
-                {errors.email ? <AppText variant="bodySmall" style={{ color: palette.error }}>{errors.email.message}</AppText> : null}
-              </View>
-            )}
-          />
-          <Controller
-            control={control}
-            name="password"
-            rules={{ validate: (value) => validatePassword(value, 8) }}
-            render={({ field: { onChange, value } }) => (
-              <View style={{ gap: spacing[1] }}>
-                <Input
-                  placeholder="Create Password"
-                  value={value}
-                  onChangeText={onChange}
-                  secureTextEntry={!showPassword}
-                  leftIcon={<Lock color={palette.textMuted} size={18} />}
-                  rightIcon={(
-                    <Pressable onPress={() => setShowPassword((current) => !current)} hitSlop={8}>
-                      {showPassword ? <EyeOff color={palette.textMuted} size={18} /> : <Eye color={palette.textMuted} size={18} />}
-                    </Pressable>
-                  )}
-                />
-                {errors.password ? <AppText variant="bodySmall" style={{ color: palette.error }}>{errors.password.message}</AppText> : null}
-              </View>
-            )}
-          />
-        </View>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
+            <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+            <AppText variant="micro" tone="muted">
+              OR REGISTER WITH EMAIL
+            </AppText>
+            <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+          </View>
 
-        <Button label="Create Account" onPress={handleSignUp} />
-      </View>
-    </AuthScreenShell>
+          <View style={{ gap: spacing[2] }}>
+            <Controller
+              control={control}
+              name="displayName"
+              rules={{ validate: (value) => validateRequired(value, "Display name") }}
+              render={({ field: { onChange, value } }) => (
+                <View style={{ gap: spacing[1] }}>
+                  <Input
+                    placeholder="Full Name"
+                    value={value}
+                    onChangeText={onChange}
+                    leftIcon={<User color={palette.textMuted} size={18} />}
+                  />
+                  {errors.displayName ? (
+                    <AppText variant="bodySmall" style={{ color: palette.error }}>
+                      {errors.displayName.message}
+                    </AppText>
+                  ) : null}
+                </View>
+              )}
+            />
+            <Controller
+              control={control}
+              name="email"
+              rules={{ validate: validateEmail }}
+              render={({ field: { onChange, value } }) => (
+                <View style={{ gap: spacing[1] }}>
+                  <Input
+                    placeholder="Email Address"
+                    value={value}
+                    onChangeText={onChange}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    leftIcon={<Mail color={palette.textMuted} size={18} />}
+                  />
+                  {errors.email ? (
+                    <AppText variant="bodySmall" style={{ color: palette.error }}>
+                      {errors.email.message}
+                    </AppText>
+                  ) : null}
+                </View>
+              )}
+            />
+            <Controller
+              control={control}
+              name="password"
+              rules={{ validate: (value) => validatePassword(value, 8) }}
+              render={({ field: { onChange, value } }) => (
+                <View style={{ gap: spacing[1] }}>
+                  <Input
+                    placeholder="Create Password"
+                    value={value}
+                    onChangeText={onChange}
+                    secureTextEntry={!showPassword}
+                    leftIcon={<Lock color={palette.textMuted} size={18} />}
+                    rightIcon={
+                      <Pressable onPress={() => setShowPassword((current) => !current)} hitSlop={8}>
+                        {showPassword ? (
+                          <EyeOff color={palette.textMuted} size={18} />
+                        ) : (
+                          <Eye color={palette.textMuted} size={18} />
+                        )}
+                      </Pressable>
+                    }
+                  />
+                  {errors.password ? (
+                    <AppText variant="bodySmall" style={{ color: palette.error }}>
+                      {errors.password.message}
+                    </AppText>
+                  ) : null}
+                </View>
+              )}
+            />
+          </View>
+
+          <Button label="Create Account" onPress={handleSignUp} />
+        </View>
+      </AuthScreenShell>
+    </FeedErrorBoundary>
   );
 }

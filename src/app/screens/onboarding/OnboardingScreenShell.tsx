@@ -10,7 +10,12 @@ interface OnboardingScreenShellProps {
   stepLabel?: string;
 }
 
-export function OnboardingScreenShell({ children, title, subtitle, stepLabel }: PropsWithChildren<OnboardingScreenShellProps>) {
+export function OnboardingScreenShell({
+  children,
+  title,
+  subtitle,
+  stepLabel,
+}: PropsWithChildren<OnboardingScreenShellProps>) {
   const { palette, radii, spacing } = useHungryTheme();
 
   return (

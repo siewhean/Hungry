@@ -10,11 +10,7 @@
  */
 
 import type { WheelChannelEvent, WheelMember } from "@/types/domain";
-import type {
-  ChannelEventHandler,
-  IRealtimeChannel,
-  PresenceState,
-} from "./IRealtimeChannel";
+import type { ChannelEventHandler, IRealtimeChannel, PresenceState } from "./IRealtimeChannel";
 
 const SIMULATED_LATENCY_MS = 50;
 
@@ -33,10 +29,7 @@ export class MockRealtimeChannel implements IRealtimeChannel {
     if (!presenceBus.has(channelId)) presenceBus.set(channelId, {});
   }
 
-  subscribe(
-    onEvent: ChannelEventHandler,
-    onPresence: (state: PresenceState) => void
-  ): void {
+  subscribe(onEvent: ChannelEventHandler, onPresence: (state: PresenceState) => void): void {
     this.eventHandler = onEvent;
     this.presenceHandler = onPresence;
     eventBus.get(this.channelId)!.add(onEvent);

@@ -91,7 +91,7 @@ export function WheelResultModal({ navigation, route }: Props) {
         colors={[palette.overlay, "rgba(0,0,0,0.9)"]}
         style={StyleSheet.absoluteFill}
       />
-      
+
       <Animated.View
         style={{
           backgroundColor: palette.surface,
@@ -108,18 +108,20 @@ export function WheelResultModal({ navigation, route }: Props) {
         <View style={{ position: "absolute", top: spacing[4], left: spacing[4], zIndex: 10 }}>
           <LinearGradient
             colors={[palette.amber, palette.amber]}
-            style={{ 
-              flexDirection: "row", 
-              alignItems: "center", 
-              gap: 6, 
-              paddingHorizontal: spacing[3], 
-              paddingVertical: spacing[1.5], 
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              paddingHorizontal: spacing[3],
+              paddingVertical: spacing[1.5],
               borderRadius: radii.pill,
-              ...shadows.card
+              ...shadows.card,
             }}
           >
             <Trophy size={14} color={palette.white} />
-            <AppText variant="micro" style={{ color: palette.white, fontWeight: "900" }}>WINNER</AppText>
+            <AppText variant="micro" style={{ color: palette.white, fontWeight: "900" }}>
+              WINNER
+            </AppText>
           </LinearGradient>
         </View>
 
@@ -132,8 +134,15 @@ export function WheelResultModal({ navigation, route }: Props) {
               contentFit="cover"
             />
           ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }]}>
-              <AppText variant="display" style={{ color: palette.orange }}>🎉</AppText>
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" },
+              ]}
+            >
+              <AppText variant="display" style={{ color: palette.orange }}>
+                🎉
+              </AppText>
             </View>
           )}
           <LinearGradient
@@ -145,13 +154,26 @@ export function WheelResultModal({ navigation, route }: Props) {
         {/* Content */}
         <View style={{ padding: spacing[5], gap: spacing[5] }}>
           <View style={{ gap: spacing[1], alignItems: "center" }}>
-            <AppText variant="micro" tone="accent" style={{ fontWeight: "800", textTransform: "uppercase", letterSpacing: 1 }}>
+            <AppText
+              variant="micro"
+              tone="accent"
+              style={{ fontWeight: "800", textTransform: "uppercase", letterSpacing: 1 }}
+            >
               {isClassic ? "Your next stop is..." : `The Last One Standing`}
             </AppText>
-            <AppText variant="h1" style={{ textAlign: "center", fontSize: 28 }}>{winnerEntry?.label ?? "—"}</AppText>
+            <AppText variant="h1" style={{ textAlign: "center", fontSize: 28 }}>
+              {winnerEntry?.label ?? "—"}
+            </AppText>
 
             {venue ? (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginTop: spacing[1] }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing[2],
+                  marginTop: spacing[1],
+                }}
+              >
                 <MapPin size={14} color={palette.orange} />
                 <AppText variant="bodySmall" tone="secondary">
                   {venue.floor} {venue.unitNumber}
@@ -177,17 +199,21 @@ export function WheelResultModal({ navigation, route }: Props) {
               />
             ) : null}
 
-            <Pressable 
-              onPress={handleDone} 
-              style={({ pressed }) => ({ 
-                alignItems: "center", 
+            <Pressable
+              onPress={handleDone}
+              style={({ pressed }) => ({
+                alignItems: "center",
                 paddingVertical: spacing[2],
-                opacity: pressed ? 0.7 : 1
+                opacity: pressed ? 0.7 : 1,
               })}
             >
               <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
                 <CheckCircle2 size={14} color={palette.textMuted} />
-                <AppText variant="bodySmallBold" tone="muted" style={{ textTransform: "uppercase", letterSpacing: 1 }}>
+                <AppText
+                  variant="bodySmallBold"
+                  tone="muted"
+                  style={{ textTransform: "uppercase", letterSpacing: 1 }}
+                >
                   {isClassic ? "Done" : "Disband Party"}
                 </AppText>
               </View>

@@ -35,8 +35,7 @@ export const Input = forwardRef<TextInput, InputProps>(
     const isSecureField = Boolean(secureTextEntry);
     const resolvedAutoCorrect = autoCorrect ?? !isSecureField;
     const resolvedSpellCheck = spellCheck ?? !isSecureField;
-    const resolvedAutoComplete =
-      autoComplete ?? (isSecureField ? "off" : undefined);
+    const resolvedAutoComplete = autoComplete ?? (isSecureField ? "off" : undefined);
 
     return (
       <View style={styles.container}>

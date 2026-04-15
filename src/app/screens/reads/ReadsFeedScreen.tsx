@@ -5,19 +5,9 @@ import type { CompositeScreenProps } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 
-import type {
-  MainTabParamList,
-  RootStackParamList,
-} from "@/app/navigation/navigationTypes";
+import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { getReadsFeed } from "@/features/reads/feed";
-import {
-  AppText,
-  Badge,
-  Card,
-  FeedErrorBoundary,
-  FeedStateView,
-  Screen,
-} from "@/components/ui";
+import { AppText, Badge, Card, FeedErrorBoundary, FeedStateView, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { BlogPost } from "@/types/domain";
 
@@ -36,9 +26,7 @@ const ATMOSPHERES = [
 export function ReadsFeedScreen({ navigation }: Props) {
   const { palette, spacing, radii, shadows } = useHungryTheme();
   const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [feedState, setFeedState] = useState<"loading" | "ready" | "error">(
-    "loading",
-  );
+  const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
 
   const loadPosts = useCallback(() => {
     setFeedState("loading");
@@ -117,9 +105,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
             {posts.map((post) => (
               <Pressable
                 key={post.id}
-                onPress={() =>
-                  navigation.navigate("BlogPost", { postId: post.id })
-                }
+                onPress={() => navigation.navigate("BlogPost", { postId: post.id })}
               >
                 <Card>
                   <View style={{ flexDirection: "row", gap: spacing[3] }}>
@@ -133,19 +119,11 @@ export function ReadsFeedScreen({ navigation }: Props) {
                       contentFit="cover"
                     />
                     <View style={{ flex: 1, gap: spacing[1] }}>
-                      <AppText
-                        variant="micro"
-                        tone="accent"
-                        style={{ textTransform: "uppercase" }}
-                      >
+                      <AppText variant="micro" tone="accent" style={{ textTransform: "uppercase" }}>
                         {post.sourceName} {"\u00B7"} {getReadTime(post)}
                       </AppText>
                       <AppText variant="h3">{post.title}</AppText>
-                      <AppText
-                        variant="bodySmall"
-                        tone="secondary"
-                        numberOfLines={2}
-                      >
+                      <AppText variant="bodySmall" tone="secondary" numberOfLines={2}>
                         {post.excerpt}
                       </AppText>
                     </View>
@@ -165,9 +143,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
                 paddingHorizontal: spacing[1],
               }}
             >
-              <AppText variant="h2">
-                IN FOCUS {"\u2014"} Trending Palettes
-              </AppText>
+              <AppText variant="h2">IN FOCUS {"\u2014"} Trending Palettes</AppText>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="View archive articles"
@@ -188,11 +164,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
                   shadows.card,
                 ]}
               >
-                <AppText
-                  variant="micro"
-                  tone="accent"
-                  style={{ fontWeight: "700" }}
-                >
+                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                   VIEW ARCHIVE
                 </AppText>
               </Pressable>
@@ -206,9 +178,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
               {posts.map((post) => (
                 <Pressable
                   key={`focus-${post.id}`}
-                  onPress={() =>
-                    navigation.navigate("BlogPost", { postId: post.id })
-                  }
+                  onPress={() => navigation.navigate("BlogPost", { postId: post.id })}
                   style={{
                     width: 260,
                     height: 160,
@@ -297,16 +267,12 @@ export function ReadsFeedScreen({ navigation }: Props) {
 
           {/* ── THE LATEST — Recent Dispatches ── */}
           <View style={{ gap: spacing[3] }}>
-            <AppText variant="h2">
-              THE LATEST {"\u2014"} Recent Dispatches
-            </AppText>
+            <AppText variant="h2">THE LATEST {"\u2014"} Recent Dispatches</AppText>
 
             {posts.slice(0, 1).map((post) => (
               <Pressable
                 key={`latest-${post.id}`}
-                onPress={() =>
-                  navigation.navigate("BlogPost", { postId: post.id })
-                }
+                onPress={() => navigation.navigate("BlogPost", { postId: post.id })}
               >
                 <Card>
                   <Image

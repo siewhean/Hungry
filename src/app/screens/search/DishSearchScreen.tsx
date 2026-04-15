@@ -7,10 +7,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, Chip, Input, Screen } from "@/components/ui";
-import {
-  getDiscoverStallCollections,
-  useSearchData,
-} from "@/features/search/search";
+import { getDiscoverStallCollections, useSearchData } from "@/features/search/search";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
@@ -32,15 +29,10 @@ export function DishSearchScreen() {
   const { filters } = useSearchData();
   const profile = useProfileStore((state) => state.profile);
   const updateQuery = useSearchStore((state) => state.updateQuery);
-  const selectedCategories = useSearchStore(
-    (state) => state.filters.categories,
-  );
+  const selectedCategories = useSearchStore((state) => state.filters.categories);
   const toggleCategory = useSearchStore((state) => state.toggleCategory);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
-  const collections = getDiscoverStallCollections(profile, filters.query).slice(
-    0,
-    4,
-  );
+  const collections = getDiscoverStallCollections(profile, filters.query).slice(0, 4);
   const entryY = useRef(new Animated.Value(-28)).current;
   const entryOpacity = useRef(new Animated.Value(0)).current;
 
@@ -106,9 +98,7 @@ export function DishSearchScreen() {
           onChangeText={updateQuery}
           onSubmitEditing={() => navigation.navigate("SearchResults")}
         />
-        <View
-          style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}
-        >
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
           {SEARCH_CATEGORIES.map((category) => (
             <Chip
               key={category}
@@ -123,10 +113,7 @@ export function DishSearchScreen() {
           variant="secondary"
           onPress={() => navigation.navigate("TasteFilter")}
         />
-        <Button
-          label="View search results"
-          onPress={() => navigation.navigate("SearchResults")}
-        />
+        <Button label="View search results" onPress={() => navigation.navigate("SearchResults")} />
         <Pressable
           onPress={() => {
             const match = collections[0]?.topDishes[0];
@@ -154,22 +141,13 @@ export function DishSearchScreen() {
             }}
           >
             <View style={{ flex: 1, gap: spacing[1] }}>
-              <AppText
-                variant="micro"
-                tone="accent"
-                style={{ fontWeight: "700" }}
-              >
+              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                 SUGGESTED FOR TONIGHT
               </AppText>
               <AppText variant="h2" style={{ marginTop: spacing[1] }}>
-                Craving{" "}
-                {collections[0]?.topDishes[0]?.name ?? "something special"}?
+                Craving {collections[0]?.topDishes[0]?.name ?? "something special"}?
               </AppText>
-              <AppText
-                variant="bodySmall"
-                tone="secondary"
-                style={{ marginTop: spacing[1] }}
-              >
+              <AppText variant="bodySmall" tone="secondary" style={{ marginTop: spacing[1] }}>
                 Best match within 2km. Start strong, widen later if needed.
               </AppText>
               <View
@@ -182,10 +160,7 @@ export function DishSearchScreen() {
                   borderRadius: radii.pill,
                 }}
               >
-                <AppText
-                  variant="micro"
-                  style={{ color: palette.orange, fontWeight: "700" }}
-                >
+                <AppText variant="micro" style={{ color: palette.orange, fontWeight: "700" }}>
                   BROWSE DISH
                 </AppText>
               </View>
@@ -244,14 +219,9 @@ export function DishSearchScreen() {
                     </AppText>
                   </View>
                   <AppText variant="bodySmall" tone="secondary">
-                    {collection.location} · {collection.venue.floor}{" "}
-                    {collection.venue.unitNumber}
+                    {collection.location} · {collection.venue.floor} {collection.venue.unitNumber}
                   </AppText>
-                  <AppText
-                    variant="bodySmall"
-                    tone="secondary"
-                    numberOfLines={2}
-                  >
+                  <AppText variant="bodySmall" tone="secondary" numberOfLines={2}>
                     {collection.topDishes[0]?.name} ·{" "}
                     {collection.topDishes[0]?.tasteTags.slice(0, 2).join(" · ")}
                   </AppText>

@@ -21,11 +21,14 @@ export function ReviewHistoryScreen({ navigation }: Props) {
 
   const openReviewFlow = () => {
     const rootNavigation = getRootNavigation(navigation as any);
-    rootNavigation.navigate("ReviewStack", { screen: "ReviewHub" });
+    rootNavigation.navigate("ReviewStack", { screen: "ReviewMain" });
   };
 
   return (
-    <ProfileScreenShell title="Review history" subtitle="Submitted reviews stay visible in the mock profile.">
+    <ProfileScreenShell
+      title="Review history"
+      subtitle="Submitted reviews stay visible in the mock profile."
+    >
       {history.length ? (
         history.map((dish) => {
           const entry = reviewEntries[dish.id];

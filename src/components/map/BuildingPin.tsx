@@ -14,7 +14,12 @@ interface BuildingPinProps {
 
 export function BuildingPin({ name, type, selected = false, onPress }: BuildingPinProps) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
-  const tone = type === "hawker_centre" ? palette.orange : type === "food_court" ? palette.teal : palette.textMuted;
+  const tone =
+    type === "hawker_centre"
+      ? palette.orange
+      : type === "food_court"
+        ? palette.teal
+        : palette.textMuted;
 
   return (
     <Pressable

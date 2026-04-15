@@ -11,7 +11,9 @@ test("grantLocation tracks denied analytics when location module is unavailable"
   const granted = await useLocationStore.getState().grantLocation();
   assert.equal(granted, false);
 
-  const events = getTrackedAnalyticsEvents().filter((event) => event.event === "location_permission_result");
+  const events = getTrackedAnalyticsEvents().filter(
+    (event) => event.event === "location_permission_result",
+  );
   assert.ok(events.length > 0);
   assert.equal(events[events.length - 1]?.properties.reason, "module_unavailable");
 });

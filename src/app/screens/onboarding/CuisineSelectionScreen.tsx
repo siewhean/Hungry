@@ -26,9 +26,7 @@ export function CuisineSelectionScreen({ navigation }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
 
   const toggle = (id: string) => {
-    setSelected((prev) => 
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const handleNext = () => {
@@ -36,8 +34,8 @@ export function CuisineSelectionScreen({ navigation }: Props) {
   };
 
   return (
-    <Screen 
-      title="What do you love?" 
+    <Screen
+      title="What do you love?"
       subtitle="Pick your go-to cuisines to help us curate your feed."
     >
       <View style={{ flex: 1, gap: spacing[6] }}>
@@ -64,19 +62,28 @@ export function CuisineSelectionScreen({ navigation }: Props) {
                   isSelected ? shadows.card : {},
                 ]}
               >
-                <View style={{
-                  width: 24, height: 24, borderRadius: radii.pill,
-                  backgroundColor: isSelected ? palette.orange : palette.bgSoft,
-                  alignItems: "center", justifyContent: "center",
-                  position: "absolute", top: spacing[2], right: spacing[2]
-                }}>
+                <View
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: radii.pill,
+                    backgroundColor: isSelected ? palette.orange : palette.bgSoft,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    position: "absolute",
+                    top: spacing[2],
+                    right: spacing[2],
+                  }}
+                >
                   {isSelected && <Check size={14} color={palette.surface} strokeWidth={3} />}
                 </View>
-                <AppText style={{ 
-                  fontWeight: isSelected ? "800" : "600", 
-                  color: isSelected ? palette.text : palette.textSecondary,
-                  textAlign: "center"
-                }}>
+                <AppText
+                  style={{
+                    fontWeight: isSelected ? "800" : "600",
+                    color: isSelected ? palette.text : palette.textSecondary,
+                    textAlign: "center",
+                  }}
+                >
                   {cuisine.label}
                 </AppText>
               </Pressable>

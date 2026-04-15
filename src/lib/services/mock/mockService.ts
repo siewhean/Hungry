@@ -9,7 +9,15 @@
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
-import { blogPosts, buildings, dishes, guestProfile, stallPosts, userProfile, venues } from "./data";
+import {
+  blogPosts,
+  buildings,
+  dishes,
+  guestProfile,
+  stallPosts,
+  userProfile,
+  venues,
+} from "./data";
 import { mockRepository, similarityScore } from "./repositories";
 import { assertFixtureBundleValid } from "./validation";
 import type {
@@ -46,10 +54,7 @@ import {
   processExplicitFeedback as processExplicitFeedbackCore,
   processImplicitFeedback as processImplicitFeedbackCore,
 } from "@/lib/ai/tasteEngine";
-import type {
-  ExplicitFeedbackEvent,
-  ImplicitSignal,
-} from "@/lib/ai/tasteEngine";
+import type { ExplicitFeedbackEvent, ImplicitSignal } from "@/lib/ai/tasteEngine";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -63,9 +68,7 @@ const cosine = similarityScore;
 
 function matchReason(userVec: TasteVector, dishVec: TasteVector): string {
   const keys = Object.keys(userVec) as Array<keyof TasteVector>;
-  const topKey = keys.reduce((best, k) =>
-    dishVec[k] > dishVec[best] ? k : best
-  );
+  const topKey = keys.reduce((best, k) => (dishVec[k] > dishVec[best] ? k : best));
   const labels: Record<keyof TasteVector, string> = {
     sweet: "Sweet",
     spicy: "Spicy",
@@ -173,12 +176,13 @@ const MOCK_BITES_FEED: Bite[] = [
 
 // ─── Building detail lookups ──────────────────────────────────────────────────
 
-const BUILDING_DETAILS: Record<string, Omit<BuildingDetail, keyof typeof buildings[number]>> = {
+const BUILDING_DETAILS: Record<string, Omit<BuildingDetail, keyof (typeof buildings)[number]>> = {
   "building-maxwell": {
     address: "1 Kadayanallur St, Singapore 069184",
     postalCode: "069184",
     operatingHours: "Mon–Sun 06:00–22:00",
-    description: "One of Singapore's most iconic hawker centres, home to the famous Tian Tian Chicken Rice.",
+    description:
+      "One of Singapore's most iconic hawker centres, home to the famous Tian Tian Chicken Rice.",
     famousDishes: ["Chicken Rice", "Laksa", "Indian Rojak", "Cheng Tng"],
     totalStalls: 100,
     openStalls: 85,
@@ -188,7 +192,8 @@ const BUILDING_DETAILS: Record<string, Omit<BuildingDetail, keyof typeof buildin
     address: "18 Raffles Quay, Singapore 048582",
     postalCode: "048582",
     operatingHours: "Mon–Sun 24 hours (Satay Street from 19:00)",
-    description: "A Victorian cast-iron market gazetted as a national monument, famed for satay at night.",
+    description:
+      "A Victorian cast-iron market gazetted as a national monument, famed for satay at night.",
     famousDishes: ["Satay", "Stingray", "Kopi"],
     totalStalls: 80,
     openStalls: 60,
@@ -198,7 +203,8 @@ const BUILDING_DETAILS: Record<string, Omit<BuildingDetail, keyof typeof buildin
     address: "7 Maxwell Rd, Singapore 069111",
     postalCode: "069111",
     operatingHours: "Mon–Fri 07:30–14:30",
-    description: "A lunchtime favourite with office crowds, known for thunder tea rice and ban mian.",
+    description:
+      "A lunchtime favourite with office crowds, known for thunder tea rice and ban mian.",
     famousDishes: ["Thunder Tea Rice", "Ban Mian", "Fish Soup"],
     totalStalls: 70,
     openStalls: 0,
@@ -208,7 +214,8 @@ const BUILDING_DETAILS: Record<string, Omit<BuildingDetail, keyof typeof buildin
     address: "51 Old Airport Rd, Singapore 390051",
     postalCode: "390051",
     operatingHours: "Mon–Sun 06:00–23:00",
-    description: "One of Singapore's largest and oldest hawker centres. A pilgrimage site for food lovers.",
+    description:
+      "One of Singapore's largest and oldest hawker centres. A pilgrimage site for food lovers.",
     famousDishes: ["Char Kway Teow", "Lor Mee", "Hokkien Mee"],
     totalStalls: 150,
     openStalls: 130,
@@ -218,7 +225,8 @@ const BUILDING_DETAILS: Record<string, Omit<BuildingDetail, keyof typeof buildin
     address: "30 Seng Poh Rd, Singapore 168898",
     postalCode: "168898",
     operatingHours: "Mon–Sun 06:00–21:00",
-    description: "Beloved neighbourhood market in Singapore's oldest housing estate, known for Shui Kueh.",
+    description:
+      "Beloved neighbourhood market in Singapore's oldest housing estate, known for Shui Kueh.",
     famousDishes: ["Choon Kueh", "Chwee Kueh", "Char Kway Teow"],
     totalStalls: 83,
     openStalls: 70,
@@ -228,7 +236,8 @@ const BUILDING_DETAILS: Record<string, Omit<BuildingDetail, keyof typeof buildin
     address: "435 Orchard Rd, #04-01 Wisma Atria, Singapore 238877",
     postalCode: "238877",
     operatingHours: "Mon–Sun 10:00–22:00",
-    description: "Upscale food court in the heart of Orchard Road with a focus on local heritage cuisine.",
+    description:
+      "Upscale food court in the heart of Orchard Road with a focus on local heritage cuisine.",
     famousDishes: ["Sambal Seafood", "Claypot Rice"],
     totalStalls: 40,
     openStalls: 38,
@@ -322,7 +331,17 @@ export const hungryService: HungryService = {
       const building = buildings.find((b) => b.id === id);
       if (!building) return resolve(undefined);
       const extra = BUILDING_DETAILS[id];
-      if (!extra) return resolve({ ...building, address: "", postalCode: "", operatingHours: "", famousDishes: [], totalStalls: building.venueCount, openStalls: building.venueCount, avgRating: 4.0 });
+      if (!extra)
+        return resolve({
+          ...building,
+          address: "",
+          postalCode: "",
+          operatingHours: "",
+          famousDishes: [],
+          totalStalls: building.venueCount,
+          openStalls: building.venueCount,
+          avgRating: 4.0,
+        });
       return resolve({ ...building, ...extra } as BuildingDetail);
     },
 
@@ -353,9 +372,7 @@ export const hungryService: HungryService = {
     },
 
     async listPopularNearby(_lat?, _lng?) {
-      return resolve(
-        [...dishes].sort((a, b) => a.distanceMeters - b.distanceMeters).slice(0, 6)
-      );
+      return resolve([...dishes].sort((a, b) => a.distanceMeters - b.distanceMeters).slice(0, 6));
     },
 
     async searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]> {
@@ -364,7 +381,7 @@ export const hungryService: HungryService = {
         results.map((dish) => ({
           dish,
           score: cosine(dish.tasteVector, tasteProfile),
-        }))
+        })),
       );
     },
 
@@ -577,10 +594,8 @@ export const hungryService: HungryService = {
             matchReason: result.explanation,
           };
         })
-        .filter(
-          (
-            recommendation,
-          ): recommendation is RecommendationResult => Boolean(recommendation),
+        .filter((recommendation): recommendation is RecommendationResult =>
+          Boolean(recommendation),
         );
 
       return resolve(results);
@@ -603,20 +618,17 @@ export const hungryService: HungryService = {
 
     // Extended — Full Recommendation Pipeline
     async getContextualRecommendations(
-      ctx: ExtendedRecommendationContext
+      ctx: ExtendedRecommendationContext,
     ): Promise<RankedRecommendation[]> {
-      const pipelineResults = runRecommendationPipeline(
-        dishes,
-        {
-          userVector: ctx.tasteProfile.vector,
-          dietaryFlags: ctx.dietaryFlags,
-          neophiliaIndex: ctx.tasteProfile.neophiliaIndex,
-          latitude: ctx.latitude,
-          longitude: ctx.longitude,
-          radiusMeters: ctx.radiusMeters,
-          excludeDishIds: ctx.excludeDishIds,
-        }
-      );
+      const pipelineResults = runRecommendationPipeline(dishes, {
+        userVector: ctx.tasteProfile.vector,
+        dietaryFlags: ctx.dietaryFlags,
+        neophiliaIndex: ctx.tasteProfile.neophiliaIndex,
+        latitude: ctx.latitude,
+        longitude: ctx.longitude,
+        radiusMeters: ctx.radiusMeters,
+        excludeDishIds: ctx.excludeDishIds,
+      });
 
       // Map pipeline results back to RankedRecommendation (with full DishDetail)
       const results: RankedRecommendation[] = pipelineResults
@@ -637,9 +649,7 @@ export const hungryService: HungryService = {
     },
 
     // Extended — Feedback Processing
-    async processExplicitFeedback(
-      feedback: ExplicitFeedbackInput
-    ): Promise<TasteVector> {
+    async processExplicitFeedback(feedback: ExplicitFeedbackInput): Promise<TasteVector> {
       const dish = dishes.find((d) => d.id === feedback.dishId);
       if (!dish) return resolve(_profile.tasteVector);
 
@@ -672,9 +682,7 @@ export const hungryService: HungryService = {
       return resolve(updatedVector);
     },
 
-    async processImplicitFeedback(
-      signals: ImplicitSignalInput[]
-    ): Promise<TasteVector> {
+    async processImplicitFeedback(signals: ImplicitSignalInput[]): Promise<TasteVector> {
       const coreSignals: ImplicitSignal[] = signals
         .map((s) => {
           const dish = dishes.find((d) => d.id === s.dishId);
@@ -687,10 +695,7 @@ export const hungryService: HungryService = {
         })
         .filter((s): s is ImplicitSignal => s !== null);
 
-      const updatedVector = processImplicitFeedbackCore(
-        _profile.tasteVector,
-        coreSignals
-      );
+      const updatedVector = processImplicitFeedbackCore(_profile.tasteVector, coreSignals);
       _profile = { ..._profile, tasteVector: updatedVector };
       return resolve(updatedVector);
     },
@@ -705,22 +710,16 @@ export const hungryService: HungryService = {
       if (dish.tasteVector.aromatic >= 7) suggestions.push("wok_hei");
       if (dish.tasteVector.rich >= 7) suggestions.push("lemak");
       if (dish.tasteVector.spicy >= 7) suggestions.push("hiam");
-      if (dish.tasteVector.rich >= 6 && dish.tasteVector.salty >= 6)
-        suggestions.push("sedap");
-      if (dish.tasteVector.salty >= 7 && dish.tasteVector.aromatic >= 6)
-        suggestions.push("shiok");
+      if (dish.tasteVector.rich >= 6 && dish.tasteVector.salty >= 6) suggestions.push("sedap");
+      if (dish.tasteVector.salty >= 7 && dish.tasteVector.aromatic >= 6) suggestions.push("shiok");
 
       // Always suggest at most 3
       return resolve(suggestions.slice(0, 3));
     },
 
-    async submitCommunityTags(
-      _dishId: string,
-      _tags: HawkerTasteTag[]
-    ): Promise<void> {
+    async submitCommunityTags(_dishId: string, _tags: HawkerTasteTag[]): Promise<void> {
       // Mock: no-op — in production updates the dish's community taste vector
       return resolve(undefined);
     },
   },
 };
-

@@ -58,9 +58,7 @@ export function WheelSvg({ entries, size = 300 }: Props) {
 
   const active = Array.from(
     new Map(
-      entries
-        .filter((entry) => !entry.isEliminated)
-        .map((entry) => [entry.id, entry] as const),
+      entries.filter((entry) => !entry.isEliminated).map((entry) => [entry.id, entry] as const),
     ).values(),
   );
   const cx = size / 2;

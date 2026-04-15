@@ -13,4 +13,3 @@ export const authFieldLabels = {
     confirmPassword: "Confirm password",
   },
 } as const;
-

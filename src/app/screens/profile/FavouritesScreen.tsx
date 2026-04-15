@@ -25,10 +25,7 @@ export function FavouritesScreen({ navigation }: Props) {
   const rootNavigation = getRootNavigation(navigation as any);
 
   return (
-    <ProfileScreenShell
-      title="Favourites"
-      subtitle="Saved dishes that shape your taste profile."
-    >
+    <ProfileScreenShell title="Favourites" subtitle="Saved dishes that shape your taste profile.">
       {dishes.length ? (
         <View
           style={{
@@ -43,9 +40,7 @@ export function FavouritesScreen({ navigation }: Props) {
             return (
               <Pressable
                 key={dish.id}
-                onPress={() =>
-                  rootNavigation.navigate("DishDetail", { dishId: dish.id })
-                }
+                onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
                 style={[
                   shadows.card,
                   {
@@ -58,9 +53,7 @@ export function FavouritesScreen({ navigation }: Props) {
                   },
                 ]}
               >
-                <View
-                  style={{ height: 120, width: "100%", position: "relative" }}
-                >
+                <View style={{ height: 120, width: "100%", position: "relative" }}>
                   <Image
                     source={{ uri: dish.imageUrl }}
                     style={{ width: "100%", height: "100%" }}
@@ -80,11 +73,7 @@ export function FavouritesScreen({ navigation }: Props) {
                       justifyContent: "center",
                     }}
                   >
-                    <Heart
-                      size={16}
-                      color={palette.error}
-                      fill={palette.error}
-                    />
+                    <Heart size={16} color={palette.error} fill={palette.error} />
                   </Pressable>
                 </View>
                 <View style={{ padding: spacing[3], gap: spacing[1] }}>
@@ -118,11 +107,7 @@ export function FavouritesScreen({ navigation }: Props) {
                         gap: spacing[1],
                       }}
                     >
-                      <Star
-                        color={palette.amber}
-                        fill={palette.amber}
-                        size={10}
-                      />
+                      <Star color={palette.amber} fill={palette.amber} size={10} />
                       <AppText variant="micro" style={{ fontWeight: "700" }}>
                         {dish.rating.toFixed(1)}
                       </AppText>

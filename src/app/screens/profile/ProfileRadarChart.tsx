@@ -26,7 +26,7 @@ export function ProfileRadarChart({ value }: ProfileRadarChartProps) {
   const maxRadius = 74;
 
   const a11yLabel = useMemo(() => {
-    const summary = axes.map(a => `${a.label} ${value[a.key].toFixed(1)}`).join(", ");
+    const summary = axes.map((a) => `${a.label} ${value[a.key].toFixed(1)}`).join(", ");
     return `Your taste profile: ${summary}.`;
   }, [value]);
 
@@ -43,9 +43,30 @@ export function ProfileRadarChart({ value }: ProfileRadarChartProps) {
   return (
     <View style={{ alignItems: "center" }} accessibilityLabel={a11yLabel} accessibilityRole="image">
       <Svg height={size} width={size}>
-        <Circle cx={center} cy={center} r={maxRadius} stroke={palette.border} strokeWidth={1} fill="transparent" />
-        <Circle cx={center} cy={center} r={maxRadius * 0.66} stroke={palette.border} strokeWidth={1} fill="transparent" />
-        <Circle cx={center} cy={center} r={maxRadius * 0.33} stroke={palette.border} strokeWidth={1} fill="transparent" />
+        <Circle
+          cx={center}
+          cy={center}
+          r={maxRadius}
+          stroke={palette.border}
+          strokeWidth={1}
+          fill="transparent"
+        />
+        <Circle
+          cx={center}
+          cy={center}
+          r={maxRadius * 0.66}
+          stroke={palette.border}
+          strokeWidth={1}
+          fill="transparent"
+        />
+        <Circle
+          cx={center}
+          cy={center}
+          r={maxRadius * 0.33}
+          stroke={palette.border}
+          strokeWidth={1}
+          fill="transparent"
+        />
         {axes.map((axis, index) => {
           const angle = ((Math.PI * 2) / axes.length) * index - Math.PI / 2;
           const x = center + Math.cos(angle) * maxRadius;
@@ -55,14 +76,25 @@ export function ProfileRadarChart({ value }: ProfileRadarChartProps) {
           return (
             <Fragment key={axis.key}>
               <Line x1={center} y1={center} x2={x} y2={y} stroke={palette.border} strokeWidth={1} />
-              <SvgText x={labelX} y={labelY} fill={palette.textSecondary} fontSize="10" textAnchor="middle">
+              <SvgText
+                x={labelX}
+                y={labelY}
+                fill={palette.textSecondary}
+                fontSize="10"
+                textAnchor="middle"
+              >
                 {axis.label}
               </SvgText>
             </Fragment>
           );
         })}
         {hasSignal ? (
-          <Polygon points={points.join(" ")} fill={palette.orangeLight} stroke={palette.orange} strokeWidth={2} />
+          <Polygon
+            points={points.join(" ")}
+            fill={palette.orangeLight}
+            stroke={palette.orange}
+            strokeWidth={2}
+          />
         ) : null}
       </Svg>
       {!hasSignal ? (

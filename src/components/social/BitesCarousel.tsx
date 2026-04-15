@@ -37,9 +37,7 @@ export function BitesCarousel({
   const navigation = useNavigation<RootNavigation>();
   const { width: screenWidth } = useWindowDimensions();
   const [likedBites, setLikedBites] = useState<Record<string, boolean>>({});
-  const [commentedBites, setCommentedBites] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [commentedBites, setCommentedBites] = useState<Record<string, boolean>>({});
   const fallbackBites = useMemo(() => createDefaultBites(), []);
   const biteData = bites?.length ? bites : fallbackBites;
   const cardWidth = Math.max(300, screenWidth - spacing[4] * 2);

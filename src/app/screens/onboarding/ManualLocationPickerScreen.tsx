@@ -21,9 +21,19 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
   const buildings = repository.listBuildings().slice(0, 10);
 
   return (
-    <View style={{ backgroundColor: palette.bg, flex: 1, paddingHorizontal: spacing[3], paddingTop: spacing[6] }}>
+    <View
+      style={{
+        backgroundColor: palette.bg,
+        flex: 1,
+        paddingHorizontal: spacing[3],
+        paddingTop: spacing[6],
+      }}
+    >
       <View style={{ alignItems: "center", flexDirection: "row", marginBottom: spacing[4] }}>
-        <Pressable onPress={() => navigation.goBack()} style={{ marginRight: spacing[3], padding: spacing[2] }}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={{ marginRight: spacing[3], padding: spacing[2] }}
+        >
           <ArrowLeft color={palette.navy} size={18} />
         </Pressable>
         <AppText variant="h2">Pick a location</AppText>
@@ -32,7 +42,11 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
       <Input placeholder="Search Singapore location" />
 
       <ScrollView
-        contentContainerStyle={{ gap: spacing[2], paddingBottom: spacing[6], paddingTop: spacing[3] }}
+        contentContainerStyle={{
+          gap: spacing[2],
+          paddingBottom: spacing[6],
+          paddingTop: spacing[3],
+        }}
         showsVerticalScrollIndicator={false}
       >
         {buildings.map((building) => (
@@ -47,11 +61,10 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
               <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
                 <MapPin color={palette.orange} size={16} />
                 <View style={{ flex: 1, gap: spacing[1] }}>
-                  <AppText variant="bodyBold">
-                    {building.name}
-                  </AppText>
+                  <AppText variant="bodyBold">{building.name}</AppText>
                   <AppText variant="bodySmall" tone="secondary">
-                    {building.coordinate.latitude.toFixed(4)}, {building.coordinate.longitude.toFixed(4)}
+                    {building.coordinate.latitude.toFixed(4)},{" "}
+                    {building.coordinate.longitude.toFixed(4)}
                   </AppText>
                 </View>
               </View>

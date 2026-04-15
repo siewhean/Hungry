@@ -1,13 +1,5 @@
-import {
-  getDataRepository,
-  getSimilarityScore,
-} from "@/lib/services/serviceProvider";
-import type {
-  DishDetail,
-  StallPost,
-  UserProfile,
-  VenueSummary,
-} from "@/types/domain";
+import { getDataRepository, getSimilarityScore } from "@/lib/services/serviceProvider";
+import type { DishDetail, StallPost, UserProfile, VenueSummary } from "@/types/domain";
 
 export interface HomeFeedItem extends StallPost {
   venue: VenueSummary;
@@ -68,11 +60,7 @@ export function getHomeFeed(profile: UserProfile): HomeFeedSection[] {
     .filter((p) => {
       const d = p.dishes[0];
       if (!d) return false;
-      return (
-        d.tasteVector.rich > 7 ||
-        d.tasteVector.salty > 7 ||
-        d.tasteVector.sweet > 7
-      );
+      return d.tasteVector.rich > 7 || d.tasteVector.salty > 7 || d.tasteVector.sweet > 7;
     })
     .slice(0, 5);
 

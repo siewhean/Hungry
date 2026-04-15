@@ -3,18 +3,18 @@ import { useState } from "react";
 import { Alert, View, ScrollView, Linking } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { 
-  User, 
-  Bell, 
-  HandMetal, 
-  ShieldCheck, 
-  Moon, 
-  MapPin, 
-  LogOut, 
-  Trash2, 
-  Info, 
+import {
+  User,
+  Bell,
+  HandMetal,
+  ShieldCheck,
+  Moon,
+  MapPin,
+  LogOut,
+  Trash2,
+  Info,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
 } from "lucide-react-native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
@@ -34,7 +34,7 @@ import { ProfileScreenShell } from "./ProfileScreenShell";
 export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { palette, spacing } = useHungryTheme();
-  
+
   const signOut = useSessionStore((state) => state.signOut);
   const clearSession = useSessionStore((state) => state.clearSession);
   const location = useLocationStore((state) => state.manualLocation);
@@ -42,13 +42,13 @@ export function SettingsScreen() {
   const clearProfile = useProfileStore((state) => state.clearProfile);
   const clearSearchState = useSearchStore((state) => state.clearSearchState);
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
-  
+
   const themePreference = useUIStore((state) => state.themePreference);
   const setThemePreference = useUIStore((state) => state.setThemePreference);
-  
+
   const profile = useProfileStore((state) => state.profile);
   const setLeftHandedMode = useProfileStore((state) => state.setLeftHandedMode);
-  
+
   const [dietaryEnabled, setDietaryEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
@@ -67,14 +67,14 @@ export function SettingsScreen() {
   const handleSignOut = () => {
     Alert.alert("Log out", "Are you sure you want to log out?", [
       { text: "Cancel", style: "cancel" },
-      { 
-        text: "Log out", 
+      {
+        text: "Log out",
         onPress: () => {
           signOut();
           const rootNavigation = getRootNavigation(navigation);
           rootNavigation.navigate("Splash");
-        } 
-      }
+        },
+      },
     ]);
   };
 
@@ -108,24 +108,23 @@ export function SettingsScreen() {
     const next: Record<string, any> = {
       automatic: "light",
       light: "dark",
-      dark: "automatic"
+      dark: "automatic",
     };
     setThemePreference(next[themePreference]);
   };
 
   return (
     <ProfileScreenShell title="Settings" subtitle="Account and app preferences">
-      
       <SettingsSection title="Account">
-        <SettingsRow 
-          label="Edit Profile" 
-          icon={<User size={20} color={palette.orange} />} 
+        <SettingsRow
+          label="Edit Profile"
+          icon={<User size={20} color={palette.orange} />}
           onPress={() => navigation.navigate("EditProfile")}
           value={profile.displayName}
         />
-        <SettingsRow 
-          label="Location" 
-          icon={<MapPin size={20} color={palette.orange} />} 
+        <SettingsRow
+          label="Location"
+          icon={<MapPin size={20} color={palette.orange} />}
           onPress={() => navigation.navigate("ManualLocationPicker" as any)}
           value={location || "Use GPS"}
           isLast
@@ -133,23 +132,23 @@ export function SettingsScreen() {
       </SettingsSection>
 
       <SettingsSection title="App Preferences">
-        <SettingsRow 
-          label="Left-handed mode" 
-          icon={<HandMetal size={20} color={palette.orange} />} 
+        <SettingsRow
+          label="Left-handed mode"
+          icon={<HandMetal size={20} color={palette.orange} />}
           type="toggle"
           isEnabled={profile.leftHandedMode}
           onToggle={setLeftHandedMode}
         />
-        <SettingsRow 
-          label="Dietary filters" 
-          icon={<ShieldCheck size={20} color={palette.orange} />} 
+        <SettingsRow
+          label="Dietary filters"
+          icon={<ShieldCheck size={20} color={palette.orange} />}
           type="toggle"
           isEnabled={dietaryEnabled}
           onToggle={setDietaryEnabled}
         />
-        <SettingsRow 
-          label="Push Notifications" 
-          icon={<Bell size={20} color={palette.orange} />} 
+        <SettingsRow
+          label="Push Notifications"
+          icon={<Bell size={20} color={palette.orange} />}
           type="toggle"
           isEnabled={notificationsEnabled}
           onToggle={setNotificationsEnabled}
@@ -158,9 +157,9 @@ export function SettingsScreen() {
       </SettingsSection>
 
       <SettingsSection title="Appearance">
-        <SettingsRow 
-          label="Theme" 
-          icon={<Moon size={20} color={palette.orange} />} 
+        <SettingsRow
+          label="Theme"
+          icon={<Moon size={20} color={palette.orange} />}
           type="navigation"
           value={themePreference.charAt(0).toUpperCase() + themePreference.slice(1)}
           onPress={cycleTheme}
@@ -169,45 +168,39 @@ export function SettingsScreen() {
       </SettingsSection>
 
       <SettingsSection title="Support">
-        <SettingsRow 
-          label="Help Center" 
+        <SettingsRow
+          label="Help Center"
           onPress={() => Linking.openURL("https://hungry.sg/help")}
         />
-        <SettingsRow 
-          label="Privacy Policy" 
+        <SettingsRow
+          label="Privacy Policy"
           onPress={() => Linking.openURL("https://hungry.sg/privacy")}
         />
-        <SettingsRow 
-          label="Terms of Service" 
+        <SettingsRow
+          label="Terms of Service"
           onPress={() => Linking.openURL("https://hungry.sg/terms")}
           isLast
         />
       </SettingsSection>
 
       <SettingsSection title="About">
-        <SettingsRow 
-          label="Version" 
-          type="value"
-          value={appVersion}
-          isLast
-        />
+        <SettingsRow label="Version" type="value" value={appVersion} isLast />
       </SettingsSection>
 
       <View style={{ gap: spacing[3], marginBottom: spacing[12] }}>
-        <Button 
-          label="Log out" 
-          variant="secondary" 
-          onPress={handleSignOut} 
+        <Button
+          label="Log out"
+          variant="secondary"
+          onPress={handleSignOut}
           leftIcon={<LogOut size={20} color={palette.text} />}
         />
-        <Button 
-          label="Delete account" 
-          variant="destructive" 
-          onPress={handleDeleteAccount} 
+        <Button
+          label="Delete account"
+          variant="destructive"
+          onPress={handleDeleteAccount}
           leftIcon={<Trash2 size={20} color={palette.white} />}
         />
       </View>
-
     </ProfileScreenShell>
   );
 }

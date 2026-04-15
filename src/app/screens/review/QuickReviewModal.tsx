@@ -10,7 +10,7 @@ export function QuickReviewModal() {
   const payload = useUIStore((state) => state.quickReview);
   const hideQuickReview = useUIStore((state) => state.hideQuickReview);
   const showReviewSuccess = useUIStore((state) => state.showReviewSuccess);
-  
+
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ["70%"], []);
 
@@ -41,8 +41,8 @@ export function QuickReviewModal() {
       handleIndicatorStyle={{ backgroundColor: palette.border }}
     >
       <BottomSheetView style={{ padding: spacing[5] }}>
-        <QuickReviewSheet 
-          venueName={payload.venueName} 
+        <QuickReviewSheet
+          venueName={payload.venueName}
           dishName={payload.dishName}
           onSuccess={(data) => {
             hideQuickReview();

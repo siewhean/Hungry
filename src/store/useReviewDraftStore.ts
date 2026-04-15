@@ -23,6 +23,9 @@ interface ReviewDraftState {
   clearFailedPhoto: (uri: string) => void;
   resetDraft: () => void;
   setSubmitting: (isSubmitting: boolean) => void;
+  setVideoUri: (uri?: string) => void;
+  setFilterId: (id?: string) => void;
+  setMusicId: (id?: string) => void;
 }
 
 export const useReviewDraftStore = create<ReviewDraftState>()(
@@ -92,11 +95,27 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
           },
           failedPhotoUris: state.failedPhotoUris.filter((value) => value !== uri),
         })),
-      markPhotoFailed: (uri) => set((state) => ({ failedPhotoUris: [...state.failedPhotoUris, uri] })),
+      markPhotoFailed: (uri) =>
+        set((state) => ({ failedPhotoUris: [...state.failedPhotoUris, uri] })),
       clearFailedPhoto: (uri) =>
-        set((state) => ({ failedPhotoUris: state.failedPhotoUris.filter((value) => value !== uri) })),
-      resetDraft: () => set({ draft: createInitialReviewDraft(), isSubmitting: false, failedPhotoUris: [] }),
+        set((state) => ({
+          failedPhotoUris: state.failedPhotoUris.filter((value) => value !== uri),
+        })),
+      resetDraft: () =>
+        set({ draft: createInitialReviewDraft(), isSubmitting: false, failedPhotoUris: [] }),
       setSubmitting: (isSubmitting) => set({ isSubmitting }),
+      setVideoUri: (uri) =>
+        set((state) => ({
+          draft: { ...state.draft, videoUri: uri },
+        })),
+      setFilterId: (id) =>
+        set((state) => ({
+          draft: { ...state.draft, filterId: id },
+        })),
+      setMusicId: (id) =>
+        set((state) => ({
+          draft: { ...state.draft, musicId: id },
+        })),
     }),
     {
       name: "hungry-review-draft-v1",

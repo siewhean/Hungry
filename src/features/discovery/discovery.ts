@@ -31,9 +31,13 @@ export function getBuildingVenues(buildingId: string) {
 export function getBuildingDishes(buildingId: string) {
   const venues = getBuildingVenues(buildingId);
 
-  return venues.map((venue) => getDataRepository().getDishById(venue.topDishId)).filter(Boolean) as DishDetail[];
+  return venues
+    .map((venue) => getDataRepository().getDishById(venue.topDishId))
+    .filter(Boolean) as DishDetail[];
 }
 
 export function findBuildingById(buildingId: string): BuildingSummary | undefined {
-  return getDataRepository().listBuildings().find((building) => building.id === buildingId);
+  return getDataRepository()
+    .listBuildings()
+    .find((building) => building.id === buildingId);
 }

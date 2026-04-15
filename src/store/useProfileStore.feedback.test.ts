@@ -9,10 +9,7 @@ test("toggleFavourite updates taste vector and recommendation signals", () => {
   const dish = repository
     .listPopularNearby()
     .find(
-      (candidate) =>
-        !useProfileStore
-          .getState()
-          .profile.favouriteDishIds.includes(candidate.id),
+      (candidate) => !useProfileStore.getState().profile.favouriteDishIds.includes(candidate.id),
     );
 
   assert.ok(dish, "Expected at least one candidate dish for favourite toggling");

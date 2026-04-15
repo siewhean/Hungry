@@ -19,10 +19,7 @@ export function PostComposerScreen({ navigation }: Props) {
   const repository = getDataRepository();
   const [caption, setCaption] = useState("");
   const dish = useMemo(() => repository.listPopularNearby()[0], [repository]);
-  const venue = useMemo(
-    () => repository.getVenueById(dish.venueId),
-    [dish.venueId, repository],
-  );
+  const venue = useMemo(() => repository.getVenueById(dish.venueId), [dish.venueId, repository]);
 
   const handlePublish = () => {
     if (!isAuthenticated) {
@@ -56,9 +53,7 @@ export function PostComposerScreen({ navigation }: Props) {
             value={caption}
             onChangeText={setCaption}
           />
-          <View
-            style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}
-          >
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             {dish.tasteTags.slice(0, 3).map((tag) => (
               <Badge key={tag} label={tag} tone="neutral" />
             ))}
@@ -69,9 +64,7 @@ export function PostComposerScreen({ navigation }: Props) {
       <Button
         label="Save draft for later"
         variant="secondary"
-        onPress={() =>
-          showToast({ message: "Draft saved locally.", tone: "info" })
-        }
+        onPress={() => showToast({ message: "Draft saved locally.", tone: "info" })}
       />
     </Screen>
   );

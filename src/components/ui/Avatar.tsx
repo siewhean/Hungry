@@ -13,7 +13,7 @@ interface AvatarProps {
 
 export function Avatar({ uri, name, size = 40, variant = "circle" }: AvatarProps) {
   const { palette, radii } = useHungryTheme();
-  
+
   const initials = name
     .split(" ")
     .map((part) => part.trim().charAt(0))

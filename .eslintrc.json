@@ -1,0 +1,14 @@
+{
+  "extends": ["expo", "plugin:@typescript-eslint/recommended"],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "Literal[value=/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/]",
+        "message": "Use palette tokens instead of hardcoded hex colors."
+      }
+    ]
+  }
+}

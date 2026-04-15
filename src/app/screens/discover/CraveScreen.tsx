@@ -11,10 +11,7 @@ import { Image } from "expo-image";
 import { Heart, X, ChevronLeft, Sparkles } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -128,11 +125,7 @@ export function CraveScreen() {
           padding: spacing[8],
         }}
       >
-        <Sparkles
-          color={palette.orange}
-          size={48}
-          style={{ marginBottom: spacing[4] }}
-        />
+        <Sparkles color={palette.orange} size={48} style={{ marginBottom: spacing[4] }} />
         <AppText variant="h2" style={{ textAlign: "center" }}>
           You've seen it all!
         </AppText>
@@ -144,8 +137,7 @@ export function CraveScreen() {
             marginBottom: spacing[6],
           }}
         >
-          Your taste profile is getting sharper. Go check out your updated
-          Fingerprint.
+          Your taste profile is getting sharper. Go check out your updated Fingerprint.
         </AppText>
         <Button label="Back to Discover" onPress={() => navigation.goBack()} />
       </SafeAreaView>
@@ -194,16 +186,11 @@ export function CraveScreen() {
           <View style={{ width: 40, height: 40 }} />
         </View>
 
-        <View
-          style={{ flex: 1, padding: spacing[4], justifyContent: "center" }}
-        >
+        <View style={{ flex: 1, padding: spacing[4], justifyContent: "center" }}>
           {/* Next Card (Background) */}
           {nextDish && (
             <View
-              style={[
-                StyleSheet.absoluteFill,
-                { padding: spacing[4], justifyContent: "center" },
-              ]}
+              style={[StyleSheet.absoluteFill, { padding: spacing[4], justifyContent: "center" }]}
             >
               <View
                 style={[
@@ -264,9 +251,7 @@ export function CraveScreen() {
                 },
               ]}
             >
-              <AppText
-                style={{ color: palette.teal, fontWeight: "900", fontSize: 32 }}
-              >
+              <AppText style={{ color: palette.teal, fontWeight: "900", fontSize: 32 }}>
                 CRAVE
               </AppText>
             </Animated.View>

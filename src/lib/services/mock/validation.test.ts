@@ -1,7 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildings, blogPosts, dishes, guestProfile, stallPosts, userProfile, venues } from "./data";
+import {
+  buildings,
+  blogPosts,
+  dishes,
+  guestProfile,
+  stallPosts,
+  userProfile,
+  venues,
+} from "./data";
 import { validateFixtureBundle } from "./validation";
 
 test("validateFixtureBundle passes for default fixtures", () => {

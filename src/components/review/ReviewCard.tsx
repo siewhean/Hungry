@@ -51,16 +51,23 @@ export function ReviewCard({ review }: ReviewCardProps) {
         {review.tags.map((tag) => (
           <Badge key={tag} label={tag} tone="neutral" />
         ))}
-        <Badge label={review.wouldRecommend ? "Would recommend" : "Not recommended"} tone={review.wouldRecommend ? "success" : "warning"} />
+        <Badge
+          label={review.wouldRecommend ? "Would recommend" : "Not recommended"}
+          tone={review.wouldRecommend ? "success" : "warning"}
+        />
       </View>
       {review.photos.length ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           {review.photos.map((uri) => (
-            <Image key={uri} source={{ uri }} style={{ borderRadius: radii.sm, height: 72, width: 72 }} contentFit="cover" />
+            <Image
+              key={uri}
+              source={{ uri }}
+              style={{ borderRadius: radii.sm, height: 72, width: 72 }}
+              contentFit="cover"
+            />
           ))}
         </View>
       ) : null}
     </Card>
   );
 }
-

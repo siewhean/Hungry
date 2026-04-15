@@ -2,12 +2,7 @@ import { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
-import {
-  CircleCheck,
-  CircleAlert,
-  TriangleAlert,
-  Info,
-} from "lucide-react-native";
+import { CircleCheck, CircleAlert, TriangleAlert, Info } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
 import { useUIStore } from "@/store/useUIStore";
@@ -60,10 +55,7 @@ export function FloatingToast() {
   const Icon = toneConfig.icon;
 
   return (
-    <View
-      pointerEvents="box-none"
-      style={[styles.wrapper, { zIndex: zIndex.toast }]}
-    >
+    <View pointerEvents="box-none" style={[styles.wrapper, { zIndex: zIndex.toast }]}>
       <Animated.View
         entering={FadeInDown.duration(motion.toast)}
         exiting={FadeOutUp.duration(motion.toast)}
@@ -86,9 +78,7 @@ export function FloatingToast() {
           ]}
         >
           <Icon size={20} color={toneConfig.color} />
-          <AppText
-            style={{ color: toneConfig.color, fontWeight: "700", flex: 1 }}
-          >
+          <AppText style={{ color: toneConfig.color, fontWeight: "700", flex: 1 }}>
             {toast.message}
           </AppText>
         </Pressable>

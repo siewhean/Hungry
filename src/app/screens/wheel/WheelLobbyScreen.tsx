@@ -102,11 +102,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
 
   return (
     <>
-      <Screen
-        title="Party Lobby"
-        subtitle="Invite friends and decide together"
-        scroll={false}
-      >
+      <Screen title="Party Lobby" subtitle="Invite friends and decide together" scroll={false}>
         {/* Animated Ticket-style Code Card */}
         <View style={{ marginBottom: spacing[6] }}>
           <LinearGradient
@@ -216,11 +212,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
               <AppText variant="h3">Options</AppText>
             </View>
             <Badge
-              label={
-                party.spinMode === "classic"
-                  ? "Classic Mode"
-                  : "Elimination Mode"
-              }
+              label={party.spinMode === "classic" ? "Classic Mode" : "Elimination Mode"}
               tone="orange"
             />
           </View>
@@ -262,10 +254,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
                   >
                     <Plus size={32} color={palette.textMuted} />
                   </View>
-                  <AppText
-                    tone="secondary"
-                    style={{ textAlign: "center", fontSize: 16 }}
-                  >
+                  <AppText tone="secondary" style={{ textAlign: "center", fontSize: 16 }}>
                     The wheel is empty!{"\n"}Add some spots to start the party.
                   </AppText>
                 </View>
@@ -325,10 +314,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
         </View>
       </Screen>
 
-      <WheelEntryAddSheet
-        visible={addSheetOpen}
-        onClose={() => setAddSheetOpen(false)}
-      />
+      <WheelEntryAddSheet visible={addSheetOpen} onClose={() => setAddSheetOpen(false)} />
     </>
   );
 }

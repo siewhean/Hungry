@@ -8,31 +8,29 @@ interface SettingsSectionProps {
   description?: string;
 }
 
-export function SettingsSection({ title, description, children }: PropsWithChildren<SettingsSectionProps>) {
+export function SettingsSection({
+  title,
+  description,
+  children,
+}: PropsWithChildren<SettingsSectionProps>) {
   const { spacing, palette } = useHungryTheme();
 
   return (
     <View style={{ marginBottom: spacing[6] }}>
       {title ? (
-        <AppText 
-          variant="micro" 
-          tone="secondary" 
-          style={styles.title}
-        >
+        <AppText variant="micro" tone="secondary" style={styles.title}>
           {title.toUpperCase()}
         </AppText>
       ) : null}
-      
-      <View style={[styles.content, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+
+      <View
+        style={[styles.content, { backgroundColor: palette.surface, borderColor: palette.border }]}
+      >
         {children}
       </View>
 
       {description ? (
-        <AppText 
-          variant="micro" 
-          tone="muted" 
-          style={styles.description}
-        >
+        <AppText variant="micro" tone="muted" style={styles.description}>
           {description}
         </AppText>
       ) : null}

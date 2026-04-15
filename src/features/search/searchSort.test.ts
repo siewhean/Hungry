@@ -16,7 +16,9 @@ test("sortSearchResults sorts by rating descending", () => {
   const sorted = sortSearchResults(dishes.slice(0, 4), "rating", userProfile.tasteVector);
   assert.deepEqual(
     sorted.map((dish) => dish.id),
-    [...dishes.slice(0, 4)].sort((left, right) => right.rating - left.rating).map((dish) => dish.id),
+    [...dishes.slice(0, 4)]
+      .sort((left, right) => right.rating - left.rating)
+      .map((dish) => dish.id),
   );
 });
 
@@ -24,6 +26,8 @@ test("sortSearchResults sorts by nearest distance", () => {
   const sorted = sortSearchResults(dishes.slice(0, 4), "distance", userProfile.tasteVector);
   assert.deepEqual(
     sorted.map((dish) => dish.id),
-    [...dishes.slice(0, 4)].sort((left, right) => left.distanceMeters - right.distanceMeters).map((dish) => dish.id),
+    [...dishes.slice(0, 4)]
+      .sort((left, right) => left.distanceMeters - right.distanceMeters)
+      .map((dish) => dish.id),
   );
 });

@@ -33,4 +33,3 @@ export function InlineBanner({ message, tone = "info" }: InlineBannerProps) {
     </View>
   );
 }
-

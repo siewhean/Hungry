@@ -61,13 +61,25 @@ export function WheelHomeScreen({ navigation, route }: Props) {
   return (
     <Screen title="Hungry Wheel" subtitle="Decide together, eat better.">
       <View style={{ gap: spacing[6] }}>
-        
         {/* Intro Illustration/Icon Section */}
         <View style={{ alignItems: "center", paddingVertical: spacing[4], gap: spacing[2] }}>
-          <View style={{ width: 80, height: 80, borderRadius: 40, backgroundColor: palette.orangeLight, alignItems: "center", justifyContent: "center" }}>
+          <View
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: palette.orangeLight,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <Compass size={44} color={palette.orange} strokeWidth={1.5} />
           </View>
-          <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center", maxWidth: "80%" }}>
+          <AppText
+            variant="bodySmall"
+            tone="secondary"
+            style={{ textAlign: "center", maxWidth: "80%" }}
+          >
             The ultimate tie-breaker for groups who can't decide where to eat.
           </AppText>
         </View>
@@ -86,12 +98,23 @@ export function WheelHomeScreen({ navigation, route }: Props) {
           >
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[4] }}>
               <View style={{ flex: 1, gap: spacing[1] }}>
-                <AppText variant="h2" style={{ color: palette.white }}>Host a Party</AppText>
+                <AppText variant="h2" style={{ color: palette.white }}>
+                  Host a Party
+                </AppText>
                 <AppText variant="bodySmall" style={{ color: "rgba(255,255,255,0.8)" }}>
                   Start a new room and invite your friends to join the spin.
                 </AppText>
               </View>
-              <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}>
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: "rgba(255,255,255,0.2)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
                 <ArrowRight size={24} color={palette.white} />
               </View>
             </View>
@@ -99,7 +122,14 @@ export function WheelHomeScreen({ navigation, route }: Props) {
         </Pressable>
 
         {/* Divider */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3], paddingHorizontal: spacing[4] }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing[3],
+            paddingHorizontal: spacing[4],
+          }}
+        >
           <View style={{ flex: 1, height: 1, backgroundColor: palette.border, opacity: 0.5 }} />
           <AppText variant="micro" tone="secondary" style={{ fontWeight: "800" }}>
             HAVE A CODE?
@@ -114,7 +144,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
               <Users size={18} color={palette.orange} />
               <AppText variant="h3">Join your friends</AppText>
             </View>
-            
+
             <View style={{ gap: spacing[3] }}>
               <Input
                 label="Party Code"
@@ -134,8 +164,17 @@ export function WheelHomeScreen({ navigation, route }: Props) {
             </View>
 
             {joinError ? (
-              <View style={{ backgroundColor: `${palette.error}10`, padding: spacing[2], borderRadius: radii.sm }}>
-                <AppText variant="micro" style={{ color: palette.error, fontWeight: "600", textAlign: "center" }}>
+              <View
+                style={{
+                  backgroundColor: `${palette.error}10`,
+                  padding: spacing[2],
+                  borderRadius: radii.sm,
+                }}
+              >
+                <AppText
+                  variant="micro"
+                  style={{ color: palette.error, fontWeight: "600", textAlign: "center" }}
+                >
                   {joinError}
                 </AppText>
               </View>

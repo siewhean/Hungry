@@ -138,9 +138,7 @@ function MarkerVisual({
       {showLabel ? (
         <View
           style={{
-            backgroundColor: selected
-              ? palette.surface
-              : palette.surfaceTranslucent,
+            backgroundColor: selected ? palette.surface : palette.surfaceTranslucent,
             borderColor: selected ? palette.orange : palette.border,
             borderRadius: radii.pill,
             borderWidth: 1,
@@ -234,9 +232,7 @@ function FallbackMap({
   const coordinates = useMemo(
     () => [
       centerCoordinate,
-      ...(Array.isArray(markers)
-        ? markers.map((marker) => marker.coordinate)
-        : []),
+      ...(Array.isArray(markers) ? markers.map((marker) => marker.coordinate) : []),
       ...(currentLocation ? [currentLocation] : []),
     ],
     [centerCoordinate, currentLocation, markers],
@@ -354,12 +350,7 @@ function FallbackMap({
       })}
 
       {currentLocation ? (
-        <View
-          style={[
-            styles.absoluteMarker,
-            projectCoordinate(currentLocation, bounds),
-          ]}
-        >
+        <View style={[styles.absoluteMarker, projectCoordinate(currentLocation, bounds)]}>
           <UserPuck />
         </View>
       ) : null}
@@ -380,8 +371,7 @@ export function MapSurface({
   cameraPadding,
 }: MapSurfaceProps) {
   const { palette } = useHungryTheme();
-  const shouldUseFallback =
-    FEATURE_FLAGS.mockMapboxEnabled || !MAPBOX_ACCESS_TOKEN;
+  const shouldUseFallback = FEATURE_FLAGS.mockMapboxEnabled || !MAPBOX_ACCESS_TOKEN;
 
   useEffect(() => {
     if (!MAPBOX_ACCESS_TOKEN || hasConfiguredMapboxToken) {
@@ -441,10 +431,7 @@ export function MapSurface({
         rotateEnabled={false}
         scaleBarEnabled={false}
         onPress={(event) => {
-          const [longitude, latitude] = event.geometry.coordinates as [
-            number,
-            number,
-          ];
+          const [longitude, latitude] = event.geometry.coordinates as [number, number];
           onMapPress?.({ latitude, longitude });
         }}
         onRegionDidChange={(feature) => {

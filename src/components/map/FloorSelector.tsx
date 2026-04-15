@@ -13,7 +13,11 @@ export function FloorSelector({ floors, selectedFloor, onSelectFloor }: FloorSel
   const { palette, radii, spacing } = useHungryTheme();
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[2] }}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ gap: spacing[2] }}
+    >
       {floors.map((floor) => {
         const selected = floor === selectedFloor;
 

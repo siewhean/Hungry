@@ -22,11 +22,23 @@ export function TasteProfileLoadingScreen({ navigation }: Props) {
   }, [motion.onboardingLoading, navigation, progress]);
 
   return (
-    <View style={{ alignItems: "center", backgroundColor: palette.bg, flex: 1, justifyContent: "center", padding: spacing[6] }}>
+    <View
+      style={{
+        alignItems: "center",
+        backgroundColor: palette.bg,
+        flex: 1,
+        justifyContent: "center",
+        padding: spacing[6],
+      }}
+    >
       <AppText variant="h2" style={{ marginBottom: spacing[3], textAlign: "center" }}>
         Building your taste profile
       </AppText>
-      <AppText variant="bodySmall" tone="secondary" style={{ marginBottom: spacing[5], textAlign: "center" }}>
+      <AppText
+        variant="bodySmall"
+        tone="secondary"
+        style={{ marginBottom: spacing[5], textAlign: "center" }}
+      >
         Matching flavour signals with your preferences.
       </AppText>
       <View

@@ -2,8 +2,7 @@ import { StyleSheet, View, type ViewProps } from "react-native";
 
 import { useHungryTheme } from "@/theme";
 
-interface CardProps extends ViewProps {
-}
+interface CardProps extends ViewProps {}
 
 export function Card({ children, style, ...props }: CardProps) {
   const { palette, radii, shadows, spacing } = useHungryTheme();

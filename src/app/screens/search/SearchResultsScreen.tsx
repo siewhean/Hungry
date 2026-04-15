@@ -22,13 +22,7 @@ import type { DishDetail } from "@/types/domain";
 type DisplayMode = "list" | "grid";
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
-function SearchResultListCard({
-  dish,
-  onPress,
-}: {
-  dish: DishDetail;
-  onPress: () => void;
-}) {
+function SearchResultListCard({ dish, onPress }: { dish: DishDetail; onPress: () => void }) {
   const repository = getDataRepository();
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const venue = repository.getVenueById(dish.venueId);
@@ -64,9 +58,7 @@ function SearchResultListCard({
               }}
             >
               <View style={{ flex: 1 }}>
-                <AppText style={{ fontWeight: "800", fontSize: 16 }}>
-                  {dish.name}
-                </AppText>
+                <AppText style={{ fontWeight: "800", fontSize: 16 }}>{dish.name}</AppText>
                 <AppText variant="micro" tone="secondary">
                   {venue?.name}
                 </AppText>
@@ -110,13 +102,7 @@ function SearchResultListCard({
   );
 }
 
-function SearchResultGridCard({
-  dish,
-  onPress,
-}: {
-  dish: DishDetail;
-  onPress: () => void;
-}) {
+function SearchResultGridCard({ dish, onPress }: { dish: DishDetail; onPress: () => void }) {
   const repository = getDataRepository();
   const { palette, radii, spacing, shadows } = useHungryTheme();
 
@@ -140,10 +126,7 @@ function SearchResultGridCard({
           contentFit="cover"
         />
         <View style={{ gap: spacing[1], padding: spacing[3] }}>
-          <AppText
-            style={{ fontWeight: "800", fontSize: 14 }}
-            numberOfLines={1}
-          >
+          <AppText style={{ fontWeight: "800", fontSize: 14 }} numberOfLines={1}>
             {dish.name}
           </AppText>
           <AppText variant="micro" tone="secondary" numberOfLines={1}>
@@ -157,9 +140,7 @@ function SearchResultGridCard({
               marginTop: spacing[1],
             }}
           >
-            <AppText
-              style={{ color: palette.orange, fontWeight: "800", fontSize: 13 }}
-            >
+            <AppText style={{ color: palette.orange, fontWeight: "800", fontSize: 13 }}>
               S${dish.price.toFixed(2)}
             </AppText>
             <View
@@ -243,10 +224,7 @@ export function SearchResultsScreen() {
                   justifyContent: "center",
                 }}
               >
-                <AppText
-                  tone={selected ? "default" : "secondary"}
-                  style={{ fontWeight: "700" }}
-                >
+                <AppText tone={selected ? "default" : "secondary"} style={{ fontWeight: "700" }}>
                   {mode === "list" ? "List" : "Grid"}
                 </AppText>
               </Pressable>
@@ -255,9 +233,7 @@ export function SearchResultsScreen() {
         </View>
 
         {recentSearches.length ? (
-          <View
-            style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}
-          >
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             {recentSearches.slice(0, 3).map((term) => (
               <Chip
                 key={term}
@@ -278,9 +254,7 @@ export function SearchResultsScreen() {
           onPress={() => navigation.navigate("TasteFilter")}
         />
 
-        <View
-          style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}
-        >
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
           {[
             { label: "Best match", value: "best_match" },
             { label: "Nearest", value: "distance" },
@@ -324,9 +298,7 @@ export function SearchResultsScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ gap: 16, paddingBottom: spacing[24] }}
           columnWrapperStyle={
-            displayMode === "grid"
-              ? { justifyContent: "space-between" }
-              : undefined
+            displayMode === "grid" ? { justifyContent: "space-between" } : undefined
           }
           renderItem={({ item }) =>
             displayMode === "list" ? (
@@ -376,11 +348,7 @@ export function SearchResultsScreen() {
             }}
             style={{ alignSelf: "flex-start", paddingVertical: spacing[2] }}
           >
-            <AppText
-              variant="bodySmall"
-              tone="accent"
-              style={{ fontWeight: "700" }}
-            >
+            <AppText variant="bodySmall" tone="accent" style={{ fontWeight: "700" }}>
               Search again for "{filters.query}"
             </AppText>
           </Pressable>

@@ -38,10 +38,7 @@ export interface DataRepository {
   listDishesByVenue(venueId: string): DishDetail[];
   listPopularNearby(): DishDetail[];
   searchDishes(filters: SearchFilters, tasteProfile: TasteVector): DishDetail[];
-  getDecideForMe(
-    tasteProfile: TasteVector,
-    options?: DecideForMeOptions,
-  ): DishDetail | undefined;
+  getDecideForMe(tasteProfile: TasteVector, options?: DecideForMeOptions): DishDetail | undefined;
   listBlogPosts(): BlogPost[];
   listStallPosts(): StallPost[];
 }
@@ -180,7 +177,12 @@ export interface ExplicitFeedbackInput {
 }
 
 export interface ImplicitSignalInput {
-  type: "category_click" | "dwell_time" | "photo_zoom" | "ignored_recommendation" | "rapid_scroll_past";
+  type:
+    | "category_click"
+    | "dwell_time"
+    | "photo_zoom"
+    | "ignored_recommendation"
+    | "rapid_scroll_past";
   dishId: string;
   timestamp: number;
 }
@@ -255,7 +257,11 @@ export interface HungryService {
     listDishesByVenue(venueId: string): Promise<DishDetail[]>;
     listPopularNearby(lat?: number, lng?: number): Promise<DishDetail[]>;
     searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]>;
-    decideForMe(tasteProfile: TasteVector, lat?: number, lng?: number): Promise<DishDetail | undefined>;
+    decideForMe(
+      tasteProfile: TasteVector,
+      lat?: number,
+      lng?: number,
+    ): Promise<DishDetail | undefined>;
   };
 
   // Reviews
@@ -296,36 +302,23 @@ export interface HungryService {
     // Legacy (backward-compatible)
     computeTasteVector(answers: QuizAnswer[]): TasteVector;
     getSmartRecommendations(ctx: RecommendationContext): Promise<RecommendationResult[]>;
-    adjustCommunityTasteVector(
-      dishId: string,
-      userRating: Partial<TasteVector>
-    ): Promise<void>;
-    explainMatch(
-      userVector: TasteVector,
-      dishVector: TasteVector
-    ): string;
+    adjustCommunityTasteVector(dishId: string, userRating: Partial<TasteVector>): Promise<void>;
+    explainMatch(userVector: TasteVector, dishVector: TasteVector): string;
 
     // Extended — Scenario Quiz
     computeTasteProfile(answers: ScenarioQuizAnswer[]): TasteProfile;
 
     // Extended — Full Recommendation Pipeline
     getContextualRecommendations(
-      ctx: ExtendedRecommendationContext
+      ctx: ExtendedRecommendationContext,
     ): Promise<RankedRecommendation[]>;
 
     // Extended — Feedback Processing
-    processExplicitFeedback(
-      feedback: ExplicitFeedbackInput
-    ): Promise<TasteVector>;
-    processImplicitFeedback(
-      signals: ImplicitSignalInput[]
-    ): Promise<TasteVector>;
+    processExplicitFeedback(feedback: ExplicitFeedbackInput): Promise<TasteVector>;
+    processImplicitFeedback(signals: ImplicitSignalInput[]): Promise<TasteVector>;
 
     // Extended — Community Calibration
     getTagSuggestions(dishId: string): Promise<HawkerTasteTag[]>;
-    submitCommunityTags(
-      dishId: string,
-      tags: HawkerTasteTag[]
-    ): Promise<void>;
+    submitCommunityTags(dishId: string, tags: HawkerTasteTag[]): Promise<void>;
   };
 }

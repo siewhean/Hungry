@@ -19,12 +19,7 @@ import type { TasteVector } from "@/types/domain";
 
 // ─── Time-of-Day Segments ─────────────────────────────────────────────────────
 
-export type TimeSegment =
-  | "morning"
-  | "lunch"
-  | "afternoon"
-  | "dinner"
-  | "late_night";
+export type TimeSegment = "morning" | "lunch" | "afternoon" | "dinner" | "late_night";
 
 /**
  * Determine the current time segment from an hour value (0–23).
@@ -149,7 +144,7 @@ export function computeContextModifier(context: ContextState): Partial<TasteVect
  */
 export function applyContextModifier(
   baseVector: TasteVector,
-  modifier: Partial<TasteVector>
+  modifier: Partial<TasteVector>,
 ): TasteVector {
   return {
     sweet: clamp(baseVector.sweet + (modifier.sweet ?? 0), 0, 10),

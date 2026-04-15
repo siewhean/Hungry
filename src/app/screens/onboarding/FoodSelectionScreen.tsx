@@ -43,32 +43,23 @@ const CUISINE_MAP: Record<string, string[]> = {
 
 export function FoodSelectionScreen({ navigation, route }: Props) {
   const { motion, palette, spacing, radii, shadows } = useHungryTheme();
-  const setOnboardingSelectedDishIds = useProfileStore(
-    (s) => s.setOnboardingSelectedDishIds,
-  );
+  const setOnboardingSelectedDishIds = useProfileStore((s) => s.setOnboardingSelectedDishIds);
   const selectedCuisines = route.params.cuisines;
   const repository = getDataRepository();
 
   const [currentIndex, setCurrentCuisineIndex] = useState(0);
-  const [accumulatedSelectedIds, setAccumulatedSelectedIds] = useState<
-    string[]
-  >([]);
-  const [currentCuisineSelectedIds, setCurrentCuisineSelectedIds] = useState<
-    string[]
-  >([]);
+  const [accumulatedSelectedIds, setAccumulatedSelectedIds] = useState<string[]>([]);
+  const [currentCuisineSelectedIds, setCurrentCuisineSelectedIds] = useState<string[]>([]);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(10)).current;
 
   const currentCuisineId = selectedCuisines[currentIndex];
-  const currentCuisineLabel =
-    currentCuisineId.charAt(0).toUpperCase() + currentCuisineId.slice(1);
+  const currentCuisineLabel = currentCuisineId.charAt(0).toUpperCase() + currentCuisineId.slice(1);
 
   const filteredDishes = useMemo(() => {
     const dishIds = CUISINE_MAP[currentCuisineId] || [];
-    return dishIds
-      .map((id) => repository.getDishById(id))
-      .filter(Boolean) as DishDetail[];
+    return dishIds.map((id) => repository.getDishById(id)).filter(Boolean) as DishDetail[];
   }, [currentCuisineId, repository]);
 
   // Trigger transition animation when cuisine changes
@@ -99,10 +90,7 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
   const handleNext = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const updatedAccumulated = [
-      ...new Set([
-        ...(accumulatedSelectedIds || []),
-        ...(currentCuisineSelectedIds || []),
-      ]),
+      ...new Set([...(accumulatedSelectedIds || []), ...(currentCuisineSelectedIds || [])]),
     ];
 
     if (currentIndex < selectedCuisines.length - 1) {
@@ -183,9 +171,7 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
                     },
                   ]}
                 >
-                  <View
-                    style={{ height: 120, width: "100%", position: "relative" }}
-                  >
+                  <View style={{ height: 120, width: "100%", position: "relative" }}>
                     <Image
                       source={{ uri: dish.imageUrl }}
                       style={{ width: "100%", height: "100%" }}
@@ -199,20 +185,12 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
                         width: 28,
                         height: 28,
                         borderRadius: radii.pill,
-                        backgroundColor: isSelected
-                          ? palette.orange
-                          : palette.surfaceTranslucent,
+                        backgroundColor: isSelected ? palette.orange : palette.surfaceTranslucent,
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
-                      {isSelected && (
-                        <Check
-                          size={16}
-                          color={palette.surface}
-                          strokeWidth={3}
-                        />
-                      )}
+                      {isSelected && <Check size={16} color={palette.surface} strokeWidth={3} />}
                     </View>
                   </View>
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
@@ -227,22 +205,14 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
               );
             })
           ) : (
-            <View
-              style={{ flex: 1, padding: spacing[8], alignItems: "center" }}
-            >
-              <AppText tone="secondary">
-                No {currentCuisineLabel} dishes found.
-              </AppText>
+            <View style={{ flex: 1, padding: spacing[8], alignItems: "center" }}>
+              <AppText tone="secondary">No {currentCuisineLabel} dishes found.</AppText>
             </View>
           )}
         </Animated.View>
 
         <Button
-          label={
-            currentIndex < selectedCuisines.length - 1
-              ? "Next Cuisine"
-              : "Start Taste Quiz"
-          }
+          label={currentIndex < selectedCuisines.length - 1 ? "Next Cuisine" : "Start Taste Quiz"}
           onPress={handleNext}
           disabled={
             currentCuisineSelectedIds.length === 0 &&

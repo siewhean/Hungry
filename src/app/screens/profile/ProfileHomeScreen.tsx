@@ -127,9 +127,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
           </View>
 
           <View style={{ flex: 1, gap: spacing[1] }}>
-            <AppText
-              style={{ fontSize: 24, fontWeight: "900", color: palette.text }}
-            >
+            <AppText style={{ fontSize: 24, fontWeight: "900", color: palette.text }}>
               {profile.displayName}
             </AppText>
             <AppText variant="bodySmall" tone="secondary">
@@ -174,11 +172,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
               style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
             >
               <Share2 size={16} color={palette.orange} />
-              <AppText
-                variant="micro"
-                tone="accent"
-                style={{ fontWeight: "700" }}
-              >
+              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                 SHARE
               </AppText>
             </Pressable>
@@ -217,9 +211,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
                 <BarChart3 size={20} color={palette.orange} />
               </View>
               <View style={{ flex: 1 }}>
-                <AppText style={{ fontWeight: "700", fontSize: 16 }}>
-                  Detailed Analysis
-                </AppText>
+                <AppText style={{ fontWeight: "700", fontSize: 16 }}>Detailed Analysis</AppText>
                 <AppText variant="micro" tone="secondary">
                   Updated based on your last 5 reviews
                 </AppText>
@@ -249,23 +241,14 @@ export function ProfileHomeScreen({ navigation }: Props) {
 
             <View
               style={{
-                backgroundColor:
-                  colorScheme === "dark"
-                    ? palette.surfaceRaised
-                    : palette.bgSoft,
+                backgroundColor: colorScheme === "dark" ? palette.surfaceRaised : palette.bgSoft,
                 padding: spacing[3],
                 borderRadius: radii.md,
               }}
             >
-              <AppText
-                variant="bodySmall"
-                tone="secondary"
-                style={{ lineHeight: 18 }}
-              >
+              <AppText variant="bodySmall" tone="secondary" style={{ lineHeight: 18 }}>
                 Your profile leans heavily towards{" "}
-                <AppText style={{ fontWeight: "700", color: palette.text }}>
-                  Spicy
-                </AppText>{" "}
+                <AppText style={{ fontWeight: "700", color: palette.text }}>Spicy</AppText>{" "}
                 flavours. You have reviewed{" "}
                 <AppText style={{ fontWeight: "700", color: palette.text }}>
                   {profile.stats.dishesReviewed} dishes
@@ -320,11 +303,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
               accessibilityLabel="View all favourites"
               onPress={() => navigation.navigate("Favourites")}
             >
-              <AppText
-                variant="micro"
-                tone="accent"
-                style={{ fontWeight: "700" }}
-              >
+              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                 SEE ALL
               </AppText>
             </Pressable>
@@ -341,9 +320,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
                   key={dish.id}
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${dish.name} details`}
-                  onPress={() =>
-                    rootNavigation.navigate("DishDetail", { dishId: dish.id })
-                  }
+                  onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
                   style={[
                     shadows.card,
                     {
@@ -372,9 +349,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
             </ScrollView>
           ) : (
             <Card style={{ padding: spacing[6], alignItems: "center" }}>
-              <AppText tone="secondary">
-                No favourites yet. Start exploring!
-              </AppText>
+              <AppText tone="secondary">No favourites yet. Start exploring!</AppText>
             </Card>
           )}
         </View>
@@ -447,8 +422,7 @@ function StatBlock({
   return (
     <View
       style={{
-        backgroundColor:
-          colorScheme === "dark" ? palette.surfaceRaised : palette.bgSoft,
+        backgroundColor: colorScheme === "dark" ? palette.surfaceRaised : palette.bgSoft,
         borderRadius: radii.lg,
         paddingVertical: spacing[3],
         paddingHorizontal: spacing[3],
@@ -457,15 +431,9 @@ function StatBlock({
         gap: spacing[1],
       }}
     >
-      <View
-        style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-      >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
         {icon}
-        <AppText
-          style={{ fontSize: 18, fontWeight: "900", color: palette.text }}
-        >
-          {value}
-        </AppText>
+        <AppText style={{ fontSize: 18, fontWeight: "900", color: palette.text }}>{value}</AppText>
       </View>
       <AppText
         variant="micro"
@@ -507,9 +475,7 @@ function MenuRow({
       ]}
     >
       {icon}
-      <AppText style={{ flex: 1, fontWeight: "600", color: palette.text }}>
-        {label}
-      </AppText>
+      <AppText style={{ flex: 1, fontWeight: "600", color: palette.text }}>{label}</AppText>
       <ChevronRight color={palette.textMuted} size={18} />
     </Pressable>
   );

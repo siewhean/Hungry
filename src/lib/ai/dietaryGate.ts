@@ -92,10 +92,7 @@ export function encodeDietaryFlags(flags: DietaryFlag[]): DietaryMask {
  *
  * Returns true if there IS a conflict (dish is UNSAFE for this user).
  */
-export function hasConflict(
-  userRequirements: DietaryMask,
-  dishFlags: DietaryMask
-): boolean {
+export function hasConflict(userRequirements: DietaryMask, dishFlags: DietaryMask): boolean {
   // If the user requires certain flags and the dish doesn't have them,
   // the AND of userRequirements with the COMPLEMENT of dishFlags will be non-zero
   return (userRequirements & ~dishFlags) !== 0;
@@ -105,10 +102,7 @@ export function hasConflict(
  * Check if a specific dish is safe for a user, given their dietary preferences.
  * Convenience wrapper over bitmask operations.
  */
-export function isDishSafe(
-  dish: DishSummary,
-  userFlags: DietaryFlag[]
-): boolean {
+export function isDishSafe(dish: DishSummary, userFlags: DietaryFlag[]): boolean {
   if (userFlags.length === 0) return true; // no restrictions = everything is safe
 
   const userMask = encodeDietaryFlags(userFlags);
@@ -129,7 +123,7 @@ export function isDishSafe(
  */
 export function filterSafeDishes<T extends DishSummary>(
   dishes: T[],
-  userFlags: DietaryFlag[]
+  userFlags: DietaryFlag[],
 ): T[] {
   if (userFlags.length === 0) return dishes;
 
@@ -148,7 +142,7 @@ export function filterSafeDishes<T extends DishSummary>(
  */
 export function getViolatedRestrictions(
   dish: DishSummary,
-  userFlags: DietaryFlag[]
+  userFlags: DietaryFlag[],
 ): DietaryFlag[] {
   return userFlags.filter((flag) => !dish.dietaryFlags.includes(flag));
 }

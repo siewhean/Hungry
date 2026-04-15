@@ -50,35 +50,34 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
     setSelectedFloor(building.floors[0]);
   }, [building, setSelectedBuilding, setSelectedFloor]);
 
-  const markers = useMemo<MapSurfaceMarker[]>(
-    () => {
-      const buildingMarker = {
-        id: building.id,
-        label: building.name.replace(" Food Centre", ""),
-        coordinate: building.coordinate,
-        accent: building.type === "hawker_centre" ? palette.orange : palette.teal,
-        type: building.type,
-      };
+  const markers = useMemo<MapSurfaceMarker[]>(() => {
+    const buildingMarker = {
+      id: building.id,
+      label: building.name.replace(" Food Centre", ""),
+      coordinate: building.coordinate,
+      accent: building.type === "hawker_centre" ? palette.orange : palette.teal,
+      type: building.type,
+    };
 
-      if (currentZoom > 17.0) {
-        const stallMarkers = getBuildingVenues(building.id).map(v => ({
-          id: `stall-${v.id}`,
-          label: v.name,
-          coordinate: {
-            latitude: building.coordinate.latitude + (Math.random() - 0.5) * 0.0008,
-            longitude: building.coordinate.longitude + (Math.random() - 0.5) * 0.0008,
-          },
-          accent: palette.orange,
-        }));
-        return [buildingMarker, ...stallMarkers];
-      }
+    if (currentZoom > 17.0) {
+      const stallMarkers = getBuildingVenues(building.id).map((v) => ({
+        id: `stall-${v.id}`,
+        label: v.name,
+        coordinate: {
+          latitude: building.coordinate.latitude + (Math.random() - 0.5) * 0.0008,
+          longitude: building.coordinate.longitude + (Math.random() - 0.5) * 0.0008,
+        },
+        accent: palette.orange,
+      }));
+      return [buildingMarker, ...stallMarkers];
+    }
 
-      return [buildingMarker];
-    },
-    [building, palette, currentZoom],
-  );
+    return [buildingMarker];
+  }, [building, palette, currentZoom]);
 
-  const featuredStalls = getBuildingVenues(building.id).filter((v) => v.isOpen).slice(0, 3);
+  const featuredStalls = getBuildingVenues(building.id)
+    .filter((v) => v.isOpen)
+    .slice(0, 3);
   const bottomSheetRef = useRef<BottomSheet>(null);
 
   useEffect(() => {
@@ -108,9 +107,22 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
         onZoomChange={setCurrentZoom}
       />
 
-      <Pressable 
-        onPress={() => navigation.goBack()} 
-        style={[{ position: "absolute", top: insets.top + spacing[2], left: spacing[4], width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center" }, shadows.floating]}
+      <Pressable
+        onPress={() => navigation.goBack()}
+        style={[
+          {
+            position: "absolute",
+            top: insets.top + spacing[2],
+            left: spacing[4],
+            width: 44,
+            height: 44,
+            borderRadius: radii.pill,
+            backgroundColor: palette.surface,
+            alignItems: "center",
+            justifyContent: "center",
+          },
+          shadows.floating,
+        ]}
       >
         <ChevronLeft color={palette.text} size={24} />
       </Pressable>
@@ -120,15 +132,33 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
         index={1}
         snapPoints={["2%", "35%", "60%"]}
         enablePanDownToClose={false}
-        backgroundStyle={{ backgroundColor: palette.surface, borderTopLeftRadius: radii.xl, borderTopRightRadius: radii.xl }}
+        backgroundStyle={{
+          backgroundColor: palette.surface,
+          borderTopLeftRadius: radii.xl,
+          borderTopRightRadius: radii.xl,
+        }}
         handleIndicatorStyle={{ backgroundColor: palette.border, width: 40 }}
       >
-        <BottomSheetScrollView contentContainerStyle={{ paddingBottom: insets.bottom + spacing[5], paddingHorizontal: spacing[3], paddingTop: spacing[6] }}>
+        <BottomSheetScrollView
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + spacing[5],
+            paddingHorizontal: spacing[3],
+            paddingTop: spacing[6],
+          }}
+        >
           <View style={{ gap: spacing[4] }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+              }}
+            >
               <View style={{ flex: 1, gap: spacing[1] }}>
                 <AppText variant="h2">{building.name}</AppText>
-                <AppText variant="bodySmall" tone="secondary">{building.address}</AppText>
+                <AppText variant="bodySmall" tone="secondary">
+                  {building.address}
+                </AppText>
               </View>
               <Badge label="Open" tone="success" />
             </View>
@@ -151,7 +181,9 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
                 >
                   <View style={{ flex: 1, gap: spacing[1] }}>
                     <AppText variant="h3">{venue.name}</AppText>
-                    <AppText variant="micro" tone="secondary">{venue.unitNumber} · {venue.operatingHours}</AppText>
+                    <AppText variant="micro" tone="secondary">
+                      {venue.unitNumber} · {venue.operatingHours}
+                    </AppText>
                   </View>
                   <Store size={16} color={palette.orange} />
                 </Pressable>

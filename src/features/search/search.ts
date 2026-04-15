@@ -1,7 +1,4 @@
-import {
-  getDataRepository,
-  getSimilarityScore,
-} from "@/lib/services/serviceProvider";
+import { getDataRepository, getSimilarityScore } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import type {
@@ -26,10 +23,7 @@ export function useSearchData() {
   };
 }
 
-export function getSearchResults(
-  filters: SearchFilters,
-  tasteVector = filters.tasteValues,
-) {
+export function getSearchResults(filters: SearchFilters, tasteVector = filters.tasteValues) {
   return getDataRepository().searchDishes(filters, tasteVector);
 }
 
@@ -41,9 +35,7 @@ export function sortSearchResults(
   const cloned = [...results];
 
   if (mode === "distance") {
-    return cloned.sort(
-      (left, right) => left.distanceMeters - right.distanceMeters,
-    );
+    return cloned.sort((left, right) => left.distanceMeters - right.distanceMeters);
   }
 
   if (mode === "rating") {
@@ -90,9 +82,7 @@ export function groupResultsByVenue(results: DishDetail[]) {
       return {
         venue,
         dishes: dishesByVenue.sort((left, right) => right.rating - left.rating),
-        minDistanceMeters: Math.min(
-          ...dishesByVenue.map((dish) => dish.distanceMeters),
-        ),
+        minDistanceMeters: Math.min(...dishesByVenue.map((dish) => dish.distanceMeters)),
         bestRating: Math.max(...dishesByVenue.map((dish) => dish.rating)),
       };
     })
@@ -122,18 +112,13 @@ export interface DiscoverStallCollection {
   affinity: number;
 }
 
-export function getDiscoverStallCollections(
-  profile: UserProfile,
-  query: string,
-) {
+export function getDiscoverStallCollections(profile: UserProfile, query: string) {
   const repository = getDataRepository();
   const normalizedQuery = query.trim().toLowerCase();
   const posts = repository.listStallPosts();
   const buildings = repository.listBuildings();
   const seenVenues = new Set<string>();
-  const collections: Array<
-    DiscoverStallCollection & { nearestDistanceMeters: number }
-  > = [];
+  const collections: Array<DiscoverStallCollection & { nearestDistanceMeters: number }> = [];
 
   for (const building of buildings) {
     const venues = repository.listVenuesByBuilding(building.id);
@@ -180,14 +165,8 @@ export function getDiscoverStallCollections(
       return haystack.includes(normalizedQuery);
     })
     .sort((left, right) => {
-      const leftProximityScore = Math.max(
-        0,
-        1 - left.nearestDistanceMeters / 2500,
-      );
-      const rightProximityScore = Math.max(
-        0,
-        1 - right.nearestDistanceMeters / 2500,
-      );
+      const leftProximityScore = Math.max(0, 1 - left.nearestDistanceMeters / 2500);
+      const rightProximityScore = Math.max(0, 1 - right.nearestDistanceMeters / 2500);
       const leftScore = left.affinity * 0.7 + leftProximityScore * 0.3;
       const rightScore = right.affinity * 0.7 + rightProximityScore * 0.3;
 
@@ -197,8 +176,5 @@ export function getDiscoverStallCollections(
 
       return left.nearestDistanceMeters - right.nearestDistanceMeters;
     })
-    .map(
-      ({ nearestDistanceMeters: _nearestDistanceMeters, ...collection }) =>
-        collection,
-    );
+    .map(({ nearestDistanceMeters: _nearestDistanceMeters, ...collection }) => collection);
 }

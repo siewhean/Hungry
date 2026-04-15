@@ -3,12 +3,7 @@ import { persist } from "zustand/middleware";
 
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import type {
-  DietaryFlag,
-  SearchCategory,
-  SearchFilters,
-  TasteVector,
-} from "@/types/domain";
+import type { DietaryFlag, SearchCategory, SearchFilters, TasteVector } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
 
 const MAX_RECENT_SEARCHES = 5;
@@ -118,8 +113,7 @@ export const useSearchStore = create<SearchState>()(
             recentSearches: [
               normalizedQuery,
               ...state.recentSearches.filter(
-                (value) =>
-                  value.toLowerCase() !== normalizedQuery.toLowerCase(),
+                (value) => value.toLowerCase() !== normalizedQuery.toLowerCase(),
               ),
             ].slice(0, MAX_RECENT_SEARCHES),
           };

@@ -11,24 +11,14 @@
  */
 
 import { useEffect, useRef } from "react";
-import {
-  Animated,
-  Easing,
-  Pressable,
-  View,
-  StyleSheet,
-  Platform,
-} from "react-native";
+import { Animated, Easing, Pressable, View, StyleSheet, Platform } from "react-native";
 import type { PropsWithChildren } from "react";
 import { ChevronRight } from "lucide-react-native";
 
 import { AppText, Button } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
-import {
-  ONBOARDING_ACTIONS_BOTTOM_PADDING,
-  ONBOARDING_ACTIONS_GAP,
-} from "./layoutConstants";
+import { ONBOARDING_ACTIONS_BOTTOM_PADDING, ONBOARDING_ACTIONS_GAP } from "./layoutConstants";
 
 // ─── Progress bar ─────────────────────────────────────────────────────────────
 
@@ -96,13 +86,7 @@ function ProgressBar({ total, current }: { total: number; current: number }) {
 
 // ─── Slide illustration (abstract) ────────────────────────────────────────────
 
-function SlideIllustration({
-  step,
-  accentColor,
-}: {
-  step: number;
-  accentColor: string;
-}) {
+function SlideIllustration({ step, accentColor }: { step: number; accentColor: string }) {
   const { palette, radii } = useHungryTheme();
   const anim = useRef(new Animated.Value(0)).current;
 
@@ -122,12 +106,7 @@ function SlideIllustration({
       // Dish-first: bowl + chopsticks silhouette
       <View style={styles.illustrationInner}>
         <View style={[styles.bowl, { borderColor: accentColor }]}>
-          <View
-            style={[
-              styles.bowlContent,
-              { backgroundColor: `${accentColor}44` },
-            ]}
-          >
+          <View style={[styles.bowlContent, { backgroundColor: `${accentColor}44` }]}>
             <View
               style={[
                 styles.steamLine,
@@ -139,10 +118,7 @@ function SlideIllustration({
               ]}
             />
             <View
-              style={[
-                styles.steamLine,
-                { backgroundColor: accentColor, borderRadius: radii.pill },
-              ]}
+              style={[styles.steamLine, { backgroundColor: accentColor, borderRadius: radii.pill }]}
             />
             <View
               style={[
@@ -175,17 +151,9 @@ function SlideIllustration({
             ]}
           />
         ))}
-        <View
-          style={[
-            styles.mapPin,
-            { backgroundColor: accentColor, borderRadius: radii.pill },
-          ]}
-        >
+        <View style={[styles.mapPin, { backgroundColor: accentColor, borderRadius: radii.pill }]}>
           <View
-            style={[
-              styles.mapPinDot,
-              { backgroundColor: palette.white, borderRadius: radii.pill },
-            ]}
+            style={[styles.mapPinDot, { backgroundColor: palette.white, borderRadius: radii.pill }]}
           />
         </View>
       </View>
@@ -199,10 +167,7 @@ function SlideIllustration({
             style={[
               styles.biteCard,
               {
-                backgroundColor:
-                  i === 2
-                    ? accentColor
-                    : `${accentColor}${i === 1 ? "66" : "33"}`,
+                backgroundColor: i === 2 ? accentColor : `${accentColor}${i === 1 ? "66" : "33"}`,
                 transform: [
                   { scale },
                   { translateY: (2 - i) * -18 },
@@ -225,8 +190,7 @@ function SlideIllustration({
               style={[
                 styles.hexCell,
                 {
-                  backgroundColor:
-                    i % 2 === 0 ? accentColor : `${accentColor}44`,
+                  backgroundColor: i % 2 === 0 ? accentColor : `${accentColor}44`,
                   opacity: 0.6 + (i / 6) * 0.4,
                   width: 30 + (i % 3) * 8,
                   height: 30 + (i % 3) * 8,
@@ -305,11 +269,7 @@ function BulletItem({ text, index }: { text: string; index: number }) {
           flexShrink: 0,
         }}
       />
-      <AppText
-        style={{ flex: 1, color: palette.textSecondary, lineHeight: 22 }}
-      >
-        {text}
-      </AppText>
+      <AppText style={{ flex: 1, color: palette.textSecondary, lineHeight: 22 }}>{text}</AppText>
     </Animated.View>
   );
 }
@@ -357,12 +317,7 @@ export function OnboardingIntroTemplate({
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, [
-    headlineAnim,
-    motion.buttonPress,
-    motion.onboardingHeadlineEnter,
-    stepIndex,
-  ]);
+  }, [headlineAnim, motion.buttonPress, motion.onboardingHeadlineEnter, stepIndex]);
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.bg }]}>
@@ -412,10 +367,7 @@ export function OnboardingIntroTemplate({
 
       {/* ── Content ─────────────────────────────────────── */}
       <View
-        style={[
-          styles.contentArea,
-          { backgroundColor: palette.surface, ...shadows.bottomSheet },
-        ]}
+        style={[styles.contentArea, { backgroundColor: palette.surface, ...shadows.bottomSheet }]}
       >
         {/* Eyebrow */}
         <View
@@ -453,10 +405,7 @@ export function OnboardingIntroTemplate({
           <AppText variant="h1" style={{ marginBottom: spacing[2] }}>
             {title}
           </AppText>
-          <AppText
-            tone="secondary"
-            style={{ marginBottom: spacing[4], lineHeight: 22 }}
-          >
+          <AppText tone="secondary" style={{ marginBottom: spacing[4], lineHeight: 22 }}>
             {subtitle}
           </AppText>
         </Animated.View>
@@ -482,11 +431,7 @@ export function OnboardingIntroTemplate({
             onPress={() => navigation.navigate(nextScreen)}
           />
           {backScreen ? (
-            <Button
-              label="Back"
-              variant="ghost"
-              onPress={() => navigation.navigate(backScreen)}
-            />
+            <Button label="Back" variant="ghost" onPress={() => navigation.navigate(backScreen)} />
           ) : null}
         </View>
       </View>

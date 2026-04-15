@@ -32,10 +32,7 @@ export type ProfileStackParamList = {
 };
 
 export type ReviewStackParamList = {
-  ReviewHub: { venueId?: string; dishId?: string } | undefined;
-  ReviewRating: { venueId: string; dishId?: string };
-  ReviewTags: { venueId: string; dishId?: string };
-  ReviewCompose: { venueId: string; dishId?: string };
+  ReviewMain: { venueId?: string; dishId?: string } | undefined;
 };
 
 export type WheelStackParamList = {

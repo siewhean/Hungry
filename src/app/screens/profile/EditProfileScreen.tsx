@@ -46,16 +46,14 @@ const EDITABLE_DIETARY_OPTIONS: Array<{ label: string; value: DietaryFlag }> = [
 export function EditProfileScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
   const updateProfile = useProfileStore((state) => state.updateProfile);
-  const setDietaryPreferences = useProfileStore(
-    (state) => state.setDietaryPreferences,
-  );
+  const setDietaryPreferences = useProfileStore((state) => state.setDietaryPreferences);
   const showToast = useUIStore((state) => state.showToast);
   const { palette, spacing, radii } = useHungryTheme();
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [email, setEmail] = useState(profile.email);
-  const [dietaryPreferences, setDietaryPreferencesState] = useState<
-    DietaryFlag[]
-  >(profile.dietaryPreferences);
+  const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(
+    profile.dietaryPreferences,
+  );
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
 
   const handlePickAvatar = async () => {
@@ -94,9 +92,7 @@ export function EditProfileScreen({ navigation }: Props) {
 
   const toggleDietary = (flag: DietaryFlag) => {
     setDietaryPreferencesState((current) =>
-      current.includes(flag)
-        ? current.filter((value) => value !== flag)
-        : [...current, flag],
+      current.includes(flag) ? current.filter((value) => value !== flag) : [...current, flag],
     );
   };
 
@@ -171,11 +167,7 @@ export function EditProfileScreen({ navigation }: Props) {
 
       <Card>
         <View style={{ gap: spacing[3] }}>
-          <Input
-            label="Display name"
-            value={displayName}
-            onChangeText={setDisplayName}
-          />
+          <Input label="Display name" value={displayName} onChangeText={setDisplayName} />
           <Input
             label="Email"
             autoCapitalize="none"
@@ -197,9 +189,7 @@ export function EditProfileScreen({ navigation }: Props) {
           </Pressable>
 
           <AppText variant="h3">Dietary preferences</AppText>
-          <View
-            style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}
-          >
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             {EDITABLE_DIETARY_OPTIONS.map((option) => (
               <Chip
                 key={option.value}

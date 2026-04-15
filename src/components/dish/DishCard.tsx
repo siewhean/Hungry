@@ -14,7 +14,13 @@ interface DishCardProps {
   onFavouritePress?: () => void;
 }
 
-export function DishCard({ dish, variant = "horizontal", favourited = false, onPress, onFavouritePress }: DishCardProps) {
+export function DishCard({
+  dish,
+  variant = "horizontal",
+  favourited = false,
+  onPress,
+  onFavouritePress,
+}: DishCardProps) {
   const { palette, radii, spacing } = useHungryTheme();
   const styles = createStyles(spacing);
 
@@ -74,7 +80,11 @@ export function DishCard({ dish, variant = "horizontal", favourited = false, onP
               disabled={!onFavouritePress}
               hitSlop={8}
             >
-              <Heart size={18} color={favourited ? palette.error : palette.textMuted} fill={favourited ? palette.error : "transparent"} />
+              <Heart
+                size={18}
+                color={favourited ? palette.error : palette.textMuted}
+                fill={favourited ? palette.error : "transparent"}
+              />
             </Pressable>
           </View>
           <View style={styles.rowWrap}>
@@ -95,26 +105,27 @@ export function DishCard({ dish, variant = "horizontal", favourited = false, onP
   );
 }
 
-const createStyles = (spacing: any) => StyleSheet.create({
-  content: {
-    alignItems: "flex-start",
-  },
-  image: {},
-  row: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: spacing[2],
-    justifyContent: "space-between",
-  },
-  rowWrap: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing[2],
-  },
-  chipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing[1],
-  },
-});
+const createStyles = (spacing: any) =>
+  StyleSheet.create({
+    content: {
+      alignItems: "flex-start",
+    },
+    image: {},
+    row: {
+      alignItems: "flex-start",
+      flexDirection: "row",
+      gap: spacing[2],
+      justifyContent: "space-between",
+    },
+    rowWrap: {
+      alignItems: "center",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing[2],
+    },
+    chipRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing[1],
+    },
+  });

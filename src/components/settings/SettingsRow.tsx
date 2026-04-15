@@ -29,30 +29,39 @@ export function SettingsRow({
 }: SettingsRowProps) {
   const { palette, spacing } = useHungryTheme();
 
-  // If it's a toggle, we don't want the whole row to be pressable in the same way
-  const Container = type === "toggle" ? View : Pressable;
+  // Handle row press even for toggle types
+  const handlePress = () => {
+    if (type === "toggle" && onToggle) {
+      onToggle(!isEnabled);
+    } else if (onPress) {
+      onPress();
+    }
+  };
 
   return (
-    <Container
-      onPress={onPress}
-      style={({ pressed }: any) => [
-        styles.row,
-        { 
+    <Pressable
+      onPress={handlePress}
+      style={({ pressed }) => [
+        {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          minHeight: 56,
           backgroundColor: pressed ? palette.bgSoft : "transparent",
           paddingVertical: spacing[4],
           paddingHorizontal: spacing[4],
           borderBottomWidth: isLast ? 0 : 1,
           borderBottomColor: palette.border,
-        }
+        },
       ]}
     >
       <View style={styles.left}>
         {icon ? <View style={styles.iconWrap}>{icon}</View> : null}
-        <AppText 
-          variant="body" 
-          style={{ 
+        <AppText
+          variant="body"
+          style={{
             color: destructive ? palette.error : palette.text,
-            fontWeight: "500"
+            fontWeight: "500",
           }}
         >
           {label}
@@ -61,12 +70,18 @@ export function SettingsRow({
 
       <View style={styles.right}>
         {type === "value" && value ? (
-          <AppText tone="secondary" style={styles.valueText}>{value}</AppText>
+          <AppText tone="secondary" style={styles.valueText}>
+            {value}
+          </AppText>
         ) : null}
-        
+
         {type === "navigation" ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            {value ? <AppText tone="secondary" style={styles.valueText}>{value}</AppText> : null}
+            {value ? (
+              <AppText tone="secondary" style={styles.valueText}>
+                {value}
+              </AppText>
+            ) : null}
             <ChevronRight size={18} color={palette.textMuted} />
           </View>
         ) : null}
@@ -81,17 +96,11 @@ export function SettingsRow({
           />
         ) : null}
       </View>
-    </Container>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    minHeight: 56,
-  },
   left: {
     flexDirection: "row",
     alignItems: "center",

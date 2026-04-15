@@ -14,14 +14,14 @@ export function OperatingHours({ hours, isOpen, closureNotice }: OperatingHoursP
 
   return (
     <View style={{ gap: spacing[1] }}>
-      <AppText
-        variant="bodySmall"
-        style={{ color: isOpen ? palette.success : palette.error }}
-      >
+      <AppText variant="bodySmall" style={{ color: isOpen ? palette.success : palette.error }}>
         {isOpen ? `Open now · ${hours}` : `Closed now · ${hours}`}
       </AppText>
-      {closureNotice ? <AppText variant="bodySmall" tone="accent">{closureNotice}</AppText> : null}
+      {closureNotice ? (
+        <AppText variant="bodySmall" tone="accent">
+          {closureNotice}
+        </AppText>
+      ) : null}
     </View>
   );
 }
-

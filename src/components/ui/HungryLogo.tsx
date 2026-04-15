@@ -9,11 +9,7 @@ type HungryLogoProps = {
   wordmarkColor?: string;
 };
 
-export function HungryLogo({
-  size = 64,
-  showWordmark = true,
-  wordmarkColor,
-}: HungryLogoProps) {
+export function HungryLogo({ size = 64, showWordmark = true, wordmarkColor }: HungryLogoProps) {
   const { palette } = useHungryTheme();
   const markSize = Math.max(24, Math.round(size * 0.58));
   const finalWordmarkColor = wordmarkColor ?? palette.orange;

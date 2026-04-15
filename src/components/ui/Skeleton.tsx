@@ -1,10 +1,5 @@
 import { useEffect, useRef } from "react";
-import {
-  Animated,
-  type DimensionValue,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
+import { Animated, type DimensionValue, type StyleProp, type ViewStyle } from "react-native";
 
 import { useHungryTheme } from "@/theme";
 
@@ -15,12 +10,7 @@ interface SkeletonProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export function Skeleton({
-  width = "100%",
-  height = 20,
-  borderRadius = 8,
-  style,
-}: SkeletonProps) {
+export function Skeleton({ width = "100%", height = 20, borderRadius = 8, style }: SkeletonProps) {
   const { motion, palette } = useHungryTheme();
   const opacity = useRef(new Animated.Value(0.3)).current;
 

@@ -164,21 +164,15 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const { width } = useWindowDimensions();
   const setTasteVector = useProfileStore((state) => state.setTasteVector);
   const profile = useProfileStore((state) => state.profile);
-  const setDietaryPreferences = useProfileStore(
-    (state) => state.setDietaryPreferences,
-  );
-  const setSkippedTasteQuiz = useSessionStore(
-    (state) => state.setSkippedTasteQuiz,
-  );
-  const hasSkippedTasteQuiz = useSessionStore(
-    (state) => state.hasSkippedTasteQuiz,
-  );
+  const setDietaryPreferences = useProfileStore((state) => state.setDietaryPreferences);
+  const setSkippedTasteQuiz = useSessionStore((state) => state.setSkippedTasteQuiz);
+  const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
   const showToast = useUIStore((state) => state.showToast);
   const flowMode = route.params?.mode ?? "onboarding";
   const [values, setValues] = useState<TasteVector>(INITIAL);
-  const [dietaryPreferences, setDietaryPreferencesState] = useState<
-    DietaryFlag[]
-  >(profile.dietaryPreferences);
+  const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(
+    profile.dietaryPreferences,
+  );
   const [dietaryQuery, setDietaryQuery] = useState("");
   const [step, setStep] = useState(0);
   const [phase, setPhase] = useState<"taste" | "dietary">("taste");
@@ -200,10 +194,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const CARD_GAP = spacing[8];
   const SNAP_INTERVAL = CARD_WIDTH + CARD_GAP;
   const horizontalPadding = Math.max(0, (width - CARD_WIDTH) / 2);
-  const snapOffsets = useMemo(
-    () => [0, SNAP_INTERVAL, SNAP_INTERVAL * 2],
-    [SNAP_INTERVAL],
-  );
+  const snapOffsets = useMemo(() => [0, SNAP_INTERVAL, SNAP_INTERVAL * 2], [SNAP_INTERVAL]);
 
   useEffect(() => {
     const offset = SNAP_INTERVAL;
@@ -223,10 +214,8 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       return;
     }
     const offscreenDistance = width + CARD_WIDTH + CARD_GAP;
-    const exitTo =
-      direction === "forward" ? -offscreenDistance : offscreenDistance;
-    const enterFrom =
-      direction === "forward" ? offscreenDistance : -offscreenDistance;
+    const exitTo = direction === "forward" ? -offscreenDistance : offscreenDistance;
+    const enterFrom = direction === "forward" ? offscreenDistance : -offscreenDistance;
     setIsTransitioning(true);
     optionsSlideAnim.setValue(0);
     Animated.timing(optionsSlideAnim, {
@@ -278,22 +267,17 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const inDietaryStep = phase === "dietary";
   const currentValue = values[currentKey];
   const hasRestrictions = dietaryPreferences.length > 0;
-  const dietaryPrimaryLabel = hasRestrictions
-    ? "Continue"
-    : "I have no restrictions";
+  const dietaryPrimaryLabel = hasRestrictions ? "Continue" : "I have no restrictions";
   const normalizedDietaryQuery = dietaryQuery.trim().toLowerCase();
   const filteredDietaryOptions = DIETARY_OPTIONS.filter((option) => {
     if (!normalizedDietaryQuery) return true;
-    const haystack =
-      `${option.label} ${option.keywords.join(" ")}`.toLowerCase();
+    const haystack = `${option.label} ${option.keywords.join(" ")}`.toLowerCase();
     return haystack.includes(normalizedDietaryQuery);
   });
 
   const toggleDietary = (flag: DietaryFlag) => {
     setDietaryPreferencesState((current) =>
-      current.includes(flag)
-        ? current.filter((value) => value !== flag)
-        : [...current, flag],
+      current.includes(flag) ? current.filter((value) => value !== flag) : [...current, flag],
     );
   };
 
@@ -303,13 +287,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       duration: motion.onboardingProgress,
       useNativeDriver: false,
     }).start();
-  }, [
-    inDietaryStep,
-    motion.onboardingProgress,
-    progressAnim,
-    step,
-    totalSteps,
-  ]);
+  }, [inDietaryStep, motion.onboardingProgress, progressAnim, step, totalSteps]);
 
   return (
     <SafeAreaView
@@ -349,11 +327,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
           <AppText variant="h2" style={{ textAlign: "center" }}>
             {inDietaryStep ? "Dietary preferences" : QUESTIONS[currentKey]}
           </AppText>
-          <AppText
-            variant="bodySmall"
-            tone="muted"
-            style={{ textAlign: "center" }}
-          >
+          <AppText variant="bodySmall" tone="muted" style={{ textAlign: "center" }}>
             Question {inDietaryStep ? totalSteps : step + 1} of {totalSteps}
           </AppText>
           <View
@@ -408,21 +382,15 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                   }}
                 >
                   {filteredDietaryOptions.map((option) => {
-                    const isSelected = dietaryPreferences.includes(
-                      option.value,
-                    );
+                    const isSelected = dietaryPreferences.includes(option.value);
                     return (
                       <Pressable
                         key={option.value}
                         onPress={() => toggleDietary(option.value)}
                         style={{
                           alignItems: "center",
-                          backgroundColor: isSelected
-                            ? palette.orangeLight
-                            : palette.surface,
-                          borderColor: isSelected
-                            ? palette.orange
-                            : palette.border,
+                          backgroundColor: isSelected ? palette.orangeLight : palette.surface,
+                          borderColor: isSelected ? palette.orange : palette.border,
                           borderRadius: radii.lg,
                           borderWidth: 1,
                           flexDirection: "row",
@@ -435,12 +403,8 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                         <View
                           style={{
                             alignItems: "center",
-                            backgroundColor: isSelected
-                              ? palette.orange
-                              : "transparent",
-                            borderColor: isSelected
-                              ? palette.orange
-                              : palette.border,
+                            backgroundColor: isSelected ? palette.orange : "transparent",
+                            borderColor: isSelected ? palette.orange : palette.border,
                             borderRadius: radii.pill,
                             borderWidth: 1,
                             height: 20,
@@ -448,9 +412,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                             width: 20,
                           }}
                         >
-                          {isSelected ? (
-                            <Check color={palette.surface} size={12} />
-                          ) : null}
+                          {isSelected ? <Check color={palette.surface} size={12} /> : null}
                         </View>
                         <AppText style={{ flex: 1 }}>{option.label}</AppText>
                       </Pressable>
@@ -470,8 +432,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                 flex: 1,
                 justifyContent: "center",
                 overflow: "visible",
-                paddingBottom:
-                  ACTIONS_FOOTER_HEIGHT + spacing[OPTIONS_VERTICAL_GAP_UNITS],
+                paddingBottom: ACTIONS_FOOTER_HEIGHT + spacing[OPTIONS_VERTICAL_GAP_UNITS],
                 paddingTop: spacing[OPTIONS_VERTICAL_GAP_UNITS],
                 transform: [{ translateX: optionsSlideAnim }],
               }}
@@ -498,9 +459,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                   paddingHorizontal: horizontalPadding + spacing[2],
                   paddingTop: spacing[2],
                 }}
-                ItemSeparatorComponent={() => (
-                  <View style={{ width: CARD_GAP }} />
-                )}
+                ItemSeparatorComponent={() => <View style={{ width: CARD_GAP }} />}
                 getItemLayout={(_: any, index: number) => ({
                   index,
                   length: SNAP_INTERVAL,
@@ -524,25 +483,16 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                     quizScrollX.setValue(SNAP_INTERVAL);
                   });
                 }}
-                onScroll={Animated.event(
-                  [{ nativeEvent: { contentOffset: { x: quizScrollX } } }],
-                  { useNativeDriver: true },
-                )}
+                onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: quizScrollX } } }], {
+                  useNativeDriver: true,
+                })}
                 onMomentumScrollEnd={(event: any) => {
                   const index = Math.max(
                     0,
-                    Math.min(
-                      2,
-                      Math.round(
-                        event.nativeEvent.contentOffset.x / SNAP_INTERVAL,
-                      ),
-                    ),
+                    Math.min(2, Math.round(event.nativeEvent.contentOffset.x / SNAP_INTERVAL)),
                   );
                   const exactOffset = index * SNAP_INTERVAL;
-                  if (
-                    Math.abs(event.nativeEvent.contentOffset.x - exactOffset) >
-                    0.5
-                  ) {
+                  if (Math.abs(event.nativeEvent.contentOffset.x - exactOffset) > 0.5) {
                     carouselRef.current?.scrollToOffset({
                       animated: false,
                       offset: exactOffset,

@@ -9,12 +9,7 @@
  */
 
 import React, { useCallback, useMemo, useState } from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  View,
-  type ViewStyle,
-} from "react-native";
+import { ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
 import Svg, { G, Image as SvgImage, Polygon, Rect, Text as SvgText } from "react-native-svg";
 import { useHungryTheme } from "@/theme";
 import type { FloorPlan, StallPolygon } from "@/lib/services/types";
@@ -32,7 +27,11 @@ function stallKind(stall: StallPolygon) {
   return stall.kind ?? "tenant";
 }
 
-function getStallVisual(stall: StallPolygon, isSelected: boolean, palette: ReturnType<typeof useHungryTheme>["palette"]): StallVisual {
+function getStallVisual(
+  stall: StallPolygon,
+  isSelected: boolean,
+  palette: ReturnType<typeof useHungryTheme>["palette"],
+): StallVisual {
   const kind = stallKind(stall);
 
   if (kind === "corridor") {
@@ -127,8 +126,7 @@ function StallCell({ stall, isSelected, onPress, labelMode }: StallCellProps) {
   const showUnitLabel = kind === "tenant" && Boolean(stall.unitNumber) && canShowLabel;
   const showSecondaryLabel = kind === "tenant" && Boolean(stall.label) && canShowLabel;
   const showFacilityLabel = kind === "facility" && Boolean(stall.label) && canShowLabel;
-  const corridorLabel =
-    kind === "corridor" && labelMode === "all" ? stall.label : undefined;
+  const corridorLabel = kind === "corridor" && labelMode === "all" ? stall.label : undefined;
 
   return (
     <G>
@@ -174,9 +172,7 @@ function StallCell({ stall, isSelected, onPress, labelMode }: StallCellProps) {
           fill={visual.labelColor}
           fillOpacity={0.88}
         >
-          {stall.label && stall.label.length > 16
-            ? `${stall.label.slice(0, 15)}…`
-            : stall.label}
+          {stall.label && stall.label.length > 16 ? `${stall.label.slice(0, 15)}…` : stall.label}
         </SvgText>
       ) : null}
 
@@ -260,9 +256,7 @@ export function FloorPlanViewer({
   viewportHeight,
 }: FloorPlanViewerProps) {
   const { palette } = useHungryTheme();
-  const [internalSelected, setInternalSelected] = useState<string | undefined>(
-    selectedStallId
-  );
+  const [internalSelected, setInternalSelected] = useState<string | undefined>(selectedStallId);
   const tenantStalls = useMemo(
     () => floorPlan.stalls.filter((stall) => stallKind(stall) === "tenant"),
     [floorPlan.stalls],
@@ -295,7 +289,7 @@ export function FloorPlanViewer({
       setInternalSelected(stall.stallId);
       onStallPress?.(stall);
     },
-    [onStallPress]
+    [onStallPress],
   );
 
   const svgWidth = floorPlan.canvasWidth * scale;
@@ -407,15 +401,7 @@ export function FloorPlanViewer({
   );
 }
 
-function StatChip({
-  color,
-  count,
-  label,
-}: {
-  color: string;
-  count: number;
-  label: string;
-}) {
+function StatChip({ color, count, label }: { color: string; count: number; label: string }) {
   const { spacing } = useHungryTheme();
   return (
     <View style={[styles.statChip, { marginRight: spacing[3] }]}>

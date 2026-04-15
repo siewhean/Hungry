@@ -1,5 +1,4 @@
-export * from "./PhotoPicker";
-export * from "./ReviewCard";
-export * from "./StarRating";
-export * from "./TasteTagSelector";
-
+export * from "./MediaPicker";
+export * from "./MusicPicker";
+export * from "./MediaEditor";
+export * from "./ReviewStars";

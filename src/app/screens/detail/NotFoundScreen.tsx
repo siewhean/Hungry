@@ -18,11 +18,33 @@ export function NotFoundScreen({ navigation, route }: Props) {
     "We couldn't find the recipe or page you're looking for. It might have been taken off the menu.";
 
   return (
-    <SafeAreaView style={{ backgroundColor: palette.bgSoft, flex: 1 }} edges={["top", "left", "right", "bottom"]}>
+    <SafeAreaView
+      style={{ backgroundColor: palette.bgSoft, flex: 1 }}
+      edges={["top", "left", "right", "bottom"]}
+    >
       <View style={{ flex: 1, justifyContent: "center", paddingHorizontal: spacing[6] }}>
         <View style={{ alignItems: "center", gap: spacing[5] }}>
-          <AppText style={{ color: `${palette.orange}15`, fontWeight: "700", fontSize: 96, lineHeight: 96 }}>404</AppText>
-          <View style={{ alignItems: "center", backgroundColor: palette.bgMuted, borderRadius: radii.pill, height: 60, justifyContent: "center", marginTop: -54, width: 60 }}>
+          <AppText
+            style={{
+              color: `${palette.orange}15`,
+              fontWeight: "700",
+              fontSize: 96,
+              lineHeight: 96,
+            }}
+          >
+            404
+          </AppText>
+          <View
+            style={{
+              alignItems: "center",
+              backgroundColor: palette.bgMuted,
+              borderRadius: radii.pill,
+              height: 60,
+              justifyContent: "center",
+              marginTop: -54,
+              width: 60,
+            }}
+          >
             <UtensilsCrossed color={palette.orange} size={26} />
           </View>
           <AppText variant="display" style={{ textAlign: "center" }}>
@@ -31,10 +53,19 @@ export function NotFoundScreen({ navigation, route }: Props) {
           <AppText variant="bodyLarge" tone="secondary" style={{ textAlign: "center" }}>
             {body}
           </AppText>
-          <Button label="Back to Feed" onPress={() => navigation.navigate("MainTabs", { screen: "Home" })} style={{ borderRadius: radii.pill, minHeight: 56, width: 220 }} />
-          <Pressable onPress={() => navigation.navigate("SearchHome")} style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+          <Button
+            label="Back to Feed"
+            onPress={() => navigation.navigate("MainTabs", { screen: "Home" })}
+            style={{ borderRadius: radii.pill, minHeight: 56, width: 220 }}
+          />
+          <Pressable
+            onPress={() => navigation.navigate("SearchHome")}
+            style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}
+          >
             <Search color={palette.orange} size={14} />
-            <AppText variant="bodyBold" tone="accent">Search for recipes</AppText>
+            <AppText variant="bodyBold" tone="accent">
+              Search for recipes
+            </AppText>
           </Pressable>
         </View>
       </View>

@@ -1,10 +1,7 @@
 import { create } from "zustand";
 
 import { MockRealtimeChannel } from "@/lib/services/realtime/MockRealtimeChannel";
-import type {
-  IRealtimeChannel,
-  PresenceState,
-} from "@/lib/services/realtime/IRealtimeChannel";
+import type { IRealtimeChannel, PresenceState } from "@/lib/services/realtime/IRealtimeChannel";
 import type {
   TriggerValue,
   WheelEntry,
@@ -37,13 +34,8 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function appendEntryUnique(
-  entries: WheelEntry[],
-  entry: WheelEntry,
-): WheelEntry[] {
-  return entries.some((existing) => existing.id === entry.id)
-    ? entries
-    : [...entries, entry];
+function appendEntryUnique(entries: WheelEntry[], entry: WheelEntry): WheelEntry[] {
+  return entries.some((existing) => existing.id === entry.id) ? entries : [...entries, entry];
 }
 
 function dedupeEntries(entries: WheelEntry[]): WheelEntry[] {
@@ -80,17 +72,9 @@ interface WheelState {
     avatarUrl?: string,
     dietaryPreferences?: DietaryFlag[],
   ): Promise<void>;
-  addEntry(
-    venueId: string,
-    buildingId: string,
-    label: string,
-    imageUrl: string,
-  ): void;
+  addEntry(venueId: string, buildingId: string, label: string, imageUrl: string): void;
   removeEntry(entryId: string): void;
-  updateTrigger(
-    triggerMode: WheelTriggerMode,
-    triggerValue?: TriggerValue,
-  ): void;
+  updateTrigger(triggerMode: WheelTriggerMode, triggerValue?: TriggerValue): void;
   updateEntryLimit(limit: number): void;
   triggerSpin(): void;
   leaveParty(): void;
@@ -214,9 +198,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     if (!party || !myMemberId || !_channel) return;
 
     if (party.maxEntriesPerMember) {
-      const myEntriesCount = entries.filter(
-        (e) => e.addedByMemberId === myMemberId,
-      ).length;
+      const myEntriesCount = entries.filter((e) => e.addedByMemberId === myMemberId).length;
       if (myEntriesCount >= party.maxEntriesPerMember) {
         set({
           connectionError: `Limit reached: Max ${party.maxEntriesPerMember} entries per person.`,
@@ -264,9 +246,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     if (!_channel) return;
 
     set((state) => ({
-      party: state.party
-        ? { ...state.party, triggerMode, triggerValue }
-        : state.party,
+      party: state.party ? { ...state.party, triggerMode, triggerValue } : state.party,
     }));
     _channel.broadcast({ type: "trigger_update", triggerMode, triggerValue });
   },
@@ -275,9 +255,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     const { _channel } = get();
     if (!_channel) return;
     set((state) => ({
-      party: state.party
-        ? { ...state.party, maxEntriesPerMember: limit }
-        : state.party,
+      party: state.party ? { ...state.party, maxEntriesPerMember: limit } : state.party,
     }));
   },
 
@@ -289,9 +267,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
 
     const seed = Math.random();
     const startedAt = Date.now();
-    const activeEntryIds = entries
-      .filter((e) => !e.isEliminated)
-      .map((e) => e.id);
+    const activeEntryIds = entries.filter((e) => !e.isEliminated).map((e) => e.id);
 
     _channel.broadcast({
       type: "spin_triggered",

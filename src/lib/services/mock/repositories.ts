@@ -1,4 +1,12 @@
-import { blogPosts, buildings, dishes, guestProfile, stallPosts, userProfile, venues } from "./data";
+import {
+  blogPosts,
+  buildings,
+  dishes,
+  guestProfile,
+  stallPosts,
+  userProfile,
+  venues,
+} from "./data";
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import type { DecideForMeOptions } from "@/lib/services/types";
 import type {
@@ -91,7 +99,9 @@ export const mockRepository = {
           `${dish.name} ${dish.tasteTags.join(" ")}`.toLowerCase().includes(category.split(" ")[0]),
         );
 
-      return matchesQuery && matchesDietary && matchesCategory && dish.distanceMeters <= filters.radius;
+      return (
+        matchesQuery && matchesDietary && matchesCategory && dish.distanceMeters <= filters.radius
+      );
     });
 
     return results.sort((a, b) => {
@@ -107,10 +117,7 @@ export const mockRepository = {
       return scoreB - scoreA;
     });
   },
-  getDecideForMe(
-    tasteProfile: TasteVector,
-    options: DecideForMeOptions = {},
-  ) {
+  getDecideForMe(tasteProfile: TasteVector, options: DecideForMeOptions = {}) {
     const dietaryFlags: DietaryFlag[] = options.dietaryFlags ?? [];
     const radiusMeters = options.radiusMeters ?? 500;
     const pipelineResults = runRecommendationPipeline(dishes, {

@@ -109,9 +109,7 @@ export const useDiscoveryStore = create<DiscoveryState>()(
         const now = Date.now();
         set((state) => ({
           recommendationCache: Object.fromEntries(
-            Object.entries(state.recommendationCache).filter(
-              ([, entry]) => entry.expiresAt > now,
-            ),
+            Object.entries(state.recommendationCache).filter(([, entry]) => entry.expiresAt > now),
           ),
         }));
       },
@@ -129,6 +127,6 @@ export const useDiscoveryStore = create<DiscoveryState>()(
       partialize: (state) => ({
         mapFilters: state.mapFilters,
       }),
-    }
-  )
+    },
+  ),
 );

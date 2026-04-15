@@ -47,10 +47,7 @@ export function DirectMessagesScreen() {
   const { palette, spacing, radii } = useHungryTheme();
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: palette.bg }}
-      edges={["top", "left", "right"]}
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top", "left", "right"]}>
       <View style={{ flex: 1 }}>
         {/* Header */}
         <View
@@ -76,9 +73,7 @@ export function DirectMessagesScreen() {
         </View>
 
         {/* Search */}
-        <View
-          style={{ paddingHorizontal: spacing[3], marginBottom: spacing[4] }}
-        >
+        <View style={{ paddingHorizontal: spacing[3], marginBottom: spacing[4] }}>
           <Input
             placeholder="Search messages..."
             leftIcon={<Search color={palette.textMuted} size={18} />}

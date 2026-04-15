@@ -8,14 +8,7 @@ import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import {
-  AppText,
-  Badge,
-  Button,
-  Card,
-  EmptyState,
-  Screen,
-} from "@/components/ui";
+import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { findBuildingById } from "@/features/discovery/discovery";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
 import { getDataRepository } from "@/lib/services/serviceProvider";
@@ -139,11 +132,7 @@ function getCandidates(
   );
 }
 
-function getNextDistinctDish(
-  candidates: DishDetail[],
-  currentDishId?: string,
-  currentIndex = 0,
-) {
+function getNextDistinctDish(candidates: DishDetail[], currentDishId?: string, currentIndex = 0) {
   if (!candidates.length) {
     return undefined;
   }
@@ -153,10 +142,7 @@ function getNextDistinctDish(
 
   let nextIndex = (currentIndex + 1) % candidates.length;
   let guard = 0;
-  while (
-    guard < candidates.length &&
-    candidates[nextIndex]?.id === currentDishId
-  ) {
+  while (guard < candidates.length && candidates[nextIndex]?.id === currentDishId) {
     nextIndex = (nextIndex + 1) % candidates.length;
     guard += 1;
   }
@@ -178,13 +164,7 @@ export function DecideForMeResultScreen() {
   const trackedNoMatchRadius = useRef<number | null>(null);
 
   const candidates = useMemo(
-    () =>
-      getCandidates(
-        repository,
-        profile.tasteVector,
-        profile.dietaryPreferences,
-        searchRadius,
-      ),
+    () => getCandidates(repository, profile.tasteVector, profile.dietaryPreferences, searchRadius),
     [profile.dietaryPreferences, profile.tasteVector, repository, searchRadius],
   );
 
@@ -198,9 +178,7 @@ export function DecideForMeResultScreen() {
     }
 
     if (selectedDish) {
-      const selectedIndex = candidates.findIndex(
-        (dish) => dish.id === selectedDish.id,
-      );
+      const selectedIndex = candidates.findIndex((dish) => dish.id === selectedDish.id);
       if (selectedIndex >= 0) {
         setResultIndex(selectedIndex);
         return;
@@ -282,10 +260,7 @@ export function DecideForMeResultScreen() {
   if (!dish) {
     const upcomingRadius = nextRadius(searchRadius);
     return (
-      <Screen
-        title="Recommended for you"
-        subtitle="A single dish picked for your taste profile."
-      >
+      <Screen title="Recommended for you" subtitle="A single dish picked for your taste profile.">
         <EmptyState
           title="No match found"
           body={`No dish fits your current filters within ${(searchRadius / 1000).toFixed(1)} km.`}
@@ -296,10 +271,7 @@ export function DecideForMeResultScreen() {
             onPress={expandRadius}
           />
         ) : null}
-        <Button
-          label="Back to Discover"
-          onPress={() => navigation.navigate("SearchHome")}
-        />
+        <Button label="Back to Discover" onPress={() => navigation.navigate("SearchHome")} />
       </Screen>
     );
   }
@@ -317,9 +289,7 @@ export function DecideForMeResultScreen() {
   const sortedDims = tasteDims
     .map((dimension) => ({
       ...dimension,
-      diff: Math.abs(
-        profile.tasteVector[dimension.key] - dish.tasteVector[dimension.key],
-      ),
+      diff: Math.abs(profile.tasteVector[dimension.key] - dish.tasteVector[dimension.key]),
     }))
     .sort((left, right) => left.diff - right.diff);
   const topMatch = sortedDims[0];
@@ -349,23 +319,16 @@ export function DecideForMeResultScreen() {
       return;
     }
 
-    const nextIndex = candidates.findIndex(
-      (candidate) => candidate.id === nextDish.id,
-    );
+    const nextIndex = candidates.findIndex((candidate) => candidate.id === nextDish.id);
     if (nextIndex >= 0) {
       setResultIndex(nextIndex);
     }
     setDecideForMe(nextDish);
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(
-      () => {},
-    );
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   };
 
   return (
-    <Screen
-      title="Recommended for you"
-      subtitle="One dish picked from your current taste profile."
-    >
+    <Screen title="Recommended for you" subtitle="One dish picked from your current taste profile.">
       <View style={{ gap: spacing[5] }}>
         <Animated.View
           style={{
@@ -414,10 +377,7 @@ export function DecideForMeResultScreen() {
                   gap: spacing[2],
                 }}
               >
-                <Badge
-                  label={`Radius ${(searchRadius / 1000).toFixed(1)} km`}
-                  tone="neutral"
-                />
+                <Badge label={`Radius ${(searchRadius / 1000).toFixed(1)} km`} tone="neutral" />
                 {dish.tasteTags.slice(0, 3).map((tag) => (
                   <Badge key={tag} label={tag} tone="amber" />
                 ))}
@@ -475,9 +435,7 @@ export function DecideForMeResultScreen() {
 
         <Button
           label="View stall"
-          onPress={() =>
-            navigation.navigate("StallDetail", { venueId: dish.venueId })
-          }
+          onPress={() => navigation.navigate("StallDetail", { venueId: dish.venueId })}
         />
         <Button
           label="Order now"
@@ -498,16 +456,8 @@ export function DecideForMeResultScreen() {
             }
           }}
         />
-        <Button
-          label="Try another dish"
-          variant="ghost"
-          onPress={handleTryAnother}
-        />
-        <Button
-          label="Go back"
-          variant="ghost"
-          onPress={() => navigation.goBack()}
-        />
+        <Button label="Try another dish" variant="ghost" onPress={handleTryAnother} />
+        <Button label="Go back" variant="ghost" onPress={() => navigation.goBack()} />
       </View>
     </Screen>
   );

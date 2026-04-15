@@ -8,7 +8,11 @@ test("buildDishGallery keeps hero first and removes duplicate URLs", () => {
   const dish = {
     ...dishes[0],
     imageUrl: "https://example.com/hero.jpg",
-    gallery: ["https://example.com/alt-1.jpg", "https://example.com/hero.jpg", "https://example.com/alt-2.jpg"],
+    gallery: [
+      "https://example.com/alt-1.jpg",
+      "https://example.com/hero.jpg",
+      "https://example.com/alt-2.jpg",
+    ],
   };
 
   assert.deepEqual(buildDishGallery(dish), [

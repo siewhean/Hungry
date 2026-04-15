@@ -60,9 +60,7 @@ export function BiteCard({
   onCommentPress,
 }: BiteCardProps) {
   const { palette, radii, spacing, motion } = useHungryTheme();
-  const leftHandedMode = useProfileStore(
-    (state) => state.profile.leftHandedMode,
-  );
+  const leftHandedMode = useProfileStore((state) => state.profile.leftHandedMode);
   const imageHeight = Math.round(width * 0.76);
 
   const heartScale = useSharedValue(0);
@@ -134,10 +132,7 @@ export function BiteCard({
           />
           {/* Animated Heart Pop Overlay */}
           <View
-            style={[
-              StyleSheet.absoluteFill,
-              { alignItems: "center", justifyContent: "center" },
-            ]}
+            style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center" }]}
             pointerEvents="none"
           >
             <Animated.View style={animatedHeartStyle}>
@@ -156,11 +151,7 @@ export function BiteCard({
               paddingVertical: 2,
             }}
           >
-            <AppText
-              variant="micro"
-              tone="inverse"
-              style={{ fontWeight: "700" }}
-            >
+            <AppText variant="micro" tone="inverse" style={{ fontWeight: "700" }}>
               {bite.tasteTag}
             </AppText>
           </View>
@@ -263,10 +254,7 @@ export function BiteCard({
             gap: spacing[1],
           }}
         >
-          <MessageCircle
-            size={18}
-            color={commented ? palette.orange : palette.textMuted}
-          />
+          <MessageCircle size={18} color={commented ? palette.orange : palette.textMuted} />
           <AppText variant="micro" tone="muted">
             {displayCommentCount}
           </AppText>

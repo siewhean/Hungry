@@ -14,11 +14,7 @@
  * Output: Complete TasteProfile (6-axis vector + secondary psychometric axes)
  */
 
-import type {
-  TasteProfile,
-  TasteVector,
-  TextureArchetype,
-} from "@/types/domain";
+import type { TasteProfile, TasteVector, TextureArchetype } from "@/types/domain";
 import { NEUTRAL_TASTE_PROFILE } from "@/constants/taste";
 
 // ─── Quiz Types ───────────────────────────────────────────────────────────────
@@ -62,8 +58,7 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
         id: "comfort-umami",
         label: "Rich ramen",
         description: "A steaming bowl of thick, cloudy tonkotsu broth",
-        imageUrl:
-          "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600",
+        imageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600",
         tasteImpact: { salty: 3, rich: 3, aromatic: 1 },
         profileImpact: { fatAffinity: 8, spiceSeeking: 2 },
       },
@@ -71,8 +66,7 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
         id: "comfort-sweet",
         label: "Warm brownie & ice cream",
         description: "Decadent double-fudge with a generous scoop",
-        imageUrl:
-          "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600",
+        imageUrl: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600",
         tasteImpact: { sweet: 4, rich: 2 },
         profileImpact: { fatAffinity: 7, spiceSeeking: 1 },
       },
@@ -80,8 +74,7 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
         id: "comfort-spicy",
         label: "Fiery mala skewers",
         description: "Tongue-numbing Sichuan peppercorn heat",
-        imageUrl:
-          "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600",
+        imageUrl: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600",
         tasteImpact: { spicy: 4, salty: 2, aromatic: 1 },
         profileImpact: { spiceSeeking: 9, fatAffinity: 5 },
       },
@@ -89,8 +82,7 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
         id: "comfort-clean",
         label: "Crisp Caesar salad",
         description: "Cool, clean, crunchy — the palate reset",
-        imageUrl:
-          "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600",
+        imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600",
         tasteImpact: { sour: 2, salty: 1 },
         profileImpact: { fatAffinity: 2, spiceSeeking: 1 },
       },
@@ -101,15 +93,13 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
   {
     id: "bitter",
     prompt: "You walk into an artisanal café.",
-    scene:
-      "They hand you their signature dark, intense black coffee. How do you prepare it?",
+    scene: "They hand you their signature dark, intense black coffee. How do you prepare it?",
     options: [
       {
         id: "bitter-black",
         label: "Pitch black",
-        description: "\"I drink it as it is.\"",
-        imageUrl:
-          "https://images.unsplash.com/photo-1514432324607-a09d9b4aefda?w=600",
+        description: '"I drink it as it is."',
+        imageUrl: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefda?w=600",
         tasteImpact: { aromatic: 2 },
         profileImpact: { bitterTolerance: 9 },
       },
@@ -117,8 +107,7 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
         id: "bitter-splash",
         label: "Splash of milk",
         description: "Just enough to take the edge off",
-        imageUrl:
-          "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600",
+        imageUrl: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600",
         tasteImpact: { rich: 1 },
         profileImpact: { bitterTolerance: 6 },
       },
@@ -126,8 +115,7 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
         id: "bitter-loaded",
         label: "Cream & caramel",
         description: "Heavy cream and two pumps of syrup",
-        imageUrl:
-          "https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600",
+        imageUrl: "https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600",
         tasteImpact: { sweet: 3, rich: 2 },
         profileImpact: { bitterTolerance: 2 },
       },
@@ -135,8 +123,7 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
         id: "bitter-skip",
         label: "Herbal tea instead",
         description: "Skip the coffee entirely — a bright fruity tea",
-        imageUrl:
-          "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600",
+        imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600",
         tasteImpact: { sweet: 1, sour: 1, aromatic: 1 },
         profileImpact: { bitterTolerance: 1 },
       },
@@ -147,15 +134,13 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
   {
     id: "texture",
     prompt: "Forget flavour for a moment.",
-    scene:
-      "Which physical texture makes a dish completely irresistible to you?",
+    scene: "Which physical texture makes a dish completely irresistible to you?",
     options: [
       {
         id: "texture-bouncy",
         label: "QQ bouncy",
         description: "Fresh tapioca pearls or thick hand-pulled noodles",
-        imageUrl:
-          "https://images.unsplash.com/photo-1558857563-b371033873b8?w=600",
+        imageUrl: "https://images.unsplash.com/photo-1558857563-b371033873b8?w=600",
         tasteImpact: {},
         profileImpact: { textureArchetype: "chewer" as TextureArchetype },
       },
@@ -163,8 +148,7 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
         id: "texture-crunchy",
         label: "Shatteringly crunchy",
         description: "Double-fried chicken skin, golden and loud",
-        imageUrl:
-          "https://images.unsplash.com/photo-1562967914-608f82629710?w=600",
+        imageUrl: "https://images.unsplash.com/photo-1562967914-608f82629710?w=600",
         tasteImpact: { rich: 1 },
         profileImpact: { textureArchetype: "cruncher" as TextureArchetype },
       },
@@ -172,8 +156,7 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
         id: "texture-silky",
         label: "Melt-in-your-mouth",
         description: "Slow-braised pork belly, silky and rich",
-        imageUrl:
-          "https://images.unsplash.com/photo-1544025162-d76694265947?w=600",
+        imageUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?w=600",
         tasteImpact: { rich: 2 },
         profileImpact: {
           textureArchetype: "smoother" as TextureArchetype,
@@ -184,8 +167,7 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
         id: "texture-pop",
         label: "Pop & snap",
         description: "Fresh roe, charred corn, bursting with juice",
-        imageUrl:
-          "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600",
+        imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=600",
         tasteImpact: { sour: 1 },
         profileImpact: { textureArchetype: "mixed" as TextureArchetype },
       },
@@ -196,15 +178,13 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
   {
     id: "adventure",
     prompt: "You're exploring a foreign night market.",
-    scene:
-      "Bustling stalls, unfamiliar aromas, smoke everywhere. What's your strategy?",
+    scene: "Bustling stalls, unfamiliar aromas, smoke everywhere. What's your strategy?",
     options: [
       {
         id: "adventure-extreme",
         label: "Find the longest queue",
         description: "The most exotic, unrecognisable dish — let's go",
-        imageUrl:
-          "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600",
+        imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600",
         tasteImpact: { aromatic: 1, spicy: 1 },
         profileImpact: { neophiliaIndex: 10 },
       },
@@ -212,8 +192,7 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
         id: "adventure-familiar",
         label: "Local twist on comfort",
         description: "Something familiar given a local spin — fried chicken?",
-        imageUrl:
-          "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=600",
+        imageUrl: "https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=600",
         tasteImpact: { salty: 1, rich: 1 },
         profileImpact: { neophiliaIndex: 4 },
       },
@@ -221,8 +200,7 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
         id: "adventure-safe",
         label: "Fresh grilled seafood",
         description: "Simple, clean, freshest possible — minimal risk",
-        imageUrl:
-          "https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=600",
+        imageUrl: "https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=600",
         tasteImpact: { salty: 1, aromatic: 1 },
         profileImpact: { neophiliaIndex: 2 },
       },
@@ -238,9 +216,7 @@ export const QUIZ_SCENARIOS: QuizScenario[] = [
  * Starts from the neutral profile (all 5s) and applies each answer's
  * taste and profile impacts additively, clamped to [0, 10].
  */
-export function computeTasteProfileFromQuiz(
-  answers: ScenarioQuizAnswer[]
-): TasteProfile {
+export function computeTasteProfileFromQuiz(answers: ScenarioQuizAnswer[]): TasteProfile {
   const result: TasteProfile = {
     ...NEUTRAL_TASTE_PROFILE,
     vector: { ...NEUTRAL_TASTE_PROFILE.vector },
@@ -250,9 +226,7 @@ export function computeTasteProfileFromQuiz(
     const scenario = QUIZ_SCENARIOS.find((s) => s.id === answer.scenarioId);
     if (!scenario) continue;
 
-    const option = scenario.options.find(
-      (o) => o.id === answer.selectedOptionId
-    );
+    const option = scenario.options.find((o) => o.id === answer.selectedOptionId);
     if (!option) continue;
 
     // Apply taste vector impacts (additive, clamped)
@@ -270,9 +244,7 @@ export function computeTasteProfileFromQuiz(
       result.fatAffinity =
         result.fatAffinity === NEUTRAL_TASTE_PROFILE.fatAffinity
           ? option.profileImpact.fatAffinity
-          : Math.round(
-              (result.fatAffinity + option.profileImpact.fatAffinity) / 2
-            );
+          : Math.round((result.fatAffinity + option.profileImpact.fatAffinity) / 2);
     }
     if (option.profileImpact.textureArchetype !== undefined) {
       result.textureArchetype = option.profileImpact.textureArchetype;
@@ -305,9 +277,7 @@ export function isQuizComplete(answers: ScenarioQuizAnswer[]): boolean {
 /**
  * Get the scenario that the user should answer next, or null if complete.
  */
-export function getNextScenario(
-  answers: ScenarioQuizAnswer[]
-): QuizScenario | null {
+export function getNextScenario(answers: ScenarioQuizAnswer[]): QuizScenario | null {
   const answeredIds = new Set(answers.map((a) => a.scenarioId));
   return QUIZ_SCENARIOS.find((s) => !answeredIds.has(s.id)) ?? null;
 }

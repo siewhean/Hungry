@@ -17,10 +17,7 @@ export function UserProfileScreen({ navigation, route }: Props) {
   const repository = getDataRepository();
 
   const posts = useMemo(
-    () =>
-      repository
-        .listStallPosts()
-        .filter((post) => post.authorName === authorName),
+    () => repository.listStallPosts().filter((post) => post.authorName === authorName),
     [authorName, repository],
   );
 
@@ -148,11 +145,7 @@ export function UserProfileScreen({ navigation, route }: Props) {
                         <AppText variant="bodyBold" numberOfLines={1}>
                           {topDish?.name ?? post.caption}
                         </AppText>
-                        <AppText
-                          variant="bodySmall"
-                          tone="secondary"
-                          numberOfLines={1}
-                        >
+                        <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
                           {post.caption}
                         </AppText>
                       </View>
@@ -163,11 +156,7 @@ export function UserProfileScreen({ navigation, route }: Props) {
                           gap: spacing[1],
                         }}
                       >
-                        <Star
-                          color={palette.amber}
-                          fill={palette.amber}
-                          size={14}
-                        />
+                        <Star color={palette.amber} fill={palette.amber} size={14} />
                         <AppText variant="micro">{ratingText}</AppText>
                       </View>
                     </View>
@@ -187,15 +176,7 @@ export function UserProfileScreen({ navigation, route }: Props) {
   );
 }
 
-function StatChip({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: number;
-}) {
+function StatChip({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
   const { palette, radii, spacing } = useHungryTheme();
 
   return (

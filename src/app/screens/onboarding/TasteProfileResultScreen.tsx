@@ -22,7 +22,9 @@ export function TasteProfileResultScreen({ navigation }: Props) {
 
   return (
     <View style={{ backgroundColor: palette.bg, flex: 1 }}>
-      <ScrollView contentContainerStyle={{ gap: spacing[4], padding: spacing[4], paddingBottom: spacing[12] }}>
+      <ScrollView
+        contentContainerStyle={{ gap: spacing[4], padding: spacing[4], paddingBottom: spacing[12] }}
+      >
         <View style={{ gap: spacing[1] }}>
           <AppText variant="h1">Your taste profile is ready</AppText>
           <AppText variant="bodySmall" tone="secondary">
@@ -30,15 +32,35 @@ export function TasteProfileResultScreen({ navigation }: Props) {
           </AppText>
         </View>
 
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3], justifyContent: "space-between" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: spacing[3],
+            justifyContent: "space-between",
+          }}
+        >
           {dishes.map((dish) => (
-            <Card key={dish.id} style={{ borderRadius: radii.md, overflow: "hidden", padding: 0, width: "48%" }}>
-              <Image source={{ uri: dish.imageUrl }} contentFit="cover" style={{ height: 120, width: "100%" }} />
+            <Card
+              key={dish.id}
+              style={{ borderRadius: radii.md, overflow: "hidden", padding: 0, width: "48%" }}
+            >
+              <Image
+                source={{ uri: dish.imageUrl }}
+                contentFit="cover"
+                style={{ height: 120, width: "100%" }}
+              />
               <View style={{ gap: spacing[1], padding: spacing[2] }}>
                 <AppText variant="bodyBold" numberOfLines={1}>
                   {dish.name}
                 </AppText>
-                <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
+                <View
+                  style={{
+                    alignItems: "center",
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                  }}
+                >
                   <AppText variant="micro" tone="secondary" numberOfLines={1}>
                     {dish.tasteTags.slice(0, 2).join(" · ")}
                   </AppText>

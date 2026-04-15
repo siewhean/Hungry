@@ -33,7 +33,7 @@ export function MapBottomSheet({
       }}
     >
       <View style={{ alignItems: "center", gap: spacing[2] }}>
-        <View 
+        <View
           accessibilityLabel="Expand building details"
           accessibilityRole="button"
           style={{ width: "100%", alignItems: "center" }}
@@ -41,10 +41,21 @@ export function MapBottomSheet({
           <GripHorizontal size={18} color={palette.textMuted} />
         </View>
         {(title || subtitle || headerRight) && (
-          <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12, width: "100%" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              gap: 12,
+              width: "100%",
+            }}
+          >
             <View style={{ flex: 1, gap: 4 }}>
               {title ? <AppText variant="h3">{title}</AppText> : null}
-              {subtitle ? <AppText variant="bodySmall" tone="secondary">{subtitle}</AppText> : null}
+              {subtitle ? (
+                <AppText variant="bodySmall" tone="secondary">
+                  {subtitle}
+                </AppText>
+              ) : null}
             </View>
             {headerRight}
           </View>

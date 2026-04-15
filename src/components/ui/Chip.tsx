@@ -22,9 +22,11 @@ export function Chip({ label, selected = false, onPress, leftIcon }: ChipProps) 
       style={({ pressed }) => [
         styles.chip,
         {
-          backgroundColor: selected 
-            ? palette.orangeLight 
-            : (colorScheme === "dark" ? palette.surfaceRaised : palette.surface),
+          backgroundColor: selected
+            ? palette.orangeLight
+            : colorScheme === "dark"
+              ? palette.surfaceRaised
+              : palette.surface,
           borderColor: selected ? palette.orange : palette.border,
           borderRadius: radii.pill,
           minHeight: 44,
@@ -37,7 +39,12 @@ export function Chip({ label, selected = false, onPress, leftIcon }: ChipProps) 
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
         {leftIcon}
-        <AppText style={{ color: selected ? palette.orange : palette.textSecondary, fontWeight: selected ? "700" : "500" }}>
+        <AppText
+          style={{
+            color: selected ? palette.orange : palette.textSecondary,
+            fontWeight: selected ? "700" : "500",
+          }}
+        >
           {label}
         </AppText>
       </View>

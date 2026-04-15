@@ -1,15 +1,6 @@
 import type { PropsWithChildren, ReactNode } from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  View,
-  type StyleProp,
-  type ViewStyle,
-} from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { useUIStore } from "@/store/useUIStore";
@@ -72,9 +63,7 @@ export function Screen({
               >
                 <View style={styles.headerCopy}>
                   {title ? <AppText variant="h1">{title}</AppText> : null}
-                  {subtitle ? (
-                    <AppText tone="secondary">{subtitle}</AppText>
-                  ) : null}
+                  {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}
                 </View>
                 {headerRight}
               </View>
@@ -107,9 +96,7 @@ export function Screen({
               >
                 <View style={styles.headerCopy}>
                   {title ? <AppText variant="h1">{title}</AppText> : null}
-                  {subtitle ? (
-                    <AppText tone="secondary">{subtitle}</AppText>
-                  ) : null}
+                  {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}
                 </View>
                 {headerRight}
               </View>

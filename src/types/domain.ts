@@ -1,10 +1,4 @@
-export type TasteKey =
-  | "sweet"
-  | "spicy"
-  | "sour"
-  | "salty"
-  | "rich"
-  | "aromatic";
+export type TasteKey = "sweet" | "spicy" | "sour" | "salty" | "rich" | "aromatic";
 
 export interface TasteVector {
   sweet: number;
@@ -90,12 +84,7 @@ export type DietaryFlag =
   | "mustard_free"
   | "lupin_free"
   | "sulphite_free";
-export type SearchCategory =
-  | "local favourites"
-  | "noodles"
-  | "rice"
-  | "desserts"
-  | "late night";
+export type SearchCategory = "local favourites" | "noodles" | "rice" | "desserts" | "late night";
 
 export interface Coordinate {
   latitude: number;
@@ -220,6 +209,9 @@ export interface ReviewDraft {
   recommend: boolean;
   text: string;
   photos: string[];
+  videoUri?: string;
+  filterId?: string;
+  musicId?: string;
 }
 
 export interface SearchFilters {

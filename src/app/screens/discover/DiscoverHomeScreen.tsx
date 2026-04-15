@@ -1,12 +1,6 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Animated,
-  Pressable,
-  ScrollView,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { Animated, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import {
   ChevronRight,
@@ -49,8 +43,7 @@ export function DiscoverHomeScreen() {
   const navigation = useNavigation<RootNavigation>();
   const repository = getDataRepository();
   const { width: screenWidth } = useWindowDimensions();
-  const { palette, radii, spacing, shadows, motion, colorScheme } =
-    useHungryTheme();
+  const { palette, radii, spacing, shadows, motion, colorScheme } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
   const locationPermission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
@@ -62,25 +55,15 @@ export function DiscoverHomeScreen() {
     getCachedRecommendationSlate,
     pruneExpiredRecommendations,
   } = useDiscoveryStore();
-  const selectedCategories = useSearchStore(
-    (state) => state.filters.categories,
-  );
+  const selectedCategories = useSearchStore((state) => state.filters.categories);
   const toggleCategory = useSearchStore((state) => state.toggleCategory);
 
   const nearbyBuildings = useMemo(
-    () =>
-      getNearestBuildings(
-        currentLocation.latitude,
-        currentLocation.longitude,
-        3,
-        14,
-      ),
+    () => getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 3, 14),
     [currentLocation.latitude, currentLocation.longitude],
   );
-  const discoverLocationLabel =
-    manualLocation ?? nearbyBuildings[0]?.name ?? "Nearby";
-  const discoverNearbyCount =
-    nearbyBuildings.length || repository.listBuildings().length;
+  const discoverLocationLabel = manualLocation ?? nearbyBuildings[0]?.name ?? "Nearby";
+  const discoverNearbyCount = nearbyBuildings.length || repository.listBuildings().length;
 
   const themeTints = useMemo(() => {
     const isDark = colorScheme === "dark";
@@ -97,9 +80,7 @@ export function DiscoverHomeScreen() {
     const hour = new Date().getHours();
     const prioritizeLateNight = hour >= 22 || hour < 4;
     if (prioritizeLateNight) {
-      return [...INTENT_CHIPS].sort((a, b) =>
-        a.id === "late" ? -1 : b.id === "late" ? 1 : 0,
-      );
+      return [...INTENT_CHIPS].sort((a, b) => (a.id === "late" ? -1 : b.id === "late" ? 1 : 0));
     }
     return INTENT_CHIPS;
   }, []);
@@ -153,9 +134,7 @@ export function DiscoverHomeScreen() {
     .map((building) => {
       const venues = repository.listVenuesByBuilding(building.id);
       const venue = venues[0];
-      const topDish = venue
-        ? repository.getDishById(venue.topDishId)
-        : undefined;
+      const topDish = venue ? repository.getDishById(venue.topDishId) : undefined;
       return venue ? { building, venue, topDish } : null;
     })
     .filter(Boolean) as Array<{
@@ -171,10 +150,7 @@ export function DiscoverHomeScreen() {
       radius_m: radiusMeters,
     });
 
-    const geoCell = toRecommendationGeoCell(
-      currentLocation.latitude,
-      currentLocation.longitude,
-    );
+    const geoCell = toRecommendationGeoCell(currentLocation.latitude, currentLocation.longitude);
     pruneExpiredRecommendations();
 
     const cachedDishIds = getCachedRecommendationSlate(geoCell);
@@ -275,18 +251,13 @@ export function DiscoverHomeScreen() {
                 flexDirection: "row",
                 alignItems: "center",
                 gap: spacing[1],
-                backgroundColor: themeTints.isDark
-                  ? "rgba(255,255,255,0.1)"
-                  : palette.orangeLight,
+                backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.1)" : palette.orangeLight,
                 paddingHorizontal: spacing[3],
                 paddingVertical: spacing[1.5],
                 borderRadius: radii.pill,
               }}
             >
-              <MapPinned
-                color={themeTints.isDark ? palette.white : palette.orange}
-                size={14}
-              />
+              <MapPinned color={themeTints.isDark ? palette.white : palette.orange} size={14} />
               <AppText
                 variant="micro"
                 style={{
@@ -321,10 +292,7 @@ export function DiscoverHomeScreen() {
               },
             ]}
           >
-            <Search
-              color={themeTints.isDark ? palette.white : palette.textMuted}
-              size={20}
-            />
+            <Search color={themeTints.isDark ? palette.white : palette.textMuted} size={20} />
             <AppText style={{ flex: 1, color: themeTints.secondaryText }}>
               Search dishes, stalls or vibes...
             </AppText>
@@ -338,9 +306,7 @@ export function DiscoverHomeScreen() {
           contentContainerStyle={{ gap: spacing[2] }}
         >
           {sortedChips.map((chip) => {
-            const isActive = selectedCategories.includes(
-              chip.category as SearchCategory,
-            );
+            const isActive = selectedCategories.includes(chip.category as SearchCategory);
             return (
               <Chip
                 key={chip.id}
@@ -349,32 +315,18 @@ export function DiscoverHomeScreen() {
                 onPress={() => toggleCategory(chip.category as SearchCategory)}
                 leftIcon={
                   chip.id === "spicy" ? (
-                    <Flame
-                      size={14}
-                      color={
-                        isActive ? palette.orange : themeTints.secondaryText
-                      }
-                    />
+                    <Flame size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
                   ) : chip.id === "halal" ? (
-                    <Home
-                      size={14}
-                      color={
-                        isActive ? palette.orange : themeTints.secondaryText
-                      }
-                    />
+                    <Home size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
                   ) : chip.id === "late" ? (
                     <Compass
                       size={14}
-                      color={
-                        isActive ? palette.orange : themeTints.secondaryText
-                      }
+                      color={isActive ? palette.orange : themeTints.secondaryText}
                     />
                   ) : (
                     <Utensils
                       size={14}
-                      color={
-                        isActive ? palette.orange : themeTints.secondaryText
-                      }
+                      color={isActive ? palette.orange : themeTints.secondaryText}
                     />
                   )
                 }
@@ -386,9 +338,7 @@ export function DiscoverHomeScreen() {
         {/* Proactive Selection Grid */}
         <View style={{ gap: spacing[3] }}>
           <View style={{ flexDirection: "row", gap: spacing[3] }}>
-            <Animated.View
-              style={{ flex: 1, transform: [{ scale: pulseAnim }] }}
-            >
+            <Animated.View style={{ flex: 1, transform: [{ scale: pulseAnim }] }}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Decide for me"
@@ -409,11 +359,7 @@ export function DiscoverHomeScreen() {
                   <AppText variant="h3" tone="inverse">
                     Decide For Me
                   </AppText>
-                  <AppText
-                    variant="micro"
-                    tone="inverse"
-                    style={{ opacity: 0.8 }}
-                  >
+                  <AppText variant="micro" tone="inverse" style={{ opacity: 0.8 }}>
                     Single-player pick
                   </AppText>
                 </View>
@@ -423,15 +369,11 @@ export function DiscoverHomeScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Open hungry wheel"
-              onPress={() =>
-                navigation.navigate("WheelStack", { screen: "WheelHome" })
-              }
+              onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
               style={[
                 shadows.card,
                 {
-                  backgroundColor: themeTints.isDark
-                    ? "rgba(255,255,255,0.15)"
-                    : palette.navy,
+                  backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.15)" : palette.navy,
                   borderRadius: radii.lg,
                   flex: 1,
                   padding: spacing[4],
@@ -445,11 +387,7 @@ export function DiscoverHomeScreen() {
                 <AppText variant="h3" tone="inverse">
                   Hungry Wheel
                 </AppText>
-                <AppText
-                  variant="micro"
-                  tone="inverse"
-                  style={{ opacity: 0.8 }}
-                >
+                <AppText variant="micro" tone="inverse" style={{ opacity: 0.8 }}>
                   Party mode
                 </AppText>
               </View>
@@ -465,9 +403,7 @@ export function DiscoverHomeScreen() {
               style={[
                 shadows.card,
                 {
-                  backgroundColor: themeTints.isDark
-                    ? "rgba(255,255,255,0.05)"
-                    : palette.bgSoft,
+                  backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.05)" : palette.bgSoft,
                   borderRadius: radii.lg,
                   padding: spacing[4],
                   flexDirection: "row",
@@ -494,10 +430,7 @@ export function DiscoverHomeScreen() {
                 <AppText variant="h3" style={{ color: themeTints.text }}>
                   Daily Crave
                 </AppText>
-                <AppText
-                  variant="bodySmall"
-                  style={{ color: themeTints.secondaryText }}
-                >
+                <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
                   Swipe to build your profile
                 </AppText>
               </View>
@@ -524,11 +457,7 @@ export function DiscoverHomeScreen() {
               accessibilityLabel="See all trending nearby dishes"
               onPress={() => navigation.navigate("SearchResults")}
             >
-              <AppText
-                variant="micro"
-                tone="accent"
-                style={{ fontWeight: "700" }}
-              >
+              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                 SEE ALL
               </AppText>
             </Pressable>
@@ -543,9 +472,7 @@ export function DiscoverHomeScreen() {
                 key={dish.id}
                 accessibilityRole="button"
                 accessibilityLabel={`Open ${dish.name} at ${dish.venueName}`}
-                onPress={() =>
-                  navigation.navigate("DishDetail", { dishId: dish.id })
-                }
+                onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
                 style={[
                   shadows.card,
                   {
@@ -564,17 +491,10 @@ export function DiscoverHomeScreen() {
                   contentFit="cover"
                 />
                 <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                  <AppText
-                    variant="h3"
-                    numberOfLines={1}
-                    style={{ color: themeTints.text }}
-                  >
+                  <AppText variant="h3" numberOfLines={1} style={{ color: themeTints.text }}>
                     {dish.name}
                   </AppText>
-                  <AppText
-                    variant="micro"
-                    style={{ color: themeTints.secondaryText }}
-                  >
+                  <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
                     {dish.venueName}
                   </AppText>
                   <View
@@ -594,11 +514,7 @@ export function DiscoverHomeScreen() {
                         gap: spacing[1],
                       }}
                     >
-                      <Star
-                        color={palette.amber}
-                        size={12}
-                        fill={palette.amber}
-                      />
+                      <Star color={palette.amber} size={12} fill={palette.amber} />
                       <AppText
                         variant="micro"
                         style={{ fontWeight: "700", color: themeTints.text }}
@@ -630,11 +546,7 @@ export function DiscoverHomeScreen() {
               accessibilityLabel="View stalls on map"
               onPress={() => navigation.navigate("DiscoverMap")}
             >
-              <AppText
-                variant="micro"
-                tone="accent"
-                style={{ fontWeight: "700" }}
-              >
+              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                 VIEW MAP
               </AppText>
             </Pressable>

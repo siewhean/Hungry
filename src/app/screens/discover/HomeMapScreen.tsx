@@ -23,19 +23,12 @@ import {
   Flame,
   Zap,
 } from "lucide-react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import {
-  MapSurface,
-  type MapSurfaceMarker,
-  BuildingLegend,
-} from "@/components/map";
+import { MapSurface, type MapSurfaceMarker, BuildingLegend } from "@/components/map";
 import { AppText, Chip } from "@/components/ui";
 import {
   getBuildingById,
@@ -59,17 +52,13 @@ function CrowdIndicator({ level }: { level?: "low" | "medium" | "high" }) {
     low: {
       color: palette.statusFast,
       label: "Fast",
-      icon: (
-        <Zap size={10} color={palette.statusFast} fill={palette.statusFast} />
-      ),
+      icon: <Zap size={10} color={palette.statusFast} fill={palette.statusFast} />,
     },
     medium: { color: palette.statusModerate, label: "Moderate", icon: null },
     high: {
       color: palette.statusBusy,
       label: "Trending",
-      icon: (
-        <Flame size={10} color={palette.statusBusy} fill={palette.statusBusy} />
-      ),
+      icon: <Flame size={10} color={palette.statusBusy} fill={palette.statusBusy} />,
     },
   };
 
@@ -113,8 +102,7 @@ function CrowdIndicator({ level }: { level?: "low" | "medium" | "high" }) {
 }
 
 export function HomeMapScreen() {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const repository = getDataRepository();
   const insets = useSafeAreaInsets();
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
@@ -122,9 +110,7 @@ export function HomeMapScreen() {
 
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
-  const setSelectedBuilding = useDiscoveryStore(
-    (state) => state.setSelectedBuilding,
-  );
+  const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
   const mapFilters = useDiscoveryStore((state) => state.mapFilters);
   const toggleMapFilter = useDiscoveryStore((state) => state.toggleMapFilter);
 
@@ -136,12 +122,7 @@ export function HomeMapScreen() {
   }, [selectedBuilding]);
 
   const visibleBuildings = useMemo(() => {
-    const nearest = getNearestBuildings(
-      currentLocation.latitude,
-      currentLocation.longitude,
-      5,
-      8,
-    );
+    const nearest = getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 5, 8);
     const combined = [activeBuildingRecord, ...nearest];
     const seen = new Set<string>();
     return combined.filter((b) => {
@@ -152,9 +133,7 @@ export function HomeMapScreen() {
   }, [activeBuildingRecord, currentLocation]);
 
   const areaPopularDishes = useMemo(() => {
-    const allVenues = visibleBuildings.flatMap((b) =>
-      repository.listVenuesByBuilding(b.id),
-    );
+    const allVenues = visibleBuildings.flatMap((b) => repository.listVenuesByBuilding(b.id));
     return allVenues
       .map((v) => repository.getDishById(v.topDishId))
       .filter((d): d is DishDetail => !!d)
@@ -163,9 +142,7 @@ export function HomeMapScreen() {
 
   const [currentZoom, setCurrentZoom] = useState(15.5);
   const [selectedDish, setSelectedDish] = useState<DishDetail | null>(null);
-  const [displayMode, setDisplayMode] = useState<"carousel" | "list">(
-    "carousel",
-  );
+  const [displayMode, setDisplayMode] = useState<"carousel" | "list">("carousel");
 
   const PEEK_HEIGHT = 240;
   const FULL_HEIGHT = 600;
@@ -190,8 +167,7 @@ export function HomeMapScreen() {
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) =>
-        Math.abs(gestureState.dy) > 10,
+      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 10,
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dy > 50) {
           setSelectedDish(null);
@@ -231,13 +207,7 @@ export function HomeMapScreen() {
       return [...bMarkers, ...stallMarkers];
     }
     return bMarkers;
-  }, [
-    palette,
-    repository,
-    visibleBuildings,
-    currentZoom,
-    activeBuildingRecord,
-  ]);
+  }, [palette, repository, visibleBuildings, currentZoom, activeBuildingRecord]);
 
   const cameraPadding = useMemo(
     () => ({
@@ -316,9 +286,7 @@ export function HomeMapScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={
-                displayMode === "carousel"
-                  ? "Switch to list view"
-                  : "Switch to carousel view"
+                displayMode === "carousel" ? "Switch to list view" : "Switch to carousel view"
               }
               onPress={() => {
                 const next = displayMode === "carousel" ? "list" : "carousel";
@@ -382,9 +350,7 @@ export function HomeMapScreen() {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Recenter map to default building"
-        onPress={() =>
-          setSelectedBuilding(toSummary(getBuildingById(DEFAULT_BUILDING_ID)!))
-        }
+        onPress={() => setSelectedBuilding(toSummary(getBuildingById(DEFAULT_BUILDING_ID)!))}
         style={[
           styles.floatingButton,
           {
@@ -420,8 +386,7 @@ export function HomeMapScreen() {
             height: animatedHeight,
             zIndex: zIndex.sheet,
             bottom: 0,
-            paddingHorizontal:
-              selectedDish || displayMode === "list" ? spacing[4] : 0,
+            paddingHorizontal: selectedDish || displayMode === "list" ? spacing[4] : 0,
             borderTopLeftRadius: radii.xl,
             borderTopRightRadius: radii.xl,
             ...shadows.floating,
@@ -586,9 +551,7 @@ export function HomeMapScreen() {
               <AppText style={{ fontSize: 16, color: palette.textSecondary }}>
                 {selectedDish.venueName} •{" "}
                 {(() => {
-                  const venues = repository.listVenuesByBuilding(
-                    activeBuildingRecord.id,
-                  );
+                  const venues = repository.listVenuesByBuilding(activeBuildingRecord.id);
                   const openCount = venues.filter((v) => v.isOpen).length;
                   return openCount > 0
                     ? `${openCount} stalls open now`
@@ -607,9 +570,7 @@ export function HomeMapScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`View menu for ${selectedDish.name}`}
-                onPress={() =>
-                  navigation.navigate("DishDetail", { dishId: selectedDish.id })
-                }
+                onPress={() => navigation.navigate("DishDetail", { dishId: selectedDish.id })}
                 style={{
                   flex: 1,
                   height: 56,
@@ -679,9 +640,7 @@ export function HomeMapScreen() {
                   key={venue.id}
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${venue.name} stall details`}
-                  onPress={() =>
-                    navigation.navigate("StallDetail", { venueId: venue.id })
-                  }
+                  onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
                   style={{
                     backgroundColor: palette.bgSoft,
                     borderRadius: radii.md,
@@ -745,9 +704,7 @@ export function HomeMapScreen() {
                       contentFit="cover"
                     />
                     {dish.liveCrowd && (
-                      <View
-                        style={{ position: "absolute", top: 10, right: 10 }}
-                      >
+                      <View style={{ position: "absolute", top: 10, right: 10 }}>
                         <CrowdIndicator level={dish.liveCrowd} />
                       </View>
                     )}
@@ -759,15 +716,10 @@ export function HomeMapScreen() {
                         justifyContent: "space-between",
                       }}
                     >
-                      <AppText
-                        style={{ fontWeight: "800", flex: 1 }}
-                        numberOfLines={1}
-                      >
+                      <AppText style={{ fontWeight: "800", flex: 1 }} numberOfLines={1}>
                         {dish.name}
                       </AppText>
-                      <AppText
-                        style={{ color: palette.orange, fontWeight: "800" }}
-                      >
+                      <AppText style={{ color: palette.orange, fontWeight: "800" }}>
                         S${Math.round(dish.price)}
                       </AppText>
                     </View>

@@ -14,7 +14,7 @@ export function StarRating({ value, max = 5, editable = false, onChange }: StarR
   const { palette } = useHungryTheme();
 
   return (
-    <View 
+    <View
       style={styles.row}
       accessibilityLabel={editable ? "Rating out of 5 stars" : `${value} out of ${max} stars`}
       accessibilityRole={editable ? "adjustable" : "none"}

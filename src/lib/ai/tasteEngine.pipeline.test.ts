@@ -13,11 +13,7 @@ const BASE_VECTOR: TasteVector = {
   aromatic: 5,
 };
 
-function buildDish(
-  id: string,
-  venueId: string,
-  tasteVector: TasteVector,
-): DishSummary {
+function buildDish(id: string, venueId: string, tasteVector: TasteVector): DishSummary {
   return {
     id,
     venueId,
@@ -40,14 +36,7 @@ function buildDish(
 }
 
 function dominantTasteDimension(vector: TasteVector): keyof TasteVector {
-  const keys: Array<keyof TasteVector> = [
-    "sweet",
-    "spicy",
-    "sour",
-    "salty",
-    "rich",
-    "aromatic",
-  ];
+  const keys: Array<keyof TasteVector> = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"];
 
   let dominant = keys[0];
   for (const key of keys) {

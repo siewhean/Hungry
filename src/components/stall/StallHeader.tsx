@@ -21,10 +21,16 @@ export function StallHeader({ venue }: StallHeaderProps) {
         </AppText>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-        <Badge label={venue.isOpen ? "Open" : "Closed"} tone={venue.isOpen ? "success" : "warning"} />
+        <Badge
+          label={venue.isOpen ? "Open" : "Closed"}
+          tone={venue.isOpen ? "success" : "warning"}
+        />
       </View>
-      <OperatingHours hours={venue.operatingHours} isOpen={venue.isOpen} closureNotice={venue.closureNotice} />
+      <OperatingHours
+        hours={venue.operatingHours}
+        isOpen={venue.isOpen}
+        closureNotice={venue.closureNotice}
+      />
     </View>
   );
 }
-

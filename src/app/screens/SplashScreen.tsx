@@ -144,10 +144,16 @@ export function SplashScreen({ navigation }: Props) {
             transform: [{ scale: logoScale }],
           }}
         >
-          <View style={[styles.hContainer, { backgroundColor: palette.orange, borderRadius: radii.xl }]}>
-            <AppText tone="inverse" style={styles.hLetter}>H</AppText>
+          <View
+            style={[styles.hContainer, { backgroundColor: palette.orange, borderRadius: radii.xl }]}
+          >
+            <AppText tone="inverse" style={styles.hLetter}>
+              H
+            </AppText>
             {/* Bite notch */}
-            <View style={[styles.biteNotch, { backgroundColor: palette.bg, borderRadius: radii.md }]} />
+            <View
+              style={[styles.biteNotch, { backgroundColor: palette.bg, borderRadius: radii.md }]}
+            />
           </View>
         </Animated.View>
 
@@ -171,7 +177,9 @@ export function SplashScreen({ navigation }: Props) {
             marginBottom: spacing[2],
           }}
         >
-          <View style={[styles.dot, { backgroundColor: palette.orange, borderRadius: radii.pill }]} />
+          <View
+            style={[styles.dot, { backgroundColor: palette.orange, borderRadius: radii.pill }]}
+          />
         </Animated.View>
       </View>
 

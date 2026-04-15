@@ -93,8 +93,7 @@ export function WheelSpinScreen({ navigation }: Props) {
 
     const segmentAngle = 360 / activeEntries.length;
     const winnerIndex =
-      ((seed % activeEntries.length) + activeEntries.length) %
-      activeEntries.length;
+      ((seed % activeEntries.length) + activeEntries.length) % activeEntries.length;
     const winnerAngle = winnerIndex * segmentAngle + segmentAngle / 2;
     const totalRotation = 5 * 360 + (360 - winnerAngle);
 
@@ -150,10 +149,7 @@ export function WheelSpinScreen({ navigation }: Props) {
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
-      <LinearGradient
-        colors={[palette.bg, palette.bgSoft]}
-        style={StyleSheet.absoluteFill}
-      />
+      <LinearGradient colors={[palette.bg, palette.bgSoft]} style={StyleSheet.absoluteFill} />
 
       {/* Decorative background pattern (subtle circles) */}
       <View
@@ -270,9 +266,7 @@ export function WheelSpinScreen({ navigation }: Props) {
       >
         <Badge
           label={
-            party.spinMode === "classic"
-              ? "Classic"
-              : `Elimination — Round ${party.currentRound}`
+            party.spinMode === "classic" ? "Classic" : `Elimination — Round ${party.currentRound}`
           }
           tone="orange"
         />
@@ -331,13 +325,8 @@ export function WheelSpinScreen({ navigation }: Props) {
               paddingVertical: spacing[4],
             }}
           >
-            <AppText
-              tone="secondary"
-              style={{ textAlign: "center", fontWeight: "600" }}
-            >
-              {spinning
-                ? "🎡 The wheel is turning..."
-                : "⏳ Waiting for host to spin"}
+            <AppText tone="secondary" style={{ textAlign: "center", fontWeight: "600" }}>
+              {spinning ? "🎡 The wheel is turning..." : "⏳ Waiting for host to spin"}
             </AppText>
           </Card>
         )}

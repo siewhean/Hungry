@@ -14,9 +14,7 @@ export function MemberAvatarRow({ members, maxVisible = 8 }: Props) {
 
   const present = Array.from(
     new Map(
-      members
-        .filter((member) => member.isPresent)
-        .map((member) => [member.id, member] as const),
+      members.filter((member) => member.isPresent).map((member) => [member.id, member] as const),
     ).values(),
   );
   const visible = present.slice(0, maxVisible);
@@ -24,9 +22,7 @@ export function MemberAvatarRow({ members, maxVisible = 8 }: Props) {
   const avatarSize = 36;
 
   return (
-    <View
-      style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}
-    >
+    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
       {visible.map((member) => (
         <View
           key={member.id}

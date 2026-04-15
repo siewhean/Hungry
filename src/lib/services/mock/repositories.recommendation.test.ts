@@ -32,10 +32,6 @@ test("getDecideForMe excludes already shown dishes", () => {
   });
 
   if (nextPick) {
-    assert.notEqual(
-      nextPick.id,
-      initialPick.id,
-      "Excluded dish should not be returned again",
-    );
+    assert.notEqual(nextPick.id, initialPick.id, "Excluded dish should not be returned again");
   }
 });

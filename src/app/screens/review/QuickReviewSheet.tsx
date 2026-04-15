@@ -1,6 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { View, StyleSheet, Pressable, ScrollView } from "react-native";
-import { BottomSheetModal, BottomSheetView, BottomSheetBackdrop, BottomSheetTextInput } from "@gorhom/bottom-sheet";
+import {
+  BottomSheetModal,
+  BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetTextInput,
+} from "@gorhom/bottom-sheet";
 import { Star, X } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 
@@ -19,11 +24,13 @@ export const QuickReviewSheet = ({ venueName, dishName, onSuccess }: QuickReview
   const [rating, setRating] = useState(0);
   const [comment, setCaption] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  
+
   const tags = ["Spicy", "Savoury", "Sweet", "Sour", "Worth it", "Quick", "Chewy", "Fresh"];
 
   const toggleTag = (tag: string) => {
-    setSelectedTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
@@ -37,7 +44,9 @@ export const QuickReviewSheet = ({ venueName, dishName, onSuccess }: QuickReview
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <View>
           <AppText variant="h2">Quick Review</AppText>
-          <AppText variant="bodySmall" tone="secondary">{dishName ? `${dishName} at ${venueName}` : venueName}</AppText>
+          <AppText variant="bodySmall" tone="secondary">
+            {dishName ? `${dishName} at ${venueName}` : venueName}
+          </AppText>
         </View>
       </View>
 
@@ -45,28 +54,36 @@ export const QuickReviewSheet = ({ venueName, dishName, onSuccess }: QuickReview
       <View style={{ alignItems: "center", gap: spacing[2] }}>
         <View style={{ flexDirection: "row", gap: spacing[3] }}>
           {[1, 2, 3, 4, 5].map((star) => (
-            <Pressable key={star} onPress={() => { setRating(star); void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}>
-              <Star 
-                size={32} 
-                color={star <= rating ? palette.amber : palette.border} 
-                fill={star <= rating ? palette.amber : "transparent"} 
+            <Pressable
+              key={star}
+              onPress={() => {
+                setRating(star);
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }}
+            >
+              <Star
+                size={32}
+                color={star <= rating ? palette.amber : palette.border}
+                fill={star <= rating ? palette.amber : "transparent"}
               />
             </Pressable>
           ))}
         </View>
-        <AppText variant="micro" tone="secondary">Tap to rate</AppText>
+        <AppText variant="micro" tone="secondary">
+          Tap to rate
+        </AppText>
       </View>
 
       {/* Taste Tags */}
       <View style={{ gap: spacing[2] }}>
         <AppText variant="h3">How was it?</AppText>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-          {tags.map(tag => (
-            <Chip 
-              key={tag} 
-              label={tag} 
-              selected={selectedTags.includes(tag)} 
-              onPress={() => toggleTag(tag)} 
+          {tags.map((tag) => (
+            <Chip
+              key={tag}
+              label={tag}
+              selected={selectedTags.includes(tag)}
+              onPress={() => toggleTag(tag)}
             />
           ))}
         </View>
@@ -78,14 +95,14 @@ export const QuickReviewSheet = ({ venueName, dishName, onSuccess }: QuickReview
         <BottomSheetTextInput
           style={[
             styles.input,
-            { 
-              backgroundColor: palette.surface, 
-              borderColor: palette.border, 
+            {
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
               borderWidth: 1,
               borderRadius: radii.md,
               color: palette.text,
               padding: spacing[3],
-            }
+            },
           ]}
           placeholder="What makes this worth the queue?"
           placeholderTextColor={palette.textMuted}

@@ -115,13 +115,19 @@ export const useLocationStore = create<LocationState>()(
           return true;
         } catch {
           set(getDeniedLocationState(options?.manualLocation));
-          trackAnalyticsEvent("location_permission_result", { result: "denied", reason: "exception" });
+          trackAnalyticsEvent("location_permission_result", {
+            result: "denied",
+            reason: "exception",
+          });
           return false;
         }
       },
       denyLocation: () => {
         set({ permission: "denied", gpsBadgeState: "denied", manualCoordinate: undefined });
-        trackAnalyticsEvent("location_permission_result", { result: "denied", source: "manual_deny" });
+        trackAnalyticsEvent("location_permission_result", {
+          result: "denied",
+          source: "manual_deny",
+        });
       },
       setManualLocation: (label) =>
         set({

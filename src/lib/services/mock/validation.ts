@@ -1,5 +1,20 @@
-import { blogPosts, buildings, dishes, guestProfile, stallPosts, userProfile, venues } from "./data";
-import type { BlogPost, BuildingSummary, DishDetail, StallPost, UserProfile, VenueSummary } from "@/types/domain";
+import {
+  blogPosts,
+  buildings,
+  dishes,
+  guestProfile,
+  stallPosts,
+  userProfile,
+  venues,
+} from "./data";
+import type {
+  BlogPost,
+  BuildingSummary,
+  DishDetail,
+  StallPost,
+  UserProfile,
+  VenueSummary,
+} from "@/types/domain";
 
 const TASTE_KEYS = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"] as const;
 
@@ -62,7 +77,11 @@ function validateTasteVector(issues: FixtureValidationIssue[], dish: DishDetail)
   for (const key of TASTE_KEYS) {
     const value = dish.tasteVector[key];
     if (!Number.isFinite(value) || value < 0 || value > 10) {
-      pushIssue(issues, "INVALID_TASTE_VECTOR", `dish ${dish.id} has out-of-range ${key}: ${value}`);
+      pushIssue(
+        issues,
+        "INVALID_TASTE_VECTOR",
+        `dish ${dish.id} has out-of-range ${key}: ${value}`,
+      );
     }
   }
 }
@@ -94,7 +113,11 @@ export function validateFixtureBundle(
     const topDish = dishesById.get(venue.topDishId);
     if (!topDish) {
       if (options.strictTopDishRefs) {
-        pushIssue(issues, "BROKEN_TOP_DISH_REF", `venue ${venue.id} topDishId missing: ${venue.topDishId}`);
+        pushIssue(
+          issues,
+          "BROKEN_TOP_DISH_REF",
+          `venue ${venue.id} topDishId missing: ${venue.topDishId}`,
+        );
       }
     } else if (topDish.venueId !== venue.id) {
       pushIssue(
@@ -108,11 +131,19 @@ export function validateFixtureBundle(
   for (const dish of bundle.dishes) {
     const venue = venuesById.get(dish.venueId);
     if (!venue) {
-      pushIssue(issues, "BROKEN_VENUE_REF", `dish ${dish.id} references missing venue ${dish.venueId}`);
+      pushIssue(
+        issues,
+        "BROKEN_VENUE_REF",
+        `dish ${dish.id} references missing venue ${dish.venueId}`,
+      );
       continue;
     }
     if (!buildingIds.has(dish.buildingId)) {
-      pushIssue(issues, "BROKEN_BUILDING_REF", `dish ${dish.id} references missing building ${dish.buildingId}`);
+      pushIssue(
+        issues,
+        "BROKEN_BUILDING_REF",
+        `dish ${dish.id} references missing building ${dish.buildingId}`,
+      );
     }
     if (dish.buildingId !== venue.buildingId) {
       pushIssue(
@@ -133,7 +164,11 @@ export function validateFixtureBundle(
   for (const post of bundle.stallPosts) {
     const venue = venuesById.get(post.venueId);
     if (!venue) {
-      pushIssue(issues, "BROKEN_POST_VENUE_REF", `stallPost ${post.id} references missing venue ${post.venueId}`);
+      pushIssue(
+        issues,
+        "BROKEN_POST_VENUE_REF",
+        `stallPost ${post.id} references missing venue ${post.venueId}`,
+      );
       continue;
     }
     if (post.buildingId !== venue.buildingId) {
@@ -146,7 +181,11 @@ export function validateFixtureBundle(
     for (const dishId of post.dishIds) {
       const dish = dishesById.get(dishId);
       if (!dish) {
-        pushIssue(issues, "BROKEN_POST_DISH_REF", `stallPost ${post.id} references missing dish ${dishId}`);
+        pushIssue(
+          issues,
+          "BROKEN_POST_DISH_REF",
+          `stallPost ${post.id} references missing dish ${dishId}`,
+        );
         continue;
       }
       if (dish.venueId !== post.venueId) {
@@ -161,7 +200,11 @@ export function validateFixtureBundle(
 
   for (const post of bundle.blogPosts) {
     if (post.relatedVenueId && !venuesById.has(post.relatedVenueId)) {
-      pushIssue(issues, "BROKEN_BLOG_VENUE_REF", `blogPost ${post.id} relatedVenueId missing: ${post.relatedVenueId}`);
+      pushIssue(
+        issues,
+        "BROKEN_BLOG_VENUE_REF",
+        `blogPost ${post.id} relatedVenueId missing: ${post.relatedVenueId}`,
+      );
     }
   }
 
@@ -173,7 +216,11 @@ export function validateFixtureBundle(
 
   for (const dishId of bundle.userProfile.reviewedDishIds) {
     if (!dishesById.has(dishId)) {
-      pushIssue(issues, "BROKEN_PROFILE_REVIEW_REF", `userProfile reviewed dish missing: ${dishId}`);
+      pushIssue(
+        issues,
+        "BROKEN_PROFILE_REVIEW_REF",
+        `userProfile reviewed dish missing: ${dishId}`,
+      );
     }
   }
 
@@ -183,9 +230,13 @@ export function validateFixtureBundle(
   };
 }
 
-export function assertFixtureBundleValid(bundle: MockFixtureBundle = getDefaultFixtureBundle()): void {
+export function assertFixtureBundleValid(
+  bundle: MockFixtureBundle = getDefaultFixtureBundle(),
+): void {
   const result = validateFixtureBundle(bundle);
   if (!result.valid) {
-    throw new Error(`Mock fixture validation failed:\n${result.issues.map((i) => `- ${i.code}: ${i.message}`).join("\n")}`);
+    throw new Error(
+      `Mock fixture validation failed:\n${result.issues.map((i) => `- ${i.code}: ${i.message}`).join("\n")}`,
+    );
   }
 }

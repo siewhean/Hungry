@@ -17,7 +17,8 @@ import {
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "LocationPermission">;
 
-const HERO_ILLUSTRATION = "https://www.figma.com/api/mcp/asset/c29e48d7-30d6-42f9-a46e-9d8c5419d602";
+const HERO_ILLUSTRATION =
+  "https://www.figma.com/api/mcp/asset/c29e48d7-30d6-42f9-a46e-9d8c5419d602";
 
 const FEATURE_ROWS = [
   {
@@ -66,7 +67,10 @@ export function LocationPermissionScreen({ navigation }: Props) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top", "left", "right", "bottom"]}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: palette.bg }}
+      edges={["top", "left", "right", "bottom"]}
+    >
       <View
         style={{
           alignItems: "center",
@@ -119,7 +123,11 @@ export function LocationPermissionScreen({ navigation }: Props) {
               },
             ]}
           >
-            <Image source={{ uri: HERO_ILLUSTRATION }} contentFit="cover" style={{ height: "100%", width: "100%" }} />
+            <Image
+              source={{ uri: HERO_ILLUSTRATION }}
+              contentFit="cover"
+              style={{ height: "100%", width: "100%" }}
+            />
             <View
               style={{
                 alignItems: "center",
@@ -167,11 +175,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
           paddingHorizontal: ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
         }}
       >
-        <Button
-          label="Continue"
-          onPress={allowDeviceLocation}
-          style={shadows.floating}
-        />
+        <Button label="Continue" onPress={allowDeviceLocation} style={shadows.floating} />
         <Button
           label="Enter Manually"
           variant="secondary"
@@ -222,9 +226,7 @@ function FeatureCard({
         <Icon color={palette[iconTone]} size={20} />
       </View>
       <View style={{ flex: 1, gap: spacing[1] }}>
-        <AppText variant="bodyBold">
-          {title}
-        </AppText>
+        <AppText variant="bodyBold">{title}</AppText>
         <AppText variant="micro" tone="secondary">
           {description}
         </AppText>

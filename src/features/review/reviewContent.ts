@@ -3,4 +3,3 @@ export const reviewSteps = [
   { key: "tags", label: "Taste Tags" },
   { key: "compose", label: "Photos & Text" },
 ] as const;
-
