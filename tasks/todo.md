@@ -661,11 +661,11 @@ These items affect perceived quality but do not break functionality.
 
 #### Claude primary
 
-- [ ] **CI/CD pipeline:** Write `.github/workflows/ci.yml` with typecheck → test → expo-doctor → EAS build gates.
-- [ ] **Environment strategy:** Define `.env.development`, `.env.staging`, `.env.production` variable sets. Document which variables go where.
-- [ ] **Sentry init plan:** Define the Sentry DSN placement, error boundary strategy, and source map upload hook for EAS builds.
-- [ ] **PostHog init plan:** Define the PostHog project setup, API key placement, identity linking strategy, and the core funnel events that must ship for launch (from P1-03 taxonomy).
-- [ ] **Launch readiness checklist:** Draft Privacy Policy and Terms of Service requirements. List App Store / Play Store submission requirements (screenshots, ratings, keywords, etc.).
+- [x] **CI/CD pipeline:** Write `.github/workflows/ci.yml` with typecheck → test → expo-doctor → EAS build gates.
+- [x] **Environment strategy:** Define `.env.development`, `.env.staging`, `.env.production` variable sets. Document which variables go where.
+- [x] **Sentry init plan:** Define the Sentry DSN placement, error boundary strategy, and source map upload hook for EAS builds.
+- [x] **PostHog init plan:** Define the PostHog project setup, API key placement, identity linking strategy, and the core funnel events that must ship for launch (from P1-03 taxonomy).
+- [x] **Launch readiness checklist:** Draft Privacy Policy and Terms of Service requirements. List App Store / Play Store submission requirements (screenshots, ratings, keywords, etc.).
 
 #### Codex primary
 
@@ -676,6 +676,13 @@ These items affect perceived quality but do not break functionality.
 - [x] **CI/CD setup:** Implement the `.github/workflows/ci.yml` from Claude's spec. Add `EXPO_TOKEN` as a GitHub Actions secret (coordinate with user).
 - [x] **Environment files:** Create `.env.development`, `.env.staging`, `.env.production` from Claude's spec. Update `.gitignore` to include all variants.
 - [x] **Feature flag upgrade:** Add `FEATURE_FLAGS.directMessagesEnabled` (default `false`), `FEATURE_FLAGS.commentsEnabled` (default `false`), `FEATURE_FLAGS.craveEnabled` (default `true`). Wire into navigation.
+
+#### Phase execution (2026-04-15)
+
+- [x] **Phase 1 (env contract):** Expanded `.env.development`, `.env.staging`, `.env.production` placeholders to the production-infrastructure variable catalog and aligned staging/production `HUNGRY_DATA_SOURCE=supabase`.
+- [x] **Phase 2 (build pipeline):** Updated `.gitignore` for local env variants and aligned `eas.json` channels/env blocks, plus CI Sentry secret pass-through for EAS build-gate job.
+- [x] **Phase 3 (observability/events):** Hardened `Sentry.init` env + privacy filtering and added must-ship analytics coverage (`sign_up_completed`, `decide_for_me_*`, `delivery_link_tapped`) in auth/discover/detail flows.
+- [ ] **Phase 4 (launch smoke evidence):** Pending simulator validation against Sentry/PostHog dashboards and CI run evidence on `main`.
 
 #### Done gate
 

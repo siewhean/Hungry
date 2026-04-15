@@ -25,6 +25,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Chip, Input, Screen } from "@/components/ui";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -50,6 +51,7 @@ export function DiscoverHomeScreen() {
   const { palette, radii, spacing, shadows, motion, colorScheme } =
     useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
+  const locationPermission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
   const { popularNearby, setDecideForMe } = useDiscoveryStore();
@@ -156,6 +158,10 @@ export function DiscoverHomeScreen() {
   }>;
 
   const handleDecideForMe = () => {
+    trackAnalyticsEvent("decide_for_me_triggered", {
+      location_granted: locationPermission === "granted",
+      radius_m: 500,
+    });
     const picked = repository.getDecideForMe(profile.tasteVector);
     if (picked) {
       setDecideForMe(picked);

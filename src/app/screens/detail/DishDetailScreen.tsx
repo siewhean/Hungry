@@ -413,7 +413,12 @@ export function DishDetailScreen({ navigation, route }: Props) {
               {deliveryAvailable ? (
                 <View style={{ gap: spacing[3], marginTop: spacing[2] }}>
                   {venue.deliveryLinks.map((link) => (
-                    <DeliveryPlatformButton key={link.platform} link={link} />
+                    <DeliveryPlatformButton
+                      key={link.platform}
+                      link={link}
+                      dishId={dish.id}
+                      venueId={venue.id}
+                    />
                   ))}
                 </View>
               ) : (

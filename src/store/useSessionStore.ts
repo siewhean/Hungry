@@ -27,6 +27,7 @@ interface SessionState {
     completedOnboarding?: boolean;
     skippedTasteQuiz?: boolean;
     authProvider?: AuthProvider;
+    trackSignInEvent?: boolean;
   }) => void;
   completeOnboarding: (skippedQuiz?: boolean) => void;
   expireSession: () => void;
@@ -71,15 +72,17 @@ export const useSessionStore = create<SessionState>()(
           dietaryPreferences: profile.dietaryPreferences,
           area,
         });
-        trackAnalyticsEvent(
-          "sign_in_completed",
-          {
-            method: options?.authProvider ?? "email",
-            has_completed_onboarding: options?.completedOnboarding ?? false,
-            skipped_taste_quiz: options?.skippedTasteQuiz ?? false,
-          },
-          { userId: profile.id },
-        );
+        if (options?.trackSignInEvent ?? true) {
+          trackAnalyticsEvent(
+            "sign_in_completed",
+            {
+              method: options?.authProvider ?? "email",
+              has_completed_onboarding: options?.completedOnboarding ?? false,
+              skipped_taste_quiz: options?.skippedTasteQuiz ?? false,
+            },
+            { userId: profile.id },
+          );
+        }
       },
       completeOnboarding: (skippedQuiz = false) => {
         set({

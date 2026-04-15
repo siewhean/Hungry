@@ -7,7 +7,10 @@ import { AppText } from "@/components/ui";
 import { HungryThemeProvider, useHungryTheme } from "@/theme";
 import { AppBody } from "@/app/AppBody";
 
-const sentryDsn = process.env.SENTRY_DSN ?? process.env.EXPO_PUBLIC_SENTRY_DSN;
+const appEnv =
+  process.env.EXPO_PUBLIC_APP_ENV ??
+  (typeof __DEV__ !== "undefined" && __DEV__ ? "development" : "production");
+const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
 
 let sentryInitialized = false;
 if (!sentryInitialized) {
@@ -15,7 +18,15 @@ if (!sentryInitialized) {
     dsn: sentryDsn,
     enabled: Boolean(sentryDsn),
     debug: typeof __DEV__ !== "undefined" ? __DEV__ : false,
-    tracesSampleRate: 0.1,
+    environment: appEnv,
+    tracesSampleRate: appEnv === "production" ? 0.1 : 0,
+    beforeSend: (event) => {
+      if (event.user) {
+        delete event.user.email;
+        delete event.user.username;
+      }
+      return event;
+    },
   });
   sentryInitialized = true;
 }
@@ -46,7 +57,7 @@ function SentryFallback() {
   );
 }
 
-export default function App() {
+export default Sentry.wrap(function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -58,4 +69,4 @@ export default function App() {
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
-}
+});

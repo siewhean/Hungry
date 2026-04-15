@@ -2,6 +2,7 @@ import { Linking, Pressable, StyleSheet, View } from "react-native";
 import { ExternalLink } from "lucide-react-native";
 
 import { BRAND_COLORS } from "@/constants/brandColors";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { DeliveryLink } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "../ui";
@@ -9,6 +10,8 @@ import { AppText } from "../ui";
 interface DeliveryPlatformButtonProps {
   link: DeliveryLink;
   compact?: boolean;
+  dishId?: string;
+  venueId?: string;
 }
 
 const platformMeta: Record<string, { label: string; color: string }> = {
@@ -20,6 +23,8 @@ const platformMeta: Record<string, { label: string; color: string }> = {
 export function DeliveryPlatformButton({
   link,
   compact = false,
+  dishId,
+  venueId,
 }: DeliveryPlatformButtonProps) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const meta = platformMeta[link.platform] ?? {
@@ -28,6 +33,12 @@ export function DeliveryPlatformButton({
   };
 
   const handlePress = async () => {
+    trackAnalyticsEvent("delivery_link_tapped", {
+      dish_id: dishId,
+      venue_id: venueId,
+      platform: link.platform,
+    });
+
     try {
       await Linking.openURL(link.nativeUrl);
     } catch {

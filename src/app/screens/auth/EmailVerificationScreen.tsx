@@ -4,6 +4,7 @@ import { Pressable, View } from "react-native";
 import { ArrowLeft, CircleAlert, MailCheck } from "lucide-react-native";
 
 import { AppText, Button } from "@/components/ui";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -131,7 +132,13 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
           <Button
             label="Verify Account"
             onPress={() => {
-              completeAuth();
+              trackAnalyticsEvent("sign_up_completed", {
+                method: "email",
+              });
+              completeAuth({
+                authProvider: "email",
+                trackSignInEvent: false,
+              });
               showToast({
                 message: "Email verified. Continue onboarding.",
                 tone: "success",

@@ -7,6 +7,7 @@ import { Sparkles } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import {
   AppText,
   Badge,
@@ -173,6 +174,8 @@ export function DecideForMeResultScreen() {
   const showToast = useUIStore((state) => state.showToast);
   const [searchRadius, setSearchRadius] = useState(500);
   const [resultIndex, setResultIndex] = useState(0);
+  const trackedResultKey = useRef<string | null>(null);
+  const trackedNoMatchRadius = useRef<number | null>(null);
 
   const candidates = useMemo(
     () =>
@@ -212,6 +215,36 @@ export function DecideForMeResultScreen() {
   }, [candidates, resultIndex, selectedDish, setDecideForMe]);
 
   const dish = candidates[resultIndex] ?? selectedDish;
+  const match = dish
+    ? Math.round(blendedMatchScore(profile.tasteVector, dish.tasteVector) * 100)
+    : 0;
+
+  useEffect(() => {
+    if (!dish) {
+      if (trackedNoMatchRadius.current !== searchRadius) {
+        trackAnalyticsEvent("decide_for_me_no_match", {
+          radius_m: searchRadius,
+        });
+        trackedNoMatchRadius.current = searchRadius;
+      }
+      return;
+    }
+
+    trackedNoMatchRadius.current = null;
+    const resultKey = `${dish.id}:${searchRadius}`;
+    if (trackedResultKey.current === resultKey) {
+      return;
+    }
+    trackedResultKey.current = resultKey;
+    trackAnalyticsEvent("decide_for_me_result_shown", {
+      dish_id: dish.id,
+      venue_id: dish.venueId,
+      building_id: dish.buildingId,
+      radius_m: searchRadius,
+      match_score: match,
+      distance_m: dish.distanceMeters,
+    });
+  }, [dish, match, searchRadius]);
 
   const cardAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -239,6 +272,10 @@ export function DecideForMeResultScreen() {
       });
       return;
     }
+    trackAnalyticsEvent("decide_for_me_radius_expanded", {
+      from_radius_m: searchRadius,
+      new_radius_m: target,
+    });
     setSearchRadius(target);
   };
 
@@ -269,9 +306,6 @@ export function DecideForMeResultScreen() {
 
   const venue = repository.getVenueById(dish.venueId);
   const building = findBuildingById(dish.buildingId);
-  const match = Math.round(
-    blendedMatchScore(profile.tasteVector, dish.tasteVector) * 100,
-  );
   const tasteDims: Array<{ key: keyof TasteVector; label: string }> = [
     { key: "sweet", label: "Sweet" },
     { key: "spicy", label: "Spicy" },
@@ -448,10 +482,19 @@ export function DecideForMeResultScreen() {
         <Button
           label="Order now"
           variant="secondary"
-          onPress={() => {
+          onPress={async () => {
             const link = venue?.deliveryLinks[0];
             if (link) {
-              void Linking.openURL(link.nativeUrl || link.webUrl);
+              trackAnalyticsEvent("delivery_link_tapped", {
+                dish_id: dish.id,
+                venue_id: dish.venueId,
+                platform: link.platform,
+              });
+              try {
+                await Linking.openURL(link.nativeUrl);
+              } catch {
+                await Linking.openURL(link.webUrl);
+              }
             }
           }}
         />

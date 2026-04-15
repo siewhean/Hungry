@@ -232,3 +232,19 @@
   - Reverted a failed header-wrapper suppression experiment that introduced ExpoModulesCore compile errors, then restored dependency headers and revalidated.
   - Final verification: `xcodebuild` succeeds (`BUILD_EXIT:0`, `ERROR_COUNT:0`, `TOTAL_WARNING_LINES:1`), `npm run typecheck` passes, and `npm test -- --runInBand` passes (23/23).
   - Remaining warning is a single Xcode AppIntents metadata processor notice (`Metadata extraction skipped. No AppIntents.framework dependency found.`); app usability and feature behavior are unchanged.
+
+## 2026-04-15
+
+- Prompt: "Refer to the document and update the existing code based on the documnet guidelines. Create and complete the task in multiple phases. Activate the appropriate agents for the respective tasks"
+- Actions:
+  - Activated `Project Shepherd` subagent to generate a phased implementation plan from `tasks/Roadmap/production-infrastructure.md` and activated `Backend Architect` subagent to validate a minimal-diff patch set before code edits.
+  - Phase 1 (environment strategy): expanded `.env.development`, `.env.staging`, and `.env.production` placeholder templates to the full variable catalog (`Supabase`, `Mapbox`, `PostHog`, `Sentry`, `EAS`) and aligned staging/production `HUNGRY_DATA_SOURCE=supabase`.
+  - Phase 2 (pipeline/config): updated `.gitignore` to keep committed template env files while ignoring local secret overlays, aligned `eas.json` channels/env blocks, and added Sentry-related GitHub secret pass-through in `.github/workflows/ci.yml` EAS build gate.
+  - Phase 3 (observability + analytics): hardened `Sentry.init` in `App.tsx` with environment tagging, non-production trace suppression, and `beforeSend` PII stripping; extended analytics event union; added explicit `sign_up_completed` event on email verification; instrumented `decide_for_me_triggered`, `decide_for_me_result_shown`, `decide_for_me_no_match`, `decide_for_me_radius_expanded`, and `delivery_link_tapped` events in discover/detail flows.
+  - Updated Sprint 4 execution tracking in `tasks/todo.md` with phase-based completion status and remaining launch-smoke evidence gate.
+  - Re-validated project health: `npm run typecheck`, `npm run test`, and `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor` all passed.
+
+- Prompt: "Replace the sensitive information with the variables in the .env file"
+- Actions:
+  - Sanitized `tasks/Roadmap/production-infrastructure.md` Section 1.2 by removing hardcoded credential/token literals.
+  - Replaced each sensitive value with environment-variable references (for example `${EXPO_PUBLIC_SENTRY_DSN}`, `${SENTRY_AUTH_TOKEN}`, `${EXPO_TOKEN}`) so the document retains the variable contract without exposing secrets.
