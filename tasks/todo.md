@@ -559,8 +559,8 @@ These items affect perceived quality but do not break functionality.
 
 #### Claude primary
 
-- [ ] **P1-ARCH-07 audit:** Produce the definitive list of all 20 screen files that import `mockRepository` directly, and for each file specify which `DataRepository` or `HungryService` methods they should call instead.
-- [ ] **P1-ARCH-07 contract check:** Verify that `DataRepository` interface in `types.ts` has every method needed by the 20 screens. If methods are missing, define them.
+- [x] **P1-ARCH-07 audit:** Codex completed all 6 migration batches without a formal audit doc; done gate verified clean (`grep -rn 'from.*mock/repositories' src/app/ src/features/` returns zero non-dev results). Three orphaned `(1).tsx` backup files deleted 2026-04-15 to clear the last stale imports.
+- [x] **P1-ARCH-07 contract check:** All 6 migration batches passed typecheck — DataRepository interface was sufficient. No missing methods found.
 
 #### Codex primary
 
@@ -617,11 +617,11 @@ These items affect perceived quality but do not break functionality.
 
 #### Claude primary
 
-- [ ] **P1-49 decision:** Should DirectMessages be fully removed or feature-flagged for Phase 2? If kept, define the data contract (which store, which `HungryService` method). Write recommendation.
-- [ ] **P1-50 decision:** Should the Comments bottom sheet be removed entirely or stubbed behind a feature flag? Write recommendation.
-- [ ] **P1-51 decision:** What should the "Detailed Analysis" Pressable navigate to? Define the target screen (or remove the chevron affordance). What should favourite cards on Profile navigate to? (Presumably `DishDetail`.)
-- [ ] **P1-53 decision:** Define what drives "Level 12 • Foodie Scout" and the analytics prose. Should it derive from review count / stall visits, or be removed entirely until gamification is properly designed?
-- [ ] **P2-63 spec:** Define how location strings ("Tanjong Pagar · 14 nearby") should be derived. From `useLocationStore`? Reverse geocoding? Nearest building cluster name?
+- [x] **P1-49 decision:** Feature-flagged behind `directMessagesEnabled: false` (default off). Data contract deferred to Phase 2. Verified: `featureFlags.ts:6`.
+- [x] **P1-50 decision:** Comments kept and working (`commentsEnabled: true`); the placeholder `BottomSheetModal` stub was removed. Comments are a live feature, not a dead-end.
+- [x] **P1-51 decision:** "Detailed Analysis" chevron removed — block is now a display-only `View` (not a Pressable). Favourite cards on Profile navigate to `DishDetail`. Verified in `ProfileHomeScreen.tsx`.
+- [x] **P1-53 decision:** Gamification copy replaced with profile-stats-driven text using `profile.stats.dishesReviewed` and `profile.stats.stallsVisited`. No hardcoded "Level 12 / Foodie Scout" remains (verified by grep).
+- [x] **P2-63 spec:** Location strings derive from `useLocationStore` nearest-building computation. Hardcoded "Tanjong Pagar" strings gone (verified by grep). "14 nearby" replaced with computed building count.
 
 #### Codex primary
 
@@ -648,11 +648,11 @@ These items affect perceived quality but do not break functionality.
 
 #### Claude primary
 
-- [ ] **CI/CD pipeline:** Write `.github/workflows/ci.yml` with typecheck → test → expo-doctor → EAS build gates.
-- [ ] **Environment strategy:** Define `.env.development`, `.env.staging`, `.env.production` variable sets. Document which variables go where.
-- [ ] **Sentry init plan:** Define the Sentry DSN placement, error boundary strategy, and source map upload hook for EAS builds.
-- [ ] **PostHog init plan:** Define the PostHog project setup, API key placement, identity linking strategy, and the core funnel events that must ship for launch (from P1-03 taxonomy).
-- [ ] **Launch readiness checklist:** Draft Privacy Policy and Terms of Service requirements. List App Store / Play Store submission requirements (screenshots, ratings, keywords, etc.).
+- [x] **CI/CD pipeline:** `.github/workflows/ci.yml` written by Codex (Batch 2026-04-13T); documented and ratified in `tasks/Roadmap/production-infrastructure.md` §2.
+- [x] **Environment strategy:** `.env.development/.staging/.production` created by Codex. Full variable catalogue, routing rules, and `.gitignore` additions documented in `tasks/Roadmap/production-infrastructure.md` §1.
+- [x] **Sentry init plan:** Documented in `tasks/Roadmap/production-infrastructure.md` §3 — source map upload via Expo plugin, error boundary strategy per surface, PII-scrubbing `beforeSend`, performance monitoring config.
+- [x] **PostHog init plan:** Documented in `tasks/Roadmap/production-infrastructure.md` §4 — must-ship event priority list (10 events), identity linking flow, 4 core funnels.
+- [x] **Launch readiness checklist:** Documented in `tasks/Roadmap/production-infrastructure.md` §5 — PDPA/legal, App Store + Play Store requirements, pre-launch smoke tests.
 
 #### Codex primary
 
@@ -680,11 +680,11 @@ These items affect perceived quality but do not break functionality.
 
 #### Claude primary
 
-- [ ] **Schema deployment plan:** Finalize the DDL from `backend-architecture.md`. Write a Supabase migration script. Define the seed data mapping from `mock/data.ts` → SQL inserts.
-- [ ] **Auth integration plan:** Define the Supabase Auth configuration (email/password, Google OAuth, Apple Sign-In). Map to the existing `HungryService.auth` interface.
-- [ ] **API security plan:** Define Row-Level Security (RLS) policies for all tables. Define which endpoints need rate limiting. Document the JWT → userId extraction pattern.
-- [ ] **Media pipeline plan:** Define the upload flow for review photos and avatar photos. Specify Supabase Storage bucket structure, signed URL generation, and CDN caching.
-- [ ] **Migration testing plan:** Define the acceptance tests for the data layer swap (data parity with mock, performance baselines, error handling).
+- [x] **Schema deployment plan:** DDL, migration script order, and seed data mapping documented in `tasks/Roadmap/backend-migration-plan.md` §1.
+- [x] **Auth integration plan:** `HungryService.auth` → Supabase method mapping, `onAuthStateChange` session bridge documented in `tasks/Roadmap/backend-migration-plan.md` §2.
+- [x] **API security plan:** RLS policies for all tables, Redis rate limiting, Zod input validation documented in `tasks/Roadmap/backend-migration-plan.md` §3.
+- [x] **Media pipeline plan:** Signed upload URL flow, bucket structure, image size constraints, CDN caching documented in `tasks/Roadmap/backend-migration-plan.md` §4.
+- [x] **Migration testing plan:** Data parity checks, P95 baselines, acceptance suite, phased rollout + rollback documented in `tasks/Roadmap/backend-migration-plan.md` §5.
 
 #### Codex primary
 
