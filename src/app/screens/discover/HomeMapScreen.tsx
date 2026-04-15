@@ -215,19 +215,19 @@ export function HomeMapScreen() {
     }));
     if (currentZoom > 16.5) {
       const venues = repository.listVenuesByBuilding(activeBuildingRecord.id);
-      const stallMarkers = venues.map((v) => ({
-        id: `stall-${v.id}`,
-        label: v.name,
-        coordinate: {
-          latitude:
-            activeBuildingRecord.coordinate.latitude +
-            (Math.random() - 0.5) * 0.0005,
-          longitude:
-            activeBuildingRecord.coordinate.longitude +
-            (Math.random() - 0.5) * 0.0005,
-        },
-        accent: palette.orange,
-      }));
+      const stallMarkers = venues.map((v, index) => {
+        const latitudeOffset = ((index % 7) - 3) * 0.00007;
+        const longitudeOffset = ((Math.floor(index / 7) % 7) - 3) * 0.00007;
+        return {
+          id: `stall-${v.id}`,
+          label: v.name,
+          coordinate: {
+            latitude: activeBuildingRecord.coordinate.latitude + latitudeOffset,
+            longitude: activeBuildingRecord.coordinate.longitude + longitudeOffset,
+          },
+          accent: palette.orange,
+        };
+      });
       return [...bMarkers, ...stallMarkers];
     }
     return bMarkers;

@@ -20,29 +20,26 @@ Three environment files are committed to the repo as templates (secrets are neve
 
 ```bash
 # ── Supabase ────────────────────────────────────────────────────────────────
-EXPO_PUBLIC_SUPABASE_URL=${EXPO_PUBLIC_SUPABASE_URL}          # e.g. https://abcdef.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=${EXPO_PUBLIC_SUPABASE_ANON_KEY}     # public anon key (safe to expose in JS bundle)
-SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}         # server-side only — NEVER in Expo public bundle
+EXPO_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co   # public project URL
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key           # public anon key (safe to expose in JS bundle)
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key       # server-side only — NEVER in Expo public bundle
 
 # ── Mapbox ──────────────────────────────────────────────────────────────────
-EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN=${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}   # pk.eyJ1... — public Mapbox token
-MAPBOX_SECRET_TOKEN=${MAPBOX_SECRET_TOKEN}               # sk.eyJ1... — used in EAS native build only
+EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN=your-mapbox-public-token        # pk.eyJ1... — public Mapbox token
+MAPBOX_SECRET_TOKEN=your-mapbox-secret-token                    # sk.eyJ1... — used in EAS native build only
 
 # ── PostHog ─────────────────────────────────────────────────────────────────
-EXPO_PUBLIC_POSTHOG_API_KEY=${EXPO_PUBLIC_POSTHOG_API_KEY}       # phc_xxxx — project API key
-EXPO_PUBLIC_POSTHOG_HOST=${EXPO_PUBLIC_POSTHOG_HOST}          # https://us.i.posthog.com (or EU endpoint)
+EXPO_PUBLIC_POSTHOG_API_KEY=your-posthog-project-key            # phc_xxxx — project API key
+EXPO_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com               # or EU endpoint
 
 # ── Sentry ──────────────────────────────────────────────────────────────────
-EXPO_PUBLIC_SENTRY_DSN=https://64d7f7f36550f559d8aa484d8baeac84@o4511223191830528.ingest.us.sentry.io/4511223204347904            # https://xxx@oXX.ingest.sentry.io/yyy
-SENTRY_AUTH_TOKEN=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                 # CI-only: used for source map upload during EAS build
-
-EXPO_PUBLIC_SENTRY_DSN=${EXPO_PUBLIC_SENTRY_DSN}            # https://xxx@oXX.ingest.sentry.io/yyy
-SENTRY_AUTH_TOKEN=${SENTRY_AUTH_TOKEN}                 # CI-only: used for source map upload during EAS build
-SENTRY_ORG=${SENTRY_ORG}                        # slug from Sentry organisation settings
-SENTRY_PROJECT=${SENTRY_PROJECT}                    # project slug
+EXPO_PUBLIC_SENTRY_DSN=https://examplePublicKey@o0.ingest.sentry.io/0 # project DSN
+SENTRY_AUTH_TOKEN=your-sentry-auth-token                            # CI-only: source map upload token
+SENTRY_ORG=your-sentry-org-slug                                     # slug from Sentry organisation settings
+SENTRY_PROJECT=your-sentry-project-slug                             # project slug
 
 # ── EAS ─────────────────────────────────────────────────────────────────────
-EXPO_TOKEN=${EXPO_TOKEN}                        # CI secret — EAS account token for GitHub Actions
+EXPO_TOKEN=your-expo-token                                   # CI secret — EAS account token for GitHub Actions
 ```
 
 ### 1.3 Routing Rules
