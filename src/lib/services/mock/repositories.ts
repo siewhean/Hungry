@@ -1,7 +1,10 @@
 import { blogPosts, buildings, dishes, guestProfile, stallPosts, userProfile, venues } from "./data";
+import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
+import type { DecideForMeOptions } from "@/lib/services/types";
 import type {
   BlogPost,
   BuildingSummary,
+  DietaryFlag,
   DishDetail,
   SearchFilters,
   StallPost,
@@ -104,10 +107,36 @@ export const mockRepository = {
       return scoreB - scoreA;
     });
   },
-  getDecideForMe(tasteProfile: TasteVector) {
+  getDecideForMe(
+    tasteProfile: TasteVector,
+    options: DecideForMeOptions = {},
+  ) {
+    const dietaryFlags: DietaryFlag[] = options.dietaryFlags ?? [];
+    const radiusMeters = options.radiusMeters ?? 500;
+    const pipelineResults = runRecommendationPipeline(dishes, {
+      userVector: tasteProfile,
+      dietaryFlags,
+      neophiliaIndex: options.neophiliaIndex ?? 5,
+      latitude: options.latitude,
+      longitude: options.longitude,
+      radiusMeters,
+      excludeDishIds: options.excludeDishIds,
+    });
+
+    const topDish = pipelineResults[0]
+      ? dishes.find((dish) => dish.id === pipelineResults[0].dishId)
+      : undefined;
+    if (topDish) {
+      return topDish;
+    }
+
     return [...dishes]
-      .filter((dish) => dish.distanceMeters <= 500)
-      .sort((a, b) => similarityScore(b.tasteVector, tasteProfile) - similarityScore(a.tasteVector, tasteProfile))[0];
+      .filter((dish) => dish.distanceMeters <= radiusMeters)
+      .sort(
+        (a, b) =>
+          similarityScore(b.tasteVector, tasteProfile) -
+          similarityScore(a.tasteVector, tasteProfile),
+      )[0];
   },
   listBlogPosts(): BlogPost[] {
     return blogPosts;

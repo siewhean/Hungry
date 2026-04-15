@@ -2,6 +2,10 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import {
+  processExplicitFeedback,
+  type ExplicitFeedbackEvent,
+} from "@/lib/ai/tasteEngine";
 import { getDataRepository, getSimilarityScore } from "@/lib/services/serviceProvider";
 import type { DietaryFlag, DishDetail, TasteProfile, TasteVector, UserProfile } from "@/types/domain";
 import { NEUTRAL_TASTE_PROFILE } from "@/constants/taste";
@@ -26,26 +30,47 @@ interface ProfileState {
   clearProfile: () => void;
 }
 
-function recalculateTasteVector(profile: UserProfile) {
-  const repository = getDataRepository();
-  const favourites = profile.favouriteDishIds
-    .map((id) => repository.getDishById(id))
-    .filter((d): d is DishDetail => !!d);
+const FEEDBACK_CONFIDENCE_DELTAS: Record<ExplicitFeedbackEvent["type"], number> = {
+  saved: 0.04,
+  unsaved: 0.005,
+  rating_5_star: 0.03,
+  rating_4_star: 0.02,
+  rating_3_star: 0.01,
+  rating_2_star: 0.015,
+  rating_1_star: 0.02,
+  hawker_tag_positive: 0.01,
+  hawker_tag_negative: 0.01,
+};
 
-  if (favourites.length === 0) return profile.tasteVector;
+function clampConfidence(value: number) {
+  return Math.max(0, Math.min(1, Number(value.toFixed(3))));
+}
 
-  const newVector: TasteVector = { sweet: 0, spicy: 0, sour: 0, salty: 0, rich: 0, aromatic: 0 };
-  favourites.forEach((dish) => {
-    Object.keys(newVector).forEach((key) => {
-      (newVector as any)[key] += (dish.tasteVector as any)[key];
-    });
-  });
+function getRatingFeedbackType(rating: number): ExplicitFeedbackEvent["type"] {
+  if (rating >= 5) return "rating_5_star";
+  if (rating >= 4) return "rating_4_star";
+  if (rating >= 3) return "rating_3_star";
+  if (rating >= 2) return "rating_2_star";
+  return "rating_1_star";
+}
 
-  Object.keys(newVector).forEach((key) => {
-    (newVector as any)[key] = Math.round((newVector as any)[key] / favourites.length);
-  });
-
-  return newVector;
+function bumpRecommendationSignals(
+  profile: UserProfile,
+  feedbackType: ExplicitFeedbackEvent["type"],
+) {
+  const previous =
+    profile.recommendationSignals ??
+    ({
+      confidence: 0,
+      signalCount: 0,
+    } as const);
+  return {
+    confidence: clampConfidence(
+      previous.confidence + FEEDBACK_CONFIDENCE_DELTAS[feedbackType],
+    ),
+    signalCount: previous.signalCount + 1,
+    lastSignalAt: new Date().toISOString(),
+  };
 }
 
 export const useProfileStore = create<ProfileState>()(
@@ -63,6 +88,17 @@ export const useProfileStore = create<ProfileState>()(
           const nextIds = isFavourite
             ? state.profile.favouriteDishIds.filter((id) => id !== dish.id)
             : [...state.profile.favouriteDishIds, dish.id];
+          const feedbackType: ExplicitFeedbackEvent["type"] = isFavourite
+            ? "unsaved"
+            : "saved";
+          const updatedTasteVector = processExplicitFeedback(
+            state.profile.tasteVector,
+            {
+              type: feedbackType,
+              dishVector: dish.tasteVector,
+              timestamp: Date.now(),
+            },
+          );
 
           trackAnalyticsEvent(isFavourite ? "dish_unfavourited" : "dish_favourited", {
             dish_id: dish.id,
@@ -76,12 +112,18 @@ export const useProfileStore = create<ProfileState>()(
               ...state.profile.stats,
               favouritesCount: nextIds.length,
             },
+            tasteVector: updatedTasteVector,
+            recommendationSignals: bumpRecommendationSignals(
+              state.profile,
+              feedbackType,
+            ),
           };
 
           return {
-            profile: {
-              ...nextProfile,
-              tasteVector: recalculateTasteVector(nextProfile),
+            profile: nextProfile,
+            tasteProfile: {
+              ...state.tasteProfile,
+              vector: updatedTasteVector,
             },
           };
         }),
@@ -173,16 +215,54 @@ export const useProfileStore = create<ProfileState>()(
           };
         }),
       recordReviewEntry: (dishId, entry) =>
-        set((state) => ({
-          reviewEntries: {
-            ...state.reviewEntries,
-            [dishId]: {
-              ...entry,
-              text: entry.text.trim(),
-              createdAt: new Date().toISOString(),
+        set((state) => {
+          const dish = getDataRepository().getDishById(dishId);
+          if (!dish) {
+            return {
+              reviewEntries: {
+                ...state.reviewEntries,
+                [dishId]: {
+                  ...entry,
+                  text: entry.text.trim(),
+                  createdAt: new Date().toISOString(),
+                },
+              },
+            };
+          }
+
+          const feedbackType = getRatingFeedbackType(entry.rating);
+          const updatedTasteVector = processExplicitFeedback(
+            state.profile.tasteVector,
+            {
+              type: feedbackType,
+              dishVector: dish.tasteVector,
+              timestamp: Date.now(),
             },
-          },
-        })),
+          );
+
+          return {
+            reviewEntries: {
+              ...state.reviewEntries,
+              [dishId]: {
+                ...entry,
+                text: entry.text.trim(),
+                createdAt: new Date().toISOString(),
+              },
+            },
+            profile: {
+              ...state.profile,
+              tasteVector: updatedTasteVector,
+              recommendationSignals: bumpRecommendationSignals(
+                state.profile,
+                feedbackType,
+              ),
+            },
+            tasteProfile: {
+              ...state.tasteProfile,
+              vector: updatedTasteVector,
+            },
+          };
+        }),
       setLeftHandedMode: (enabled) =>
         set((state) => ({
           profile: {

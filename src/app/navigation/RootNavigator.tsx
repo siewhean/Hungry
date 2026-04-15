@@ -67,7 +67,6 @@ const AUTH_REQUIRED_ROUTES = new Set([
   "MainTabs",
   "SearchHome",
   "SearchResults",
-  "ReadsFeed",
   "MapZoomedIn",
   "Post",
   "EditProfile",
@@ -269,14 +268,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       navigationRef.resetRoot({
         index: 0,
         routes: [returnRoute as never],
-      });
-      return;
-    }
-
-    if (returnRoute === "ReadsFeed") {
-      navigationRef.resetRoot({
-        index: 0,
-        routes: [{ name: "ReadsFeed" }],
       });
       return;
     }

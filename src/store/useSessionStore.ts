@@ -110,6 +110,7 @@ export const useSessionStore = create<SessionState>()(
       signOut: () => {
         const profileId = useProfileStore.getState().profile.id;
         set({ ...initialState });
+        useProfileStore.getState().clearProfile();
         useProfileStore.getState().syncProfile(false);
         resetPostHogUser();
         trackAnalyticsEvent(
@@ -121,6 +122,7 @@ export const useSessionStore = create<SessionState>()(
       clearSession: () => {
         const profileId = useProfileStore.getState().profile.id;
         set({ ...initialState });
+        useProfileStore.getState().clearProfile();
         useProfileStore.getState().syncProfile(false);
         resetPostHogUser();
         trackAnalyticsEvent(

@@ -23,3 +23,4 @@
 - All data access in `src/app/` and `src/features/` must go through `getDataRepository()` or `getHungryService()` from `serviceProvider.ts`. Never import from `src/lib/services/mock/` directly in screen or feature files — doing so silently breaks the mock-to-Supabase swap path.
 - Any persisted Zustand state keyed by user identity (reviewEntries, favourites, tasteVector) must be cleared in `clearProfile()`. `clearProfile()` must always be called from `signOut()`, not `syncProfile(false)` alone.
 - No backlog item is done until `npm run typecheck` passes AND a verification command is recorded in Section 5 (Session Log) of `tasks/todo.md` with the agent name and date. "Done" without evidence is status inflation.
+- On retry requests after partial work, re-validate the workspace state and run hard verification gates (`typecheck` + tests) before reporting completion.

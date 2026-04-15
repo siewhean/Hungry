@@ -369,7 +369,15 @@ export const hungryService: HungryService = {
     },
 
     async decideForMe(tasteProfile, _lat?, _lng?) {
-      return resolve(mockRepository.getDecideForMe(tasteProfile));
+      return resolve(
+        mockRepository.getDecideForMe(tasteProfile, {
+          dietaryFlags: _profile.dietaryPreferences,
+          neophiliaIndex: _profile.tasteProfile?.neophiliaIndex ?? 5,
+          radiusMeters: 500,
+          latitude: _lat,
+          longitude: _lng,
+        }),
+      );
     },
   },
 
@@ -547,22 +555,35 @@ export const hungryService: HungryService = {
     },
 
     async getSmartRecommendations(ctx: RecommendationContext): Promise<RecommendationResult[]> {
-      const candidates = dishes.filter((d) => {
-        const withinRadius = d.distanceMeters <= (ctx.radiusMeters ?? 800);
-        const notExcluded = !(ctx.excludeDishIds ?? []).includes(d.id);
-        return withinRadius && notExcluded;
-      });
+      const results = runRecommendationPipeline(dishes, {
+        userVector: ctx.tasteProfile,
+        dietaryFlags: _profile.dietaryPreferences,
+        neophiliaIndex: _profile.tasteProfile?.neophiliaIndex ?? 5,
+        latitude: ctx.latitude,
+        longitude: ctx.longitude,
+        radiusMeters: ctx.radiusMeters,
+        excludeDishIds: ctx.excludeDishIds,
+      })
+        .slice(0, 10)
+        .map((result) => {
+          const dish = dishes.find((item) => item.id === result.dishId);
+          if (!dish) {
+            return undefined;
+          }
 
-      return resolve(
-        candidates
-          .map((dish) => ({
+          return {
             dish,
-            matchScore: cosine(ctx.tasteProfile, dish.tasteVector),
-            matchReason: matchReason(ctx.tasteProfile, dish.tasteVector),
-          }))
-          .sort((a, b) => b.matchScore - a.matchScore)
-          .slice(0, 10)
-      );
+            matchScore: result.score,
+            matchReason: result.explanation,
+          };
+        })
+        .filter(
+          (
+            recommendation,
+          ): recommendation is RecommendationResult => Boolean(recommendation),
+        );
+
+      return resolve(results);
     },
 
     async adjustCommunityTasteVector(_dishId, _userRating) {

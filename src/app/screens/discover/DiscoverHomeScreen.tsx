@@ -27,6 +27,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Chip, Input, Screen } from "@/components/ui";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
+import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
@@ -54,7 +55,13 @@ export function DiscoverHomeScreen() {
   const locationPermission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
-  const { popularNearby, setDecideForMe } = useDiscoveryStore();
+  const {
+    popularNearby,
+    setDecideForMe,
+    cacheRecommendationSlate,
+    getCachedRecommendationSlate,
+    pruneExpiredRecommendations,
+  } = useDiscoveryStore();
   const selectedCategories = useSearchStore(
     (state) => state.filters.categories,
   );
@@ -158,11 +165,61 @@ export function DiscoverHomeScreen() {
   }>;
 
   const handleDecideForMe = () => {
+    const radiusMeters = 500;
     trackAnalyticsEvent("decide_for_me_triggered", {
       location_granted: locationPermission === "granted",
-      radius_m: 500,
+      radius_m: radiusMeters,
     });
-    const picked = repository.getDecideForMe(profile.tasteVector);
+
+    const geoCell = toRecommendationGeoCell(
+      currentLocation.latitude,
+      currentLocation.longitude,
+    );
+    pruneExpiredRecommendations();
+
+    const cachedDishIds = getCachedRecommendationSlate(geoCell);
+    const cachedDishes = (cachedDishIds ?? [])
+      .map((dishId) => repository.getDishById(dishId))
+      .filter((dish): dish is DishDetail => Boolean(dish));
+
+    let picked = repository.getDecideForMe(profile.tasteVector, {
+      dietaryFlags: profile.dietaryPreferences,
+      neophiliaIndex: profile.tasteProfile?.neophiliaIndex ?? 5,
+      radiusMeters,
+      latitude: currentLocation.latitude,
+      longitude: currentLocation.longitude,
+      excludeDishIds: [],
+    });
+
+    if (!picked && cachedDishes.length) {
+      picked = cachedDishes[0];
+    }
+
+    if (!cachedDishes.length) {
+      const liveSlate = repository
+        .searchDishes(
+          {
+            query: "",
+            categories: [],
+            dietaryFlags: profile.dietaryPreferences,
+            tasteValues: profile.tasteVector,
+            radius: radiusMeters,
+          },
+          profile.tasteVector,
+        )
+        .slice(0, 20);
+
+      if (liveSlate.length) {
+        cacheRecommendationSlate(
+          geoCell,
+          liveSlate.map((dish) => dish.id),
+        );
+        if (!picked) {
+          picked = liveSlate[0];
+        }
+      }
+    }
+
     if (picked) {
       setDecideForMe(picked);
     }

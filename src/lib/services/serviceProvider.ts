@@ -51,6 +51,7 @@ export function getSimilarityScore(left: TasteVector, right: TasteVector): numbe
 
 // Compatibility layer for legacy callsites migrating off direct mock imports.
 // Each access resolves the current provider lazily, so provider swaps stay live.
+/** @deprecated Use getDataRepository() directly. */
 export const dataRepository = new Proxy({} as DataRepository, {
   get(_target, property, receiver) {
     const repository = getDataRepository() as unknown as Record<PropertyKey, unknown>;

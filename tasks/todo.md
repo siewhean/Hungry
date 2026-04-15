@@ -700,27 +700,27 @@ These items affect perceived quality but do not break functionality.
 
 #### HIGH
 
-- [ ] **AUD-01 — `ReadsFeed` route undefined** `src/app/navigation/RootNavigator.tsx:63,261–264` — `"ReadsFeed"` appears in `AUTH_REQUIRED_ROUTES` and `openResolvedRoute()`, but is never declared in `RootStackParamList` (`navigationTypes.ts`). If a user's `returnRoute` is ever set to `"ReadsFeed"` (e.g. from a deep link or post-auth redirect), the app will crash at runtime with an unknown route error. Fix: add `ReadsFeed: undefined` to `RootStackParamList`, or remove the three `ReadsFeed` references from `RootNavigator.tsx`.
+- [x] **AUD-01 — `ReadsFeed` route undefined** `src/app/navigation/RootNavigator.tsx:63,261–264` — `"ReadsFeed"` appears in `AUTH_REQUIRED_ROUTES` and `openResolvedRoute()`, but is never declared in `RootStackParamList` (`navigationTypes.ts`). If a user's `returnRoute` is ever set to `"ReadsFeed"` (e.g. from a deep link or post-auth redirect), the app will crash at runtime with an unknown route error. Fix: add `ReadsFeed: undefined` to `RootStackParamList`, or remove the three `ReadsFeed` references from `RootNavigator.tsx`.
 
 #### MEDIUM
 
-- [ ] **AUD-02 — `reviewEntries` not cleared on sign-out** `src/store/useSessionStore.ts:93–96` / `useProfileStore.ts:200–205` — `signOut()` calls `syncProfile(false)` which resets the profile object, but never calls `clearProfile()`. The `reviewEntries` map (persisted via `hungryPersistStorage`) survives sign-out and will be visible to the next user on a shared device. Fix: call `useProfileStore.getState().clearProfile()` inside `signOut()` alongside `syncProfile(false)`.
+- [x] **AUD-02 — `reviewEntries` not cleared on sign-out** `src/store/useSessionStore.ts:93–96` / `useProfileStore.ts:200–205` — `signOut()` calls `syncProfile(false)` which resets the profile object, but never calls `clearProfile()`. The `reviewEntries` map (persisted via `hungryPersistStorage`) survives sign-out and will be visible to the next user on a shared device. Fix: call `useProfileStore.getState().clearProfile()` inside `signOut()` alongside `syncProfile(false)`.
 
-- [ ] **AUD-03 — Sentry DSN env fallback is dead code** `App.tsx:10` — `process.env.SENTRY_DSN` (no `EXPO_PUBLIC_` prefix) is never bundled into the React Native JS bundle; it will always be `undefined`. The `??` fallback silently always uses `EXPO_PUBLIC_SENTRY_DSN`, making the first read misleading dead code. Fix: remove the `process.env.SENTRY_DSN` half and use `process.env.EXPO_PUBLIC_SENTRY_DSN` directly.
+- [x] **AUD-03 — Sentry DSN env fallback is dead code** `App.tsx:10` — `process.env.SENTRY_DSN` (no `EXPO_PUBLIC_` prefix) is never bundled into the React Native JS bundle; it will always be `undefined`. The `??` fallback silently always uses `EXPO_PUBLIC_SENTRY_DSN`, making the first read misleading dead code. Fix: remove the `process.env.SENTRY_DSN` half and use `process.env.EXPO_PUBLIC_SENTRY_DSN` directly. (Verified already compliant in current `App.tsx`.)
 
-- [ ] **AUD-04 — CI pipeline has no lint gate** `.github/workflows/ci.yml` — The `quality-gates` job runs typecheck → test → expo-doctor but has no ESLint step. Lint errors silently pass CI. Fix: add `npm run lint` as a step (after verifying/adding the `lint` script to `package.json`).
+- [x] **AUD-04 — CI pipeline has no lint gate** `.github/workflows/ci.yml` — The `quality-gates` job runs typecheck → test → expo-doctor but has no ESLint step. Lint errors silently pass CI. Fix: add `npm run lint` as a step (after verifying/adding the `lint` script to `package.json`).
 
-- [ ] **AUD-05 — `navigation as any` in ProfileHomeScreen** `src/app/screens/profile/ProfileHomeScreen.tsx:23` — `getRootNavigation(navigation as any)` casts away type safety on the navigation prop. If the prop type or `getRootNavigation` signature changes, this will fail silently at runtime. Fix: cast to `NativeStackNavigationProp<ProfileStackParamList>` (the actual prop type from the screen's `NativeStackScreenProps`).
+- [x] **AUD-05 — `navigation as any` in ProfileHomeScreen** `src/app/screens/profile/ProfileHomeScreen.tsx:23` — `getRootNavigation(navigation as any)` casts away type safety on the navigation prop. If the prop type or `getRootNavigation` signature changes, this will fail silently at runtime. Fix: cast to `NativeStackNavigationProp<ProfileStackParamList>` (the actual prop type from the screen's `NativeStackScreenProps`).
 
 #### LOW
 
-- [ ] **AUD-06 — `borderRadius: 999` instead of `radii.pill`** `src/app/screens/onboarding/OnboardingIntroTemplate.tsx:487,506,517,524` and `TasteQuizScreen.tsx:561` — Sprint 2 replaced hardcoded radii in most screens but these five instances were missed. Fix: replace with `radii.pill` from `useHungryTheme()`.
+- [x] **AUD-06 — `borderRadius: 999` instead of `radii.pill`** `src/app/screens/onboarding/OnboardingIntroTemplate.tsx:487,506,517,524` and `TasteQuizScreen.tsx:561` — Sprint 2 replaced hardcoded radii in most screens but these five instances were missed. Fix: replace with `radii.pill` from `useHungryTheme()`.
 
-- [ ] **AUD-07 — Hardcoded `#FFFFFF` in LoginScreen** `src/app/screens/auth/LoginScreen.tsx:113` — `color="#FFFFFF"` on the `ArrowRight` icon. Sprint 2 replaced `#FFFFFF` in 35+ places but missed this one. Fix: `color={palette.white}`.
+- [x] **AUD-07 — Hardcoded `#FFFFFF` in LoginScreen** `src/app/screens/auth/LoginScreen.tsx:113` — `color="#FFFFFF"` on the `ArrowRight` icon. Sprint 2 replaced `#FFFFFF` in 35+ places but missed this one. Fix: `color={palette.white}`.
 
-- [ ] **AUD-08 — Gradient uses hardcoded hex matching an existing token** `src/app/screens/wheel/WheelResultModal.tsx:110` — `colors={[palette.amber, "#F59E0B"]}` — `#F59E0B` is identical to `palette.amber`. Fix: `colors={[palette.amber, palette.amber]}` or simplify to a solid color.
+- [x] **AUD-08 — Gradient uses hardcoded hex matching an existing token** `src/app/screens/wheel/WheelResultModal.tsx:110` — `colors={[palette.amber, "#F59E0B"]}` — `#F59E0B` is identical to `palette.amber`. Fix: `colors={[palette.amber, palette.amber]}` or simplify to a solid color.
 
-- [ ] **AUD-09 — `dataRepository` Proxy undocumented as deprecated** `src/lib/services/serviceProvider.ts:52–63` — The Proxy is a compatibility shim for legacy call sites migrating off direct mock imports. The comment says "legacy callsites" but there is no explicit deprecation notice telling future contributors to use `getDataRepository()` instead. Fix: add `@deprecated Use getDataRepository() directly.` JSDoc to the `dataRepository` export.
+- [x] **AUD-09 — `dataRepository` Proxy undocumented as deprecated** `src/lib/services/serviceProvider.ts:52–63` — The Proxy is a compatibility shim for legacy call sites migrating off direct mock imports. The comment says "legacy callsites" but there is no explicit deprecation notice telling future contributors to use `getDataRepository()` instead. Fix: add `@deprecated Use getDataRepository() directly.` JSDoc to the `dataRepository` export.
 
 ---
 
@@ -937,6 +937,7 @@ These items affect perceived quality but do not break functionality.
 - 2026-04-15 | Codex | Removed Discover-only extra bottom scroll spacing in `DiscoverHomeScreen` to eliminate the horizontal gap above the tab bar while keeping shared `Screen` padding intact for other screens; fixed one unrelated onboarding compile break surfaced during validation. | Status: completed + verified (`npm run typecheck`). | Blockers: none. | Next: runtime visual confirmation on Discover tab.
 - 2026-04-15 | Codex | Aligned Review-tab Bites section left padding with other sections by adding a configurable `horizontalInset` to `BitesCarousel` and applying `spacing[3]` in `HomeFeedScreen` review mode. | Status: completed + verified (`npm run typecheck`). | Blockers: none. | Next: quick visual check on Review tab carousel alignment.
 - 2026-04-15 | Codex | Removed Home/Review top greeting + nearby-stalls text from `HomeFeedScreen`, fixed malformed duplicated BottomSheet closing tags causing transform parser failure, and repaired concurrent `Input.tsx` syntax corruption surfaced during validation. | Status: completed + verified (`npm run typecheck`). | Blockers: none. | Next: runtime check on Home and Review headers plus comments sheet behavior.
+- 2026-04-15 | Codex | Retry pass for AI recommendation engine: audited roadmap coverage with the `Explore` subagent, enforced diversity caps in `runRecommendationPipeline`, corrected signed feedback updates (negative signals now push away from disliked dish vectors), added explicit-feedback recency decay support, propagated feedback timestamps from profile interactions, and added targeted regression tests for diversity + feedback math. | Status: completed + verified (`npm run typecheck`, `npm run test -- --runInBand`). | Blockers: none. | Next: optional Phase-2 Supabase endpoint wiring when backend scope is enabled.
 
 ---
 
@@ -974,3 +975,5 @@ These items affect perceived quality but do not break functionality.
 - [x] `npm run typecheck` — 2026-04-15 (DiscoverHome bottom-gap removal + onboarding compile fix)
 - [x] `npm run typecheck` — 2026-04-15 (Review tab Bites left-padding alignment)
 - [x] `npm run typecheck` — 2026-04-15 (Home/Review header text removal + HomeFeed JSX parser fix)
+- [x] `npm run typecheck` — 2026-04-15 (AI recommendation retry: diversity caps + signed/decayed feedback updates)
+- [x] `npm run test -- --runInBand` — 2026-04-15 (AI recommendation retry + new taste-engine regression tests)
