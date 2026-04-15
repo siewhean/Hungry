@@ -162,3 +162,64 @@
 - Actions:
   - Fixed `HomeFeedScreen` runtime crash by adding the missing `useUIStore` import from `@/store/useUIStore`.
   - Revalidated with `npm run typecheck` and `npm run test -- --runInBand`; both passed.
+
+- Prompt: "The automatic should either show light mode or dark mode based on the user's preference on their device. Currently, the automatic does not change to either light or dark mode and the dark mode looks different from the dark mode setting."
+- Actions:
+  - Hardened `HungryThemeProvider` automatic color-scheme resolution in `src/theme/index.tsx` by combining `useColorScheme()` with `Appearance` listener updates.
+  - Added app-foreground refresh (`AppState` active transition) to re-read `Appearance.getColorScheme()` so scheduled or out-of-app system theme changes are reflected when returning to the app.
+  - Synchronized global React Native appearance override with user preference using `Appearance.setColorScheme(...)`: explicit `light`/`dark` now forces app-wide scheme, while `automatic` releases override (`null`) to follow device setting.
+  - Kept manual `light`/`dark` override behavior unchanged while making `automatic` reliably mirror device preference.
+  - Revalidated with `npm run typecheck` in root; passed.
+
+- Prompt: "There is still no difference after the change"
+- Actions:
+  - Identified `HomeFeedScreen` as a visual override source: it was applying time-of-day (`isLateNight`) tint logic independent of theme preference/device scheme.
+  - Removed the time-based color override and aligned feed tinting to active theme tokens (`colorScheme`/`palette`) so automatic-dark and manual-dark render consistently.
+  - Removed debug-only theme text from the Home header and updated overlay/badge styling to use theme-derived colors.
+  - Revalidated with `npm run typecheck` in root; passed.
+
+- Prompt: "The discover page is dark even though the rest are light mode when it is on automatic"
+- Actions:
+  - Identified the same root cause pattern in `DiscoverHomeScreen`: time-based `isLateNight` tint overrides were forcing dark visuals independent of active theme mode.
+  - Removed Discover time-based visual overrides and switched tinting to active `colorScheme`/theme palette only.
+  - Preserved late-night chip ordering behavior as a non-visual UX hint (separate from theme rendering).
+  - Revalidated with `npm run typecheck` in root; passed.
+
+- Prompt: "Allow users to reply to the comments in the reviews and comment section"
+- Actions:
+  - Added reply support to Home social comments sheet in `HomeFeedScreen`: per-comment `Reply` actions, nested reply rendering, inline reply composer, and local reply persistence by comment ID.
+  - Added reply support to detail review surfaces in `DishDetailScreen` and `StallDetailScreen`: per-review `Reply` actions, nested reply threads, and inline reply composer with local reply state.
+  - Preserved existing comment/review posting behavior while extending it with local threaded replies.
+  - Revalidated with `npm run typecheck` in root; passed.
+
+- Prompt: "Indicate the time in terms of how long ago the user sent the comment. Within the bites section, the user should be able to click on the hearts and comments section. It should not open the food info when the user click on the card."
+- Actions:
+  - Added shared relative-time utility `formatTimeAgo` in `src/lib/date/formatTimeAgo.ts` and applied it to Home comment/reply timestamps, detail review/reply timestamps, and shared `ReviewCard` timestamp rendering.
+  - Updated `BiteCard` and `BitesCarousel` interaction wiring so bites cards no longer route to dish-detail on card tap, while heart/comment controls remain explicitly clickable with visible count feedback.
+  - Removed comment-button fallback navigation to dish details inside `BiteCard` so comment interaction no longer opens food info.
+  - Revalidated with `npm run typecheck` in root; passed.
+
+- Prompt: "[TextInputUI] Result accumulator timeout ... Attempted to update accumulator ... after completion has already been called"
+- Actions:
+  - Traced the warning path to iOS keyboard/prediction internals interacting with React Native text fields, then added a low-risk mitigation in shared input handling.
+  - Hardened `src/components/ui/Input.tsx` so secure text fields default to `autoCorrect={false}`, `spellCheck={false}`, and `autoComplete="off"` unless explicitly overridden by a caller.
+  - Revalidated with `npm run typecheck` in root; passed.
+
+- Prompt: "Help me to remove it in the discoverhomepage"
+- Actions:
+  - Removed Discover-only extra bottom scroll spacing in `src/app/screens/discover/DiscoverHomeScreen.tsx` (`paddingBottom: spacing[24]`) to eliminate the visible horizontal gap above the tab bar without changing shared `Screen` behavior.
+  - While validating, fixed an unrelated existing compile break in `src/app/screens/onboarding/OnboardingIntroTemplate.tsx` by restoring theme palette access inside `SlideIllustration`.
+  - Revalidated with `npm run typecheck` in root; passed.
+
+- Prompt: "The bites section within the review section do not have the right left padding."
+- Actions:
+  - Added a `horizontalInset` prop to `BitesCarousel` (default `0`) and applied it in Review mode (`HomeFeedScreen`) as `spacing[3]` so the Bites section aligns with other left-padded sections on the page.
+  - Revalidated with `npm run typecheck` in root; passed.
+
+- Prompt: "Remove the Good morning and number of stalls nearby on the top of the screen in the home and review page" + reported JSX transform error in `HomeFeedScreen`.
+- Actions:
+  - Removed the greeting and nearby-stalls summary row from `HomeFeedScreen` header rendering so both Home and Review surfaces no longer show that top text.
+  - Preserved DirectMessages entry for social mode by rendering it in a compact top-right control without the removed text row.
+  - Fixed malformed JSX in `HomeFeedScreen` by removing duplicated `BottomSheetScrollView`/`BottomSheetModal` closing tags that caused the transform parser error.
+  - Repaired a concurrent syntax corruption in `src/components/ui/Input.tsx` (accidental placeholder token and missing `forwardRef` closure), then corrected `Input` usage in `HomeFeedScreen` (`maxHeight` moved to `style`).
+  - Revalidated with `npm run typecheck` in root; passed.

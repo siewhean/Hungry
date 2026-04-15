@@ -1,13 +1,15 @@
 import { Alert, Linking, Platform, Pressable, ScrollView, Share, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
+import { useState } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, Heart, MapPin, Share2, Star, Truck, ChevronLeft } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, EmptyState, InlineBanner, Screen, FAB, Button, Card } from "@/components/ui";
+import { AppText, EmptyState, InlineBanner, Screen, FAB, Button, Card, Input } from "@/components/ui";
 import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
+import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -15,6 +17,14 @@ import { useHungryTheme } from "@/theme";
 import { isDishDetail } from "../profile/profileGuards";
 
 type Props = NativeStackScreenProps<RootStackParamList, "StallDetail">;
+
+type ReviewReply = {
+  id: string;
+  reviewId: string;
+  authorName: string;
+  text: string;
+  createdAt: string;
+};
 
 export function StallDetailScreen({ navigation, route }: Props) {
   const venueId = route.params?.venueId ?? "";
@@ -29,6 +39,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(null);
+  const [replyDraftByReviewId, setReplyDraftByReviewId] = useState<Record<string, string>>({});
+  const [localRepliesByReviewId, setLocalRepliesByReviewId] = useState<Record<string, ReviewReply[]>>({});
 
   if (!venue) {
     return (
@@ -45,6 +58,30 @@ export function StallDetailScreen({ navigation, route }: Props) {
     : "Check Map";
 
   const communityReviews = deriveStallCommunityReviews(dishes);
+
+  const submitReviewReply = (reviewId: string) => {
+    const draft = (replyDraftByReviewId[reviewId] ?? "").trim();
+    if (!draft.length) {
+      return;
+    }
+
+    const reply: ReviewReply = {
+      id: `stall-review-reply-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      reviewId,
+      authorName: profile.displayName,
+      text: draft,
+      createdAt: new Date().toISOString(),
+    };
+
+    setLocalRepliesByReviewId((prev) => ({
+      ...prev,
+      [reviewId]: [...(prev[reviewId] ?? []), reply],
+    }));
+    setReplyDraftByReviewId((prev) => ({
+      ...prev,
+      [reviewId]: "",
+    }));
+  };
 
   const handleShare = async () => {
     try {
@@ -214,11 +251,62 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           ))}
                         </View>
                       </View>
-                      <AppText variant="micro" tone="muted">{review.createdAt}</AppText>
+                      <AppText variant="micro" tone="muted">{formatTimeAgo(review.createdAt)}</AppText>
                     </View>
                     <AppText variant="bodySmall" tone="secondary" style={{ marginTop: spacing[2] }}>
                       {review.text}
                     </AppText>
+
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing[2] }}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Reply to review by ${review.authorName}`}
+                        onPress={() => setActiveReplyReviewId((current) => (current === review.id ? null : review.id))}
+                      >
+                        <AppText variant="micro" tone="accent">Reply</AppText>
+                      </Pressable>
+                      {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
+                        <AppText variant="micro" tone="muted">
+                          {localRepliesByReviewId[review.id]?.length} repl{(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
+                        </AppText>
+                      ) : null}
+                    </View>
+
+                    {(localRepliesByReviewId[review.id] ?? []).length > 0 ? (
+                      <View style={{ gap: spacing[2], marginTop: spacing[2], paddingLeft: spacing[3], borderLeftWidth: 1, borderLeftColor: palette.border }}>
+                        {(localRepliesByReviewId[review.id] ?? []).map((reply) => (
+                          <View key={reply.id} style={{ gap: 2 }}>
+                            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                              <AppText variant="micro">{reply.authorName}</AppText>
+                              <AppText variant="micro" tone="muted">{formatTimeAgo(reply.createdAt)}</AppText>
+                            </View>
+                            <AppText variant="bodySmall" tone="secondary">{reply.text}</AppText>
+                          </View>
+                        ))}
+                      </View>
+                    ) : null}
+
+                    {activeReplyReviewId === review.id ? (
+                      <View style={{ gap: spacing[2], marginTop: spacing[2], paddingLeft: spacing[3] }}>
+                        <Input
+                          placeholder={`Reply to ${review.authorName}`}
+                          value={replyDraftByReviewId[review.id] ?? ""}
+                          onChangeText={(text) => {
+                            setReplyDraftByReviewId((prev) => ({
+                              ...prev,
+                              [review.id]: text,
+                            }));
+                          }}
+                          multiline
+                        />
+                        <Button
+                          label="Post reply"
+                          variant="secondary"
+                          onPress={() => submitReviewReply(review.id)}
+                          disabled={!(replyDraftByReviewId[review.id] ?? "").trim().length}
+                        />
+                      </View>
+                    ) : null}
                   </View>
                 ))
               ) : (

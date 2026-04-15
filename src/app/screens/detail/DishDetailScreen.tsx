@@ -1,23 +1,32 @@
 import { Animated, ScrollView, Share, View, useWindowDimensions, Pressable, StyleSheet } from "react-native";
 import { Image } from "expo-image";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Star } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import { AppText, Badge, Button, Card, EmptyState, InlineBanner } from "@/components/ui";
+import { AppText, Badge, Button, Card, EmptyState, InlineBanner, Input } from "@/components/ui";
 import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">;
+
+type ReviewReply = {
+  id: string;
+  reviewId: string;
+  authorName: string;
+  text: string;
+  createdAt: string;
+};
 
 export function DishDetailScreen({ navigation, route }: Props) {
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
@@ -33,6 +42,9 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const heroScrollX = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
   const lastTrackedDishId = useRef<string | null>(null);
+  const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(null);
+  const [replyDraftByReviewId, setReplyDraftByReviewId] = useState<Record<string, string>>({});
+  const [localRepliesByReviewId, setLocalRepliesByReviewId] = useState<Record<string, ReviewReply[]>>({});
 
   const venue = useMemo(() => (dish ? repository.getVenueById(dish.venueId) : undefined), [dish, repository]);
   const tasteMatch = useMemo(() => (dish ? getTasteSimilarityWithDish(profile, dish) : 0), [profile, dish]);
@@ -76,6 +88,30 @@ export function DishDetailScreen({ navigation, route }: Props) {
 
   const deliveryAvailable = venue.deliveryLinks.length > 0;
   const isSaved = profile.favouriteDishIds.includes(dish.id);
+
+  const submitReviewReply = (reviewId: string) => {
+    const draft = (replyDraftByReviewId[reviewId] ?? "").trim();
+    if (!draft.length) {
+      return;
+    }
+
+    const reply: ReviewReply = {
+      id: `dish-review-reply-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      reviewId,
+      authorName: profile.displayName,
+      text: draft,
+      createdAt: new Date().toISOString(),
+    };
+
+    setLocalRepliesByReviewId((prev) => ({
+      ...prev,
+      [reviewId]: [...(prev[reviewId] ?? []), reply],
+    }));
+    setReplyDraftByReviewId((prev) => ({
+      ...prev,
+      [reviewId]: "",
+    }));
+  };
 
   return (
     <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["top", "left", "right"]}>
@@ -227,6 +263,68 @@ export function DishDetailScreen({ navigation, route }: Props) {
                       </View>
                     </View>
                     <AppText variant="bodySmall" tone="secondary">{review.text}</AppText>
+
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Reply to review by ${review.authorName}`}
+                        onPress={() => setActiveReplyReviewId((current) => (current === review.id ? null : review.id))}
+                      >
+                        <AppText variant="micro" tone="accent">Reply</AppText>
+                      </Pressable>
+                      {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
+                        <AppText variant="micro" tone="muted">
+                          {localRepliesByReviewId[review.id]?.length} repl{(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
+                        </AppText>
+                      ) : null}
+                    </View>
+
+                    {(localRepliesByReviewId[review.id] ?? []).length > 0 ? (
+                      <View style={{ gap: spacing[2], paddingLeft: spacing[3], borderLeftWidth: 1, borderLeftColor: palette.border }}>
+                        {(localRepliesByReviewId[review.id] ?? []).map((reply) => (
+                          <View key={reply.id} style={{ gap: 2 }}>
+                            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                              <AppText variant="micro">{reply.authorName}</AppText>
+                              <AppText variant="micro" tone="muted">{formatTimeAgo(reply.createdAt)}</AppText>
+                            </View>
+                            <AppText variant="bodySmall" tone="secondary">{reply.text}</AppText>
+                          </View>
+                        ))}
+                      </View>
+                    ) : null}
+
+                    {activeReplyReviewId === review.id ? (
+                      <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
+                        <View
+                          style={{
+                            backgroundColor: palette.bgSoft,
+                            borderRadius: radii.md,
+                            borderWidth: 1,
+                            borderColor: palette.border,
+                            paddingHorizontal: spacing[3],
+                            paddingVertical: spacing[2],
+                          }}
+                        >
+                          <Input
+                            placeholder={`Reply to ${review.authorName}`}
+                            value={replyDraftByReviewId[review.id] ?? ""}
+                            onChangeText={(text) => {
+                              setReplyDraftByReviewId((prev) => ({
+                                ...prev,
+                                [review.id]: text,
+                              }));
+                            }}
+                            multiline
+                          />
+                        </View>
+                        <Button
+                          label="Post reply"
+                          variant="secondary"
+                          onPress={() => submitReviewReply(review.id)}
+                          disabled={!(replyDraftByReviewId[review.id] ?? "").trim().length}
+                        />
+                      </View>
+                    ) : null}
                   </Card>
                 ))
               ) : (

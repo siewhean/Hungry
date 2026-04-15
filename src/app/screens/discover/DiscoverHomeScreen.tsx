@@ -30,7 +30,7 @@ export function DiscoverHomeScreen() {
   const navigation = useNavigation<RootNavigation>();
   const repository = getDataRepository();
   const { width: screenWidth } = useWindowDimensions();
-  const { palette, radii, spacing, shadows, motion } = useHungryTheme();
+  const { palette, radii, spacing, shadows, motion, colorScheme } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
@@ -46,23 +46,24 @@ export function DiscoverHomeScreen() {
   const discoverNearbyCount = nearbyBuildings.length || repository.listBuildings().length;
 
   const themeTints = useMemo(() => {
-    const hour = new Date().getHours();
-    const isLateNight = hour >= 22 || hour < 4;
+    const isDark = colorScheme === "dark";
     return {
-      bg: isLateNight ? palette.navy : palette.bg,
-      text: isLateNight ? palette.white : palette.text,
-      cardBg: isLateNight ? "rgba(255,255,255,0.05)" : palette.surface,
-      secondaryText: isLateNight ? "rgba(255,255,255,0.6)" : palette.textSecondary,
-      isLateNight,
+      bg: palette.bg,
+      text: palette.text,
+      cardBg: palette.surface,
+      secondaryText: palette.textSecondary,
+      isDark,
     };
-  }, [palette]);
+  }, [palette, colorScheme]);
 
   const sortedChips = useMemo(() => {
-    if (themeTints.isLateNight) {
+    const hour = new Date().getHours();
+    const prioritizeLateNight = hour >= 22 || hour < 4;
+    if (prioritizeLateNight) {
       return [...INTENT_CHIPS].sort((a, b) => (a.id === "late" ? -1 : b.id === "late" ? 1 : 0));
     }
     return INTENT_CHIPS;
-  }, [themeTints.isLateNight]);
+  }, []);
 
   // ─── Idle Pulse Animation (Psychological Nudge) ───────────────────────────
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -133,13 +134,13 @@ export function DiscoverHomeScreen() {
     <Screen scroll={false} style={{ backgroundColor: themeTints.bg }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ gap: spacing[6], paddingBottom: spacing[24] }}
+        contentContainerStyle={{ gap: spacing[6] }}
         onScroll={resetIdleTimer}
         scrollEventThrottle={16}
       >
         {/* Dynamic Location Header */}
         <View style={{ paddingTop: spacing[2] }}>
-          <AppText variant="micro" style={{ color: themeTints.isLateNight ? palette.white : palette.orange, letterSpacing: 1, marginBottom: 2, opacity: 0.8 }}>
+          <AppText variant="micro" style={{ color: themeTints.isDark ? palette.white : palette.orange, letterSpacing: 1, marginBottom: 2, opacity: 0.8 }}>
             YOU ARE AT
           </AppText>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -151,10 +152,10 @@ export function DiscoverHomeScreen() {
               accessibilityRole="button"
               accessibilityLabel="Open map view"
               onPress={() => navigation.navigate("DiscoverMap")}
-              style={{ flexDirection: "row", alignItems: "center", gap: spacing[1], backgroundColor: themeTints.isLateNight ? "rgba(255,255,255,0.1)" : palette.orangeLight, paddingHorizontal: spacing[3], paddingVertical: spacing[1.5], borderRadius: radii.pill }}
+              style={{ flexDirection: "row", alignItems: "center", gap: spacing[1], backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.1)" : palette.orangeLight, paddingHorizontal: spacing[3], paddingVertical: spacing[1.5], borderRadius: radii.pill }}
             >
-              <MapPinned color={themeTints.isLateNight ? palette.white : palette.orange} size={14} />
-              <AppText variant="micro" style={{ color: themeTints.isLateNight ? palette.white : palette.orange, fontWeight: "700" }}>MAP</AppText>
+              <MapPinned color={themeTints.isDark ? palette.white : palette.orange} size={14} />
+              <AppText variant="micro" style={{ color: themeTints.isDark ? palette.white : palette.orange, fontWeight: "700" }}>MAP</AppText>
             </Pressable>
           </View>
         </View>
@@ -175,12 +176,12 @@ export function DiscoverHomeScreen() {
                 paddingHorizontal: spacing[3],
                 height: 52,
                 gap: spacing[2],
-                borderWidth: themeTints.isLateNight ? 0 : 1,
+                borderWidth: themeTints.isDark ? 0 : 1,
                 borderColor: palette.border,
               }
             ]}
           >
-            <Search color={themeTints.isLateNight ? palette.white : palette.textMuted} size={20} />
+            <Search color={themeTints.isDark ? palette.white : palette.textMuted} size={20} />
             <AppText style={{ flex: 1, color: themeTints.secondaryText }}>Search dishes, stalls or vibes...</AppText>
           </Pressable>
         </View>
@@ -242,7 +243,7 @@ export function DiscoverHomeScreen() {
               style={[
                 shadows.card,
                 {
-                  backgroundColor: themeTints.isLateNight ? "rgba(255,255,255,0.15)" : palette.navy,
+                  backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.15)" : palette.navy,
                   borderRadius: radii.lg,
                   flex: 1,
                   padding: spacing[4],
@@ -268,7 +269,7 @@ export function DiscoverHomeScreen() {
               style={[
                 shadows.card,
                 {
-                  backgroundColor: themeTints.isLateNight ? "rgba(255,255,255,0.05)" : palette.bgSoft,
+                  backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.05)" : palette.bgSoft,
                   borderRadius: radii.lg,
                   padding: spacing[4],
                   flexDirection: "row",
@@ -286,7 +287,7 @@ export function DiscoverHomeScreen() {
                 <AppText variant="h3" style={{ color: themeTints.text }}>Daily Crave</AppText>
                 <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>Swipe to build your profile</AppText>
               </View>
-              <ChevronRight color={themeTints.isLateNight ? palette.white : palette.textMuted} size={20} />
+              <ChevronRight color={themeTints.isDark ? palette.white : palette.textMuted} size={20} />
             </Pressable>
           ) : null}
         </View>
@@ -321,7 +322,7 @@ export function DiscoverHomeScreen() {
                     borderRadius: radii.lg,
                     overflow: "hidden",
                     width: screenWidth * 0.65,
-                    borderWidth: themeTints.isLateNight ? 0 : 1,
+                    borderWidth: themeTints.isDark ? 0 : 1,
                     borderColor: palette.border,
                   },
                 ]}
@@ -374,7 +375,7 @@ export function DiscoverHomeScreen() {
                     width: 160,
                     padding: spacing[3],
                     gap: spacing[2],
-                    borderWidth: themeTints.isLateNight ? 0 : 1,
+                    borderWidth: themeTints.isDark ? 0 : 1,
                     borderColor: palette.border,
                   },
                 ]}

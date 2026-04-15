@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { forwardRef, type ReactNode } from "react";
 import { StyleSheet, TextInput, View, type TextInputProps } from "react-native";
 
 import { useHungryTheme } from "@/theme";
@@ -13,8 +13,25 @@ interface InputProps extends TextInputProps {
   rightIcon?: ReactNode;
 }
 
-export function Input({ label, helperText, errorText, error, leftIcon, rightIcon, style, ...props }: InputProps) {
+export const Input = forwardRef<TextInput, InputProps>(({
+  label,
+  helperText,
+  errorText,
+  error,
+  leftIcon,
+  rightIcon,
+  style,
+  secureTextEntry,
+  autoCorrect,
+  spellCheck,
+  autoComplete,
+  ...props
+}, ref) => {
   const { palette, radii, spacing, typography } = useHungryTheme();
+  const isSecureField = Boolean(secureTextEntry);
+  const resolvedAutoCorrect = autoCorrect ?? !isSecureField;
+  const resolvedSpellCheck = spellCheck ?? !isSecureField;
+  const resolvedAutoComplete = autoComplete ?? (isSecureField ? "off" : undefined);
 
   return (
     <View style={styles.container}>
@@ -38,7 +55,12 @@ export function Input({ label, helperText, errorText, error, leftIcon, rightIcon
       >
         {leftIcon ? <View style={styles.iconWrap}>{leftIcon}</View> : null}
         <TextInput
+          ref={ref}
           placeholderTextColor={palette.textMuted}
+          secureTextEntry={secureTextEntry}
+          autoCorrect={resolvedAutoCorrect}
+          spellCheck={resolvedSpellCheck}
+          autoComplete={resolvedAutoComplete}
           style={[
             typography.body,
             {
@@ -64,7 +86,7 @@ export function Input({ label, helperText, errorText, error, leftIcon, rightIcon
       ) : null}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

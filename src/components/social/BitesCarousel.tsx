@@ -23,18 +23,19 @@ interface BitesCarouselProps {
   /** Optional override for the bites data (e.g. from API) */
   bites?: HomeBite[];
   showHeader?: boolean;
+  horizontalInset?: number;
 }
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
-export function BitesCarousel({ bites, showHeader = true }: BitesCarouselProps) {
+export function BitesCarousel({ bites, showHeader = true, horizontalInset = 0 }: BitesCarouselProps) {
   const { palette, spacing } = useHungryTheme();
   const navigation = useNavigation<RootNavigation>();
   const { width: screenWidth } = useWindowDimensions();
   const [likedBites, setLikedBites] = useState<Record<string, boolean>>({});
+  const [commentedBites, setCommentedBites] = useState<Record<string, boolean>>({});
   const fallbackBites = useMemo(() => createDefaultBites(), []);
   const biteData = bites?.length ? bites : fallbackBites;
-  const horizontalInset = 0;
   const cardWidth = Math.max(300, screenWidth - spacing[4] * 2);
   const snapInterval = cardWidth + spacing[3];
 
@@ -44,15 +45,16 @@ export function BitesCarousel({ bites, showHeader = true }: BitesCarouselProps) 
         bite={item}
         width={cardWidth}
         liked={Boolean(likedBites[item.id])}
+        commented={Boolean(commentedBites[item.id])}
         onToggleLike={() =>
           setLikedBites((current) => ({ ...current, [item.id]: !current[item.id] }))
         }
-        onPress={() => navigation.navigate("DishDetail", { dishId: item.dishId })}
-        onDishPress={() => navigation.navigate("DishDetail", { dishId: item.dishId })}
-        onCommentPress={() => navigation.navigate("DishDetail", { dishId: item.dishId })}
+        onCommentPress={() =>
+          setCommentedBites((current) => ({ ...current, [item.id]: !current[item.id] }))
+        }
       />
     ),
-    [cardWidth, likedBites, navigation],
+    [cardWidth, commentedBites, likedBites],
   );
 
   return (

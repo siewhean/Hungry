@@ -2,6 +2,7 @@ import { View } from "react-native";
 import { Image } from "expo-image";
 
 import type { Review } from "@/types/domain";
+import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { useHungryTheme } from "@/theme";
 import { AppText, Badge, Card } from "../ui";
 import { StarRating } from "./StarRating";
@@ -40,7 +41,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
         <View style={{ flex: 1 }}>
           <AppText variant="body">{review.authorName}</AppText>
           <AppText variant="bodySmall" tone="secondary">
-            {review.createdAt}
+            {formatTimeAgo(review.createdAt)}
           </AppText>
         </View>
       </View>

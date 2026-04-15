@@ -75,7 +75,7 @@ export function Screen({
             {
               alignItems: "center",
               paddingHorizontal: spacing[3],
-              paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[4],
+              // paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[4],
               paddingTop: spacing[3],
             },
           ]}

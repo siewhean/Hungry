@@ -98,6 +98,7 @@ function SlideIllustration({
   step: number;
   accentColor: string;
 }) {
+  const { palette } = useHungryTheme();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -142,7 +143,7 @@ function SlideIllustration({
           />
         ))}
         <View style={[styles.mapPin, { backgroundColor: accentColor }]}>
-          <View style={[styles.mapPinDot, { backgroundColor: "#fff" }]} />
+          <View style={[styles.mapPinDot, { backgroundColor: palette.white }]} />
         </View>
       </View>
     ),

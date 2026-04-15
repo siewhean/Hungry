@@ -3,8 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Animated, FlatList, Pressable, ScrollView, Share, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { Bookmark, Heart, MessageCircle, PlayCircle, Send, Star } from "lucide-react-native";
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import { Bookmark, Heart, MessageCircle, PlayCircle, Send, Star, X } from "lucide-react-native";
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, BottomSheetFooter } from "@gorhom/bottom-sheet";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,13 +15,10 @@ import { AppText, Avatar, Button, EmptyState, FeedErrorBoundary, FeedStateView, 
 import { BitesCarousel } from "@/components/social";
 import { getHomeFeed, getHomeSocialFeed, type HomeFeedItem, type HomeFeedSection } from "@/features/home/feed";
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
-import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
-import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
 function FeedSkeleton() {
@@ -57,31 +54,29 @@ type FeedComment = {
   createdAt: string;
 };
 
+type FeedReply = {
+  id: string;
+  parentCommentId: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  text: string;
+  createdAt: string;
+};
+
 type HomeFeedScreenProps = {
   mode?: HomeFeedMode;
 };
 
 export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const navigation = useNavigation<RootNavigation>();
-  const repository = getDataRepository();
   const { width: screenWidth } = useWindowDimensions();
   const theme = useHungryTheme();
   const { palette, spacing, radii, shadows, colorScheme } = theme;
-  const themePreference = useUIStore((state) => state.themePreference);
   const styles = createStyles(theme);
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
-  const currentLocation = useLocationStore((state) => state.currentLocation);
-  const manualLocation = useLocationStore((state) => state.manualLocation);
-  
-  const nearbyBuildings = useMemo(
-    () => getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 3, 14),
-    [currentLocation.latitude, currentLocation.longitude],
-  );
-  const locationLabel = manualLocation ?? nearbyBuildings[0]?.name ?? "Nearby";
-  const nearbyCount = nearbyBuildings.length || repository.listBuildings().length;
 
   const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
   const [sections, setSections] = useState<HomeFeedSection[]>([]);
@@ -90,7 +85,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const [activeCommentItem, setActiveCommentItem] = useState<HomeFeedItem | null>(null);
   const [draftComment, setDraftComment] = useState("");
   const [localCommentsByPostId, setLocalCommentsByPostId] = useState<Record<string, FeedComment[]>>({});
+  const [localRepliesByCommentId, setLocalRepliesByCommentId] = useState<Record<string, FeedReply[]>>({});
+  const [activeReplyCommentId, setActiveReplyCommentId] = useState<string | null>(null);
+  const [draftReplyByCommentId, setDraftReplyByCommentId] = useState<Record<string, string>>({});
   const commentsSheetRef = useRef<BottomSheetModal>(null);
+  const commentInputRef = useRef<any>(null);
   const commentSnapPoints = useMemo(() => ["50%", "88%"], []);
 
   const [interactionByPostId, setInteractionByPostId] = useState<Record<string, InteractionState>>({});
@@ -189,6 +188,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const openComments = useCallback((item: HomeFeedItem) => {
     setActiveCommentItem(item);
     setDraftComment("");
+    setActiveReplyCommentId(null);
+    setDraftReplyByCommentId({});
     requestAnimationFrame(() => {
       commentsSheetRef.current?.present();
     });
@@ -258,55 +259,79 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     });
 
     setDraftComment("");
+    setActiveReplyCommentId(null);
   }, [activeCommentItem, draftComment, profile.displayName]);
+
+  const submitReply = useCallback((commentId: string) => {
+    if (!activeCommentItem) {
+      return;
+    }
+
+    const trimmed = draftComment.trim();
+    if (!trimmed.length) {
+      return;
+    }
+
+    const newReply: FeedReply = {
+      id: `local-reply-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      parentCommentId: commentId,
+      authorName: profile.displayName,
+      authorAvatarUrl: undefined,
+      text: trimmed,
+      createdAt: new Date().toISOString(),
+    };
+
+    setLocalRepliesByCommentId((prev) => ({
+      ...prev,
+      [commentId]: [...(prev[commentId] ?? []), newReply],
+    }));
+
+    setDraftComment("");
+    setActiveReplyCommentId(null);
+  }, [activeCommentItem, draftComment, profile.displayName]);
+
+  const handlePostCommentOrReply = useCallback(() => {
+    if (activeReplyCommentId) {
+      submitReply(activeReplyCommentId);
+    } else {
+      submitComment();
+    }
+  }, [activeReplyCommentId, submitReply, submitComment]);
 
   const navigateToDish = useCallback((dishId: string) => {
     navigation.navigate("DishDetail", { dishId });
   }, [navigation]);
 
-  const getGreeting = useCallback(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return `Good morning, ${profile.displayName.split(" ")[0]}`;
-    if (hour < 17) return "Hungry for lunch?";
-    return "Suggested for dinner";
-  }, [profile.displayName]);
-
   const themeTints = useMemo(() => {
-    const hour = new Date().getHours();
-    const isLateNight = hour >= 22 || hour < 4;
+    const isDark = colorScheme === "dark";
     return {
-      bg: isLateNight ? palette.navy : palette.bg,
-      text: isLateNight ? palette.white : palette.text, // Kept white for dark mode contrast
-      cardBg: isLateNight ? "rgba(255,255,255,0.05)" : palette.surface,
-      secondaryText: isLateNight ? "rgba(255,255,255,0.6)" : palette.textSecondary,
-      isLateNight,
+      bg: palette.bg,
+      text: palette.text,
+      cardBg: palette.surface,
+      secondaryText: palette.textSecondary,
+      actionOverlayBg: isDark ? "rgba(0,0,0,0.45)" : palette.surfaceTranslucent,
+      badgeBg: isDark ? "rgba(255,255,255,0.1)" : palette.bgSoft,
+      isDark,
     };
-  }, [palette]);
+  }, [palette, colorScheme]);
 
   const renderHeader = useCallback(() => {
     const stories = socialFeed.slice(0, 5);
 
     return (
       <View style={{ gap: spacing[6], paddingBottom: spacing[4], paddingTop: spacing[2] }}>
-        <View style={{ paddingHorizontal: spacing[3], paddingBottom: spacing[2], flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <View>
-            <AppText style={{ fontSize: 24, fontWeight: "900", color: themeTints.isLateNight ? palette.white : palette.orange }}>{getGreeting()}</AppText>
-            <AppText variant="micro" style={{ color: palette.textMuted }}>
-              DEBUG: {colorScheme} (Pref: {themePreference}) {themeTints.isLateNight ? '🌙' : ''}
-            </AppText>
-            <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>{`${locationLabel} · ${nearbyCount} nearby`}</AppText>
-          </View>
-          {FEATURE_FLAGS.directMessagesEnabled ? (
-            <Pressable 
-              onPress={() => navigation.navigate("DirectMessages")}
-              style={{ width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}
-            >
-              <Send color={palette.orange} size={24} />
-            </Pressable>
-          ) : null}
-        </View>
         {mode === "social" ? (
           <>
+            {FEATURE_FLAGS.directMessagesEnabled ? (
+              <View style={{ paddingHorizontal: spacing[3], alignItems: "flex-end" }}>
+                <Pressable
+                  onPress={() => navigation.navigate("DirectMessages")}
+                  style={{ width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}
+                >
+                  <Send color={palette.orange} size={24} />
+                </Pressable>
+              </View>
+            ) : null}
             <View style={{ gap: spacing[1], paddingHorizontal: spacing[3] }}>
               <AppText variant="micro" tone="accent" style={styles.sectionEyebrow}>
                 APPETITE SCROLL
@@ -358,7 +383,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         ) : null}
       </View>
     );
-  }, [palette, spacing, getGreeting, themeTints, radii, locationLabel, nearbyCount, mode, socialFeed, openUserProfile]);
+  }, [palette, spacing, themeTints, radii, mode, socialFeed, openUserProfile, navigation, styles.sectionEyebrow]);
 
   const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
 
@@ -555,7 +580,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             borderRadius: radii.lg, 
             width: 300,
             overflow: "hidden",
-            borderWidth: themeTints.isLateNight ? 0 : 1,
+            borderWidth: themeTints.isDark ? 0 : 1,
             borderColor: palette.border,
           }
         ]}
@@ -574,15 +599,15 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         >
           <Pressable 
             onPress={() => toggleLike(item.id)}
-            style={{ width: 36, height: 36, borderRadius: radii.pill, backgroundColor: themeTints.isLateNight ? "rgba(0,0,0,0.5)" : palette.surfaceTranslucent, alignItems: "center", justifyContent: "center" }}
+            style={{ width: 36, height: 36, borderRadius: radii.pill, backgroundColor: themeTints.actionOverlayBg, alignItems: "center", justifyContent: "center" }}
           >
-            <Heart color={isLiked ? palette.error : (themeTints.isLateNight ? palette.white : palette.text)} fill={isLiked ? palette.error : "transparent"} size={18} />
+            <Heart color={isLiked ? palette.error : themeTints.text} fill={isLiked ? palette.error : "transparent"} size={18} />
           </Pressable>
           <Pressable 
             onPress={() => toggleSave(item.id)}
-            style={{ width: 36, height: 36, borderRadius: radii.pill, backgroundColor: themeTints.isLateNight ? "rgba(0,0,0,0.5)" : palette.surfaceTranslucent, alignItems: "center", justifyContent: "center" }}
+            style={{ width: 36, height: 36, borderRadius: radii.pill, backgroundColor: themeTints.actionOverlayBg, alignItems: "center", justifyContent: "center" }}
           >
-            <Bookmark color={isSaved ? palette.orange : (themeTints.isLateNight ? palette.white : palette.text)} fill={isSaved ? palette.orange : "transparent"} size={18} />
+            <Bookmark color={isSaved ? palette.orange : themeTints.text} fill={isSaved ? palette.orange : "transparent"} size={18} />
           </Pressable>
         </View>
 
@@ -603,7 +628,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           </Pressable>
           
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginTop: spacing[2] }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1], backgroundColor: themeTints.isLateNight ? "rgba(255,255,255,0.1)" : palette.bgSoft, paddingHorizontal: spacing[2], paddingVertical: spacing[1], borderRadius: radii.sm }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1], backgroundColor: themeTints.badgeBg, paddingHorizontal: spacing[2], paddingVertical: spacing[1], borderRadius: radii.sm }}>
               <MessageCircle color={themeTints.secondaryText} size={12} />
               <AppText variant="micro" style={{ color: themeTints.secondaryText }}>{interaction.commentCount}</AppText>
             </View>
@@ -696,7 +721,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               <View style={{ paddingHorizontal: spacing[3], paddingTop: spacing[1] }}>
                 <AppText variant="h2" style={{ color: themeTints.text }}>Bites</AppText>
               </View>
-              <BitesCarousel showHeader={false} />
+              <BitesCarousel showHeader={false} horizontalInset={spacing[3]} />
             </View>
 
             {sections.map((section) => (
@@ -730,7 +755,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             snapPoints={commentSnapPoints}
             index={0}
             enablePanDownToClose
-            onDismiss={() => setActiveCommentItem(null)}
+            onDismiss={() => {
+              setActiveCommentItem(null);
+              setActiveReplyCommentId(null);
+              setDraftComment("");
+            }}
             backdropComponent={(props) => (
               <BottomSheetBackdrop
                 {...props}
@@ -742,70 +771,122 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             )}
             backgroundStyle={{ backgroundColor: palette.surface }}
             handleIndicatorStyle={{ backgroundColor: palette.border }}
+            footerComponent={(props) => (
+              <BottomSheetFooter {...props}>
+                <View 
+                  style={{ 
+                    backgroundColor: palette.surface, 
+                    borderTopWidth: 1, 
+                    borderTopColor: palette.border,
+                    paddingHorizontal: spacing[3],
+                    paddingTop: spacing[2],
+                    paddingBottom: Math.max(insets.bottom, spacing[4]),
+                    gap: spacing[2]
+                  }}
+                >
+                  {activeReplyCommentId ? (
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: palette.bgSoft, paddingHorizontal: spacing[3], paddingVertical: spacing[1.5], borderRadius: radii.md }}>
+                      <AppText variant="micro" tone="secondary">
+                        Replying to <AppText variant="micro" style={{ fontWeight: "700" }}>
+                          {commentsForActiveItem.find(c => c.id === activeReplyCommentId)?.authorName}
+                        </AppText>
+                      </AppText>
+                      <Pressable onPress={() => setActiveReplyCommentId(null)}>
+                        <X size={14} color={palette.textMuted} />
+                      </Pressable>
+                    </View>
+                  ) : null}
+                  <View style={{ flexDirection: "row", alignItems: "flex-end", gap: spacing[2] }}>
+                    <View style={{ flex: 1 }}>
+                      <Input
+                        ref={commentInputRef}
+                        placeholder={activeReplyCommentId ? "Write a reply..." : "Add a comment..."}
+                        value={draftComment}
+                        onChangeText={setDraftComment}
+                        multiline
+                        style={{ maxHeight: 100 }}
+                      />
+                    </View>
+                    <Pressable 
+                      onPress={handlePostCommentOrReply}
+                      disabled={!draftComment.trim().length}
+                      style={{ 
+                        paddingHorizontal: spacing[3], 
+                        paddingVertical: spacing[3],
+                        opacity: draftComment.trim().length ? 1 : 0.5
+                      }}
+                    >
+                      <AppText variant="bodyBold" style={{ color: palette.orange }}>Post</AppText>
+                    </Pressable>
+                  </View>
+                </View>
+              </BottomSheetFooter>
+            )}
           >
+            <View style={{ borderBottomWidth: 1, borderBottomColor: palette.border, paddingVertical: spacing[3], alignItems: "center" }}>
+              <AppText variant="h3">Comments</AppText>
+            </View>
             <BottomSheetScrollView
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{
-                gap: spacing[3],
                 paddingHorizontal: spacing[3],
                 paddingVertical: spacing[4],
-                paddingBottom: spacing[8] + insets.bottom,
+                paddingBottom: spacing[24], // Space for footer
               }}
             >
-              <AppText variant="h3">Comments</AppText>
               {commentsForActiveItem.length ? (
                 commentsForActiveItem.map((comment) => (
-                  <View
-                    key={comment.id}
-                    style={{
-                      backgroundColor: palette.bgSoft,
-                      borderColor: palette.border,
-                      borderRadius: radii.md,
-                      borderWidth: 1,
-                      gap: spacing[1],
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[3],
-                    }}
-                  >
-                    <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                  <View key={comment.id} style={{ gap: spacing[3], marginBottom: spacing[5] }}>
+                    <View style={{ flexDirection: "row", gap: spacing[3] }}>
                       <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`Open ${comment.authorName} profile`}
                         onPress={() => openUserProfile(comment.authorName, comment.authorAvatarUrl, activeCommentItem?.authorLocation)}
                       >
-                        <Avatar uri={comment.authorAvatarUrl} name={comment.authorName} size={32} />
+                        <Avatar uri={comment.authorAvatarUrl} name={comment.authorName} size={36} />
                       </Pressable>
-                      <View style={{ flex: 1, gap: spacing[1] }}>
-                        <AppText variant="bodySmall">{comment.authorName}</AppText>
-                        <AppText variant="micro" tone="muted">
-                          {new Date(comment.createdAt).toLocaleDateString()}
-                        </AppText>
+                      <View style={{ flex: 1, gap: 2 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                          <AppText variant="bodySmallBold">{comment.authorName}</AppText>
+                          <AppText variant="micro" tone="muted">{formatTimeAgo(comment.createdAt)}</AppText>
+                        </View>
+                        <AppText variant="bodySmall" style={{ lineHeight: 18 }}>{comment.text}</AppText>
+                        <Pressable
+                          onPress={() => {
+                            setActiveReplyCommentId(comment.id);
+                            commentInputRef.current?.focus();
+                          }}
+                          style={{ marginTop: 4 }}
+                        >
+                          <AppText variant="micro" style={{ fontWeight: "700", color: palette.textMuted }}>Reply</AppText>
+                        </Pressable>
+
+                        {/* Replies */}
+                        {(localRepliesByCommentId[comment.id] ?? []).length > 0 && (
+                          <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
+                            {(localRepliesByCommentId[comment.id] ?? []).map((reply) => (
+                              <View key={reply.id} style={{ flexDirection: "row", gap: spacing[3] }}>
+                                <Avatar uri={reply.authorAvatarUrl} name={reply.authorName} size={24} />
+                                <View style={{ flex: 1, gap: 2 }}>
+                                  <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                                    <AppText variant="micro" style={{ fontWeight: "700" }}>{reply.authorName}</AppText>
+                                    <AppText variant="micro" tone="muted">{formatTimeAgo(reply.createdAt)}</AppText>
+                                  </View>
+                                  <AppText variant="bodySmall" style={{ lineHeight: 16 }}>{reply.text}</AppText>
+                                </View>
+                              </View>
+                            ))}
+                          </View>
+                        )}
                       </View>
                     </View>
-                    <AppText variant="bodySmall" tone="secondary">
-                      {comment.text}
-                    </AppText>
                   </View>
                 ))
               ) : (
-                <AppText variant="bodySmall" tone="secondary">
-                  No comments yet. Be the first to share your review.
-                </AppText>
+                <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: spacing[12] }}>
+                  <MessageCircle size={48} color={palette.border} style={{ marginBottom: spacing[4] }} />
+                  <AppText tone="secondary">No comments yet</AppText>
+                  <AppText variant="bodySmall" tone="muted">Be the first to share your review!</AppText>
+                </View>
               )}
-
-              <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
-                <Input
-                  placeholder="Write a comment"
-                  value={draftComment}
-                  onChangeText={setDraftComment}
-                  multiline
-                />
-                <Button
-                  label="Post comment"
-                  onPress={submitComment}
-                  disabled={!draftComment.trim().length}
-                />
-              </View>
             </BottomSheetScrollView>
           </BottomSheetModal>
         ) : null}

@@ -1,5 +1,5 @@
 import { PropsWithChildren, createContext, useContext, useMemo, useState, useEffect } from "react";
-import { Appearance, ColorSchemeName } from "react-native";
+import { AppState, Appearance, ColorSchemeName, useColorScheme } from "react-native";
 import {
   DefaultTheme,
   DarkTheme,
@@ -29,6 +29,7 @@ const ThemeContext = createContext<HungryTheme | null>(null);
 
 export function HungryThemeProvider({ children }: PropsWithChildren) {
   const themePreference = useUIStore((state) => state.themePreference);
+  const hookScheme = useColorScheme();
   
   // Track system color scheme via Appearance API for maximum reliability
   const [systemScheme, setSystemScheme] = useState<ColorSchemeName>(
@@ -42,13 +43,36 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
     return () => subscription.remove();
   }, []);
 
+  useEffect(() => {
+    const appStateSubscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        setSystemScheme(Appearance.getColorScheme());
+      }
+    });
+
+    return () => {
+      appStateSubscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (themePreference === "automatic") {
+      Appearance.setColorScheme(null);
+      return;
+    }
+
+    Appearance.setColorScheme(themePreference);
+  }, [themePreference]);
+
+  const resolvedSystemScheme = hookScheme ?? systemScheme;
+
   // Resolve active color scheme
   const colorScheme = useMemo(() => {
     if (themePreference === "light") return "light";
     if (themePreference === "dark") return "dark";
-    // Default to light if system preference is null/undefined
-    return systemScheme === "dark" ? "dark" : "light";
-  }, [themePreference, systemScheme]);
+    // Fall back to light only if the OS doesn't report a scheme.
+    return resolvedSystemScheme === "dark" ? "dark" : "light";
+  }, [themePreference, resolvedSystemScheme]);
 
   const palette = colors[colorScheme];
   

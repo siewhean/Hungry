@@ -19,6 +19,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { AppText } from "@/components/ui";
+import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { useHungryTheme } from "@/theme";
 import { useProfileStore } from "@/store/useProfileStore";
 
@@ -39,10 +40,11 @@ export interface Bite {
 
 interface BiteCardProps {
   bite: Bite;
-  onPress: () => void;
+  onPress?: () => void;
   onDishPress?: () => void;
   width?: number;
   liked?: boolean;
+  commented?: boolean;
   onToggleLike?: () => void;
   onCommentPress?: () => void;
 }
@@ -53,6 +55,7 @@ export function BiteCard({
   onDishPress,
   width = 160,
   liked = false,
+  commented = false,
   onToggleLike,
   onCommentPress,
 }: BiteCardProps) {
@@ -84,6 +87,7 @@ export function BiteCard({
     });
 
   const displayHeartCount = bite.heartCount + (liked ? 1 : 0);
+  const displayCommentCount = bite.commentCount + (commented ? 1 : 0);
   const openDishDetails = onDishPress ?? onPress;
 
   return (
@@ -99,8 +103,9 @@ export function BiteCard({
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`View ${bite.dishName} details by ${bite.authorName}`}
-        accessibilityHint="Double tap anywhere on the caption to like. Single tap to see dish details."
+        accessibilityLabel={openDishDetails ? `View ${bite.dishName} details by ${bite.authorName}` : `${bite.dishName} bite by ${bite.authorName}`}
+        accessibilityHint={openDishDetails ? "Double tap anywhere on the caption to like. Single tap to see dish details." : "Double tap anywhere on the caption to like this bite."}
+        disabled={!openDishDetails}
         onPress={openDishDetails}
       >
         {/* Dish image */}
@@ -211,18 +216,19 @@ export function BiteCard({
         </Pressable>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Open comments for ${bite.dishName}`}
+          accessibilityLabel={`${commented ? "Undo comment" : "Comment on"} ${bite.dishName}`}
           hitSlop={10}
-          onPress={onCommentPress ?? onPress}
+          onPress={onCommentPress}
+          disabled={!onCommentPress}
           style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
         >
-          <MessageCircle size={18} color={palette.textMuted} />
+          <MessageCircle size={18} color={commented ? palette.orange : palette.textMuted} />
           <AppText variant="micro" tone="muted">
-            {bite.commentCount}
+            {displayCommentCount}
           </AppText>
         </Pressable>
         <AppText variant="micro" tone="muted" style={{ marginLeft: leftHandedMode ? 0 : "auto", marginRight: leftHandedMode ? "auto" : 0 }}>
-          {bite.createdAt}
+          {formatTimeAgo(bite.createdAt)}
         </AppText>
       </View>
     </View>
