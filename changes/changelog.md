@@ -223,3 +223,12 @@
   - Fixed malformed JSX in `HomeFeedScreen` by removing duplicated `BottomSheetScrollView`/`BottomSheetModal` closing tags that caused the transform parser error.
   - Repaired a concurrent syntax corruption in `src/components/ui/Input.tsx` (accidental placeholder token and missing `forwardRef` closure), then corrected `Input` usage in `HomeFeedScreen` (`maxHeight` moved to `style`).
   - Revalidated with `npm run typecheck` in root; passed.
+
+- Prompt: "There are 1099 warnings within xcode, resolve all of the warnings with minimal code changes while not affecting usability and main code base"
+- Actions:
+  - Audited iOS build warning sources with repeated `xcodebuild` log extraction and warning-family aggregation.
+  - Applied minimal iOS build-configuration changes in `ios/Podfile` to suppress non-functional third-party warning classes and keep linker noise lower (`inhibit_all_warnings!`, pod/user target warning flags, deployment-target normalization, and duplicate-library linker suppression flag).
+  - Repaired transient lockfile conflict markers in `ios/Podfile.lock` introduced during interrupted CocoaPods runs and resynced the sandbox via `pod install`.
+  - Reverted a failed header-wrapper suppression experiment that introduced ExpoModulesCore compile errors, then restored dependency headers and revalidated.
+  - Final verification: `xcodebuild` succeeds (`BUILD_EXIT:0`, `ERROR_COUNT:0`, `TOTAL_WARNING_LINES:1`), `npm run typecheck` passes, and `npm test -- --runInBand` passes (23/23).
+  - Remaining warning is a single Xcode AppIntents metadata processor notice (`Metadata extraction skipped. No AppIntents.framework dependency found.`); app usability and feature behavior are unchanged.
