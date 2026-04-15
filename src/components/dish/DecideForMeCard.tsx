@@ -15,7 +15,13 @@ interface DecideForMeCardProps {
   onDismiss?: () => void;
 }
 
-export function DecideForMeCard({ dish, matchScore, onOrder, onReroll, onDismiss }: DecideForMeCardProps) {
+export function DecideForMeCard({
+  dish,
+  matchScore,
+  onOrder,
+  onReroll,
+  onDismiss,
+}: DecideForMeCardProps) {
   const { palette, radii, spacing } = useHungryTheme();
   const styles = createStyles(spacing);
 
@@ -54,9 +60,21 @@ export function DecideForMeCard({ dish, matchScore, onOrder, onReroll, onDismiss
       <View style={styles.actions}>
         <Button label="Order now" onPress={onOrder} disabled={!onOrder} />
         <View style={styles.secondaryRow}>
-          <Button label="Try again" variant="secondary" fullWidth={false} onPress={onReroll} disabled={!onReroll} />
-          <Pressable accessibilityRole="button" onPress={onDismiss} disabled={!onDismiss}>
-            <AppText variant="bodyBold" tone="accent">Dismiss</AppText>
+          <Button
+            label="Try again"
+            variant="secondary"
+            fullWidth={false}
+            onPress={onReroll}
+            disabled={!onReroll}
+          />
+          <Pressable
+            accessibilityRole="button"
+            onPress={onDismiss}
+            disabled={!onDismiss}
+          >
+            <AppText variant="bodyBold" tone="accent">
+              Dismiss
+            </AppText>
           </Pressable>
         </View>
       </View>
@@ -64,23 +82,24 @@ export function DecideForMeCard({ dish, matchScore, onOrder, onReroll, onDismiss
   );
 }
 
-const createStyles = (spacing: any) => StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    gap: spacing[3],
-    justifyContent: "space-between",
-  },
-  headerCopy: {
-    flex: 1,
-    gap: spacing[1],
-  },
-  actions: {
-    gap: spacing[3],
-  },
-  secondaryRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing[3],
-    justifyContent: "space-between",
-  },
-});
+const createStyles = (spacing: any) =>
+  StyleSheet.create({
+    header: {
+      flexDirection: "row",
+      gap: spacing[3],
+      justifyContent: "space-between",
+    },
+    headerCopy: {
+      flex: 1,
+      gap: spacing[1],
+    },
+    actions: {
+      gap: spacing[3],
+    },
+    secondaryRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing[3],
+      justifyContent: "space-between",
+    },
+  });

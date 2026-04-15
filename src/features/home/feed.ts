@@ -1,5 +1,13 @@
-import { getDataRepository, getSimilarityScore } from "@/lib/services/serviceProvider";
-import type { DishDetail, StallPost, UserProfile, VenueSummary } from "@/types/domain";
+import {
+  getDataRepository,
+  getSimilarityScore,
+} from "@/lib/services/serviceProvider";
+import type {
+  DishDetail,
+  StallPost,
+  UserProfile,
+  VenueSummary,
+} from "@/types/domain";
 
 export interface HomeFeedItem extends StallPost {
   venue: VenueSummary;
@@ -33,8 +41,12 @@ function buildHomeFeedItems(profile: UserProfile): HomeFeedItem[] {
     .sort((left, right) => {
       const leftDish = left.dishes[0];
       const rightDish = right.dishes[0];
-      const leftScore = leftDish ? getSimilarityScore(leftDish.tasteVector, profile.tasteVector) : 0;
-      const rightScore = rightDish ? getSimilarityScore(rightDish.tasteVector, profile.tasteVector) : 0;
+      const leftScore = leftDish
+        ? getSimilarityScore(leftDish.tasteVector, profile.tasteVector)
+        : 0;
+      const rightScore = rightDish
+        ? getSimilarityScore(rightDish.tasteVector, profile.tasteVector)
+        : 0;
       return rightScore - leftScore;
     });
 }
@@ -52,11 +64,17 @@ export function getHomeFeed(profile: UserProfile): HomeFeedSection[] {
     .slice(0, 5);
 
   // 2. Comfort Food / Heavy Rich (Taste-based)
-  const comfort = allPosts.filter((p) => {
-    const d = p.dishes[0];
-    if (!d) return false;
-    return d.tasteVector.rich > 7 || d.tasteVector.salty > 7 || d.tasteVector.sweet > 7;
-  }).slice(0, 5);
+  const comfort = allPosts
+    .filter((p) => {
+      const d = p.dishes[0];
+      if (!d) return false;
+      return (
+        d.tasteVector.rich > 7 ||
+        d.tasteVector.salty > 7 ||
+        d.tasteVector.sweet > 7
+      );
+    })
+    .slice(0, 5);
 
   // 3. Top Rated by the Community (Rating-based)
   const topRated = [...allPosts]

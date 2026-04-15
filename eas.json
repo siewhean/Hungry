@@ -7,14 +7,24 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "channel": "development"
+      "channel": "development",
+      "env": {
+        "HUNGRY_DATA_SOURCE": "mock"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview"
+      "channel": "staging",
+      "env": {
+        "HUNGRY_DATA_SOURCE": "supabase"
+      }
     },
     "production": {
-      "channel": "production"
+      "channel": "production",
+      "env": {
+        "HUNGRY_DATA_SOURCE": "supabase"
+      },
+      "postBuildCommand": "npx @sentry/wizard@latest -i reactNative --skip-connect-react-native-version-check"
     }
   },
   "submit": {

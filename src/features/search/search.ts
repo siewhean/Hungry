@@ -1,7 +1,16 @@
-import { getDataRepository, getSimilarityScore } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getSimilarityScore,
+} from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
-import type { DishDetail, SearchFilters, StallPost, UserProfile, VenueSummary } from "@/types/domain";
+import type {
+  DishDetail,
+  SearchFilters,
+  StallPost,
+  UserProfile,
+  VenueSummary,
+} from "@/types/domain";
 
 export type SearchSortMode = "best_match" | "distance" | "rating" | "price";
 
@@ -17,15 +26,24 @@ export function useSearchData() {
   };
 }
 
-export function getSearchResults(filters: SearchFilters, tasteVector = filters.tasteValues) {
+export function getSearchResults(
+  filters: SearchFilters,
+  tasteVector = filters.tasteValues,
+) {
   return getDataRepository().searchDishes(filters, tasteVector);
 }
 
-export function sortSearchResults(results: DishDetail[], mode: SearchSortMode, tasteVector: UserProfile["tasteVector"]) {
+export function sortSearchResults(
+  results: DishDetail[],
+  mode: SearchSortMode,
+  tasteVector: UserProfile["tasteVector"],
+) {
   const cloned = [...results];
 
   if (mode === "distance") {
-    return cloned.sort((left, right) => left.distanceMeters - right.distanceMeters);
+    return cloned.sort(
+      (left, right) => left.distanceMeters - right.distanceMeters,
+    );
   }
 
   if (mode === "rating") {
@@ -37,7 +55,9 @@ export function sortSearchResults(results: DishDetail[], mode: SearchSortMode, t
   }
 
   return cloned.sort(
-    (left, right) => getSimilarityScore(right.tasteVector, tasteVector) - getSimilarityScore(left.tasteVector, tasteVector),
+    (left, right) =>
+      getSimilarityScore(right.tasteVector, tasteVector) -
+      getSimilarityScore(left.tasteVector, tasteVector),
   );
 }
 
@@ -66,11 +86,22 @@ export function groupResultsByVenue(results: DishDetail[]) {
       return {
         venue,
         dishes: dishesByVenue.sort((left, right) => right.rating - left.rating),
-        minDistanceMeters: Math.min(...dishesByVenue.map((dish) => dish.distanceMeters)),
+        minDistanceMeters: Math.min(
+          ...dishesByVenue.map((dish) => dish.distanceMeters),
+        ),
         bestRating: Math.max(...dishesByVenue.map((dish) => dish.rating)),
       };
     })
-    .filter((group): group is { venue: VenueSummary; dishes: DishDetail[]; minDistanceMeters: number; bestRating: number } => Boolean(group))
+    .filter(
+      (
+        group,
+      ): group is {
+        venue: VenueSummary;
+        dishes: DishDetail[];
+        minDistanceMeters: number;
+        bestRating: number;
+      } => Boolean(group),
+    )
     .sort((left, right) => {
       if (left.minDistanceMeters !== right.minDistanceMeters) {
         return left.minDistanceMeters - right.minDistanceMeters;
@@ -87,13 +118,18 @@ export interface DiscoverStallCollection {
   affinity: number;
 }
 
-export function getDiscoverStallCollections(profile: UserProfile, query: string) {
+export function getDiscoverStallCollections(
+  profile: UserProfile,
+  query: string,
+) {
   const repository = getDataRepository();
   const normalizedQuery = query.trim().toLowerCase();
   const posts = repository.listStallPosts();
   const buildings = repository.listBuildings();
   const seenVenues = new Set<string>();
-  const collections: Array<DiscoverStallCollection & { nearestDistanceMeters: number }> = [];
+  const collections: Array<
+    DiscoverStallCollection & { nearestDistanceMeters: number }
+  > = [];
 
   for (const building of buildings) {
     const venues = repository.listVenuesByBuilding(building.id);
@@ -111,7 +147,9 @@ export function getDiscoverStallCollections(profile: UserProfile, query: string)
 
       const topDishes = repository.listDishesByVenue(venue.id);
       const affinity =
-        topDishes.length > 0 ? getSimilarityScore(topDishes[0].tasteVector, profile.tasteVector) : 0;
+        topDishes.length > 0
+          ? getSimilarityScore(topDishes[0].tasteVector, profile.tasteVector)
+          : 0;
       const nearestDistanceMeters = topDishes.length
         ? Math.min(...topDishes.map((dish) => dish.distanceMeters))
         : Number.MAX_SAFE_INTEGER;
@@ -133,12 +171,19 @@ export function getDiscoverStallCollections(profile: UserProfile, query: string)
         return true;
       }
 
-      const haystack = `${item.venue.name} ${item.location} ${item.topDishes.map((dish) => dish.name).join(" ")}`.toLowerCase();
+      const haystack =
+        `${item.venue.name} ${item.location} ${item.topDishes.map((dish) => dish.name).join(" ")}`.toLowerCase();
       return haystack.includes(normalizedQuery);
     })
     .sort((left, right) => {
-      const leftProximityScore = Math.max(0, 1 - left.nearestDistanceMeters / 2500);
-      const rightProximityScore = Math.max(0, 1 - right.nearestDistanceMeters / 2500);
+      const leftProximityScore = Math.max(
+        0,
+        1 - left.nearestDistanceMeters / 2500,
+      );
+      const rightProximityScore = Math.max(
+        0,
+        1 - right.nearestDistanceMeters / 2500,
+      );
       const leftScore = left.affinity * 0.7 + leftProximityScore * 0.3;
       const rightScore = right.affinity * 0.7 + rightProximityScore * 0.3;
 
@@ -148,5 +193,8 @@ export function getDiscoverStallCollections(profile: UserProfile, query: string)
 
       return left.nearestDistanceMeters - right.nearestDistanceMeters;
     })
-    .map(({ nearestDistanceMeters: _nearestDistanceMeters, ...collection }) => collection);
+    .map(
+      ({ nearestDistanceMeters: _nearestDistanceMeters, ...collection }) =>
+        collection,
+    );
 }

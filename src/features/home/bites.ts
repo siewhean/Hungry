@@ -17,27 +17,25 @@ export interface HomeBite {
 
 export function createDefaultBites(): HomeBite[] {
   const repository = getDataRepository();
-  const postDrivenBites = repository
-    .listStallPosts()
-    .flatMap((post, index) =>
-      post.dishIds
-        .map((dishId) => repository.getDishById(dishId))
-        .filter((dish): dish is NonNullable<typeof dish> => Boolean(dish))
-        .map((dish) => ({
-          id: `bite-${post.id}-${dish.id}`,
-          dishId: dish.id,
-          dishName: dish.name,
-          dishImageUrl: dish.imageUrl,
-          venueName: dish.venueName,
-          authorName: post.authorName,
-          authorAvatarUrl: post.authorAvatarUrl,
-          caption: post.caption,
-          heartCount: 140 + index * 22,
-          commentCount: 20 + index * 4,
-          tasteTag: dish.tasteTags[0] ?? "Popular",
-          createdAt: post.createdAt,
-        })),
-    );
+  const postDrivenBites = repository.listStallPosts().flatMap((post, index) =>
+    post.dishIds
+      .map((dishId) => repository.getDishById(dishId))
+      .filter((dish): dish is NonNullable<typeof dish> => Boolean(dish))
+      .map((dish) => ({
+        id: `bite-${post.id}-${dish.id}`,
+        dishId: dish.id,
+        dishName: dish.name,
+        dishImageUrl: dish.imageUrl,
+        venueName: dish.venueName,
+        authorName: post.authorName,
+        authorAvatarUrl: post.authorAvatarUrl,
+        caption: post.caption,
+        heartCount: 140 + index * 22,
+        commentCount: 20 + index * 4,
+        tasteTag: dish.tasteTags[0] ?? "Popular",
+        createdAt: post.createdAt,
+      })),
+  );
 
   const nearbyBites = repository.listPopularNearby().map((dish, index) => ({
     id: `bite-nearby-${dish.id}`,

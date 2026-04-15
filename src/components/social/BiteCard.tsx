@@ -60,7 +60,9 @@ export function BiteCard({
   onCommentPress,
 }: BiteCardProps) {
   const { palette, radii, spacing, motion } = useHungryTheme();
-  const leftHandedMode = useProfileStore((state) => state.profile.leftHandedMode);
+  const leftHandedMode = useProfileStore(
+    (state) => state.profile.leftHandedMode,
+  );
   const imageHeight = Math.round(width * 0.76);
 
   const heartScale = useSharedValue(0);
@@ -103,13 +105,27 @@ export function BiteCard({
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={openDishDetails ? `View ${bite.dishName} details by ${bite.authorName}` : `${bite.dishName} bite by ${bite.authorName}`}
-        accessibilityHint={openDishDetails ? "Double tap anywhere on the caption to like. Single tap to see dish details." : "Double tap anywhere on the caption to like this bite."}
+        accessibilityLabel={
+          openDishDetails
+            ? `View ${bite.dishName} details by ${bite.authorName}`
+            : `${bite.dishName} bite by ${bite.authorName}`
+        }
+        accessibilityHint={
+          openDishDetails
+            ? "Double tap anywhere on the caption to like. Single tap to see dish details."
+            : "Double tap anywhere on the caption to like this bite."
+        }
         disabled={!openDishDetails}
         onPress={openDishDetails}
       >
         {/* Dish image */}
-        <View style={{ height: imageHeight, position: "relative", backgroundColor: palette.surfaceRaised }}>
+        <View
+          style={{
+            height: imageHeight,
+            position: "relative",
+            backgroundColor: palette.surfaceRaised,
+          }}
+        >
           <Image
             source={{ uri: bite.dishImageUrl }}
             style={{ width: "100%", height: imageHeight }}
@@ -118,7 +134,10 @@ export function BiteCard({
           />
           {/* Animated Heart Pop Overlay */}
           <View
-            style={[StyleSheet.absoluteFill, { alignItems: "center", justifyContent: "center" }]}
+            style={[
+              StyleSheet.absoluteFill,
+              { alignItems: "center", justifyContent: "center" },
+            ]}
             pointerEvents="none"
           >
             <Animated.View style={animatedHeartStyle}>
@@ -137,7 +156,11 @@ export function BiteCard({
               paddingVertical: 2,
             }}
           >
-            <AppText variant="micro" tone="inverse" style={{ fontWeight: "700" }}>
+            <AppText
+              variant="micro"
+              tone="inverse"
+              style={{ fontWeight: "700" }}
+            >
               {bite.tasteTag}
             </AppText>
           </View>
@@ -145,7 +168,13 @@ export function BiteCard({
 
         {/* Content */}
         <View style={{ padding: spacing[3], gap: spacing[2] }}>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              gap: spacing[2],
+            }}
+          >
             <View
               style={{
                 width: 26,
@@ -207,9 +236,17 @@ export function BiteCard({
           accessibilityState={{ selected: liked }}
           hitSlop={10}
           onPress={onToggleLike}
-          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing[1],
+          }}
         >
-          <Heart size={18} color={liked ? palette.error : palette.textMuted} fill={liked ? palette.error : "transparent"} />
+          <Heart
+            size={18}
+            color={liked ? palette.error : palette.textMuted}
+            fill={liked ? palette.error : "transparent"}
+          />
           <AppText variant="micro" tone="muted">
             {displayHeartCount}
           </AppText>
@@ -220,14 +257,28 @@ export function BiteCard({
           hitSlop={10}
           onPress={onCommentPress}
           disabled={!onCommentPress}
-          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing[1],
+          }}
         >
-          <MessageCircle size={18} color={commented ? palette.orange : palette.textMuted} />
+          <MessageCircle
+            size={18}
+            color={commented ? palette.orange : palette.textMuted}
+          />
           <AppText variant="micro" tone="muted">
             {displayCommentCount}
           </AppText>
         </Pressable>
-        <AppText variant="micro" tone="muted" style={{ marginLeft: leftHandedMode ? 0 : "auto", marginRight: leftHandedMode ? "auto" : 0 }}>
+        <AppText
+          variant="micro"
+          tone="muted"
+          style={{
+            marginLeft: leftHandedMode ? 0 : "auto",
+            marginRight: leftHandedMode ? "auto" : 0,
+          }}
+        >
           {formatTimeAgo(bite.createdAt)}
         </AppText>
       </View>

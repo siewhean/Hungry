@@ -48,14 +48,20 @@ export function DiscoverTabScreen() {
             style={[
               styles.togglePill,
               {
-                backgroundColor: mode === "map" ? palette.orange : "transparent",
+                backgroundColor:
+                  mode === "map" ? palette.orange : "transparent",
                 borderRadius: radii.pill,
                 paddingHorizontal: spacing[3],
                 paddingVertical: spacing[2],
               },
             ]}
           >
-            <AppText style={{ color: mode === "map" ? palette.white : palette.text, fontWeight: "700" }}>
+            <AppText
+              style={{
+                color: mode === "map" ? palette.white : palette.text,
+                fontWeight: "700",
+              }}
+            >
               Map
             </AppText>
           </Pressable>
@@ -66,14 +72,20 @@ export function DiscoverTabScreen() {
             style={[
               styles.togglePill,
               {
-                backgroundColor: mode === "explore" ? palette.orange : "transparent",
+                backgroundColor:
+                  mode === "explore" ? palette.orange : "transparent",
                 borderRadius: radii.pill,
                 paddingHorizontal: spacing[3],
                 paddingVertical: spacing[2],
               },
             ]}
           >
-            <AppText style={{ color: mode === "explore" ? palette.white : palette.text, fontWeight: "700" }}>
+            <AppText
+              style={{
+                color: mode === "explore" ? palette.white : palette.text,
+                fontWeight: "700",
+              }}
+            >
               Explore
             </AppText>
           </Pressable>

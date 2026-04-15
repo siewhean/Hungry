@@ -108,13 +108,7 @@ function MarkerVisual({
   const showLabel = selected || zoomLevel >= 15.5;
 
   if (type) {
-    return (
-      <BuildingPin
-        name={label}
-        type={type}
-        selected={selected}
-      />
-    );
+    return <BuildingPin name={label} type={type} selected={selected} />;
   }
 
   return (
@@ -144,7 +138,9 @@ function MarkerVisual({
       {showLabel ? (
         <View
           style={{
-            backgroundColor: selected ? palette.surface : palette.surfaceTranslucent,
+            backgroundColor: selected
+              ? palette.surface
+              : palette.surfaceTranslucent,
             borderColor: selected ? palette.orange : palette.border,
             borderRadius: radii.pill,
             borderWidth: 1,
@@ -156,10 +152,10 @@ function MarkerVisual({
         >
           <AppText
             variant="micro"
-            style={{ 
-              color: palette.text, 
-              fontFamily: selected ? "Nunito_800ExtraBold" : "Nunito_700Bold", 
-              textAlign: "center" 
+            style={{
+              color: palette.text,
+              fontFamily: selected ? "Nunito_800ExtraBold" : "Nunito_700Bold",
+              textAlign: "center",
             }}
             numberOfLines={1}
           >
@@ -176,8 +172,29 @@ function UserPuck() {
 
   return (
     <View style={styles.userPuckOuter}>
-      <View style={[styles.userPuckHalo, { backgroundColor: `${palette.navy}12`, borderRadius: radii.pill, height: 36, width: 36 }]} />
-      <View style={[styles.userPuckInner, { backgroundColor: palette.navy, borderColor: palette.surface, borderRadius: radii.pill, height: 14, width: 14 }]} />
+      <View
+        style={[
+          styles.userPuckHalo,
+          {
+            backgroundColor: `${palette.navy}12`,
+            borderRadius: radii.pill,
+            height: 36,
+            width: 36,
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.userPuckInner,
+          {
+            backgroundColor: palette.navy,
+            borderColor: palette.surface,
+            borderRadius: radii.pill,
+            height: 14,
+            width: 14,
+          },
+        ]}
+      />
     </View>
   );
 }
@@ -192,23 +209,34 @@ function FallbackMap({
   cameraPadding,
 }: Pick<
   MapSurfaceProps,
-  "centerCoordinate" | "markers" | "selectedMarkerId" | "currentLocation" | "onMarkerPress" | "onMapPress" | "cameraPadding"
+  | "centerCoordinate"
+  | "markers"
+  | "selectedMarkerId"
+  | "currentLocation"
+  | "onMarkerPress"
+  | "onMapPress"
+  | "cameraPadding"
 >) {
   const { palette, radii } = useHungryTheme();
   const [frame, setFrame] = useState({ width: 1, height: 1 });
 
   // Apply padding to the map container to simulate camera offset
-  const containerStyle = useMemo(() => ({
-    paddingTop: cameraPadding?.paddingTop ?? 0,
-    paddingBottom: cameraPadding?.paddingBottom ?? 0,
-    paddingLeft: cameraPadding?.paddingLeft ?? 0,
-    paddingRight: cameraPadding?.paddingRight ?? 0,
-  }), [cameraPadding]);
+  const containerStyle = useMemo(
+    () => ({
+      paddingTop: cameraPadding?.paddingTop ?? 0,
+      paddingBottom: cameraPadding?.paddingBottom ?? 0,
+      paddingLeft: cameraPadding?.paddingLeft ?? 0,
+      paddingRight: cameraPadding?.paddingRight ?? 0,
+    }),
+    [cameraPadding],
+  );
 
   const coordinates = useMemo(
     () => [
       centerCoordinate,
-      ...(Array.isArray(markers) ? markers.map((marker) => marker.coordinate) : []),
+      ...(Array.isArray(markers)
+        ? markers.map((marker) => marker.coordinate)
+        : []),
       ...(currentLocation ? [currentLocation] : []),
     ],
     [centerCoordinate, currentLocation, markers],
@@ -326,7 +354,12 @@ function FallbackMap({
       })}
 
       {currentLocation ? (
-        <View style={[styles.absoluteMarker, projectCoordinate(currentLocation, bounds)]}>
+        <View
+          style={[
+            styles.absoluteMarker,
+            projectCoordinate(currentLocation, bounds),
+          ]}
+        >
           <UserPuck />
         </View>
       ) : null}
@@ -347,7 +380,8 @@ export function MapSurface({
   cameraPadding,
 }: MapSurfaceProps) {
   const { palette } = useHungryTheme();
-  const shouldUseFallback = FEATURE_FLAGS.mockMapboxEnabled || !MAPBOX_ACCESS_TOKEN;
+  const shouldUseFallback =
+    FEATURE_FLAGS.mockMapboxEnabled || !MAPBOX_ACCESS_TOKEN;
 
   useEffect(() => {
     if (!MAPBOX_ACCESS_TOKEN || hasConfiguredMapboxToken) {
@@ -360,7 +394,10 @@ export function MapSurface({
 
   if (shouldUseFallback) {
     return (
-      <View style={[styles.wrapper, { backgroundColor: palette.mapBg }, style]} accessibilityLabel="Map surface">
+      <View
+        style={[styles.wrapper, { backgroundColor: palette.mapBg }, style]}
+        accessibilityLabel="Map surface"
+      >
         <FallbackMap
           centerCoordinate={centerCoordinate}
           markers={markers}
@@ -371,7 +408,15 @@ export function MapSurface({
           cameraPadding={cameraPadding}
         />
         {!MAPBOX_ACCESS_TOKEN ? (
-          <View style={[styles.tokenNotice, { backgroundColor: palette.surfaceTranslucent, borderColor: palette.border }]}>
+          <View
+            style={[
+              styles.tokenNotice,
+              {
+                backgroundColor: palette.surfaceTranslucent,
+                borderColor: palette.border,
+              },
+            ]}
+          >
             <AppText variant="micro" style={{ color: palette.textMuted }}>
               Set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` to enable the live map.
             </AppText>
@@ -382,7 +427,10 @@ export function MapSurface({
   }
 
   return (
-    <View style={[styles.wrapper, { backgroundColor: palette.mapBg }, style]} accessibilityLabel="Map surface">
+    <View
+      style={[styles.wrapper, { backgroundColor: palette.mapBg }, style]}
+      accessibilityLabel="Map surface"
+    >
       <MapboxGL.MapView
         style={styles.map}
         styleURL={MapboxGL.StyleURL.Street}
@@ -393,7 +441,10 @@ export function MapSurface({
         rotateEnabled={false}
         scaleBarEnabled={false}
         onPress={(event) => {
-          const [longitude, latitude] = event.geometry.coordinates as [number, number];
+          const [longitude, latitude] = event.geometry.coordinates as [
+            number,
+            number,
+          ];
           onMapPress?.({ latitude, longitude });
         }}
         onRegionDidChange={(feature) => {
@@ -422,7 +473,10 @@ export function MapSurface({
             allowOverlap
             anchor={{ x: 0.5, y: 1 }}
           >
-            <Pressable onPress={() => onMarkerPress?.(marker.id)} style={[styles.markerPressable, { minWidth: 44, minHeight: 44 }]}>
+            <Pressable
+              onPress={() => onMarkerPress?.(marker.id)}
+              style={[styles.markerPressable, { minWidth: 44, minHeight: 44 }]}
+            >
               <MarkerVisual
                 label={marker.label}
                 accent={marker.accent ?? palette.orange}

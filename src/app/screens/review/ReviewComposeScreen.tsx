@@ -27,7 +27,9 @@ export function ReviewComposeScreen({ navigation }: Props) {
   const addPhoto = useReviewDraftStore((state) => state.addPhoto);
   const removePhoto = useReviewDraftStore((state) => state.removePhoto);
   const markPhotoFailed = useReviewDraftStore((state) => state.markPhotoFailed);
-  const clearFailedPhoto = useReviewDraftStore((state) => state.clearFailedPhoto);
+  const clearFailedPhoto = useReviewDraftStore(
+    (state) => state.clearFailedPhoto,
+  );
   const setText = useReviewDraftStore((state) => state.setText);
   const isSubmitting = useReviewDraftStore((state) => state.isSubmitting);
   const setSubmitting = useReviewDraftStore((state) => state.setSubmitting);
@@ -37,8 +39,13 @@ export function ReviewComposeScreen({ navigation }: Props) {
   const recordReviewEntry = useProfileStore((state) => state.recordReviewEntry);
   const showToast = useUIStore((state) => state.showToast);
   const showReviewSuccess = useUIStore((state) => state.showReviewSuccess);
-  const selectedDishId = useReviewDraftStore((state) => state.draft.selectedDishId);
-  const dish = useMemo(() => repository.getDishById(selectedDishId ?? ""), [repository, selectedDishId]);
+  const selectedDishId = useReviewDraftStore(
+    (state) => state.draft.selectedDishId,
+  );
+  const dish = useMemo(
+    () => repository.getDishById(selectedDishId ?? ""),
+    [repository, selectedDishId],
+  );
 
   if (!dish) {
     return (
@@ -52,11 +59,15 @@ export function ReviewComposeScreen({ navigation }: Props) {
           <View style={{ gap: spacing[3] }}>
             <AppText variant="h3">Dish selection is missing</AppText>
             <AppText tone="secondary">
-              Go back to quick review and pick the exact dish before writing your final notes.
+              Go back to quick review and pick the exact dish before writing
+              your final notes.
             </AppText>
           </View>
         </Card>
-        <Button label="Back to quick review" onPress={() => navigation.popToTop()} />
+        <Button
+          label="Back to quick review"
+          onPress={() => navigation.popToTop()}
+        />
       </ReviewScreenShell>
     );
   }
@@ -74,8 +85,16 @@ export function ReviewComposeScreen({ navigation }: Props) {
     const successPayload = {
       dishName: dish.name,
       venueName: repository.getVenueById(dish.venueId)?.name ?? "",
-      pointsEarned: 15 + draft.selectedTags.length * 4 + (draft.text.trim().length ? 10 : 0) + draft.photos.length * 5,
-      xpEarned: 15 + draft.selectedTags.length * 4 + (draft.text.trim().length ? 10 : 0) + draft.photos.length * 5,
+      pointsEarned:
+        15 +
+        draft.selectedTags.length * 4 +
+        (draft.text.trim().length ? 10 : 0) +
+        draft.photos.length * 5,
+      xpEarned:
+        15 +
+        draft.selectedTags.length * 4 +
+        (draft.text.trim().length ? 10 : 0) +
+        draft.photos.length * 5,
       tagCount: draft.selectedTags.length,
       rating: draft.rating,
     };
@@ -98,7 +117,11 @@ export function ReviewComposeScreen({ navigation }: Props) {
         tag_count: draft.selectedTags.length,
       });
       setSubmitting(false);
-      showToast({ message: "Review posted! Your feedback helps other foodies find the best dishes in Singapore.", tone: "success" });
+      showToast({
+        message:
+          "Review posted! Your feedback helps other foodies find the best dishes in Singapore.",
+        tone: "success",
+      });
       showReviewSuccess(successPayload);
       resetDraft();
       navigation.popToTop();
@@ -115,7 +138,9 @@ export function ReviewComposeScreen({ navigation }: Props) {
       <Card>
         <View style={{ gap: spacing[3] }}>
           <AppText variant="h3">{dish.name}</AppText>
-          <AppText tone="secondary">The draft stays intact while you move between steps.</AppText>
+          <AppText tone="secondary">
+            The draft stays intact while you move between steps.
+          </AppText>
           <Input
             label="Review text"
             value={draft.text}
@@ -134,19 +159,39 @@ export function ReviewComposeScreen({ navigation }: Props) {
             onRemovePhoto={removePhoto}
             onPhotoError={markPhotoFailed}
           />
-          {draft.photos.length ? <AppText tone="muted">Photos attached: {draft.photos.length}</AppText> : null}
+          {draft.photos.length ? (
+            <AppText tone="muted">
+              Photos attached: {draft.photos.length}
+            </AppText>
+          ) : null}
           {failedPhotoUris.length ? (
-            <InlineBanner tone="warning" message="One or more photos failed. Remove them or retry later." />
+            <InlineBanner
+              tone="warning"
+              message="One or more photos failed. Remove them or retry later."
+            />
           ) : null}
           <View style={{ gap: spacing[2] }}>
             {failedPhotoUris.map((uri) => (
-              <Button key={uri} label={`Retry ${uri}`} variant="ghost" onPress={() => clearFailedPhoto(uri)} />
+              <Button
+                key={uri}
+                label={`Retry ${uri}`}
+                variant="ghost"
+                onPress={() => clearFailedPhoto(uri)}
+              />
             ))}
           </View>
         </View>
       </Card>
-      <Button label="Submit review" loading={isSubmitting} onPress={handleSubmit} />
-      <Button label="Back" variant="ghost" onPress={() => navigation.goBack()} />
+      <Button
+        label="Submit review"
+        loading={isSubmitting}
+        onPress={handleSubmit}
+      />
+      <Button
+        label="Back"
+        variant="ghost"
+        onPress={() => navigation.goBack()}
+      />
     </ReviewScreenShell>
   );
 }

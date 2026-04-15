@@ -11,7 +11,14 @@
  */
 
 import { useEffect, useRef } from "react";
-import { Animated, Easing, Pressable, View, StyleSheet, Platform } from "react-native";
+import {
+  Animated,
+  Easing,
+  Pressable,
+  View,
+  StyleSheet,
+  Platform,
+} from "react-native";
 import type { PropsWithChildren } from "react";
 import { ChevronRight } from "lucide-react-native";
 
@@ -25,13 +32,7 @@ import {
 
 // ─── Progress bar ─────────────────────────────────────────────────────────────
 
-function ProgressBar({
-  total,
-  current,
-}: {
-  total: number;
-  current: number;
-}) {
+function ProgressBar({ total, current }: { total: number; current: number }) {
   const { motion, palette, radii } = useHungryTheme();
   const anim = useRef(new Animated.Value(0)).current;
 
@@ -64,7 +65,11 @@ function ProgressBar({
             <View
               style={[
                 styles.progressFill,
-                { backgroundColor: palette.orange, borderRadius: radii.pill, width: "100%" },
+                {
+                  backgroundColor: palette.orange,
+                  borderRadius: radii.pill,
+                  width: "100%",
+                },
               ]}
             />
           ) : i === current ? (
@@ -117,10 +122,27 @@ function SlideIllustration({
       // Dish-first: bowl + chopsticks silhouette
       <View style={styles.illustrationInner}>
         <View style={[styles.bowl, { borderColor: accentColor }]}>
-          <View style={[styles.bowlContent, { backgroundColor: `${accentColor}44` }]}>
-            <View style={[styles.steamLine, { backgroundColor: accentColor, marginLeft: -12 }]} />
-            <View style={[styles.steamLine, { backgroundColor: accentColor }]} />
-            <View style={[styles.steamLine, { backgroundColor: accentColor, marginLeft: 12 }]} />
+          <View
+            style={[
+              styles.bowlContent,
+              { backgroundColor: `${accentColor}44` },
+            ]}
+          >
+            <View
+              style={[
+                styles.steamLine,
+                { backgroundColor: accentColor, marginLeft: -12 },
+              ]}
+            />
+            <View
+              style={[styles.steamLine, { backgroundColor: accentColor }]}
+            />
+            <View
+              style={[
+                styles.steamLine,
+                { backgroundColor: accentColor, marginLeft: 12 },
+              ]}
+            />
           </View>
         </View>
       </View>
@@ -143,7 +165,9 @@ function SlideIllustration({
           />
         ))}
         <View style={[styles.mapPin, { backgroundColor: accentColor }]}>
-          <View style={[styles.mapPinDot, { backgroundColor: palette.white }]} />
+          <View
+            style={[styles.mapPinDot, { backgroundColor: palette.white }]}
+          />
         </View>
       </View>
     ),
@@ -262,7 +286,11 @@ function BulletItem({ text, index }: { text: string; index: number }) {
           flexShrink: 0,
         }}
       />
-      <AppText style={{ flex: 1, color: palette.textSecondary, lineHeight: 22 }}>{text}</AppText>
+      <AppText
+        style={{ flex: 1, color: palette.textSecondary, lineHeight: 22 }}
+      >
+        {text}
+      </AppText>
     </Animated.View>
   );
 }
@@ -310,7 +338,12 @@ export function OnboardingIntroTemplate({
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, [headlineAnim, motion.buttonPress, motion.onboardingHeadlineEnter, stepIndex]);
+  }, [
+    headlineAnim,
+    motion.buttonPress,
+    motion.onboardingHeadlineEnter,
+    stepIndex,
+  ]);
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.bg }]}>
@@ -318,7 +351,10 @@ export function OnboardingIntroTemplate({
       <View
         style={[
           styles.topArea,
-          { paddingTop: Platform.OS === "ios" ? 66 : 36, zIndex: zIndex.overlay },
+          {
+            paddingTop: Platform.OS === "ios" ? 66 : 36,
+            zIndex: zIndex.overlay,
+          },
         ]}
       >
         <ProgressBar total={totalSteps} current={stepIndex - 1} />
@@ -328,7 +364,14 @@ export function OnboardingIntroTemplate({
 
           <Pressable
             onPress={() => navigation.navigate("TasteQuiz")}
-            style={{ alignItems: "center", flexDirection: "row", gap: 4, justifyContent: "center", minHeight: 28, minWidth: 52 }}
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              gap: 4,
+              justifyContent: "center",
+              minHeight: 28,
+              minWidth: 52,
+            }}
             accessibilityLabel="Skip onboarding"
           >
             <AppText variant="bodySmallBold" tone="muted">
@@ -349,7 +392,12 @@ export function OnboardingIntroTemplate({
       </Pressable>
 
       {/* ── Content ─────────────────────────────────────── */}
-      <View style={[styles.contentArea, { backgroundColor: palette.surface, ...shadows.bottomSheet }]}>
+      <View
+        style={[
+          styles.contentArea,
+          { backgroundColor: palette.surface, ...shadows.bottomSheet },
+        ]}
+      >
         {/* Eyebrow */}
         <View
           style={{
@@ -386,7 +434,10 @@ export function OnboardingIntroTemplate({
           <AppText variant="h1" style={{ marginBottom: spacing[2] }}>
             {title}
           </AppText>
-          <AppText tone="secondary" style={{ marginBottom: spacing[4], lineHeight: 22 }}>
+          <AppText
+            tone="secondary"
+            style={{ marginBottom: spacing[4], lineHeight: 22 }}
+          >
             {subtitle}
           </AppText>
         </Animated.View>
@@ -411,7 +462,13 @@ export function OnboardingIntroTemplate({
             label={stepIndex < totalSteps ? "Continue" : "Set up my taste"}
             onPress={() => navigation.navigate(nextScreen)}
           />
-          {backScreen ? <Button label="Back" variant="ghost" onPress={() => navigation.navigate(backScreen)} /> : null}
+          {backScreen ? (
+            <Button
+              label="Back"
+              variant="ghost"
+              onPress={() => navigation.navigate(backScreen)}
+            />
+          ) : null}
         </View>
       </View>
     </View>

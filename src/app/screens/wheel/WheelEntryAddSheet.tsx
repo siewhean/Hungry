@@ -9,8 +9,23 @@
  */
 
 import { useState, useMemo } from "react";
-import { FlatList, Modal, Pressable, ScrollView, View, Alert } from "react-native";
-import { X, Search, Compass, Heart, Plus, ShieldAlert, Sparkles } from "lucide-react-native";
+import {
+  FlatList,
+  Modal,
+  Pressable,
+  ScrollView,
+  View,
+  Alert,
+} from "react-native";
+import {
+  X,
+  Search,
+  Compass,
+  Heart,
+  Plus,
+  ShieldAlert,
+  Sparkles,
+} from "lucide-react-native";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 
@@ -36,14 +51,17 @@ interface Props {
   onClose: () => void;
 }
 
-function calculateMatchScore(dish: DishDetail | undefined, userTaste: any): number {
+function calculateMatchScore(
+  dish: DishDetail | undefined,
+  userTaste: any,
+): number {
   if (!dish || !userTaste) return 0;
   let score = 0;
   const keys = Object.keys(userTaste) as Array<keyof typeof userTaste>;
-  keys.forEach(key => {
+  keys.forEach((key) => {
     const dishVal = (dish.tasteVector as any)[key] || 0;
     const userVal = userTaste[key] || 0;
-    score += (dishVal * userVal);
+    score += dishVal * userVal;
   });
   return score;
 }
@@ -77,14 +95,20 @@ function VenueRow({
           borderBottomWidth: 1,
           borderBottomColor: palette.border,
           backgroundColor: pressed ? palette.bgSoft : palette.surface,
-        }
+        },
       ]}
     >
       <View style={{ position: "relative" }}>
         {hero?.imageUrl ? (
           <Image
             source={{ uri: hero.imageUrl }}
-            style={{ width: 56, height: 56, borderRadius: radii.md, borderWidth: isHighMatch ? 2 : 0, borderColor: palette.orange }}
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: radii.md,
+              borderWidth: isHighMatch ? 2 : 0,
+              borderColor: palette.orange,
+            }}
             contentFit="cover"
           />
         ) : (
@@ -102,22 +126,54 @@ function VenueRow({
           </View>
         )}
         {isHighMatch && (
-          <View style={{ position: "absolute", top: -6, left: -6, backgroundColor: palette.orange, borderRadius: radii.pill, width: 20, height: 20, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: palette.surface }}>
+          <View
+            style={{
+              position: "absolute",
+              top: -6,
+              left: -6,
+              backgroundColor: palette.orange,
+              borderRadius: radii.pill,
+              width: 20,
+              height: 20,
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 2,
+              borderColor: palette.surface,
+            }}
+          >
             <Sparkles size={10} color={palette.textOnPrimary} />
           </View>
         )}
       </View>
-      
+
       <View style={{ flex: 1, gap: spacing[1] }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-          <AppText style={{ fontWeight: "700", fontSize: 16 }}>{venue.name}</AppText>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing[2],
+          }}
+        >
+          <AppText style={{ fontWeight: "700", fontSize: 16 }}>
+            {venue.name}
+          </AppText>
           {isHighMatch && <Badge label="BEST MATCH" tone="orange" />}
         </View>
         <AppText variant="micro" tone="secondary">
-          {venue.floor} {venue.unitNumber} • {hero?.tasteTags.slice(0, 2).join(", ")}
+          {venue.floor} {venue.unitNumber} •{" "}
+          {hero?.tasteTags.slice(0, 2).join(", ")}
         </AppText>
       </View>
-      <View style={{ width: 32, height: 32, borderRadius: radii.pill, backgroundColor: palette.orangeLight, alignItems: "center", justifyContent: "center" }}>
+      <View
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: radii.pill,
+          backgroundColor: palette.orangeLight,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <Plus size={16} color={palette.orange} />
       </View>
     </Pressable>
@@ -135,24 +191,25 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   // Group dietary summary
   const groupDietaryRestrictions = useMemo(() => {
     const all = new Set<string>();
-    members.forEach(m => m.dietaryPreferences?.forEach(p => all.add(p)));
+    members.forEach((m) => m.dietaryPreferences?.forEach((p) => all.add(p)));
     return Array.from(all);
   }, [members]);
 
   const [tab, setTab] = useState<Tab>("search");
   const [query, setQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<SearchCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<SearchCategory | null>(null);
 
   const addedVenueIds = new Set(entries.map((e) => e.venueId));
 
   function addVenue(venue: VenueSummary) {
     const dishes = repository.listDishesByVenue(venue.id);
     const venueDish = dishes[0];
-    
+
     // Conflict detection
     if (groupDietaryRestrictions.length > 0 && venueDish) {
-      const conflicts = groupDietaryRestrictions.filter(pref => 
-        !venueDish.dietaryFlags.includes(pref as any)
+      const conflicts = groupDietaryRestrictions.filter(
+        (pref) => !venueDish.dietaryFlags.includes(pref as any),
       );
 
       if (conflicts.length > 0) {
@@ -161,27 +218,27 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
           `This stall may not accommodate: ${conflicts.join(", ")}. Someone in your party has these restrictions. Add anyway?`,
           [
             { text: "Pick Something Else", style: "cancel" },
-            { 
-              text: "Add Anyway", 
+            {
+              text: "Add Anyway",
               onPress: () => {
                 void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                addEntry(venue.id, venue.buildingId, venue.name, venueDish.imageUrl ?? "");
+                addEntry(
+                  venue.id,
+                  venue.buildingId,
+                  venue.name,
+                  venueDish.imageUrl ?? "",
+                );
                 onClose();
-              }
-            }
-          ]
+              },
+            },
+          ],
         );
         return;
       }
     }
 
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    addEntry(
-      venue.id,
-      venue.buildingId,
-      venue.name,
-      venueDish?.imageUrl ?? ""
-    );
+    addEntry(venue.id, venue.buildingId, venue.name, venueDish?.imageUrl ?? "");
     onClose();
   }
 
@@ -202,42 +259,53 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
     return repository
       .listBuildings()
       .flatMap((b) =>
-        repository.listVenuesByBuilding(b.id).map((v) => ({ 
-          ...v, 
+        repository.listVenuesByBuilding(b.id).map((v) => ({
+          ...v,
           buildingId: b.id,
-          matchScore: calculateMatchScore(repository.listDishesByVenue(v.id)[0], profile.tasteVector)
-        }))
+          matchScore: calculateMatchScore(
+            repository.listDishesByVenue(v.id)[0],
+            profile.tasteVector,
+          ),
+        })),
       )
       .sort((a, b) => b.matchScore - a.matchScore);
   }, [profile.tasteVector, repository]);
 
-  const searchResults = useMemo(() => 
-    tab === "search" && query.trim()
-      ? allVenues.filter((v) => v.name.toLowerCase().includes(query.toLowerCase()))
-      : [],
-    [allVenues, tab, query]
+  const searchResults = useMemo(
+    () =>
+      tab === "search" && query.trim()
+        ? allVenues.filter((v) =>
+            v.name.toLowerCase().includes(query.toLowerCase()),
+          )
+        : [],
+    [allVenues, tab, query],
   );
 
-  const categoryResults = useMemo(() => 
-    tab === "category" && selectedCategory
-      ? allVenues.filter((v) => {
-          const dishes = repository.listDishesByVenue(v.id);
-          return dishes.some((d) => d.tasteTags.includes(selectedCategory));
-        })
-      : [],
-    [allVenues, tab, selectedCategory, repository]
+  const categoryResults = useMemo(
+    () =>
+      tab === "category" && selectedCategory
+        ? allVenues.filter((v) => {
+            const dishes = repository.listDishesByVenue(v.id);
+            return dishes.some((d) => d.tasteTags.includes(selectedCategory));
+          })
+        : [],
+    [allVenues, tab, selectedCategory, repository],
   );
 
-  const favouriteVenues = useMemo(() => 
-    tab === "favourites" && profile
-      ? profile.favouriteDishIds
-          .map((dishId) => repository.getDishById(dishId))
-          .filter(Boolean)
-          .map((dish) => allVenues.find((v) => v.id === dish!.venueId))
-          .filter((v): v is (typeof allVenues)[0] & { matchScore: number } => v !== undefined)
-          .filter((v, i, arr) => arr.findIndex((x) => x.id === v.id) === i)
-      : [],
-    [allVenues, tab, profile, repository]
+  const favouriteVenues = useMemo(
+    () =>
+      tab === "favourites" && profile
+        ? profile.favouriteDishIds
+            .map((dishId) => repository.getDishById(dishId))
+            .filter(Boolean)
+            .map((dish) => allVenues.find((v) => v.id === dish!.venueId))
+            .filter(
+              (v): v is (typeof allVenues)[0] & { matchScore: number } =>
+                v !== undefined,
+            )
+            .filter((v, i, arr) => arr.findIndex((x) => x.id === v.id) === i)
+        : [],
+    [allVenues, tab, profile, repository],
   );
 
   const tabs: { id: Tab; label: string; icon: any }[] = [
@@ -281,12 +349,25 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
           }}
         >
           <View style={{ flex: 1 }}>
-            <AppText style={{ fontSize: 20, fontWeight: "900" }}>Add an Option</AppText>
+            <AppText style={{ fontSize: 20, fontWeight: "900" }}>
+              Add an Option
+            </AppText>
             {groupDietaryRestrictions.length > 0 && (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                  marginTop: 2,
+                }}
+              >
                 <ShieldAlert size={12} color={palette.error} />
-                <AppText variant="micro" style={{ color: palette.error, fontWeight: "700" }}>
-                  GROUP NEEDS: {groupDietaryRestrictions.join(", ").toUpperCase()}
+                <AppText
+                  variant="micro"
+                  style={{ color: palette.error, fontWeight: "700" }}
+                >
+                  GROUP NEEDS:{" "}
+                  {groupDietaryRestrictions.join(", ").toUpperCase()}
                 </AppText>
               </View>
             )}
@@ -296,7 +377,14 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
             accessibilityLabel="Dismiss add option sheet"
             onPress={onClose}
             hitSlop={12}
-            style={{ backgroundColor: palette.bgSoft, width: 32, height: 32, borderRadius: radii.pill, alignItems: "center", justifyContent: "center" }}
+            style={{
+              backgroundColor: palette.bgSoft,
+              width: 32,
+              height: 32,
+              borderRadius: radii.pill,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
             <X size={18} color={palette.text} />
           </Pressable>
@@ -318,28 +406,55 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 key={t.id}
                 accessibilityRole="button"
                 accessibilityLabel={`Switch to ${t.label} tab`}
-                onPress={() => { setTab(t.id); void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                onPress={() => {
+                  setTab(t.id);
+                  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
                 style={{
                   paddingHorizontal: spacing[3],
                   paddingVertical: spacing[2],
                   borderRadius: radii.md,
-                  backgroundColor: tab === t.id ? palette.orangeLight : palette.bgSoft,
+                  backgroundColor:
+                    tab === t.id ? palette.orangeLight : palette.bgSoft,
                   borderWidth: 1,
                   borderColor: tab === t.id ? palette.orange : palette.border,
                   flexDirection: "row",
                   alignItems: "center",
-                  gap: 6
+                  gap: 6,
                 }}
               >
                 <View style={{ opacity: tab === t.id ? 1 : 0.6 }}>
-                  {t.id === "search" && <Search size={14} color={tab === t.id ? palette.orange : palette.text} />}
-                  {t.id === "random" && <Compass size={14} color={tab === t.id ? palette.orange : palette.text} />}
-                  {t.id === "category" && <Plus size={14} color={tab === t.id ? palette.orange : palette.text} />}
-                  {t.id === "favourites" && <Heart size={14} color={tab === t.id ? palette.orange : palette.text} />}
+                  {t.id === "search" && (
+                    <Search
+                      size={14}
+                      color={tab === t.id ? palette.orange : palette.text}
+                    />
+                  )}
+                  {t.id === "random" && (
+                    <Compass
+                      size={14}
+                      color={tab === t.id ? palette.orange : palette.text}
+                    />
+                  )}
+                  {t.id === "category" && (
+                    <Plus
+                      size={14}
+                      color={tab === t.id ? palette.orange : palette.text}
+                    />
+                  )}
+                  {t.id === "favourites" && (
+                    <Heart
+                      size={14}
+                      color={tab === t.id ? palette.orange : palette.text}
+                    />
+                  )}
                 </View>
                 <AppText
                   variant="bodySmall"
-                  style={{ color: tab === t.id ? palette.orange : palette.text, fontWeight: tab === t.id ? "700" : "500" }}
+                  style={{
+                    color: tab === t.id ? palette.orange : palette.text,
+                    fontWeight: tab === t.id ? "700" : "500",
+                  }}
                 >
                   {t.label}
                 </AppText>
@@ -352,7 +467,12 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
         <View style={{ flex: 1 }}>
           {tab === "search" && (
             <>
-              <View style={{ paddingHorizontal: spacing[3], paddingBottom: spacing[4] }}>
+              <View
+                style={{
+                  paddingHorizontal: spacing[3],
+                  paddingBottom: spacing[4],
+                }}
+              >
                 <Input
                   placeholder="Find a specific stall..."
                   value={query}
@@ -365,7 +485,11 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 data={searchResults}
                 keyExtractor={(v) => v.id}
                 renderItem={({ item }) => (
-                  <VenueRow venue={item} onAdd={() => addVenue(item)} matchScore={item.matchScore} />
+                  <VenueRow
+                    venue={item}
+                    onAdd={() => addVenue(item)}
+                    matchScore={item.matchScore}
+                  />
                 )}
                 contentContainerStyle={{ paddingBottom: 40 }}
                 ListEmptyComponent={
@@ -377,7 +501,13 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                       No stalls found for "{query}"
                     </AppText>
                   ) : (
-                    <View style={{ padding: spacing[8], alignItems: "center", gap: spacing[3] }}>
+                    <View
+                      style={{
+                        padding: spacing[8],
+                        alignItems: "center",
+                        gap: spacing[3],
+                      }}
+                    >
                       <Search size={40} color={palette.border} />
                       <AppText tone="secondary" style={{ textAlign: "center" }}>
                         Type to search for a stall.
@@ -390,14 +520,35 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
           )}
 
           {tab === "random" && (
-            <View style={{ padding: spacing[8], gap: spacing[6], alignItems: "center" }}>
-              <View style={{ width: 80, height: 80, borderRadius: radii.pill, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}>
+            <View
+              style={{
+                padding: spacing[8],
+                gap: spacing[6],
+                alignItems: "center",
+              }}
+            >
+              <View
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: radii.pill,
+                  backgroundColor: palette.bgSoft,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
                 <Compass color={palette.orange} size={40} />
               </View>
               <View style={{ gap: spacing[1], alignItems: "center" }}>
-                <AppText style={{ fontSize: 20, fontWeight: "800" }}>Surprise Me!</AppText>
-                <AppText style={{ textAlign: "center", paddingHorizontal: spacing[3] }} tone="secondary">
-                  Can't decide? Let us pick a random nearby stall for your group.
+                <AppText style={{ fontSize: 20, fontWeight: "800" }}>
+                  Surprise Me!
+                </AppText>
+                <AppText
+                  style={{ textAlign: "center", paddingHorizontal: spacing[3] }}
+                  tone="secondary"
+                >
+                  Can't decide? Let us pick a random nearby stall for your
+                  group.
                 </AppText>
               </View>
               <Pressable
@@ -413,11 +564,17 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                     paddingVertical: spacing[4],
                     borderRadius: radii.pill,
                     transform: [{ translateY: pressed ? 1 : 0 }],
-                    ...shadows.card
-                  }
+                    ...shadows.card,
+                  },
                 ]}
               >
-                <AppText style={{ color: palette.orange, fontWeight: "800", fontSize: 18 }}>
+                <AppText
+                  style={{
+                    color: palette.orange,
+                    fontWeight: "800",
+                    fontSize: 18,
+                  }}
+                >
                   Pick for Me
                 </AppText>
               </Pressable>
@@ -426,7 +583,13 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
 
           {tab === "category" && (
             <>
-              <View style={{ borderBottomWidth: 1, borderBottomColor: palette.border, paddingBottom: spacing[4] }}>
+              <View
+                style={{
+                  borderBottomWidth: 1,
+                  borderBottomColor: palette.border,
+                  paddingBottom: spacing[4],
+                }}
+              >
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -441,26 +604,37 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                       accessibilityRole="button"
                       accessibilityLabel={`${cat} category`}
                       onPress={() => {
-                        setSelectedCategory(selectedCategory === cat ? null : cat);
-                        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setSelectedCategory(
+                          selectedCategory === cat ? null : cat,
+                        );
+                        void Haptics.impactAsync(
+                          Haptics.ImpactFeedbackStyle.Light,
+                        );
                       }}
                       style={{
                         paddingHorizontal: spacing[3],
                         paddingVertical: spacing[2],
                         borderRadius: radii.pill,
                         backgroundColor:
-                          selectedCategory === cat ? palette.navy : palette.bgSoft,
+                          selectedCategory === cat
+                            ? palette.navy
+                            : palette.bgSoft,
                         borderWidth: 1,
                         borderColor:
-                          selectedCategory === cat ? palette.navy : palette.border,
+                          selectedCategory === cat
+                            ? palette.navy
+                            : palette.border,
                       }}
                     >
                       <AppText
                         variant="bodySmall"
                         style={{
-                          color: selectedCategory === cat ? palette.textOnDark : palette.text,
+                          color:
+                            selectedCategory === cat
+                              ? palette.textOnDark
+                              : palette.text,
                           textTransform: "capitalize",
-                          fontWeight: selectedCategory === cat ? "700" : "500"
+                          fontWeight: selectedCategory === cat ? "700" : "500",
                         }}
                       >
                         {cat}
@@ -473,16 +647,23 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 data={categoryResults}
                 keyExtractor={(v) => v.id}
                 renderItem={({ item }) => (
-                  <VenueRow venue={item} onAdd={() => addVenue(item)} matchScore={item.matchScore} />
+                  <VenueRow
+                    venue={item}
+                    onAdd={() => addVenue(item)}
+                    matchScore={item.matchScore}
+                  />
                 )}
                 contentContainerStyle={{ paddingBottom: 40 }}
                 ListEmptyComponent={
-                  <View style={{ padding: spacing[8], alignItems: "center", gap: spacing[3] }}>
+                  <View
+                    style={{
+                      padding: spacing[8],
+                      alignItems: "center",
+                      gap: spacing[3],
+                    }}
+                  >
                     <Plus size={40} color={palette.border} />
-                    <AppText
-                      tone="secondary"
-                      style={{ textAlign: "center" }}
-                    >
+                    <AppText tone="secondary" style={{ textAlign: "center" }}>
                       {selectedCategory
                         ? "No stalls in this category."
                         : "Pick a category above to browse options."}
@@ -498,16 +679,23 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               data={favouriteVenues}
               keyExtractor={(v) => v.id}
               renderItem={({ item }) => (
-                <VenueRow venue={item} onAdd={() => addVenue(item)} matchScore={item.matchScore} />
+                <VenueRow
+                  venue={item}
+                  onAdd={() => addVenue(item)}
+                  matchScore={item.matchScore}
+                />
               )}
               contentContainerStyle={{ paddingBottom: 40 }}
               ListEmptyComponent={
-                <View style={{ padding: spacing[8], alignItems: "center", gap: spacing[3] }}>
+                <View
+                  style={{
+                    padding: spacing[8],
+                    alignItems: "center",
+                    gap: spacing[3],
+                  }}
+                >
                   <Heart size={40} color={palette.border} />
-                  <AppText
-                    tone="secondary"
-                    style={{ textAlign: "center" }}
-                  >
+                  <AppText tone="secondary" style={{ textAlign: "center" }}>
                     No favourites yet. Start liking some dishes!
                   </AppText>
                 </View>

@@ -2,6 +2,7 @@ import { Linking, Pressable, StyleSheet, View } from "react-native";
 import { ExternalLink } from "lucide-react-native";
 
 import { BRAND_COLORS } from "@/constants/brandColors";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { DeliveryLink } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "../ui";
@@ -9,6 +10,8 @@ import { AppText } from "../ui";
 interface DeliveryPlatformButtonProps {
   link: DeliveryLink;
   compact?: boolean;
+  dishId?: string;
+  venueId?: string;
 }
 
 const platformMeta: Record<string, { label: string; color: string }> = {
@@ -17,11 +20,25 @@ const platformMeta: Record<string, { label: string; color: string }> = {
   deliveroo: { label: "Order on Deliveroo", color: BRAND_COLORS.deliveroo },
 };
 
-export function DeliveryPlatformButton({ link, compact = false }: DeliveryPlatformButtonProps) {
+export function DeliveryPlatformButton({
+  link,
+  compact = false,
+  dishId,
+  venueId,
+}: DeliveryPlatformButtonProps) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
-  const meta = platformMeta[link.platform] ?? { label: `Order on ${link.platform}`, color: palette.surface };
+  const meta = platformMeta[link.platform] ?? {
+    label: `Order on ${link.platform}`,
+    color: palette.surface,
+  };
 
   const handlePress = async () => {
+    trackAnalyticsEvent("delivery_link_tapped", {
+      dish_id: dishId,
+      venue_id: venueId,
+      platform: link.platform,
+    });
+
     try {
       await Linking.openURL(link.nativeUrl);
     } catch {
@@ -47,14 +64,17 @@ export function DeliveryPlatformButton({ link, compact = false }: DeliveryPlatfo
       ]}
     >
       <View style={styles.row}>
-        <AppText 
-          variant="body" 
-          tone={platformMeta[link.platform] ? "inverse" : "default"} 
+        <AppText
+          variant="body"
+          tone={platformMeta[link.platform] ? "inverse" : "default"}
           numberOfLines={1}
         >
           {meta.label}
         </AppText>
-        <ExternalLink size={16} color={platformMeta[link.platform] ? palette.white : palette.text} />
+        <ExternalLink
+          size={16}
+          color={platformMeta[link.platform] ? palette.white : palette.text}
+        />
       </View>
     </Pressable>
   );
@@ -71,4 +91,3 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
-

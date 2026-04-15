@@ -223,3 +223,28 @@
   - Fixed malformed JSX in `HomeFeedScreen` by removing duplicated `BottomSheetScrollView`/`BottomSheetModal` closing tags that caused the transform parser error.
   - Repaired a concurrent syntax corruption in `src/components/ui/Input.tsx` (accidental placeholder token and missing `forwardRef` closure), then corrected `Input` usage in `HomeFeedScreen` (`maxHeight` moved to `style`).
   - Revalidated with `npm run typecheck` in root; passed.
+
+- Prompt: "There are 1099 warnings within xcode, resolve all of the warnings with minimal code changes while not affecting usability and main code base"
+- Actions:
+  - Audited iOS build warning sources with repeated `xcodebuild` log extraction and warning-family aggregation.
+  - Applied minimal iOS build-configuration changes in `ios/Podfile` to suppress non-functional third-party warning classes and keep linker noise lower (`inhibit_all_warnings!`, pod/user target warning flags, deployment-target normalization, and duplicate-library linker suppression flag).
+  - Repaired transient lockfile conflict markers in `ios/Podfile.lock` introduced during interrupted CocoaPods runs and resynced the sandbox via `pod install`.
+  - Reverted a failed header-wrapper suppression experiment that introduced ExpoModulesCore compile errors, then restored dependency headers and revalidated.
+  - Final verification: `xcodebuild` succeeds (`BUILD_EXIT:0`, `ERROR_COUNT:0`, `TOTAL_WARNING_LINES:1`), `npm run typecheck` passes, and `npm test -- --runInBand` passes (23/23).
+  - Remaining warning is a single Xcode AppIntents metadata processor notice (`Metadata extraction skipped. No AppIntents.framework dependency found.`); app usability and feature behavior are unchanged.
+
+## 2026-04-15
+
+- Prompt: "Refer to the document and update the existing code based on the documnet guidelines. Create and complete the task in multiple phases. Activate the appropriate agents for the respective tasks"
+- Actions:
+  - Activated `Project Shepherd` subagent to generate a phased implementation plan from `tasks/Roadmap/production-infrastructure.md` and activated `Backend Architect` subagent to validate a minimal-diff patch set before code edits.
+  - Phase 1 (environment strategy): expanded `.env.development`, `.env.staging`, and `.env.production` placeholder templates to the full variable catalog (`Supabase`, `Mapbox`, `PostHog`, `Sentry`, `EAS`) and aligned staging/production `HUNGRY_DATA_SOURCE=supabase`.
+  - Phase 2 (pipeline/config): updated `.gitignore` to keep committed template env files while ignoring local secret overlays, aligned `eas.json` channels/env blocks, and added Sentry-related GitHub secret pass-through in `.github/workflows/ci.yml` EAS build gate.
+  - Phase 3 (observability + analytics): hardened `Sentry.init` in `App.tsx` with environment tagging, non-production trace suppression, and `beforeSend` PII stripping; extended analytics event union; added explicit `sign_up_completed` event on email verification; instrumented `decide_for_me_triggered`, `decide_for_me_result_shown`, `decide_for_me_no_match`, `decide_for_me_radius_expanded`, and `delivery_link_tapped` events in discover/detail flows.
+  - Updated Sprint 4 execution tracking in `tasks/todo.md` with phase-based completion status and remaining launch-smoke evidence gate.
+  - Re-validated project health: `npm run typecheck`, `npm run test`, and `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor` all passed.
+
+- Prompt: "Replace the sensitive information with the variables in the .env file"
+- Actions:
+  - Sanitized `tasks/Roadmap/production-infrastructure.md` Section 1.2 by removing hardcoded credential/token literals.
+  - Replaced each sensitive value with environment-variable references (for example `${EXPO_PUBLIC_SENTRY_DSN}`, `${SENTRY_AUTH_TOKEN}`, `${EXPO_TOKEN}`) so the document retains the variable contract without exposing secrets.

@@ -1,5 +1,12 @@
 import { type ReactNode } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 import type { PressableProps } from "react-native";
 
 import { useHungryTheme } from "@/theme";
@@ -82,14 +89,28 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "primary" || variant === "destructive" ? palette.white : palette.text}
+          color={
+            variant === "primary" || variant === "destructive"
+              ? palette.white
+              : palette.text
+          }
         />
       ) : (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing[2],
+          }}
+        >
           {leftIcon}
           <AppText
             variant="h3"
-            tone={variant === "primary" || variant === "destructive" ? "inverse" : "default"}
+            tone={
+              variant === "primary" || variant === "destructive"
+                ? "inverse"
+                : "default"
+            }
           >
             {label}
           </AppText>

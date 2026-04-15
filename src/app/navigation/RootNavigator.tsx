@@ -11,7 +11,14 @@ import {
   createNativeStackNavigator,
   type NativeStackScreenProps,
 } from "@react-navigation/native-stack";
-import { ArrowLeft, Compass, House, NotebookPen, User, BookOpenText } from "lucide-react-native";
+import {
+  ArrowLeft,
+  Compass,
+  House,
+  NotebookPen,
+  User,
+  BookOpenText,
+} from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
@@ -93,8 +100,12 @@ function GlobalScrollBackButton() {
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const scrollBackVisible = useUIStore((state) => state.scrollBackVisible);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
-  const rootState = navigationRef.isReady() ? navigationRef.getRootState() : undefined;
-  const rootRouteName = rootState ? rootState.routes[rootState.index]?.name : undefined;
+  const rootState = navigationRef.isReady()
+    ? navigationRef.getRootState()
+    : undefined;
+  const rootRouteName = rootState
+    ? rootState.routes[rootState.index]?.name
+    : undefined;
 
   if (
     !scrollBackVisible ||
@@ -215,9 +226,13 @@ function TabNavigator() {
 
 export function RootNavigator({ theme }: { theme: Theme }) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
+  const hasCompletedOnboarding = useSessionStore(
+    (state) => state.hasCompletedOnboarding,
+  );
   const sessionExpired = useSessionStore((state) => state.sessionExpired);
-  const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
+  const dismissSessionExpiry = useSessionStore(
+    (state) => state.dismissSessionExpiry,
+  );
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
 
@@ -269,12 +284,20 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     if (returnRoute === "Post") {
       navigationRef.resetRoot({
         index: 1,
-        routes: [{ name: "MainTabs", params: { screen: "Home" } }, { name: "Post" }],
+        routes: [
+          { name: "MainTabs", params: { screen: "Home" } },
+          { name: "Post" },
+        ],
       });
       return;
     }
 
-    if (returnRoute === "EditProfile" || returnRoute === "Favourites" || returnRoute === "ReviewHistory" || returnRoute === "Settings") {
+    if (
+      returnRoute === "EditProfile" ||
+      returnRoute === "Favourites" ||
+      returnRoute === "ReviewHistory" ||
+      returnRoute === "Settings"
+    ) {
       navigationRef.resetRoot({
         index: 0,
         routes: [{ name: returnRoute }],
@@ -282,7 +305,12 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       return;
     }
 
-    if (returnRoute === "Profile" || returnRoute === "Review" || returnRoute === "Rate" || returnRoute === "Home") {
+    if (
+      returnRoute === "Profile" ||
+      returnRoute === "Review" ||
+      returnRoute === "Rate" ||
+      returnRoute === "Home"
+    ) {
       navigationRef.resetRoot({
         index: 0,
         routes: [{ name: "MainTabs", params: { screen: returnRoute } }],
@@ -315,7 +343,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       if (isAuthenticated && !hasCompletedOnboarding) {
         navigationRef.resetRoot({
           index: 0,
-          routes: [{ name: "OnboardingStack", params: { screen: "OnboardingIntro1" } }],
+          routes: [
+            { name: "OnboardingStack", params: { screen: "OnboardingIntro1" } },
+          ],
         });
         return;
       }
@@ -338,7 +368,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     const rootState = navigationRef.getRootState();
     const currentTopRoute = rootState.routes[rootState.index]?.name;
 
-    if (!isAuthenticated && currentTopRoute && AUTH_REQUIRED_ROUTES.has(currentTopRoute)) {
+    if (
+      !isAuthenticated &&
+      currentTopRoute &&
+      AUTH_REQUIRED_ROUTES.has(currentTopRoute)
+    ) {
       const activeRoute = rootState.routes[rootState.index];
       const mainTabScreen =
         activeRoute.name === "MainTabs" &&
@@ -377,21 +411,43 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           resetScrollBack();
         }}
       >
-        <RootStack.Navigator initialRouteName={__DEV__ ? "DeveloperLauncher" : "Splash"} screenOptions={{ headerShown: false }}>
-          {__DEV__ ? <RootStack.Screen component={DeveloperLauncherScreen} name="DeveloperLauncher" /> : null}
+        <RootStack.Navigator
+          initialRouteName={__DEV__ ? "DeveloperLauncher" : "Splash"}
+          screenOptions={{ headerShown: false }}
+        >
+          {__DEV__ ? (
+            <RootStack.Screen
+              component={DeveloperLauncherScreen}
+              name="DeveloperLauncher"
+            />
+          ) : null}
           <RootStack.Screen component={SplashScreen} name="Splash" />
           <RootStack.Screen component={AuthStack} name="AuthStack" />
-          <RootStack.Screen component={OnboardingStack} name="OnboardingStack" />
+          <RootStack.Screen
+            component={OnboardingStack}
+            name="OnboardingStack"
+          />
           <RootStack.Screen component={TabNavigator} name="MainTabs" />
-          <RootStack.Screen component={DishSearchScreen} name="SearchHome" options={{ animation: "none" }} />
-          <RootStack.Screen component={SearchResultsScreen} name="SearchResults" options={{ animation: "none" }} />
+          <RootStack.Screen
+            component={DishSearchScreen}
+            name="SearchHome"
+            options={{ animation: "none" }}
+          />
+          <RootStack.Screen
+            component={SearchResultsScreen}
+            name="SearchResults"
+            options={{ animation: "none" }}
+          />
           <RootStack.Screen component={TasteFilterScreen} name="TasteFilter" />
           <RootStack.Screen component={HomeMapScreen} name="DiscoverMap" />
           <RootStack.Screen component={MapZoomedInScreen} name="MapZoomedIn" />
           <RootStack.Screen component={PostComposerScreen} name="Post" />
           <RootStack.Screen component={EditProfileScreen} name="EditProfile" />
           <RootStack.Screen component={FavouritesScreen} name="Favourites" />
-          <RootStack.Screen component={ReviewHistoryScreen} name="ReviewHistory" />
+          <RootStack.Screen
+            component={ReviewHistoryScreen}
+            name="ReviewHistory"
+          />
           <RootStack.Screen component={SettingsScreen} name="Settings" />
           <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
           <RootStack.Screen component={DishDetailScreen} name="DishDetail" />
@@ -399,17 +455,32 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           <RootStack.Screen component={ReviewStack} name="ReviewStack" />
           <RootStack.Screen component={WheelStack} name="WheelStack" />
-          {FEATURE_FLAGS.directMessagesEnabled ? <RootStack.Screen component={DirectMessagesScreen} name="DirectMessages" /> : null}
-          {FEATURE_FLAGS.craveEnabled ? <RootStack.Screen component={CraveScreen} name="Crave" /> : null}
-          <RootStack.Screen component={DecideForMeResultScreen} name="DecideForMeResult" />
-          <RootStack.Screen component={BuildingDrillDownScreen} name="BuildingDrillDown" />
+          {FEATURE_FLAGS.directMessagesEnabled ? (
+            <RootStack.Screen
+              component={DirectMessagesScreen}
+              name="DirectMessages"
+            />
+          ) : null}
+          {FEATURE_FLAGS.craveEnabled ? (
+            <RootStack.Screen component={CraveScreen} name="Crave" />
+          ) : null}
+          <RootStack.Screen
+            component={DecideForMeResultScreen}
+            name="DecideForMeResult"
+          />
+          <RootStack.Screen
+            component={BuildingDrillDownScreen}
+            name="BuildingDrillDown"
+          />
           <RootStack.Screen component={OfflineStateScreen} name="Offline" />
           <RootStack.Screen component={NotFoundScreen} name="NotFound" />
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />
       <QuickReviewModal />
-      <ReviewSuccessModal onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
+      <ReviewSuccessModal
+        onOpenHistory={() => navigationRef.navigate("ReviewHistory")}
+      />
       <FloatingToast />
     </>
   );

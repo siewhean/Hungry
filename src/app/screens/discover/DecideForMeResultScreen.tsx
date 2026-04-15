@@ -7,7 +7,15 @@ import { Sparkles } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import {
+  AppText,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  Screen,
+} from "@/components/ui";
 import { findBuildingById } from "@/features/discovery/discovery";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
 import { getDataRepository } from "@/lib/services/serviceProvider";
@@ -131,7 +139,11 @@ function getCandidates(
   );
 }
 
-function getNextDistinctDish(candidates: DishDetail[], currentDishId?: string, currentIndex = 0) {
+function getNextDistinctDish(
+  candidates: DishDetail[],
+  currentDishId?: string,
+  currentIndex = 0,
+) {
   if (!candidates.length) {
     return undefined;
   }
@@ -141,7 +153,10 @@ function getNextDistinctDish(candidates: DishDetail[], currentDishId?: string, c
 
   let nextIndex = (currentIndex + 1) % candidates.length;
   let guard = 0;
-  while (guard < candidates.length && candidates[nextIndex]?.id === currentDishId) {
+  while (
+    guard < candidates.length &&
+    candidates[nextIndex]?.id === currentDishId
+  ) {
     nextIndex = (nextIndex + 1) % candidates.length;
     guard += 1;
   }
@@ -159,9 +174,17 @@ export function DecideForMeResultScreen() {
   const showToast = useUIStore((state) => state.showToast);
   const [searchRadius, setSearchRadius] = useState(500);
   const [resultIndex, setResultIndex] = useState(0);
+  const trackedResultKey = useRef<string | null>(null);
+  const trackedNoMatchRadius = useRef<number | null>(null);
 
   const candidates = useMemo(
-    () => getCandidates(repository, profile.tasteVector, profile.dietaryPreferences, searchRadius),
+    () =>
+      getCandidates(
+        repository,
+        profile.tasteVector,
+        profile.dietaryPreferences,
+        searchRadius,
+      ),
     [profile.dietaryPreferences, profile.tasteVector, repository, searchRadius],
   );
 
@@ -175,7 +198,9 @@ export function DecideForMeResultScreen() {
     }
 
     if (selectedDish) {
-      const selectedIndex = candidates.findIndex((dish) => dish.id === selectedDish.id);
+      const selectedIndex = candidates.findIndex(
+        (dish) => dish.id === selectedDish.id,
+      );
       if (selectedIndex >= 0) {
         setResultIndex(selectedIndex);
         return;
@@ -190,6 +215,36 @@ export function DecideForMeResultScreen() {
   }, [candidates, resultIndex, selectedDish, setDecideForMe]);
 
   const dish = candidates[resultIndex] ?? selectedDish;
+  const match = dish
+    ? Math.round(blendedMatchScore(profile.tasteVector, dish.tasteVector) * 100)
+    : 0;
+
+  useEffect(() => {
+    if (!dish) {
+      if (trackedNoMatchRadius.current !== searchRadius) {
+        trackAnalyticsEvent("decide_for_me_no_match", {
+          radius_m: searchRadius,
+        });
+        trackedNoMatchRadius.current = searchRadius;
+      }
+      return;
+    }
+
+    trackedNoMatchRadius.current = null;
+    const resultKey = `${dish.id}:${searchRadius}`;
+    if (trackedResultKey.current === resultKey) {
+      return;
+    }
+    trackedResultKey.current = resultKey;
+    trackAnalyticsEvent("decide_for_me_result_shown", {
+      dish_id: dish.id,
+      venue_id: dish.venueId,
+      building_id: dish.buildingId,
+      radius_m: searchRadius,
+      match_score: match,
+      distance_m: dish.distanceMeters,
+    });
+  }, [dish, match, searchRadius]);
 
   const cardAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -211,31 +266,46 @@ export function DecideForMeResultScreen() {
   const expandRadius = () => {
     const target = nextRadius(searchRadius);
     if (!target) {
-      showToast({ message: "Already searching the widest radius.", tone: "info" });
+      showToast({
+        message: "Already searching the widest radius.",
+        tone: "info",
+      });
       return;
     }
+    trackAnalyticsEvent("decide_for_me_radius_expanded", {
+      from_radius_m: searchRadius,
+      new_radius_m: target,
+    });
     setSearchRadius(target);
   };
 
   if (!dish) {
     const upcomingRadius = nextRadius(searchRadius);
     return (
-      <Screen title="Recommended for you" subtitle="A single dish picked for your taste profile.">
+      <Screen
+        title="Recommended for you"
+        subtitle="A single dish picked for your taste profile."
+      >
         <EmptyState
           title="No match found"
           body={`No dish fits your current filters within ${(searchRadius / 1000).toFixed(1)} km.`}
         />
         {upcomingRadius ? (
-          <Button label={`Expand radius to ${(upcomingRadius / 1000).toFixed(1)} km`} onPress={expandRadius} />
+          <Button
+            label={`Expand radius to ${(upcomingRadius / 1000).toFixed(1)} km`}
+            onPress={expandRadius}
+          />
         ) : null}
-        <Button label="Back to Discover" onPress={() => navigation.navigate("SearchHome")} />
+        <Button
+          label="Back to Discover"
+          onPress={() => navigation.navigate("SearchHome")}
+        />
       </Screen>
     );
   }
 
   const venue = repository.getVenueById(dish.venueId);
   const building = findBuildingById(dish.buildingId);
-  const match = Math.round(blendedMatchScore(profile.tasteVector, dish.tasteVector) * 100);
   const tasteDims: Array<{ key: keyof TasteVector; label: string }> = [
     { key: "sweet", label: "Sweet" },
     { key: "spicy", label: "Spicy" },
@@ -247,7 +317,9 @@ export function DecideForMeResultScreen() {
   const sortedDims = tasteDims
     .map((dimension) => ({
       ...dimension,
-      diff: Math.abs(profile.tasteVector[dimension.key] - dish.tasteVector[dimension.key]),
+      diff: Math.abs(
+        profile.tasteVector[dimension.key] - dish.tasteVector[dimension.key],
+      ),
     }))
     .sort((left, right) => left.diff - right.diff);
   const topMatch = sortedDims[0];
@@ -264,23 +336,36 @@ export function DecideForMeResultScreen() {
       const upcomingRadius = nextRadius(searchRadius);
       if (upcomingRadius) {
         setSearchRadius(upcomingRadius);
-        showToast({ message: `Expanded radius to ${(upcomingRadius / 1000).toFixed(1)} km.`, tone: "info" });
+        showToast({
+          message: `Expanded radius to ${(upcomingRadius / 1000).toFixed(1)} km.`,
+          tone: "info",
+        });
       } else {
-        showToast({ message: "No other matching dishes right now.", tone: "info" });
+        showToast({
+          message: "No other matching dishes right now.",
+          tone: "info",
+        });
       }
       return;
     }
 
-    const nextIndex = candidates.findIndex((candidate) => candidate.id === nextDish.id);
+    const nextIndex = candidates.findIndex(
+      (candidate) => candidate.id === nextDish.id,
+    );
     if (nextIndex >= 0) {
       setResultIndex(nextIndex);
     }
     setDecideForMe(nextDish);
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(
+      () => {},
+    );
   };
 
   return (
-    <Screen title="Recommended for you" subtitle="One dish picked from your current taste profile.">
+    <Screen
+      title="Recommended for you"
+      subtitle="One dish picked from your current taste profile."
+    >
       <View style={{ gap: spacing[5] }}>
         <Animated.View
           style={{
@@ -302,7 +387,11 @@ export function DecideForMeResultScreen() {
           }}
         >
           <Card style={{ gap: spacing[4], overflow: "hidden", padding: 0 }}>
-            <Image source={{ uri: dish.imageUrl }} style={{ height: 240, width: "100%" }} contentFit="cover" />
+            <Image
+              source={{ uri: dish.imageUrl }}
+              style={{ height: 240, width: "100%" }}
+              contentFit="cover"
+            />
             <View style={{ gap: spacing[4], padding: spacing[4] }}>
               <AnimatedMatchBadge percent={match} />
 
@@ -318,8 +407,17 @@ export function DecideForMeResultScreen() {
                 </AppText>
               </View>
 
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-                <Badge label={`Radius ${(searchRadius / 1000).toFixed(1)} km`} tone="neutral" />
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  gap: spacing[2],
+                }}
+              >
+                <Badge
+                  label={`Radius ${(searchRadius / 1000).toFixed(1)} km`}
+                  tone="neutral"
+                />
                 {dish.tasteTags.slice(0, 3).map((tag) => (
                   <Badge key={tag} label={tag} tone="amber" />
                 ))}
@@ -336,7 +434,11 @@ export function DecideForMeResultScreen() {
               >
                 <AppText
                   variant="micro"
-                  style={{ color: palette.orange, fontWeight: "700", marginBottom: spacing[1] }}
+                  style={{
+                    color: palette.orange,
+                    fontWeight: "700",
+                    marginBottom: spacing[1],
+                  }}
                 >
                   WHY THIS DISH?
                 </AppText>
@@ -349,7 +451,13 @@ export function DecideForMeResultScreen() {
                 <AppText variant="h3" style={{ marginBottom: spacing[3] }}>
                   Taste dimensions
                 </AppText>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: spacing[3],
+                  }}
+                >
                   {tasteDims.map((dimension) => (
                     <TasteMiniBar
                       key={dimension.key}
@@ -365,19 +473,41 @@ export function DecideForMeResultScreen() {
           </Card>
         </Animated.View>
 
-        <Button label="View stall" onPress={() => navigation.navigate("StallDetail", { venueId: dish.venueId })} />
+        <Button
+          label="View stall"
+          onPress={() =>
+            navigation.navigate("StallDetail", { venueId: dish.venueId })
+          }
+        />
         <Button
           label="Order now"
           variant="secondary"
-          onPress={() => {
+          onPress={async () => {
             const link = venue?.deliveryLinks[0];
             if (link) {
-              void Linking.openURL(link.nativeUrl || link.webUrl);
+              trackAnalyticsEvent("delivery_link_tapped", {
+                dish_id: dish.id,
+                venue_id: dish.venueId,
+                platform: link.platform,
+              });
+              try {
+                await Linking.openURL(link.nativeUrl);
+              } catch {
+                await Linking.openURL(link.webUrl);
+              }
             }
           }}
         />
-        <Button label="Try another dish" variant="ghost" onPress={handleTryAnother} />
-        <Button label="Go back" variant="ghost" onPress={() => navigation.goBack()} />
+        <Button
+          label="Try another dish"
+          variant="ghost"
+          onPress={handleTryAnother}
+        />
+        <Button
+          label="Go back"
+          variant="ghost"
+          onPress={() => navigation.goBack()}
+        />
       </View>
     </Screen>
   );

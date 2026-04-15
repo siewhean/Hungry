@@ -17,14 +17,20 @@ export function ReviewRatingScreen({ navigation, route }: Props) {
   const repository = getDataRepository();
   const { spacing } = useHungryTheme();
   const rating = useReviewDraftStore((state) => state.draft.rating);
-  const selectedVenueId = useReviewDraftStore((state) => state.draft.selectedVenueId);
-  const selectedDishId = useReviewDraftStore((state) => state.draft.selectedDishId);
+  const selectedVenueId = useReviewDraftStore(
+    (state) => state.draft.selectedVenueId,
+  );
+  const selectedDishId = useReviewDraftStore(
+    (state) => state.draft.selectedDishId,
+  );
   const selectDish = useReviewDraftStore((state) => state.selectDish);
   const setRating = useReviewDraftStore((state) => state.setRating);
   const routeDishId = route.params?.dishId;
   const routeVenueId = route.params?.venueId;
   const dish = repository.getDishById(routeDishId ?? selectedDishId ?? "");
-  const venue = dish ? repository.getVenueById(routeVenueId ?? selectedVenueId ?? dish.venueId) : undefined;
+  const venue = dish
+    ? repository.getVenueById(routeVenueId ?? selectedVenueId ?? dish.venueId)
+    : undefined;
 
   useEffect(() => {
     if (!dish) {
@@ -61,13 +67,25 @@ export function ReviewRatingScreen({ navigation, route }: Props) {
           <AppText variant="h3">{dish.name}</AppText>
           <AppText tone="secondary">{venue?.name}</AppText>
           <AppText tone="secondary">
-            Your rating stays attached to this dish as you move through the rest of the review flow.
+            Your rating stays attached to this dish as you move through the rest
+            of the review flow.
           </AppText>
           <ReviewStars value={rating} onChange={setRating} />
-          <AppText tone="muted">{rating ? `${rating} / 5 selected` : "Tap a star to continue."}</AppText>
+          <AppText tone="muted">
+            {rating ? `${rating} / 5 selected` : "Tap a star to continue."}
+          </AppText>
         </View>
       </Card>
-      <Button label="Next: taste notes" onPress={() => navigation.navigate("ReviewTags", { venueId: venue.id, dishId: dish.id })} disabled={!rating} />
+      <Button
+        label="Next: taste notes"
+        onPress={() =>
+          navigation.navigate("ReviewTags", {
+            venueId: venue.id,
+            dishId: dish.id,
+          })
+        }
+        disabled={!rating}
+      />
     </ReviewScreenShell>
   );
 }

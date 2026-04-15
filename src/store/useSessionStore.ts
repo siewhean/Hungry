@@ -2,7 +2,10 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { identifyPostHogUser, resetPostHogUser } from "@/lib/analytics/posthogSink";
+import {
+  identifyPostHogUser,
+  resetPostHogUser,
+} from "@/lib/analytics/posthogSink";
 import type { AuthProvider } from "@/lib/services/types";
 import { useProfileStore } from "./useProfileStore";
 import { useLocationStore } from "./useLocationStore";
@@ -24,6 +27,7 @@ interface SessionState {
     completedOnboarding?: boolean;
     skippedTasteQuiz?: boolean;
     authProvider?: AuthProvider;
+    trackSignInEvent?: boolean;
   }) => void;
   completeOnboarding: (skippedQuiz?: boolean) => void;
   expireSession: () => void;
@@ -51,8 +55,10 @@ export const useSessionStore = create<SessionState>()(
       completeAuth: (options) => {
         set((state) => ({
           isAuthenticated: true,
-          hasCompletedOnboarding: options?.completedOnboarding ?? state.hasCompletedOnboarding,
-          hasSkippedTasteQuiz: options?.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
+          hasCompletedOnboarding:
+            options?.completedOnboarding ?? state.hasCompletedOnboarding,
+          hasSkippedTasteQuiz:
+            options?.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
           sessionExpired: false,
         }));
         useProfileStore.getState().syncProfile(true);
@@ -66,11 +72,17 @@ export const useSessionStore = create<SessionState>()(
           dietaryPreferences: profile.dietaryPreferences,
           area,
         });
-        trackAnalyticsEvent("sign_in_completed", {
-          method: options?.authProvider ?? "email",
-          has_completed_onboarding: options?.completedOnboarding ?? false,
-          skipped_taste_quiz: options?.skippedTasteQuiz ?? false,
-        }, { userId: profile.id });
+        if (options?.trackSignInEvent ?? true) {
+          trackAnalyticsEvent(
+            "sign_in_completed",
+            {
+              method: options?.authProvider ?? "email",
+              has_completed_onboarding: options?.completedOnboarding ?? false,
+              skipped_taste_quiz: options?.skippedTasteQuiz ?? false,
+            },
+            { userId: profile.id },
+          );
+        }
       },
       completeOnboarding: (skippedQuiz = false) => {
         set({
@@ -85,24 +97,37 @@ export const useSessionStore = create<SessionState>()(
         const profileId = useProfileStore.getState().profile.id;
         set({ sessionExpired: true, isAuthenticated: false });
         resetPostHogUser();
-        trackAnalyticsEvent("sign_out", { reason: "session_expired" }, { userId: profileId });
+        trackAnalyticsEvent(
+          "sign_out",
+          { reason: "session_expired" },
+          { userId: profileId },
+        );
       },
       dismissSessionExpiry: () => set({ sessionExpired: false }),
       setReturnRoute: (returnRoute) => set({ returnRoute }),
-      setSkippedTasteQuiz: (hasSkippedTasteQuiz) => set({ hasSkippedTasteQuiz }),
+      setSkippedTasteQuiz: (hasSkippedTasteQuiz) =>
+        set({ hasSkippedTasteQuiz }),
       signOut: () => {
         const profileId = useProfileStore.getState().profile.id;
         set({ ...initialState });
         useProfileStore.getState().syncProfile(false);
         resetPostHogUser();
-        trackAnalyticsEvent("sign_out", { reason: "manual" }, { userId: profileId });
+        trackAnalyticsEvent(
+          "sign_out",
+          { reason: "manual" },
+          { userId: profileId },
+        );
       },
       clearSession: () => {
         const profileId = useProfileStore.getState().profile.id;
         set({ ...initialState });
         useProfileStore.getState().syncProfile(false);
         resetPostHogUser();
-        trackAnalyticsEvent("sign_out", { reason: "clear_session" }, { userId: profileId });
+        trackAnalyticsEvent(
+          "sign_out",
+          { reason: "clear_session" },
+          { userId: profileId },
+        );
       },
       markHydrated: () => set({ hasHydrated: true }),
     }),
