@@ -15,3 +15,8 @@ scripts/__pycache__/
 ios/.xcode.env.local
 ios/Hungry.xcworkspace/xcuserdata/
 .env
+
+# Graphify artifacts
+.graphify*
+graphify-out/
+src/graphify-out/
