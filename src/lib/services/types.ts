@@ -20,6 +20,15 @@ import type {
   VenueSummary,
 } from "@/types/domain";
 
+export interface DecideForMeOptions {
+  dietaryFlags?: DietaryFlag[];
+  radiusMeters?: number;
+  excludeDishIds?: string[];
+  neophiliaIndex?: number;
+  latitude?: number;
+  longitude?: number;
+}
+
 export interface DataRepository {
   getProfile(isAuthenticated: boolean): UserProfile;
   listBuildings(): BuildingSummary[];
@@ -29,7 +38,10 @@ export interface DataRepository {
   listDishesByVenue(venueId: string): DishDetail[];
   listPopularNearby(): DishDetail[];
   searchDishes(filters: SearchFilters, tasteProfile: TasteVector): DishDetail[];
-  getDecideForMe(tasteProfile: TasteVector): DishDetail | undefined;
+  getDecideForMe(
+    tasteProfile: TasteVector,
+    options?: DecideForMeOptions,
+  ): DishDetail | undefined;
   listBlogPosts(): BlogPost[];
   listStallPosts(): StallPost[];
 }

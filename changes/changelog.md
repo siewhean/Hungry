@@ -150,6 +150,19 @@
 
 ## 2026-04-15
 
+- Prompt: "Refer to todo.md and work on audit findings"
+- Actions:
+  - Resolved `AUD-01` by removing stale `ReadsFeed` return-route handling and auth-required route references from `RootNavigator` to prevent unknown-route reset crashes.
+  - Resolved `AUD-02` by clearing persisted profile state (`clearProfile()`) during `signOut()` and `clearSession()` before profile sync/reset.
+  - Verified `AUD-03` was already compliant in current `App.tsx` (`EXPO_PUBLIC_SENTRY_DSN` direct usage, no dead fallback branch).
+  - Resolved `AUD-04` by adding a real CI lint gate (`npm run lint`) and introducing ESLint config/dependencies with a direct `eslint .` script.
+  - Resolved `AUD-05` by replacing `navigation as any` in `ProfileHomeScreen` with `NativeStackNavigationProp<ProfileStackParamList, "ProfileHome">` cast.
+  - Resolved `AUD-06` by replacing remaining onboarding hardcoded pill radii with theme token usage (`radii.pill`).
+  - Resolved `AUD-07` by replacing Login icon hardcoded `#FFFFFF` with `palette.white`.
+  - Resolved `AUD-08` by removing hardcoded amber duplicate in wheel winner badge gradient.
+  - Resolved `AUD-09` by adding `@deprecated` JSDoc to the legacy `dataRepository` proxy export in `serviceProvider.ts`.
+  - Updated `tasks/todo.md` audit checklist to mark `AUD-01` through `AUD-09` complete with `AUD-03` noted as verified-noop.
+
 - Prompt: "Allow users to view other user's profile and comment when the users click on the icon"
 - Actions:
   - Added a new root route `UserProfile` and implemented `UserProfileScreen` to display another user's avatar, location, post stats, comment stats, and recent posts.
@@ -248,3 +261,13 @@
 - Actions:
   - Sanitized `tasks/Roadmap/production-infrastructure.md` Section 1.2 by removing hardcoded credential/token literals.
   - Replaced each sensitive value with environment-variable references (for example `${EXPO_PUBLIC_SENTRY_DSN}`, `${SENTRY_AUTH_TOKEN}`, `${EXPO_TOKEN}`) so the document retains the variable contract without exposing secrets.
+
+- Prompt: "Try again"
+- Actions:
+  - Re-ran implementation validation for the AI recommendation engine after a prior incomplete attempt and confirmed app-shell integrity was unchanged.
+  - Used the `Explore` subagent to compare roadmap requirements against current recommendation implementation and identify high-impact correctness gaps.
+  - Updated `src/lib/ai/tasteEngine.ts` to enforce diversity caps in recommendation slates (max 3 dishes per venue, max 2 per dominant taste axis, with wildcard backfill when available).
+  - Corrected feedback update math so negative explicit/implicit signals now move taste vectors away from disliked dishes.
+  - Added explicit feedback recency decay support and propagated timestamps from profile interactions in `src/store/useProfileStore.ts`.
+  - Added regression coverage in `src/lib/ai/tasteEngine.pipeline.test.ts` for negative-signal behavior, recency decay weighting, and diversity-cap enforcement.
+  - Revalidated with `npm run typecheck` and `npm run test -- --runInBand` (30 tests passing).

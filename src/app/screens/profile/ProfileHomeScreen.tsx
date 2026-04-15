@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Pressable, ScrollView, View, Share } from "react-native";
 import { Image } from "expo-image";
 import {
@@ -29,7 +30,9 @@ export function ProfileHomeScreen({ navigation }: Props) {
   const { palette, spacing, radii, shadows, colorScheme } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
   const repository = getDataRepository();
-  const rootNavigation = getRootNavigation(navigation as any);
+  const rootNavigation = getRootNavigation(
+    navigation as NativeStackNavigationProp<ProfileStackParamList, "ProfileHome">,
+  );
   const favourites = profile.favouriteDishIds
     .map((dishId) => repository.getDishById(dishId))
     .filter(isDishDetail);

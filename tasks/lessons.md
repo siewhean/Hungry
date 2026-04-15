@@ -19,3 +19,4 @@
 - Do not reapply default mock profile data on app bootstrap when persisted profile state exists; only run profile sync when auth state actually changes.
 - For optional native modules in Expo Dev Client, avoid hard imports in leaf UI components that can crash the app on stale binaries; use lazy module loading with graceful fallback messaging until the app is rebuilt.
 - When a design artifact exists, implementation must start from that file and end with a design-source check; code-first improvisation causes drift.
+- On retry requests after partial work, re-validate the workspace state and run hard verification gates (`typecheck` + tests) before reporting completion.

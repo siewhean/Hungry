@@ -323,6 +323,10 @@ export const guestProfile: UserProfile = {
     stallsVisited: 0,
     favouritesCount: 0,
   },
+  recommendationSignals: {
+    confidence: 0,
+    signalCount: 0,
+  },
 };
 
 export const userProfile: UserProfile = {
@@ -352,6 +356,11 @@ export const userProfile: UserProfile = {
     dishesReviewed: 1,
     stallsVisited: 1,
     favouritesCount: 2,
+  },
+  recommendationSignals: {
+    confidence: 0.22,
+    signalCount: 6,
+    lastSignalAt: new Date(Date.now() - 2 * 86_400_000).toISOString(),
   },
   leftHandedMode: false,
 };

@@ -63,7 +63,11 @@ export function sortSearchResults(
 
 export function getDecideForMeDish() {
   const profile = useProfileStore.getState().profile;
-  return getDataRepository().getDecideForMe(profile.tasteVector);
+  return getDataRepository().getDecideForMe(profile.tasteVector, {
+    dietaryFlags: profile.dietaryPreferences,
+    neophiliaIndex: profile.tasteProfile?.neophiliaIndex ?? 5,
+    radiusMeters: 500,
+  });
 }
 
 export function groupResultsByVenue(results: DishDetail[]) {

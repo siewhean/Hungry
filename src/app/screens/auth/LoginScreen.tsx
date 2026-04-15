@@ -110,7 +110,7 @@ export function LoginScreen({ navigation }: Props) {
         <Button 
           label="Sign In" 
           onPress={handleLogin} 
-          rightIcon={<ArrowRight size={18} color="#FFFFFF" />}
+          rightIcon={<ArrowRight size={18} color={palette.white} />}
         />
 
         <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3], marginVertical: spacing[2] }}>

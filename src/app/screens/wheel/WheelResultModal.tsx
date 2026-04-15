@@ -107,7 +107,7 @@ export function WheelResultModal({ navigation, route }: Props) {
         {/* Winner Header Badge */}
         <View style={{ position: "absolute", top: spacing[4], left: spacing[4], zIndex: 10 }}>
           <LinearGradient
-            colors={[palette.amber, "#F59E0B"]}
+            colors={[palette.amber, palette.amber]}
             style={{ 
               flexDirection: "row", 
               alignItems: "center", 

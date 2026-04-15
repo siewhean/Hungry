@@ -186,6 +186,12 @@ export interface BlogPost {
   relatedVenueId?: string;
 }
 
+export interface RecommendationSignalState {
+  confidence: number;
+  signalCount: number;
+  lastSignalAt?: string;
+}
+
 export interface UserProfile {
   id: string;
   displayName: string;
@@ -201,6 +207,7 @@ export interface UserProfile {
     stallsVisited: number;
     favouritesCount: number;
   };
+  recommendationSignals?: RecommendationSignalState;
   leftHandedMode?: boolean;
   onboardingSelectedDishIds?: string[];
 }

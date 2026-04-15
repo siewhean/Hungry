@@ -103,7 +103,7 @@ function SlideIllustration({
   step: number;
   accentColor: string;
 }) {
-  const { palette } = useHungryTheme();
+  const { palette, radii } = useHungryTheme();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -131,16 +131,27 @@ function SlideIllustration({
             <View
               style={[
                 styles.steamLine,
-                { backgroundColor: accentColor, marginLeft: -12 },
+                {
+                  backgroundColor: accentColor,
+                  borderRadius: radii.pill,
+                  marginLeft: -12,
+                },
               ]}
-            />
-            <View
-              style={[styles.steamLine, { backgroundColor: accentColor }]}
             />
             <View
               style={[
                 styles.steamLine,
-                { backgroundColor: accentColor, marginLeft: 12 },
+                { backgroundColor: accentColor, borderRadius: radii.pill },
+              ]}
+            />
+            <View
+              style={[
+                styles.steamLine,
+                {
+                  backgroundColor: accentColor,
+                  borderRadius: radii.pill,
+                  marginLeft: 12,
+                },
               ]}
             />
           </View>
@@ -164,9 +175,17 @@ function SlideIllustration({
             ]}
           />
         ))}
-        <View style={[styles.mapPin, { backgroundColor: accentColor }]}>
+        <View
+          style={[
+            styles.mapPin,
+            { backgroundColor: accentColor, borderRadius: radii.pill },
+          ]}
+        >
           <View
-            style={[styles.mapPinDot, { backgroundColor: palette.white }]}
+            style={[
+              styles.mapPinDot,
+              { backgroundColor: palette.white, borderRadius: radii.pill },
+            ]}
           />
         </View>
       </View>
@@ -541,7 +560,6 @@ const styles = StyleSheet.create({
     width: 100,
     height: 60,
     borderWidth: 3,
-    borderRadius: 999,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
     overflow: "hidden",
@@ -560,7 +578,6 @@ const styles = StyleSheet.create({
   steamLine: {
     width: 3,
     height: 20,
-    borderRadius: 999,
     opacity: 0.8,
   },
   // Map pin illustration
@@ -571,14 +588,12 @@ const styles = StyleSheet.create({
   mapPin: {
     width: 20,
     height: 20,
-    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
   },
   mapPinDot: {
     width: 8,
     height: 8,
-    borderRadius: 999,
   },
   // Bite cards
   biteCard: {

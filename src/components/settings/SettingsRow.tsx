@@ -29,6 +29,7 @@ export function SettingsRow({
 }: SettingsRowProps) {
   const { palette, spacing } = useHungryTheme();
 
+  // If it's a toggle, we don't want the whole row to be pressable in the same way
   const Container = type === "toggle" ? View : Pressable;
 
   return (
@@ -89,6 +90,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    minHeight: 56,
   },
   left: {
     flexDirection: "row",
@@ -103,6 +105,7 @@ const styles = StyleSheet.create({
   right: {
     flexDirection: "row",
     alignItems: "center",
+    marginLeft: 16,
   },
   valueText: {
     fontSize: 14,

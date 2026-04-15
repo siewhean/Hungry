@@ -13,6 +13,14 @@ interface MapFilters {
   openNow: boolean;
 }
 
+interface RecommendationCacheEntry {
+  dishIds: string[];
+  generatedAt: number;
+  expiresAt: number;
+}
+
+const RECOMMENDATION_CACHE_TTL_MS = 5 * 60 * 1000;
+
 interface DiscoveryState {
   selectedBuilding?: BuildingSummary;
   selectedFloor: string;
@@ -20,10 +28,14 @@ interface DiscoveryState {
   popularNearby: DishDetail[];
   decideForMe?: DishDetail;
   mapFilters: MapFilters;
+  recommendationCache: Record<string, RecommendationCacheEntry>;
   setSelectedBuilding: (building?: BuildingSummary) => void;
   setSelectedFloor: (floor: string) => void;
   setHighlightedStallVenueId: (venueId?: string) => void;
   setDecideForMe: (dish?: DishDetail) => void;
+  cacheRecommendationSlate: (geoCell: string, dishIds: string[]) => void;
+  getCachedRecommendationSlate: (geoCell: string) => string[] | undefined;
+  pruneExpiredRecommendations: () => void;
   toggleMapFilter: (filter: keyof MapFilters) => void;
 }
 
@@ -36,13 +48,14 @@ const initialFilters: MapFilters = {
 
 export const useDiscoveryStore = create<DiscoveryState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       selectedBuilding: undefined,
       selectedFloor: "L1",
       highlightedStallVenueId: undefined,
       popularNearby: getDataRepository().listPopularNearby(),
       decideForMe: undefined,
       mapFilters: initialFilters,
+      recommendationCache: {},
       setSelectedBuilding: (selectedBuilding) => {
         set({ selectedBuilding });
         if (selectedBuilding) {
@@ -66,6 +79,42 @@ export const useDiscoveryStore = create<DiscoveryState>()(
       },
       setHighlightedStallVenueId: (highlightedStallVenueId) => set({ highlightedStallVenueId }),
       setDecideForMe: (decideForMe) => set({ decideForMe }),
+      cacheRecommendationSlate: (geoCell, dishIds) => {
+        if (!dishIds.length) {
+          return;
+        }
+        const now = Date.now();
+        set((state) => ({
+          recommendationCache: {
+            ...state.recommendationCache,
+            [geoCell]: {
+              dishIds,
+              generatedAt: now,
+              expiresAt: now + RECOMMENDATION_CACHE_TTL_MS,
+            },
+          },
+        }));
+      },
+      getCachedRecommendationSlate: (geoCell) => {
+        const entry = get().recommendationCache[geoCell];
+        if (!entry) {
+          return undefined;
+        }
+        if (entry.expiresAt <= Date.now()) {
+          return undefined;
+        }
+        return entry.dishIds;
+      },
+      pruneExpiredRecommendations: () => {
+        const now = Date.now();
+        set((state) => ({
+          recommendationCache: Object.fromEntries(
+            Object.entries(state.recommendationCache).filter(
+              ([, entry]) => entry.expiresAt > now,
+            ),
+          ),
+        }));
+      },
       toggleMapFilter: (filter) =>
         set((state) => ({
           mapFilters: {

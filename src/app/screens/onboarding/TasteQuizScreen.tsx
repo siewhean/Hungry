@@ -359,7 +359,11 @@ export function TasteQuizScreen({ navigation, route }: Props) {
           <View
             style={[
               styles.progressTrack,
-              { backgroundColor: palette.border, marginHorizontal: spacing[6] },
+              {
+                backgroundColor: palette.border,
+                borderRadius: radii.pill,
+                marginHorizontal: spacing[6],
+              },
             ]}
           >
             <Animated.View
@@ -731,7 +735,6 @@ export function TasteQuizScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   progressTrack: {
-    borderRadius: 999,
     height: 6,
     overflow: "hidden",
   },

@@ -390,6 +390,125 @@ function stage4SerendipityReRanking<
   return results;
 }
 
+const TASTE_KEYS: Array<keyof TasteVector> = [
+  "sweet",
+  "spicy",
+  "sour",
+  "salty",
+  "rich",
+  "aromatic",
+];
+
+function getDominantTasteDimension(vector: TasteVector): keyof TasteVector {
+  let dominant: keyof TasteVector = TASTE_KEYS[0];
+  for (const key of TASTE_KEYS) {
+    if (vector[key] > vector[dominant]) {
+      dominant = key;
+    }
+  }
+  return dominant;
+}
+
+function isWildCardScore(score: number): boolean {
+  return score >= 0.4 && score <= 0.6;
+}
+
+function mutateCount(map: Map<string, number>, key: string, delta: number) {
+  const next = (map.get(key) ?? 0) + delta;
+  if (next <= 0) {
+    map.delete(key);
+    return;
+  }
+  map.set(key, next);
+}
+
+function diversifyResults(
+  results: PipelineResult[],
+  dishesById: Map<string, DishSummary>,
+): PipelineResult[] {
+  const selected: PipelineResult[] = [];
+  const selectedIds = new Set<string>();
+  const venueCounts = new Map<string, number>();
+  const dimensionCounts = new Map<string, number>();
+  let hasWildCard = false;
+
+  const canSelectDish = (dish: DishSummary) => {
+    const dominant = getDominantTasteDimension(dish.tasteVector);
+    const venueCount = venueCounts.get(dish.venueId) ?? 0;
+    const dimensionCount = dimensionCounts.get(dominant) ?? 0;
+    return venueCount < 3 && dimensionCount < 2;
+  };
+
+  const addDishCounts = (dish: DishSummary) => {
+    const dominant = getDominantTasteDimension(dish.tasteVector);
+    mutateCount(venueCounts, dish.venueId, 1);
+    mutateCount(dimensionCounts, dominant, 1);
+  };
+
+  const removeDishCounts = (dish: DishSummary) => {
+    const dominant = getDominantTasteDimension(dish.tasteVector);
+    mutateCount(venueCounts, dish.venueId, -1);
+    mutateCount(dimensionCounts, dominant, -1);
+  };
+
+  for (const result of results) {
+    if (selected.length >= 20) {
+      break;
+    }
+    if (selectedIds.has(result.dishId)) {
+      continue;
+    }
+    const dish = dishesById.get(result.dishId);
+    if (!dish || !canSelectDish(dish)) {
+      continue;
+    }
+
+    selected.push(result);
+    selectedIds.add(result.dishId);
+    addDishCounts(dish);
+    if (isWildCardScore(result.score)) {
+      hasWildCard = true;
+    }
+  }
+
+  if (hasWildCard || selected.length === 0) {
+    return selected;
+  }
+
+  for (const candidate of results) {
+    if (!isWildCardScore(candidate.score) || selectedIds.has(candidate.dishId)) {
+      continue;
+    }
+    const candidateDish = dishesById.get(candidate.dishId);
+    if (!candidateDish) {
+      continue;
+    }
+
+    for (let index = selected.length - 1; index >= 0; index -= 1) {
+      const existing = selected[index];
+      const existingDish = dishesById.get(existing.dishId);
+      if (!existingDish) {
+        continue;
+      }
+
+      removeDishCounts(existingDish);
+      const canReplace = canSelectDish(candidateDish);
+      if (!canReplace) {
+        addDishCounts(existingDish);
+        continue;
+      }
+
+      selected[index] = candidate;
+      selectedIds.delete(existing.dishId);
+      selectedIds.add(candidate.dishId);
+      addDishCounts(candidateDish);
+      return selected;
+    }
+  }
+
+  return selected;
+}
+
 // ─── Full Pipeline ────────────────────────────────────────────────────────────
 
 /**
@@ -439,11 +558,16 @@ export function runRecommendationPipeline(
   precisionRanked.sort((a, b) => b._precisionScore - a._precisionScore);
 
   // Stage 4: Inject serendipity based on neophilia
-  return stage4SerendipityReRanking(
+  const reranked = stage4SerendipityReRanking(
     precisionRanked,
     ctx.neophiliaIndex,
     ctx.userVector,
     candidates
+  );
+
+  return diversifyResults(
+    reranked,
+    new Map(candidates.map((dish) => [dish.id, dish])),
   );
 }
 
@@ -463,8 +587,18 @@ export type FeedbackType =
 export interface ExplicitFeedbackEvent {
   type: FeedbackType;
   dishVector: TasteVector;
+  /** Timestamp in ms since epoch. Used to apply recency decay. */
+  timestamp?: number;
   /** Optional: hawker tags applied with this feedback */
   hawkerTags?: HawkerTasteTag[];
+}
+
+function applyFeedbackRecencyDecay(weight: number, timestamp?: number): number {
+  if (timestamp === undefined) {
+    return weight;
+  }
+  const ageDays = Math.max(0, (Date.now() - timestamp) / (1000 * 60 * 60 * 24));
+  return weight * Math.exp(-0.05 * ageDays);
 }
 
 /**
@@ -490,10 +624,13 @@ export function processExplicitFeedback(
   currentVector: TasteVector,
   event: ExplicitFeedbackEvent
 ): TasteVector {
-  const alpha = FEEDBACK_WEIGHTS[event.type];
+  const alpha = applyFeedbackRecencyDecay(
+    FEEDBACK_WEIGHTS[event.type],
+    event.timestamp,
+  );
   if (alpha === 0) return currentVector;
 
-  return calibrateVector(currentVector, event.dishVector, Math.abs(alpha));
+  return calibrateVector(currentVector, event.dishVector, alpha);
 }
 
 // ─── Implicit Feedback Processing (Phase 2 Placeholder) ──────────────────────
@@ -543,7 +680,7 @@ export function processImplicitFeedback(
     const alpha = IMPLICIT_WEIGHTS[signal.type] * decayFactor;
     if (alpha === 0) continue;
 
-    vector = calibrateVector(vector, signal.dishVector, Math.abs(alpha));
+    vector = calibrateVector(vector, signal.dishVector, alpha);
   }
 
   return vector;
