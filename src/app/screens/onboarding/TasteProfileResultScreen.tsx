@@ -4,7 +4,7 @@ import { Heart } from "lucide-react-native";
 import { Image } from "expo-image";
 
 import { AppText, Button, Card } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { dataRepository as mockRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
@@ -35,7 +35,7 @@ export function TasteProfileResultScreen({ navigation }: Props) {
             <Card key={dish.id} style={{ borderRadius: radii.md, overflow: "hidden", padding: 0, width: "48%" }}>
               <Image source={{ uri: dish.imageUrl }} contentFit="cover" style={{ height: 120, width: "100%" }} />
               <View style={{ gap: spacing[1], padding: spacing[2] }}>
-                <AppText variant="body" numberOfLines={1} style={{ fontFamily: "Nunito_700Bold" }}>
+                <AppText variant="bodyBold" numberOfLines={1}>
                   {dish.name}
                 </AppText>
                 <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>

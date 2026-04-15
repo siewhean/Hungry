@@ -22,6 +22,7 @@ export function FloorSelector({ floors, selectedFloor, onSelectFloor }: FloorSel
             key={floor}
             accessibilityRole="button"
             accessibilityLabel={`Select floor ${floor}`}
+            accessibilityState={{ selected }}
             onPress={() => onSelectFloor(floor)}
             style={({ pressed }) => [
               styles.tab,
@@ -50,4 +51,3 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
-

@@ -12,7 +12,13 @@ interface Props {
 export function MemberAvatarRow({ members, maxVisible = 8 }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
 
-  const present = members.filter((m) => m.isPresent);
+  const present = Array.from(
+    new Map(
+      members
+        .filter((member) => member.isPresent)
+        .map((member) => [member.id, member] as const)
+    ).values()
+  );
   const visible = present.slice(0, maxVisible);
   const overflow = present.length - maxVisible;
   const avatarSize = 36;
@@ -36,7 +42,7 @@ export function MemberAvatarRow({ members, maxVisible = 8 }: Props) {
           <AppText
             variant="micro"
             style={{
-              color: member.isHost ? "#FFFFFF" : palette.text,
+              color: member.isHost ? palette.textOnDark : palette.text,
               fontFamily: "Nunito_700Bold",
             }}
           >

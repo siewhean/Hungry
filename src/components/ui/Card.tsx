@@ -1,28 +1,28 @@
-import type { PropsWithChildren } from "react";
-import { StyleSheet, View, type ViewStyle } from "react-native";
+import { StyleSheet, View, type ViewProps } from "react-native";
 
 import { useHungryTheme } from "@/theme";
 
-interface CardProps {
-  style?: ViewStyle | ViewStyle[];
+interface CardProps extends ViewProps {
 }
 
-export function Card({ children, style }: PropsWithChildren<CardProps>) {
+export function Card({ children, style, ...props }: CardProps) {
   const { palette, radii, shadows, spacing } = useHungryTheme();
 
   return (
     <View
       style={[
         styles.card,
-        shadows.card,
         {
+          ...shadows.card,
           backgroundColor: palette.surface,
           borderColor: palette.border,
           borderRadius: radii.lg,
-          padding: spacing[4],
+          padding: spacing[5],
+          gap: spacing[4],
         },
         style,
       ]}
+      {...props}
     >
       {children}
     </View>
@@ -32,6 +32,5 @@ export function Card({ children, style }: PropsWithChildren<CardProps>) {
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    gap: 12,
   },
 });

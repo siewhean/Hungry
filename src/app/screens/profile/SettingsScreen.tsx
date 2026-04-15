@@ -1,39 +1,140 @@
+import Constants from "expo-constants";
 import { useState } from "react";
-import { View } from "react-native";
+import { Alert, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, Chip, InlineBanner } from "@/components/ui";
 import { useLocationStore } from "@/store/useLocationStore";
+import { useProfileStore } from "@/store/useProfileStore";
+import { useReviewDraftStore } from "@/store/useReviewDraftStore";
+import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
+import { hungryPersistStorage } from "@/store/persistStorage";
+import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
 export function SettingsScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { spacing } = useHungryTheme();
   const signOut = useSessionStore((state) => state.signOut);
+  const clearSession = useSessionStore((state) => state.clearSession);
   const location = useLocationStore((state) => state.manualLocation);
+  const resetLocationState = useLocationStore((state) => state.resetLocationState);
+  const clearProfile = useProfileStore((state) => state.clearProfile);
+  const clearSearchState = useSearchStore((state) => state.clearSearchState);
+  const resetDraft = useReviewDraftStore((state) => state.resetDraft);
+  const themePreference = useUIStore((state) => state.themePreference);
+  const setThemePreference = useUIStore((state) => state.setThemePreference);
+  const leftHandedMode = useProfileStore((state) => state.profile.leftHandedMode ?? false);
+  const setLeftHandedMode = useProfileStore((state) => state.setLeftHandedMode);
   const [dietaryEnabled, setDietaryEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const appVersion = Constants.expoConfig?.version ?? "0.1.0";
+
+  const purgePersistedAccountData = async () => {
+    if (!hungryPersistStorage) {
+      return;
+    }
+
+    await Promise.all([
+      hungryPersistStorage.removeItem("hungry-session-v1"),
+      hungryPersistStorage.removeItem("hungry-profile-v1"),
+      hungryPersistStorage.removeItem("hungry-search-v1"),
+      hungryPersistStorage.removeItem("hungry-review-draft-v1"),
+      hungryPersistStorage.removeItem("hungry-location-v1"),
+    ]);
+  };
+
   const handleSignOut = () => {
     signOut();
     const rootNavigation = getRootNavigation(navigation);
     rootNavigation.navigate("Splash");
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete account",
+      "This removes your local session and profile data on this device.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              await purgePersistedAccountData();
+              clearSession();
+              clearProfile();
+              clearSearchState();
+              resetDraft();
+              resetLocationState();
+              const rootNavigation = getRootNavigation(navigation);
+              rootNavigation.navigate("AuthStack", { screen: "SignUp" });
+            })();
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <ProfileScreenShell title="Settings" subtitle="Account, privacy, and lightweight preferences.">
       <Card>
-        <View style={{ gap: 12 }}>
-          <AppText variant="h3">Preferences</AppText>
-          <View style={{ flexDirection: "row", gap: 8, flexWrap: "wrap" }}>
-            <Chip label="Dietary filters" selected={dietaryEnabled} onPress={() => setDietaryEnabled((value) => !value)} />
-            <Chip label="Notifications" selected={notificationsEnabled} onPress={() => setNotificationsEnabled((value) => !value)} />
+        <View style={{ gap: spacing[4] }}>
+          <View style={{ gap: spacing[3] }}>
+            <AppText variant="h3">Preferences</AppText>
+            <View style={{ flexDirection: "row", gap: spacing[2], flexWrap: "wrap" }}>
+              <Chip
+                label="Dietary filters"
+                selected={dietaryEnabled}
+                onPress={() => setDietaryEnabled((value) => !value)}
+              />
+              <Chip
+                label="Notifications"
+                selected={notificationsEnabled}
+                onPress={() => setNotificationsEnabled((value) => !value)}
+              />
+              <Chip
+                label="Left-handed mode"
+                selected={leftHandedMode}
+                onPress={() => setLeftHandedMode(!leftHandedMode)}
+              />
+            </View>
           </View>
+
+          <View style={{ gap: spacing[3] }}>
+            <AppText variant="h3">Appearance</AppText>
+            <View style={{ flexDirection: "row", gap: spacing[2], flexWrap: "wrap" }}>
+              <Chip
+                label="Automatic"
+                selected={themePreference === "automatic"}
+                onPress={() => setThemePreference("automatic")}
+              />
+              <Chip
+                label="Light"
+                selected={themePreference === "light"}
+                onPress={() => setThemePreference("light")}
+              />
+              <Chip
+                label="Dark"
+                selected={themePreference === "dark"}
+                onPress={() => setThemePreference("dark")}
+              />
+            </View>
+          </View>
+
           <Badge label={location ? `Manual location: ${location}` : "Location uses GPS"} tone="neutral" />
-          <InlineBanner tone="info" message="This section is mock-only until backend settings exist." />
         </View>
       </Card>
-      <Button label="Log out" variant="destructive" onPress={handleSignOut} />
+      <Button label="Log out" variant="secondary" onPress={handleSignOut} />
+      <Button label="Delete account" variant="destructive" onPress={handleDeleteAccount} />
+      <View style={{ marginTop: spacing[4], alignItems: "center", opacity: 0.5 }}>
+        <AppText variant="micro">Hungry v{appVersion} {"\u00B7"} Singapore</AppText>
+      </View>
     </ProfileScreenShell>
   );
 }

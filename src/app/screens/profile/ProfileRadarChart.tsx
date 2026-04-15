@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import { View } from "react-native";
 import Svg, { Circle, Line, Polygon, Text as SvgText } from "react-native-svg";
 
@@ -25,6 +25,11 @@ export function ProfileRadarChart({ value }: ProfileRadarChartProps) {
   const center = size / 2;
   const maxRadius = 74;
 
+  const a11yLabel = useMemo(() => {
+    const summary = axes.map(a => `${a.label} ${value[a.key].toFixed(1)}`).join(", ");
+    return `Your taste profile: ${summary}.`;
+  }, [value]);
+
   const points = axes.map((axis, index) => {
     const angle = ((Math.PI * 2) / axes.length) * index - Math.PI / 2;
     const magnitude = value[axis.key] / 10;
@@ -36,8 +41,8 @@ export function ProfileRadarChart({ value }: ProfileRadarChartProps) {
   const hasSignal = axes.some((axis) => value[axis.key] > 0);
 
   return (
-    <View style={{ alignItems: "center" }}>
-      <Svg height={size} width={size} accessibilityLabel="Taste radar chart">
+    <View style={{ alignItems: "center" }} accessibilityLabel={a11yLabel} accessibilityRole="image">
+      <Svg height={size} width={size}>
         <Circle cx={center} cy={center} r={maxRadius} stroke={palette.border} strokeWidth={1} fill="transparent" />
         <Circle cx={center} cy={center} r={maxRadius * 0.66} stroke={palette.border} strokeWidth={1} fill="transparent" />
         <Circle cx={center} cy={center} r={maxRadius * 0.33} stroke={palette.border} strokeWidth={1} fill="transparent" />

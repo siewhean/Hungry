@@ -1,8 +1,9 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronRight, Minus, Plus, RotateCcw, Search } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { FloorPlanViewer } from "@/components/map/FloorPlanViewer";
@@ -11,7 +12,7 @@ import { getBuildingVenues } from "@/features/discovery/discovery";
 import { getDirectoryDescriptor } from "@/features/discovery/venueDescriptor";
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { getBuildingById, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import type { StallPolygon } from "@/lib/services/types";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useHungryTheme } from "@/theme";
@@ -66,12 +67,12 @@ function resolveBuilding(buildingId?: string, selectedName?: string) {
   return getBuildingById(DEFAULT_BUILDING_ID)!;
 }
 
-function isDessertDish(dishId?: string) {
+function isDessertDish(dishId: string | undefined, getDishById: (dishId: string) => DishDetail | undefined) {
   if (!dishId) {
     return false;
   }
 
-  const dish = mockRepository.getDishById(dishId);
+  const dish = getDishById(dishId);
   if (!dish) {
     return false;
   }
@@ -110,7 +111,7 @@ function FloorToggle({
         borderColor: selected ? palette.navy : palette.border,
         borderRadius: radii.pill,
         borderWidth: 1,
-        minHeight: 36,
+        minHeight: 44,
         minWidth: 44,
         justifyContent: "center",
         paddingHorizontal: spacing[2],
@@ -137,12 +138,16 @@ function DirectoryFilter({
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
       onPress={onPress}
       style={{
         backgroundColor: selected ? palette.bgSoft : palette.surface,
         borderColor: selected ? palette.navy : palette.border,
         borderRadius: radii.pill,
         borderWidth: 1,
+        minHeight: 44,
+        justifyContent: "center",
         paddingHorizontal: spacing[3],
         paddingVertical: spacing[2],
       }}
@@ -264,9 +269,9 @@ function ZoomControlButton({
         borderColor: palette.border,
         borderRadius: radii.pill,
         borderWidth: 1,
-        height: 34,
+        height: 44,
         justifyContent: "center",
-        width: 34,
+        width: 44,
       }}
     >
       {children}
@@ -277,6 +282,7 @@ function ZoomControlButton({
 export function BuildingDrillDownScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
+  const repository = getDataRepository();
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const selectedFloor = useDiscoveryStore((state) => state.selectedFloor);
@@ -284,6 +290,9 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
   const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
   const setSelectedFloor = useDiscoveryStore((state) => state.setSelectedFloor);
   const setHighlightedStallVenueId = useDiscoveryStore((state) => state.setHighlightedStallVenueId);
+
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const snapPoints = useMemo(() => ["40%", "90%"], []);
 
   const [stallQuery, setStallQuery] = useState("");
   const [dessertsOnly, setDessertsOnly] = useState(false);
@@ -339,7 +348,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
     return tenantPolygons
       .map((stall) => {
         const venue = stall.venueId ? venueById.get(stall.venueId) : undefined;
-        const dish = venue ? mockRepository.getDishById(venue.topDishId) : undefined;
+        const dish = venue ? repository.getDishById(venue.topDishId) : undefined;
         const title = venue?.name ?? stall.label ?? `Unit ${stall.unitNumber}`;
         const unitNumber = venue?.unitNumber ?? stall.unitNumber;
         const isOpen = venue ? venue.isOpen : stall.status === "open";
@@ -361,13 +370,15 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
         };
       })
       .filter((record) => Boolean(record.venue))
+      .filter((record) => record.stall.status !== "non_food")
       .filter((record) => {
         if (openNowOnly && !record.isOpen) {
           return false;
         }
 
         if (dessertsOnly) {
-          const isDessert = isDessertDish(record.venue?.topDishId) || isDessertLabel(record.title);
+          const isDessert =
+            isDessertDish(record.venue?.topDishId, repository.getDishById) || isDessertLabel(record.title);
           if (!isDessert) {
             return false;
           }
@@ -379,7 +390,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
 
         return true;
       });
-  }, [dessertsOnly, openNowOnly, stallQuery, tenantPolygons, venueById]);
+  }, [dessertsOnly, openNowOnly, repository, stallQuery, tenantPolygons, venueById]);
 
   const selectedFromStore = useMemo(
     () => tenantPolygons.find((stall) => stall.venueId === highlightedStallVenueId)?.stallId,
@@ -403,7 +414,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
       floorDirectory
         .map((record) => record.dish)
         .filter((dish): dish is DishDetail => Boolean(dish))
-        .slice(0, 4),
+        .slice(0, 8),
     [floorDirectory],
   );
 
@@ -447,7 +458,22 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
 
     setSelectedStallId(stall.stallId);
     setHighlightedStallVenueId(stall.venueId);
+
+    requestAnimationFrame(() => {
+      bottomSheetModalRef.current?.present();
+    });
   };
+
+  const activeRecord = useMemo(() => {
+    return floorDirectory.find((r) => r.stall.stallId === activeStallId);
+  }, [floorDirectory, activeStallId]);
+
+  const renderBackdrop = useCallback(
+    (props: any) => (
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
+    ),
+    [],
+  );
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
@@ -455,7 +481,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={{
-            paddingHorizontal: spacing[5],
+            paddingHorizontal: spacing[3],
             paddingTop: spacing[3],
             paddingBottom: Math.max(insets.bottom + 132, spacing[12]),
           }}
@@ -474,7 +500,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
 
             <Input
               label=""
-              placeholder="Search unit, stall, or dish"
+              placeholder="Search stalls in this building"
               value={stallQuery}
               onChangeText={setStallQuery}
               leftIcon={<Search color={palette.textMuted} size={18} />}
@@ -497,12 +523,12 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
               style={{
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
-                borderRadius: 24,
+                borderRadius: radii.xl,
                 borderWidth: 1,
                 overflow: "hidden",
               }}
             >
-              <View style={{ gap: 4, paddingHorizontal: spacing[4], paddingTop: spacing[4] }}>
+              <View style={{ gap: spacing[1], paddingHorizontal: spacing[3], paddingTop: spacing[4] }}>
                 <AppText variant="h3">Store directory map</AppText>
                 <AppText variant="bodySmall" tone="secondary">
                   Floor {activeFloor} · tap a stall polygon to inspect that unit.
@@ -524,12 +550,12 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                   style={[
                     styles.zoomPill,
                     {
-                      backgroundColor: "rgba(255,255,255,0.96)",
+                      backgroundColor: palette.surfaceTranslucent,
                       borderColor: palette.border,
                       borderRadius: radii.lg,
                       padding: spacing[1],
                       left: spacing[3],
-                      top: spacing[3],
+                      bottom: spacing[3],
                     },
                     shadows.floating,
                   ]}
@@ -552,12 +578,12 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                   style={[
                     styles.levelPill,
                     {
-                      backgroundColor: "rgba(255,255,255,0.96)",
+                      backgroundColor: palette.surfaceTranslucent,
                       borderColor: palette.border,
                       borderRadius: radii.lg,
                       padding: spacing[1],
                       right: spacing[3],
-                      top: spacing[3],
+                      bottom: spacing[3],
                     },
                     shadows.floating,
                   ]}
@@ -576,66 +602,81 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
 
             <View style={{ gap: spacing[2] }}>
               <AppText variant="h3">Stall directory · {activeFloor}</AppText>
+              <View style={{ gap: spacing[2] }}>
+                {floorDirectory.map((record) => {
+                  const isSelected = activeStallId === record.stall.stallId;
+                  const status = getVenueStatus(record.isOpen, record.venue?.operatingHours);
 
-              {floorDirectory.map((record) => {
-                const isSelected = activeStallId === record.stall.stallId;
-                const status = getVenueStatus(record.isOpen, record.venue?.operatingHours);
-
-                return (
-                  <Pressable
-                    key={record.stall.stallId}
-                    onPress={() => handleStallSelection(record.stall)}
-                    style={{
-                      backgroundColor: palette.surface,
-                      borderColor: isSelected ? palette.orange : palette.border,
-                      borderRadius: 18,
-                      borderWidth: 1,
-                      gap: 4,
-                      paddingHorizontal: spacing[4],
-                      paddingVertical: spacing[3],
-                    }}
-                  >
-                    <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                      <View style={{ flex: 1, gap: 2 }}>
-                        <AppText variant="h3">{record.title}</AppText>
-                        <AppText variant="bodySmall" tone="secondary">
-                          {record.unitNumber} · {record.descriptor}
-                        </AppText>
+                  return (
+                    <Pressable
+                      key={record.stall.stallId}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${record.title} ${record.unitNumber}`}
+                      onPress={() => handleStallSelection(record.stall)}
+                      style={{
+                        backgroundColor: palette.surface,
+                        borderColor: isSelected ? palette.orange : palette.border,
+                        borderRadius: radii.md,
+                        borderWidth: 1,
+                        gap: spacing[1],
+                        minHeight: 56,
+                        paddingHorizontal: spacing[3],
+                        paddingVertical: spacing[2],
+                        width: "100%",
+                      }}
+                    >
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[2], alignItems: "center" }}>
+                        <View style={{ flex: 1, gap: 1 }}>
+                          <AppText numberOfLines={1} variant="h3">
+                            {record.title}
+                          </AppText>
+                          <AppText variant="bodySmall" tone="secondary">
+                            {record.unitNumber}
+                          </AppText>
+                        </View>
+                        <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                          <StatusBadge status={status} />
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Open ${record.title} stall details`}
+                            hitSlop={10}
+                            onPress={() => {
+                              if (record.venue) {
+                                navigation.navigate("StallDetail", { venueId: record.venue.id });
+                              }
+                            }}
+                            style={{
+                              alignItems: "center",
+                              borderColor: palette.border,
+                              borderRadius: radii.pill,
+                              borderWidth: 1,
+                              height: 26,
+                              justifyContent: "center",
+                              width: 26,
+                            }}
+                          >
+                            <ChevronRight color={palette.textMuted} size={13} />
+                          </Pressable>
+                        </View>
                       </View>
-                      <StatusBadge status={status} />
-                      <Pressable
-                        accessibilityRole="button"
-                        hitSlop={10}
-                        onPress={() => {
-                          if (record.venue) {
-                            navigation.navigate("StallDetail", { venueId: record.venue.id });
-                          }
-                        }}
-                        style={{
-                          alignItems: "center",
-                          borderColor: palette.border,
-                          borderRadius: radii.pill,
-                          borderWidth: 1,
-                          height: 30,
-                          justifyContent: "center",
-                          width: 30,
-                        }}
-                      >
-                        <ChevronRight color={palette.textMuted} size={16} />
-                      </Pressable>
-                    </View>
-                  </Pressable>
-                );
-              })}
+                      {record.venue?.closureNotice ? (
+                        <AppText numberOfLines={2} variant="micro" style={{ color: palette.warning }}>
+                          {record.venue.closureNotice}
+                        </AppText>
+                      ) : null}
+                    </Pressable>
+                  );
+                })}
+              </View>
 
               {floorDirectory.length === 0 ? (
                 <View
                   style={{
                     backgroundColor: palette.surface,
                     borderColor: palette.border,
-                    borderRadius: 18,
+                    borderRadius: radii.lg,
                     borderWidth: 1,
-                    paddingHorizontal: spacing[4],
+                    paddingHorizontal: spacing[3],
                     paddingVertical: spacing[4],
                   }}
                 >
@@ -652,14 +693,23 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                 style={{
                   backgroundColor: palette.surface,
                   borderColor: palette.border,
-                  borderRadius: 22,
+                  borderRadius: radii.xl,
                   borderWidth: 1,
                   gap: spacing[3],
-                  paddingHorizontal: spacing[4],
+                  paddingHorizontal: spacing[3],
                   paddingVertical: spacing[4],
                 }}
               >
-                <AppText variant="h3">Menu preview on this level</AppText>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <AppText variant="h3">Menu preview on this level</AppText>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="View all menu items"
+                    onPress={() => navigation.navigate("SearchResults")}
+                  >
+                    <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>VIEW ALL</AppText>
+                  </Pressable>
+                </View>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -668,13 +718,15 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                   {menuPreview.map((dish) => (
                     <Pressable
                       key={dish.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${dish.name} details`}
                       onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
                       style={{
                         backgroundColor: palette.bgSoft,
                         borderColor: palette.border,
-                        borderRadius: 16,
+                        borderRadius: radii.lg,
                         borderWidth: 1,
-                        gap: 3,
+                        gap: spacing[1],
                         minWidth: 164,
                         paddingHorizontal: spacing[3],
                         paddingVertical: spacing[3],
@@ -696,11 +748,101 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
             ) : null}
           </View>
         </ScrollView>
+        </View>
 
-      </View>
-    </SafeAreaView>
-  );
-}
+        <BottomSheetModal
+        ref={bottomSheetModalRef}
+        index={0}
+        snapPoints={snapPoints}
+        backdropComponent={renderBackdrop}
+        backgroundStyle={{ backgroundColor: palette.surface }}
+        handleIndicatorStyle={{ backgroundColor: palette.border }}
+        >
+        <BottomSheetScrollView
+          contentContainerStyle={{
+            padding: spacing[5],
+            paddingBottom: insets.bottom + spacing[8],
+            gap: spacing[4],
+          }}
+        >
+          {activeRecord?.venue ? (
+            <>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3] }}>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <AppText variant="bodySmall" tone="muted">
+                    {activeRecord.unitNumber} · {activeFloor}
+                  </AppText>
+                  <AppText variant="h1">{activeRecord.title}</AppText>
+                  <StatusBadge status={getVenueStatus(activeRecord.isOpen, activeRecord.venue.operatingHours)} />
+                </View>
+                <Button
+                  label="View full stall"
+                  variant="primary"
+                  onPress={() => {
+                    bottomSheetModalRef.current?.dismiss();
+                    navigation.navigate("StallDetail", { venueId: activeRecord.venue!.id });
+                  }}
+                />
+              </View>
+
+              <AppText tone="secondary">{activeRecord.descriptor}</AppText>
+
+              {activeRecord.dish ? (
+                <View style={{ gap: spacing[3] }}>
+                  <AppText variant="h3">Signature dish</AppText>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open signature dish ${activeRecord.dish.name}`}
+                    onPress={() => {
+                      bottomSheetModalRef.current?.dismiss();
+                      navigation.navigate("DishDetail", { dishId: activeRecord.dish!.id });
+                    }}
+                    style={{
+                      backgroundColor: palette.bgSoft,
+                      borderColor: palette.border,
+                      borderRadius: radii.lg,
+                      borderWidth: 1,
+                      padding: spacing[4],
+                      flexDirection: "row",
+                      gap: spacing[3],
+                    }}
+                  >
+                    <View style={{ flex: 1, gap: spacing[1] }}>
+                      <AppText variant="h3">{activeRecord.dish.name}</AppText>
+                      <AppText variant="price" style={{ color: palette.orange }}>
+                        S${activeRecord.dish.price.toFixed(2)}
+                      </AppText>
+                      <AppText variant="micro" tone="muted">
+                        Rated {activeRecord.dish.rating.toFixed(1)} ★
+                      </AppText>
+                    </View>
+                    <ChevronRight color={palette.textMuted} size={20} />
+                  </Pressable>
+                </View>
+              ) : null}
+
+              <View style={{ gap: spacing[3] }}>
+                <AppText variant="h3">Information</AppText>
+                <View style={{ gap: spacing[2] }}>
+                  <AppText variant="bodySmall" tone="secondary">
+                    Operating Hours: {activeRecord.venue.operatingHours}
+                  </AppText>
+                </View>
+              </View>
+            </>
+          ) : (
+            <View style={{ paddingVertical: spacing[12] }}>
+              <AppText variant="h3" style={{ textAlign: "center" }}>No stall selected</AppText>
+              <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
+                Tap a stall on the map to see details.
+              </AppText>
+            </View>
+          )}
+        </BottomSheetScrollView>
+        </BottomSheetModal>
+        </SafeAreaView>
+        );
+        }
 
 const styles = StyleSheet.create({
   safeArea: {

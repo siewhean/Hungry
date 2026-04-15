@@ -1,4 +1,5 @@
-import { ActivityIndicator, Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
+import { type ReactNode } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import type { PressableProps } from "react-native";
 
 import { useHungryTheme } from "@/theme";
@@ -12,6 +13,8 @@ interface ButtonProps extends Omit<PressableProps, "style"> {
   loading?: boolean;
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
 }
 
 export function Button({
@@ -21,6 +24,8 @@ export function Button({
   disabled,
   fullWidth = true,
   style,
+  leftIcon,
+  rightIcon,
   ...props
 }: ButtonProps) {
   const { palette, radii, spacing } = useHungryTheme();
@@ -57,10 +62,10 @@ export function Button({
         styles.base,
         variantStyle[variant],
         {
-          borderRadius: radii.md,
+          borderRadius: radii.pill,
           minHeight: 52,
           opacity: isDisabled ? 0.5 : 1,
-          paddingHorizontal: spacing[4],
+          paddingHorizontal: spacing[3],
           paddingVertical: spacing[3],
           width: fullWidth ? "100%" : undefined,
           transform: [{ translateY: pressed ? 1 : 0 }],
@@ -77,16 +82,19 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "primary" || variant === "destructive" ? "#FFFFFF" : palette.text}
+          color={variant === "primary" || variant === "destructive" ? palette.white : palette.text}
         />
       ) : (
-        <AppText
-          variant="body"
-          style={styles.label}
-          tone={variant === "primary" || variant === "destructive" ? "inverse" : "default"}
-        >
-          {label}
-        </AppText>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+          {leftIcon}
+          <AppText
+            variant="h3"
+            tone={variant === "primary" || variant === "destructive" ? "inverse" : "default"}
+          >
+            {label}
+          </AppText>
+          {rightIcon}
+        </View>
       )}
     </Pressable>
   );
@@ -97,8 +105,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
-  },
-  label: {
-    fontFamily: "Nunito_600SemiBold",
   },
 });

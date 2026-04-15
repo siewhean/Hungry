@@ -1,340 +1,897 @@
 import type { ReactNode } from "react";
-import { useCallback, useMemo, useState } from "react";
-import { FlatList, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Animated, FlatList, Pressable, ScrollView, Share, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
-import { Bookmark, Heart, MessageCircle, PlayCircle, Send, Utensils } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Bookmark, Heart, MessageCircle, PlayCircle, Send, Star, X } from "lucide-react-native";
+import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView, BottomSheetFooter } from "@gorhom/bottom-sheet";
 import { useNavigation } from "@react-navigation/native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { runOnJS } from "react-native-reanimated";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Haptics from "expo-haptics";
 
-import { AppText, EmptyState } from "@/components/ui";
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { AppText, Avatar, Button, EmptyState, FeedErrorBoundary, FeedStateView, Input, Skeleton } from "@/components/ui";
 import { BitesCarousel } from "@/components/social";
-import { getHomeFeed, type HomeFeedItem } from "@/features/home/feed";
+import { getHomeFeed, getHomeSocialFeed, type HomeFeedItem, type HomeFeedSection } from "@/features/home/feed";
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
-import { mockRepository } from "@/lib/services/mock/repositories";
-import { useDiscoveryStore } from "@/store/useDiscoveryStore";
+import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 
-const IMAGE_HEIGHT = 500;
+function FeedSkeleton() {
+  const { spacing, radii, palette } = useHungryTheme();
+  return (
+    <View style={{ gap: spacing[6], padding: spacing[4] }}>
+      <Skeleton width="60%" height={24} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[4] }}>
+        <Skeleton width={280} height={200} borderRadius={radii.lg} />
+        <Skeleton width={280} height={200} borderRadius={radii.lg} />
+      </ScrollView>
+    </View>
+  );
+}
 
-export function HomeFeedScreen() {
-  const navigation = useNavigation<any>();
+type InteractionState = {
+  liked: boolean;
+  saved: boolean;
+  likeCount: number;
+  saveCount: number;
+  shareCount: number;
+  commentCount: number;
+};
+type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
+
+type HomeFeedMode = "social" | "review";
+
+type FeedComment = {
+  id: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  text: string;
+  createdAt: string;
+};
+
+type FeedReply = {
+  id: string;
+  parentCommentId: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  text: string;
+  createdAt: string;
+};
+
+type HomeFeedScreenProps = {
+  mode?: HomeFeedMode;
+};
+
+export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
+  const navigation = useNavigation<RootNavigation>();
   const { width: screenWidth } = useWindowDimensions();
-  const { palette, radii, spacing } = useHungryTheme();
+  const theme = useHungryTheme();
+  const { palette, spacing, radii, shadows, colorScheme } = theme;
+  const styles = createStyles(theme);
   const insets = useSafeAreaInsets();
+  const profile = useProfileStore((state) => state.profile);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
-  const profile = useProfileStore((state) => state.profile);
+
+  const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
+  const [sections, setSections] = useState<HomeFeedSection[]>([]);
+  const [socialFeed, setSocialFeed] = useState<HomeFeedItem[]>([]);
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
-  const [likedPostIds, setLikedPostIds] = useState<Record<string, boolean>>({});
-  const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
-  const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
-  const feed = getHomeFeed(profile);
-  const stories = useMemo(() => feed.slice(0, 5), [feed]);
-  const isCompact = screenWidth < 390;
+  const [activeCommentItem, setActiveCommentItem] = useState<HomeFeedItem | null>(null);
+  const [draftComment, setDraftComment] = useState("");
+  const [localCommentsByPostId, setLocalCommentsByPostId] = useState<Record<string, FeedComment[]>>({});
+  const [localRepliesByCommentId, setLocalRepliesByCommentId] = useState<Record<string, FeedReply[]>>({});
+  const [activeReplyCommentId, setActiveReplyCommentId] = useState<string | null>(null);
+  const [draftReplyByCommentId, setDraftReplyByCommentId] = useState<Record<string, string>>({});
+  const commentsSheetRef = useRef<BottomSheetModal>(null);
+  const commentInputRef = useRef<any>(null);
+  const commentSnapPoints = useMemo(() => ["50%", "88%"], []);
 
-  const navigateToStall = useCallback(
-    (venueId: string) => navigation.navigate("StallDetail", { venueId }),
-    [navigation],
-  );
+  const [interactionByPostId, setInteractionByPostId] = useState<Record<string, InteractionState>>({});
 
-  const navigateToDish = useCallback(
-    (dishId: string) => navigation.navigate("DishDetail", { dishId }),
-    [navigation],
-  );
+  const loadFeed = useCallback(async () => {
+    setFeedState("loading");
+    try {
+      const data = await getHomeFeed(profile);
+      const socialData = await getHomeSocialFeed(profile);
+      setSections(data);
+      setSocialFeed(socialData);
+      setInteractionByPostId((current) => {
+        const next = { ...current };
+        const allItems = [...socialData, ...data.flatMap((section) => section.items)];
+
+        allItems.forEach((item) => {
+          if (next[item.id]) {
+            return;
+          }
+
+          const baseComments = item.dishes[0]?.reviews.length ?? 0;
+          next[item.id] = {
+            liked: false,
+            saved: false,
+            likeCount: baseComments,
+            saveCount: 0,
+            shareCount: 0,
+            commentCount: baseComments,
+          };
+        });
+
+        return next;
+      });
+      setFeedState("ready");
+    } catch {
+      setFeedState("error");
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    void loadFeed();
+  }, [loadFeed]);
+
+  const toggleLike = useCallback((postId: string) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setInteractionByPostId((prev) => {
+      const current = prev[postId] ?? {
+        liked: false, saved: false, likeCount: 12, saveCount: 4, shareCount: 2, commentCount: 3,
+      };
+      const isLiked = !current.liked;
+      return {
+        ...prev,
+        [postId]: { ...current, liked: isLiked, likeCount: isLiked ? current.likeCount + 1 : Math.max(0, current.likeCount - 1) },
+      };
+    });
+  }, []);
+
+  const toggleSave = useCallback((postId: string) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setInteractionByPostId((prev) => {
+      const current = prev[postId] ?? {
+        liked: false, saved: false, likeCount: 0, saveCount: 0, shareCount: 0, commentCount: 0,
+      };
+      return {
+        ...prev,
+        [postId]: { ...current, saved: !current.saved },
+      };
+    });
+  }, []);
+
+  const incrementShare = useCallback((postId: string) => {
+    setInteractionByPostId((prev) => {
+      const current = prev[postId] ?? {
+        liked: false,
+        saved: false,
+        likeCount: 0,
+        saveCount: 0,
+        shareCount: 0,
+        commentCount: 0,
+      };
+
+      return {
+        ...prev,
+        [postId]: {
+          ...current,
+          shareCount: current.shareCount + 1,
+        },
+      };
+    });
+  }, []);
 
   const toggleExpandedPost = useCallback((postId: string) => {
     setExpandedPostId((current) => (current === postId ? null : postId));
   }, []);
 
-  const toggleLike = useCallback((postId: string) => {
-    setLikedPostIds((current) => ({
-      ...current,
-      [postId]: !current[postId],
-    }));
+  const openComments = useCallback((item: HomeFeedItem) => {
+    setActiveCommentItem(item);
+    setDraftComment("");
+    setActiveReplyCommentId(null);
+    setDraftReplyByCommentId({});
+    requestAnimationFrame(() => {
+      commentsSheetRef.current?.present();
+    });
   }, []);
 
-  const handleDecideForMe = useCallback(() => {
-    const picked = mockRepository.getDecideForMe(profile.tasteVector);
-    if (picked) {
-      setDecideForMe(picked);
+  const openUserProfile = useCallback((authorName: string, authorAvatarUrl?: string, authorLocation?: string) => {
+    navigation.navigate("UserProfile", { authorName, authorAvatarUrl, authorLocation });
+  }, [navigation]);
+
+  const commentsForActiveItem = useMemo(() => {
+    if (!activeCommentItem) {
+      return [];
     }
-    navigation.navigate("DecideForMeResult");
-  }, [navigation, profile.tasteVector, setDecideForMe]);
 
-  const renderItem = useCallback(
-    ({ item, index }: { item: HomeFeedItem; index: number }) => {
-      const leadDish = item.dishes[0];
-      const isExpanded = expandedPostId === item.id;
-      const isLiked = Boolean(likedPostIds[item.id]);
-      const baseReactionCount = (leadDish?.reviewCount ?? 24) + 36 + index * 4;
-      const reactionCount = baseReactionCount + (isLiked ? 1 : 0);
-      const commentCount = Math.max(12, Math.round(reactionCount / 4));
-      const bookmarkCount = Math.max(8, Math.round(commentCount / 2));
-      const captionGesture = Gesture.Exclusive(
-        Gesture.Tap()
-          .numberOfTaps(2)
-          .maxDuration(260)
-          .onEnd((_event, success) => {
-            if (success) {
-              runOnJS(toggleLike)(item.id);
-            }
-          }),
-        Gesture.Tap()
-          .maxDuration(260)
-          .onEnd((_event, success) => {
-            if (success) {
-              runOnJS(toggleExpandedPost)(item.id);
-            }
-          }),
-      );
+    const seededComments: FeedComment[] = (activeCommentItem.dishes[0]?.reviews ?? []).map((review) => ({
+      id: review.id,
+      authorName: review.authorName,
+      authorAvatarUrl: undefined,
+      text: review.text,
+      createdAt: review.createdAt,
+    }));
 
-      return (
-        <View style={styles.feedItemWrap}>
-          <Pressable
-            onPress={() => {
-              if (leadDish) {
-                navigateToDish(leadDish.id);
-                return;
-              }
-              navigateToStall(item.venueId);
-            }}
-          >
-            <View style={styles.imageContainer}>
-              <Image
-                source={{ uri: item.mediaUrl }}
-                style={styles.heroImage}
-                contentFit="cover"
-                transition={200}
-              />
-              {item.mediaType === "video" ? (
-                <View style={styles.playButtonContainer}>
-                  <View style={styles.playButtonBackdrop}>
-                    <PlayCircle color="#FFFFFF" size={54} strokeWidth={1.4} />
-                  </View>
-                </View>
-              ) : null}
-            </View>
-          </Pressable>
+    const local = localCommentsByPostId[activeCommentItem.id] ?? [];
+    return [...seededComments, ...local];
+  }, [activeCommentItem, localCommentsByPostId]);
 
-          <View
-            style={[
-              styles.belowImageSection,
-              {
-                paddingHorizontal: spacing[4],
-                paddingVertical: spacing[4],
-                gap: spacing[3],
-              },
-            ]}
-          >
-            <View style={[styles.textGestureRegion, { gap: spacing[2] }]}>
-              <View style={styles.metaRow}>
-                <AppText variant="bodySmall">{item.authorName} · {item.authorLocation}</AppText>
-                {isLiked ? (
-                  <AppText variant="bodySmall" tone="muted">
-                    Liked
-                  </AppText>
-                ) : null}
-              </View>
+  const submitComment = useCallback(() => {
+    if (!activeCommentItem) {
+      return;
+    }
 
-              <AppText variant="h2" numberOfLines={2}>
-                {leadDish?.name ?? item.venue.name}
-              </AppText>
-              <GestureDetector gesture={captionGesture}>
-                <View style={styles.captionHitArea}>
-                  <AppText variant="bodySmall" tone="secondary" numberOfLines={isExpanded ? undefined : isCompact ? 2 : 3}>
-                    {item.caption}
-                  </AppText>
-                </View>
-              </GestureDetector>
-              <AppText variant="micro" tone="muted">
-                {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
-              </AppText>
-            </View>
+    const trimmed = draftComment.trim();
+    if (!trimmed.length) {
+      return;
+    }
 
-            {isExpanded ? (
-              <View style={[styles.quickPostRow, { gap: spacing[2] }]}>
+    const newComment: FeedComment = {
+      id: `local-comment-${Date.now()}`,
+      authorName: profile.displayName,
+      authorAvatarUrl: undefined,
+      text: trimmed,
+      createdAt: new Date().toISOString(),
+    };
+
+    setLocalCommentsByPostId((prev) => ({
+      ...prev,
+      [activeCommentItem.id]: [...(prev[activeCommentItem.id] ?? []), newComment],
+    }));
+
+    setInteractionByPostId((prev) => {
+      const current = prev[activeCommentItem.id] ?? {
+        liked: false,
+        saved: false,
+        likeCount: 0,
+        saveCount: 0,
+        shareCount: 0,
+        commentCount: 0,
+      };
+
+      return {
+        ...prev,
+        [activeCommentItem.id]: {
+          ...current,
+          commentCount: current.commentCount + 1,
+        },
+      };
+    });
+
+    setDraftComment("");
+    setActiveReplyCommentId(null);
+  }, [activeCommentItem, draftComment, profile.displayName]);
+
+  const submitReply = useCallback((commentId: string) => {
+    if (!activeCommentItem) {
+      return;
+    }
+
+    const trimmed = draftComment.trim();
+    if (!trimmed.length) {
+      return;
+    }
+
+    const newReply: FeedReply = {
+      id: `local-reply-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      parentCommentId: commentId,
+      authorName: profile.displayName,
+      authorAvatarUrl: undefined,
+      text: trimmed,
+      createdAt: new Date().toISOString(),
+    };
+
+    setLocalRepliesByCommentId((prev) => ({
+      ...prev,
+      [commentId]: [...(prev[commentId] ?? []), newReply],
+    }));
+
+    setDraftComment("");
+    setActiveReplyCommentId(null);
+  }, [activeCommentItem, draftComment, profile.displayName]);
+
+  const handlePostCommentOrReply = useCallback(() => {
+    if (activeReplyCommentId) {
+      submitReply(activeReplyCommentId);
+    } else {
+      submitComment();
+    }
+  }, [activeReplyCommentId, submitReply, submitComment]);
+
+  const navigateToDish = useCallback((dishId: string) => {
+    navigation.navigate("DishDetail", { dishId });
+  }, [navigation]);
+
+  const themeTints = useMemo(() => {
+    const isDark = colorScheme === "dark";
+    return {
+      bg: palette.bg,
+      text: palette.text,
+      cardBg: palette.surface,
+      secondaryText: palette.textSecondary,
+      actionOverlayBg: isDark ? "rgba(0,0,0,0.45)" : palette.surfaceTranslucent,
+      badgeBg: isDark ? "rgba(255,255,255,0.1)" : palette.bgSoft,
+      isDark,
+    };
+  }, [palette, colorScheme]);
+
+  const renderHeader = useCallback(() => {
+    const stories = socialFeed.slice(0, 5);
+
+    return (
+      <View style={{ gap: spacing[6], paddingBottom: spacing[4], paddingTop: spacing[2] }}>
+        {mode === "social" ? (
+          <>
+            {FEATURE_FLAGS.directMessagesEnabled ? (
+              <View style={{ paddingHorizontal: spacing[3], alignItems: "flex-end" }}>
                 <Pressable
-                  onPress={() => {
-                    if (!isAuthenticated) {
-                      setReturnRoute("Review");
-                      navigation.navigate("AuthStack", { screen: "Login" });
-                      return;
-                    }
-                    navigation.navigate("ReviewStack", {
-                      screen: "ReviewRating",
-                      params: { dishId: leadDish?.id, venueId: item.venueId },
-                    });
-                  }}
-                  style={[
-                    styles.quickPostButton,
-                    {
-                      borderColor: palette.border,
-                      borderRadius: radii.pill,
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[2],
-                    },
-                  ]}
+                  onPress={() => navigation.navigate("DirectMessages")}
+                  style={{ width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" }}
                 >
-                  <AppText variant="bodySmall">Quick review</AppText>
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    if (!isAuthenticated) {
-                      setReturnRoute("Post");
-                      navigation.navigate("AuthStack", { screen: "Login" });
-                      return;
-                    }
-                    navigation.navigate("Post");
-                  }}
-                  style={[
-                    styles.quickPostButton,
-                    {
-                      borderColor: palette.border,
-                      borderRadius: radii.pill,
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[2],
-                    },
-                  ]}
-                >
-                  <AppText variant="bodySmall">Post</AppText>
+                  <Send color={palette.orange} size={24} />
                 </Pressable>
               </View>
             ) : null}
-
-            <View style={styles.postFooterRow}>
-              <AppText variant="micro" tone="muted">
-                {item.createdAt}
+            <View style={{ gap: spacing[1], paddingHorizontal: spacing[3] }}>
+              <AppText variant="micro" tone="accent" style={styles.sectionEyebrow}>
+                APPETITE SCROLL
               </AppText>
-              <View style={styles.postActionsRow}>
-                <InlineActionMetric icon={<Heart color={isLiked ? palette.error : palette.textMuted} size={14} />} count={reactionCount} />
-                <InlineActionMetric icon={<Send color={palette.textMuted} size={14} />} count={6} />
-                <InlineActionMetric icon={<MessageCircle color={palette.textMuted} size={14} />} count={commentCount} />
-                <InlineActionMetric icon={<Bookmark color={palette.textMuted} size={14} />} count={bookmarkCount} />
+              <AppText variant="h2" style={{ color: themeTints.text }}>Tonight&apos;s food stories</AppText>
+              <AppText variant="bodySmall" tone="secondary">
+                Browse what stalls are pushing out right now, then jump straight into the dish.
+              </AppText>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[3] }}
+            >
+              {stories.map((story) => (
+                <Pressable
+                  key={story.id}
+                  onPress={() => openUserProfile(story.authorName, story.authorAvatarUrl, story.authorLocation)}
+                  style={{ width: 78, gap: spacing[2], alignItems: "center" }}
+                >
+                  <View
+                    style={[
+                      styles.storyRing,
+                      {
+                        borderColor: palette.orange,
+                        borderRadius: radii.pill,
+                        padding: 3,
+                      },
+                    ]}
+                  >
+                    <Image
+                      source={{ uri: story.authorAvatarUrl }}
+                      style={{ width: 58, height: 58, borderRadius: 29 }}
+                      contentFit="cover"
+                    />
+                  </View>
+                  <AppText variant="micro" style={styles.storyLabel} numberOfLines={2}>
+                    {story.venue.name}
+                  </AppText>
+                </Pressable>
+              ))}
+            </ScrollView>
+
+            <View style={{ gap: spacing[2], paddingHorizontal: spacing[3] }}>
+              <BitesCarousel />
+            </View>
+          </>
+        ) : null}
+      </View>
+    );
+  }, [palette, spacing, themeTints, radii, mode, socialFeed, openUserProfile, navigation, styles.sectionEyebrow]);
+
+  const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
+
+  const renderFeedCard = useCallback((item: HomeFeedItem, variant: "social" | "review" = "review") => {
+    const interaction = interactionByPostId[item.id] ?? {
+      liked: false, saved: false, likeCount: 12, saveCount: 4, shareCount: 2, commentCount: 3,
+    };
+    const isLiked = interaction.liked;
+    const isSaved = interaction.saved;
+
+    if (variant === "social") {
+      const imageHeight = Math.min(Math.max(screenWidth * 1.12, 360), 460);
+      const isExpanded = expandedPostId === item.id;
+
+      return (
+        <View key={item.id} style={styles.feedItemWrap}>
+          <View style={[styles.imageContainer, { height: imageHeight }]}> 
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${item.dishes[0]?.name ?? item.venue.name} details`}
+              onPress={() => navigateToDish(item.dishIds[0])}
+              style={StyleSheet.absoluteFill}
+            >
+              <Image source={{ uri: item.mediaUrl }} style={styles.heroImage} contentFit="cover" transition={200} />
+            </Pressable>
+
+            {item.mediaType === "video" ? (
+              <View pointerEvents="none" style={styles.playButtonContainer}>
+                <View style={styles.playButtonBackdrop}>
+                  <PlayCircle color={palette.white} size={54} strokeWidth={1.4} />
+                </View>
               </View>
+            ) : null}
+
+            <LinearGradient
+              colors={["transparent", "rgba(0,0,0,0.1)", "rgba(0,0,0,0.8)"]}
+              style={styles.gradientScrim}
+              pointerEvents="none"
+            />
+
+            <View style={[styles.overlayContent, { padding: spacing[3] }]} pointerEvents="box-none">
+              <View style={[styles.overlayTopRow, { flexDirection: profile.leftHandedMode ? "row-reverse" : "row" }]} pointerEvents="box-none">
+                <View style={[styles.textOverlay, { gap: spacing[1], alignItems: profile.leftHandedMode ? "flex-end" : "flex-start", marginRight: profile.leftHandedMode ? 0 : 12, marginLeft: profile.leftHandedMode ? 12 : 0 }]} pointerEvents="box-none">
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${item.authorName} profile`}
+                      onPress={() => openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)}
+                    >
+                      <Avatar uri={item.authorAvatarUrl} name={item.authorName} size={30} />
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open ${item.authorName} profile`}
+                      onPress={() => openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)}
+                    >
+                      <AppText variant="micro" style={{ color: "rgba(255,255,255,0.9)", textAlign: profile.leftHandedMode ? "right" : "left" }}>
+                        {item.authorName} · {item.authorLocation}
+                      </AppText>
+                    </Pressable>
+                  </View>
+                  <AppText variant="h2" style={{ color: palette.white, textAlign: profile.leftHandedMode ? "right" : "left" }} numberOfLines={2}>
+                    {item.dishes[0]?.name ?? item.venue.name}
+                  </AppText>
+                  <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)", textAlign: profile.leftHandedMode ? "right" : "left" }}>
+                    {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
+                  </AppText>
+                </View>
+
+                <View style={[styles.sideActions, { gap: spacing[4] }]} pointerEvents="box-none">
+                  <Pressable hitSlop={10} onPress={() => toggleLike(item.id)}>
+                    <VerticalActionMetric
+                      icon={
+                        <Heart
+                          color={isLiked ? palette.error : palette.white}
+                          fill={isLiked ? palette.error : "transparent"}
+                          size={28}
+                        />
+                      }
+                      count={interaction.likeCount}
+                      palette={palette}
+                    />
+                  </Pressable>
+                  <Pressable hitSlop={10} onPress={() => openComments(item)}>
+                    <VerticalActionMetric icon={<MessageCircle color={palette.white} size={28} />} count={interaction.commentCount} palette={palette} />
+                  </Pressable>
+                  <Pressable hitSlop={10} onPress={() => toggleSave(item.id)}>
+                    <VerticalActionMetric
+                      icon={
+                        <Bookmark
+                          color={isSaved ? palette.orange : palette.white}
+                          fill={isSaved ? palette.orange : "transparent"}
+                          size={28}
+                        />
+                      }
+                      count={interaction.saveCount}
+                      palette={palette}
+                    />
+                  </Pressable>
+                  <Pressable
+                    hitSlop={10}
+                    onPress={async () => {
+                      if (!item.dishes[0]) return;
+                      await Share.share({
+                        message: `Check out ${item.dishes[0].name} at ${item.venue.name} on Hungry.`,
+                      });
+                      incrementShare(item.id);
+                    }}
+                  >
+                    <VerticalActionMetric icon={<Send color={palette.white} size={26} />} count={interaction.shareCount} palette={palette} />
+                  </Pressable>
+                </View>
+              </View>
+
+              <Pressable hitSlop={10} onPress={() => toggleExpandedPost(item.id)} style={[styles.captionOverlay, { alignItems: profile.leftHandedMode ? "flex-end" : "flex-start" }]}>
+                <AppText variant="bodySmall" style={{ color: "rgba(255,255,255,0.9)", textAlign: profile.leftHandedMode ? "right" : "left" }} numberOfLines={isExpanded ? undefined : 2}>
+                  {item.caption}
+                </AppText>
+              </Pressable>
+
+              {isExpanded ? (
+                <View style={[styles.quickPostRow, { gap: spacing[2], marginTop: spacing[3], flexDirection: profile.leftHandedMode ? "row-reverse" : "row" }]}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Quick review"
+                    onPress={() => {
+                      if (!isAuthenticated) {
+                        setReturnRoute("Review");
+                        navigation.navigate("AuthStack", { screen: "Login" });
+                        return;
+                      }
+
+                      navigation.navigate("ReviewStack", {
+                        screen: "ReviewRating",
+                        params: { dishId: item.dishes[0]?.id, venueId: item.venueId },
+                      });
+                    }}
+                    style={[
+                      styles.quickPostButton,
+                      {
+                        backgroundColor: "rgba(255,255,255,0.2)",
+                        borderColor: "rgba(255,255,255,0.4)",
+                        borderRadius: radii.pill,
+                        paddingHorizontal: spacing[3],
+                        paddingVertical: spacing[2],
+                      },
+                    ]}
+                  >
+                    <AppText variant="bodySmall" style={{ color: palette.white }}>Quick review</AppText>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Create post"
+                    onPress={() => {
+                      if (!isAuthenticated) {
+                        setReturnRoute("Post");
+                        navigation.navigate("AuthStack", { screen: "Login" });
+                        return;
+                      }
+                      navigation.navigate("Post", {
+                        dishId: item.dishes[0]?.id,
+                        venueId: item.venueId,
+                      });
+                    }}
+                    style={[
+                      styles.quickPostButton,
+                      {
+                        backgroundColor: "rgba(255,255,255,0.2)",
+                        borderColor: "rgba(255,255,255,0.4)",
+                        borderRadius: radii.pill,
+                        paddingHorizontal: spacing[3],
+                        paddingVertical: spacing[2],
+                      },
+                    ]}
+                  >
+                    <AppText variant="bodySmall" style={{ color: palette.white }}>Post</AppText>
+                  </Pressable>
+                </View>
+              ) : null}
             </View>
           </View>
         </View>
       );
-    },
-    [
-      expandedPostId,
-      isAuthenticated,
-      isCompact,
-      likedPostIds,
-      navigateToDish,
-      navigateToStall,
-      palette.border,
-      palette.error,
-      palette.textMuted,
-      spacing,
-      setReturnRoute,
-      toggleExpandedPost,
-      toggleLike,
-      navigation,
-    ],
-  );
+    }
 
-  const listHeader = useMemo(
-    () => (
-      <View style={{ gap: spacing[4], paddingHorizontal: spacing[5], paddingTop: spacing[1] }}>
-        <View style={{ gap: spacing[1] }}>
-          <AppText variant="micro" tone="accent" style={styles.sectionEyebrow}>
-            APPETITE SCROLL
-          </AppText>
-          <AppText variant="h1">Tonight&apos;s food stories</AppText>
-          <AppText variant="bodySmall" tone="secondary">
-            Browse what stalls are pushing out right now, then jump straight into the dish.
-          </AppText>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: spacing[3] }}
+    return (
+      <Pressable 
+        key={item.id}
+        onPress={() => navigateToDish(item.dishIds[0])}
+        style={[
+          shadows.card,
+          { 
+            backgroundColor: themeTints.cardBg, 
+            borderRadius: radii.lg, 
+            width: 300,
+            overflow: "hidden",
+            borderWidth: themeTints.isDark ? 0 : 1,
+            borderColor: palette.border,
+          }
+        ]}
+      >
+        <Image source={{ uri: item.mediaUrl }} style={{ width: "100%", height: 180 }} contentFit="cover" />
+        
+        {/* Interaction Overlay */}
+        <View 
+          style={{ 
+            position: "absolute", 
+            top: spacing[3], 
+            left: profile.leftHandedMode ? spacing[3] : undefined,
+            right: profile.leftHandedMode ? undefined : spacing[3], 
+            gap: spacing[2] 
+          }}
         >
-          {stories.map((story) => (
-            <Pressable
-              key={story.id}
-              onPress={() => navigateToStall(story.venueId)}
-              style={{ width: 78, gap: spacing[2], alignItems: "center" }}
-            >
-              <View
-                style={[
-                  styles.storyRing,
-                  {
-                    borderColor: palette.orange,
-                    borderRadius: radii.pill,
-                    padding: 3,
-                  },
-                ]}
-              >
-                <Image
-                  source={{ uri: story.authorAvatarUrl }}
-                  style={{ width: 58, height: 58, borderRadius: 29 }}
-                  contentFit="cover"
-                />
-              </View>
-              <AppText
-                variant="micro"
-                style={styles.storyLabel}
-                numberOfLines={2}
-              >
-                {story.venue.name}
-              </AppText>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        {/* Bites section */}
-        <View style={{ gap: spacing[2] }}>
-          <BitesCarousel />
+          <Pressable 
+            onPress={() => toggleLike(item.id)}
+            style={{ width: 36, height: 36, borderRadius: radii.pill, backgroundColor: themeTints.actionOverlayBg, alignItems: "center", justifyContent: "center" }}
+          >
+            <Heart color={isLiked ? palette.error : themeTints.text} fill={isLiked ? palette.error : "transparent"} size={18} />
+          </Pressable>
+          <Pressable 
+            onPress={() => toggleSave(item.id)}
+            style={{ width: 36, height: 36, borderRadius: radii.pill, backgroundColor: themeTints.actionOverlayBg, alignItems: "center", justifyContent: "center" }}
+          >
+            <Bookmark color={isSaved ? palette.orange : themeTints.text} fill={isSaved ? palette.orange : "transparent"} size={18} />
+          </Pressable>
         </View>
-      </View>
-    ),
-    [navigateToStall, palette.orange, radii.pill, spacing, stories],
-  );
+
+        <View style={{ padding: spacing[3], gap: spacing[1] }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <AppText style={{ fontWeight: "800", fontSize: 16, flex: 1, color: themeTints.text }} numberOfLines={1}>{item.dishes[0]?.name ?? item.caption}</AppText>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+              <Star color={palette.amber} fill={palette.amber} size={14} />
+              <AppText style={{ fontWeight: "700", fontSize: 14, color: themeTints.text }}>{(item.dishes[0]?.rating ?? 4.5).toFixed(1)}</AppText>
+            </View>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${item.authorName} profile`}
+            onPress={() => openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)}
+          >
+            <AppText variant="micro" style={{ color: themeTints.secondaryText }} numberOfLines={1}>{item.authorName} · {item.authorLocation}</AppText>
+          </Pressable>
+          
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginTop: spacing[2] }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1], backgroundColor: themeTints.badgeBg, paddingHorizontal: spacing[2], paddingVertical: spacing[1], borderRadius: radii.sm }}>
+              <MessageCircle color={themeTints.secondaryText} size={12} />
+              <AppText variant="micro" style={{ color: themeTints.secondaryText }}>{interaction.commentCount}</AppText>
+            </View>
+            {item.dishes[0]?.price && (
+              <AppText variant="price" style={{ color: palette.orange, fontSize: 14 }}>S${item.dishes[0].price.toFixed(2)}</AppText>
+            )}
+          </View>
+        </View>
+      </Pressable>
+    );
+  }, [interactionByPostId, navigateToDish, shadows.card, themeTints, radii, palette.border, palette.error, palette.text, palette.orange, palette.amber, palette.bgSoft, spacing, toggleLike, toggleSave, incrementShare, isAuthenticated, setReturnRoute, navigation, screenWidth, expandedPostId, openComments, toggleExpandedPost, openUserProfile, profile.leftHandedMode]);
+
+  if (feedState === "loading") {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: themeTints.bg }} edges={["top", "left", "right"]}>
+        <FeedErrorBoundary onRetry={() => { void loadFeed(); }}>
+          {mode === "social" ? (
+            <View style={{ alignItems: "center", flex: 1, gap: spacing[3], justifyContent: "center", paddingHorizontal: spacing[3] }}>
+              <ActivityIndicator color={palette.orange} />
+              <AppText tone="secondary">Loading your food feed...</AppText>
+            </View>
+          ) : (
+            <ScrollView scrollEnabled={false}>
+              {renderHeader()}
+              <FeedSkeleton />
+              <FeedSkeleton />
+            </ScrollView>
+          )}
+        </FeedErrorBoundary>
+      </SafeAreaView>
+    );
+  }
+
+  if (feedState === "error") {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: themeTints.bg }} edges={["top", "left", "right"]}>
+        <FeedErrorBoundary onRetry={() => { void loadFeed(); }}>
+          <FeedStateView
+            state="error"
+            title="Something went wrong"
+            body="We couldn't load your feed right now. Please check your connection and try again."
+            ctaLabel="Retry"
+            onPress={loadFeed}
+          />
+        </FeedErrorBoundary>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
-      <View style={{ flex: 1, paddingTop: spacing[3] }}>
-        <FlatList
-          data={feed}
-          keyExtractor={keyExtractor}
-          ListHeaderComponent={listHeader}
-          renderItem={renderItem}
-          ListEmptyComponent={
-            <EmptyState
-              title="No food stories yet"
-              body="Follow stalls and save dishes to fill your feed with food stories you'll love."
+    <SafeAreaView style={{ flex: 1, backgroundColor: themeTints.bg }} edges={["top", "left", "right"]}>
+      <FeedErrorBoundary
+        onRetry={() => { void loadFeed(); }}
+        title="Feed temporarily unavailable"
+        body="A display issue occurred while rendering this feed. Please retry."
+      >
+        {mode === "social" ? (
+          <View style={{ flex: 1, paddingTop: spacing[3] }}>
+            <FlatList
+              data={socialFeed}
+              keyExtractor={keyExtractor}
+              ListHeaderComponent={renderHeader}
+              renderItem={({ item }) => renderFeedCard(item, "social")}
+              ListEmptyComponent={
+                <EmptyState
+                  title="No food stories yet"
+                  body="Nothing to show right now. Try Discover to find dishes nearby."
+                />
+              }
+              style={{ flex: 1 }}
+              contentContainerStyle={{
+                gap: spacing[5],
+                paddingBottom: spacing[16] + insets.bottom + spacing[6],
+              }}
+              onScroll={onScroll}
+              scrollEventThrottle={scrollEventThrottle}
+              showsVerticalScrollIndicator={false}
             />
-          }
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-            gap: spacing[5],
-            paddingBottom: spacing[16] + insets.bottom + spacing[6],
-          }}
-          onScroll={onScroll}
-          scrollEventThrottle={scrollEventThrottle}
-          showsVerticalScrollIndicator={false}
-        />
-        <Pressable
-          onPress={handleDecideForMe}
-          style={[
-            styles.fab,
-            {
-              backgroundColor: palette.orange,
-              bottom: insets.bottom + spacing[6],
-              right: spacing[5],
-            },
-          ]}
-        >
-          <Utensils color="#FFFFFF" size={24} />
-        </Pressable>
-      </View>
+          </View>
+        ) : (
+          <Animated.ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: insets.bottom + spacing[24] }}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
+          >
+            {renderHeader()}
+
+            <View style={{ marginBottom: spacing[6], gap: spacing[3] }}>
+              <View style={{ paddingHorizontal: spacing[3], paddingTop: spacing[1] }}>
+                <AppText variant="h2" style={{ color: themeTints.text }}>Bites</AppText>
+              </View>
+              <BitesCarousel showHeader={false} horizontalInset={spacing[3]} />
+            </View>
+
+            {sections.map((section) => (
+              <View key={section.title} style={{ marginBottom: spacing[4] }}>
+                <View style={{ paddingHorizontal: spacing[3], paddingVertical: spacing[3] }}>
+                  <AppText variant="h2" style={{ color: themeTints.text }}>{section.title}</AppText>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: spacing[4], paddingHorizontal: spacing[3], paddingBottom: spacing[2] }}
+                >
+                  {section.items.map((item) => renderFeedCard(item, "review"))}
+                </ScrollView>
+              </View>
+            ))}
+
+            {sections.length === 0 && (
+              <FeedStateView
+                state="empty"
+                title="Feed is taking a break"
+                body="We're still gathering the latest food stories for you. Check back shortly for new recommendations near you!"
+              />
+            )}
+          </Animated.ScrollView>
+        )}
+
+        {mode === "social" ? (
+          <BottomSheetModal
+            ref={commentsSheetRef}
+            snapPoints={commentSnapPoints}
+            index={0}
+            enablePanDownToClose
+            onDismiss={() => {
+              setActiveCommentItem(null);
+              setActiveReplyCommentId(null);
+              setDraftComment("");
+            }}
+            backdropComponent={(props) => (
+              <BottomSheetBackdrop
+                {...props}
+                appearsOnIndex={0}
+                disappearsOnIndex={-1}
+                opacity={0.5}
+                pressBehavior="close"
+              />
+            )}
+            backgroundStyle={{ backgroundColor: palette.surface }}
+            handleIndicatorStyle={{ backgroundColor: palette.border }}
+            footerComponent={(props) => (
+              <BottomSheetFooter {...props}>
+                <View 
+                  style={{ 
+                    backgroundColor: palette.surface, 
+                    borderTopWidth: 1, 
+                    borderTopColor: palette.border,
+                    paddingHorizontal: spacing[3],
+                    paddingTop: spacing[2],
+                    paddingBottom: Math.max(insets.bottom, spacing[4]),
+                    gap: spacing[2]
+                  }}
+                >
+                  {activeReplyCommentId ? (
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: palette.bgSoft, paddingHorizontal: spacing[3], paddingVertical: spacing[1.5], borderRadius: radii.md }}>
+                      <AppText variant="micro" tone="secondary">
+                        Replying to <AppText variant="micro" style={{ fontWeight: "700" }}>
+                          {commentsForActiveItem.find(c => c.id === activeReplyCommentId)?.authorName}
+                        </AppText>
+                      </AppText>
+                      <Pressable onPress={() => setActiveReplyCommentId(null)}>
+                        <X size={14} color={palette.textMuted} />
+                      </Pressable>
+                    </View>
+                  ) : null}
+                  <View style={{ flexDirection: "row", alignItems: "flex-end", gap: spacing[2] }}>
+                    <View style={{ flex: 1 }}>
+                      <Input
+                        ref={commentInputRef}
+                        placeholder={activeReplyCommentId ? "Write a reply..." : "Add a comment..."}
+                        value={draftComment}
+                        onChangeText={setDraftComment}
+                        multiline
+                        style={{ maxHeight: 100 }}
+                      />
+                    </View>
+                    <Pressable 
+                      onPress={handlePostCommentOrReply}
+                      disabled={!draftComment.trim().length}
+                      style={{ 
+                        paddingHorizontal: spacing[3], 
+                        paddingVertical: spacing[3],
+                        opacity: draftComment.trim().length ? 1 : 0.5
+                      }}
+                    >
+                      <AppText variant="bodyBold" style={{ color: palette.orange }}>Post</AppText>
+                    </Pressable>
+                  </View>
+                </View>
+              </BottomSheetFooter>
+            )}
+          >
+            <View style={{ borderBottomWidth: 1, borderBottomColor: palette.border, paddingVertical: spacing[3], alignItems: "center" }}>
+              <AppText variant="h3">Comments</AppText>
+            </View>
+            <BottomSheetScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{
+                paddingHorizontal: spacing[3],
+                paddingVertical: spacing[4],
+                paddingBottom: spacing[24], // Space for footer
+              }}
+            >
+              {commentsForActiveItem.length ? (
+                commentsForActiveItem.map((comment) => (
+                  <View key={comment.id} style={{ gap: spacing[3], marginBottom: spacing[5] }}>
+                    <View style={{ flexDirection: "row", gap: spacing[3] }}>
+                      <Pressable
+                        onPress={() => openUserProfile(comment.authorName, comment.authorAvatarUrl, activeCommentItem?.authorLocation)}
+                      >
+                        <Avatar uri={comment.authorAvatarUrl} name={comment.authorName} size={36} />
+                      </Pressable>
+                      <View style={{ flex: 1, gap: 2 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                          <AppText variant="bodySmallBold">{comment.authorName}</AppText>
+                          <AppText variant="micro" tone="muted">{formatTimeAgo(comment.createdAt)}</AppText>
+                        </View>
+                        <AppText variant="bodySmall" style={{ lineHeight: 18 }}>{comment.text}</AppText>
+                        <Pressable
+                          onPress={() => {
+                            setActiveReplyCommentId(comment.id);
+                            commentInputRef.current?.focus();
+                          }}
+                          style={{ marginTop: 4 }}
+                        >
+                          <AppText variant="micro" style={{ fontWeight: "700", color: palette.textMuted }}>Reply</AppText>
+                        </Pressable>
+
+                        {/* Replies */}
+                        {(localRepliesByCommentId[comment.id] ?? []).length > 0 && (
+                          <View style={{ gap: spacing[3], marginTop: spacing[3] }}>
+                            {(localRepliesByCommentId[comment.id] ?? []).map((reply) => (
+                              <View key={reply.id} style={{ flexDirection: "row", gap: spacing[3] }}>
+                                <Avatar uri={reply.authorAvatarUrl} name={reply.authorName} size={24} />
+                                <View style={{ flex: 1, gap: 2 }}>
+                                  <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                                    <AppText variant="micro" style={{ fontWeight: "700" }}>{reply.authorName}</AppText>
+                                    <AppText variant="micro" tone="muted">{formatTimeAgo(reply.createdAt)}</AppText>
+                                  </View>
+                                  <AppText variant="bodySmall" style={{ lineHeight: 16 }}>{reply.text}</AppText>
+                                </View>
+                              </View>
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: spacing[12] }}>
+                  <MessageCircle size={48} color={palette.border} style={{ marginBottom: spacing[4] }} />
+                  <AppText tone="secondary">No comments yet</AppText>
+                  <AppText variant="bodySmall" tone="muted">Be the first to share your review!</AppText>
+                </View>
+              )}
+            </BottomSheetScrollView>
+          </BottomSheetModal>
+        ) : null}
+
+      </FeedErrorBoundary>
     </SafeAreaView>
   );
 }
@@ -343,43 +900,72 @@ function keyExtractor(item: HomeFeedItem) {
   return item.id;
 }
 
-function InlineActionMetric({
+function VerticalActionMetric({
   icon,
   count,
+  palette,
 }: {
   icon: ReactNode;
   count: number;
+  palette: any;
 }) {
   return (
-    <View style={styles.inlineActionMetric}>
+    <View style={{ alignItems: "center", gap: 4 }}>
       {icon}
-      <AppText variant="micro" tone="muted">
+      <AppText variant="micro" style={{ color: palette.white, fontWeight: "600" }}>
         {count}
       </AppText>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ palette, spacing, radii }: ReturnType<typeof useHungryTheme>) => StyleSheet.create({
   safeArea: {
     flex: 1,
   },
   feedItemWrap: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.navy,
   },
   imageContainer: {
-    height: IMAGE_HEIGHT,
     width: "100%",
     position: "relative",
+    backgroundColor: palette.navy,
   },
   heroImage: {
-    height: IMAGE_HEIGHT,
-    width: "100%",
+    ...StyleSheet.absoluteFillObject,
+  },
+  gradientScrim: {
+    ...StyleSheet.absoluteFillObject,
+    height: "100%",
+  },
+  overlayContent: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "flex-end",
+  },
+  overlayTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+  },
+  textOverlay: {
+    flex: 1,
+    marginRight: 12,
+  },
+  sideActions: {
+    alignItems: "center",
+  },
+  verticalActionMetric: {
+    alignItems: "center",
+    gap: 4,
+  },
+  captionOverlay: {
+    marginTop: 8,
   },
   playButtonContainer: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 1,
   },
   playButtonBackdrop: {
     width: 68,
@@ -389,8 +975,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  belowImageSection: {},
-  textGestureRegion: {},
   quickPostRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -399,35 +983,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     minHeight: 36,
   },
-  captionHitArea: {
-    minHeight: 28,
-    justifyContent: "center",
-    paddingVertical: 4,
-  },
-  metaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  postFooterRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  postActionsRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 12,
-    marginLeft: "auto",
-  },
-  inlineActionMetric: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: 4,
-  },
   storyRing: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: palette.surface,
     borderWidth: 2,
   },
   storyLabel: {
@@ -436,18 +993,5 @@ const styles = StyleSheet.create({
   sectionEyebrow: {
     letterSpacing: 0.8,
     textTransform: "uppercase",
-  },
-  fab: {
-    alignItems: "center",
-    borderRadius: 28,
-    elevation: 4,
-    height: 56,
-    justifyContent: "center",
-    position: "absolute",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 4,
-    width: 56,
   },
 });

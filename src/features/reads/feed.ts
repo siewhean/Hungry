@@ -1,7 +1,7 @@
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 
 export function getReadsFeed(area?: string) {
-  const posts = mockRepository.listBlogPosts();
+  const posts = getDataRepository().listBlogPosts();
 
   if (!area || area === "Nearby") {
     return posts;
@@ -9,4 +9,3 @@ export function getReadsFeed(area?: string) {
 
   return posts.filter((post) => post.area === area);
 }
-

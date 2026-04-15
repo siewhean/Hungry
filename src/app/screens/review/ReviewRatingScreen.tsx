@@ -4,7 +4,7 @@ import { View } from "react-native";
 import { Image } from "expo-image";
 
 import { AppText, Button, Card } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useHungryTheme } from "@/theme";
 import { ReviewScreenShell } from "./ReviewScreenShell";
@@ -14,6 +14,7 @@ import type { ReviewStackParamList } from "./ReviewStack";
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewRating">;
 
 export function ReviewRatingScreen({ navigation, route }: Props) {
+  const repository = getDataRepository();
   const { spacing } = useHungryTheme();
   const rating = useReviewDraftStore((state) => state.draft.rating);
   const selectedVenueId = useReviewDraftStore((state) => state.draft.selectedVenueId);
@@ -22,8 +23,8 @@ export function ReviewRatingScreen({ navigation, route }: Props) {
   const setRating = useReviewDraftStore((state) => state.setRating);
   const routeDishId = route.params?.dishId;
   const routeVenueId = route.params?.venueId;
-  const dish = mockRepository.getDishById(routeDishId ?? selectedDishId ?? "");
-  const venue = dish ? mockRepository.getVenueById(routeVenueId ?? selectedVenueId ?? dish.venueId) : undefined;
+  const dish = repository.getDishById(routeDishId ?? selectedDishId ?? "");
+  const venue = dish ? repository.getVenueById(routeVenueId ?? selectedVenueId ?? dish.venueId) : undefined;
 
   useEffect(() => {
     if (!dish) {
@@ -66,7 +67,7 @@ export function ReviewRatingScreen({ navigation, route }: Props) {
           <AppText tone="muted">{rating ? `${rating} / 5 selected` : "Tap a star to continue."}</AppText>
         </View>
       </Card>
-      <Button label="Next: taste notes" onPress={() => navigation.navigate("ReviewTags")} disabled={!rating} />
+      <Button label="Next: taste notes" onPress={() => navigation.navigate("ReviewTags", { venueId: venue.id, dishId: dish.id })} disabled={!rating} />
     </ReviewScreenShell>
   );
 }

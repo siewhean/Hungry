@@ -13,6 +13,7 @@
 import { useEffect, useRef } from "react";
 import { View, Animated, Easing, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import Constants from "expo-constants";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -24,7 +25,8 @@ type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
 export function SplashScreen({ navigation }: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const { palette, spacing } = useHungryTheme();
+  const { palette, motion, spacing, radii } = useHungryTheme();
+  const appVersion = Constants.expoConfig?.version ?? "0.1.0";
 
   // ── Animated values ───────────────────────────────────────────────────────
   const logoScale = useRef(new Animated.Value(0.4)).current;
@@ -49,7 +51,7 @@ export function SplashScreen({ navigation }: Props) {
         }),
         Animated.timing(logoOpacity, {
           toValue: 1,
-          duration: 200,
+          duration: motion.splashFast,
           useNativeDriver: true,
         }),
       ]),
@@ -58,13 +60,13 @@ export function SplashScreen({ navigation }: Props) {
       Animated.parallel([
         Animated.timing(suffixTranslateX, {
           toValue: 0,
-          duration: 280,
+          duration: motion.splashMedium,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(suffixOpacity, {
           toValue: 1,
-          duration: 200,
+          duration: motion.splashFast,
           useNativeDriver: true,
         }),
       ]),
@@ -73,7 +75,7 @@ export function SplashScreen({ navigation }: Props) {
       Animated.parallel([
         Animated.timing(taglineOpacity, {
           toValue: 1,
-          duration: 400,
+          duration: motion.splashReveal,
           easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
@@ -84,7 +86,7 @@ export function SplashScreen({ navigation }: Props) {
         }),
         Animated.timing(dotOpacity, {
           toValue: 1,
-          duration: 260,
+          duration: motion.splashDot,
           useNativeDriver: true,
         }),
       ]),
@@ -117,15 +119,24 @@ export function SplashScreen({ navigation }: Props) {
           },
         ],
       });
-    }, 2000);
+    }, motion.splashTotal);
 
     return () => clearTimeout(timer);
-  }, [hasCompletedOnboarding, isAuthenticated, navigation]);
+  }, [
+    hasCompletedOnboarding,
+    isAuthenticated,
+    motion.splashDot,
+    motion.splashFast,
+    motion.splashMedium,
+    motion.splashReveal,
+    motion.splashTotal,
+    navigation,
+  ]);
 
   return (
-    <View style={[styles.root, { backgroundColor: palette.bg }]}>
+    <View style={[styles.root, { backgroundColor: palette.bg, gap: spacing[4] }]}>
       {/* Brand lockup */}
-      <View style={styles.lockup}>
+      <View style={[styles.lockup, { gap: 0 }]}>
         {/* "H" — the "bite" letter */}
         <Animated.View
           style={{
@@ -133,10 +144,10 @@ export function SplashScreen({ navigation }: Props) {
             transform: [{ scale: logoScale }],
           }}
         >
-          <View style={[styles.hContainer, { backgroundColor: palette.orange }]}>
-            <AppText style={styles.hLetter}>H</AppText>
+          <View style={[styles.hContainer, { backgroundColor: palette.orange, borderRadius: radii.xl }]}>
+            <AppText tone="inverse" style={styles.hLetter}>H</AppText>
             {/* Bite notch */}
-            <View style={[styles.biteNotch, { backgroundColor: palette.bg }]} />
+            <View style={[styles.biteNotch, { backgroundColor: palette.bg, borderRadius: radii.md }]} />
           </View>
         </Animated.View>
 
@@ -157,10 +168,10 @@ export function SplashScreen({ navigation }: Props) {
             opacity: dotOpacity,
             transform: [{ scale: dotScale }],
             alignSelf: "flex-end",
-            marginBottom: 10,
+            marginBottom: spacing[2],
           }}
         >
-          <View style={[styles.dot, { backgroundColor: palette.orange }]} />
+          <View style={[styles.dot, { backgroundColor: palette.orange, borderRadius: radii.pill }]} />
         </Animated.View>
       </View>
 
@@ -176,11 +187,11 @@ export function SplashScreen({ navigation }: Props) {
         style={{
           opacity: taglineOpacity,
           position: "absolute",
-          bottom: 48,
+          bottom: spacing[12],
         }}
       >
         <AppText variant="micro" tone="muted">
-          Hungry v0.1.0 · Singapore
+          Hungry v{appVersion} · Singapore
         </AppText>
       </Animated.View>
     </View>
@@ -192,17 +203,14 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 16,
   },
   lockup: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 0,
   },
   hContainer: {
     width: 72,
     height: 72,
-    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -212,7 +220,6 @@ const styles = StyleSheet.create({
     fontSize: 48,
     lineHeight: 56,
     fontFamily: "Nunito_800ExtraBold",
-    color: "#FFFFFF",
   },
   biteNotch: {
     position: "absolute",
@@ -220,7 +227,6 @@ const styles = StyleSheet.create({
     right: -6,
     width: 24,
     height: 24,
-    borderRadius: 12,
   },
   brandSuffix: {
     fontSize: 48,
@@ -231,7 +237,6 @@ const styles = StyleSheet.create({
   dot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
   },
   tagline: {
     fontSize: 15,
