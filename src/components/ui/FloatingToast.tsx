@@ -2,7 +2,12 @@ import { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
-import { CircleCheck, CircleAlert, TriangleAlert, Info } from "lucide-react-native";
+import {
+  CircleCheck,
+  CircleAlert,
+  TriangleAlert,
+  Info,
+} from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
 import { useUIStore } from "@/store/useUIStore";
@@ -34,18 +39,32 @@ export function FloatingToast() {
   if (!toast) return null;
 
   const toneConfig = {
-    success: { bg: palette.orange, icon: CircleCheck, color: palette.textOnPrimary },
-    warning: { bg: palette.amber, icon: TriangleAlert, color: palette.textOnPrimary },
-    error: { bg: palette.error, icon: CircleAlert, color: palette.textOnPrimary },
+    success: {
+      bg: palette.orange,
+      icon: CircleCheck,
+      color: palette.textOnPrimary,
+    },
+    warning: {
+      bg: palette.amber,
+      icon: TriangleAlert,
+      color: palette.textOnPrimary,
+    },
+    error: {
+      bg: palette.error,
+      icon: CircleAlert,
+      color: palette.textOnPrimary,
+    },
     info: { bg: palette.navy, icon: Info, color: palette.textOnPrimary },
   }[tone] || { bg: palette.navy, icon: Info, color: palette.textOnPrimary };
-
 
   const Icon = toneConfig.icon;
 
   return (
-    <View pointerEvents="box-none" style={[styles.wrapper, { zIndex: zIndex.toast }]}>
-      <Animated.View 
+    <View
+      pointerEvents="box-none"
+      style={[styles.wrapper, { zIndex: zIndex.toast }]}
+    >
+      <Animated.View
         entering={FadeInDown.duration(motion.toast)}
         exiting={FadeOutUp.duration(motion.toast)}
       >
@@ -67,7 +86,11 @@ export function FloatingToast() {
           ]}
         >
           <Icon size={20} color={toneConfig.color} />
-          <AppText style={{ color: toneConfig.color, fontWeight: "700", flex: 1 }}>{toast.message}</AppText>
+          <AppText
+            style={{ color: toneConfig.color, fontWeight: "700", flex: 1 }}
+          >
+            {toast.message}
+          </AppText>
         </Pressable>
       </Animated.View>
     </View>

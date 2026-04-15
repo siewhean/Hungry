@@ -1,9 +1,35 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ChevronRight, Minus, Plus, RotateCcw, Search } from "lucide-react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import {
+  ChevronRight,
+  Minus,
+  Plus,
+  RotateCcw,
+  Search,
+} from "lucide-react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import {
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetScrollView,
+} from "@gorhom/bottom-sheet";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { FloorPlanViewer } from "@/components/map/FloorPlanViewer";
@@ -11,7 +37,11 @@ import { AppText, Button, Input } from "@/components/ui";
 import { getBuildingVenues } from "@/features/discovery/discovery";
 import { getDirectoryDescriptor } from "@/features/discovery/venueDescriptor";
 import { getFloorPlan } from "@/lib/geo/floorPlans";
-import { getBuildingById, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
+import {
+  getBuildingById,
+  singaporeBuildings,
+  toSummary,
+} from "@/lib/geo/singaporeBuildings";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import type { StallPolygon } from "@/lib/services/types";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
@@ -67,7 +97,10 @@ function resolveBuilding(buildingId?: string, selectedName?: string) {
   return getBuildingById(DEFAULT_BUILDING_ID)!;
 }
 
-function isDessertDish(dishId: string | undefined, getDishById: (dishId: string) => DishDetail | undefined) {
+function isDessertDish(
+  dishId: string | undefined,
+  getDishById: (dishId: string) => DishDetail | undefined,
+) {
   if (!dishId) {
     return false;
   }
@@ -78,15 +111,21 @@ function isDessertDish(dishId: string | undefined, getDishById: (dishId: string)
   }
 
   const haystack = `${dish.name} ${dish.tasteTags.join(" ")}`.toLowerCase();
-  return ["dessert", "sweet", "cheng tng", "pancake", "ice", "toast", "kueh"].some((token) =>
-    haystack.includes(token),
-  );
+  return [
+    "dessert",
+    "sweet",
+    "cheng tng",
+    "pancake",
+    "ice",
+    "toast",
+    "kueh",
+  ].some((token) => haystack.includes(token));
 }
 
 function isDessertLabel(label: string) {
   const normalized = label.toLowerCase();
-  return ["dessert", "ice", "cake", "sweet", "kueh", "pastry", "bakery"].some((token) =>
-    normalized.includes(token),
+  return ["dessert", "ice", "cake", "sweet", "kueh", "pastry", "bakery"].some(
+    (token) => normalized.includes(token),
   );
 }
 
@@ -118,7 +157,10 @@ function FloorToggle({
         paddingVertical: spacing[1],
       }}
     >
-      <AppText variant="micro" style={{ color: selected ? palette.surface : palette.text }}>
+      <AppText
+        variant="micro"
+        style={{ color: selected ? palette.surface : palette.text }}
+      >
         {floor}
       </AppText>
     </Pressable>
@@ -152,7 +194,10 @@ function DirectoryFilter({
         paddingVertical: spacing[2],
       }}
     >
-      <AppText variant="micro" style={{ color: selected ? palette.navy : palette.text }}>
+      <AppText
+        variant="micro"
+        style={{ color: selected ? palette.navy : palette.text }}
+      >
         {label}
       </AppText>
     </Pressable>
@@ -175,11 +220,14 @@ function parseTimeToMinutes(value: string): number | null {
     return null;
   }
 
-  const normalizedHours = hours % 12 + (suffix === "PM" ? 12 : 0);
+  const normalizedHours = (hours % 12) + (suffix === "PM" ? 12 : 0);
   return normalizedHours * 60 + minutes;
 }
 
-function isClosingWithinOneHour(operatingHours?: string, now = new Date()): boolean {
+function isClosingWithinOneHour(
+  operatingHours?: string,
+  now = new Date(),
+): boolean {
   if (!operatingHours) {
     return false;
   }
@@ -286,10 +334,16 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const selectedFloor = useDiscoveryStore((state) => state.selectedFloor);
-  const highlightedStallVenueId = useDiscoveryStore((state) => state.highlightedStallVenueId);
-  const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
+  const highlightedStallVenueId = useDiscoveryStore(
+    (state) => state.highlightedStallVenueId,
+  );
+  const setSelectedBuilding = useDiscoveryStore(
+    (state) => state.setSelectedBuilding,
+  );
   const setSelectedFloor = useDiscoveryStore((state) => state.setSelectedFloor);
-  const setHighlightedStallVenueId = useDiscoveryStore((state) => state.setHighlightedStallVenueId);
+  const setHighlightedStallVenueId = useDiscoveryStore(
+    (state) => state.setHighlightedStallVenueId,
+  );
 
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const snapPoints = useMemo(() => ["40%", "90%"], []);
@@ -297,7 +351,9 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
   const [stallQuery, setStallQuery] = useState("");
   const [dessertsOnly, setDessertsOnly] = useState(false);
   const [openNowOnly, setOpenNowOnly] = useState(false);
-  const [selectedStallId, setSelectedStallId] = useState<string | undefined>(undefined);
+  const [selectedStallId, setSelectedStallId] = useState<string | undefined>(
+    undefined,
+  );
 
   const building = useMemo(
     () => resolveBuilding(route.params?.buildingId, selectedBuilding?.name),
@@ -311,13 +367,27 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
     }
   }, [building, selectedFloor, setSelectedBuilding, setSelectedFloor]);
 
-  const activeFloor = building.floors.includes(selectedFloor) ? selectedFloor : building.floors[0];
+  const activeFloor = building.floors.includes(selectedFloor)
+    ? selectedFloor
+    : building.floors[0];
 
-  const buildingVenues = useMemo(() => getBuildingVenues(building.id), [building.id]);
-  const venueById = useMemo(() => new Map(buildingVenues.map((venue) => [venue.id, venue])), [buildingVenues]);
+  const buildingVenues = useMemo(
+    () => getBuildingVenues(building.id),
+    [building.id],
+  );
+  const venueById = useMemo(
+    () => new Map(buildingVenues.map((venue) => [venue.id, venue])),
+    [buildingVenues],
+  );
 
   const floorPlan = useMemo(
-    () => getFloorPlan(building.id, activeFloor, building.openStalls, building.totalStalls),
+    () =>
+      getFloorPlan(
+        building.id,
+        activeFloor,
+        building.openStalls,
+        building.totalStalls,
+      ),
     [activeFloor, building.id, building.openStalls, building.totalStalls],
   );
   const mapViewportWidth = useMemo(
@@ -334,7 +404,8 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
   }, [floorPlan.canvasHeight, floorPlan.canvasWidth, mapViewportWidth]);
   const [directoryScale, setDirectoryScale] = useState(fittedDirectoryScale);
   const tenantPolygons = useMemo(
-    () => floorPlan.stalls.filter((stall) => (stall.kind ?? "tenant") === "tenant"),
+    () =>
+      floorPlan.stalls.filter((stall) => (stall.kind ?? "tenant") === "tenant"),
     [floorPlan.stalls],
   );
 
@@ -348,7 +419,9 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
     return tenantPolygons
       .map((stall) => {
         const venue = stall.venueId ? venueById.get(stall.venueId) : undefined;
-        const dish = venue ? repository.getDishById(venue.topDishId) : undefined;
+        const dish = venue
+          ? repository.getDishById(venue.topDishId)
+          : undefined;
         const title = venue?.name ?? stall.label ?? `Unit ${stall.unitNumber}`;
         const unitNumber = venue?.unitNumber ?? stall.unitNumber;
         const isOpen = venue ? venue.isOpen : stall.status === "open";
@@ -356,7 +429,8 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
           operatingHours: venue?.operatingHours,
           isFacility: stall.status === "non_food",
         });
-        const searchable = `${title} ${unitNumber} ${dish?.name ?? ""}`.toLowerCase();
+        const searchable =
+          `${title} ${unitNumber} ${dish?.name ?? ""}`.toLowerCase();
 
         return {
           stall,
@@ -378,7 +452,8 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
 
         if (dessertsOnly) {
           const isDessert =
-            isDessertDish(record.venue?.topDishId, repository.getDishById) || isDessertLabel(record.title);
+            isDessertDish(record.venue?.topDishId, repository.getDishById) ||
+            isDessertLabel(record.title);
           if (!isDessert) {
             return false;
           }
@@ -390,10 +465,19 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
 
         return true;
       });
-  }, [dessertsOnly, openNowOnly, repository, stallQuery, tenantPolygons, venueById]);
+  }, [
+    dessertsOnly,
+    openNowOnly,
+    repository,
+    stallQuery,
+    tenantPolygons,
+    venueById,
+  ]);
 
   const selectedFromStore = useMemo(
-    () => tenantPolygons.find((stall) => stall.venueId === highlightedStallVenueId)?.stallId,
+    () =>
+      tenantPolygons.find((stall) => stall.venueId === highlightedStallVenueId)
+        ?.stallId,
     [highlightedStallVenueId, tenantPolygons],
   );
 
@@ -403,7 +487,9 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
       return;
     }
 
-    if (!floorDirectory.some((record) => record.stall.stallId === selectedStallId)) {
+    if (
+      !floorDirectory.some((record) => record.stall.stallId === selectedStallId)
+    ) {
       setSelectedStallId(floorDirectory[0]?.stall.stallId);
     }
   }, [floorDirectory, selectedFromStore, selectedStallId]);
@@ -426,19 +512,13 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
 
   const zoomInDirectory = () => {
     setDirectoryScale((current) =>
-      Math.min(
-        DIRECTORY_ZOOM_MAX,
-        Number((current * 1.2).toFixed(3)),
-      ),
+      Math.min(DIRECTORY_ZOOM_MAX, Number((current * 1.2).toFixed(3))),
     );
   };
 
   const zoomOutDirectory = () => {
     setDirectoryScale((current) =>
-      Math.max(
-        DIRECTORY_ZOOM_MIN,
-        Number((current / 1.2).toFixed(3)),
-      ),
+      Math.max(DIRECTORY_ZOOM_MIN, Number((current / 1.2).toFixed(3))),
     );
   };
 
@@ -470,13 +550,21 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
 
   const renderBackdrop = useCallback(
     (props: any) => (
-      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.5}
+      />
     ),
     [],
   );
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: palette.bg }]}
+      edges={["top", "left", "right"]}
+    >
       <View style={styles.screen}>
         <ScrollView
           style={styles.scroll}
@@ -494,7 +582,8 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
               </AppText>
               <AppText variant="h1">{building.name}</AppText>
               <AppText variant="bodySmall" tone="secondary">
-                Browse realistic floor overlays, select a unit polygon, then open the stall details.
+                Browse realistic floor overlays, select a unit polygon, then
+                open the stall details.
               </AppText>
             </View>
 
@@ -506,7 +595,13 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
               leftIcon={<Search color={palette.textMuted} size={18} />}
             />
 
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                gap: spacing[2],
+              }}
+            >
               <DirectoryFilter
                 label="Open now"
                 selected={openNowOnly}
@@ -528,10 +623,17 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                 overflow: "hidden",
               }}
             >
-              <View style={{ gap: spacing[1], paddingHorizontal: spacing[3], paddingTop: spacing[4] }}>
+              <View
+                style={{
+                  gap: spacing[1],
+                  paddingHorizontal: spacing[3],
+                  paddingTop: spacing[4],
+                }}
+              >
                 <AppText variant="h3">Store directory map</AppText>
                 <AppText variant="bodySmall" tone="secondary">
-                  Floor {activeFloor} · tap a stall polygon to inspect that unit.
+                  Floor {activeFloor} · tap a stall polygon to inspect that
+                  unit.
                 </AppText>
               </View>
 
@@ -605,7 +707,10 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
               <View style={{ gap: spacing[2] }}>
                 {floorDirectory.map((record) => {
                   const isSelected = activeStallId === record.stall.stallId;
-                  const status = getVenueStatus(record.isOpen, record.venue?.operatingHours);
+                  const status = getVenueStatus(
+                    record.isOpen,
+                    record.venue?.operatingHours,
+                  );
 
                   return (
                     <Pressable
@@ -615,7 +720,9 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                       onPress={() => handleStallSelection(record.stall)}
                       style={{
                         backgroundColor: palette.surface,
-                        borderColor: isSelected ? palette.orange : palette.border,
+                        borderColor: isSelected
+                          ? palette.orange
+                          : palette.border,
                         borderRadius: radii.md,
                         borderWidth: 1,
                         gap: spacing[1],
@@ -625,7 +732,14 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                         width: "100%",
                       }}
                     >
-                      <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[2], alignItems: "center" }}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          gap: spacing[2],
+                          alignItems: "center",
+                        }}
+                      >
                         <View style={{ flex: 1, gap: 1 }}>
                           <AppText numberOfLines={1} variant="h3">
                             {record.title}
@@ -634,7 +748,13 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                             {record.unitNumber}
                           </AppText>
                         </View>
-                        <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                        <View
+                          style={{
+                            alignItems: "center",
+                            flexDirection: "row",
+                            gap: spacing[2],
+                          }}
+                        >
                           <StatusBadge status={status} />
                           <Pressable
                             accessibilityRole="button"
@@ -642,7 +762,9 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                             hitSlop={10}
                             onPress={() => {
                               if (record.venue) {
-                                navigation.navigate("StallDetail", { venueId: record.venue.id });
+                                navigation.navigate("StallDetail", {
+                                  venueId: record.venue.id,
+                                });
                               }
                             }}
                             style={{
@@ -660,7 +782,11 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                         </View>
                       </View>
                       {record.venue?.closureNotice ? (
-                        <AppText numberOfLines={2} variant="micro" style={{ color: palette.warning }}>
+                        <AppText
+                          numberOfLines={2}
+                          variant="micro"
+                          style={{ color: palette.warning }}
+                        >
                           {record.venue.closureNotice}
                         </AppText>
                       ) : null}
@@ -700,14 +826,26 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                   paddingVertical: spacing[4],
                 }}
               >
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
                   <AppText variant="h3">Menu preview on this level</AppText>
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel="View all menu items"
                     onPress={() => navigation.navigate("SearchResults")}
                   >
-                    <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>VIEW ALL</AppText>
+                    <AppText
+                      variant="micro"
+                      tone="accent"
+                      style={{ fontWeight: "700" }}
+                    >
+                      VIEW ALL
+                    </AppText>
                   </Pressable>
                 </View>
                 <ScrollView
@@ -720,7 +858,9 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                       key={dish.id}
                       accessibilityRole="button"
                       accessibilityLabel={`Open ${dish.name} details`}
-                      onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
+                      onPress={() =>
+                        navigation.navigate("DishDetail", { dishId: dish.id })
+                      }
                       style={{
                         backgroundColor: palette.bgSoft,
                         borderColor: palette.border,
@@ -735,10 +875,17 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                       <AppText variant="h3" numberOfLines={1}>
                         {dish.name}
                       </AppText>
-                      <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                      <AppText
+                        variant="bodySmall"
+                        tone="secondary"
+                        numberOfLines={1}
+                      >
                         {dish.venueName}
                       </AppText>
-                      <AppText variant="price" style={{ color: palette.orange }}>
+                      <AppText
+                        variant="price"
+                        style={{ color: palette.orange }}
+                      >
                         S${dish.price.toFixed(2)}
                       </AppText>
                     </Pressable>
@@ -748,16 +895,16 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
             ) : null}
           </View>
         </ScrollView>
-        </View>
+      </View>
 
-        <BottomSheetModal
+      <BottomSheetModal
         ref={bottomSheetModalRef}
         index={0}
         snapPoints={snapPoints}
         backdropComponent={renderBackdrop}
         backgroundStyle={{ backgroundColor: palette.surface }}
         handleIndicatorStyle={{ backgroundColor: palette.border }}
-        >
+      >
         <BottomSheetScrollView
           contentContainerStyle={{
             padding: spacing[5],
@@ -767,20 +914,33 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
         >
           {activeRecord?.venue ? (
             <>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3] }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  gap: spacing[3],
+                }}
+              >
                 <View style={{ flex: 1, gap: 4 }}>
                   <AppText variant="bodySmall" tone="muted">
                     {activeRecord.unitNumber} · {activeFloor}
                   </AppText>
                   <AppText variant="h1">{activeRecord.title}</AppText>
-                  <StatusBadge status={getVenueStatus(activeRecord.isOpen, activeRecord.venue.operatingHours)} />
+                  <StatusBadge
+                    status={getVenueStatus(
+                      activeRecord.isOpen,
+                      activeRecord.venue.operatingHours,
+                    )}
+                  />
                 </View>
                 <Button
                   label="View full stall"
                   variant="primary"
                   onPress={() => {
                     bottomSheetModalRef.current?.dismiss();
-                    navigation.navigate("StallDetail", { venueId: activeRecord.venue!.id });
+                    navigation.navigate("StallDetail", {
+                      venueId: activeRecord.venue!.id,
+                    });
                   }}
                 />
               </View>
@@ -795,7 +955,9 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                     accessibilityLabel={`Open signature dish ${activeRecord.dish.name}`}
                     onPress={() => {
                       bottomSheetModalRef.current?.dismiss();
-                      navigation.navigate("DishDetail", { dishId: activeRecord.dish!.id });
+                      navigation.navigate("DishDetail", {
+                        dishId: activeRecord.dish!.id,
+                      });
                     }}
                     style={{
                       backgroundColor: palette.bgSoft,
@@ -809,7 +971,10 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                   >
                     <View style={{ flex: 1, gap: spacing[1] }}>
                       <AppText variant="h3">{activeRecord.dish.name}</AppText>
-                      <AppText variant="price" style={{ color: palette.orange }}>
+                      <AppText
+                        variant="price"
+                        style={{ color: palette.orange }}
+                      >
                         S${activeRecord.dish.price.toFixed(2)}
                       </AppText>
                       <AppText variant="micro" tone="muted">
@@ -832,17 +997,23 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
             </>
           ) : (
             <View style={{ paddingVertical: spacing[12] }}>
-              <AppText variant="h3" style={{ textAlign: "center" }}>No stall selected</AppText>
-              <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
+              <AppText variant="h3" style={{ textAlign: "center" }}>
+                No stall selected
+              </AppText>
+              <AppText
+                variant="bodySmall"
+                tone="secondary"
+                style={{ textAlign: "center" }}
+              >
                 Tap a stall on the map to see details.
               </AppText>
             </View>
           )}
         </BottomSheetScrollView>
-        </BottomSheetModal>
-        </SafeAreaView>
-        );
-        }
+      </BottomSheetModal>
+    </SafeAreaView>
+  );
+}
 
 const styles = StyleSheet.create({
   safeArea: {

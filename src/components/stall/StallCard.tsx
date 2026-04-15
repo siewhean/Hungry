@@ -36,7 +36,10 @@ export function StallCard({ venue, topDish, onPress }: StallCardProps) {
             </AppText>
           </View>
           <View style={styles.metaRow}>
-            <Badge label={venue.isOpen ? "Open" : "Closed"} tone={venue.isOpen ? "success" : "warning"} />
+            <Badge
+              label={venue.isOpen ? "Open" : "Closed"}
+              tone={venue.isOpen ? "success" : "warning"}
+            />
           </View>
           <View style={styles.infoRow}>
             <Clock3 size={14} color={palette.textMuted} />
@@ -58,19 +61,19 @@ export function StallCard({ venue, topDish, onPress }: StallCardProps) {
   );
 }
 
-const createStyles = (spacing: any) => StyleSheet.create({
-  row: {
-    flexDirection: "row",
-  },
-  metaRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing[2],
-  },
-  infoRow: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing[1],
-  },
-});
-
+const createStyles = (spacing: any) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: "row",
+    },
+    metaRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing[2],
+    },
+    infoRow: {
+      alignItems: "center",
+      flexDirection: "row",
+      gap: spacing[1],
+    },
+  });

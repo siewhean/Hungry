@@ -1,8 +1,19 @@
-import { Animated, ScrollView, Share, View, useWindowDimensions, Pressable, StyleSheet } from "react-native";
+import {
+  Animated,
+  ScrollView,
+  Share,
+  View,
+  useWindowDimensions,
+  Pressable,
+  StyleSheet,
+} from "react-native";
 import { Image } from "expo-image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { Star } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -10,11 +21,22 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
-import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
+import {
+  useProfileStore,
+  getTasteSimilarityWithDish,
+} from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import { AppText, Badge, Button, Card, EmptyState, InlineBanner, Input } from "@/components/ui";
+import {
+  AppText,
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  InlineBanner,
+  Input,
+} from "@/components/ui";
 import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 
@@ -42,12 +64,24 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const heroScrollX = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
   const lastTrackedDishId = useRef<string | null>(null);
-  const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(null);
-  const [replyDraftByReviewId, setReplyDraftByReviewId] = useState<Record<string, string>>({});
-  const [localRepliesByReviewId, setLocalRepliesByReviewId] = useState<Record<string, ReviewReply[]>>({});
+  const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(
+    null,
+  );
+  const [replyDraftByReviewId, setReplyDraftByReviewId] = useState<
+    Record<string, string>
+  >({});
+  const [localRepliesByReviewId, setLocalRepliesByReviewId] = useState<
+    Record<string, ReviewReply[]>
+  >({});
 
-  const venue = useMemo(() => (dish ? repository.getVenueById(dish.venueId) : undefined), [dish, repository]);
-  const tasteMatch = useMemo(() => (dish ? getTasteSimilarityWithDish(profile, dish) : 0), [profile, dish]);
+  const venue = useMemo(
+    () => (dish ? repository.getVenueById(dish.venueId) : undefined),
+    [dish, repository],
+  );
+  const tasteMatch = useMemo(
+    () => (dish ? getTasteSimilarityWithDish(profile, dish) : 0),
+    [profile, dish],
+  );
   const gallery = useMemo(() => (dish ? buildDishGallery(dish) : []), [dish]);
 
   const maxTasteScore = useMemo(() => {
@@ -59,7 +93,10 @@ export function DishDetailScreen({ navigation, route }: Props) {
 
   const indicatorDotSize = 7;
   const indicatorStep = 14;
-  const indicatorTrackWidth = Math.max(indicatorDotSize, indicatorDotSize + Math.max(0, gallery.length - 1) * indicatorStep);
+  const indicatorTrackWidth = Math.max(
+    indicatorDotSize,
+    indicatorDotSize + Math.max(0, gallery.length - 1) * indicatorStep,
+  );
 
   useEffect(() => {
     if (!dish || lastTrackedDishId.current === dish.id) {
@@ -80,8 +117,14 @@ export function DishDetailScreen({ navigation, route }: Props) {
 
   if (!dish || !venue) {
     return (
-      <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["top", "left", "right"]}>
-        <EmptyState title="Dish not found" body="This dish is no longer available in the current mock dataset." />
+      <SafeAreaView
+        style={{ backgroundColor: palette.bg, flex: 1 }}
+        edges={["top", "left", "right"]}
+      >
+        <EmptyState
+          title="Dish not found"
+          body="This dish is no longer available in the current mock dataset."
+        />
       </SafeAreaView>
     );
   }
@@ -114,18 +157,31 @@ export function DishDetailScreen({ navigation, route }: Props) {
   };
 
   return (
-    <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["top", "left", "right"]}>
+    <SafeAreaView
+      style={{ backgroundColor: palette.bg, flex: 1 }}
+      edges={["top", "left", "right"]}
+    >
       <View style={{ flex: 1 }}>
         <Animated.ScrollView
           showsVerticalScrollIndicator={false}
           scrollEventThrottle={16}
-          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-            useNativeDriver: true,
-          })}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            {
+              useNativeDriver: true,
+            },
+          )}
           contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
         >
           {/* Hero image carousel - Fixed 4:3 Aspect Ratio */}
-          <View style={{ width: screenWidth, height: screenWidth * 0.75, position: "relative", overflow: "hidden" }}>
+          <View
+            style={{
+              width: screenWidth,
+              height: screenWidth * 0.75,
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
             <Animated.ScrollView
               horizontal
               pagingEnabled
@@ -152,26 +208,81 @@ export function DishDetailScreen({ navigation, route }: Props) {
             </Animated.ScrollView>
 
             {/* Rating Pill - Floating in bottom corners of image */}
-            <View 
-              style={{ 
-                position: "absolute", 
-                bottom: spacing[3], 
+            <View
+              style={{
+                position: "absolute",
+                bottom: spacing[3],
                 left: profile.leftHandedMode ? spacing[4] : undefined,
-                right: profile.leftHandedMode ? undefined : spacing[4] 
+                right: profile.leftHandedMode ? undefined : spacing[4],
               }}
             >
-              <View style={[{ backgroundColor: palette.amber, borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 6, flexDirection: "row", alignItems: "center", gap: 4 }, shadows.floating]}>
+              <View
+                style={[
+                  {
+                    backgroundColor: palette.amber,
+                    borderRadius: radii.pill,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                  },
+                  shadows.floating,
+                ]}
+              >
                 <Star color={palette.white} fill={palette.white} size={14} />
-                <AppText style={{ color: palette.white, fontWeight: "800", fontSize: 15 }}>{dish.rating.toFixed(1)}</AppText>
+                <AppText
+                  style={{
+                    color: palette.white,
+                    fontWeight: "800",
+                    fontSize: 15,
+                  }}
+                >
+                  {dish.rating.toFixed(1)}
+                </AppText>
               </View>
             </View>
 
             {/* Page Indicators */}
-            <View pointerEvents="none" style={{ alignItems: "center", bottom: 12, left: 0, position: "absolute", right: 0 }}>
-              <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.2)", borderRadius: radii.pill, paddingHorizontal: 8, paddingVertical: 6 }}>
-                <View style={{ height: indicatorDotSize, position: "relative", width: indicatorTrackWidth }}>
+            <View
+              pointerEvents="none"
+              style={{
+                alignItems: "center",
+                bottom: 12,
+                left: 0,
+                position: "absolute",
+                right: 0,
+              }}
+            >
+              <View
+                style={{
+                  alignItems: "center",
+                  backgroundColor: "rgba(0,0,0,0.2)",
+                  borderRadius: radii.pill,
+                  paddingHorizontal: 8,
+                  paddingVertical: 6,
+                }}
+              >
+                <View
+                  style={{
+                    height: indicatorDotSize,
+                    position: "relative",
+                    width: indicatorTrackWidth,
+                  }}
+                >
                   {gallery.map((uri, index) => (
-                    <View key={`${uri}-${index}`} style={{ backgroundColor: "rgba(255,255,255,0.4)", borderRadius: radii.pill, height: indicatorDotSize, left: index * indicatorStep, position: "absolute", top: 0, width: indicatorDotSize }} />
+                    <View
+                      key={`${uri}-${index}`}
+                      style={{
+                        backgroundColor: "rgba(255,255,255,0.4)",
+                        borderRadius: radii.pill,
+                        height: indicatorDotSize,
+                        left: index * indicatorStep,
+                        position: "absolute",
+                        top: 0,
+                        width: indicatorDotSize,
+                      }}
+                    />
                   ))}
                   <Animated.View
                     style={{
@@ -181,13 +292,21 @@ export function DishDetailScreen({ navigation, route }: Props) {
                       left: 0,
                       position: "absolute",
                       top: 0,
-                      transform: [{
-                        translateX: heroScrollX.interpolate({
-                          inputRange: [0, Math.max(1, gallery.length - 1) * screenWidth],
-                          outputRange: [0, Math.max(0, gallery.length - 1) * indicatorStep],
-                          extrapolate: "clamp",
-                        }),
-                      }],
+                      transform: [
+                        {
+                          translateX: heroScrollX.interpolate({
+                            inputRange: [
+                              0,
+                              Math.max(1, gallery.length - 1) * screenWidth,
+                            ],
+                            outputRange: [
+                              0,
+                              Math.max(0, gallery.length - 1) * indicatorStep,
+                            ],
+                            extrapolate: "clamp",
+                          }),
+                        },
+                      ],
                       width: indicatorDotSize,
                     }}
                   />
@@ -196,16 +315,38 @@ export function DishDetailScreen({ navigation, route }: Props) {
             </View>
           </View>
 
-          <View style={{ gap: spacing[5], paddingHorizontal: spacing[3], paddingTop: spacing[5] }}>
+          <View
+            style={{
+              gap: spacing[5],
+              paddingHorizontal: spacing[3],
+              paddingTop: spacing[5],
+            }}
+          >
             {/* Title & Trust */}
             <View style={{ gap: spacing[1] }}>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2], marginBottom: spacing[1] }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  gap: spacing[2],
+                  marginBottom: spacing[1],
+                }}
+              >
                 <Badge label={`${tasteMatch}% match`} tone="orange" />
                 {dish.mustOrder && <Badge label="Must Order" tone="amber" />}
               </View>
-              <AppText variant="h1" style={{ fontSize: 28 }}>{dish.name}</AppText>
-              <AppText variant="bodyLarge" tone="secondary">{venue.name} · {venue.unitNumber}</AppText>
-              <AppText variant="price" style={{ fontSize: 20, color: palette.orange }}>{dish.priceRange}</AppText>
+              <AppText variant="h1" style={{ fontSize: 28 }}>
+                {dish.name}
+              </AppText>
+              <AppText variant="bodyLarge" tone="secondary">
+                {venue.name} · {venue.unitNumber}
+              </AppText>
+              <AppText
+                variant="price"
+                style={{ fontSize: 20, color: palette.orange }}
+              >
+                {dish.priceRange}
+              </AppText>
             </View>
 
             {/* Taste graph */}
@@ -215,16 +356,45 @@ export function DishDetailScreen({ navigation, route }: Props) {
                 {TASTE_DIMENSIONS.map((dimension) => {
                   const score = dish.tasteVector[dimension.key] ?? 0;
                   const isDominant = score === maxTasteScore && score > 0;
-                  const progressWidth = `${Math.max(0, Math.min(100, Math.round((score / 10) * 100)))}%` as const;
+                  const progressWidth =
+                    `${Math.max(0, Math.min(100, Math.round((score / 10) * 100)))}%` as const;
 
                   return (
                     <View key={dimension.key} style={{ gap: spacing[1] }}>
-                      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                        <AppText variant="bodySmall" style={{ fontWeight: isDominant ? "700" : "400" }}>{dimension.label}</AppText>
-                        <AppText variant="micro" tone="secondary">{score.toFixed(1)}</AppText>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <AppText
+                          variant="bodySmall"
+                          style={{ fontWeight: isDominant ? "700" : "400" }}
+                        >
+                          {dimension.label}
+                        </AppText>
+                        <AppText variant="micro" tone="secondary">
+                          {score.toFixed(1)}
+                        </AppText>
                       </View>
-                      <View style={{ backgroundColor: palette.border, borderRadius: radii.pill, height: 8, overflow: "hidden" }}>
-                        <View style={{ backgroundColor: isDominant ? palette.orange : palette.orangeLight, borderRadius: radii.pill, height: "100%", width: progressWidth }} />
+                      <View
+                        style={{
+                          backgroundColor: palette.border,
+                          borderRadius: radii.pill,
+                          height: 8,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <View
+                          style={{
+                            backgroundColor: isDominant
+                              ? palette.orange
+                              : palette.orangeLight,
+                            borderRadius: radii.pill,
+                            height: "100%",
+                            width: progressWidth,
+                          }}
+                        />
                       </View>
                     </View>
                   );
@@ -233,7 +403,9 @@ export function DishDetailScreen({ navigation, route }: Props) {
             </View>
 
             {/* Closure notice */}
-            {venue.closureNotice ? <InlineBanner message={venue.closureNotice} tone="warning" /> : null}
+            {venue.closureNotice ? (
+              <InlineBanner message={venue.closureNotice} tone="warning" />
+            ) : null}
 
             {/* Order / delivery */}
             <Card>
@@ -245,7 +417,10 @@ export function DishDetailScreen({ navigation, route }: Props) {
                   ))}
                 </View>
               ) : (
-                <EmptyState title="Dine-in only" body="This stall has no verified delivery links yet." />
+                <EmptyState
+                  title="Dine-in only"
+                  body="This stall has no verified delivery links yet."
+                />
               )}
             </Card>
 
@@ -255,41 +430,100 @@ export function DishDetailScreen({ navigation, route }: Props) {
               {dish.reviews.length ? (
                 dish.reviews.map((review) => (
                   <Card key={review.id} style={{ gap: spacing[2] }}>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                      <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
-                        <Star color={palette.amber} fill={palette.amber} size={12} />
-                        <AppText variant="micro" style={{ fontWeight: "700" }}>{review.rating}</AppText>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <AppText style={{ fontWeight: "700" }}>
+                        {review.authorName}
+                      </AppText>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 2,
+                        }}
+                      >
+                        <Star
+                          color={palette.amber}
+                          fill={palette.amber}
+                          size={12}
+                        />
+                        <AppText variant="micro" style={{ fontWeight: "700" }}>
+                          {review.rating}
+                        </AppText>
                       </View>
                     </View>
-                    <AppText variant="bodySmall" tone="secondary">{review.text}</AppText>
+                    <AppText variant="bodySmall" tone="secondary">
+                      {review.text}
+                    </AppText>
 
-                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
                       <Pressable
                         accessibilityRole="button"
                         accessibilityLabel={`Reply to review by ${review.authorName}`}
-                        onPress={() => setActiveReplyReviewId((current) => (current === review.id ? null : review.id))}
+                        onPress={() =>
+                          setActiveReplyReviewId((current) =>
+                            current === review.id ? null : review.id,
+                          )
+                        }
                       >
-                        <AppText variant="micro" tone="accent">Reply</AppText>
+                        <AppText variant="micro" tone="accent">
+                          Reply
+                        </AppText>
                       </Pressable>
                       {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
                         <AppText variant="micro" tone="muted">
-                          {localRepliesByReviewId[review.id]?.length} repl{(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
+                          {localRepliesByReviewId[review.id]?.length} repl
+                          {(localRepliesByReviewId[review.id]?.length ?? 0) ===
+                          1
+                            ? "y"
+                            : "ies"}
                         </AppText>
                       ) : null}
                     </View>
 
                     {(localRepliesByReviewId[review.id] ?? []).length > 0 ? (
-                      <View style={{ gap: spacing[2], paddingLeft: spacing[3], borderLeftWidth: 1, borderLeftColor: palette.border }}>
-                        {(localRepliesByReviewId[review.id] ?? []).map((reply) => (
-                          <View key={reply.id} style={{ gap: 2 }}>
-                            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                              <AppText variant="micro">{reply.authorName}</AppText>
-                              <AppText variant="micro" tone="muted">{formatTimeAgo(reply.createdAt)}</AppText>
+                      <View
+                        style={{
+                          gap: spacing[2],
+                          paddingLeft: spacing[3],
+                          borderLeftWidth: 1,
+                          borderLeftColor: palette.border,
+                        }}
+                      >
+                        {(localRepliesByReviewId[review.id] ?? []).map(
+                          (reply) => (
+                            <View key={reply.id} style={{ gap: 2 }}>
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <AppText variant="micro">
+                                  {reply.authorName}
+                                </AppText>
+                                <AppText variant="micro" tone="muted">
+                                  {formatTimeAgo(reply.createdAt)}
+                                </AppText>
+                              </View>
+                              <AppText variant="bodySmall" tone="secondary">
+                                {reply.text}
+                              </AppText>
                             </View>
-                            <AppText variant="bodySmall" tone="secondary">{reply.text}</AppText>
-                          </View>
-                        ))}
+                          ),
+                        )}
                       </View>
                     ) : null}
 
@@ -321,34 +555,39 @@ export function DishDetailScreen({ navigation, route }: Props) {
                           label="Post reply"
                           variant="secondary"
                           onPress={() => submitReviewReply(review.id)}
-                          disabled={!(replyDraftByReviewId[review.id] ?? "").trim().length}
+                          disabled={
+                            !(replyDraftByReviewId[review.id] ?? "").trim()
+                              .length
+                          }
                         />
                       </View>
                     ) : null}
                   </Card>
                 ))
               ) : (
-                <AppText tone="secondary">No reviews yet. Be the first!</AppText>
+                <AppText tone="secondary">
+                  No reviews yet. Be the first!
+                </AppText>
               )}
             </View>
           </View>
         </Animated.ScrollView>
 
         {/* CTA Dock - Horizontally Aligned Sticky Bottom */}
-        <View 
-          style={{ 
-            position: "absolute", 
-            bottom: 0, 
-            left: 0, 
-            right: 0, 
-            backgroundColor: palette.bg, 
-            paddingHorizontal: spacing[3], 
+        <View
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: palette.bg,
+            paddingHorizontal: spacing[3],
             paddingTop: spacing[3],
             paddingBottom: Math.max(insets.bottom, spacing[4]),
             flexDirection: "row",
             gap: spacing[3],
             borderTopWidth: 1,
-            borderTopColor: palette.border
+            borderTopColor: palette.border,
           }}
         >
           <Button
@@ -357,13 +596,18 @@ export function DishDetailScreen({ navigation, route }: Props) {
             variant={isSaved ? "secondary" : "primary"}
             onPress={() => {
               if (!isAuthenticated) {
-                setReturnRoute({ name: "DishDetail", params: { dishId: dish.id } });
+                setReturnRoute({
+                  name: "DishDetail",
+                  params: { dishId: dish.id },
+                });
                 navigation.navigate("AuthStack", { screen: "Login" });
                 return;
               }
               toggleFavourite(dish);
               showToast({
-                message: isSaved ? "Removed from favourites." : "Saved to favourites!",
+                message: isSaved
+                  ? "Removed from favourites."
+                  : "Saved to favourites!",
                 tone: "success",
               });
             }}

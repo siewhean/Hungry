@@ -6,7 +6,14 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Badge, Button, Card, Chip, InlineBanner } from "@/components/ui";
+import {
+  AppText,
+  Badge,
+  Button,
+  Card,
+  Chip,
+  InlineBanner,
+} from "@/components/ui";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
@@ -18,18 +25,23 @@ import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
 export function SettingsScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { spacing } = useHungryTheme();
   const signOut = useSessionStore((state) => state.signOut);
   const clearSession = useSessionStore((state) => state.clearSession);
   const location = useLocationStore((state) => state.manualLocation);
-  const resetLocationState = useLocationStore((state) => state.resetLocationState);
+  const resetLocationState = useLocationStore(
+    (state) => state.resetLocationState,
+  );
   const clearProfile = useProfileStore((state) => state.clearProfile);
   const clearSearchState = useSearchStore((state) => state.clearSearchState);
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
   const themePreference = useUIStore((state) => state.themePreference);
   const setThemePreference = useUIStore((state) => state.setThemePreference);
-  const leftHandedMode = useProfileStore((state) => state.profile.leftHandedMode ?? false);
+  const leftHandedMode = useProfileStore(
+    (state) => state.profile.leftHandedMode ?? false,
+  );
   const setLeftHandedMode = useProfileStore((state) => state.setLeftHandedMode);
   const [dietaryEnabled, setDietaryEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
@@ -82,12 +94,21 @@ export function SettingsScreen() {
   };
 
   return (
-    <ProfileScreenShell title="Settings" subtitle="Account, privacy, and lightweight preferences.">
+    <ProfileScreenShell
+      title="Settings"
+      subtitle="Account, privacy, and lightweight preferences."
+    >
       <Card>
         <View style={{ gap: spacing[4] }}>
           <View style={{ gap: spacing[3] }}>
             <AppText variant="h3">Preferences</AppText>
-            <View style={{ flexDirection: "row", gap: spacing[2], flexWrap: "wrap" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: spacing[2],
+                flexWrap: "wrap",
+              }}
+            >
               <Chip
                 label="Dietary filters"
                 selected={dietaryEnabled}
@@ -108,7 +129,13 @@ export function SettingsScreen() {
 
           <View style={{ gap: spacing[3] }}>
             <AppText variant="h3">Appearance</AppText>
-            <View style={{ flexDirection: "row", gap: spacing[2], flexWrap: "wrap" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: spacing[2],
+                flexWrap: "wrap",
+              }}
+            >
               <Chip
                 label="Automatic"
                 selected={themePreference === "automatic"}
@@ -127,13 +154,26 @@ export function SettingsScreen() {
             </View>
           </View>
 
-          <Badge label={location ? `Manual location: ${location}` : "Location uses GPS"} tone="neutral" />
+          <Badge
+            label={
+              location ? `Manual location: ${location}` : "Location uses GPS"
+            }
+            tone="neutral"
+          />
         </View>
       </Card>
       <Button label="Log out" variant="secondary" onPress={handleSignOut} />
-      <Button label="Delete account" variant="destructive" onPress={handleDeleteAccount} />
-      <View style={{ marginTop: spacing[4], alignItems: "center", opacity: 0.5 }}>
-        <AppText variant="micro">Hungry v{appVersion} {"\u00B7"} Singapore</AppText>
+      <Button
+        label="Delete account"
+        variant="destructive"
+        onPress={handleDeleteAccount}
+      />
+      <View
+        style={{ marginTop: spacing[4], alignItems: "center", opacity: 0.5 }}
+      >
+        <AppText variant="micro">
+          Hungry v{appVersion} {"\u00B7"} Singapore
+        </AppText>
       </View>
     </ProfileScreenShell>
   );

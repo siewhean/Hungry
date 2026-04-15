@@ -72,7 +72,11 @@ export type RootStackParamList = {
   WheelStack: NavigatorScreenParams<WheelStackParamList>;
   DirectMessages: undefined;
   Crave: undefined;
-  UserProfile: { authorName: string; authorAvatarUrl?: string; authorLocation?: string };
+  UserProfile: {
+    authorName: string;
+    authorAvatarUrl?: string;
+    authorLocation?: string;
+  };
   Offline: undefined;
   NotFound: { title?: string; body?: string } | undefined;
   Post: { venueId?: string; dishId?: string } | undefined;

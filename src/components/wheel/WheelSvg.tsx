@@ -25,7 +25,7 @@ function polarToCartesian(
   cx: number,
   cy: number,
   r: number,
-  angleDeg: number
+  angleDeg: number,
 ): { x: number; y: number } {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
@@ -36,7 +36,7 @@ function slicePath(
   cy: number,
   r: number,
   startAngle: number,
-  endAngle: number
+  endAngle: number,
 ): string {
   const start = polarToCartesian(cx, cy, r, endAngle);
   const end = polarToCartesian(cx, cy, r, startAngle);
@@ -60,8 +60,8 @@ export function WheelSvg({ entries, size = 300 }: Props) {
     new Map(
       entries
         .filter((entry) => !entry.isEliminated)
-        .map((entry) => [entry.id, entry] as const)
-    ).values()
+        .map((entry) => [entry.id, entry] as const),
+    ).values(),
   );
   const cx = size / 2;
   const cy = size / 2;
@@ -97,7 +97,6 @@ export function WheelSvg({ entries, size = 300 }: Props) {
             const midAngle = startAngle + segmentAngle / 2;
             const fill = i % 2 === 0 ? palette.orange : palette.surface;
             const textFill = i % 2 === 0 ? palette.textOnDark : palette.text;
-
 
             const labelPt = polarToCartesian(cx, cy, labelRadius, midAngle);
             const labelAngle = midAngle - 90; // rotate text to sit along arc

@@ -8,7 +8,12 @@ import { Star } from "lucide-react-native";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, EmptyState, Screen, Chip } from "@/components/ui";
 import { findBuildingById } from "@/features/discovery/discovery";
-import { getSearchResults, sortSearchResults, type SearchSortMode, useSearchData } from "@/features/search/search";
+import {
+  getSearchResults,
+  sortSearchResults,
+  type SearchSortMode,
+  useSearchData,
+} from "@/features/search/search";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
@@ -17,7 +22,13 @@ import type { DishDetail } from "@/types/domain";
 type DisplayMode = "list" | "grid";
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
-function SearchResultListCard({ dish, onPress }: { dish: DishDetail; onPress: () => void }) {
+function SearchResultListCard({
+  dish,
+  onPress,
+}: {
+  dish: DishDetail;
+  onPress: () => void;
+}) {
   const repository = getDataRepository();
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const venue = repository.getVenueById(dish.venueId);
@@ -35,7 +46,7 @@ function SearchResultListCard({ dish, onPress }: { dish: DishDetail; onPress: ()
             borderWidth: 1,
             gap: spacing[3],
             padding: spacing[3],
-          }
+          },
         ]}
       >
         <View style={{ flexDirection: "row", gap: spacing[3] }}>
@@ -45,25 +56,52 @@ function SearchResultListCard({ dish, onPress }: { dish: DishDetail; onPress: ()
             contentFit="cover"
           />
           <View style={{ flex: 1, gap: spacing[1] }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3] }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                gap: spacing[3],
+              }}
+            >
               <View style={{ flex: 1 }}>
-                <AppText style={{ fontWeight: "800", fontSize: 16 }}>{dish.name}</AppText>
+                <AppText style={{ fontWeight: "800", fontSize: 16 }}>
+                  {dish.name}
+                </AppText>
                 <AppText variant="micro" tone="secondary">
                   {venue?.name}
                 </AppText>
               </View>
-              <AppText style={{ fontWeight: "800", color: palette.orange }}>S${dish.price.toFixed(2)}</AppText>
+              <AppText style={{ fontWeight: "800", color: palette.orange }}>
+                S${dish.price.toFixed(2)}
+              </AppText>
             </View>
             <AppText variant="micro" tone="secondary">
               {building?.name}
               {venue ? ` · ${venue.floor} ${venue.unitNumber}` : ""}
             </AppText>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginTop: spacing[1] }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacing[2],
+                marginTop: spacing[1],
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing[1],
+                }}
+              >
                 <Star color={palette.amber} fill={palette.amber} size={12} />
-                <AppText variant="micro" style={{ fontWeight: "700" }}>{dish.rating.toFixed(1)}</AppText>
+                <AppText variant="micro" style={{ fontWeight: "700" }}>
+                  {dish.rating.toFixed(1)}
+                </AppText>
               </View>
-              <AppText variant="micro" tone="secondary">· {dish.distanceMeters}m away</AppText>
+              <AppText variant="micro" tone="secondary">
+                · {dish.distanceMeters}m away
+              </AppText>
             </View>
           </View>
         </View>
@@ -72,7 +110,13 @@ function SearchResultListCard({ dish, onPress }: { dish: DishDetail; onPress: ()
   );
 }
 
-function SearchResultGridCard({ dish, onPress }: { dish: DishDetail; onPress: () => void }) {
+function SearchResultGridCard({
+  dish,
+  onPress,
+}: {
+  dish: DishDetail;
+  onPress: () => void;
+}) {
   const repository = getDataRepository();
   const { palette, radii, spacing, shadows } = useHungryTheme();
 
@@ -87,22 +131,48 @@ function SearchResultGridCard({ dish, onPress }: { dish: DishDetail; onPress: ()
             borderRadius: radii.lg,
             borderWidth: 1,
             overflow: "hidden",
-          }
+          },
         ]}
       >
-        <Image source={{ uri: dish.imageUrl }} style={{ height: 120, width: "100%" }} contentFit="cover" />
+        <Image
+          source={{ uri: dish.imageUrl }}
+          style={{ height: 120, width: "100%" }}
+          contentFit="cover"
+        />
         <View style={{ gap: spacing[1], padding: spacing[3] }}>
-          <AppText style={{ fontWeight: "800", fontSize: 14 }} numberOfLines={1}>
+          <AppText
+            style={{ fontWeight: "800", fontSize: 14 }}
+            numberOfLines={1}
+          >
             {dish.name}
           </AppText>
           <AppText variant="micro" tone="secondary" numberOfLines={1}>
             {repository.getVenueById(dish.venueId)?.name}
           </AppText>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: spacing[1] }}>
-            <AppText style={{ color: palette.orange, fontWeight: "800", fontSize: 13 }}>S${dish.price.toFixed(2)}</AppText>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: spacing[1],
+            }}
+          >
+            <AppText
+              style={{ color: palette.orange, fontWeight: "800", fontSize: 13 }}
+            >
+              S${dish.price.toFixed(2)}
+            </AppText>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacing[1],
+              }}
+            >
               <Star color={palette.amber} fill={palette.amber} size={10} />
-              <AppText variant="micro" style={{ fontWeight: "700" }}>{dish.rating.toFixed(1)}</AppText>
+              <AppText variant="micro" style={{ fontWeight: "700" }}>
+                {dish.rating.toFixed(1)}
+              </AppText>
             </View>
           </View>
         </View>
@@ -120,8 +190,14 @@ export function SearchResultsScreen() {
   const [displayMode, setDisplayMode] = useState<DisplayMode>("list");
   const [sortMode, setSortMode] = useState<SearchSortMode>("best_match");
   const [isLoading, setIsLoading] = useState(true);
-  const rawResults = useMemo(() => getSearchResults(filters, profile.tasteVector), [filters, profile.tasteVector]);
-  const results = useMemo(() => sortSearchResults(rawResults, sortMode, profile.tasteVector), [profile.tasteVector, rawResults, sortMode]);
+  const rawResults = useMemo(
+    () => getSearchResults(filters, profile.tasteVector),
+    [filters, profile.tasteVector],
+  );
+  const results = useMemo(
+    () => sortSearchResults(rawResults, sortMode, profile.tasteVector),
+    [profile.tasteVector, rawResults, sortMode],
+  );
 
   useEffect(() => {
     setIsLoading(true);
@@ -133,7 +209,13 @@ export function SearchResultsScreen() {
     <Screen
       scroll={false}
       title="Search results"
-      subtitle={isLoading ? "Finding dishes near you…" : results.length > 0 ? `${results.length} dishes matched your current search.` : undefined}
+      subtitle={
+        isLoading
+          ? "Finding dishes near you…"
+          : results.length > 0
+            ? `${results.length} dishes matched your current search.`
+            : undefined
+      }
     >
       <View style={{ flex: 1, gap: spacing[4] }}>
         <View
@@ -161,7 +243,10 @@ export function SearchResultsScreen() {
                   justifyContent: "center",
                 }}
               >
-                <AppText tone={selected ? "default" : "secondary"} style={{ fontWeight: "700" }}>
+                <AppText
+                  tone={selected ? "default" : "secondary"}
+                  style={{ fontWeight: "700" }}
+                >
                   {mode === "list" ? "List" : "Grid"}
                 </AppText>
               </Pressable>
@@ -170,7 +255,9 @@ export function SearchResultsScreen() {
         </View>
 
         {recentSearches.length ? (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+          <View
+            style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}
+          >
             {recentSearches.slice(0, 3).map((term) => (
               <Chip
                 key={term}
@@ -191,7 +278,9 @@ export function SearchResultsScreen() {
           onPress={() => navigation.navigate("TasteFilter")}
         />
 
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+        <View
+          style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}
+        >
           {[
             { label: "Best match", value: "best_match" },
             { label: "Nearest", value: "distance" },
@@ -211,7 +300,14 @@ export function SearchResultsScreen() {
         </View>
 
         {isLoading ? (
-          <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: spacing[8], gap: spacing[2] }}>
+          <View
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: spacing[8],
+              gap: spacing[2],
+            }}
+          >
             <ActivityIndicator color={palette.orange} />
             <AppText variant="bodySmall" tone="secondary">
               Updating results…
@@ -227,7 +323,11 @@ export function SearchResultsScreen() {
           numColumns={displayMode === "grid" ? 2 : 1}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ gap: 16, paddingBottom: spacing[24] }}
-          columnWrapperStyle={displayMode === "grid" ? { justifyContent: "space-between" } : undefined}
+          columnWrapperStyle={
+            displayMode === "grid"
+              ? { justifyContent: "space-between" }
+              : undefined
+          }
           renderItem={({ item }) =>
             displayMode === "list" ? (
               <SearchResultListCard
@@ -255,13 +355,13 @@ export function SearchResultsScreen() {
                 ctaLabel="Adjust Taste Filters"
                 onPress={() => navigation.navigate("TasteFilter")}
               />
-              <Button 
-                label="Explore Popular Nearby" 
-                variant="secondary" 
+              <Button
+                label="Explore Popular Nearby"
+                variant="secondary"
                 onPress={() => {
                   updateQuery("");
                   navigation.navigate("SearchHome");
-                }} 
+                }}
               />
             </View>
           }
@@ -276,7 +376,11 @@ export function SearchResultsScreen() {
             }}
             style={{ alignSelf: "flex-start", paddingVertical: spacing[2] }}
           >
-            <AppText variant="bodySmall" tone="accent" style={{ fontWeight: "700" }}>
+            <AppText
+              variant="bodySmall"
+              tone="accent"
+              style={{ fontWeight: "700" }}
+            >
               Search again for "{filters.query}"
             </AppText>
           </Pressable>

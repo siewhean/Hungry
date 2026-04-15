@@ -119,4 +119,6 @@ const secureStateStorage: StateStorage = {
   },
 };
 
-export const hungrySecurePersistStorage = createJSONStorage(() => secureStateStorage);
+export const hungrySecurePersistStorage = createJSONStorage(
+  () => secureStateStorage,
+);

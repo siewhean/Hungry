@@ -33,7 +33,10 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
     if (resendSeconds > 0) {
       return;
     }
-    showToast({ message: `Verification code resent to ${email}.`, tone: "success" });
+    showToast({
+      message: `Verification code resent to ${email}.`,
+      tone: "success",
+    });
     setResendSeconds(54);
   };
 
@@ -45,18 +48,42 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
       title="Verify your email"
       subtitle="Enter the verification code we sent to continue onboarding."
       footer={
-        <Pressable onPress={() => navigation.navigate("SignUp")} style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], justifyContent: "center" }}>
+        <Pressable
+          onPress={() => navigation.navigate("SignUp")}
+          style={{
+            alignItems: "center",
+            flexDirection: "row",
+            gap: spacing[2],
+            justifyContent: "center",
+          }}
+        >
           <ArrowLeft color={palette.orange} size={14} />
-          <AppText tone="accent" style={{ fontWeight: "700" }}>Back to sign up</AppText>
+          <AppText tone="accent" style={{ fontWeight: "700" }}>
+            Back to sign up
+          </AppText>
         </Pressable>
       }
     >
       <View style={{ gap: spacing[4] }}>
-        <View style={{ alignItems: "center", backgroundColor: palette.orangeLight, borderRadius: radii.pill, width: 64, height: 64, justifyContent: "center", alignSelf: "center" }}>
+        <View
+          style={{
+            alignItems: "center",
+            backgroundColor: palette.orangeLight,
+            borderRadius: radii.pill,
+            width: 64,
+            height: 64,
+            justifyContent: "center",
+            alignSelf: "center",
+          }}
+        >
           <MailCheck color={palette.orange} size={30} />
         </View>
-        <AppText tone="secondary" style={{ lineHeight: 24, textAlign: "center" }}>
-          We sent a 6-digit verification code to <AppText style={{ fontWeight: "700" }}>{email}</AppText>.
+        <AppText
+          tone="secondary"
+          style={{ lineHeight: 24, textAlign: "center" }}
+        >
+          We sent a 6-digit verification code to{" "}
+          <AppText style={{ fontWeight: "700" }}>{email}</AppText>.
         </AppText>
 
         <View style={{ flexDirection: "row", gap: spacing[2] }}>
@@ -74,7 +101,9 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
                 justifyContent: "center",
               }}
             >
-              <AppText variant="h2" tone={digit === "•" ? "muted" : "default"}>{digit}</AppText>
+              <AppText variant="h2" tone={digit === "•" ? "muted" : "default"}>
+                {digit}
+              </AppText>
             </View>
           ))}
         </View>
@@ -86,16 +115,30 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
           onPress={handleResend}
           style={{ opacity: resendSeconds > 0 ? 0.8 : 1 }}
         >
-          <AppText style={{ color: palette.textSecondary, textAlign: "center" }}>
+          <AppText
+            style={{ color: palette.textSecondary, textAlign: "center" }}
+          >
             Didn't receive the code?{" "}
             <AppText style={{ color: palette.orange, fontWeight: "700" }}>
-              {resendSeconds > 0 ? `Resend in ${minuteText}:${secondText}` : "Resend now"}
+              {resendSeconds > 0
+                ? `Resend in ${minuteText}:${secondText}`
+                : "Resend now"}
             </AppText>
           </AppText>
         </Pressable>
 
         <View style={{ gap: spacing[3] }}>
-          <Button label="Verify Account" onPress={() => { completeAuth(); showToast({ message: "Email verified. Continue onboarding.", tone: "success" }); }} style={{ borderRadius: radii.pill, minHeight: 56 }} />
+          <Button
+            label="Verify Account"
+            onPress={() => {
+              completeAuth();
+              showToast({
+                message: "Email verified. Continue onboarding.",
+                tone: "success",
+              });
+            }}
+            style={{ borderRadius: radii.pill, minHeight: 56 }}
+          />
           <Button
             label="Change Email Address"
             variant="secondary"
@@ -110,10 +153,19 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
           />
         </View>
 
-        <View style={{ backgroundColor: palette.infoSoft, borderRadius: radii.lg, flexDirection: "row", gap: spacing[3], padding: spacing[3] }}>
+        <View
+          style={{
+            backgroundColor: palette.infoSoft,
+            borderRadius: radii.lg,
+            flexDirection: "row",
+            gap: spacing[3],
+            padding: spacing[3],
+          }}
+        >
           <CircleAlert color={palette.orange} size={18} />
           <AppText variant="bodySmall" tone="secondary" style={{ flex: 1 }}>
-            Hungry uses encrypted verification to ensure your culinary journey is safe.
+            Hungry uses encrypted verification to ensure your culinary journey
+            is safe.
           </AppText>
         </View>
       </View>

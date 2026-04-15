@@ -137,7 +137,12 @@ export const typography = {
   bodyBold: { fontSize: 16, lineHeight: 24, fontFamily: "Nunito_700Bold" },
   bodySmall: { fontSize: 14, lineHeight: 22, fontFamily: "Nunito_400Regular" },
   bodySmallBold: { fontSize: 14, lineHeight: 22, fontFamily: "Nunito_700Bold" },
-  micro: { fontSize: 12, lineHeight: 16, fontFamily: "Nunito_500Medium", letterSpacing: 0.6 },
+  micro: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "Nunito_500Medium",
+    letterSpacing: 0.6,
+  },
   price: { fontSize: 16, lineHeight: 24, fontFamily: "DMMono_400Regular" },
   code: { fontSize: 14, lineHeight: 22, fontFamily: "DMMono_400Regular" },
 } as const;

@@ -1,10 +1,20 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Animated, PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import {
+  Animated,
+  PanResponder,
+  Pressable,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { Image } from "expo-image";
 import { Heart, X, ChevronLeft, Sparkles } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -28,7 +38,8 @@ export function CraveScreen() {
 
   // Get a set of appealing dishes for swiping
   const [dishes, setDishes] = useState<DishDetail[]>(() => {
-    return repository.listBuildings()
+    return repository
+      .listBuildings()
       .flatMap((b) => repository.listVenuesByBuilding(b.id))
       .flatMap((v) => repository.listDishesByVenue(v.id))
       .sort(() => Math.random() - 0.5)
@@ -60,13 +71,13 @@ export function CraveScreen() {
           }).start();
         }
       },
-    })
+    }),
   ).current;
 
   const swipeRight = () => {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     if (currentDish) toggleFavourite(currentDish);
-    
+
     Animated.timing(position, {
       toValue: { x: screenWidth + 100, y: 0 },
       duration: motion.craveSwipe,
@@ -108,11 +119,33 @@ export function CraveScreen() {
 
   if (!currentDish) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg, alignItems: "center", justifyContent: "center", padding: spacing[8] }}>
-        <Sparkles color={palette.orange} size={48} style={{ marginBottom: spacing[4] }} />
-        <AppText variant="h2" style={{ textAlign: "center" }}>You've seen it all!</AppText>
-        <AppText tone="secondary" style={{ textAlign: "center", marginTop: spacing[2], marginBottom: spacing[6] }}>
-          Your taste profile is getting sharper. Go check out your updated Fingerprint.
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: palette.bg,
+          alignItems: "center",
+          justifyContent: "center",
+          padding: spacing[8],
+        }}
+      >
+        <Sparkles
+          color={palette.orange}
+          size={48}
+          style={{ marginBottom: spacing[4] }}
+        />
+        <AppText variant="h2" style={{ textAlign: "center" }}>
+          You've seen it all!
+        </AppText>
+        <AppText
+          tone="secondary"
+          style={{
+            textAlign: "center",
+            marginTop: spacing[2],
+            marginBottom: spacing[6],
+          }}
+        >
+          Your taste profile is getting sharper. Go check out your updated
+          Fingerprint.
         </AppText>
         <Button label="Back to Discover" onPress={() => navigation.goBack()} />
       </SafeAreaView>
@@ -123,23 +156,70 @@ export function CraveScreen() {
     <View style={{ flex: 1, backgroundColor: palette.navy }}>
       <SafeAreaView style={{ flex: 1 }} edges={["top", "left", "right"]}>
         {/* Header */}
-        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: spacing[3], paddingVertical: spacing[2], justifyContent: "space-between" }}>
-          <Pressable onPress={() => navigation.goBack()} style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: spacing[3],
+            paddingVertical: spacing[2],
+            justifyContent: "space-between",
+          }}
+        >
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={{
+              width: 40,
+              height: 40,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <ChevronLeft color={palette.white} size={28} />
           </Pressable>
           <View style={{ alignItems: "center" }}>
-            <AppText style={{ color: palette.textOnDark, fontWeight: "900", fontSize: 18, letterSpacing: 1 }}>CRAVE</AppText>
-            <AppText variant="micro" style={{ color: "rgba(255,255,255,0.6)" }}>SWIPE TO BUILD PROFILE</AppText>
+            <AppText
+              style={{
+                color: palette.textOnDark,
+                fontWeight: "900",
+                fontSize: 18,
+                letterSpacing: 1,
+              }}
+            >
+              CRAVE
+            </AppText>
+            <AppText variant="micro" style={{ color: "rgba(255,255,255,0.6)" }}>
+              SWIPE TO BUILD PROFILE
+            </AppText>
           </View>
           <View style={{ width: 40, height: 40 }} />
         </View>
 
-        <View style={{ flex: 1, padding: spacing[4], justifyContent: "center" }}>
+        <View
+          style={{ flex: 1, padding: spacing[4], justifyContent: "center" }}
+        >
           {/* Next Card (Background) */}
           {nextDish && (
-            <View style={[StyleSheet.absoluteFill, { padding: spacing[4], justifyContent: "center" }]}>
-              <View style={[styles.card, { backgroundColor: palette.surface, opacity: 0.5, transform: [{ scale: 0.95 }] }]}>
-                <Image source={{ uri: nextDish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                { padding: spacing[4], justifyContent: "center" },
+              ]}
+            >
+              <View
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: palette.surface,
+                    opacity: 0.5,
+                    transform: [{ scale: 0.95 }],
+                  },
+                ]}
+              >
+                <Image
+                  source={{ uri: nextDish.imageUrl }}
+                  style={StyleSheet.absoluteFill}
+                  contentFit="cover"
+                />
               </View>
             </View>
           )}
@@ -161,8 +241,12 @@ export function CraveScreen() {
               shadows.floating,
             ]}
           >
-            <Image source={{ uri: currentDish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
-            
+            <Image
+              source={{ uri: currentDish.imageUrl }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+            />
+
             {/* Feedback Overlays */}
             <Animated.View
               style={[
@@ -180,7 +264,11 @@ export function CraveScreen() {
                 },
               ]}
             >
-              <AppText style={{ color: palette.teal, fontWeight: "900", fontSize: 32 }}>CRAVE</AppText>
+              <AppText
+                style={{ color: palette.teal, fontWeight: "900", fontSize: 32 }}
+              >
+                CRAVE
+              </AppText>
             </Animated.View>
             <Animated.View
               style={[
@@ -198,18 +286,61 @@ export function CraveScreen() {
                 },
               ]}
             >
-              <AppText style={{ color: palette.error, fontWeight: "900", fontSize: 32 }}>PASS</AppText>
+              <AppText
+                style={{
+                  color: palette.error,
+                  fontWeight: "900",
+                  fontSize: 32,
+                }}
+              >
+                PASS
+              </AppText>
             </Animated.View>
 
             <View style={[styles.cardInfo, { padding: spacing[6] }]}>
               <View style={{ gap: spacing[0.5] }}>
-                <AppText style={{ color: palette.textOnDark, fontSize: 28, fontWeight: "900" }}>{currentDish.name}</AppText>
-                <AppText style={{ color: "rgba(255,255,255,0.8)", fontSize: 16, fontWeight: "600" }}>{currentDish.venueName}</AppText>
+                <AppText
+                  style={{
+                    color: palette.textOnDark,
+                    fontSize: 28,
+                    fontWeight: "900",
+                  }}
+                >
+                  {currentDish.name}
+                </AppText>
+                <AppText
+                  style={{
+                    color: "rgba(255,255,255,0.8)",
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  {currentDish.venueName}
+                </AppText>
               </View>
-              <View style={{ flexDirection: "row", gap: spacing[2], marginTop: spacing[2] }}>
-                {currentDish.tasteTags.slice(0, 3).map(tag => (
-                  <View key={tag} style={{ backgroundColor: "rgba(255,255,255,0.2)", paddingHorizontal: spacing[2.5], paddingVertical: spacing[1], borderRadius: radii.sm }}>
-                    <AppText variant="micro" style={{ color: palette.textOnDark, fontWeight: "700" }}>{tag.toUpperCase()}</AppText>
+              <View
+                style={{
+                  flexDirection: "row",
+                  gap: spacing[2],
+                  marginTop: spacing[2],
+                }}
+              >
+                {currentDish.tasteTags.slice(0, 3).map((tag) => (
+                  <View
+                    key={tag}
+                    style={{
+                      backgroundColor: "rgba(255,255,255,0.2)",
+                      paddingHorizontal: spacing[2.5],
+                      paddingVertical: spacing[1],
+                      borderRadius: radii.sm,
+                    }}
+                  >
+                    <AppText
+                      variant="micro"
+                      style={{ color: palette.textOnDark, fontWeight: "700" }}
+                    >
+                      {tag.toUpperCase()}
+                    </AppText>
                   </View>
                 ))}
               </View>
@@ -218,38 +349,46 @@ export function CraveScreen() {
         </View>
 
         {/* Action Buttons */}
-        <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: spacing[8], paddingBottom: Math.max(insets.bottom, spacing[8]) }}>
-          <Pressable 
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: spacing[8],
+            paddingBottom: Math.max(insets.bottom, spacing[8]),
+          }}
+        >
+          <Pressable
             onPress={swipeLeft}
             style={({ pressed }) => [
-              { 
+              {
                 width: 72,
                 height: 72,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: "rgba(255,255,255,0.1)", 
-                borderColor: palette.error, 
-                borderWidth: 2, 
-                borderRadius: radii.pill 
+                backgroundColor: "rgba(255,255,255,0.1)",
+                borderColor: palette.error,
+                borderWidth: 2,
+                borderRadius: radii.pill,
               },
-              pressed && { opacity: 0.7 }
+              pressed && { opacity: 0.7 },
             ]}
           >
             <X color={palette.error} size={32} />
           </Pressable>
-          
-          <Pressable 
+
+          <Pressable
             onPress={swipeRight}
             style={({ pressed }) => [
-              { 
+              {
                 width: 72,
                 height: 72,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: palette.orange, 
-                borderRadius: radii.pill 
+                backgroundColor: palette.orange,
+                borderRadius: radii.pill,
               },
-              pressed && { scale: 0.9, opacity: 0.9 }
+              pressed && { scale: 0.9, opacity: 0.9 },
             ]}
           >
             <Heart color={palette.white} fill={palette.white} size={32} />

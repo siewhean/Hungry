@@ -33,7 +33,10 @@ function SentryFallback() {
         paddingHorizontal: spacing[6],
       }}
     >
-      <AppText variant="h2" style={{ marginBottom: spacing[2], textAlign: "center" }}>
+      <AppText
+        variant="h2"
+        style={{ marginBottom: spacing[2], textAlign: "center" }}
+      >
         Something went wrong
       </AppText>
       <AppText tone="secondary" style={{ textAlign: "center" }}>

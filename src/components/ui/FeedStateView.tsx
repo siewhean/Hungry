@@ -35,7 +35,9 @@ export function FeedStateView({
         }}
       >
         <ActivityIndicator color={palette.orange} />
-        <AppText tone="secondary">{loadingMessage ?? "Loading feed..."}</AppText>
+        <AppText tone="secondary">
+          {loadingMessage ?? "Loading feed..."}
+        </AppText>
       </View>
     );
   }
@@ -49,8 +51,16 @@ export function FeedStateView({
       }}
     >
       <EmptyState
-        title={title ?? (state === "error" ? "Unable to load feed" : "Nothing to show")}
-        body={body ?? (state === "error" ? "Please try again." : "Try adjusting filters and check again.")}
+        title={
+          title ??
+          (state === "error" ? "Unable to load feed" : "Nothing to show")
+        }
+        body={
+          body ??
+          (state === "error"
+            ? "Please try again."
+            : "Try adjusting filters and check again.")
+        }
         ctaLabel={ctaLabel}
         onPress={onPress}
       />

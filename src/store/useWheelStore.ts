@@ -1,7 +1,10 @@
 import { create } from "zustand";
 
 import { MockRealtimeChannel } from "@/lib/services/realtime/MockRealtimeChannel";
-import type { IRealtimeChannel, PresenceState } from "@/lib/services/realtime/IRealtimeChannel";
+import type {
+  IRealtimeChannel,
+  PresenceState,
+} from "@/lib/services/realtime/IRealtimeChannel";
 import type {
   TriggerValue,
   WheelEntry,
@@ -15,7 +18,10 @@ import type {
 
 // ─── Mock Global DB ─────────────────────────────────────────────────────────
 // In a real app, this is Supabase or Firebase.
-const mockPartyStore = new Map<string, { party: WheelParty; members: WheelMember[]; entries: WheelEntry[] }>();
+const mockPartyStore = new Map<
+  string,
+  { party: WheelParty; members: WheelMember[]; entries: WheelEntry[] }
+>();
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -31,8 +37,13 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
-function appendEntryUnique(entries: WheelEntry[], entry: WheelEntry): WheelEntry[] {
-  return entries.some((existing) => existing.id === entry.id) ? entries : [...entries, entry];
+function appendEntryUnique(
+  entries: WheelEntry[],
+  entry: WheelEntry,
+): WheelEntry[] {
+  return entries.some((existing) => existing.id === entry.id)
+    ? entries
+    : [...entries, entry];
 }
 
 function dedupeEntries(entries: WheelEntry[]): WheelEntry[] {
@@ -61,12 +72,25 @@ interface WheelState {
     spinMode: WheelSpinMode,
     triggerMode: WheelTriggerMode,
     triggerValue?: TriggerValue,
-    dietaryPreferences?: DietaryFlag[]
+    dietaryPreferences?: DietaryFlag[],
   ): Promise<WheelParty>;
-  joinParty(code: string, displayName: string, avatarUrl?: string, dietaryPreferences?: DietaryFlag[]): Promise<void>;
-  addEntry(venueId: string, buildingId: string, label: string, imageUrl: string): void;
+  joinParty(
+    code: string,
+    displayName: string,
+    avatarUrl?: string,
+    dietaryPreferences?: DietaryFlag[],
+  ): Promise<void>;
+  addEntry(
+    venueId: string,
+    buildingId: string,
+    label: string,
+    imageUrl: string,
+  ): void;
   removeEntry(entryId: string): void;
-  updateTrigger(triggerMode: WheelTriggerMode, triggerValue?: TriggerValue): void;
+  updateTrigger(
+    triggerMode: WheelTriggerMode,
+    triggerValue?: TriggerValue,
+  ): void;
   updateEntryLimit(limit: number): void;
   triggerSpin(): void;
   leaveParty(): void;
@@ -128,11 +152,17 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     const channel = new MockRealtimeChannel(`party:${partyId}`);
     channel.subscribe(
       (event) => get()._onEvent(event),
-      (state) => get()._onPresence(state)
+      (state) => get()._onPresence(state),
     );
     channel.track(hostMember);
 
-    set({ party, members: [hostMember], entries: [], myMemberId: memberId, _channel: channel });
+    set({
+      party,
+      members: [hostMember],
+      entries: [],
+      myMemberId: memberId,
+      _channel: channel,
+    });
     return party;
   },
 
@@ -161,7 +191,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     const channel = new MockRealtimeChannel(`party:${party.id}`);
     channel.subscribe(
       (event) => get()._onEvent(event),
-      (state) => get()._onPresence(state)
+      (state) => get()._onPresence(state),
     );
     channel.track(member);
 
@@ -184,9 +214,13 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     if (!party || !myMemberId || !_channel) return;
 
     if (party.maxEntriesPerMember) {
-      const myEntriesCount = entries.filter((e) => e.addedByMemberId === myMemberId).length;
+      const myEntriesCount = entries.filter(
+        (e) => e.addedByMemberId === myMemberId,
+      ).length;
       if (myEntriesCount >= party.maxEntriesPerMember) {
-        set({ connectionError: `Limit reached: Max ${party.maxEntriesPerMember} entries per person.` });
+        set({
+          connectionError: `Limit reached: Max ${party.maxEntriesPerMember} entries per person.`,
+        });
         return;
       }
     }
@@ -230,7 +264,9 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     if (!_channel) return;
 
     set((state) => ({
-      party: state.party ? { ...state.party, triggerMode, triggerValue } : state.party,
+      party: state.party
+        ? { ...state.party, triggerMode, triggerValue }
+        : state.party,
     }));
     _channel.broadcast({ type: "trigger_update", triggerMode, triggerValue });
   },
@@ -239,7 +275,9 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     const { _channel } = get();
     if (!_channel) return;
     set((state) => ({
-      party: state.party ? { ...state.party, maxEntriesPerMember: limit } : state.party,
+      party: state.party
+        ? { ...state.party, maxEntriesPerMember: limit }
+        : state.party,
     }));
   },
 
@@ -251,13 +289,25 @@ export const useWheelStore = create<WheelState>((set, get) => ({
 
     const seed = Math.random();
     const startedAt = Date.now();
-    const activeEntryIds = entries.filter((e) => !e.isEliminated).map((e) => e.id);
+    const activeEntryIds = entries
+      .filter((e) => !e.isEliminated)
+      .map((e) => e.id);
 
-    _channel.broadcast({ type: "spin_triggered", seed, startedAt, activeEntryIds });
+    _channel.broadcast({
+      type: "spin_triggered",
+      seed,
+      startedAt,
+      activeEntryIds,
+    });
 
     set((state) => ({
       party: state.party
-        ? { ...state.party, status: "spinning", spinSeed: seed, spinStartedAt: startedAt }
+        ? {
+            ...state.party,
+            status: "spinning",
+            spinSeed: seed,
+            spinStartedAt: startedAt,
+          }
         : null,
     }));
   },
@@ -275,26 +325,47 @@ export const useWheelStore = create<WheelState>((set, get) => ({
   _onEvent(event) {
     switch (event.type) {
       case "entry_added":
-        set((state) => ({ entries: appendEntryUnique(state.entries, event.entry) }));
+        set((state) => ({
+          entries: appendEntryUnique(state.entries, event.entry),
+        }));
         break;
       case "entry_removed":
-        set((state) => ({ entries: state.entries.filter((e) => e.id !== event.entryId) }));
+        set((state) => ({
+          entries: state.entries.filter((e) => e.id !== event.entryId),
+        }));
         break;
       case "spin_triggered":
         set((state) => ({
           party: state.party
-            ? { ...state.party, status: "spinning", spinSeed: event.seed, spinStartedAt: event.startedAt }
+            ? {
+                ...state.party,
+                status: "spinning",
+                spinSeed: event.seed,
+                spinStartedAt: event.startedAt,
+              }
             : null,
         }));
         break;
       case "party_resolved":
         set((state) => ({
-          party: state.party ? { ...state.party, status: "resolved", winnerEntryId: event.winnerEntryId } : null,
+          party: state.party
+            ? {
+                ...state.party,
+                status: "resolved",
+                winnerEntryId: event.winnerEntryId,
+              }
+            : null,
         }));
         break;
       case "trigger_update":
         set((state) => ({
-          party: state.party ? { ...state.party, triggerMode: event.triggerMode, triggerValue: event.triggerValue } : null,
+          party: state.party
+            ? {
+                ...state.party,
+                triggerMode: event.triggerMode,
+                triggerValue: event.triggerValue,
+              }
+            : null,
         }));
         break;
     }

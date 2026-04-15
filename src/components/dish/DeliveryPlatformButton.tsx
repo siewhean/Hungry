@@ -17,9 +17,15 @@ const platformMeta: Record<string, { label: string; color: string }> = {
   deliveroo: { label: "Order on Deliveroo", color: BRAND_COLORS.deliveroo },
 };
 
-export function DeliveryPlatformButton({ link, compact = false }: DeliveryPlatformButtonProps) {
+export function DeliveryPlatformButton({
+  link,
+  compact = false,
+}: DeliveryPlatformButtonProps) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
-  const meta = platformMeta[link.platform] ?? { label: `Order on ${link.platform}`, color: palette.surface };
+  const meta = platformMeta[link.platform] ?? {
+    label: `Order on ${link.platform}`,
+    color: palette.surface,
+  };
 
   const handlePress = async () => {
     try {
@@ -47,14 +53,17 @@ export function DeliveryPlatformButton({ link, compact = false }: DeliveryPlatfo
       ]}
     >
       <View style={styles.row}>
-        <AppText 
-          variant="body" 
-          tone={platformMeta[link.platform] ? "inverse" : "default"} 
+        <AppText
+          variant="body"
+          tone={platformMeta[link.platform] ? "inverse" : "default"}
           numberOfLines={1}
         >
           {meta.label}
         </AppText>
-        <ExternalLink size={16} color={platformMeta[link.platform] ? palette.white : palette.text} />
+        <ExternalLink
+          size={16}
+          color={platformMeta[link.platform] ? palette.white : palette.text}
+        />
       </View>
     </Pressable>
   );
@@ -71,4 +80,3 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
-

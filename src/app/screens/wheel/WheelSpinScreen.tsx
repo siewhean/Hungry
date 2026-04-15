@@ -51,22 +51,22 @@ export function WheelSpinScreen({ navigation }: Props) {
   // Track animation for haptics
   useEffect(() => {
     const segmentAngle = 360 / Math.max(1, activeEntries.length);
-    
+
     // We expect totalRotation to be around 5 * 360 = 1800+ degrees.
     // The animation is Easing.out(Easing.cubic), so speed is high at first.
-    
+
     const listenerId = spinAnim.addListener(({ value }) => {
       const currentSegment = Math.floor(value / segmentAngle);
       const lastSegment = Math.floor(lastHapticAngle.current / segmentAngle);
 
       if (currentSegment !== lastSegment) {
         lastHapticAngle.current = value;
-        
-        // Intensity logic: 
+
+        // Intensity logic:
         // 1. Initial burst (first 2 full rotations): Heavy
         // 2. Middle phase (rotations 3-4): Medium
         // 3. Final slowdown (rotation 5+): Light
-        
+
         if (value < 720) {
           void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         } else if (value < 1440) {
@@ -93,7 +93,8 @@ export function WheelSpinScreen({ navigation }: Props) {
 
     const segmentAngle = 360 / activeEntries.length;
     const winnerIndex =
-      ((seed % activeEntries.length) + activeEntries.length) % activeEntries.length;
+      ((seed % activeEntries.length) + activeEntries.length) %
+      activeEntries.length;
     const winnerAngle = winnerIndex * segmentAngle + segmentAngle / 2;
     const totalRotation = 5 * 360 + (360 - winnerAngle);
 
@@ -127,7 +128,9 @@ export function WheelSpinScreen({ navigation }: Props) {
           });
         } else {
           // Elimination mode: go back to lobby for next round.
-          navigation.replace("WheelLobby", { partyId: currentParty?.id ?? party.id });
+          navigation.replace("WheelLobby", {
+            partyId: currentParty?.id ?? party.id,
+          });
         }
       });
     }, delay);
@@ -151,26 +154,63 @@ export function WheelSpinScreen({ navigation }: Props) {
         colors={[palette.bg, palette.bgSoft]}
         style={StyleSheet.absoluteFill}
       />
-      
+
       {/* Decorative background pattern (subtle circles) */}
-      <View style={{ ...StyleSheet.absoluteFillObject, opacity: 0.03, overflow: "hidden" }} pointerEvents="none">
-        <View style={{ position: "absolute", top: -100, right: -100, width: 400, height: 400, borderRadius: 200, borderWidth: 40, borderColor: palette.orange }} />
-        <View style={{ position: "absolute", bottom: -50, left: -50, width: 200, height: 200, borderRadius: 100, borderWidth: 20, borderColor: palette.orange }} />
+      <View
+        style={{
+          ...StyleSheet.absoluteFillObject,
+          opacity: 0.03,
+          overflow: "hidden",
+        }}
+        pointerEvents="none"
+      >
+        <View
+          style={{
+            position: "absolute",
+            top: -100,
+            right: -100,
+            width: 400,
+            height: 400,
+            borderRadius: 200,
+            borderWidth: 40,
+            borderColor: palette.orange,
+          }}
+        />
+        <View
+          style={{
+            position: "absolute",
+            bottom: -50,
+            left: -50,
+            width: 200,
+            height: 200,
+            borderRadius: 100,
+            borderWidth: 20,
+            borderColor: palette.orange,
+          }}
+        />
       </View>
 
       {/* Member row */}
-      <View style={{ paddingTop: spacing[12], paddingHorizontal: spacing[3], paddingBottom: spacing[4] }}>
+      <View
+        style={{
+          paddingTop: spacing[12],
+          paddingHorizontal: spacing[3],
+          paddingBottom: spacing[4],
+        }}
+      >
         <MemberAvatarRow members={members} />
       </View>
 
       {/* Wheel area */}
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
         {/* Pointer - Improved with Gradient/Shadow */}
-        <View style={{ 
-          alignItems: "center", 
-          zIndex: zIndex.overlay, 
-          marginBottom: -spacing[4] 
-        }}>
+        <View
+          style={{
+            alignItems: "center",
+            zIndex: zIndex.overlay,
+            marginBottom: -spacing[4],
+          }}
+        >
           <LinearGradient
             colors={[palette.orange, palette.orangeDark]}
             style={{
@@ -201,14 +241,16 @@ export function WheelSpinScreen({ navigation }: Props) {
         </View>
 
         {/* Spinning wheel with outer ring */}
-        <View style={{
-          padding: 8,
-          borderRadius: (WHEEL_SIZE + 16) / 2,
-          backgroundColor: palette.bgSoft,
-          borderWidth: 2,
-          borderColor: palette.border,
-          ...shadows.card,
-        }}>
+        <View
+          style={{
+            padding: 8,
+            borderRadius: (WHEEL_SIZE + 16) / 2,
+            backgroundColor: palette.bgSoft,
+            borderWidth: 2,
+            borderColor: palette.border,
+            ...shadows.card,
+          }}
+        >
           <Animated.View style={{ transform: [{ rotate: rotation }] }}>
             <WheelSvg entries={entries} size={WHEEL_SIZE} />
           </Animated.View>
@@ -227,7 +269,11 @@ export function WheelSpinScreen({ navigation }: Props) {
         }}
       >
         <Badge
-          label={party.spinMode === "classic" ? "Classic" : `Elimination — Round ${party.currentRound}`}
+          label={
+            party.spinMode === "classic"
+              ? "Classic"
+              : `Elimination — Round ${party.currentRound}`
+          }
           tone="orange"
         />
         <AppText variant="micro" tone="secondary">
@@ -259,21 +305,39 @@ export function WheelSpinScreen({ navigation }: Props) {
                 opacity: canSpin ? (pressed ? 0.9 : 1) : 0.5,
                 ...shadows.floating,
                 transform: [{ scale: pressed ? 0.98 : 1 }],
-              }
+              },
             ]}
           >
-            <Play size={24} color={canSpin ? palette.white : palette.textMuted} fill={canSpin ? palette.white : "transparent"} />
+            <Play
+              size={24}
+              color={canSpin ? palette.white : palette.textMuted}
+              fill={canSpin ? palette.white : "transparent"}
+            />
             <AppText
               variant="h2"
-              style={{ color: canSpin ? palette.white : palette.textMuted, fontWeight: "800" }}
+              style={{
+                color: canSpin ? palette.white : palette.textMuted,
+                fontWeight: "800",
+              }}
             >
               {spinning ? "SPINNING…" : "SPIN NOW"}
             </AppText>
           </Pressable>
         ) : (
-          <Card style={{ backgroundColor: palette.bgSoft, borderColor: "transparent", paddingVertical: spacing[4] }}>
-            <AppText tone="secondary" style={{ textAlign: "center", fontWeight: "600" }}>
-              {spinning ? "🎡 The wheel is turning..." : "⏳ Waiting for host to spin"}
+          <Card
+            style={{
+              backgroundColor: palette.bgSoft,
+              borderColor: "transparent",
+              paddingVertical: spacing[4],
+            }}
+          >
+            <AppText
+              tone="secondary"
+              style={{ textAlign: "center", fontWeight: "600" }}
+            >
+              {spinning
+                ? "🎡 The wheel is turning..."
+                : "⏳ Waiting for host to spin"}
             </AppText>
           </Card>
         )}

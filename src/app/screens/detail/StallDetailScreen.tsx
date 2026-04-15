@@ -1,13 +1,43 @@
-import { Alert, Linking, Platform, Pressable, ScrollView, Share, StyleSheet, View, useWindowDimensions } from "react-native";
+import {
+  Alert,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { useState } from "react";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft, Heart, MapPin, Share2, Star, Truck, ChevronLeft } from "lucide-react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import {
+  ArrowLeft,
+  Heart,
+  MapPin,
+  Share2,
+  Star,
+  Truck,
+  ChevronLeft,
+} from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, EmptyState, InlineBanner, Screen, FAB, Button, Card, Input } from "@/components/ui";
+import {
+  AppText,
+  EmptyState,
+  InlineBanner,
+  Screen,
+  FAB,
+  Button,
+  Card,
+  Input,
+} from "@/components/ui";
 import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getDataRepository } from "@/lib/services/serviceProvider";
@@ -39,20 +69,32 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(null);
-  const [replyDraftByReviewId, setReplyDraftByReviewId] = useState<Record<string, string>>({});
-  const [localRepliesByReviewId, setLocalRepliesByReviewId] = useState<Record<string, ReviewReply[]>>({});
+  const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(
+    null,
+  );
+  const [replyDraftByReviewId, setReplyDraftByReviewId] = useState<
+    Record<string, string>
+  >({});
+  const [localRepliesByReviewId, setLocalRepliesByReviewId] = useState<
+    Record<string, ReviewReply[]>
+  >({});
 
   if (!venue) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top", "left", "right"]}>
-        <EmptyState title="Stall not found" body="The stall you are looking for does not exist in our current directory." />
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: palette.bg }}
+        edges={["top", "left", "right"]}
+      >
+        <EmptyState
+          title="Stall not found"
+          body="The stall you are looking for does not exist in our current directory."
+        />
       </SafeAreaView>
     );
   }
 
   const distanceLabel = leadDish
-    ? leadDish.distanceMeters > 1000 
+    ? leadDish.distanceMeters > 1000
       ? `${(leadDish.distanceMeters / 1000).toFixed(1)}km away`
       : `${leadDish.distanceMeters}m away`
     : "Check Map";
@@ -95,7 +137,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["left", "right"]}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: palette.bg }}
+      edges={["left", "right"]}
+    >
       <View style={{ flex: 1 }}>
         <View
           style={[
@@ -114,16 +159,36 @@ export function StallDetailScreen({ navigation, route }: Props) {
             colors={[palette.overlay, "transparent"]}
             style={[StyleSheet.absoluteFill, { height: 100 }]}
           />
-          <Pressable 
+          <Pressable
             onPress={() => navigation.goBack()}
-            style={[{ width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center" }, shadows.floating]}
+            style={[
+              {
+                width: 44,
+                height: 44,
+                borderRadius: radii.pill,
+                backgroundColor: palette.surface,
+                alignItems: "center",
+                justifyContent: "center",
+              },
+              shadows.floating,
+            ]}
           >
             <ChevronLeft color={palette.text} size={24} />
           </Pressable>
           <View style={{ flex: 1 }} />
-          <Pressable 
+          <Pressable
             onPress={handleShare}
-            style={[{ width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center" }, shadows.floating]}
+            style={[
+              {
+                width: 44,
+                height: 44,
+                borderRadius: radii.pill,
+                backgroundColor: palette.surface,
+                alignItems: "center",
+                justifyContent: "center",
+              },
+              shadows.floating,
+            ]}
           >
             <Share2 color={palette.text} size={20} />
           </Pressable>
@@ -134,7 +199,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
           contentContainerStyle={{ paddingBottom: insets.bottom + spacing[20] }}
         >
           {/* Hero image - 4:3 Ratio */}
-          <View style={{ width: screenWidth, height: screenWidth * 0.75, position: "relative" }}>
+          <View
+            style={{
+              width: screenWidth,
+              height: screenWidth * 0.75,
+              position: "relative",
+            }}
+          >
             <Image
               source={{ uri: leadDish?.imageUrl }}
               style={StyleSheet.absoluteFill}
@@ -142,67 +213,149 @@ export function StallDetailScreen({ navigation, route }: Props) {
             />
             <LinearGradient
               colors={[`${palette.bg}00`, `${palette.bg}B3`, palette.bg]}
-              style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80 }}
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 80,
+              }}
             />
             {/* Rating Pill - Floating */}
-            <View 
-              style={{ 
-                position: "absolute", 
-                bottom: -spacing[2], 
+            <View
+              style={{
+                position: "absolute",
+                bottom: -spacing[2],
                 left: profile.leftHandedMode ? spacing[4] : undefined,
-                right: profile.leftHandedMode ? undefined : spacing[4] 
+                right: profile.leftHandedMode ? undefined : spacing[4],
               }}
             >
-              <View style={[{ backgroundColor: palette.amber, borderRadius: radii.pill, paddingHorizontal: spacing[3], paddingVertical: spacing[2], flexDirection: "row", alignItems: "center", gap: spacing[1], ...shadows.floating }]}>
-                <Star color={palette.surface} fill={palette.surface} size={14} />
-                <AppText style={{ color: palette.surface, fontWeight: "800", fontSize: 15 }}>{(leadDish?.rating ?? 4.8).toFixed(1)}</AppText>
+              <View
+                style={[
+                  {
+                    backgroundColor: palette.amber,
+                    borderRadius: radii.pill,
+                    paddingHorizontal: spacing[3],
+                    paddingVertical: spacing[2],
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: spacing[1],
+                    ...shadows.floating,
+                  },
+                ]}
+              >
+                <Star
+                  color={palette.surface}
+                  fill={palette.surface}
+                  size={14}
+                />
+                <AppText
+                  style={{
+                    color: palette.surface,
+                    fontWeight: "800",
+                    fontSize: 15,
+                  }}
+                >
+                  {(leadDish?.rating ?? 4.8).toFixed(1)}
+                </AppText>
               </View>
             </View>
           </View>
 
-          <View style={{ gap: spacing[6], paddingHorizontal: spacing[3], paddingTop: spacing[5] }}>
+          <View
+            style={{
+              gap: spacing[6],
+              paddingHorizontal: spacing[3],
+              paddingTop: spacing[5],
+            }}
+          >
             {/* Header Content */}
             <View style={{ gap: spacing[1] }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2], marginBottom: spacing[1] }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing[2],
+                  marginBottom: spacing[1],
+                }}
+              >
                 <MapPin color={palette.orange} size={14} />
-                <AppText variant="micro" style={{ color: palette.orange, fontWeight: "700", textTransform: "uppercase" }}>
+                <AppText
+                  variant="micro"
+                  style={{
+                    color: palette.orange,
+                    fontWeight: "700",
+                    textTransform: "uppercase",
+                  }}
+                >
                   {building?.name ?? "Food Centre"}
                 </AppText>
               </View>
-              <AppText variant="h1" style={{ fontSize: 28 }}>{venue.name}</AppText>
-              <AppText variant="bodyLarge" tone="secondary">{venue.unitNumber} · {distanceLabel}</AppText>
+              <AppText variant="h1" style={{ fontSize: 28 }}>
+                {venue.name}
+              </AppText>
+              <AppText variant="bodyLarge" tone="secondary">
+                {venue.unitNumber} · {distanceLabel}
+              </AppText>
             </View>
 
             {/* Attributes */}
             <View style={{ flexDirection: "row", gap: spacing[3] }}>
               <Card style={{ flex: 1, padding: spacing[4], gap: spacing[1] }}>
-                <AppText variant="micro" tone="secondary" style={{ letterSpacing: 0.5 }}>OPERATING</AppText>
-                <AppText variant="bodyLarge" style={{ fontWeight: "700" }}>Open Now</AppText>
-                <AppText variant="micro" tone="secondary">{venue.operatingHours.split(" – ")[0]}</AppText>
+                <AppText
+                  variant="micro"
+                  tone="secondary"
+                  style={{ letterSpacing: 0.5 }}
+                >
+                  OPERATING
+                </AppText>
+                <AppText variant="bodyLarge" style={{ fontWeight: "700" }}>
+                  Open Now
+                </AppText>
+                <AppText variant="micro" tone="secondary">
+                  {venue.operatingHours.split(" – ")[0]}
+                </AppText>
               </Card>
             </View>
 
             {/* Dishes Grid */}
             <View style={{ gap: spacing[4] }}>
               <AppText variant="h2">Signature Dishes</AppText>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  gap: spacing[3],
+                }}
+              >
                 {dishes.map((dish) => (
                   <Pressable
                     key={dish.id}
-                    onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
-                    style={{ width: (screenWidth - spacing[5] * 2 - spacing[3]) / 2 }}
+                    onPress={() =>
+                      navigation.navigate("DishDetail", { dishId: dish.id })
+                    }
+                    style={{
+                      width: (screenWidth - spacing[5] * 2 - spacing[3]) / 2,
+                    }}
                   >
                     <View style={{ gap: spacing[2] }}>
                       <Image
                         source={{ uri: dish.imageUrl }}
-                        style={{ width: "100%", height: 120, borderRadius: radii.lg }}
+                        style={{
+                          width: "100%",
+                          height: 120,
+                          borderRadius: radii.lg,
+                        }}
                         contentFit="cover"
                       />
                       <View style={{ gap: spacing[1] }}>
                         <AppText variant="bodyBold" numberOfLines={1}>
                           {dish.name}
                         </AppText>
-                        <AppText variant="price" style={{ color: palette.orange }}>
+                        <AppText
+                          variant="price"
+                          style={{ color: palette.orange }}
+                        >
                           {dish.priceRange}
                         </AppText>
                       </View>
@@ -217,16 +370,21 @@ export function StallDetailScreen({ navigation, route }: Props) {
               <AppText variant="h2">Recent Reviews</AppText>
               {communityReviews.length > 0 ? (
                 communityReviews.map((review) => (
-                  <View key={review.id} style={{
-                    paddingVertical: spacing[3],
-                    borderBottomWidth: 1,
-                    borderBottomColor: palette.border,
-                  }}>
-                    <View style={{
-                      alignItems: "center",
-                      flexDirection: "row",
-                      gap: spacing[3],
-                    }}>
+                  <View
+                    key={review.id}
+                    style={{
+                      paddingVertical: spacing[3],
+                      borderBottomWidth: 1,
+                      borderBottomColor: palette.border,
+                    }}
+                  >
+                    <View
+                      style={{
+                        alignItems: "center",
+                        flexDirection: "row",
+                        gap: spacing[3],
+                      }}
+                    >
                       <Image
                         source={{ uri: review.avatarUrl }}
                         style={{
@@ -236,58 +394,121 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         }}
                       />
                       <View style={{ flex: 1 }}>
-                        <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
-                        <View style={{
-                          flexDirection: "row",
-                          gap: spacing[0.5],
-                        }}>
+                        <AppText style={{ fontWeight: "700" }}>
+                          {review.authorName}
+                        </AppText>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            gap: spacing[0.5],
+                          }}
+                        >
                           {Array.from({ length: 5 }).map((_, i) => (
                             <Star
                               key={i}
                               size={12}
-                              color={i < review.rating ? palette.amber : palette.border}
-                              fill={i < review.rating ? palette.amber : "transparent"}
+                              color={
+                                i < review.rating
+                                  ? palette.amber
+                                  : palette.border
+                              }
+                              fill={
+                                i < review.rating
+                                  ? palette.amber
+                                  : "transparent"
+                              }
                             />
                           ))}
                         </View>
                       </View>
-                      <AppText variant="micro" tone="muted">{formatTimeAgo(review.createdAt)}</AppText>
+                      <AppText variant="micro" tone="muted">
+                        {formatTimeAgo(review.createdAt)}
+                      </AppText>
                     </View>
-                    <AppText variant="bodySmall" tone="secondary" style={{ marginTop: spacing[2] }}>
+                    <AppText
+                      variant="bodySmall"
+                      tone="secondary"
+                      style={{ marginTop: spacing[2] }}
+                    >
                       {review.text}
                     </AppText>
 
-                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing[2] }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginTop: spacing[2],
+                      }}
+                    >
                       <Pressable
                         accessibilityRole="button"
                         accessibilityLabel={`Reply to review by ${review.authorName}`}
-                        onPress={() => setActiveReplyReviewId((current) => (current === review.id ? null : review.id))}
+                        onPress={() =>
+                          setActiveReplyReviewId((current) =>
+                            current === review.id ? null : review.id,
+                          )
+                        }
                       >
-                        <AppText variant="micro" tone="accent">Reply</AppText>
+                        <AppText variant="micro" tone="accent">
+                          Reply
+                        </AppText>
                       </Pressable>
                       {(localRepliesByReviewId[review.id]?.length ?? 0) > 0 ? (
                         <AppText variant="micro" tone="muted">
-                          {localRepliesByReviewId[review.id]?.length} repl{(localRepliesByReviewId[review.id]?.length ?? 0) === 1 ? "y" : "ies"}
+                          {localRepliesByReviewId[review.id]?.length} repl
+                          {(localRepliesByReviewId[review.id]?.length ?? 0) ===
+                          1
+                            ? "y"
+                            : "ies"}
                         </AppText>
                       ) : null}
                     </View>
 
                     {(localRepliesByReviewId[review.id] ?? []).length > 0 ? (
-                      <View style={{ gap: spacing[2], marginTop: spacing[2], paddingLeft: spacing[3], borderLeftWidth: 1, borderLeftColor: palette.border }}>
-                        {(localRepliesByReviewId[review.id] ?? []).map((reply) => (
-                          <View key={reply.id} style={{ gap: 2 }}>
-                            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                              <AppText variant="micro">{reply.authorName}</AppText>
-                              <AppText variant="micro" tone="muted">{formatTimeAgo(reply.createdAt)}</AppText>
+                      <View
+                        style={{
+                          gap: spacing[2],
+                          marginTop: spacing[2],
+                          paddingLeft: spacing[3],
+                          borderLeftWidth: 1,
+                          borderLeftColor: palette.border,
+                        }}
+                      >
+                        {(localRepliesByReviewId[review.id] ?? []).map(
+                          (reply) => (
+                            <View key={reply.id} style={{ gap: 2 }}>
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <AppText variant="micro">
+                                  {reply.authorName}
+                                </AppText>
+                                <AppText variant="micro" tone="muted">
+                                  {formatTimeAgo(reply.createdAt)}
+                                </AppText>
+                              </View>
+                              <AppText variant="bodySmall" tone="secondary">
+                                {reply.text}
+                              </AppText>
                             </View>
-                            <AppText variant="bodySmall" tone="secondary">{reply.text}</AppText>
-                          </View>
-                        ))}
+                          ),
+                        )}
                       </View>
                     ) : null}
 
                     {activeReplyReviewId === review.id ? (
-                      <View style={{ gap: spacing[2], marginTop: spacing[2], paddingLeft: spacing[3] }}>
+                      <View
+                        style={{
+                          gap: spacing[2],
+                          marginTop: spacing[2],
+                          paddingLeft: spacing[3],
+                        }}
+                      >
                         <Input
                           placeholder={`Reply to ${review.authorName}`}
                           value={replyDraftByReviewId[review.id] ?? ""}
@@ -303,7 +524,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           label="Post reply"
                           variant="secondary"
                           onPress={() => submitReviewReply(review.id)}
-                          disabled={!(replyDraftByReviewId[review.id] ?? "").trim().length}
+                          disabled={
+                            !(replyDraftByReviewId[review.id] ?? "").trim()
+                              .length
+                          }
                         />
                       </View>
                     ) : null}
@@ -325,19 +549,26 @@ export function StallDetailScreen({ navigation, route }: Props) {
               }
             }}
             style={({ pressed }) => [
-              { 
-                width: 56, 
-                height: 56, 
-                borderRadius: radii.pill, 
-                backgroundColor: palette.orange, 
-                alignItems: "center", 
+              {
+                width: 56,
+                height: 56,
+                borderRadius: radii.pill,
+                backgroundColor: palette.orange,
+                alignItems: "center",
                 justifyContent: "center",
                 opacity: pressed ? 0.9 : 1,
                 ...shadows.floating,
-              }
+              },
             ]}
           >
-            <Heart color={palette.textOnPrimary} fill={profile.favouriteDishIds.includes(leadDish?.id ?? "") ? palette.textOnPrimary : "transparent"} />
+            <Heart
+              color={palette.textOnPrimary}
+              fill={
+                profile.favouriteDishIds.includes(leadDish?.id ?? "")
+                  ? palette.textOnPrimary
+                  : "transparent"
+              }
+            />
           </Pressable>
         </FAB>
       </View>

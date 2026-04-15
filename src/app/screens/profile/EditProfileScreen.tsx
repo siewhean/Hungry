@@ -46,24 +46,34 @@ const EDITABLE_DIETARY_OPTIONS: Array<{ label: string; value: DietaryFlag }> = [
 export function EditProfileScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
   const updateProfile = useProfileStore((state) => state.updateProfile);
-  const setDietaryPreferences = useProfileStore((state) => state.setDietaryPreferences);
+  const setDietaryPreferences = useProfileStore(
+    (state) => state.setDietaryPreferences,
+  );
   const showToast = useUIStore((state) => state.showToast);
   const { palette, spacing, radii } = useHungryTheme();
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [email, setEmail] = useState(profile.email);
-  const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(profile.dietaryPreferences);
+  const [dietaryPreferences, setDietaryPreferencesState] = useState<
+    DietaryFlag[]
+  >(profile.dietaryPreferences);
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
 
   const handlePickAvatar = async () => {
     const imagePicker = loadImagePickerModule();
     if (!imagePicker) {
-      showToast({ message: "Image picker unavailable right now.", tone: "warning" });
+      showToast({
+        message: "Image picker unavailable right now.",
+        tone: "warning",
+      });
       return;
     }
 
     const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
     if (permission.status !== "granted") {
-      showToast({ message: "Photo permission is required to update your avatar.", tone: "warning" });
+      showToast({
+        message: "Photo permission is required to update your avatar.",
+        tone: "warning",
+      });
       return;
     }
 
@@ -84,7 +94,9 @@ export function EditProfileScreen({ navigation }: Props) {
 
   const toggleDietary = (flag: DietaryFlag) => {
     setDietaryPreferencesState((current) =>
-      current.includes(flag) ? current.filter((value) => value !== flag) : [...current, flag],
+      current.includes(flag)
+        ? current.filter((value) => value !== flag)
+        : [...current, flag],
     );
   };
 
@@ -97,7 +109,10 @@ export function EditProfileScreen({ navigation }: Props) {
   };
 
   return (
-    <ProfileScreenShell title="Edit profile" subtitle="Changes to your profile are saved locally on this device.">
+    <ProfileScreenShell
+      title="Edit profile"
+      subtitle="Changes to your profile are saved locally on this device."
+    >
       <View style={{ alignItems: "center", marginBottom: spacing[2] }}>
         <Pressable
           style={{ position: "relative" }}
@@ -117,9 +132,19 @@ export function EditProfileScreen({ navigation }: Props) {
             }}
           >
             {avatarUri ? (
-              <Image source={{ uri: avatarUri }} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+              <Image
+                source={{ uri: avatarUri }}
+                style={{ height: "100%", width: "100%" }}
+                contentFit="cover"
+              />
             ) : (
-              <AppText style={{ fontSize: 32, fontWeight: "700", color: palette.orange }}>
+              <AppText
+                style={{
+                  fontSize: 32,
+                  fontWeight: "700",
+                  color: palette.orange,
+                }}
+              >
                 {displayName.charAt(0).toUpperCase()}
               </AppText>
             )}
@@ -145,8 +170,12 @@ export function EditProfileScreen({ navigation }: Props) {
       </View>
 
       <Card>
-          <View style={{ gap: spacing[3] }}>
-          <Input label="Display name" value={displayName} onChangeText={setDisplayName} />
+        <View style={{ gap: spacing[3] }}>
+          <Input
+            label="Display name"
+            value={displayName}
+            onChangeText={setDisplayName}
+          />
           <Input
             label="Email"
             autoCapitalize="none"
@@ -156,14 +185,21 @@ export function EditProfileScreen({ navigation }: Props) {
           />
           <Pressable
             onPress={handleChangePassword}
-            style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: spacing[2] }}
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingVertical: spacing[2],
+            }}
           >
             <AppText style={{ fontWeight: "600" }}>Change Password</AppText>
             <ChevronRight size={18} color={palette.textMuted} />
           </Pressable>
 
           <AppText variant="h3">Dietary preferences</AppText>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+          <View
+            style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}
+          >
             {EDITABLE_DIETARY_OPTIONS.map((option) => (
               <Chip
                 key={option.value}

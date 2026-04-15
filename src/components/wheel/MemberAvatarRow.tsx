@@ -16,15 +16,17 @@ export function MemberAvatarRow({ members, maxVisible = 8 }: Props) {
     new Map(
       members
         .filter((member) => member.isPresent)
-        .map((member) => [member.id, member] as const)
-    ).values()
+        .map((member) => [member.id, member] as const),
+    ).values(),
   );
   const visible = present.slice(0, maxVisible);
   const overflow = present.length - maxVisible;
   const avatarSize = 36;
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+    <View
+      style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}
+    >
       {visible.map((member) => (
         <View
           key={member.id}

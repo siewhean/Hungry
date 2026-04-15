@@ -1,16 +1,45 @@
-import { PropsWithChildren, createContext, useContext, useMemo, useState, useEffect } from "react";
-import { AppState, Appearance, ColorSchemeName, useColorScheme } from "react-native";
+import {
+  PropsWithChildren,
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
+import {
+  AppState,
+  Appearance,
+  ColorSchemeName,
+  useColorScheme,
+} from "react-native";
 import {
   DefaultTheme,
   DarkTheme,
   ThemeProvider as NavigationThemeProvider,
   type Theme,
 } from "@react-navigation/native";
-import { useFonts as useNunitoFonts, Nunito_400Regular, Nunito_500Medium, Nunito_600SemiBold, Nunito_700Bold } from "@expo-google-fonts/nunito";
-import { useFonts as useMonoFonts, DMMono_400Regular } from "@expo-google-fonts/dm-mono";
+import {
+  useFonts as useNunitoFonts,
+  Nunito_400Regular,
+  Nunito_500Medium,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+} from "@expo-google-fonts/nunito";
+import {
+  useFonts as useMonoFonts,
+  DMMono_400Regular,
+} from "@expo-google-fonts/dm-mono";
 
 import { useUIStore } from "@/store/useUIStore";
-import { colors, motion, radii, shadows, spacing, typography, zIndex } from "./tokens";
+import {
+  colors,
+  motion,
+  radii,
+  shadows,
+  spacing,
+  typography,
+  zIndex,
+} from "./tokens";
 
 type HungryTheme = {
   colorScheme: "light" | "dark";
@@ -30,10 +59,10 @@ const ThemeContext = createContext<HungryTheme | null>(null);
 export function HungryThemeProvider({ children }: PropsWithChildren) {
   const themePreference = useUIStore((state) => state.themePreference);
   const hookScheme = useColorScheme();
-  
+
   // Track system color scheme via Appearance API for maximum reliability
   const [systemScheme, setSystemScheme] = useState<ColorSchemeName>(
-    Appearance.getColorScheme()
+    Appearance.getColorScheme(),
   );
 
   useEffect(() => {
@@ -44,11 +73,14 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    const appStateSubscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") {
-        setSystemScheme(Appearance.getColorScheme());
-      }
-    });
+    const appStateSubscription = AppState.addEventListener(
+      "change",
+      (state) => {
+        if (state === "active") {
+          setSystemScheme(Appearance.getColorScheme());
+        }
+      },
+    );
 
     return () => {
       appStateSubscription.remove();
@@ -75,7 +107,7 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
   }, [themePreference, resolvedSystemScheme]);
 
   const palette = colors[colorScheme];
-  
+
   const themedShadows = useMemo(
     () => ({
       card: {
@@ -139,7 +171,9 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
 
   return (
     <ThemeContext.Provider value={value}>
-      <NavigationThemeProvider value={theme}>{children}</NavigationThemeProvider>
+      <NavigationThemeProvider value={theme}>
+        {children}
+      </NavigationThemeProvider>
     </ThemeContext.Provider>
   );
 }

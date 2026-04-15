@@ -4,7 +4,14 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { Search, FileEdit, Clock } from "lucide-react-native";
 
-import { AppText, Badge, Card, EmptyState, Input, Screen } from "@/components/ui";
+import {
+  AppText,
+  Badge,
+  Card,
+  EmptyState,
+  Input,
+  Screen,
+} from "@/components/ui";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -26,10 +33,16 @@ export function ReviewHubScreen({ navigation }: Props) {
     .listBuildings()
     .flatMap((building) => repository.listVenuesByBuilding(building.id))
     .filter((venue) =>
-      `${venue.name} ${venue.unitNumber}`.toLowerCase().includes(query.trim().toLowerCase()),
+      `${venue.name} ${venue.unitNumber}`
+        .toLowerCase()
+        .includes(query.trim().toLowerCase()),
     );
 
-  const hasActiveDraft = !!(draft.selectedDishId || draft.text || draft.photos.length > 0);
+  const hasActiveDraft = !!(
+    draft.selectedDishId ||
+    draft.text ||
+    draft.photos.length > 0
+  );
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -68,7 +81,11 @@ export function ReviewHubScreen({ navigation }: Props) {
                 paddingVertical: spacing[1],
               }}
             >
-              <AppText variant="micro" tone="accent" style={{ textTransform: "uppercase" }}>
+              <AppText
+                variant="micro"
+                tone="accent"
+                style={{ textTransform: "uppercase" }}
+              >
                 Step 1 of 4
               </AppText>
             </View>
@@ -79,16 +96,18 @@ export function ReviewHubScreen({ navigation }: Props) {
                 <Pressable
                   onPress={() => {
                     if (draft.selectedVenueId && draft.selectedDishId) {
-                      navigation.navigate("ReviewRating", { 
-                        venueId: draft.selectedVenueId, 
-                        dishId: draft.selectedDishId 
+                      navigation.navigate("ReviewRating", {
+                        venueId: draft.selectedVenueId,
+                        dishId: draft.selectedDishId,
                       });
                     }
                   }}
                   style={({ pressed }) => [
                     {
                       ...shadows.card,
-                      backgroundColor: pressed ? palette.bgSoft : palette.surface,
+                      backgroundColor: pressed
+                        ? palette.bgSoft
+                        : palette.surface,
                       borderRadius: radii.lg,
                       padding: spacing[4],
                       borderWidth: 1,
@@ -112,7 +131,9 @@ export function ReviewHubScreen({ navigation }: Props) {
                     <FileEdit size={20} color={palette.orange} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <AppText style={{ fontWeight: "700" }}>Resume Review</AppText>
+                    <AppText style={{ fontWeight: "700" }}>
+                      Resume Review
+                    </AppText>
                     <AppText variant="micro" tone="secondary">
                       {draft.selectedDishId
                         ? repository.getDishById(draft.selectedDishId)?.name
@@ -142,7 +163,10 @@ export function ReviewHubScreen({ navigation }: Props) {
               return;
             }
             selectDish(item.id, leadDish.id);
-            navigation.navigate("ReviewRating", { venueId: item.id, dishId: leadDish.id });
+            navigation.navigate("ReviewRating", {
+              venueId: item.id,
+              dishId: leadDish.id,
+            });
           };
 
           return (
@@ -157,7 +181,13 @@ export function ReviewHubScreen({ navigation }: Props) {
                 ) : null}
                 <View style={{ padding: spacing[4], gap: spacing[3] }}>
                   <View style={{ gap: spacing[2] }}>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[3] }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        gap: spacing[3],
+                      }}
+                    >
                       <View style={{ flex: 1 }}>
                         <AppText variant="h3">{item.name}</AppText>
                         <AppText variant="bodySmall" tone="secondary">
@@ -169,13 +199,22 @@ export function ReviewHubScreen({ navigation }: Props) {
                       Tap this card to start a review with the highlighted dish.
                     </AppText>
                   </View>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: spacing[2],
+                    }}
+                  >
                     {dishes.map((dish) => (
                       <Pressable
                         key={dish.id}
                         onPress={() => {
                           selectDish(item.id, dish.id);
-                          navigation.navigate("ReviewRating", { venueId: item.id, dishId: dish.id });
+                          navigation.navigate("ReviewRating", {
+                            venueId: item.id,
+                            dishId: dish.id,
+                          });
                         }}
                       >
                         <Badge label={dish.name} tone="neutral" />

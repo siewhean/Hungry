@@ -13,7 +13,10 @@ interface FeedErrorBoundaryState {
   hasError: boolean;
 }
 
-export class FeedErrorBoundary extends Component<FeedErrorBoundaryProps, FeedErrorBoundaryState> {
+export class FeedErrorBoundary extends Component<
+  FeedErrorBoundaryProps,
+  FeedErrorBoundaryState
+> {
   state: FeedErrorBoundaryState = {
     hasError: false,
   };

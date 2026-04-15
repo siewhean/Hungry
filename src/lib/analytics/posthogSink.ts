@@ -4,11 +4,18 @@ import type { AnalyticsEventRecord, AnalyticsSink } from "./types";
 
 const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
 const POSTHOG_API_KEY = process.env.EXPO_PUBLIC_POSTHOG_API_KEY?.trim();
-const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST?.trim() || DEFAULT_POSTHOG_HOST;
+const POSTHOG_HOST =
+  process.env.EXPO_PUBLIC_POSTHOG_HOST?.trim() || DEFAULT_POSTHOG_HOST;
 
 let posthogClient: PostHog | null = null;
 
-type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
 type PostHogProperties = { [key: string]: JsonValue };
 
 function getPostHogClient(): PostHog | null {
@@ -55,7 +62,9 @@ function toJsonValue(value: unknown): JsonValue | undefined {
   return undefined;
 }
 
-function toPostHogProperties(properties: Record<string, unknown>): PostHogProperties {
+function toPostHogProperties(
+  properties: Record<string, unknown>,
+): PostHogProperties {
   const normalizedEntries = Object.entries(properties)
     .map(([key, value]) => {
       const normalized = toJsonValue(value);
@@ -84,7 +93,10 @@ export const posthogSink: AnalyticsSink = (event) => {
   client.capture(event.event, mapEventProperties(event));
 };
 
-export function identifyPostHogUser(userId: string, properties: Record<string, unknown>): void {
+export function identifyPostHogUser(
+  userId: string,
+  properties: Record<string, unknown>,
+): void {
   const client = getPostHogClient();
   if (!client || !userId) {
     return;

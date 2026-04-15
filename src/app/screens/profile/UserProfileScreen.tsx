@@ -17,16 +17,22 @@ export function UserProfileScreen({ navigation, route }: Props) {
   const repository = getDataRepository();
 
   const posts = useMemo(
-    () => repository.listStallPosts().filter((post) => post.authorName === authorName),
+    () =>
+      repository
+        .listStallPosts()
+        .filter((post) => post.authorName === authorName),
     [authorName, repository],
   );
 
   const totalComments = useMemo(() => {
     return posts.reduce((count, post) => {
-      return count + post.dishIds.reduce((dishCount, dishId) => {
-        const dish = repository.getDishById(dishId);
-        return dishCount + (dish?.reviews.length ?? 0);
-      }, 0);
+      return (
+        count +
+        post.dishIds.reduce((dishCount, dishId) => {
+          const dish = repository.getDishById(dishId);
+          return dishCount + (dish?.reviews.length ?? 0);
+        }, 0)
+      );
     }, 0);
   }, [posts, repository]);
 
@@ -57,13 +63,23 @@ export function UserProfileScreen({ navigation, route }: Props) {
               width: 84,
             }}
           >
-            <Image source={{ uri: authorAvatarUrl }} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+            <Image
+              source={{ uri: authorAvatarUrl }}
+              style={{ height: "100%", width: "100%" }}
+              contentFit="cover"
+            />
           </View>
 
           <View style={{ alignItems: "center", gap: spacing[1] }}>
             <AppText variant="h2">{authorName}</AppText>
             {authorLocation ? (
-              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+              <View
+                style={{
+                  alignItems: "center",
+                  flexDirection: "row",
+                  gap: spacing[1],
+                }}
+              >
                 <MapPin color={palette.textMuted} size={14} />
                 <AppText variant="bodySmall" tone="secondary">
                   {authorLocation}
@@ -73,8 +89,16 @@ export function UserProfileScreen({ navigation, route }: Props) {
           </View>
 
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
-            <StatChip icon={<Utensils color={palette.orange} size={14} />} label="Posts" value={posts.length} />
-            <StatChip icon={<MessageCircle color={palette.orange} size={14} />} label="Comments" value={totalComments} />
+            <StatChip
+              icon={<Utensils color={palette.orange} size={14} />}
+              label="Posts"
+              value={posts.length}
+            />
+            <StatChip
+              icon={<MessageCircle color={palette.orange} size={14} />}
+              label="Comments"
+              value={totalComments}
+            />
           </View>
         </View>
 
@@ -90,7 +114,11 @@ export function UserProfileScreen({ navigation, route }: Props) {
                   key={post.id}
                   accessibilityRole="button"
                   accessibilityLabel={`Open post at ${post.authorLocation}`}
-                  onPress={() => navigation.navigate("DishDetail", { dishId: post.dishIds[0] })}
+                  onPress={() =>
+                    navigation.navigate("DishDetail", {
+                      dishId: post.dishIds[0],
+                    })
+                  }
                 >
                   <Card
                     style={{
@@ -100,22 +128,46 @@ export function UserProfileScreen({ navigation, route }: Props) {
                       padding: spacing[3],
                     }}
                   >
-                    <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                    <View
+                      style={{
+                        alignItems: "center",
+                        flexDirection: "row",
+                        gap: spacing[2],
+                      }}
+                    >
                       <Image
                         source={{ uri: post.mediaUrl }}
-                        style={{ borderRadius: radii.md, height: 56, width: 56 }}
+                        style={{
+                          borderRadius: radii.md,
+                          height: 56,
+                          width: 56,
+                        }}
                         contentFit="cover"
                       />
                       <View style={{ flex: 1, gap: spacing[1] }}>
                         <AppText variant="bodyBold" numberOfLines={1}>
                           {topDish?.name ?? post.caption}
                         </AppText>
-                        <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                        <AppText
+                          variant="bodySmall"
+                          tone="secondary"
+                          numberOfLines={1}
+                        >
                           {post.caption}
                         </AppText>
                       </View>
-                      <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-                        <Star color={palette.amber} fill={palette.amber} size={14} />
+                      <View
+                        style={{
+                          alignItems: "center",
+                          flexDirection: "row",
+                          gap: spacing[1],
+                        }}
+                      >
+                        <Star
+                          color={palette.amber}
+                          fill={palette.amber}
+                          size={14}
+                        />
                         <AppText variant="micro">{ratingText}</AppText>
                       </View>
                     </View>
@@ -135,7 +187,15 @@ export function UserProfileScreen({ navigation, route }: Props) {
   );
 }
 
-function StatChip({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
+function StatChip({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: number;
+}) {
   const { palette, radii, spacing } = useHungryTheme();
 
   return (

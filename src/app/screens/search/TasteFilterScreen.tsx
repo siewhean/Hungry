@@ -21,14 +21,24 @@ export function TasteFilterScreen() {
   const profile = useProfileStore((state) => state.profile);
 
   return (
-    <Screen title="Taste filters" subtitle="Slide each dimension to match the current craving.">
+    <Screen
+      title="Taste filters"
+      subtitle="Slide each dimension to match the current craving."
+    >
       <View style={{ gap: spacing[4] }}>
         <Card style={{ gap: spacing[4] }}>
           {TASTE_DIMENSIONS.map((dimension) => (
             <View key={dimension.key} style={{ gap: 8 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
                 <AppText variant="h3">{dimension.label}</AppText>
-                <AppText variant="price">{Math.round(filters.tasteValues[dimension.key])}</AppText>
+                <AppText variant="price">
+                  {Math.round(filters.tasteValues[dimension.key])}
+                </AppText>
               </View>
               <Slider
                 minimumValue={0}
@@ -45,17 +55,30 @@ export function TasteFilterScreen() {
                   })
                 }
               />
-              <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: -4 }}>
-                <AppText variant="micro" tone="secondary">LOW</AppText>
-                <AppText variant="micro" tone="secondary">HIGH</AppText>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginTop: -4,
+                }}
+              >
+                <AppText variant="micro" tone="secondary">
+                  LOW
+                </AppText>
+                <AppText variant="micro" tone="secondary">
+                  HIGH
+                </AppText>
               </View>
             </View>
           ))}
         </Card>
-        <Button label="Reset to my profile" variant="secondary" onPress={() => resetToProfile(profile.tasteVector)} />
+        <Button
+          label="Reset to my profile"
+          variant="secondary"
+          onPress={() => resetToProfile(profile.tasteVector)}
+        />
         <Button label="Apply filters" onPress={() => navigation.goBack()} />
       </View>
     </Screen>
   );
 }
-

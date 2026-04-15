@@ -28,12 +28,18 @@ interface BitesCarouselProps {
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
-export function BitesCarousel({ bites, showHeader = true, horizontalInset = 0 }: BitesCarouselProps) {
+export function BitesCarousel({
+  bites,
+  showHeader = true,
+  horizontalInset = 0,
+}: BitesCarouselProps) {
   const { palette, spacing } = useHungryTheme();
   const navigation = useNavigation<RootNavigation>();
   const { width: screenWidth } = useWindowDimensions();
   const [likedBites, setLikedBites] = useState<Record<string, boolean>>({});
-  const [commentedBites, setCommentedBites] = useState<Record<string, boolean>>({});
+  const [commentedBites, setCommentedBites] = useState<Record<string, boolean>>(
+    {},
+  );
   const fallbackBites = useMemo(() => createDefaultBites(), []);
   const biteData = bites?.length ? bites : fallbackBites;
   const cardWidth = Math.max(300, screenWidth - spacing[4] * 2);
@@ -47,10 +53,16 @@ export function BitesCarousel({ bites, showHeader = true, horizontalInset = 0 }:
         liked={Boolean(likedBites[item.id])}
         commented={Boolean(commentedBites[item.id])}
         onToggleLike={() =>
-          setLikedBites((current) => ({ ...current, [item.id]: !current[item.id] }))
+          setLikedBites((current) => ({
+            ...current,
+            [item.id]: !current[item.id],
+          }))
         }
         onCommentPress={() =>
-          setCommentedBites((current) => ({ ...current, [item.id]: !current[item.id] }))
+          setCommentedBites((current) => ({
+            ...current,
+            [item.id]: !current[item.id],
+          }))
         }
       />
     ),
@@ -71,7 +83,11 @@ export function BitesCarousel({ bites, showHeader = true, horizontalInset = 0 }:
           }}
         >
           <View style={{ flex: 1, paddingRight: spacing[2] }}>
-            <AppText variant="micro" tone="accent" style={{ letterSpacing: 0.8, textTransform: "uppercase" }}>
+            <AppText
+              variant="micro"
+              tone="accent"
+              style={{ letterSpacing: 0.8, textTransform: "uppercase" }}
+            >
               BITES
             </AppText>
             <AppText variant="h2" numberOfLines={2}>
@@ -80,7 +96,12 @@ export function BitesCarousel({ bites, showHeader = true, horizontalInset = 0 }:
           </View>
           <Pressable
             onPress={() => navigation.navigate("SearchHome")}
-            style={{ flexDirection: "row", alignItems: "center", gap: 2, flexShrink: 0 }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 2,
+              flexShrink: 0,
+            }}
           >
             <AppText variant="bodySmall" tone="accent">
               See more

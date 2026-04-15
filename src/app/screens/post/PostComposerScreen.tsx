@@ -19,7 +19,10 @@ export function PostComposerScreen({ navigation }: Props) {
   const repository = getDataRepository();
   const [caption, setCaption] = useState("");
   const dish = useMemo(() => repository.listPopularNearby()[0], [repository]);
-  const venue = useMemo(() => repository.getVenueById(dish.venueId), [dish.venueId, repository]);
+  const venue = useMemo(
+    () => repository.getVenueById(dish.venueId),
+    [dish.venueId, repository],
+  );
 
   const handlePublish = () => {
     if (!isAuthenticated) {
@@ -28,12 +31,18 @@ export function PostComposerScreen({ navigation }: Props) {
       return;
     }
 
-    showToast({ message: "Post created in the local mock flow.", tone: "success" });
+    showToast({
+      message: "Post created in the local mock flow.",
+      tone: "success",
+    });
     navigation.navigate("MainTabs", { screen: "Home" });
   };
 
   return (
-    <Screen title="Create post" subtitle="Share a quick dish update without turning the app into a creator platform.">
+    <Screen
+      title="Create post"
+      subtitle="Share a quick dish update without turning the app into a creator platform."
+    >
       <Card>
         <View style={{ gap: spacing[3] }}>
           <Badge label="Photo or video" tone="neutral" />
@@ -47,7 +56,9 @@ export function PostComposerScreen({ navigation }: Props) {
             value={caption}
             onChangeText={setCaption}
           />
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+          <View
+            style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}
+          >
             {dish.tasteTags.slice(0, 3).map((tag) => (
               <Badge key={tag} label={tag} tone="neutral" />
             ))}
@@ -55,7 +66,13 @@ export function PostComposerScreen({ navigation }: Props) {
         </View>
       </Card>
       <Button label="Publish post" onPress={handlePublish} />
-      <Button label="Save draft for later" variant="secondary" onPress={() => showToast({ message: "Draft saved locally.", tone: "info" })} />
+      <Button
+        label="Save draft for later"
+        variant="secondary"
+        onPress={() =>
+          showToast({ message: "Draft saved locally.", tone: "info" })
+        }
+      />
     </Screen>
   );
 }
