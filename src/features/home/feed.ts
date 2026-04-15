@@ -7,7 +7,10 @@ export interface HomeFeedItem extends StallPost {
   dishes: DishDetail[];
 }
 
-export function getHomeFeed(profile: UserProfile) {
+export async function getHomeFeed(profile: UserProfile) {
+  // Simulate network delay for skeleton loaders
+  await new Promise((resolve) => setTimeout(resolve, 800));
+
   return mockRepository
     .listStallPosts()
     .map((post) => {
@@ -30,6 +33,15 @@ export function getHomeFeed(profile: UserProfile) {
     .sort((left, right) => {
       const leftDish = left!.dishes[0];
       const rightDish = right!.dishes[0];
+      
+      // Proactive logic: prioritize nearby dishes (simulated via distanceMeters)
+      const leftDistance = leftDish?.distanceMeters ?? 1000;
+      const rightDistance = rightDish?.distanceMeters ?? 1000;
+      
+      if (Math.abs(leftDistance - rightDistance) > 200) {
+        return leftDistance - rightDistance;
+      }
+
       const leftScore = leftDish ? similarityScore(leftDish.tasteVector, profile.tasteVector) : 0;
       const rightScore = rightDish ? similarityScore(rightDish.tasteVector, profile.tasteVector) : 0;
       return rightScore - leftScore;

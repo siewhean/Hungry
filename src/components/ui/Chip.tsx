@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet } from "react-native";
+import * as Haptics from "expo-haptics";
 
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
@@ -16,7 +17,10 @@ export function Chip({ label, selected = false, onPress }: ChipProps) {
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      onPress={onPress}
+      onPress={() => {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onPress?.();
+      }}
       style={({ pressed }) => [
         styles.chip,
         {

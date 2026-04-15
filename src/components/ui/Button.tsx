@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import type { PressableProps } from "react-native";
+import * as Haptics from "expo-haptics";
 
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
@@ -53,6 +54,11 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       disabled={isDisabled}
+      onPressIn={() => {
+        if (!isDisabled) {
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+      }}
       style={({ pressed }) => [
         styles.base,
         variantStyle[variant],

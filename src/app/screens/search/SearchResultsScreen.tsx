@@ -1,15 +1,35 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { useNavigation } from "@react-navigation/native";
 
-import { AppText, Button, EmptyState, Screen } from "@/components/ui";
+import { AppText, Button, EmptyState, Screen, Skeleton } from "@/components/ui";
 import { findBuildingById } from "@/features/discovery/discovery";
 import { getSearchResults, sortSearchResults, type SearchSortMode, useSearchData } from "@/features/search/search";
 import { mockRepository } from "@/lib/services/mock/repositories";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
+
+function SearchSkeleton() {
+  const { spacing, radii } = useHungryTheme();
+  const { width } = useWindowDimensions();
+  const cardWidth = (width - 48) / 2;
+
+  return (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <View key={i} style={{ width: cardWidth, gap: 8 }}>
+          <Skeleton height={132} borderRadius={radii.lg} />
+          <View style={{ gap: 4 }}>
+            <Skeleton width="80%" height={16} />
+            <Skeleton width="40%" height={12} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
 
 type DisplayMode = "list" | "grid";
 
@@ -101,7 +121,7 @@ export function SearchResultsScreen() {
   const { profile, filters, recentSearches } = useSearchData();
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const updateQuery = useSearchStore((state) => state.updateQuery);
-  const [displayMode, setDisplayMode] = useState<DisplayMode>("list");
+  const [displayMode, setDisplayMode] = useState<DisplayMode>("grid");
   const [sortMode, setSortMode] = useState<SearchSortMode>("best_match");
   const [isLoading, setIsLoading] = useState(true);
   const rawResults = useMemo(() => getSearchResults(filters, profile.tasteVector), [filters, profile.tasteVector]);
@@ -109,7 +129,7 @@ export function SearchResultsScreen() {
 
   useEffect(() => {
     setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 160);
+    const timer = setTimeout(() => setIsLoading(false), 600);
     return () => clearTimeout(timer);
   }, [results]);
 
@@ -117,7 +137,7 @@ export function SearchResultsScreen() {
     <Screen
       scroll={false}
       title="Search results"
-      subtitle={isLoading ? "Finding dishes near you…" : `${results.length} dishes matched your current search.`}
+      subtitle={isLoading && results.length === 0 ? "Finding dishes near you…" : `${results.length} dishes matched your search.`}
     >
       <View style={{ flex: 1, gap: spacing[4] }}>
         <View
@@ -213,52 +233,49 @@ export function SearchResultsScreen() {
           })}
         </View>
 
-        {isLoading ? (
-          <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: spacing[8], gap: spacing[2] }}>
-            <ActivityIndicator color={palette.orange} />
-            <AppText variant="bodySmall" tone="secondary">
-              Updating results…
-            </AppText>
-          </View>
-        ) : null}
-
-        <FlatList
-          style={{ opacity: isLoading ? 0.35 : 1 }}
-          key={displayMode}
-          data={results}
-          keyExtractor={(item) => item.id}
-          numColumns={displayMode === "grid" ? 2 : 1}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ gap: 12, paddingBottom: 24 }}
-          columnWrapperStyle={displayMode === "grid" ? { gap: 12 } : undefined}
-          renderItem={({ item }) =>
-            displayMode === "list" ? (
-              <SearchResultListCard
-                dish={item}
-                onPress={() => {
-                  rememberSearch(filters.query);
-                  navigation.navigate("DishDetail", { dishId: item.id });
-                }}
-              />
-            ) : (
-              <SearchResultGridCard
-                dish={item}
-                onPress={() => {
-                  rememberSearch(filters.query);
-                  navigation.navigate("DishDetail", { dishId: item.id });
-                }}
-              />
-            )
-          }
-          ListEmptyComponent={
-            <EmptyState
-              title="No dishes found"
-              body="Try a broader search term or return to Search to change the dish query."
-              ctaLabel="Back to Search"
-              onPress={() => navigation.navigate("SearchHome")}
-            />
-          }
-        />
+        {isLoading && results.length === 0 ? (
+          <SearchSkeleton />
+        ) : (
+          <FlatList
+            style={{ opacity: isLoading ? 0.5 : 1 }}
+            key={displayMode}
+            data={results}
+            keyExtractor={(item) => item.id}
+            numColumns={displayMode === "grid" ? 2 : 1}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ gap: 12, paddingBottom: 24 }}
+            columnWrapperStyle={displayMode === "grid" ? { gap: 12 } : undefined}
+            renderItem={({ item }) =>
+              displayMode === "list" ? (
+                <SearchResultListCard
+                  dish={item}
+                  onPress={() => {
+                    rememberSearch(filters.query);
+                    navigation.navigate("DishDetail", { dishId: item.id });
+                  }}
+                />
+              ) : (
+                <SearchResultGridCard
+                  dish={item}
+                  onPress={() => {
+                    rememberSearch(filters.query);
+                    navigation.navigate("DishDetail", { dishId: item.id });
+                  }}
+                />
+              )
+            }
+            ListEmptyComponent={
+              !isLoading ? (
+                <EmptyState
+                  title="No dishes found"
+                  body="Try a broader search term or return to Search to change the dish query."
+                  ctaLabel="Back to Search"
+                  onPress={() => navigation.navigate("SearchHome")}
+                />
+              ) : null
+            }
+          />
+        )}
 
         {filters.query ? (
           <Pressable

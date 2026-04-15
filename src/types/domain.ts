@@ -155,6 +155,7 @@ export interface UserProfile {
     stallsVisited: number;
     favouritesCount: number;
   };
+  leftHandedMode?: boolean;
 }
 
 export interface ReviewDraft {

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, ScrollView, Share, StyleSheet, View, useWindowDimensions } from "react-native";
+import { FlatList, Pressable, ScrollView, Share, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Bookmark, Heart, MessageCircle, PlayCircle, Send } from "lucide-react-native";
@@ -10,13 +10,30 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { runOnJS } from "react-native-reanimated";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, EmptyState } from "@/components/ui";
+import { AppText, EmptyState, Skeleton } from "@/components/ui";
 import { BitesCarousel } from "@/components/social";
 import { getHomeFeed, type HomeFeedItem } from "@/features/home/feed";
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
+
+function FeedSkeleton() {
+  const { spacing } = useHungryTheme();
+  const { width } = useWindowDimensions();
+  const imageHeight = width / (4 / 5);
+
+  return (
+    <View style={{ gap: spacing[4], backgroundColor: "#000000", marginBottom: spacing[8] }}>
+      <Skeleton height={imageHeight} borderRadius={0} />
+      <View style={{ padding: spacing[4], gap: spacing[3] }}>
+        <Skeleton width="40%" height={12} />
+        <Skeleton width="70%" height={24} />
+        <Skeleton width="50%" height={12} />
+      </View>
+    </View>
+  );
+}
 
 type InteractionState = {
   liked: boolean;
@@ -32,129 +49,179 @@ export function HomeFeedScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const { palette, radii, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
+  const leftHandedMode = useProfileStore((state) => state.profile.leftHandedMode ?? false);
+  const profile = useProfileStore((state) => state.profile);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
   const [feed, setFeed] = useState<HomeFeedItem[]>([]);
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
+
   const [interactionByPostId, setInteractionByPostId] = useState<Record<string, InteractionState>>({});
-  const [activeCommentItem, setActiveCommentItem] = useState<HomeFeedItem | null>(null);
-  const commentsSheetRef = useRef<BottomSheetModal>(null);
-  const commentSnapPoints = useMemo(() => ["50%", "88%"], []);
-  const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
-  const stories = useMemo(() => feed.slice(0, 5), [feed]);
-  const isCompact = screenWidth < 390;
 
-  const loadFeed = useCallback(() => {
+  const loadFeed = useCallback(async () => {
+    setFeedState("loading");
     try {
-      const nextFeed = getHomeFeed(useProfileStore.getState().profile);
-      setFeed(nextFeed);
-      setInteractionByPostId((current) => {
-        const next = { ...current };
-
-        nextFeed.forEach((item) => {
-          if (next[item.id]) {
-            return;
-          }
-          const leadDish = item.dishes[0];
-          const baseComments = leadDish?.reviews.length ?? 0;
-          next[item.id] = {
-            liked: false,
-            saved: false,
-            likeCount: baseComments,
-            saveCount: 0,
-            shareCount: 0,
-            commentCount: baseComments,
-          };
-        });
-
-        return next;
-      });
+      const data = await getHomeFeed(profile);
+      setFeed(data);
       setFeedState("ready");
     } catch {
       setFeedState("error");
     }
-  }, []);
+  }, [profile]);
 
   useEffect(() => {
-    setFeedState("loading");
-    const timer = setTimeout(() => loadFeed(), 180);
-    return () => clearTimeout(timer);
+    void loadFeed();
   }, [loadFeed]);
 
-  const navigateToStall = useCallback(
-    (venueId: string) => navigation.navigate("StallDetail", { venueId }),
-    [navigation],
-  );
+  const toggleLike = (postId: string) => {
+    setInteractionByPostId((prev) => {
+      const current = prev[postId] ?? {
+        liked: false,
+        saved: false,
+        likeCount: 0,
+        saveCount: 0,
+        shareCount: 0,
+        commentCount: 0,
+      };
+      const isLiked = !current.liked;
+      return {
+        ...prev,
+        [postId]: {
+          ...current,
+          liked: isLiked,
+          likeCount: isLiked ? current.likeCount + 1 : Math.max(0, current.likeCount - 1),
+        },
+      };
+    });
+  };
 
-  const navigateToDish = useCallback(
-    (dishId: string) => navigation.navigate("DishDetail", { dishId }),
-    [navigation],
-  );
+  const toggleSave = (postId: string) => {
+    setInteractionByPostId((prev) => {
+      const current = prev[postId] ?? {
+        liked: false,
+        saved: false,
+        likeCount: 0,
+        saveCount: 0,
+        shareCount: 0,
+        commentCount: 0,
+      };
+      const isSaved = !current.saved;
+      return {
+        ...prev,
+        [postId]: {
+          ...current,
+          saved: isSaved,
+          saveCount: isSaved ? current.saveCount + 1 : Math.max(0, current.saveCount - 1),
+        },
+      };
+    });
+  };
 
-  const toggleExpandedPost = useCallback((postId: string) => {
+  const incrementShare = (postId: string) => {
+    setInteractionByPostId((prev) => {
+      const current = prev[postId] ?? {
+        liked: false,
+        saved: false,
+        likeCount: 0,
+        saveCount: 0,
+        shareCount: 0,
+        commentCount: 0,
+      };
+      return {
+        ...prev,
+        [postId]: {
+          ...current,
+          shareCount: current.shareCount + 1,
+        },
+      };
+    });
+  };
+
+  const toggleExpandedPost = (postId: string) => {
     setExpandedPostId((current) => (current === postId ? null : postId));
-  }, []);
+  };
 
-  const toggleLike = useCallback((postId: string) => {
-    setInteractionByPostId((current) => {
-      const previous = current[postId];
-      if (!previous) {
-        return current;
-      }
+  const navigateToDish = (dishId: string) => {
+    navigation.navigate("DishDetail", { dishId });
+  };
 
-      const nextLiked = !previous.liked;
-      return {
-        ...current,
-        [postId]: {
-          ...previous,
-          liked: nextLiked,
-          likeCount: Math.max(0, previous.likeCount + (nextLiked ? 1 : -1)),
-        },
-      };
-    });
-  }, []);
+  const navigateToStall = useCallback(
+    (venueId: string) => {
+      navigation.navigate("StallDetail", { venueId });
+    },
+    [navigation],
+  );
 
-  const toggleSave = useCallback((postId: string) => {
-    setInteractionByPostId((current) => {
-      const previous = current[postId];
-      if (!previous) {
-        return current;
-      }
-      const nextSaved = !previous.saved;
-      return {
-        ...current,
-        [postId]: {
-          ...previous,
-          saved: nextSaved,
-          saveCount: Math.max(0, previous.saveCount + (nextSaved ? 1 : -1)),
-        },
-      };
-    });
-  }, []);
+  const stories = useMemo(
+    () => [
+      { id: "s1", label: "My taste", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80" },
+      { id: "s2", label: "Nearby", avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=100&q=80" },
+      { id: "s3", label: "Top rated", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80" },
+      { id: "s4", label: "Late night", avatar: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?auto=format&fit=crop&w=100&q=80" },
+    ],
+    [],
+  );
 
-  const incrementShare = useCallback((postId: string) => {
-    setInteractionByPostId((current) => {
-      const previous = current[postId];
-      if (!previous) {
-        return current;
-      }
-      return {
-        ...current,
-        [postId]: {
-          ...previous,
-          shareCount: previous.shareCount + 1,
-        },
-      };
-    });
-  }, []);
+  const commentSheetRef = useRef<BottomSheetModal>(null);
+  const [activePostForComments, setActivePostForComments] = useState<HomeFeedItem | null>(null);
 
-  const openComments = useCallback((item: HomeFeedItem) => {
-    setActiveCommentItem(item);
-    requestAnimationFrame(() => {
-      commentsSheetRef.current?.present();
-    });
-  }, []);
+  const openComments = (item: HomeFeedItem) => {
+    setActivePostForComments(item);
+    commentSheetRef.current?.present();
+  };
+
+  const renderCommentBackdrop = useCallback(
+    (props: any) => (
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
+    ),
+    [],
+  );
+
+  const renderHeader = useCallback(
+    () => (
+      <View style={{ gap: spacing[6], paddingBottom: spacing[4], paddingTop: spacing[2] }}>
+        {/* Stories-like Taste Fingerprints */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[4], paddingHorizontal: spacing[5] }}>
+          {stories.map((s) => (
+            <View key={s.id} style={{ alignItems: "center", gap: spacing[2] }}>
+              <Pressable
+                onPress={() => navigation.navigate("TasteFilter")}
+                style={[
+                  styles.storyRing,
+                  {
+                    borderColor: palette.orange,
+                    borderRadius: 34,
+                    height: 68,
+                    padding: 3,
+                    width: 68,
+                  },
+                ]}
+              >
+                <Image source={{ uri: s.avatar }} style={{ borderRadius: 31, height: "100%", width: "100%" }} />
+              </Pressable>
+              <AppText variant="micro" style={styles.storyLabel}>
+                {s.label}
+              </AppText>
+            </View>
+          ))}
+        </ScrollView>
+
+        <View style={{ paddingHorizontal: spacing[5] }}>
+          <AppText variant="micro" tone="muted" style={styles.sectionEyebrow}>
+            Happening now
+          </AppText>
+          <AppText variant="h1">Dish drops near you</AppText>
+        </View>
+
+        {/* Bites section */}
+        <View style={{ gap: spacing[2] }}>
+          <BitesCarousel />
+        </View>
+      </View>
+    ),
+    [navigateToStall, navigation, palette.orange, spacing, stories],
+  );
 
   const renderItem = useCallback(
     ({ item, index }: { item: HomeFeedItem; index: number }) => {
@@ -175,7 +242,7 @@ export function HomeFeedScreen() {
       const isLiked = interaction.liked;
       const isSaved = interaction.saved;
 
-      // Instagram-style portrait aspect ratio (4:5)
+      // Dynamic aspect ratio (Instagram-style 4:5 for portrait)
       const imageAspectRatio = 4 / 5;
       const imageHeight = screenWidth / imageAspectRatio;
 
@@ -194,7 +261,7 @@ export function HomeFeedScreen() {
             >
               <Image
                 source={{ uri: item.mediaUrl }}
-                style={styles.heroImage}
+                style={StyleSheet.absoluteFill}
                 contentFit="cover"
                 transition={200}
               />
@@ -217,20 +284,20 @@ export function HomeFeedScreen() {
 
             {/* Metadata & Actions Overlay */}
             <View style={[styles.overlayContent, { padding: spacing[4] }]} pointerEvents="box-none">
-              <View style={styles.overlayTopRow} pointerEvents="box-none">
-                <View style={[styles.textOverlay, { gap: spacing[1] }]} pointerEvents="box-none">
-                  <AppText variant="micro" style={{ color: "rgba(255,255,255,0.9)" }}>
+              <View style={[styles.overlayTopRow, leftHandedMode && { flexDirection: "row-reverse" }]} pointerEvents="box-none">
+                <View style={[styles.textOverlay, { gap: spacing[1] }, leftHandedMode && { marginLeft: 12, marginRight: 0 }]} pointerEvents="box-none">
+                  <AppText variant="micro" style={{ color: "rgba(255,255,255,0.9)", textAlign: leftHandedMode ? "right" : "left" }}>
                     {item.authorName} · {item.authorLocation}
                   </AppText>
-                  <AppText variant="h2" style={{ color: "#FFFFFF" }} numberOfLines={2}>
+                  <AppText variant="h2" style={{ color: "#FFFFFF", textAlign: leftHandedMode ? "right" : "left" }} numberOfLines={2}>
                     {leadDish?.name ?? item.venue.name}
                   </AppText>
-                  <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)" }}>
+                  <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)", textAlign: leftHandedMode ? "right" : "left" }}>
                     {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
                   </AppText>
                 </View>
 
-                {/* Vertical Actions Column */}
+                {/* Vertical Actions Column (Instagram-inspired overlay style) */}
                 <View style={[styles.sideActions, { gap: spacing[4] }]} pointerEvents="box-none">
                   <Pressable hitSlop={10} onPress={() => toggleLike(item.id)}>
                     <VerticalActionMetric
@@ -280,7 +347,7 @@ export function HomeFeedScreen() {
                 </View>
               </View>
 
-              {/* Caption */}
+              {/* Caption (Collapsible) */}
               <Pressable
                 hitSlop={10}
                 onPress={() => toggleExpandedPost(item.id)}
@@ -288,7 +355,7 @@ export function HomeFeedScreen() {
               >
                 <AppText
                   variant="bodySmall"
-                  style={{ color: "rgba(255,255,255,0.9)" }}
+                  style={{ color: "rgba(255,255,255,0.9)", textAlign: leftHandedMode ? "right" : "left" }}
                   numberOfLines={isExpanded ? undefined : 2}
                 >
                   {item.caption}
@@ -296,7 +363,7 @@ export function HomeFeedScreen() {
               </Pressable>
 
               {isExpanded ? (
-                <View style={[styles.quickPostRow, { gap: spacing[2], marginTop: spacing[3] }]}>
+                <View style={[styles.quickPostRow, { gap: spacing[2], marginTop: spacing[3] }, leftHandedMode && { flexDirection: "row-reverse" }]}>
                   <Pressable
                     onPress={() => {
                       if (!isAuthenticated) {
@@ -357,92 +424,29 @@ export function HomeFeedScreen() {
     },
     [
       expandedPostId,
-      isAuthenticated,
-      isCompact,
       interactionByPostId,
+      isAuthenticated,
+      leftHandedMode,
       navigateToDish,
-      navigateToStall,
-      palette.border,
-      palette.error,
-      palette.textMuted,
-      spacing,
-      setReturnRoute,
-      toggleExpandedPost,
-      toggleLike,
-      toggleSave,
-      incrementShare,
       navigation,
-      openComments,
+      palette.error,
+      palette.orange,
+      radii.pill,
+      screenWidth,
+      setReturnRoute,
+      spacing,
     ],
   );
 
-  const listHeader = useMemo(
-    () => (
-      <View style={{ gap: spacing[4], paddingHorizontal: spacing[5], paddingTop: spacing[1] }}>
-        <View style={{ gap: spacing[1] }}>
-          <AppText variant="micro" tone="accent" style={styles.sectionEyebrow}>
-            APPETITE SCROLL
-          </AppText>
-          <AppText variant="h1">Tonight&apos;s food stories</AppText>
-          <AppText variant="bodySmall" tone="secondary">
-            Browse what stalls are pushing out right now, then jump straight into the dish.
-          </AppText>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: spacing[3] }}
-        >
-          {stories.map((story) => (
-            <Pressable
-              key={story.id}
-              onPress={() => navigateToStall(story.venueId)}
-              style={{ width: 78, gap: spacing[2], alignItems: "center" }}
-            >
-              <View
-                style={[
-                  styles.storyRing,
-                  {
-                    borderColor: palette.orange,
-                    borderRadius: radii.pill,
-                    padding: 3,
-                  },
-                ]}
-              >
-                <Image
-                  source={{ uri: story.authorAvatarUrl }}
-                  style={{ width: 58, height: 58, borderRadius: 29 }}
-                  contentFit="cover"
-                />
-              </View>
-              <AppText
-                variant="micro"
-                style={styles.storyLabel}
-                numberOfLines={2}
-              >
-                {story.venue.name}
-              </AppText>
-            </Pressable>
-          ))}
-        </ScrollView>
-
-        {/* Bites section */}
-        <View style={{ gap: spacing[2] }}>
-          <BitesCarousel />
-        </View>
-      </View>
-    ),
-    [navigateToStall, palette.orange, radii.pill, spacing, stories],
-  );
+  useScrollToRevealBack();
 
   if (feedState === "loading") {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
-        <View style={{ alignItems: "center", flex: 1, gap: spacing[3], justifyContent: "center", paddingHorizontal: spacing[5] }}>
-          <ActivityIndicator color={palette.orange} />
-          <AppText tone="secondary">Loading your food feed…</AppText>
-        </View>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: "#000000" }]} edges={["top", "left", "right"]}>
+        <ScrollView scrollEnabled={false} contentContainerStyle={{ gap: spacing[4] }}>
+          <FeedSkeleton />
+          <FeedSkeleton />
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -463,89 +467,33 @@ export function HomeFeedScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
-      <View style={{ flex: 1, paddingTop: spacing[3] }}>
-        <FlatList
-          data={feed}
-          keyExtractor={keyExtractor}
-          ListHeaderComponent={listHeader}
-          renderItem={renderItem}
-          ListEmptyComponent={
-            <EmptyState
-              title="No food stories yet"
-              body="Nothing to show right now. Try Discover to find dishes nearby."
-            />
-          }
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-            gap: spacing[5],
-            paddingBottom: spacing[16] + insets.bottom + spacing[6],
-          }}
-          onScroll={onScroll}
-          scrollEventThrottle={scrollEventThrottle}
-          showsVerticalScrollIndicator={false}
-        />
-      </View>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: "#000000" }]} edges={["top", "left", "right"]}>
+      <FlatList
+        data={feed}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        ListHeaderComponent={renderHeader}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing[16] }}
+        removeClippedSubviews
+        maxToRenderPerBatch={3}
+        initialNumToRender={2}
+        windowSize={5}
+      />
 
       <BottomSheetModal
-        ref={commentsSheetRef}
-        snapPoints={commentSnapPoints}
+        ref={commentSheetRef}
         index={0}
-        enablePanDownToClose
-        onDismiss={() => setActiveCommentItem(null)}
-        backdropComponent={(props) => (
-          <BottomSheetBackdrop
-            {...props}
-            appearsOnIndex={0}
-            disappearsOnIndex={-1}
-            opacity={0.5}
-            pressBehavior="close"
-          />
-        )}
+        snapPoints={["60%", "90%"]}
+        backdropComponent={renderCommentBackdrop}
         backgroundStyle={{ backgroundColor: palette.surface }}
         handleIndicatorStyle={{ backgroundColor: palette.border }}
       >
-        <BottomSheetScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            gap: spacing[3],
-            paddingHorizontal: spacing[4],
-            paddingVertical: spacing[4],
-            paddingBottom: spacing[8] + insets.bottom,
-          }}
-        >
-          <AppText variant="h3">Comments</AppText>
-          {activeCommentItem?.dishes[0]?.reviews?.length ? (
-            activeCommentItem.dishes[0].reviews.map((review) => (
-              <View
-                key={review.id}
-                style={{
-                  backgroundColor: palette.bgSoft,
-                  borderColor: palette.border,
-                  borderRadius: radii.md,
-                  borderWidth: 1,
-                  gap: spacing[1],
-                  paddingHorizontal: spacing[3],
-                  paddingVertical: spacing[3],
-                }}
-              >
-                <AppText variant="bodySmall">{review.authorName}</AppText>
-                <AppText variant="micro" tone="muted">
-                  {new Date(review.createdAt).toLocaleDateString()}
-                </AppText>
-                <AppText variant="bodySmall" tone="secondary">
-                  {review.text}
-                </AppText>
-              </View>
-            ))
-          ) : (
-            <AppText variant="bodySmall" tone="secondary">
-              No comments yet. Be the first to share your review.
-            </AppText>
-          )}
+        <BottomSheetScrollView contentContainerStyle={{ padding: spacing[5], gap: spacing[4] }}>
+          <AppText variant="h2">Comments</AppText>
+          <AppText tone="secondary">Community discussions for {activePostForComments?.venue.name} coming soon.</AppText>
         </BottomSheetScrollView>
       </BottomSheetModal>
-
     </SafeAreaView>
   );
 }

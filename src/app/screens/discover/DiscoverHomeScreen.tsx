@@ -1,5 +1,6 @@
 import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
+import { useMemo } from "react";
 import { ChevronRight, Compass, MapPinned, Search, Shuffle } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 
@@ -30,6 +31,7 @@ export function DiscoverHomeScreen() {
 
   const buildings = mockRepository.listBuildings();
   const recommendedDishes = popularNearby.slice(0, 4);
+  const nearestBuilding = useMemo(() => buildings[0], [buildings]);
   const nearbyVenues = buildings
     .slice(0, 4)
     .map((building) => {
@@ -132,6 +134,38 @@ export function DiscoverHomeScreen() {
             onPress={() => navigation.navigate("SearchHome")}
           />
         </View>
+
+        {/* Proactive Nearby Card */}
+        <Pressable
+          onPress={() => navigation.navigate("BuildingDrillDown", { buildingId: nearestBuilding.id })}
+          style={[
+            shadows.floating,
+            {
+              backgroundColor: palette.navy,
+              borderRadius: radii.lg,
+              padding: spacing[4],
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing[4],
+            },
+          ]}
+        >
+          <View style={{ backgroundColor: "rgba(255,255,255,0.1)", borderRadius: radii.lg, padding: spacing[3] }}>
+            <MapPinned color="#FFFFFF" size={24} />
+          </View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <AppText variant="micro" style={{ color: "rgba(255,255,255,0.6)", fontWeight: "700", textTransform: "uppercase" }}>
+              You are at
+            </AppText>
+            <AppText variant="h2" tone="inverse">
+              {nearestBuilding.name}
+            </AppText>
+            <AppText variant="bodySmall" style={{ color: "rgba(255,255,255,0.8)" }}>
+              Tap to browse {nearestBuilding.venueCount} stalls inside.
+            </AppText>
+          </View>
+          <ChevronRight color="#FFFFFF" size={20} />
+        </Pressable>
 
         <View style={{ flexDirection: "row", gap: spacing[3] }}>
           <Pressable

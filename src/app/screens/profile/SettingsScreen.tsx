@@ -24,6 +24,9 @@ export function SettingsScreen() {
   const clearProfile = useProfileStore((state) => state.clearProfile);
   const clearSearchState = useSearchStore((state) => state.clearSearchState);
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
+  const leftHandedMode = useProfileStore((state) => state.profile.leftHandedMode ?? false);
+  const setLeftHandedMode = useProfileStore((state) => state.setLeftHandedMode);
+
   const [dietaryEnabled, setDietaryEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
@@ -89,6 +92,11 @@ export function SettingsScreen() {
               label="Notifications"
               selected={notificationsEnabled}
               onPress={() => setNotificationsEnabled((value) => !value)}
+            />
+            <Chip
+              label="Left-handed mode"
+              selected={leftHandedMode}
+              onPress={() => setLeftHandedMode(!leftHandedMode)}
             />
           </View>
           <Badge label={location ? `Manual location: ${location}` : "Location uses GPS"} tone="neutral" />
