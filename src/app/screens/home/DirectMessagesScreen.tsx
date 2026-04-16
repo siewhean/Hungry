@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronLeft, Search, Edit3, MessageCircle } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Image } from "expo-image";
+import Animated from "react-native-reanimated";
 
 import { AppText, Input, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -88,18 +89,25 @@ export function DirectMessagesScreen() {
           }}
         >
           {MOCK_CHATS.map((chat) => (
-            <View
+            <Pressable
               key={chat.id}
+              // @ts-ignore
+              onPress={() => navigation.navigate("ChatDetail", { chatId: chat.id, name: chat.name, avatar: chat.avatar })}
               style={{
                 flexDirection: "row",
                 alignItems: "center",
                 gap: spacing[3],
               }}
             >
-              <Image
-                source={{ uri: chat.avatar }}
-                style={{ width: 56, height: 56, borderRadius: radii.pill }}
-              />
+              <Animated.View 
+                // @ts-ignore
+                sharedTransitionTag={`avatar-${chat.id}`}
+              >
+                <Image
+                  source={{ uri: chat.avatar }}
+                  style={{ width: 56, height: 56, borderRadius: radii.pill }}
+                />
+              </Animated.View>
               <View style={{ flex: 1, gap: spacing[1] }}>
                 <View
                   style={{
@@ -117,7 +125,7 @@ export function DirectMessagesScreen() {
                   {chat.lastMessage}
                 </AppText>
               </View>
-            </View>
+            </Pressable>
           ))}
 
           {MOCK_CHATS.length === 0 && (

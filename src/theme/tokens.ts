@@ -129,6 +129,12 @@ export const shadows = {
 
 export const typography = {
   display: { fontSize: 34, lineHeight: 40, fontFamily: "Nunito_700Bold" },
+  displayBold: {
+    fontSize: 42,
+    lineHeight: 48,
+    fontFamily: "Nunito_700Bold",
+    letterSpacing: -1,
+  },
   h1: { fontSize: 26, lineHeight: 32, fontFamily: "Nunito_700Bold" },
   h2: { fontSize: 22, lineHeight: 28, fontFamily: "Nunito_600SemiBold" },
   h3: { fontSize: 19, lineHeight: 24, fontFamily: "Nunito_600SemiBold" },

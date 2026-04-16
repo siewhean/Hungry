@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-04-16
+
+- Prompt: "There is an error" (runtime: `Tried to register two views with the same name SkiaPictureView`)
+- Actions:
+  - Diagnosed package/runtime state and confirmed single install of `@shopify/react-native-skia` with no duplicate Metro aliases.
+  - Tested New Architecture disable path and found it incompatible with current `@rnmapbox/maps@10.3.0` (`Old React Native Architecture is no longer supported`).
+  - Implemented targeted iOS Skia guard for New Architecture by wrapping `SkiaPictureViewManager` with `#ifndef RCT_NEW_ARCH_ENABLED`.
+  - Made the fix durable via `patch-package`: added `patches/@shopify+react-native-skia+2.2.12.patch`, installed `patch-package` as dev dependency, and added `postinstall` hook.
+  - Verified patch and native sync with `npm run postinstall`, `cd ios && pod install`, and `npm run typecheck`.
+
 ## 2026-04-13
 
 - Prompt: "Do 1+3. Use any agents/skills necessary to assist you in your task"

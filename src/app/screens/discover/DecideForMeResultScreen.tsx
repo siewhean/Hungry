@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, Linking, View } from "react-native";
+import { Animated, Easing, Linking, View, StyleSheet, Pressable, useWindowDimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import { Sparkles } from "lucide-react-native";
+import { Sparkles, ChevronLeft, Shuffle, MapPin, Star } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -18,6 +20,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { DietaryFlag, DishDetail, TasteVector } from "@/types/domain";
+import { TASTE_DIMENSIONS } from "@/constants/taste";
 
 function TasteMiniBar({
   label,
@@ -96,11 +99,11 @@ function AnimatedMatchBadge({ percent }: { percent: number }) {
         flexDirection: "row",
         gap: spacing[2],
         paddingHorizontal: spacing[3],
-        paddingVertical: spacing[2],
+        paddingVertical: spacing[4],
       }}
     >
-      <Sparkles size={14} color={palette.orange} />
-      <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
+      <Sparkles size={16} color={palette.orange} />
+      <AppText variant="h3" style={{ color: palette.orange }}>
         {displayValue}% taste match
       </AppText>
     </View>
@@ -153,15 +156,17 @@ function getNextDistinctDish(candidates: DishDetail[], currentDishId?: string, c
 export function DecideForMeResultScreen() {
   const navigation = useNavigation<RootNavigation>();
   const repository = getDataRepository();
-  const { palette, spacing, radii } = useHungryTheme();
+  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const selectedDish = useDiscoveryStore((state) => state.decideForMe);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const showToast = useUIStore((state) => state.showToast);
   const [searchRadius, setSearchRadius] = useState(500);
   const [resultIndex, setResultIndex] = useState(0);
-  const trackedResultKey = useRef<string | null>(null);
-  const trackedNoMatchRadius = useRef<number | null>(null);
+
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const candidates = useMemo(
     () => getCandidates(repository, profile.tasteVector, profile.dietaryPreferences, searchRadius),
@@ -197,64 +202,55 @@ export function DecideForMeResultScreen() {
     ? Math.round(blendedMatchScore(profile.tasteVector, dish.tasteVector) * 100)
     : 0;
 
-  useEffect(() => {
-    if (!dish) {
-      if (trackedNoMatchRadius.current !== searchRadius) {
-        trackAnalyticsEvent("decide_for_me_no_match", {
-          radius_m: searchRadius,
-        });
-        trackedNoMatchRadius.current = searchRadius;
-      }
-      return;
-    }
+  const HERO_HEIGHT = screenWidth * 1.1;
 
-    trackedNoMatchRadius.current = null;
-    const resultKey = `${dish.id}:${searchRadius}`;
-    if (trackedResultKey.current === resultKey) {
-      return;
-    }
-    trackedResultKey.current = resultKey;
-    trackAnalyticsEvent("decide_for_me_result_shown", {
-      dish_id: dish.id,
-      venue_id: dish.venueId,
-      building_id: dish.buildingId,
-      radius_m: searchRadius,
-      match_score: match,
-      distance_m: dish.distanceMeters,
-    });
-  }, [dish, match, searchRadius]);
-
-  const cardAnim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!dish) {
-      return;
-    }
-
-    cardAnim.setValue(0);
-    Animated.spring(cardAnim, {
-      damping: 14,
-      mass: 0.9,
-      stiffness: 140,
-      toValue: 1,
-      useNativeDriver: true,
-    }).start();
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-  }, [cardAnim, dish?.id]);
+  const heroStyle = {
+    transform: [
+      {
+        scale: scrollY.interpolate({
+          inputRange: [-100, 0],
+          outputRange: [1.2, 1],
+          extrapolate: "clamp",
+        }),
+      },
+      {
+        translateY: scrollY.interpolate({
+          inputRange: [0, HERO_HEIGHT],
+          outputRange: [0, HERO_HEIGHT / 2],
+          extrapolate: "clamp",
+        }),
+      },
+    ],
+  };
 
   const expandRadius = () => {
     const target = nextRadius(searchRadius);
     if (!target) {
-      showToast({
-        message: "Already searching the widest radius.",
-        tone: "info",
-      });
+      showToast({ message: "Already searching the widest radius.", tone: "info" });
       return;
     }
-    trackAnalyticsEvent("decide_for_me_radius_expanded", {
-      from_radius_m: searchRadius,
-      new_radius_m: target,
-    });
     setSearchRadius(target);
+  };
+
+  const handleTryAnother = () => {
+    const nextDish = getNextDistinctDish(candidates, dish?.id, resultIndex);
+    if (!nextDish || nextDish.id === dish?.id) {
+      const upcomingRadius = nextRadius(searchRadius);
+      if (upcomingRadius) {
+        setSearchRadius(upcomingRadius);
+        showToast({ message: `Expanded radius to ${(upcomingRadius / 1000).toFixed(1)} km.`, tone: "info" });
+      } else {
+        showToast({ message: "No other matching dishes right now.", tone: "info" });
+      }
+      return;
+    }
+
+    const nextIndex = candidates.findIndex((candidate) => candidate.id === nextDish.id);
+    if (nextIndex >= 0) {
+      setResultIndex(nextIndex);
+    }
+    setDecideForMe(nextDish);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   };
 
   if (!dish) {
@@ -300,165 +296,125 @@ export function DecideForMeResultScreen() {
         ? `A strong pick based on your ${topMatch.label.toLowerCase()} and ${sortedDims[1].label.toLowerCase()} preferences.`
         : `A nearby pick that still aligns with your strongest taste dimensions.`;
 
-  const handleTryAnother = () => {
-    const nextDish = getNextDistinctDish(candidates, dish.id, resultIndex);
-    if (!nextDish || nextDish.id === dish.id) {
-      const upcomingRadius = nextRadius(searchRadius);
-      if (upcomingRadius) {
-        setSearchRadius(upcomingRadius);
-        showToast({
-          message: `Expanded radius to ${(upcomingRadius / 1000).toFixed(1)} km.`,
-          tone: "info",
-        });
-      } else {
-        showToast({
-          message: "No other matching dishes right now.",
-          tone: "info",
-        });
-      }
-      return;
-    }
-
-    const nextIndex = candidates.findIndex((candidate) => candidate.id === nextDish.id);
-    if (nextIndex >= 0) {
-      setResultIndex(nextIndex);
-    }
-    setDecideForMe(nextDish);
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-  };
-
   return (
-    <Screen title="Recommended for you" subtitle="One dish picked from your current taste profile.">
-      <View style={{ gap: spacing[5] }}>
-        <Animated.View
-          style={{
-            opacity: cardAnim,
-            transform: [
-              {
-                translateY: cardAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [30, 0],
-                }),
-              },
-              {
-                scale: cardAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.96, 1],
-                }),
-              },
-            ],
-          }}
-        >
-          <Card style={{ gap: spacing[4], overflow: "hidden", padding: 0 }}>
-            <Image
-              source={{ uri: dish.imageUrl }}
-              style={{ height: 240, width: "100%" }}
-              contentFit="cover"
-            />
-            <View style={{ gap: spacing[4], padding: spacing[4] }}>
-              <AnimatedMatchBadge percent={match} />
+    <View style={{ flex: 1, backgroundColor: palette.bg }}>
+      {/* Navigation Overlay */}
+      <View style={[styles.navOverlay, { top: insets.top, zIndex: 10 }]}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.navBtn}>
+          <ChevronLeft color={palette.text} size={24} />
+        </Pressable>
+        <AppText variant="h3" style={{ flex: 1, textAlign: "center", marginRight: 40 }}>Recommended</AppText>
+      </View>
 
-              <View style={{ gap: spacing[1] }}>
-                <AppText variant="h1">{dish.name}</AppText>
-                <AppText tone="secondary">{venue?.name}</AppText>
-                <AppText tone="muted">
-                  {building?.name}
-                  {venue ? ` · ${venue.floor} ${venue.unitNumber}` : ""}
-                </AppText>
-                <AppText variant="price" style={{ marginTop: spacing[1] }}>
-                  S${dish.price.toFixed(2)}
-                </AppText>
-              </View>
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  flexWrap: "wrap",
-                  gap: spacing[2],
-                }}
-              >
-                <Badge label={`Radius ${(searchRadius / 1000).toFixed(1)} km`} tone="neutral" />
-                {dish.tasteTags.slice(0, 3).map((tag) => (
-                  <Badge key={tag} label={tag} tone="amber" />
-                ))}
-              </View>
-
-              <View
-                style={{
-                  backgroundColor: palette.surfaceRaised,
-                  borderLeftColor: palette.orange,
-                  borderLeftWidth: 3,
-                  borderRadius: radii.md,
-                  padding: spacing[3],
-                }}
-              >
-                <AppText
-                  variant="micro"
-                  style={{
-                    color: palette.orange,
-                    fontWeight: "700",
-                    marginBottom: spacing[1],
-                  }}
-                >
-                  WHY THIS DISH?
-                </AppText>
-                <AppText tone="secondary" style={{ lineHeight: 20 }}>
-                  {explanation}
-                </AppText>
-              </View>
-
-              <View>
-                <AppText variant="h3" style={{ marginBottom: spacing[3] }}>
-                  Taste dimensions
-                </AppText>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: spacing[3],
-                  }}
-                >
-                  {tasteDims.map((dimension) => (
-                    <TasteMiniBar
-                      key={dimension.key}
-                      label={TASTE_LABELS[dimension.key]}
-                      userVal={profile.tasteVector[dimension.key]}
-                      dishVal={dish.tasteVector[dimension.key]}
-                      accentColor={palette.orange}
-                    />
-                  ))}
-                </View>
-              </View>
-            </View>
-          </Card>
+      <Animated.ScrollView
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
+      >
+        {/* Parallax Hero */}
+        <Animated.View style={[styles.heroContainer, { height: HERO_HEIGHT }, heroStyle]}>
+          <Image source={{ uri: dish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <LinearGradient
+            colors={["transparent", "rgba(0,0,0,0.2)", palette.bg]}
+            style={StyleSheet.absoluteFill}
+          />
         </Animated.View>
 
-        <Button
-          label="View stall"
-          onPress={() => navigation.navigate("StallDetail", { venueId: dish.venueId })}
-        />
-        <Button
-          label="Order now"
-          variant="secondary"
-          onPress={async () => {
-            const link = venue?.deliveryLinks[0];
-            if (link) {
-              trackAnalyticsEvent("delivery_link_tapped", {
-                dish_id: dish.id,
-                venue_id: dish.venueId,
-                platform: link.platform,
-              });
-              try {
-                await Linking.openURL(link.nativeUrl);
-              } catch {
-                await Linking.openURL(link.webUrl);
-              }
-            }
-          }}
-        />
-        <Button label="Try another dish" variant="ghost" onPress={handleTryAnother} />
-        <Button label="Go back" variant="ghost" onPress={() => navigation.goBack()} />
+        {/* Content */}
+        <View style={{ paddingHorizontal: spacing[4], gap: spacing[6], marginTop: -40 }}>
+          
+          <AnimatedMatchBadge percent={match} />
+
+          <View style={{ gap: spacing[2] }}>
+            <View style={{ flexDirection: "row", gap: spacing[2] }}>
+              <Badge label={`Radius ${(searchRadius / 1000).toFixed(1)} km`} tone="neutral" />
+              {dish.mustOrder && <Badge label="MUST ORDER" tone="amber" />}
+            </View>
+            <AppText variant="displayBold">{dish.name}</AppText>
+            <AppText variant="h2" tone="secondary" style={{ color: palette.orange }}>
+              S${dish.price.toFixed(2)}
+            </AppText>
+            <AppText variant="bodyLarge" tone="secondary">
+              {venue?.name} · {venue?.unitNumber}
+            </AppText>
+          </View>
+
+          {/* Why this dish? */}
+          <Card style={{ backgroundColor: palette.bgSoft, borderLeftColor: palette.orange, borderLeftWidth: 4, padding: spacing[4] }}>
+            <AppText variant="micro" style={{ color: palette.orange, fontWeight: "800", marginBottom: 4 }}>WHY THIS DISH?</AppText>
+            <AppText variant="body" style={{ lineHeight: 22 }}>{explanation}</AppText>
+          </Card>
+
+          {/* Taste Breakdown */}
+          <View style={{ gap: spacing[3] }}>
+            <AppText variant="h3">Palate Match</AppText>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
+              {tasteDims.map((dimension) => (
+                <TasteMiniBar
+                  key={dimension.key}
+                  label={TASTE_LABELS[dimension.key]}
+                  userVal={profile.tasteVector[dimension.key]}
+                  dishVal={dish.tasteVector[dimension.key]}
+                  accentColor={palette.orange}
+                />
+              ))}
+            </View>
+          </View>
+
+          <View style={{ gap: spacing[2] }}>
+            <AppText variant="h3">Description</AppText>
+            <AppText variant="body" tone="secondary" style={{ lineHeight: 24 }}>
+              {dish.description || "A flavorful local specialty recommended specifically for your current taste profile and proximity."}
+            </AppText>
+          </View>
+
+          <View style={{ gap: spacing[3] }}>
+            <Button label="View Stall Details" variant="secondary" onPress={() => navigation.navigate("StallDetail", { venueId: dish.venueId })} />
+            <Button label="Try Another Pick" variant="ghost" leftIcon={<Shuffle size={18} color={palette.text} />} onPress={handleTryAnother} />
+          </View>
+
+        </View>
+      </Animated.ScrollView>
+
+      {/* Action Dock */}
+      <View style={[styles.actionDock, { paddingBottom: Math.max(insets.bottom, spacing[4]) }]}>
+        <Button label="Order Now" style={{ flex: 1 }} onPress={() => {}} />
       </View>
-    </Screen>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  navOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    paddingHorizontal: 16,
+    height: 60,
+    alignItems: "center",
+  },
+  navBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroContainer: {
+    width: "100%",
+    overflow: "hidden",
+  },
+  actionDock: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.05)",
+  },
+});

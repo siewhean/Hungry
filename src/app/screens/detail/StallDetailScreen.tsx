@@ -15,6 +15,7 @@ import { useState } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, Heart, MapPin, Share2, Star, Truck, ChevronLeft } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import Animated from "react-native-reanimated";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
@@ -198,11 +199,17 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 position: "relative",
               }}
             >
-              <Image
-                source={{ uri: leadDish?.imageUrl }}
+              <Animated.View 
                 style={StyleSheet.absoluteFill}
-                contentFit="cover"
-              />
+                // @ts-ignore
+                sharedTransitionTag={`venue-image-${venue.id}`}
+              >
+                <Image
+                  source={{ uri: leadDish?.imageUrl }}
+                  style={StyleSheet.absoluteFill}
+                  contentFit="cover"
+                />
+              </Animated.View>
               <LinearGradient
                 colors={[`${palette.bg}00`, `${palette.bg}B3`, palette.bg]}
                 style={{

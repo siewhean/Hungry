@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Star } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -194,14 +195,28 @@ export function DishDetailScreen({ navigation, route }: Props) {
                 style={{ width: screenWidth, height: "100%" }}
               >
                 {gallery.map((uri) => (
-                  <Image
-                    key={uri}
-                    source={uri}
-                    style={{ height: "100%", width: screenWidth }}
-                    contentFit="cover"
-                  />
+                  <View key={uri} style={{ height: "100%", width: screenWidth }}>
+                    <Animated.View 
+                      style={StyleSheet.absoluteFill}
+                      // @ts-ignore
+                      sharedTransitionTag={gallery[0] === uri ? `dish-image-${dish.id}` : undefined}
+                    >
+                      <Image
+                        source={uri}
+                        style={StyleSheet.absoluteFill}
+                        contentFit="cover"
+                      />
+                    </Animated.View>
+                  </View>
                 ))}
               </Animated.ScrollView>
+
+              {/* Gradient Overlay (requested) */}
+              <LinearGradient
+                colors={["transparent", "rgba(0,0,0,0.1)", "rgba(0,0,0,0.4)"]}
+                style={{ ...StyleSheet.absoluteFillObject, height: "100%" }}
+                pointerEvents="none"
+              />
 
               {/* Rating Pill - Floating in bottom corners of image */}
               <View

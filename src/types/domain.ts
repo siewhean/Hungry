@@ -158,6 +158,7 @@ export interface Review {
 
 export interface DishDetail extends DishSummary {
   gallery: string[];
+  description?: string;
   mustOrder: boolean;
   availabilityFlags: string[];
   reviews: Review[];

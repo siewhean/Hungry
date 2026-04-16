@@ -25,10 +25,12 @@ export type OnboardingStackParamList = {
 
 export type ProfileStackParamList = {
   ProfileHome: undefined;
+  ProfilePremium: undefined;
   Favourites: undefined;
   ReviewHistory: undefined;
   Settings: undefined;
   EditProfile: undefined;
+  ReviewFlow: undefined;
 };
 
 export type ReviewStackParamList = {
@@ -68,7 +70,10 @@ export type RootStackParamList = {
   ReviewStack: NavigatorScreenParams<ReviewStackParamList>;
   WheelStack: NavigatorScreenParams<WheelStackParamList>;
   DirectMessages: undefined;
+  ChatDetail: { chatId: string; name: string; avatar: string };
   Crave: undefined;
+  MusicSelection: undefined;
+  DishDetailStandard: { dishId: string };
   UserProfile: {
     authorName: string;
     authorAvatarUrl?: string;

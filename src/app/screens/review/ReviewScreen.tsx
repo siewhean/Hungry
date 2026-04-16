@@ -2,12 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { View, Pressable, ScrollView, FlatList, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import { Search, MapPin, ChevronRight, Check } from "lucide-react-native";
+import { Search, MapPin, ChevronRight, Check, Music } from "lucide-react-native";
 
 import { AppText, Button, Card, Input, Screen, Badge, Chip, FeedErrorBoundary } from "@/components/ui";
-import { MediaPicker } from "@/components/review/MediaPicker";
-import { MusicPicker } from "@/components/review/MusicPicker";
-import { ReviewStars } from "./ReviewStars";
+import { MediaPicker, StarRating } from "@/components/review";
+import { TRENDING_MUSIC } from "@/features/review/musicData";
 import { REVIEW_TAGS } from "@/constants/taste";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
@@ -124,11 +123,36 @@ export function ReviewScreen({ navigation, route }: Props) {
             onSetFilter={actions.setFilterId}
           />
 
-          {/* 2. Music Picker */}
-          <MusicPicker
-            selectedMusicId={draft.musicId}
-            onSelectMusic={actions.setMusicId}
-          />
+          {/* 2. Music Picker (Navigation Button) */}
+          <View style={{ gap: spacing[3] }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+              <Music size={18} color={palette.orange} />
+              <AppText variant="h3">Music</AppText>
+            </View>
+            
+            {draft.musicId ? (
+              <Card style={{ padding: spacing[3], backgroundColor: palette.orangeLight, borderColor: palette.orange }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <View style={{ flex: 1 }}>
+                    <AppText variant="bodyBold">
+                      {TRENDING_MUSIC.find(m => m.id === draft.musicId)?.title ?? "Selected Track"}
+                    </AppText>
+                    <AppText variant="micro" tone="secondary">
+                      {TRENDING_MUSIC.find(m => m.id === draft.musicId)?.artist ?? "Artist"}
+                    </AppText>
+                  </View>
+                  <Button label="Change" variant="ghost" size="sm" onPress={() => navigation.navigate("MusicSelection" as any)} />
+                </View>
+              </Card>
+            ) : (
+              <Button
+                label="Add Music"
+                variant="secondary"
+                onPress={() => navigation.navigate("MusicSelection" as any)}
+                leftIcon={<Music size={18} color={palette.text} />}
+              />
+            )}
+          </View>
 
           {/* 3. Location & Food Selection */}
           <View style={{ gap: spacing[3] }}>
@@ -175,7 +199,7 @@ export function ReviewScreen({ navigation, route }: Props) {
           <View style={{ gap: spacing[4] }}>
             <View style={{ gap: spacing[2] }}>
               <AppText variant="h3">Overall Rating</AppText>
-              <ReviewStars value={draft.rating} onChange={actions.setRating} />
+              <StarRating value={draft.rating} onChange={actions.setRating} />
             </View>
 
             <View style={{ gap: spacing[3] }}>

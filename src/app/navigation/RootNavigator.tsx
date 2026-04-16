@@ -18,6 +18,7 @@ import { SplashScreen } from "@/app/screens/SplashScreen";
 import { DeveloperLauncherScreen } from "@/app/screens/dev/DeveloperLauncherScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { DishDetailScreen } from "@/app/screens/detail/DishDetailScreen";
+import { DishDetailScreen_Premium } from "@/app/screens/detail/DishDetailScreen_Premium";
 import { NotFoundScreen } from "@/app/screens/detail/NotFoundScreen";
 import { OfflineStateScreen } from "@/app/screens/detail/OfflineStateScreen";
 import { StallDetailScreen } from "@/app/screens/detail/StallDetailScreen";
@@ -39,6 +40,8 @@ import { SettingsScreen } from "@/app/screens/profile/SettingsScreen";
 import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
 import { BlogPostWebViewScreen } from "@/app/screens/reads/BlogPostWebViewScreen";
 import { ReviewStack } from "@/app/screens/review/ReviewStack";
+import { ReviewScreen } from "@/app/screens/review/ReviewScreen";
+import { MusicSelectionScreen } from "@/app/screens/review/MusicSelectionScreen";
 import { ReviewSuccessModal } from "@/app/screens/review/ReviewSuccessModal";
 import { QuickReviewModal } from "@/app/screens/review/QuickReviewModal";
 import { WheelStack } from "@/app/screens/wheel/WheelStack";
@@ -175,20 +178,21 @@ function TabNavigator() {
       <Tabs.Screen component={DiscoverHomeScreen} name="Discover" />
       <Tabs.Screen name="Review">{() => <HomeFeedScreen mode="review" />}</Tabs.Screen>
       <Tabs.Screen
-        component={ReviewStack}
+        name="Rate"
         listeners={{
           tabPress: (event) => {
             if (!isAuthenticated) {
               event.preventDefault();
-              setReturnRoute("Rate");
+              setReturnRoute("ReviewStack");
               if (navigationRef.isReady()) {
                 navigationRef.navigate("AuthStack", { screen: "Login" });
               }
             }
           },
         }}
-        name="Rate"
-      />
+      >
+        {(props) => <ReviewScreen {...(props as any)} />}
+      </Tabs.Screen>
       <Tabs.Screen
         component={ProfileStack}
         listeners={{
@@ -404,7 +408,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={ReviewHistoryScreen} name="ReviewHistory" />
           <RootStack.Screen component={SettingsScreen} name="Settings" />
           <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
-          <RootStack.Screen component={DishDetailScreen} name="DishDetail" />
+          <RootStack.Screen component={DishDetailScreen_Premium} name="DishDetail" />
+          {/* @ts-ignore */}
+          <RootStack.Screen component={DishDetailScreen} name="DishDetailStandard" />
           <RootStack.Screen component={StallDetailScreen} name="StallDetail" />
           <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           <RootStack.Screen component={ReviewStack} name="ReviewStack" />
@@ -415,6 +421,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           {FEATURE_FLAGS.craveEnabled ? (
             <RootStack.Screen component={CraveScreen} name="Crave" />
           ) : null}
+          <RootStack.Screen component={MusicSelectionScreen} name="MusicSelection" />
           <RootStack.Screen component={DecideForMeResultScreen} name="DecideForMeResult" />
           <RootStack.Screen component={BuildingDrillDownScreen} name="BuildingDrillDown" />
           <RootStack.Screen component={OfflineStateScreen} name="Offline" />

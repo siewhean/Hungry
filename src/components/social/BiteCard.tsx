@@ -212,63 +212,59 @@ export function BiteCard({
       {/* Social row */}
       <View
         style={{
-          direction: "ltr",
-          flexDirection: leftHandedMode ? "row-reverse" : "row",
+          flexDirection: "row",
           alignItems: "center",
-          gap: spacing[2],
-          marginTop: spacing[1],
+          justifyContent: "space-between",
           paddingHorizontal: spacing[3],
           paddingBottom: spacing[3],
+          marginTop: spacing[1],
         }}
       >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${liked ? "Unlike" : "Like"} ${bite.dishName}`}
-          accessibilityState={{ selected: liked }}
-          hitSlop={10}
-          onPress={onToggleLike}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: spacing[1],
-          }}
-        >
-          <Heart
-            size={18}
-            color={liked ? palette.error : palette.textMuted}
-            fill={liked ? palette.error : "transparent"}
-          />
-          <AppText variant="micro" tone="muted">
-            {displayHeartCount}
-          </AppText>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`${commented ? "Undo comment" : "Comment on"} ${bite.dishName}`}
-          hitSlop={10}
-          onPress={onCommentPress}
-          disabled={!onCommentPress}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: spacing[1],
-          }}
-        >
-          <MessageCircle size={18} color={commented ? palette.orange : palette.textMuted} />
-          <AppText variant="micro" tone="muted">
-            {displayCommentCount}
-          </AppText>
-        </Pressable>
-        <AppText
-          variant="micro"
-          tone="muted"
-          style={{
-            marginLeft: leftHandedMode ? 0 : "auto",
-            marginRight: leftHandedMode ? "auto" : 0,
-          }}
-        >
+        <AppText variant="micro" tone="muted">
           {formatTimeAgo(bite.createdAt)}
         </AppText>
+
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${commented ? "Undo comment" : "Comment on"} ${bite.dishName}`}
+            hitSlop={10}
+            onPress={onCommentPress}
+            disabled={!onCommentPress}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <MessageCircle size={18} color={commented ? palette.orange : palette.textMuted} />
+            <AppText variant="micro" tone="muted">
+              {displayCommentCount}
+            </AppText>
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${liked ? "Unlike" : "Like"} ${bite.dishName}`}
+            accessibilityState={{ selected: liked }}
+            hitSlop={10}
+            onPress={onToggleLike}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <Heart
+              size={18}
+              color={liked ? palette.error : palette.textMuted}
+              fill={liked ? palette.error : "transparent"}
+            />
+            <AppText variant="micro" tone="muted">
+              {displayHeartCount}
+            </AppText>
+          </Pressable>
+        </View>
       </View>
     </View>
   );

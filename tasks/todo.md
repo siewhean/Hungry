@@ -855,6 +855,7 @@ These items affect perceived quality but do not break functionality.
 - [x] Session log maintained with: date, actor (Claude/Codex), tasks touched, status, blockers, next step.
 
 ### Session Entries
+- 2026-04-16 | Codex | Investigated runtime crash `Tried to register two views with the same name SkiaPictureView`. Confirmed New Architecture must stay enabled because `@rnmapbox/maps@10.3.0` rejects old architecture. Implemented durable Skia patch by guarding `SkiaPictureViewManager.mm` under `#ifndef RCT_NEW_ARCH_ENABLED`, generated `patches/@shopify+react-native-skia+2.2.12.patch`, added `patch-package` with `postinstall`, and re-synced iOS pods successfully. | Status: completed + verified (`npm run postinstall`, `cd ios && pod install`, `npm run typecheck`). | Blockers: runtime confirmation still requires app relaunch in simulator/device to verify redbox no longer appears. | Next: relaunch app with clean Metro cache and validate startup on iOS.
 - 2026-04-15 | Claude | Chief of Staff audit: repo-wide dead code, harness gaps, backlog integrity, and production roadmap assessment. Created `tasks/Roadmap/chief-of-staff-report-2026-04-15.md`. Added Sprint 6 (TOOL-01/02/03/04, DEAD-01/02/03/04, ERR-01/02, DOC-01, LES-01) to backlog with Codex/Gemini/Claude delegation. Appended 4 missing lessons to `tasks/lessons.md` (token scope, service provider bypass, sign-out state persistence, backlog verification gate). | Status: documentation complete. | Blockers: none. | Next: Codex to execute Sprint 6 TOOL items first (ESLint/Prettier install), then DEAD items, then ERR items. Claude to handle DOC-01.
 - 2026-04-05 | Codex | Updated project-fit task requirements, phased Claude/Codex ownership checklist, and planning cadence. | Status: completed for documentation update. | Blockers: none. | Next: keep this checklist current during implementation sessions.
 - 2026-04-06 | Codex | Audited app screen inventory, research docs, and design artifacts; created Stitch-ready design-system and screen-brief files under `design/stitch/`. | Status: completed for design planning artifact. | Blockers: direct Stitch editing is not available in this environment. | Next: generate remaining screens in Stitch using `design/stitch/DESIGN.md` and `design/stitch/STITCH_BRIEFS.md`, then sync the chosen outputs back into Figma and code.
@@ -941,6 +942,32 @@ These items affect perceived quality but do not break functionality.
 
 ---
 
+## Sprint 7 — Boil the Ocean (UI/UX & Performance Overhaul)
+
+> **Goal:** Complete comprehensive overhaul of the Hungry application to achieve premium "social-media" quality in UI/UX, motion, and performance.
+> **Date:** 2026-04-16
+
+#### Gemini primary
+- [x] **BT-01 Design Audit & Critique:** Audited every screen, proposed immersive designs for Home, Discover, Detail, and Profile screens.
+- [x] **BT-02 Motion Strategy:** Defined Context (Tab), Drill (Messaging), and Continuity (Card -> Full Screen) transitions.
+
+#### Codex primary
+- [x] **BT-03 Home Feed Overhaul:** Rebuilt with immersive full-bleed cards, action islands, haptic feedback, and local state optimization.
+- [x] **BT-04 Dish Detail Overhaul:** Implemented parallax hero, morphing sticky header, immersive story flow, and Skia-powered `TasteRadar`.
+- [x] **BT-05 Discover Performance:** Migrated to sectioned `FlashList` with layout animations and optimized image priorities.
+- [x] **BT-06 Messaging Drill:** Added `ChatDetailScreen` and implemented shared element avatar morphing.
+- [x] **BT-07 Profile Visualization:** Rebuilt with interactive stats and taste signature visualization.
+- [x] **BT-08 Tab Transitions:** Implemented `AnimatedTabBar` for smooth context transitions between main app sections.
+- [x] **BT-09 Performance Hardening:** Integrated `@shopify/flash-list` across the app for buttery smooth scrolling.
+- [x] **BT-10 UI Hardening:** Enhanced `AppText` and `Button` components with premium variants (`displayBold`, `glass`, `success` tone).
+
+#### Done gate
+- [x] `npm run typecheck` passes with zero errors.
+- [x] Transitions (Continuity, Drill, Context) functional in navigation and UI logic.
+- [x] No hardcoded hex or radii remain in newly refactored screens.
+
+---
+
 ## 6. Verification Commands Log
 
 - [x] `npm run typecheck` — 2026-04-13
@@ -977,3 +1004,7 @@ These items affect perceived quality but do not break functionality.
 - [x] `npm run typecheck` — 2026-04-15 (Home/Review header text removal + HomeFeed JSX parser fix)
 - [x] `npm run typecheck` — 2026-04-15 (AI recommendation retry: diversity caps + signed/decayed feedback updates)
 - [x] `npm run test -- --runInBand` — 2026-04-15 (AI recommendation retry + new taste-engine regression tests)
+- [x] `npm run postinstall` — 2026-04-16 (validated patch-package applies `@shopify/react-native-skia` patch)
+- [x] `cd ios && pod install` — 2026-04-16 (New Architecture retained; pods integrated successfully)
+- [x] `npm run typecheck` — 2026-04-16 (post-fix compile health)
+- [x] `npm run ios` — 2026-04-16 (Debug simulator build succeeded and app opened on iPhone 17 Pro)

@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
-  FlatList,
   Pressable,
   ScrollView,
   Share,
@@ -13,7 +12,15 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { Bookmark, Heart, MessageCircle, PlayCircle, Send, Star, X } from "lucide-react-native";
+import {
+  Bookmark,
+  Heart,
+  MessageCircle,
+  PlayCircle,
+  Send,
+  Star,
+  X,
+} from "lucide-react-native";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -22,8 +29,12 @@ import {
 } from "@gorhom/bottom-sheet";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
+import { FlashList } from "@shopify/flash-list";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
@@ -36,7 +47,7 @@ import {
   Input,
   Skeleton,
 } from "@/components/ui";
-import { BitesCarousel } from "@/components/social";
+import { BitesCarousel, CircleStoryCarousel, ZoomableMedia } from "@/components/social";
 import {
   getHomeFeed,
   getHomeSocialFeed,
@@ -111,27 +122,34 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
 
-  const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
+  const [feedState, setFeedState] = useState<"loading" | "ready" | "error">(
+    "loading",
+  );
   const [sections, setSections] = useState<HomeFeedSection[]>([]);
   const [socialFeed, setSocialFeed] = useState<HomeFeedItem[]>([]);
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
-  const [activeCommentItem, setActiveCommentItem] = useState<HomeFeedItem | null>(null);
+  const [activeCommentItem, setActiveCommentItem] =
+    useState<HomeFeedItem | null>(null);
   const [draftComment, setDraftComment] = useState("");
-  const [localCommentsByPostId, setLocalCommentsByPostId] = useState<Record<string, FeedComment[]>>(
-    {},
-  );
+  const [localCommentsByPostId, setLocalCommentsByPostId] = useState<
+    Record<string, FeedComment[]>
+  >({});
   const [localRepliesByCommentId, setLocalRepliesByCommentId] = useState<
     Record<string, FeedReply[]>
   >({});
-  const [activeReplyCommentId, setActiveReplyCommentId] = useState<string | null>(null);
-  const [draftReplyByCommentId, setDraftReplyByCommentId] = useState<Record<string, string>>({});
+  const [activeReplyCommentId, setActiveReplyCommentId] = useState<
+    string | null
+  >(null);
+  const [draftReplyByCommentId, setDraftReplyByCommentId] = useState<
+    Record<string, string>
+  >({});
   const commentsSheetRef = useRef<BottomSheetModal>(null);
   const commentInputRef = useRef<any>(null);
   const commentSnapPoints = useMemo(() => ["50%", "88%"], []);
 
-  const [interactionByPostId, setInteractionByPostId] = useState<Record<string, InteractionState>>(
-    {},
-  );
+  const [interactionByPostId, setInteractionByPostId] = useState<
+    Record<string, InteractionState>
+  >({});
 
   const loadFeed = useCallback(async () => {
     setFeedState("loading");
@@ -142,7 +160,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       setSocialFeed(socialData);
       setInteractionByPostId((current) => {
         const next = { ...current };
-        const allItems = [...socialData, ...data.flatMap((section) => section.items)];
+        const allItems = [
+          ...socialData,
+          ...data.flatMap((section) => section.items),
+        ];
 
         allItems.forEach((item) => {
           if (next[item.id]) {
@@ -189,7 +210,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         [postId]: {
           ...current,
           liked: isLiked,
-          likeCount: isLiked ? current.likeCount + 1 : Math.max(0, current.likeCount - 1),
+          likeCount: isLiked
+            ? current.likeCount + 1
+            : Math.max(0, current.likeCount - 1),
         },
       };
     });
@@ -264,104 +287,76 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       return [];
     }
 
-    const seededComments: FeedComment[] = (activeCommentItem.dishes[0]?.reviews ?? []).map(
-      (review) => ({
-        id: review.id,
-        authorName: review.authorName,
-        authorAvatarUrl: undefined,
-        text: review.text,
-        createdAt: review.createdAt,
-      }),
-    );
-
-    const local = localCommentsByPostId[activeCommentItem.id] ?? [];
-    return [...seededComments, ...local];
-  }, [activeCommentItem, localCommentsByPostId]);
-
-  const submitComment = useCallback(() => {
-    if (!activeCommentItem) {
-      return;
-    }
-
-    const trimmed = draftComment.trim();
-    if (!trimmed.length) {
-      return;
-    }
-
-    const newComment: FeedComment = {
-      id: `local-comment-${Date.now()}`,
-      authorName: profile.displayName,
+    const seededComments: FeedComment[] = (
+      activeCommentItem.dishes[0]?.reviews ?? []
+    ).map((review) => ({
+      id: review.id,
+      authorName: review.authorName,
       authorAvatarUrl: undefined,
-      text: trimmed,
+      text: review.text,
       createdAt: new Date().toISOString(),
-    };
-
-    setLocalCommentsByPostId((prev) => ({
-      ...prev,
-      [activeCommentItem.id]: [...(prev[activeCommentItem.id] ?? []), newComment],
     }));
 
-    setInteractionByPostId((prev) => {
-      const current = prev[activeCommentItem.id] ?? {
-        liked: false,
-        saved: false,
-        likeCount: 0,
-        saveCount: 0,
-        shareCount: 0,
-        commentCount: 0,
-      };
+    const localComments = localCommentsByPostId[activeCommentItem.id] ?? [];
 
-      return {
-        ...prev,
-        [activeCommentItem.id]: {
-          ...current,
-          commentCount: current.commentCount + 1,
-        },
-      };
-    });
+    return [...seededComments, ...localComments].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }, [activeCommentItem, localCommentsByPostId]);
 
-    setDraftComment("");
-    setActiveReplyCommentId(null);
-  }, [activeCommentItem, draftComment, profile.displayName]);
+  const handlePostCommentOrReply = useCallback(() => {
+    if (!activeCommentItem || !draftComment.trim().length) return;
 
-  const submitReply = useCallback(
-    (commentId: string) => {
-      if (!activeCommentItem) {
-        return;
-      }
-
-      const trimmed = draftComment.trim();
-      if (!trimmed.length) {
-        return;
-      }
-
+    if (activeReplyCommentId) {
       const newReply: FeedReply = {
-        id: `local-reply-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        parentCommentId: commentId,
+        id: `reply-${Date.now()}`,
+        parentCommentId: activeReplyCommentId,
         authorName: profile.displayName,
-        authorAvatarUrl: undefined,
-        text: trimmed,
+        text: draftComment.trim(),
         createdAt: new Date().toISOString(),
       };
 
       setLocalRepliesByCommentId((prev) => ({
         ...prev,
-        [commentId]: [...(prev[commentId] ?? []), newReply],
+        [activeReplyCommentId]: [
+          ...(prev[activeReplyCommentId] ?? []),
+          newReply,
+        ],
       }));
-
-      setDraftComment("");
       setActiveReplyCommentId(null);
-    },
-    [activeCommentItem, draftComment, profile.displayName],
-  );
-
-  const handlePostCommentOrReply = useCallback(() => {
-    if (activeReplyCommentId) {
-      submitReply(activeReplyCommentId);
     } else {
-      submitComment();
+      const newComment: FeedComment = {
+        id: `comment-${Date.now()}`,
+        authorName: profile.displayName,
+        text: draftComment.trim(),
+        createdAt: new Date().toISOString(),
+      };
+
+      setLocalCommentsByPostId((prev) => ({
+        ...prev,
+        [activeCommentItem.id]: [
+          ...(prev[activeCommentItem.id] ?? []),
+          newComment,
+        ],
+      }));
     }
-  }, [activeReplyCommentId, submitReply, submitComment]);
+
+    setDraftComment("");
+  }, [activeCommentItem, draftComment, activeReplyCommentId, profile.displayName]);
+
+  const themeTints = useMemo(() => {
+    const isDark = colorScheme === "dark";
+    return {
+      bg: palette.bg,
+      cardBg: palette.surface,
+      text: palette.text,
+      secondaryText: palette.textSecondary,
+      badgeBg: palette.bgSoft,
+      actionOverlayBg: "rgba(255,255,255,0.85)",
+      isDark,
+    };
+  }, [palette, colorScheme]);
 
   const navigateToDish = useCallback(
     (dishId: string) => {
@@ -370,170 +365,49 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     [navigation],
   );
 
-  const themeTints = useMemo(() => {
-    const isDark = colorScheme === "dark";
-    return {
-      bg: palette.bg,
-      text: palette.text,
-      cardBg: palette.surface,
-      secondaryText: palette.textSecondary,
-      actionOverlayBg: isDark ? "rgba(0,0,0,0.45)" : palette.surfaceTranslucent,
-      badgeBg: isDark ? "rgba(255,255,255,0.1)" : palette.bgSoft,
-      isDark,
-    };
-  }, [palette, colorScheme]);
+  const { onScroll, scrollEventThrottle } =
+    useScrollToRevealBack();
 
-  const renderHeader = useCallback(() => {
-    const stories = socialFeed.slice(0, 5);
-
-    return (
-      <View
-        style={{
-          gap: spacing[6],
-          paddingBottom: spacing[4],
-          paddingTop: spacing[2],
-        }}
-      >
-        {mode === "social" ? (
-          <>
-            {FEATURE_FLAGS.directMessagesEnabled ? (
-              <View
-                style={{
-                  paddingHorizontal: spacing[3],
-                  alignItems: "flex-end",
-                }}
-              >
-                <Pressable
-                  onPress={() => navigation.navigate("DirectMessages")}
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: radii.pill,
-                    backgroundColor: palette.bgSoft,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Send color={palette.orange} size={24} />
-                </Pressable>
-              </View>
-            ) : null}
-            <View style={{ gap: spacing[1], paddingHorizontal: spacing[3] }}>
-              <AppText variant="micro" tone="accent" style={styles.sectionEyebrow}>
-                APPETITE SCROLL
-              </AppText>
-              <AppText variant="h2" style={{ color: themeTints.text }}>
-                Tonight&apos;s food stories
-              </AppText>
-              <AppText variant="bodySmall" tone="secondary">
-                Browse what stalls are pushing out right now, then jump straight into the dish.
-              </AppText>
-            </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                gap: spacing[3],
-                paddingHorizontal: spacing[3],
-              }}
-            >
-              {stories.map((story) => (
-                <Pressable
-                  key={story.id}
-                  onPress={() =>
-                    openUserProfile(story.authorName, story.authorAvatarUrl, story.authorLocation)
-                  }
-                  style={{ width: 78, gap: spacing[2], alignItems: "center" }}
-                >
-                  <View
-                    style={[
-                      styles.storyRing,
-                      {
-                        borderColor: palette.orange,
-                        borderRadius: radii.pill,
-                        padding: 3,
-                      },
-                    ]}
-                  >
-                    <Image
-                      source={{ uri: story.authorAvatarUrl }}
-                      style={{ width: 58, height: 58, borderRadius: 29 }}
-                      contentFit="cover"
-                    />
-                  </View>
-                  <AppText variant="micro" style={styles.storyLabel} numberOfLines={2}>
-                    {story.venue.name}
-                  </AppText>
-                </Pressable>
-              ))}
-            </ScrollView>
-
-            <View style={{ gap: spacing[2], paddingHorizontal: spacing[3] }}>
-              <BitesCarousel />
-            </View>
-          </>
-        ) : null}
+  const renderHeader = useCallback(
+    () => (
+      <View style={{ paddingBottom: spacing[2], gap: spacing[2] }}>
+        <View style={{ paddingHorizontal: spacing[4], paddingTop: 0 }}>
+          <AppText variant="displayBold" style={{ color: palette.orange, fontSize: 32 }}>Hungry</AppText>
+        </View>
+        <CircleStoryCarousel />
       </View>
-    );
-  }, [
-    palette,
-    spacing,
-    themeTints,
-    radii,
-    mode,
-    socialFeed,
-    openUserProfile,
-    navigation,
-    styles.sectionEyebrow,
-  ]);
-
-  const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
+    ),
+    [spacing, palette.orange],
+  );
 
   const renderFeedCard = useCallback(
-    (item: HomeFeedItem, variant: "social" | "review" = "review") => {
+    (item: HomeFeedItem, cardMode: HomeFeedMode) => {
       const interaction = interactionByPostId[item.id] ?? {
         liked: false,
         saved: false,
-        likeCount: 12,
-        saveCount: 4,
-        shareCount: 2,
-        commentCount: 3,
+        likeCount: 0,
+        saveCount: 0,
+        shareCount: 0,
+        commentCount: 0,
       };
       const isLiked = interaction.liked;
       const isSaved = interaction.saved;
+      const isExpanded = expandedPostId === item.id;
 
-      if (variant === "social") {
-        const imageHeight = Math.min(Math.max(screenWidth * 1.12, 360), 460);
-        const isExpanded = expandedPostId === item.id;
+      if (cardMode === "social") {
+        const imageHeight = Math.min(Math.max(screenWidth * 1.3, 400), 520);
 
         return (
           <View key={item.id} style={styles.feedItemWrap}>
             <View style={[styles.imageContainer, { height: imageHeight }]}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Open ${item.dishes[0]?.name ?? item.venue.name} details`}
-                onPress={() => navigateToDish(item.dishIds[0])}
+              <ZoomableMedia
+                uri={item.mediaUrl}
+                type={item.mediaType as "image" | "video"}
                 style={StyleSheet.absoluteFill}
-              >
-                <Image
-                  source={{ uri: item.mediaUrl }}
-                  style={styles.heroImage}
-                  contentFit="cover"
-                  transition={200}
-                />
-              </Pressable>
-
-              {item.mediaType === "video" ? (
-                <View pointerEvents="none" style={styles.playButtonContainer}>
-                  <View style={styles.playButtonBackdrop}>
-                    <PlayCircle color={palette.white} size={54} strokeWidth={1.4} />
-                  </View>
-                </View>
-              ) : null}
+              />
 
               <LinearGradient
-                colors={["transparent", "rgba(0,0,0,0.1)", "rgba(0,0,0,0.8)"]}
+                colors={["transparent", "rgba(0,0,0,0.4)", "rgba(0,0,0,0.8)"]}
                 style={styles.gradientScrim}
                 pointerEvents="none"
               />
@@ -545,9 +419,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 <View
                   style={[
                     styles.overlayTopRow,
-                    {
-                      flexDirection: profile.leftHandedMode ? "row-reverse" : "row",
-                    },
+                    { flexDirection: profile.leftHandedMode ? "row-reverse" : "row" },
                   ]}
                   pointerEvents="box-none"
                 >
@@ -583,27 +455,44 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       >
                         <Avatar uri={item.authorAvatarUrl} name={item.authorName} size={30} />
                       </Pressable>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`Open ${item.authorName} profile`}
-                        onPress={() =>
-                          openUserProfile(
-                            item.authorName,
-                            item.authorAvatarUrl,
-                            item.authorLocation,
-                          )
-                        }
-                      >
-                        <AppText
-                          variant="micro"
-                          style={{
-                            color: "rgba(255,255,255,0.9)",
-                            textAlign: profile.leftHandedMode ? "right" : "left",
-                          }}
+                      <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <Pressable
+                          onPress={() =>
+                            openUserProfile(
+                              item.authorName,
+                              item.authorAvatarUrl,
+                              item.authorLocation,
+                            )
+                          }
                         >
-                          {item.authorName} · {item.authorLocation}
+                          <AppText
+                            variant="micro"
+                            style={{
+                              color: "rgba(255,255,255,0.9)",
+                            }}
+                          >
+                            {item.authorName}
+                          </AppText>
+                        </Pressable>
+                        <AppText variant="micro" style={{ color: "rgba(255,255,255,0.7)" }}>
+                          {" · "}
                         </AppText>
-                      </Pressable>
+                        <Pressable
+                          onPress={() =>
+                            navigation.navigate("StallDetail", { venueId: item.venueId })
+                          }
+                        >
+                          <AppText
+                            variant="micro"
+                            style={{
+                              color: "rgba(255,255,255,0.9)",
+                              textDecorationLine: "underline",
+                            }}
+                          >
+                            {item.authorLocation}
+                          </AppText>
+                        </Pressable>
+                      </View>
                     </View>
                     <AppText
                       variant="h2"
@@ -615,15 +504,19 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     >
                       {item.dishes[0]?.name ?? item.venue.name}
                     </AppText>
-                    <AppText
-                      variant="micro"
-                      style={{
-                        color: "rgba(255,255,255,0.8)",
-                        textAlign: profile.leftHandedMode ? "right" : "left",
-                      }}
+                    <Pressable
+                      onPress={() => navigation.navigate("StallDetail", { venueId: item.venueId })}
                     >
-                      {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
-                    </AppText>
+                      <AppText
+                        variant="micro"
+                        style={{
+                          color: "rgba(255,255,255,0.8)",
+                          textAlign: profile.leftHandedMode ? "right" : "left",
+                        }}
+                      >
+                        {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
+                      </AppText>
+                    </Pressable>
                   </View>
 
                   <View style={[styles.sideActions, { gap: spacing[4] }]} pointerEvents="box-none">
@@ -656,7 +549,6 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                             size={28}
                           />
                         }
-                        count={interaction.saveCount}
                         palette={palette}
                       />
                     </Pressable>
@@ -783,15 +675,14 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       }
 
       return (
-        <Pressable
+        <View
           key={item.id}
-          onPress={() => navigateToDish(item.dishIds[0])}
           style={[
             shadows.card,
             {
               backgroundColor: themeTints.cardBg,
               borderRadius: radii.lg,
-              width: 300,
+              width: 280,
               overflow: "hidden",
               borderWidth: themeTints.isDark ? 0 : 1,
               borderColor: palette.border,
@@ -888,21 +779,34 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 </AppText>
               </View>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Open ${item.authorName} profile`}
-              onPress={() =>
-                openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
-              }
-            >
-              <AppText
-                variant="micro"
-                style={{ color: themeTints.secondaryText }}
-                numberOfLines={1}
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${item.authorName} profile`}
+                onPress={() =>
+                  openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
+                }
               >
-                {item.authorName} · {item.authorLocation}
+                <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                  {item.authorName}
+                </AppText>
+              </Pressable>
+              <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                {" · "}
               </AppText>
-            </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Open stall details for ${item.authorLocation}`}
+                onPress={() => navigation.navigate("StallDetail", { venueId: item.venueId })}
+              >
+                <AppText
+                  variant="micro"
+                  style={{ color: themeTints.secondaryText, textDecorationLine: "underline" }}
+                >
+                  {item.authorLocation}
+                </AppText>
+              </Pressable>
+            </View>
 
             <View
               style={{
@@ -935,7 +839,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               )}
             </View>
           </View>
-        </Pressable>
+        </View>
       );
     },
     [
@@ -963,6 +867,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       toggleExpandedPost,
       openUserProfile,
       profile.leftHandedMode,
+      palette.white,
     ],
   );
 
@@ -1039,20 +944,21 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       >
         {mode === "social" ? (
           <View style={{ flex: 1, paddingTop: spacing[3] }}>
-            <FlatList
+            <FlashList
               data={socialFeed}
               keyExtractor={keyExtractor}
               ListHeaderComponent={renderHeader}
               renderItem={({ item }) => renderFeedCard(item, "social")}
+              // @ts-ignore
+              estimatedItemSize={500}
               ListEmptyComponent={
                 <EmptyState
                   title="No food stories yet"
                   body="Nothing to show right now. Try Discover to find dishes nearby."
                 />
               }
-              style={{ flex: 1 }}
               contentContainerStyle={{
-                gap: spacing[5],
+                gap: spacing[2],
                 paddingBottom: spacing[16] + insets.bottom + spacing[6],
               }}
               onScroll={onScroll}
@@ -1069,47 +975,36 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             onScroll={onScroll}
             scrollEventThrottle={16}
           >
-            {renderHeader()}
-
-            <View style={{ marginBottom: spacing[6], gap: spacing[3] }}>
-              <View
-                style={{
-                  paddingHorizontal: spacing[3],
-                  paddingTop: spacing[1],
-                }}
-              >
-                <AppText variant="h2" style={{ color: themeTints.text }}>
-                  Bites
-                </AppText>
-              </View>
-              <BitesCarousel showHeader={false} horizontalInset={spacing[3]} />
+            <View style={{ paddingHorizontal: spacing[4], paddingTop: 0, paddingBottom: spacing[2] }}>
+              <AppText variant="displayBold" style={{ color: palette.orange, fontSize: 32 }}>Hungry</AppText>
             </View>
-
-            {sections.map((section) => (
-              <View key={section.title} style={{ marginBottom: spacing[4] }}>
-                <View
-                  style={{
-                    paddingHorizontal: spacing[3],
-                    paddingVertical: spacing[3],
-                  }}
-                >
-                  <AppText variant="h2" style={{ color: themeTints.text }}>
-                    {section.title}
-                  </AppText>
+            <View style={{ paddingTop: 0 }}>
+              {sections.map((section) => (
+                <View key={section.title} style={{ marginBottom: spacing[4] }}>
+                  <View
+                    style={{
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[3],
+                    }}
+                  >
+                    <AppText variant="h2" style={{ color: themeTints.text }}>
+                      {section.title}
+                    </AppText>
+                  </View>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{
+                      gap: spacing[4],
+                      paddingHorizontal: spacing[3],
+                      paddingBottom: spacing[2],
+                    }}
+                  >
+                    {section.items.map((item) => renderFeedCard(item, "review"))}
+                  </ScrollView>
                 </View>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{
-                    gap: spacing[4],
-                    paddingHorizontal: spacing[3],
-                    paddingBottom: spacing[2],
-                  }}
-                >
-                  {section.items.map((item) => renderFeedCard(item, "review"))}
-                </ScrollView>
-              </View>
-            ))}
+              ))}
+            </View>
 
             {sections.length === 0 && (
               <FeedStateView
@@ -1365,15 +1260,17 @@ function VerticalActionMetric({
   palette,
 }: {
   icon: ReactNode;
-  count: number;
+  count?: number;
   palette: any;
 }) {
   return (
     <View style={{ alignItems: "center", gap: 4 }}>
       {icon}
-      <AppText variant="micro" style={{ color: palette.white, fontWeight: "600" }}>
-        {count}
-      </AppText>
+      {count !== undefined && (
+        <AppText variant="micro" style={{ color: palette.white, fontWeight: "600" }}>
+          {count}
+        </AppText>
+      )}
     </View>
   );
 }

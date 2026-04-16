@@ -128,8 +128,9 @@ export function DiscoverHomeScreen() {
   }, [resetIdleTimer]);
 
   const recommendedDishes = popularNearby.slice(0, 4);
-  const nearbyVenues = repository
+  const nearbyHawkerCentres = repository
     .listBuildings()
+    .filter((b) => (b as any).type === "hawker_centre")
     .slice(0, 4)
     .map((building) => {
       const venues = repository.listVenuesByBuilding(building.id);
@@ -529,7 +530,7 @@ export function DiscoverHomeScreen() {
           </ScrollView>
         </View>
 
-        {/* Stalls Near You (Horizontal Selection) */}
+        {/* Hawker Centres Near You (Horizontal Selection) */}
         <View style={{ gap: spacing[3] }}>
           <View
             style={{
@@ -539,11 +540,11 @@ export function DiscoverHomeScreen() {
             }}
           >
             <AppText variant="h2" style={{ color: themeTints.text }}>
-              Stalls Near You
+              Hawker Centres Near You
             </AppText>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="View stalls on map"
+              accessibilityLabel="View hawker centres on map"
               onPress={() => navigation.navigate("DiscoverMap")}
             >
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
@@ -556,7 +557,7 @@ export function DiscoverHomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ gap: spacing[3] }}
           >
-            {nearbyVenues.map(({ venue, topDish }) => (
+            {nearbyHawkerCentres.map(({ venue, topDish }) => (
               <Pressable
                 key={venue.id}
                 accessibilityRole="button"
@@ -597,7 +598,7 @@ export function DiscoverHomeScreen() {
                     style={{ color: themeTints.secondaryText }}
                     numberOfLines={1}
                   >
-                    {venue.unitNumber} · {venue.operatingHours.split("–")[0]}
+                    {venue.unitNumber} · {venue.operatingHours.split(" – ")[0]}
                   </AppText>
                 </View>
               </Pressable>

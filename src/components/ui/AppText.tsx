@@ -5,6 +5,7 @@ import { useHungryTheme } from "@/theme";
 
 type Variant =
   | "display"
+  | "displayBold"
   | "h1"
   | "h2"
   | "h3"
@@ -19,7 +20,7 @@ type Variant =
 
 interface AppTextProps extends TextProps {
   variant?: Variant;
-  tone?: "default" | "secondary" | "muted" | "accent" | "inverse";
+  tone?: "default" | "secondary" | "muted" | "accent" | "inverse" | "success";
   style?: TextStyle | TextStyle[];
 }
 
@@ -41,7 +42,9 @@ export function AppText({
           ? palette.orange
           : tone === "inverse"
             ? palette.textOnDark
-            : palette.text;
+            : tone === "success"
+              ? palette.statusFast
+              : palette.text;
 
   return (
     <Text
