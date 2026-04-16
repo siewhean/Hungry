@@ -25,6 +25,11 @@ src/graphify-out/
 .env.staging.local
 .env.production.local
 .env.local
+
+# Local build/cache artifacts (large)
 .DerivedData/
-.venv/
+ios/build/
 *.xcresult/
+
+# Local Python environment
+.venv/
