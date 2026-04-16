@@ -408,6 +408,23 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
   }, [floorDirectory, selectedFromStore, selectedStallId]);
 
   const activeStallId = selectedFromStore ?? selectedStallId;
+
+  const stats = useMemo(() => {
+    const allOnFloor = tenantPolygons.map((stall) => {
+      const venueId = stall.venueId;
+      const venue = venueId ? venueById.get(venueId) : undefined;
+      const dish = venue ? mockRepository.listDishesByVenue(venue.id)[0] : undefined;
+      const isOpen = venue ? getVenueStatus(venue.isOpen, venue.operatingHours) === "open" : false;
+      const isDessert = dish ? isDessertDish(dish.name) : false;
+      return { isOpen, isDessert };
+    });
+
+    return {
+      openCount: allOnFloor.filter((s) => s.isOpen).length,
+      dessertCount: allOnFloor.filter((s) => s.isDessert).length,
+    };
+  }, [tenantPolygons, venueById]);
+
   const menuPreview = useMemo(
     () =>
       floorDirectory
@@ -510,12 +527,12 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
               }}
             >
               <DirectoryFilter
-                label="Open now"
+                label={`Open now (${stats.openCount})`}
                 selected={openNowOnly}
                 onPress={() => setOpenNowOnly((current) => !current)}
               />
               <DirectoryFilter
-                label="Desserts"
+                label={`Desserts (${stats.dessertCount})`}
                 selected={dessertsOnly}
                 onPress={() => setDessertsOnly((current) => !current)}
               />
