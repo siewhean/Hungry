@@ -29,6 +29,7 @@ import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { DietaryFlag, DishDetail, SearchCategory, VenueSummary } from "@/types/domain";
 
@@ -121,6 +122,7 @@ export function DiscoverHomeScreen() {
   const locationPermission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
+  const isOffline = useUIStore((state) => state.isOffline);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -304,6 +306,28 @@ export function DiscoverHomeScreen() {
         onScroll={resetIdleTimer}
         scrollEventThrottle={16}
       >
+        {/* Offline Banner (F-015 / ERR-00) */}
+        {isOffline && (
+          <Pressable
+            onPress={() => {
+              // Trigger a check or show a toast
+            }}
+            style={{
+              backgroundColor: palette.navy,
+              padding: spacing[3],
+              borderRadius: radii.md,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing[2],
+            }}
+          >
+            <Zap size={16} color={palette.white} />
+            <AppText variant="bodySmallBold" tone="inverse">
+              You&apos;re offline. Showing cached results.
+            </AppText>
+          </Pressable>
+        )}
+
         {/* Dynamic Location Header */}
         <View style={{ paddingTop: spacing[2] }}>
           <AppText
