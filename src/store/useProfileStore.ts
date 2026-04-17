@@ -24,7 +24,7 @@ interface ProfileState {
   >;
   syncProfile: (isAuthenticated: boolean) => void;
   toggleFavourite: (dish: DishDetail) => void;
-  updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email">>) => void;
+  updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email" | "avatarUrl">>) => void;
   setTasteVector: (tasteVector: TasteVector) => void;
   setTasteProfile: (tasteProfile: TasteProfile) => void;
   setDietaryPreferences: (dietaryPreferences: DietaryFlag[]) => void;

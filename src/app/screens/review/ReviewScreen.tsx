@@ -4,11 +4,20 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { Search, MapPin, ChevronRight, Check, Music } from "lucide-react-native";
 
-import { AppText, Button, Card, Input, Screen, Badge, Chip, FeedErrorBoundary } from "@/components/ui";
+import {
+  AppText,
+  Button,
+  Card,
+  Input,
+  Screen,
+  Badge,
+  Chip,
+  FeedErrorBoundary,
+} from "@/components/ui";
 import { MediaPicker, StarRating } from "@/components/review";
 import { TRENDING_MUSIC } from "@/features/review/musicData";
 import { REVIEW_TAGS } from "@/constants/taste";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -37,18 +46,18 @@ export function ReviewScreen({ navigation, route }: Props) {
   // Derived data
   const selectedDish = useMemo(
     () => repository.getDishById(draft.selectedDishId || ""),
-    [repository, draft.selectedDishId]
+    [repository, draft.selectedDishId],
   );
   const selectedVenue = useMemo(
     () => repository.getVenueById(draft.selectedVenueId || ""),
-    [repository, draft.selectedVenueId]
+    [repository, draft.selectedVenueId],
   );
 
   const venues = repository
     .listBuildings()
     .flatMap((building) => repository.listVenuesByBuilding(building.id))
     .filter((venue) =>
-      `${venue.name} ${venue.unitNumber}`.toLowerCase().includes(query.trim().toLowerCase())
+      `${venue.name} ${venue.unitNumber}`.toLowerCase().includes(query.trim().toLowerCase()),
     );
 
   useEffect(() => {
@@ -64,7 +73,7 @@ export function ReviewScreen({ navigation, route }: Props) {
     }
   }, [isAuthenticated, rootNavigation, setReturnRoute]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedDish) {
       useUIStore.getState().showToast({ message: "Please select a dish first.", tone: "warning" });
       return;
@@ -73,14 +82,25 @@ export function ReviewScreen({ navigation, route }: Props) {
     const successPayload = {
       dishName: selectedDish.name,
       venueName: selectedVenue?.name ?? "",
-      pointsEarned: 25 + draft.selectedTags.length * 5 + draft.photos.length * 10 + (draft.videoUri ? 20 : 0),
-      xpEarned: 25 + draft.selectedTags.length * 5 + draft.photos.length * 10 + (draft.videoUri ? 20 : 0),
+      pointsEarned:
+        25 + draft.selectedTags.length * 5 + draft.photos.length * 10 + (draft.videoUri ? 20 : 0),
+      xpEarned:
+        25 + draft.selectedTags.length * 5 + draft.photos.length * 10 + (draft.videoUri ? 20 : 0),
       tagCount: draft.selectedTags.length,
       rating: draft.rating,
     };
 
     actions.setSubmitting(true);
-    setTimeout(() => {
+    try {
+      await getHungryService().reviews.submitReview({
+        dishId: selectedDish.id,
+        venueId: selectedDish.venueId,
+        rating: draft.rating,
+        text: draft.text.trim(),
+        tags: draft.selectedTags,
+        photos: draft.photos,
+      });
+
       useProfileStore.getState().addReviewedDish(selectedDish.id);
       useProfileStore.getState().addReview(selectedDish);
       useProfileStore.getState().recordReviewEntry(selectedDish.id, {
@@ -97,21 +117,29 @@ export function ReviewScreen({ navigation, route }: Props) {
         filter_id: draft.filterId,
       });
 
-      actions.setSubmitting(false);
       useUIStore.getState().showToast({ message: "Review posted!", tone: "success" });
       useUIStore.getState().showReviewSuccess(successPayload);
       actions.resetDraft();
       navigation.popToTop();
-    }, 800);
+    } catch {
+      useUIStore.getState().showToast({
+        message: "Could not publish review. Please try again.",
+        tone: "warning",
+      });
+    } finally {
+      actions.setSubmitting(false);
+    }
   };
 
   if (!isAuthenticated) return null;
 
   return (
     <Screen title="Create Post" subtitle="Share your latest meal with the community." scroll>
-      <FeedErrorBoundary title="Review editor failed" body="We hit a snag loading the editor. Please try again.">
+      <FeedErrorBoundary
+        title="Review editor failed"
+        body="We hit a snag loading the editor. Please try again."
+      >
         <View style={{ gap: spacing[6], paddingBottom: spacing[20] }}>
-          
           {/* 1. Media Picker & Reels */}
           <MediaPicker
             photos={draft.photos}
@@ -129,19 +157,37 @@ export function ReviewScreen({ navigation, route }: Props) {
               <Music size={18} color={palette.orange} />
               <AppText variant="h3">Music</AppText>
             </View>
-            
+
             {draft.musicId ? (
-              <Card style={{ padding: spacing[3], backgroundColor: palette.orangeLight, borderColor: palette.orange }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+              <Card
+                style={{
+                  padding: spacing[3],
+                  backgroundColor: palette.orangeLight,
+                  borderColor: palette.orange,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
                   <View style={{ flex: 1 }}>
                     <AppText variant="bodyBold">
-                      {TRENDING_MUSIC.find(m => m.id === draft.musicId)?.title ?? "Selected Track"}
+                      {TRENDING_MUSIC.find((m) => m.id === draft.musicId)?.title ??
+                        "Selected Track"}
                     </AppText>
                     <AppText variant="micro" tone="secondary">
-                      {TRENDING_MUSIC.find(m => m.id === draft.musicId)?.artist ?? "Artist"}
+                      {TRENDING_MUSIC.find((m) => m.id === draft.musicId)?.artist ?? "Artist"}
                     </AppText>
                   </View>
-                  <Button label="Change" variant="ghost" size="sm" onPress={() => navigation.navigate("MusicSelection" as any)} />
+                  <Button
+                    label="Change"
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => navigation.navigate("MusicSelection" as any)}
+                  />
                 </View>
               </Card>
             ) : (
@@ -162,12 +208,23 @@ export function ReviewScreen({ navigation, route }: Props) {
             </View>
 
             {selectedDish ? (
-              <Card style={{ padding: spacing[3], backgroundColor: palette.bgSoft, borderColor: palette.orange }}>
+              <Card
+                style={{
+                  padding: spacing[3],
+                  backgroundColor: palette.bgSoft,
+                  borderColor: palette.orange,
+                }}
+              >
                 <View style={{ flexDirection: "row", gap: spacing[3], alignItems: "center" }}>
-                  <Image source={{ uri: selectedDish.imageUrl }} style={{ width: 60, height: 60, borderRadius: radii.md }} />
+                  <Image
+                    source={{ uri: selectedDish.imageUrl }}
+                    style={{ width: 60, height: 60, borderRadius: radii.md }}
+                  />
                   <View style={{ flex: 1 }}>
                     <AppText style={{ fontWeight: "700" }}>{selectedDish.name}</AppText>
-                    <AppText variant="bodySmall" tone="secondary">{selectedVenue?.name}</AppText>
+                    <AppText variant="bodySmall" tone="secondary">
+                      {selectedVenue?.name}
+                    </AppText>
                   </View>
                   <Button label="Change" variant="ghost" onPress={() => setIsSearching(true)} />
                 </View>
@@ -246,9 +303,18 @@ export function ReviewScreen({ navigation, route }: Props) {
 
       {/* Search Modal Overlay */}
       {isSearching && (
-        <View style={StyleSheet.absoluteFillObject}>
-          <View style={{ flex: 1, backgroundColor: palette.bg, padding: spacing[4], paddingTop: 60 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3], marginBottom: spacing[4] }}>
+        <View style={StyleSheet.absoluteFill}>
+          <View
+            style={{ flex: 1, backgroundColor: palette.bg, padding: spacing[4], paddingTop: 60 }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacing[3],
+                marginBottom: spacing[4],
+              }}
+            >
               <Input
                 placeholder="Search stalls..."
                 value={query}
@@ -272,12 +338,24 @@ export function ReviewScreen({ navigation, route }: Props) {
                         setIsSearching(false);
                       }
                     }}
-                    style={{ paddingVertical: spacing[3], borderBottomWidth: 1, borderBottomColor: palette.border }}
+                    style={{
+                      paddingVertical: spacing[3],
+                      borderBottomWidth: 1,
+                      borderBottomColor: palette.border,
+                    }}
                   >
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
                       <View>
                         <AppText style={{ fontWeight: "600" }}>{item.name}</AppText>
-                        <AppText variant="bodySmall" tone="secondary">{item.unitNumber}</AppText>
+                        <AppText variant="bodySmall" tone="secondary">
+                          {item.unitNumber}
+                        </AppText>
                       </View>
                       <ChevronRight size={18} color={palette.textMuted} />
                     </View>

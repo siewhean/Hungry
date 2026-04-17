@@ -6,6 +6,8 @@ import { useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { validateConfirmPassword, validatePassword } from "@/features/auth/validation";
+import { getHungryService } from "@/lib/services/serviceProvider";
+import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
@@ -29,9 +31,16 @@ export function ResetPasswordScreen({ navigation }: Props) {
   });
   const passwordValue = watch("password");
 
-  const handleReset = handleSubmit(() => {
-    showToast({ message: "Password updated. Please check your inbox.", tone: "success" });
-    navigation.navigate("ResetPasswordSuccess");
+  const handleReset = handleSubmit(async ({ password }) => {
+    try {
+      if (getConfiguredDataSource() === "supabase") {
+        await getHungryService().auth.resetPassword("", password);
+      }
+      showToast({ message: "Password updated. Please check your inbox.", tone: "success" });
+      navigation.navigate("ResetPasswordSuccess");
+    } catch {
+      showToast({ message: "Password reset failed. Please try again.", tone: "error" });
+    }
   });
 
   return (

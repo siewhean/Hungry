@@ -44,7 +44,7 @@ const MOCK_CHATS = [
 ];
 
 export function DirectMessagesScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { palette, spacing, radii } = useHungryTheme();
 
   return (
@@ -91,18 +91,20 @@ export function DirectMessagesScreen() {
           {MOCK_CHATS.map((chat) => (
             <Pressable
               key={chat.id}
-              // @ts-ignore
-              onPress={() => navigation.navigate("ChatDetail", { chatId: chat.id, name: chat.name, avatar: chat.avatar })}
+              onPress={() =>
+                navigation.navigate("ChatDetail", {
+                  chatId: chat.id,
+                  name: chat.name,
+                  avatar: chat.avatar,
+                })
+              }
               style={{
                 flexDirection: "row",
                 alignItems: "center",
                 gap: spacing[3],
               }}
             >
-              <Animated.View 
-                // @ts-ignore
-                sharedTransitionTag={`avatar-${chat.id}`}
-              >
+              <Animated.View sharedTransitionTag={`avatar-${chat.id}`}>
                 <Image
                   source={{ uri: chat.avatar }}
                   style={{ width: 56, height: 56, borderRadius: radii.pill }}

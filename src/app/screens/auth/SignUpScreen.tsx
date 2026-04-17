@@ -7,6 +7,8 @@ import { useState } from "react";
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { getMockSignUpFailure } from "@/features/auth/mockAuth";
 import { validateEmail, validatePassword, validateRequired } from "@/features/auth/validation";
+import { getHungryService } from "@/lib/services/serviceProvider";
+import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
@@ -27,14 +29,17 @@ export function SignUpScreen({ navigation }: Props) {
     defaultValues: { displayName: "", email: "", password: "" },
   });
 
-  const handleSignUp = handleSubmit((values) => {
-    const failure = getMockSignUpFailure(values.email);
-    if (failure) {
-      showToast({ message: failure.message, tone: "error" });
-      return;
-    }
-
+  const handleSignUp = handleSubmit(async (values) => {
     try {
+      if (getConfiguredDataSource() === "supabase") {
+        await getHungryService().auth.signUp(values.email, values.password, values.displayName);
+      } else {
+        const failure = getMockSignUpFailure(values.email);
+        if (failure) {
+          showToast({ message: failure.message, tone: "error" });
+          return;
+        }
+      }
       showToast({ message: "Account created. Please verify your email.", tone: "success" });
       navigation.navigate("EmailVerification", { email: values.email });
     } catch {
@@ -42,13 +47,24 @@ export function SignUpScreen({ navigation }: Props) {
     }
   });
 
-  const handleProviderContinue = (provider: "google" | "apple") => {
+  const handleProviderContinue = async (provider: "google" | "apple") => {
     const providerEmail = provider === "google" ? "google.user@hungry.sg" : "apple.user@hungry.sg";
-    showToast({
-      message: `Continue with ${provider === "google" ? "Google" : "Apple"} successful.`,
-      tone: "success",
-    });
-    navigation.navigate("EmailVerification", { email: providerEmail });
+    try {
+      if (getConfiguredDataSource() === "supabase") {
+        if (provider === "google") {
+          await getHungryService().auth.signInWithGoogle();
+        } else {
+          await getHungryService().auth.signInWithApple();
+        }
+      }
+      showToast({
+        message: `Continue with ${provider === "google" ? "Google" : "Apple"} successful.`,
+        tone: "success",
+      });
+      navigation.navigate("EmailVerification", { email: providerEmail });
+    } catch {
+      showToast({ message: "Could not continue sign-up. Please try again.", tone: "error" });
+    }
   };
 
   return (
@@ -106,12 +122,16 @@ export function SignUpScreen({ navigation }: Props) {
             <Button
               label="Continue with Google"
               variant="secondary"
-              onPress={() => handleProviderContinue("google")}
+              onPress={() => {
+                void handleProviderContinue("google");
+              }}
             />
             <Button
               label="Continue with Apple"
               variant="secondary"
-              onPress={() => handleProviderContinue("apple")}
+              onPress={() => {
+                void handleProviderContinue("apple");
+              }}
             />
           </View>
 

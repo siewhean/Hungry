@@ -4,7 +4,7 @@ import { Heart } from "lucide-react-native";
 import { Image } from "expo-image";
 
 import { AppText, Button, Card } from "@/components/ui";
-import { dataRepository as mockRepository } from "@/lib/services/serviceProvider";
+import { dataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
@@ -14,11 +14,10 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileResul
 
 export function TasteProfileResultScreen({ navigation }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
-  const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
-  const dishes = mockRepository.listPopularNearby().slice(0, 4);
+  const dishes = dataRepository.listPopularNearby().slice(0, 4);
 
   return (
     <View style={{ backgroundColor: palette.bg, flex: 1 }}>

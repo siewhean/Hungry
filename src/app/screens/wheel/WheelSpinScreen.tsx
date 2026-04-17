@@ -154,7 +154,11 @@ export function WheelSpinScreen({ navigation }: Props) {
       {/* Decorative background pattern (subtle circles) */}
       <View
         style={{
-          ...StyleSheet.absoluteFillObject,
+          bottom: 0,
+          left: 0,
+          position: "absolute",
+          right: 0,
+          top: 0,
           opacity: 0.03,
           overflow: "hidden",
         }}

@@ -186,6 +186,7 @@ export interface UserProfile {
   id: string;
   displayName: string;
   email: string;
+  avatarUrl?: string;
   tasteVector: TasteVector;
   /** Extended psychometric taste profile (populated after scenario quiz) */
   tasteProfile?: TasteProfile;

@@ -7,6 +7,8 @@ import { useState } from "react";
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { getMockLoginFailure } from "@/features/auth/mockAuth";
 import { validateEmail, validatePassword } from "@/features/auth/validation";
+import { getHungryService } from "@/lib/services/serviceProvider";
+import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -21,7 +23,7 @@ type FormValues = {
 };
 
 export function LoginScreen({ navigation }: Props) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const showToast = useUIStore((state) => state.showToast);
@@ -34,14 +36,17 @@ export function LoginScreen({ navigation }: Props) {
     defaultValues: { email: "", password: "" },
   });
 
-  const handleLogin = handleSubmit((values) => {
-    const failure = getMockLoginFailure(values.email, values.password);
-    if (failure) {
-      showToast({ message: failure.message, tone: "error" });
-      return;
-    }
-
+  const handleLogin = handleSubmit(async (values) => {
     try {
+      if (getConfiguredDataSource() === "supabase") {
+        await getHungryService().auth.signIn(values.email, values.password);
+      } else {
+        const failure = getMockLoginFailure(values.email, values.password);
+        if (failure) {
+          showToast({ message: failure.message, tone: "error" });
+          return;
+        }
+      }
       completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
       showToast({ message: "Welcome back.", tone: "success" });
     } catch {
@@ -49,8 +54,15 @@ export function LoginScreen({ navigation }: Props) {
     }
   });
 
-  const handleProviderLogin = () => {
+  const handleProviderLogin = async (provider: "google" | "apple") => {
     try {
+      if (getConfiguredDataSource() === "supabase") {
+        if (provider === "google") {
+          await getHungryService().auth.signInWithGoogle();
+        } else {
+          await getHungryService().auth.signInWithApple();
+        }
+      }
       completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
       showToast({ message: "Signed in successfully.", tone: "success" });
     } catch {
@@ -162,8 +174,20 @@ export function LoginScreen({ navigation }: Props) {
           </View>
 
           <View style={{ gap: spacing[3] }}>
-            <Button label="Sign in with Google" variant="secondary" onPress={handleProviderLogin} />
-            <Button label="Sign in with Apple" variant="secondary" onPress={handleProviderLogin} />
+            <Button
+              label="Sign in with Google"
+              variant="secondary"
+              onPress={() => {
+                void handleProviderLogin("google");
+              }}
+            />
+            <Button
+              label="Sign in with Apple"
+              variant="secondary"
+              onPress={() => {
+                void handleProviderLogin("apple");
+              }}
+            />
           </View>
         </View>
       </AuthScreenShell>

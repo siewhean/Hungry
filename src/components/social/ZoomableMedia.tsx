@@ -3,10 +3,7 @@ import { StyleSheet, View, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { Pause, Volume2, VolumeX } from "lucide-react-native";
-import {
-  Gesture,
-  GestureDetector,
-} from "react-native-gesture-handler";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -137,7 +134,9 @@ export function ZoomableMedia({ uri, type, onPress, style }: ZoomableMediaProps)
         {/* 2x Fast Forward indicator */}
         {isFastForwarding && (
           <View pointerEvents="none" style={styles.fastForwardIndicator}>
-            <AppText variant="h3" style={{ color: palette.white, fontWeight: "900" }}>2x Speed</AppText>
+            <AppText variant="h3" style={{ color: palette.white, fontWeight: "900" }}>
+              2x Speed
+            </AppText>
           </View>
         )}
 
@@ -175,7 +174,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
   centerIcon: {
-    ...StyleSheet.absoluteFillObject,
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
     alignItems: "center",
     justifyContent: "center",
   },

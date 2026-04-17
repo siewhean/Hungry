@@ -1,11 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  View,
-  useWindowDimensions,
-  Pressable,
-  StyleSheet,
-  Share,
-} from "react-native";
+import { View, useWindowDimensions, Pressable, StyleSheet, Share } from "react-native";
 import { Image } from "expo-image";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -84,17 +78,17 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, [route.params?.dishId]);
-  
+
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
-  
+
   const { palette, spacing, radii, shadows } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  
+
   const scrollY = useSharedValue(0);
   const scrollHandler = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
@@ -103,7 +97,12 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
   const HERO_HEIGHT = screenWidth * 1.2; // Immersive height
 
   const headerStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(scrollY.value, [HERO_HEIGHT - 100, HERO_HEIGHT - 40], [0, 1], Extrapolate.CLAMP);
+    const opacity = interpolate(
+      scrollY.value,
+      [HERO_HEIGHT - 100, HERO_HEIGHT - 40],
+      [0, 1],
+      Extrapolate.CLAMP,
+    );
     return {
       opacity,
       backgroundColor: palette.bg,
@@ -114,14 +113,25 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
 
   const heroStyle = useAnimatedStyle(() => {
     const scale = interpolate(scrollY.value, [-100, 0], [1.2, 1], Extrapolate.CLAMP);
-    const translateY = interpolate(scrollY.value, [0, HERO_HEIGHT], [0, HERO_HEIGHT / 2], Extrapolate.CLAMP);
+    const translateY = interpolate(
+      scrollY.value,
+      [0, HERO_HEIGHT],
+      [0, HERO_HEIGHT / 2],
+      Extrapolate.CLAMP,
+    );
     return {
       transform: [{ scale }, { translateY }],
     };
   });
 
-  const venue = useMemo(() => dish ? repository.getVenueById(dish.venueId) : undefined, [dish, repository]);
-  const tasteMatch = useMemo(() => (dish ? getTasteSimilarityWithDish(profile, dish) : 0), [profile, dish]);
+  const venue = useMemo(
+    () => (dish ? repository.getVenueById(dish.venueId) : undefined),
+    [dish, repository],
+  );
+  const tasteMatch = useMemo(
+    () => (dish ? getTasteSimilarityWithDish(profile, dish) : 0),
+    [profile, dish],
+  );
   const isSaved = profile.favouriteDishIds.includes(dish?.id ?? "");
 
   if (isLoading) {
@@ -141,7 +151,9 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
       {/* ─── STICKY HEADER ────────────────────────────────────────────────── */}
       <Animated.View style={[styles.stickyHeader, headerStyle, { zIndex: 100 }]}>
         <View style={styles.stickyHeaderContent}>
-          <AppText variant="h3" numberOfLines={1} style={{ flex: 1 }}>{dish.name}</AppText>
+          <AppText variant="h3" numberOfLines={1} style={{ flex: 1 }}>
+            {dish.name}
+          </AppText>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <Star size={14} color={palette.amber} fill={palette.amber} />
             <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
@@ -155,7 +167,10 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
           <ChevronLeft color={palette.text} size={24} />
         </Pressable>
         <View style={{ flex: 1 }} />
-        <Pressable onPress={() => Share.share({ message: `Check out ${dish.name} on Hungry!` })} style={styles.navBtn}>
+        <Pressable
+          onPress={() => Share.share({ message: `Check out ${dish.name} on Hungry!` })}
+          style={styles.navBtn}
+        >
           <Share2 color={palette.text} size={20} />
         </Pressable>
       </View>
@@ -168,12 +183,16 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
       >
         {/* ─── HERO PARALLAX ──────────────────────────────────────────────── */}
         <Animated.View style={[styles.heroContainer, { height: HERO_HEIGHT }, heroStyle]}>
-          <Animated.View 
+          <Animated.View
             style={StyleSheet.absoluteFill}
             // @ts-ignore
             sharedTransitionTag={`dish-image-premium-${dish.id}`}
           >
-            <Image source={{ uri: dish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+            <Image
+              source={{ uri: dish.imageUrl }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+            />
           </Animated.View>
           <LinearGradient
             colors={["transparent", "rgba(0,0,0,0.1)", palette.bg]}
@@ -183,7 +202,6 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
 
         {/* ─── CONTENT ────────────────────────────────────────────────────── */}
         <View style={{ paddingHorizontal: spacing[4], gap: spacing[6], marginTop: -40 }}>
-          
           {/* Header Info */}
           <View style={{ gap: spacing[2] }}>
             <View style={{ flexDirection: "row", gap: spacing[2] }}>
@@ -202,23 +220,37 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
           {/* Quick Stats */}
           <View style={{ flexDirection: "row", gap: spacing[3] }}>
             <Card style={{ flex: 1, padding: spacing[3], alignItems: "center", gap: 4 }}>
-              <AppText variant="micro" tone="muted">DISTANCE</AppText>
-              <AppText variant="bodyBold">{dish.distanceMeters > 1000 ? `${(dish.distanceMeters/1000).toFixed(1)}km` : `${dish.distanceMeters}m`}</AppText>
+              <AppText variant="micro" tone="muted">
+                DISTANCE
+              </AppText>
+              <AppText variant="bodyBold">
+                {dish.distanceMeters > 1000
+                  ? `${(dish.distanceMeters / 1000).toFixed(1)}km`
+                  : `${dish.distanceMeters}m`}
+              </AppText>
             </Card>
             <Card style={{ flex: 1, padding: spacing[3], alignItems: "center", gap: 4 }}>
-              <AppText variant="micro" tone="muted">REVIEWS</AppText>
+              <AppText variant="micro" tone="muted">
+                REVIEWS
+              </AppText>
               <AppText variant="bodyBold">{dish.reviews.length}</AppText>
             </Card>
             <Card style={{ flex: 1, padding: spacing[3], alignItems: "center", gap: 4 }}>
-              <AppText variant="micro" tone="muted">STATUS</AppText>
-              <AppText variant="bodyBold" tone="success">Open</AppText>
+              <AppText variant="micro" tone="muted">
+                STATUS
+              </AppText>
+              <AppText variant="bodyBold" tone="success">
+                Open
+              </AppText>
             </Card>
           </View>
 
           {/* Taste Radar */}
           <Animated.View entering={FadeInUp.delay(200)}>
             <Card style={styles.radarCard}>
-              <AppText variant="h3" style={{ marginBottom: spacing[2] }}>Taste Signature</AppText>
+              <AppText variant="h3" style={{ marginBottom: spacing[2] }}>
+                Taste Signature
+              </AppText>
               <TasteRadar tasteVector={dish.tasteVector} size={280} />
             </Card>
           </Animated.View>
@@ -227,10 +259,10 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
           <View style={{ gap: spacing[3] }}>
             <AppText variant="h3">Dietary & Vibes</AppText>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-              {dish.dietaryFlags.map(flag => (
+              {dish.dietaryFlags.map((flag) => (
                 <Badge key={flag} label={flag} tone="orange" />
               ))}
-              {dish.availabilityFlags.map(flag => (
+              {dish.availabilityFlags.map((flag) => (
                 <Badge key={flag} label={flag} tone="neutral" />
               ))}
             </View>
@@ -241,7 +273,8 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
             <AppText variant="h3">The Story</AppText>
             <AppText variant="bodyLarge" style={{ lineHeight: 28 }}>
               {/* @ts-ignore */}
-              {dish.description || "A signature local favorite, prepared with traditional methods and fresh ingredients. Every bite is a journey through Singapore's rich culinary heritage."}
+              {dish.description ||
+                "A signature local favorite, prepared with traditional methods and fresh ingredients. Every bite is a journey through Singapore's rich culinary heritage."}
             </AppText>
           </View>
 
@@ -258,14 +291,19 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
                 <AppText variant="bodySmall">{venue.unitNumber}</AppText>
               </View>
             </View>
-            <Button label="View Full Stall" variant="secondary" size="sm" onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })} />
+            <Button
+              label="View Full Stall"
+              variant="secondary"
+              size="sm"
+              onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
+            />
           </Card>
         </View>
       </Animated.ScrollView>
 
       {/* ─── ACTION DOCK ────────────────────────────────────────────────── */}
       <View style={[styles.actionDock, { paddingBottom: Math.max(insets.bottom, spacing[4]) }]}>
-        <Button 
+        <Button
           variant={isSaved ? "secondary" : "primary"}
           label={isSaved ? "Saved to Favourites" : "Save Favorite"}
           style={{ flex: 2 }}
@@ -276,14 +314,23 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
               return;
             }
             toggleFavourite(dish);
-            showToast({ message: isSaved ? "Removed from favourites." : "Added to favourites!", tone: "success" });
+            showToast({
+              message: isSaved ? "Removed from favourites." : "Added to favourites!",
+              tone: "success",
+            });
           }}
-          leftIcon={<Heart size={20} color={isSaved ? palette.orange : palette.white} fill={isSaved ? palette.orange : "transparent"} />}
+          leftIcon={
+            <Heart
+              size={20}
+              color={isSaved ? palette.orange : palette.white}
+              fill={isSaved ? palette.orange : "transparent"}
+            />
+          }
         />
         <View style={{ flex: 2, flexDirection: "row", gap: spacing[2] }}>
-          <Button 
-            variant="glass" 
-            label="Rate" 
+          <Button
+            variant="glass"
+            label="Rate"
             style={{ flex: 1 }}
             onPress={() =>
               useUIStore.getState().showQuickReview({
@@ -295,11 +342,16 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
             }
             leftIcon={<Star size={18} color={palette.text} />}
           />
-          <Button 
-            variant="glass" 
-            label="Post" 
+          <Button
+            variant="glass"
+            label="Post"
             style={{ flex: 1 }}
-            onPress={() => navigation.navigate("ReviewStack", { screen: "ReviewMain", params: { dishId: dish.id, venueId: dish.venueId } })}
+            onPress={() =>
+              navigation.navigate("ReviewStack", {
+                screen: "ReviewMain",
+                params: { dishId: dish.id, venueId: dish.venueId },
+              })
+            }
             leftIcon={<MessageCircle size={18} color={palette.text} />}
           />
         </View>
@@ -351,7 +403,11 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   heroGradient: {
-    ...StyleSheet.absoluteFillObject,
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
     height: "100%",
   },
   radarCard: {

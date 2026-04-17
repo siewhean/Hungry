@@ -8,10 +8,10 @@ import {
   StyleSheet,
   View,
   useWindowDimensions,
+  Easing,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { Easing } from "react-native";
 import { Check, ChevronRight, Search } from "lucide-react-native";
 
 import { Button, AppText, Card, Input } from "@/components/ui";
@@ -95,11 +95,11 @@ const LABELS = {
   aromatic: ["Subtle", "Balanced", "Intense"],
 } as const;
 
-const DIETARY_OPTIONS: Array<{
+const DIETARY_OPTIONS: {
   value: DietaryFlag;
   label: string;
   keywords: string[];
-}> = [
+}[] = [
   { value: "vegetarian", label: "Vegetarian", keywords: ["veg"] },
   { value: "vegan", label: "Vegan", keywords: ["plant"] },
   { value: "halal", label: "Halal", keywords: ["muslim", "halal"] },
@@ -550,7 +550,11 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                         <Animated.View
                           pointerEvents="none"
                           style={{
-                            ...StyleSheet.absoluteFillObject,
+                            bottom: 0,
+                            left: 0,
+                            position: "absolute",
+                            right: 0,
+                            top: 0,
                             opacity: bwOpacity,
                           }}
                         >

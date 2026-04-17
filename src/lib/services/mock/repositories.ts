@@ -51,7 +51,7 @@ function ratingScore(rating: number) {
   return rating / 5;
 }
 
-export const mockRepository = {
+export const dataRepositoryMock = {
   getProfile(isAuthenticated: boolean): UserProfile {
     return isAuthenticated ? userProfile : guestProfile;
   },
@@ -140,3 +140,5 @@ export const mockRepository = {
     return stallPosts;
   },
 };
+
+export const mockRepository = dataRepositoryMock;

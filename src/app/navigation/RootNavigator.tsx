@@ -367,7 +367,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 
 const styles = StyleSheet.create({
   globalBackWrap: {
-    ...StyleSheet.absoluteFillObject,
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    right: 0,
+    top: 0,
   },
   globalBackButton: {
     alignItems: "center",

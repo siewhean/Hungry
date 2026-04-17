@@ -155,10 +155,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
   };
 
   return (
-    <FeedErrorBoundary
-      title="Dish details unavailable"
-      body="Couldn't load this dish — try again."
-    >
+    <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
       <SafeAreaView
         style={{ backgroundColor: palette.bg, flex: 1 }}
         edges={["top", "left", "right"]}
@@ -211,7 +208,14 @@ export function DishDetailScreen({ navigation, route }: Props) {
               {/* Gradient Overlay (requested) */}
               <LinearGradient
                 colors={["transparent", "rgba(0,0,0,0.1)", "rgba(0,0,0,0.4)"]}
-                style={{ ...StyleSheet.absoluteFillObject, height: "100%" }}
+                style={{
+                  bottom: 0,
+                  height: "100%",
+                  left: 0,
+                  position: "absolute",
+                  right: 0,
+                  top: 0,
+                }}
                 pointerEvents="none"
               />
 

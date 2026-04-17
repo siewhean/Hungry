@@ -6,6 +6,7 @@ import { Image } from "expo-image";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AppText, Button, Card, Chip, Input } from "@/components/ui";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -25,14 +26,14 @@ function loadImagePickerModule() {
         aspect: [number, number];
         quality: number;
         mediaTypes: string;
-      }) => Promise<{ canceled: boolean; assets?: Array<{ uri: string }> }>;
+      }) => Promise<{ canceled: boolean; assets?: { uri: string }[] }>;
     };
   } catch {
     return null;
   }
 }
 
-const EDITABLE_DIETARY_OPTIONS: Array<{ label: string; value: DietaryFlag }> = [
+const EDITABLE_DIETARY_OPTIONS: { label: string; value: DietaryFlag }[] = [
   { label: "Halal", value: "halal" },
   { label: "Vegetarian", value: "vegetarian" },
   { label: "Vegan", value: "vegan" },
@@ -55,6 +56,7 @@ export function EditProfileScreen({ navigation }: Props) {
     profile.dietaryPreferences,
   );
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handlePickAvatar = async () => {
     const imagePicker = loadImagePickerModule();
@@ -107,7 +109,7 @@ export function EditProfileScreen({ navigation }: Props) {
   return (
     <ProfileScreenShell
       title="Edit profile"
-      subtitle="Changes to your profile are saved locally on this device."
+      subtitle="Changes sync to your account when connected."
     >
       <View style={{ alignItems: "center", marginBottom: spacing[2] }}>
         <Pressable
@@ -203,11 +205,30 @@ export function EditProfileScreen({ navigation }: Props) {
       </Card>
       <Button
         label="Save changes"
+        loading={isSaving}
         onPress={() => {
-          updateProfile({ displayName, email });
-          setDietaryPreferences(dietaryPreferences);
-          showToast({ message: "Profile updated locally.", tone: "success" });
-          navigation.goBack();
+          void (async () => {
+            setIsSaving(true);
+            try {
+              await getHungryService().profile.updateProfile({
+                displayName,
+                email,
+                avatarUrl: avatarUri,
+              });
+              await getHungryService().profile.updateDietaryPreferences(dietaryPreferences);
+              updateProfile({ displayName, email, avatarUrl: avatarUri });
+              setDietaryPreferences(dietaryPreferences);
+              showToast({ message: "Profile updated.", tone: "success" });
+              navigation.goBack();
+            } catch {
+              showToast({
+                message: "Could not save profile right now.",
+                tone: "warning",
+              });
+            } finally {
+              setIsSaving(false);
+            }
+          })();
         }}
       />
       <Button

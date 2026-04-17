@@ -1,17 +1,5 @@
-import {
-  PropsWithChildren,
-  createContext,
-  useContext,
-  useMemo,
-  useState,
-  useEffect,
-} from "react";
-import {
-  AppState,
-  Appearance,
-  ColorSchemeName,
-  useColorScheme,
-} from "react-native";
+import { PropsWithChildren, createContext, useContext, useMemo, useState, useEffect } from "react";
+import { AppState, Appearance, useColorScheme } from "react-native";
 import {
   DefaultTheme,
   DarkTheme,
@@ -25,21 +13,10 @@ import {
   Nunito_600SemiBold,
   Nunito_700Bold,
 } from "@expo-google-fonts/nunito";
-import {
-  useFonts as useMonoFonts,
-  DMMono_400Regular,
-} from "@expo-google-fonts/dm-mono";
+import { useFonts as useMonoFonts, DMMono_400Regular } from "@expo-google-fonts/dm-mono";
 
 import { useUIStore } from "@/store/useUIStore";
-import {
-  colors,
-  motion,
-  radii,
-  shadows,
-  spacing,
-  typography,
-  zIndex,
-} from "./tokens";
+import { colors, motion, radii, shadows, spacing, typography, zIndex } from "./tokens";
 
 type HungryTheme = {
   colorScheme: "light" | "dark";
@@ -54,6 +31,8 @@ type HungryTheme = {
   fontsLoaded: boolean;
 };
 
+type AppColorScheme = "light" | "dark";
+
 const ThemeContext = createContext<HungryTheme | null>(null);
 
 export function HungryThemeProvider({ children }: PropsWithChildren) {
@@ -61,26 +40,23 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
   const hookScheme = useColorScheme();
 
   // Track system color scheme via Appearance API for maximum reliability
-  const [systemScheme, setSystemScheme] = useState<ColorSchemeName>(
-    Appearance.getColorScheme(),
+  const [systemScheme, setSystemScheme] = useState<AppColorScheme>(
+    Appearance.getColorScheme() === "dark" ? "dark" : "light",
   );
 
   useEffect(() => {
     const subscription = Appearance.addChangeListener(({ colorScheme }) => {
-      setSystemScheme(colorScheme);
+      setSystemScheme(colorScheme === "dark" ? "dark" : "light");
     });
     return () => subscription.remove();
   }, []);
 
   useEffect(() => {
-    const appStateSubscription = AppState.addEventListener(
-      "change",
-      (state) => {
-        if (state === "active") {
-          setSystemScheme(Appearance.getColorScheme());
-        }
-      },
-    );
+    const appStateSubscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        setSystemScheme(Appearance.getColorScheme() === "dark" ? "dark" : "light");
+      }
+    });
 
     return () => {
       appStateSubscription.remove();
@@ -89,14 +65,14 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (themePreference === "automatic") {
-      Appearance.setColorScheme(null);
       return;
     }
 
     Appearance.setColorScheme(themePreference);
   }, [themePreference]);
 
-  const resolvedSystemScheme = hookScheme ?? systemScheme;
+  const resolvedSystemScheme: AppColorScheme =
+    hookScheme === "dark" || hookScheme === "light" ? hookScheme : systemScheme;
 
   // Resolve active color scheme
   const colorScheme = useMemo(() => {
@@ -171,9 +147,7 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
 
   return (
     <ThemeContext.Provider value={value}>
-      <NavigationThemeProvider value={theme}>
-        {children}
-      </NavigationThemeProvider>
+      <NavigationThemeProvider value={theme}>{children}</NavigationThemeProvider>
     </ThemeContext.Provider>
   );
 }

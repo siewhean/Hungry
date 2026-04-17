@@ -6,6 +6,8 @@ import { ArrowLeft, LockKeyhole, Mail } from "lucide-react-native";
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { useUIStore } from "@/store/useUIStore";
 import { validateEmail } from "@/features/auth/validation";
+import { getHungryService } from "@/lib/services/serviceProvider";
+import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthScreenShell } from "./AuthScreenShell";
@@ -22,9 +24,16 @@ export function ForgotPasswordScreen({ navigation }: Props) {
     formState: { errors },
   } = useForm<FormValues>({ defaultValues: { email: "" } });
 
-  const handleSend = handleSubmit(() => {
-    showToast({ message: "If the email exists, a reset link was sent.", tone: "info" });
-    navigation.navigate("ResetPassword");
+  const handleSend = handleSubmit(async ({ email }) => {
+    try {
+      if (getConfiguredDataSource() === "supabase") {
+        await getHungryService().auth.forgotPassword(email);
+      }
+      showToast({ message: "If the email exists, a reset link was sent.", tone: "info" });
+      navigation.navigate("ResetPassword");
+    } catch {
+      showToast({ message: "Could not send reset link. Please try again.", tone: "error" });
+    }
   });
 
   return (
@@ -71,8 +80,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
             </AppText>
             <AppText tone="secondary" style={{ textAlign: "center" }}>
               Enter your email address and we&apos;ll send you a link to reset your password and get
-              you
-              back to your table.
+              you back to your table.
             </AppText>
           </View>
 

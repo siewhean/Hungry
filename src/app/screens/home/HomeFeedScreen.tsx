@@ -12,15 +12,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  Bookmark,
-  Heart,
-  MessageCircle,
-  PlayCircle,
-  Send,
-  Star,
-  X,
-} from "lucide-react-native";
+import { Bookmark, Heart, MessageCircle, PlayCircle, Send, Star, X } from "lucide-react-native";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -29,10 +21,7 @@ import {
 } from "@gorhom/bottom-sheet";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { FlashList } from "@shopify/flash-list";
 
@@ -122,34 +111,27 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
 
-  const [feedState, setFeedState] = useState<"loading" | "ready" | "error">(
-    "loading",
-  );
+  const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
   const [sections, setSections] = useState<HomeFeedSection[]>([]);
   const [socialFeed, setSocialFeed] = useState<HomeFeedItem[]>([]);
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
-  const [activeCommentItem, setActiveCommentItem] =
-    useState<HomeFeedItem | null>(null);
+  const [activeCommentItem, setActiveCommentItem] = useState<HomeFeedItem | null>(null);
   const [draftComment, setDraftComment] = useState("");
-  const [localCommentsByPostId, setLocalCommentsByPostId] = useState<
-    Record<string, FeedComment[]>
-  >({});
+  const [localCommentsByPostId, setLocalCommentsByPostId] = useState<Record<string, FeedComment[]>>(
+    {},
+  );
   const [localRepliesByCommentId, setLocalRepliesByCommentId] = useState<
     Record<string, FeedReply[]>
   >({});
-  const [activeReplyCommentId, setActiveReplyCommentId] = useState<
-    string | null
-  >(null);
-  const [draftReplyByCommentId, setDraftReplyByCommentId] = useState<
-    Record<string, string>
-  >({});
+  const [activeReplyCommentId, setActiveReplyCommentId] = useState<string | null>(null);
+  const [draftReplyByCommentId, setDraftReplyByCommentId] = useState<Record<string, string>>({});
   const commentsSheetRef = useRef<BottomSheetModal>(null);
   const commentInputRef = useRef<any>(null);
   const commentSnapPoints = useMemo(() => ["50%", "88%"], []);
 
-  const [interactionByPostId, setInteractionByPostId] = useState<
-    Record<string, InteractionState>
-  >({});
+  const [interactionByPostId, setInteractionByPostId] = useState<Record<string, InteractionState>>(
+    {},
+  );
 
   const loadFeed = useCallback(async () => {
     setFeedState("loading");
@@ -160,10 +142,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       setSocialFeed(socialData);
       setInteractionByPostId((current) => {
         const next = { ...current };
-        const allItems = [
-          ...socialData,
-          ...data.flatMap((section) => section.items),
-        ];
+        const allItems = [...socialData, ...data.flatMap((section) => section.items)];
 
         allItems.forEach((item) => {
           if (next[item.id]) {
@@ -210,9 +189,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         [postId]: {
           ...current,
           liked: isLiked,
-          likeCount: isLiked
-            ? current.likeCount + 1
-            : Math.max(0, current.likeCount - 1),
+          likeCount: isLiked ? current.likeCount + 1 : Math.max(0, current.likeCount - 1),
         },
       };
     });
@@ -287,21 +264,20 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       return [];
     }
 
-    const seededComments: FeedComment[] = (
-      activeCommentItem.dishes[0]?.reviews ?? []
-    ).map((review) => ({
-      id: review.id,
-      authorName: review.authorName,
-      authorAvatarUrl: undefined,
-      text: review.text,
-      createdAt: new Date().toISOString(),
-    }));
+    const seededComments: FeedComment[] = (activeCommentItem.dishes[0]?.reviews ?? []).map(
+      (review) => ({
+        id: review.id,
+        authorName: review.authorName,
+        authorAvatarUrl: undefined,
+        text: review.text,
+        createdAt: new Date().toISOString(),
+      }),
+    );
 
     const localComments = localCommentsByPostId[activeCommentItem.id] ?? [];
 
     return [...seededComments, ...localComments].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
   }, [activeCommentItem, localCommentsByPostId]);
 
@@ -319,10 +295,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
       setLocalRepliesByCommentId((prev) => ({
         ...prev,
-        [activeReplyCommentId]: [
-          ...(prev[activeReplyCommentId] ?? []),
-          newReply,
-        ],
+        [activeReplyCommentId]: [...(prev[activeReplyCommentId] ?? []), newReply],
       }));
       setActiveReplyCommentId(null);
     } else {
@@ -335,10 +308,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
       setLocalCommentsByPostId((prev) => ({
         ...prev,
-        [activeCommentItem.id]: [
-          ...(prev[activeCommentItem.id] ?? []),
-          newComment,
-        ],
+        [activeCommentItem.id]: [...(prev[activeCommentItem.id] ?? []), newComment],
       }));
     }
 
@@ -365,14 +335,15 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     [navigation],
   );
 
-  const { onScroll, scrollEventThrottle } =
-    useScrollToRevealBack();
+  const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
 
   const renderHeader = useCallback(
     () => (
       <View style={{ paddingBottom: spacing[2], gap: spacing[2] }}>
         <View style={{ paddingHorizontal: spacing[4], paddingTop: 0 }}>
-          <AppText variant="displayBold" style={{ color: palette.orange, fontSize: 32 }}>Hungry</AppText>
+          <AppText variant="displayBold" style={{ color: palette.orange, fontSize: 32 }}>
+            Hungry
+          </AppText>
         </View>
         <CircleStoryCarousel />
       </View>
@@ -674,23 +645,23 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         );
       }
 
-        return (
-          <Pressable
+      return (
+        <Pressable
           key={item.id}
-            accessibilityRole="button"
-            accessibilityLabel={
-              item.dishes[0]?.id
-                ? `Open details for ${item.dishes[0]?.name ?? "dish"}`
-                : `Open stall details for ${item.venue.name}`
+          accessibilityRole="button"
+          accessibilityLabel={
+            item.dishes[0]?.id
+              ? `Open details for ${item.dishes[0]?.name ?? "dish"}`
+              : `Open stall details for ${item.venue.name}`
+          }
+          onPress={() => {
+            const primaryDishId = item.dishes[0]?.id;
+            if (primaryDishId) {
+              navigateToDish(primaryDishId);
+              return;
             }
-            onPress={() => {
-              const primaryDishId = item.dishes[0]?.id;
-              if (primaryDishId) {
-                navigateToDish(primaryDishId);
-                return;
-              }
-              navigation.navigate("StallDetail", { venueId: item.venueId });
-            }}
+            navigation.navigate("StallDetail", { venueId: item.venueId });
+          }}
           style={[
             shadows.card,
             {
@@ -710,7 +681,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           />
 
           {/* Interaction Overlay */}
-            <View
+          <View
             style={{
               position: "absolute",
               top: spacing[3],
@@ -720,10 +691,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             }}
           >
             <Pressable
-                onPress={(event) => {
-                  event.stopPropagation();
-                  toggleLike(item.id);
-                }}
+              onPress={(event) => {
+                event.stopPropagation();
+                toggleLike(item.id);
+              }}
               style={{
                 width: 36,
                 height: 36,
@@ -740,10 +711,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               />
             </Pressable>
             <Pressable
-                onPress={(event) => {
-                  event.stopPropagation();
-                  toggleSave(item.id);
-                }}
+              onPress={(event) => {
+                event.stopPropagation();
+                toggleSave(item.id);
+              }}
               style={{
                 width: 36,
                 height: 36,
@@ -862,8 +833,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 </AppText>
               )}
             </View>
-            </View>
-          </Pressable>
+          </View>
+        </Pressable>
       );
     },
     [
@@ -999,8 +970,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             onScroll={onScroll}
             scrollEventThrottle={16}
           >
-            <View style={{ paddingHorizontal: spacing[4], paddingTop: 0, paddingBottom: spacing[2] }}>
-              <AppText variant="displayBold" style={{ color: palette.orange, fontSize: 32 }}>Hungry</AppText>
+            <View
+              style={{ paddingHorizontal: spacing[4], paddingTop: 0, paddingBottom: spacing[2] }}
+            >
+              <AppText variant="displayBold" style={{ color: palette.orange, fontSize: 32 }}>
+                Hungry
+              </AppText>
             </View>
             <View style={{ paddingTop: 0 }}>
               {sections.map((section) => (
@@ -1313,14 +1288,26 @@ const createStyles = ({ palette, spacing, radii }: ReturnType<typeof useHungryTh
       backgroundColor: palette.navy,
     },
     heroImage: {
-      ...StyleSheet.absoluteFillObject,
+      bottom: 0,
+      left: 0,
+      position: "absolute",
+      right: 0,
+      top: 0,
     },
     gradientScrim: {
-      ...StyleSheet.absoluteFillObject,
+      bottom: 0,
+      left: 0,
+      position: "absolute",
+      right: 0,
+      top: 0,
       height: "100%",
     },
     overlayContent: {
-      ...StyleSheet.absoluteFillObject,
+      bottom: 0,
+      left: 0,
+      position: "absolute",
+      right: 0,
+      top: 0,
       justifyContent: "flex-end",
     },
     overlayTopRow: {
@@ -1343,7 +1330,11 @@ const createStyles = ({ palette, spacing, radii }: ReturnType<typeof useHungryTh
       marginTop: 8,
     },
     playButtonContainer: {
-      ...StyleSheet.absoluteFillObject,
+      bottom: 0,
+      left: 0,
+      position: "absolute",
+      right: 0,
+      top: 0,
       alignItems: "center",
       justifyContent: "center",
       zIndex: 1,

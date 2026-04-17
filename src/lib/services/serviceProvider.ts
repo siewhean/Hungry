@@ -1,13 +1,16 @@
 import type { TasteVector } from "@/types/domain";
 import { hungryService as mockHungryService } from "@/lib/services/mock/mockService";
-import { mockRepository as mockRepositorySource } from "@/lib/services/mock/repositories";
+import { dataRepositoryMock } from "@/lib/services/mock/repositories";
+import { getConfiguredDataSource } from "@/lib/services/supabase/client";
+import { supabaseRepository } from "@/lib/services/supabase/supabaseRepository";
+import { supabaseService } from "@/lib/services/supabase/supabaseService";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import type { DataRepository, HungryService } from "@/lib/services/types";
 
-const mockRepository: DataRepository = mockRepositorySource;
+const defaultMockDataRepository: DataRepository = dataRepositoryMock;
 
 export interface ServiceProvider {
-  mode: "mock" | "api";
+  mode: "mock" | "supabase";
   service: HungryService;
   repository: DataRepository;
   similarityScore: (left: TasteVector, right: TasteVector) => number;
@@ -17,14 +20,25 @@ function createMockProvider(): ServiceProvider {
   return {
     mode: "mock",
     service: mockHungryService,
-    repository: mockRepository,
+    repository: defaultMockDataRepository,
     similarityScore,
   };
 }
 
-// TODO(api): replace with a real provider factory wired to Supabase/REST adapters.
-// TODO(api): keep interface stable so UI/store code does not change when backend lands.
-let activeProvider: ServiceProvider = createMockProvider();
+function createSupabaseProvider(): ServiceProvider {
+  return {
+    mode: "supabase",
+    service: supabaseService,
+    repository: supabaseRepository,
+    similarityScore,
+  };
+}
+
+function createProviderFromEnv(): ServiceProvider {
+  return getConfiguredDataSource() === "supabase" ? createSupabaseProvider() : createMockProvider();
+}
+
+let activeProvider: ServiceProvider = createProviderFromEnv();
 
 export function getServiceProvider(): ServiceProvider {
   return activeProvider;
@@ -35,7 +49,7 @@ export function setServiceProvider(provider: ServiceProvider): void {
 }
 
 export function resetServiceProvider(): void {
-  activeProvider = createMockProvider();
+  activeProvider = createProviderFromEnv();
 }
 
 export function getHungryService(): HungryService {

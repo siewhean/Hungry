@@ -4,6 +4,8 @@ import { persist } from "zustand/middleware";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { identifyPostHogUser, resetPostHogUser } from "@/lib/analytics/posthogSink";
 import type { AuthProvider } from "@/lib/services/types";
+import { getConfiguredDataSource } from "@/lib/services/supabase/client";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "./useProfileStore";
 import { useLocationStore } from "./useLocationStore";
 import { hungrySecurePersistStorage } from "./secureStorage";
@@ -34,6 +36,12 @@ interface SessionState {
   signOut: () => void;
   clearSession: () => void;
   markHydrated: () => void;
+  applyAuthStateFromSession: (session: {
+    isAuthenticated: boolean;
+    userId?: string | null;
+    completedOnboarding?: boolean;
+    skippedTasteQuiz?: boolean;
+  }) => void;
 }
 
 const initialState = {
@@ -99,6 +107,11 @@ export const useSessionStore = create<SessionState>()(
       setSkippedTasteQuiz: (hasSkippedTasteQuiz) => set({ hasSkippedTasteQuiz }),
       signOut: () => {
         const profileId = useProfileStore.getState().profile.id;
+        if (getConfiguredDataSource() === "supabase") {
+          void getHungryService()
+            .auth.signOut()
+            .catch(() => undefined);
+        }
         set({ ...initialState });
         useProfileStore.getState().clearProfile();
         useProfileStore.getState().syncProfile(false);
@@ -114,6 +127,60 @@ export const useSessionStore = create<SessionState>()(
         trackAnalyticsEvent("sign_out", { reason: "clear_session" }, { userId: profileId });
       },
       markHydrated: () => set({ hasHydrated: true }),
+      applyAuthStateFromSession: (session) => {
+        const currentlyAuthenticated = useSessionStore.getState().isAuthenticated;
+
+        if (session.isAuthenticated) {
+          set((state) => ({
+            isAuthenticated: true,
+            hasCompletedOnboarding: session.completedOnboarding ?? state.hasCompletedOnboarding,
+            hasSkippedTasteQuiz: session.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
+            sessionExpired: false,
+          }));
+          useProfileStore.getState().syncProfile(true);
+
+          const profile = useProfileStore.getState().profile;
+          const location = useLocationStore.getState();
+          const area =
+            location.manualLocation ??
+            `${location.currentLocation.latitude.toFixed(4)},${location.currentLocation.longitude.toFixed(4)}`;
+          identifyPostHogUser(session.userId ?? profile.id, {
+            tasteVector: profile.tasteVector,
+            dietaryPreferences: profile.dietaryPreferences,
+            area,
+          });
+
+          if (!currentlyAuthenticated) {
+            trackAnalyticsEvent(
+              "sign_in_completed",
+              {
+                method: "email",
+                has_completed_onboarding: session.completedOnboarding ?? false,
+                skipped_taste_quiz: session.skippedTasteQuiz ?? false,
+              },
+              { userId: session.userId ?? profile.id },
+            );
+          }
+          return;
+        }
+
+        if (!currentlyAuthenticated) {
+          return;
+        }
+
+        const profileId = useProfileStore.getState().profile.id;
+        set({
+          isAuthenticated: false,
+          sessionExpired: false,
+        });
+        useProfileStore.getState().syncProfile(false);
+        resetPostHogUser();
+        trackAnalyticsEvent(
+          "sign_out",
+          { reason: "supabase_auth_state_change" },
+          { userId: profileId },
+        );
+      },
     }),
     {
       name: "hungry-session-v1",
