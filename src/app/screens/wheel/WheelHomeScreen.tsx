@@ -80,7 +80,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
             tone="secondary"
             style={{ textAlign: "center", maxWidth: "80%" }}
           >
-            The ultimate tie-breaker for groups who can't decide where to eat.
+            The ultimate tie-breaker for groups who can&apos;t decide where to eat.
           </AppText>
         </View>
 

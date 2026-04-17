@@ -6,7 +6,8 @@ import {
   View,
   type StyleProp,
   type ViewStyle,
- PressableProps } from "react-native";
+  type PressableProps,
+} from "react-native";
 import * as Haptics from "expo-haptics";
 
 import { useHungryTheme } from "@/theme";

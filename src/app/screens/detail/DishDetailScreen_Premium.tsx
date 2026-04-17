@@ -29,6 +29,7 @@ import {
   EmptyState,
   FeedErrorBoundary,
   Screen,
+  Skeleton,
 } from "@/components/ui";
 import { TasteRadar } from "@/components/dish/TasteRadar";
 import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton";
@@ -38,11 +39,52 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
+function DishDetailSkeleton() {
+  const { spacing, radii, palette } = useHungryTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  const HERO_HEIGHT = screenWidth * 1.2;
+
+  return (
+    <View style={{ flex: 1, backgroundColor: palette.bg }}>
+      <Skeleton width="100%" height={HERO_HEIGHT} borderRadius={0} />
+      <View style={{ padding: spacing[4], gap: spacing[6], marginTop: -40 }}>
+        <View style={{ gap: spacing[2] }}>
+          <View style={{ flexDirection: "row", gap: spacing[2] }}>
+            <Skeleton width={100} height={24} borderRadius={radii.pill} />
+            <Skeleton width={120} height={24} borderRadius={radii.pill} />
+          </View>
+          <Skeleton width="80%" height={42} />
+          <Skeleton width="40%" height={32} />
+          <Skeleton width="60%" height={24} />
+        </View>
+        <View style={{ flexDirection: "row", gap: spacing[3] }}>
+          <Skeleton width="30%" height={60} borderRadius={radii.lg} />
+          <Skeleton width="30%" height={60} borderRadius={radii.lg} />
+          <Skeleton width="30%" height={60} borderRadius={radii.lg} />
+        </View>
+        <Skeleton width="100%" height={300} borderRadius={radii.xl} />
+        <View style={{ gap: spacing[2] }}>
+          <Skeleton width="40%" height={24} />
+          <Skeleton width="100%" height={100} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">;
 
 export function DishDetailScreen_Premium({ navigation, route }: Props) {
   const repository = getDataRepository();
-  const dish = repository.getDishById(route.params?.dishId ?? "");
+  const [isLoading, setIsLoading] = useState(true);
+  const deepLinkedDishId = route.params?.dishId ?? route.params?.id ?? "";
+  const dish = repository.getDishById(deepLinkedDishId);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, [route.params?.dishId]);
+  
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -81,6 +123,10 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
   const venue = useMemo(() => dish ? repository.getVenueById(dish.venueId) : undefined, [dish, repository]);
   const tasteMatch = useMemo(() => (dish ? getTasteSimilarityWithDish(profile, dish) : 0), [profile, dish]);
   const isSaved = profile.favouriteDishIds.includes(dish?.id ?? "");
+
+  if (isLoading) {
+    return <DishDetailSkeleton />;
+  }
 
   if (!dish || !venue) {
     return (
@@ -216,6 +262,48 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
           </Card>
         </View>
       </Animated.ScrollView>
+
+      {/* ─── ACTION DOCK ────────────────────────────────────────────────── */}
+      <View style={[styles.actionDock, { paddingBottom: Math.max(insets.bottom, spacing[4]) }]}>
+        <Button 
+          variant={isSaved ? "secondary" : "primary"}
+          label={isSaved ? "Saved to Favourites" : "Save Favorite"}
+          style={{ flex: 2 }}
+          onPress={() => {
+            if (!isAuthenticated) {
+              setReturnRoute({ name: "DishDetail", params: { dishId: dish.id } });
+              navigation.navigate("AuthStack", { screen: "Login" });
+              return;
+            }
+            toggleFavourite(dish);
+            showToast({ message: isSaved ? "Removed from favourites." : "Added to favourites!", tone: "success" });
+          }}
+          leftIcon={<Heart size={20} color={isSaved ? palette.orange : palette.white} fill={isSaved ? palette.orange : "transparent"} />}
+        />
+        <View style={{ flex: 2, flexDirection: "row", gap: spacing[2] }}>
+          <Button 
+            variant="glass" 
+            label="Rate" 
+            style={{ flex: 1 }}
+            onPress={() =>
+              useUIStore.getState().showQuickReview({
+                venueId: venue.id,
+                venueName: venue.name,
+                dishId: dish.id,
+                dishName: dish.name,
+              })
+            }
+            leftIcon={<Star size={18} color={palette.text} />}
+          />
+          <Button 
+            variant="glass" 
+            label="Post" 
+            style={{ flex: 1 }}
+            onPress={() => navigation.navigate("ReviewStack", { screen: "ReviewMain", params: { dishId: dish.id, venueId: dish.venueId } })}
+            leftIcon={<MessageCircle size={18} color={palette.text} />}
+          />
+        </View>
+      </View>
     </View>
   );
 }
@@ -271,5 +359,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FFF9F3",
     borderColor: "#F8EFE4",
+  },
+  actionDock: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    gap: 12,
+    padding: 16,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.05)",
   },
 });

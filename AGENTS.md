@@ -209,3 +209,12 @@ Rules:
 | Missing design         | If no design file exists for the requested screen/component, stop and define the design before implementation.                            |
 | Verification           | UI work is not complete until the implementation is checked back against the design artifact.                                             |
 | Review standard        | Run the approved design checklist skill or equivalent structured visual review before considering the screen done.                        |
+
+
+<claude-mem-context>
+# Memory Context
+
+# $CMEM Hungry 2026-04-17 10:53am GMT+8
+
+No previous sessions found.
+</claude-mem-context>

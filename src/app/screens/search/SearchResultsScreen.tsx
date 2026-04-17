@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Star } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Button, EmptyState, Screen, Chip } from "@/components/ui";
+import { AppText, Button, EmptyState, Screen, Chip, Card, Skeleton } from "@/components/ui";
 import { findBuildingById } from "@/features/discovery/discovery";
 import {
   getSearchResults,
@@ -16,11 +16,38 @@ import {
 } from "@/features/search/search";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useSearchStore } from "@/store/useSearchStore";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
 
 type DisplayMode = "list" | "grid";
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
+
+function SearchResultsSkeleton() {
+  const { spacing, radii, palette } = useHungryTheme();
+  return (
+    <View style={{ gap: spacing[4], padding: spacing[4] }}>
+      <Skeleton width="60%" height={28} />
+      <View style={{ flexDirection: "row", gap: spacing[2] }}>
+        <Skeleton width={80} height={32} borderRadius={radii.pill} />
+        <Skeleton width={100} height={32} borderRadius={radii.pill} />
+        <Skeleton width={70} height={32} borderRadius={radii.pill} />
+      </View>
+      <View style={{ gap: spacing[4], marginTop: spacing[2] }}>
+        {[1, 2, 3].map((i) => (
+          <Card key={i} style={{ flexDirection: "row", gap: spacing[3], padding: spacing[3] }}>
+            <Skeleton width={96} height={96} borderRadius={radii.md} />
+            <View style={{ flex: 1, gap: spacing[2], justifyContent: "center" }}>
+              <Skeleton width="80%" height={20} />
+              <Skeleton width="40%" height={16} />
+              <Skeleton width="30%" height={24} />
+            </View>
+          </Card>
+        ))}
+      </View>
+    </View>
+  );
+}
 
 function SearchResultListCard({ dish, onPress }: { dish: DishDetail; onPress: () => void }) {
   const repository = getDataRepository();
@@ -198,39 +225,42 @@ export function SearchResultsScreen() {
             : undefined
       }
     >
-      <View style={{ flex: 1, gap: spacing[4] }}>
-        <View
-          style={{
-            backgroundColor: palette.surface,
-            borderColor: palette.border,
-            borderRadius: radii.lg,
-            borderWidth: 1,
-            flexDirection: "row",
-            padding: 4,
-          }}
-        >
-          {(["list", "grid"] as const).map((mode) => {
-            const selected = displayMode === mode;
-            return (
-              <Pressable
-                key={mode}
-                onPress={() => setDisplayMode(mode)}
-                style={{
-                  alignItems: "center",
-                  backgroundColor: selected ? palette.bgSoft : "transparent",
-                  borderRadius: radii.md,
-                  flex: 1,
-                  minHeight: 44,
-                  justifyContent: "center",
-                }}
-              >
-                <AppText tone={selected ? "default" : "secondary"} style={{ fontWeight: "700" }}>
-                  {mode === "list" ? "List" : "Grid"}
-                </AppText>
-              </Pressable>
-            );
-          })}
-        </View>
+      {isLoading ? (
+        <SearchResultsSkeleton />
+      ) : (
+        <View style={{ flex: 1, gap: spacing[4] }}>
+          <View
+            style={{
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+              borderRadius: radii.lg,
+              borderWidth: 1,
+              flexDirection: "row",
+              padding: 4,
+            }}
+          >
+            {(["list", "grid"] as const).map((mode) => {
+              const selected = displayMode === mode;
+              return (
+                <Pressable
+                  key={mode}
+                  onPress={() => setDisplayMode(mode)}
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: selected ? palette.bgSoft : "transparent",
+                    borderRadius: radii.md,
+                    flex: 1,
+                    minHeight: 44,
+                    justifyContent: "center",
+                  }}
+                >
+                  <AppText tone={selected ? "default" : "secondary"} style={{ fontWeight: "700" }}>
+                    {mode === "list" ? "List" : "Grid"}
+                  </AppText>
+                </Pressable>
+              );
+            })}
+          </View>
 
         {recentSearches.length ? (
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
@@ -349,11 +379,12 @@ export function SearchResultsScreen() {
             style={{ alignSelf: "flex-start", paddingVertical: spacing[2] }}
           >
             <AppText variant="bodySmall" tone="accent" style={{ fontWeight: "700" }}>
-              Search again for "{filters.query}"
+              Search again for &quot;{filters.query}&quot;
             </AppText>
           </Pressable>
         ) : null}
       </View>
+      )}
     </Screen>
   );
 }

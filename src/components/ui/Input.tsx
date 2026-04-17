@@ -97,6 +97,8 @@ export const Input = forwardRef<TextInput, InputProps>(
   },
 );
 
+Input.displayName = "Input";
+
 const styles = StyleSheet.create({
   container: {
     gap: 4, // Intional small gap for label proximity

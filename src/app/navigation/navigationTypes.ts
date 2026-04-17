@@ -57,8 +57,8 @@ export type RootStackParamList = {
   AuthStack: NavigatorScreenParams<AuthStackParamList>;
   OnboardingStack: NavigatorScreenParams<OnboardingStackParamList>;
   MainTabs: NavigatorScreenParams<MainTabParamList>;
-  StallDetail: { venueId: string };
-  DishDetail: { dishId: string };
+  StallDetail: { venueId?: string; id?: string };
+  DishDetail: { dishId?: string; id?: string };
   SearchHome: undefined;
   SearchResults: undefined;
   TasteFilter: undefined;

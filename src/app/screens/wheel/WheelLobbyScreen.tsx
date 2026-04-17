@@ -26,9 +26,6 @@ export function WheelLobbyScreen({ navigation }: Props) {
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  if (!party) return null;
-
-  const isHost = members.find((m) => m.id === myMemberId)?.isHost ?? false;
   const activeEntries = useMemo(() => {
     const deduped = new Map<string, WheelEntry>();
     entries.forEach((entry) => {
@@ -38,6 +35,10 @@ export function WheelLobbyScreen({ navigation }: Props) {
     });
     return Array.from(deduped.values());
   }, [entries]);
+
+  if (!party) return null;
+
+  const isHost = members.find((m) => m.id === myMemberId)?.isHost ?? false;
   const canSpin = activeEntries.length >= 2;
 
   async function copyCode() {

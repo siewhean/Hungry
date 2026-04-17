@@ -5,6 +5,7 @@ import { Eye, EyeOff, User, Mail, Lock } from "lucide-react-native";
 import { useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
+import { getMockSignUpFailure } from "@/features/auth/mockAuth";
 import { validateEmail, validatePassword, validateRequired } from "@/features/auth/validation";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -27,8 +28,18 @@ export function SignUpScreen({ navigation }: Props) {
   });
 
   const handleSignUp = handleSubmit((values) => {
-    showToast({ message: "Account created. Please verify your email.", tone: "success" });
-    navigation.navigate("EmailVerification", { email: values.email });
+    const failure = getMockSignUpFailure(values.email);
+    if (failure) {
+      showToast({ message: failure.message, tone: "error" });
+      return;
+    }
+
+    try {
+      showToast({ message: "Account created. Please verify your email.", tone: "success" });
+      navigation.navigate("EmailVerification", { email: values.email });
+    } catch {
+      showToast({ message: "Could not continue sign-up. Please try again.", tone: "error" });
+    }
   });
 
   const handleProviderContinue = (provider: "google" | "apple") => {
@@ -59,7 +70,7 @@ export function SignUpScreen({ navigation }: Props) {
               }}
             >
               <AppText variant="micro" tone="secondary" style={{ textAlign: "center" }}>
-                By creating an account, you agree to Hungry's{" "}
+                By creating an account, you agree to Hungry&apos;s{" "}
                 <AppText
                   variant="micro"
                   tone="accent"

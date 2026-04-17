@@ -674,9 +674,23 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         );
       }
 
-      return (
-        <View
+        return (
+          <Pressable
           key={item.id}
+            accessibilityRole="button"
+            accessibilityLabel={
+              item.dishes[0]?.id
+                ? `Open details for ${item.dishes[0]?.name ?? "dish"}`
+                : `Open stall details for ${item.venue.name}`
+            }
+            onPress={() => {
+              const primaryDishId = item.dishes[0]?.id;
+              if (primaryDishId) {
+                navigateToDish(primaryDishId);
+                return;
+              }
+              navigation.navigate("StallDetail", { venueId: item.venueId });
+            }}
           style={[
             shadows.card,
             {
@@ -696,7 +710,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           />
 
           {/* Interaction Overlay */}
-          <View
+            <View
             style={{
               position: "absolute",
               top: spacing[3],
@@ -706,7 +720,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             }}
           >
             <Pressable
-              onPress={() => toggleLike(item.id)}
+                onPress={(event) => {
+                  event.stopPropagation();
+                  toggleLike(item.id);
+                }}
               style={{
                 width: 36,
                 height: 36,
@@ -723,7 +740,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               />
             </Pressable>
             <Pressable
-              onPress={() => toggleSave(item.id)}
+                onPress={(event) => {
+                  event.stopPropagation();
+                  toggleSave(item.id);
+                }}
               style={{
                 width: 36,
                 height: 36,
@@ -783,9 +803,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Open ${item.authorName} profile`}
-                onPress={() =>
-                  openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
-                }
+                onPress={(event) => {
+                  event.stopPropagation();
+                  openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation);
+                }}
               >
                 <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
                   {item.authorName}
@@ -797,7 +818,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Open stall details for ${item.authorLocation}`}
-                onPress={() => navigation.navigate("StallDetail", { venueId: item.venueId })}
+                onPress={(event) => {
+                  event.stopPropagation();
+                  navigation.navigate("StallDetail", { venueId: item.venueId });
+                }}
               >
                 <AppText
                   variant="micro"
@@ -838,8 +862,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 </AppText>
               )}
             </View>
-          </View>
-        </View>
+            </View>
+          </Pressable>
       );
     },
     [

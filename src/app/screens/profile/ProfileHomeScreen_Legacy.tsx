@@ -19,6 +19,7 @@ import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
+import { useSessionStore } from "@/store/useSessionStore";
 import { isDishDetail } from "./profileGuards";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
@@ -28,6 +29,7 @@ type Props = NativeStackScreenProps<ProfileStackParamList, "ProfileHome">;
 export function ProfileHomeScreen_Legacy({ navigation }: Props) {
   const { palette, spacing, radii, shadows, colorScheme } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const repository = getDataRepository();
   const rootNavigation = getRootNavigation(
     navigation as NativeStackNavigationProp<ProfileStackParamList, "ProfileHome">,
@@ -45,6 +47,7 @@ export function ProfileHomeScreen_Legacy({ navigation }: Props) {
     .toUpperCase();
 
   const handleShareTaste = useCallback(async () => {
+    if (!isAuthenticated) return;
     const topTastes = Object.entries(profile.tasteVector)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 3)
@@ -60,12 +63,12 @@ export function ProfileHomeScreen_Legacy({ navigation }: Props) {
     } catch (error) {
       console.error("Error sharing taste fingerprint:", error);
     }
-  }, [profile.tasteVector]);
+  }, [profile.tasteVector, isAuthenticated]);
 
   return (
     <ProfileScreenShell
       title="Profile"
-      subtitle="Your established list-based profile."
+      subtitle={isAuthenticated ? "Your established list-based profile." : "Join Hungry to save dishes and find your taste."}
     >
       <View style={{ gap: spacing[6], paddingBottom: spacing[8] }}>
         
@@ -101,210 +104,226 @@ export function ProfileHomeScreen_Legacy({ navigation }: Props) {
                   fontWeight: "800",
                 }}
               >
-                {initials || "U"}
+                {isAuthenticated ? initials : "U"}
               </AppText>
             </View>
-            <Pressable
-              onPress={() => navigation.navigate("EditProfile")}
-              style={{
-                position: "absolute",
-                bottom: -2,
-                right: -2,
-                backgroundColor: palette.orange,
-                width: 28,
-                height: 28,
-                borderRadius: radii.pill,
-                alignItems: "center",
-                justifyContent: "center",
-                borderWidth: 2,
-                borderColor: palette.surface,
-              }}
-            >
-              <Edit2 color={palette.white} size={14} />
-            </Pressable>
+            {isAuthenticated && (
+              <Pressable
+                onPress={() => navigation.navigate("EditProfile")}
+                style={{
+                  position: "absolute",
+                  bottom: -2,
+                  right: -2,
+                  backgroundColor: palette.orange,
+                  width: 28,
+                  height: 28,
+                  borderRadius: radii.pill,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 2,
+                  borderColor: palette.surface,
+                }}
+              >
+                <Edit2 color={palette.white} size={14} />
+              </Pressable>
+            )}
           </View>
 
           <View style={{ flex: 1, gap: spacing[1] }}>
             <AppText
               style={{ fontSize: 24, fontWeight: "900", color: palette.text }}
             >
-              {profile.displayName}
+              {isAuthenticated ? profile.displayName : "Guest User"}
             </AppText>
             <AppText variant="bodySmall" tone="secondary">
-              {`${profile.stats.dishesReviewed} reviews · ${profile.stats.stallsVisited} stalls visited`}
+              {isAuthenticated 
+                ? `${profile.stats.dishesReviewed} reviews · ${profile.stats.stallsVisited} stalls visited`
+                : "Sign in to see your culinary journey"}
             </AppText>
           </View>
         </View>
 
-        <View style={{ flexDirection: "row", gap: spacing[3] }}>
-          <StatBlock
-            label="Reviews"
-            value={profile.stats.dishesReviewed}
-            icon={<Star size={14} color={palette.orange} />}
-          />
-          <StatBlock
-            label="Stalls"
-            value={profile.stats.stallsVisited}
-            icon={<Utensils size={14} color={palette.orange} />}
-          />
-          <StatBlock
-            label="Saved"
-            value={profile.stats.favouritesCount}
-            icon={<Heart size={14} color={palette.orange} />}
-          />
-        </View>
+        {!isAuthenticated ? (
+          <Card style={{ gap: spacing[4], padding: spacing[5], backgroundColor: palette.bgSoft, borderColor: palette.orange }}>
+            <View style={{ gap: spacing[2] }}>
+              <AppText variant="h2">Unlock your taste profile</AppText>
+              <AppText tone="secondary">Save your favorite dishes, review hawker stalls, and build your personalized taste fingerprint.</AppText>
+            </View>
+            <Button label="Sign In / Create Account" onPress={() => navigation.navigate("AuthStack" as any, { screen: "Login" })} />
+          </Card>
+        ) : (
+          <>
+            <View style={{ flexDirection: "row", gap: spacing[3] }}>
+              <StatBlock
+                label="Reviews"
+                value={profile.stats.dishesReviewed}
+                icon={<Star size={14} color={palette.orange} />}
+              />
+              <StatBlock
+                label="Stalls"
+                value={profile.stats.stallsVisited}
+                icon={<Utensils size={14} color={palette.orange} />}
+              />
+              <StatBlock
+                label="Saved"
+                value={profile.stats.favouritesCount}
+                icon={<Heart size={14} color={palette.orange} />}
+              />
+            </View>
 
-        {/* Favourites Preview (Legacy Carousel) */}
-        <View style={{ gap: spacing[4] }}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingHorizontal: spacing[1],
-            }}
-          >
-            <AppText variant="h2">Recently Saved</AppText>
-            <Pressable onPress={() => navigation.navigate("Favourites")}>
-              <AppText
-                variant="micro"
-                tone="accent"
-                style={{ fontWeight: "700" }}
+            {/* Favourites Preview (Legacy Carousel) */}
+            <View style={{ gap: spacing[4] }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingHorizontal: spacing[1],
+                }}
               >
-                SEE ALL
-              </AppText>
-            </Pressable>
-          </View>
+                <AppText variant="h2">Recently Saved</AppText>
+                <Pressable onPress={() => navigation.navigate("Favourites")}>
+                  <AppText
+                    variant="micro"
+                    tone="accent"
+                    style={{ fontWeight: "700" }}
+                  >
+                    SEE ALL
+                  </AppText>
+                </Pressable>
+              </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: spacing[3] }}
-          >
-            {favourites.map((dish) => (
-              <Pressable
-                key={dish.id}
-                onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ gap: spacing[3] }}
+              >
+                {favourites.map((dish) => (
+                  <Pressable
+                    key={dish.id}
+                    onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
+                    style={[
+                      shadows.card,
+                      {
+                        width: 140,
+                        backgroundColor: palette.surface,
+                        borderRadius: radii.lg,
+                        overflow: "hidden",
+                        borderWidth: 1,
+                        borderColor: palette.border,
+                      },
+                    ]}
+                  >
+                    <Image
+                      source={{ uri: dish.imageUrl }}
+                      style={{ width: "100%", height: 100 }}
+                      contentFit="cover"
+                    />
+                    <View style={{ padding: spacing[2], gap: 2 }}>
+                      <AppText variant="bodySmallBold" numberOfLines={1}>
+                        {dish.name}
+                      </AppText>
+                      <AppText variant="micro" tone="secondary">
+                        {dish.venueName}
+                      </AppText>
+                    </View>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+
+            {/* Taste Fingerprint Section */}
+            <View style={{ gap: spacing[4] }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  paddingHorizontal: spacing[1],
+                }}
+              >
+                <AppText variant="h2">Taste Fingerprint</AppText>
+                <Pressable
+                  onPress={handleShareTaste}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+                >
+                  <Share2 size={16} color={palette.orange} />
+                  <AppText
+                    variant="micro"
+                    tone="accent"
+                    style={{ fontWeight: "700" }}
+                  >
+                    SHARE
+                  </AppText>
+                </Pressable>
+              </View>
+
+              <View
                 style={[
                   shadows.card,
                   {
-                    width: 140,
                     backgroundColor: palette.surface,
-                    borderRadius: radii.lg,
-                    overflow: "hidden",
+                    borderRadius: radii.xl,
+                    padding: spacing[5],
                     borderWidth: 1,
                     borderColor: palette.border,
+                    gap: spacing[4],
                   },
                 ]}
               >
-                <Image
-                  source={{ uri: dish.imageUrl }}
-                  style={{ width: "100%", height: 100 }}
-                  contentFit="cover"
-                />
-                <View style={{ padding: spacing[2], gap: 2 }}>
-                  <AppText variant="bodySmallBold" numberOfLines={1}>
-                    {dish.name}
-                  </AppText>
-                  <AppText variant="micro" tone="secondary">
-                    {dish.venueName}
-                  </AppText>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: spacing[3],
+                  }}
+                >
+                  <View
+                    style={{
+                      backgroundColor: palette.orangeLight,
+                      width: 40,
+                      height: 40,
+                      borderRadius: radii.pill,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <BarChart3 size={20} color={palette.orange} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <AppText style={{ fontWeight: "700", fontSize: 16 }}>
+                      Detailed Analysis
+                    </AppText>
+                    <AppText variant="micro" tone="secondary">
+                      Updated based on your last 5 reviews
+                    </AppText>
+                  </View>
                 </View>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
 
-        {/* Taste Fingerprint Section */}
-        <View style={{ gap: spacing[4] }}>
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingHorizontal: spacing[1],
-            }}
-          >
-            <AppText variant="h2">Taste Fingerprint</AppText>
-            <Pressable
-              onPress={handleShareTaste}
-              style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-            >
-              <Share2 size={16} color={palette.orange} />
-              <AppText
-                variant="micro"
-                tone="accent"
-                style={{ fontWeight: "700" }}
-              >
-                SHARE
-              </AppText>
-            </Pressable>
-          </View>
-
-          <View
-            style={[
-              shadows.card,
-              {
-                backgroundColor: palette.surface,
-                borderRadius: radii.xl,
-                padding: spacing[5],
-                borderWidth: 1,
-                borderColor: palette.border,
-                gap: spacing[4],
-              },
-            ]}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: spacing[3],
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: palette.orangeLight,
-                  width: 40,
-                  height: 40,
-                  borderRadius: radii.pill,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <BarChart3 size={20} color={palette.orange} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <AppText style={{ fontWeight: "700", fontSize: 16 }}>
-                  Detailed Analysis
-                </AppText>
-                <AppText variant="micro" tone="secondary">
-                  Updated based on your last 5 reviews
-                </AppText>
+                <View style={{ gap: spacing[2] }}>
+                  <TasteBar
+                    label="Spicy"
+                    value={profile.tasteVector.spicy}
+                    max={10}
+                    color={palette.orange}
+                  />
+                  <TasteBar
+                    label="Salty"
+                    value={profile.tasteVector.salty}
+                    max={10}
+                    color={palette.info}
+                  />
+                  <TasteBar
+                    label="Sweet"
+                    value={profile.tasteVector.sweet}
+                    max={10}
+                    color={palette.statusFast}
+                  />
+                </View>
               </View>
             </View>
-
-            <View style={{ gap: spacing[2] }}>
-              <TasteBar
-                label="Spicy"
-                value={profile.tasteVector.spicy}
-                max={10}
-                color={palette.orange}
-              />
-              <TasteBar
-                label="Salty"
-                value={profile.tasteVector.salty}
-                max={10}
-                color={palette.info}
-              />
-              <TasteBar
-                label="Sweet"
-                value={profile.tasteVector.sweet}
-                max={10}
-                color={palette.statusFast}
-              />
-            </View>
-          </View>
-        </View>
+          </>
+        )}
 
         {/* Quick Access List */}
         <View style={{ gap: spacing[3] }}>

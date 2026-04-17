@@ -59,7 +59,9 @@
           "project": "react-native",
           "organization": "hungry-3z"
         }
-      ]
+      ],
+      "expo-audio",
+      "expo-video"
     ],
     "extra": {
       "eas": {

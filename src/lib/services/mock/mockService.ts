@@ -9,6 +9,7 @@
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import { similarityScore } from "@/lib/ai/similarityScore";
 import {
   blogPosts,
   buildings,
@@ -18,7 +19,7 @@ import {
   userProfile,
   venues,
 } from "./data";
-import { mockRepository, similarityScore } from "./repositories";
+import { mockRepository } from "./repositories";
 import { assertFixtureBundleValid } from "./validation";
 import type {
   Bite,
@@ -67,7 +68,7 @@ function resolve<T>(value: T): Promise<T> {
 const cosine = similarityScore;
 
 function matchReason(userVec: TasteVector, dishVec: TasteVector): string {
-  const keys = Object.keys(userVec) as Array<keyof TasteVector>;
+  const keys = Object.keys(userVec) as (keyof TasteVector)[];
   const topKey = keys.reduce((best, k) => (dishVec[k] > dishVec[best] ? k : best));
   const labels: Record<keyof TasteVector, string> = {
     sweet: "Sweet",
@@ -564,7 +565,7 @@ export const hungryService: HungryService = {
       const result: TasteVector = { ...NEUTRAL_TASTE_VECTOR };
       for (const answer of answers) {
         const impact = answer.tasteImpact;
-        for (const key of Object.keys(impact) as Array<keyof TasteVector>) {
+        for (const key of Object.keys(impact) as (keyof TasteVector)[]) {
           result[key] = Math.min(10, Math.max(0, result[key] + (impact[key] ?? 0)));
         }
       }

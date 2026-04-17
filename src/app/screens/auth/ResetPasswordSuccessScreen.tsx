@@ -20,7 +20,7 @@ export function ResetPasswordSuccessScreen({ navigation }: Props) {
       subtitle="We sent password reset instructions to your email."
       footer={
         <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "center" }}>
-          <AppText tone="secondary">Didn't receive an email? </AppText>
+          <AppText tone="secondary">Didn&apos;t receive an email? </AppText>
           <Pressable onPress={() => showToast({ message: "Reset link resent.", tone: "success" })}>
             <AppText tone="accent" style={{ fontWeight: "700", textDecorationLine: "underline" }}>
               Resend link

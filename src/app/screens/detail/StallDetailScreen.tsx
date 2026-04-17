@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, Heart, MapPin, Share2, Star, Truck, ChevronLeft } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -28,6 +28,7 @@ import {
   Button,
   Card,
   Input,
+  Skeleton,
 } from "@/components/ui";
 import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
@@ -36,6 +37,32 @@ import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { isDishDetail } from "../profile/profileGuards";
+
+function StallDetailSkeleton() {
+  const { spacing, radii, palette } = useHungryTheme();
+  const { width: screenWidth } = useWindowDimensions();
+
+  return (
+    <View style={{ flex: 1, backgroundColor: palette.bg }}>
+      <Skeleton width="100%" height={screenWidth * 0.75} borderRadius={0} />
+      <View style={{ padding: spacing[4], gap: spacing[6], marginTop: 20 }}>
+        <View style={{ gap: spacing[1] }}>
+          <Skeleton width={150} height={20} />
+          <Skeleton width="70%" height={34} />
+          <Skeleton width="40%" height={24} />
+        </View>
+        <Skeleton width="100%" height={80} borderRadius={radii.lg} />
+        <View style={{ gap: spacing[4] }}>
+          <Skeleton width={200} height={28} />
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
+            <Skeleton width="45%" height={160} borderRadius={radii.lg} />
+            <Skeleton width="45%" height={160} borderRadius={radii.lg} />
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 type Props = NativeStackScreenProps<RootStackParamList, "StallDetail">;
 
@@ -48,9 +75,16 @@ type ReviewReply = {
 };
 
 export function StallDetailScreen({ navigation, route }: Props) {
-  const venueId = route.params?.venueId ?? "";
+  const venueId = route.params?.venueId ?? route.params?.id ?? "";
   const repository = getDataRepository();
+  const [isLoading, setIsLoading] = useState(true);
   const venue = repository.getVenueById(venueId);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, [venueId]);
+
   const building = venue ? getBuildingById(venue.buildingId) : undefined;
   const dishes = venue ? repository.listDishesByVenue(venue.id) : [];
   const leadDish = dishes[0];
@@ -66,11 +100,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
     Record<string, ReviewReply[]>
   >({});
 
+  if (isLoading) {
+    return <StallDetailSkeleton />;
+  }
+
   if (!venue) {
     return (
       <FeedErrorBoundary
         title="Stall details unavailable"
-        body="An error occurred while fetching the information for this stall. Please try again."
+        body="Couldn't load this dish — try again."
       >
         <SafeAreaView
           style={{ flex: 1, backgroundColor: palette.bg }}
@@ -131,7 +169,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   return (
     <FeedErrorBoundary
       title="Stall details unavailable"
-      body="An error occurred while fetching the information for this stall. Please try again."
+      body="Couldn't load this dish — try again."
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
@@ -199,7 +237,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 position: "relative",
               }}
             >
-              <Animated.View 
+              <Animated.View
                 style={StyleSheet.absoluteFill}
                 // @ts-ignore
                 sharedTransitionTag={`venue-image-${venue.id}`}

@@ -13,12 +13,13 @@ import {
   Home,
   Compass as CompassIcon,
   Utensils,
+  Zap,
 } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Chip, Input, Screen } from "@/components/ui";
+import { AppText, Chip, Input, Screen, Card } from "@/components/ui";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
@@ -29,7 +30,7 @@ import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
-import type { DishDetail, SearchCategory, VenueSummary } from "@/types/domain";
+import type { DietaryFlag, DishDetail, SearchCategory, VenueSummary } from "@/types/domain";
 
 const INTENT_CHIPS = [
   { id: "spicy", label: "Spicy", category: "local favourites" },
@@ -38,6 +39,57 @@ const INTENT_CHIPS = [
   { id: "cheap", label: "Value", category: "noodles" },
 ] as const;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
+
+function SituationTile({
+  label,
+  sublabel,
+  icon,
+  color,
+  onPress,
+}: {
+  label: string;
+  sublabel: string;
+  icon: ReactNode;
+  color: string;
+  onPress: () => void;
+}) {
+  const { radii, spacing, shadows } = useHungryTheme();
+  return (
+    <Pressable onPress={onPress} style={{ width: 140 }}>
+      <Card
+        style={{
+          backgroundColor: color,
+          height: 120,
+          padding: spacing[3],
+          justifyContent: "space-between",
+          borderWidth: 0,
+          ...shadows.floating,
+        }}
+      >
+        <View
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: radii.pill,
+            backgroundColor: "rgba(255,255,255,0.2)",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {icon}
+        </View>
+        <View>
+          <AppText variant="bodyBold" tone="inverse" numberOfLines={1}>
+            {label}
+          </AppText>
+          <AppText variant="micro" tone="inverse" style={{ opacity: 0.8 }} numberOfLines={1}>
+            {sublabel}
+          </AppText>
+        </View>
+      </Card>
+    </Pressable>
+  );
+}
 
 export function DiscoverHomeScreen() {
   const navigation = useNavigation<RootNavigation>();
@@ -77,12 +129,16 @@ export function DiscoverHomeScreen() {
   }, [palette, colorScheme]);
 
   const sortedChips = useMemo(() => {
+    const baseChips = [
+      { id: "dietary", label: "Dietary Needs", category: "dietary" as any },
+      ...INTENT_CHIPS,
+    ];
     const hour = new Date().getHours();
     const prioritizeLateNight = hour >= 22 || hour < 4;
     if (prioritizeLateNight) {
-      return [...INTENT_CHIPS].sort((a, b) => (a.id === "late" ? -1 : b.id === "late" ? 1 : 0));
+      return baseChips.sort((a, b) => (a.id === "late" ? -1 : b.id === "late" ? 1 : 0));
     }
-    return INTENT_CHIPS;
+    return baseChips;
   }, []);
 
   // ─── Idle Pulse Animation (Psychological Nudge) ───────────────────────────
@@ -138,11 +194,11 @@ export function DiscoverHomeScreen() {
       const topDish = venue ? repository.getDishById(venue.topDishId) : undefined;
       return venue ? { building, venue, topDish } : null;
     })
-    .filter(Boolean) as Array<{
+    .filter(Boolean) as {
     building: any;
     venue: VenueSummary;
     topDish: DishDetail | undefined;
-  }>;
+  }[];
 
   const handleDecideForMe = () => {
     const radiusMeters = 500;
@@ -307,15 +363,24 @@ export function DiscoverHomeScreen() {
           contentContainerStyle={{ gap: spacing[2] }}
         >
           {sortedChips.map((chip) => {
-            const isActive = selectedCategories.includes(chip.category as SearchCategory);
+            const isActive = chip.id === "dietary" ? true : selectedCategories.includes(chip.category as SearchCategory);
             return (
               <Chip
                 key={chip.id}
                 label={chip.label}
                 selected={isActive}
-                onPress={() => toggleCategory(chip.category as SearchCategory)}
+                onPress={() => {
+                  if (chip.id === "dietary") {
+                    // Navigate to profile/dietary settings or just keep active
+                    navigation.navigate("UserProfile", { authorName: profile.displayName });
+                  } else {
+                    toggleCategory(chip.category as SearchCategory);
+                  }
+                }}
                 leftIcon={
-                  chip.id === "spicy" ? (
+                  chip.id === "dietary" ? (
+                    <Utensils size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+                  ) : chip.id === "spicy" ? (
                     <Flame size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
                   ) : chip.id === "halal" ? (
                     <Home size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
@@ -335,6 +400,38 @@ export function DiscoverHomeScreen() {
             );
           })}
         </ScrollView>
+
+        {/* Situation-based Presets (F-015) */}
+        <View style={{ gap: spacing[3] }}>
+          <AppText variant="h2">Find something for...</AppText>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: spacing[3] }}
+          >
+            <SituationTile
+              icon={<Zap size={20} color={palette.white} />}
+              label="< 15 min"
+              sublabel="Quick bites"
+              color={palette.statusFast}
+              onPress={() => navigation.navigate("SearchResults")}
+            />
+            <SituationTile
+              icon={<Utensils size={20} color={palette.white} />}
+              label="Budget < S$8"
+              sublabel="Value meals"
+              color={palette.orange}
+              onPress={() => navigation.navigate("SearchResults")}
+            />
+            <SituationTile
+              icon={<CompassIcon size={20} color={palette.white} />}
+              label="Late Night"
+              sublabel="Midnight munchies"
+              color={palette.navy}
+              onPress={() => navigation.navigate("SearchResults")}
+            />
+          </ScrollView>
+        </View>
 
         {/* Proactive Selection Grid */}
         <View style={{ gap: spacing[3] }}>

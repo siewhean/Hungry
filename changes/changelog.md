@@ -281,3 +281,26 @@
   - Added explicit feedback recency decay support and propagated timestamps from profile interactions in `src/store/useProfileStore.ts`.
   - Added regression coverage in `src/lib/ai/tasteEngine.pipeline.test.ts` for negative-signal behavior, recency decay weighting, and diversity-cap enforcement.
   - Revalidated with `npm run typecheck` and `npm run test -- --runInBand` (30 tests passing).
+
+## 2026-04-17
+
+- Prompt: "solve this and I am unable to access dishdetail"
+- Actions:
+  - Fixed JSX transform failure in `src/app/screens/search/SearchResultsScreen.tsx` by closing the `isLoading ? ... : ...` conditional render block with the missing `)}` before `</Screen>`.
+  - Fixed Dish Detail quick-review payload typing in `src/app/screens/detail/DishDetailScreen_Premium.tsx` by supplying required `venueId` and passing `dishId`/`dishName` in `showQuickReview(...)`.
+  - Fixed missing React hook import in `src/app/screens/detail/StallDetailScreen.tsx` by adding `useEffect` to the React import list.
+  - Corrected `PressableProps` import semantics in `src/components/ui/Button.tsx` to ensure it is imported as a type-only specifier.
+  - Revalidated with `npm run typecheck`; passed.
+
+- Prompt: "I am not able to click on the cards in the review section"
+- Actions:
+  - Updated review-mode card rendering in `src/app/screens/home/HomeFeedScreen.tsx` so each review card container is a `Pressable` that routes to `DishDetail` using the first dish ID, with fallback to `StallDetail` when no dish exists.
+  - Added `event.stopPropagation()` to nested review-card controls (like/save/profile/stall links) to prevent parent card press from overriding inner actions.
+  - Revalidated with `npm run typecheck`; passed.
+
+- Prompt: "WARN [expo-av]: Expo AV has been deprecated... Use expo-audio and expo-video"
+- Actions:
+  - Installed `expo-audio` and `expo-video`, then removed `expo-av` from dependencies and lockfile.
+  - Migrated music preview playback in `src/components/review/MusicPicker.tsx` from `Audio.Sound` to `createAudioPlayer` from `expo-audio` with playback-complete state reset handling.
+  - Migrated video playback in `src/components/social/ZoomableMedia.tsx` from `Video` (`expo-av`) to `VideoView` + `useVideoPlayer` (`expo-video`), preserving tap play/pause, mute toggle, and long-press 2x playback.
+  - Verified no remaining `expo-av` usage via workspace search and revalidated with `npm run typecheck`; passed.

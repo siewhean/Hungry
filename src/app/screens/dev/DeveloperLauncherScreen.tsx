@@ -137,6 +137,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
 
   const hideReviewSuccess = useUIStore((state) => state.hideReviewSuccess);
   const showToast = useUIStore((state) => state.showToast);
+  const setOffline = useUIStore((state) => state.setOffline);
 
   // Feature flags
   const [flags, setFlags] = useState<FeatureFlags>(DEFAULT_FLAGS);
@@ -312,6 +313,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                   key={preset.id}
                   onPress={() => {
                     setNetwork(preset.id);
+                    setOffline(preset.id === "offline");
                     if (preset.id === "offline") {
                       navigation.navigate("Offline");
                     }

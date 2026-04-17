@@ -8,6 +8,7 @@ import {
   venues,
 } from "./data";
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
+import { similarityScore } from "@/lib/ai/similarityScore";
 import type { DecideForMeOptions } from "@/lib/services/types";
 import type {
   BlogPost,
@@ -48,19 +49,6 @@ function distanceScore(distanceMeters: number) {
 
 function ratingScore(rating: number) {
   return rating / 5;
-}
-
-export function similarityScore(left: TasteVector, right: TasteVector) {
-  const keys = Object.keys(left) as Array<keyof TasteVector>;
-  const leftMagnitude = Math.sqrt(keys.reduce((sum, key) => sum + left[key] ** 2, 0));
-  const rightMagnitude = Math.sqrt(keys.reduce((sum, key) => sum + right[key] ** 2, 0));
-  const dot = keys.reduce((sum, key) => sum + left[key] * right[key], 0);
-
-  if (!leftMagnitude || !rightMagnitude) {
-    return 0;
-  }
-
-  return dot / (leftMagnitude * rightMagnitude);
 }
 
 export const mockRepository = {

@@ -127,7 +127,7 @@ export function CraveScreen() {
       >
         <Sparkles color={palette.orange} size={48} style={{ marginBottom: spacing[4] }} />
         <AppText variant="h2" style={{ textAlign: "center" }}>
-          You've seen it all!
+          You&apos;ve seen it all!
         </AppText>
         <AppText
           tone="secondary"

@@ -10,11 +10,11 @@
 
 Three environment files are committed to the repo as templates (secrets are never committed — CI injects them):
 
-| File | Purpose | Secret values |
-|------|---------|--------------|
-| `.env.development` | Local dev + simulator | Placeholder / dev-project keys |
-| `.env.staging` | Expo EAS `preview` channel, internal testers | Staging Supabase project, staging PostHog key |
-| `.env.production` | Expo EAS `production` channel, App Store / Play Store | Production keys |
+| File               | Purpose                                               | Secret values                                 |
+| ------------------ | ----------------------------------------------------- | --------------------------------------------- |
+| `.env.development` | Local dev + simulator                                 | Placeholder / dev-project keys                |
+| `.env.staging`     | Expo EAS `preview` channel, internal testers          | Staging Supabase project, staging PostHog key |
+| `.env.production`  | Expo EAS `production` channel, App Store / Play Store | Production keys                               |
 
 ### 1.2 Full Variable Catalogue
 
@@ -47,10 +47,10 @@ EXPO_TOKEN=${EXPO_TOKEN}                        # CI secret — EAS account toke
 
 ### 1.3 Routing Rules
 
-| Prefix | Bundled in JS? | Accessible in RN? | Safe to log? |
-|--------|---------------|-------------------|-------------|
-| `EXPO_PUBLIC_*` | Yes | Yes (`process.env.EXPO_PUBLIC_*`) | Treat as public |
-| No prefix | No | No (server/CI only) | Never |
+| Prefix          | Bundled in JS? | Accessible in RN?                 | Safe to log?    |
+| --------------- | -------------- | --------------------------------- | --------------- |
+| `EXPO_PUBLIC_*` | Yes            | Yes (`process.env.EXPO_PUBLIC_*`) | Treat as public |
+| No prefix       | No             | No (server/CI only)               | Never           |
 
 **Rule:** Any key the user can extract from the APK/IPA decompile is public. Supabase anon key and PostHog project key are intentionally public — their security model (Row-Level Security; project-scoped ingestion) tolerates exposure. Service role keys and Sentry auth tokens are CI-only and never enter the JS bundle.
 
@@ -66,6 +66,7 @@ EXPO_TOKEN=${EXPO_TOKEN}                        # CI secret — EAS account toke
 ```
 
 The committed `.env.development`, `.env.staging`, `.env.production` files contain **only placeholder values** (no real keys). Real keys live in:
+
 - **Local:** developer's shell `export` or `direnv` `.envrc` (gitignored)
 - **CI:** GitHub Actions repository secrets
 - **EAS cloud builds:** EAS Secrets (set via `eas secret:create`)
@@ -78,21 +79,21 @@ The committed `.env.development`, `.env.staging`, `.env.production` files contai
 
 `/.github/workflows/ci.yml` is already wired with two jobs:
 
-| Job | Trigger | Gates |
-|-----|---------|-------|
-| `quality-gates` | Every push + PR to `main` | `npm run typecheck` → `npm run test` → `npx expo-doctor` |
-| `eas-build-gate` | Push to `main` only, when `EXPO_TOKEN` is set | `eas build --platform all --profile preview --no-wait` |
+| Job              | Trigger                                       | Gates                                                    |
+| ---------------- | --------------------------------------------- | -------------------------------------------------------- |
+| `quality-gates`  | Every push + PR to `main`                     | `npm run typecheck` → `npm run test` → `npx expo-doctor` |
+| `eas-build-gate` | Push to `main` only, when `EXPO_TOKEN` is set | `eas build --platform all --profile preview --no-wait`   |
 
 ### 2.2 Required GitHub Secrets
 
 Configure in **Settings → Secrets and variables → Actions**:
 
-| Secret | Value |
-|--------|-------|
-| `EXPO_TOKEN` | Output of `npx eas-cli token:create --scope build` |
-| `SENTRY_AUTH_TOKEN` | From Sentry → Settings → Auth Tokens |
-| `SENTRY_ORG` | Sentry organisation slug |
-| `SENTRY_PROJECT` | Sentry project slug |
+| Secret              | Value                                              |
+| ------------------- | -------------------------------------------------- |
+| `EXPO_TOKEN`        | Output of `npx eas-cli token:create --scope build` |
+| `SENTRY_AUTH_TOKEN` | From Sentry → Settings → Auth Tokens               |
+| `SENTRY_ORG`        | Sentry organisation slug                           |
+| `SENTRY_PROJECT`    | Sentry project slug                                |
 
 ### 2.3 EAS Build Profiles
 
@@ -157,13 +158,13 @@ This uploads source maps automatically on every EAS production build, enabling s
 
 ### 3.3 Error Boundary Strategy
 
-| Surface | Boundary | Fallback |
-|---------|----------|---------|
-| Root tree | `Sentry.ErrorBoundary` (root) | Full-screen error with "Restart" |
-| Home feed | `FeedErrorBoundary` | Empty feed with retry |
-| Reads feed | `FeedErrorBoundary` | Same |
-| Map surface | Inline try/catch in `MapSurface` | Static coordinate overlay |
-| Individual screens | Not wrapped — root boundary catches | Root fallback |
+| Surface            | Boundary                            | Fallback                         |
+| ------------------ | ----------------------------------- | -------------------------------- |
+| Root tree          | `Sentry.ErrorBoundary` (root)       | Full-screen error with "Restart" |
+| Home feed          | `FeedErrorBoundary`                 | Empty feed with retry            |
+| Reads feed         | `FeedErrorBoundary`                 | Same                             |
+| Map surface        | Inline try/catch in `MapSurface`    | Static coordinate overlay        |
+| Individual screens | Not wrapped — root boundary catches | Root fallback                    |
 
 ### 3.4 Performance Monitoring
 
@@ -172,7 +173,7 @@ Enable in `Sentry.init`:
 ```typescript
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  tracesSampleRate: __DEV__ ? 0 : 0.1,  // 10% of production sessions
+  tracesSampleRate: __DEV__ ? 0 : 0.1, // 10% of production sessions
   environment: __DEV__ ? "development" : "production",
   beforeSend: (event) => {
     // Strip PII before sending (no email/displayName in events)
@@ -200,18 +201,18 @@ Sentry.init({
 
 From the P1-03 taxonomy, these are the minimum events required before any marketing spend:
 
-| Priority | Event | Why it matters |
-|----------|-------|---------------|
-| P0 | `app_launched` | DAU/MAU computation |
-| P0 | `onboarding_completed` | Activation funnel gate |
-| P0 | `taste_quiz_completed` | Personalisation readiness |
-| P0 | `sign_up_completed` | Top-of-funnel |
-| P0 | `dish_viewed` | Core engagement signal |
-| P1 | `decide_for_me_triggered` | Feature adoption |
-| P1 | `decide_for_me_result_shown` | Recommendation quality |
-| P1 | `delivery_link_tapped` | Revenue signal |
-| P1 | `review_submitted` | Content generation signal |
-| P1 | `dish_favourited` | Retention signal |
+| Priority | Event                        | Why it matters            |
+| -------- | ---------------------------- | ------------------------- |
+| P0       | `app_launched`               | DAU/MAU computation       |
+| P0       | `onboarding_completed`       | Activation funnel gate    |
+| P0       | `taste_quiz_completed`       | Personalisation readiness |
+| P0       | `sign_up_completed`          | Top-of-funnel             |
+| P0       | `dish_viewed`                | Core engagement signal    |
+| P1       | `decide_for_me_triggered`    | Feature adoption          |
+| P1       | `decide_for_me_result_shown` | Recommendation quality    |
+| P1       | `delivery_link_tapped`       | Revenue signal            |
+| P1       | `review_submitted`           | Content generation signal |
+| P1       | `dish_favourited`            | Retention signal          |
 
 ### 4.3 Identity Linking
 
@@ -222,6 +223,7 @@ Sign-out            →  posthog.reset()   // generates new anonymous ID
 ```
 
 User properties to set on identify:
+
 - `taste_vector_*` (6 axes) — enables cohort analysis by flavour preference
 - `dietary_flags` — dietary cohort segmentation
 - `area` — geographic cohort (hawker centre zone)
@@ -249,39 +251,39 @@ Funnel 4 — Revenue intent:
 
 ### 5.1 Legal & Compliance
 
-| Item | Owner | Status |
-|------|-------|--------|
-| Privacy Policy (covers: data collected, third parties, PDPA/GDPR) | Legal | Draft required |
-| Terms of Service (use, prohibited conduct, content ownership) | Legal | Draft required |
-| Cookie/tracking disclosure (PostHog, Sentry) | Legal | Mention in Privacy Policy |
-| Singapore PDPA compliance (data residency, breach notification) | Legal | Confirm Supabase ap-southeast-1 region |
+| Item                                                                   | Owner   | Status                                   |
+| ---------------------------------------------------------------------- | ------- | ---------------------------------------- |
+| Privacy Policy (covers: data collected, third parties, PDPA/GDPR)      | Legal   | Draft required                           |
+| Terms of Service (use, prohibited conduct, content ownership)          | Legal   | Draft required                           |
+| Cookie/tracking disclosure (PostHog, Sentry)                           | Legal   | Mention in Privacy Policy                |
+| Singapore PDPA compliance (data residency, breach notification)        | Legal   | Confirm Supabase ap-southeast-1 region   |
 | Dietary information disclaimer ("Not a substitute for medical advice") | Product | Add to dietary preferences screen footer |
 
 ### 5.2 App Store (iOS)
 
-| Item | Notes |
-|------|-------|
-| App name | `Hungry — Hawker Food Finder` (≤30 chars) |
-| Subtitle | `Discover hawker dishes near you` (≤30 chars) |
-| Keywords | `hawker, food, Singapore, dish, restaurant, foodie, halal, vegetarian` |
-| Age rating | 4+ (no objectionable content) |
-| Screenshots | Required: 6.7" (iPhone 16 Pro Max), 6.5" (iPhone 14 Plus), 5.5" (iPhone 8 Plus); iPad optional |
-| App preview video | 15–30s, same device sizes |
-| Privacy labels | Location (precise, coarse), Identifiers (user ID), Usage Data (PostHog events) |
-| App Tracking Transparency | Required if using IDFA — PostHog's `posthog-react-native` does NOT use IDFA by default; no ATT prompt needed |
-| TestFlight internal → external | Beta test with ≥20 users before submission |
-| Review notes | Explain mock data mode if reviewer cannot log in with real credentials |
+| Item                           | Notes                                                                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| App name                       | `Hungry — Hawker Food Finder` (≤30 chars)                                                                    |
+| Subtitle                       | `Discover hawker dishes near you` (≤30 chars)                                                                |
+| Keywords                       | `hawker, food, Singapore, dish, restaurant, foodie, halal, vegetarian`                                       |
+| Age rating                     | 4+ (no objectionable content)                                                                                |
+| Screenshots                    | Required: 6.7" (iPhone 16 Pro Max), 6.5" (iPhone 14 Plus), 5.5" (iPhone 8 Plus); iPad optional               |
+| App preview video              | 15–30s, same device sizes                                                                                    |
+| Privacy labels                 | Location (precise, coarse), Identifiers (user ID), Usage Data (PostHog events)                               |
+| App Tracking Transparency      | Required if using IDFA — PostHog's `posthog-react-native` does NOT use IDFA by default; no ATT prompt needed |
+| TestFlight internal → external | Beta test with ≥20 users before submission                                                                   |
+| Review notes                   | Explain mock data mode if reviewer cannot log in with real credentials                                       |
 
 ### 5.3 Play Store (Android)
 
-| Item | Notes |
-|------|-------|
-| Target SDK | API 34 (Android 14) |
-| Permissions | `ACCESS_FINE_LOCATION`, `CAMERA` (review photos), `READ_MEDIA_IMAGES` |
+| Item                | Notes                                                                                          |
+| ------------------- | ---------------------------------------------------------------------------------------------- |
+| Target SDK          | API 34 (Android 14)                                                                            |
+| Permissions         | `ACCESS_FINE_LOCATION`, `CAMERA` (review photos), `READ_MEDIA_IMAGES`                          |
 | Data safety section | Declare: location (collected, shared with Firebase/Supabase), reviews (user generated, stored) |
-| Content rating | ESRB: Everyone (food/dining app) |
-| Short description | ≤80 chars: `Find hawker dishes you'll love, near you` |
-| Full description | ≤4000 chars |
+| Content rating      | ESRB: Everyone (food/dining app)                                                               |
+| Short description   | ≤80 chars: `Find hawker dishes you'll love, near you`                                          |
+| Full description    | ≤4000 chars                                                                                    |
 
 ### 5.4 Pre-Launch Smoke Tests
 

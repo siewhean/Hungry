@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { View, Pressable, ScrollView } from "react-native";
-import { Audio } from "expo-av";
+import { createAudioPlayer } from "expo-audio";
+import type { AudioPlayer, AudioStatus } from "expo-audio";
 import { Music, Play, Pause, Check, Search } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
@@ -14,17 +15,19 @@ interface MusicPickerProps {
 
 export function MusicPicker({ selectedMusicId, onSelectMusic }: MusicPickerProps) {
   const { palette, radii, spacing } = useHungryTheme();
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [player, setPlayer] = useState<AudioPlayer | null>(null);
+  const [statusSubscription, setStatusSubscription] = useState<
+    { remove: () => void } | null
+  >(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
-  }, [sound]);
+    return () => {
+      statusSubscription?.remove();
+      player?.remove();
+    };
+  }, [player, statusSubscription]);
 
   const filteredMusic = useMemo(() => {
     if (!query.trim()) return TRENDING_MUSIC;
@@ -36,26 +39,36 @@ export function MusicPicker({ selectedMusicId, onSelectMusic }: MusicPickerProps
     );
   }, [query]);
 
-  const handleTogglePlay = async (track: MusicTrack) => {
-    if (playingId === track.id) {
-      await sound?.pauseAsync();
-      setPlayingId(null);
+  const handleTogglePlay = (track: MusicTrack) => {
+    if (playingId === track.id && player) {
+      if (player.playing) {
+        player.pause();
+        setPlayingId(null);
+      } else {
+        player.play();
+        setPlayingId(track.id);
+      }
       return;
     }
 
-    if (sound) {
-      await sound.unloadAsync();
-    }
+    statusSubscription?.remove();
+    player?.remove();
 
-    const { sound: newSound } = await Audio.Sound.createAsync({ uri: track.url }, { shouldPlay: true });
-    setSound(newSound);
+    const nextPlayer = createAudioPlayer({ uri: track.url });
+    nextPlayer.play();
+
+    const nextSubscription = nextPlayer.addListener(
+      "playbackStatusUpdate",
+      (status: AudioStatus) => {
+        if (status.isLoaded && status.didJustFinish) {
+          setPlayingId((current) => (current === track.id ? null : current));
+        }
+      },
+    );
+
+    setPlayer(nextPlayer);
+    setStatusSubscription(nextSubscription);
     setPlayingId(track.id);
-
-    newSound.setOnPlaybackStatusUpdate((status: any) => {
-      if (status.isLoaded && status.didJustFinish) {
-        setPlayingId(null);
-      }
-    });
   };
 
   return (
@@ -139,7 +152,7 @@ export function MusicPicker({ selectedMusicId, onSelectMusic }: MusicPickerProps
 
         {filteredMusic.length === 0 && (
           <View style={{ paddingVertical: spacing[8], alignItems: "center" }}>
-            <AppText tone="secondary">No music found for "{query}"</AppText>
+            <AppText tone="secondary">No music found for &quot;{query}&quot;</AppText>
           </View>
         )}
       </ScrollView>

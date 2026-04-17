@@ -70,7 +70,8 @@ export function ForgotPasswordScreen({ navigation }: Props) {
               Forgot password
             </AppText>
             <AppText tone="secondary" style={{ textAlign: "center" }}>
-              Enter your email address and we'll send you a link to reset your password and get you
+              Enter your email address and we&apos;ll send you a link to reset your password and get
+              you
               back to your table.
             </AppText>
           </View>

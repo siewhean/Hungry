@@ -5,6 +5,7 @@ import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react-native";
 import { useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
+import { getMockLoginFailure } from "@/features/auth/mockAuth";
 import { validateEmail, validatePassword } from "@/features/auth/validation";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -34,14 +35,27 @@ export function LoginScreen({ navigation }: Props) {
   });
 
   const handleLogin = handleSubmit((values) => {
-    if (!values.email || !values.password) return;
-    completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
-    showToast({ message: "Welcome back.", tone: "success" });
+    const failure = getMockLoginFailure(values.email, values.password);
+    if (failure) {
+      showToast({ message: failure.message, tone: "error" });
+      return;
+    }
+
+    try {
+      completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
+      showToast({ message: "Welcome back.", tone: "success" });
+    } catch {
+      showToast({ message: "Sign in failed. Please try again.", tone: "error" });
+    }
   });
 
   const handleProviderLogin = () => {
-    completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
-    showToast({ message: "Signed in successfully.", tone: "success" });
+    try {
+      completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
+      showToast({ message: "Signed in successfully.", tone: "success" });
+    } catch {
+      showToast({ message: "Sign in failed. Please try again.", tone: "error" });
+    }
   };
 
   return (

@@ -6,7 +6,6 @@ import {
   createNavigationContainerRef,
   type Theme,
 } from "@react-navigation/native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import {
   createNativeStackNavigator,
   type NativeStackScreenProps,
@@ -53,10 +52,11 @@ import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
+import type { RootStackParamList } from "./navigationTypes";
+import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
+import { createRootLinking } from "./linking";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
-const Tabs = createBottomTabNavigator<MainTabParamList>();
 const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 const AUTH_REQUIRED_ROUTES = new Set([
@@ -134,84 +134,6 @@ function GlobalScrollBackButton() {
   );
 }
 
-function TabNavigator() {
-  const { palette, spacing } = useHungryTheme();
-  const insets = useSafeAreaInsets();
-  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
-
-  return (
-    <Tabs.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarShowLabel: false,
-        tabBarActiveTintColor: palette.orange,
-        tabBarInactiveTintColor: palette.textMuted,
-        tabBarStyle: {
-          backgroundColor: palette.bg,
-          borderTopWidth: 0,
-          borderTopColor: "transparent",
-          elevation: 0,
-          shadowOpacity: 0,
-          shadowColor: "transparent",
-          height: 60 + Math.max(insets.bottom, spacing[2]),
-          paddingBottom: Math.max(insets.bottom, spacing[2]),
-          paddingTop: spacing[2],
-        },
-        tabBarIcon: ({ color, size }) => {
-          const Icon =
-            route.name === "Home"
-              ? House
-              : route.name === "Discover"
-                ? Compass
-                : route.name === "Review"
-                  ? BookOpenText
-                  : route.name === "Rate"
-                    ? NotebookPen
-                    : User;
-
-          return <Icon color={color} size={Math.max(size + 7, 30)} />;
-        },
-      })}
-    >
-      <Tabs.Screen name="Home">{() => <HomeFeedScreen mode="social" />}</Tabs.Screen>
-      <Tabs.Screen component={DiscoverHomeScreen} name="Discover" />
-      <Tabs.Screen name="Review">{() => <HomeFeedScreen mode="review" />}</Tabs.Screen>
-      <Tabs.Screen
-        name="Rate"
-        listeners={{
-          tabPress: (event) => {
-            if (!isAuthenticated) {
-              event.preventDefault();
-              setReturnRoute("ReviewStack");
-              if (navigationRef.isReady()) {
-                navigationRef.navigate("AuthStack", { screen: "Login" });
-              }
-            }
-          },
-        }}
-      >
-        {(props) => <ReviewScreen {...(props as any)} />}
-      </Tabs.Screen>
-      <Tabs.Screen
-        component={ProfileStack}
-        listeners={{
-          tabPress: (event) => {
-            if (!isAuthenticated) {
-              event.preventDefault();
-              setReturnRoute("Profile");
-              if (navigationRef.isReady()) {
-                navigationRef.navigate("AuthStack", { screen: "Login" });
-              }
-            }
-          },
-        }}
-        name="Profile"
-      />
-    </Tabs.Navigator>
-  );
-}
-
 export function RootNavigator({ theme }: { theme: Theme }) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
@@ -219,24 +141,10 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
+  const isOffline = useUIStore((state) => state.isOffline);
 
   const prefix = Linking.createURL("/");
-  const linking = useMemo(
-    () => ({
-      prefixes: [prefix, "hungry://", "https://hungry.sg"],
-      config: {
-        screens: {
-          WheelStack: {
-            path: "join/:code",
-            screens: {
-              WheelHome: "",
-            },
-          },
-        },
-      },
-    }),
-    [prefix],
-  );
+  const linking = useMemo(() => createRootLinking(prefix), [prefix]);
 
   const navigateHome = () => {
     setReturnRoute(undefined);
@@ -368,6 +276,27 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
   }, [isAuthenticated, setReturnRoute]);
 
+  useEffect(() => {
+    if (!navigationRef.isReady()) {
+      return;
+    }
+
+    const rootState = navigationRef.getRootState();
+    const currentTopRoute = rootState.routes[rootState.index]?.name;
+
+    if (isOffline && currentTopRoute !== "Offline") {
+      navigationRef.navigate("Offline");
+      return;
+    }
+
+    if (!isOffline && currentTopRoute === "Offline") {
+      navigationRef.resetRoot({
+        index: 0,
+        routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+      });
+    }
+  }, [isOffline]);
+
   return (
     <>
       <NavigationContainer
@@ -388,7 +317,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={SplashScreen} name="Splash" />
           <RootStack.Screen component={AuthStack} name="AuthStack" />
           <RootStack.Screen component={OnboardingStack} name="OnboardingStack" />
-          <RootStack.Screen component={TabNavigator} name="MainTabs" />
+          <RootStack.Screen component={SwipeableTabNavigator} name="MainTabs" />
           <RootStack.Screen
             component={DishSearchScreen}
             name="SearchHome"

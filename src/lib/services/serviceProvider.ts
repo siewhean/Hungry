@@ -1,9 +1,7 @@
 import type { TasteVector } from "@/types/domain";
 import { hungryService as mockHungryService } from "@/lib/services/mock/mockService";
-import {
-  mockRepository as mockRepositorySource,
-  similarityScore as mockSimilarityScore,
-} from "@/lib/services/mock/repositories";
+import { mockRepository as mockRepositorySource } from "@/lib/services/mock/repositories";
+import { similarityScore } from "@/lib/ai/similarityScore";
 import type { DataRepository, HungryService } from "@/lib/services/types";
 
 const mockRepository: DataRepository = mockRepositorySource;
@@ -20,7 +18,7 @@ function createMockProvider(): ServiceProvider {
     mode: "mock",
     service: mockHungryService,
     repository: mockRepository,
-    similarityScore: mockSimilarityScore,
+    similarityScore,
   };
 }
 

@@ -46,6 +46,8 @@ export const BottomSheet = forwardRef<BottomSheetModal, BottomSheetProps>(
   },
 );
 
+BottomSheet.displayName = "BottomSheet";
+
 const styles = StyleSheet.create({
   content: {
     flex: 1,

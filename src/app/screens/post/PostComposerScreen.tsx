@@ -11,15 +11,29 @@ import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Post">;
 
-export function PostComposerScreen({ navigation }: Props) {
+export function PostComposerScreen({ navigation, route }: Props) {
   const { spacing } = useHungryTheme();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
   const repository = getDataRepository();
   const [caption, setCaption] = useState("");
-  const dish = useMemo(() => repository.listPopularNearby()[0], [repository]);
-  const venue = useMemo(() => repository.getVenueById(dish.venueId), [dish.venueId, repository]);
+  const fallbackDish = useMemo(() => repository.listPopularNearby()[0], [repository]);
+  const dish = useMemo(() => {
+    if (route.params?.dishId) {
+      return repository.getDishById(route.params.dishId) ?? fallbackDish;
+    }
+    if (route.params?.venueId) {
+      return repository.listDishesByVenue(route.params.venueId)[0] ?? fallbackDish;
+    }
+    return fallbackDish;
+  }, [fallbackDish, repository, route.params?.dishId, route.params?.venueId]);
+  const venue = useMemo(() => {
+    if (route.params?.venueId) {
+      return repository.getVenueById(route.params.venueId) ?? repository.getVenueById(dish.venueId);
+    }
+    return repository.getVenueById(dish.venueId);
+  }, [dish.venueId, repository, route.params?.venueId]);
 
   const handlePublish = () => {
     if (!isAuthenticated) {

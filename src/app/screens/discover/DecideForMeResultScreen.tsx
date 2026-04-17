@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, Linking, View, StyleSheet, Pressable, useWindowDimensions } from "react-native";
+import {
+  Animated,
+  Easing,
+  Linking,
+  View,
+  StyleSheet,
+  Pressable,
+  useWindowDimensions,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
@@ -238,7 +246,10 @@ export function DecideForMeResultScreen() {
       const upcomingRadius = nextRadius(searchRadius);
       if (upcomingRadius) {
         setSearchRadius(upcomingRadius);
-        showToast({ message: `Expanded radius to ${(upcomingRadius / 1000).toFixed(1)} km.`, tone: "info" });
+        showToast({
+          message: `Expanded radius to ${(upcomingRadius / 1000).toFixed(1)} km.`,
+          tone: "info",
+        });
       } else {
         showToast({ message: "No other matching dishes right now.", tone: "info" });
       }
@@ -274,7 +285,7 @@ export function DecideForMeResultScreen() {
 
   const venue = repository.getVenueById(dish.venueId);
   const building = findBuildingById(dish.buildingId);
-  const tasteDims: Array<{ key: keyof TasteVector; label: string }> = [
+  const tasteDims: { key: keyof TasteVector; label: string }[] = [
     { key: "sweet", label: "Sweet" },
     { key: "spicy", label: "Spicy" },
     { key: "sour", label: "Sour" },
@@ -303,18 +314,26 @@ export function DecideForMeResultScreen() {
         <Pressable onPress={() => navigation.goBack()} style={styles.navBtn}>
           <ChevronLeft color={palette.text} size={24} />
         </Pressable>
-        <AppText variant="h3" style={{ flex: 1, textAlign: "center", marginRight: 40 }}>Recommended</AppText>
+        <AppText variant="h3" style={{ flex: 1, textAlign: "center", marginRight: 40 }}>
+          Recommended
+        </AppText>
       </View>
 
       <Animated.ScrollView
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          useNativeDriver: true,
+        })}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
       >
         {/* Parallax Hero */}
         <Animated.View style={[styles.heroContainer, { height: HERO_HEIGHT }, heroStyle]}>
-          <Image source={{ uri: dish.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+          <Image
+            source={{ uri: dish.imageUrl }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+          />
           <LinearGradient
             colors={["transparent", "rgba(0,0,0,0.2)", palette.bg]}
             style={StyleSheet.absoluteFill}
@@ -323,7 +342,6 @@ export function DecideForMeResultScreen() {
 
         {/* Content */}
         <View style={{ paddingHorizontal: spacing[4], gap: spacing[6], marginTop: -40 }}>
-          
           <AnimatedMatchBadge percent={match} />
 
           <View style={{ gap: spacing[2] }}>
@@ -341,9 +359,23 @@ export function DecideForMeResultScreen() {
           </View>
 
           {/* Why this dish? */}
-          <Card style={{ backgroundColor: palette.bgSoft, borderLeftColor: palette.orange, borderLeftWidth: 4, padding: spacing[4] }}>
-            <AppText variant="micro" style={{ color: palette.orange, fontWeight: "800", marginBottom: 4 }}>WHY THIS DISH?</AppText>
-            <AppText variant="body" style={{ lineHeight: 22 }}>{explanation}</AppText>
+          <Card
+            style={{
+              backgroundColor: palette.bgSoft,
+              borderLeftColor: palette.orange,
+              borderLeftWidth: 4,
+              padding: spacing[4],
+            }}
+          >
+            <AppText
+              variant="micro"
+              style={{ color: palette.orange, fontWeight: "800", marginBottom: 4 }}
+            >
+              WHY THIS DISH?
+            </AppText>
+            <AppText variant="body" style={{ lineHeight: 22 }}>
+              {explanation}
+            </AppText>
           </Card>
 
           {/* Taste Breakdown */}
@@ -365,15 +397,24 @@ export function DecideForMeResultScreen() {
           <View style={{ gap: spacing[2] }}>
             <AppText variant="h3">Description</AppText>
             <AppText variant="body" tone="secondary" style={{ lineHeight: 24 }}>
-              {dish.description || "A flavorful local specialty recommended specifically for your current taste profile and proximity."}
+              {dish.description ||
+                "A flavorful local specialty recommended specifically for your current taste profile and proximity."}
             </AppText>
           </View>
 
           <View style={{ gap: spacing[3] }}>
-            <Button label="View Stall Details" variant="secondary" onPress={() => navigation.navigate("StallDetail", { venueId: dish.venueId })} />
-            <Button label="Try Another Pick" variant="ghost" leftIcon={<Shuffle size={18} color={palette.text} />} onPress={handleTryAnother} />
+            <Button
+              label="View Stall Details"
+              variant="secondary"
+              onPress={() => navigation.navigate("StallDetail", { venueId: dish.venueId })}
+            />
+            <Button
+              label="Try Another Pick"
+              variant="ghost"
+              leftIcon={<Shuffle size={18} color={palette.text} />}
+              onPress={handleTryAnother}
+            />
           </View>
-
         </View>
       </Animated.ScrollView>
 

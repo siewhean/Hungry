@@ -413,9 +413,9 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
     const allOnFloor = tenantPolygons.map((stall) => {
       const venueId = stall.venueId;
       const venue = venueId ? venueById.get(venueId) : undefined;
-      const dish = venue ? mockRepository.listDishesByVenue(venue.id)[0] : undefined;
+      const dish = venue ? repository.listDishesByVenue(venue.id)[0] : undefined;
       const isOpen = venue ? getVenueStatus(venue.isOpen, venue.operatingHours) === "open" : false;
-      const isDessert = dish ? isDessertDish(dish.name) : false;
+      const isDessert = dish ? isDessertDish(dish.id, repository.getDishById) : false;
       return { isOpen, isDessert };
     });
 

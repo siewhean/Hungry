@@ -5,7 +5,7 @@
  * Shows 5–8 bite cards from nearby/trending stalls.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FlatList, Pressable, View, useWindowDimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -13,7 +13,8 @@ import { ChevronRight } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText } from "@/components/ui";
-import { createDefaultBites, type HomeBite } from "@/features/home/bites";
+import { getHomeBitesFeed } from "@/features/home/bites";
+import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
 import { BiteCard } from "./BiteCard";
 
@@ -21,7 +22,7 @@ import { BiteCard } from "./BiteCard";
 
 interface BitesCarouselProps {
   /** Optional override for the bites data (e.g. from API) */
-  bites?: HomeBite[];
+  bites?: Bite[];
   showHeader?: boolean;
   horizontalInset?: number;
 }
@@ -36,15 +37,24 @@ export function BitesCarousel({
   const { palette, spacing } = useHungryTheme();
   const navigation = useNavigation<RootNavigation>();
   const { width: screenWidth } = useWindowDimensions();
+  const [fallbackBites, setFallbackBites] = useState<Bite[]>([]);
   const [likedBites, setLikedBites] = useState<Record<string, boolean>>({});
   const [commentedBites, setCommentedBites] = useState<Record<string, boolean>>({});
-  const fallbackBites = useMemo(() => createDefaultBites(), []);
   const biteData = bites?.length ? bites : fallbackBites;
   const cardWidth = Math.max(300, screenWidth - spacing[4] * 2);
   const snapInterval = cardWidth + spacing[3];
 
+  useEffect(() => {
+    if (bites?.length) {
+      return;
+    }
+    void getHomeBitesFeed().then((resolvedBites) => {
+      setFallbackBites(resolvedBites);
+    });
+  }, [bites]);
+
   const renderBite = useCallback(
-    ({ item }: { item: HomeBite }) => (
+    ({ item }: { item: Bite }) => (
       <BiteCard
         bite={item}
         width={cardWidth}

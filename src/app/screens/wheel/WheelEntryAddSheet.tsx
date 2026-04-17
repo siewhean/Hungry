@@ -39,7 +39,7 @@ interface Props {
 function calculateMatchScore(dish: DishDetail | undefined, userTaste: any): number {
   if (!dish || !userTaste) return 0;
   let score = 0;
-  const keys = Object.keys(userTaste) as Array<keyof typeof userTaste>;
+  const keys = Object.keys(userTaste) as (keyof typeof userTaste)[];
   keys.forEach((key) => {
     const dishVal = (dish.tasteVector as any)[key] || 0;
     const userVal = userTaste[key] || 0;
@@ -439,7 +439,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 ListEmptyComponent={
                   query.trim() ? (
                     <AppText tone="secondary" style={{ textAlign: "center", padding: spacing[8] }}>
-                      No stalls found for "{query}"
+                      No stalls found for &quot;{query}&quot;
                     </AppText>
                   ) : (
                     <View
@@ -486,7 +486,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                   style={{ textAlign: "center", paddingHorizontal: spacing[3] }}
                   tone="secondary"
                 >
-                  Can't decide? Let us pick a random nearby stall for your group.
+                  Can&apos;t decide? Let us pick a random nearby stall for your group.
                 </AppText>
               </View>
               <Pressable

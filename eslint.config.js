@@ -5,6 +5,21 @@ const expoConfig = require("eslint-config-expo/flat");
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ["dist/*"],
+    ignores: [
+      "dist/*",
+      ".venv/**",
+      "venv/**",
+      "__pycache__/**",
+      ".claude/**",
+      "output/**",
+      "changes/**",
+      ".expo/**",
+      ".next/**",
+      "coverage/**",
+      "store-layout-editor/**",
+      "figma-plugin/**",
+      "ios/**",
+      "android/**",
+    ],
   }
 ]);

@@ -23,14 +23,14 @@
 
 ## 1. Stack Decision
 
-| Layer | Choice | Reason |
-|---|---|---|
-| Primary database | **PostgreSQL 16 + PostGIS + pgvector** | ACID on orders/payments, geospatial discovery, FTS on menus, taste-vector similarity — one store |
-| Cache / presence | **Redis** | Chat fan-out, hot menu cache, online presence, session tokens |
-| Media storage | **Vercel Blob / Cloudflare R2** | Schema stores CDN URLs only — no raw file bytes in Postgres |
-| Runtime | **Node.js 24 on Vercel Fluid Compute** | Zero-config deploy, concurrent request reuse, 300s timeout default |
-| API layer | **tRPC** or **REST** over Next.js API routes | Type-safe client/server contract; swap if a mobile-native API is needed |
-| Auth | **Clerk** or **Supabase Auth** | Handles OAuth, OTP, magic link; vendor profile upgrade flow needs custom hook |
+| Layer            | Choice                                       | Reason                                                                                           |
+| ---------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Primary database | **PostgreSQL 16 + PostGIS + pgvector**       | ACID on orders/payments, geospatial discovery, FTS on menus, taste-vector similarity — one store |
+| Cache / presence | **Redis**                                    | Chat fan-out, hot menu cache, online presence, session tokens                                    |
+| Media storage    | **Vercel Blob / Cloudflare R2**              | Schema stores CDN URLs only — no raw file bytes in Postgres                                      |
+| Runtime          | **Node.js 24 on Vercel Fluid Compute**       | Zero-config deploy, concurrent request reuse, 300s timeout default                               |
+| API layer        | **tRPC** or **REST** over Next.js API routes | Type-safe client/server contract; swap if a mobile-native API is needed                          |
+| Auth             | **Clerk** or **Supabase Auth**               | Handles OAuth, OTP, magic link; vendor profile upgrade flow needs custom hook                    |
 
 **When to reconsider:** peel chat off to a dedicated store (e.g. Upstash Kafka + Redis) when messaging exceeds ~5k msgs/s. Peel geo-search into a dedicated search service when venue count exceeds ~50k.
 
@@ -659,21 +659,21 @@ CREATE INDEX idx_blog_posts_area  ON blog_posts (area, published_at DESC);
 
 ## 3. Indexing Strategy
 
-| Query | Table | Index type |
-|---|---|---|
-| "Find stalls near me" | `buildings`, `venues` | **GIST** on `location` (PostGIS geography) |
-| "Is this venue open?" | `venues` | partial btree `(building_id, is_open) WHERE deleted_at IS NULL` |
-| "Menu for a stall (available dishes)" | `dishes` | partial btree `(venue_id, is_available) WHERE deleted_at IS NULL` |
-| "Must-order badges" | `dishes` | partial `(venue_id) WHERE must_order = TRUE` |
-| "Social feed (recency)" | `posts` | btree `(created_at DESC)` per partition |
-| "Stall-specific feed" | `posts` | btree `(venue_id, created_at DESC)` |
-| "My order history" | `orders` | btree `(user_id, created_at DESC)` |
-| "Kitchen queue" | `orders` | partial `(venue_id, status) WHERE status IN (...)` |
-| "Chat scrollback" | `chat_messages` | btree `(thread_id, created_at DESC)` per partition |
-| "Taste recommendations" | `dish_taste_vectors` | **HNSW** cosine via pgvector |
-| "Full-text search" | `dishes`, `venues` | **GIN** on `search_tsv`; trigram fallback via `pg_trgm` |
-| "Who follows me" | `follows` | reverse btree `(followee_id, follower_id)` |
-| "Past reviews of a dish" | `reviews` | btree `(dish_id, created_at DESC) WHERE deleted_at IS NULL` |
+| Query                                 | Table                 | Index type                                                        |
+| ------------------------------------- | --------------------- | ----------------------------------------------------------------- |
+| "Find stalls near me"                 | `buildings`, `venues` | **GIST** on `location` (PostGIS geography)                        |
+| "Is this venue open?"                 | `venues`              | partial btree `(building_id, is_open) WHERE deleted_at IS NULL`   |
+| "Menu for a stall (available dishes)" | `dishes`              | partial btree `(venue_id, is_available) WHERE deleted_at IS NULL` |
+| "Must-order badges"                   | `dishes`              | partial `(venue_id) WHERE must_order = TRUE`                      |
+| "Social feed (recency)"               | `posts`               | btree `(created_at DESC)` per partition                           |
+| "Stall-specific feed"                 | `posts`               | btree `(venue_id, created_at DESC)`                               |
+| "My order history"                    | `orders`              | btree `(user_id, created_at DESC)`                                |
+| "Kitchen queue"                       | `orders`              | partial `(venue_id, status) WHERE status IN (...)`                |
+| "Chat scrollback"                     | `chat_messages`       | btree `(thread_id, created_at DESC)` per partition                |
+| "Taste recommendations"               | `dish_taste_vectors`  | **HNSW** cosine via pgvector                                      |
+| "Full-text search"                    | `dishes`, `venues`    | **GIN** on `search_tsv`; trigram fallback via `pg_trgm`           |
+| "Who follows me"                      | `follows`             | reverse btree `(followee_id, follower_id)`                        |
+| "Past reviews of a dish"              | `reviews`             | btree `(dish_id, created_at DESC) WHERE deleted_at IS NULL`       |
 
 ---
 
@@ -681,19 +681,19 @@ CREATE INDEX idx_blog_posts_area  ON blog_posts (area, published_at DESC);
 
 ### Foreign Key Cascade Policy
 
-| Table | Column | ON DELETE |
-|---|---|---|
-| `orders` | `user_id`, `venue_id` | **RESTRICT** — history must survive catalog edits |
-| `order_items` | `dish_id` | **RESTRICT** — receipt integrity |
-| `venues` | `owner_user_id` | **SET NULL** — venue survives account deletion |
-| `reviews` | `author_user_id` | **SET NULL** — preserve anonymized reviews |
-| `posts` | `author_user_id` | **CASCADE** — posts are owned content |
-| `chat_threads` children | `thread_id` | **CASCADE** — messages are owned by thread |
-| `modifier_groups` children | `group_id` | **CASCADE** — options are owned by group |
+| Table                      | Column                | ON DELETE                                         |
+| -------------------------- | --------------------- | ------------------------------------------------- |
+| `orders`                   | `user_id`, `venue_id` | **RESTRICT** — history must survive catalog edits |
+| `order_items`              | `dish_id`             | **RESTRICT** — receipt integrity                  |
+| `venues`                   | `owner_user_id`       | **SET NULL** — venue survives account deletion    |
+| `reviews`                  | `author_user_id`      | **SET NULL** — preserve anonymized reviews        |
+| `posts`                    | `author_user_id`      | **CASCADE** — posts are owned content             |
+| `chat_threads` children    | `thread_id`           | **CASCADE** — messages are owned by thread        |
+| `modifier_groups` children | `group_id`            | **CASCADE** — options are owned by group          |
 
 ### Soft Delete Pattern
 
-Tables with `deleted_at`:  `users`, `venues`, `dishes`, `posts`, `reviews`
+Tables with `deleted_at`: `users`, `venues`, `dishes`, `posts`, `reviews`
 
 All read queries must filter `WHERE deleted_at IS NULL`. All partial indexes above are already scoped this way. Never hard-delete these rows once they have FK dependents.
 
@@ -778,13 +778,13 @@ guest orders → prompts sign-up (soft gate)
 
 ### Roles
 
-| Role | Can do |
-|---|---|
-| `diner` | Browse, review, order, chat |
+| Role           | Can do                                                                 |
+| -------------- | ---------------------------------------------------------------------- |
+| `diner`        | Browse, review, order, chat                                            |
 | `vendor_owner` | All of diner + manage venue, menu, accept orders, view stall analytics |
-| `vendor_staff` | Same as vendor_owner minus payout settings |
-| `moderator` | Flag/remove posts and reviews |
-| `admin` | Full access |
+| `vendor_staff` | Same as vendor_owner minus payout settings                             |
+| `moderator`    | Flag/remove posts and reviews                                          |
+| `admin`        | Full access                                                            |
 
 One user can hold multiple roles simultaneously (e.g. a vendor who is also a diner).
 
@@ -843,10 +843,10 @@ Client → WebSocket (or SSE) → Redis pub/sub → Postgres write
 
 ### Supported Payment Providers (initial)
 
-| Provider | Method |
-|---|---|
-| Stripe | Card, PayNow QR |
-| GrabPay | GrabPay wallet |
+| Provider | Method          |
+| -------- | --------------- |
+| Stripe   | Card, PayNow QR |
+| GrabPay  | GrabPay wallet  |
 
 ---
 
@@ -878,14 +878,14 @@ db/
 
 Seed from existing V1 mock fixtures in `src/lib/services/mock/data.ts`:
 
-| V1 fixture | V2 target tables |
-|---|---|
-| 3 buildings (Maxwell, Lau Pa Sat, Amoy) | `buildings` |
-| 5 venues (Tian Tian, Old School Laksa, etc.) | `venues`, `building_floors` |
-| 5 dishes (Chicken Rice, Laksa, etc.) | `dishes`, `dish_images` |
-| 2 blog posts | `blog_sources`, `blog_posts` |
-| 1 user profile (Wei Ming) | `users`, `user_taste_vectors` |
-| `guestProfile` | `users` (is_guest=TRUE) |
+| V1 fixture                                   | V2 target tables              |
+| -------------------------------------------- | ----------------------------- |
+| 3 buildings (Maxwell, Lau Pa Sat, Amoy)      | `buildings`                   |
+| 5 venues (Tian Tian, Old School Laksa, etc.) | `venues`, `building_floors`   |
+| 5 dishes (Chicken Rice, Laksa, etc.)         | `dishes`, `dish_images`       |
+| 2 blog posts                                 | `blog_sources`, `blog_posts`  |
+| 1 user profile (Wei Ming)                    | `users`, `user_taste_vectors` |
+| `guestProfile`                               | `users` (is_guest=TRUE)       |
 
 ### Rating trigger
 
@@ -909,24 +909,24 @@ CREATE TRIGGER trg_update_dish_rating
 
 ## 11. V1 → V2 Domain Mapping
 
-| V1 TypeScript interface | V2 tables |
-|---|---|
-| `BuildingSummary` | `buildings` |
-| `BuildingType` | `building_type` enum |
-| `VenueSummary` | `venues`, `building_floors` |
-| `HygieneGrade` | `hygiene_grade` enum |
-| `DeliveryLink` | `venue_delivery_links` |
-| `DeliveryPlatform` | `delivery_platform` enum |
-| `DishSummary` / `DishDetail` | `dishes`, `dish_images`, `dish_dietary_flags` |
-| `TasteVector` | `user_taste_vectors`, `dish_taste_vectors` (vector(6)) |
-| `TasteKey` | Index 0–5 of the vector column |
-| `DietaryFlag` | `dietary_flags`, `dish_dietary_flags`, `user_dietary_preferences` |
-| `Review` | `reviews`, `review_photos`, `review_tags` |
-| `StallPost` | `posts`, `post_media`, `post_dish_refs` |
-| `BlogPost` | `blog_posts`, `blog_sources` |
-| `UserProfile` | `users`, `user_taste_vectors`, `user_dietary_preferences`, `user_favourite_dishes`, `user_favourite_venues` |
-| `AppSession` | `guest_sessions`, `user_roles` |
-| `SearchFilters` | Query params → `dishes.search_tsv`, `venue_category_map`, `dish_dietary_flags` |
-| `SearchCategory` | `venue_categories` |
+| V1 TypeScript interface      | V2 tables                                                                                                   |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `BuildingSummary`            | `buildings`                                                                                                 |
+| `BuildingType`               | `building_type` enum                                                                                        |
+| `VenueSummary`               | `venues`, `building_floors`                                                                                 |
+| `HygieneGrade`               | `hygiene_grade` enum                                                                                        |
+| `DeliveryLink`               | `venue_delivery_links`                                                                                      |
+| `DeliveryPlatform`           | `delivery_platform` enum                                                                                    |
+| `DishSummary` / `DishDetail` | `dishes`, `dish_images`, `dish_dietary_flags`                                                               |
+| `TasteVector`                | `user_taste_vectors`, `dish_taste_vectors` (vector(6))                                                      |
+| `TasteKey`                   | Index 0–5 of the vector column                                                                              |
+| `DietaryFlag`                | `dietary_flags`, `dish_dietary_flags`, `user_dietary_preferences`                                           |
+| `Review`                     | `reviews`, `review_photos`, `review_tags`                                                                   |
+| `StallPost`                  | `posts`, `post_media`, `post_dish_refs`                                                                     |
+| `BlogPost`                   | `blog_posts`, `blog_sources`                                                                                |
+| `UserProfile`                | `users`, `user_taste_vectors`, `user_dietary_preferences`, `user_favourite_dishes`, `user_favourite_venues` |
+| `AppSession`                 | `guest_sessions`, `user_roles`                                                                              |
+| `SearchFilters`              | Query params → `dishes.search_tsv`, `venue_category_map`, `dish_dietary_flags`                              |
+| `SearchCategory`             | `venue_categories`                                                                                          |
 
 > When the V2 API ships: update `src/lib/services/mock/repositories.ts` to call real endpoints and remove mock data. The repository function signatures (`getDishById`, etc.) should stay identical — screens call repositories, not raw fetch.

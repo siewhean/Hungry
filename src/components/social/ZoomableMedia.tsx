@@ -1,7 +1,7 @@
-import React, { useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, View, Pressable } from "react-native";
 import { Image } from "expo-image";
-import { Video, ResizeMode } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
 import { Pause, Volume2, VolumeX } from "lucide-react-native";
 import {
   Gesture,
@@ -25,11 +25,28 @@ interface ZoomableMediaProps {
 }
 
 export function ZoomableMedia({ uri, type, onPress, style }: ZoomableMediaProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { palette } = useHungryTheme();
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const [isFastForwarding, setIsFastForwarding] = useState(false);
-  const videoRef = useRef<Video>(null);
+  const player = useVideoPlayer(uri, (videoPlayer) => {
+    videoPlayer.loop = true;
+    videoPlayer.muted = true;
+    videoPlayer.play();
+  });
+
+  useEffect(() => {
+    player.muted = isMuted;
+  }, [isMuted, player]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      player.play();
+      return;
+    }
+
+    player.pause();
+  }, [isPlaying, player]);
 
   // Zoom logic
   const scale = useSharedValue(1);
@@ -58,43 +75,34 @@ export function ZoomableMedia({ uri, type, onPress, style }: ZoomableMediaProps)
     ],
   }));
 
-  const handleTogglePlay = async () => {
-    if (!videoRef.current) return;
-    const status = await videoRef.current.getStatusAsync();
-    if (status.isLoaded) {
-      if (status.isPlaying) {
-        await videoRef.current.pauseAsync();
-        setIsPlaying(false);
-      } else {
-        await videoRef.current.playAsync();
-        setIsPlaying(true);
-      }
-    }
+  const handleTogglePlay = () => {
+    setIsPlaying((current) => !current);
   };
 
-  const handleToggleMute = async () => {
-    setIsMuted(!isMuted);
+  const handleToggleMute = () => {
+    setIsMuted((current) => !current);
+  };
+
+  const startFastForward = () => {
+    player.playbackRate = 2.0;
+    setIsFastForwarding(true);
+  };
+
+  const stopFastForward = () => {
+    player.playbackRate = 1.0;
+    setIsFastForwarding(false);
   };
 
   const videoLongPress = Gesture.LongPress()
     .minDuration(300)
     .onStart(() => {
-      if (videoRef.current) {
-        runOnJS(setIsFastForwarding)(true);
-        videoRef.current.setRateAsync(2.0, true);
-      }
+      runOnJS(startFastForward)();
     })
     .onEnd(() => {
-      if (videoRef.current) {
-        runOnJS(setIsFastForwarding)(false);
-        videoRef.current.setRateAsync(1.0, true);
-      }
+      runOnJS(stopFastForward)();
     })
     .onFinalize(() => {
-      if (videoRef.current) {
-        runOnJS(setIsFastForwarding)(false);
-        videoRef.current.setRateAsync(1.0, true);
-      }
+      runOnJS(stopFastForward)();
     });
 
   const videoTap = Gesture.Tap().onEnd((_event, success) => {
@@ -110,14 +118,11 @@ export function ZoomableMedia({ uri, type, onPress, style }: ZoomableMediaProps)
       <View style={[styles.container, style]}>
         <GestureDetector gesture={videoGestures}>
           <View style={StyleSheet.absoluteFill}>
-            <Video
-              ref={videoRef}
-              source={{ uri }}
+            <VideoView
+              player={player}
               style={StyleSheet.absoluteFill}
-              resizeMode={ResizeMode.COVER}
-              isLooping
-              shouldPlay={isPlaying}
-              isMuted={isMuted}
+              contentFit="cover"
+              nativeControls={false}
             />
           </View>
         </GestureDetector>

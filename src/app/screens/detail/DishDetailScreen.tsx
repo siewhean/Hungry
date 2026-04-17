@@ -49,7 +49,8 @@ type ReviewReply = {
 export function DishDetailScreen({ navigation, route }: Props) {
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const repository = getDataRepository();
-  const dish = repository.getDishById(route.params?.dishId ?? "");
+  const deepLinkedDishId = route.params?.dishId ?? route.params?.id ?? "";
+  const dish = repository.getDishById(deepLinkedDishId);
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -111,7 +112,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
     return (
       <FeedErrorBoundary
         title="Dish details unavailable"
-        body="We couldn't load those delicious details. Our chefs are on it!"
+        body="Couldn't load this dish — try again."
       >
         <SafeAreaView
           style={{ backgroundColor: palette.bg, flex: 1 }}
@@ -156,7 +157,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
   return (
     <FeedErrorBoundary
       title="Dish details unavailable"
-      body="We couldn't load those delicious details. Our chefs are on it!"
+      body="Couldn't load this dish — try again."
     >
       <SafeAreaView
         style={{ backgroundColor: palette.bg, flex: 1 }}
@@ -196,16 +197,12 @@ export function DishDetailScreen({ navigation, route }: Props) {
               >
                 {gallery.map((uri) => (
                   <View key={uri} style={{ height: "100%", width: screenWidth }}>
-                    <Animated.View 
+                    <Animated.View
                       style={StyleSheet.absoluteFill}
                       // @ts-ignore
                       sharedTransitionTag={gallery[0] === uri ? `dish-image-${dish.id}` : undefined}
                     >
-                      <Image
-                        source={uri}
-                        style={StyleSheet.absoluteFill}
-                        contentFit="cover"
-                      />
+                      <Image source={uri} style={StyleSheet.absoluteFill} contentFit="cover" />
                     </Animated.View>
                   </View>
                 ))}
@@ -608,7 +605,6 @@ export function DishDetailScreen({ navigation, route }: Props) {
                     params: {
                       screen: "ReviewMain",
                       params: { venueId: dish.venueId, dishId: dish.id },
-
                     },
                   });
                   navigation.navigate("AuthStack", { screen: "Login" });
@@ -617,7 +613,6 @@ export function DishDetailScreen({ navigation, route }: Props) {
                 navigation.navigate("ReviewStack", {
                   screen: "ReviewMain",
                   params: { venueId: dish.venueId, dishId: dish.id },
-
                 });
               }}
             />

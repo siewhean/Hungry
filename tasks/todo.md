@@ -1,712 +1,196 @@
-# Hungry — Consolidated Audit Backlog
+# Hungry — Master Task Contract
 
-> Generated 2026-04-09 by Claude (Opus) after a full codebase audit against product-context.md, design-system.md, screens.md, data-contracts.md, and the Figma prototypes.
-
----
-
-## 0. Done (Execution Batches)
-
-### Final-State Summary (Collapsed)
-
-This section intentionally replaces detailed per-batch writeups with a condensed final-state view.
-Detailed execution chronology remains in:
-
-- Section 5 shared session log
-- Section 6 verification commands log
-
-| Window                   | Delivery Summary                                                                                                                                                                   | Final Verification                                                                                                      |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| 2026-04-09 to 2026-04-11 | Closed P0/P1 flow blockers across onboarding persistence, location permissions, review media stability, profile persistence, map sheet behavior, and core interaction regressions. | `typecheck` and tests green per session log entries.                                                                    |
-| 2026-04-12               | Completed architecture/contract hardening (`serviceProvider`, typed service boundaries), analytics instrumentation, fixture validation, and design-audit implementation batches.   | `typecheck` + tests green; supporting verification recorded in Sections 5 and 6.                                        |
-| 2026-04-13               | Closed residual P1/P2 items, tokenization and accessibility cleanup, full branch QA/QC audit, P2-08 search-history fix, and follow-up typecheck recovery pass.                     | `npm run typecheck`, `npm test -- --runInBand`, and `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor` all green. |
-
-### Final Closure Snapshot
-
-| Group                             | Status | Notes                                                                                               |
-| --------------------------------- | ------ | --------------------------------------------------------------------------------------------------- |
-| P0 blockers                       | Done   | Runtime and persistence blockers closed (including review photo flow and profile hydration guards). |
-| P1 UX/state backlog               | Done   | Core screen fidelity and state-flow gaps are closed and reflected in Section 2 statuses.            |
-| P2 polish/copy/consistency        | Done   | Tokenization, semantics, and copy cleanup complete, including P2-08 search history behavior.        |
-| Phase 2 done criteria             | Done   | `P2-DC1` and `P2-DC2` recorded as closed with evidence.                                             |
-| Phase 3 readiness (tracked items) | Done   | `P3-04` to `P3-08` marked complete with instrumentation and validation references.                  |
-
-### Final-State Closure Checklist
-
-- [x] `P2-08` now persists only real user-entered search history (trim/empty guard, case-insensitive dedupe, capped recency).
-- [x] Stale open-task section labels were replaced with completed ownership labels for Codex and Gemini.
-- [x] Verbose completed-batch history was collapsed into a final-state summary + closure snapshot.
-- [x] Completion/progress wording in this backlog is synchronized with the latest green verification gates.
+> **Last updated:** 2026-04-16 | **Phase:** Prototype → Production  
+> Shared execution contract between Claude, Codex, and all agents.  
+> Read `tasks/lessons.md` before any implementation session.
 
 ---
 
-## 1. Phase 1 & Phase 3 Reference (Closed)
+## How to Use This File
 
-### Phase 1 — Product + Architecture Planning
-
-> P1-01 through P1-04 are completed Claude deliverables. Architecture follow-ups use `P1-ARCH-*` IDs to avoid collision with UI backlog IDs.
-
----
-
-#### P1-01 — Mock-First Architecture Strategy
-
-**Service Boundary (the contract):**
-
-- `src/lib/services/types.ts` — `HungryService` interface; 41 methods across 6 domains (auth, discovery, reviews, profile, social, content, ai)
-- `src/lib/services/mock/mockService.ts` — current implementation; all methods return `Promise.resolve(...)` with fixture data
-- Future: `src/lib/services/supabase/supabaseService.ts` — real implementation, same interface, zero screen changes required
-
-**Decoupling Rules (enforce now):**
-
-1. Screens import from stores only — never from `mock/data.ts` or `mock/repositories.ts` directly
-2. Stores call `hungryService.method()` — not `mockRepository.method()` directly
-3. Service provider is a single injection point (`src/lib/services/serviceProvider.ts` — Codex to create, P1-05)
-4. Mock service simulates async with `Promise.resolve()` so swap to real async is drop-in
-
-**Swap Path (single-file change):**
-
-```ts
-// serviceProvider.ts (to create — P1-05)
-import { mockService } from "./mock/mockService";
-// import { supabaseService } from './supabase/supabaseService'; // Phase 2 swap
-export const hungryService = mockService;
-```
-
-**State Persistence Status (current):**
-
-- Zustand `persist` is already active for the core app stores after P0-14
-- Current persisted stores include `useSessionStore`, `useProfileStore`, `useSearchStore`, `useLocationStore`, and `useReviewDraftStore`
-- Future backend/native-storage work should decide whether `useReviewDraftStore` remains persisted or is intentionally reset on cold start; current runtime behavior keeps the draft
+- **Before any non-trivial task:** add a scoped mini-plan under the relevant phase.
+- **During work:** check off items as you go. Add inline notes for scope changes.
+- **Before ending a session:** record a session log entry. Never mark done without a verification step.
+- **Source of truth precedence:** Figma > `product-context.md` > this file > memory.
 
 ---
 
-#### P1-02 — Feature-Level Definition of Done
+## Completed Phases (Archive)
 
-| Feature                     | Definition of Done                                                                                                                                                                                                        |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F-001 Auth                  | Sign-up routes to onboarding; login routes to MainTabs; inline validation errors with red borders; password visibility toggle present; terms/privacy link tappable; loading state on submit                               |
-| F-002 Taste Profile         | 6 sliders at `step={1}` (integer only); results persisted to `useProfileStore` on submit; skip sets neutral vector (all 5s); no pre-seeded non-neutral defaults on mount                                                  |
-| F-003 Location              | System permission dialog shown; GPS coords written to `useLocationStore.currentLocation` on grant; manual location entry on deny; fallback does not hardcode "CBD"                                                        |
-| F-004 Building Drill-Down   | `FloorSelector` component used (not inline pills); stall grid ≥2 columns; `venue.closureNotice` visible via `InlineBanner`; loads <1.5s (mock: instant)                                                                   |
-| F-005 Dish-First Search     | Text matches dish name across all venues; ranked by proximity + rating + cosine taste similarity; results <1s                                                                                                             |
-| F-006 Taste-Based Filtering | Navigation path from search/discover to `TasteFilterScreen` exists; `step={1}` on all sliders; "Reset to my profile" restores quiz values; Apply navigates back and results re-sort                                       |
-| F-007 Decide For Me         | FAB visible on Home or Discover; shows best dish within 500m by cosine similarity; haptic on result; "Try another" returns different dish; expand radius option on no-match; result <2s                                   |
-| F-008 Dish Detail           | Photo carousel uses `DishDetail.gallery`; taste radar chart rendered (`ProfileRadarChart`); price uses `variant="price"` (DM Mono); delivery buttons use brand colors and call `Linking.openURL`                          |
-| F-009 Stall Detail          | Hygiene grade color-coded (A=green, B=amber, C=orange, D=red); directions opens native maps; delivery buttons call `Linking.openURL`; closure notice via `InlineBanner`; reviews from venue data (not hardcoded constant) |
-| F-010 Dish Reviews          | Rating required before Next; step counter shows 4 steps (not 5); no debug "Simulate photo failure" button; real photo picker (`expo-image-picker`); success modal shown; draft cleared after submit                       |
-| F-011 Favourites            | Tapping a dish navigates to DishDetail; each card shows image, rating, venue name; `EmptyState` component with CTA; no developer-facing copy visible                                                                      |
-| F-012 Delivery Deep Links   | Buttons visible only when `deliveryLinks` non-empty; taps call `Linking.openURL(nativeUrl)` with `webUrl` fallback; buttons hidden when array is empty                                                                    |
+### Phase 1 — Repo Bootstrap ✅
 
----
+- [x] Expo scaffold + typed domain layer
+- [x] Zustand stores, mock repositories, navigation shell
+- [x] Theme tokens, design system, shared component library
 
-#### P1-03 — Event Taxonomy
+### Phase 2 — Core Screens ✅
 
-All events follow: `{ event: string, properties: object, user_id?: string, session_id: string, timestamp: ISO8601 }`
+- [x] Auth, Onboarding, Location Permission
+- [x] Home feed, Discover, Search, Search Results
+- [x] Dish Detail, Stall Detail, Decide For Me
+- [x] Maps tab, MapZoomedIn, BuildingDrillDown
+- [x] Profile, Favourites, Review History
+- [x] Review compose flow (4-step)
+- [x] Reads (blog feed, feature-flagged)
+- [x] Offline + NotFound recovery screens
 
-**App Lifecycle**
+### Phase 3 — Hardening Pass 1 (2026-04-08) ✅
 
-| Event                     | Trigger                  | Key Properties                                            |
-| ------------------------- | ------------------------ | --------------------------------------------------------- |
-| `app_launched`            | Cold start or foreground | `{ is_first_launch: boolean, is_authenticated: boolean }` |
-| `onboarding_started`      | First screen after auth  | `{}`                                                      |
-| `taste_quiz_completed`    | Submit on quiz screen    | `{ skipped: boolean, vector: TasteVector }`               |
-| `dietary_preferences_set` | Submit dietary prefs     | `{ flags: DietaryFlag[] }`                                |
-| `onboarding_completed`    | Final onboarding step    | `{ has_taste_vector: boolean, has_location: boolean }`    |
+- [x] Auth-first shell (removed guest browsing from runtime)
+- [x] Shared primitives (Button, Input, Chip, Badge) restyled to Figma warm-neutral system
+- [x] Emoji removed from runtime UI
+- [x] Discover/Search/Stall Detail composition tightened
+- [x] Home feed container fixed (safe-area, no scrollbar)
+- [x] Maxwell demo floor plan (L1/L2) with real venue/dish fixture bridge
 
-**Discovery**
+### Phase 4 — Maps Rebuild (2026-04-08) ✅
 
-| Event                           | Trigger                       | Key Properties                                                                                            |
-| ------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------- | -------- | ---------------- | ------------ | ------- | ---------- |
-| `decide_for_me_triggered`       | FAB tap                       | `{ location_granted: boolean, radius_m: number }`                                                         |
-| `decide_for_me_result_shown`    | Result card displayed         | `{ dish_id: string, match_score: number, distance_m: number }`                                            |
-| `decide_for_me_no_match`        | No dish within radius         | `{ radius_m: number }`                                                                                    |
-| `decide_for_me_radius_expanded` | Expand radius tapped          | `{ new_radius_m: number }`                                                                                |
-| `map_pin_tapped`                | Building pin tapped           | `{ building_id: string, building_type: BuildingType }`                                                    |
-| `floor_switched`                | Floor tab tapped in drilldown | `{ building_id: string, from_floor: string, to_floor: string }`                                           |
-| `stall_tapped`                  | Stall selected in drilldown   | `{ venue_id: string, building_id: string, floor: string }`                                                |
-| `dish_viewed`                   | Dish detail screen opened     | `{ dish_id: string, venue_id: string, source: 'search'                                                    | 'home'   | 'maps'           | 'favourites' | 'wheel' | 'stall' }` |
-| `stall_viewed`                  | Stall detail screen opened    | `{ venue_id: string, building_id: string, source: 'maps'                                                  | 'search' | 'dish_detail' }` |
-| `search_submitted`              | Search query submitted        | `{ query_length: number, result_count: number, categories_active: number, dietary_flags_active: number }` |
-| `taste_filter_applied`          | Apply tapped on TasteFilter   | `{ axes_changed: string[], result_count: number }`                                                        |
-| `taste_filter_reset`            | Reset to profile tapped       | `{}`                                                                                                      |
-| `category_chip_tapped`          | Category chip toggled         | `{ category: SearchCategory, selected: boolean }`                                                         |
+- [x] Real `MapSurface` wrapper with token-aware Mapbox fallback
+- [x] Maps tab rebuilt to Figma spec with building pins
+- [x] `MapZoomedIn` wired as real route (partially — see P0 list)
+- [x] `BuildingDrillDown` screen built with floor switcher + stall grid
 
-**Engagement**
+### Phase 5 — Marketing Launch Kit (2026-04-08) ✅
 
-| Event                   | Trigger                       | Key Properties                                                                                                     |
-| ----------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------- | ----------------- | --------------------- | -------- | ------ | ---------------------------------------- |
-| `delivery_link_tapped`  | Delivery button tapped        | `{ dish_id: string, venue_id: string, platform: DeliveryPlatform }`                                                |
-| `directions_tapped`     | Directions button tapped      | `{ venue_id: string, building_id: string }`                                                                        |
-| `dish_favourited`       | Dish added to favourites      | `{ dish_id: string, venue_id: string, source: 'dish_detail'                                                        | 'search'      | 'home' }`         |
-| `dish_unfavourited`     | Dish removed from favourites  | `{ dish_id: string }`                                                                                              |
-| `review_started`        | Review flow entered           | `{ trigger: 'tab'                                                                                                  | 'dish_detail' | 'stall_detail' }` |
-| `review_step_completed` | Step N completed              | `{ step: 1                                                                                                         | 2             | 3                 | 4, step_name: 'venue' | 'rating' | 'tags' | 'compose', has_dish_selected: boolean }` |
-| `review_submitted`      | Review successfully submitted | `{ dish_id: string, venue_id: string, rating: number, has_text: boolean, has_photos: boolean, tag_count: number }` |
-| `review_abandoned`      | Review flow exited early      | `{ at_step: 1                                                                                                      | 2             | 3                 | 4 }`                  |
-| `blog_post_opened`      | Reads article link tapped     | `{ post_id: string, source_name: string }`                                                                         |
+- [x] `marketing/` workspace: positioning, waitlist copy, channel playbook
+- [x] 30-day organic content calendar
+- [x] Video briefs, AI prompt pack, creator/press/hawker outreach
 
-**Wheel (Multiplayer)**
+### Phase 6 — AI Food Engine (Completed) ✅
 
-| Event                  | Trigger                 | Key Properties                                                        |
-| ---------------------- | ----------------------- | --------------------------------------------------------------------- |
-| `wheel_party_created`  | New party created       | `{ spin_mode: WheelSpinMode, trigger_mode: WheelTriggerMode }`        |
-| `wheel_entry_added`    | Item added to wheel     | `{ party_id: string, venue_id: string }`                              |
-| `wheel_spin_triggered` | Spin initiated          | `{ party_id: string, entry_count: number, spin_mode: WheelSpinMode }` |
-| `wheel_party_resolved` | Final winner determined | `{ party_id: string, rounds_played: number }`                         |
+- [x] `src/lib/ai/tasteEngine.ts` — cosine similarity, euclidean distance, blended score
+- [x] `rankDishes()` — ranked results with human-readable explanation
+- [x] `decideForMe()` — single-best-dish picker with min-score threshold
+- [x] `calibrateVector()` — community feedback loop (post-review nudge)
+- [x] `buildTasteVectorFromQuiz()` — quiz slider → TasteVector
+- [x] Taste labels + color map (display helpers)
 
-**Auth**
+### Phase 6 — Sprint 6 Audit (2026-04-08) ✅
 
-| Event                      | Trigger                | Key Properties     |
-| -------------------------- | ---------------------- | ------------------ | -------- | ---------- |
-| `sign_up_completed`        | Auth sign-up done      | `{ method: 'email' | 'google' | 'apple' }` |
-| `sign_in_completed`        | Auth sign-in done      | `{ method: 'email' | 'google' | 'apple' }` |
-| `sign_out`                 | User signs out         | `{}`               |
-| `password_reset_completed` | Password reset success | `{}`               |
+- [x] Full codebase audit against PRD, Figma, and data contracts
+- [x] `tasks/Roadmap/mvp_audit_and_v2_roadmap.md` — 9 P0s, 11 P1s, 8 P2s documented
+- [x] V2 system design: messaging, QR ordering, guest checkout
+- [x] `tasks/backend-architecture.md` — full V2 Postgres schema + DDL (2026-04-16)
 
 ---
 
-#### P1-04 — Tradeoffs & Decisions Log
+## 🔴 SPRINT 7 — P0 Dead-End Fixes (Demo-Breaking)
 
-| Decision               | Choice Made                                    | Alternative Rejected                 | Rationale                                                                                                                             |
-| ---------------------- | ---------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Data layer             | Mock-first with `HungryService` interface      | Backend-first with real Supabase     | Unblocks frontend build; interface contract enforces clean swap path with zero screen changes                                         |
-| Auth model             | Auth-first (mandatory, gated at Splash)        | Guest browsing with soft gates       | Guest flow added navigation complexity; auth-first ensures taste personalization from first session and cleaner analytics             |
-| Taste vector precision | 0–10 integers (sliders) / 0.0–1.0 (PRD stored) | Float-only per PRD                   | Integer slider steps are intuitive for UX; cosine similarity is scale-invariant so range doesn't affect correctness                   |
-| Map SDK                | Mapbox (`@rnmapbox/maps`) + static fallback    | React Native Maps (Google/Apple)     | Mapbox supports custom indoor floor-plan styling required for hawker centre drill-down; fallback keeps repo inspectable without token |
-| Indoor map UX          | Polygon-first floor viewer with synced list    | List-first stall directory           | List-first fails directory realism at mall scale; polygon-first mirrors Google/Apple mall UX                                          |
-| Navigation stack       | React Navigation v7 (Stack + Tab)              | Expo Router (file-based)             | Type-safe route params; predictable protected-route pattern; Expo Router auth-gate complexity not worth it at this scale              |
-| State management       | Zustand                                        | Redux, Context API                   | Minimal boilerplate; strong TypeScript inference; no Provider wrapping required                                                       |
-| Delivery links         | GrabFood/Foodpanda deep links                  | In-app ordering                      | Ordering is explicit PRD out-of-scope; deep links deliver 80% of user value at 0% logistics complexity                                |
-| Taste match algorithm  | Cosine similarity                              | Euclidean distance, weighted scoring | Cosine is direction-agnostic; correctly handles users with different absolute intensity levels                                        |
-| `Reads` tab            | Feature-flagged (`FEATURE_FLAGS.readsEnabled`) | Always-on                            | Safe toggle without deploy; navigation enforcement is now implemented (P1-42 complete).                                               |
-| Review system          | Full mock flow (no backend)                    | Defer until backend ready            | Reviews are core engagement signal; mock flow enables investor demos and tests complete UI/UX contract                                |
+> **Owner:** Codex | **Gate:** Must complete before any demo or beta invite.  
+> Every item below is a user-facing dead end or broken state. Est. total: ~4h.
 
----
+- [x] **Wire `TasteFilter` route** — now mapped to `TasteFilterScreen` in `RootNavigator`.
+- [x] **Wire `BuildingDrillDown` route** — now mapped to `BuildingDrillDownScreen` in `RootNavigator`.
+- [x] **Fix profile sync on auth** — `completeAuth()` now syncs profile store via `syncProfile(true)`.
+- [x] **Fix `BitesCarousel` data architecture (P0 subset)** — inline bad IDs removed; bites now come from `features/home/bites` and no longer reference non-existent dish IDs.
+- [x] **Fix `BitesCarousel` "See all" navigation** — no longer routes to Post composer; now routes to Search.
+- [x] **Fix `MapZoomedIn` placeholder** — screen now renders functional map/sheet flow and drill-down action.
+- [x] **Fix `StallDetail` wrong field** — stale `dishId -> venueId` wiring removed from current bites flow.
+- [x] **Fix `useNavigation<any>()` (P0 scope)** — removed from `BitesCarousel` and current P0 surfaces.
+- [x] **Verify typecheck passes** — validated in Wave 1 gate.
 
-#### Codex Task Ownership (Completed)
+### Sprint 7 Mini-Plan
 
-| ID         | Item                                                                                                                                                                                                                                                                                                                             | Owner |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| P1-ARCH-05 | Done (Batch 2026-04-12D): Created `src/lib/services/serviceProvider.ts` as the single injection point for mock/live service wiring.                                                                                                                                                                                              | Codex |
-| P1-ARCH-06 | Done (Batch 2026-04-12D): Updated typed service interfaces and added TODO API anchors for mock-to-live replacement.                                                                                                                                                                                                              | Codex |
-| P1-ARCH-07 | **REOPENED (Audit 2026-04-13):** Only 7 of ~27 data-access sites use `serviceProvider`; 20 screen files still import `mockRepository` directly. Progress: batches 1-6 are now migrated to `getDataRepository()` and direct `mockRepository` imports in `src/app/` + `src/features/` are cleared (Batches 2026-04-13I/J/K/L/M/N). | Codex |
-| P1-08      | Done: Planning artifacts committed and discoverable in this backlog + linked docs.                                                                                                                                                                                                                                               | Both  |
-| P1-09      | Done: implementation-to-requirement mapping is synchronized through Batch 2026-04-13C with verification evidence logged per batch.                                                                                                                                                                                               | Both  |
-
-#### Gemini Design Ownership (Completed)
-
-> Gemini is the design owner for open frontend/UI/UX work. Gemini should produce concrete screen-level direction, copy replacements, spacing/type/icon specs, motion guidance, and acceptance references that Codex can implement without re-interpreting intent.
-
-| ID   | Item                                                                                                                                                                                                            | Owner  | Status |
-| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------ |
-| G-01 | Done (Batch 2026-04-12): Audited all remaining open visual/UI backlog items in P1/P2 and grouped them into screen-level design batches.                                                                         | Gemini |        |
-| G-02 | Done (Batch 2026-04-12): Provided the final visual spec for the `Maps` bottom-sheet cleanup. See `docs/audit/MAPS_SPEC.md`.                                                                                     | Gemini |        |
-| G-03 | Done (Batch 2026-04-12): Provided the final visual polish spec for `StallDetail` and `DishDetail` delivery-brand treatment. See `docs/audit/DETAIL_SPEC.md`.                                                    | Gemini |        |
-| G-04 | Done (Batch 2026-04-12): Provided copy replacements for all remaining developer-facing or mock-revealing text. See `docs/audit/COPY_REPLACEMENTS.md`.                                                           | Gemini |        |
-| G-05 | Done (Batch 2026-04-12): Defined the final auth visual system pass for consistent branding across login, signup, verification, forgot, and reset screens. See `docs/audit/AUTH_SPEC.md`.                        | Gemini |        |
-| G-06 | Done (Batch 2026-04-12): Defined the final `Search` and `Discover` UI polish pass covering suggested card content, empty-state actions, and carousel affordances. See `docs/audit/SEARCH_SPEC.md`.              | Gemini |        |
-| G-07 | Done (Batch 2026-04-12): Defined the final `Profile` and `Reads` visual/content polish pass covering settings density, edit-profile completeness, and article metadata. See `docs/audit/PROFILE_READS_SPEC.md`. | Gemini |        |
-| G-08 | Done (Batch 2026-04-12): Defined shared component cleanup guidance for remaining token/typography/shape inconsistencies. See `docs/audit/SHARED_COMPONENTS_SPEC.md`.                                            | Gemini |        |
-| G-09 | Done (Batch 2026-04-12): Defined accessibility presentation guidance for unresolved UI items. See `docs/audit/ACCESSIBILITY_SPEC.md`.                                                                           | Gemini |        |
-| G-10 | Done (Batch 2026-04-12): Attached explicit acceptance criteria for every Gemini design batch in their respective spec files.                                                                                    | Gemini |        |
-
-### Phase 2 — Core App Hardening (Done Criteria)
-
-| ID     | Item                                                                                                                                                                                                           | Owner |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| P2-DC1 | Done: full mock-mode closure pass explicitly recorded (P1/P2 residual scope audited, token/a11y residuals closed, and verification rerun: `typecheck`, `test`, `expo-doctor` all green on 2026-04-13).         | Both  |
-| P2-DC2 | Done (Batch 2026-04-13G): reopened 25-error typecheck regression is closed; token-scope fixes applied in onboarding/components and verification rerun passed (`npm run typecheck`, `npm test -- --runInBand`). | Both  |
-
-### Phase 3 — Data + Analytics Readiness
-
-> P3-01 through P3-03 are completed Claude deliverables. P3-04 through P3-06 are implemented, and P3-07/P3-08 are now supported by the recorded instrumentation and validation passes below.
+Wave 1 reconciliation note (2026-04-17): Sprint 7 list above was stale relative to repo truth and has been normalized. Remaining engineering items continue under Sprint 8+/Wave 2+ sections.
 
 ---
 
-#### P3-01 — KPI Definitions
+## 🟡 SPRINT 8 — P1 Beta Hardening
 
-**Business / Retention KPIs**
+> **Owner:** Codex primary, Claude reviews | **Gate:** Before beta invites go out.
 
-| KPI                           | Definition                                      | Year-1 Target |
-| ----------------------------- | ----------------------------------------------- | ------------- |
-| Daily Active Users (DAU)      | Unique users with ≥1 event per calendar day     | 5,000         |
-| Monthly Active Users (MAU)    | Unique users with ≥1 session in rolling 30 days | 25,000        |
-| DAU/MAU Ratio                 | Stickiness; higher = more habitual usage        | ≥20%          |
-| D1 Retention                  | % new users who return on day 2                 | ≥40%          |
-| D7 Retention                  | % new users who return within 7 days            | ≥25%          |
-| D30 Retention                 | % new users active within 30 days of signup     | ≥15%          |
-| Taste Profile Completion Rate | % sign-ups who complete quiz (not skip)         | ≥60%          |
+### Empty States
 
-**Engagement KPIs**
+- [x] `FavouritesScreen` — no empty state when list is empty. Add `EmptyState` with CTA to Discover.
+- [x] `ReviewHistoryScreen` — no empty state when no reviews. Add `EmptyState` with CTA to Review flow.
+- [x] `ProfileHomeScreen` — shows default user data for guest users. Show guest-appropriate fallback.
 
-| KPI                    | Definition                                                      |
-| ---------------------- | --------------------------------------------------------------- |
-| Decide For Me Adoption | % of sessions containing `decide_for_me_triggered`              |
-| Review Completion Rate | `review_submitted` / `review_started`                           |
-| Dish Detail CTR        | `dish_viewed` / total results surfaced to user                  |
-| Delivery Link CTR      | `delivery_link_tapped` / `dish_viewed` (dishes with links only) |
-| Favourite Rate         | `dish_favourited` / `dish_viewed`                               |
-| Taste Filter Adoption  | % of sessions with `taste_filter_applied`                       |
-| Wheel Session Rate     | `wheel_party_created` per MAU per month                         |
-| Blog Read-Through Rate | `blog_post_opened` per Reads session                            |
+### Review Flow
 
----
+- [x] Review submit persistence — `ReviewScreen` writes reviewed dish ids + review entries to persisted `useProfileStore` state; added regression test (`useProfileStore.review-persistence.test.ts`).
+- [x] Review success feedback — submit path triggers both toast and `showReviewSuccess` modal payload in `ReviewScreen`.
+- [x] Quick-review path (F-018) — PRD requires a 30-second tag-only flow. Add shortcut that skips text/photo steps.
 
-#### P3-02 — Event-to-Metric Mapping
+### Auth & Error Handling
 
-| KPI                      | Source Events                                | Calculation                                                                            |
-| ------------------------ | -------------------------------------------- | -------------------------------------------------------------------------------------- |
-| DAU                      | `app_launched`                               | `COUNT(DISTINCT user_id) WHERE event_date = today`                                     |
-| MAU                      | `app_launched`                               | `COUNT(DISTINCT user_id) WHERE event_date >= today - 30d`                              |
-| DAU/MAU                  | derived                                      | `DAU / MAU`                                                                            |
-| D1 Retention             | `app_launched`                               | `COUNT(users with event on day N+1) / COUNT(new users on day N)`                       |
-| D7 Retention             | `app_launched`                               | `COUNT(users with any event in days N+1..N+7) / COUNT(new users on day N)`             |
-| Taste Profile Completion | `taste_quiz_completed`, `onboarding_started` | `COUNT(taste_quiz_completed WHERE skipped=false) / COUNT(onboarding_started)`          |
-| Decide For Me Adoption   | `decide_for_me_triggered`, sessions          | `COUNT(DISTINCT session_id with decide_for_me_triggered) / COUNT(DISTINCT session_id)` |
-| Review Completion        | `review_started`, `review_submitted`         | `COUNT(review_submitted) / COUNT(review_started)`                                      |
-| Delivery Intent          | `delivery_link_tapped`, `dish_viewed`        | `COUNT(delivery_link_tapped) / COUNT(dish_viewed WHERE dish.deliveryLinks.length > 0)` |
-| Favourite Rate           | `dish_favourited`, `dish_viewed`             | `COUNT(dish_favourited) / COUNT(dish_viewed)`                                          |
-| Taste Filter Adoption    | `taste_filter_applied`, sessions             | `COUNT(DISTINCT session_id with taste_filter_applied) / COUNT(DISTINCT session_id)`    |
-| Wheel Engagement         | `wheel_party_created`, MAU                   | `COUNT(wheel_party_created) / MAU` per month                                           |
+- [x] Auth error feedback — `LoginScreen`/`SignUpScreen` now use deterministic mock-failure guards with error toasts (`features/auth/mockAuth.ts`) and have test coverage.
+- [x] Try/catch scaffolding — critical auth actions wrapped in try/catch and offline mode now triggers `Offline` route via `useUIStore.isOffline` + root navigator effect.
 
-**Data Quality Expectations:**
+### Service Layer
 
-- Every event must carry `user_id` (or `anonymous_id` pre-auth), `session_id`, and `timestamp`
-- `dish_id` / `venue_id` in events must resolve against fixtures/database — validate in CI (P3-06)
-- Events are idempotent — duplicate `session_id + event + timestamp` tuples deduplicated at ingestion
+- [x] `HungryService` interface — mock implementation is active for current screen callsites in `src/lib/services/mock/mockService.ts`.
+- [x] `getBuildingDetail()` service method — implemented in mock discovery service with enriched building metadata + test coverage (`service-methods.test.ts`).
+- [x] `getFloorPlan()` service method — implemented via `lib/geo/floorPlans` + test coverage (`service-methods.test.ts`).
+- [x] `Bite` type divergence — `BitesCarousel`/`BiteCard` now consume canonical `src/lib/services/types.ts` `Bite`; ad hoc local bite shape removed.
+
+### Discovery
+
+- [x] Situation-based discovery presets (F-015) — no "< 15 min", "Budget < S$8", "Late night" tiles on DiscoverHomeScreen.
+- [x] Dietary filter on Discover root (F-014) — `DietaryFlag` filter chips exist in Search but not accessible from Discover tab root.
+
+### Loading States
+
+- [x] Skeleton screens — no skeletons anywhere. Add skeleton placeholders for `DishDetailScreen`, `StallDetailScreen`, and `SearchResultsScreen` (preparing for API migration).
+- [x] `OfflineStateScreen` trigger — screen exists but is never triggered. Add connectivity listener in `useAppBootstrap`.
+
+### Sprint 8 Mini-Plan
+
+> Add before implementation begins.
 
 ---
 
-#### P3-03 — Phased Rollout Strategy
+## 🟢 SPRINT 9 — P2 Polish & Future-Proofing
 
-**Phase 1 — Current (Mock-First, No Backend)**
+> **Owner:** Claude + Codex | **Timing:** After Sprint 8 is green.
 
-- All service calls: `mockService` via `HungryService` interface (`src/lib/services/mock/mockService.ts`)
-- Analytics: events defined in P1-03 taxonomy; Phase 1 implementation is console-log-only sink
-- Feature flags: hardcoded in `src/constants/featureFlags.ts`
-- Zustand persistence is active for core stores (`session`, `profile`, `search`, `location`, `reviewDraft`, etc.)
+- [ ] Unit tests — `__tests__/` directory is empty. Write tests for `tasteEngine.ts` (pure functions), `repositories.ts`, and at least 3 critical screens.
+- [x] Deep linking — linked routes added for `hungry://dish/:id`, `hungry://venue/:id`, and `hungry://order?venueId=...` (+ linking config/query parser tests).
+- [ ] Haptic feedback — `Decide For Me` FAB should fire `Haptics.impactAsync` on tap (PRD spec).
+- [ ] Share URL — `DishDetailScreen` share target is `"https://hungry.sg/dish/${dish.id}"` (placeholder). Implement real share sheet.
+- [ ] Photo carousel — `DishDetailScreen` doesn't use `DishDetail.gallery` array. Wire to `ImageCarousel` component.
+- [ ] Module co-location — `ProfileRadarChart` is in `screens/profile/` not `components/dish/`. Move.
+- [x] Font error handling — `AppBody` now has font-loading and timeout fallback surfaces when font assets are delayed/missing.
+- [x] `similarityScore` in `repositories.ts` — extracted to `src/lib/ai/similarityScore.ts`; service provider now sources shared utility.
+- [ ] `useDiscoveryStore.popularNearby` computed at store creation — guard for async-safe access pattern.
+- [ ] Placeholder stubs for `useOrderStore` and `useCartStore` (V2 prep).
+  Deferred rationale: no active runtime callsites in current app flow depend on order/cart state; keep this for backend/bootstrap phase to avoid dead stores.
 
-**Phase 2 — Backend Integration**
+### Wave Verification Log
 
-1. Supabase project: PostgreSQL + PostGIS (buildings/venues/dishes), pgvector (taste vectors), Supabase Auth
-2. Create `src/lib/services/supabase/supabaseService.ts` implementing `HungryService` — same interface, zero screen changes
-3. Update `serviceProvider.ts` (P1-05) to export `supabaseService` — single-file swap
-4. If native-storage performance becomes a concern, swap the current persistence backing store to MMKV without changing store contracts
-5. Harden live GPS integration and fallback telemetry (baseline `expo-location` integration already shipped)
-6. Harden native media integration and upload pipeline (baseline `expo-image-picker` flow already shipped)
-7. Analytics SDK: integrate PostHog or Amplitude; replace console sink with real event batching
-8. Feature flags: migrate to Supabase-backed remote config or LaunchDarkly
-
-**Phase 3 — Analytics & Merchant Layer**
-
-1. Analytics dashboards: PostHog/Amplitude self-serve using KPIs from P3-01
-2. Event instrumentation: add hooks at service/store boundaries (P3-04, P3-05)
-3. Data quality CI: fixture integrity checks (P3-06) — validate IDs, required fields, taste vector ranges [0–10]
-4. Merchant Business Portal: Next.js web app (separate repo); Verified Stall and Stall Pro tiers
-5. A/B testing: Decide For Me FAB placement, Taste Filter entry point, Home feed ranking variants
+- [x] Wave 1 gate run (2026-04-17): `lint` (0 errors), `typecheck` pass, `test` pass, `expo-doctor` pass. QA Agent A completed consistency audit.
+- [x] Wave 2 gate run (2026-04-17): `lint` (0 errors), `typecheck` pass, `test` pass (added bites + service-method tests), `expo-doctor` pass.
+- [x] Wave 3 gate run (2026-04-17): auth failure simulation + review persistence verified with new tests (`mockAuth.test.ts`, `useProfileStore.review-persistence.test.ts`).
+- [x] Wave 4 gate run (2026-04-17): deep-link contracts added + tested (`RootNavigator.linking.test.ts`), font fallback behavior added in bootstrap path.
 
 ---
 
-#### Codex Task Ownership (Completed)
-
-| ID    | Item                                                                                                                                           | Owner |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| P3-04 | Done (Batch 2026-04-12E): Added event instrumentation hooks in frontend service/store boundaries.                                              | Codex |
-| P3-05 | Done (Batch 2026-04-12E): Analytics hooks are mock-safe with no backend dependency.                                                            | Codex |
-| P3-06 | Done (Batch 2026-04-12E): Added fixture validation helpers and tests.                                                                          | Codex |
-| P3-07 | Done: event schema is documented in P1-03 and key instrumentation landed in Batch 2026-04-12E.                                                 | Both  |
-| P3-08 | Done: mock data quality checks are executable via `src/lib/services/mock/validation.ts`, covered by tests, and recorded in verification notes. | Both  |
-
----
-
-## 2. Prioritised UX & State-Handling Backlog
-
-### P0 — Blocker / Broken Flow
-
-These items break core user journeys or render features non-functional.
-
-> **Recommended execution order:** P0-14 → P0-01+P0-02 → P0-05 → P0-08 → P0-10+P0-11+P0-12 → P0-06 → P0-03 → P0-07 → P0-09 → P0-15
-
-| ID    | Area    | Issue                                                                                                                                                                                                 | File(s)                                    |
-| ----- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| P0-16 | Review  | Done (Batch 2026-04-11C): **Bug: App crashes when clicking Add Photo.** Fixed by guarding the add-photo path with lazy native-module load + graceful fallback; iOS pods synced for `ExpoImagePicker`. | `PhotoPicker.tsx`, iOS native modules      |
-| P0-17 | Profile | Done (Batch 2026-04-11C): **Bug: Profile dietary preferences reset after relaunch.** Fixed by preventing bootstrap re-sync from wiping hydrated profile state.                                        | `useAppBootstrap.ts`, `useProfileStore.ts` |
-
-### P1 — UX / UI Degradation
-
-These items degrade the user experience but do not fully block flows.
-
-| ID     | Area       | Issue                                                                                                                                       | File(s)                                                                                          |
-| ------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| P1-01  | Detail     | Done (Batch 2026-04-10J): DishDetail now has a gallery-aware hero carousel.                                                                 | `DishDetailScreen.tsx`                                                                           |
-| P1-02  | Detail     | Done (Batch 2026-04-10J): DishDetail now uses radar chart taste visualization.                                                              | `DishDetailScreen.tsx`                                                                           |
-| P1-03  | Detail     | Done (Batch 2026-04-10J): DishDetail now uses `variant="price"` for price display.                                                          | `DishDetailScreen.tsx`                                                                           |
-| P1-04  | Detail     | Done: DishDetail delivery buttons now use brand colours (Grab green, Foodpanda pink, Deliveroo teal).                                       | `DishDetailScreen.tsx`                                                                           |
-| P1-05  | Detail     | Done (Batch 2026-04-10J): StallDetail community reviews now derive from venue dish review data.                                             | `StallDetailScreen.tsx`                                                                          |
-| P1-06  | Detail     | Done (Batch 2026-04-10J): StallDetail closure notice now uses `InlineBanner`.                                                               | `StallDetailScreen.tsx`                                                                          |
-| P1-07  | Detail     | Done (Batch 2026-04-10J): StallDetail now renders colour-coded hygiene grade badge.                                                         | `StallDetailScreen.tsx`                                                                          |
-| P1-08  | Detail     | Done (Batch 2026-04-10J): StallDetail share/favourite actions are implemented.                                                              | `StallDetailScreen.tsx`                                                                          |
-| P1-09  | Detail     | Done (Batch 2026-04-10J): Detail not-found states now render inside `Screen` wrappers.                                                      | `DishDetailScreen.tsx`, `StallDetailScreen.tsx`                                                  |
-| P1-10  | Discover   | Done (Batch 2026-04-10M): DecideForMe now has no-match radius expansion actions.                                                            | `DecideForMeResultScreen.tsx`                                                                    |
-| P1-11  | Discover   | Done (Batch 2026-04-10M): DecideForMe now triggers haptic feedback on result transitions.                                                   | `DecideForMeResultScreen.tsx`                                                                    |
-| P1-12  | Discover   | Done (Batch 2026-04-10M): AnimatedMatchBadge is now functional and rendered with numeric animation output.                                  | `DecideForMeResultScreen.tsx`                                                                    |
-| P1-13  | Discover   | Done (Batch 2026-04-10M): Try-another logic now picks a distinct next dish.                                                                 | `DecideForMeResultScreen.tsx`                                                                    |
-| P1-14  | Discover   | Done (latest UX direction): BuildingDrillDown directory is back to compact full-width list rows (grid experiment reverted).                 | `BuildingDrillDownScreen.tsx`                                                                    |
-| P1-15  | Discover   | Done (Batch 2026-04-10M): BuildingDrillDown now surfaces `venue.closureNotice` in directory cards.                                          | `BuildingDrillDownScreen.tsx`                                                                    |
-| P1-43  | Discover   | Done: Map bottom sheet geometry tightened: square bottom, flush to edge, 240/600px heights.                                                 | `HomeMapScreen.tsx`                                                                              |
-| P1-44  | Discover   | Done: Map bottom sheet card corners squared at bottom.                                                                                      | `HomeMapScreen.tsx`                                                                              |
-| P1-16  | Home       | Done (Batch 2026-04-10J): HomeFeedScreen now has loading and retry-on-error states before feed render.                                      | `HomeFeedScreen.tsx`                                                                             |
-| P1-17  | Home       | Done: true React child-render crash handling now uses `FeedErrorBoundary` around feed surfaces with fallback and retry.                     | `HomeFeedScreen.tsx`, `ReadsFeedScreen.tsx`, `FeedErrorBoundary.tsx`                             |
-| P1-18  | Search     | Done (Batch 2026-04-10J): SearchResultsScreen now has loading state while results refresh.                                                  | `SearchResultsScreen.tsx`                                                                        |
-| P1-19  | Search     | Done (Batch 2026-04-10J): SearchResultsScreen now supports sort by match, distance, rating, and price.                                      | `SearchResultsScreen.tsx`, `search.ts`                                                           |
-| P1-20  | Search     | Done: `groupResultsByVenue` now groups by venue, enriches venue metadata, and sorts by distance/rating relevance.                           | `search.ts`                                                                                      |
-| P1-21  | Search     | Done: Discover collections now iterate all buildings, dedupe venues, and rank by taste affinity plus proximity (no hardcoded building IDs). | `search.ts`                                                                                      |
-| P1-22  | Onboarding | Done: onboarding no longer exposes raw `SCR-*` developer IDs in runtime UI.                                                                 | `OnboardingScreenShell.tsx`, `TasteQuizScreen.tsx`, `LocationPermissionScreen.tsx`               |
-| P1-24  | Review     | Done: review flow now consistently uses 4-step progress.                                                                                    | `ReviewHubScreen.tsx`, `ReviewTagsScreen.tsx`, `ReviewComposeScreen.tsx`                         |
-| P1-25  | Review     | Done: unauthenticated review hub now redirects without rendering blocked content.                                                           | `ReviewHubScreen.tsx`                                                                            |
-| P1-26  | Review     | Done: ReviewHub now renders an explicit empty state for zero matching venues.                                                               | `ReviewHubScreen.tsx`                                                                            |
-| P1-27  | Review     | Done: ReviewRating now returns to hub when no valid dish exists (no random fallback).                                                       | `ReviewRatingScreen.tsx`                                                                         |
-| P1-29  | Review     | Done: end-user debug button removed from compose screen.                                                                                    | `ReviewComposeScreen.tsx`                                                                        |
-| P1-30  | Review     | Done (Batch 2026-04-10M): Review compose now uses real image picker integration (`expo-image-picker`).                                      | `ReviewComposeScreen.tsx`, `PhotoPicker.tsx`                                                     |
-| P1-31  | Profile    | Done: Favourites cards now navigate to DishDetail from profile flow.                                                                        | `FavouritesScreen.tsx`                                                                           |
-| P1-32  | Profile    | Done: Favourites cards now include image, venue, rating, and distance metadata.                                                             | `FavouritesScreen.tsx`                                                                           |
-| P1-33  | Profile    | Done: Review history empty state now uses shared `EmptyState` component.                                                                    | `ReviewHistoryScreen.tsx`                                                                        |
-| P1-34  | Profile    | Done: Review history now surfaces user-submitted rating/tags/text entries.                                                                  | `ReviewHistoryScreen.tsx`, `useProfileStore.ts`                                                  |
-| P1-35  | Profile    | Done (Batch 2026-04-10J): Radar chart now shows explanatory fallback when taste vector has no signal.                                       | `ProfileRadarChart.tsx`                                                                          |
-| P1-36  | Profile    | Done (Batch 2026-04-10J): sign-out/root redirects now use root-navigation traversal helper.                                                 | `ProfileHomeScreen.tsx`, `SettingsScreen.tsx`, `ReviewHistoryScreen.tsx`, `getRootNavigation.ts` |
-| P1-37  | Component  | Done: FloatingToast now has entrance/exit animations.                                                                                       | `FloatingToast.tsx`                                                                              |
-| P1-38  | Component  | Done: FloatingToast now uses `zIndex.toast`.                                                                                                | `FloatingToast.tsx`                                                                              |
-| P1-39  | Component  | Done: FloatingToast now uses correct tone mapping and icons.                                                                                | `FloatingToast.tsx`                                                                              |
-| P1-40  | Component  | Done: HygieneGradeBadge updated with semantic tokens for dark mode.                                                                         | `HygieneGradeBadge.tsx`                                                                          |
-| P1-41  | Component  | Done: FloorPlanViewer updated with semantic tokens for dark mode.                                                                           | `FloorPlanViewer.tsx`                                                                            |
-| P1-42  | Reads      | Done: Reads tab inclusion now enforced via feature flag in navigation.                                                                      | `RootNavigator.tsx`                                                                              |
-| P1-43S | Splash     | Done: splash animated values are stable `useRef` instances (not recreated on rerender).                                                     | `SplashScreen.tsx`                                                                               |
-| P1-44S | Splash     | Done: splash app version now reads from Expo runtime config (`expo-constants`).                                                             | `SplashScreen.tsx`                                                                               |
-| P1-45  | Auth       | Done: login, signup, and reset-password screens now include password visibility toggles.                                                    | `LoginScreen.tsx`, `SignUpScreen.tsx`, `ResetPasswordScreen.tsx`                                 |
-| P1-46  | Auth       | Done: signup terms/privacy copy now includes tappable links.                                                                                | `SignUpScreen.tsx`                                                                               |
-| P1-47  | Search     | Done: TasteFilter sliders now use `step={1}` and have axis legends.                                                                         | `TasteFilterScreen.tsx`                                                                          |
-| P1-48  | Detail     | Done: StallDetail hero polished with `LinearGradient` fade.                                                                                 | `StallDetailScreen.tsx`                                                                          |
-
-### P2 — Polish / Copy / Consistency
-
-These items affect perceived quality but do not break functionality.
-
-| ID    | Area           | Issue                                                                                                                                                                                                                      | File(s)                                                                                                                                                                                                                         |
-| ----- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P2-01 | Home           | Done: Home feed empty state copy updated.                                                                                                                                                                                  | `HomeFeedScreen.tsx`                                                                                                                                                                                                            |
-| P2-02 | Home           | Done: Home feed social engagement counts are now dynamic.                                                                                                                                                                  | `HomeFeedScreen.tsx`                                                                                                                                                                                                            |
-| P2-03 | Home           | Done: Home greeting is now dynamic based on time-of-day.                                                                                                                                                                   | `HomeFeedScreen.tsx`                                                                                                                                                                                                            |
-| P2-05 | Search         | Done: DishSearch suggested card polished with high-contrast layout.                                                                                                                                                        | `DishSearchScreen.tsx`                                                                                                                                                                                                          |
-| P2-06 | Search         | Done: SearchResults redundant subtitle removed.                                                                                                                                                                            | `SearchResultsScreen.tsx`                                                                                                                                                                                                       |
-| P2-07 | Search         | Done: SearchResults empty state CTA improved.                                                                                                                                                                              | `SearchResultsScreen.tsx`                                                                                                                                                                                                       |
-| P2-08 | Search         | Done: `recentSearches` now persists real user-entered history only (no hardcoded seeds), with trim/empty guards and case-insensitive dedupe.                                                                               | `useSearchStore.ts`                                                                                                                                                                                                             |
-| P2-09 | Discover       | Done: BuildingDrillDown placeholder corrected.                                                                                                                                                                             | `BuildingDrillDownScreen.tsx`                                                                                                                                                                                                   |
-| P2-10 | Discover       | Done: BuildingDrillDown dish carousel limit expanded + affordance added.                                                                                                                                                   | `BuildingDrillDownScreen.tsx`                                                                                                                                                                                                   |
-| P2-12 | Maps           | Done: Map sheet open stall count logic fixed.                                                                                                                                                                              | `HomeMapScreen.tsx`                                                                                                                                                                                                             |
-| P2-13 | Maps           | Done: `BuildingLegend` rendered on map screen.                                                                                                                                                                             | `HomeMapScreen.tsx`                                                                                                                                                                                                             |
-| P2-14 | Maps           | Done: `cameraPadding` implemented in MapSurface.                                                                                                                                                                           | `MapSurface.tsx`                                                                                                                                                                                                                |
-| P2-15 | Auth           | Done: active auth routes no longer use `AuthScreenShell`, so the stale footer copy is no longer shown in runtime auth flows.                                                                                               | `AuthScreenShell.tsx`, `AuthStack.tsx`                                                                                                                                                                                          |
-| P2-16 | Auth           | Done: verification/forgot/reset/success routes now align to shared auth-shell branding with consistent tokenized treatment.                                                                                                | `LoginScreen.tsx`, `SignUpScreen.tsx`, `EmailVerificationScreen.tsx`, `ForgotPasswordScreen.tsx`, `ResetPasswordScreen.tsx`, `ResetPasswordSuccessScreen.tsx`                                                                   |
-| P2-17 | Auth           | Done (Batch 2026-04-10M): Email verification resend now uses countdown + gated resend action.                                                                                                                              | `EmailVerificationScreen.tsx`                                                                                                                                                                                                   |
-| P2-18 | Auth           | Done (Batch 2026-04-10M): Change-email action now returns to existing SignUp instance to preserve entered values.                                                                                                          | `EmailVerificationScreen.tsx`, `SignUpScreen.tsx`                                                                                                                                                                               |
-| P2-21 | Review         | Done: Mock disclosure copy removed from Review compose.                                                                                                                                                                    | `ReviewComposeScreen.tsx`                                                                                                                                                                                                       |
-| P2-22 | Review         | Done: Mock disclosure copy removed from success modal.                                                                                                                                                                     | `ReviewSuccessModal.tsx`                                                                                                                                                                                                        |
-| P2-23 | Profile        | Done: Favourites empty state copy updated.                                                                                                                                                                                 | `FavouritesScreen.tsx`                                                                                                                                                                                                          |
-| P2-24 | Profile        | Done: Settings screen cleanup (mock banner removed).                                                                                                                                                                       | `SettingsScreen.tsx`                                                                                                                                                                                                            |
-| P2-25 | Profile        | Done: Edit profile now supports real avatar photo picking and routes password changes into reset-password flow.                                                                                                            | `EditProfileScreen.tsx`                                                                                                                                                                                                         |
-| P2-26 | Profile        | Done: EditProfile mock disclosure removed.                                                                                                                                                                                 | `EditProfileScreen.tsx`                                                                                                                                                                                                         |
-| P2-27 | Profile        | Done (Batch 2026-04-10M): Settings now includes account deletion action with destructive confirmation.                                                                                                                     | `SettingsScreen.tsx`                                                                                                                                                                                                            |
-| P2-28 | Profile        | Done (Batch 2026-04-10M): Settings now shows app version metadata.                                                                                                                                                         | `SettingsScreen.tsx`                                                                                                                                                                                                            |
-| P2-29 | Profile        | Done: `ProfileScreen.tsx` dead indirection removed.                                                                                                                                                                        | `ProfileStack.tsx`                                                                                                                                                                                                              |
-| P2-30 | Reads          | Done: dynamic read time calculation implemented.                                                                                                                                                                           | `ReadsFeedScreen.tsx`                                                                                                                                                                                                           |
-| P2-31 | Reads          | Done: "View Archive" CTA now has an interactive `onPress` path.                                                                                                                                                            | `ReadsFeedScreen.tsx`                                                                                                                                                                                                           |
-| P2-32 | Reads          | Done: Reads grid updated with token colors.                                                                                                                                                                                | `ReadsFeedScreen.tsx`                                                                                                                                                                                                           |
-| P2-33 | Component      | Done: `DishCard` placeholder colour now uses a theme palette token.                                                                                                                                                        | `DishCard.tsx`                                                                                                                                                                                                                  |
-| P2-34 | Component      | Done (Batch 2026-04-10M): PhotoPicker no longer hardcodes placeholder grey token.                                                                                                                                          | `PhotoPicker.tsx`                                                                                                                                                                                                               |
-| P2-35 | Component      | Done: `StallHeader` now consumes theme spacing/tokens instead of magic-number-only layout gaps.                                                                                                                            | `StallHeader.tsx`                                                                                                                                                                                                               |
-| P2-36 | Component      | Done: `OperatingHours` now visually differentiates open/closed states with semantic success/error colouring.                                                                                                               | `OperatingHours.tsx`                                                                                                                                                                                                            |
-| P2-37 | Component      | Done: inline hardcoded `fontFamily` overrides removed from flagged components in favour of typography variants/token-driven styling.                                                                                       | `Button.tsx`, `ClusterPin.tsx`, `ReviewCard.tsx`, `DeliveryPlatformButton.tsx`, `BiteCard.tsx`                                                                                                                                  |
-| P2-38 | Component      | Done: `MapSurface` fallback roads now use `palette.mapRoadPrimary/Secondary` tokens.                                                                                                                                       | `MapSurface.tsx`                                                                                                                                                                                                                |
-| P2-39 | Component      | Done: flagged `borderRadius: 999` usages replaced with tokenized `radii.pill`.                                                                                                                                             | `MapSurface.tsx`                                                                                                                                                                                                                |
-| P2-40 | Component      | Done: `BiteCard` taste tag text now uses inverse/tokenized text tone instead of hardcoded white.                                                                                                                           | `BiteCard.tsx`                                                                                                                                                                                                                  |
-| P2-41 | Component      | Done: `BitesCarousel` fixture-building logic extracted to `src/features/home/bites.ts` (no large inline data block).                                                                                                       | `BitesCarousel.tsx`, `bites.ts`                                                                                                                                                                                                 |
-| P2-42 | Component      | Done (Batch 2026-04-13H): removed remaining `useNavigation<any>()` callsites by applying typed `RootStackParamList` navigation props across Home/Discover/Search screens and `BitesCarousel`; verification rerun is green. | `HomeFeedScreen.tsx`, `DecideForMeResultScreen.tsx`, `CraveScreen.tsx`, `DiscoverHomeScreen.tsx`, `TasteFilterScreen.tsx`, `SearchResultsScreen.tsx`, `DishSearchScreen.tsx`, `BitesCarousel.tsx`                               |
-| P2-43 | A11y           | Done (Batch 2026-04-10M): FloatingToast now announces as alert with polite live region.                                                                                                                                    | `FloatingToast.tsx`                                                                                                                                                                                                             |
-| P2-44 | A11y           | Done (Batch 2026-04-10M): Chip now exposes selected accessibility state.                                                                                                                                                   | `Chip.tsx`                                                                                                                                                                                                                      |
-| P2-45 | A11y           | Done (Batch 2026-04-10M): FloorSelector tabs now expose selected accessibility state.                                                                                                                                      | `FloorSelector.tsx`                                                                                                                                                                                                             |
-| P2-46 | A11y           | Done: StarRating roles and context labels added.                                                                                                                                                                           | `StarRating.tsx`                                                                                                                                                                                                                |
-| P2-47 | A11y           | Done: ProfileRadarChart summary label added.                                                                                                                                                                               | `ProfileRadarChart.tsx`                                                                                                                                                                                                         |
-| P2-48 | A11y           | Done: MustOrderBadge accessibility label added.                                                                                                                                                                            | `MustOrderBadge.tsx`                                                                                                                                                                                                            |
-| P2-49 | A11y           | Done: BiteCard now has a single primary action target plus explicit accessibility labels/states on secondary controls.                                                                                                     | `BiteCard.tsx`                                                                                                                                                                                                                  |
-| P2-50 | A11y           | Done: MapBottomSheet accessibility roles added.                                                                                                                                                                            | `MapBottomSheet.tsx`                                                                                                                                                                                                            |
-| P2-51 | Infra          | Done: Input component hardened with error styling.                                                                                                                                                                         | `Input.tsx`                                                                                                                                                                                                                     |
-| P2-52 | Infra          | Done: `Skeleton` loading primitive created and exported.                                                                                                                                                                   | `Skeleton.tsx`                                                                                                                                                                                                                  |
-| P2-53 | Infra          | Done: `Avatar` primitive created and exported.                                                                                                                                                                             | `Avatar.tsx`                                                                                                                                                                                                                    |
-| P2-54 | Infra          | Done: `BottomSheet` general-purpose primitive created and exported.                                                                                                                                                        | `BottomSheet.tsx`                                                                                                                                                                                                               |
-| P2-55 | Infra          | Done (Batch 2026-04-13G): resolved module-scope token regressions by replacing out-of-scope static usages and adopting spacing-aware style factories in affected components; typecheck is green.                           | `OnboardingIntroTemplate.tsx`, `DecideForMeCard.tsx`, `DishCard.tsx`, `StallCard.tsx`, `Screen.tsx`                                                                                                                             |
-| P2-56 | Infra          | Done: numeric z-index literals removed from targeted surfaces in favor of `zIndex.*` tokens.                                                                                                                               | `tokens.ts`, `OnboardingIntroTemplate.tsx`, `WheelSpinScreen.tsx`, `RootNavigator.tsx`, `HomeMapScreen.tsx`                                                                                                                     |
-| P2-57 | Infra          | Done: hardcoded animation durations replaced with `motion.*` tokens across remaining onboarding/splash/wheel/discovery surfaces.                                                                                           | `tokens.ts`, `SplashScreen.tsx`, `DecideForMeResultScreen.tsx`, `TasteProfileLoadingScreen.tsx`, `FoodSelectionScreen.tsx`, `TasteQuizScreen.tsx`, `OnboardingIntroTemplate.tsx`, `WheelResultModal.tsx`, `WheelSpinScreen.tsx` |
-| P2-58 | Design System  | **NEW (Audit 2026-04-13):** `palette.white` / `palette.textOnPrimary` token missing — 35+ `#FFFFFF` inline violations across screens and components. Need a semantic token for text-on-dark and text-on-primary surfaces.  | `tokens.ts`, multiple screens                                                                                                                                                                                                   |
-| P2-59 | Design System  | **NEW (Audit 2026-04-13):** Delivery brand colors (`#00B14F` GrabFood, `#D70F64` Foodpanda, `#00CCBC` Deliveroo) should be extracted to named constants, not inline hex strings.                                           | `DeliveryPlatformButton.tsx`                                                                                                                                                                                                    |
-| P2-60 | Design System  | **NEW (Audit 2026-04-13):** Busyness indicator colors (`#10B981`, `#F59E0B`, `#EF4444`) need palette tokens (e.g. `palette.statusFast`, `palette.statusModerate`, `palette.statusBusy`).                                   | `HomeMapScreen.tsx`                                                                                                                                                                                                             |
-| P2-61 | Tokens         | Done (Batch 2026-04-13G): removed invalid `spacing[0.5]` usage in `BiteCard` (`paddingVertical` now explicit `2`) and restored type safety.                                                                                | `BiteCard.tsx`                                                                                                                                                                                                                  |
-| P2-62 | Security       | Done (Batch 2026-04-13O): `DeveloperLauncher` registration is now excluded from production stack using `__DEV__` route gating.                                                                                             | `RootNavigator.tsx`                                                                                                                                                                                                             |
-| P2-63 | Hardcoded Copy | Done (Batch 2026-04-13P): Home/Discover location labels now derive from location state + nearest-building computation, and Profile hardcoded gamification strings were replaced with data-backed copy.                     | `HomeFeedScreen.tsx`, `DiscoverHomeScreen.tsx`, `ProfileHomeScreen.tsx`                                                                                                                                                         |
-
-### P0 — Newly Discovered Blockers (Audit 2026-04-13)
-
-| ID    | Area  | Issue                                                                                                                                                             | File(s)                                                                                                             |
-| ----- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| P0-18 | Build | Done (Batch 2026-04-13G): 25 TypeScript compilation errors resolved across the six affected files; build unblocked and verified by green typecheck/test commands. | `OnboardingIntroTemplate.tsx`, `DecideForMeCard.tsx`, `DishCard.tsx`, `BiteCard.tsx`, `StallCard.tsx`, `Screen.tsx` |
-
-### P1 — Newly Discovered UX Gaps (Audit 2026-04-13)
-
-| ID    | Area    | Issue                                                                                                                                                                    | File(s)                                                      |
-| ----- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| P1-49 | Home    | Done (Batch 2026-04-13P): DirectMessages entry points are now feature-flagged off by default (`directMessagesEnabled: false`) and the route is conditionally registered. | `featureFlags.ts`, `RootNavigator.tsx`, `HomeFeedScreen.tsx` |
-| P1-50 | Home    | Done (Batch 2026-04-13P): Removed placeholder comments bottom-sheet implementation from Home feed.                                                                       | `HomeFeedScreen.tsx`                                         |
-| P1-51 | Profile | Done (Batch 2026-04-13P): Removed dead chevron affordance from the Detailed Analysis block and wired Recently Saved cards to DishDetail.                                 | `ProfileHomeScreen.tsx`                                      |
-| P1-52 | Crave   | Done (Batch 2026-04-13P): Removed dead `(i)` info button affordance from Crave header.                                                                                   | `CraveScreen.tsx`                                            |
-| P1-53 | Profile | Done (Batch 2026-04-13P): Replaced hardcoded level/prose with profile-stats-driven copy.                                                                                 | `ProfileHomeScreen.tsx`                                      |
-
----
-
-## 3. Verification Matrix
-
-### Core Flow Testing Matrix
-
-| Domain       | Flow                  | Entry Point                                                    | Happy Path                                                                                  | Edge Cases                                                                   | Verification Criteria                                                                                                                                                                     |
-| ------------ | --------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Home**     | Feed load             | App launch → Home tab                                          | Feed renders personalised dish cards sorted by taste similarity                             | Empty feed (no mock data); feed with closed venues only                      | Feed populates without crash; DishCard taps navigate to DishDetail; Decide For Me FAB visible and functional; no developer-facing copy visible                                            |
-| **Home**     | Decide For Me         | Home → FAB tap                                                 | Dish result card shown with photo, name, stall, floor/unit, match %                         | No match within radius; user has neutral taste vector (all 5s)               | Result renders within 2s; haptic fires; "Try another" returns a different dish; expand radius option shown on no-match                                                                    |
-| **Discover** | Category browse       | Discover tab → category chip tap                               | Chips filter search store; SearchResults update accordingly                                 | All chips deselected; single chip selected; multiple chips                   | Chip `selected` state syncs with `useSearchStore.categories`; results reflect active filters                                                                                              |
-| **Discover** | Taste filter          | Discover → Taste Filter → Apply                                | Sliders update `useSearchStore.tasteValues`; results rank by cosine similarity              | All sliders at 0; all at 10; reset to profile                                | Slider values are integers (step=1); "Reset to my profile" restores quiz values; "Apply" navigates back and results re-sort                                                               |
-| **Search**   | Text search           | Discover tab → search input → submit                           | Results screen shows matching dishes ranked by relevance + taste                            | Empty query; query with no matches; special characters                       | Loading state shown during fetch; empty state with clear CTA; "0 dishes" subtitle hidden when empty state shown                                                                           |
-| **Search**   | Sort & display        | SearchResults → sort toggle / grid toggle                      | Results re-order by selected sort; grid/list layout switches cleanly                        | Single result; 100+ results; sort by price ascending                         | Sort dropdown present with options (price, rating, distance, match); grid remounts correctly via `key` prop                                                                               |
-| **Maps**     | Building selection    | Maps tab → pin tap                                             | Bottom sheet shows building name, type, stall count, hero dish                              | Closed building tap; building with 0 open stalls                             | Pin colours match spec (hawker=orange, food_court=teal, restaurant=grey); bottom sheet is gesture-draggable; "View stalls" navigates to BuildingDrillDown                                 |
-| **Maps**     | Floor plan drill-down | Maps → pin → BuildingDrillDown                                 | Floor tabs switch; compact full-width stall list renders per floor; stall tap → StallDetail | Single-floor building; floor with 0 stalls; building flagged `isClosedToday` | FloorSelector component used (not inline pills); compact list rows render cleanly; closure notice visible; dish carousel shows >4 with "see more"                                         |
-| **Maps**     | Current location      | Maps tab → location button                                     | Camera re-centres to user's GPS coordinates with appropriate zoom                           | Location permission denied; GPS unavailable                                  | Button re-centres camera; zoom level adjusts; fallback to manual location if permission denied                                                                                            |
-| **Auth**     | Email sign-up         | Splash → Auth → SignUp → EmailVerification → Onboarding        | User completes sign-up, verifies email, enters onboarding                                   | Invalid email format; short password; mismatched passwords; blank fields     | Form validation errors shown inline with red border; loading state on submit button; password visibility toggle present; terms/privacy link tappable                                      |
-| **Auth**     | Email login           | Auth → Login                                                   | User authenticates and lands on MainTabs (or Onboarding if first time)                      | Wrong password; unregistered email; session expired re-auth                  | Validation errors shown; loading spinner on submit; expired session redirects to Login with return route preserved                                                                        |
-| **Auth**     | Password reset        | Login → Forgot → Reset → Success → Login                       | User resets password and returns to login                                                   | Invalid email on forgot; token expired on reset                              | Toast confirmation on email sent; password match validation on reset; success screen navigates to Login                                                                                   |
-| **Auth**     | Social auth           | Auth → Google/Apple button                                     | Auth completes, user enters onboarding                                                      | Provider unavailable; user cancels consent                                   | Loading state on provider button; cancel returns to auth screen; success routes through onboarding                                                                                        |
-| **Review**   | Full review flow      | Review tab → ReviewHub → Rating → Tags → Compose → Submit      | User selects venue+dish, rates, tags, writes, submits                                       | No venues found; switch dish mid-flow; submit while unauthenticated          | Hub shows searchable venue list with empty state; rating disables "Next" when 0; tags are optional; compose has real photo picker; submit shows success modal; draft cleared after submit |
-| **Review**   | Quick tag review      | Review tab → ReviewHub → Rating → Tags → Submit (skip compose) | User completes quick 3-step review without text/photos                                      | —                                                                            | Tags screen has a "Submit without text" affordance or compose step is skippable                                                                                                           |
-| **Profile**  | View profile          | Profile tab                                                    | Profile overview with radar chart, stats, quick links                                       | New user with 0 reviews and 0 favourites; user who skipped taste quiz        | Radar chart renders non-zero polygon (or shows explanatory text for all-zero); stats show correct counts; sign-out works                                                                  |
-| **Profile**  | Favourites            | Profile → Favourites                                           | Saved dishes list with images, prices, venues, tap-to-detail                                | 0 favourites; removing last favourite                                        | `EmptyState` component with CTA to discover; each dish card navigates to DishDetail; remove action updates count                                                                          |
-| **Profile**  | Review history        | Profile → Review History                                       | User's past reviews with their rating, tags, text, date                                     | 0 reviews                                                                    | `EmptyState` component with CTA to write review; each entry shows the user's own review content (not dish's public reviewCount)                                                           |
-| **Profile**  | Edit profile          | Profile → Edit                                                 | User updates display name, email                                                            | No changes saved; empty name                                                 | Input validation (non-empty name, valid email format); save persists to `useProfileStore`                                                                                                 |
-| **Profile**  | Settings              | Profile → Settings                                             | Dietary filters, notifications, sign-out, app version                                       | —                                                                            | Sign-out clears session and routes to Splash; app version sourced from package.json; account deletion option present                                                                      |
-
-### State-Handling Verification Checklist
-
-| State                                               | Screens That Must Handle It                                                                        | Current Status                                                                                                        |
-| --------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Loading (data fetch in progress)                    | Home, SearchResults, DishDetail, StallDetail, BuildingDrillDown, DecideForMe, Maps                 | Partial: implemented on Home/SearchResults and several detail flows; still inconsistent across all surfaces.          |
-| Empty (valid response, zero items)                  | Home feed, SearchResults, ReviewHub venue list, Favourites, ReviewHistory, BuildingDrillDown floor | Partial: present in SearchResults/Favourites/BuildingDrillDown; copy and UX consistency still pending in some flows.  |
-| Error (fetch failure / thrown exception)            | Home, SearchResults, DishDetail, StallDetail, Maps                                                 | Partial: Home has explicit retry error UI; other domains remain inconsistent and need shared error-state patterning.  |
-| Not found (invalid ID in route params)              | DishDetail, StallDetail, BlogPost                                                                  | Partial: exists in detail/blog routes but wrapper/copy consistency still needs final pass.                            |
-| Offline (no network)                                | Global                                                                                             | Present — `OfflineStateScreen` exists with recovery button                                                            |
-| Auth required (protected action by signed-out user) | Favourite, Review submit, Profile tab, protected routes                                            | Auth-first redirect is active; signed-out attempts are routed to `AuthStack/Login` with return-route intent preserved |
-
----
-
-### Claude primary
-
----
-
-## 4. Phase 4 — Ordering + Payments Preparation (Future)
-
-### Claude primary
-
-- [ ] Break down ordering system architecture (consumer, vendor, platform analytics).
-- [ ] Document payment/provider tradeoffs and compliance constraints.
-- [ ] Define queue-time/crowd-estimation model assumptions.
-
-### Codex primary
-
-- [ ] Scaffold frontend contracts and placeholders for order/cart/checkout flows.
-- [ ] Add feature flags for future ordering capabilities.
-- [ ] Maintain separation between MVP shell and future ordering modules.
-
-### Done criteria
-
-- [ ] Future-facing contracts exist without destabilising current MVP.
-- [ ] Feature flags gate unfinished modules cleanly.
-
----
-
----
-
-## 4B. State of the Union — Execution Checklist (2026-04-13)
-
-> **Source:** Full codebase audit by Claude (Opus). All items are tracked against evidence in `state_of_the_union.md`.
-> **Rule:** No item may be marked `[x]` without a verification step recorded in Section 5 (Session Log).
-> **Agents:** **Claude** = architecture, planning, contracts. **Codex** = implementation, fixes, migration. **Gemini** = design system, tokens, visual specs.
-
----
-
-### Sprint 0 — Emergency Stabilization (P0-18 + P2-DC2)
-
-> **Goal:** Restore the build to green. Nothing else proceeds until typecheck passes.
-
-#### Codex primary
-
-- [x] **P0-18a:** Fix `OnboardingIntroTemplate.tsx` — move 13 `spacing`/`radii` references out of `StyleSheet.create()` into component-scoped styles or inline styles that access `useHungryTheme()`. (13 errors)
-- [x] **P0-18b:** Fix `DecideForMeCard.tsx` — same pattern: `spacing` used at module scope. Move into component body. (4 errors)
-- [x] **P0-18c:** Fix `DishCard.tsx` — same pattern. (3 errors)
-- [x] **P0-18d:** Fix `StallCard.tsx` — same pattern. (2 errors)
-- [x] **P0-18e:** Fix `Screen.tsx` — same pattern. (2 errors)
-- [x] **P2-61:** Fix `BiteCard.tsx` — replace `spacing[0.5]` with a valid spacing key (e.g. `spacing[1]` or add `0.5` to the spacing scale in `tokens.ts`). (1 error)
-
-#### Done gate
-
-- [x] `npm run typecheck` passes with zero errors.
-- [x] `npm test -- --runInBand` passes.
-- [x] P2-DC2 status updated to Done with evidence in Session Log.
-
----
-
-### Sprint 1 — Architecture Repair (P1-ARCH-07 + P2-42)
-
-> **Goal:** Complete the service provider migration and type-safe navigation. Restore the single-file backend swap path.
-
-#### Claude primary
-
-- [x] **P1-ARCH-07 audit:** Codex completed all 6 migration batches without a formal audit doc; done gate verified clean (`grep -rn 'from.*mock/repositories' src/app/ src/features/` returns zero non-dev results). Three orphaned `(1).tsx` backup files deleted 2026-04-15 to clear the last stale imports.
-- [x] **P1-ARCH-07 contract check:** All 6 migration batches passed typecheck — DataRepository interface was sufficient. No missing methods found.
-
-#### Codex primary
-
-- [x] **P1-ARCH-07 migrate (batch 1 — detail screens):** Refactor `DishDetailScreen`, `StallDetailScreen` to use `getDataRepository()` or store-backed data.
-- [x] **P1-ARCH-07 migrate (batch 2 — discover screens):** Refactor `DecideForMeResultScreen`, `HomeMapScreen`, `CraveScreen`, `DiscoverHomeScreen`, `BuildingDrillDownScreen`, `MapZoomedInScreen`.
-- [x] **P1-ARCH-07 migrate (batch 3 — search/review screens):** Refactor `SearchResultsScreen`, `ReviewHubScreen`, `ReviewRatingScreen`, `ReviewComposeScreen`.
-- [x] **P1-ARCH-07 migrate (batch 4 — profile screens):** Refactor `ProfileHomeScreen`, `FavouritesScreen`, `ReviewHistoryScreen`.
-- [x] **P1-ARCH-07 migrate (batch 5 — remaining screens):** Refactor `PostComposerScreen`, `BlogPostWebViewScreen`, `FoodSelectionScreen`, `WheelResultModal`, `WheelEntryAddSheet`.
-- [x] **P1-ARCH-07 migrate (batch 6 — dev only):** Refactor `DeveloperLauncherScreen` (acceptable to keep `mockRepository` behind `__DEV__` guard, but document the exception).
-- [x] **P2-42 (batch 1):** Type `useNavigation<any>()` in `HomeFeedScreen`, `DecideForMeResultScreen`, `CraveScreen`, `DiscoverHomeScreen`.
-- [x] **P2-42 (batch 2):** Type `useNavigation<any>()` in `TasteFilterScreen`, `SearchResultsScreen`, `DishSearchScreen`, `BitesCarousel`.
-
-#### Done gate
-
-- [x] `grep -rn 'from.*mock/repositories' src/app/ src/features/` returns zero non-test results (except `DeveloperLauncherScreen` behind `__DEV__`).
-- [x] `grep -rn 'useNavigation<any>' src/` returns zero results.
-- [x] `npm run typecheck` passes.
-
----
-
-### Sprint 2 — Design System Compliance (P2-55, P2-58–P2-61)
-
-> **Goal:** Restore full design token compliance. Zero hardcoded hex colors in screen files.
-
-#### Gemini primary
-
-- [x] **P2-58 spec:** Define semantic token names for text-on-dark / text-on-primary. Propose additions to `palette` in `tokens.ts` (e.g. `palette.textOnPrimary`, `palette.textOnDark`, `palette.white`). Document in `tasks/design-system.md`.
-- [x] **P2-59 spec:** Define named constants for delivery brand colors (Grab green, Foodpanda pink, Deliveroo teal). Decide: palette tokens or a separate `brandColors` map.
-- [x] **P2-60 spec:** Define palette tokens for busyness/status indicators (`statusFast`, `statusModerate`, `statusBusy`). Document in `tasks/design-system.md`.
-- [x] **P2-61 spec:** Decide whether `spacing[0.5]` (2px) should be added to the spacing scale, or if the `BiteCard` usage should round up to `spacing[1]`.
-- [x] **P2-55 spec:** Provide guidance for remaining hardcoded `borderRadius` values (CraveScreen `32`, StallDetail `28`, etc.) — which `radii.*` token do they map to? Should any new tokens be added?
-
-#### Codex primary
-
-- [x] **P2-58 implement:** Add approved tokens to `tokens.ts`. Replace all `#FFFFFF` usages in screen files (35+) with `palette.textOnPrimary` or `palette.white`.
-- [x] **P2-58 implement (components):** Replace all `#FFFFFF` usages in component files (13+) with the new tokens.
-- [x] **P2-59 implement:** Extract delivery brand colors to named constants in `src/constants/brandColors.ts`. Update `DeliveryPlatformButton.tsx`.
-- [x] **P2-60 implement:** Add busyness tokens to palette. Update `HomeMapScreen.tsx` busyness indicator.
-- [x] **P2-61 implement:** Apply the spacing decision from Gemini's spec to `BiteCard.tsx`.
-- [x] **P2-55 implement:** Replace remaining hardcoded `borderRadius` values in screens with `radii.*` tokens per Gemini's mapping.
-- [x] **Inline fontFamily cleanup:** Replace 20+ inline `fontFamily: "Nunito_*"` overrides in screen files with `AppText` variant props or `fontWeight` styling. (Screens only — `SplashScreen` and `HungryLogo` are acceptable exceptions.)
-
-#### Done gate
-
-- [x] `grep -rn '#[0-9a-fA-F]\{6\}' src/app/screens/ --include="*.tsx"` returns zero results (excluding `rgba()` overlays).
-- [x] `grep -rn 'borderRadius: [0-9]' src/app/screens/ --include="*.tsx"` returns zero results (excluding `padding: 0` card resets).
-- [x] `npm run typecheck` passes.
-
----
-
-### Sprint 3 — Dead Feature Purge (P1-49–P1-53, P2-62–P2-63)
-
-> **Goal:** Remove or feature-flag every dead-end screen, unimplemented button, and hardcoded copy string.
-
-#### Claude primary
-
-- [x] **P1-49 decision:** Feature-flagged behind `directMessagesEnabled: false` (default off). Data contract deferred to Phase 2. Verified: `featureFlags.ts:6`.
-- [x] **P1-50 decision:** Comments kept and working (`commentsEnabled: true`); the placeholder `BottomSheetModal` stub was removed. Comments are a live feature, not a dead-end.
-- [x] **P1-51 decision:** "Detailed Analysis" chevron removed — block is now a display-only `View` (not a Pressable). Favourite cards on Profile navigate to `DishDetail`. Verified in `ProfileHomeScreen.tsx`.
-- [x] **P1-53 decision:** Gamification copy replaced with profile-stats-driven text using `profile.stats.dishesReviewed` and `profile.stats.stallsVisited`. No hardcoded "Level 12 / Foodie Scout" remains (verified by grep).
-- [x] **P2-63 spec:** Location strings derive from `useLocationStore` nearest-building computation. Hardcoded "Tanjong Pagar" strings gone (verified by grep). "14 nearby" replaced with computed building count.
-
-#### Codex primary
-
-- [x] **P1-49 execute:** Based on Claude's decision — remove `DirectMessagesScreen` and its route, or wrap it in a feature flag. Remove the DM icon from `HomeFeedScreen` header if the screen is removed.
-- [x] **P1-50 execute:** Based on Claude's decision — remove the Comments `BottomSheetModal` from `HomeFeedScreen`, or gate it behind a flag.
-- [x] **P1-51 execute:** Wire `onPress` on the "Detailed Analysis" card (navigate to a defined destination or remove the chevron). Wire `onPress` on "Recently saved" favourite cards to navigate to `DishDetail`.
-- [x] **P1-52 execute:** Either wire the `(i)` Pressable on CraveScreen to a help/info modal, or remove the button.
-- [x] **P1-53 execute:** Based on Claude's decision — make Profile gamification text dynamic from store data, or replace with a static-but-honest alternative.
-- [x] **P2-62 execute:** Wrap the `DeveloperLauncherScreen` route registration in `RootNavigator.tsx` with `{__DEV__ && <RootStack.Screen ... />}` so it's omitted from the production bundle entirely.
-- [x] **P2-63 execute:** Based on Claude's spec — replace hardcoded "Tanjong Pagar" strings with location-derived values. Replace "14 nearby" with computed building count from `listBuildings()`.
-
-#### Done gate
-
-- [x] Every `<Pressable>` in screen files has either an `onPress` handler or an explicit `accessibilityRole="none"` / is purely decorative.
-- [x] `DeveloperLauncherScreen` route does not appear in production navigation stack.
-- [x] `grep -rn 'Tanjong Pagar\|Level 12\|Foodie Scout\|14 nearby\|8 new stalls\|top 5%' src/` returns zero results.
-- [x] `npm run typecheck` passes.
-
----
-
-### Sprint 4 — Production Infrastructure
-
-> **Goal:** Install the minimum infrastructure required for a production deploy.
-
-#### Claude primary
-
-- [x] **CI/CD pipeline:** Write `.github/workflows/ci.yml` with typecheck → test → expo-doctor → EAS build gates.
-- [x] **Environment strategy:** Define `.env.development`, `.env.staging`, `.env.production` variable sets. Document which variables go where.
-- [x] **Sentry init plan:** Define the Sentry DSN placement, error boundary strategy, and source map upload hook for EAS builds.
-- [x] **PostHog init plan:** Define the PostHog project setup, API key placement, identity linking strategy, and the core funnel events that must ship for launch (from P1-03 taxonomy).
-- [x] **Launch readiness checklist:** Draft Privacy Policy and Terms of Service requirements. List App Store / Play Store submission requirements (screenshots, ratings, keywords, etc.).
-
-#### Codex primary
-
-- [x] **Sentry install:** `npx expo install @sentry/react-native`. Init in `App.tsx`. Wrap root with `Sentry.ErrorBoundary`. Add `SENTRY_DSN` to `.env`.
-- [x] **PostHog install:** `npx expo install posthog-react-native`. Create `src/lib/analytics/posthogSink.ts`. Wire `setAnalyticsSink(posthogSink)` in app bootstrap. Add `EXPO_PUBLIC_POSTHOG_API_KEY` and `EXPO_PUBLIC_POSTHOG_HOST` to `.env`.
-- [x] **PostHog identity:** On `sign_in_completed` call `posthog.identify(userId)`. On `sign_out` call `posthog.reset()`. Set user properties (tasteVector, dietaryPreferences, area).
-- [x] **Secure storage:** Install `expo-secure-store`. Create `src/store/secureStorage.ts`. Migrate `useSessionStore` persistence from `AsyncStorage` to `SecureStore` for auth-related fields.
-- [x] **CI/CD setup:** Implement the `.github/workflows/ci.yml` from Claude's spec. Add `EXPO_TOKEN` as a GitHub Actions secret (coordinate with user).
-- [x] **Environment files:** Create `.env.development`, `.env.staging`, `.env.production` from Claude's spec. Update `.gitignore` to include all variants.
-- [x] **Feature flag upgrade:** Add `FEATURE_FLAGS.directMessagesEnabled` (default `false`), `FEATURE_FLAGS.commentsEnabled` (default `false`), `FEATURE_FLAGS.craveEnabled` (default `true`). Wire into navigation.
-
-#### Phase execution (2026-04-15)
-
-- [x] **Phase 1 (env contract):** Expanded `.env.development`, `.env.staging`, `.env.production` placeholders to the production-infrastructure variable catalog and aligned staging/production `HUNGRY_DATA_SOURCE=supabase`.
-- [x] **Phase 2 (build pipeline):** Updated `.gitignore` for local env variants and aligned `eas.json` channels/env blocks, plus CI Sentry secret pass-through for EAS build-gate job.
-- [x] **Phase 3 (observability/events):** Hardened `Sentry.init` env + privacy filtering and added must-ship analytics coverage (`sign_up_completed`, `decide_for_me_*`, `delivery_link_tapped`) in auth/discover/detail flows.
-- [ ] **Phase 4 (launch smoke evidence):** Pending simulator validation against Sentry/PostHog dashboards and CI run evidence on `main`.
-
-#### Done gate
-
-- [ ] `@sentry/react-native` imported and initialised; errors captured in Sentry dashboard on simulator crash.
-- [ ] PostHog receives at least `app_launched`, `sign_in_completed`, `dish_viewed` events from a simulator run.
-- [ ] Session tokens stored in `SecureStore` (verify with `expo-secure-store` API in dev client).
-- [ ] GitHub Actions CI runs on push to `main` and all 3 gates pass.
-- [x] `npm run typecheck` passes.
-
----
-
-### Sprint 1–4 Audit Findings (2026-04-15)
-
-> **Source:** Full code audit against all sprint deliverables. Every item below was verified against actual file contents before being logged. Severity: **HIGH** = runtime breakage, **MEDIUM** = architectural debt / silent failure, **LOW** = design system consistency.
-
-#### HIGH
-
-- [x] **AUD-01 — `ReadsFeed` route undefined** `src/app/navigation/RootNavigator.tsx:63,261–264` — `"ReadsFeed"` appears in `AUTH_REQUIRED_ROUTES` and `openResolvedRoute()`, but is never declared in `RootStackParamList` (`navigationTypes.ts`). If a user's `returnRoute` is ever set to `"ReadsFeed"` (e.g. from a deep link or post-auth redirect), the app will crash at runtime with an unknown route error. Fix: add `ReadsFeed: undefined` to `RootStackParamList`, or remove the three `ReadsFeed` references from `RootNavigator.tsx`.
-
-#### MEDIUM
-
-- [x] **AUD-02 — `reviewEntries` not cleared on sign-out** `src/store/useSessionStore.ts:93–96` / `useProfileStore.ts:200–205` — `signOut()` calls `syncProfile(false)` which resets the profile object, but never calls `clearProfile()`. The `reviewEntries` map (persisted via `hungryPersistStorage`) survives sign-out and will be visible to the next user on a shared device. Fix: call `useProfileStore.getState().clearProfile()` inside `signOut()` alongside `syncProfile(false)`.
-
-- [x] **AUD-03 — Sentry DSN env fallback is dead code** `App.tsx:10` — `process.env.SENTRY_DSN` (no `EXPO_PUBLIC_` prefix) is never bundled into the React Native JS bundle; it will always be `undefined`. The `??` fallback silently always uses `EXPO_PUBLIC_SENTRY_DSN`, making the first read misleading dead code. Fix: remove the `process.env.SENTRY_DSN` half and use `process.env.EXPO_PUBLIC_SENTRY_DSN` directly. (Verified already compliant in current `App.tsx`.)
+## 🔵 PHASE 7 — Backend Bootstrap (V2 Foundation)
+
+> **Owner:** Claude architects, Codex scaffolds | **Stack:** Supabase (Postgres 15 + PostGIS + pgvector).  
+> Full schema in `tasks/backend-architecture.md`.
+
+### Database
+
+- [ ] Provision Supabase project (`hungry-production`)
+- [ ] Run migration `0001_v2_initial_schema.sql` — all tables from `backend-architecture.md §2.3`
+- [ ] Run migration `0002_seed_dietary_flags.sql` — halal, vegetarian, vegan, pork_free, nut_free, gluten_free
+- [ ] Run migration `0003_seed_venue_categories.sql` — local_favourites, noodles, rice, desserts, late_night
+- [ ] Seed `buildings`, `building_floors`, `venues` from V1 mock fixtures (Maxwell, Lau Pa Sat, Amoy)
+- [ ] Seed `dishes`, `dish_images`, `dish_taste_vectors` from V1 fixture data
+- [ ] Seed `blog_sources`, `blog_posts` (EatBook, SethLui)
+- [ ] Add `update_dish_rating` trigger (see `backend-architecture.md §10`)
+- [ ] Verify PostGIS: `SELECT ST_Distance(...)` smoke test on Maxwell/Lau Pa Sat coordinates
+- [ ] Verify pgvector: HNSW index smoke test on taste vector cosine similarity
+
+### Auth (Supabase Auth)
+
+- [ ] Configure email + password provider
+- [ ] Configure Google OAuth provider
+- [ ] Configure Apple OAuth provider (iOS required)
+- [ ] Define Row Level Security (RLS) policies on `users`, `reviews`, `orders`, `chat_messages`
+- [ ] Implement guest session token issuance endpoint (`POST /api/guest-sessions`)
+
+### API Layer (Supabase Edge Functions or Next.js API routes)
 
 - [x] **AUD-04 — CI pipeline has no lint gate** `.github/workflows/ci.yml` — The `quality-gates` job runs typecheck → test → expo-doctor but has no ESLint step. Lint errors silently pass CI. Fix: add `npm run lint` as a step (after verifying/adding the `lint` script to `package.json`).
 
@@ -786,10 +270,10 @@ These items affect perceived quality but do not break functionality.
 
 #### Codex primary
 
-- [x] **TOOL-01 — Install ESLint + Prettier:** Install `eslint`, `prettier`, `eslint-config-expo`, `@typescript-eslint/eslint-plugin`, `@typescript-eslint/parser` as devDeps. Create `.eslintrc.json` and `.prettierrc`. Add `"lint": "eslint src/ --ext .ts,.tsx"`, `"format": "prettier --write src/"`, `"format:check": "prettier --check src/"`, `"lint:fix": "eslint src/ --ext .ts,.tsx --fix"` scripts to `package.json`. Include a `no-restricted-syntax` rule that flags hardcoded hex color literals. *(Verified 2026-04-17 — `.eslintrc.json`, `.prettierrc`, `eslint.config.js` present)*
-- [x] **TOOL-02 — Add lint gate to CI:** Add `npm run lint` and `npm run format:check` steps to the `quality-gates` job in `.github/workflows/ci.yml`, after the existing typecheck step. *(Verified 2026-04-17 — `ci.yml:27` runs `npm run lint`)*
-- [x] **TOOL-03 — Pre-commit hooks:** Install `husky` and `lint-staged`. Configure lint-staged to run `eslint --fix` and `prettier --write` on staged `.ts`/`.tsx` files. *(Verified 2026-04-17 — `.husky/pre-commit` present)*
-- [x] **TOOL-04 — Create `.env.example`:** Copy `.env.development` and strip all real values; leave placeholder comments (`# Your Mapbox public token here`). Commit to repo root. *(Verified 2026-04-17 — `.env.example` committed)*
+- [ ] **TOOL-01 — Install ESLint + Prettier:** Install `eslint`, `prettier`, `eslint-config-expo`, `@typescript-eslint/eslint-plugin`, `@typescript-eslint/parser` as devDeps. Create `.eslintrc.json` and `.prettierrc`. Add `"lint": "eslint src/ --ext .ts,.tsx"`, `"format": "prettier --write src/"`, `"format:check": "prettier --check src/"`, `"lint:fix": "eslint src/ --ext .ts,.tsx --fix"` scripts to `package.json`. Include a `no-restricted-syntax` rule that flags hardcoded hex color literals.
+- [ ] **TOOL-02 — Add lint gate to CI:** Add `npm run lint` and `npm run format:check` steps to the `quality-gates` job in `.github/workflows/ci.yml`, after the existing typecheck step.
+- [ ] **TOOL-03 — Pre-commit hooks:** Install `husky` and `lint-staged`. Configure lint-staged to run `eslint --fix` and `prettier --write` on staged `.ts`/`.tsx` files.
+- [ ] **TOOL-04 — Create `.env.example`:** Copy `.env.development` and strip all real values; leave placeholder comments (`# Your Mapbox public token here`). Commit to repo root.
 
 #### Done gate
 
@@ -830,8 +314,8 @@ These items affect perceived quality but do not break functionality.
 
 #### Codex primary
 
-- [x] **ERR-01 — Auth screen boundaries:** Wrap `LoginScreen`, `SignUpScreen`, `ForgotPasswordScreen`, `EmailVerificationScreen`, `ResetPasswordScreen` with `FeedErrorBoundary`. Use Gemini's fallback copy spec. *(Verified 2026-04-17 — all 5 screens import and wrap with `FeedErrorBoundary`)*
-- [x] **ERR-02 — Detail screen boundaries:** Wrap `DishDetailScreen` and `StallDetailScreen` with `FeedErrorBoundary`. Fallback: "Couldn't load this dish — try again." *(Verified 2026-04-17)*
+- [ ] **ERR-01 — Auth screen boundaries:** Wrap `LoginScreen`, `SignUpScreen`, `ForgotPasswordScreen`, `EmailVerificationScreen`, `ResetPasswordScreen` with `FeedErrorBoundary`. Use Gemini's fallback copy spec.
+- [ ] **ERR-02 — Detail screen boundaries:** Wrap `DishDetailScreen` and `StallDetailScreen` with `FeedErrorBoundary`. Fallback: "Couldn't load this dish — try again."
 
 #### Done gate
 
@@ -1008,160 +492,3 @@ These items affect perceived quality but do not break functionality.
 - [x] `cd ios && pod install` — 2026-04-16 (New Architecture retained; pods integrated successfully)
 - [x] `npm run typecheck` — 2026-04-16 (post-fix compile health)
 - [x] `npm run ios` — 2026-04-16 (Debug simulator build succeeded and app opened on iPhone 17 Pro)
-
----
-
-## Sprint 7 Closure Audit (2026-04-17)
-
-> Post-merge verification against the war-room P0 register (previously in `war-room-report-2026-04-16.md`, now folded here). All 9 war-room P0s are closed in main. Report retained below as evidence; standalone file removed per "one source of truth" rule.
-
-| Former P0 | Check | Evidence | Status |
-|---|---|---|---|
-| P0-1 TasteFilter route dead end | `grep 'name="TasteFilter"'` in `RootNavigator.tsx` | `<RootStack.Screen component={TasteFilterScreen} name="TasteFilter" />` | ✅ |
-| P0-2 BuildingDrillDown route dead end | `RootNavigator.tsx` | `component={BuildingDrillDownScreen}` | ✅ |
-| P0-3 Profile not syncing after login | `useSessionStore.completeAuth` | `useProfileStore.getState().syncProfile(true)` line 59 | ✅ |
-| P0-4 `BitesCarousel` stale dish IDs | `grep MOCK_BITES src` | zero matches (removed) | ✅ |
-| P0-5 "See all" → PostComposer mismatch | `grep '"Post"' BitesCarousel.tsx` | zero matches (refactored) | ✅ |
-| P0-6 `MapZoomedIn` placeholder text | `MapZoomedInScreen.tsx` | Renders building header, markers, stalls list | ✅ |
-| P0-7 `StallDetail` param field mismatch | grep `navigate("StallDetail"` | All call sites pass `venueId: venue.id` | ✅ |
-| P0-8 `useNavigation<any>()` type unsafety | `grep -rn 'useNavigation<any>' src/` | 0 occurrences | ✅ |
-| P0-9 `BitesCarousel` bypasses repo layer | `BitesCarousel.tsx` | No direct `mockRepository` import; inline fixtures removed | ✅ |
-
-**Closure verdict:** Sprint 7 "Boil the Ocean" silently cleared the war-room P0 backlog on top of its own BT-01..BT-10 deliverables. The standalone `war-room-report-2026-04-16.md` is now obsolete and being removed — its forward-looking content (PRD compliance, decisions, production-path phasing) folded into Sprint 8 below.
-
----
-
-## Sprint 8 — Backend Bootstrap & Production Hygiene (2026-04-17)
-
-> **Goal:** Convert the demo-ready app into a beta-grade product. Two parallel tracks: (A) Backend migration (Supabase), (B) Hygiene carryover from Sprint 6. Gated deliverable: mock-source toggle still works, real-source path ships feature-flag-guarded.
-> **Owners:** Codex = execution. Claude = planning/docs. Gemini = UX states + offline spec.
-> **Rule:** No item flips to `[x]` without a verification step in Section 5 (Session Log).
-
----
-
-### Track A — Backend Migration (carryover from Sprint 5)
-
-> All items reference the existing Sprint 5 checklist (lines 741–748) — not duplicated. Update those checkboxes as work lands; cross-link session log entries.
-
-**Open Codex items (see Sprint 5 section):**
-- Supabase project provisioning (ap-southeast-1, PostGIS + pgvector + pg_trgm + btree_gist + citext)
-- Seed data script from `mock/data.ts`
-- `supabaseRepository.ts` implementing 11 `DataRepository` methods
-- `supabaseService.ts` wiring auth / discovery / reviews / profile / social / content / ai
-- `serviceProvider.ts` swap with `HUNGRY_DATA_SOURCE=mock|supabase` env toggle
-- Auth token migration from AsyncStorage → Supabase Auth session
-- Review photo upload via Supabase Storage signed URLs (wire into `ReviewScreen` + `EditProfileScreen`)
-- RLS policies per `tasks/Roadmap/backend-migration-plan.md §3`
-
-**Open Gemini items (see Sprint 5 section):**
-- Loading / error / empty state audit across all screens once async is real
-- Offline experience spec (cached display, retry affordance, review queue-and-sync)
-
-**Track A done gate:**
-- [ ] All `DataRepository` methods return live data from Supabase
-- [ ] Auth flow (sign up → verify → onboarding → main) works end-to-end against Supabase Auth
-- [ ] `HUNGRY_DATA_SOURCE=mock` still works as fallback (no regression)
-- [ ] Review photo upload stores to Supabase Storage and displays via CDN URL
-- [ ] `npm run typecheck` + `npm test -- --runInBand` green
-- [ ] No `mockRepository` imports remain in production code paths
-
----
-
-### Track B — Sprint 6 Carryover
-
-#### Codex primary
-
-- [ ] **DEAD-01 — Delete `HomeMapScreen (1).tsx`:** Verified still present 2026-04-17. Remove and confirm no imports. *(Already listed in Dead Code Removal section above — still open.)*
-- [ ] **DEAD-02 — Delete `BuildingInfoSheet.tsx`:** Verified still present 2026-04-17.
-- [ ] **DEAD-03 — Delete `DiscoverTabScreen.tsx`:** Verified still present 2026-04-17.
-- [ ] **DEAD-04 — Delete `.tmp_todo_current.md`:** Verified still present at repo root 2026-04-17.
-- [ ] **DOC-01 — Document feature flags in README:** Add "Feature Flags" section documenting `HUNGRY_DATA_SOURCE`, `FEATURE_FLAGS.directMessagesEnabled`, `FEATURE_FLAGS.commentsEnabled`, `FEATURE_FLAGS.craveEnabled`, and toggle instructions.
-
-#### Gemini primary
-
-- [ ] **ERR-00 spec:** Define fallback copy + visual design for auth-screen and detail-screen `FeedErrorBoundary` states (message + CTA per screen group). *(Boundary wiring is done — spec still needed for final copy pass.)*
-
-**Track B done gate:**
-- [ ] `ls .tmp_todo_current.md` → "No such file"
-- [ ] `find src/app/screens/discover -name "*.tsx"` returns no matches for `BuildingInfoSheet`, `DiscoverTabScreen`, or `HomeMapScreen (1)`
-- [ ] `npm run typecheck` green
-- [ ] README has a "Feature Flags" section
-
----
-
-### Track C — Backend-ready UX gaps (new this sprint)
-
-Items surfaced by the war-room audit that are not yet in any existing sprint section. Small, high-ROI, mostly blockers for beta sign-off.
-
-#### Codex primary
-
-- [ ] **S8-UX-01 — Empty states:** Wire real empty states for `FavouritesScreen`, `ReviewHistoryScreen`, and `ProfileHomeScreen` (guest). Use the existing `EmptyState` component.
-- [ ] **S8-UX-02 — Review persistence + success toast:** On submit, persist to `getDataRepository().createReview()`, then show `ReviewSuccessModal` and append to `useReviewDraftStore` history. Blocks F-010 beta claim.
-- [ ] **S8-UX-03 — Quick-review (F-018):** 30-second tag-only path — skip the 4-step flow when `reviewDraft.quickMode === true`. Entry point: long-press a dish card or CTA inside `QuickReviewSheet`.
-- [ ] **S8-UX-04 — Auth error feedback:** Surface invalid-credential / network-error messages inline on `LoginScreen` and `SignUpScreen`.
-- [ ] **S8-UX-05 — Discovery situation presets (F-015):** Add "Quick lunch / Date night / Late night / With kids" presets on `DiscoverHomeScreen` that pre-seed taste weights + distance + open-now filter.
-- [ ] **S8-UX-06 — Dietary filter on Discover root (F-014):** Promote halal / vegetarian / vegan toggle from Search into `DiscoverHomeScreen` header.
-- [ ] **S8-UX-07 — Skeleton screens:** Add `Skeleton` scaffolds to `HomeFeedScreen`, `DiscoverHomeScreen`, `ProfileHomeScreen`, `DishDetailScreen`, `StallDetailScreen` for non-instant async.
-- [ ] **S8-UX-08 — Offline detection trigger:** Hook `NetInfo` to route to `OfflineStateScreen` when connectivity drops and a data request fails.
-
-**Track C done gate:**
-- [ ] Empty, loading, error, and offline states verified via simulator toggle (manual QA)
-- [ ] F-018 quick-review path demonstrable in <30s end-to-end
-- [ ] `npm run typecheck` + `npm test -- --runInBand` green
-
----
-
-### Sprint 8 — PRD Compliance Snapshot (post-Sprint-7)
-
-| ID | Feature | Status | Gap |
-|---|---|---|---|
-| F-001 | User accounts + Auth | ✅ | Google SSO still stubbed (Phase 7 gate) |
-| F-002 | Taste Profile (Onboarding) | ✅ | — |
-| F-003 | Location permissions | ✅ | — |
-| F-004 | Building Drill-Down | ✅ | — (Sprint 7 closed the route) |
-| F-005 | Dish-First Search | ✅ | — |
-| F-006 | Taste-Based Filtering | ✅ | — (Sprint 7 closed the route) |
-| F-007 | Decide For Me | ✅ | — |
-| F-008 | Dish Detail | ✅ | Photo carousel gallery wiring — P2 |
-| F-009 | Stall Detail | ✅ | — |
-| F-010 | Dish-Level Reviews | ⚠️ | S8-UX-02 persistence gap |
-| F-011 | Favourites | ⚠️ | S8-UX-01 empty state |
-| F-012 | Delivery Deep Links | ✅ | — |
-| F-013 | Reads (Blog Aggregator) | ⚠️ | Feature-flag-gated; tab promotion pending product call |
-| F-014 | Halal / Dietary Filter | ⚠️ | S8-UX-06 |
-| F-015 | Situation-Based Discovery | ❌ | S8-UX-05 |
-| F-016 | NEA Closure Integration | ✅ | — |
-| F-017 | Business Portal | 🚫 | Out of scope (correct) |
-| F-018 | 30-Second Tag Review | ⚠️ | S8-UX-03 |
-| F-019 | Photo Check-In | ❌ | Deferred to Phase 8 (commerce + media pipeline) |
-
-**Post-Sprint-7 compliance: 12/19 full, 5/19 partial, 2/19 not-started-but-scoped, 1/19 out of scope.**
-
----
-
-### Sprint 8 — Decisions Needed (gating Phase 7+)
-
-| # | Decision | Options | Recommended | Needed by |
-|---|---|---|---|---|
-| D1 | Backend host | Supabase vs Postgres-on-Fly.io | **Supabase** (auth + pgvector + storage + realtime built in) | Before Track A kicks off |
-| D2 | API layer | Edge Functions vs Node/Express | **Both** — Edge for CRUD, Node for Socket.IO transport | Before Track A supabaseService |
-| D3 | Payment gateway | Stripe only vs Stripe + PayNow | **Stripe primary, PayNow SGQR fallback** | Before Phase 8 |
-| D4 | Vendor portal | Monorepo vs separate repo | **Separate repo** (different cadence, different auth) | Before Phase 8 |
-| D5 | Chat transport | Supabase Realtime vs Socket.IO | **Socket.IO** (typing, reconnect, custom events) | Before Phase 10 |
-| D6 | Mobile deployment | Expo Go vs EAS Build | **EAS Build** (required for OTA + App Store) | Before store submission |
-| D7 | Analytics | PostHog vs Amplitude vs Mixpanel | **PostHog** (self-hostable, SQL, built-in flags) — partially wired | Before Phase 11 |
-
----
-
-### Sprint 8 — Sequenced Path Forward
-
-```
-SPRINT 8 (this wk)    PHASE 7 (~3 wk)    PHASE 8 (~6 wk)    PHASE 9/10 (~4 wk)
-─────────────────────────────────────────────────────────────────────────────
-Backend bootstrap     API + data live    QR Order & Pay      Chat + Analytics
-+ hygiene + UX gaps   real traffic       revenue live        platform scaling
-```
-
-- **Phase 7 — Backend Bootstrap** (~3 engineer-weeks): provision Supabase, run migrations, discovery + search + recommendation endpoints, replace mock repos behind flag
-- **Phase 8 — QR Order & Pay** (~6 engineer-weeks): Stripe integration, order lifecycle, vendor dashboard MVP, guest checkout
-- **Phase 9/10 — Chat + Analytics** (~4 engineer-weeks): Socket.IO messaging, PostHog instrumentation, vendor analytics dashboard

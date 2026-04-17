@@ -20,23 +20,8 @@ import Animated, {
 
 import { AppText } from "@/components/ui";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
+import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
-import { useProfileStore } from "@/store/useProfileStore";
-
-export interface Bite {
-  id: string;
-  dishId: string;
-  dishName: string;
-  dishImageUrl: string;
-  venueName: string;
-  authorName: string;
-  authorAvatarUrl: string;
-  caption: string; // max 80 chars
-  heartCount: number;
-  commentCount: number;
-  tasteTag: string; // e.g. "Spicy kick"
-  createdAt: string;
-}
 
 interface BiteCardProps {
   bite: Bite;
@@ -60,7 +45,6 @@ export function BiteCard({
   onCommentPress,
 }: BiteCardProps) {
   const { palette, radii, spacing, motion } = useHungryTheme();
-  const leftHandedMode = useProfileStore((state) => state.profile.leftHandedMode);
   const imageHeight = Math.round(width * 0.76);
 
   const heartScale = useSharedValue(0);
@@ -86,8 +70,8 @@ export function BiteCard({
       }
     });
 
-  const displayHeartCount = bite.heartCount + (liked ? 1 : 0);
-  const displayCommentCount = bite.commentCount + (commented ? 1 : 0);
+  const displayHeartCount = bite.cravingCount + (liked ? 1 : 0);
+  const displayCommentCount = commented ? 1 : 0;
   const openDishDetails = onDishPress ?? onPress;
 
   return (
@@ -125,7 +109,7 @@ export function BiteCard({
           }}
         >
           <Image
-            source={{ uri: bite.dishImageUrl }}
+            source={{ uri: bite.photoUrl }}
             style={{ width: "100%", height: imageHeight }}
             contentFit="contain"
             transition={200}
@@ -152,7 +136,7 @@ export function BiteCard({
             }}
           >
             <AppText variant="micro" tone="inverse" style={{ fontWeight: "700" }}>
-              {bite.tasteTag}
+              {bite.tasteStamp.spicy >= bite.tasteStamp.sweet ? "Spicy" : "Comfort"}
             </AppText>
           </View>
         </View>
@@ -178,7 +162,7 @@ export function BiteCard({
               }}
             >
               <Image
-                source={{ uri: bite.authorAvatarUrl }}
+                source={{ uri: bite.authorAvatar || bite.photoUrl }}
                 style={{ width: "100%", height: "100%" }}
                 contentFit="cover"
               />
