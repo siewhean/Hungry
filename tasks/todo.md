@@ -143,17 +143,16 @@ Wave 1 reconciliation note (2026-04-17): Sprint 7 list above was stale relative 
 
 > **Owner:** Claude + Codex | **Timing:** After Sprint 8 is green.
 
-- [ ] Unit tests — `__tests__/` directory is empty. Write tests for `tasteEngine.ts` (pure functions), `repositories.ts`, and at least 3 critical screens.
+- [x] Unit tests — Sprint 9 coverage added/adjusted for `tasteEngine.ts` pure math contracts (`src/lib/ai/tasteEngine.sprint9.test.ts`), repository mapping contracts (`src/lib/services/mock/repositories.sprint9.test.ts`), service behaviors (`src/lib/services/mock/service-methods.test.ts`), and 3+ critical screen contracts (`src/app/screens/sprint9-screen-contracts.test.ts` now includes Login, Review, HomeFeed, DishDetail).
 - [x] Deep linking — linked routes added for `hungry://dish/:id`, `hungry://venue/:id`, and `hungry://order?venueId=...` (+ linking config/query parser tests).
-- [ ] Haptic feedback — `Decide For Me` FAB should fire `Haptics.impactAsync` on tap (PRD spec).
-- [ ] Share URL — `DishDetailScreen` share target is `"https://hungry.sg/dish/${dish.id}"` (placeholder). Implement real share sheet.
-- [ ] Photo carousel — `DishDetailScreen` doesn't use `DishDetail.gallery` array. Wire to `ImageCarousel` component.
-- [ ] Module co-location — `ProfileRadarChart` is in `screens/profile/` not `components/dish/`. Move.
+- [x] Haptic feedback — `DiscoverHomeScreen` `handleDecideForMe` now fires `Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)` on tap.
+- [x] Share URL — `DishDetailScreen` now invokes the real native share sheet (`Share.share`) with canonical URL `https://hungry.sg/dish/${dish.id}`.
+- [x] Photo carousel — `DishDetailScreen` now uses `ImageCarousel` wired with `buildDishGallery(dish)` (`imageUrl + gallery[]` deduped).
+- [x] Module co-location — `ProfileRadarChart` now lives in `src/components/dish/ProfileRadarChart.tsx`; old `screens/profile` module removed.
 - [x] Font error handling — `AppBody` now has font-loading and timeout fallback surfaces when font assets are delayed/missing.
 - [x] `similarityScore` in `repositories.ts` — extracted to `src/lib/ai/similarityScore.ts`; service provider now sources shared utility.
-- [ ] `useDiscoveryStore.popularNearby` computed at store creation — guard for async-safe access pattern.
-- [ ] Placeholder stubs for `useOrderStore` and `useCartStore` (V2 prep).
-  Deferred rationale: no active runtime callsites in current app flow depend on order/cart state; keep this for backend/bootstrap phase to avoid dead stores.
+- [x] `useDiscoveryStore.popularNearby` async-safe access pattern — moved to selector-based consumption in `DiscoverHomeScreen` and added refresh token race-guard in `refreshPopularNearby`.
+- [x] Placeholder stubs for `useOrderStore` and `useCartStore` (V2 prep) — minimal compile-safe Zustand stores added under `src/store/`.
 
 ### Wave Verification Log
 
@@ -161,6 +160,8 @@ Wave 1 reconciliation note (2026-04-17): Sprint 7 list above was stale relative 
 - [x] Wave 2 gate run (2026-04-17): `lint` (0 errors), `typecheck` pass, `test` pass (added bites + service-method tests), `expo-doctor` pass.
 - [x] Wave 3 gate run (2026-04-17): auth failure simulation + review persistence verified with new tests (`mockAuth.test.ts`, `useProfileStore.review-persistence.test.ts`).
 - [x] Wave 4 gate run (2026-04-17): deep-link contracts added + tested (`RootNavigator.linking.test.ts`), font fallback behavior added in bootstrap path.
+- [x] Wave 5 gate run (2026-04-17): `npm run test` → pass (`tests 68`, `fail 0`); `npm run typecheck` → pass; `npm_config_cache=/tmp/npm-cache npx expo-doctor` → pass (16/16).
+- [x] Wave 6 QA/QC re-audit (2026-04-17): QA agent verified Sprint 9 PASS on routed DishDetail premium share + carousel behavior; QC agent reported no high issues, one medium residual risk (`sprint9-screen-contracts.test.ts` remains source-contract style rather than runtime-render tests).
 
 ---
 
@@ -223,13 +224,13 @@ Wave 1 reconciliation note (2026-04-17): Sprint 7 list above was stale relative 
 #### Codex primary
 
 - [ ] **Supabase project provisioning:** Create project (ap-southeast-1 region). Run DDL migrations. Enable PostGIS, pgvector, pg_trgm, btree_gist, citext extensions.
-- [x] **Seed data:** Added seed generator + SQL output (`scripts/seed/generateSeedSQL.ts`, `supabase/seed.sql`). *(Verified 2026-04-17)*
-- [x] **supabaseRepository:** `src/lib/services/supabase/supabaseRepository.ts` now implements `DataRepository` on Supabase reads without `mockRepository` fallback in Supabase mode. *(Verified 2026-04-17)*
-- [x] **supabaseService:** `src/lib/services/supabase/supabaseService.ts` implements `HungryService` domains with Supabase-backed auth/discovery/reviews/profile/social/content + local AI adapters. *(Verified 2026-04-17)*
-- [x] **Provider swap:** `serviceProvider.ts` env-driven toggle remains active (`HUNGRY_DATA_SOURCE=mock|supabase`) and tested. *(Verified 2026-04-17)*
-- [x] **Auth token migration:** Session bridge active (`useAppBootstrap` + `useSessionStore.applyAuthStateFromSession`), auth screens now call `HungryService.auth` in Supabase mode, and sign-out delegates to Supabase auth sign-out. *(Verified 2026-04-17)*
-- [x] **Media upload:** Added signed-upload-first Supabase storage pipeline (`src/lib/services/supabase/mediaUpload.ts`) and wired review/photo + profile avatar persistence paths (`ReviewScreen`, `EditProfileScreen`). *(Verified 2026-04-17)*
-- [x] **RLS policies:** SQL policy migration added at `supabase/migrations/0003_rls_policies.sql`. *(Verified 2026-04-17)*
+- [ ] **Seed data:** Write migration script that maps `mock/data.ts` fixtures to Supabase inserts (buildings, venues, dishes, reviews, users, blog posts).
+- [ ] **supabaseRepository:** Create `src/lib/services/supabase/supabaseRepository.ts` implementing `DataRepository` interface. Implement all 11 methods against Supabase client.
+- [ ] **supabaseService:** Create `src/lib/services/supabase/supabaseService.ts` implementing `HungryService` interface. Wire auth, discovery, reviews, profile, social, content, ai domains.
+- [ ] **Provider swap:** Update `serviceProvider.ts` to import `supabaseService`. Add env-driven toggle: `HUNGRY_DATA_SOURCE=mock|supabase`.
+- [ ] **Auth token migration:** Replace AsyncStorage auth persistence with Supabase Auth session management. Remove mock auth flow.
+- [ ] **Media upload:** Implement review photo upload via Supabase Storage signed URLs. Wire into `ReviewComposeScreen` and `EditProfileScreen`.
+- [ ] **RLS policies:** Implement Row-Level Security policies from Claude's spec.
 
 #### Gemini primary
 
@@ -238,12 +239,12 @@ Wave 1 reconciliation note (2026-04-17): Sprint 7 list above was stale relative 
 
 #### Done gate
 
-- [x] All `DataRepository` methods return live data from Supabase.
+- [ ] All `DataRepository` methods return live data from Supabase.
 - [ ] Auth flow (sign up → verify email → onboarding → main app) works end-to-end against Supabase Auth.
-- [x] `HUNGRY_DATA_SOURCE=mock` still works as a fallback (no regression).
-- [x] Review photo upload stores to Supabase Storage and displays via CDN URL.
-- [x] `npm run typecheck` passes.
-- [x] No `mockRepository` imports remain in production code paths.
+- [ ] `HUNGRY_DATA_SOURCE=mock` still works as a fallback (no regression).
+- [ ] Review photo upload stores to Supabase Storage and displays via CDN URL.
+- [ ] `npm run typecheck` passes.
+- [ ] No `mockRepository` imports remain in production code paths.
 
 ---
 
@@ -314,13 +315,11 @@ Wave 1 reconciliation note (2026-04-17): Sprint 7 list above was stale relative 
 
 #### Codex primary
 
-- [x] **ERR-01 — Auth screen boundaries:** `LoginScreen`, `SignUpScreen`, `ForgotPasswordScreen`, `EmailVerificationScreen`, `ResetPasswordScreen` all wrap `FeedErrorBoundary`. *(Verified 2026-04-17 via source-scan logic test)*
-- [x] **ERR-02 — Detail screen boundaries:** `DishDetailScreen` and `StallDetailScreen` wrap `FeedErrorBoundary`. *(Verified 2026-04-17 via source-scan logic test)*
-- [x] **ERR-03 — Profile screen boundaries:** Wrapped `ProfileStack` with `FeedErrorBoundary` as per audit recommendation. *(Verified 2026-04-17)*
+- [x] **ERR-01 — Auth screen boundaries:** `LoginScreen`, `SignUpScreen`, `ForgotPasswordScreen`, `EmailVerificationScreen`, `ResetPasswordScreen` all wrap `FeedErrorBoundary`. *(Verified 2026-04-17.)*
+- [x] **ERR-02 — Detail screen boundaries:** `DishDetailScreen` and `StallDetailScreen` wrap `FeedErrorBoundary`. *(Verified 2026-04-17.)*
 
 #### Done gate
 
-- [x] Manual crash test logic: `src/features/system/systemHardening.test.ts` validates that all critical screens are wrapped in Error Boundaries and fallback copy matches the specification.
 - [ ] Manual crash test: trigger a JS throw in `LoginScreen` render — app shows fallback UI, does not white-screen. *(Runtime smoke still required.)*
 - [ ] Manual crash test: trigger a JS throw in `DishDetailScreen` render — app shows fallback UI. *(Runtime smoke still required.)*
 - [x] `npm run typecheck` passes. *(Wave gate logs 2026-04-17.)*
@@ -332,7 +331,98 @@ Wave 1 reconciliation note (2026-04-17): Sprint 7 list above was stale relative 
 #### Claude primary
 
 - [x] **LES-01 — Add 4 missing lessons to `tasks/lessons.md`:** Token scope, service provider bypass, state persistence after sign-out, backlog verification gate. *(Done 2026-04-15 — lessons appended)*
-- [x] **DOC-01 — Document feature flags in README:** Add a "Feature Flags" section to `README.md` documenting `HUNGRY_DATA_SOURCE`, `FEATURE_FLAGS.directMessagesEnabled`, `FEATURE_FLAGS.commentsEnabled`, `FEATURE_FLAGS.craveEnabled`, and how to toggle them for development. *(Done 2026-04-17)*
+- [ ] **DOC-01 — Document feature flags in README:** Add a "Feature Flags" section to `README.md` documenting `HUNGRY_DATA_SOURCE`, `FEATURE_FLAGS.directMessagesEnabled`, `FEATURE_FLAGS.commentsEnabled`, `FEATURE_FLAGS.craveEnabled`, and how to toggle them for development.
+
+---
+
+## 🟢 SPRINT 10 — Supply Priming (V1.5 Prep)
+
+> **Owner:** Codex executes; Claude scopes contracts; Gemini scopes UX copy.
+> **Gate:** Ship before V1 public launch so supply is warm by the time consumers arrive.
+> **Depends on:** Sprint 5 Supabase migration landed (staging + prod).
+> **Canonical plan reference:** `tasks/Roadmap/roadmap.md` §4.
+
+### Schema (Claude primary, Codex executes)
+
+- [ ] **CLM-01 — Append DDL to `backend-architecture.md` §2.3** for `menu_photo_submissions` (photo storage pointer + OCR job status), `dishes_draft` (extracted dishes pre-promotion + confidence score), `merchant_claim_interests` (UEN + contact + venue_id + claimed_at waitlist). [Claude]
+- [ ] **CLM-02 — Write + run migration `0004_supply_priming.sql`** against Supabase for the three new tables. Requires Sprint 5 provisioning complete. [Codex]
+
+### Menu OCR pipeline (Codex primary)
+
+- [ ] **OCR-01 — Quick Review "snap a menu photo" step** — add optional step in `QuickReviewSheet.tsx` that uploads a menu photo alongside the review. [Codex]
+- [ ] **OCR-02 — Supabase Storage bucket `menu-photos`** + signed-URL upload flow with size/MIME guardrails. [Codex]
+- [ ] **OCR-03 — Edge Function `ingest-menu-photo`** invoking Google Cloud Vision `DOCUMENT_TEXT_DETECTION` with `languageHints: ["zh-Hans", "zh-Hant", "en"]` (SimpChinese + TradChinese + English — covers SG hawker reality). [Codex]
+- [ ] **OCR-04 — LLM extraction step** (Gemini Flash or Claude Haiku) that converts the OCR text blob into a JSON array of `{name, price, modifiers[]}` with an `extraction_confidence` score per dish. [Codex]
+- [ ] **OCR-05 — Write to `dishes_draft` with dedupe** — for each extracted dish compute cosine similarity on `(name, price)` against existing draft rows for that venue; similarity > 0.9 → bump confidence on existing row; else → insert new row. [Codex]
+- [ ] **OCR-06 — Ops review queue UI at `/ops/dishes-draft`** — internal Next.js stub (separate admin app or protected route) letting a human reviewer accept / edit / reject extracted dishes before they render to consumers. [Codex]
+
+### Consumer-surface supply capture (Codex primary, Gemini copy)
+
+- [ ] **CLM-03 — "Claim this stall" CTA on `StallDetailScreen`** — fires `merchant_claim_interests` insert + telemetry event `claim_this_stall_tapped`. [Codex]
+- [ ] **CLM-04 — Copy spec for CTA + verification explainer page** — tone-aligned with onboarding, sets expectation that verification uses SingPass Myinfo Business / NEA licence lookup / video walkaround. [Gemini]
+- [ ] **CLM-05 — Feature flag `merchantClaimCtaEnabled`** added to `src/constants/featureFlags.ts` — OFF in production until public launch; ON in staging. [Codex]
+- [ ] **CLM-06 — "Menu (community-sourced)" block on `StallDetailScreen`** — renders accepted `dishes_draft` rows so consumers get immediate value from their own photo uploads. Gated by `FEATURE_FLAGS.craveEnabled` sibling flag scope. [Codex]
+
+### Done gate
+
+- [ ] OCR pipeline processes a test menu photo end-to-end in staging within 30s (upload → Vision → extraction → `dishes_draft` row visible in ops queue).
+- [ ] "Claim this stall" CTA fires a telemetry event AND inserts a `merchant_claim_interests` row in staging.
+- [ ] `npm run typecheck` passes.
+- [ ] `npm run test` passes.
+- [ ] Feature flag `merchantClaimCtaEnabled` OFF in production, ON in staging (verified via live flag read).
+
+---
+
+## 🔵 PHASE 8 — Merchant Portal & QR Ordering (V2, deferred)
+
+> **Gate — do NOT start Phase 8 until ALL five are green:**
+> 1. ≥500 active consumer WAU sustained 4 consecutive weeks.
+> 2. ≥20 hawker centres with ≥80% venue coverage.
+> 3. ≥50 rows in `merchant_claim_interests`.
+> 4. ≥5 merchants committed to pilot onboarding (phone confirmed, not just waitlist).
+> 5. Sprint 5 Supabase migration fully green (staging + prod).
+>
+> **Canonical plan reference:** `tasks/Roadmap/roadmap.md` §5–§6.
+
+### Sprint 11 — Merchant Portal skeleton + Verification
+
+- [ ] **MP-01 — Standalone Next.js merchant portal app** (separate deploy; keeps merchant auth/session/bundling orthogonal to consumer app). [Codex + Claude architect]
+- [ ] **MP-02 — SingPass Myinfo Business integration (Tier 1)** — instant ACRA pull by UEN via Singpass consent flow. Primary verification path for registered businesses. [Codex]
+- [ ] **MP-03 — NEA licensed hawker lookup adapter (Tier 2)** — licence number + stall address match against NEA's published hawker licence dataset. [Codex]
+- [ ] **MP-04 — Video walkaround upload + ops review queue (Tier 3)** — 30-second stall walk covering signage, menu board, POS. Ops reviews within 48h SLA. Replaces postcard pattern (which fails in SG hawker context). [Codex]
+- [ ] **MP-05 — `vendor_profiles.kyc_status` state machine** — `pending → in_review → verified | rejected`; rejected can re-submit. DDL already in `backend-architecture.md`. [Claude spec, Codex impl]
+- [ ] **MP-06 — Verification explainer page + merchant FAQ** — why we ask for each document, how long each tier takes, what "Verified" badge means to consumers. [Gemini]
+
+### Sprint 12 — Merchant Menu Editor + Claim Promotion
+
+- [ ] **MP-07 — Merchant menu editor** — review `dishes_draft` seeded by Sprint 10 OCR → accept / edit / reject → promote to authoritative `dishes` table. [Codex]
+- [ ] **MP-08 — Modifier group editor** — wire `modifier_groups`, `modifier_options`, `dish_modifier_groups` from `backend-architecture.md` §2.3. [Codex]
+- [ ] **MP-09 — Claim review workflow** — merchant claim → ops review → consumer-surface "Verified" badge renders on `StallDetailScreen`. [Codex]
+- [ ] **MP-10 — Pilot onboarding cohort** — 5–10 hawkers drawn from top of `merchant_claim_interests` waitlist; white-glove onboarding, weekly check-ins, structured feedback capture. [Claude facilitates]
+
+### Sprint 13 — Payment Rails
+
+- [ ] **PAY-01 — Stripe Connect Express onboarding** — merchant hosted KYC flow; weekly payouts to merchant bank account. Primary rail. [Codex]
+- [ ] **PAY-02 — SGQR/PayNow secondary rail** — requires bank partnership (DBS or OCBC); likely 2026-Q4 deliverable. Scope as optional; don't block Sprint 13 critical path. [Claude scopes, Codex impl]
+- [ ] **PAY-03 — Payout scheduling + bank account linking flow** — merchant-side UI for editing payout method + viewing next payout date. [Codex]
+- [ ] **PAY-04 — Tax (GST 9%) + service-fee calculation** — write to `order.tax_cents` + `order.service_fee_cents`; DDL already in `backend-architecture.md`. [Claude spec]
+
+### Sprint 14 — QR Session + Consumer Order Flow
+
+- [ ] **QR-01 — QR session issuance API** — `POST /api/merchant/qr-sessions` creates `qr_sessions` row with `token`, `venue_id`, optional `table_label`, `expires_at`. [Codex]
+- [ ] **QR-02 — Printable QR asset generator** — PNG + PDF with Hungry branding, merchant-configurable table label. [Codex]
+- [ ] **QR-03 — Consumer deep-link handler extension** — `hungry://order?venueId=X&qrSessionId=Y&table=A3`; parses → resolves menu from `dishes` → opens cart. [Codex]
+- [ ] **QR-04 — Cart + checkout screens (consumer app)** — dish list with modifiers, qty adjust, totals, tax/service-fee breakdown, payment method selector. [Codex + Gemini design]
+- [ ] **QR-05 — Stripe PaymentSheet integration in Expo** — use `@stripe/stripe-react-native` PaymentSheet for native pay UX. [Codex]
+- [ ] **QR-06 — Order creation API + idempotency keys** — `POST /api/orders` with `Idempotency-Key` header to dedupe double-tap payments. [Codex]
+
+### Sprint 15 — Merchant Order Inbox + Lifecycle
+
+- [ ] **QR-07 — Merchant order inbox** — realtime via Supabase Realtime subscribed to `orders` partition for the merchant's `vendor_id`. [Codex]
+- [ ] **QR-08 — Order status lifecycle UI** — `placed → accepted → preparing → ready → collected`; each transition audited in `order_status_history`. [Codex + Gemini]
+- [ ] **QR-09 — Push notifications** — order accepted (consumer), order ready (consumer), new order (merchant); Expo Notifications + FCM/APNs. [Codex]
+- [ ] **QR-10 — Refund flow** — `refunds` table + Stripe refund API + merchant-initiated partial/full refund UI. [Codex]
+- [ ] **QR-11 — Weekly Stripe payout confirmation email** — sent to merchant on payout settlement; template in shared transactional email infra. [Codex]
 
 ---
 
@@ -341,9 +431,9 @@ Wave 1 reconciliation note (2026-04-17): Sprint 7 list above was stale relative 
 - [x] Session log maintained with: date, actor (Claude/Codex), tasks touched, status, blockers, next step.
 
 ### Session Entries
-- 2026-04-17 | Gemini | Comprehensive loading/error audit via `codebase_investigator` (identified onboarding/wheel gaps); hardened DiscoverHome with `isOffline` banner. Authored detailed `docs/audit/OFFLINE_SPEC.md` via `generalist` (Sync queue, Blocked vs Degraded states, Persistent media path). | Status: ✅ Done | Verification: Audit report complete; spec doc updated; `npm run typecheck` passed.
-- 2026-04-17 | Gemini | Hardened navigation: disabled tab click animations while keeping swipe gestures. Completed ERR-00 spec and OFFLINE_SPEC. Implemented DiscoverHome loading skeletons and global NetInfo listener. DOC-01 (README Feature Flags) complete. Verified ERR-01/02/03 via logic tests. | Status: ✅ Done | Verification: `npm test` (46/46 passed), `npm run typecheck` green, pushed to `main` (commit `b91ffd28e`).
-- 2026-04-17 | Codex | Sprint 5 backend hardening pass (backend-architect scope): removed Supabase mock fallbacks in repository/service runtime paths, fixed env data-source precedence for blank private env, added signed-upload-first media helper (`mediaUpload.ts`), wired review submit to service (`ReviewScreen`) and profile save/avatar upload to Supabase (`EditProfileScreen`), and added Supabase/provider regression tests (`serviceProvider.sprint5.test.ts`, `supabase/client.test.ts`). Updated Sprint 5 checklist truth to reflect completed vs blocked items. | Status: partially completed (codebase-allowed scope complete; external provisioning/auth-UI migration pending). | Blockers: global typecheck currently fails on pre-existing unrelated files (`RootNavigator`, `HomeFeedScreen`, `theme/index.tsx`, etc.). | Next: finish auth-screen Supabase sign-in flow + clear global typecheck debt, then run end-to-end Supabase auth verification.
+- 2026-04-17 | Codex | Sprint 9 non-UI closure pass: verified and finalized haptic tap on Discover "Decide For Me", real Dish Detail share sheet with canonical `https://hungry.sg/dish/:id` URL, gallery-backed `ImageCarousel` usage in Dish Detail, ProfileRadarChart co-location under `src/components/dish/`, async-safe `popularNearby` pattern (selector consumption + refresh race guard), and placeholder `useOrderStore`/`useCartStore` stubs for V2 prep. Updated Sprint 9 checklist statuses accordingly. | Status: completed + verification in progress. | Blockers: none. | Next: run TypeScript gate and report touched files + Sprint 9 completion matrix.
+- 2026-04-17 | Codex | Sprint 9 testing + backlog sync evidence: expanded service-behavior coverage in `src/lib/services/mock/service-methods.test.ts`, strengthened repository mapping contracts in `src/lib/services/mock/repositories.sprint9.test.ts`, and extended critical screen contracts in `src/app/screens/sprint9-screen-contracts.test.ts` (Login, Review, HomeFeed, routed DishDetail premium). Updated Sprint 9 unit-test checklist and Wave 5 verification evidence lines with command results/date. | Status: completed + verified. | Blockers: none. | Next: maintain Sprint 9 gate evidence as future changes land.
+- 2026-04-17 | Claude (Sonnet 4.7) | Strategic advisory for merchant expansion delivered. Consolidated 8 overlapping `tasks/Roadmap/*.md` drafts into a single READ-FIRST `tasks/Roadmap/roadmap.md` (11 sections, 329 lines) without deleting sources — sources preserved under `tasks/Roadmap/` for audit trail per §11 Archive Map. Authored Sprint 10 (Supply Priming, 14 items: CLM-01..06 + OCR-01..06 + done-gate) and Phase 8 (Merchant Portal + QR Ordering V2, 26 items across Sprints 11–15: MP-01..10, PAY-01..04, QR-01..11) with explicit Claude/Codex/Gemini assignments. Decision recorded: Merchant Portal ships as V2 (Phase 3), NOT V1; V1 primes supply passively via Menu OCR + "Claim this stall" waitlist CTA. Phase 8 gate: ≥500 WAU × 4wk + ≥20 hawker centres 80% coverage + ≥50 waitlist rows + ≥5 pilot commits + Sprint 5 green. 3 lessons appended to `tasks/lessons.md` (consolidation audit trail, two-sided marketplace gating, SG verification tiering). | Status: documentation complete. | Blockers: Sprint 5 Supabase migration still open — Phase 2 (Sprint 10) cannot execute DDL until Sprint 5 lands. | Next: Codex picks up Sprint 10 CLM-02 migration + OCR-01..06 pipeline once Sprint 5 provisions Supabase; Claude drafts CLM-01 DDL append to `backend-architecture.md` in parallel (no Sprint 5 dependency for the DDL spec itself, only for executing the migration).
 - 2026-04-17 | Claude (Sonnet 4.7) | Sprint 5/6/8 audit against code after merge of PR #19 + commit `00f03e256` (Completed Sprint 7). Verified Sprint 6 TOOL-01..04 (`.eslintrc.json`, `.prettierrc`, `.husky/pre-commit`, `.env.example`, CI lint step at `.github/workflows/ci.yml:27`), DEAD-01..04 (files removed by Sprint 7 commit), and ERR-01/ERR-02 (`grep -l FeedErrorBoundary` confirms 5 auth + 2 detail screens). Flipped these from `[ ]` to `[x]` in `tasks/todo.md`. Verified Sprint 8 `[x]` marks are grounded in code (QuickReviewSheet, discovery presets, dietary chip, skeletons, offline route switch). Sprint 5 Supabase Codex/Gemini items confirmed still genuinely open (no `src/lib/services/supabase/` directory exists). Remaining genuinely open in Sprint 6: ERR-00 Gemini copy spec, DOC-01 README Feature Flags section, ERR manual crash tests. | Status: documentation audit complete. | Blockers: none. | Next: Codex to execute Sprint 5 Supabase provisioning + repository scaffolding; Claude to write DOC-01 Feature Flags section in README.
 - 2026-04-16 | Codex | Investigated runtime crash `Tried to register two views with the same name SkiaPictureView`. Confirmed New Architecture must stay enabled because `@rnmapbox/maps@10.3.0` rejects old architecture. Implemented durable Skia patch by guarding `SkiaPictureViewManager.mm` under `#ifndef RCT_NEW_ARCH_ENABLED`, generated `patches/@shopify+react-native-skia+2.2.12.patch`, added `patch-package` with `postinstall`, and re-synced iOS pods successfully. | Status: completed + verified (`npm run postinstall`, `cd ios && pod install`, `npm run typecheck`). | Blockers: runtime confirmation still requires app relaunch in simulator/device to verify redbox no longer appears. | Next: relaunch app with clean Metro cache and validate startup on iOS.
 - 2026-04-15 | Claude | Chief of Staff audit: repo-wide dead code, harness gaps, backlog integrity, and production roadmap assessment. Created `tasks/Roadmap/chief-of-staff-report-2026-04-15.md`. Added Sprint 6 (TOOL-01/02/03/04, DEAD-01/02/03/04, ERR-01/02, DOC-01, LES-01) to backlog with Codex/Gemini/Claude delegation. Appended 4 missing lessons to `tasks/lessons.md` (token scope, service provider bypass, sign-out state persistence, backlog verification gate). | Status: documentation complete. | Blockers: none. | Next: Codex to execute Sprint 6 TOOL items first (ESLint/Prettier install), then DEAD items, then ERR items. Claude to handle DOC-01.
@@ -498,7 +588,3 @@ Wave 1 reconciliation note (2026-04-17): Sprint 7 list above was stale relative 
 - [x] `cd ios && pod install` — 2026-04-16 (New Architecture retained; pods integrated successfully)
 - [x] `npm run typecheck` — 2026-04-16 (post-fix compile health)
 - [x] `npm run ios` — 2026-04-16 (Debug simulator build succeeded and app opened on iPhone 17 Pro)
-- [x] `npm run typecheck` — 2026-04-17 (Sprint 5 Supabase pass: repository/service/auth bridge/media + global TS blockers resolved)
-- [x] `npm run test` — 2026-04-17 (50/50 passing)
-- [x] `npm_config_cache=/tmp/npm-cache npx expo-doctor` — 2026-04-17 (16/16 checks passed)
-- [x] `rg -n "mockRepository" src --glob '!src/lib/services/mock/**' --glob '!**/*.test.ts'` — 2026-04-17 (no production-path matches)
