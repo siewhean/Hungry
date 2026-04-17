@@ -19,7 +19,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Chip, Input, Screen, Card } from "@/components/ui";
+import { AppText, Chip, Input, Screen, Card, Skeleton } from "@/components/ui";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
@@ -39,6 +39,27 @@ const INTENT_CHIPS = [
   { id: "cheap", label: "Value", category: "noodles" },
 ] as const;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
+
+function DiscoverSkeleton() {
+  const { spacing, radii, palette } = useHungryTheme();
+  return (
+    <View style={{ gap: spacing[6], padding: spacing[4] }}>
+      <Skeleton width="40%" height={24} />
+      <Skeleton width="100%" height={56} borderRadius={radii.lg} />
+      <View style={{ flexDirection: "row", gap: spacing[3] }}>
+        <Skeleton width={140} height={120} borderRadius={radii.lg} />
+        <Skeleton width={140} height={120} borderRadius={radii.lg} />
+      </View>
+      <View style={{ gap: spacing[4] }}>
+        <Skeleton width="60%" height={28} />
+        <View style={{ flexDirection: "row", gap: spacing[4] }}>
+          <Skeleton width={200} height={280} borderRadius={radii.xl} />
+          <Skeleton width={200} height={280} borderRadius={radii.xl} />
+        </View>
+      </View>
+    </View>
+  );
+}
 
 function SituationTile({
   label,
@@ -100,6 +121,15 @@ export function DiscoverHomeScreen() {
   const locationPermission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
+
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading for better UX transition
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
   const {
     popularNearby,
     setDecideForMe,
@@ -182,7 +212,6 @@ export function DiscoverHomeScreen() {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
   }, [resetIdleTimer]);
-
   const recommendedDishes = popularNearby.slice(0, 4);
   const nearbyHawkerCentres = repository
     .listBuildings()
@@ -258,6 +287,14 @@ export function DiscoverHomeScreen() {
     }
     navigation.navigate("DecideForMeResult");
   };
+
+  if (isLoading) {
+    return (
+      <Screen style={{ backgroundColor: themeTints.bg }}>
+        <DiscoverSkeleton />
+      </Screen>
+    );
+  }
 
   return (
     <Screen scroll={false} style={{ backgroundColor: themeTints.bg }}>
@@ -363,7 +400,10 @@ export function DiscoverHomeScreen() {
           contentContainerStyle={{ gap: spacing[2] }}
         >
           {sortedChips.map((chip) => {
-            const isActive = chip.id === "dietary" ? true : selectedCategories.includes(chip.category as SearchCategory);
+            const isActive =
+              chip.id === "dietary"
+                ? true
+                : selectedCategories.includes(chip.category as SearchCategory);
             return (
               <Chip
                 key={chip.id}
@@ -379,7 +419,10 @@ export function DiscoverHomeScreen() {
                 }}
                 leftIcon={
                   chip.id === "dietary" ? (
-                    <Utensils size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+                    <Utensils
+                      size={14}
+                      color={isActive ? palette.orange : themeTints.secondaryText}
+                    />
                   ) : chip.id === "spicy" ? (
                     <Flame size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
                   ) : chip.id === "halal" ? (

@@ -71,6 +71,23 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 
 ---
 
+## Feature Flags
+
+The application uses feature flags to toggle functionality for development and release branches. These are configured in `src/constants/featureFlags.ts`.
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `HUNGRY_DATA_SOURCE` | Toggle between `mock` and `supabase` data layers. | `mock` |
+| `FEATURE_FLAGS.directMessagesEnabled` | Enable the Direct Messages tab and chat functionality. | `false` |
+| `FEATURE_FLAGS.commentsEnabled` | Enable the community comments section on dish posts. | `true` |
+| `FEATURE_FLAGS.craveEnabled` | Enable the "Daily Crave" swiping discovery mode. | `true` |
+| `FEATURE_FLAGS.readsEnabled` | Enable the "Reads" (blog) tab. | `true` |
+| `FEATURE_FLAGS.mockMapboxEnabled` | Use a static fallback for the map in test environments. | `false` |
+
+To override these locally, you can use `.env.development` or modify the constants directly during prototyping.
+
+---
+
 ## Project Status
 
 | Area | Status |

@@ -8,10 +8,7 @@ import {
   Animated,
   PanResponder,
 } from "react-native";
-import AnimatedReanimated, {
-  FadeInUp,
-  FadeOutDown,
-} from "react-native-reanimated";
+import AnimatedReanimated, { FadeInUp, FadeOutDown } from "react-native-reanimated";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import {
@@ -33,7 +30,7 @@ import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { MapSurface, type MapSurfaceMarker, BuildingLegend } from "@/components/map";
-import { AppText, Chip, Button } from "@/components/ui";
+import { AppText, Chip, Button, FeedErrorBoundary } from "@/components/ui";
 import {
   getBuildingById,
   getNearestBuildings,
@@ -234,20 +231,25 @@ export function HomeMapScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
-      <MapSurface
-        style={StyleSheet.absoluteFill}
-        centerCoordinate={activeBuildingRecord.coordinate}
-        zoomLevel={currentZoom}
-        markers={markers}
-        cameraPadding={cameraPadding}
-        onMapPress={() => {
-          if (displayMode === "carousel") {
-             snapTo(isMinimized.current ? CAROUSEL_HEIGHT : MINIMIZED_HEIGHT);
-             isMinimized.current = !isMinimized.current;
-          }
-        }}
-        onZoomChange={setCurrentZoom}
-      />
+      <FeedErrorBoundary
+        title="Map currently unavailable"
+        body="We hit a rendering issue with the map. Please try again."
+      >
+        <MapSurface
+          style={StyleSheet.absoluteFill}
+          centerCoordinate={activeBuildingRecord.coordinate}
+          zoomLevel={currentZoom}
+          markers={markers}
+          cameraPadding={cameraPadding}
+          onMapPress={() => {
+            if (displayMode === "carousel") {
+              snapTo(isMinimized.current ? CAROUSEL_HEIGHT : MINIMIZED_HEIGHT);
+              isMinimized.current = !isMinimized.current;
+            }
+          }}
+          onZoomChange={setCurrentZoom}
+        />
+      </FeedErrorBoundary>
 
       {/* Top Floating UI */}
       <SafeAreaView
@@ -536,7 +538,7 @@ export function HomeMapScreen() {
                   ]}
                 >
                   <View style={{ height: 160 }}>
-                    <AnimatedReanimated.View 
+                    <AnimatedReanimated.View
                       style={StyleSheet.absoluteFill}
                       // @ts-ignore
                       sharedTransitionTag={`dish-image-${dish.id}`}
