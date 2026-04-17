@@ -16,9 +16,7 @@ interface MusicPickerProps {
 export function MusicPicker({ selectedMusicId, onSelectMusic }: MusicPickerProps) {
   const { palette, radii, spacing } = useHungryTheme();
   const [player, setPlayer] = useState<AudioPlayer | null>(null);
-  const [statusSubscription, setStatusSubscription] = useState<
-    { remove: () => void } | null
-  >(null);
+  const [statusSubscription, setStatusSubscription] = useState<{ remove: () => void } | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
@@ -35,7 +33,7 @@ export function MusicPicker({ selectedMusicId, onSelectMusic }: MusicPickerProps
     return TRENDING_MUSIC.filter(
       (track) =>
         track.title.toLowerCase().includes(lowerQuery) ||
-        track.artist.toLowerCase().includes(lowerQuery)
+        track.artist.toLowerCase().includes(lowerQuery),
     );
   }, [query]);
 
@@ -80,16 +78,16 @@ export function MusicPicker({ selectedMusicId, onSelectMusic }: MusicPickerProps
         leftIcon={<Search size={18} color={palette.textMuted} />}
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: spacing[2], paddingBottom: 40 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ gap: spacing[2], paddingBottom: 40 }}
+      >
         {filteredMusic.map((track) => {
           const isSelected = selectedMusicId === track.id;
           const isPlaying = playingId === track.id;
 
           return (
-            <Pressable
-              key={track.id}
-              onPress={() => handleTogglePlay(track)}
-            >
+            <Pressable key={track.id} onPress={() => handleTogglePlay(track)}>
               <Card
                 style={{
                   padding: spacing[3],
@@ -129,7 +127,7 @@ export function MusicPicker({ selectedMusicId, onSelectMusic }: MusicPickerProps
                   </AppText>
                 </View>
 
-                <Pressable 
+                <Pressable
                   onPress={(e) => {
                     e.stopPropagation();
                     onSelectMusic(isSelected ? undefined : track.id);
@@ -141,7 +139,10 @@ export function MusicPicker({ selectedMusicId, onSelectMusic }: MusicPickerProps
                     borderRadius: radii.pill,
                   }}
                 >
-                  <AppText variant="micro" style={{ color: isSelected ? palette.white : palette.text, fontWeight: "700" }}>
+                  <AppText
+                    variant="micro"
+                    style={{ color: isSelected ? palette.white : palette.text, fontWeight: "700" }}
+                  >
                     {isSelected ? "SELECTED" : "SELECT"}
                   </AppText>
                 </Pressable>

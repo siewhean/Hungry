@@ -6,12 +6,12 @@ import type {
   TextureArchetype,
 } from "@/types/domain";
 
-export const TASTE_DIMENSIONS: Array<{
+export const TASTE_DIMENSIONS: {
   key: TasteKey;
   label: string;
   shortLabel: string;
   icon: string;
-}> = [
+}[] = [
   { key: "sweet", label: "Sweet", shortLabel: "Sw", icon: "Sparkles" },
   { key: "spicy", label: "Spicy", shortLabel: "Sp", icon: "Flame" },
   { key: "sour", label: "Sour", shortLabel: "So", icon: "Citrus" },
@@ -60,14 +60,14 @@ export const REVIEW_TAGS = [
  * When a user applies a tag to a dish review, the engine uses `vectorImpact`
  * to calibrate both the dish's community vector and the user's personal vector.
  */
-export const HAWKER_TASTE_TAGS: Array<{
+export const HAWKER_TASTE_TAGS: {
   key: HawkerTasteTag;
   label: string;
   emoji: string;
   description: string;
   /** Additive adjustment to taste vector axes when this tag is applied */
   vectorImpact: Partial<TasteVector>;
-}> = [
+}[] = [
   {
     key: "wok_hei",
     label: "Wok Hei",
@@ -153,4 +153,3 @@ export const EXTENDED_REVIEW_TAGS = [
   "Shiok",
   "Sedap",
 ];
-

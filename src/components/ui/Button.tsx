@@ -117,7 +117,11 @@ export function Button({
           {leftIcon}
           <AppText
             variant={size === "sm" ? "bodySmallBold" : "h3"}
-            tone={variant === "primary" || variant === "destructive" || variant === "glass" ? "inverse" : "default"}
+            tone={
+              variant === "primary" || variant === "destructive" || variant === "glass"
+                ? "inverse"
+                : "default"
+            }
           >
             {label}
           </AppText>

@@ -68,10 +68,13 @@ export function ProfileHomeScreen_Legacy({ navigation }: Props) {
   return (
     <ProfileScreenShell
       title="Profile"
-      subtitle={isAuthenticated ? "Your established list-based profile." : "Join Hungry to save dishes and find your taste."}
+      subtitle={
+        isAuthenticated
+          ? "Your established list-based profile."
+          : "Join Hungry to save dishes and find your taste."
+      }
     >
       <View style={{ gap: spacing[6], paddingBottom: spacing[8] }}>
-        
         {/* Profile Header Block */}
         <View
           style={{
@@ -130,13 +133,11 @@ export function ProfileHomeScreen_Legacy({ navigation }: Props) {
           </View>
 
           <View style={{ flex: 1, gap: spacing[1] }}>
-            <AppText
-              style={{ fontSize: 24, fontWeight: "900", color: palette.text }}
-            >
+            <AppText style={{ fontSize: 24, fontWeight: "900", color: palette.text }}>
               {isAuthenticated ? profile.displayName : "Guest User"}
             </AppText>
             <AppText variant="bodySmall" tone="secondary">
-              {isAuthenticated 
+              {isAuthenticated
                 ? `${profile.stats.dishesReviewed} reviews · ${profile.stats.stallsVisited} stalls visited`
                 : "Sign in to see your culinary journey"}
             </AppText>
@@ -144,12 +145,25 @@ export function ProfileHomeScreen_Legacy({ navigation }: Props) {
         </View>
 
         {!isAuthenticated ? (
-          <Card style={{ gap: spacing[4], padding: spacing[5], backgroundColor: palette.bgSoft, borderColor: palette.orange }}>
+          <Card
+            style={{
+              gap: spacing[4],
+              padding: spacing[5],
+              backgroundColor: palette.bgSoft,
+              borderColor: palette.orange,
+            }}
+          >
             <View style={{ gap: spacing[2] }}>
               <AppText variant="h2">Unlock your taste profile</AppText>
-              <AppText tone="secondary">Save your favorite dishes, review hawker stalls, and build your personalized taste fingerprint.</AppText>
+              <AppText tone="secondary">
+                Save your favorite dishes, review hawker stalls, and build your personalized taste
+                fingerprint.
+              </AppText>
             </View>
-            <Button label="Sign In / Create Account" onPress={() => navigation.navigate("AuthStack" as any, { screen: "Login" })} />
+            <Button
+              label="Sign In / Create Account"
+              onPress={() => navigation.navigate("AuthStack" as any, { screen: "Login" })}
+            />
           </Card>
         ) : (
           <>
@@ -183,11 +197,7 @@ export function ProfileHomeScreen_Legacy({ navigation }: Props) {
               >
                 <AppText variant="h2">Recently Saved</AppText>
                 <Pressable onPress={() => navigation.navigate("Favourites")}>
-                  <AppText
-                    variant="micro"
-                    tone="accent"
-                    style={{ fontWeight: "700" }}
-                  >
+                  <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                     SEE ALL
                   </AppText>
                 </Pressable>
@@ -248,11 +258,7 @@ export function ProfileHomeScreen_Legacy({ navigation }: Props) {
                   style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
                 >
                   <Share2 size={16} color={palette.orange} />
-                  <AppText
-                    variant="micro"
-                    tone="accent"
-                    style={{ fontWeight: "700" }}
-                  >
+                  <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                     SHARE
                   </AppText>
                 </Pressable>
@@ -291,9 +297,7 @@ export function ProfileHomeScreen_Legacy({ navigation }: Props) {
                     <BarChart3 size={20} color={palette.orange} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <AppText style={{ fontWeight: "700", fontSize: 16 }}>
-                      Detailed Analysis
-                    </AppText>
+                    <AppText style={{ fontWeight: "700", fontSize: 16 }}>Detailed Analysis</AppText>
                     <AppText variant="micro" tone="secondary">
                       Updated based on your last 5 reviews
                     </AppText>
@@ -412,8 +416,7 @@ function StatBlock({
   return (
     <View
       style={{
-        backgroundColor:
-          colorScheme === "dark" ? palette.surfaceRaised : palette.bgSoft,
+        backgroundColor: colorScheme === "dark" ? palette.surfaceRaised : palette.bgSoft,
         borderRadius: radii.lg,
         paddingVertical: spacing[3],
         paddingHorizontal: spacing[3],
@@ -422,15 +425,9 @@ function StatBlock({
         gap: spacing[1],
       }}
     >
-      <View
-        style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-      >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
         {icon}
-        <AppText
-          style={{ fontSize: 18, fontWeight: "900", color: palette.text }}
-        >
-          {value}
-        </AppText>
+        <AppText style={{ fontSize: 18, fontWeight: "900", color: palette.text }}>{value}</AppText>
       </View>
       <AppText
         variant="micro"
@@ -470,9 +467,7 @@ function MenuRow({
       ]}
     >
       {icon}
-      <AppText style={{ flex: 1, fontWeight: "600", color: palette.text }}>
-        {label}
-      </AppText>
+      <AppText style={{ flex: 1, fontWeight: "600", color: palette.text }}>{label}</AppText>
       <ChevronRight color={palette.textMuted} size={18} />
     </Pressable>
   );

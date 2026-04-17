@@ -8,7 +8,10 @@ test("mock login failure detects invalid credentials and offline markers", () =>
     getMockLoginFailure("fail-user@hungry.sg", "password123")?.reason,
     "invalid_credentials",
   );
-  assert.equal(getMockLoginFailure("offline@hungry.sg", "password123")?.reason, "network_unavailable");
+  assert.equal(
+    getMockLoginFailure("offline@hungry.sg", "password123")?.reason,
+    "network_unavailable",
+  );
   assert.equal(getMockLoginFailure("user@hungry.sg", "password123"), null);
 });
 

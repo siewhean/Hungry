@@ -7,4 +7,3 @@ export const FEATURE_FLAGS = {
   commentsEnabled: true,
   craveEnabled: true,
 } as const;
-

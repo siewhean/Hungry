@@ -54,7 +54,7 @@ export function TasteRadar({ tasteVector, size = 300 }: TasteRadarProps) {
   const radarPath = useMemo(() => {
     const path = Skia.Path.Make();
     if (points.length === 0) return path;
-    
+
     path.moveTo(points[0].x, points[0].y);
     for (let i = 1; i < points.length; i++) {
       path.lineTo(points[i].x, points[i].y);

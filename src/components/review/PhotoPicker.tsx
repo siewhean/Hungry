@@ -40,7 +40,10 @@ export function PhotoPicker({
     try {
       const imagePicker = loadImagePickerModule();
       if (!imagePicker) {
-        showToast({ message: "Photo picker is unavailable. Please reinstall the app build.", tone: "warning" });
+        showToast({
+          message: "Photo picker is unavailable. Please reinstall the app build.",
+          tone: "warning",
+        });
         return;
       }
 
@@ -75,7 +78,11 @@ export function PhotoPicker({
       <View style={styles.grid}>
         {photos.map((uri) => (
           <Pressable key={uri} onPress={() => onRemovePhoto?.(uri)} style={styles.photoWrap}>
-            <Image source={{ uri }} style={[styles.photo, { borderRadius: radii.sm }]} contentFit="cover" />
+            <Image
+              source={{ uri }}
+              style={[styles.photo, { borderRadius: radii.sm }]}
+              contentFit="cover"
+            />
           </Pressable>
         ))}
         {canAddPhoto ? (
@@ -104,7 +111,14 @@ export function PhotoPicker({
           </Pressable>
         ) : null}
         {photos.length === 0 && !canAddPhoto ? (
-          <Card style={{ alignItems: "center", backgroundColor: palette.bgMuted, borderStyle: "dashed", gap: 8 }}>
+          <Card
+            style={{
+              alignItems: "center",
+              backgroundColor: palette.bgMuted,
+              borderStyle: "dashed",
+              gap: 8,
+            }}
+          >
             <Camera size={18} color={palette.textMuted} />
             <AppText variant="bodySmall" tone="secondary">
               No photos yet

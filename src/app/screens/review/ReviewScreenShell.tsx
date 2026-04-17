@@ -11,7 +11,13 @@ interface ReviewScreenShellProps {
   total: number;
 }
 
-export function ReviewScreenShell({ children, title, subtitle, step, total }: PropsWithChildren<ReviewScreenShellProps>) {
+export function ReviewScreenShell({
+  children,
+  title,
+  subtitle,
+  step,
+  total,
+}: PropsWithChildren<ReviewScreenShellProps>) {
   const { palette, radii, spacing } = useHungryTheme();
   const progress = Math.max(0, Math.min(100, (step / total) * 100));
 

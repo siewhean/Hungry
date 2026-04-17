@@ -262,128 +262,128 @@ export function SearchResultsScreen() {
             })}
           </View>
 
-        {recentSearches.length ? (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-            {recentSearches.slice(0, 3).map((term) => (
-              <Chip
-                key={term}
-                label={term}
-                selected={filters.query === term}
-                onPress={() => {
-                  rememberSearch(term);
-                  updateQuery(term);
-                }}
-              />
-            ))}
-          </View>
-        ) : null}
-
-        <Button
-          label="Taste filter"
-          variant="secondary"
-          onPress={() => navigation.navigate("TasteFilter")}
-        />
-
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-          {[
-            { label: "Best match", value: "best_match" },
-            { label: "Nearest", value: "distance" },
-            { label: "Top rated", value: "rating" },
-            { label: "Cheapest", value: "price" },
-          ].map((option) => {
-            const selected = sortMode === option.value;
-            return (
-              <Chip
-                key={option.value}
-                label={option.label}
-                selected={selected}
-                onPress={() => setSortMode(option.value as SearchSortMode)}
-              />
-            );
-          })}
-        </View>
-
-        {isLoading ? (
-          <View
-            style={{
-              alignItems: "center",
-              justifyContent: "center",
-              paddingVertical: spacing[8],
-              gap: spacing[2],
-            }}
-          >
-            <ActivityIndicator color={palette.orange} />
-            <AppText variant="bodySmall" tone="secondary">
-              Updating results…
-            </AppText>
-          </View>
-        ) : null}
-
-        <FlatList
-          style={{ opacity: isLoading ? 0.35 : 1 }}
-          key={displayMode}
-          data={results}
-          keyExtractor={(item) => item.id}
-          numColumns={displayMode === "grid" ? 2 : 1}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ gap: 16, paddingBottom: spacing[24] }}
-          columnWrapperStyle={
-            displayMode === "grid" ? { justifyContent: "space-between" } : undefined
-          }
-          renderItem={({ item }) =>
-            displayMode === "list" ? (
-              <SearchResultListCard
-                dish={item}
-                onPress={() => {
-                  rememberSearch(filters.query);
-                  navigation.navigate("DishDetail", { dishId: item.id });
-                }}
-              />
-            ) : (
-              <SearchResultGridCard
-                dish={item}
-                onPress={() => {
-                  rememberSearch(filters.query);
-                  navigation.navigate("DishDetail", { dishId: item.id });
-                }}
-              />
-            )
-          }
-          ListEmptyComponent={
-            <View style={{ gap: spacing[4] }}>
-              <EmptyState
-                title="No dishes found"
-                body="Try adjusting your taste filters or searching for something else."
-                ctaLabel="Adjust Taste Filters"
-                onPress={() => navigation.navigate("TasteFilter")}
-              />
-              <Button
-                label="Explore Popular Nearby"
-                variant="secondary"
-                onPress={() => {
-                  updateQuery("");
-                  navigation.navigate("SearchHome");
-                }}
-              />
+          {recentSearches.length ? (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+              {recentSearches.slice(0, 3).map((term) => (
+                <Chip
+                  key={term}
+                  label={term}
+                  selected={filters.query === term}
+                  onPress={() => {
+                    rememberSearch(term);
+                    updateQuery(term);
+                  }}
+                />
+              ))}
             </View>
-          }
-        />
+          ) : null}
 
-        {filters.query ? (
-          <Pressable
-            onPress={() => {
-              rememberSearch(filters.query);
-              updateQuery(filters.query);
-              navigation.navigate("SearchHome");
-            }}
-            style={{ alignSelf: "flex-start", paddingVertical: spacing[2] }}
-          >
-            <AppText variant="bodySmall" tone="accent" style={{ fontWeight: "700" }}>
-              Search again for &quot;{filters.query}&quot;
-            </AppText>
-          </Pressable>
-        ) : null}
-      </View>
+          <Button
+            label="Taste filter"
+            variant="secondary"
+            onPress={() => navigation.navigate("TasteFilter")}
+          />
+
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+            {[
+              { label: "Best match", value: "best_match" },
+              { label: "Nearest", value: "distance" },
+              { label: "Top rated", value: "rating" },
+              { label: "Cheapest", value: "price" },
+            ].map((option) => {
+              const selected = sortMode === option.value;
+              return (
+                <Chip
+                  key={option.value}
+                  label={option.label}
+                  selected={selected}
+                  onPress={() => setSortMode(option.value as SearchSortMode)}
+                />
+              );
+            })}
+          </View>
+
+          {isLoading ? (
+            <View
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                paddingVertical: spacing[8],
+                gap: spacing[2],
+              }}
+            >
+              <ActivityIndicator color={palette.orange} />
+              <AppText variant="bodySmall" tone="secondary">
+                Updating results…
+              </AppText>
+            </View>
+          ) : null}
+
+          <FlatList
+            style={{ opacity: isLoading ? 0.35 : 1 }}
+            key={displayMode}
+            data={results}
+            keyExtractor={(item) => item.id}
+            numColumns={displayMode === "grid" ? 2 : 1}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ gap: 16, paddingBottom: spacing[24] }}
+            columnWrapperStyle={
+              displayMode === "grid" ? { justifyContent: "space-between" } : undefined
+            }
+            renderItem={({ item }) =>
+              displayMode === "list" ? (
+                <SearchResultListCard
+                  dish={item}
+                  onPress={() => {
+                    rememberSearch(filters.query);
+                    navigation.navigate("DishDetail", { dishId: item.id });
+                  }}
+                />
+              ) : (
+                <SearchResultGridCard
+                  dish={item}
+                  onPress={() => {
+                    rememberSearch(filters.query);
+                    navigation.navigate("DishDetail", { dishId: item.id });
+                  }}
+                />
+              )
+            }
+            ListEmptyComponent={
+              <View style={{ gap: spacing[4] }}>
+                <EmptyState
+                  title="No dishes found"
+                  body="Try adjusting your taste filters or searching for something else."
+                  ctaLabel="Adjust Taste Filters"
+                  onPress={() => navigation.navigate("TasteFilter")}
+                />
+                <Button
+                  label="Explore Popular Nearby"
+                  variant="secondary"
+                  onPress={() => {
+                    updateQuery("");
+                    navigation.navigate("SearchHome");
+                  }}
+                />
+              </View>
+            }
+          />
+
+          {filters.query ? (
+            <Pressable
+              onPress={() => {
+                rememberSearch(filters.query);
+                updateQuery(filters.query);
+                navigation.navigate("SearchHome");
+              }}
+              style={{ alignSelf: "flex-start", paddingVertical: spacing[2] }}
+            >
+              <AppText variant="bodySmall" tone="accent" style={{ fontWeight: "700" }}>
+                Search again for &quot;{filters.query}&quot;
+              </AppText>
+            </Pressable>
+          ) : null}
+        </View>
       )}
     </Screen>
   );

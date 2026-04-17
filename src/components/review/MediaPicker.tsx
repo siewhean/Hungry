@@ -42,7 +42,10 @@ export function MediaPicker({
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: type === "image" ? ImagePicker.MediaTypeOptions.Images : ImagePicker.MediaTypeOptions.Videos,
+      mediaTypes:
+        type === "image"
+          ? ImagePicker.MediaTypeOptions.Images
+          : ImagePicker.MediaTypeOptions.Videos,
       allowsEditing: true,
       quality: 0.8,
       videoMaxDuration: 60,
@@ -64,10 +67,16 @@ export function MediaPicker({
     <View style={{ gap: spacing[4] }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <AppText variant="h3">Photos & Reels</AppText>
-        <AppText variant="micro" tone="muted">{photos.length}/5 photos</AppText>
+        <AppText variant="micro" tone="muted">
+          {photos.length}/5 photos
+        </AppText>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3] }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: spacing[3] }}
+      >
         {/* Video/Reel Slot */}
         {videoUri ? (
           <View style={styles.mediaContainer}>
@@ -83,7 +92,10 @@ export function MediaPicker({
               <Pressable onPress={() => setEditingUri(videoUri)} style={styles.actionBtn}>
                 <Edit2 size={14} color={palette.white} />
               </Pressable>
-              <Pressable onPress={() => onSetVideo(undefined)} style={[styles.actionBtn, { backgroundColor: palette.error }]}>
+              <Pressable
+                onPress={() => onSetVideo(undefined)}
+                style={[styles.actionBtn, { backgroundColor: palette.error }]}
+              >
                 <X size={14} color={palette.white} />
               </Pressable>
             </View>
@@ -101,7 +113,9 @@ export function MediaPicker({
             ]}
           >
             <Video size={24} color={palette.orange} />
-            <AppText variant="micro" style={{ color: palette.orange }}>Add Reel</AppText>
+            <AppText variant="micro" style={{ color: palette.orange }}>
+              Add Reel
+            </AppText>
           </Pressable>
         )}
 
@@ -117,7 +131,10 @@ export function MediaPicker({
               <Pressable onPress={() => setEditingUri(uri)} style={styles.actionBtn}>
                 <Edit2 size={14} color={palette.white} />
               </Pressable>
-              <Pressable onPress={() => onRemovePhoto(uri)} style={[styles.actionBtn, { backgroundColor: palette.error }]}>
+              <Pressable
+                onPress={() => onRemovePhoto(uri)}
+                style={[styles.actionBtn, { backgroundColor: palette.error }]}
+              >
                 <X size={14} color={palette.white} />
               </Pressable>
             </View>
@@ -137,7 +154,9 @@ export function MediaPicker({
             ]}
           >
             <Camera size={24} color={palette.textMuted} />
-            <AppText variant="micro" tone="secondary">Add Photo</AppText>
+            <AppText variant="micro" tone="secondary">
+              Add Photo
+            </AppText>
           </Pressable>
         )}
       </ScrollView>

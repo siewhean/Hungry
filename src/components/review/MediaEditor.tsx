@@ -18,14 +18,20 @@ interface MediaEditorProps {
 const { width } = Dimensions.get("window");
 const PREVIEW_SIZE = width - 40;
 
-export function MediaEditor({ uri, isVisible, onClose, onSave, initialFilterId = "none" }: MediaEditorProps) {
+export function MediaEditor({
+  uri,
+  isVisible,
+  onClose,
+  onSave,
+  initialFilterId = "none",
+}: MediaEditorProps) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const [selectedFilterId, setSelectedFilterId] = useState(initialFilterId);
   const skiaImage = useImage(uri);
 
   const activeFilter = useMemo(
     () => FILTERS.find((f) => f.id === selectedFilterId) || FILTERS[0],
-    [selectedFilterId]
+    [selectedFilterId],
   );
 
   if (!skiaImage) return null;
@@ -33,7 +39,14 @@ export function MediaEditor({ uri, isVisible, onClose, onSave, initialFilterId =
   return (
     <Modal visible={isVisible} animationType="slide" presentationStyle="fullScreen">
       <View style={{ flex: 1, backgroundColor: palette.bg, padding: spacing[4], paddingTop: 60 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing[4] }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: spacing[4],
+          }}
+        >
           <Pressable onPress={onClose}>
             <X size={24} color={palette.text} />
           </Pressable>
@@ -73,7 +86,11 @@ export function MediaEditor({ uri, isVisible, onClose, onSave, initialFilterId =
           <AppText variant="bodySmall" tone="secondary" style={{ marginBottom: spacing[2] }}>
             Choose a Filter
           </AppText>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[3] }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: spacing[3] }}
+          >
             {FILTERS.map((filter) => {
               const isSelected = selectedFilterId === filter.id;
               return (
@@ -93,14 +110,7 @@ export function MediaEditor({ uri, isVisible, onClose, onSave, initialFilterId =
                     }}
                   >
                     <Canvas style={{ flex: 1 }}>
-                      <Image
-                        image={skiaImage}
-                        x={0}
-                        y={0}
-                        width={70}
-                        height={70}
-                        fit="cover"
-                      >
+                      <Image image={skiaImage} x={0} y={0} width={70} height={70} fit="cover">
                         <ColorMatrix matrix={filter.matrix} />
                       </Image>
                     </Canvas>
@@ -114,7 +124,11 @@ export function MediaEditor({ uri, isVisible, onClose, onSave, initialFilterId =
           </ScrollView>
         </View>
 
-        <Button label="Apply & Save" onPress={() => onSave(selectedFilterId)} style={{ marginTop: spacing[4] }} />
+        <Button
+          label="Apply & Save"
+          onPress={() => onSave(selectedFilterId)}
+          style={{ marginTop: spacing[4] }}
+        />
       </View>
     </Modal>
   );

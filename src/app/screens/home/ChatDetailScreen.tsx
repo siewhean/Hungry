@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Pressable, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChevronLeft, Send, Phone, Video } from "lucide-react-native";
 import { Image } from "expo-image";
@@ -31,9 +38,9 @@ export function ChatDetailScreen({ navigation, route }: Props) {
         <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
           <ChevronLeft color={palette.text} size={28} />
         </Pressable>
-        
+
         <View style={styles.userInfo}>
-          <Animated.View 
+          <Animated.View
             // @ts-ignore
             sharedTransitionTag={`avatar-${route.params.chatId}`}
           >
@@ -41,7 +48,9 @@ export function ChatDetailScreen({ navigation, route }: Props) {
           </Animated.View>
           <View>
             <AppText variant="bodyBold">{name}</AppText>
-            <AppText variant="micro" tone="success">Online</AppText>
+            <AppText variant="micro" tone="success">
+              Online
+            </AppText>
           </View>
         </View>
 
@@ -51,18 +60,18 @@ export function ChatDetailScreen({ navigation, route }: Props) {
         </View>
       </View>
 
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={{ padding: spacing[4], gap: spacing[3] }}
           showsVerticalScrollIndicator={false}
         >
           {MOCK_MESSAGES.map((msg) => (
-            <Animated.View 
-              key={msg.id} 
+            <Animated.View
+              key={msg.id}
               entering={FadeIn.delay(100)}
               style={[
                 styles.messageBubble,
@@ -72,22 +81,24 @@ export function ChatDetailScreen({ navigation, route }: Props) {
                   borderRadius: radii.md,
                   borderBottomRightRadius: msg.sent ? 2 : radii.md,
                   borderBottomLeftRadius: msg.sent ? radii.md : 2,
-                }
+                },
               ]}
             >
-              <AppText style={{ color: msg.sent ? palette.white : palette.text }}>{msg.text}</AppText>
+              <AppText style={{ color: msg.sent ? palette.white : palette.text }}>
+                {msg.text}
+              </AppText>
             </Animated.View>
           ))}
         </ScrollView>
 
         <View style={[styles.inputRow, { paddingBottom: insets.bottom + spacing[2] }]}>
-          <Input 
-            placeholder="Type a message..." 
+          <Input
+            placeholder="Type a message..."
             value={message}
             onChangeText={setMessage}
             style={{ flex: 1 }}
           />
-          <Pressable 
+          <Pressable
             onPress={() => setMessage("")}
             style={[styles.sendBtn, { backgroundColor: palette.orange }]}
           >

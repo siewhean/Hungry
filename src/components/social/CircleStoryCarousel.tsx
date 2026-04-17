@@ -40,7 +40,9 @@ export function CircleStoryCarousel() {
               },
             ]}
           >
-            <View style={[styles.avatarWrap, { backgroundColor: palette.bg, borderRadius: radii.pill }]}>
+            <View
+              style={[styles.avatarWrap, { backgroundColor: palette.bg, borderRadius: radii.pill }]}
+            >
               <Image
                 source={{ uri: story.avatarUrl }}
                 style={[styles.avatar, { borderRadius: radii.pill }]}
