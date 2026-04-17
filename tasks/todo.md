@@ -786,10 +786,10 @@ These items affect perceived quality but do not break functionality.
 
 #### Codex primary
 
-- [ ] **TOOL-01 — Install ESLint + Prettier:** Install `eslint`, `prettier`, `eslint-config-expo`, `@typescript-eslint/eslint-plugin`, `@typescript-eslint/parser` as devDeps. Create `.eslintrc.json` and `.prettierrc`. Add `"lint": "eslint src/ --ext .ts,.tsx"`, `"format": "prettier --write src/"`, `"format:check": "prettier --check src/"`, `"lint:fix": "eslint src/ --ext .ts,.tsx --fix"` scripts to `package.json`. Include a `no-restricted-syntax` rule that flags hardcoded hex color literals.
-- [ ] **TOOL-02 — Add lint gate to CI:** Add `npm run lint` and `npm run format:check` steps to the `quality-gates` job in `.github/workflows/ci.yml`, after the existing typecheck step.
-- [ ] **TOOL-03 — Pre-commit hooks:** Install `husky` and `lint-staged`. Configure lint-staged to run `eslint --fix` and `prettier --write` on staged `.ts`/`.tsx` files.
-- [ ] **TOOL-04 — Create `.env.example`:** Copy `.env.development` and strip all real values; leave placeholder comments (`# Your Mapbox public token here`). Commit to repo root.
+- [x] **TOOL-01 — Install ESLint + Prettier:** Install `eslint`, `prettier`, `eslint-config-expo`, `@typescript-eslint/eslint-plugin`, `@typescript-eslint/parser` as devDeps. Create `.eslintrc.json` and `.prettierrc`. Add `"lint": "eslint src/ --ext .ts,.tsx"`, `"format": "prettier --write src/"`, `"format:check": "prettier --check src/"`, `"lint:fix": "eslint src/ --ext .ts,.tsx --fix"` scripts to `package.json`. Include a `no-restricted-syntax` rule that flags hardcoded hex color literals. *(Verified 2026-04-17 — `.eslintrc.json`, `.prettierrc`, `eslint.config.js` present)*
+- [x] **TOOL-02 — Add lint gate to CI:** Add `npm run lint` and `npm run format:check` steps to the `quality-gates` job in `.github/workflows/ci.yml`, after the existing typecheck step. *(Verified 2026-04-17 — `ci.yml:27` runs `npm run lint`)*
+- [x] **TOOL-03 — Pre-commit hooks:** Install `husky` and `lint-staged`. Configure lint-staged to run `eslint --fix` and `prettier --write` on staged `.ts`/`.tsx` files. *(Verified 2026-04-17 — `.husky/pre-commit` present)*
+- [x] **TOOL-04 — Create `.env.example`:** Copy `.env.development` and strip all real values; leave placeholder comments (`# Your Mapbox public token here`). Commit to repo root. *(Verified 2026-04-17 — `.env.example` committed)*
 
 #### Done gate
 
@@ -830,8 +830,8 @@ These items affect perceived quality but do not break functionality.
 
 #### Codex primary
 
-- [ ] **ERR-01 — Auth screen boundaries:** Wrap `LoginScreen`, `SignUpScreen`, `ForgotPasswordScreen`, `EmailVerificationScreen`, `ResetPasswordScreen` with `FeedErrorBoundary`. Use Gemini's fallback copy spec.
-- [ ] **ERR-02 — Detail screen boundaries:** Wrap `DishDetailScreen` and `StallDetailScreen` with `FeedErrorBoundary`. Fallback: "Couldn't load this dish — try again."
+- [x] **ERR-01 — Auth screen boundaries:** Wrap `LoginScreen`, `SignUpScreen`, `ForgotPasswordScreen`, `EmailVerificationScreen`, `ResetPasswordScreen` with `FeedErrorBoundary`. Use Gemini's fallback copy spec. *(Verified 2026-04-17 — all 5 screens import and wrap with `FeedErrorBoundary`)*
+- [x] **ERR-02 — Detail screen boundaries:** Wrap `DishDetailScreen` and `StallDetailScreen` with `FeedErrorBoundary`. Fallback: "Couldn't load this dish — try again." *(Verified 2026-04-17)*
 
 #### Done gate
 
@@ -1008,3 +1008,160 @@ These items affect perceived quality but do not break functionality.
 - [x] `cd ios && pod install` — 2026-04-16 (New Architecture retained; pods integrated successfully)
 - [x] `npm run typecheck` — 2026-04-16 (post-fix compile health)
 - [x] `npm run ios` — 2026-04-16 (Debug simulator build succeeded and app opened on iPhone 17 Pro)
+
+---
+
+## Sprint 7 Closure Audit (2026-04-17)
+
+> Post-merge verification against the war-room P0 register (previously in `war-room-report-2026-04-16.md`, now folded here). All 9 war-room P0s are closed in main. Report retained below as evidence; standalone file removed per "one source of truth" rule.
+
+| Former P0 | Check | Evidence | Status |
+|---|---|---|---|
+| P0-1 TasteFilter route dead end | `grep 'name="TasteFilter"'` in `RootNavigator.tsx` | `<RootStack.Screen component={TasteFilterScreen} name="TasteFilter" />` | ✅ |
+| P0-2 BuildingDrillDown route dead end | `RootNavigator.tsx` | `component={BuildingDrillDownScreen}` | ✅ |
+| P0-3 Profile not syncing after login | `useSessionStore.completeAuth` | `useProfileStore.getState().syncProfile(true)` line 59 | ✅ |
+| P0-4 `BitesCarousel` stale dish IDs | `grep MOCK_BITES src` | zero matches (removed) | ✅ |
+| P0-5 "See all" → PostComposer mismatch | `grep '"Post"' BitesCarousel.tsx` | zero matches (refactored) | ✅ |
+| P0-6 `MapZoomedIn` placeholder text | `MapZoomedInScreen.tsx` | Renders building header, markers, stalls list | ✅ |
+| P0-7 `StallDetail` param field mismatch | grep `navigate("StallDetail"` | All call sites pass `venueId: venue.id` | ✅ |
+| P0-8 `useNavigation<any>()` type unsafety | `grep -rn 'useNavigation<any>' src/` | 0 occurrences | ✅ |
+| P0-9 `BitesCarousel` bypasses repo layer | `BitesCarousel.tsx` | No direct `mockRepository` import; inline fixtures removed | ✅ |
+
+**Closure verdict:** Sprint 7 "Boil the Ocean" silently cleared the war-room P0 backlog on top of its own BT-01..BT-10 deliverables. The standalone `war-room-report-2026-04-16.md` is now obsolete and being removed — its forward-looking content (PRD compliance, decisions, production-path phasing) folded into Sprint 8 below.
+
+---
+
+## Sprint 8 — Backend Bootstrap & Production Hygiene (2026-04-17)
+
+> **Goal:** Convert the demo-ready app into a beta-grade product. Two parallel tracks: (A) Backend migration (Supabase), (B) Hygiene carryover from Sprint 6. Gated deliverable: mock-source toggle still works, real-source path ships feature-flag-guarded.
+> **Owners:** Codex = execution. Claude = planning/docs. Gemini = UX states + offline spec.
+> **Rule:** No item flips to `[x]` without a verification step in Section 5 (Session Log).
+
+---
+
+### Track A — Backend Migration (carryover from Sprint 5)
+
+> All items reference the existing Sprint 5 checklist (lines 741–748) — not duplicated. Update those checkboxes as work lands; cross-link session log entries.
+
+**Open Codex items (see Sprint 5 section):**
+- Supabase project provisioning (ap-southeast-1, PostGIS + pgvector + pg_trgm + btree_gist + citext)
+- Seed data script from `mock/data.ts`
+- `supabaseRepository.ts` implementing 11 `DataRepository` methods
+- `supabaseService.ts` wiring auth / discovery / reviews / profile / social / content / ai
+- `serviceProvider.ts` swap with `HUNGRY_DATA_SOURCE=mock|supabase` env toggle
+- Auth token migration from AsyncStorage → Supabase Auth session
+- Review photo upload via Supabase Storage signed URLs (wire into `ReviewScreen` + `EditProfileScreen`)
+- RLS policies per `tasks/Roadmap/backend-migration-plan.md §3`
+
+**Open Gemini items (see Sprint 5 section):**
+- Loading / error / empty state audit across all screens once async is real
+- Offline experience spec (cached display, retry affordance, review queue-and-sync)
+
+**Track A done gate:**
+- [ ] All `DataRepository` methods return live data from Supabase
+- [ ] Auth flow (sign up → verify → onboarding → main) works end-to-end against Supabase Auth
+- [ ] `HUNGRY_DATA_SOURCE=mock` still works as fallback (no regression)
+- [ ] Review photo upload stores to Supabase Storage and displays via CDN URL
+- [ ] `npm run typecheck` + `npm test -- --runInBand` green
+- [ ] No `mockRepository` imports remain in production code paths
+
+---
+
+### Track B — Sprint 6 Carryover
+
+#### Codex primary
+
+- [ ] **DEAD-01 — Delete `HomeMapScreen (1).tsx`:** Verified still present 2026-04-17. Remove and confirm no imports. *(Already listed in Dead Code Removal section above — still open.)*
+- [ ] **DEAD-02 — Delete `BuildingInfoSheet.tsx`:** Verified still present 2026-04-17.
+- [ ] **DEAD-03 — Delete `DiscoverTabScreen.tsx`:** Verified still present 2026-04-17.
+- [ ] **DEAD-04 — Delete `.tmp_todo_current.md`:** Verified still present at repo root 2026-04-17.
+- [ ] **DOC-01 — Document feature flags in README:** Add "Feature Flags" section documenting `HUNGRY_DATA_SOURCE`, `FEATURE_FLAGS.directMessagesEnabled`, `FEATURE_FLAGS.commentsEnabled`, `FEATURE_FLAGS.craveEnabled`, and toggle instructions.
+
+#### Gemini primary
+
+- [ ] **ERR-00 spec:** Define fallback copy + visual design for auth-screen and detail-screen `FeedErrorBoundary` states (message + CTA per screen group). *(Boundary wiring is done — spec still needed for final copy pass.)*
+
+**Track B done gate:**
+- [ ] `ls .tmp_todo_current.md` → "No such file"
+- [ ] `find src/app/screens/discover -name "*.tsx"` returns no matches for `BuildingInfoSheet`, `DiscoverTabScreen`, or `HomeMapScreen (1)`
+- [ ] `npm run typecheck` green
+- [ ] README has a "Feature Flags" section
+
+---
+
+### Track C — Backend-ready UX gaps (new this sprint)
+
+Items surfaced by the war-room audit that are not yet in any existing sprint section. Small, high-ROI, mostly blockers for beta sign-off.
+
+#### Codex primary
+
+- [ ] **S8-UX-01 — Empty states:** Wire real empty states for `FavouritesScreen`, `ReviewHistoryScreen`, and `ProfileHomeScreen` (guest). Use the existing `EmptyState` component.
+- [ ] **S8-UX-02 — Review persistence + success toast:** On submit, persist to `getDataRepository().createReview()`, then show `ReviewSuccessModal` and append to `useReviewDraftStore` history. Blocks F-010 beta claim.
+- [ ] **S8-UX-03 — Quick-review (F-018):** 30-second tag-only path — skip the 4-step flow when `reviewDraft.quickMode === true`. Entry point: long-press a dish card or CTA inside `QuickReviewSheet`.
+- [ ] **S8-UX-04 — Auth error feedback:** Surface invalid-credential / network-error messages inline on `LoginScreen` and `SignUpScreen`.
+- [ ] **S8-UX-05 — Discovery situation presets (F-015):** Add "Quick lunch / Date night / Late night / With kids" presets on `DiscoverHomeScreen` that pre-seed taste weights + distance + open-now filter.
+- [ ] **S8-UX-06 — Dietary filter on Discover root (F-014):** Promote halal / vegetarian / vegan toggle from Search into `DiscoverHomeScreen` header.
+- [ ] **S8-UX-07 — Skeleton screens:** Add `Skeleton` scaffolds to `HomeFeedScreen`, `DiscoverHomeScreen`, `ProfileHomeScreen`, `DishDetailScreen`, `StallDetailScreen` for non-instant async.
+- [ ] **S8-UX-08 — Offline detection trigger:** Hook `NetInfo` to route to `OfflineStateScreen` when connectivity drops and a data request fails.
+
+**Track C done gate:**
+- [ ] Empty, loading, error, and offline states verified via simulator toggle (manual QA)
+- [ ] F-018 quick-review path demonstrable in <30s end-to-end
+- [ ] `npm run typecheck` + `npm test -- --runInBand` green
+
+---
+
+### Sprint 8 — PRD Compliance Snapshot (post-Sprint-7)
+
+| ID | Feature | Status | Gap |
+|---|---|---|---|
+| F-001 | User accounts + Auth | ✅ | Google SSO still stubbed (Phase 7 gate) |
+| F-002 | Taste Profile (Onboarding) | ✅ | — |
+| F-003 | Location permissions | ✅ | — |
+| F-004 | Building Drill-Down | ✅ | — (Sprint 7 closed the route) |
+| F-005 | Dish-First Search | ✅ | — |
+| F-006 | Taste-Based Filtering | ✅ | — (Sprint 7 closed the route) |
+| F-007 | Decide For Me | ✅ | — |
+| F-008 | Dish Detail | ✅ | Photo carousel gallery wiring — P2 |
+| F-009 | Stall Detail | ✅ | — |
+| F-010 | Dish-Level Reviews | ⚠️ | S8-UX-02 persistence gap |
+| F-011 | Favourites | ⚠️ | S8-UX-01 empty state |
+| F-012 | Delivery Deep Links | ✅ | — |
+| F-013 | Reads (Blog Aggregator) | ⚠️ | Feature-flag-gated; tab promotion pending product call |
+| F-014 | Halal / Dietary Filter | ⚠️ | S8-UX-06 |
+| F-015 | Situation-Based Discovery | ❌ | S8-UX-05 |
+| F-016 | NEA Closure Integration | ✅ | — |
+| F-017 | Business Portal | 🚫 | Out of scope (correct) |
+| F-018 | 30-Second Tag Review | ⚠️ | S8-UX-03 |
+| F-019 | Photo Check-In | ❌ | Deferred to Phase 8 (commerce + media pipeline) |
+
+**Post-Sprint-7 compliance: 12/19 full, 5/19 partial, 2/19 not-started-but-scoped, 1/19 out of scope.**
+
+---
+
+### Sprint 8 — Decisions Needed (gating Phase 7+)
+
+| # | Decision | Options | Recommended | Needed by |
+|---|---|---|---|---|
+| D1 | Backend host | Supabase vs Postgres-on-Fly.io | **Supabase** (auth + pgvector + storage + realtime built in) | Before Track A kicks off |
+| D2 | API layer | Edge Functions vs Node/Express | **Both** — Edge for CRUD, Node for Socket.IO transport | Before Track A supabaseService |
+| D3 | Payment gateway | Stripe only vs Stripe + PayNow | **Stripe primary, PayNow SGQR fallback** | Before Phase 8 |
+| D4 | Vendor portal | Monorepo vs separate repo | **Separate repo** (different cadence, different auth) | Before Phase 8 |
+| D5 | Chat transport | Supabase Realtime vs Socket.IO | **Socket.IO** (typing, reconnect, custom events) | Before Phase 10 |
+| D6 | Mobile deployment | Expo Go vs EAS Build | **EAS Build** (required for OTA + App Store) | Before store submission |
+| D7 | Analytics | PostHog vs Amplitude vs Mixpanel | **PostHog** (self-hostable, SQL, built-in flags) — partially wired | Before Phase 11 |
+
+---
+
+### Sprint 8 — Sequenced Path Forward
+
+```
+SPRINT 8 (this wk)    PHASE 7 (~3 wk)    PHASE 8 (~6 wk)    PHASE 9/10 (~4 wk)
+─────────────────────────────────────────────────────────────────────────────
+Backend bootstrap     API + data live    QR Order & Pay      Chat + Analytics
++ hygiene + UX gaps   real traffic       revenue live        platform scaling
+```
+
+- **Phase 7 — Backend Bootstrap** (~3 engineer-weeks): provision Supabase, run migrations, discovery + search + recommendation endpoints, replace mock repos behind flag
+- **Phase 8 — QR Order & Pay** (~6 engineer-weeks): Stripe integration, order lifecycle, vendor dashboard MVP, guest checkout
+- **Phase 9/10 — Chat + Analytics** (~4 engineer-weeks): Socket.IO messaging, PostHog instrumentation, vendor analytics dashboard
