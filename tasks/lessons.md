@@ -24,3 +24,5 @@
 - Any persisted Zustand state keyed by user identity (reviewEntries, favourites, tasteVector) must be cleared in `clearProfile()`. `clearProfile()` must always be called from `signOut()`, not `syncProfile(false)` alone.
 - No backlog item is done until `npm run typecheck` passes AND a verification command is recorded in Section 5 (Session Log) of `tasks/todo.md` with the agent name and date. "Done" without evidence is status inflation.
 - On retry requests after partial work, re-validate the workspace state and run hard verification gates (`typecheck` + tests) before reporting completion.
+- Do not create sibling planning documents (war-room reports, audit reports, sprint plans) alongside `tasks/todo.md` — always fold into `tasks/todo.md` as a dated section. Two sources of truth drift. The master task list is the single source.
+- Before authoring a sprint audit, verify the sprint checklist against the code. Reconstructing a sprint's scope from a compacted conversation summary is unreliable — the real checklist lives in main's `tasks/todo.md`. Read that first.
