@@ -1,0 +1,28 @@
+diff --git a/node_modules/expo-dev-launcher/ios/EXDevLauncherController.m b/node_modules/expo-dev-launcher/ios/EXDevLauncherController.m
+index c9ca6fb..8440670 100644
+--- a/node_modules/expo-dev-launcher/ios/EXDevLauncherController.m
++++ b/node_modules/expo-dev-launcher/ios/EXDevLauncherController.m
+@@ -475,7 +475,9 @@ - (void)_initAppWithUrl:(NSURL *)appUrl bundleUrl:(NSURL *)bundleUrl manifest:(E
+ #if RCT_DEV
+     // Connect to the websocket, ignore downloaded update bundles
+     if (![bundleUrl.scheme isEqualToString:@"file"]) {
+-      [[RCTPackagerConnection sharedPackagerConnection] setSocketConnectionURL:bundleUrl];
++      if (self.appBridge != nil) {
++        [self.appBridge.devSettings.packagerConnection setSocketConnectionURL:bundleUrl];
++      }
+     }
+     self.networkInterceptor = [[EXDevLauncherNetworkInterceptor alloc] initWithBundleUrl:bundleUrl];
+ #endif
+@@ -627,6 +629,12 @@ - (void)setDevMenuAppBridge
+   DevMenuManager *manager = [DevMenuManager shared];
+   [manager updateCurrentBridge:self.appBridge];
+ 
++#if RCT_DEV
++  if (self.appBridge != nil && self.sourceUrl != nil && ![self.sourceUrl.scheme isEqualToString:@"file"]) {
++    [self.appBridge.devSettings.packagerConnection setSocketConnectionURL:self.sourceUrl];
++  }
++#endif
++
+   if (self.manifest != nil) {
+     [manager updateCurrentManifest:self.manifest manifestURL:self.manifestURL];
+   } else {

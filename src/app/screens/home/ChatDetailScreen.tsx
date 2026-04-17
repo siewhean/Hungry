@@ -40,10 +40,7 @@ export function ChatDetailScreen({ navigation, route }: Props) {
         </Pressable>
 
         <View style={styles.userInfo}>
-          <Animated.View
-            // @ts-ignore
-            sharedTransitionTag={`avatar-${route.params.chatId}`}
-          >
+          <Animated.View>
             <Image source={{ uri: avatar }} style={[styles.avatar, { borderRadius: radii.pill }]} />
           </Animated.View>
           <View>

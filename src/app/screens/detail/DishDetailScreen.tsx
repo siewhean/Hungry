@@ -1,18 +1,8 @@
-import {
-  Animated,
-  ScrollView,
-  Share,
-  View,
-  useWindowDimensions,
-  Pressable,
-  StyleSheet,
-} from "react-native";
-import { Image } from "expo-image";
+import { Animated, ScrollView, Share, View, useWindowDimensions, Pressable } from "react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Star } from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { Share2, Star } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -34,6 +24,7 @@ import {
   Input,
 } from "@/components/ui";
 import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton";
+import { ImageCarousel } from "@/components/dish/ImageCarousel";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">;
@@ -58,7 +49,6 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const heroScrollX = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
   const lastTrackedDishId = useRef<string | null>(null);
   const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(null);
@@ -83,13 +73,6 @@ export function DishDetailScreen({ navigation, route }: Props) {
     if (scores.length === 0) return 0;
     return Math.max(...scores);
   }, [dish]);
-
-  const indicatorDotSize = 7;
-  const indicatorStep = 14;
-  const indicatorTrackWidth = Math.max(
-    indicatorDotSize,
-    indicatorDotSize + Math.max(0, gallery.length - 1) * indicatorStep,
-  );
 
   useEffect(() => {
     if (!dish || lastTrackedDishId.current === dish.id) {
@@ -129,6 +112,18 @@ export function DishDetailScreen({ navigation, route }: Props) {
 
   const deliveryAvailable = venue.deliveryLinks.length > 0;
   const isSaved = profile.favouriteDishIds.includes(dish.id);
+  const canonicalDishUrl = `https://hungry.sg/dish/${dish.id}`;
+
+  const handleShareDish = async () => {
+    const message =
+      `${dish.name} at ${venue.name} (${dish.priceRange}) on Hungry.\n` +
+      `Taste match: ${tasteMatch}%.\n\n${canonicalDishUrl}`;
+    await Share.share({
+      title: `${dish.name} · Hungry`,
+      message,
+      url: canonicalDishUrl,
+    });
+  };
 
   const submitReviewReply = (reviewId: string) => {
     const draft = (replyDraftByReviewId[reviewId] ?? "").trim();
@@ -169,57 +164,12 @@ export function DishDetailScreen({ navigation, route }: Props) {
             })}
             contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
           >
-            {/* Hero image carousel - Fixed 4:3 Aspect Ratio */}
-            <View
-              style={{
-                width: screenWidth,
-                height: screenWidth * 0.75,
-                position: "relative",
-                overflow: "hidden",
-              }}
+            <ImageCarousel
+              images={gallery}
+              width={screenWidth}
+              height={screenWidth * 0.75}
+              entityId={dish.id}
             >
-              <Animated.ScrollView
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                decelerationRate="fast"
-                bounces={false}
-                scrollEventThrottle={16}
-                onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: heroScrollX } } }], {
-                  useNativeDriver: true,
-                })}
-                snapToInterval={screenWidth}
-                snapToAlignment="start"
-                style={{ width: screenWidth, height: "100%" }}
-              >
-                {gallery.map((uri) => (
-                  <View key={uri} style={{ height: "100%", width: screenWidth }}>
-                    <Animated.View
-                      style={StyleSheet.absoluteFill}
-                      // @ts-ignore
-                      sharedTransitionTag={gallery[0] === uri ? `dish-image-${dish.id}` : undefined}
-                    >
-                      <Image source={uri} style={StyleSheet.absoluteFill} contentFit="cover" />
-                    </Animated.View>
-                  </View>
-                ))}
-              </Animated.ScrollView>
-
-              {/* Gradient Overlay (requested) */}
-              <LinearGradient
-                colors={["transparent", "rgba(0,0,0,0.1)", "rgba(0,0,0,0.4)"]}
-                style={{
-                  bottom: 0,
-                  height: "100%",
-                  left: 0,
-                  position: "absolute",
-                  right: 0,
-                  top: 0,
-                }}
-                pointerEvents="none"
-              />
-
-              {/* Rating Pill - Floating in bottom corners of image */}
               <View
                 style={{
                   position: "absolute",
@@ -254,72 +204,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
                   </AppText>
                 </View>
               </View>
-
-              {/* Page Indicators */}
-              <View
-                pointerEvents="none"
-                style={{
-                  alignItems: "center",
-                  bottom: 12,
-                  left: 0,
-                  position: "absolute",
-                  right: 0,
-                }}
-              >
-                <View
-                  style={{
-                    alignItems: "center",
-                    backgroundColor: "rgba(0,0,0,0.2)",
-                    borderRadius: radii.pill,
-                    paddingHorizontal: 8,
-                    paddingVertical: 6,
-                  }}
-                >
-                  <View
-                    style={{
-                      height: indicatorDotSize,
-                      position: "relative",
-                      width: indicatorTrackWidth,
-                    }}
-                  >
-                    {gallery.map((uri, index) => (
-                      <View
-                        key={`${uri}-${index}`}
-                        style={{
-                          backgroundColor: "rgba(255,255,255,0.4)",
-                          borderRadius: radii.pill,
-                          height: indicatorDotSize,
-                          left: index * indicatorStep,
-                          position: "absolute",
-                          top: 0,
-                          width: indicatorDotSize,
-                        }}
-                      />
-                    ))}
-                    <Animated.View
-                      style={{
-                        backgroundColor: palette.white,
-                        borderRadius: radii.pill,
-                        height: indicatorDotSize,
-                        left: 0,
-                        position: "absolute",
-                        top: 0,
-                        transform: [
-                          {
-                            translateX: heroScrollX.interpolate({
-                              inputRange: [0, Math.max(1, gallery.length - 1) * screenWidth],
-                              outputRange: [0, Math.max(0, gallery.length - 1) * indicatorStep],
-                              extrapolate: "clamp",
-                            }),
-                          },
-                        ],
-                        width: indicatorDotSize,
-                      }}
-                    />
-                  </View>
-                </View>
-              </View>
-            </View>
+            </ImageCarousel>
 
             <View
               style={{
@@ -341,9 +226,34 @@ export function DishDetailScreen({ navigation, route }: Props) {
                   <Badge label={`${tasteMatch}% match`} tone="orange" />
                   {dish.mustOrder && <Badge label="Must Order" tone="amber" />}
                 </View>
-                <AppText variant="h1" style={{ fontSize: 28 }}>
-                  {dish.name}
-                </AppText>
+                <View
+                  style={{
+                    alignItems: "center",
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    gap: spacing[2],
+                  }}
+                >
+                  <AppText variant="h1" style={{ fontSize: 28, flex: 1 }}>
+                    {dish.name}
+                  </AppText>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Share ${dish.name}`}
+                    onPress={() => {
+                      void handleShareDish();
+                    }}
+                    style={{
+                      borderWidth: 1,
+                      borderColor: palette.border,
+                      borderRadius: radii.pill,
+                      paddingHorizontal: spacing[2],
+                      paddingVertical: spacing[1.5],
+                    }}
+                  >
+                    <Share2 size={16} color={palette.text} />
+                  </Pressable>
+                </View>
                 <AppText variant="bodyLarge" tone="secondary">
                   {venue.name} · {venue.unitNumber}
                 </AppText>

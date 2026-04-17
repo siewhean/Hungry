@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, useWindowDimensions, Pressable, StyleSheet, Share } from "react-native";
-import { Image } from "expo-image";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Star, ChevronLeft, Share2, Heart, MessageCircle } from "lucide-react-native";
@@ -12,7 +11,6 @@ import Animated, {
   Extrapolate,
   FadeInUp,
 } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
@@ -27,6 +25,8 @@ import {
 } from "@/components/ui";
 import { TasteRadar } from "@/components/dish/TasteRadar";
 import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton";
+import { ImageCarousel } from "@/components/dish/ImageCarousel";
+import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -132,6 +132,7 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
     () => (dish ? getTasteSimilarityWithDish(profile, dish) : 0),
     [profile, dish],
   );
+  const gallery = useMemo(() => (dish ? buildDishGallery(dish) : []), [dish]);
   const isSaved = profile.favouriteDishIds.includes(dish?.id ?? "");
 
   if (isLoading) {
@@ -145,6 +146,8 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
       </Screen>
     );
   }
+
+  const canonicalDishUrl = `https://hungry.sg/dish/${dish.id}`;
 
   return (
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
@@ -168,7 +171,13 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
         </Pressable>
         <View style={{ flex: 1 }} />
         <Pressable
-          onPress={() => Share.share({ message: `Check out ${dish.name} on Hungry!` })}
+          onPress={() =>
+            Share.share({
+              title: `${dish.name} · Hungry`,
+              message: `Check out ${dish.name} at ${venue.name} on Hungry.\n\n${canonicalDishUrl}`,
+              url: canonicalDishUrl,
+            })
+          }
           style={styles.navBtn}
         >
           <Share2 color={palette.text} size={20} />
@@ -183,21 +192,7 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
       >
         {/* ─── HERO PARALLAX ──────────────────────────────────────────────── */}
         <Animated.View style={[styles.heroContainer, { height: HERO_HEIGHT }, heroStyle]}>
-          <Animated.View
-            style={StyleSheet.absoluteFill}
-            // @ts-ignore
-            sharedTransitionTag={`dish-image-premium-${dish.id}`}
-          >
-            <Image
-              source={{ uri: dish.imageUrl }}
-              style={StyleSheet.absoluteFill}
-              contentFit="cover"
-            />
-          </Animated.View>
-          <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.1)", palette.bg]}
-            style={styles.heroGradient}
-          />
+          <ImageCarousel images={gallery} width={screenWidth} height={HERO_HEIGHT} />
         </Animated.View>
 
         {/* ─── CONTENT ────────────────────────────────────────────────────── */}
@@ -401,14 +396,6 @@ const styles = StyleSheet.create({
   heroContainer: {
     width: "100%",
     overflow: "hidden",
-  },
-  heroGradient: {
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-    height: "100%",
   },
   radarCard: {
     padding: 20,

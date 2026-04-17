@@ -538,11 +538,7 @@ export function HomeMapScreen() {
                   ]}
                 >
                   <View style={{ height: 160 }}>
-                    <AnimatedReanimated.View
-                      style={StyleSheet.absoluteFill}
-                      // @ts-ignore
-                      sharedTransitionTag={`dish-image-${dish.id}`}
-                    >
+                    <AnimatedReanimated.View style={StyleSheet.absoluteFill}>
                       <Image
                         source={{ uri: dish.imageUrl }}
                         style={StyleSheet.absoluteFill}

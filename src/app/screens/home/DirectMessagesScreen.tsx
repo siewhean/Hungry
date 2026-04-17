@@ -104,7 +104,7 @@ export function DirectMessagesScreen() {
                 gap: spacing[3],
               }}
             >
-              <Animated.View sharedTransitionTag={`avatar-${chat.id}`}>
+              <Animated.View>
                 <Image
                   source={{ uri: chat.avatar }}
                   style={{ width: 56, height: 56, borderRadius: radii.pill }}

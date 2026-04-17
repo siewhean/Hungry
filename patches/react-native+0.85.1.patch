@@ -1,0 +1,15 @@
+diff --git a/node_modules/react-native/Libraries/AppDelegate/RCTUIConfiguratorProtocol.h b/node_modules/react-native/Libraries/AppDelegate/RCTUIConfiguratorProtocol.h
+index 9e76c5b..ad7982f 100644
+--- a/node_modules/react-native/Libraries/AppDelegate/RCTUIConfiguratorProtocol.h
++++ b/node_modules/react-native/Libraries/AppDelegate/RCTUIConfiguratorProtocol.h
+@@ -37,7 +37,10 @@ NS_ASSUME_NONNULL_BEGIN
+  *
+  * @parameter: rootView - The root view to customize.
+  */
++#pragma clang diagnostic push
++#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+ - (void)customizeRootView:(RCTRootView *)rootView;
++#pragma clang diagnostic pop
+ 
+ /**
+  * It creates the RootViewController.

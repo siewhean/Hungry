@@ -2,9 +2,9 @@ import { Fragment, useMemo } from "react";
 import { View } from "react-native";
 import Svg, { Circle, Line, Polygon, Text as SvgText } from "react-native-svg";
 
+import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { TasteVector } from "@/types/domain";
-import { AppText } from "@/components/ui";
 
 interface ProfileRadarChartProps {
   value: TasteVector;
@@ -26,7 +26,7 @@ export function ProfileRadarChart({ value }: ProfileRadarChartProps) {
   const maxRadius = 74;
 
   const a11yLabel = useMemo(() => {
-    const summary = axes.map((a) => `${a.label} ${value[a.key].toFixed(1)}`).join(", ");
+    const summary = axes.map((axis) => `${axis.label} ${value[axis.key].toFixed(1)}`).join(", ");
     return `Your taste profile: ${summary}.`;
   }, [value]);
 

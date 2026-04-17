@@ -237,11 +237,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 position: "relative",
               }}
             >
-              <Animated.View
-                style={StyleSheet.absoluteFill}
-                // @ts-ignore
-                sharedTransitionTag={`venue-image-${venue.id}`}
-              >
+              <Animated.View style={StyleSheet.absoluteFill}>
                 <Image
                   source={{ uri: leadDish?.imageUrl }}
                   style={StyleSheet.absoluteFill}

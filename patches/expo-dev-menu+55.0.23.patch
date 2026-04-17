@@ -1,0 +1,94 @@
+diff --git a/node_modules/expo-dev-menu/ios/DevMenuManager.swift b/node_modules/expo-dev-menu/ios/DevMenuManager.swift
+index 0fbf236..a34a87d 100644
+--- a/node_modules/expo-dev-menu/ios/DevMenuManager.swift
++++ b/node_modules/expo-dev-menu/ios/DevMenuManager.swift
+@@ -197,6 +197,7 @@ open class DevMenuManager: NSObject {
+   public func updateCurrentBridge(_ bridge: RCTBridge?) {
+     currentBridge = bridge
+     if bridge != nil {
++      packagerConnectionHandler?.setup()
+       isNavigatingHome = false
+     }
+   }
+diff --git a/node_modules/expo-dev-menu/ios/DevMenuPackagerConnectionHandler.swift b/node_modules/expo-dev-menu/ios/DevMenuPackagerConnectionHandler.swift
+index aaeb550..65570de 100644
+--- a/node_modules/expo-dev-menu/ios/DevMenuPackagerConnectionHandler.swift
++++ b/node_modules/expo-dev-menu/ios/DevMenuPackagerConnectionHandler.swift
+@@ -6,6 +6,8 @@ import React
+ class DevMenuPackagerConnectionHandler {
+   weak var manager: DevMenuManager?
+   private static var suppressRNDevMenu = true
++  private static var hasSwizzledRCTDevMenuShow = false
++  private var hasConfiguredHandlers = false
+ 
+   init(manager: DevMenuManager) {
+     self.manager = manager
+@@ -15,23 +17,31 @@ class DevMenuPackagerConnectionHandler {
+     // `RCT_DEV` isn't available in Swift, that's why we used `DEBUG` instead.
+     // It shouldn't diverge, because of the definition of `RCT_DEV`.
+ #if DEBUG
+-    self.swizzleRCTDevMenuShow()
+-
+-    RCTPackagerConnection
+-      .shared()
+-      .addNotificationHandler(
+-        self.sendDevCommandNotificationHandler,
+-        queue: DispatchQueue.main,
+-        forMethod: "sendDevCommand"
+-      )
+-
+-    RCTPackagerConnection
+-      .shared()
+-      .addNotificationHandler(
+-        self.devMenuNotificationHanlder,
+-        queue: DispatchQueue.main,
+-        forMethod: "devMenu"
+-      )
++    if !Self.hasSwizzledRCTDevMenuShow {
++      Self.hasSwizzledRCTDevMenuShow = true
++      self.swizzleRCTDevMenuShow()
++    }
++
++    guard !hasConfiguredHandlers else {
++      return
++    }
++    guard let bridge = manager?.currentBridge else {
++      return
++    }
++
++    _ = bridge.devSettings.addNotificationHandler(
++      self.sendDevCommandNotificationHandler,
++      queue: DispatchQueue.main,
++      forMethod: "sendDevCommand"
++    )
++
++    _ = bridge.devSettings.addNotificationHandler(
++      self.devMenuNotificationHanlder,
++      queue: DispatchQueue.main,
++      forMethod: "devMenu"
++    )
++
++    hasConfiguredHandlers = true
+ #endif
+   }
+ 
+@@ -64,8 +74,9 @@ class DevMenuPackagerConnectionHandler {
+   }
+ 
+   @objc
+-  func sendDevCommandNotificationHandler(_ params: [String: Any]) {
++  func sendDevCommandNotificationHandler(_ params: [String: Any]?) {
+     guard let manager = manager,
++      let params,
+       let command = params["name"] as? String,
+       let bridge = manager.currentBridge
+     else {
+@@ -89,7 +100,7 @@ class DevMenuPackagerConnectionHandler {
+   }
+ 
+   @objc
+-  func devMenuNotificationHanlder(_ parames: [String: Any]) {
++  func devMenuNotificationHanlder(_ parames: [String: Any]?) {
+     self.manager?.toggleMenu()
+   }
+ 

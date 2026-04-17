@@ -1,0 +1,118 @@
+diff --git a/node_modules/expo-modules-core/ios/Core/ExpoBridgeModule.h b/node_modules/expo-modules-core/ios/Core/ExpoBridgeModule.h
+index 063fe1a..49df5ad 100644
+--- a/node_modules/expo-modules-core/ios/Core/ExpoBridgeModule.h
++++ b/node_modules/expo-modules-core/ios/Core/ExpoBridgeModule.h
+@@ -1,6 +1,12 @@
+ // Copyright 2024-present 650 Industries. All rights reserved.
+ 
++#if __has_include(<React/RCTBridgeModule.h>)
++#import <React/RCTBridgeModule.h>
++#elif __has_include(<React-RCTBridge/RCTBridgeModule.h>)
++#import <React-RCTBridge/RCTBridgeModule.h>
++#else
+ @protocol RCTBridgeModule;
++#endif
+ 
+ #import <ExpoModulesCore/EXNativeModulesProxy.h>
+ #import <ExpoModulesCore/EXModuleRegistry.h>
+diff --git a/node_modules/expo-modules-core/ios/Interfaces/FileSystem/EXFileSystemInterface.h b/node_modules/expo-modules-core/ios/Interfaces/FileSystem/EXFileSystemInterface.h
+index fca4649..0bfb2e5 100644
+--- a/node_modules/expo-modules-core/ios/Interfaces/FileSystem/EXFileSystemInterface.h
++++ b/node_modules/expo-modules-core/ios/Interfaces/FileSystem/EXFileSystemInterface.h
+@@ -2,6 +2,8 @@
+ 
+ #import <Foundation/Foundation.h>
+ 
++NS_ASSUME_NONNULL_BEGIN
++
+ typedef NS_OPTIONS(unsigned int, EXFileSystemPermissionFlags) {
+   EXFileSystemPermissionNone = 0,
+   EXFileSystemPermissionRead = 1 << 1,
+@@ -21,3 +23,5 @@ typedef NS_OPTIONS(unsigned int, EXFileSystemPermissionFlags) {
+ - (BOOL)ensureDirExistsWithPath:(NSString *)path;
+ 
+ @end
++
++NS_ASSUME_NONNULL_END
+diff --git a/node_modules/expo-modules-core/ios/JS/EXJSIInstaller.h b/node_modules/expo-modules-core/ios/JS/EXJSIInstaller.h
+index 8be984a..8cc8590 100644
+--- a/node_modules/expo-modules-core/ios/JS/EXJSIInstaller.h
++++ b/node_modules/expo-modules-core/ios/JS/EXJSIInstaller.h
+@@ -16,6 +16,8 @@
+ @class RCTRuntimeExecutor;
+ #endif // React Native >=0.74
+ 
++NS_ASSUME_NONNULL_BEGIN
++
+ /**
+  Property name of the core object in the global scope of the Expo JS runtime.
+  */
+@@ -42,7 +44,7 @@ extern NSString *_Nonnull const EXGlobalCoreObjectPropertyName;
+ /**
+  Installs the base class for shared objects, i.e. `global.expo.SharedObject`.
+  */
+-+ (void)installSharedObjectClass:(nonnull EXJavaScriptRuntime *)runtime releaser:(void (^)(long))releaser;
+++ (void)installSharedObjectClass:(nonnull EXJavaScriptRuntime *)runtime releaser:(void (^ _Nonnull)(long))releaser;
+ 
+ /**
+  Installs the base class for shared refs, i.e. `global.expo.SharedRef`.
+@@ -60,3 +62,5 @@ extern NSString *_Nonnull const EXGlobalCoreObjectPropertyName;
+ + (void)installNativeModuleClass:(nonnull EXJavaScriptRuntime *)runtime;
+ 
+ @end
++
++NS_ASSUME_NONNULL_END
+diff --git a/node_modules/expo-modules-core/ios/Legacy/ModuleRegistryAdapter/EXModuleRegistryHolderReactModule.h b/node_modules/expo-modules-core/ios/Legacy/ModuleRegistryAdapter/EXModuleRegistryHolderReactModule.h
+index 40307db..97c75fd 100644
+--- a/node_modules/expo-modules-core/ios/Legacy/ModuleRegistryAdapter/EXModuleRegistryHolderReactModule.h
++++ b/node_modules/expo-modules-core/ios/Legacy/ModuleRegistryAdapter/EXModuleRegistryHolderReactModule.h
+@@ -1,6 +1,12 @@
+ // Copyright 2018-present 650 Industries. All rights reserved.
+ 
++#if __has_include(<React/RCTBridgeModule.h>)
++#import <React/RCTBridgeModule.h>
++#elif __has_include(<React-RCTBridge/RCTBridgeModule.h>)
++#import <React-RCTBridge/RCTBridgeModule.h>
++#else
+ @protocol RCTBridgeModule;
++#endif
+ 
+ #import <ExpoModulesCore/EXModuleRegistry.h>
+ 
+diff --git a/node_modules/expo-modules-core/ios/Legacy/NativeModulesProxy/EXNativeModulesProxy.h b/node_modules/expo-modules-core/ios/Legacy/NativeModulesProxy/EXNativeModulesProxy.h
+index 4e6c173..d1b6688 100644
+--- a/node_modules/expo-modules-core/ios/Legacy/NativeModulesProxy/EXNativeModulesProxy.h
++++ b/node_modules/expo-modules-core/ios/Legacy/NativeModulesProxy/EXNativeModulesProxy.h
+@@ -1,17 +1,23 @@
+ // Copyright 2018-present 650 Industries. All rights reserved.
+ 
+-#if !__building_module(ExpoModulesCore)
++#if __has_include(<React/RCTBridgeModule.h>)
+ #import <React/RCTBridgeModule.h>
++#import <React/RCTBridge.h>
++#elif __has_include(<React-RCTBridge/RCTBridgeModule.h>)
++#import <React-RCTBridge/RCTBridgeModule.h>
++#import <React-RCTBridge/RCTBridge.h>
+ #else
+ @class RCTBridge;
+ @protocol RCTBridgeModule;
+-typedef void (^RCTPromiseResolveBlock)(id result);
+-typedef void (^RCTPromiseRejectBlock)(NSString *code, NSString *message, NSError *error);
++typedef void (^RCTPromiseResolveBlock)(id _Nullable result);
++typedef void (^RCTPromiseRejectBlock)(NSString * _Nonnull code, NSString * _Nullable message, NSError * _Nullable error);
+ #endif
+ 
+ #import <ExpoModulesCore/EXInternalModule.h>
+ #import <ExpoModulesCore/EXModuleRegistry.h>
+ 
++NS_ASSUME_NONNULL_BEGIN
++
+ // A convenience class, which acts as a store for the native modules proxy config
+ 
+ NS_SWIFT_NAME(ModulesProxyConfig)
+@@ -42,3 +48,5 @@ NS_SWIFT_NAME(LegacyNativeModulesProxy)
+ - (void)callMethod:(NSString *)moduleName methodNameOrKey:(id)methodNameOrKey arguments:(NSArray *)arguments resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject;
+ 
+ @end
++
++NS_ASSUME_NONNULL_END

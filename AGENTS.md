@@ -214,7 +214,16 @@ Rules:
 <claude-mem-context>
 # Memory Context
 
-# [Hungry] recent context, 2026-04-17 2:44pm GMT+8
+# [Hungry] recent context, 2026-04-17 9:42pm GMT+8
 
-No previous sessions found.
+Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision
+Format: ID TIME TYPE TITLE
+Fetch details: get_observations([IDs]) | Search: mem-search skill
+
+Stats: 1 obs (276t read) | 525t work | 47% savings
+
+### Apr 17, 2026
+136 2:59p 🔵 Dual radar chart implementations found in codebase
+
+Access 1k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

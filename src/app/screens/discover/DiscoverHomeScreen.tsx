@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
+import * as Haptics from "expo-haptics";
 import {
   ChevronRight,
   Compass,
@@ -132,13 +133,20 @@ export function DiscoverHomeScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  const {
-    popularNearby,
-    setDecideForMe,
-    cacheRecommendationSlate,
-    getCachedRecommendationSlate,
-    pruneExpiredRecommendations,
-  } = useDiscoveryStore();
+  const popularNearby = useDiscoveryStore((state) => state.popularNearby ?? []);
+  const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
+  const refreshPopularNearby = useDiscoveryStore((state) => state.refreshPopularNearby);
+  const cacheRecommendationSlate = useDiscoveryStore((state) => state.cacheRecommendationSlate);
+  const getCachedRecommendationSlate = useDiscoveryStore(
+    (state) => state.getCachedRecommendationSlate,
+  );
+  const pruneExpiredRecommendations = useDiscoveryStore(
+    (state) => state.pruneExpiredRecommendations,
+  );
+
+  useEffect(() => {
+    void refreshPopularNearby();
+  }, [refreshPopularNearby]);
   const selectedCategories = useSearchStore((state) => state.filters.categories);
   const toggleCategory = useSearchStore((state) => state.toggleCategory);
 
@@ -232,6 +240,7 @@ export function DiscoverHomeScreen() {
   }[];
 
   const handleDecideForMe = () => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const radiusMeters = 500;
     trackAnalyticsEvent("decide_for_me_triggered", {
       location_granted: locationPermission === "granted",

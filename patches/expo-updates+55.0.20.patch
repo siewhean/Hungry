@@ -1,0 +1,35 @@
+diff --git a/node_modules/expo-updates/ios/EXUpdates/ReactDelegateHandler/ExpoUpdatesReactDelegateHandler.swift b/node_modules/expo-updates/ios/EXUpdates/ReactDelegateHandler/ExpoUpdatesReactDelegateHandler.swift
+index 4be5f2d..9eb2836 100644
+--- a/node_modules/expo-updates/ios/EXUpdates/ReactDelegateHandler/ExpoUpdatesReactDelegateHandler.swift
++++ b/node_modules/expo-updates/ios/EXUpdates/ReactDelegateHandler/ExpoUpdatesReactDelegateHandler.swift
+@@ -63,7 +63,13 @@ public final class ExpoUpdatesReactDelegateHandler: ExpoReactDelegateHandler, Ap
+   }
+ 
+   public override func bundleURL(reactDelegate: ExpoReactDelegate) -> URL? {
+-    AppController.sharedInstance.launchAssetUrl()
++    if UpdatesUtils.isUsingCustomInitialization() {
++      return nil
++    }
++    if !AppController.isInitialized() {
++      AppController.initializeWithoutStarting()
++    }
++    return AppController.sharedInstance.launchAssetUrl()
+   }
+ 
+   // MARK: AppControllerDelegate implementations
+diff --git a/node_modules/expo-updates/ios/EXUpdates/UpdatesModule.swift b/node_modules/expo-updates/ios/EXUpdates/UpdatesModule.swift
+index 55efaca..899de7a 100644
+--- a/node_modules/expo-updates/ios/EXUpdates/UpdatesModule.swift
++++ b/node_modules/expo-updates/ios/EXUpdates/UpdatesModule.swift
+@@ -20,7 +20,10 @@ public final class UpdatesModule: Module, UpdatesEventManagerObserver {
+     )
+ 
+     Constants {
+-      AppController.sharedInstance.getConstantsForModule().toModuleConstantsMap()
++      if !AppController.isInitialized() {
++        AppController.initializeWithoutStarting()
++      }
++      return AppController.sharedInstance.getConstantsForModule().toModuleConstantsMap()
+     }
+ 
+     OnStartObserving(EXUpdatesStateChangeEventName) {
