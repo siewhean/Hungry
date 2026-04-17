@@ -315,9 +315,10 @@ Manages device `Coordinate` and permission state.
 
 | Key | Method |
 |-----|--------|
-| Show soft gate | `showSoftGate()` |
-| Dismiss soft gate | `hideSoftGate()` |
-| Show toast | `showToast(message, type?)` |
+| Show toast | `showToast({ message, tone? })` |
+| Dismiss toast | `clearToast()` |
+| Review success modal | `showReviewSuccess(payload)` / `hideReviewSuccess()` |
+| Scroll-back affordance | `registerScrollForBack(offsetY)` / `setScrollBackVisible(visible)` |
 
 ---
 

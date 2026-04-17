@@ -50,7 +50,7 @@ export function euclideanDistance(a: TasteVector, b: TasteVector): number {
       (a.sour - b.sour) ** 2 +
       (a.salty - b.salty) ** 2 +
       (a.rich - b.rich) ** 2 +
-      (a.aromatic - b.aromatic) ** 2
+      (a.aromatic - b.aromatic) ** 2,
   );
 }
 
@@ -69,9 +69,9 @@ export function blendedMatchScore(user: TasteVector, dish: TasteVector): number 
 
 export interface ScoredDish {
   dishId: string;
-  score: number;        // [0, 1]
+  score: number; // [0, 1]
   matchPercent: number; // 0–100 rounded
-  explanation: string;  // human-readable reason
+  explanation: string; // human-readable reason
 }
 
 /**
@@ -79,7 +79,7 @@ export interface ScoredDish {
  */
 export function rankDishes(
   user: TasteVector,
-  dishes: Array<{ id: string; tasteVector: TasteVector; name: string }>
+  dishes: Array<{ id: string; tasteVector: TasteVector; name: string }>,
 ): ScoredDish[] {
   return dishes
     .map((dish) => {
@@ -119,8 +119,7 @@ function buildExplanation(user: TasteVector, dish: TasteVector, name: string): s
     .slice(0, 2);
 
   if (matched.length === 0) return `${name} is a crowd favourite.`;
-  if (matched.length === 1)
-    return `Matches your love of ${matched[0].label}.`;
+  if (matched.length === 1) return `Matches your love of ${matched[0].label}.`;
   return `Matches your ${matched[0].label} and ${matched[1].label} preferences.`;
 }
 
@@ -135,7 +134,7 @@ function buildExplanation(user: TasteVector, dish: TasteVector, name: string): s
 export function calibrateVector(
   current: TasteVector,
   impression: TasteVector,
-  alpha = 0.05
+  alpha = 0.05,
 ): TasteVector {
   return {
     sweet: clamp(current.sweet + alpha * (impression.sweet - current.sweet), 0, 10),
@@ -160,7 +159,7 @@ function clamp(value: number, min: number, max: number): number {
 export function decideForMe(
   user: TasteVector,
   dishes: Array<{ id: string; tasteVector: TasteVector; name: string }>,
-  minScore = 0.4
+  minScore = 0.4,
 ): { dishId: string; matchPercent: number; explanation: string } | null {
   const ranked = rankDishes(user, dishes);
   const top = ranked.find((d) => d.score >= minScore);
@@ -207,3 +206,451 @@ export const TASTE_COLORS: Record<keyof TasteVector, string> = {
   rich: "#A855F7",
   aromatic: "#10B981",
 };
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EXTENDED RECOMMENDATION PIPELINE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+import type { DietaryFlag, DishSummary, HawkerTasteTag } from "@/types/domain";
+import { filterSafeDishes } from "./dietaryGate";
+import { applyContextModifier, computeContextModifier, getCurrentContext } from "./contextEngine";
+import type { ContextState } from "./contextEngine";
+
+// ─── Pipeline Types ───────────────────────────────────────────────────────────
+
+export interface PipelineContext {
+  /** User's core taste vector */
+  userVector: TasteVector;
+  /** User's dietary restrictions */
+  dietaryFlags: DietaryFlag[];
+  /** User's neophilia index (0–10) — controls serendipity injection */
+  neophiliaIndex: number;
+  /** GPS location (optional) */
+  latitude?: number;
+  longitude?: number;
+  /** Maximum distance in meters */
+  radiusMeters?: number;
+  /** Dish IDs to exclude (already seen / dismissed) */
+  excludeDishIds?: string[];
+  /** Environmental context (time-of-day, weather) */
+  context?: ContextState;
+}
+
+export interface PipelineResult {
+  dishId: string;
+  /** Multi-signal precision score, 0–1 */
+  score: number;
+  /** Human-readable percentage */
+  matchPercent: number;
+  /** Explanation of why this dish was recommended */
+  explanation: string;
+  /** Whether this dish was injected for serendipity */
+  isSerendipitous: boolean;
+}
+
+// ─── Stage 1: Hard Filter (Dietary Gate) ──────────────────────────────────────
+
+/**
+ * SAFETY-CRITICAL: Purge all dishes that conflict with user's dietary flags.
+ * This function runs FIRST — the AI engine never sees unsafe dishes.
+ */
+function stage1HardFilter<T extends DishSummary>(dishes: T[], userFlags: DietaryFlag[]): T[] {
+  return filterSafeDishes(dishes, userFlags);
+}
+
+// ─── Stage 2: Candidate Generation ────────────────────────────────────────────
+
+/**
+ * Rapidly narrow the safe pool to the top N candidates by cosine similarity.
+ * In production, this maps to pgvector's HNSW nearest-neighbor search.
+ */
+function stage2CandidateGeneration<T extends DishSummary>(
+  dishes: T[],
+  userVector: TasteVector,
+  topN = 50,
+): Array<T & { _rawScore: number }> {
+  return dishes
+    .map((dish) => ({
+      ...dish,
+      _rawScore: blendedMatchScore(userVector, dish.tasteVector),
+    }))
+    .sort((a, b) => b._rawScore - a._rawScore)
+    .slice(0, topN);
+}
+
+// ─── Stage 3: Precision Scoring ───────────────────────────────────────────────
+
+/**
+ * Multi-signal weighted scoring combining taste match, context, distance,
+ * community rating, and implicit behavior signals.
+ *
+ * Weights:
+ *   40% — Taste match (blended cosine + euclidean)
+ *   20% — Contextual relevance (time-of-day modifier)
+ *   15% — Distance proximity (inverse normalized)
+ *   15% — Community rating (normalized)
+ *   10% — Reserved for implicit behavior signals (Phase 2)
+ */
+function stage3PrecisionScoring<T extends DishSummary & { _rawScore: number }>(
+  candidates: T[],
+  contextVector: TasteVector,
+  userVector: TasteVector,
+): Array<T & { _precisionScore: number }> {
+  // Find max distance for normalization
+  const maxDist = Math.max(...candidates.map((d) => d.distanceMeters), 1);
+
+  return candidates.map((dish) => {
+    const tasteScore = dish._rawScore; // already computed in Stage 2
+    const contextScore = blendedMatchScore(contextVector, dish.tasteVector);
+    const distanceScore = 1 - dish.distanceMeters / maxDist;
+    const ratingScore = (dish.rating ?? 0) / 5;
+    const implicitScore = 0.5; // Neutral baseline — Phase 2 will populate
+
+    const precisionScore =
+      0.4 * tasteScore +
+      0.2 * contextScore +
+      0.15 * distanceScore +
+      0.15 * ratingScore +
+      0.1 * implicitScore;
+
+    return { ...dish, _precisionScore: precisionScore };
+  });
+}
+
+// ─── Stage 4: Serendipity Re-Ranking ──────────────────────────────────────────
+
+/**
+ * Inject novel dishes based on the user's neophilia index.
+ * Serendipitous dishes are NOT random — they must share flavor chemistry
+ * with the user's known favorites (≥ 0.3 cosine similarity).
+ *
+ * neophiliaIndex mapping:
+ *   0–3: 5% serendipity (safe zone — mostly familiar)
+ *   4–6: 15% serendipity (occasional novelty)
+ *   7–10: 30% serendipity (actively inject the unfamiliar)
+ */
+function stage4SerendipityReRanking<T extends DishSummary & { _precisionScore: number }>(
+  ranked: T[],
+  neophiliaIndex: number,
+  userVector: TasteVector,
+  allSafeDishes: DishSummary[],
+): PipelineResult[] {
+  const serendipityRate = neophiliaIndex <= 3 ? 0.05 : neophiliaIndex <= 6 ? 0.15 : 0.3;
+
+  const topN = Math.min(ranked.length, 20);
+  const serendipitySlots = Math.floor(topN * serendipityRate);
+  const regularSlots = topN - serendipitySlots;
+
+  // Regular top-scored dishes
+  const regularResults = ranked.slice(0, regularSlots);
+  const regularIds = new Set(regularResults.map((d) => d.id));
+
+  // Serendipitous dishes: from the safe pool but NOT in the top regulars
+  // Must have minimum flavor overlap (cosine ≥ 0.3 with user vector)
+  const novelCandidates = allSafeDishes
+    .filter((d) => !regularIds.has(d.id) && cosineSimilarity(userVector, d.tasteVector) >= 0.3)
+    .sort(() => Math.random() - 0.5) // shuffle for variety
+    .slice(0, serendipitySlots);
+
+  // Build final results
+  const results: PipelineResult[] = [
+    ...regularResults.map((d) => ({
+      dishId: d.id,
+      score: d._precisionScore,
+      matchPercent: Math.round(d._precisionScore * 100),
+      explanation: buildExplanation(userVector, d.tasteVector, d.name),
+      isSerendipitous: false,
+    })),
+    ...novelCandidates.map((d) => ({
+      dishId: d.id,
+      score: cosineSimilarity(userVector, d.tasteVector),
+      matchPercent: Math.round(cosineSimilarity(userVector, d.tasteVector) * 100),
+      explanation: `Something new — try ${d.name}?`,
+      isSerendipitous: true,
+    })),
+  ];
+
+  return results;
+}
+
+const TASTE_KEYS: Array<keyof TasteVector> = [
+  "sweet",
+  "spicy",
+  "sour",
+  "salty",
+  "rich",
+  "aromatic",
+];
+
+function getDominantTasteDimension(vector: TasteVector): keyof TasteVector {
+  let dominant: keyof TasteVector = TASTE_KEYS[0];
+  for (const key of TASTE_KEYS) {
+    if (vector[key] > vector[dominant]) {
+      dominant = key;
+    }
+  }
+  return dominant;
+}
+
+function isWildCardScore(score: number): boolean {
+  return score >= 0.4 && score <= 0.6;
+}
+
+function mutateCount(map: Map<string, number>, key: string, delta: number) {
+  const next = (map.get(key) ?? 0) + delta;
+  if (next <= 0) {
+    map.delete(key);
+    return;
+  }
+  map.set(key, next);
+}
+
+function diversifyResults(
+  results: PipelineResult[],
+  dishesById: Map<string, DishSummary>,
+): PipelineResult[] {
+  const selected: PipelineResult[] = [];
+  const selectedIds = new Set<string>();
+  const venueCounts = new Map<string, number>();
+  const dimensionCounts = new Map<string, number>();
+  let hasWildCard = false;
+
+  const canSelectDish = (dish: DishSummary) => {
+    const dominant = getDominantTasteDimension(dish.tasteVector);
+    const venueCount = venueCounts.get(dish.venueId) ?? 0;
+    const dimensionCount = dimensionCounts.get(dominant) ?? 0;
+    return venueCount < 3 && dimensionCount < 2;
+  };
+
+  const addDishCounts = (dish: DishSummary) => {
+    const dominant = getDominantTasteDimension(dish.tasteVector);
+    mutateCount(venueCounts, dish.venueId, 1);
+    mutateCount(dimensionCounts, dominant, 1);
+  };
+
+  const removeDishCounts = (dish: DishSummary) => {
+    const dominant = getDominantTasteDimension(dish.tasteVector);
+    mutateCount(venueCounts, dish.venueId, -1);
+    mutateCount(dimensionCounts, dominant, -1);
+  };
+
+  for (const result of results) {
+    if (selected.length >= 20) {
+      break;
+    }
+    if (selectedIds.has(result.dishId)) {
+      continue;
+    }
+    const dish = dishesById.get(result.dishId);
+    if (!dish || !canSelectDish(dish)) {
+      continue;
+    }
+
+    selected.push(result);
+    selectedIds.add(result.dishId);
+    addDishCounts(dish);
+    if (isWildCardScore(result.score)) {
+      hasWildCard = true;
+    }
+  }
+
+  if (hasWildCard || selected.length === 0) {
+    return selected;
+  }
+
+  for (const candidate of results) {
+    if (!isWildCardScore(candidate.score) || selectedIds.has(candidate.dishId)) {
+      continue;
+    }
+    const candidateDish = dishesById.get(candidate.dishId);
+    if (!candidateDish) {
+      continue;
+    }
+
+    for (let index = selected.length - 1; index >= 0; index -= 1) {
+      const existing = selected[index];
+      const existingDish = dishesById.get(existing.dishId);
+      if (!existingDish) {
+        continue;
+      }
+
+      removeDishCounts(existingDish);
+      const canReplace = canSelectDish(candidateDish);
+      if (!canReplace) {
+        addDishCounts(existingDish);
+        continue;
+      }
+
+      selected[index] = candidate;
+      selectedIds.delete(existing.dishId);
+      selectedIds.add(candidate.dishId);
+      addDishCounts(candidateDish);
+      return selected;
+    }
+  }
+
+  return selected;
+}
+
+// ─── Full Pipeline ────────────────────────────────────────────────────────────
+
+/**
+ * Execute the complete 4-stage recommendation pipeline.
+ *
+ * Stage 1: Dietary Hard Filter (safety gate)
+ * Stage 2: Candidate Generation (cosine similarity top-N)
+ * Stage 3: Precision Scoring (multi-signal weighted)
+ * Stage 4: Serendipity Re-Ranking (neophilia-gated novelty injection)
+ */
+export function runRecommendationPipeline(
+  allDishes: DishSummary[],
+  ctx: PipelineContext,
+): PipelineResult[] {
+  // Resolve context
+  const context = ctx.context ?? getCurrentContext();
+  const contextModifier = computeContextModifier(context);
+  const contextVector = applyContextModifier(ctx.userVector, contextModifier);
+
+  // Stage 1: Remove unsafe dishes
+  const safeDishes = stage1HardFilter(allDishes, ctx.dietaryFlags);
+
+  // Apply exclusions and radius filter
+  let candidates = safeDishes.filter((d) => {
+    if (ctx.excludeDishIds?.includes(d.id)) return false;
+    if (ctx.radiusMeters && d.distanceMeters > ctx.radiusMeters) return false;
+    return true;
+  });
+
+  if (candidates.length === 0) return [];
+
+  // Stage 2: Narrow to top candidates by taste match
+  const topCandidates = stage2CandidateGeneration(candidates, contextVector, 50);
+
+  // Stage 3: Multi-signal precision scoring
+  const precisionRanked = stage3PrecisionScoring(topCandidates, contextVector, ctx.userVector);
+
+  // Sort by precision score
+  precisionRanked.sort((a, b) => b._precisionScore - a._precisionScore);
+
+  // Stage 4: Inject serendipity based on neophilia
+  const reranked = stage4SerendipityReRanking(
+    precisionRanked,
+    ctx.neophiliaIndex,
+    ctx.userVector,
+    candidates,
+  );
+
+  return diversifyResults(reranked, new Map(candidates.map((dish) => [dish.id, dish])));
+}
+
+// ─── Explicit Feedback Processing ─────────────────────────────────────────────
+
+export type FeedbackType =
+  | "rating_5_star"
+  | "rating_4_star"
+  | "rating_3_star"
+  | "rating_2_star"
+  | "rating_1_star"
+  | "saved"
+  | "unsaved"
+  | "hawker_tag_positive"
+  | "hawker_tag_negative";
+
+export interface ExplicitFeedbackEvent {
+  type: FeedbackType;
+  dishVector: TasteVector;
+  /** Timestamp in ms since epoch. Used to apply recency decay. */
+  timestamp?: number;
+  /** Optional: hawker tags applied with this feedback */
+  hawkerTags?: HawkerTasteTag[];
+}
+
+function applyFeedbackRecencyDecay(weight: number, timestamp?: number): number {
+  if (timestamp === undefined) {
+    return weight;
+  }
+  const ageDays = Math.max(0, (Date.now() - timestamp) / (1000 * 60 * 60 * 24));
+  return weight * Math.exp(-0.05 * ageDays);
+}
+
+/**
+ * Feedback weight coefficients — how strongly each signal pulls/pushes the user vector.
+ */
+const FEEDBACK_WEIGHTS: Record<FeedbackType, number> = {
+  rating_5_star: 0.15,
+  rating_4_star: 0.08,
+  rating_3_star: 0.0,
+  rating_2_star: -0.05,
+  rating_1_star: -0.15,
+  saved: 0.1,
+  unsaved: -0.03,
+  hawker_tag_positive: 0.05,
+  hawker_tag_negative: -0.05,
+};
+
+/**
+ * Process an explicit feedback event and return an updated user taste vector.
+ * Uses the existing `calibrateVector` with feedback-type-specific learning rates.
+ */
+export function processExplicitFeedback(
+  currentVector: TasteVector,
+  event: ExplicitFeedbackEvent,
+): TasteVector {
+  const alpha = applyFeedbackRecencyDecay(FEEDBACK_WEIGHTS[event.type], event.timestamp);
+  if (alpha === 0) return currentVector;
+
+  return calibrateVector(currentVector, event.dishVector, alpha);
+}
+
+// ─── Implicit Feedback Processing (Phase 2 Placeholder) ──────────────────────
+
+export type ImplicitSignalType =
+  | "category_click"
+  | "dwell_time"
+  | "photo_zoom"
+  | "ignored_recommendation"
+  | "rapid_scroll_past";
+
+export interface ImplicitSignal {
+  type: ImplicitSignalType;
+  dishVector: TasteVector;
+  /** Timestamp for recency decay */
+  timestamp: number;
+}
+
+const IMPLICIT_WEIGHTS: Record<ImplicitSignalType, number> = {
+  category_click: 0.05,
+  dwell_time: 0.03,
+  photo_zoom: 0.02,
+  ignored_recommendation: -0.02,
+  rapid_scroll_past: -0.01,
+};
+
+/**
+ * Process a batch of implicit signals with recency decay.
+ * Signals older than 30 days receive only 10% weight.
+ */
+export function processImplicitFeedback(
+  currentVector: TasteVector,
+  signals: ImplicitSignal[],
+): TasteVector {
+  let vector = { ...currentVector };
+  const now = Date.now();
+
+  for (const signal of signals) {
+    const ageMs = now - signal.timestamp;
+    const ageDays = ageMs / (1000 * 60 * 60 * 24);
+
+    // Recency decay: full weight within 7 days, 50% at 8–30 days, 10% beyond
+    let decayFactor = 1.0;
+    if (ageDays > 30) decayFactor = 0.1;
+    else if (ageDays > 7) decayFactor = 0.5;
+
+    const alpha = IMPLICIT_WEIGHTS[signal.type] * decayFactor;
+    if (alpha === 0) continue;
+
+    vector = calibrateVector(vector, signal.dishVector, alpha);
+  }
+
+  return vector;
+}

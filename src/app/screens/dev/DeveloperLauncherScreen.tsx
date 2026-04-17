@@ -16,7 +16,7 @@ import { ChevronDown, ChevronRight, FlaskConical, Wifi, WifiOff, Zap } from "luc
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, Screen } from "@/components/ui";
-import { mockRepository } from "@/lib/services/mock/repositories";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { singaporeBuildings } from "@/lib/geo/singaporeBuildings";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
@@ -85,11 +85,21 @@ function CollapsibleSection({
         }}
       >
         <View style={{ flex: 1, gap: 2 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing[2],
+            }}
+          >
             <AppText variant="h3">{title}</AppText>
             {badge ? <Badge label={badge} tone="orange" /> : null}
           </View>
-          {subtitle ? <AppText tone="secondary" variant="bodySmall">{subtitle}</AppText> : null}
+          {subtitle ? (
+            <AppText tone="secondary" variant="bodySmall">
+              {subtitle}
+            </AppText>
+          ) : null}
         </View>
         {expanded ? (
           <ChevronDown size={18} color={palette.textMuted} />
@@ -111,6 +121,7 @@ function LaunchButton({ label, onPress }: { label: string; onPress: () => void }
 
 export function DeveloperLauncherScreen({ navigation }: Props) {
   const { palette, spacing, radii } = useHungryTheme();
+  const repository = getDataRepository();
 
   // Session
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -143,13 +154,13 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   }, [buildingSearch]);
 
   // Sample data
-  const sampleDish = useMemo(() => mockRepository.listPopularNearby()[0], []);
-  const sampleBuilding = useMemo(() => mockRepository.listBuildings()[0], []);
+  const sampleDish = useMemo(() => repository.listPopularNearby()[0], [repository]);
+  const sampleBuilding = useMemo(() => repository.listBuildings()[0], [repository]);
   const sampleVenue = useMemo(
-    () => mockRepository.listVenuesByBuilding(sampleBuilding.id)[0],
-    [sampleBuilding.id]
+    () => repository.listVenuesByBuilding(sampleBuilding.id)[0],
+    [sampleBuilding.id, repository],
   );
-  const sampleArticle = useMemo(() => mockRepository.listBlogPosts()[0], []);
+  const sampleArticle = useMemo(() => repository.listBlogPosts()[0], [repository]);
 
   // Helpers
   const resetToSignedOut = () => {
@@ -163,7 +174,10 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     completeAuth();
     setReturnRoute(undefined);
     hideReviewSuccess();
-    showToast({ message: "Session → Authenticated (onboarding pending)", tone: "info" });
+    showToast({
+      message: "Session → Authenticated (onboarding pending)",
+      tone: "info",
+    });
   };
   const resetToAuthComplete = () => {
     clearSession();
@@ -204,14 +218,13 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   // Data inspector stats
   const stats = useMemo(
     () => ({
-      buildings: mockRepository.listBuildings().length,
+      buildings: repository.listBuildings().length,
       sgBuildings: singaporeBuildings.length,
-      venues: mockRepository.listBuildings().flatMap((b) =>
-        mockRepository.listVenuesByBuilding(b.id)
-      ).length,
-      articles: mockRepository.listBlogPosts().length,
+      venues: repository.listBuildings().flatMap((b) => repository.listVenuesByBuilding(b.id))
+        .length,
+      articles: repository.listBlogPosts().length,
     }),
-    []
+    [repository],
   );
 
   return (
@@ -223,17 +236,17 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         {/* ── Quick header badges ────────────────────────── */}
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
           <Badge label="DEV ONLY" tone="warning" />
-          <Badge label={isAuthenticated ? "Authenticated" : "Signed out"} tone={isAuthenticated ? "success" : "neutral"} />
+          <Badge
+            label={isAuthenticated ? "Authenticated" : "Signed out"}
+            tone={isAuthenticated ? "success" : "neutral"}
+          />
           <Badge
             label={network === "live" ? "Live" : network === "slow" ? "Slow 3G" : "Offline"}
             tone={network === "live" ? "success" : network === "slow" ? "warning" : "error"}
           />
         </View>
 
-        <Button
-          label="Open normal app flow"
-          onPress={() => navigation.replace("Splash")}
-        />
+        <Button label="Open normal app flow" onPress={() => navigation.replace("Splash")} />
 
         {/* ── Session Presets ────────────────────────────── */}
         <CollapsibleSection
@@ -246,10 +259,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             label="Authenticated · onboarding incomplete"
             onPress={resetToAuthIncomplete}
           />
-          <LaunchButton
-            label="Authenticated · onboarding complete"
-            onPress={resetToAuthComplete}
-          />
+          <LaunchButton label="Authenticated · onboarding complete" onPress={resetToAuthComplete} />
         </CollapsibleSection>
 
         {/* ── Feature Flags ──────────────────────────────── */}
@@ -261,13 +271,20 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           {(Object.keys(flags) as FlagKey[]).map((key) => (
             <View
               key={key}
-              style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
             >
               <AppText style={{ flex: 1 }}>{FLAG_LABELS[key]}</AppText>
               <Switch
                 value={flags[key]}
                 onValueChange={() => toggleFlag(key)}
-                trackColor={{ false: palette.border, true: `${palette.orange}66` }}
+                trackColor={{
+                  false: palette.border,
+                  true: `${palette.orange}66`,
+                }}
                 thumbColor={flags[key] ? palette.orange : palette.textMuted}
               />
             </View>
@@ -305,8 +322,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 6,
-                    backgroundColor:
-                      network === preset.id ? palette.orange : palette.surfaceRaised,
+                    backgroundColor: network === preset.id ? palette.orange : palette.surfaceRaised,
                     borderColor: network === preset.id ? palette.orange : palette.border,
                     borderWidth: 1,
                     borderRadius: radii.md,
@@ -349,15 +365,17 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           {[
             { label: "Intro 1 — Dish first", screen: "OnboardingIntro1" },
             { label: "Intro 2 — Social cues", screen: "OnboardingIntro2" },
-            { label: "Intro 3 — Personalisation", screen: "OnboardingIntro3" },
             { label: "Taste Quiz", screen: "TasteQuiz" },
-            { label: "Dietary Preferences", screen: "DietaryPreferences" },
             { label: "Location Permission", screen: "LocationPermission" },
           ].map(({ label, screen }) => (
             <LaunchButton
               key={label}
               label={label}
-              onPress={() => navigation.navigate("OnboardingStack", { screen: screen as any })}
+              onPress={() =>
+                navigation.navigate("OnboardingStack", {
+                  screen: screen as any,
+                })
+              }
             />
           ))}
         </CollapsibleSection>
@@ -373,10 +391,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             onPress={() => navigation.navigate("MainTabs", { screen: "Discover" })}
           />
           <LaunchButton label="Search" onPress={() => navigation.navigate("SearchHome")} />
-          <LaunchButton
-            label="Map Browse"
-            onPress={() => navigation.navigate("MainTabs", { screen: "Maps" })}
-          />
+          <LaunchButton label="Map Browse" onPress={() => navigation.navigate("DiscoverMap")} />
           <LaunchButton
             label="Floor Plan — Maxwell Food Centre"
             onPress={() => openBuilding("hc-maxwell")}
@@ -388,7 +403,14 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           <LaunchButton
             label="What to eat? (Dish Roulette)"
             onPress={() => {
-              const dish = mockRepository.getDecideForMe({ sweet: 3, spicy: 3, sour: 3, salty: 3, rich: 3, aromatic: 3 });
+              const dish = repository.getDecideForMe({
+                sweet: 3,
+                spicy: 3,
+                sour: 3,
+                salty: 3,
+                rich: 3,
+                aromatic: 3,
+              });
               if (dish) setDecideForMe(dish);
               navigation.navigate("DecideForMeResult");
             }}
@@ -402,8 +424,8 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             onPress={() => navigation.navigate("DishDetail", { dishId: sampleDish.id })}
           />
           <LaunchButton
-            label="Read feed"
-            onPress={() => navigation.navigate("ReadsFeed")}
+            label="Review feed"
+            onPress={() => navigation.navigate("MainTabs", { screen: "Review" })}
           />
           <LaunchButton
             label="Article"
@@ -431,21 +453,20 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             label="Profile"
             onPress={() =>
               openProtected("Profile", () =>
-                navigation.navigate("MainTabs", { screen: "Profile" })
+                navigation.navigate("MainTabs", {
+                  screen: "Profile",
+                  params: { screen: "ProfileHome" },
+                }),
               )
             }
           />
           <LaunchButton
             label="Edit Profile"
-            onPress={() =>
-              openProtected("EditProfile", () => navigation.navigate("EditProfile"))
-            }
+            onPress={() => openProtected("EditProfile", () => navigation.navigate("EditProfile"))}
           />
           <LaunchButton
             label="Favourites"
-            onPress={() =>
-              openProtected("Favourites", () => navigation.navigate("Favourites"))
-            }
+            onPress={() => openProtected("Favourites", () => navigation.navigate("Favourites"))}
           />
           <LaunchButton
             label="Review History"
@@ -455,15 +476,13 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           />
           <LaunchButton
             label="Settings"
-            onPress={() =>
-              openProtected("Settings", () => navigation.navigate("Settings"))
-            }
+            onPress={() => openProtected("Settings", () => navigation.navigate("Settings"))}
           />
           <LaunchButton
             label="Quick Review"
             onPress={() =>
-              openProtected("Review", () =>
-                navigation.navigate("ReviewStack", { screen: "ReviewHub" })
+              openProtected("Rate", () =>
+                navigation.navigate("ReviewStack", { screen: "ReviewMain" }),
               )
             }
           />
@@ -487,7 +506,11 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
               Search…
             </AppText>
           </View>
-          <ScrollView style={{ maxHeight: 320 }} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={{ maxHeight: 320 }}
+            nestedScrollEnabled
+            showsVerticalScrollIndicator={false}
+          >
             <View style={{ gap: spacing[2] }}>
               {singaporeBuildings.map((building) => (
                 <Pressable
@@ -505,7 +528,11 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                   }}
                 >
                   <View style={{ flex: 1 }}>
-                    <AppText variant="bodySmall" style={{ fontFamily: "Nunito_700Bold" }} numberOfLines={1}>
+                    <AppText
+                      variant="bodySmall"
+                      style={{ fontFamily: "Nunito_700Bold" }}
+                      numberOfLines={1}
+                    >
                       {building.name}
                     </AppText>
                     <AppText variant="micro" tone="muted">
@@ -530,11 +557,17 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
               { label: "SG dataset buildings", value: stats.sgBuildings },
               { label: "Mock venues/stalls", value: stats.venues },
               { label: "Blog articles", value: stats.articles },
-              { label: "Total dishes", value: mockRepository.listPopularNearby().length },
+              {
+                label: "Total dishes",
+                value: repository.listPopularNearby().length,
+              },
             ].map(({ label, value }) => (
               <View
                 key={label}
-                style={{ flexDirection: "row", justifyContent: "space-between" }}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
               >
                 <AppText tone="secondary">{label}</AppText>
                 <AppText style={{ fontFamily: "DMMono_400Regular" }}>{value}</AppText>

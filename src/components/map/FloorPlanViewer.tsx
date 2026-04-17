@@ -2,54 +2,86 @@
  * FloorPlanViewer
  *
  * Renders an interactive SVG-based floor plan with:
- * - Color-coded stall polygons (green=open, red=closed, grey=non-food)
- * - Tap to select a stall → orange highlight
- * - Stall labels rendered at polygon center
- * - Pinch/scroll to zoom via ScrollView nesting
- *
- * Uses react-native-svg for all rendering.
+ * - Tenant, facility, and corridor polygons
+ * - Tap-to-select tenant polygons
+ * - Unit and stall labels rendered at polygon center
+ * - Bidirectional sync support with the stall directory list
  */
 
 import React, { useCallback, useMemo, useState } from "react";
-import {
-  ScrollView,
-  StyleSheet,
-  View,
-  type ViewStyle,
-} from "react-native";
-import Svg, { G, Polygon, Rect, Text as SvgText } from "react-native-svg";
+import { ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
+import Svg, { G, Image as SvgImage, Polygon, Rect, Text as SvgText } from "react-native-svg";
 import { useHungryTheme } from "@/theme";
 import type { FloorPlan, StallPolygon } from "@/lib/services/types";
 import { AppText } from "@/components/ui";
 
-// ─── Stall Status Colors ──────────────────────────────────────────────────────
+interface StallVisual {
+  fill: string;
+  fillOpacity: number;
+  stroke: string;
+  labelColor: string;
+  strokeWidth: number;
+}
 
-const STALL_COLORS = {
-  open: {
-    fill: "#4F7E17",
-    fillOpacity: 0.15,
-    stroke: "#4F7E17",
-    labelColor: "#4F7E17",
-  },
-  closed: {
-    fill: "#CD0302",
-    fillOpacity: 0.1,
-    stroke: "#CD0302",
-    labelColor: "#CD0302",
-  },
-  non_food: {
-    fill: "#9CA3AF",
-    fillOpacity: 0.1,
-    stroke: "#9CA3AF",
-    labelColor: "#9CA3AF",
-  },
-  selected: {
-    fill: "#E8531E",
-    fillOpacity: 0.25,
-    stroke: "#E8531E",
-    labelColor: "#E8531E",
-  },
-} as const;
+function stallKind(stall: StallPolygon) {
+  return stall.kind ?? "tenant";
+}
+
+function getStallVisual(
+  stall: StallPolygon,
+  isSelected: boolean,
+  palette: ReturnType<typeof useHungryTheme>["palette"],
+): StallVisual {
+  const kind = stallKind(stall);
+
+  if (kind === "corridor") {
+    return {
+      fill: palette.bgSoft,
+      fillOpacity: 1,
+      stroke: palette.border,
+      labelColor: palette.textMuted,
+      strokeWidth: 0.9,
+    };
+  }
+
+  if (kind === "facility") {
+    return {
+      fill: palette.surfaceRaised,
+      fillOpacity: 1,
+      stroke: palette.border,
+      labelColor: palette.navy,
+      strokeWidth: 1.25,
+    };
+  }
+
+  if (isSelected) {
+    return {
+      fill: palette.orangeLight,
+      fillOpacity: 1,
+      stroke: palette.orange,
+      labelColor: palette.orange,
+      strokeWidth: 2,
+    };
+  }
+
+  if (stall.status === "closed") {
+    return {
+      fill: palette.bgSoft,
+      fillOpacity: 1,
+      stroke: palette.error,
+      labelColor: palette.error,
+      strokeWidth: 1,
+    };
+  }
+
+  return {
+    fill: palette.surface,
+    fillOpacity: 1,
+    stroke: palette.border,
+    labelColor: palette.text,
+    strokeWidth: 1,
+  };
+}
 
 // ─── Helper: polygon centroid ─────────────────────────────────────────────────
 
@@ -69,13 +101,14 @@ interface StallCellProps {
   stall: StallPolygon;
   isSelected: boolean;
   onPress: (stall: StallPolygon) => void;
-  scale: number;
+  labelMode: "none" | "selected" | "all";
 }
 
-function StallCell({ stall, isSelected, onPress, scale }: StallCellProps) {
-  const colors = isSelected
-    ? STALL_COLORS.selected
-    : STALL_COLORS[stall.status];
+function StallCell({ stall, isSelected, onPress, labelMode }: StallCellProps) {
+  const { palette } = useHungryTheme();
+  const kind = stallKind(stall);
+  const visual = getStallVisual(stall, isSelected, palette);
+  const isInteractive = kind === "tenant";
 
   const center = centroid(stall.polygon);
   const svgPoints = toSvgPoints(stall.polygon);
@@ -88,54 +121,86 @@ function StallCell({ stall, isSelected, onPress, scale }: StallCellProps) {
   const boxW = Math.max(...xs) - minX;
   const boxH = Math.max(...ys) - minY;
 
-  const labelFontSize = Math.max(7, Math.min(10, boxH * 0.15));
+  const labelFontSize = Math.max(7, Math.min(11, boxH * 0.16));
+  const canShowLabel = labelMode === "all" || (labelMode === "selected" && isSelected);
+  const showUnitLabel = kind === "tenant" && Boolean(stall.unitNumber) && canShowLabel;
+  const showSecondaryLabel = kind === "tenant" && Boolean(stall.label) && canShowLabel;
+  const showFacilityLabel = kind === "facility" && Boolean(stall.label) && canShowLabel;
+  const corridorLabel = kind === "corridor" && labelMode === "all" ? stall.label : undefined;
 
   return (
     <G>
-      {/* Invisible touch rect (larger than polygon for easier tapping) */}
-      <Rect
-        x={minX}
-        y={minY}
-        width={boxW}
-        height={boxH}
-        fill="transparent"
-        onPress={() => onPress(stall)}
-      />
+      {isInteractive ? (
+        <Rect
+          x={minX}
+          y={minY}
+          width={boxW}
+          height={boxH}
+          fill="transparent"
+          onPress={() => onPress(stall)}
+        />
+      ) : null}
       <Polygon
         points={svgPoints}
-        fill={colors.fill}
-        fillOpacity={colors.fillOpacity}
-        stroke={colors.stroke}
-        strokeWidth={isSelected ? 2 : 1}
+        fill={visual.fill}
+        fillOpacity={visual.fillOpacity}
+        stroke={visual.stroke}
+        strokeWidth={visual.strokeWidth}
         strokeLinejoin="round"
-        onPress={() => onPress(stall)}
+        onPress={isInteractive ? () => onPress(stall) : undefined}
       />
-      {/* Unit number label */}
-      <SvgText
-        x={center.x}
-        y={center.y - labelFontSize * 0.6}
-        textAnchor="middle"
-        fontSize={labelFontSize}
-        fill={colors.labelColor}
-        fontWeight="700"
-      >
-        {stall.unitNumber}
-      </SvgText>
-      {/* Stall name (truncated) */}
-      {stall.label && (
+
+      {showUnitLabel ? (
         <SvgText
           x={center.x}
-          y={center.y + labelFontSize * 0.8}
+          y={center.y - labelFontSize * 0.55}
+          textAnchor="middle"
+          fontSize={labelFontSize}
+          fill={visual.labelColor}
+          fontWeight="700"
+        >
+          {stall.unitNumber}
+        </SvgText>
+      ) : null}
+
+      {showSecondaryLabel ? (
+        <SvgText
+          x={center.x}
+          y={center.y + labelFontSize * 0.82}
           textAnchor="middle"
           fontSize={Math.max(6, labelFontSize - 2)}
-          fill={colors.labelColor}
-          fillOpacity={0.8}
+          fill={visual.labelColor}
+          fillOpacity={0.88}
         >
-          {stall.label.length > 12
-            ? stall.label.slice(0, 11) + "…"
-            : stall.label}
+          {stall.label && stall.label.length > 16 ? `${stall.label.slice(0, 15)}…` : stall.label}
         </SvgText>
-      )}
+      ) : null}
+
+      {showFacilityLabel ? (
+        <SvgText
+          x={center.x}
+          y={center.y + labelFontSize * 0.25}
+          textAnchor="middle"
+          fontSize={Math.max(7, labelFontSize - 1)}
+          fill={visual.labelColor}
+          fontWeight="600"
+        >
+          {stall.label}
+        </SvgText>
+      ) : null}
+
+      {corridorLabel ? (
+        <SvgText
+          x={center.x}
+          y={center.y + labelFontSize * 0.2}
+          textAnchor="middle"
+          fontSize={Math.max(6, labelFontSize - 3)}
+          fill={visual.labelColor}
+          fillOpacity={0.74}
+        >
+          {corridorLabel}
+        </SvgText>
+      ) : null}
     </G>
   );
 }
@@ -143,12 +208,13 @@ function StallCell({ stall, isSelected, onPress, scale }: StallCellProps) {
 // ─── Legend ───────────────────────────────────────────────────────────────────
 
 function FloorPlanLegend() {
-  const { palette, spacing } = useHungryTheme();
+  const { palette } = useHungryTheme();
   const items = [
-    { color: "#4F7E17", label: "Open" },
-    { color: "#CD0302", label: "Closed" },
-    { color: "#9CA3AF", label: "Non-food" },
-    { color: "#E8531E", label: "Selected" },
+    { color: palette.success, label: "Open tenant" },
+    { color: palette.error, label: "Closed tenant" },
+    { color: palette.navy, label: "Facility" },
+    { color: palette.border, label: "Corridor" },
+    { color: palette.orange, label: "Selected" },
   ];
 
   return (
@@ -175,6 +241,8 @@ export interface FloorPlanViewerProps {
   /** Render scale — default 1.0 */
   scale?: number;
   showLegend?: boolean;
+  showStatsBar?: boolean;
+  viewportHeight?: number;
 }
 
 export function FloorPlanViewer({
@@ -184,11 +252,35 @@ export function FloorPlanViewer({
   style,
   scale = 1.0,
   showLegend = true,
+  showStatsBar = true,
+  viewportHeight,
 }: FloorPlanViewerProps) {
   const { palette } = useHungryTheme();
-  const [internalSelected, setInternalSelected] = useState<string | undefined>(
-    selectedStallId
+  const [internalSelected, setInternalSelected] = useState<string | undefined>(selectedStallId);
+  const tenantStalls = useMemo(
+    () => floorPlan.stalls.filter((stall) => stallKind(stall) === "tenant"),
+    [floorPlan.stalls],
   );
+  const renderedStalls = useMemo(
+    () =>
+      floorPlan.stalls.filter((stall) => {
+        if (!floorPlan.backgroundImage) {
+          return true;
+        }
+
+        return stallKind(stall) !== "corridor";
+      }),
+    [floorPlan.backgroundImage, floorPlan.stalls],
+  );
+  const labelMode = useMemo<"none" | "selected" | "all">(() => {
+    if (scale >= 0.72) {
+      return "all";
+    }
+    if (scale >= 0.4) {
+      return "selected";
+    }
+    return "none";
+  }, [scale]);
 
   const effectiveSelected = selectedStallId ?? internalSelected;
 
@@ -197,7 +289,7 @@ export function FloorPlanViewer({
       setInternalSelected(stall.stallId);
       onStallPress?.(stall);
     },
-    [onStallPress]
+    [onStallPress],
   );
 
   const svgWidth = floorPlan.canvasWidth * scale;
@@ -210,9 +302,23 @@ export function FloorPlanViewer({
       {/* Scrollable/zoomable canvas */}
       <ScrollView
         horizontal
+        bouncesZoom
+        minimumZoomScale={1}
+        maximumZoomScale={3}
+        pinchGestureEnabled
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
-        style={[styles.scrollView, { backgroundColor: palette.bgMuted }]}
+        style={[
+          styles.scrollView,
+          { backgroundColor: palette.bgMuted },
+          viewportHeight
+            ? {
+                minHeight: viewportHeight,
+                maxHeight: viewportHeight,
+                height: viewportHeight,
+              }
+            : undefined,
+        ]}
       >
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -234,14 +340,26 @@ export function FloorPlanViewer({
               fill={palette.bgMuted}
             />
 
+            {floorPlan.backgroundImage ? (
+              <SvgImage
+                x={0}
+                y={0}
+                width={floorPlan.canvasWidth}
+                height={floorPlan.canvasHeight}
+                href={{ uri: floorPlan.backgroundImage.uri }}
+                opacity={floorPlan.backgroundImage.opacity ?? 1}
+                preserveAspectRatio="none"
+              />
+            ) : null}
+
             {/* All stalls */}
-            {floorPlan.stalls.map((stall) => (
+            {renderedStalls.map((stall) => (
               <StallCell
                 key={stall.stallId}
                 stall={stall}
                 isSelected={stall.stallId === effectiveSelected}
                 onPress={handleStallPress}
-                scale={scale}
+                labelMode={labelMode}
               />
             ))}
           </Svg>
@@ -252,44 +370,38 @@ export function FloorPlanViewer({
       {showLegend && <FloorPlanLegend />}
 
       {/* Stall count summary */}
-      <View
-        style={[
-          styles.statsBar,
-          { backgroundColor: palette.surface, borderTopColor: palette.border },
-        ]}
-      >
-        <StatChip
-          color="#4F7E17"
-          count={floorPlan.stalls.filter((s) => s.status === "open").length}
-          label="Open"
-        />
-        <StatChip
-          color="#CD0302"
-          count={floorPlan.stalls.filter((s) => s.status === "closed").length}
-          label="Closed"
-        />
-        <StatChip
-          color="#9CA3AF"
-          count={floorPlan.stalls.filter((s) => s.status === "non_food").length}
-          label="Other"
-        />
-        <AppText variant="micro" style={{ marginLeft: "auto" }}>
-          {floorPlan.stalls.length} stalls total
-        </AppText>
-      </View>
+      {showStatsBar ? (
+        <View
+          style={[
+            styles.statsBar,
+            { backgroundColor: palette.surface, borderTopColor: palette.border },
+          ]}
+        >
+          <StatChip
+            color={palette.success}
+            count={tenantStalls.filter((stall) => stall.status === "open").length}
+            label="Open"
+          />
+          <StatChip
+            color={palette.error}
+            count={tenantStalls.filter((stall) => stall.status === "closed").length}
+            label="Closed"
+          />
+          <StatChip
+            color={palette.navy}
+            count={floorPlan.stalls.filter((stall) => stallKind(stall) === "facility").length}
+            label="Facilities"
+          />
+          <AppText variant="micro" style={{ marginLeft: "auto" }}>
+            {tenantStalls.length} tenants
+          </AppText>
+        </View>
+      ) : null}
     </View>
   );
 }
 
-function StatChip({
-  color,
-  count,
-  label,
-}: {
-  color: string;
-  count: number;
-  label: string;
-}) {
+function StatChip({ color, count, label }: { color: string; count: number; label: string }) {
   const { spacing } = useHungryTheme();
   return (
     <View style={[styles.statChip, { marginRight: spacing[3] }]}>

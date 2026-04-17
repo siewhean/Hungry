@@ -12,26 +12,27 @@ interface BuildingPinProps {
   onPress?: () => void;
 }
 
-const pinTone = {
-  hawker_centre: "#E8531E",
-  food_court: "#14B8A6",
-  restaurant: "#6B7280",
-} as const;
-
 export function BuildingPin({ name, type, selected = false, onPress }: BuildingPinProps) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
+  const tone =
+    type === "hawker_centre"
+      ? palette.orange
+      : type === "food_court"
+        ? palette.teal
+        : palette.textMuted;
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Building pin for ${name}`}
       onPress={onPress}
+      pointerEvents={onPress ? "auto" : "none"}
       style={({ pressed }) => [
         styles.container,
-        shadows.floating,
+        selected ? shadows.floating : undefined,
         {
           backgroundColor: palette.surface,
-          borderColor: selected ? palette.navy : palette.border,
+          borderColor: selected ? tone : palette.border,
           borderRadius: radii.md,
           opacity: pressed ? 0.9 : 1,
         },
@@ -41,12 +42,12 @@ export function BuildingPin({ name, type, selected = false, onPress }: BuildingP
         style={[
           styles.iconWrap,
           {
-            backgroundColor: `${pinTone[type]}22`,
+            backgroundColor: `${tone}22`,
             borderRadius: radii.pill,
           },
         ]}
       >
-        <MapPin size={18} color={pinTone[type]} fill={pinTone[type]} />
+        <MapPin size={18} color={tone} fill={tone} />
       </View>
       <AppText variant="bodySmall" numberOfLines={1} style={{ maxWidth: 96 }}>
         {name}
@@ -55,7 +56,7 @@ export function BuildingPin({ name, type, selected = false, onPress }: BuildingP
         style={[
           styles.typeMark,
           {
-            backgroundColor: pinTone[type],
+            backgroundColor: tone,
             borderRadius: radii.pill,
             marginTop: spacing[1],
           },
@@ -85,4 +86,3 @@ const styles = StyleSheet.create({
     width: 28,
   },
 });
-

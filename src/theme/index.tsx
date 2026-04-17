@@ -1,15 +1,45 @@
-import { PropsWithChildren, createContext, useContext, useMemo } from "react";
-import { useColorScheme } from "react-native";
 import {
-  DarkTheme,
+  PropsWithChildren,
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+} from "react";
+import {
+  AppState,
+  Appearance,
+  ColorSchemeName,
+  useColorScheme,
+} from "react-native";
+import {
   DefaultTheme,
+  DarkTheme,
   ThemeProvider as NavigationThemeProvider,
   type Theme,
 } from "@react-navigation/native";
-import { useFonts as useNunitoFonts, Nunito_400Regular, Nunito_500Medium, Nunito_600SemiBold, Nunito_700Bold } from "@expo-google-fonts/nunito";
-import { useFonts as useMonoFonts, DMMono_400Regular } from "@expo-google-fonts/dm-mono";
+import {
+  useFonts as useNunitoFonts,
+  Nunito_400Regular,
+  Nunito_500Medium,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+} from "@expo-google-fonts/nunito";
+import {
+  useFonts as useMonoFonts,
+  DMMono_400Regular,
+} from "@expo-google-fonts/dm-mono";
 
-import { colors, motion, radii, shadows, spacing, typography } from "./tokens";
+import { useUIStore } from "@/store/useUIStore";
+import {
+  colors,
+  motion,
+  radii,
+  shadows,
+  spacing,
+  typography,
+  zIndex,
+} from "./tokens";
 
 type HungryTheme = {
   colorScheme: "light" | "dark";
@@ -20,15 +50,81 @@ type HungryTheme = {
   shadows: typeof shadows;
   typography: typeof typography;
   motion: typeof motion;
+  zIndex: typeof zIndex;
   fontsLoaded: boolean;
 };
 
 const ThemeContext = createContext<HungryTheme | null>(null);
 
 export function HungryThemeProvider({ children }: PropsWithChildren) {
-  const systemScheme = useColorScheme();
-  const colorScheme = systemScheme === "dark" ? "dark" : "light";
+  const themePreference = useUIStore((state) => state.themePreference);
+  const hookScheme = useColorScheme();
+
+  // Track system color scheme via Appearance API for maximum reliability
+  const [systemScheme, setSystemScheme] = useState<ColorSchemeName>(
+    Appearance.getColorScheme(),
+  );
+
+  useEffect(() => {
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      setSystemScheme(colorScheme);
+    });
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    const appStateSubscription = AppState.addEventListener(
+      "change",
+      (state) => {
+        if (state === "active") {
+          setSystemScheme(Appearance.getColorScheme());
+        }
+      },
+    );
+
+    return () => {
+      appStateSubscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (themePreference === "automatic") {
+      Appearance.setColorScheme(null);
+      return;
+    }
+
+    Appearance.setColorScheme(themePreference);
+  }, [themePreference]);
+
+  const resolvedSystemScheme = hookScheme ?? systemScheme;
+
+  // Resolve active color scheme
+  const colorScheme = useMemo(() => {
+    if (themePreference === "light") return "light";
+    if (themePreference === "dark") return "dark";
+    // Fall back to light only if the OS doesn't report a scheme.
+    return resolvedSystemScheme === "dark" ? "dark" : "light";
+  }, [themePreference, resolvedSystemScheme]);
+
   const palette = colors[colorScheme];
+
+  const themedShadows = useMemo(
+    () => ({
+      card: {
+        ...shadows.card,
+        shadowColor: palette.navy,
+      },
+      floating: {
+        ...shadows.floating,
+        shadowColor: palette.navy,
+      },
+      bottomSheet: {
+        ...shadows.bottomSheet,
+        shadowColor: palette.navy,
+      },
+    }),
+    [palette],
+  );
 
   const [nunitoLoaded] = useNunitoFonts({
     Nunito_400Regular,
@@ -64,17 +160,20 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
       palette,
       spacing,
       radii,
-      shadows,
+      shadows: themedShadows,
       typography,
       motion,
+      zIndex,
       fontsLoaded: nunitoLoaded && monoLoaded,
     }),
-    [colorScheme, theme, palette, nunitoLoaded, monoLoaded],
+    [colorScheme, theme, palette, themedShadows, nunitoLoaded, monoLoaded],
   );
 
   return (
     <ThemeContext.Provider value={value}>
-      <NavigationThemeProvider value={theme}>{children}</NavigationThemeProvider>
+      <NavigationThemeProvider value={theme}>
+        {children}
+      </NavigationThemeProvider>
     </ThemeContext.Provider>
   );
 }

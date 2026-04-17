@@ -13,7 +13,11 @@ export function FloorSelector({ floors, selectedFloor, onSelectFloor }: FloorSel
   const { palette, radii, spacing } = useHungryTheme();
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing[2] }}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ gap: spacing[2] }}
+    >
       {floors.map((floor) => {
         const selected = floor === selectedFloor;
 
@@ -22,6 +26,7 @@ export function FloorSelector({ floors, selectedFloor, onSelectFloor }: FloorSel
             key={floor}
             accessibilityRole="button"
             accessibilityLabel={`Select floor ${floor}`}
+            accessibilityState={{ selected }}
             onPress={() => onSelectFloor(floor)}
             style={({ pressed }) => [
               styles.tab,
@@ -50,4 +55,3 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
-

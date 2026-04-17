@@ -14,3 +14,22 @@ scripts/playwright-profile/
 scripts/__pycache__/
 ios/.xcode.env.local
 ios/Hungry.xcworkspace/xcuserdata/
+.env
+# Graphify artifacts
+.graphify*
+graphify-out/
+src/graphify-out/
+.env.local
+.env.*.local
+.env.development.local
+.env.staging.local
+.env.production.local
+.env.local
+
+# Local build/cache artifacts (large)
+.DerivedData/
+ios/build/
+*.xcresult/
+
+# Local Python environment
+.venv/

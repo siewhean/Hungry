@@ -24,7 +24,11 @@ export function ReviewStars({ value, onChange }: ReviewStarsProps) {
             onPress={() => onChange(index + 1)}
             style={{ alignItems: "center", justifyContent: "center", width: 44, height: 44 }}
           >
-            <Star size={28} color={filled ? palette.amber : palette.border} fill={filled ? palette.amber : "transparent"} />
+            <Star
+              size={28}
+              color={filled ? palette.amber : palette.border}
+              fill={filled ? palette.amber : "transparent"}
+            />
           </Pressable>
         );
       })}

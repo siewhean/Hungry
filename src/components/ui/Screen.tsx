@@ -1,7 +1,9 @@
 import type { PropsWithChildren, ReactNode } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
 
@@ -10,6 +12,7 @@ interface ScreenProps {
   subtitle?: string;
   headerRight?: ReactNode;
   scroll?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function Screen({
@@ -18,11 +21,19 @@ export function Screen({
   subtitle,
   headerRight,
   scroll = true,
+  style,
 }: PropsWithChildren<ScreenProps>) {
   const { palette, spacing } = useHungryTheme();
+  const styles = createStyles(spacing);
+  const insets = useSafeAreaInsets();
+  const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
+  const scrollBackVisible = useUIStore((state) => state.scrollBackVisible);
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top", "left", "right"]}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: palette.bg }, style]}
+      edges={["top", "left", "right"]}
+    >
       {scroll ? (
         <ScrollView
           style={styles.flex}
@@ -31,15 +42,25 @@ export function Screen({
             styles.content,
             {
               alignItems: "center",
-              paddingHorizontal: spacing[5],
-              paddingBottom: spacing[12],
+              paddingHorizontal: spacing[3],
+              paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[12],
               paddingTop: spacing[3],
             },
           ]}
+          onScroll={onScroll}
+          scrollEventThrottle={scrollEventThrottle}
         >
           <View style={[styles.inner, { gap: spacing[5] }]}>
             {(title || headerRight) && (
-              <View style={styles.header}>
+              <View
+                style={[
+                  styles.header,
+                  {
+                    paddingLeft: scrollBackVisible ? spacing[12] : 0,
+                    paddingTop: scrollBackVisible ? spacing[8] : 0,
+                  },
+                ]}
+              >
                 <View style={styles.headerCopy}>
                   {title ? <AppText variant="h1">{title}</AppText> : null}
                   {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}
@@ -56,15 +77,23 @@ export function Screen({
             styles.flex,
             {
               alignItems: "center",
-              paddingHorizontal: spacing[5],
-              paddingBottom: spacing[12],
+              paddingHorizontal: spacing[3],
+              // paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[4],
               paddingTop: spacing[3],
             },
           ]}
         >
           <View style={[styles.inner, { gap: spacing[5] }]}>
             {(title || headerRight) && (
-              <View style={styles.header}>
+              <View
+                style={[
+                  styles.header,
+                  {
+                    paddingLeft: scrollBackVisible ? spacing[12] : 0,
+                    paddingTop: scrollBackVisible ? spacing[8] : 0,
+                  },
+                ]}
+              >
                 <View style={styles.headerCopy}>
                   {title ? <AppText variant="h1">{title}</AppText> : null}
                   {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}
@@ -80,28 +109,29 @@ export function Screen({
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  flex: {
-    flex: 1,
-  },
-  content: {
-    flexGrow: 1,
-  },
-  inner: {
-    maxWidth: 440,
-    width: "100%",
-  },
-  header: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 16,
-  },
-  headerCopy: {
-    flex: 1,
-    gap: 6,
-  },
-});
+const createStyles = (spacing: any) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+    },
+    flex: {
+      flex: 1,
+    },
+    content: {
+      flexGrow: 1,
+    },
+    inner: {
+      maxWidth: 440,
+      width: "100%",
+    },
+    header: {
+      alignItems: "flex-start",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      gap: spacing[4],
+    },
+    headerCopy: {
+      flex: 1,
+      gap: spacing[1],
+    },
+  });

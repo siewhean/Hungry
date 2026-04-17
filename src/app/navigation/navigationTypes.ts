@@ -5,7 +5,7 @@ export type AuthStackParamList = {
   SignUp: undefined;
   EmailVerification: { email: string } | undefined;
   ForgotPassword: undefined;
-  ResetPassword: undefined;
+  ResetPassword: { email: string; code: string } | undefined;
   ResetPasswordSuccess: undefined;
 };
 
@@ -13,48 +13,78 @@ export type OnboardingStackParamList = {
   OnboardingIntro1: undefined;
   OnboardingIntro2: undefined;
   OnboardingIntro3: undefined;
-  TasteQuiz: undefined;
+  CuisineSelection: undefined;
+  FoodSelection: { cuisines: string[] };
+  TasteQuiz: { mode?: "onboarding" | "profile" } | undefined;
   DietaryPreferences: undefined;
+  TasteProfileLoading: undefined;
+  TasteProfileResult: undefined;
   LocationPermission: undefined;
+  ManualLocationPicker: undefined;
+};
+
+export type ProfileStackParamList = {
+  ProfileHome: undefined;
+  ProfilePremium: undefined;
+  Favourites: undefined;
+  ReviewHistory: undefined;
+  Settings: undefined;
+  EditProfile: undefined;
+  ReviewFlow: undefined;
 };
 
 export type ReviewStackParamList = {
-  ReviewHub: undefined;
-  ReviewRating: { venueId?: string; dishId?: string } | undefined;
-  ReviewTags: undefined;
-  ReviewCompose: undefined;
+  ReviewMain: { venueId?: string; dishId?: string } | undefined;
+};
+
+export type WheelStackParamList = {
+  WheelHome: { code?: string } | undefined;
+  WheelLobby: { partyId: string };
+  WheelSpin: { partyId: string };
+  WheelResult: { partyId: string; winnerEntryId: string };
 };
 
 export type MainTabParamList = {
   Home: undefined;
   Discover: undefined;
-  Maps: undefined;
   Review: undefined;
-  Profile: undefined;
+  Rate: undefined;
+  Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 
 export type RootStackParamList = {
-  DeveloperLauncher: undefined;
   Splash: undefined;
   AuthStack: NavigatorScreenParams<AuthStackParamList>;
   OnboardingStack: NavigatorScreenParams<OnboardingStackParamList>;
   MainTabs: NavigatorScreenParams<MainTabParamList>;
-  ReadsFeed: undefined;
+  StallDetail: { venueId: string };
+  DishDetail: { dishId: string };
   SearchHome: undefined;
-  MapZoomedIn: { buildingId?: string } | undefined;
-  Post: undefined;
-  EditProfile: undefined;
-  BuildingDrillDown: { buildingId: string };
-  DecideForMeResult: undefined;
   SearchResults: undefined;
   TasteFilter: undefined;
+  DiscoverMap: undefined;
+  DecideForMeResult: undefined;
+  BuildingDrillDown: { buildingId: string };
+  MapZoomedIn: { buildingId: string };
+  BlogPost: { postId: string };
+  ReviewStack: NavigatorScreenParams<ReviewStackParamList>;
+  WheelStack: NavigatorScreenParams<WheelStackParamList>;
+  DirectMessages: undefined;
+  ChatDetail: { chatId: string; name: string; avatar: string };
+  Crave: undefined;
+  MusicSelection: undefined;
+  DishDetailStandard: { dishId: string };
+  UserProfile: {
+    authorName: string;
+    authorAvatarUrl?: string;
+    authorLocation?: string;
+  };
+  Offline: undefined;
+  NotFound: { title?: string; body?: string } | undefined;
+  Post: { venueId?: string; dishId?: string } | undefined;
+  DeveloperLauncher: undefined;
   Favourites: undefined;
   ReviewHistory: undefined;
   Settings: undefined;
-  DishDetail: { dishId: string };
-  StallDetail: { venueId: string };
-  BlogPost: { postId: string };
-  ReviewStack: NavigatorScreenParams<ReviewStackParamList>;
-  Offline: undefined;
-  NotFound: { title?: string; body?: string } | undefined;
+  EditProfile: undefined;
 };

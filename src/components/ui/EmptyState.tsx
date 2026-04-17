@@ -25,4 +25,3 @@ export function EmptyState({ title, body, ctaLabel, onPress }: EmptyStateProps) 
     </Card>
   );
 }
-

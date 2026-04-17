@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Modal, Pressable, View } from "react-native";
 import { CheckCircle2, Sparkles, X } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 
 import { AppText, Badge, Button, Card } from "@/components/ui";
 import { useUIStore } from "@/store/useUIStore";
@@ -14,8 +16,19 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
   const payload = useUIStore((state) => state.reviewSuccess);
   const hideReviewSuccess = useUIStore((state) => state.hideReviewSuccess);
 
+  useEffect(() => {
+    if (payload) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  }, [payload]);
+
   return (
-    <Modal animationType="fade" transparent visible={Boolean(payload)} onRequestClose={hideReviewSuccess}>
+    <Modal
+      animationType="fade"
+      transparent
+      visible={Boolean(payload)}
+      onRequestClose={hideReviewSuccess}
+    >
       <View
         style={{
           flex: 1,
@@ -32,7 +45,7 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
                 style={{
                   width: 56,
                   height: 56,
-                  borderRadius: 28,
+                  borderRadius: radii.pill,
                   alignItems: "center",
                   justifyContent: "center",
                   backgroundColor: palette.successSoft,
@@ -40,7 +53,7 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
               >
                 <CheckCircle2 color={palette.success} size={28} />
               </View>
-              <View style={{ flex: 1, gap: 4 }}>
+              <View style={{ flex: 1, gap: spacing[1] }}>
                 <AppText variant="h3">Review posted</AppText>
                 <AppText tone="secondary">
                   {payload?.dishName ?? "Dish review"} · {payload?.venueName ?? "Nearby stall"}
@@ -53,7 +66,7 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
               style={{
                 width: 44,
                 height: 44,
-                borderRadius: 22,
+                borderRadius: radii.pill,
                 alignItems: "center",
                 justifyContent: "center",
                 backgroundColor: palette.bgMuted,
@@ -72,7 +85,7 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
             <Sparkles color={palette.orange} size={16} />
             <AppText variant="bodySmall" tone="secondary">
-              Your profile and review history have been updated in this mock session.
+              Profile updated. Your review has been added to your history.
             </AppText>
           </View>
 

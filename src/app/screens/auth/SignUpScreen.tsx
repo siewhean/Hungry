@@ -1,67 +1,195 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
+import { Linking, Pressable, View } from "react-native";
+import { Eye, EyeOff, User, Mail, Lock } from "lucide-react-native";
+import { useState } from "react";
 
-import { AppText, Button, Input } from "@/components/ui";
+import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
+import { validateEmail, validatePassword, validateRequired } from "@/features/auth/validation";
 import { useUIStore } from "@/store/useUIStore";
-import { authFieldLabels } from "@/features/auth/authContent";
-import { AuthScreenShell } from "./AuthScreenShell";
+import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
+import { AuthScreenShell } from "./AuthScreenShell";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "SignUp">;
-
-type FormValues = {
-  displayName: string;
-  email: string;
-  password: string;
-};
+type FormValues = { displayName: string; email: string; password: string };
 
 export function SignUpScreen({ navigation }: Props) {
+  const { palette, spacing } = useHungryTheme();
+  const [showPassword, setShowPassword] = useState(false);
   const showToast = useUIStore((state) => state.showToast);
-  const { handleSubmit, register, setValue } = useForm<FormValues>({
-    defaultValues: {
-      displayName: "",
-      email: "",
-      password: "",
-    },
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormValues>({
+    defaultValues: { displayName: "", email: "", password: "" },
   });
 
-  register("displayName");
-  register("email");
-  register("password");
-
-  const handleSignUp = handleSubmit(() => {
+  const handleSignUp = handleSubmit((values) => {
     showToast({ message: "Account created. Please verify your email.", tone: "success" });
-    navigation.navigate("EmailVerification");
+    navigation.navigate("EmailVerification", { email: values.email });
   });
 
-  const handleGoogle = () => {
-    showToast({ message: "Google sign-up mocked. Verify the account to continue.", tone: "success" });
-    navigation.navigate("EmailVerification");
-  };
-
-  const handleApple = () => {
-    showToast({ message: "Apple sign-up mocked. Verify the account to continue.", tone: "success" });
-    navigation.navigate("EmailVerification");
+  const handleProviderContinue = (provider: "google" | "apple") => {
+    const providerEmail = provider === "google" ? "google.user@hungry.sg" : "apple.user@hungry.sg";
+    showToast({
+      message: `Continue with ${provider === "google" ? "Google" : "Apple"} successful.`,
+      tone: "success",
+    });
+    navigation.navigate("EmailVerification", { email: providerEmail });
   };
 
   return (
-    <AuthScreenShell
-      title="Create account"
-      subtitle="Create your Hungry account before you start browsing dishes, stalls, and editorial content."
-      footer={<Button label="Already have an account? Log in" variant="ghost" onPress={() => navigation.navigate("Login")} />}
+    <FeedErrorBoundary
+      title="Sign-up unavailable"
+      body="Couldn't load account creation right now. Please retry."
     >
-      <Button label="Continue with Google" variant="secondary" onPress={handleGoogle} />
-      <Button label="Continue with Apple" variant="secondary" onPress={handleApple} />
-      <AppText variant="micro" tone="muted">
-        OR CREATE AN ACCOUNT WITH EMAIL
-      </AppText>
-      <Input label={authFieldLabels.signUp.displayName} placeholder="Wei Ming" onChangeText={(value) => setValue("displayName", value)} />
-      <Input label={authFieldLabels.signUp.email} keyboardType="email-address" autoCapitalize="none" placeholder="weiming@example.com" onChangeText={(value) => setValue("email", value)} />
-      <Input label={authFieldLabels.signUp.password} secureTextEntry placeholder="Minimum 8 characters" onChangeText={(value) => setValue("password", value)} />
-      <Button label="Create account" onPress={handleSignUp} />
-      <AppText variant="bodySmall" tone="muted">
-        By continuing, you accept the Hungry terms and privacy policy.
-      </AppText>
-    </AuthScreenShell>
+      <AuthScreenShell
+        title="Create account"
+        subtitle="Join our community of food lovers."
+        footer={
+          <View style={{ alignItems: "center", gap: spacing[4] }}>
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                flexWrap: "wrap",
+                justifyContent: "center",
+              }}
+            >
+              <AppText variant="micro" tone="secondary" style={{ textAlign: "center" }}>
+                By creating an account, you agree to Hungry's{" "}
+                <AppText
+                  variant="micro"
+                  tone="accent"
+                  onPress={() => void Linking.openURL("https://hungry.sg/terms")}
+                >
+                  Terms of Service
+                </AppText>{" "}
+                and{" "}
+                <AppText
+                  variant="micro"
+                  tone="accent"
+                  onPress={() => void Linking.openURL("https://hungry.sg/privacy")}
+                >
+                  Privacy Policy
+                </AppText>
+                .
+              </AppText>
+            </View>
+
+            <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "center" }}>
+              <AppText tone="secondary">Already have an account? </AppText>
+              <Pressable onPress={() => navigation.navigate("Login")}>
+                <AppText variant="bodyBold" tone="accent">
+                  Log in
+                </AppText>
+              </Pressable>
+            </View>
+          </View>
+        }
+      >
+        <View style={{ gap: spacing[4] }}>
+          <View style={{ gap: spacing[3] }}>
+            <Button
+              label="Continue with Google"
+              variant="secondary"
+              onPress={() => handleProviderContinue("google")}
+            />
+            <Button
+              label="Continue with Apple"
+              variant="secondary"
+              onPress={() => handleProviderContinue("apple")}
+            />
+          </View>
+
+          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
+            <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+            <AppText variant="micro" tone="muted">
+              OR REGISTER WITH EMAIL
+            </AppText>
+            <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
+          </View>
+
+          <View style={{ gap: spacing[2] }}>
+            <Controller
+              control={control}
+              name="displayName"
+              rules={{ validate: (value) => validateRequired(value, "Display name") }}
+              render={({ field: { onChange, value } }) => (
+                <View style={{ gap: spacing[1] }}>
+                  <Input
+                    placeholder="Full Name"
+                    value={value}
+                    onChangeText={onChange}
+                    leftIcon={<User color={palette.textMuted} size={18} />}
+                  />
+                  {errors.displayName ? (
+                    <AppText variant="bodySmall" style={{ color: palette.error }}>
+                      {errors.displayName.message}
+                    </AppText>
+                  ) : null}
+                </View>
+              )}
+            />
+            <Controller
+              control={control}
+              name="email"
+              rules={{ validate: validateEmail }}
+              render={({ field: { onChange, value } }) => (
+                <View style={{ gap: spacing[1] }}>
+                  <Input
+                    placeholder="Email Address"
+                    value={value}
+                    onChangeText={onChange}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    leftIcon={<Mail color={palette.textMuted} size={18} />}
+                  />
+                  {errors.email ? (
+                    <AppText variant="bodySmall" style={{ color: palette.error }}>
+                      {errors.email.message}
+                    </AppText>
+                  ) : null}
+                </View>
+              )}
+            />
+            <Controller
+              control={control}
+              name="password"
+              rules={{ validate: (value) => validatePassword(value, 8) }}
+              render={({ field: { onChange, value } }) => (
+                <View style={{ gap: spacing[1] }}>
+                  <Input
+                    placeholder="Create Password"
+                    value={value}
+                    onChangeText={onChange}
+                    secureTextEntry={!showPassword}
+                    leftIcon={<Lock color={palette.textMuted} size={18} />}
+                    rightIcon={
+                      <Pressable onPress={() => setShowPassword((current) => !current)} hitSlop={8}>
+                        {showPassword ? (
+                          <EyeOff color={palette.textMuted} size={18} />
+                        ) : (
+                          <Eye color={palette.textMuted} size={18} />
+                        )}
+                      </Pressable>
+                    }
+                  />
+                  {errors.password ? (
+                    <AppText variant="bodySmall" style={{ color: palette.error }}>
+                      {errors.password.message}
+                    </AppText>
+                  ) : null}
+                </View>
+              )}
+            />
+          </View>
+
+          <Button label="Create Account" onPress={handleSignUp} />
+        </View>
+      </AuthScreenShell>
+    </FeedErrorBoundary>
   );
 }

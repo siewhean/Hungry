@@ -9,6 +9,8 @@ export function MustOrderBadge() {
 
   return (
     <View
+      accessibilityLabel="Must order signature dish"
+      accessibilityRole="text"
       style={{
         alignSelf: "flex-start",
         alignItems: "center",
@@ -27,4 +29,3 @@ export function MustOrderBadge() {
     </View>
   );
 }
-

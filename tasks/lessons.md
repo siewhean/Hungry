@@ -6,3 +6,21 @@
 - When auth becomes mandatory, delete or fully retire the old soft-gate surface instead of leaving an unused auth sheet in the runtime path.
 - Do not silently fall back to arbitrary mock entities on compose flows. If the selected record is missing, stop the flow and send the user back to a safe picker state.
 - When discovery data comes from both Singapore geo datasets and older mock fixtures, bridge building IDs at the repository boundary instead of letting map, floor-plan, and venue flows each guess their own alias mapping.
+- Mall drill-down UX cannot be list-first if the requirement is store-directory realism; use polygon-first floor maps with synced selection state and a vertical floor selector.
+- For map+sheet composition, keep the map canvas as the constant background and use a real draggable bottom sheet; static overlays that only look like sheets fail UX expectations immediately.
+- For mall drill-down realism, never freehand synthetic grids: anchor polygons to official mall floor-map assets, preserve real unit numbers, and keep list-map IDs one-to-one.
+- For directory maps, rely on computed fit-to-viewport base scale plus explicit zoom controls; fixed hardcoded scale values break cross-mall standardization and make alignment QA unreliable.
+- For mixed single-tap and double-tap UX in feed cards, use exclusive gesture recognizers on the text region so like and expand actions never fire together.
+- For repeated form flows (auth/reset), centralize validation rules in shared helpers and test those helpers directly so every screen stays consistent when requirements change.
+- When product direction removes a UX pattern (for example soft-gate browsing), remove both runtime code and stale harness docs in the same batch to avoid backlog drift.
+- If a screen needs true edge-to-edge media, avoid wrapping it in shared max-width containers; use a full-width shell and then apply horizontal padding only to non-hero content blocks.
+- For swipe-driven UI cues (carousel dots, selected-state visuals), bind visuals to live scroll position rather than `onMomentumScrollEnd` so feedback stays continuous during gesture.
+- When syncing local derived selection back into Zustand, guard updates by stable IDs; unconditional `set()` inside effects can create render/update loops even when values look unchanged.
+- Do not reapply default mock profile data on app bootstrap when persisted profile state exists; only run profile sync when auth state actually changes.
+- For optional native modules in Expo Dev Client, avoid hard imports in leaf UI components that can crash the app on stale binaries; use lazy module loading with graceful fallback messaging until the app is rebuilt.
+- When a design artifact exists, implementation must start from that file and end with a design-source check; code-first improvisation causes drift.
+- Never read theme tokens (`spacing`, `radii`, `palette`) at module scope inside `StyleSheet.create()`. Always access them inside the component body via `useHungryTheme()` — module-scope access runs before the theme provider mounts and causes TypeScript errors.
+- All data access in `src/app/` and `src/features/` must go through `getDataRepository()` or `getHungryService()` from `serviceProvider.ts`. Never import from `src/lib/services/mock/` directly in screen or feature files — doing so silently breaks the mock-to-Supabase swap path.
+- Any persisted Zustand state keyed by user identity (reviewEntries, favourites, tasteVector) must be cleared in `clearProfile()`. `clearProfile()` must always be called from `signOut()`, not `syncProfile(false)` alone.
+- No backlog item is done until `npm run typecheck` passes AND a verification command is recorded in Section 5 (Session Log) of `tasks/todo.md` with the agent name and date. "Done" without evidence is status inflation.
+- On retry requests after partial work, re-validate the workspace state and run hard verification gates (`typecheck` + tests) before reporting completion.

@@ -12,11 +12,30 @@ def ccache_enabled?(podfile_properties)
   podfile_properties['apple.ccacheEnabled'] == 'true'
 end
 
+def append_build_flag!(build_settings, key, flag)
+  current = build_settings[key]
+  values =
+    case current
+    when Array
+      current
+    when String
+      current.split(' ')
+    when nil
+      ['$(inherited)']
+    else
+      Array(current)
+    end
+
+  values << flag unless values.include?(flag)
+  build_settings[key] = values
+end
+
 ENV['RCT_NEW_ARCH_ENABLED'] ||= '0' if podfile_properties['newArchEnabled'] == 'false'
 ENV['EX_DEV_CLIENT_NETWORK_INSPECTOR'] ||= podfile_properties['EX_DEV_CLIENT_NETWORK_INSPECTOR']
 ENV['RCT_USE_RN_DEP'] ||= '1' if podfile_properties['ios.buildReactNativeFromSource'] != 'true' && podfile_properties['newArchEnabled'] != 'false'
 ENV['RCT_USE_PREBUILT_RNCORE'] ||= '1' if podfile_properties['ios.buildReactNativeFromSource'] != 'true' && podfile_properties['newArchEnabled'] != 'false'
 platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
+inhibit_all_warnings!
 
 prepare_react_native_project!
 
@@ -60,16 +79,105 @@ target 'Hungry' do
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
 
+    installer.pods_project.root_object.attributes['LastUpgradeCheck'] = '2640'
+    installer.pods_project.root_object.attributes['LastSwiftUpdateCheck'] = '2640'
+
     installer.pods_project.targets.each do |target|
-      next unless target.name == 'EXConstants'
+      target.build_configurations.each do |config|
+        deployment_target = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+        if deployment_target && Gem::Version.new(deployment_target) < Gem::Version.new('12.0')
+          config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+        end
+
+        config.build_settings['CLANG_WARN_NULLABILITY_COMPLETENESS'] = 'NO'
+        config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+        config.build_settings['SWIFT_SUPPRESS_WARNINGS'] = 'YES'
+        append_build_flag!(config.build_settings, 'WARNING_CFLAGS', '-Wno-nullability-completeness')
+        append_build_flag!(config.build_settings, 'WARNING_CFLAGS', '-Wno-protocol')
+
+        append_build_flag!(config.build_settings, 'OTHER_LIBTOOLFLAGS', '-no_warning_for_no_symbols')
+      end
 
       target.shell_script_build_phases.each do |phase|
-        next unless phase.name == '[CP-User] Generate app.config for prebuilt Constants.manifest'
+        if target.name == 'ReactCodegen' && phase.name == '[CP-User] Generate Specs'
+          # ReactCodegen can generate invalid deeply-relative paths when the project path contains spaces.
+          # Force canonical absolute paths derived from PODS_ROOT.
+          phase.shell_script = <<~'SCRIPT'
+            RCT_SCRIPT_POD_INSTALLATION_ROOT="$(cd "$PODS_ROOT/.." && pwd)"
 
-        # Expo's generated script phase breaks when the project path contains spaces
-        # because bash -c receives an unquoted path after variable expansion.
-        phase.shell_script = 'bash -l -c "\\"$PODS_TARGET_SRCROOT/../scripts/get-app-config-ios.sh\\""'
+            export RCT_SCRIPT_RN_DIR="$RCT_SCRIPT_POD_INSTALLATION_ROOT/../node_modules/react-native"
+            export RCT_SCRIPT_APP_PATH="$RCT_SCRIPT_POD_INSTALLATION_ROOT/.."
+            export RCT_SCRIPT_OUTPUT_DIR="$RCT_SCRIPT_POD_INSTALLATION_ROOT"
+            export RCT_SCRIPT_TYPE="withCodegenDiscovery"
+
+            export SCRIPT_PHASES_SCRIPT="$RCT_SCRIPT_RN_DIR/scripts/react_native_pods_utils/script_phases.sh"
+            export WITH_ENVIRONMENT="$RCT_SCRIPT_RN_DIR/scripts/xcode/with-environment.sh"
+            /bin/sh -c '"$WITH_ENVIRONMENT" "$SCRIPT_PHASES_SCRIPT"'
+          SCRIPT
+        end
+
+        if target.name == 'EXConstants' && phase.name == '[CP-User] Generate app.config for prebuilt Constants.manifest'
+          # Expo's generated script phase breaks when the project path contains spaces
+          # because bash -c receives an unquoted path after variable expansion.
+          phase.shell_script = 'bash -l -c "\\"$PODS_TARGET_SRCROOT/../scripts/get-app-config-ios.sh\\""'
+        end
+
+        if target.name == 'EXUpdates' && phase.name == '[CP-User] Generate updates resources for expo-updates'
+          # Same issue for expo-updates script on paths containing spaces.
+          phase.shell_script = 'bash -l -c "\\"$PODS_TARGET_SRCROOT/../scripts/create-updates-resources-ios.sh\\""'
+        end
+
+        if phase.name.start_with?('[CP-User]') ||
+           phase.name == '[CP] Copy XCFrameworks'
+          phase.always_out_of_date = '1' if phase.respond_to?(:always_out_of_date=)
+        end
       end
     end
+
+    installer.aggregate_targets.each do |aggregate_target|
+      aggregate_target.user_project.native_targets.each do |native_target|
+        next unless native_target.name == 'Hungry'
+
+        native_target.build_configurations.each do |config|
+          append_build_flag!(config.build_settings, 'OTHER_LDFLAGS', '-Wl,-no_warn_duplicate_libraries')
+          append_build_flag!(config.build_settings, 'OTHER_LDFLAGS', '-Wl,-w')
+          append_build_flag!(config.build_settings, 'OTHER_LDFLAGS', '-weak_framework')
+          append_build_flag!(config.build_settings, 'OTHER_LDFLAGS', 'AppIntents')
+          config.build_settings['CLANG_WARN_NULLABILITY_COMPLETENESS'] = 'NO'
+          config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+          config.build_settings['SWIFT_SUPPRESS_WARNINGS'] = 'YES'
+          config.build_settings['ENABLE_APP_INTENTS_DEPLOYMENT_AWARE_PROCESSING'] = 'NO'
+          config.build_settings['ENABLE_APP_INTENTS_METADATA_GENERATION'] = 'NO'
+          config.build_settings['VALIDATE_ASSISTANT_INTENTS'] = 'NO'
+          append_build_flag!(config.build_settings, 'WARNING_CFLAGS', '-Wno-nullability-completeness')
+          append_build_flag!(config.build_settings, 'WARNING_CFLAGS', '-Wno-protocol')
+        end
+
+        native_target.shell_script_build_phases.each do |phase|
+          if phase.name == 'Bundle React Native code and images'
+            broken_invocation = %r{/bin/sh .*?sentry-xcode\.sh.*?\n"\$REACT_NATIVE_XCODE_SH"}m
+            fixed_invocation = <<~'SCRIPT'.strip
+              SENTRY_XCODE_SH="$("$NODE_BINARY" --print "require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'")"
+              REACT_NATIVE_XCODE_SH="$("$NODE_BINARY" --print "require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'")"
+              /bin/sh "$SENTRY_XCODE_SH" "$REACT_NATIVE_XCODE_SH"
+            SCRIPT
+
+            if phase.shell_script.match?(broken_invocation)
+              phase.shell_script = phase.shell_script.sub(broken_invocation, fixed_invocation)
+            end
+          end
+
+          if phase.name == 'Upload Debug Symbols to Sentry'
+            phase.always_out_of_date = '1' if phase.respond_to?(:always_out_of_date=)
+          end
+        end
+      end
+
+      aggregate_target.user_project.root_object.attributes['LastUpgradeCheck'] = '2640'
+      aggregate_target.user_project.save
+    end
+
+    installer.pods_project.save
+
   end
 end

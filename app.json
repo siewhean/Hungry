@@ -3,6 +3,13 @@
     "name": "Hungry",
     "slug": "hungry-mobile",
     "version": "0.1.0",
+    "runtimeVersion": "0.1.0",
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/6d724772-04c3-4823-91bc-a1f7604c9f15"
+    },
     "orientation": "portrait",
     "scheme": "hungry",
     "userInterfaceStyle": "automatic",
@@ -12,18 +19,52 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "app.hungry.mobile",
-      "appleTeamId": "94R58J6LA2"
+      "appleTeamId": "94R58J6LA2",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Hungry uses your location to rank nearby dishes and map results."
+      }
     },
     "android": {
-      "package": "app.hungry.mobile"
+      "package": "app.hungry.mobile",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "experiments": {
       "typedRoutes": false
     },
     "plugins": [
-      "expo-dev-client",
+      [
+        "expo-dev-client",
+        {
+          "launchMode": "most-recent"
+        }
+      ],
       "expo-font",
-      "expo-web-browser"
-    ]
+      "expo-web-browser",
+      "expo-location",
+      "@sentry/react-native",
+      "expo-secure-store",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "hungry-3z"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6d724772-04c3-4823-91bc-a1f7604c9f15"
+      }
+    }
   }
 }

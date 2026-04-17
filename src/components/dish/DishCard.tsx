@@ -14,8 +14,15 @@ interface DishCardProps {
   onFavouritePress?: () => void;
 }
 
-export function DishCard({ dish, variant = "horizontal", favourited = false, onPress, onFavouritePress }: DishCardProps) {
+export function DishCard({
+  dish,
+  variant = "horizontal",
+  favourited = false,
+  onPress,
+  onFavouritePress,
+}: DishCardProps) {
   const { palette, radii, spacing } = useHungryTheme();
+  const styles = createStyles(spacing);
 
   const isHorizontal = variant === "horizontal";
 
@@ -46,6 +53,7 @@ export function DishCard({ dish, variant = "horizontal", favourited = false, onP
           style={[
             styles.image,
             {
+              backgroundColor: palette.bgSoft,
               borderRadius: radii.sm,
               height: isHorizontal ? 88 : 140,
               width: isHorizontal ? 88 : "100%",
@@ -72,7 +80,11 @@ export function DishCard({ dish, variant = "horizontal", favourited = false, onP
               disabled={!onFavouritePress}
               hitSlop={8}
             >
-              <Heart size={18} color={favourited ? palette.error : palette.textMuted} fill={favourited ? palette.error : "transparent"} />
+              <Heart
+                size={18}
+                color={favourited ? palette.error : palette.textMuted}
+                fill={favourited ? palette.error : "transparent"}
+              />
             </Pressable>
           </View>
           <View style={styles.rowWrap}>
@@ -93,28 +105,27 @@ export function DishCard({ dish, variant = "horizontal", favourited = false, onP
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    alignItems: "flex-start",
-  },
-  image: {
-    backgroundColor: "#E5E7EB",
-  },
-  row: {
-    alignItems: "flex-start",
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "space-between",
-  },
-  rowWrap: {
-    alignItems: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  chipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-});
+const createStyles = (spacing: any) =>
+  StyleSheet.create({
+    content: {
+      alignItems: "flex-start",
+    },
+    image: {},
+    row: {
+      alignItems: "flex-start",
+      flexDirection: "row",
+      gap: spacing[2],
+      justifyContent: "space-between",
+    },
+    rowWrap: {
+      alignItems: "center",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing[2],
+    },
+    chipRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing[1],
+    },
+  });

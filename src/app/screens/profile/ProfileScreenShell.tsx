@@ -9,7 +9,11 @@ interface ProfileScreenShellProps {
   subtitle?: string;
 }
 
-export function ProfileScreenShell({ children, title, subtitle }: PropsWithChildren<ProfileScreenShellProps>) {
+export function ProfileScreenShell({
+  children,
+  title,
+  subtitle,
+}: PropsWithChildren<ProfileScreenShellProps>) {
   const { spacing } = useHungryTheme();
 
   return (
@@ -18,4 +22,3 @@ export function ProfileScreenShell({ children, title, subtitle }: PropsWithChild
     </Screen>
   );
 }
-

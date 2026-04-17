@@ -12,9 +12,13 @@ export function TasteTagSelector({ selectedTags, onToggleTag }: TasteTagSelector
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
       {REVIEW_TAGS.map((tag) => (
-        <Chip key={tag} label={tag} selected={selectedTags.includes(tag)} onPress={() => onToggleTag(tag)} />
+        <Chip
+          key={tag}
+          label={tag}
+          selected={selectedTags.includes(tag)}
+          onPress={() => onToggleTag(tag)}
+        />
       ))}
     </View>
   );
 }
-

@@ -1,26 +1,41 @@
-import { ActivityIndicator, Pressable, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
-import type { PressableProps } from "react-native";
+import { type ReactNode } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type ViewStyle,
+ PressableProps } from "react-native";
+import * as Haptics from "expo-haptics";
 
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive" | "glass";
+type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps extends Omit<PressableProps, "style"> {
   label: string;
   variant?: ButtonVariant;
+  size?: ButtonSize;
   loading?: boolean;
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
+  leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
 }
 
 export function Button({
   label,
   variant = "primary",
+  size = "md",
   loading = false,
   disabled,
   fullWidth = true,
   style,
+  leftIcon,
+  rightIcon,
   ...props
 }: ButtonProps) {
   const { palette, radii, spacing } = useHungryTheme();
@@ -47,46 +62,66 @@ export function Button({
       borderColor: palette.error,
       borderWidth: 1,
     },
+    glass: {
+      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      borderColor: "rgba(255, 255, 255, 0.4)",
+      borderWidth: 1,
+    },
+  };
+
+  const sizeStyle: Record<ButtonSize, ViewStyle> = {
+    sm: { minHeight: 36, paddingVertical: spacing[1.5], paddingHorizontal: spacing[3] },
+    md: { minHeight: 52, paddingVertical: spacing[3], paddingHorizontal: spacing[4] },
+    lg: { minHeight: 60, paddingVertical: spacing[4], paddingHorizontal: spacing[6] },
   };
 
   return (
     <Pressable
       accessibilityRole="button"
       disabled={isDisabled}
+      onPressIn={() => {
+        if (!isDisabled) {
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+      }}
       style={({ pressed }) => [
         styles.base,
         variantStyle[variant],
+        sizeStyle[size],
         {
-          borderRadius: radii.md,
-          minHeight: 52,
+          borderRadius: radii.pill,
           opacity: isDisabled ? 0.5 : 1,
-          paddingHorizontal: spacing[4],
-          paddingVertical: spacing[3],
           width: fullWidth ? "100%" : undefined,
           transform: [{ translateY: pressed ? 1 : 0 }],
         },
-        pressed && variant === "secondary"
-          ? { backgroundColor: palette.surfaceRaised }
-          : null,
-        pressed && variant === "ghost"
-          ? { backgroundColor: palette.surfaceRaised }
-          : null,
+        pressed && variant === "secondary" ? { backgroundColor: palette.surfaceRaised } : null,
+        pressed && variant === "ghost" ? { backgroundColor: palette.surfaceRaised } : null,
+        pressed && variant === "glass" ? { backgroundColor: "rgba(255, 255, 255, 0.3)" } : null,
         style,
       ]}
       {...props}
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "primary" || variant === "destructive" ? "#FFFFFF" : palette.text}
+          color={variant === "primary" || variant === "destructive" ? palette.white : palette.text}
         />
       ) : (
-        <AppText
-          variant="body"
-          style={styles.label}
-          tone={variant === "primary" || variant === "destructive" ? "inverse" : "default"}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing[2],
+          }}
         >
-          {label}
-        </AppText>
+          {leftIcon}
+          <AppText
+            variant={size === "sm" ? "bodySmallBold" : "h3"}
+            tone={variant === "primary" || variant === "destructive" || variant === "glass" ? "inverse" : "default"}
+          >
+            {label}
+          </AppText>
+          {rightIcon}
+        </View>
       )}
     </Pressable>
   );
@@ -97,8 +132,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
-  },
-  label: {
-    fontFamily: "Nunito_600SemiBold",
   },
 });

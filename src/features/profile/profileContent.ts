@@ -4,4 +4,3 @@ export const profileSections = [
   { key: "reviews", label: "Review History" },
   { key: "settings", label: "Settings" },
 ] as const;
-

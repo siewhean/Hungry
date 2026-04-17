@@ -1,0 +1,18 @@
+diff --git a/node_modules/@shopify/react-native-skia/apple/SkiaPictureViewManager.mm b/node_modules/@shopify/react-native-skia/apple/SkiaPictureViewManager.mm
+index e36d7a4..b36ae7f 100644
+--- a/node_modules/@shopify/react-native-skia/apple/SkiaPictureViewManager.mm
++++ b/node_modules/@shopify/react-native-skia/apple/SkiaPictureViewManager.mm
+@@ -10,6 +10,7 @@
+ #include "SkiaManager.h"
+ #include "SkiaUIView.h"
+ 
++#ifndef RCT_NEW_ARCH_ENABLED
+ @implementation SkiaPictureViewManager
+ 
+ RCT_EXPORT_MODULE(SkiaPictureView)
+@@ -53,3 +54,5 @@ - (RCTUIView *)view {
+ }
+ 
+ @end
++
++#endif

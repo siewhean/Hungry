@@ -14,8 +14,8 @@ interface TasteRadarChartProps {
 }
 
 function normalizeVector(vector: TasteVector) {
-  return [vector.sweet, vector.spicy, vector.sour, vector.salty, vector.rich, vector.aromatic].map((value) =>
-    Math.max(0.18, Math.min(1, value / 10)),
+  return [vector.sweet, vector.spicy, vector.sour, vector.salty, vector.rich, vector.aromatic].map(
+    (value) => Math.max(0.18, Math.min(1, value / 10)),
   );
 }
 
@@ -48,12 +48,33 @@ export function TasteRadarChart({ vector, size = 220, showLabels = true }: Taste
     <View accessibilityLabel={summary}>
       <Svg width={size} height={size} accessibilityRole="image">
         {[0.35, 0.6, 0.85, 1].map((step) => (
-          <Circle key={step} cx={center} cy={center} r={radius * step} stroke={palette.border} strokeWidth={1} fill="none" />
+          <Circle
+            key={step}
+            cx={center}
+            cy={center}
+            r={radius * step}
+            stroke={palette.border}
+            strokeWidth={1}
+            fill="none"
+          />
         ))}
         {axisLines.map(({ x, y }, index) => (
-          <Line key={index} x1={center} y1={center} x2={x} y2={y} stroke={palette.border} strokeWidth={1} />
+          <Line
+            key={index}
+            x1={center}
+            y1={center}
+            x2={x}
+            y2={y}
+            stroke={palette.border}
+            strokeWidth={1}
+          />
         ))}
-        <Polygon points={points} fill={`${palette.orange}33`} stroke={palette.orange} strokeWidth={2} />
+        <Polygon
+          points={points}
+          fill={`${palette.orange}33`}
+          stroke={palette.orange}
+          strokeWidth={2}
+        />
         {axisLines.map(({ x, y, angle }, index) => {
           const labelDistance = radius + 18;
           const labelX = center + Math.cos(angle) * labelDistance;
@@ -72,8 +93,11 @@ export function TasteRadarChart({ vector, size = 220, showLabels = true }: Taste
           );
         })}
       </Svg>
-      {showLabels ? <AppText variant="bodySmall" tone="secondary">{summary}</AppText> : null}
+      {showLabels ? (
+        <AppText variant="bodySmall" tone="secondary">
+          {summary}
+        </AppText>
+      ) : null}
     </View>
   );
 }
-

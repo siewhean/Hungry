@@ -5,19 +5,22 @@ import { useHungryTheme } from "@/theme";
 
 type Variant =
   | "display"
+  | "displayBold"
   | "h1"
   | "h2"
   | "h3"
   | "bodyLarge"
   | "body"
+  | "bodyBold"
   | "bodySmall"
+  | "bodySmallBold"
   | "micro"
   | "price"
   | "code";
 
 interface AppTextProps extends TextProps {
   variant?: Variant;
-  tone?: "default" | "secondary" | "muted" | "accent" | "inverse";
+  tone?: "default" | "secondary" | "muted" | "accent" | "inverse" | "success";
   style?: TextStyle | TextStyle[];
 }
 
@@ -38,8 +41,10 @@ export function AppText({
         : tone === "accent"
           ? palette.orange
           : tone === "inverse"
-            ? "#FFFFFF"
-            : palette.text;
+            ? palette.textOnDark
+            : tone === "success"
+              ? palette.statusFast
+              : palette.text;
 
   return (
     <Text

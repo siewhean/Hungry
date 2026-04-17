@@ -13,33 +13,28 @@
 import { useEffect, useRef } from "react";
 import { Animated, Easing, Pressable, View, StyleSheet, Platform } from "react-native";
 import type { PropsWithChildren } from "react";
-import { ChevronRight, ArrowLeft } from "lucide-react-native";
+import { ChevronRight } from "lucide-react-native";
 
 import { AppText, Button } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
+import { ONBOARDING_ACTIONS_BOTTOM_PADDING, ONBOARDING_ACTIONS_GAP } from "./layoutConstants";
 
 // ─── Progress bar ─────────────────────────────────────────────────────────────
 
-function ProgressBar({
-  total,
-  current,
-}: {
-  total: number;
-  current: number;
-}) {
-  const { palette, radii } = useHungryTheme();
+function ProgressBar({ total, current }: { total: number; current: number }) {
+  const { motion, palette, radii } = useHungryTheme();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     anim.setValue(0);
     Animated.timing(anim, {
       toValue: 1,
-      duration: 500,
+      duration: motion.onboardingSegmentFill,
       easing: Easing.out(Easing.quad),
       useNativeDriver: false,
     }).start();
-  }, [current]);
+  }, [current, motion.onboardingSegmentFill]);
 
   return (
     <View style={styles.progressRow}>
@@ -60,7 +55,11 @@ function ProgressBar({
             <View
               style={[
                 styles.progressFill,
-                { backgroundColor: palette.orange, borderRadius: radii.pill, width: "100%" },
+                {
+                  backgroundColor: palette.orange,
+                  borderRadius: radii.pill,
+                  width: "100%",
+                },
               ]}
             />
           ) : i === current ? (
@@ -87,13 +86,8 @@ function ProgressBar({
 
 // ─── Slide illustration (abstract) ────────────────────────────────────────────
 
-function SlideIllustration({
-  step,
-  accentColor,
-}: {
-  step: number;
-  accentColor: string;
-}) {
+function SlideIllustration({ step, accentColor }: { step: number; accentColor: string }) {
+  const { palette, radii } = useHungryTheme();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -113,9 +107,29 @@ function SlideIllustration({
       <View style={styles.illustrationInner}>
         <View style={[styles.bowl, { borderColor: accentColor }]}>
           <View style={[styles.bowlContent, { backgroundColor: `${accentColor}44` }]}>
-            <View style={[styles.steamLine, { backgroundColor: accentColor, marginLeft: -12 }]} />
-            <View style={[styles.steamLine, { backgroundColor: accentColor }]} />
-            <View style={[styles.steamLine, { backgroundColor: accentColor, marginLeft: 12 }]} />
+            <View
+              style={[
+                styles.steamLine,
+                {
+                  backgroundColor: accentColor,
+                  borderRadius: radii.pill,
+                  marginLeft: -12,
+                },
+              ]}
+            />
+            <View
+              style={[styles.steamLine, { backgroundColor: accentColor, borderRadius: radii.pill }]}
+            />
+            <View
+              style={[
+                styles.steamLine,
+                {
+                  backgroundColor: accentColor,
+                  borderRadius: radii.pill,
+                  marginLeft: 12,
+                },
+              ]}
+            />
           </View>
         </View>
       </View>
@@ -137,8 +151,10 @@ function SlideIllustration({
             ]}
           />
         ))}
-        <View style={[styles.mapPin, { backgroundColor: accentColor }]}>
-          <View style={[styles.mapPinDot, { backgroundColor: "#fff" }]} />
+        <View style={[styles.mapPin, { backgroundColor: accentColor, borderRadius: radii.pill }]}>
+          <View
+            style={[styles.mapPinDot, { backgroundColor: palette.white, borderRadius: radii.pill }]}
+          />
         </View>
       </View>
     ),
@@ -151,10 +167,7 @@ function SlideIllustration({
             style={[
               styles.biteCard,
               {
-                backgroundColor:
-                  i === 2
-                    ? accentColor
-                    : `${accentColor}${i === 1 ? "66" : "33"}`,
+                backgroundColor: i === 2 ? accentColor : `${accentColor}${i === 1 ? "66" : "33"}`,
                 transform: [
                   { scale },
                   { translateY: (2 - i) * -18 },
@@ -177,8 +190,7 @@ function SlideIllustration({
               style={[
                 styles.hexCell,
                 {
-                  backgroundColor:
-                    i % 2 === 0 ? accentColor : `${accentColor}44`,
+                  backgroundColor: i % 2 === 0 ? accentColor : `${accentColor}44`,
                   opacity: 0.6 + (i / 6) * 0.4,
                   width: 30 + (i % 3) * 8,
                   height: 30 + (i % 3) * 8,
@@ -218,18 +230,18 @@ function SlideIllustration({
 // ─── Bullet item ──────────────────────────────────────────────────────────────
 
 function BulletItem({ text, index }: { text: string; index: number }) {
-  const { palette, spacing } = useHungryTheme();
+  const { motion, palette, spacing, radii } = useHungryTheme();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.timing(anim, {
       toValue: 1,
-      duration: 320,
-      delay: 200 + index * 100,
+      duration: motion.onboardingBulletEnter,
+      delay: motion.buttonPress * 2 + index * motion.buttonPress,
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, []);
+  }, [index, motion.buttonPress, motion.onboardingBulletEnter]);
 
   return (
     <Animated.View
@@ -250,7 +262,7 @@ function BulletItem({ text, index }: { text: string; index: number }) {
       <View
         style={{
           backgroundColor: palette.orange,
-          borderRadius: 999,
+          borderRadius: radii.pill,
           height: 7,
           marginTop: 9,
           width: 7,
@@ -292,7 +304,7 @@ export function OnboardingIntroTemplate({
   nextScreen,
   backScreen,
 }: OnboardingIntroTemplateProps) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { motion, palette, radii, spacing, shadows, zIndex } = useHungryTheme();
 
   const headlineAnim = useRef(new Animated.Value(0)).current;
 
@@ -300,38 +312,43 @@ export function OnboardingIntroTemplate({
     headlineAnim.setValue(0);
     Animated.timing(headlineAnim, {
       toValue: 1,
-      duration: 380,
-      delay: 80,
+      duration: motion.onboardingHeadlineEnter,
+      delay: motion.buttonPress,
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, [stepIndex]);
+  }, [headlineAnim, motion.buttonPress, motion.onboardingHeadlineEnter, stepIndex]);
 
   return (
     <View style={[styles.screen, { backgroundColor: palette.bg }]}>
       {/* ── Top: progress + header ──────────────────────── */}
-      <View style={[styles.topArea, { paddingTop: Platform.OS === "ios" ? 56 : 32 }]}>
+      <View
+        style={[
+          styles.topArea,
+          {
+            paddingTop: Platform.OS === "ios" ? 66 : 36,
+            zIndex: zIndex.overlay,
+          },
+        ]}
+      >
         <ProgressBar total={totalSteps} current={stepIndex - 1} />
 
         <View style={styles.topRow}>
-          {backScreen ? (
-            <Pressable
-              onPress={() => navigation.navigate(backScreen)}
-              style={styles.backBtn}
-              accessibilityLabel="Go back"
-            >
-              <ArrowLeft size={20} color={palette.textMuted} />
-            </Pressable>
-          ) : (
-            <View style={styles.backBtn} />
-          )}
+          <View style={styles.backBtn} />
 
           <Pressable
             onPress={() => navigation.navigate("TasteQuiz")}
-            style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              gap: 4,
+              justifyContent: "center",
+              minHeight: 28,
+              minWidth: 52,
+            }}
             accessibilityLabel="Skip onboarding"
           >
-            <AppText variant="bodySmall" tone="muted">
+            <AppText variant="bodySmallBold" tone="muted">
               Skip
             </AppText>
             <ChevronRight size={14} color={palette.textMuted} />
@@ -349,7 +366,9 @@ export function OnboardingIntroTemplate({
       </Pressable>
 
       {/* ── Content ─────────────────────────────────────── */}
-      <View style={[styles.contentArea, { backgroundColor: palette.surface }]}>
+      <View
+        style={[styles.contentArea, { backgroundColor: palette.surface, ...shadows.bottomSheet }]}
+      >
         {/* Eyebrow */}
         <View
           style={{
@@ -392,24 +411,29 @@ export function OnboardingIntroTemplate({
         </Animated.View>
 
         {/* Bullets */}
-        <View style={{ gap: spacing[3], marginBottom: spacing[6] }}>
+        <View style={{ flex: 1, gap: spacing[3], marginBottom: spacing[8] }}>
           {bullets.map((bullet, i) => (
             <BulletItem key={bullet} text={bullet} index={i} />
           ))}
         </View>
 
         {/* CTA */}
-        <Button
-          label={stepIndex < totalSteps ? "Continue" : "Set up my taste"}
-          onPress={() => navigation.navigate(nextScreen)}
-        />
-        {backScreen ? (
+        <View
+          style={{
+            gap: ONBOARDING_ACTIONS_GAP,
+            marginHorizontal: -8,
+            marginTop: spacing[2],
+            paddingBottom: ONBOARDING_ACTIONS_BOTTOM_PADDING + spacing[2],
+          }}
+        >
           <Button
-            label="Back"
-            variant="ghost"
-            onPress={() => navigation.navigate(backScreen)}
+            label={stepIndex < totalSteps ? "Continue" : "Set up my taste"}
+            onPress={() => navigation.navigate(nextScreen)}
           />
-        ) : null}
+          {backScreen ? (
+            <Button label="Back" variant="ghost" onPress={() => navigation.navigate(backScreen)} />
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -424,11 +448,10 @@ const styles = StyleSheet.create({
   topArea: {
     paddingHorizontal: 20,
     gap: 12,
-    zIndex: 10,
   },
   progressRow: {
     flexDirection: "row",
-    gap: 6,
+    gap: 4,
     height: 3,
   },
   progressTrack: {
@@ -452,8 +475,8 @@ const styles = StyleSheet.create({
   },
   illustrationArea: {
     flex: 1,
-    minHeight: 200,
-    maxHeight: 280,
+    minHeight: 156,
+    maxHeight: 208,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -471,22 +494,17 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   contentArea: {
+    flex: 1,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: 28,
-    paddingBottom: Platform.OS === "ios" ? 48 : 32,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 8,
+    paddingBottom: 0,
   },
   // Bowl illustration
   bowl: {
     width: 100,
     height: 60,
     borderWidth: 3,
-    borderRadius: 50,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
     overflow: "hidden",
@@ -505,7 +523,6 @@ const styles = StyleSheet.create({
   steamLine: {
     width: 3,
     height: 20,
-    borderRadius: 2,
     opacity: 0.8,
   },
   // Map pin illustration
@@ -516,21 +533,19 @@ const styles = StyleSheet.create({
   mapPin: {
     width: 20,
     height: 20,
-    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
   mapPinDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
   },
   // Bite cards
   biteCard: {
     position: "absolute",
     width: 100,
     height: 64,
-    borderRadius: 16,
+    borderRadius: 18,
   },
   // Hex grid
   hexGrid: {

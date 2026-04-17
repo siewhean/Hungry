@@ -1,0 +1,59 @@
+src/app/screens/discover/MapZoomedInScreen.tsx:111:       <Pressable          onPress={() => navigation.goBack()} 
+src/app/screens/discover/MapZoomedInScreen.tsx:138:                 <Pressable                   key={venue.id}                   onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
+src/app/screens/discover/CraveScreen.tsx:127:           <Pressable onPress={() => navigation.goBack()} style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
+src/app/screens/discover/CraveScreen.tsx:222:           <Pressable              onPress={swipeLeft}             style={({ pressed }) => [
+src/app/screens/discover/CraveScreen.tsx:241:           <Pressable              onPress={swipeRight}             style={({ pressed }) => [
+src/app/screens/discover/BuildingInfoSheet.tsx:188:                 <Pressable                   key={floor}                   onPress={() => onDrillDown(building.id)}
+src/app/screens/auth/EmailVerificationScreen.tsx:48:         <Pressable onPress={() => navigation.navigate("SignUp")} style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], justifyContent: "center" }}>
+src/app/screens/auth/ForgotPasswordScreen.tsx:31:         <Pressable onPress={() => navigation.navigate("Login")} style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], justifyContent: "center" }}>
+src/app/screens/auth/ResetPasswordSuccessScreen.tsx:24:           <Pressable onPress={() => showToast({ message: "Reset link resent.", tone: "success" })}>
+src/app/screens/auth/SignUpScreen.tsx:53:             <Pressable onPress={() => navigation.navigate("Login")}>
+src/app/screens/auth/SignUpScreen.tsx:120:                     <Pressable onPress={() => setShowPassword((current) => !current)} hitSlop={8}>
+src/app/screens/auth/LoginScreen.tsx:54:           <Pressable onPress={() => navigation.navigate("SignUp")}>
+src/app/screens/auth/LoginScreen.tsx:93:                     <Pressable onPress={() => setShowPassword((current) => !current)} hitSlop={8}>
+src/app/screens/auth/LoginScreen.tsx:101:                   <Pressable onPress={() => navigation.navigate("ForgotPassword")}>
+src/app/screens/auth/ResetPasswordScreen.tsx:37:         <Pressable onPress={() => navigation.navigate("Login")} style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], justifyContent: "center" }}>
+src/app/screens/auth/ResetPasswordScreen.tsx:64:                 <Pressable onPress={() => setShowPassword((current) => !current)} hitSlop={8}>
+src/app/screens/auth/ResetPasswordScreen.tsx:85:                 <Pressable onPress={() => setShowConfirmPassword((current) => !current)} hitSlop={8}>
+src/app/screens/wheel/WheelLobbyScreen.tsx:75:           <Pressable             onPress={() => removeEntry(item.id)}
+src/app/screens/wheel/WheelLobbyScreen.tsx:101:             <Pressable               onPress={copyCode}               style={{                 flexDirection: "row",                 alignItems: "center",                 gap: spacing[2],                 backgroundColor: palette.orangeLight,                 pa
+src/app/screens/wheel/WheelLobbyScreen.tsx:176:           <Pressable onPress={handleLeave}>
+src/app/screens/wheel/WheelSpinScreen.tsx:207:           <Pressable             onPress={triggerSpin}             disabled={!canSpin}             style={{               flexDirection: "row",               alignItems: "center",               gap: spacing[2],               backgroundColor: canSpin ? palette.
+src/app/screens/wheel/WheelResultModal.tsx:89:       <Pressable style={{ flex: 1 }} onPress={() => {}} />
+src/app/screens/wheel/WheelResultModal.tsx:157:             <Pressable               onPress={handleStallDetail}               style={{                 backgroundColor: palette.orange,                 paddingVertical: spacing[4],                 borderRadius: radii.pill,                 flexDirection: "row"
+src/app/screens/wheel/WheelResultModal.tsx:180:               <Pressable                 onPress={handleSpinAgain}                 style={{                   backgroundColor: palette.bgSoft,                   paddingVertical: spacing[4],                   borderRadius: radii.pill,                   alignIte
+src/app/screens/wheel/WheelResultModal.tsx:196:             <Pressable onPress={handleDone} style={{ alignItems: "center", paddingVertical: spacing[2] }}>
+src/app/screens/search/SearchResultsScreen.tsx:27:     <Pressable onPress={onPress}>
+src/app/screens/search/SearchResultsScreen.tsx:80:     <Pressable onPress={onPress} style={{ width: "47%" }}>
+src/app/screens/search/SearchResultsScreen.tsx:152:               <Pressable                 key={mode}                 onPress={() => setDisplayMode(mode)}
+src/app/screens/search/SearchResultsScreen.tsx:271:           <Pressable             onPress={() => {
+src/app/screens/search/DishSearchScreen.tsx:115:         <Pressable           onPress={() => {
+src/app/screens/search/DishSearchScreen.tsx:158:             <Pressable               key={collection.venue.id}               onPress={() => navigation.navigate("StallDetail", { venueId: collection.venue.id })}
+src/app/screens/reads/ReadsFeedScreen.tsx:106:             <Pressable key={post.id} onPress={() => navigation.navigate("BlogPost", { postId: post.id })}>
+src/app/screens/reads/ReadsFeedScreen.tsx:180:               <Pressable                 key={`focus-${post.id}`}                 onPress={() => navigation.navigate("BlogPost", { postId: post.id })}
+src/app/screens/reads/ReadsFeedScreen.tsx:274:             <Pressable key={`latest-${post.id}`} onPress={() => navigation.navigate("BlogPost", { postId: post.id })}>
+src/app/screens/detail/NotFoundScreen.tsx:35:           <Pressable onPress={() => navigation.navigate("SearchHome")} style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+src/app/screens/detail/StallDetailScreen.tsx:80:           <Pressable              onPress={() => navigation.goBack()}
+src/app/screens/detail/StallDetailScreen.tsx:87:           <Pressable              onPress={handleShare}             style={[{ width: 44, height: 44, borderRadius: radii.pill, backgroundColor: palette.surface, alignItems: "center", justifyContent: "center" }, shadows.floating]}           >
+src/app/screens/detail/StallDetailScreen.tsx:151:                   <Pressable                     key={dish.id}                     onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
+src/app/screens/detail/StallDetailScreen.tsx:231:           <Pressable             onPress={() => {
+src/app/screens/profile/EditProfileScreen.tsx:102:         <Pressable           style={{ position: "relative" }}           onPress={() => {
+src/app/screens/profile/EditProfileScreen.tsx:157:           <Pressable             onPress={handleChangePassword}             style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: spacing[2] }}           >
+src/app/screens/profile/FavouritesScreen.tsx:32:               <Pressable                  key={dish.id}                  onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
+src/app/screens/profile/FavouritesScreen.tsx:49:                   <Pressable                      onPress={() => toggleFavourite(dish)}
+src/app/screens/review/QuickReviewSheet.tsx:48:             <Pressable key={star} onPress={() => { setRating(star); void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}>
+src/app/screens/review/ReviewHubScreen.tsx:79:                 <Pressable                   onPress={() => {
+src/app/screens/review/ReviewHubScreen.tsx:149:             <Pressable onPress={handleCardPress}>
+src/app/screens/review/ReviewHubScreen.tsx:174:                       <Pressable                         key={dish.id}                         onPress={() => {
+src/app/screens/dev/DeveloperLauncherScreen.tsx:79:       <Pressable         onPress={() => setExpanded((v) => !v)}
+src/app/screens/dev/DeveloperLauncherScreen.tsx:295:                 <Pressable                   key={preset.id}                   onPress={() => {
+src/app/screens/dev/DeveloperLauncherScreen.tsx:492:                 <Pressable                   key={building.id}                   onPress={() => openBuilding(building.id)}
+src/app/screens/onboarding/FoodSelectionScreen.tsx:104:         <Pressable onPress={handleBack} style={{ padding: 8 }}>
+src/app/screens/onboarding/FoodSelectionScreen.tsx:130:                 <Pressable                   key={dish.id}                   onPress={() => toggle(dish.id)}
+src/app/screens/onboarding/TasteQuizScreen.tsx:312:                       <Pressable                         key={option.value}                         onPress={() => toggleDietary(option.value)}
+src/app/screens/onboarding/OnboardingIntroTemplate.tsx:328:           <Pressable             onPress={() => navigation.navigate("TasteQuiz")}
+src/app/screens/onboarding/OnboardingIntroTemplate.tsx:342:       <Pressable         style={styles.illustrationArea}         onPress={() => navigation.navigate(nextScreen)}
+src/app/screens/onboarding/CuisineSelectionScreen.tsx:48:               <Pressable                 key={cuisine.id}                 onPress={() => toggle(cuisine.id)}
+src/app/screens/onboarding/ManualLocationPickerScreen.tsx:26:         <Pressable onPress={() => navigation.goBack()} style={{ marginRight: spacing[3], padding: spacing[2] }}>
+src/app/screens/onboarding/ManualLocationPickerScreen.tsx:39:           <Pressable             key={building.id}             onPress={() => {
+src/app/screens/onboarding/TasteProfileResultScreen.tsx:45:                   <Pressable onPress={() => toggleFavourite(dish)} style={{ padding: spacing[1] }}>

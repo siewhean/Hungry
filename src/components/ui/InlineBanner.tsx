@@ -23,7 +23,7 @@ export function InlineBanner({ message, tone = "info" }: InlineBannerProps) {
       style={{
         backgroundColor: tones[tone].bg,
         borderRadius: radii.sm,
-        paddingHorizontal: spacing[4],
+        paddingHorizontal: spacing[3],
         paddingVertical: spacing[3],
       }}
     >
@@ -33,4 +33,3 @@ export function InlineBanner({ message, tone = "info" }: InlineBannerProps) {
     </View>
   );
 }
-
