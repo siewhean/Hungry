@@ -1,262 +1,317 @@
-# Hungry Mobile Frontend Task Requirements & Shared Checklist
-
-This file is the shared execution checklist for both Claude and Codex.
-
-## Shared Planning Rules
-
-- Before any non-trivial implementation, update the relevant phase checklist with the intended work.
-- While working, mark checklist items as they move and add short notes when scope or sequencing changes.
-- Before ending a session, update the review, verification, or phase notes so the next agent can continue without re-discovery.
-- Do not mark work complete without verification appropriate to the change.
-
-## Phase 1. Repo Bootstrap
-
-- [x] Create root Expo app scaffold and repo bootstrap docs
-- [x] Install app dependencies and verify typecheck
-
-## Phase 2. Shared App Foundations
-
-- [x] Build shared theme, tokens, types, stores, and mock services
-- [x] Implement navigation shell and guest/auth gating
-
-## Phase 3. Core Discovery Experience
-
-- [x] Implement Discover and Search flows
-- [x] Implement Dish and Stall detail flows
-
-## Phase 4. Account and Supporting Flows
-
-- [x] Implement Auth, Onboarding, Profile, and Review flows
-- [x] Implement Reads and recovery states
-
-## Phase 5. Verification and Delivery Review
-
-- [x] Run typecheck and record review notes
-This document is the shared execution contract for both Claude and Codex.
-
-## Planning + Update Rules (Mandatory)
-
-- Mock discovery dataset expanded to include additional food courts and hawker centres with broader stall and dish coverage.
-- `npm run typecheck` passes.
-- `npx expo-doctor` passes after adding `react-native-worklets` and running a dedupe pass.
-- The current app remains frontend-only and mock-first; no backend or security implementation has started in the shipped phases above.
+# Hungry — Master Task Contract
+> **Last updated:** 2026-04-16 | **Phase:** Prototype → Production  
+> Shared execution contract between Claude, Codex, and all agents.  
+> Read `tasks/lessons.md` before any implementation session.
 
 ---
 
-## Future Delivery Phases
+## How to Use This File
 
-### Phase 6. Ordering MVP Foundations
-
-- [ ] Browse stall menu and add items to cart within the app
-- [ ] Order confirmation with estimated wait time
-- [ ] Order history and reorder shortcut
-- [ ] Receive and acknowledge incoming orders
-- [ ] Mark items as sold out or unavailable
-
-### Phase 7. Payments and Order State
-
-- [ ] Checkout and pay on device (PayNow / card / e-wallet)
-- [ ] Define the consumer app contract for optimistic order state plus polling or WebSocket updates
-- [ ] Confirm regulatory and operational requirements for live transaction rollout
-
-### Phase 8. Vendor Operations and Analytics
-
-- [ ] Analytics dashboard for top dishes, peak hours, revenue trend, and average order value
-- [ ] Export order data (CSV) for inventory planning
-- [ ] Aggregate dish popularity rankings across hawker centres
-- [ ] Trend detection for dishes spiking in order volume
-
-### Phase 9. Crowd Signals and Indoor Map Integration
-
-- [ ] Real-time busyness indicator per stall derived from active order volume
-- [ ] Expected wait estimate shown on stall card in-feed and on map
-- [ ] Crowd heat map overlay on indoor floor plan
-- [ ] Push notification when queues clear at a stall
-
-### Phase 10. Platform Data Expansion
-
-- [ ] Building-level footfall analytics for mall operators
-- [ ] Anonymised data export for F&B research or NEA partnerships
-
-## Future Phase Notes
-
-- Scope: all future phases remain out of the current MVP.
-- Payment integration candidates: Stripe for cards, PayNow QR for SGD, and GrabPay.
-- Order backend should live as a separate service from the consumer mobile frontend.
-- Crowd monitoring MVP should be derived from order count per stall per time window rather than hardware sensors.
-- [ ] Keep this file as the single source of truth for delivery status.
-- [ ] Before implementing any non-trivial task (3+ steps), add a scoped mini-plan under the relevant phase.
-- [ ] During active implementation, update checklist progress at least once per focused work block (or before ending a session).
-- [ ] Do not mark a task as done until a verification step is recorded.
-- [ ] Add blockers/decisions in the session log section so the next agent can continue without re-discovery.
+- **Before any non-trivial task:** add a scoped mini-plan under the relevant phase.
+- **During work:** check off items as you go. Add inline notes for scope changes.
+- **Before ending a session:** record a session log entry. Never mark done without a verification step.
+- **Source of truth precedence:** Figma > `product-context.md` > this file > memory.
 
 ---
 
-## Project-Fit Requirements (Updated for current Hungry development)
+## Completed Phases (Archive)
 
-### Current Product Scope (Now)
-- Consumer mobile app only (Expo + React Native).
-- Frontend-first, mock-first execution.
-- No live backend/payment/security deployment in this phase.
+### Phase 1 — Repo Bootstrap ✅
+- [x] Expo scaffold + typed domain layer
+- [x] Zustand stores, mock repositories, navigation shell
+- [x] Theme tokens, design system, shared component library
 
-### Near-Term Priorities (Next)
-1. Stabilise and polish current user journeys (Discover, Search, Details, Auth, Profile, Reviews).
-2. Improve data quality and fixture realism for Singapore food discovery.
-3. Introduce backend-ready contracts progressively (without blocking frontend demoability).
-4. Define a social analytics-ready event taxonomy now, even before backend rollout.
+### Phase 2 — Core Screens ✅
+- [x] Auth, Onboarding, Location Permission
+- [x] Home feed, Discover, Search, Search Results
+- [x] Dish Detail, Stall Detail, Decide For Me
+- [x] Maps tab, MapZoomedIn, BuildingDrillDown
+- [x] Profile, Favourites, Review History
+- [x] Review compose flow (4-step)
+- [x] Reads (blog feed, feature-flagged)
+- [x] Offline + NotFound recovery screens
 
-### Future Expansion (Later)
-- Digital ordering + payment + vendor tooling.
-- Crowd/queue analytics derived from active order volume.
-- Social and trend analytics surfaces.
+### Phase 3 — Hardening Pass 1 (2026-04-08) ✅
+- [x] Auth-first shell (removed guest browsing from runtime)
+- [x] Shared primitives (Button, Input, Chip, Badge) restyled to Figma warm-neutral system
+- [x] Emoji removed from runtime UI
+- [x] Discover/Search/Stall Detail composition tightened
+- [x] Home feed container fixed (safe-area, no scrollbar)
+- [x] Maxwell demo floor plan (L1/L2) with real venue/dish fixture bridge
 
----
+### Phase 4 — Maps Rebuild (2026-04-08) ✅
+- [x] Real `MapSurface` wrapper with token-aware Mapbox fallback
+- [x] Maps tab rebuilt to Figma spec with building pins
+- [x] `MapZoomedIn` wired as real route (partially — see P0 list)
+- [x] `BuildingDrillDown` screen built with floor switcher + stall grid
 
-## Implementation Phases with Claude/Codex Ownership
+### Phase 5 — Marketing Launch Kit (2026-04-08) ✅
+- [x] `marketing/` workspace: positioning, waitlist copy, channel playbook
+- [x] 30-day organic content calendar
+- [x] Video briefs, AI prompt pack, creator/press/hawker outreach
 
-## Phase 1 — Product + Architecture Planning
+### Phase 6 — AI Food Engine (Completed) ✅
+- [x] `src/lib/ai/tasteEngine.ts` — cosine similarity, euclidean distance, blended score
+- [x] `rankDishes()` — ranked results with human-readable explanation
+- [x] `decideForMe()` — single-best-dish picker with min-score threshold
+- [x] `calibrateVector()` — community feedback loop (post-review nudge)
+- [x] `buildTasteVectorFromQuiz()` — quiz slider → TasteVector
+- [x] Taste labels + color map (display helpers)
 
-### Claude primary
-- [ ] Define/refresh architecture notes for mock-first now vs backend-connected later.
-- [ ] Produce feature-level acceptance criteria for critical flows.
-- [ ] Define event taxonomy for future social analytics (events, attributes, ownership).
-- [ ] Record tradeoffs/decisions directly in README (or linked docs).
-
-### Codex primary
-- [ ] Convert architecture decisions into concrete repository tasks.
-- [ ] Create/update typed interfaces and TODO anchors matching planned contracts.
-- [ ] Ensure implementation tasks are granular and checkable in this file.
-
-### Done criteria
-- [ ] Planning artifacts are committed and discoverable.
-- [ ] Every in-progress build task maps to a planned requirement.
-
-### Phase 1 mini-plan — 2026-04-08 marketing launch system
-- [x] Draft a repo-grounded product marketing context, positioning, and messaging system for Hungry.
-- [x] Create a dedicated `marketing/` workspace for strategy, website, social, video, outreach, and brand-asset rules.
-- [x] Write the waitlist page copy and wireframe contract for a consumer-first launch destination.
-- [x] Write a 30-day organic content calendar plus reusable cross-channel copy templates.
-- [x] Define creator, press, and hawker outreach plus AI-assisted video briefs and prompt packs.
-
----
-
-## Phase 2 — Core App Hardening (Current Build Focus)
-
-### Claude primary
-- [ ] Identify highest-risk UX/logic gaps in current implemented flows.
-- [ ] Prioritise bug/quality backlog by user impact.
-- [ ] Define verification matrix for Home, Discover, Search, Maps, Auth, Review, and Profile.
-
-### Codex primary
-- [ ] Implement high-priority flow fixes with minimal scoped changes.
-- [ ] Add or refine loading, error, and empty states where missing.
-- [ ] Keep navigation contracts, mock repositories, and type safety aligned after each patch.
-- [ ] Run and record verification commands after each batch.
-
-### Phase 2 mini-plan — 2026-04-08 Figma-fidelity hardening
-- [x] Remove guest browsing from the session model, auth flow, soft gates, and developer launcher.
-- [x] Make signed-out launch always resolve Splash -> Auth before MainTabs.
-- [x] Rebuild shared input/button/chip/badge patterns to match the approved warm neutral Figma system.
-- [x] Restyle Discover/Search and Stall Detail to match the Figma hierarchy and remove low-contrast pill/card drift.
-- [x] Remove emoji usage from runtime UI, onboarding, social sample content, and share labels.
-- [x] Run typecheck plus multi-device QA review notes for iPhone 16e, 16, 16 Pro, 16 Pro Max, and one Android sanity pass.
-
-### Phase 2 mini-plan — 2026-04-08 Maps + building layout
-- [x] Replace the fake `Maps` tab surface with a token-aware Mapbox wrapper plus a repo-visible fallback preview.
-- [x] Rebuild `HomeMapScreen` to match the Figma map composition with live building pins, current-location affordance, and selected-building sheet.
-- [x] Turn `MapZoomedIn` into a real focused-building map route instead of a placeholder card.
-- [x] Wire `BuildingDrillDown` to the real screen and rebuild it around the Figma drill-down flow.
-- [x] Add a demo Maxwell `L2` floor-plan plus mock venues/dishes so the floor switch and menu preview are visible in repo runtime.
-
-### Done criteria
-- [ ] Critical user journeys run end-to-end in mock mode.
-- [ ] Verification commands are green and logged.
+### Phase 6 — Sprint 6 Audit (2026-04-08) ✅
+- [x] Full codebase audit against PRD, Figma, and data contracts
+- [x] `tasks/Roadmap/mvp_audit_and_v2_roadmap.md` — 9 P0s, 11 P1s, 8 P2s documented
+- [x] V2 system design: messaging, QR ordering, guest checkout
+- [x] `tasks/backend-architecture.md` — full V2 Postgres schema + DDL (2026-04-16)
 
 ---
 
-## Phase 3 — Data + Analytics Readiness
+## 🔴 SPRINT 7 — P0 Dead-End Fixes (Demo-Breaking)
+> **Owner:** Codex | **Gate:** Must complete before any demo or beta invite.  
+> Every item below is a user-facing dead end or broken state. Est. total: ~4h.
 
-### Claude primary
-- [ ] Specify analytics KPIs and dashboard-ready metric definitions.
-- [ ] Define event-to-metric mapping and data quality expectations.
-- [ ] Propose phased rollout path for backend/event ingestion.
+- [ ] **Wire `TasteFilter` route** — `RootNavigator.tsx` maps `TasteFilter` to `DeferredRouteScreen`. Replace with `TasteFilterScreen` import. File: `src/app/navigation/RootNavigator.tsx` ~L266.
+- [ ] **Wire `BuildingDrillDown` route** — Same issue. Replace `DeferredRouteScreen` with `BuildingDrillDownScreen`. File: `src/app/navigation/RootNavigator.tsx` ~L275.
+- [ ] **Fix profile sync on auth** — `useSessionStore.completeAuth()` never calls `useProfileStore.getState().syncProfile(true)`. After login, profile stays as `guestProfile`. Files: `src/store/useSessionStore.ts`, `src/store/useProfileStore.ts`.
+- [ ] **Fix `BitesCarousel` data architecture** — `MOCK_BITES` inlined with wrong IDs (`"dish-1"` doesn't exist). Move to `data.ts`, align with `services/types.ts → Bite`, add `getBites()` repo method. File: `src/components/social/BitesCarousel.tsx`.
+- [ ] **Fix `BitesCarousel` "See all" navigation** — navigates to `"Post"` (PostComposerScreen). Should navigate to a Bites feed or be removed. File: `src/components/social/BitesCarousel.tsx` ~L148.
+- [ ] **Fix `MapZoomedIn` placeholder** — renders static text. Wire to `BuildingDrillDownScreen` or remove. File: `src/app/screens/discover/MapZoomedInScreen.tsx`.
+- [ ] **Fix `StallDetail` wrong field** — `navigation.navigate("StallDetail", { venueId: item.dishId })` passes `dishId` as `venueId`. File: `src/components/social/BitesCarousel.tsx` ~L123.
+- [ ] **Fix `useNavigation<any>()`** — replace with typed `NativeStackNavigationProp<RootStackParamList>` in `BitesCarousel.tsx` and any other components using `any` navigation type.
+- [ ] **Verify typecheck passes** — `npm run typecheck` must be green after all P0 fixes.
 
-### Codex primary
-- [ ] Add event instrumentation hooks in frontend service/store boundaries.
-- [ ] Keep analytics hooks mock-safe (no backend dependency required).
-- [ ] Add data validation helpers for fixture integrity checks.
-
-### Done criteria
-- [ ] Event schema is documented and instrumentation is implemented for key flows.
-- [ ] Mock data quality checks are executable and recorded.
-
----
-
-## Phase 4 — Ordering + Payments Preparation (Future)
-
-### Claude primary
-- [ ] Break down ordering system architecture (consumer, vendor, platform analytics).
-- [ ] Document payment/provider tradeoffs and compliance constraints.
-- [ ] Define queue-time/crowd-estimation model assumptions.
-
-### Codex primary
-- [ ] Scaffold frontend contracts and placeholders for order/cart/checkout flows.
-- [ ] Add feature flags for future ordering capabilities.
-- [ ] Maintain separation between MVP shell and future ordering modules.
-
-### Done criteria
-- [ ] Future-facing contracts exist without destabilising current MVP.
-- [ ] Feature flags gate unfinished modules cleanly.
+### Sprint 7 Mini-Plan
+> Add before implementation begins.
 
 ---
 
-## Shared Session Log (Claude + Codex must append)
+## 🟡 SPRINT 8 — P1 Beta Hardening
+> **Owner:** Codex primary, Claude reviews | **Gate:** Before beta invites go out.
 
-- [ ] Session log maintained with: date, actor (Claude/Codex), tasks touched, status, blockers, next step.
+### Empty States
+- [ ] `FavouritesScreen` — no empty state when list is empty. Add `EmptyState` with CTA to Discover.
+- [ ] `ReviewHistoryScreen` — no empty state when no reviews. Add `EmptyState` with CTA to Review flow.
+- [ ] `ProfileHomeScreen` — shows default user data for guest users. Show guest-appropriate fallback.
 
-### Session Entries
-- 2026-04-05 | Codex | Updated project-fit task requirements, phased Claude/Codex ownership checklist, and planning cadence. | Status: completed for documentation update. | Blockers: none. | Next: keep this checklist current during implementation sessions.
-- 2026-04-06 | Codex | Audited app screen inventory, research docs, and design artifacts; created Stitch-ready design-system and screen-brief files under `design/stitch/`. | Status: completed for design planning artifact. | Blockers: direct Stitch editing is not available in this environment. | Next: generate remaining screens in Stitch using `design/stitch/DESIGN.md` and `design/stitch/STITCH_BRIEFS.md`, then sync the chosen outputs back into Figma and code.
-- 2026-04-08 | Codex | Reconciled repo housekeeping and status docs with the actual codebase: removed stale `AGENT.md`, archived older design iterations under `design/archive/`, cleaned local artifacts, and updated instruction references. | Status: completed for repository cleanup and documentation alignment. | Blockers: none. | Next: use Phase 2 as the active workstream and keep verification notes current as UI hardening continues.
-- 2026-04-08 | Codex | Started Figma-fidelity hardening pass: auth-first shell, guest-flow removal, emoji purge, shared primitive restyle, and device-matrix QA prep. | Status: in progress. | Blockers: final visual fidelity depends on runtime verification against simulators after code changes. | Next: update auth/session flow, restyle Search and Stall Detail to match Figma, then run multi-device QA.
-- 2026-04-08 | Codex | Completed the Figma-fidelity hardening pass for auth/session, shared primitives, Discover/Search, Stall Detail, and runtime emoji removal. | Status: completed for the code pass with review notes recorded. | Blockers: simulator access from this sandbox is limited because CoreSimulatorService is unavailable here, and `npm run test` is not defined in package.json. | Next: run on-device or local simulator visual smoke tests outside the sandbox, then continue with Home/Reads/Profile polish if needed.
-- 2026-04-08 | Codex | Continued the hardening pass: removed the remaining runtime soft-gate path, made signed-out protected actions route directly into auth, aligned login methods to the same onboarding-first flow, prevented review-compose from falling back to the wrong dish, tightened Discover/Search composition, reduced pill-heavy styling, and improved Home/Stall Detail layout behavior. | Status: completed for this implementation batch. | Blockers: the remaining work is visual polish, especially Home feed overlay density, tighter Search fidelity, and flatter Stall Detail composition. | Next: run local simulator checks on iPhone 16e/16/16 Pro/16 Pro Max and Android, then finish the remaining visual polish based on screenshots instead of code-only review.
-- 2026-04-08 | Codex | Added the Hungry marketing launch workspace under `marketing/` with positioning, waitlist copy, wireframe, channel playbook, 30-day calendar, copy pack, video briefs, AI prompt pack, outreach playbook, and brand/visual rules. | Status: completed for documentation implementation. | Blockers: the sandbox can read `.agents/` but cannot write into it, so the product marketing context draft currently lives at `marketing/strategy/product-marketing-context.md` instead of `.agents/product-marketing-context.md`. | Next: if a less restricted local environment is available, mirror that file into `.agents/` so other marketing skills can consume it automatically.
-- 2026-04-08 | Codex | Implemented the Figma-based maps deliverables: real `MapSurface` wrapper with token-aware fallback, rebuilt `Maps` and `MapZoomedIn`, rewired `BuildingDrillDown`, bridged Singapore/mock building IDs, and added a demo Maxwell `L2` floor plan with matching mock venues and dishes. | Status: completed for the code pass. | Blockers: live Mapbox rendering still requires `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` in the local environment; without it, the repo falls back to a static coordinate preview. | Next: run the app locally on simulator/device to visually inspect the live map route and the Maxwell drill-down flow with a real token configured.
-- 2026-04-08 | Codex | Fixed the Home route container to render as a direct safe-area feed surface, added a feed empty state, and removed visible scroll indicators from shared screen wrappers plus remaining explicit scrollable surfaces. | Status: completed for this UI hardening patch. | Blockers: runtime simulator verification is still needed to confirm the Home tab now renders correctly on-device. | Next: open the app locally and verify Home, Review, Search Results, Dish Detail, and the developer launcher no longer show scrollbars.
+### Review Flow
+- [ ] Review submit persistence — `ReviewComposeScreen` completes but writes nothing. Add review to `useProfileStore` + `data.ts` runtime state.
+- [ ] Review success feedback — no toast or modal shown after submit. Add `ReviewSuccessModal` or `showToast` call.
+- [ ] Quick-review path (F-018) — PRD requires a 30-second tag-only flow. Add shortcut that skips text/photo steps.
 
----
+### Auth & Error Handling
+- [ ] Auth error feedback — `LoginScreen` and `SignUpScreen` call `completeAuth()` with no failure simulation. Add error state + toast for bad credentials.
+- [ ] Try/catch scaffolding — zero try/catch in any screen. Add error boundary pattern + `OfflineStateScreen` trigger before API migration.
 
-## Verification Commands Log
+### Service Layer
+- [ ] `HungryService` interface — 41 methods defined, ~10 implemented. Complete mock implementations for all methods called by screens. File: `src/lib/services/mock/repositories.ts`.
+- [ ] `getBuildingDetail()` repo method — defined in `HungryService` but missing from mock. Add it using `SingaporeBuilding` geo data.
+- [ ] `getFloorPlan()` repo method — `FloorPlan` type exists in `services/types.ts` but no repo method. Add using `floorPlans.ts`.
+- [ ] `Bite` type divergence — `services/types.ts → Bite` and local `BiteCard.tsx` `Bite` are different shapes. Reconcile to single source.
 
-- [x] `npm run typecheck`
-- [ ] `npx expo-doctor`
+### Discovery
+- [ ] Situation-based discovery presets (F-015) — no "< 15 min", "Budget < S$8", "Late night" tiles on DiscoverHomeScreen.
+- [ ] Dietary filter on Discover root (F-014) — `DietaryFlag` filter chips exist in Search but not accessible from Discover tab root.
 
-Add dated command outputs under each active workstream when run.
+### Loading States
+- [ ] Skeleton screens — no skeletons anywhere. Add skeleton placeholders for `DishDetailScreen`, `StallDetailScreen`, and `SearchResultsScreen` (preparing for API migration).
+- [ ] `OfflineStateScreen` trigger — screen exists but is never triggered. Add connectivity listener in `useAppBootstrap`.
 
-
-### Verification Notes
-- 2026-04-05: `npm run typecheck` passed after task-document updates.
-- 2026-04-08: Repository audit shows implemented screens for Splash, Auth, Onboarding, Home, Discover, Search, Maps, Review, Profile, Reads, Offline, NotFound, and developer utilities are present under `src/app/screens/`.
-- 2026-04-08: `npm run typecheck` passed after the Figma-fidelity hardening patch set.
-- 2026-04-08: `npm run typecheck` passed again after removing the runtime soft-gate path and tightening Discover/Search/Home/Stall Detail.
-- 2026-04-08: `npm run test` could not run because `package.json` does not define a `test` script.
-- 2026-04-08: Device QA was completed as a code-based review matrix for iPhone 16e, 16, 16 Pro, 16 Pro Max, and Android sanity because `xcrun simctl` could not access CoreSimulatorService from this sandbox.
-- 2026-04-08: Marketing launch documentation was added under `marketing/`; the sandbox could not write into `.agents/`, so the repo-grounded product marketing context is stored at `marketing/strategy/product-marketing-context.md`.
-- 2026-04-08: `npm run typecheck` passed after the marketing launch documentation, README index, and task-log updates.
-- 2026-04-08: `npm run typecheck` passed after the map deliverable, route rewiring, Maxwell demo L2 floor plan, and building-layout drill-down implementation.
-- 2026-04-08: `npm run typecheck` passed after the Home feed container fix and app-wide scrollbar suppression cleanup.
+### Sprint 8 Mini-Plan
+> Add before implementation begins.
 
 ---
 
-## Current Execution Split
+## 🟢 SPRINT 9 — P2 Polish & Future-Proofing
+> **Owner:** Claude + Codex | **Timing:** After Sprint 8 is green.
 
-### Claude Plan
-- [ ] Audit implemented flows against product requirements and design docs.
-- [ ] Produce a prioritized UX and verification backlog for the existing MVP.
-- [ ] Identify missing polish, copy, navigation, and state-handling gaps before new features are added.
+- [ ] Unit tests — `__tests__/` directory is empty. Write tests for `tasteEngine.ts` (pure functions), `repositories.ts`, and at least 3 critical screens.
+- [ ] Deep linking — no `Linking` config. Set up universal links for `hungry://dish/:id`, `hungry://venue/:id`, and `hungry://order?venueId=X`.
+- [ ] Haptic feedback — `Decide For Me` FAB should fire `Haptics.impactAsync` on tap (PRD spec).
+- [ ] Share URL — `DishDetailScreen` share target is `"https://hungry.sg/dish/${dish.id}"` (placeholder). Implement real share sheet.
+- [ ] Photo carousel — `DishDetailScreen` doesn't use `DishDetail.gallery` array. Wire to `ImageCarousel` component.
+- [ ] Module co-location — `ProfileRadarChart` is in `screens/profile/` not `components/dish/`. Move.
+- [ ] Font error handling — `useAppBootstrap` has no visible font-loading failure path. Add fallback.
+- [ ] `similarityScore` in `repositories.ts` — pure utility. Extract to `src/lib/ai/` alongside `tasteEngine.ts`.
+- [ ] `useDiscoveryStore.popularNearby` computed at store creation — guard for async-safe access pattern.
+- [ ] Placeholder stubs for `useOrderStore` and `useCartStore` (V2 prep).
 
-### Codex Plan
-- [ ] Execute the highest-priority hardening fixes from Claude's backlog.
-- [ ] Keep repository structure, docs, and navigation/types in sync as features evolve.
-- [ ] Maintain passing typecheck and update verification notes after each implementation batch.
+---
+
+## 🔵 PHASE 7 — Backend Bootstrap (V2 Foundation)
+> **Owner:** Claude architects, Codex scaffolds | **Stack:** Supabase (Postgres 15 + PostGIS + pgvector).  
+> Full schema in `tasks/backend-architecture.md`.
+
+### Database
+- [ ] Provision Supabase project (`hungry-production`)
+- [ ] Run migration `0001_v2_initial_schema.sql` — all tables from `backend-architecture.md §2.3`
+- [ ] Run migration `0002_seed_dietary_flags.sql` — halal, vegetarian, vegan, pork_free, nut_free, gluten_free
+- [ ] Run migration `0003_seed_venue_categories.sql` — local_favourites, noodles, rice, desserts, late_night
+- [ ] Seed `buildings`, `building_floors`, `venues` from V1 mock fixtures (Maxwell, Lau Pa Sat, Amoy)
+- [ ] Seed `dishes`, `dish_images`, `dish_taste_vectors` from V1 fixture data
+- [ ] Seed `blog_sources`, `blog_posts` (EatBook, SethLui)
+- [ ] Add `update_dish_rating` trigger (see `backend-architecture.md §10`)
+- [ ] Verify PostGIS: `SELECT ST_Distance(...)` smoke test on Maxwell/Lau Pa Sat coordinates
+- [ ] Verify pgvector: HNSW index smoke test on taste vector cosine similarity
+
+### Auth (Supabase Auth)
+- [ ] Configure email + password provider
+- [ ] Configure Google OAuth provider
+- [ ] Configure Apple OAuth provider (iOS required)
+- [ ] Define Row Level Security (RLS) policies on `users`, `reviews`, `orders`, `chat_messages`
+- [ ] Implement guest session token issuance endpoint (`POST /api/guest-sessions`)
+
+### API Layer (Supabase Edge Functions or Next.js API routes)
+- [ ] `GET /api/buildings` — with `?lat&lng&radius&type` PostGIS proximity filter
+- [ ] `GET /api/buildings/:id` — detail + open venues
+- [ ] `GET /api/venues/:id` — detail + menu (cache in Redis 60s)
+- [ ] `GET /api/dishes/:id` — detail + reviews
+- [ ] `GET /api/search` — FTS on `search_tsv` + dietary + category filter
+- [ ] `POST /api/recommendations/dishes` — pgvector cosine similarity endpoint
+- [ ] `PATCH /api/users/me/taste-vector` — update user taste profile
+- [ ] Health check endpoint + Vercel deploy config
+
+### Frontend API Integration (replace mock repositories)
+- [ ] Create `src/lib/services/api/` directory with real API client (typed fetch wrapper)
+- [ ] Replace `mockRepositories` with real `apiRepositories` behind feature flag `FEATURE_FLAGS.useRealApi`
+- [ ] Migrate `getDishById`, `getVenueById`, `getBuildingById`, `searchDishes` first
+- [ ] Add error handling + loading state propagation through all screens
+- [ ] `npm run typecheck` must pass after migration
+
+---
+
+## 🔵 PHASE 8 — QR Order & Pay
+> **Owner:** Claude designs, Codex implements | **Revenue critical path.**  
+> Full system design in `tasks/Roadmap/mvp_audit_and_v2_roadmap.md §2.2`.
+
+### Backend
+- [ ] Orders schema deployed (see `backend-architecture.md` — `orders`, `order_items`, `order_item_modifiers`, `order_status_history`, `payments`, `refunds`, `qr_sessions`)
+- [ ] `POST /api/qr/scan` — validate QR token, return session + venue menu
+- [ ] `POST /api/orders` — create order + Stripe PaymentIntent
+- [ ] `PATCH /api/orders/:id/status` — vendor status updates (accepted/preparing/ready/cancelled)
+- [ ] `GET /api/orders/:id` — status polling endpoint
+- [ ] `GET /api/orders/history` — consumer order history (paginated)
+- [ ] `POST /api/payments/confirm` — Stripe webhook handler
+- [ ] Stripe account setup (SGD, PayNow + card enabled)
+- [ ] QR code generation script for stall QR codes
+
+### Frontend
+- [ ] `QRScannerScreen.tsx` — camera-based QR scan entry
+- [ ] `StallMenuScreen.tsx` — live menu with add-to-cart
+- [ ] `CartSheet.tsx` — bottom sheet cart summary
+- [ ] `CheckoutScreen.tsx` — payment method selector + confirm
+- [ ] `OrderConfirmationScreen.tsx` — success + estimated wait
+- [ ] `OrderTrackingScreen.tsx` — polling-based status (15s interval)
+- [ ] `OrderHistoryScreen.tsx` — past orders + reorder shortcut
+- [ ] `useCartStore.ts` — items, quantities, notes, stale-cart detection
+- [ ] `useOrderStore.ts` — active order state, polling lifecycle
+- [ ] `orderRepository.ts` — REST API wrapper
+- [ ] `paymentService.ts` — Stripe `PaymentSheet` integration
+- [ ] Deep link handler: `hungry://order?venueId=X&tableId=Y`
+
+### Vendor Dashboard (separate surface)
+- [ ] Next.js vendor portal scaffold (separate repo or `apps/vendor/`)
+- [ ] Order inbox with real-time push (Socket.IO or Supabase Realtime)
+- [ ] Accept / reject / mark-ready controls
+- [ ] Basic analytics: orders/day, avg order value, top dishes
+
+---
+
+## 🔵 PHASE 9 — Guest Checkout
+> **Owner:** Codex implements, Claude reviews security model.  
+> Full system design in `tasks/Roadmap/mvp_audit_and_v2_roadmap.md §2.3`.
+
+- [ ] `POST /api/guest-sessions` — create session (UUID + Stripe ephemeral key)
+- [ ] `POST /api/guest-sessions/:id/upgrade` — migrate orders to full account
+- [ ] `GuestCheckoutScreen.tsx` — Stripe PaymentSheet, no email required
+- [ ] `GuestReceiptScreen.tsx` — order receipt + soft "Create account?" prompt
+- [ ] `GuestUpgradeSheet.tsx` — bottom sheet: save details for next time
+- [ ] `useGuestStore.ts` — session ID, saved methods, expiry tracking
+- [ ] Guest session stored in `expo-secure-store` (Keychain / EncryptedSharedPreferences)
+- [ ] 24-hour auto-expiry + server-side cleanup cron
+- [ ] Verify: card details never touch Hungry servers (Stripe-native payment sheet)
+
+---
+
+## 🔵 PHASE 10 — Real-Time Messaging
+> **Owner:** Claude designs, Codex implements.  
+> Full system design in `tasks/Roadmap/mvp_audit_and_v2_roadmap.md §2.1`.
+
+- [ ] `chat_threads`, `chat_participants`, `chat_messages`, `chat_message_receipts` tables deployed
+- [ ] Socket.IO server deployed (Railway / Fly.io)
+- [ ] `POST /api/chat/threads` — create or resume conversation
+- [ ] `GET /api/chat/threads/:id/messages` — paginated history
+- [ ] `PATCH /api/messages/:id/read` — mark read
+- [ ] Socket.IO events: `message:send`, `message:new`, `typing:start`, `typing:stop`, `read:receipt`
+- [ ] `ConversationListScreen.tsx`
+- [ ] `ChatScreen.tsx` + `ChatBubble.tsx` + `ChatInputBar.tsx`
+- [ ] `ChatStack.tsx` — stack navigator for chat
+- [ ] `useChatStore.ts` — messages, typing state, unread counts
+- [ ] `socketClient.ts` — connection manager with reconnect
+- [ ] `chatRepository.ts` — REST wrapper for history + create
+- [ ] Unread badge on tab bar (integrate with `useUIStore`)
+- [ ] Push notification on new message (Expo Push + FCM/APNs)
+
+---
+
+## 🔵 PHASE 11 — Analytics & Vendor Intelligence
+> **Owner:** Claude designs | **Timing:** After Phase 8 (orders generate the data).
+
+- [ ] PostHog integration for event instrumentation
+- [ ] Event taxonomy: `dish_viewed`, `search_performed`, `decide_for_me_used`, `order_placed`, `review_submitted`, `favourite_toggled`
+- [ ] Vendor analytics dashboard: top dishes, peak hours, revenue trend, avg order value
+- [ ] Export: CSV order data for inventory planning
+- [ ] Dish popularity rankings across hawker centres
+- [ ] Crowd signal: busyness indicator derived from active order volume per stall
+- [ ] Wait-time estimate shown on stall card and map pin
+
+---
+
+## 🏗️ Platform Infra (Cross-Cutting)
+> These run in parallel with all phases above.
+
+- [ ] **CI/CD** — GitHub Actions: lint → typecheck → test → build on every PR
+- [ ] **Unit test suite** — Jest + React Native Testing Library; target 60% coverage on business logic
+- [ ] **Sentry** — crash reporting for both Expo app and API layer
+- [ ] **Environment management** — `.env.local` + Vercel env vars; separate staging/prod Supabase projects
+- [ ] **CDN** — Vercel Blob for review photos + menu images; `blurhash` on all food images
+- [ ] **Rate limiting** — Redis-backed rate limits on order creation, guest session creation, search
+- [ ] **GDPR / PDPA** — data deletion endpoint; audit log for personal data access
+- [ ] **App Store submission** — iOS App Store + Google Play setup; metadata, screenshots, privacy policy
+
+---
+
+## Shared Session Log
+> Append: `YYYY-MM-DD | Actor | Tasks touched | Status | Blockers | Next`
+
+- 2026-04-05 | Codex | Project-fit task requirements, phased checklist, planning cadence | ✅ Done | None | Keep checklist current
+- 2026-04-06 | Codex | Screen inventory, design artifacts, Stitch design system + screen briefs | ✅ Done | Stitch not editable from sandbox | Generate in Stitch, sync to Figma + code
+- 2026-04-08 | Codex | Repo housekeeping, removed stale `AGENT.md`, archived old design iterations | ✅ Done | None | Phase 2 as active workstream
+- 2026-04-08 | Codex | Figma-fidelity hardening: auth-first shell, guest removal, emoji purge, shared primitives | ✅ Done | Simulator unavailable in sandbox | Run on-device visual smoke tests locally
+- 2026-04-08 | Codex | Maps deliverables: MapSurface, Maps tab, MapZoomedIn, BuildingDrillDown, Maxwell L2 floor plan | ✅ Done | Mapbox token required for live render | Configure `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` locally
+- 2026-04-08 | Codex | Home feed container fix, app-wide scrollbar suppression | ✅ Done | Simulator verification needed | Open app locally, verify Home/Review/Search/Dish Detail
+- 2026-04-08 | Codex | Marketing launch workspace under `marketing/` | ✅ Done | Could not write to `.agents/` from sandbox | Mirror to `.agents/` in less-restricted env
+- 2026-04-08 | Codex | Sprint 6 audit: full codebase vs PRD/Figma/data-contracts; V2 system design (messaging, ordering, guest checkout) | ✅ Done | None | Fix P0 dead ends in Sprint 7
+- 2026-04-16 | Claude | V2 database schema (30+ tables, DDL, indexes) → `tasks/backend-architecture.md` | ✅ Done | None | Provision Supabase, run migrations
+- 2026-04-16 | Claude | Fixed `security_reminder_hook.py` — quoted `${CLAUDE_PLUGIN_ROOT}` in both hooks.json copies | ✅ Done | None | Restart Claude Code to reload hooks
+- 2026-04-16 | Claude | Upgraded Vercel CLI 50.37.3 → 50.42.0 via npm | ✅ Done | None | —
+- 2026-04-16 | Claude | Rebuilt `tasks/todo.md` (this file) + `war-room-report-2026-04-16.md` from scratch | ✅ Done | None | Sprint 7 P0 fixes are next
+
+---
+
+## Verification Commands
+
+| Command | When | Gate |
+|---------|------|------|
+| `npm run typecheck` | After every code change | **Required** — blocks commit |
+| `npx expo-doctor` | After any package change | Required |
+| `npm run test` | After any logic change | Required (once tests exist) |
+| `npm run ios` | After any navigation/UI change | Manual verification |
+| `npm run android` | After any navigation/UI change | Manual verification |
+
+### Verification Log
+- 2026-04-05: `npm run typecheck` ✅
+- 2026-04-08: `npm run typecheck` ✅ (multiple passes through hardening)
+- 2026-04-08: `npx expo-doctor` ✅
+- 2026-04-08: `npm run test` ❌ — script not defined in `package.json`
+- 2026-04-16: Hook fix verified — `python3 "${CLAUDE_PLUGIN_ROOT}/hooks/security_reminder_hook.py"` in both hooks.json
+- 2026-04-16: Vercel CLI ✅ `50.42.0`
