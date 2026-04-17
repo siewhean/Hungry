@@ -186,11 +186,16 @@ export const useSessionStore = create<SessionState>()(
       name: "hungry-session-v1",
       storage: hungrySecurePersistStorage,
       partialize: (state) => ({
-        isAuthenticated: state.isAuthenticated,
+        ...(getConfiguredDataSource() === "supabase"
+          ? {}
+          : { isAuthenticated: state.isAuthenticated }),
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         hasSkippedTasteQuiz: state.hasSkippedTasteQuiz,
       }),
       onRehydrateStorage: () => (state) => {
+        if (state && getConfiguredDataSource() === "supabase") {
+          state.isAuthenticated = false;
+        }
         state?.markHydrated();
       },
     },

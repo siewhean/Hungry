@@ -103,6 +103,7 @@ To override these locally, you can use `.env.development` or modify the constant
 | Review flow | Done |
 | Reads (feature-flagged) | Done |
 | Offline + NotFound states | Done |
+| Supabase Sprint 5/Phase 7 in-repo artifacts | Done (migrations, seed generator/output, guest-session function scaffold) |
 | Marketing launch kit | Done |
 | Typecheck | Passing |
 | Expo Doctor | Blocked locally (npm cache permissions) |

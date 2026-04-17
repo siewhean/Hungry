@@ -168,7 +168,6 @@ export function DishDetailScreen({ navigation, route }: Props) {
               images={gallery}
               width={screenWidth}
               height={screenWidth * 0.75}
-              entityId={dish.id}
             >
               <View
                 style={{
