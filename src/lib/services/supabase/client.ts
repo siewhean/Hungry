@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type HungryDataSource = "mock" | "supabase";
 
@@ -28,6 +28,9 @@ export function getSupabaseClient(): SupabaseClient | null {
     return cachedClient;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { createClient } =
+    require("@supabase/supabase-js") as typeof import("@supabase/supabase-js");
   cachedClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
       persistSession: true,
