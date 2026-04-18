@@ -214,16 +214,23 @@ Rules:
 <claude-mem-context>
 # Memory Context
 
-# [Hungry] recent context, 2026-04-18 12:48am GMT+8
+# [Hungry] recent context, 2026-04-18 4:34pm GMT+8
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 1 obs (276t read) | 525t work | 47% savings
+Stats: 7 obs (1,726t read) | 26,339t work | 93% savings
 
 ### Apr 17, 2026
 136 2:59p 🔵 Dual radar chart implementations found in codebase
+### Apr 18, 2026
+137 2:01p 🔴 Removed undefined bindReactNativeFactory call from iOS AppDelegate
+139 2:03p 🔵 bindReactNativeFactory function missing in iOS AppDelegate
+141 2:04p 🔵 CoreSimulator service connection failure on macOS
+142 " 🔴 Force Metro bundler to prevent stale expo-updates bundles
+147 2:05p 🟣 Font loading timeout and fallback handling in AppBody
+148 4:29p ✅ iOS JavaScript engine switched from Hermes to JavaScriptCore
 
-Access 1k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 26k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

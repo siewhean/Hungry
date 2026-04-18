@@ -14,9 +14,18 @@ index 9e76c5b..ad7982f 100644
  /**
   * It creates the RootViewController.
 diff --git a/node_modules/react-native/Libraries/Core/setUpReactDevTools.js b/node_modules/react-native/Libraries/Core/setUpReactDevTools.js
-index 2c80b23..7366dab 100644
+index 2c80b23..f87a67d 100644
 --- a/node_modules/react-native/Libraries/Core/setUpReactDevTools.js
 +++ b/node_modules/react-native/Libraries/Core/setUpReactDevTools.js
+@@ -29,7 +29,7 @@ if (__DEV__) {
+   }
+ }
+ 
+-if (__DEV__) {
++if (__DEV__ && false) {
+   // Register dispatcher on global, which can be used later by Chrome DevTools frontend
+   require('../../src/private/devsupport/rndevtools/setUpFuseboxReactDevToolsDispatcher');
+   const {
 @@ -97,24 +97,31 @@ if (__DEV__) {
      } = readReloadAndProfileConfig(
        maybeReactDevToolsRuntimeSettingsModuleModule,
