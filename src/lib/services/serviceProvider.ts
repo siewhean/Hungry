@@ -2,8 +2,6 @@ import type { TasteVector } from "@/types/domain";
 import { hungryService as mockHungryService } from "@/lib/services/mock/mockService";
 import { dataRepositoryMock } from "@/lib/services/mock/repositories";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
-import { supabaseRepository } from "@/lib/services/supabase/supabaseRepository";
-import { supabaseService } from "@/lib/services/supabase/supabaseService";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import type { DataRepository, HungryService } from "@/lib/services/types";
 
@@ -26,6 +24,16 @@ function createMockProvider(): ServiceProvider {
 }
 
 function createSupabaseProvider(): ServiceProvider {
+  // Lazy require prevents @supabase/supabase-js from being evaluated at module
+  // load time, which avoids a [runtime not ready] TypeError in Hermes 0.85
+  // when polyfillGlobalThis() in @supabase/auth-js runs before the JS runtime
+  // has fully initialised the globalThis binding.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { supabaseRepository } =
+    require("@/lib/services/supabase/supabaseRepository") as typeof import("@/lib/services/supabase/supabaseRepository");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { supabaseService } =
+    require("@/lib/services/supabase/supabaseService") as typeof import("@/lib/services/supabase/supabaseService");
   return {
     mode: "supabase",
     service: supabaseService,
