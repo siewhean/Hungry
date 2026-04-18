@@ -13,3 +13,22 @@ index 9e76c5b..ad7982f 100644
  
  /**
   * It creates the RootViewController.
+diff --git a/node_modules/react-native/src/private/setup/setUpPerformanceModern.js b/node_modules/react-native/src/private/setup/setUpPerformanceModern.js
+index 0000000..0000000 100644
+--- a/node_modules/react-native/src/private/setup/setUpPerformanceModern.js
++++ b/node_modules/react-native/src/private/setup/setUpPerformanceModern.js
+@@ -22,9 +22,12 @@ export default function setUpPerformanceModern() {
+   const Performance = require('../webapis/performance/Performance').default;
+
+   // We don't use `polyfillGlobal` to define this lazily because the
+   // `performance` object is always accessed.
+   // $FlowExpectedError[cannot-write]
+-  global.performance = new Performance();
++  // Wrap in try/catch: Hermes 0.85+ defines global.performance as non-writable
++  // before JS bootstrap completes, causing a [runtime not ready] TypeError.
++  try {
++    global.performance = new Performance();
++  } catch (_e) {}
+
+   polyfillGlobal(
+     'EventCounts',
