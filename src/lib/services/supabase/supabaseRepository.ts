@@ -1,5 +1,4 @@
 import { similarityScore } from "@/lib/ai/similarityScore";
-import { mockRepository } from "@/lib/services/mock/repositories";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
 import type { DataRepository } from "@/lib/services/types";
 import type {
@@ -72,10 +71,6 @@ let cachedBlogPosts: BlogPost[] = [];
 let cachedStallPosts: StallPost[] = [];
 
 const REFRESH_TTL_MS = 45_000;
-
-function shouldUseMockFallback(): boolean {
-  return !hydrated;
-}
 
 function mapBuilding(row: Row): BuildingSummary {
   return {
@@ -257,57 +252,36 @@ function ensureHydrated(): void {
 const supabaseRepositoryImpl: DataRepository = {
   getProfile(isAuthenticated: boolean): UserProfile {
     ensureHydrated();
-    if (shouldUseMockFallback()) {
-      return mockRepository.getProfile(isAuthenticated);
-    }
     return isAuthenticated ? DEFAULT_AUTH_PROFILE : DEFAULT_GUEST_PROFILE;
   },
 
   listBuildings(): BuildingSummary[] {
     ensureHydrated();
-    if (shouldUseMockFallback()) {
-      return mockRepository.listBuildings();
-    }
     return cachedBuildings;
   },
 
   listVenuesByBuilding(buildingId: string): VenueSummary[] {
     ensureHydrated();
-    if (shouldUseMockFallback()) {
-      return mockRepository.listVenuesByBuilding(buildingId);
-    }
     return cachedVenues.filter((venue) => venue.buildingId === buildingId);
   },
 
   getVenueById(venueId: string): VenueSummary | undefined {
     ensureHydrated();
-    if (shouldUseMockFallback()) {
-      return mockRepository.getVenueById(venueId);
-    }
     return cachedVenues.find((venue) => venue.id === venueId);
   },
 
   getDishById(dishId: string): DishDetail | undefined {
     ensureHydrated();
-    if (shouldUseMockFallback()) {
-      return mockRepository.getDishById(dishId);
-    }
     return cachedDishes.find((dish) => dish.id === dishId);
   },
 
   listDishesByVenue(venueId: string): DishDetail[] {
     ensureHydrated();
-    if (shouldUseMockFallback()) {
-      return mockRepository.listDishesByVenue(venueId);
-    }
     return cachedDishes.filter((dish) => dish.venueId === venueId);
   },
 
   listPopularNearby(): DishDetail[] {
     ensureHydrated();
-    if (shouldUseMockFallback()) {
-      return mockRepository.listPopularNearby();
-    }
     return [...cachedDishes]
       .sort((left, right) => left.distanceMeters - right.distanceMeters)
       .slice(0, 8);
@@ -315,9 +289,6 @@ const supabaseRepositoryImpl: DataRepository = {
 
   searchDishes(filters: SearchFilters, tasteProfile): DishDetail[] {
     ensureHydrated();
-    if (shouldUseMockFallback()) {
-      return mockRepository.searchDishes(filters, tasteProfile);
-    }
     const query = filters.query.trim().toLowerCase();
     const matched = cachedDishes.filter((dish) => {
       const matchesQuery = !query || dish.name.toLowerCase().includes(query);
@@ -345,9 +316,6 @@ const supabaseRepositoryImpl: DataRepository = {
 
   getDecideForMe(tasteProfile, options) {
     ensureHydrated();
-    if (shouldUseMockFallback()) {
-      return mockRepository.getDecideForMe(tasteProfile, options);
-    }
     const excluded = new Set(options?.excludeDishIds ?? []);
     const withinRadius = cachedDishes.filter(
       (dish) =>
@@ -364,17 +332,11 @@ const supabaseRepositoryImpl: DataRepository = {
 
   listBlogPosts(): BlogPost[] {
     ensureHydrated();
-    if (shouldUseMockFallback()) {
-      return mockRepository.listBlogPosts();
-    }
     return cachedBlogPosts;
   },
 
   listStallPosts(): StallPost[] {
     ensureHydrated();
-    if (shouldUseMockFallback()) {
-      return mockRepository.listStallPosts();
-    }
     return cachedStallPosts;
   },
 };

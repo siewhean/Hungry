@@ -173,24 +173,23 @@ Wave 1 reconciliation note (2026-04-17): Sprint 7 list above was stale relative 
 ### Database
 
 - [ ] Provision Supabase project (`hungry-production`)
-- [x] Author baseline schema migrations (`0001_extensions.sql`, `0002_core_schema.sql`) covering `backend-architecture.md §2.3` entities.
-- [x] Author dietary seed migration (`0005_seed_dietary_flags.sql`) — halal, vegetarian, vegan, pork_free, nut_free, gluten_free.
-- [x] Author venue-category seed migration (`0006_seed_venue_categories.sql`) — local_favourites, noodles, rice, desserts, late_night.
-- [x] Seed `buildings`, `building_floors`, `venues` from V1 mock fixtures (Maxwell, Lau Pa Sat, Amoy) via `scripts/seed/generateSeedSQL.ts` → `supabase/seed.sql`.
-- [x] Seed `dishes`, `dish_images`, `dish_taste_vectors` from V1 fixture data via `scripts/seed/generateSeedSQL.ts` → `supabase/seed.sql`.
-- [x] Seed `blog_sources`, `blog_posts` (EatBook, SethLui) via `scripts/seed/generateSeedSQL.ts` → `supabase/seed.sql` + `0009_blog_sources.sql`.
-- [x] Add `update_dish_rating` trigger (see `backend-architecture.md §10`) via `0007_update_dish_rating_trigger.sql`.
-- [ ] Verify PostGIS: execute `supabase/smoke/postgis_distance.sql` against linked Supabase DB.
-- [ ] Verify pgvector: execute `supabase/smoke/pgvector_similarity.sql` against linked Supabase DB.
-- [x] In-repo migration artifacts added for missing DB bootstrap pieces: dietary/category seeds, dish-rating trigger, auth scaffold tables/RLS, and blog source normalization (`supabase/migrations/0005` → `0009`).
+- [ ] Run migration `0001_v2_initial_schema.sql` — all tables from `backend-architecture.md §2.3`
+- [ ] Run migration `0002_seed_dietary_flags.sql` — halal, vegetarian, vegan, pork_free, nut_free, gluten_free
+- [ ] Run migration `0003_seed_venue_categories.sql` — local_favourites, noodles, rice, desserts, late_night
+- [ ] Seed `buildings`, `building_floors`, `venues` from V1 mock fixtures (Maxwell, Lau Pa Sat, Amoy)
+- [ ] Seed `dishes`, `dish_images`, `dish_taste_vectors` from V1 fixture data
+- [ ] Seed `blog_sources`, `blog_posts` (EatBook, SethLui)
+- [ ] Add `update_dish_rating` trigger (see `backend-architecture.md §10`)
+- [ ] Verify PostGIS: `SELECT ST_Distance(...)` smoke test on Maxwell/Lau Pa Sat coordinates
+- [ ] Verify pgvector: HNSW index smoke test on taste vector cosine similarity
 
 ### Auth (Supabase Auth)
 
 - [ ] Configure email + password provider
 - [ ] Configure Google OAuth provider
 - [ ] Configure Apple OAuth provider (iOS required)
-- [x] Define Row Level Security (RLS) policies on `users`, `reviews`, `orders`, `chat_messages` *(scaffolded in `supabase/migrations/0008_phase7_auth_scaffold.sql`; deployment pending Supabase credentials/dashboard access)*.
-- [x] Implement guest session token issuance endpoint (`POST /functions/v1/guest-sessions`) *(scaffolded as Supabase Edge Function at `supabase/functions/guest-sessions/index.ts`; deploy step pending linked project/service role key)*.
+- [ ] Define Row Level Security (RLS) policies on `users`, `reviews`, `orders`, `chat_messages`
+- [ ] Implement guest session token issuance endpoint (`POST /api/guest-sessions`)
 
 ### API Layer (Supabase Edge Functions or Next.js API routes)
 
@@ -225,13 +224,13 @@ Wave 1 reconciliation note (2026-04-17): Sprint 7 list above was stale relative 
 #### Codex primary
 
 - [ ] **Supabase project provisioning:** Create project (ap-southeast-1 region). Run DDL migrations. Enable PostGIS, pgvector, pg_trgm, btree_gist, citext extensions.
-- [x] **Seed data:** migration seed generator + seed output map `mock/data.ts` fixtures to SQL inserts (`scripts/seed/generateSeedSQL.ts`, `supabase/seed.sql`; includes venue categories + blog sources).
-- [x] **supabaseRepository:** implemented with Supabase-backed cache hydration + deterministic first-read fallback (`supabaseRepository.fallback.test.ts`); live-data validation remains tracked in Done Gate.
-- [x] **supabaseService:** `src/lib/services/supabase/supabaseService.ts` implements `HungryService` domains (auth/discovery/reviews/profile/social/content/ai).
-- [x] **Provider swap:** `serviceProvider.ts` supports env-driven `HUNGRY_DATA_SOURCE=mock|supabase` and routes service/repository accordingly.
-- [x] **Auth token migration:** Supabase auth-state subscription is wired (`useAppBootstrap.ts` + `useSessionStore.applyAuthStateFromSession`) and local auth-flag persistence is disabled in Supabase mode (`useSessionStore` partialize/onRehydrate). Mock auth remains intentionally available only for `HUNGRY_DATA_SOURCE=mock`.
-- [ ] **Media upload:** review/avatar/bite media upload paths are wired through Supabase Storage helper with signed-upload first strategy (`src/lib/services/supabase/mediaUpload.ts`), pending live bucket/CDN verification.
-- [x] **RLS policies:** baseline + Phase 7 scaffold policies codified in SQL migrations (`0003`, `0006`, `0008`, `0009`).
+- [ ] **Seed data:** Write migration script that maps `mock/data.ts` fixtures to Supabase inserts (buildings, venues, dishes, reviews, users, blog posts).
+- [ ] **supabaseRepository:** Create `src/lib/services/supabase/supabaseRepository.ts` implementing `DataRepository` interface. Implement all 11 methods against Supabase client.
+- [ ] **supabaseService:** Create `src/lib/services/supabase/supabaseService.ts` implementing `HungryService` interface. Wire auth, discovery, reviews, profile, social, content, ai domains.
+- [ ] **Provider swap:** Update `serviceProvider.ts` to import `supabaseService`. Add env-driven toggle: `HUNGRY_DATA_SOURCE=mock|supabase`.
+- [ ] **Auth token migration:** Replace AsyncStorage auth persistence with Supabase Auth session management. Remove mock auth flow.
+- [ ] **Media upload:** Implement review photo upload via Supabase Storage signed URLs. Wire into `ReviewComposeScreen` and `EditProfileScreen`.
+- [ ] **RLS policies:** Implement Row-Level Security policies from Claude's spec.
 
 #### Gemini primary
 
@@ -242,10 +241,10 @@ Wave 1 reconciliation note (2026-04-17): Sprint 7 list above was stale relative 
 
 - [ ] All `DataRepository` methods return live data from Supabase.
 - [ ] Auth flow (sign up → verify email → onboarding → main app) works end-to-end against Supabase Auth.
-- [x] `HUNGRY_DATA_SOURCE=mock` still works as a fallback (no regression). *(verified by `src/lib/services/serviceProvider.sprint5.test.ts` in `npm run test` on 2026-04-18)*
+- [ ] `HUNGRY_DATA_SOURCE=mock` still works as a fallback (no regression).
 - [ ] Review photo upload stores to Supabase Storage and displays via CDN URL.
-- [x] `npm run typecheck` passes. *(verified 2026-04-18)*
-- [x] No direct `mockRepository` imports remain in screens/stores; mock adapter imports are intentionally retained inside mock service/provider fallback paths.
+- [ ] `npm run typecheck` passes.
+- [ ] No `mockRepository` imports remain in production code paths.
 
 ---
 
@@ -432,9 +431,6 @@ Wave 1 reconciliation note (2026-04-17): Sprint 7 list above was stale relative 
 - [x] Session log maintained with: date, actor (Claude/Codex), tasks touched, status, blockers, next step.
 
 ### Session Entries
-- 2026-04-18 | Codex | Sprint 5/Phase 7 reliability closure follow-up: fixed guest-session CORS preflight for `x-guest-session-key`, allowed originless native requests, switched guest-session legacy `device_id` backfill to unique deterministic values, added `supabaseRepository` first-read deterministic fallback tests (`supabaseRepository.fallback.test.ts`), and disabled persisted `isAuthenticated` hydration in Supabase mode to align auth token migration behavior with Supabase session truth. | Status: completed in-repo + verified (`npm run typecheck`, `npm run test`, `npx expo-doctor`). | Blockers: live Supabase project execution/provider configuration still external. | Next: execute remaining external Sprint 5/Phase 7 checklist items in linked Supabase environment.
-- 2026-04-18 | Codex | Sprint 5 + Phase 7 closure hardening pass with specialized agent audits (`Bernoulli`, `Aquinas`): normalized checklist truthfulness (implemented vs externally blocked), hardened guest-session CORS/mobile behavior (`x-guest-session-key` preflight allow + originless mobile allowance), hardened `guest_sessions.device_id` schema constraint/backfill in `0008_phase7_auth_scaffold.sql`, added prepared DB smoke scripts (`supabase/smoke/postgis_distance.sql`, `supabase/smoke/pgvector_similarity.sql`), extended static artifact tests (`phase7-artifacts.test.ts`) to cover smoke scripts + auth hardening, and updated `supabase/README.md` runbook commands/notes. | Status: completed in-repo + verified (`npm run test`, `npm run typecheck`, `npx expo-doctor`). | Blockers: linked Supabase project credentials required for live project provisioning, auth provider dashboard setup, migration execution, and smoke-script execution against remote DB. | Next: run the smoke SQL and auth/provider checklist in a credentialed Supabase environment and close remaining unchecked Sprint 5/Phase 7 external items.
-- 2026-04-18 | Codex | Sprint 5 + Phase 7 backend artifact pass: audited existing Supabase scaffolding, added migrations `0005..0009` (canonical dietary/category seeds, dish-rating trigger, auth scaffold tables + RLS, blog source normalization), scaffolded guest session issuance Edge Function (`supabase/functions/guest-sessions/index.ts`), added Supabase runbook/config, updated seed generator + regenerated `supabase/seed.sql`, and added static artifact coverage (`src/lib/services/supabase/phase7-artifacts.test.ts`). Also patched pre-existing typecheck blocker in `DishDetailScreen` (`ImageCarousel` unsupported `entityId` prop). | Status: completed in-repo + verified (`npm run seed:generate`, `npm run test`, `npm run typecheck`, `rg` checks). | Blockers: Supabase project provisioning, OAuth provider setup, migration execution against live DB, PostGIS/pgvector smoke queries, and function deployment require external Supabase credentials/dashboard + linked project. | Next: once credentials are available, run `supabase db push`, `supabase functions deploy guest-sessions --no-verify-jwt`, and execute SQL smoke checks from `supabase/README.md`.
 - 2026-04-17 | Codex | Sprint 9 non-UI closure pass: verified and finalized haptic tap on Discover "Decide For Me", real Dish Detail share sheet with canonical `https://hungry.sg/dish/:id` URL, gallery-backed `ImageCarousel` usage in Dish Detail, ProfileRadarChart co-location under `src/components/dish/`, async-safe `popularNearby` pattern (selector consumption + refresh race guard), and placeholder `useOrderStore`/`useCartStore` stubs for V2 prep. Updated Sprint 9 checklist statuses accordingly. | Status: completed + verification in progress. | Blockers: none. | Next: run TypeScript gate and report touched files + Sprint 9 completion matrix.
 - 2026-04-17 | Codex | Sprint 9 testing + backlog sync evidence: expanded service-behavior coverage in `src/lib/services/mock/service-methods.test.ts`, strengthened repository mapping contracts in `src/lib/services/mock/repositories.sprint9.test.ts`, and extended critical screen contracts in `src/app/screens/sprint9-screen-contracts.test.ts` (Login, Review, HomeFeed, routed DishDetail premium). Updated Sprint 9 unit-test checklist and Wave 5 verification evidence lines with command results/date. | Status: completed + verified. | Blockers: none. | Next: maintain Sprint 9 gate evidence as future changes land.
 - 2026-04-17 | Claude (Sonnet 4.7) | Strategic advisory for merchant expansion delivered. Consolidated 8 overlapping `tasks/Roadmap/*.md` drafts into a single READ-FIRST `tasks/Roadmap/roadmap.md` (11 sections, 329 lines) without deleting sources — sources preserved under `tasks/Roadmap/` for audit trail per §11 Archive Map. Authored Sprint 10 (Supply Priming, 14 items: CLM-01..06 + OCR-01..06 + done-gate) and Phase 8 (Merchant Portal + QR Ordering V2, 26 items across Sprints 11–15: MP-01..10, PAY-01..04, QR-01..11) with explicit Claude/Codex/Gemini assignments. Decision recorded: Merchant Portal ships as V2 (Phase 3), NOT V1; V1 primes supply passively via Menu OCR + "Claim this stall" waitlist CTA. Phase 8 gate: ≥500 WAU × 4wk + ≥20 hawker centres 80% coverage + ≥50 waitlist rows + ≥5 pilot commits + Sprint 5 green. 3 lessons appended to `tasks/lessons.md` (consolidation audit trail, two-sided marketplace gating, SG verification tiering). | Status: documentation complete. | Blockers: Sprint 5 Supabase migration still open — Phase 2 (Sprint 10) cannot execute DDL until Sprint 5 lands. | Next: Codex picks up Sprint 10 CLM-02 migration + OCR-01..06 pipeline once Sprint 5 provisions Supabase; Claude drafts CLM-01 DDL append to `backend-architecture.md` in parallel (no Sprint 5 dependency for the DDL spec itself, only for executing the migration).
@@ -562,9 +558,6 @@ Wave 1 reconciliation note (2026-04-17): Sprint 7 list above was stale relative 
 - [x] `grep -RIn "111827\|shadowColor[[:space:]]*:" src --include='*.ts' --include='*.tsx'` — 2026-04-13
 - [x] `grep -rn 'useNavigation<any>' src/` — 2026-04-13
 - [x] `grep -rn 'Tanjong Pagar\|Level 12\|Foodie Scout\|14 nearby\|8 new stalls\|top 5%' src/` — 2026-04-13
-- [x] `npm run seed:generate` — 2026-04-18
-- [x] `npm run test` — 2026-04-18
-- [x] `npm run typecheck` — 2026-04-18
 - [x] parser-based `Pressable` semantic scan over `src/app/screens/**/*.tsx` (TOTAL=108, FAIL=0) — 2026-04-13
 - [x] `pgrep -af "_rebuild_code\(Path\('\.'\)\)"` returned no active process — 2026-04-13
 - [x] `xcrun simctl launch booted app.hungry.mobile` (simulator smoke launch) — 2026-04-13
