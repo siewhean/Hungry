@@ -1,7 +1,7 @@
 # Hungry — Master Roadmap
 
 > Single source of truth for phase/sprint sequencing across the Hungry program.
-> Last updated: **2026-04-17**
+> Last updated: **2026-04-18**
 > Replaces ad-hoc reading across `tasks/Roadmap/*.md` as the READ-FIRST entry point.
 > Source documents remain on disk for auditability — see §11 Archive Map for deep-read references.
 
@@ -39,18 +39,25 @@ Phases 3 and 4 are gated on demand-side proof points — see §4.2.
 
 ---
 
-## 2. Active Status Snapshot (as of 2026-04-17)
+## 2. Active Status Snapshot (as of 2026-04-18)
 
-**Consumer MVP — Phase 1**
-- Phases 1–3 (bootstrap, core screens, hardening): **Done** — folded Sprints 1–3.
-- Phases 4–6 (maps, launch kit, AI engine): **Done** — folded Sprints 4-launch work and AI engine design.
-- Sprint 6 (tooling + dead code + error boundaries): **Done** — TOOL-01..04, DEAD-01..04, ERR-01/02 verified 2026-04-17.
-- Sprint 7 (UI overhaul + navigation refactor + mock service layer): **Done** — PR #19 merged.
-- Sprint 8 (P1 beta hardening): **Mostly done** — offline connectivity listener remaining item audited.
-- Sprint 5 (Supabase backend migration): **🟡 Open** — Codex executes; specced in `backend-migration-plan.md`.
+**Consumer MVP — Phase 1** ✅ **Complete**
+- Phases 1–3 (bootstrap, core screens, hardening): Done.
+- Phases 4–6 (maps, launch kit, AI engine): Done.
+- Sprint 6 (tooling + dead code + error boundaries + README docs): Done — all items including ERR-00 spec, DOC-01 README Feature Flags, TOOL-01..04, DEAD-01..04, ERR-01/02 verified. Offline spec authored.
+- Sprint 7 (UI overhaul + navigation refactor + mock service layer): Done — PR #19 merged.
+- Sprint 8 (P1 beta hardening): Done — all items including offline connectivity listener wired in `useAppBootstrap.ts`.
+- Sprint 9 (P2 polish + future-proofing): Done — 68 tests passing, deep linking, `useOrderStore`/`useCartStore` V2 stubs.
+- **Expo 55 / React Native 0.85.1 upgrade** (2026-04-18): Done — PR #20 fixed lazy-load Supabase TypeError; iOS pods updated.
+
+**Phase 7 / Sprint 5 — Supabase Backend** 🟡 **Code done, provisioning open**
+- All code artifacts committed to main: `supabaseRepository.ts`, `supabaseService.ts`, `client.ts`, `mediaUpload.ts`, 9 migrations (0001–0009), `HUNGRY_DATA_SOURCE` toggle.
+- **Remaining:** Create actual Supabase cloud project (ap-southeast-1), enable extensions, apply migrations, run seed data, set env vars, smoke test with live credentials.
+- This is the **one true blocker** for everything downstream.
 
 **Supply Priming — Phase 2**
-- Sprint 10: **🟢 Scoped, not started.** Gates Phase 3 start.
+- Sprint 10: **🟢 Scoped, not started.** CLM-01 (DDL spec) can start now; CLM-02 migration needs cloud project first.
+- Note: migration numbered `0010_supply_priming.sql` (follows existing 0009 sequence).
 
 **Merchant Portal — Phase 3**
 - Sprints 11–12: **🔵 Blocked.** Gate criteria in §4.2 not yet satisfied.
@@ -59,7 +66,7 @@ Phases 3 and 4 are gated on demand-side proof points — see §4.2.
 - Sprints 13–15: **🔵 Blocked.** Requires Phase 3 complete + payment rails decision committed.
 
 **Critical open path**
-Sprint 5 Supabase migration must land before any Phase 2 / Phase 3 / Phase 4 work can execute against a real backend. OCR pipeline (Sprint 10) inserts into `dishes_draft` and `menu_photo_submissions`, which don't exist until Sprint 5 provisions Supabase and Sprint 10 runs its own DDL migration (`0004_supply_priming.sql`).
+PROV-01 (create Supabase cloud project) is the single external action unblocking the entire merchant expansion program. Once the project exists: Codex runs PROV-02..08 (extensions, migrations, seed, env vars, smoke tests) → Sprint 10 CLM-02 migration can run → OCR pipeline can be built against a real database.
 
 ---
 
@@ -302,6 +309,8 @@ Phase 3 merchant onboarding:
 
 | Date | Decision | Rationale |
 |------|----------|-----------|
+| 2026-04-18 | Expo 55 / React Native 0.85.1 upgraded | PR #20 fixed lazy-load Supabase TypeError; iOS pods updated; Hermes 0.85 adopted. No code regressions. |
+| 2026-04-18 | Sprint 5 code complete; only cloud provisioning remains | All Supabase service/repo/migration artifacts on main. Single external action (PROV-01: create cloud project) unblocks everything downstream. |
 | 2026-04-17 | Merchant Portal deferred to V2 (Phase 3), NOT V1 launch | Two-sided marketplace gating: consumer demand must exist before supply side ships, else merchants churn from empty order inbox. |
 | 2026-04-17 | V1 primes supply passively via Menu OCR + "Claim this stall" waitlist CTA | So Phase 3 launches to a warm waitlist with pre-populated draft menus, not a cold start. |
 | 2026-04-17 | Menu OCR greenlit for Sprint 10 | Cost envelope (~US$25/month at 10k images) is negligible; upside is pre-populated draft menus at Phase 3 launch. |
