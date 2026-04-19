@@ -214,16 +214,36 @@ Rules:
 <claude-mem-context>
 # Memory Context
 
-# [Hungry] recent context, 2026-04-17 9:42pm GMT+8
+# [Hungry] recent context, 2026-04-19 11:35am GMT+8
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 1 obs (276t read) | 525t work | 47% savings
+Stats: 20 obs (5,874t read) | 176,419t work | 97% savings
 
 ### Apr 17, 2026
 136 2:59p 🔵 Dual radar chart implementations found in codebase
+### Apr 18, 2026
+137 2:01p 🔴 Removed undefined bindReactNativeFactory call from iOS AppDelegate
+139 2:03p 🔵 bindReactNativeFactory function missing in iOS AppDelegate
+141 2:04p 🔵 CoreSimulator service connection failure on macOS
+142 " 🔴 Force Metro bundler to prevent stale expo-updates bundles
+147 2:05p 🟣 Font loading timeout and fallback handling in AppBody
+148 4:29p ✅ iOS JavaScript engine switched from Hermes to JavaScriptCore
+150 4:45p 🔵 Git index lock creation blocked by file system permissions
+151 4:46p 🔵 Git index lock creation blocked by file system permissions
+152 4:47p 🔵 iOS Simulator unavailable due to incorrect xcode-select path
+153 4:52p 🔵 iOS Simulator unavailable due to incorrect xcode-select path
+154 " 🔴 Disabled C++ advanced features in fmt library to fix iOS build
+157 4:55p ✅ CocoaPods installation completed with New Architecture and fmt workaround
+160 4:59p ✅ Suppressed invalid constexpr warnings in iOS C++ build
+161 5:01p ✅ Suppressed invalid constexpr warnings in iOS C++ build
+162 " ✅ Extended C++17 standard to RCT-Folly pod target
+164 5:02p 🔵 Root cause traced to fmt::basic_format_string consteval errors in RCT-Folly
+167 5:11p 🔵 iOS build fails due to ambiguous Expo module import access level
+168 5:12p 🔴 Fixed ambiguous Expo import by removing internal access modifier
+170 5:20p 🔴 Fixed app crash by binding ReactNativeFactory to ExpoAppDelegate
 
-Access 1k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 176k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

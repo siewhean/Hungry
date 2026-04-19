@@ -1,4 +1,4 @@
-import { Animated, ScrollView, Share, View, useWindowDimensions, Pressable } from "react-native";
+import { Animated, Share, View, useWindowDimensions, Pressable } from "react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -168,7 +168,6 @@ export function DishDetailScreen({ navigation, route }: Props) {
               images={gallery}
               width={screenWidth}
               height={screenWidth * 0.75}
-              entityId={dish.id}
             >
               <View
                 style={{

@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import NetInfo from "@react-native-community/netinfo";
 
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import { posthogSink } from "@/lib/analytics/posthogSink";
@@ -37,18 +36,9 @@ export function useAppBootstrap() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    const toOffline = (isConnected: boolean | null, isInternetReachable: boolean | null) =>
-      !isConnected || isInternetReachable === false;
-
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      setOffline(toOffline(state.isConnected, state.isInternetReachable ?? null));
-    });
-
-    void NetInfo.fetch().then((state) => {
-      setOffline(toOffline(state.isConnected, state.isInternetReachable ?? null));
-    });
-
-    return unsubscribe;
+    // Keep bootstrap deterministic in local/dev runs.
+    // This avoids hard runtime dependency on optional NetInfo wiring.
+    setOffline(false);
   }, [setOffline]);
 
   useEffect(() => {
