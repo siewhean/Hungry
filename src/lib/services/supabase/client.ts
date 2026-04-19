@@ -3,15 +3,22 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export type HungryDataSource = "mock" | "supabase";
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() ?? "";
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() ?? "";
+// Accept both the canonical ANON_KEY name and the newer publishable KEY alias
+const SUPABASE_ANON_KEY =
+  (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
+    process.env.EXPO_PUBLIC_SUPABASE_KEY?.trim()) ??
+  "";
 
 let cachedClient: SupabaseClient | null | undefined;
 
 export function getConfiguredDataSource(): HungryDataSource {
   const privateSource = process.env.HUNGRY_DATA_SOURCE?.trim().toLowerCase();
   const publicSource = process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE?.trim().toLowerCase();
-  const raw = privateSource || publicSource || "mock";
-  return raw === "supabase" ? "supabase" : "mock";
+  const explicit = privateSource || publicSource;
+  // If explicitly set, honour it (allows forcing mock even when credentials exist).
+  if (explicit) return explicit === "supabase" ? "supabase" : "mock";
+  // If not explicitly set but credentials are present, prefer supabase automatically.
+  return SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0 ? "supabase" : "mock";
 }
 
 export function isSupabaseConfigured(): boolean {

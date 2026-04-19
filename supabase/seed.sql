@@ -2,38 +2,19 @@
 
 begin;
 
-truncate table
-  bite_reactions,
-  bites,
-  review_photos,
-  reviews,
-  user_favourite_dishes,
-  user_taste_vectors,
-  user_profiles,
-  dish_dietary_flags,
-  dish_taste_vectors,
-  dish_images,
-  dishes,
-  venue_delivery_links,
-  venues,
-  building_floors,
-  buildings,
-  dietary_flags,
-  blog_posts,
-  stall_posts
-restart identity cascade;
-
 insert into dietary_flags (id, slug, name) values
 ('44512507-9048-4855-b486-9e368bd0d15c', 'allium_free', 'allium free'),
 ('c27f18e6-815b-4adf-b0c0-9f960d6bfc22', 'halal', 'halal'),
 ('560753d6-819a-4391-80ff-9259fa448c64', 'pork_free', 'pork free'),
-('34809192-fd8d-4d3d-9609-25ecebf8069f', 'vegetarian', 'vegetarian');
+('34809192-fd8d-4d3d-9609-25ecebf8069f', 'vegetarian', 'vegetarian')
+on conflict do nothing;
 
 insert into buildings (id, slug, name, building_type, latitude, longitude, floors, venue_count, is_closed_today, hero_dish_id) values
 ('building-maxwell', 'maxwell', 'Maxwell Food Centre', 'hawker_centre', 1.2806, 103.8448, ARRAY['L1']::text[], 42, false, 'dish-chicken-rice'),
 ('building-amoy', 'amoy', 'Amoy Street Food Centre', 'hawker_centre', 1.2793, 103.8466, ARRAY['L1', 'L2']::text[], 38, false, 'dish-ban-mian'),
 ('building-lau-pa-sat', 'lau-pa-sat', 'Lau Pa Sat', 'hawker_centre', 1.2807, 103.8504, ARRAY['L1']::text[], 54, false, 'dish-satay'),
-('building-313', '313', '313@Somerset', 'restaurant', 1.3013, 103.8384, ARRAY['B3', 'B2', 'B1', 'L1', 'L2', 'L3', 'L4', 'L5']::text[], 62, false, 'dish-japanese-curry');
+('building-313', '313', '313@Somerset', 'restaurant', 1.3013, 103.8384, ARRAY['B3', 'B2', 'B1', 'L1', 'L2', 'L3', 'L4', 'L5']::text[], 62, false, 'dish-japanese-curry')
+on conflict do nothing;
 
 insert into building_floors (id, building_id, floor_label, sort_order) values
 ('7f47dc6b-f299-4e0e-89de-95a7bd60a62e', 'building-maxwell', 'L1', 0),
@@ -47,7 +28,8 @@ insert into building_floors (id, building_id, floor_label, sort_order) values
 ('54b342b4-0ebc-436f-b072-01de903cc0bf', 'building-313', 'L2', 4),
 ('8085be14-8425-4ed5-b307-0f7f16818df3', 'building-313', 'L3', 5),
 ('6c90e917-b48c-4a1e-9fe4-136dbf693cbb', 'building-313', 'L4', 6),
-('e3f89158-ce50-485d-bd37-0438195daf04', 'building-313', 'L5', 7);
+('e3f89158-ce50-485d-bd37-0438195daf04', 'building-313', 'L5', 7)
+on conflict do nothing;
 
 insert into venues (id, building_id, name, unit_number, floor, hygiene_grade, is_open, top_dish_id, operating_hours, closure_notice, live_crowd) values
 ('venue-tian-tian', 'building-maxwell', 'Tian Tian Chicken Rice', '#01-10', 'L1', 'A', true, 'dish-chicken-rice', '10:00 AM – 8:00 PM', null, 'high'),
@@ -55,12 +37,14 @@ insert into venues (id, building_id, name, unit_number, floor, hygiene_grade, is
 ('venue-satay-street', 'building-lau-pa-sat', 'Satay Street Classics', '#01-22', 'L1', 'A', true, 'dish-satay', '4:30 PM – 11:00 PM', null, 'medium'),
 ('venue-japanese-curry', 'building-313', 'Monster Curry', '#04-16', 'L4', 'A', true, 'dish-japanese-curry', '11:00 AM – 10:00 PM', null, null),
 ('venue-maxwell-porridge', 'building-maxwell', 'Night Owl Teochew Porridge', '#02-21', 'L1', 'A', false, 'dish-teochew-porridge', '6:00 PM – 4:00 AM', null, null),
-('venue-fish-soup', 'building-amoy', 'Ah Seng Fish Soup', '#02-77', 'L2', 'B', true, 'dish-fish-soup', '9:00 AM – 3:00 PM', 'Closed today for scheduled NEA cleaning. Reopens tomorrow.', 'low');
+('venue-fish-soup', 'building-amoy', 'Ah Seng Fish Soup', '#02-77', 'L2', 'B', true, 'dish-fish-soup', '9:00 AM – 3:00 PM', 'Closed today for scheduled NEA cleaning. Reopens tomorrow.', 'low')
+on conflict do nothing;
 
 insert into venue_delivery_links (id, venue_id, platform, native_url, web_url, affiliate_eligible) values
 ('af277e82-4b8e-42ff-8f03-e2d639044bd6', 'venue-tian-tian', 'grabfood', 'grab://merchant/tian-tian', 'https://food.grab.com/sg/en/restaurant/tian-tian', false),
 ('0fb04a77-792b-45f1-97f2-081245aebe70', 'venue-tian-tian', 'foodpanda', 'foodpanda://restaurant/tian-tian', 'https://www.foodpanda.sg/restaurant/tian-tian', true),
-('aff61581-a582-4668-b2fb-c77a9e1cbdcd', 'venue-satay-street', 'foodpanda', 'foodpanda://restaurant/satay-street', 'https://www.foodpanda.sg/restaurant/satay-street', false);
+('aff61581-a582-4668-b2fb-c77a9e1cbdcd', 'venue-satay-street', 'foodpanda', 'foodpanda://restaurant/satay-street', 'https://www.foodpanda.sg/restaurant/satay-street', false)
+on conflict do nothing;
 
 insert into dishes (id, venue_id, building_id, name, description, image_url, distance_meters, rating_avg, review_count, price, price_range, live_crowd, taste_tags, must_order, availability_flags) values
 ('dish-chicken-rice', 'venue-tian-tian', 'building-maxwell', 'Chicken Rice', null, 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 180, 4.8, 118, 5.5, 'S$5.50 – S$7.00', 'high', ARRAY['Fragrant', 'Comforting', 'Juicy']::text[], true, ARRAY['Delivery available']::text[]),
@@ -68,7 +52,8 @@ insert into dishes (id, venue_id, building_id, name, description, image_url, dis
 ('dish-satay', 'venue-satay-street', 'building-lau-pa-sat', 'Chicken Satay (10 sticks)', null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 450, 4.6, 210, 8, 'S$8.00 – S$12.00', 'medium', ARRAY['Smoky', 'Nutty', 'Sweet']::text[], false, ARRAY['After 4:30 PM']::text[]),
 ('dish-japanese-curry', 'venue-japanese-curry', 'building-313', 'Monster Combo Curry', null, 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 1400, 4.4, 320, 28, 'S$24.00 – S$32.00', null, ARRAY['Rich', 'Spicy', 'Hearty']::text[], false, ARRAY['Dine-in only']::text[]),
 ('dish-laksa', 'venue-tian-tian', 'building-maxwell', 'Signature Laksa', null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 210, 4.5, 72, 6, 'S$6.00 – S$7.50', 'medium', ARRAY['Spicy', 'Rich', 'Creamy']::text[], false, ARRAY['Fresh catch daily']::text[]),
-('dish-kaya-toast', 'venue-fish-soup', 'building-amoy', 'Kaya Toast Set', null, 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 240, 4.7, 156, 4.5, 'S$4.50 – S$6.00', null, ARRAY['Sweet', 'Crunchy', 'Buttery']::text[], true, ARRAY['Morning only']::text[]);
+('dish-kaya-toast', 'venue-fish-soup', 'building-amoy', 'Kaya Toast Set', null, 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 240, 4.7, 156, 4.5, 'S$4.50 – S$6.00', null, ARRAY['Sweet', 'Crunchy', 'Buttery']::text[], true, ARRAY['Morning only']::text[])
+on conflict do nothing;
 
 insert into dish_images (id, dish_id, url, sort_order) values
 ('385985da-4ba3-4122-bd85-77812a32feb4', 'dish-chicken-rice', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 0),
@@ -78,7 +63,8 @@ insert into dish_images (id, dish_id, url, sort_order) values
 ('e383996e-182f-4ec1-8189-57825034ae84', 'dish-satay', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 0),
 ('64061ce8-7eb5-4b9c-a8a5-a7533ada265f', 'dish-japanese-curry', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 0),
 ('17e40de5-1e79-43b8-b3fe-289fb8aa30a4', 'dish-laksa', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 0),
-('0d4eb4d1-79e9-42b9-87ac-30d10089bc3e', 'dish-kaya-toast', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 0);
+('0d4eb4d1-79e9-42b9-87ac-30d10089bc3e', 'dish-kaya-toast', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 0)
+on conflict do nothing;
 
 insert into dish_taste_vectors (dish_id, sweet, spicy, sour, salty, rich, aromatic, vector) values
 ('dish-chicken-rice', 3, 2, 1, 7, 6, 9, '[3,2,1,7,6,9]'::vector),
@@ -86,7 +72,8 @@ insert into dish_taste_vectors (dish_id, sweet, spicy, sour, salty, rich, aromat
 ('dish-satay', 8, 4, 1, 5, 7, 9, '[8,4,1,5,7,9]'::vector),
 ('dish-japanese-curry', 4, 7, 3, 6, 9, 8, '[4,7,3,6,9,8]'::vector),
 ('dish-laksa', 2, 8, 3, 6, 9, 7, '[2,8,3,6,9,7]'::vector),
-('dish-kaya-toast', 9, 0, 0, 4, 8, 9, '[9,0,0,4,8,9]'::vector);
+('dish-kaya-toast', 9, 0, 0, 4, 8, 9, '[9,0,0,4,8,9]'::vector)
+on conflict do nothing;
 
 insert into dish_dietary_flags (dish_id, dietary_flag_id) values
 ('dish-chicken-rice', '560753d6-819a-4391-80ff-9259fa448c64'),
@@ -94,35 +81,43 @@ insert into dish_dietary_flags (dish_id, dietary_flag_id) values
 ('dish-ban-mian', '44512507-9048-4855-b486-9e368bd0d15c'),
 ('dish-satay', '560753d6-819a-4391-80ff-9259fa448c64'),
 ('dish-satay', 'c27f18e6-815b-4adf-b0c0-9f960d6bfc22'),
-('dish-kaya-toast', '34809192-fd8d-4d3d-9609-25ecebf8069f');
+('dish-kaya-toast', '34809192-fd8d-4d3d-9609-25ecebf8069f')
+on conflict do nothing;
 
 insert into user_profiles (id, display_name, email, dietary_preferences, favourite_dish_ids, reviewed_dish_ids, taste_profile, dishes_reviewed, stalls_visited, favourites_count, sweet, spicy, sour, salty, rich, aromatic) values
-('6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Wei Ming', 'weiming@example.sg', ARRAY['pork_free']::text[], ARRAY['dish-chicken-rice', 'dish-ban-mian']::text[], ARRAY['dish-chicken-rice']::text[], '{"vector":{"sweet":4,"spicy":8,"sour":3,"salty":6,"rich":7,"aromatic":9},"bitterTolerance":6,"fatAffinity":7,"textureArchetype":"cruncher","neophiliaIndex":8,"spiceSeeking":9}'::jsonb, 1, 1, 2, 4, 8, 3, 6, 7, 9);
+('6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Wei Ming', 'weiming@example.sg', ARRAY['pork_free']::text[], ARRAY['dish-chicken-rice', 'dish-ban-mian']::text[], ARRAY['dish-chicken-rice']::text[], '{"vector":{"sweet":4,"spicy":8,"sour":3,"salty":6,"rich":7,"aromatic":9},"bitterTolerance":6,"fatAffinity":7,"textureArchetype":"cruncher","neophiliaIndex":8,"spiceSeeking":9}'::jsonb, 1, 1, 2, 4, 8, 3, 6, 7, 9)
+on conflict do nothing;
 
 insert into user_taste_vectors (user_id, sweet, spicy, sour, salty, rich, aromatic, vector) values
-('6037d90c-9935-49d2-8206-d28cd11aa7e6', 4, 8, 3, 6, 7, 9, '[4,8,3,6,7,9]'::vector);
+('6037d90c-9935-49d2-8206-d28cd11aa7e6', 4, 8, 3, 6, 7, 9, '[4,8,3,6,7,9]'::vector)
+on conflict do nothing;
 
 insert into user_favourite_dishes (user_id, dish_id) values
 ('6037d90c-9935-49d2-8206-d28cd11aa7e6', 'dish-chicken-rice'),
-('6037d90c-9935-49d2-8206-d28cd11aa7e6', 'dish-ban-mian');
+('6037d90c-9935-49d2-8206-d28cd11aa7e6', 'dish-ban-mian')
+on conflict do nothing;
 
 insert into reviews (id, user_id, dish_id, venue_id, author_name, rating, text, tags, would_recommend, created_at) values
-('294e6d14-217e-4117-a1b5-330e944f37ab', null, 'dish-chicken-rice', 'venue-tian-tian', 'Wei Ming', 5, 'The rice is fragrant and the chicken stays silky even during lunch rush.', ARRAY['Fragrant', 'Juicy']::text[], true, '2026-03-28T00:00:00.000Z');
+('294e6d14-217e-4117-a1b5-330e944f37ab', null, 'dish-chicken-rice', 'venue-tian-tian', 'Wei Ming', 5, 'The rice is fragrant and the chicken stays silky even during lunch rush.', ARRAY['Fragrant', 'Juicy']::text[], true, '2026-03-28T00:00:00.000Z')
+on conflict do nothing;
 
 -- review_photos: no rows
 
 insert into blog_posts (id, title, excerpt, area, source_name, source_logo, image_url, url, related_venue_id) values
 ('blog-1', '10 Best Chicken Rice Stalls in 2026', 'From Michelin stars to neighborhood secrets, here are the ones you can''t miss.', 'Islandwide', 'Hungry Guide', 'H', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 'https://hungry.sg/blog/best-chicken-rice', 'venue-tian-tian'),
-('blog-2', 'Amoy Street vs Maxwell: The Ultimate Food Centre Showdown', 'Which one truly has the best variety for your lunch break?', 'CBD', 'Foodie SG', 'F', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'https://hungry.sg/blog/food-centre-showdown', null);
+('blog-2', 'Amoy Street vs Maxwell: The Ultimate Food Centre Showdown', 'Which one truly has the best variety for your lunch break?', 'CBD', 'Foodie SG', 'F', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'https://hungry.sg/blog/food-centre-showdown', null)
+on conflict do nothing;
 
 insert into stall_posts (id, venue_id, building_id, author_name, author_location, author_avatar_url, media_type, media_url, caption, dish_ids, created_at) values
-('post-1', 'venue-tian-tian', 'building-maxwell', 'Sarah Lim', 'Maxwell Food Centre', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'photo', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 'The rice is so fragrant! Totally worth the 20-minute wait.', ARRAY['dish-chicken-rice']::text[], '2026-04-17T04:25:43.341Z'),
-('post-2', 'venue-ban-mian', 'building-amoy', 'Tan Ah Teck', 'Amoy Street', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 'photo', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'Found this hidden gem. The fish slices are huge!', ARRAY['dish-ban-mian']::text[], '2026-04-17T01:25:43.341Z'),
-('post-3', 'venue-satay-street', 'building-lau-pa-sat', 'Emma Watson', 'Lau Pa Sat', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'photo', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'Satay by the street. Best vibe in Singapore.', ARRAY['dish-satay']::text[], '2026-04-16T18:25:43.341Z');
+('post-1', 'venue-tian-tian', 'building-maxwell', 'Sarah Lim', 'Maxwell Food Centre', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'photo', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 'The rice is so fragrant! Totally worth the 20-minute wait.', ARRAY['dish-chicken-rice']::text[], '2026-03-31T22:00:00.000Z'),
+('post-2', 'venue-ban-mian', 'building-amoy', 'Tan Ah Teck', 'Amoy Street', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 'photo', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'Found this hidden gem. The fish slices are huge!', ARRAY['dish-ban-mian']::text[], '2026-03-31T19:00:00.000Z'),
+('post-3', 'venue-satay-street', 'building-lau-pa-sat', 'Emma Watson', 'Lau Pa Sat', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'photo', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'Satay by the street. Best vibe in Singapore.', ARRAY['dish-satay']::text[], '2026-03-31T12:00:00.000Z')
+on conflict do nothing;
 
 insert into bites (id, author_id, author_name, author_avatar, dish_id, dish_name, venue_id, venue_name, unit_number, building_id, building_name, photo_url, caption, sweet, spicy, sour, salty, rich, aromatic, craving_count, saved_count, rating, price, expires_at, created_at) values
-('585a2ed6-455c-4e89-9757-aa4b2d011ca5', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Sarah Lim', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'dish-chicken-rice', 'Chicken Rice', 'venue-tian-tian', 'Tian Tian Chicken Rice', '#01-10', 'building-maxwell', 'Maxwell Food Centre', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 'The rice is so fragrant! Totally worth the 20-minute wait.', 3, 2, 1, 7, 6, 9, 0, 0, 4.8, 5.5, '2026-04-24T04:25:43.341Z', '2026-04-17T04:25:43.341Z'),
-('f603f90a-736a-446a-84ec-3c32edac8cde', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Tan Ah Teck', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 'dish-ban-mian', 'Sliced Fish Ban Mian', 'venue-ban-mian', 'Han Kee Fish Soup', '#02-129', 'building-amoy', 'Amoy Street Food Centre', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'Found this hidden gem. The fish slices are huge!', 1, 1, 2, 6, 4, 8, 0, 0, 4.9, 6.5, '2026-04-24T01:25:43.341Z', '2026-04-17T01:25:43.341Z'),
-('cde30d04-bc61-4f78-a112-6d69ebf4550c', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Emma Watson', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'dish-satay', 'Chicken Satay (10 sticks)', 'venue-satay-street', 'Satay Street Classics', '#01-22', 'building-lau-pa-sat', 'Lau Pa Sat', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'Satay by the street. Best vibe in Singapore.', 8, 4, 1, 5, 7, 9, 0, 0, 4.6, 8, '2026-04-23T18:25:43.341Z', '2026-04-16T18:25:43.341Z');
+('585a2ed6-455c-4e89-9757-aa4b2d011ca5', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Sarah Lim', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'dish-chicken-rice', 'Chicken Rice', 'venue-tian-tian', 'Tian Tian Chicken Rice', '#01-10', 'building-maxwell', 'Maxwell Food Centre', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 'The rice is so fragrant! Totally worth the 20-minute wait.', 3, 2, 1, 7, 6, 9, 0, 0, 4.8, 5.5, '2026-04-07T22:00:00.000Z', '2026-03-31T22:00:00.000Z'),
+('f603f90a-736a-446a-84ec-3c32edac8cde', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Tan Ah Teck', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 'dish-ban-mian', 'Sliced Fish Ban Mian', 'venue-ban-mian', 'Han Kee Fish Soup', '#02-129', 'building-amoy', 'Amoy Street Food Centre', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'Found this hidden gem. The fish slices are huge!', 1, 1, 2, 6, 4, 8, 0, 0, 4.9, 6.5, '2026-04-07T19:00:00.000Z', '2026-03-31T19:00:00.000Z'),
+('cde30d04-bc61-4f78-a112-6d69ebf4550c', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Emma Watson', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'dish-satay', 'Chicken Satay (10 sticks)', 'venue-satay-street', 'Satay Street Classics', '#01-22', 'building-lau-pa-sat', 'Lau Pa Sat', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'Satay by the street. Best vibe in Singapore.', 8, 4, 1, 5, 7, 9, 0, 0, 4.6, 8, '2026-04-07T12:00:00.000Z', '2026-03-31T12:00:00.000Z')
+on conflict do nothing;
 
 commit;

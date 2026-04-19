@@ -1,4 +1,5 @@
 import { similarityScore } from "@/lib/ai/similarityScore";
+import { mockRepository } from "@/lib/services/mock/repositories";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
 import type { DataRepository } from "@/lib/services/types";
 import type {
@@ -64,9 +65,14 @@ let hydrated = false;
 let hydrating = false;
 let hydratedAt = 0;
 
-let cachedBuildings: BuildingSummary[] = [];
-let cachedVenues: VenueSummary[] = [];
-let cachedDishes: DishDetail[] = [];
+// Pre-seed caches with mock data so sync reads always return something useful
+// before the first async Supabase refresh completes. Once hydrated, these are
+// replaced with live Supabase data.
+let cachedBuildings: BuildingSummary[] = mockRepository.listBuildings();
+let cachedVenues: VenueSummary[] = mockRepository.listBuildings().flatMap((b) =>
+  mockRepository.listVenuesByBuilding(b.id),
+);
+let cachedDishes: DishDetail[] = mockRepository.listPopularNearby();
 let cachedBlogPosts: BlogPost[] = [];
 let cachedStallPosts: StallPost[] = [];
 
