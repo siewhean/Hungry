@@ -9,6 +9,21 @@ python3 -m pip install openpyxl
 npm run data:enrich
 ```
 
+## Supabase import (real-world data, free-tier safe)
+
+Use the batch importer to upsert lean real-world records into Supabase core tables (`buildings`, `venues`) while keeping storage headroom:
+
+```bash
+python3 scripts/import_real_world_data_to_supabase.py --dry-run
+python3 scripts/import_real_world_data_to_supabase.py --batch-size 500 --max-business-rows 32253 --sleep-ms 20
+```
+
+Guardrails built into the importer:
+
+- imports only lean columns (no menu/raw blob payloads)
+- caps import volume with `--max-business-rows` (hard stop above 35000)
+- batches writes to reduce lock pressure and API burst risk
+
 ## What the pipeline does
 
 - preserves the workbook path and regenerates the three sheets in place

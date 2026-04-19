@@ -195,6 +195,8 @@ All items completed. Verification evidence in session log:
 
 ### Session Entries (recent — full history in git log)
 
+- 2026-04-19 | Codex | Started real-world Supabase ingestion on git branch `real-world-data` using a new batch importer (`scripts/import_real_world_data_to_supabase.py`) that upserts lean records only (no menu/raw blob columns) to preserve free-tier headroom. Completed live upserts into existing `buildings` and `venues` via service-role PostgREST with conflict-safe retries (`slug=id` fix). | Status: import started + core load complete. | Verification: importer output shows `hawker_rows=129`, `business_venues_rows=32253`, `building_rows=14574`, `approx_payload_mb≈13`; remote count headers after import: `buildings=14578`, `venues=32259`. | Next: optional second-pass normalization/dedup for building taxonomy and floor labels before exposing to consumer surfaces.
+
 - 2026-04-17 | Gemini | Restored premium `DishDetailScreen_Premium` layout: added immersive gradient overlay to hero, wrapped in `FeedErrorBoundary`, and added SW/SP/SO/SA/RI/AR labels to `TasteRadar` using standard `AppText` overlays. Fixed hardcoded colors in `radarCard` to use theme tokens. Pushed to `main` (commit `83a4603ea`).
 - 2026-04-17 | Gemini | Removed redundant "Log out" button from `SettingsScreen.tsx` to centralize sign-out on the Profile home page. Pushed to `main` (commit `cf93e3700`).
 - 2026-04-17 | Gemini | Inserted "Settings" menu row and "Sign Out" button into `ProfileHomeScreen_Legacy.tsx`. Verified type safety and pushed to `main` (commit `82e057a3c`).
