@@ -32,7 +32,18 @@ export function SignUpScreen({ navigation }: Props) {
   const handleSignUp = handleSubmit(async (values) => {
     try {
       if (getConfiguredDataSource() === "supabase") {
-        await getHungryService().auth.signUp(values.email, values.password, values.displayName);
+        const session = await getHungryService().auth.signUp(
+          values.email,
+          values.password,
+          values.displayName,
+        );
+        // session === null means email confirmation is required (expected in production).
+        // Treat it as success and send user to the verification screen.
+        if (!session) {
+          showToast({ message: "Account created. Please verify your email.", tone: "success" });
+          navigation.navigate("EmailVerification", { email: values.email });
+          return;
+        }
       } else {
         const failure = getMockSignUpFailure(values.email);
         if (failure) {
@@ -42,8 +53,16 @@ export function SignUpScreen({ navigation }: Props) {
       }
       showToast({ message: "Account created. Please verify your email.", tone: "success" });
       navigation.navigate("EmailVerification", { email: values.email });
-    } catch {
-      showToast({ message: "Could not continue sign-up. Please try again.", tone: "error" });
+    } catch (err) {
+      const code = (err as { error_code?: string; code?: string })?.error_code
+        ?? (err as { error_code?: string; code?: string })?.code;
+      if (code === "over_email_send_rate_limit") {
+        showToast({ message: "Too many attempts. Please wait a moment and try again.", tone: "error" });
+      } else if (code === "email_address_invalid") {
+        showToast({ message: "Please use a valid email address.", tone: "error" });
+      } else {
+        showToast({ message: "Could not continue sign-up. Please try again.", tone: "error" });
+      }
     }
   });
 

@@ -49,8 +49,16 @@ export function LoginScreen({ navigation }: Props) {
       }
       completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
       showToast({ message: "Welcome back.", tone: "success" });
-    } catch {
-      showToast({ message: "Sign in failed. Please try again.", tone: "error" });
+    } catch (err) {
+      const code = (err as { error_code?: string; code?: string })?.error_code
+        ?? (err as { error_code?: string; code?: string })?.code;
+      if (code === "email_not_confirmed") {
+        showToast({ message: "Please verify your email before signing in.", tone: "error" });
+      } else if (code === "invalid_credentials") {
+        showToast({ message: "Incorrect email or password.", tone: "error" });
+      } else {
+        showToast({ message: "Sign in failed. Please try again.", tone: "error" });
+      }
     }
   });
 
