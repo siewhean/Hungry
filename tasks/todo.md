@@ -64,12 +64,13 @@
 
 ### Schema (Claude primary, Codex executes)
 
-- [ ] **CLM-01 — Append DDL to `backend-architecture.md` §2.3** for three new tables:
+- [x] **CLM-01 — Append DDL to `backend-architecture.md` §2.3** for three new tables:
   - `menu_photo_submissions` (photo storage pointer + OCR job status)
   - `dishes_draft` (extracted dishes pre-promotion: name, price, confidence, source_photo_id, venue_id)
   - `merchant_claim_interests` (UEN, contact, venue_id, claimed_at — the waitlist)
-  [Claude — no Supabase dependency, start now]
-- [ ] **CLM-02 — Write + run migration `0010_supply_priming.sql`** for the three new tables against live Supabase. (Numbered 0010 to follow existing 0009 sequence.) [Codex — requires PROV-01]
+  [Claude — authored in `tasks/backend-architecture.md` §2.3.1. Dev-only via RLS (no public policies); two dormant `security definer` RPCs (`submit_menu_photo`, `submit_merchant_claim_interest`) defined for future CLM-03/CLM-06 wiring.]
+- [~] **CLM-02 — Write + run migration `0010_supply_priming.sql`** for the three new tables against live Supabase. (Numbered 0010 to follow existing 0009 sequence.) [Codex — requires PROV-01]
+  - Migration written: `supabase/migrations/0010_supply_priming.sql` (+ rollback `0011_rollback_supply_priming.sql`). Idempotent; adds generic `set_updated_at()` trigger fn. Awaiting `supabase db push` against live project. Verify via `select count(*) from pg_policies where tablename in (...)` = 0 and anon-key REST read returns `[]`.
 
 ### Menu OCR pipeline (Codex primary)
 
