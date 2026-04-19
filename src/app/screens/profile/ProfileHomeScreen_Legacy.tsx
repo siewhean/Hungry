@@ -12,6 +12,7 @@ import {
   Edit2,
   Share2,
   BarChart3,
+  LogOut,
 } from "lucide-react-native";
 
 import { AppText, Card, Button } from "@/components/ui";
@@ -30,6 +31,7 @@ export function ProfileHomeScreen_Legacy({ navigation }: Props) {
   const { palette, spacing, radii, shadows, colorScheme } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const signOut = useSessionStore((state) => state.signOut);
   const repository = getDataRepository();
   const rootNavigation = getRootNavigation(
     navigation as NativeStackNavigationProp<ProfileStackParamList, "ProfileHome">,
@@ -345,7 +347,22 @@ export function ProfileHomeScreen_Legacy({ navigation }: Props) {
               icon={<Star size={20} color={palette.text} />}
               onPress={() => navigation.navigate("ReviewHistory")}
             />
+            <MenuRow
+              label="Settings"
+              icon={<Settings size={20} color={palette.text} />}
+              onPress={() => navigation.navigate("Settings")}
+            />
           </View>
+
+          {isAuthenticated && (
+            <Button
+              label="Sign Out"
+              variant="secondary"
+              onPress={signOut}
+              style={{ marginTop: spacing[4] }}
+              leftIcon={<LogOut size={18} color={palette.error} />}
+            />
+          )}
         </View>
       </View>
     </ProfileScreenShell>
