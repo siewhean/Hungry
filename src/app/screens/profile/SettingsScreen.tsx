@@ -1,6 +1,6 @@
 import Constants from "expo-constants";
 import { useState } from "react";
-import { Alert, View, ScrollView } from "react-native";
+import { Alert, View, ScrollView, Linking } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
@@ -51,10 +51,6 @@ export function SettingsScreen() {
   const [dietaryEnabled, setDietaryEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
-
-  const showSupportNotice = (title: string) => {
-    Alert.alert(title, "Support and policy pages are not published in this build yet.");
-  };
 
   const purgePersistedAccountData = async () => {
     if (!hungryPersistStorage) return;
@@ -157,11 +153,17 @@ export function SettingsScreen() {
       </SettingsSection>
 
       <SettingsSection title="Support">
-        <SettingsRow label="Help Center" onPress={() => showSupportNotice("Help Center")} />
-        <SettingsRow label="Privacy Policy" onPress={() => showSupportNotice("Privacy Policy")} />
+        <SettingsRow
+          label="Help Center"
+          onPress={() => Linking.openURL("https://hungry.sg/help")}
+        />
+        <SettingsRow
+          label="Privacy Policy"
+          onPress={() => Linking.openURL("https://hungry.sg/privacy")}
+        />
         <SettingsRow
           label="Terms of Service"
-          onPress={() => showSupportNotice("Terms of Service")}
+          onPress={() => Linking.openURL("https://hungry.sg/terms")}
           isLast
         />
       </SettingsSection>

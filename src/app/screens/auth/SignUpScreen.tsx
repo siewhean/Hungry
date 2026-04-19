@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
-import { Alert, Pressable, View } from "react-native";
+import { Linking, Pressable, View } from "react-native";
 import { Eye, EyeOff, User, Mail, Lock } from "lucide-react-native";
 import { useState } from "react";
 
@@ -21,11 +21,6 @@ export function SignUpScreen({ navigation }: Props) {
   const { palette, spacing } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
   const showToast = useUIStore((state) => state.showToast);
-
-  const showLegalNotice = (title: string) => {
-    Alert.alert(title, "Policy pages are not published in this build yet.");
-  };
-
   const {
     control,
     handleSubmit,
@@ -95,7 +90,7 @@ export function SignUpScreen({ navigation }: Props) {
                 <AppText
                   variant="micro"
                   tone="accent"
-                  onPress={() => showLegalNotice("Terms of Service")}
+                  onPress={() => void Linking.openURL("https://hungry.sg/terms")}
                 >
                   Terms of Service
                 </AppText>{" "}
@@ -103,7 +98,7 @@ export function SignUpScreen({ navigation }: Props) {
                 <AppText
                   variant="micro"
                   tone="accent"
-                  onPress={() => showLegalNotice("Privacy Policy")}
+                  onPress={() => void Linking.openURL("https://hungry.sg/privacy")}
                 >
                   Privacy Policy
                 </AppText>
