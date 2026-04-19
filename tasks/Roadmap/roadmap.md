@@ -104,14 +104,16 @@ Historical reference: `hashed-conjuring-adleman.md` (folded into this section).
 - Crash reporting (Sentry), analytics (PostHog), feature flags module (`src/constants/featureFlags.ts`).
 - Offline connectivity listener: **open** — tracked in `todo.md` under Sprint 8 residuals.
 
-### 3.4 Active — Sprint 5 Supabase Backend Migration
+### 3.4 Code Done, Provisioning Open — Sprint 5 Supabase Backend
 
-**Owner:** Codex primary; Claude specifies contracts.
+**Code status:** All code artifacts committed to main (2026-04-17).
 **Canonical spec:** `backend-migration-plan.md`.
 
-Sprint 5 provisions Supabase (PostgreSQL 16 + PostGIS + pgvector + pg_trgm + btree_gist + citext) in `ap-southeast-1`, applies V2 DDL from `backend-architecture.md` (vendor_profiles, qr_sessions, orders, modifier_groups, …), migrates mock data → real tables, and swaps the mock service façade for Supabase client calls.
+All service layer code written: `supabaseRepository.ts`, `supabaseService.ts`, `client.ts`, `mediaUpload.ts`, migrations `0001`–`0009` in `supabase/migrations/`, seed SQL in `scripts/seed/`. The `HUNGRY_DATA_SOURCE=mock|supabase` toggle is wired in `serviceProvider.ts`.
 
-**Until Sprint 5 lands, Sprints 10+ cannot execute.** This is the critical-path item for the entire merchant expansion program.
+**Remaining:** create the Supabase cloud project (PROV-01), enable extensions, apply migrations, run seed, set env vars, smoke test — see `tasks/todo.md` ACTIVE section items PROV-01..08.
+
+**Until PROV-01 lands, Sprint 10 CLM-02 migration cannot execute.** PROV-01 is the single external action unblocking the entire merchant expansion program.
 
 ---
 
