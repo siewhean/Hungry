@@ -3,6 +3,7 @@ import { View, useWindowDimensions, Pressable, StyleSheet, Share } from "react-n
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Star, ChevronLeft, Share2, Heart, MessageCircle } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -150,208 +151,223 @@ export function DishDetailScreen_Premium({ navigation, route }: Props) {
   const canonicalDishUrl = `https://hungry.sg/dish/${dish.id}`;
 
   return (
-    <View style={{ flex: 1, backgroundColor: palette.bg }}>
-      {/* ─── STICKY HEADER ────────────────────────────────────────────────── */}
-      <Animated.View style={[styles.stickyHeader, headerStyle, { zIndex: 100 }]}>
-        <View style={styles.stickyHeaderContent}>
-          <AppText variant="h3" numberOfLines={1} style={{ flex: 1 }}>
-            {dish.name}
-          </AppText>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Star size={14} color={palette.amber} fill={palette.amber} />
-            <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
+    <FeedErrorBoundary
+      title="Dish details unavailable"
+      body="We couldn't load those delicious details. Our chefs are on it! Please try again."
+    >
+      <View style={{ flex: 1, backgroundColor: palette.bg }}>
+        {/* ─── STICKY HEADER ────────────────────────────────────────────────── */}
+        <Animated.View style={[styles.stickyHeader, headerStyle, { zIndex: 100 }]}>
+          <View style={styles.stickyHeaderContent}>
+            <AppText variant="h3" numberOfLines={1} style={{ flex: 1 }}>
+              {dish.name}
+            </AppText>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Star size={14} color={palette.amber} fill={palette.amber} />
+              <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
+            </View>
           </View>
-        </View>
-      </Animated.View>
-
-      {/* ─── NAVIGATION OVERLAY ─────────────────────────────────────────── */}
-      <View style={[styles.navOverlay, { top: insets.top, zIndex: 101 }]}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.navBtn}>
-          <ChevronLeft color={palette.text} size={24} />
-        </Pressable>
-        <View style={{ flex: 1 }} />
-        <Pressable
-          onPress={() =>
-            Share.share({
-              title: `${dish.name} · Hungry`,
-              message: `Check out ${dish.name} at ${venue.name} on Hungry.\n\n${canonicalDishUrl}`,
-              url: canonicalDishUrl,
-            })
-          }
-          style={styles.navBtn}
-        >
-          <Share2 color={palette.text} size={20} />
-        </Pressable>
-      </View>
-
-      <Animated.ScrollView
-        onScroll={scrollHandler}
-        scrollEventThrottle={16}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
-      >
-        {/* ─── HERO PARALLAX ──────────────────────────────────────────────── */}
-        <Animated.View style={[styles.heroContainer, { height: HERO_HEIGHT }, heroStyle]}>
-          <ImageCarousel images={gallery} width={screenWidth} height={HERO_HEIGHT} />
         </Animated.View>
 
-        {/* ─── CONTENT ────────────────────────────────────────────────────── */}
-        <View style={{ paddingHorizontal: spacing[4], gap: spacing[6], marginTop: -40 }}>
-          {/* Header Info */}
-          <View style={{ gap: spacing[2] }}>
-            <View style={{ flexDirection: "row", gap: spacing[2] }}>
-              <Badge label={`${tasteMatch}% Taste Match`} tone="orange" />
-              {dish.mustOrder && <Badge label="MUST ORDER" tone="amber" />}
-            </View>
-            <AppText variant="displayBold">{dish.name}</AppText>
-            <AppText variant="h2" tone="secondary" style={{ color: palette.orange }}>
-              S${dish.price.toFixed(2)}
-            </AppText>
-            <AppText variant="bodyLarge" tone="secondary">
-              {venue.name} · {venue.unitNumber}
-            </AppText>
-          </View>
+        {/* ─── NAVIGATION OVERLAY ─────────────────────────────────────────── */}
+        <View style={[styles.navOverlay, { top: insets.top, zIndex: 101 }]}>
+          <Pressable onPress={() => navigation.goBack()} style={styles.navBtn}>
+            <ChevronLeft color={palette.text} size={24} />
+          </Pressable>
+          <View style={{ flex: 1 }} />
+          <Pressable
+            onPress={() =>
+              Share.share({
+                title: `${dish.name} · Hungry`,
+                message: `Check out ${dish.name} at ${venue.name} on Hungry.\n\n${canonicalDishUrl}`,
+                url: canonicalDishUrl,
+              })
+            }
+            style={styles.navBtn}
+          >
+            <Share2 color={palette.text} size={20} />
+          </Pressable>
+        </View>
 
-          {/* Quick Stats */}
-          <View style={{ flexDirection: "row", gap: spacing[3] }}>
-            <Card style={{ flex: 1, padding: spacing[3], alignItems: "center", gap: 4 }}>
-              <AppText variant="micro" tone="muted">
-                DISTANCE
-              </AppText>
-              <AppText variant="bodyBold">
-                {dish.distanceMeters > 1000
-                  ? `${(dish.distanceMeters / 1000).toFixed(1)}km`
-                  : `${dish.distanceMeters}m`}
-              </AppText>
-            </Card>
-            <Card style={{ flex: 1, padding: spacing[3], alignItems: "center", gap: 4 }}>
-              <AppText variant="micro" tone="muted">
-                REVIEWS
-              </AppText>
-              <AppText variant="bodyBold">{dish.reviews.length}</AppText>
-            </Card>
-            <Card style={{ flex: 1, padding: spacing[3], alignItems: "center", gap: 4 }}>
-              <AppText variant="micro" tone="muted">
-                STATUS
-              </AppText>
-              <AppText variant="bodyBold" tone="success">
-                Open
-              </AppText>
-            </Card>
-          </View>
-
-          {/* Taste Radar */}
-          <Animated.View entering={FadeInUp.delay(200)}>
-            <Card style={styles.radarCard}>
-              <AppText variant="h3" style={{ marginBottom: spacing[2] }}>
-                Taste Signature
-              </AppText>
-              <TasteRadar tasteVector={dish.tasteVector} size={280} />
-            </Card>
+        <Animated.ScrollView
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
+        >
+          {/* ─── HERO PARALLAX ──────────────────────────────────────────────── */}
+          <Animated.View style={[styles.heroContainer, { height: HERO_HEIGHT }, heroStyle]}>
+            <ImageCarousel images={gallery} width={screenWidth} height={HERO_HEIGHT} />
+            <LinearGradient
+              colors={["transparent", "rgba(0,0,0,0.1)", "rgba(0,0,0,0.6)", palette.bg]}
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 120,
+              }}
+            />
           </Animated.View>
 
-          {/* Dietary & Vibes */}
-          <View style={{ gap: spacing[3] }}>
-            <AppText variant="h3">Dietary & Vibes</AppText>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-              {dish.dietaryFlags.map((flag) => (
-                <Badge key={flag} label={flag} tone="orange" />
-              ))}
-              {dish.availabilityFlags.map((flag) => (
-                <Badge key={flag} label={flag} tone="neutral" />
-              ))}
-            </View>
-          </View>
-
-          {/* Story / Description */}
-          <View style={{ gap: spacing[2] }}>
-            <AppText variant="h3">The Story</AppText>
-            <AppText variant="bodyLarge" style={{ lineHeight: 28 }}>
-              {/* @ts-ignore */}
-              {dish.description ||
-                "A signature local favorite, prepared with traditional methods and fresh ingredients. Every bite is a journey through Singapore's rich culinary heritage."}
-            </AppText>
-          </View>
-
-          {/* Venue Info */}
-          <Card style={{ padding: spacing[4], gap: spacing[3] }}>
-            <AppText variant="h3">About the Stall</AppText>
+          {/* ─── CONTENT ────────────────────────────────────────────────────── */}
+          <View style={{ paddingHorizontal: spacing[4], gap: spacing[6], marginTop: -40 }}>
+            {/* Header Info */}
             <View style={{ gap: spacing[2] }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <AppText tone="secondary">Hours</AppText>
-                <AppText variant="bodySmall">{venue.operatingHours}</AppText>
+              <View style={{ flexDirection: "row", gap: spacing[2] }}>
+                <Badge label={`${tasteMatch}% Taste Match`} tone="orange" />
+                {dish.mustOrder && <Badge label="MUST ORDER" tone="amber" />}
               </View>
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <AppText tone="secondary">Unit</AppText>
-                <AppText variant="bodySmall">{venue.unitNumber}</AppText>
+              <AppText variant="displayBold">{dish.name}</AppText>
+              <AppText variant="h2" tone="secondary" style={{ color: palette.orange }}>
+                S${dish.price.toFixed(2)}
+              </AppText>
+              <AppText variant="bodyLarge" tone="secondary">
+                {venue.name} · {venue.unitNumber}
+              </AppText>
+            </View>
+
+            {/* Quick Stats */}
+            <View style={{ flexDirection: "row", gap: spacing[3] }}>
+              <Card style={{ flex: 1, padding: spacing[3], alignItems: "center", gap: 4 }}>
+                <AppText variant="micro" tone="muted">
+                  DISTANCE
+                </AppText>
+                <AppText variant="bodyBold">
+                  {dish.distanceMeters > 1000
+                    ? `${(dish.distanceMeters / 1000).toFixed(1)}km`
+                    : `${dish.distanceMeters}m`}
+                </AppText>
+              </Card>
+              <Card style={{ flex: 1, padding: spacing[3], alignItems: "center", gap: 4 }}>
+                <AppText variant="micro" tone="muted">
+                  REVIEWS
+                </AppText>
+                <AppText variant="bodyBold">{dish.reviews.length}</AppText>
+              </Card>
+              <Card style={{ flex: 1, padding: spacing[3], alignItems: "center", gap: 4 }}>
+                <AppText variant="micro" tone="muted">
+                  STATUS
+                </AppText>
+                <AppText variant="bodyBold" tone="success">
+                  Open
+                </AppText>
+              </Card>
+            </View>
+
+            {/* Taste Radar */}
+            <Animated.View entering={FadeInUp.delay(200)}>
+              <Card style={styles.radarCard}>
+                <AppText variant="h3" style={{ marginBottom: spacing[2] }}>
+                  Taste Signature
+                </AppText>
+                <TasteRadar tasteVector={dish.tasteVector} size={280} />
+              </Card>
+            </Animated.View>
+
+            {/* Dietary & Vibes */}
+            <View style={{ gap: spacing[3] }}>
+              <AppText variant="h3">Dietary & Vibes</AppText>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                {dish.dietaryFlags.map((flag) => (
+                  <Badge key={flag} label={flag} tone="orange" />
+                ))}
+                {dish.availabilityFlags.map((flag) => (
+                  <Badge key={flag} label={flag} tone="neutral" />
+                ))}
               </View>
             </View>
-            <Button
-              label="View Full Stall"
-              variant="secondary"
-              size="sm"
-              onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
-            />
-          </Card>
-        </View>
-      </Animated.ScrollView>
 
-      {/* ─── ACTION DOCK ────────────────────────────────────────────────── */}
-      <View style={[styles.actionDock, { paddingBottom: Math.max(insets.bottom, spacing[4]) }]}>
-        <Button
-          variant={isSaved ? "secondary" : "primary"}
-          label={isSaved ? "Saved to Favourites" : "Save Favorite"}
-          style={{ flex: 2 }}
-          onPress={() => {
-            if (!isAuthenticated) {
-              setReturnRoute({ name: "DishDetail", params: { dishId: dish.id } });
-              navigation.navigate("AuthStack", { screen: "Login" });
-              return;
+            {/* Story / Description */}
+            <View style={{ gap: spacing[2] }}>
+              <AppText variant="h3">The Story</AppText>
+              <AppText variant="bodyLarge" style={{ lineHeight: 28 }}>
+                {/* @ts-ignore */}
+                {dish.description ||
+                  "A signature local favorite, prepared with traditional methods and fresh ingredients. Every bite is a journey through Singapore's rich culinary heritage."}
+              </AppText>
+            </View>
+
+            {/* Venue Info */}
+            <Card style={{ padding: spacing[4], gap: spacing[3] }}>
+              <AppText variant="h3">About the Stall</AppText>
+              <View style={{ gap: spacing[2] }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <AppText tone="secondary">Hours</AppText>
+                  <AppText variant="bodySmall">{venue.operatingHours}</AppText>
+                </View>
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <AppText tone="secondary">Unit</AppText>
+                  <AppText variant="bodySmall">{venue.unitNumber}</AppText>
+                </View>
+              </View>
+              <Button
+                label="View Full Stall"
+                variant="secondary"
+                size="sm"
+                onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
+              />
+            </Card>
+          </View>
+        </Animated.ScrollView>
+
+        {/* ─── ACTION DOCK ────────────────────────────────────────────────── */}
+        <View style={[styles.actionDock, { paddingBottom: Math.max(insets.bottom, spacing[4]) }]}>
+          <Button
+            variant={isSaved ? "secondary" : "primary"}
+            label={isSaved ? "Saved to Favourites" : "Save Favorite"}
+            style={{ flex: 2 }}
+            onPress={() => {
+              if (!isAuthenticated) {
+                setReturnRoute({ name: "DishDetail", params: { dishId: dish.id } });
+                navigation.navigate("AuthStack", { screen: "Login" });
+                return;
+              }
+              toggleFavourite(dish);
+              showToast({
+                message: isSaved ? "Removed from favourites." : "Added to favourites!",
+                tone: "success",
+              });
+            }}
+            leftIcon={
+              <Heart
+                size={20}
+                color={isSaved ? palette.orange : palette.white}
+                fill={isSaved ? palette.orange : "transparent"}
+              />
             }
-            toggleFavourite(dish);
-            showToast({
-              message: isSaved ? "Removed from favourites." : "Added to favourites!",
-              tone: "success",
-            });
-          }}
-          leftIcon={
-            <Heart
-              size={20}
-              color={isSaved ? palette.orange : palette.white}
-              fill={isSaved ? palette.orange : "transparent"}
+          />
+          <View style={{ flex: 2, flexDirection: "row", gap: spacing[2] }}>
+            <Button
+              variant="glass"
+              label="Rate"
+              style={{ flex: 1 }}
+              onPress={() =>
+                useUIStore.getState().showQuickReview({
+                  venueId: venue.id,
+                  venueName: venue.name,
+                  dishId: dish.id,
+                  dishName: dish.name,
+                })
+              }
+              leftIcon={<Star size={18} color={palette.text} />}
             />
-          }
-        />
-        <View style={{ flex: 2, flexDirection: "row", gap: spacing[2] }}>
-          <Button
-            variant="glass"
-            label="Rate"
-            style={{ flex: 1 }}
-            onPress={() =>
-              useUIStore.getState().showQuickReview({
-                venueId: venue.id,
-                venueName: venue.name,
-                dishId: dish.id,
-                dishName: dish.name,
-              })
-            }
-            leftIcon={<Star size={18} color={palette.text} />}
-          />
-          <Button
-            variant="glass"
-            label="Post"
-            style={{ flex: 1 }}
-            onPress={() =>
-              navigation.navigate("ReviewStack", {
-                screen: "ReviewMain",
-                params: { dishId: dish.id, venueId: dish.venueId },
-              })
-            }
-            leftIcon={<MessageCircle size={18} color={palette.text} />}
-          />
+            <Button
+              variant="glass"
+              label="Post"
+              style={{ flex: 1 }}
+              onPress={() =>
+                navigation.navigate("ReviewStack", {
+                  screen: "ReviewMain",
+                  params: { dishId: dish.id, venueId: dish.venueId },
+                })
+              }
+              leftIcon={<MessageCircle size={18} color={palette.text} />}
+            />
+          </View>
         </View>
       </View>
-    </View>
+    </FeedErrorBoundary>
   );
 }
 
@@ -400,8 +416,6 @@ const styles = StyleSheet.create({
   radarCard: {
     padding: 20,
     alignItems: "center",
-    backgroundColor: "#FFF9F3",
-    borderColor: "#F8EFE4",
   },
   actionDock: {
     position: "absolute",

@@ -1,29 +1,11 @@
 import React, { useMemo } from "react";
-import { View, Dimensions } from "react-native";
-import {
-  Canvas,
-  Path,
-  Skia,
-  Text,
-  useFont,
-  Fill,
-  LinearGradient,
-  vec,
-  Circle,
-  Group,
-} from "@shopify/react-native-skia";
-import Animated, {
-  useDerivedValue,
-  useSharedValue,
-  withSpring,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from "react-native-reanimated";
+import { View, StyleSheet } from "react-native";
+import { Canvas, Path, Skia, Circle } from "@shopify/react-native-skia";
 
 import { useHungryTheme } from "@/theme";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 import type { TasteVector } from "@/types/domain";
+import { AppText } from "../ui/AppText";
 
 interface TasteRadarProps {
   tasteVector: TasteVector;
@@ -44,9 +26,8 @@ export function TasteRadar({ tasteVector, size = 300 }: TasteRadarProps) {
       return {
         x: centerX + r * Math.cos(angle),
         y: centerY + r * Math.sin(angle),
-        labelX: centerX + (radius + 25) * Math.cos(angle),
-        labelY: centerY + (radius + 25) * Math.sin(angle),
-        label: dim.label,
+        labelAngle: angle,
+        label: dim.shortLabel,
       };
     });
   }, [tasteVector, radius, centerX, centerY]);
@@ -81,7 +62,7 @@ export function TasteRadar({ tasteVector, size = 300 }: TasteRadarProps) {
   }, [radius, centerX, centerY]);
 
   return (
-    <View style={{ width: size, height: size, alignSelf: "center" }}>
+    <View style={{ width: size, height: size, alignSelf: "center", position: "relative" }}>
       <Canvas style={{ flex: 1 }}>
         {/* Background Grids */}
         {gridPaths.map((path, i) => (
@@ -119,6 +100,33 @@ export function TasteRadar({ tasteVector, size = 300 }: TasteRadarProps) {
           <Circle key={i} cx={p.x} cy={p.y} r={4} color={palette.orange} />
         ))}
       </Canvas>
+
+      {/* Labels - Overlaying the canvas for safety and simplicity */}
+      {TASTE_DIMENSIONS.map((dim, i) => {
+        const angle = (i * 2 * Math.PI) / TASTE_DIMENSIONS.length - Math.PI / 2;
+        const labelRadius = radius + 24;
+        const lx = centerX + labelRadius * Math.cos(angle);
+        const ly = centerY + labelRadius * Math.sin(angle);
+
+        return (
+          <View
+            key={dim.key}
+            style={{
+              position: "absolute",
+              left: lx - 20,
+              top: ly - 10,
+              width: 40,
+              height: 20,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <AppText variant="micro" style={{ fontWeight: "700", color: palette.textMuted }}>
+              {dim.shortLabel.toUpperCase()}
+            </AppText>
+          </View>
+        );
+      })}
     </View>
   );
 }
