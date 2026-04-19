@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   Moon,
   MapPin,
-  LogOut,
   Trash2,
   Info,
   ExternalLink,
@@ -61,20 +60,6 @@ export function SettingsScreen() {
       hungryPersistStorage.removeItem("hungry-search-v1"),
       hungryPersistStorage.removeItem("hungry-review-draft-v1"),
       hungryPersistStorage.removeItem("hungry-location-v1"),
-    ]);
-  };
-
-  const handleSignOut = () => {
-    Alert.alert("Log out", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Log out",
-        onPress: () => {
-          signOut();
-          const rootNavigation = getRootNavigation(navigation);
-          rootNavigation.navigate("Splash");
-        },
-      },
     ]);
   };
 
@@ -188,12 +173,6 @@ export function SettingsScreen() {
       </SettingsSection>
 
       <View style={{ gap: spacing[3], marginBottom: spacing[12] }}>
-        <Button
-          label="Log out"
-          variant="secondary"
-          onPress={handleSignOut}
-          leftIcon={<LogOut size={20} color={palette.text} />}
-        />
         <Button
           label="Delete account"
           variant="destructive"
