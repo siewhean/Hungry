@@ -2,7 +2,7 @@
 -- These are minimum viable foundations for the guest-session endpoint and V2 auth hardening.
 
 create table if not exists guest_sessions (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   token_hash text not null unique,
   device_id text not null,
   metadata jsonb not null default '{}'::jsonb,
@@ -17,7 +17,7 @@ update guest_sessions set device_id = 'legacy-' || id::text where device_id is n
 alter table guest_sessions alter column device_id set not null;
 
 create table if not exists orders (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid references user_profiles(id) on delete set null,
   guest_session_id uuid references guest_sessions(id) on delete set null,
   venue_id text references venues(id) on delete set null,
@@ -35,7 +35,7 @@ create index if not exists idx_orders_user_id_created_at on orders(user_id, crea
 create index if not exists idx_orders_guest_session_id on orders(guest_session_id);
 
 create table if not exists chat_messages (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   thread_id uuid not null,
   sender_user_id uuid not null references user_profiles(id) on delete cascade,
   body text not null,

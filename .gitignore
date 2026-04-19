@@ -33,3 +33,5 @@ ios/build/
 
 # Local Python environment
 .venv/
+.env.local
+supabase/.temp/

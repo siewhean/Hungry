@@ -23,8 +23,7 @@
       "channel": "production",
       "env": {
         "HUNGRY_DATA_SOURCE": "supabase"
-      },
-      "postBuildCommand": "npx @sentry/wizard@latest -i reactNative --skip-connect-react-native-version-check"
+      }
     }
   },
   "submit": {

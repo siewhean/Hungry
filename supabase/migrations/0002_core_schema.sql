@@ -2,7 +2,7 @@
 -- This schema is mock-to-live friendly: content entities use text IDs to preserve fixture keys.
 
 create table if not exists dietary_flags (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   slug citext not null unique,
   name text not null,
   created_at timestamptz not null default now()
@@ -26,7 +26,7 @@ create table if not exists buildings (
 create index if not exists idx_buildings_location on buildings using gist (location);
 
 create table if not exists building_floors (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   building_id text not null references buildings(id) on delete cascade,
   floor_label text not null,
   sort_order integer not null default 0,
@@ -52,7 +52,7 @@ create table if not exists venues (
 create index if not exists idx_venues_building_id on venues(building_id);
 
 create table if not exists venue_delivery_links (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   venue_id text not null references venues(id) on delete cascade,
   platform text not null check (platform in ('grabfood', 'foodpanda', 'deliveroo')),
   native_url text not null default '',
@@ -87,7 +87,7 @@ create index if not exists idx_dishes_building_id on dishes(building_id);
 create index if not exists idx_dishes_name_trgm on dishes using gin (name gin_trgm_ops);
 
 create table if not exists dish_images (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   dish_id text not null references dishes(id) on delete cascade,
   url text not null,
   sort_order integer not null default 0,
@@ -155,7 +155,7 @@ create table if not exists user_favourite_dishes (
 );
 
 create table if not exists reviews (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid,
   dish_id text not null references dishes(id) on delete cascade,
   venue_id text references venues(id) on delete set null,
@@ -171,7 +171,7 @@ create index if not exists idx_reviews_dish_id on reviews(dish_id);
 create index if not exists idx_reviews_user_id on reviews(user_id);
 
 create table if not exists review_photos (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   review_id uuid not null references reviews(id) on delete cascade,
   url text not null,
   sort_order integer not null default 0,
@@ -207,7 +207,7 @@ create table if not exists stall_posts (
 );
 
 create table if not exists bites (
-  id text primary key default uuid_generate_v4()::text,
+  id text primary key default gen_random_uuid()::text,
   author_id uuid,
   author_name text not null default 'Hungry User',
   author_avatar text,
@@ -238,7 +238,7 @@ create index if not exists idx_bites_created_at on bites(created_at desc);
 create index if not exists idx_bites_dish_id on bites(dish_id);
 
 create table if not exists bite_reactions (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   bite_id text not null references bites(id) on delete cascade,
   user_id uuid not null,
   reaction text not null check (reaction in ('craving', 'save')),
