@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { supabaseAuthStorage } from "./authStorage";
+
 export type HungryDataSource = "mock" | "supabase";
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() ?? "";
@@ -35,11 +37,15 @@ export function getSupabaseClient(): SupabaseClient | null {
     return cachedClient;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { createClient } =
     require("@supabase/supabase-js") as typeof import("@supabase/supabase-js");
   cachedClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: {
+      // Persist auth tokens in a SecureStore-backed chunked adapter instead of
+      // the default AsyncStorage (plaintext on disk). See `authStorage.ts` for
+      // rationale and migration strategy. This is the primary MASVS-STORAGE
+      // control for the mobile app.
+      storage: supabaseAuthStorage,
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: false,
