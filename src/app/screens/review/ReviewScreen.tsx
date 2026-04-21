@@ -24,6 +24,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { REVIEW_TEXT_MAX_LENGTH } from "@/lib/security/inputSanitization";
 import type { ReviewStackParamList } from "@/app/navigation/navigationTypes";
 
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewMain">;
@@ -246,6 +247,7 @@ export function ReviewScreen({ navigation, route }: Props) {
               placeholder="What made this dish special?"
               multiline
               numberOfLines={4}
+              maxLength={REVIEW_TEXT_MAX_LENGTH}
               value={draft.text}
               onChangeText={actions.setText}
               style={{ minHeight: 100 }}

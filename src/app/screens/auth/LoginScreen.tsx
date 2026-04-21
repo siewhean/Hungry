@@ -6,7 +6,7 @@ import { useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { getMockLoginFailure } from "@/features/auth/mockAuth";
-import { validateEmail, validatePassword } from "@/features/auth/validation";
+import { validateEmail, validateRequired } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -50,8 +50,9 @@ export function LoginScreen({ navigation }: Props) {
       completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
       showToast({ message: "Welcome back.", tone: "success" });
     } catch (err) {
-      const code = (err as { error_code?: string; code?: string })?.error_code
-        ?? (err as { error_code?: string; code?: string })?.code;
+      const code =
+        (err as { error_code?: string; code?: string })?.error_code ??
+        (err as { error_code?: string; code?: string })?.code;
       if (code === "email_not_confirmed") {
         showToast({ message: "Please verify your email before signing in.", tone: "error" });
       } else if (code === "invalid_credentials") {
@@ -127,7 +128,7 @@ export function LoginScreen({ navigation }: Props) {
             <Controller
               control={control}
               name="password"
-              rules={{ validate: (value) => validatePassword(value, 8) }}
+              rules={{ validate: (value) => validateRequired(value, "Password") }}
               render={({ field: { onChange, value } }) => (
                 <View style={{ gap: spacing[1] }}>
                   <Input

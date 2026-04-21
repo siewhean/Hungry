@@ -92,7 +92,7 @@ export function ResetPasswordScreen({ navigation }: Props) {
           <Controller
             control={control}
             name="password"
-            rules={{ validate: (value) => validatePassword(value, 8) }}
+            rules={{ validate: (value) => validatePassword(value) }}
             render={({ field: { onChange, value } }) => (
               <Input
                 label="NEW PASSWORD"
@@ -153,7 +153,7 @@ export function ResetPasswordScreen({ navigation }: Props) {
           >
             <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
               <CheckCircle2 color={palette.orange} size={12} />
-              <AppText variant="bodySmall">At least 8 characters</AppText>
+              <AppText variant="bodySmall">At least 12 characters</AppText>
             </View>
             <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
               <View
@@ -166,7 +166,7 @@ export function ResetPasswordScreen({ navigation }: Props) {
                 }}
               />
               <AppText variant="bodySmall" tone="muted">
-                Include a number or special character
+                Include uppercase, lowercase, number, and special character
               </AppText>
             </View>
           </View>

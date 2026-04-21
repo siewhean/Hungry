@@ -1,12 +1,13 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
-import { Linking, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { Eye, EyeOff, User, Mail, Lock } from "lucide-react-native";
 import { useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { getMockSignUpFailure } from "@/features/auth/mockAuth";
 import { validateEmail, validatePassword, validateRequired } from "@/features/auth/validation";
+import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useUIStore } from "@/store/useUIStore";
@@ -54,10 +55,14 @@ export function SignUpScreen({ navigation }: Props) {
       showToast({ message: "Account created. Please verify your email.", tone: "success" });
       navigation.navigate("EmailVerification", { email: values.email });
     } catch (err) {
-      const code = (err as { error_code?: string; code?: string })?.error_code
-        ?? (err as { error_code?: string; code?: string })?.code;
+      const code =
+        (err as { error_code?: string; code?: string })?.error_code ??
+        (err as { error_code?: string; code?: string })?.code;
       if (code === "over_email_send_rate_limit") {
-        showToast({ message: "Too many attempts. Please wait a moment and try again.", tone: "error" });
+        showToast({
+          message: "Too many attempts. Please wait a moment and try again.",
+          tone: "error",
+        });
       } else if (code === "email_address_invalid") {
         showToast({ message: "Please use a valid email address.", tone: "error" });
       } else {
@@ -109,7 +114,7 @@ export function SignUpScreen({ navigation }: Props) {
                 <AppText
                   variant="micro"
                   tone="accent"
-                  onPress={() => void Linking.openURL("https://hungry.sg/terms")}
+                  onPress={() => void openTrustedExternalUrl("https://hungry.sg/terms")}
                 >
                   Terms of Service
                 </AppText>{" "}
@@ -117,7 +122,7 @@ export function SignUpScreen({ navigation }: Props) {
                 <AppText
                   variant="micro"
                   tone="accent"
-                  onPress={() => void Linking.openURL("https://hungry.sg/privacy")}
+                  onPress={() => void openTrustedExternalUrl("https://hungry.sg/privacy")}
                 >
                   Privacy Policy
                 </AppText>
@@ -208,7 +213,7 @@ export function SignUpScreen({ navigation }: Props) {
             <Controller
               control={control}
               name="password"
-              rules={{ validate: (value) => validatePassword(value, 8) }}
+              rules={{ validate: (value) => validatePassword(value) }}
               render={({ field: { onChange, value } }) => (
                 <View style={{ gap: spacing[1] }}>
                   <Input

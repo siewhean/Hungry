@@ -3,13 +3,14 @@ import { persist } from "zustand/middleware";
 
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
 import type { DietaryFlag, SearchCategory, SearchFilters, TasteVector } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
 
 const MAX_RECENT_SEARCHES = 5;
 
 function normalizeSearchQuery(query: string) {
-  return query.trim().replace(/\s+/g, " ");
+  return sanitizeSearchQuery(query);
 }
 
 interface SearchState {
@@ -39,7 +40,7 @@ export const useSearchStore = create<SearchState>()(
         set((state) => ({
           filters: {
             ...state.filters,
-            query,
+            query: normalizeSearchQuery(query),
           },
         })),
       toggleCategory: (category) =>

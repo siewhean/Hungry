@@ -22,7 +22,20 @@ test("validateEmail enforces required and format checks", () => {
 test("validatePassword enforces minimum length", () => {
   assert.equal(validatePassword(""), "Password is required");
   assert.equal(validatePassword("1234567", 8), "Password must be at least 8 characters");
-  assert.equal(validatePassword("12345678", 8), true);
+  assert.equal(
+    validatePassword("aaaaaaaaaaaa"),
+    "Password must include at least one uppercase letter",
+  );
+  assert.equal(
+    validatePassword("AAAAAAAAAAAA"),
+    "Password must include at least one lowercase letter",
+  );
+  assert.equal(validatePassword("AaAaAaAaAaAa"), "Password must include at least one number");
+  assert.equal(
+    validatePassword("AaAaAaAaAaA1"),
+    "Password must include at least one special character",
+  );
+  assert.equal(validatePassword("AaAaAaAaAaA1!"), true);
 });
 
 test("validateConfirmPassword requires matching values", () => {

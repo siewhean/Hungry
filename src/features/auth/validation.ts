@@ -1,4 +1,8 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const UPPERCASE_REGEX = /[A-Z]/;
+const LOWERCASE_REGEX = /[a-z]/;
+const DIGIT_REGEX = /\d/;
+const SYMBOL_REGEX = /[^A-Za-z0-9]/;
 
 export function validateRequired(value: string, label: string): true | string {
   if (value.trim().length > 0) {
@@ -21,7 +25,7 @@ export function validateEmail(value: string): true | string {
   return true;
 }
 
-export function validatePassword(value: string, minLength = 8): true | string {
+export function validatePassword(value: string, minLength = 12): true | string {
   const required = validateRequired(value, "Password");
   if (required !== true) {
     return required;
@@ -29,6 +33,22 @@ export function validatePassword(value: string, minLength = 8): true | string {
 
   if (value.length < minLength) {
     return `Password must be at least ${minLength} characters`;
+  }
+
+  if (!UPPERCASE_REGEX.test(value)) {
+    return "Password must include at least one uppercase letter";
+  }
+
+  if (!LOWERCASE_REGEX.test(value)) {
+    return "Password must include at least one lowercase letter";
+  }
+
+  if (!DIGIT_REGEX.test(value)) {
+    return "Password must include at least one number";
+  }
+
+  if (!SYMBOL_REGEX.test(value)) {
+    return "Password must include at least one special character";
   }
 
   return true;

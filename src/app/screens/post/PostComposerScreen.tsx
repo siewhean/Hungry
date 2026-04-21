@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, Input, Screen } from "@/components/ui";
+import { POST_CAPTION_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -65,7 +66,8 @@ export function PostComposerScreen({ navigation, route }: Props) {
             numberOfLines={5}
             placeholder="What makes this worth the queue?"
             value={caption}
-            onChangeText={setCaption}
+            maxLength={POST_CAPTION_MAX_LENGTH}
+            onChangeText={(value) => setCaption(sanitizeFreeText(value, POST_CAPTION_MAX_LENGTH))}
           />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             {dish.tasteTags.slice(0, 3).map((tag) => (
