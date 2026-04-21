@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hungry Ops — Dishes Draft Queue</title>
+    <style>
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 24px; background: #fff8f2; color: #1f1f1f; }
+      h1 { margin: 0 0 8px; }
+      .hint { color: #6b6b6b; margin-bottom: 16px; }
+      .controls { display: grid; gap: 8px; max-width: 760px; margin-bottom: 16px; }
+      input { padding: 8px 10px; border: 1px solid #d3d3d3; border-radius: 8px; }
+      button { border: 0; border-radius: 8px; padding: 8px 10px; background: #f97316; color: white; cursor: pointer; }
+      table { width: 100%; border-collapse: collapse; background: white; }
+      th, td { border: 1px solid #ececec; padding: 8px; text-align: left; font-size: 13px; }
+      th { background: #fff1e6; }
+      code { background: #f4f4f4; padding: 2px 6px; border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <h1>/ops/dishes-draft</h1>
+    <p class="hint">Developer-only stub for OCR-06. This UI calls Supabase Edge Function <code>ops-dishes-draft</code>.</p>
+    <div class="controls">
+      <input id="supabaseUrl" placeholder="SUPABASE_URL (https://...supabase.co)" />
+      <input id="anonKey" placeholder="EXPO_PUBLIC_SUPABASE_ANON_KEY" />
+      <input id="opsKey" placeholder="OPS_DISHES_DRAFT_API_KEY" />
+      <input id="venueId" placeholder="Optional venue_id filter" />
+      <button id="loadBtn">Load Queue</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Venue</th><th>Name</th><th>Price (cents)</th><th>Status</th><th>Confidence</th><th>Actions</th></tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+
+    <script>
+      async function invoke(payload) {
+        const supabaseUrl = document.getElementById('supabaseUrl').value.trim();
+        const anonKey = document.getElementById('anonKey').value.trim();
+        const opsKey = document.getElementById('opsKey').value.trim();
+        const response = await fetch(`${supabaseUrl}/functions/v1/ops-dishes-draft`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'apikey': anonKey,
+            'authorization': `Bearer ${anonKey}`,
+            'x-ops-api-key': opsKey,
+          },
+          body: JSON.stringify(payload),
+        });
+        if (!response.ok) throw new Error(await response.text());
+        return await response.json();
+      }
+
+      async function loadQueue() {
+        const venueId = document.getElementById('venueId').value.trim();
+        const payload = { action: 'list', venueId: venueId || null };
+        const data = await invoke(payload);
+        const tbody = document.getElementById('rows');
+        tbody.innerHTML = '';
+        (data.rows || []).forEach((row) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${row.id}</td>
+            <td>${row.venue_id}</td>
+            <td>${row.name}</td>
+            <td>${row.price_cents ?? ''}</td>
+            <td>${row.review_status}</td>
+            <td>${row.extraction_confidence}</td>
+            <td>
+              <button data-id="${row.id}" data-decision="accepted">Accept</button>
+              <button data-id="${row.id}" data-decision="rejected">Reject</button>
+              <button data-id="${row.id}" data-decision="duplicate">Duplicate</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      document.getElementById('loadBtn').addEventListener('click', () => {
+        loadQueue().catch((err) => alert(err.message));
+      });
+
+      document.getElementById('rows').addEventListener('click', async (event) => {
+        const button = event.target.closest('button');
+        if (!button) return;
+        const id = button.dataset.id;
+        const decision = button.dataset.decision;
+        try {
+          await invoke({ action: 'review', draftDishId: id, decision });
+          await loadQueue();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    </script>
+  </body>
+</html>

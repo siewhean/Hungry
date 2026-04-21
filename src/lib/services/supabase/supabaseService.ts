@@ -11,7 +11,10 @@ import {
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { supabaseRepository } from "@/lib/services/supabase/supabaseRepository";
 import { getSupabaseClient } from "@/lib/services/supabase/client";
-import { uploadImageFromUri } from "@/lib/services/supabase/mediaUpload";
+import {
+  assertValidMenuPhotoUpload,
+  uploadImageFromUri,
+} from "@/lib/services/supabase/mediaUpload";
 import type {
   Bite,
   BiteDraft,
@@ -268,6 +271,18 @@ function explainTasteMatch(user: TasteVector, dish: TasteVector): string {
     .sort((a, b) => a.diff - b.diff)[0]?.key;
   if (!dominant) return "Good overall profile match.";
   return `Closest match on ${dominant}.`;
+}
+
+function normalizeMenuEntry(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function getOpsDraftApiKey(): string {
+  return (
+    process.env.EXPO_PUBLIC_OPS_DISHES_DRAFT_API_KEY?.trim() ??
+    process.env.OPS_DISHES_DRAFT_API_KEY?.trim() ??
+    ""
+  );
 }
 
 export const supabaseService: HungryService = {
@@ -762,6 +777,117 @@ export const supabaseService: HungryService = {
 
     async getArticle(id) {
       return supabaseRepository.listBlogPosts().find((article) => article.id === id);
+    },
+  },
+
+  supply: {
+    async submitMenuPhoto(input) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) {
+        throw new Error("You must be signed in to submit a menu photo.");
+      }
+      if (!input.photoUri || !isLocalUri(input.photoUri)) {
+        throw new Error("Menu photo must be a local device URI.");
+      }
+
+      assertValidMenuPhotoUpload({
+        mimeType: input.photoMimeType,
+        fileSizeBytes: input.photoFileSizeBytes,
+      });
+
+      const extension = input.photoUri.split(".").pop()?.toLowerCase() || "jpg";
+      const storagePath = `${userId}/${input.venueId}/${Date.now()}.${extension}`;
+      const uploaded = await uploadImageFromUri({
+        client,
+        bucket: "menu-photos",
+        path: storagePath,
+        uri: input.photoUri,
+      });
+
+      const { data: submissionId, error: rpcError } = await client.rpc("submit_menu_photo", {
+        p_venue_id: input.venueId,
+        p_storage_path: uploaded.path,
+        p_content_type: input.photoMimeType ?? null,
+        p_byte_size: input.photoFileSizeBytes ?? null,
+        p_source_review_dish_id: input.dishId ?? null,
+        p_source_review_text: input.reviewText ?? null,
+      });
+      if (rpcError || !submissionId) {
+        throw rpcError ?? new Error("Failed to submit menu photo metadata.");
+      }
+
+      // Developer-only: kick off OCR asynchronously; draft extraction is service-role only.
+      void client.functions
+        .invoke("ingest-menu-photo", {
+          body: { submissionId },
+        })
+        .catch(() => undefined);
+
+      return {
+        submissionId: String(submissionId),
+        storagePath: uploaded.path,
+      };
+    },
+
+    async listDraftDishesQueue(venueId) {
+      const client = requireSupabaseClient();
+      const opsApiKey = getOpsDraftApiKey();
+      const { data, error } = await client.functions.invoke("ops-dishes-draft", {
+        headers: opsApiKey ? { "x-ops-api-key": opsApiKey } : undefined,
+        body: {
+          action: "list",
+          venueId: venueId ?? null,
+        },
+      });
+      if (error) throw error;
+      const rows = Array.isArray((data as Row | undefined)?.rows)
+        ? (((data as Row).rows as unknown[]) ?? [])
+        : [];
+      return rows
+        .map((row) => row as Row)
+        .map((row) => ({
+          id: asString(row.id) ?? "",
+          venueId: asString(row.venue_id) ?? "",
+          sourcePhotoId: asString(row.source_photo_id) ?? null,
+          name: asString(row.name) ?? "",
+          nameNormalized:
+            asString(row.name_normalized) ?? normalizeMenuEntry(asString(row.name) ?? ""),
+          price: (() => {
+            const cents = asNumber(row.price_cents);
+            return cents === undefined ? null : cents / 100;
+          })(),
+          currency: asString(row.currency) ?? "SGD",
+          modifiers: asStringArray(row.modifiers),
+          extractionConfidence: asNumber(row.extraction_confidence) ?? 0,
+          confidenceBumps: asNumber(row.confidence_bumps) ?? 0,
+          reviewStatus:
+            (asString(row.review_status) as
+              | "pending"
+              | "accepted"
+              | "edited"
+              | "rejected"
+              | "promoted"
+              | "duplicate") ?? "pending",
+          duplicateOf: asString(row.duplicate_of) ?? null,
+          createdAt: asString(row.created_at) ?? new Date().toISOString(),
+        }))
+        .filter((row) => row.id.length > 0 && row.venueId.length > 0 && row.name.length > 0);
+    },
+
+    async reviewDraftDish(draftDishId, decision, notes) {
+      const client = requireSupabaseClient();
+      const opsApiKey = getOpsDraftApiKey();
+      const { error } = await client.functions.invoke("ops-dishes-draft", {
+        headers: opsApiKey ? { "x-ops-api-key": opsApiKey } : undefined,
+        body: {
+          action: "review",
+          draftDishId,
+          decision,
+          notes: notes ?? null,
+        },
+      });
+      if (error) throw error;
     },
   },
 

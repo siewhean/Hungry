@@ -216,6 +216,36 @@ export interface SubmitReviewInput {
   // TODO(api): include upload references (asset ids / signed urls) once media service is wired.
 }
 
+export interface SubmitMenuPhotoInput {
+  venueId: string;
+  photoUri: string;
+  photoMimeType?: string;
+  photoFileSizeBytes?: number;
+  dishId?: string;
+  reviewText?: string;
+}
+
+export interface MenuPhotoSubmissionResult {
+  submissionId: string;
+  storagePath: string;
+}
+
+export interface DraftDishRow {
+  id: string;
+  venueId: string;
+  sourcePhotoId: string | null;
+  name: string;
+  nameNormalized: string;
+  price: number | null;
+  currency: string;
+  modifiers: string[];
+  extractionConfidence: number;
+  confidenceBumps: number;
+  reviewStatus: "pending" | "accepted" | "edited" | "rejected" | "promoted" | "duplicate";
+  duplicateOf: string | null;
+  createdAt: string;
+}
+
 // ─── Building Detail ──────────────────────────────────────────────────────────
 
 export interface BuildingDetail extends BuildingSummary {
@@ -320,5 +350,16 @@ export interface HungryService {
     // Extended — Community Calibration
     getTagSuggestions(dishId: string): Promise<HawkerTasteTag[]>;
     submitCommunityTags(dishId: string, tags: HawkerTasteTag[]): Promise<void>;
+  };
+
+  // Supply priming (developer/ops-only)
+  supply: {
+    submitMenuPhoto(input: SubmitMenuPhotoInput): Promise<MenuPhotoSubmissionResult>;
+    listDraftDishesQueue(venueId?: string): Promise<DraftDishRow[]>;
+    reviewDraftDish(
+      draftDishId: string,
+      decision: "accepted" | "rejected" | "duplicate",
+      notes?: string,
+    ): Promise<void>;
   };
 }

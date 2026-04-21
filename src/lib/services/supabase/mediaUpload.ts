@@ -5,6 +5,14 @@ export interface UploadedAsset {
   publicUrl: string;
 }
 
+export interface MenuPhotoValidationInput {
+  mimeType?: string;
+  fileSizeBytes?: number;
+}
+
+const ALLOWED_MENU_PHOTO_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/heic"]);
+const MAX_MENU_PHOTO_BYTES = 10 * 1024 * 1024;
+
 function guessContentType(uri: string): string {
   const normalized = uri.toLowerCase();
   if (normalized.endsWith(".png")) return "image/png";
@@ -85,4 +93,13 @@ export async function uploadImageFromUri(params: {
     path,
     publicUrl: data.publicUrl,
   };
+}
+
+export function assertValidMenuPhotoUpload(input: MenuPhotoValidationInput): void {
+  if (typeof input.fileSizeBytes === "number" && input.fileSizeBytes > MAX_MENU_PHOTO_BYTES) {
+    throw new Error("Menu photo exceeds 10MB limit.");
+  }
+  if (input.mimeType && !ALLOWED_MENU_PHOTO_MIME_TYPES.has(input.mimeType)) {
+    throw new Error("Menu photo must be image/jpeg, image/png, or image/heic.");
+  }
 }

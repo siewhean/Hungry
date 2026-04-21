@@ -42,7 +42,9 @@ export function QuickReviewModal() {
     >
       <BottomSheetView style={{ padding: spacing[5] }}>
         <QuickReviewSheet
+          venueId={payload.venueId}
           venueName={payload.venueName}
+          dishId={payload.dishId}
           dishName={payload.dishName}
           onSuccess={(data) => {
             hideQuickReview();

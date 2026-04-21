@@ -723,4 +723,21 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
   },
+
+  supply: {
+    async submitMenuPhoto(input) {
+      return resolve({
+        submissionId: `mock-menu-photo-${Date.now()}`,
+        storagePath: `menu-photos/mock/${input.venueId}/${Date.now()}.jpg`,
+      });
+    },
+
+    async listDraftDishesQueue() {
+      return resolve([]);
+    },
+
+    async reviewDraftDish(_draftDishId, _decision, _notes) {
+      return resolve(undefined);
+    },
+  },
 };
