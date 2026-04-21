@@ -50,7 +50,6 @@
       "expo-font",
       "expo-web-browser",
       "expo-location",
-      "@sentry/react-native",
       "expo-secure-store",
       [
         "@sentry/react-native/expo",
