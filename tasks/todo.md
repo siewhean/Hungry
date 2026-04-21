@@ -69,8 +69,11 @@
   - `dishes_draft` (extracted dishes pre-promotion: name, price, confidence, source_photo_id, venue_id)
   - `merchant_claim_interests` (UEN, contact, venue_id, claimed_at — the waitlist)
   [Claude — authored in `tasks/backend-architecture.md` §2.3.1. Dev-only via RLS (no public policies); two dormant `security definer` RPCs (`submit_menu_photo`, `submit_merchant_claim_interest`) defined for future CLM-03/CLM-06 wiring.]
-- [~] **CLM-02 — Write + run migration `0010_supply_priming.sql`** for the three new tables against live Supabase. (Numbered 0010 to follow existing 0009 sequence.) [Codex — requires PROV-01]
+- [x] **CLM-02 — Write + run migration `0010_supply_priming.sql`** for the three new tables against live Supabase. (Numbered 0010 to follow existing 0009 sequence.) [Codex — requires PROV-01]
   - Migration written: `supabase/migrations/0010_supply_priming.sql` (+ rollback `0011_rollback_supply_priming.sql`). Idempotent; adds generic `set_updated_at()` trigger fn. Awaiting `supabase db push` against live project. Verify via `select count(*) from pg_policies where tablename in (...)` = 0 and anon-key REST read returns `[]`.
+  - 2026-04-22 Codex run: `npx supabase migration list` + `npx supabase db push` attempted; blocked by missing link session (`Cannot find project ref. Have you run supabase link?`). `supabase/config.toml` contains `project_id = "vlqfgmrsprbrgzteixsj"` and CLM-02 smoke checks are now prepared at `supabase/smoke/clm02_supply_priming.sql` for immediate post-link verification.
+  - 2026-04-22 Codex follow-up: link fixed; `npx supabase migration list` showed remote included `0011` (rollback), and live anon REST checks returned 404 for `menu_photo_submissions`, `dishes_draft`, `merchant_claim_interests` (tables absent). Added `supabase/migrations/0012_reapply_supply_priming.sql` to restore CLM-02 schema after rollback.
+  - 2026-04-22 verification complete: remote migration list now includes `0012`; anon REST checks return `200 []` for `menu_photo_submissions`, `dishes_draft`, `merchant_claim_interests`, confirming tables exist and app-client access remains empty under RLS dev gate.
 
 ### Menu OCR pipeline (Codex primary)
 
