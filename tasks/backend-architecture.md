@@ -655,6 +655,161 @@ CREATE INDEX idx_blog_posts_venue ON blog_posts (related_venue_id);
 CREATE INDEX idx_blog_posts_area  ON blog_posts (area, published_at DESC);
 ```
 
+### 2.3.1 Supply Priming (Sprint 10)
+
+**Rationale.** A food-discovery marketplace has a two-sided cold-start: consumers won't come without dishes, merchants won't sign up without consumers. Sprint 10 breaks the deadlock by letting consumers prime supply for us — snap a menu photo during a review (OCR → draft dish rows) and tap *"Claim this stall"* to build a merchant waitlist. The three tables below hold the raw supply signals until an ops reviewer promotes them into the canonical `dishes` table (see MP-07) and merchants verify via the portal (see MP-02..MP-04).
+
+**Developer-only gate.** RLS is enabled on all three tables with **no public policies**. `service_role` bypasses RLS automatically — Edge Functions (OCR pipeline) and the internal ops review tooling read/write via service role. The consumer app has two narrow `security definer` RPCs (defined below) as the only authenticated write path, and these remain **unwired from the app UI** until CLM-03..CLM-06 ship. Until then, these tables are strictly dev-only.
+
+```sql
+-- =========================================================================
+-- SUPPLY PRIMING (Sprint 10)
+-- =========================================================================
+
+-- Generic updated_at trigger (new; reusable by later migrations)
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN new.updated_at := now(); RETURN new; END $$;
+
+-- Menu photos awaiting OCR
+CREATE TABLE menu_photo_submissions (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  venue_id        TEXT NOT NULL REFERENCES venues(id) ON DELETE CASCADE,
+  building_id     TEXT NOT NULL REFERENCES buildings(id) ON DELETE CASCADE,
+  submitted_by    UUID REFERENCES user_profiles(id) ON DELETE SET NULL,
+  storage_bucket  TEXT NOT NULL DEFAULT 'menu-photos',
+  storage_path    TEXT NOT NULL,
+  content_type    TEXT NOT NULL
+                  CHECK (content_type IN ('image/jpeg','image/png','image/heic','image/webp')),
+  size_bytes      INTEGER NOT NULL CHECK (size_bytes > 0 AND size_bytes <= 10485760),
+  ocr_status      TEXT NOT NULL DEFAULT 'pending'
+                  CHECK (ocr_status IN ('pending','processing','succeeded','failed','skipped')),
+  ocr_attempts    INTEGER NOT NULL DEFAULT 0,
+  ocr_job_id      TEXT,
+  ocr_error       TEXT,
+  vision_response JSONB,
+  submitted_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  processed_at    TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_menu_photo_venue     ON menu_photo_submissions(venue_id);
+CREATE INDEX idx_menu_photo_status    ON menu_photo_submissions(ocr_status, submitted_at DESC);
+CREATE INDEX idx_menu_photo_submitter ON menu_photo_submissions(submitted_by);
+
+-- OCR-extracted dishes awaiting ops review
+CREATE TABLE dishes_draft (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  venue_id              TEXT NOT NULL REFERENCES venues(id) ON DELETE CASCADE,
+  building_id           TEXT NOT NULL REFERENCES buildings(id) ON DELETE CASCADE,
+  source_photo_id       UUID REFERENCES menu_photo_submissions(id) ON DELETE SET NULL,
+  name                  TEXT NOT NULL,
+  name_normalized       TEXT NOT NULL,
+  price_cents           INTEGER CHECK (price_cents IS NULL OR price_cents >= 0),
+  currency              TEXT NOT NULL DEFAULT 'SGD',
+  modifiers             JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ocr_raw_text          TEXT,
+  extraction_confidence NUMERIC(4,3) NOT NULL CHECK (extraction_confidence BETWEEN 0 AND 1),
+  embedding             VECTOR(768),
+  review_status         TEXT NOT NULL DEFAULT 'pending'
+                        CHECK (review_status IN ('pending','accepted','edited','rejected','promoted','duplicate')),
+  reviewed_by           UUID REFERENCES user_profiles(id) ON DELETE SET NULL,
+  reviewed_at           TIMESTAMPTZ,
+  promoted_dish_id      TEXT REFERENCES dishes(id) ON DELETE SET NULL,
+  duplicate_of          UUID REFERENCES dishes_draft(id) ON DELETE SET NULL,
+  confidence_bumps      INTEGER NOT NULL DEFAULT 0,
+  created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX idx_dishes_draft_venue_status    ON dishes_draft(venue_id, review_status);
+CREATE INDEX idx_dishes_draft_queue           ON dishes_draft(review_status, created_at DESC)
+                                              WHERE review_status = 'pending';
+CREATE INDEX idx_dishes_draft_name_trgm       ON dishes_draft USING gin (name gin_trgm_ops);
+CREATE INDEX idx_dishes_draft_name_normalized ON dishes_draft(venue_id, name_normalized);
+CREATE INDEX idx_dishes_draft_embedding       ON dishes_draft USING ivfflat (embedding vector_cosine_ops)
+                                              WITH (lists = 100);
+
+-- Merchant claim waitlist
+CREATE TABLE merchant_claim_interests (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  venue_id          TEXT NOT NULL REFERENCES venues(id) ON DELETE CASCADE,
+  building_id       TEXT NOT NULL REFERENCES buildings(id) ON DELETE CASCADE,
+  claimed_by        UUID REFERENCES user_profiles(id) ON DELETE SET NULL,
+  contact_name      TEXT,
+  contact_phone     TEXT,
+  contact_email     CITEXT,
+  uen               TEXT,
+  notes             TEXT,
+  status            TEXT NOT NULL DEFAULT 'new'
+                    CHECK (status IN ('new','contacted','qualified','rejected','converted')),
+  status_updated_by UUID REFERENCES user_profiles(id) ON DELETE SET NULL,
+  status_updated_at TIMESTAMPTZ,
+  source            TEXT NOT NULL DEFAULT 'stall_detail_cta',
+  user_agent        TEXT,
+  ip_address        INET,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX uniq_claim_user_venue ON merchant_claim_interests(venue_id, claimed_by)
+  WHERE claimed_by IS NOT NULL;
+CREATE INDEX idx_claim_queue ON merchant_claim_interests(status, created_at DESC);
+CREATE INDEX idx_claim_venue ON merchant_claim_interests(venue_id);
+CREATE INDEX idx_claim_uen   ON merchant_claim_interests(uen) WHERE uen IS NOT NULL;
+
+-- RLS: enabled; NO public policies. service_role bypasses RLS.
+ALTER TABLE menu_photo_submissions   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dishes_draft             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE merchant_claim_interests ENABLE ROW LEVEL SECURITY;
+```
+
+**RPC surface (consumer writes, dormant in this PR).**
+
+| Function | Caller | Contract |
+|---|---|---|
+| `submit_menu_photo(p_venue_id text, p_storage_path text, p_content_type text, p_size_bytes integer) RETURNS uuid` | `authenticated` role | Requires `auth.uid()`; derives `building_id` from venue; raises on unknown venue; returns new submission id. |
+| `submit_merchant_claim_interest(p_venue_id text, p_contact_name text, p_contact_phone text, p_contact_email text, p_uen text, p_notes text) RETURNS uuid` | `authenticated` role (anonymous `claimed_by` allowed for guest taps) | Dedupes on `(venue_id, claimed_by)` via partial unique index; `ON CONFLICT DO NOTHING` so repeat taps are silent no-ops; returns id (null if existing). |
+
+Both functions are `SECURITY DEFINER` with `set search_path = public`, `REVOKE ALL … FROM public`, `GRANT EXECUTE … TO authenticated` — narrow surface, no direct table grants.
+
+**Foreign-key topology.**
+
+```
+menu_photo_submissions ─► venues
+                      ─► buildings
+                      ─► user_profiles (submitted_by)
+
+dishes_draft ─► menu_photo_submissions (source_photo_id)
+            ─► venues
+            ─► buildings
+            ─► dishes (promoted_dish_id)
+            ─► user_profiles (reviewed_by)
+            ─► dishes_draft (duplicate_of, self)
+
+merchant_claim_interests ─► venues
+                        ─► buildings
+                        ─► user_profiles (claimed_by, status_updated_by)
+```
+
+**`dishes_draft.review_status` lifecycle.**
+
+```
+            ┌──────────┐
+            │ pending  │◄─── OCR-05 inserts new extraction
+            └────┬─────┘
+                 │ ops reviewer action (OCR-06 / MP-07)
+        ┌────────┼────────┬──────────┐
+        ▼        ▼        ▼          ▼
+    accepted  edited   rejected   duplicate   ← terminal or pre-terminal
+        │        │
+        └────┬───┘
+             ▼
+         promoted    ← MP-07 inserts row into dishes, sets promoted_dish_id
+```
+
+`rejected` and `duplicate` are terminal — rows stay for audit, confidence feedback, and deduplication. `confidence_bumps` is incremented by OCR-05 whenever a later extraction matches (cosine ≥ 0.9) — giving the ops reviewer a trust signal without a separate join table.
+
+**Out of scope for this DDL.** Storage bucket `menu-photos` creation (OCR-02 handles via Supabase CLI or dashboard); consumer UI wiring (CLM-03, CLM-06); ops review queue UI (OCR-06); feature flag gating (CLM-05); embedding-model selection (OCR-04 — the `VECTOR(768)` dim is a placeholder matched to Gemini `gemini-embedding-001`, revisit if the pipeline picks a different model).
+
 ---
 
 ## 3. Indexing Strategy

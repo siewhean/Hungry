@@ -280,9 +280,9 @@ export const supabaseService: HungryService = {
         options: { data: { display_name: name } },
       });
       if (error) throw error;
-      const session = await toAppSession(client);
-      if (!session) throw new Error("Sign-up succeeded but no active session.");
-      return session;
+      // When email confirmation is required, Supabase returns no session yet.
+      // Return null so the caller can show the "check your email" flow instead of throwing.
+      return await toAppSession(client);
     },
 
     async signIn(email, password) {
