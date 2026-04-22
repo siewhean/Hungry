@@ -10,7 +10,6 @@ import type {
   BuildingSummary,
   DishDetail,
   DietaryFlag,
-  DishSummary,
   HawkerTasteTag,
   SearchFilters,
   StallPost,
@@ -230,6 +229,20 @@ export interface MenuPhotoSubmissionResult {
   storagePath: string;
 }
 
+export interface SubmitMerchantClaimInterestInput {
+  venueId: string;
+  contactName?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  uen?: string;
+  notes?: string;
+}
+
+export interface MerchantClaimSubmissionResult {
+  claimId: string | null;
+  status: "created" | "already_exists";
+}
+
 export interface DraftDishRow {
   id: string;
   venueId: string;
@@ -265,6 +278,7 @@ export interface HungryService {
   // Auth
   auth: {
     signUp(email: string, password: string, name: string): Promise<Session | null>;
+    resendVerificationEmail(email: string): Promise<void>;
     signIn(email: string, password: string): Promise<Session>;
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;
@@ -355,6 +369,9 @@ export interface HungryService {
   // Supply priming (developer/ops-only)
   supply: {
     submitMenuPhoto(input: SubmitMenuPhotoInput): Promise<MenuPhotoSubmissionResult>;
+    submitMerchantClaimInterest(
+      input: SubmitMerchantClaimInterestInput,
+    ): Promise<MerchantClaimSubmissionResult>;
     listDraftDishesQueue(venueId?: string): Promise<DraftDishRow[]>;
     reviewDraftDish(
       draftDishId: string,

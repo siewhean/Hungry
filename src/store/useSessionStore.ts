@@ -53,6 +53,10 @@ const initialState = {
   sessionExpired: false,
 } as const;
 
+function getSafeProfileId(): string {
+  return useProfileStore.getState().profile?.id ?? "guest-user";
+}
+
 export const useSessionStore = create<SessionState>()(
   persist(
     (set) => ({
@@ -66,13 +70,14 @@ export const useSessionStore = create<SessionState>()(
         }));
         useProfileStore.getState().syncProfile(true);
         const profile = useProfileStore.getState().profile;
+        const profileId = profile?.id ?? "guest-user";
         const location = useLocationStore.getState();
         const area =
           location.manualLocation ??
           `${location.currentLocation.latitude.toFixed(4)},${location.currentLocation.longitude.toFixed(4)}`;
-        identifyPostHogUser(profile.id, {
-          tasteVector: profile.tasteVector,
-          dietaryPreferences: profile.dietaryPreferences,
+        identifyPostHogUser(profileId, {
+          tasteVector: profile?.tasteVector,
+          dietaryPreferences: profile?.dietaryPreferences,
           area,
         });
         if (options?.trackSignInEvent ?? true) {
@@ -83,7 +88,7 @@ export const useSessionStore = create<SessionState>()(
               has_completed_onboarding: options?.completedOnboarding ?? false,
               skipped_taste_quiz: options?.skippedTasteQuiz ?? false,
             },
-            { userId: profile.id },
+            { userId: profileId },
           );
         }
       },
@@ -97,7 +102,7 @@ export const useSessionStore = create<SessionState>()(
         });
       },
       expireSession: () => {
-        const profileId = useProfileStore.getState().profile.id;
+        const profileId = getSafeProfileId();
         set({ sessionExpired: true, isAuthenticated: false });
         resetPostHogUser();
         trackAnalyticsEvent("sign_out", { reason: "session_expired" }, { userId: profileId });
@@ -106,7 +111,7 @@ export const useSessionStore = create<SessionState>()(
       setReturnRoute: (returnRoute) => set({ returnRoute }),
       setSkippedTasteQuiz: (hasSkippedTasteQuiz) => set({ hasSkippedTasteQuiz }),
       signOut: () => {
-        const profileId = useProfileStore.getState().profile.id;
+        const profileId = getSafeProfileId();
         if (getConfiguredDataSource() === "supabase") {
           void getHungryService()
             .auth.signOut()
@@ -119,7 +124,7 @@ export const useSessionStore = create<SessionState>()(
         trackAnalyticsEvent("sign_out", { reason: "manual" }, { userId: profileId });
       },
       clearSession: () => {
-        const profileId = useProfileStore.getState().profile.id;
+        const profileId = getSafeProfileId();
         set({ ...initialState });
         useProfileStore.getState().clearProfile();
         useProfileStore.getState().syncProfile(false);
@@ -140,13 +145,14 @@ export const useSessionStore = create<SessionState>()(
           useProfileStore.getState().syncProfile(true);
 
           const profile = useProfileStore.getState().profile;
+          const profileId = session.userId ?? profile?.id ?? "guest-user";
           const location = useLocationStore.getState();
           const area =
             location.manualLocation ??
             `${location.currentLocation.latitude.toFixed(4)},${location.currentLocation.longitude.toFixed(4)}`;
-          identifyPostHogUser(session.userId ?? profile.id, {
-            tasteVector: profile.tasteVector,
-            dietaryPreferences: profile.dietaryPreferences,
+          identifyPostHogUser(profileId, {
+            tasteVector: profile?.tasteVector,
+            dietaryPreferences: profile?.dietaryPreferences,
             area,
           });
 
@@ -158,7 +164,7 @@ export const useSessionStore = create<SessionState>()(
                 has_completed_onboarding: session.completedOnboarding ?? false,
                 skipped_taste_quiz: session.skippedTasteQuiz ?? false,
               },
-              { userId: session.userId ?? profile.id },
+              { userId: profileId },
             );
           }
           return;
@@ -168,7 +174,7 @@ export const useSessionStore = create<SessionState>()(
           return;
         }
 
-        const profileId = useProfileStore.getState().profile.id;
+        const profileId = getSafeProfileId();
         set({
           isAuthenticated: false,
           sessionExpired: false,

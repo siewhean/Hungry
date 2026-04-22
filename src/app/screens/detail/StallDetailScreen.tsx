@@ -1,19 +1,9 @@
-import {
-  Alert,
-  Linking,
-  Platform,
-  Pressable,
-  ScrollView,
-  Share,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { Pressable, ScrollView, Share, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { useEffect, useState } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft, Heart, MapPin, Share2, Star, Truck, ChevronLeft } from "lucide-react-native";
+import { Heart, MapPin, Share2, Star, ChevronLeft } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated from "react-native-reanimated";
 
@@ -22,8 +12,6 @@ import {
   AppText,
   EmptyState,
   FeedErrorBoundary,
-  InlineBanner,
-  Screen,
   FAB,
   Button,
   Card,
@@ -32,11 +20,14 @@ import {
 } from "@/components/ui";
 import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import { isDishDetail } from "../profile/profileGuards";
 
 function StallDetailSkeleton() {
   const { spacing, radii, palette } = useHungryTheme();
@@ -91,6 +82,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const showToast = useUIStore((state) => state.showToast);
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -99,6 +92,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [localRepliesByReviewId, setLocalRepliesByReviewId] = useState<
     Record<string, ReviewReply[]>
   >({});
+  const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
 
   if (isLoading) {
     return <StallDetailSkeleton />;
@@ -163,6 +157,52 @@ export function StallDetailScreen({ navigation, route }: Props) {
       });
     } catch (error) {
       console.error("Sharing failed", error);
+    }
+  };
+
+  const handleClaimThisStall = async () => {
+    if (isSubmittingClaim) return;
+
+    trackAnalyticsEvent("claim_this_stall_tapped", {
+      venue_id: venue.id,
+      building_id: venue.buildingId,
+      source: "stall_detail",
+    });
+
+    if (!isAuthenticated) {
+      showToast({
+        message: "Please sign in before claiming this stall.",
+        tone: "warning",
+      });
+      return;
+    }
+
+    setIsSubmittingClaim(true);
+    try {
+      const result = await getHungryService().supply.submitMerchantClaimInterest({
+        venueId: venue.id,
+        contactName: profile.displayName,
+        contactEmail: profile.email || undefined,
+      });
+
+      if (result.status === "created") {
+        showToast({
+          message: "Claim interest submitted. We will follow up with verification details.",
+          tone: "success",
+        });
+      } else {
+        showToast({
+          message: "You have already submitted a claim for this stall.",
+          tone: "info",
+        });
+      }
+    } catch {
+      showToast({
+        message: "Unable to submit claim right now. Please try again.",
+        tone: "error",
+      });
+    } finally {
+      setIsSubmittingClaim(false);
     }
   };
 
@@ -342,6 +382,24 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   </AppText>
                 </Card>
               </View>
+
+              {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
+                <Card style={{ padding: spacing[4], gap: spacing[3] }}>
+                  <View style={{ gap: spacing[1] }}>
+                    <AppText variant="h3">Own this stall?</AppText>
+                    <AppText variant="bodySmall" tone="secondary">
+                      Tap once to register your claim interest with our team.
+                    </AppText>
+                  </View>
+                  <Button
+                    label={isSubmittingClaim ? "Submitting..." : "Claim this stall"}
+                    onPress={() => {
+                      void handleClaimThisStall();
+                    }}
+                    disabled={isSubmittingClaim}
+                  />
+                </Card>
+              ) : null}
 
               {/* Dishes Grid */}
               <View style={{ gap: spacing[4] }}>

@@ -22,7 +22,8 @@ export type AnalyticsEventName =
   | "dish_favourited"
   | "dish_unfavourited"
   | "review_started"
-  | "review_submitted";
+  | "review_submitted"
+  | "claim_this_stall_tapped";
 
 export interface AnalyticsEventRecord {
   event: AnalyticsEventName | (string & {});

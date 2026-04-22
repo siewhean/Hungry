@@ -158,8 +158,8 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   const sampleDish = useMemo(() => repository.listPopularNearby()[0], [repository]);
   const sampleBuilding = useMemo(() => repository.listBuildings()[0], [repository]);
   const sampleVenue = useMemo(
-    () => repository.listVenuesByBuilding(sampleBuilding.id)[0],
-    [sampleBuilding.id, repository],
+    () => (sampleBuilding ? repository.listVenuesByBuilding(sampleBuilding.id)[0] : undefined),
+    [sampleBuilding, repository],
   );
   const sampleArticle = useMemo(() => repository.listBlogPosts()[0], [repository]);
 
@@ -419,11 +419,29 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           />
           <LaunchButton
             label="Stall Detail"
-            onPress={() => navigation.navigate("StallDetail", { venueId: sampleVenue.id })}
+            onPress={() => {
+              if (!sampleVenue) {
+                showToast({
+                  message: "No sample venue available yet. Wait for data to load.",
+                  tone: "warning",
+                });
+                return;
+              }
+              navigation.navigate("StallDetail", { venueId: sampleVenue.id });
+            }}
           />
           <LaunchButton
             label="Dish Detail"
-            onPress={() => navigation.navigate("DishDetail", { dishId: sampleDish.id })}
+            onPress={() => {
+              if (!sampleDish) {
+                showToast({
+                  message: "No sample dish available yet. Wait for data to load.",
+                  tone: "warning",
+                });
+                return;
+              }
+              navigation.navigate("DishDetail", { dishId: sampleDish.id });
+            }}
           />
           <LaunchButton
             label="Review feed"
@@ -431,7 +449,16 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           />
           <LaunchButton
             label="Article"
-            onPress={() => navigation.navigate("BlogPost", { postId: sampleArticle.id })}
+            onPress={() => {
+              if (!sampleArticle) {
+                showToast({
+                  message: "No sample article available yet. Wait for data to load.",
+                  tone: "warning",
+                });
+                return;
+              }
+              navigation.navigate("BlogPost", { postId: sampleArticle.id });
+            }}
           />
           <LaunchButton
             label="Post composer"

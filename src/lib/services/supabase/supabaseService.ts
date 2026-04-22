@@ -898,6 +898,34 @@ export const supabaseService: HungryService = {
       };
     },
 
+    async submitMerchantClaimInterest(input) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) {
+        throw new Error("You must be signed in to claim a stall.");
+      }
+
+      const { data: claimId, error: rpcError } = await client.rpc(
+        "submit_merchant_claim_interest",
+        {
+          p_venue_id: input.venueId,
+          p_contact_name: input.contactName ?? null,
+          p_contact_phone: input.contactPhone ?? null,
+          p_contact_email: input.contactEmail ?? null,
+          p_uen: input.uen ?? null,
+          p_notes: input.notes ?? null,
+        },
+      );
+      if (rpcError) {
+        throw rpcError;
+      }
+
+      return {
+        claimId: claimId ? String(claimId) : null,
+        status: claimId ? "created" : "already_exists",
+      } as const;
+    },
+
     async listDraftDishesQueue(venueId) {
       const client = requireSupabaseClient();
       const opsApiKey = getOpsDraftApiKey();

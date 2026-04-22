@@ -39,15 +39,12 @@ import type {
   SubmitReviewInput,
 } from "@/lib/services/types";
 import type {
-  BlogPost,
   DietaryFlag,
-  DishDetail,
   HawkerTasteTag,
   SearchFilters,
   TasteProfile,
   TasteVector,
   UserProfile,
-  VenueSummary,
 } from "@/types/domain";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
 import {
@@ -86,6 +83,7 @@ function matchReason(userVec: TasteVector, dishVec: TasteVector): string {
 let _profile: UserProfile = { ...guestProfile };
 let _isAuthenticated = false;
 const _biteReactions: Record<string, { cravings: Set<string>; saves: Set<string> }> = {};
+const _merchantClaimInterests = new Set<string>();
 
 if (typeof __DEV__ !== "undefined" && __DEV__) {
   // TODO(api): keep fixture validation while mock mode is active; remove once backend contracts are fully live.
@@ -274,6 +272,10 @@ export const hungryService: HungryService = {
         stats: { dishesReviewed: 0, stallsVisited: 0, favouritesCount: 0 },
       };
       return resolve(mockSession(_profile));
+    },
+
+    async resendVerificationEmail(_email) {
+      return resolve(undefined);
     },
 
     async signIn(email, _password) {
@@ -730,6 +732,26 @@ export const hungryService: HungryService = {
         submissionId: `mock-menu-photo-${Date.now()}`,
         storagePath: `menu-photos/mock/${input.venueId}/${Date.now()}.jpg`,
       });
+    },
+
+    async submitMerchantClaimInterest(input) {
+      if (!_isAuthenticated) {
+        throw new Error("You must be signed in to claim a stall.");
+      }
+
+      const claimKey = `${_profile.id}:${input.venueId}`;
+      if (_merchantClaimInterests.has(claimKey)) {
+        return resolve({
+          claimId: null,
+          status: "already_exists",
+        } as const);
+      }
+
+      _merchantClaimInterests.add(claimKey);
+      return resolve({
+        claimId: `mock-merchant-claim-${Date.now()}`,
+        status: "created",
+      } as const);
     },
 
     async listDraftDishesQueue() {
