@@ -1,5 +1,8 @@
 name: CI
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   push:
     branches: [main]
@@ -41,7 +44,7 @@ jobs:
   eas-build-gate:
     needs: quality-gates
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.EXPO_TOKEN != ''
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -62,7 +65,9 @@ jobs:
         run: npm ci
 
       - name: Validate Expo account access
+        if: env.EXPO_TOKEN != ''
         run: npx eas-cli whoami --non-interactive
 
       - name: Trigger EAS build gates
+        if: env.EXPO_TOKEN != ''
         run: npx eas-cli build --platform all --profile preview --non-interactive --no-wait
