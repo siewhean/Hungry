@@ -3,10 +3,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   ChevronRight,
   Compass,
   MapPinned,
+  Mic,
   Search,
   Shuffle,
   Star,
@@ -384,11 +386,11 @@ export function DiscoverHomeScreen() {
               shadows.card,
               {
                 backgroundColor: themeTints.cardBg,
-                borderRadius: radii.md,
+                borderRadius: radii.pill,
                 flexDirection: "row",
                 alignItems: "center",
-                paddingHorizontal: spacing[3],
-                height: 52,
+                paddingHorizontal: spacing[4],
+                height: 56,
                 gap: spacing[2],
                 borderWidth: themeTints.isDark ? 0 : 1,
                 borderColor: palette.border,
@@ -397,8 +399,15 @@ export function DiscoverHomeScreen() {
           >
             <Search color={themeTints.isDark ? palette.white : palette.textMuted} size={20} />
             <AppText style={{ flex: 1, color: themeTints.secondaryText }}>
-              Search dishes, stalls or vibes...
+              Dishes, stalls, or hawker centres…
             </AppText>
+            <Pressable
+              onPress={() => {}}
+              accessibilityLabel="Voice search"
+              accessibilityRole="button"
+            >
+              <Mic color={palette.textMuted} size={20} />
+            </Pressable>
           </Pressable>
         </View>
 
@@ -485,64 +494,85 @@ export function DiscoverHomeScreen() {
           </ScrollView>
         </View>
 
-        {/* Proactive Selection Grid */}
+        {/* Discovery Targets */}
+        <View style={{ flexDirection: "row", gap: spacing[3] }}>
+          <Pressable
+            onPress={() => navigation.navigate("SearchHome")}
+            style={[
+              shadows.card,
+              {
+                flex: 1,
+                backgroundColor: themeTints.cardBg,
+                padding: spacing[4],
+                borderRadius: radii.lg,
+                borderWidth: themeTints.isDark ? 0 : 1,
+                borderColor: palette.border,
+              },
+            ]}
+          >
+            <AppText style={{ fontSize: 24, marginBottom: spacing[2] }}>🏪</AppText>
+            <AppText variant="bodyBold" style={{ color: themeTints.text }}>
+              Stalls & Restaurants
+            </AppText>
+          </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate("SearchHome")}
+            style={[
+              shadows.card,
+              {
+                flex: 1,
+                backgroundColor: themeTints.cardBg,
+                padding: spacing[4],
+                borderRadius: radii.lg,
+                borderWidth: themeTints.isDark ? 0 : 1,
+                borderColor: palette.border,
+              },
+            ]}
+          >
+            <AppText style={{ fontSize: 24, marginBottom: spacing[2] }}>🍜</AppText>
+            <AppText variant="bodyBold" style={{ color: themeTints.text }}>
+              Dishes
+            </AppText>
+          </Pressable>
+        </View>
+
+        {/* Proactive Selection */}
         <View style={{ gap: spacing[3] }}>
-          <View style={{ flexDirection: "row", gap: spacing[3] }}>
-            <Animated.View style={{ flex: 1, transform: [{ scale: pulseAnim }] }}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Decide for me"
-                onPress={handleDecideForMe}
+          <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Decide for me"
+              onPress={handleDecideForMe}
+            >
+              <LinearGradient
+                colors={[palette.orange, palette.amber]}
                 style={[
                   shadows.card,
                   {
-                    backgroundColor: palette.orange,
-                    borderRadius: radii.lg,
-                    padding: spacing[4],
-                    minHeight: 120,
+                    borderRadius: radii.xl,
+                    padding: spacing[5],
+                    minHeight: 100,
+                    flexDirection: "row",
+                    alignItems: "center",
                     justifyContent: "space-between",
                   },
                 ]}
               >
-                <Shuffle color={palette.white} size={24} />
-                <View>
-                  <AppText variant="h3" tone="inverse">
-                    Decide For Me
-                  </AppText>
-                  <AppText variant="micro" tone="inverse" style={{ opacity: 0.8 }}>
-                    Single-player pick
-                  </AppText>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[4] }}>
+                  <Shuffle color={palette.white} size={28} />
+                  <View>
+                    <AppText variant="h2" tone="inverse">
+                      Decide For Me
+                    </AppText>
+                    <AppText variant="bodySmall" tone="inverse" style={{ opacity: 0.9 }}>
+                      Single-player pick
+                    </AppText>
+                  </View>
                 </View>
-              </Pressable>
-            </Animated.View>
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Open hungry wheel"
-              onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
-              style={[
-                shadows.card,
-                {
-                  backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.15)" : palette.navy,
-                  borderRadius: radii.lg,
-                  flex: 1,
-                  padding: spacing[4],
-                  minHeight: 120,
-                  justifyContent: "space-between",
-                },
-              ]}
-            >
-              <Compass color={palette.white} size={24} />
-              <View>
-                <AppText variant="h3" tone="inverse">
-                  Hungry Wheel
-                </AppText>
-                <AppText variant="micro" tone="inverse" style={{ opacity: 0.8 }}>
-                  Party mode
-                </AppText>
-              </View>
+                <ChevronRight color={palette.white} size={24} />
+              </LinearGradient>
             </Pressable>
-          </View>
+          </Animated.View>
 
           {/* New psychological ownership hook: Daily Crave */}
           {FEATURE_FLAGS.craveEnabled ? (
@@ -689,7 +719,7 @@ export function DiscoverHomeScreen() {
             }}
           >
             <AppText variant="h2" style={{ color: themeTints.text }}>
-              Hawker Centres Near You
+              Nearby Stalls
             </AppText>
             <Pressable
               accessibilityRole="button"
@@ -701,11 +731,7 @@ export function DiscoverHomeScreen() {
               </AppText>
             </Pressable>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: spacing[3] }}
-          >
+          <View style={{ gap: spacing[3] }}>
             {nearbyHawkerCentres.map(({ venue, topDish }) => (
               <Pressable
                 key={venue.id}
@@ -721,23 +747,33 @@ export function DiscoverHomeScreen() {
                   {
                     backgroundColor: themeTints.cardBg,
                     borderRadius: radii.lg,
-                    width: 160,
                     padding: spacing[3],
-                    gap: spacing[2],
+                    flexDirection: "row",
+                    gap: spacing[3],
+                    alignItems: "center",
                     borderWidth: themeTints.isDark ? 0 : 1,
                     borderColor: palette.border,
                   },
                 ]}
               >
-                <Image
-                  source={{ uri: topDish?.imageUrl }}
-                  style={{ borderRadius: radii.md, height: 100, width: "100%" }}
-                  contentFit="cover"
-                />
-                <View style={{ gap: spacing[1] }}>
+                <View
+                  style={{
+                    padding: 2,
+                    borderRadius: radii.pill,
+                    borderWidth: 2,
+                    borderColor: palette.orange,
+                  }}
+                >
+                  <Image
+                    source={{ uri: topDish?.imageUrl }}
+                    style={{ borderRadius: radii.pill, height: 48, width: 48 }}
+                    contentFit="cover"
+                  />
+                </View>
+                <View style={{ flex: 1, gap: 2 }}>
                   <AppText
                     variant="bodySmall"
-                    style={{ fontWeight: "700", color: themeTints.text }}
+                    style={{ fontWeight: "800", color: themeTints.text }}
                     numberOfLines={1}
                   >
                     {venue.name}
@@ -750,9 +786,10 @@ export function DiscoverHomeScreen() {
                     {venue.unitNumber} · {venue.operatingHours.split(" – ")[0]}
                   </AppText>
                 </View>
+                <ChevronRight color={palette.textMuted} size={20} />
               </Pressable>
             ))}
-          </ScrollView>
+          </View>
         </View>
       </ScrollView>
     </Screen>

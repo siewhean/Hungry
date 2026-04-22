@@ -9,10 +9,9 @@ export function QuickReviewModal() {
   const { palette, spacing } = useHungryTheme();
   const payload = useUIStore((state) => state.quickReview);
   const hideQuickReview = useUIStore((state) => state.hideQuickReview);
-  const showReviewSuccess = useUIStore((state) => state.showReviewSuccess);
 
   const bottomSheetRef = useRef<BottomSheetModal>(null);
-  const snapPoints = useMemo(() => ["70%"], []);
+  const snapPoints = useMemo(() => ["80%"], []); // Increased to 80% to give the wizard more room
 
   useEffect(() => {
     if (payload) {
@@ -40,22 +39,14 @@ export function QuickReviewModal() {
       backgroundStyle={{ backgroundColor: palette.surface }}
       handleIndicatorStyle={{ backgroundColor: palette.border }}
     >
-      <BottomSheetView style={{ padding: spacing[5] }}>
+      <BottomSheetView style={{ flex: 1, padding: spacing[5] }}>
         <QuickReviewSheet
           venueId={payload.venueId}
           venueName={payload.venueName}
           dishId={payload.dishId}
           dishName={payload.dishName}
-          onSuccess={(data) => {
+          onSuccess={() => {
             hideQuickReview();
-            showReviewSuccess({
-              venueName: payload.venueName,
-              dishName: payload.dishName ?? "Dish",
-              rating: data.rating,
-              pointsEarned: 10 + data.tagCount * 2,
-              xpEarned: 10 + data.tagCount * 2,
-              tagCount: data.tagCount,
-            });
           }}
         />
       </BottomSheetView>

@@ -372,6 +372,7 @@ export const stallPosts: StallPost[] = [
     caption: "The rice is so fragrant! Totally worth the 20-minute wait.",
     dishIds: ["dish-chicken-rice"],
     createdAt: "2h ago",
+    isStallAccount: true,
   },
   {
     id: "post-2",

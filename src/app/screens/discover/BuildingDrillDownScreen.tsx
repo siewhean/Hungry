@@ -637,14 +637,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                       key={record.stall.stallId}
                       accessibilityRole="button"
                       accessibilityLabel={`Open ${record.title} ${record.unitNumber}`}
-                      onPress={() => {
-                        handleStallSelection(record.stall);
-                        if (record.venue) {
-                          navigation.navigate("StallDetail", {
-                            venueId: record.venue.id,
-                          });
-                        }
-                      }}
+                      onPress={() => handleStallSelection(record.stall)}
                       style={{
                         backgroundColor: palette.surface,
                         borderColor: isSelected ? palette.orange : palette.border,

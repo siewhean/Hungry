@@ -12,7 +12,16 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { Bookmark, Heart, MessageCircle, PlayCircle, Send, Star, X } from "lucide-react-native";
+import {
+  Bookmark,
+  Heart,
+  MessageCircle,
+  PlayCircle,
+  Send,
+  Star,
+  X,
+  UtensilsCrossed,
+} from "lucide-react-native";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -366,279 +375,211 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       const isExpanded = expandedPostId === item.id;
 
       if (cardMode === "social") {
-        const imageHeight = Math.min(Math.max(screenWidth * 1.3, 400), 520);
+        const imageHeight = screenWidth * 1.25; // 4:5 aspect ratio
 
         return (
-          <View key={item.id} style={styles.feedItemWrap}>
-            <View style={[styles.imageContainer, { height: imageHeight }]}>
+          <View
+            key={item.id}
+            style={[
+              styles.feedItemWrap,
+              { backgroundColor: themeTints.bg, paddingBottom: spacing[6] },
+            ]}
+          >
+            {/* Header */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: spacing[4],
+                paddingVertical: spacing[3],
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
+                <Pressable
+                  onPress={() =>
+                    openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
+                  }
+                >
+                  <View style={{ position: "relative" }}>
+                    <View
+                      style={
+                        item.isStallAccount
+                          ? { borderWidth: 2, borderColor: palette.orange, borderRadius: 999 }
+                          : undefined
+                      }
+                    >
+                      <Avatar uri={item.authorAvatarUrl} name={item.authorName} size={36} />
+                    </View>
+                    {item.isStallAccount && (
+                      <View
+                        style={{
+                          position: "absolute",
+                          bottom: -4,
+                          right: -4,
+                          backgroundColor: palette.orange,
+                          borderColor: palette.bg,
+                          borderWidth: 2,
+                          borderRadius: radii.pill,
+                          padding: 2,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <UtensilsCrossed color={palette.white} size={10} strokeWidth={2.5} />
+                      </View>
+                    )}
+                  </View>
+                </Pressable>
+                <View>
+                  <Pressable
+                    onPress={() =>
+                      openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
+                    }
+                  >
+                    <AppText variant="bodySmallBold" style={{ color: themeTints.text }}>
+                      {item.authorName}
+                    </AppText>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => navigation.navigate("StallDetail", { venueId: item.venueId })}
+                  >
+                    <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                      {item.authorLocation}
+                    </AppText>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+
+            {/* Media */}
+            <View
+              style={[
+                styles.imageContainer,
+                { height: imageHeight, backgroundColor: palette.navy },
+              ]}
+            >
               <ZoomableMedia
                 uri={item.mediaUrl}
                 type={item.mediaType === "video" ? "video" : "image"}
                 style={StyleSheet.absoluteFill}
               />
-
-              <LinearGradient
-                colors={["transparent", "rgba(0,0,0,0.4)", "rgba(0,0,0,0.8)"]}
-                style={styles.gradientScrim}
-                pointerEvents="none"
-              />
-
-              <View
-                style={[styles.overlayContent, { padding: spacing[3] }]}
-                pointerEvents="box-none"
-              >
-                <View
-                  style={[
-                    styles.overlayTopRow,
-                    { flexDirection: profile.leftHandedMode ? "row-reverse" : "row" },
-                  ]}
-                  pointerEvents="box-none"
-                >
-                  <View
-                    style={[
-                      styles.textOverlay,
-                      {
-                        gap: spacing[1],
-                        alignItems: profile.leftHandedMode ? "flex-end" : "flex-start",
-                        marginRight: profile.leftHandedMode ? 0 : 12,
-                        marginLeft: profile.leftHandedMode ? 12 : 0,
-                      },
-                    ]}
-                    pointerEvents="box-none"
-                  >
-                    <View
-                      style={{
-                        alignItems: "center",
-                        flexDirection: "row",
-                        gap: spacing[2],
-                      }}
-                    >
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`Open ${item.authorName} profile`}
-                        onPress={() =>
-                          openUserProfile(
-                            item.authorName,
-                            item.authorAvatarUrl,
-                            item.authorLocation,
-                          )
-                        }
-                      >
-                        <Avatar uri={item.authorAvatarUrl} name={item.authorName} size={30} />
-                      </Pressable>
-                      <View style={{ flexDirection: "row", alignItems: "center" }}>
-                        <Pressable
-                          onPress={() =>
-                            openUserProfile(
-                              item.authorName,
-                              item.authorAvatarUrl,
-                              item.authorLocation,
-                            )
-                          }
-                        >
-                          <AppText
-                            variant="micro"
-                            style={{
-                              color: "rgba(255,255,255,0.9)",
-                            }}
-                          >
-                            {item.authorName}
-                          </AppText>
-                        </Pressable>
-                        <AppText variant="micro" style={{ color: "rgba(255,255,255,0.7)" }}>
-                          {" · "}
-                        </AppText>
-                        <Pressable
-                          onPress={() =>
-                            navigation.navigate("StallDetail", { venueId: item.venueId })
-                          }
-                        >
-                          <AppText
-                            variant="micro"
-                            style={{
-                              color: "rgba(255,255,255,0.9)",
-                              textDecorationLine: "underline",
-                            }}
-                          >
-                            {item.authorLocation}
-                          </AppText>
-                        </Pressable>
-                      </View>
-                    </View>
-                    <AppText
-                      variant="h2"
-                      style={{
-                        color: palette.white,
-                        textAlign: profile.leftHandedMode ? "right" : "left",
-                      }}
-                      numberOfLines={2}
-                    >
-                      {item.dishes[0]?.name ?? item.venue.name}
-                    </AppText>
-                    <Pressable
-                      onPress={() => navigation.navigate("StallDetail", { venueId: item.venueId })}
-                    >
-                      <AppText
-                        variant="micro"
-                        style={{
-                          color: "rgba(255,255,255,0.8)",
-                          textAlign: profile.leftHandedMode ? "right" : "left",
-                        }}
-                      >
-                        {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
-                      </AppText>
-                    </Pressable>
-                  </View>
-
-                  <View style={[styles.sideActions, { gap: spacing[4] }]} pointerEvents="box-none">
-                    <Pressable hitSlop={10} onPress={() => toggleLike(item.id)}>
-                      <VerticalActionMetric
-                        icon={
-                          <Heart
-                            color={isLiked ? palette.error : palette.white}
-                            fill={isLiked ? palette.error : "transparent"}
-                            size={28}
-                          />
-                        }
-                        count={interaction.likeCount}
-                        palette={palette}
-                      />
-                    </Pressable>
-                    <Pressable hitSlop={10} onPress={() => openComments(item)}>
-                      <VerticalActionMetric
-                        icon={<MessageCircle color={palette.white} size={28} />}
-                        count={interaction.commentCount}
-                        palette={palette}
-                      />
-                    </Pressable>
-                    <Pressable hitSlop={10} onPress={() => toggleSave(item.id)}>
-                      <VerticalActionMetric
-                        icon={
-                          <Bookmark
-                            color={isSaved ? palette.orange : palette.white}
-                            fill={isSaved ? palette.orange : "transparent"}
-                            size={28}
-                          />
-                        }
-                        palette={palette}
-                      />
-                    </Pressable>
-                    <Pressable
-                      hitSlop={10}
-                      onPress={async () => {
-                        if (!item.dishes[0]) return;
-                        await Share.share({
-                          message: `Check out ${item.dishes[0].name} at ${item.venue.name} on Hungry.`,
-                        });
-                        incrementShare(item.id);
-                      }}
-                    >
-                      <VerticalActionMetric
-                        icon={<Send color={palette.white} size={26} />}
-                        count={interaction.shareCount}
-                        palette={palette}
-                      />
-                    </Pressable>
+              {item.mediaType === "video" && (
+                <View style={styles.playButtonContainer} pointerEvents="none">
+                  <View style={styles.playButtonBackdrop}>
+                    <PlayCircle color={palette.white} size={32} />
                   </View>
                 </View>
+              )}
+            </View>
 
+            {/* Action Bar */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: spacing[4],
+                paddingVertical: spacing[3],
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[4] }}>
                 <Pressable
                   hitSlop={10}
-                  onPress={() => toggleExpandedPost(item.id)}
-                  style={[
-                    styles.captionOverlay,
-                    {
-                      alignItems: profile.leftHandedMode ? "flex-end" : "flex-start",
-                    },
-                  ]}
+                  onPress={() => toggleLike(item.id)}
+                  style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
                 >
-                  <AppText
-                    variant="bodySmall"
-                    style={{
-                      color: "rgba(255,255,255,0.9)",
-                      textAlign: profile.leftHandedMode ? "right" : "left",
-                    }}
-                    numberOfLines={isExpanded ? undefined : 2}
-                  >
-                    {item.caption}
-                  </AppText>
+                  <Heart
+                    color={isLiked ? palette.error : themeTints.text}
+                    fill={isLiked ? palette.error : "transparent"}
+                    size={28}
+                  />
+                  {interaction.likeCount > 0 && (
+                    <AppText variant="bodySmallBold" style={{ color: themeTints.text }}>
+                      {interaction.likeCount}
+                    </AppText>
+                  )}
                 </Pressable>
+                <Pressable
+                  hitSlop={10}
+                  onPress={() => openComments(item)}
+                  style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+                >
+                  <MessageCircle color={themeTints.text} size={28} />
+                  {interaction.commentCount > 0 && (
+                    <AppText variant="bodySmallBold" style={{ color: themeTints.text }}>
+                      {interaction.commentCount}
+                    </AppText>
+                  )}
+                </Pressable>
+                <Pressable
+                  hitSlop={10}
+                  onPress={async () => {
+                    if (!item.dishes[0]) return;
+                    await Share.share({
+                      message: `Check out ${item.dishes[0].name} at ${item.venue.name} on Hungry.`,
+                    });
+                    incrementShare(item.id);
+                  }}
+                  style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+                >
+                  <Send color={themeTints.text} size={26} />
+                </Pressable>
+              </View>
+              <Pressable hitSlop={10} onPress={() => toggleSave(item.id)}>
+                <Bookmark
+                  color={isSaved ? palette.orange : themeTints.text}
+                  fill={isSaved ? palette.orange : "transparent"}
+                  size={28}
+                />
+              </Pressable>
+            </View>
 
-                {isExpanded ? (
-                  <View
-                    style={[
-                      styles.quickPostRow,
-                      {
-                        gap: spacing[2],
-                        marginTop: spacing[3],
-                        flexDirection: profile.leftHandedMode ? "row-reverse" : "row",
-                      },
-                    ]}
-                  >
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Quick review"
-                      onPress={() => {
-                        if (!isAuthenticated) {
-                          setReturnRoute("Review");
-                          navigation.navigate("AuthStack", { screen: "Login" });
-                          return;
-                        }
+            {/* Caption & Timestamp */}
+            <View style={{ paddingHorizontal: spacing[4], gap: spacing[1] }}>
+              {interaction.likeCount > 0 && (
+                <AppText variant="bodySmallBold" style={{ color: themeTints.text }}>
+                  {interaction.likeCount.toLocaleString()} likes
+                </AppText>
+              )}
+              <Pressable hitSlop={10} onPress={() => toggleExpandedPost(item.id)}>
+                <AppText
+                  variant="bodySmall"
+                  style={{ color: themeTints.text }}
+                  numberOfLines={isExpanded ? undefined : 2}
+                >
+                  <AppText variant="bodySmallBold">{item.authorName} </AppText>
+                  {item.caption}{" "}
+                  {item.dishes[0] && (
+                    <AppText
+                      variant="bodySmall"
+                      style={{ color: palette.orange, textDecorationLine: "underline" }}
+                      onPress={() => navigateToDish(item.dishes[0].id)}
+                    >
+                      @{item.dishes[0].name}
+                    </AppText>
+                  )}
+                </AppText>
+              </Pressable>
 
-                        navigation.navigate("ReviewStack", {
-                          screen: "ReviewMain",
-                          params: {
-                            dishId: item.dishes[0]?.id,
-                            venueId: item.venueId,
-                          },
-                        });
-                      }}
-                      style={[
-                        styles.quickPostButton,
-                        {
-                          backgroundColor: "rgba(255,255,255,0.2)",
-                          borderColor: "rgba(255,255,255,0.4)",
-                          borderRadius: radii.pill,
-                          paddingHorizontal: spacing[3],
-                          paddingVertical: spacing[2],
-                        },
-                      ]}
-                    >
-                      <AppText variant="bodySmall" style={{ color: palette.white }}>
-                        Quick review
-                      </AppText>
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Create post"
-                      onPress={() => {
-                        if (!isAuthenticated) {
-                          setReturnRoute("Post");
-                          navigation.navigate("AuthStack", { screen: "Login" });
-                          return;
-                        }
-                        navigation.navigate("Post", {
-                          dishId: item.dishes[0]?.id,
-                          venueId: item.venueId,
-                        });
-                      }}
-                      style={[
-                        styles.quickPostButton,
-                        {
-                          backgroundColor: "rgba(255,255,255,0.2)",
-                          borderColor: "rgba(255,255,255,0.4)",
-                          borderRadius: radii.pill,
-                          paddingHorizontal: spacing[3],
-                          paddingVertical: spacing[2],
-                        },
-                      ]}
-                    >
-                      <AppText variant="bodySmall" style={{ color: palette.white }}>
-                        Post
-                      </AppText>
-                    </Pressable>
-                  </View>
-                ) : null}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginTop: spacing[1],
+                  gap: spacing[2],
+                }}
+              >
+                <AppText variant="micro" tone="muted">
+                  {formatTimeAgo(item.createdAt || new Date().toISOString())}
+                </AppText>
+                {interaction.commentCount > 0 && (
+                  <Pressable onPress={() => openComments(item)}>
+                    <AppText variant="micro" tone="muted" style={{ fontWeight: "600" }}>
+                      View all {interaction.commentCount} comments
+                    </AppText>
+                  </Pressable>
+                )}
               </View>
             </View>
           </View>

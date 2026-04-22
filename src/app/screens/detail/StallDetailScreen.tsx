@@ -12,11 +12,11 @@ import {
   AppText,
   EmptyState,
   FeedErrorBoundary,
-  FAB,
   Button,
   Card,
   Input,
   Skeleton,
+  StickyBottomBar,
 } from "@/components/ui";
 import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
@@ -247,33 +247,63 @@ export function StallDetailScreen({ navigation, route }: Props) {
               <ChevronLeft color={palette.text} size={24} />
             </Pressable>
             <View style={{ flex: 1 }} />
-            <Pressable
-              onPress={handleShare}
-              style={[
-                {
-                  width: 44,
-                  height: 44,
-                  borderRadius: radii.pill,
-                  backgroundColor: palette.surface,
-                  alignItems: "center",
-                  justifyContent: "center",
-                },
-                shadows.floating,
-              ]}
-            >
-              <Share2 color={palette.text} size={20} />
-            </Pressable>
+            <View style={{ flexDirection: "row", gap: spacing[2] }}>
+              <Pressable
+                onPress={() => {
+                  if (leadDish) {
+                    toggleFavourite(leadDish);
+                  }
+                }}
+                style={[
+                  {
+                    width: 44,
+                    height: 44,
+                    borderRadius: radii.pill,
+                    backgroundColor: palette.surface,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  },
+                  shadows.floating,
+                ]}
+              >
+                <Heart
+                  color={palette.text}
+                  fill={
+                    profile.favouriteDishIds.includes(leadDish?.id ?? "")
+                      ? palette.text
+                      : "transparent"
+                  }
+                  size={20}
+                />
+              </Pressable>
+              <Pressable
+                onPress={handleShare}
+                style={[
+                  {
+                    width: 44,
+                    height: 44,
+                    borderRadius: radii.pill,
+                    backgroundColor: palette.surface,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  },
+                  shadows.floating,
+                ]}
+              >
+                <Share2 color={palette.text} size={20} />
+              </Pressable>
+            </View>
           </View>
 
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: insets.bottom + spacing[20] }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + spacing[24] }}
           >
-            {/* Hero image - 4:3 Ratio */}
+            {/* Hero image - 16:9 Ratio */}
             <View
               style={{
                 width: screenWidth,
-                height: screenWidth * 0.75,
+                height: screenWidth * (9 / 16),
                 position: "relative",
               }}
             >
@@ -598,37 +628,25 @@ export function StallDetailScreen({ navigation, route }: Props) {
             </View>
           </ScrollView>
 
-          {/* Floating Save Button */}
-          <FAB>
-            <Pressable
-              onPress={() => {
-                if (leadDish) {
-                  toggleFavourite(leadDish);
-                }
-              }}
-              style={({ pressed }) => [
-                {
-                  width: 56,
-                  height: 56,
-                  borderRadius: radii.pill,
-                  backgroundColor: palette.orange,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  opacity: pressed ? 0.9 : 1,
-                  ...shadows.floating,
+          <StickyBottomBar
+            actions={[
+              {
+                label: "Order delivery",
+                variant: "secondary",
+                onPress: () => {
+                  showToast({ message: "Delivery integration coming soon.", tone: "info" });
                 },
-              ]}
-            >
-              <Heart
-                color={palette.textOnPrimary}
-                fill={
-                  profile.favouriteDishIds.includes(leadDish?.id ?? "")
-                    ? palette.textOnPrimary
-                    : "transparent"
-                }
-              />
-            </Pressable>
-          </FAB>
+              },
+              {
+                label: "Directions",
+                variant: "primary",
+                icon: <MapPin color={palette.textOnPrimary} size={18} />,
+                onPress: () => {
+                  navigation.navigate("MapZoomedIn", { buildingId: venue.buildingId });
+                },
+              },
+            ]}
+          />
         </View>
       </SafeAreaView>
     </FeedErrorBoundary>
