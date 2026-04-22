@@ -31,13 +31,13 @@ insert into building_floors (id, building_id, floor_label, sort_order) values
 ('e3f89158-ce50-485d-bd37-0438195daf04', 'building-313', 'L5', 7)
 on conflict do nothing;
 
-insert into venues (id, building_id, name, unit_number, floor, hygiene_grade, is_open, top_dish_id, operating_hours, closure_notice, live_crowd) values
-('venue-tian-tian', 'building-maxwell', 'Tian Tian Chicken Rice', '#01-10', 'L1', 'A', true, 'dish-chicken-rice', '10:00 AM – 8:00 PM', null, 'high'),
-('venue-ban-mian', 'building-amoy', 'Han Kee Fish Soup', '#02-129', 'L2', 'A', true, 'dish-ban-mian', '11:00 AM – 3:00 PM', null, 'medium'),
-('venue-satay-street', 'building-lau-pa-sat', 'Satay Street Classics', '#01-22', 'L1', 'A', true, 'dish-satay', '4:30 PM – 11:00 PM', null, 'medium'),
-('venue-japanese-curry', 'building-313', 'Monster Curry', '#04-16', 'L4', 'A', true, 'dish-japanese-curry', '11:00 AM – 10:00 PM', null, null),
-('venue-maxwell-porridge', 'building-maxwell', 'Night Owl Teochew Porridge', '#02-21', 'L1', 'A', false, 'dish-teochew-porridge', '6:00 PM – 4:00 AM', null, null),
-('venue-fish-soup', 'building-amoy', 'Ah Seng Fish Soup', '#02-77', 'L2', 'B', true, 'dish-fish-soup', '9:00 AM – 3:00 PM', 'Closed today for scheduled NEA cleaning. Reopens tomorrow.', 'low')
+insert into venues (id, building_id, name, unit_number, floor, is_open, top_dish_id, operating_hours, closure_notice, live_crowd) values
+('venue-tian-tian', 'building-maxwell', 'Tian Tian Chicken Rice', '#01-10', 'L1', true, 'dish-chicken-rice', '10:00 AM – 8:00 PM', null, 'high'),
+('venue-ban-mian', 'building-amoy', 'Han Kee Fish Soup', '#02-129', 'L2', true, 'dish-ban-mian', '11:00 AM – 3:00 PM', null, 'medium'),
+('venue-satay-street', 'building-lau-pa-sat', 'Satay Street Classics', '#01-22', 'L1', true, 'dish-satay', '4:30 PM – 11:00 PM', null, 'medium'),
+('venue-japanese-curry', 'building-313', 'Monster Curry', '#04-16', 'L4', true, 'dish-japanese-curry', '11:00 AM – 10:00 PM', null, null),
+('venue-maxwell-porridge', 'building-maxwell', 'Night Owl Teochew Porridge', '#02-21', 'L1', false, 'dish-teochew-porridge', '6:00 PM – 4:00 AM', null, null),
+('venue-fish-soup', 'building-amoy', 'Ah Seng Fish Soup', '#02-77', 'L2', true, 'dish-fish-soup', '9:00 AM – 3:00 PM', 'Closed today for scheduled cleaning. Reopens tomorrow.', 'low')
 on conflict do nothing;
 
 insert into venue_delivery_links (id, venue_id, platform, native_url, web_url, affiliate_eligible) values

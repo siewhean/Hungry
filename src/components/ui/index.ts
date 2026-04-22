@@ -15,3 +15,4 @@ export * from "./InlineBanner";
 export * from "./Input";
 export * from "./Screen";
 export * from "./Skeleton";
+export * from "./StickyBottomBar";

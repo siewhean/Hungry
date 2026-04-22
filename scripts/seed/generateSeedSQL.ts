@@ -144,7 +144,6 @@ seedSqlParts.push(
       "name",
       "unit_number",
       "floor",
-      "hygiene_grade",
       "is_open",
       "top_dish_id",
       "operating_hours",
@@ -152,7 +151,7 @@ seedSqlParts.push(
       "live_crowd",
     ],
     venues.map((venue) => {
-      return `(${toSqlValue(venue.id)}, ${toSqlValue(venue.buildingId)}, ${toSqlValue(venue.name)}, ${toSqlValue(venue.unitNumber)}, ${toSqlValue(venue.floor)}, ${toSqlValue(venue.hygieneGrade)}, ${toSqlValue(venue.isOpen)}, ${toSqlValue(venue.topDishId)}, ${toSqlValue(venue.operatingHours)}, ${toSqlValue(venue.closureNotice ?? null)}, ${toSqlValue(venue.liveCrowd ?? null)})`;
+      return `(${toSqlValue(venue.id)}, ${toSqlValue(venue.buildingId)}, ${toSqlValue(venue.name)}, ${toSqlValue(venue.unitNumber)}, ${toSqlValue(venue.floor)}, ${toSqlValue(venue.isOpen)}, ${toSqlValue(venue.topDishId)}, ${toSqlValue(venue.operatingHours)}, ${toSqlValue(venue.closureNotice ?? null)}, ${toSqlValue(venue.liveCrowd ?? null)})`;
     }),
   ),
 );

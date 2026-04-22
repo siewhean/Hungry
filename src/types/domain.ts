@@ -52,7 +52,6 @@ export type HawkerTasteTag =
   | "power"; // exceptionally strong flavor, standout dish
 
 export type BuildingType = "hawker_centre" | "food_court" | "restaurant";
-export type HygieneGrade = "A" | "B" | "C" | "D";
 export type DeliveryPlatform = "grabfood" | "foodpanda";
 export type DietaryFlag =
   | "halal"
@@ -115,7 +114,6 @@ export interface VenueSummary {
   name: string;
   unitNumber: string;
   floor: string;
-  hygieneGrade: HygieneGrade;
   isOpen: boolean;
   liveCrowd?: "low" | "medium" | "high";
   topDishId: string;
@@ -236,6 +234,10 @@ export interface StallPost {
   caption: string;
   dishIds: string[];
   createdAt: string;
+  /** true = stall/merchant account (orange ring + fork badge), false = user (grey ring) */
+  isStallAccount?: boolean;
+  /** Inline dish link references in caption — tap navigates to dish detail */
+  dishLinks?: { name: string; dishId: string }[];
 }
 
 export interface AppSession {
@@ -302,6 +304,55 @@ export interface WheelEntry {
   position: number;
   addedAt: string;
 }
+
+// ─── Figma V2 Feed Types ─────────────────────────────────────────────────────
+
+/** Story rail item — rendered as circular avatar with ring colour based on isStall */
+export interface StoryItem {
+  id: string;
+  displayName: string;
+  avatarUrl?: string;
+  emoji?: string;
+  /** true = stall account (orange gradient ring + fork badge), false = user (grey ring) */
+  isStall: boolean;
+  hasUnseen: boolean;
+  /** "Your story" entry — shows + add icon instead of ring */
+  isOwn?: boolean;
+}
+
+/**
+ * Quick-review taste tags — tap-only tags replacing mandatory text input.
+ * 12 tags covering 90% of user review intent.
+ */
+export type ReviewTasteTag =
+  | "spicy"
+  | "savoury"
+  | "sweet"
+  | "sour"
+  | "generous"
+  | "fresh"
+  | "worth_it"
+  | "cold_refreshing"
+  | "rich_broth"
+  | "chewy_noodles"
+  | "hot_fresh"
+  | "quick_service";
+
+/** Map of review taste tag keys to display label + emoji */
+export const REVIEW_TASTE_TAG_META: Record<ReviewTasteTag, { emoji: string; label: string }> = {
+  spicy: { emoji: "🌶️", label: "Spicy" },
+  savoury: { emoji: "🧂", label: "Savoury" },
+  sweet: { emoji: "🍯", label: "Sweet" },
+  sour: { emoji: "🍋", label: "Sour" },
+  generous: { emoji: "💪", label: "Generous" },
+  fresh: { emoji: "🌿", label: "Fresh" },
+  worth_it: { emoji: "💰", label: "Worth it" },
+  cold_refreshing: { emoji: "🧊", label: "Cold & refreshing" },
+  rich_broth: { emoji: "🫙", label: "Rich broth" },
+  chewy_noodles: { emoji: "🥢", label: "Chewy noodles" },
+  hot_fresh: { emoji: "🔥", label: "Hot & fresh" },
+  quick_service: { emoji: "⚡", label: "Quick service" },
+};
 
 /** Realtime broadcast event shapes ───────────────────────────────── */
 export type WheelChannelEvent =

@@ -96,7 +96,6 @@ function mapVenue(row: Row): VenueSummary {
     name: toString(row.name),
     unitNumber: toString(row.unit_number),
     floor: toString(row.floor),
-    hygieneGrade: (toString(row.hygiene_grade) as VenueSummary["hygieneGrade"]) || "A",
     isOpen: toBool(row.is_open, true),
     liveCrowd: (toString(row.live_crowd) as VenueSummary["liveCrowd"]) || undefined,
     topDishId: toString(row.top_dish_id),

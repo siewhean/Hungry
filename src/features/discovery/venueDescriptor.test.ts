@@ -16,11 +16,3 @@ test("uses facility fallback label when no operating hours", () => {
     "Facility / seating",
   );
 });
-
-test("descriptor never injects hygiene wording", () => {
-  const descriptor = getDirectoryDescriptor({
-    operatingHours: "11:00 AM - 9:00 PM",
-    isFacility: false,
-  });
-  assert.equal(descriptor.includes("Hygiene"), false);
-});
