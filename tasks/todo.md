@@ -44,14 +44,20 @@
 
 ### Done gate
 
-- [ ] All `DataRepository` methods return live data from Supabase (not mock).
+- [x] All `DataRepository` methods return live data from Supabase (not mock).
 - [ ] Auth flow (sign-up → email verify → onboarding → main app) works end-to-end against Supabase Auth.
 - [ ] `HUNGRY_DATA_SOURCE=mock` still works as fallback — no regression.
-- [ ] Review photo upload stores to Supabase Storage and displays via CDN URL.
-- [ ] `npm run typecheck` passes.
-- [ ] No `mockRepository` imports remain in production code paths.
+- [x] Review photo upload stores to Supabase Storage and displays via CDN URL.
+- [x] `npm run typecheck` passes.
+- [x] No `mockRepository` imports remain in production code paths.
 - [ ] Manual crash test (ERR boundary): trigger a JS throw in `LoginScreen` render — app shows fallback UI, does not white-screen. *(Runtime smoke — do alongside PROV-06.)*
 - [ ] Manual crash test (ERR boundary): trigger a JS throw in `DishDetailScreen` render — app shows fallback UI. *(Runtime smoke — do alongside PROV-06.)*
+
+Verification notes (2026-04-22):
+- `DataRepository` live-path check: removed mock fallback seeding from `src/lib/services/supabase/supabaseRepository.ts`; cache now initializes as empty until Supabase hydration.
+- Production-path import check: `rg -n "mockRepository" src/app src/features src/lib/services/supabase src/lib/services/serviceProvider.ts -S` returns no matches.
+- Typecheck gate: `npm run typecheck` passes.
+- Review photo upload gate: prior verified smoke evidence remains in session log (2026-04-19 `MEDIA_UPLOAD_OK`, storage policies + signed URL generation).
 
 ---
 
@@ -78,7 +84,7 @@
 ### Menu OCR pipeline (Codex primary)
 
 - [x] **OCR-01 — "Snap a menu photo" step in `QuickReviewSheet.tsx`** — optional step that collects a menu photo alongside the review. [Codex] *(implemented dev-only UI in `QuickReviewSheet.tsx`; wired via `QuickReviewModal.tsx` payload IDs; hidden from users with `__DEV__` gate.)*
-- [ ] **OCR-02 — Supabase Storage bucket `menu-photos`** + signed-URL upload flow with size/MIME guardrails (max 10MB, image/jpeg|png|heic). [Codex] *(code path implemented in `supabaseService.supply.submitMenuPhoto` + `assertValidMenuPhotoUpload()`; signed-URL→SDK fallback in `mediaUpload.ts`. **Bucket provisioning in Supabase still pending.**)*
+- [x] **OCR-02 — Supabase Storage bucket `menu-photos`** + signed-URL upload flow with size/MIME guardrails (max 10MB, image/jpeg|png|heic). [Codex] *(provisioned via migrations `0014_menu_photos_bucket_and_flag_rollout.sql` + `0015_menu_photos_authenticated_select_prefix.sql`; bucket is private, MIME + 10MB limits set, and `storage.objects` policies enforce `<uid>/...` path ownership. Runtime fix applied in `supabaseService.supply.submitMenuPhoto` RPC argument mapping: `p_size_bytes`.)*
 - [x] **OCR-03 — Edge Function `ingest-menu-photo`** invoking Google Cloud Vision `DOCUMENT_TEXT_DETECTION` with `languageHints: ["zh-Hans", "zh-Hant", "en"]`. [Codex] *(new function: `supabase/functions/ingest-menu-photo/index.ts`.)*
 - [x] **OCR-04 — LLM extraction step** converts OCR text blob → `{name, price, modifiers[]}[]` with per-dish `extraction_confidence`. [Codex] *(implemented with Gemini Flash JSON extraction in `ingest-menu-photo`; regex fallback parser retained for resilience.)*
 - [x] **OCR-05 — Write to `dishes_draft` with dedupe** — cosine similarity on (name, price) vs existing draft rows for that venue; similarity > 0.9 → bump confidence on existing; else → insert new row. [Codex] *(implemented in `ingest-menu-photo` using vectorized name+price cosine scoring and confidence bump updates.)*
@@ -88,7 +94,7 @@
 
 - [ ] **CLM-03 — "Claim this stall" CTA on `StallDetailScreen`** — fires `merchant_claim_interests` insert + telemetry event `claim_this_stall_tapped`. [Codex]
 - [ ] **CLM-04 — Copy spec for CTA + verification explainer page** — sets expectation for SingPass Myinfo Business / NEA licence / video walkaround flow. [Gemini]
-- [ ] **CLM-05 — Feature flag `merchantClaimCtaEnabled`** added to `src/constants/featureFlags.ts` — OFF production, ON staging. [Codex]
+- [x] **CLM-05 — Feature flag `merchantClaimCtaEnabled`** added to `src/constants/featureFlags.ts` — OFF production, ON staging. [Codex] *(implemented via `resolveFeatureFlags()` using `EXPO_PUBLIC_APP_ENV`; `true` only for `staging`, `false` for `production`/`development`. Covered by `src/constants/featureFlags.test.ts`.)*
 - [ ] **CLM-06 — "Menu (community-sourced)" block on `StallDetailScreen`** — renders accepted `dishes_draft` rows so consumers get value from their own uploads. [Codex]
 
 ### Done gate
@@ -198,6 +204,9 @@ All items completed. Verification evidence in session log:
 - [x] Session log maintained with: date, actor (Claude/Codex), tasks touched, status, blockers, next step.
 
 ### Session Entries (recent — full history in git log)
+
+- 2026-04-22 | Codex | Continued Sprint 5 done-gate verification. Removed Supabase repository mock fallback cache seeding (`supabaseRepository.ts`) and reran hard gates (`npm run typecheck`, `npx expo-doctor`). Revalidated production-path `mockRepository` usage via grep. Updated done-gate checklist with evidence-backed status only. | Status: done-gate now marked pass for `DataRepository live`, `review photo upload` (based on prior PROV-08 smoke evidence), `typecheck`, and `no mockRepository imports in production paths`; auth-E2E/onboarding, mock fallback runtime regression, and both manual crash-boundary checks remain open. | Verification: `npm run typecheck` pass; `npx expo-doctor` pass (17/17); grep `mockRepository` in production paths => no matches. | Next: run manual runtime verification on simulator/device for auth onboarding + crash-boundary checks and mock-mode runtime regression.
+- 2026-04-22 | Codex | Implemented Sprint 10 Phase A (`OCR-02` + `CLM-05`): added secure storage migrations for `menu-photos` (`0014`, `0015`), added environment-derived `merchantClaimCtaEnabled` rollout flag, and added feature-flag unit tests. While running OCR smoke, fixed `submit_menu_photo` RPC parameter mismatch in `supabaseService` (`p_byte_size` -> `p_size_bytes`). | Status: OCR-02 and CLM-05 complete. | Verification: `npm run typecheck` pass; `npx tsx --test src/constants/featureFlags.test.ts` pass (3/3); `npx eslint src/constants/featureFlags.ts src/constants/featureFlags.test.ts src/lib/services/supabase/supabaseService.ts` pass; `npx supabase db push` applied `0014` and `0015`; `npx supabase db query --linked` confirms `storage.buckets.id='menu-photos'` with `public=false`, expected `menu_photos_*` policies on `storage.objects`, and authenticated upload smoke succeeded (`MENU_PHOTOS_UPLOAD_OK`) with object present in `storage.objects`. | Next: CLM-03 (`Claim this stall` CTA + telemetry insert) and CLM-06 (`Menu (community-sourced)` block on StallDetailScreen).
 
 - 2026-04-22 | Codex | Implemented Sprint 10 OCR-01..OCR-06 in developer-only flow: quick-review menu photo capture (`__DEV__` gated), supply service interface (`HungryService.supply`), menu-photo MIME/size validation + upload path, edge function `ingest-menu-photo` (Vision OCR + Gemini extraction + dedupe to `dishes_draft`), edge function `ops-dishes-draft` (list/review queue), and local ops stub UI at `ops/dishes-draft/index.html`. Updated `.env.example` with OCR/ops secrets. | Status: OCR-01, OCR-03, OCR-04, OCR-05, OCR-06 complete in code; OCR-02 bucket provisioning pending. | Verification: `npm run typecheck` pass. `npm run test` currently fails due existing environment/tooling issue (`esbuild` transform error at `node_modules/react-native/index.js` under Node v25), not from OCR files. | Next: deploy edge functions, create `menu-photos` bucket in Supabase, set secrets (`GOOGLE_CLOUD_VISION_API_KEY`, `GEMINI_API_KEY`, `OPS_DISHES_DRAFT_API_KEY`), then run staging E2E OCR smoke.
 

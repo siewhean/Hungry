@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import * as WebBrowser from "expo-web-browser";
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { similarityScore } from "@/lib/ai/similarityScore";
@@ -285,6 +286,74 @@ function getOpsDraftApiKey(): string {
   );
 }
 
+function getAuthEmailRedirectTo(): string {
+  return process.env.EXPO_PUBLIC_AUTH_REDIRECT_URL?.trim() || "hungry://auth/callback";
+}
+
+function getAuthTokensFromCallback(url: string): {
+  accessToken?: string;
+  refreshToken?: string;
+  code?: string;
+} {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return {};
+  }
+
+  const query = new URLSearchParams(parsed.search.startsWith("?") ? parsed.search.slice(1) : "");
+  const hash = new URLSearchParams(parsed.hash.startsWith("#") ? parsed.hash.slice(1) : "");
+
+  return {
+    accessToken: hash.get("access_token") ?? query.get("access_token") ?? undefined,
+    refreshToken: hash.get("refresh_token") ?? query.get("refresh_token") ?? undefined,
+    code: query.get("code") ?? undefined,
+  };
+}
+
+async function signInWithOAuthProvider(provider: "google" | "apple"): Promise<Session> {
+  const client = requireSupabaseClient();
+  const redirectTo = getAuthEmailRedirectTo();
+  const { data, error } = await client.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo,
+      skipBrowserRedirect: true,
+    },
+  });
+  if (error) throw error;
+  if (!data?.url) {
+    throw new Error("OAuth provider URL was not generated.");
+  }
+
+  WebBrowser.maybeCompleteAuthSession();
+  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+  if (result.type !== "success" || !result.url) {
+    throw new Error("OAuth sign-in was cancelled.");
+  }
+
+  const { accessToken, refreshToken, code } = getAuthTokensFromCallback(result.url);
+  if (accessToken && refreshToken) {
+    const { error: sessionError } = await client.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    if (sessionError) throw sessionError;
+  } else if (code) {
+    const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
+    if (exchangeError) throw exchangeError;
+  } else {
+    throw new Error("OAuth callback did not include session credentials.");
+  }
+
+  const session = await toAppSession(client);
+  if (!session) {
+    throw new Error("OAuth flow completed but no active session was found.");
+  }
+  return session;
+}
+
 export const supabaseService: HungryService = {
   auth: {
     async signUp(email, password, name) {
@@ -292,12 +361,27 @@ export const supabaseService: HungryService = {
       const { error } = await client.auth.signUp({
         email,
         password,
-        options: { data: { display_name: name } },
+        options: {
+          data: { display_name: name },
+          emailRedirectTo: getAuthEmailRedirectTo(),
+        },
       });
       if (error) throw error;
       // When email confirmation is required, Supabase returns no session yet.
       // Return null so the caller can show the "check your email" flow instead of throwing.
       return await toAppSession(client);
+    },
+
+    async resendVerificationEmail(email) {
+      const client = requireSupabaseClient();
+      const { error } = await client.auth.resend({
+        type: "signup",
+        email,
+        options: {
+          emailRedirectTo: getAuthEmailRedirectTo(),
+        },
+      });
+      if (error) throw error;
     },
 
     async signIn(email, password) {
@@ -310,25 +394,11 @@ export const supabaseService: HungryService = {
     },
 
     async signInWithGoogle() {
-      const client = requireSupabaseClient();
-      const { error } = await client.auth.signInWithOAuth({ provider: "google" });
-      if (error) throw error;
-      const session = await toAppSession(client);
-      if (!session) {
-        throw new Error("OAuth flow started. Complete provider redirect to create a session.");
-      }
-      return session;
+      return signInWithOAuthProvider("google");
     },
 
     async signInWithApple() {
-      const client = requireSupabaseClient();
-      const { error } = await client.auth.signInWithOAuth({ provider: "apple" });
-      if (error) throw error;
-      const session = await toAppSession(client);
-      if (!session) {
-        throw new Error("OAuth flow started. Complete provider redirect to create a session.");
-      }
-      return session;
+      return signInWithOAuthProvider("apple");
     },
 
     async signOut() {
@@ -809,9 +879,7 @@ export const supabaseService: HungryService = {
         p_venue_id: input.venueId,
         p_storage_path: uploaded.path,
         p_content_type: input.photoMimeType ?? null,
-        p_byte_size: input.photoFileSizeBytes ?? null,
-        p_source_review_dish_id: input.dishId ?? null,
-        p_source_review_text: input.reviewText ?? null,
+        p_size_bytes: input.photoFileSizeBytes ?? null,
       });
       if (rpcError || !submissionId) {
         throw rpcError ?? new Error("Failed to submit menu photo metadata.");
