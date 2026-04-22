@@ -373,7 +373,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             <View style={[styles.imageContainer, { height: imageHeight }]}>
               <ZoomableMedia
                 uri={item.mediaUrl}
-                type={item.mediaType as "image" | "video"}
+                type={item.mediaType === "video" ? "video" : "image"}
                 style={StyleSheet.absoluteFill}
               />
 

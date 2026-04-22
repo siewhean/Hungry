@@ -17,7 +17,10 @@ test("phase7 dietary flag migration seeds the canonical six flags", () => {
 test("phase7 venue category migration seeds expected category slugs", () => {
   const sql = readRepoFile("supabase/migrations/0006_seed_venue_categories.sql");
   for (const slug of ["local_favourites", "noodles", "rice", "desserts", "late_night"]) {
-    assert.ok(sql.includes(`'${slug}'`), `Expected slug '${slug}' in venue category seed migration.`);
+    assert.ok(
+      sql.includes(`'${slug}'`),
+      `Expected slug '${slug}' in venue category seed migration.`,
+    );
   }
 });
 

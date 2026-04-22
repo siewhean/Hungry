@@ -22,6 +22,14 @@ interface ZoomableMediaProps {
 }
 
 export function ZoomableMedia({ uri, type, onPress, style }: ZoomableMediaProps) {
+  if (type === "video") {
+    return <ZoomableVideo uri={uri} style={style} />;
+  }
+
+  return <ZoomableImage uri={uri} onPress={onPress} style={style} />;
+}
+
+function ZoomableVideo({ uri, style }: Pick<ZoomableMediaProps, "uri" | "style">) {
   const { palette } = useHungryTheme();
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
@@ -44,33 +52,6 @@ export function ZoomableMedia({ uri, type, onPress, style }: ZoomableMediaProps)
 
     player.pause();
   }, [isPlaying, player]);
-
-  // Zoom logic
-  const scale = useSharedValue(1);
-  const focalX = useSharedValue(0);
-  const focalY = useSharedValue(0);
-
-  const pinchGesture = Gesture.Pinch()
-    .onStart((e) => {
-      focalX.value = e.focalX;
-      focalY.value = e.focalY;
-    })
-    .onUpdate((e) => {
-      scale.value = e.scale;
-    })
-    .onEnd(() => {
-      scale.value = withSpring(1);
-    });
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: focalX.value },
-      { translateY: focalY.value },
-      { scale: scale.value },
-      { translateX: -focalX.value },
-      { translateY: -focalY.value },
-    ],
-  }));
 
   const handleTogglePlay = () => {
     setIsPlaying((current) => !current);
@@ -110,47 +91,77 @@ export function ZoomableMedia({ uri, type, onPress, style }: ZoomableMediaProps)
 
   const videoGestures = Gesture.Exclusive(videoLongPress, videoTap);
 
-  if (type === "video") {
-    return (
-      <View style={[styles.container, style]}>
-        <GestureDetector gesture={videoGestures}>
-          <View style={StyleSheet.absoluteFill}>
-            <VideoView
-              player={player}
-              style={StyleSheet.absoluteFill}
-              contentFit="cover"
-              nativeControls={false}
-            />
-          </View>
-        </GestureDetector>
+  return (
+    <View style={[styles.container, style]}>
+      <GestureDetector gesture={videoGestures}>
+        <View style={StyleSheet.absoluteFill}>
+          <VideoView
+            player={player}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            nativeControls={false}
+          />
+        </View>
+      </GestureDetector>
 
-        {/* Play/Pause indicator */}
-        {!isPlaying && (
-          <View pointerEvents="none" style={styles.centerIcon}>
-            <Pause color={palette.white} size={48} fill={palette.white} opacity={0.6} />
-          </View>
+      {/* Play/Pause indicator */}
+      {!isPlaying && (
+        <View pointerEvents="none" style={styles.centerIcon}>
+          <Pause color={palette.white} size={48} fill={palette.white} opacity={0.6} />
+        </View>
+      )}
+
+      {/* 2x Fast Forward indicator */}
+      {isFastForwarding && (
+        <View pointerEvents="none" style={styles.fastForwardIndicator}>
+          <AppText variant="h3" style={{ color: palette.white, fontWeight: "900" }}>
+            2x Speed
+          </AppText>
+        </View>
+      )}
+
+      {/* Mute Button */}
+      <Pressable onPress={handleToggleMute} style={styles.muteButton}>
+        {isMuted ? (
+          <VolumeX color={palette.white} size={20} />
+        ) : (
+          <Volume2 color={palette.white} size={20} />
         )}
+      </Pressable>
+    </View>
+  );
+}
 
-        {/* 2x Fast Forward indicator */}
-        {isFastForwarding && (
-          <View pointerEvents="none" style={styles.fastForwardIndicator}>
-            <AppText variant="h3" style={{ color: palette.white, fontWeight: "900" }}>
-              2x Speed
-            </AppText>
-          </View>
-        )}
+function ZoomableImage({
+  uri,
+  onPress,
+  style,
+}: Pick<ZoomableMediaProps, "uri" | "onPress" | "style">) {
+  const scale = useSharedValue(1);
+  const focalX = useSharedValue(0);
+  const focalY = useSharedValue(0);
 
-        {/* Mute Button */}
-        <Pressable onPress={handleToggleMute} style={styles.muteButton}>
-          {isMuted ? (
-            <VolumeX color={palette.white} size={20} />
-          ) : (
-            <Volume2 color={palette.white} size={20} />
-          )}
-        </Pressable>
-      </View>
-    );
-  }
+  const pinchGesture = Gesture.Pinch()
+    .onStart((e) => {
+      focalX.value = e.focalX;
+      focalY.value = e.focalY;
+    })
+    .onUpdate((e) => {
+      scale.value = e.scale;
+    })
+    .onEnd(() => {
+      scale.value = withSpring(1);
+    });
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: focalX.value },
+      { translateY: focalY.value },
+      { scale: scale.value },
+      { translateX: -focalX.value },
+      { translateY: -focalY.value },
+    ],
+  }));
 
   return (
     <GestureDetector gesture={pinchGesture}>

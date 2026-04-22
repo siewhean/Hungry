@@ -1,5 +1,5 @@
 import * as Linking from "expo-linking";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import {
   NavigationContainer,
@@ -10,7 +10,7 @@ import {
   createNativeStackNavigator,
   type NativeStackScreenProps,
 } from "@react-navigation/native-stack";
-import { ArrowLeft, Compass, House, NotebookPen, User, BookOpenText } from "lucide-react-native";
+import { ArrowLeft } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
@@ -22,23 +22,19 @@ import { OfflineStateScreen } from "@/app/screens/detail/OfflineStateScreen";
 import { StallDetailScreen } from "@/app/screens/detail/StallDetailScreen";
 import { BuildingDrillDownScreen } from "@/app/screens/discover/BuildingDrillDownScreen";
 import { DecideForMeResultScreen } from "@/app/screens/discover/DecideForMeResultScreen";
-import { DiscoverHomeScreen } from "@/app/screens/discover/DiscoverHomeScreen";
 import { HomeMapScreen } from "@/app/screens/discover/HomeMapScreen";
 import { MapZoomedInScreen } from "@/app/screens/discover/MapZoomedInScreen";
 import { CraveScreen } from "@/app/screens/discover/CraveScreen";
-import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
 import { DirectMessagesScreen } from "@/app/screens/home/DirectMessagesScreen";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
 import { PostComposerScreen } from "@/app/screens/post/PostComposerScreen";
 import { EditProfileScreen } from "@/app/screens/profile/EditProfileScreen";
 import { FavouritesScreen } from "@/app/screens/profile/FavouritesScreen";
-import { ProfileStack } from "@/app/screens/profile/ProfileStack";
 import { ReviewHistoryScreen } from "@/app/screens/profile/ReviewHistoryScreen";
 import { SettingsScreen } from "@/app/screens/profile/SettingsScreen";
 import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
 import { BlogPostWebViewScreen } from "@/app/screens/reads/BlogPostWebViewScreen";
 import { ReviewStack } from "@/app/screens/review/ReviewStack";
-import { ReviewScreen } from "@/app/screens/review/ReviewScreen";
 import { MusicSelectionScreen } from "@/app/screens/review/MusicSelectionScreen";
 import { ReviewSuccessModal } from "@/app/screens/review/ReviewSuccessModal";
 import { QuickReviewModal } from "@/app/screens/review/QuickReviewModal";
@@ -47,7 +43,7 @@ import { DishSearchScreen } from "@/app/screens/search/DishSearchScreen";
 import { SearchResultsScreen } from "@/app/screens/search/SearchResultsScreen";
 import { TasteFilterScreen } from "@/app/screens/search/TasteFilterScreen";
 import { FloatingToast } from "@/components/ui";
-import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -145,64 +141,13 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const prefix = Linking.createURL("/");
   const linking = useMemo(() => createRootLinking(prefix), [prefix]);
 
-  const navigateHome = () => {
+  const navigateHome = useCallback(() => {
     setReturnRoute(undefined);
     navigationRef.resetRoot({
       index: 0,
       routes: [{ name: "MainTabs", params: { screen: "Home" } }],
     });
-  };
-
-  const openResolvedRoute = (returnRoute?: string | PendingRoute) => {
-    setReturnRoute(undefined);
-
-    if (returnRoute && typeof returnRoute !== "string") {
-      navigationRef.resetRoot({
-        index: 0,
-        routes: [returnRoute as never],
-      });
-      return;
-    }
-
-    if (returnRoute === "Post") {
-      navigationRef.resetRoot({
-        index: 1,
-        routes: [{ name: "MainTabs", params: { screen: "Home" } }, { name: "Post" }],
-      });
-      return;
-    }
-
-    if (
-      returnRoute === "EditProfile" ||
-      returnRoute === "Favourites" ||
-      returnRoute === "ReviewHistory" ||
-      returnRoute === "Settings"
-    ) {
-      navigationRef.resetRoot({
-        index: 0,
-        routes: [{ name: returnRoute }],
-      });
-      return;
-    }
-
-    if (
-      returnRoute === "Profile" ||
-      returnRoute === "Review" ||
-      returnRoute === "Rate" ||
-      returnRoute === "Home"
-    ) {
-      navigationRef.resetRoot({
-        index: 0,
-        routes: [{ name: "MainTabs", params: { screen: returnRoute } }],
-      });
-      return;
-    }
-
-    navigationRef.resetRoot({
-      index: 0,
-      routes: [{ name: "MainTabs", params: { screen: "Home" } }],
-    });
-  };
+  }, [setReturnRoute]);
 
   useEffect(() => {
     if (sessionExpired && navigationRef.isReady()) {
@@ -236,7 +181,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     if (currentTopRoute === "OnboardingStack" && hasCompletedOnboarding) {
       navigateHome();
     }
-  }, [hasCompletedOnboarding, isAuthenticated]);
+  }, [hasCompletedOnboarding, isAuthenticated, navigateHome]);
 
   useEffect(() => {
     if (!navigationRef.isReady()) {

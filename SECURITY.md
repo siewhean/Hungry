@@ -70,3 +70,23 @@ Out of scope: any separate marketing website, unrelated Anthropic products menti
 - Complete the OWASP MASVS L1 audit rehearsal with the evidence pack under `docs/security/audit-evidence/`.
 - Confirm App Store Review and Google Play Data Safety pass on a pre-submission staging build.
 - Enable branch protection with required security workflow on `main`, including `npm audit`, `gitleaks`, and `trufflehog` gates.
+
+## Supabase Advisor Accepted Findings (2026-04-22)
+
+The following Supabase Security Advisor items are currently accepted with documented rationale:
+
+- `RLS Disabled in Public` on `public.spatial_ref_sys`
+  - Status: Accepted exception.
+  - Rationale: `spatial_ref_sys` is extension-owned by PostGIS and cannot be altered by project migration roles (`must be owner of table spatial_ref_sys`).
+  - Mitigation: No app-owned user data is stored in this table. Core app tables enforce RLS and explicit policies.
+
+- `Extension in Public` for `postgis`, `vector`, `pg_trgm`, `btree_gist`, `citext`
+  - Status: Accepted warning.
+  - Rationale: Current schema intentionally uses these extensions from `public` for compatibility with existing migrations and production queries.
+  - Mitigation: Review extension schema migration in a dedicated hardening window only (high-risk change, not in active sprint scope).
+
+Non-accepted (must fix):
+
+- `Leaked Password Protection Disabled` (Auth)
+  - Status: Action required in Supabase dashboard.
+  - Required action: Enable leaked password protection under Authentication password security settings.

@@ -5,6 +5,8 @@ import { ArrowLeft, CircleAlert, MailCheck } from "lucide-react-native";
 
 import { AppText, Button, FeedErrorBoundary } from "@/components/ui";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { getHungryService } from "@/lib/services/serviceProvider";
+import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -17,6 +19,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const showToast = useUIStore((state) => state.showToast);
   const { palette, radii, spacing } = useHungryTheme();
+  const isSupabaseMode = getConfiguredDataSource() === "supabase";
   const email = route.params?.email ?? "james.cook@chef.com";
   const [resendSeconds, setResendSeconds] = useState(54);
 
@@ -30,15 +33,32 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
     return () => clearInterval(timer);
   }, [resendSeconds]);
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (resendSeconds > 0) {
       return;
     }
-    showToast({
-      message: `Verification code resent to ${email}.`,
-      tone: "success",
-    });
-    setResendSeconds(54);
+    try {
+      if (isSupabaseMode) {
+        await getHungryService().auth.resendVerificationEmail(email);
+      } else {
+        showToast({
+          message: "Running in mock mode. Verification emails are not sent in this mode.",
+          tone: "warning",
+        });
+        setResendSeconds(54);
+        return;
+      }
+      showToast({
+        message: `Verification email resent to ${email}.`,
+        tone: "success",
+      });
+      setResendSeconds(54);
+    } catch {
+      showToast({
+        message: "Could not resend verification email. Please try again shortly.",
+        tone: "error",
+      });
+    }
   };
 
   const minuteText = Math.floor(resendSeconds / 60);
@@ -51,7 +71,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
     >
       <AuthScreenShell
         title="Verify your email"
-        subtitle="Enter the verification code we sent to continue onboarding."
+        subtitle="Open the verification link in your inbox, then continue onboarding."
         footer={
           <Pressable
             onPress={() => navigation.navigate("SignUp")}
@@ -84,41 +104,21 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
             <MailCheck color={palette.orange} size={30} />
           </View>
           <AppText tone="secondary" style={{ lineHeight: 24, textAlign: "center" }}>
-            We sent a 6-digit verification code to{" "}
-            <AppText style={{ fontWeight: "700" }}>{email}</AppText>.
+            We sent a verification email to <AppText style={{ fontWeight: "700" }}>{email}</AppText>
+            .
           </AppText>
-
-          <View style={{ flexDirection: "row", gap: spacing[2] }}>
-            {["4", "9", "2", "•", "•", "•"].map((digit, index) => (
-              <View
-                key={`${digit}-${index}`}
-                style={{
-                  backgroundColor: palette.surfaceRaised,
-                  borderColor: palette.border,
-                  borderRadius: radii.pill,
-                  borderWidth: 1,
-                  flex: 1,
-                  height: 50,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <AppText variant="h2" tone={digit === "•" ? "muted" : "default"}>
-                  {digit}
-                </AppText>
-              </View>
-            ))}
-          </View>
 
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ disabled: resendSeconds > 0 }}
             disabled={resendSeconds > 0}
-            onPress={handleResend}
+            onPress={() => {
+              void handleResend();
+            }}
             style={{ opacity: resendSeconds > 0 ? 0.8 : 1 }}
           >
             <AppText style={{ color: palette.textSecondary, textAlign: "center" }}>
-              Didn&apos;t receive the code?{" "}
+              Didn&apos;t receive the email?{" "}
               <AppText style={{ color: palette.orange, fontWeight: "700" }}>
                 {resendSeconds > 0 ? `Resend in ${minuteText}:${secondText}` : "Resend now"}
               </AppText>
@@ -127,19 +127,36 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
 
           <View style={{ gap: spacing[3] }}>
             <Button
-              label="Verify Account"
-              onPress={() => {
-                trackAnalyticsEvent("sign_up_completed", {
-                  method: "email",
-                });
-                completeAuth({
-                  authProvider: "email",
-                  trackSignInEvent: false,
-                });
-                showToast({
-                  message: "Email verified. Continue onboarding.",
-                  tone: "success",
-                });
+              label="I Verified My Email"
+              onPress={async () => {
+                try {
+                  if (isSupabaseMode) {
+                    const session = await getHungryService().auth.refreshSession();
+                    if (!session) {
+                      showToast({
+                        message: "We still can’t confirm verification yet. Check your inbox link.",
+                        tone: "warning",
+                      });
+                      return;
+                    }
+                  }
+                  trackAnalyticsEvent("sign_up_completed", {
+                    method: "email",
+                  });
+                  completeAuth({
+                    authProvider: "email",
+                    trackSignInEvent: false,
+                  });
+                  showToast({
+                    message: "Email verified. Continue onboarding.",
+                    tone: "success",
+                  });
+                } catch {
+                  showToast({
+                    message: "Could not confirm verification yet. Please try again.",
+                    tone: "warning",
+                  });
+                }
               }}
               style={{ borderRadius: radii.pill, minHeight: 56 }}
             />

@@ -10,6 +10,7 @@ import { validateEmail, validatePassword, validateRequired } from "@/features/au
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
@@ -22,6 +23,7 @@ export function SignUpScreen({ navigation }: Props) {
   const { palette, spacing } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
   const showToast = useUIStore((state) => state.showToast);
+  const completeAuth = useSessionStore((state) => state.completeAuth);
   const {
     control,
     handleSubmit,
@@ -32,25 +34,37 @@ export function SignUpScreen({ navigation }: Props) {
 
   const handleSignUp = handleSubmit(async (values) => {
     try {
-      if (getConfiguredDataSource() === "supabase") {
+      const dataSource = getConfiguredDataSource();
+      if (dataSource === "supabase") {
         const session = await getHungryService().auth.signUp(
           values.email,
           values.password,
           values.displayName,
         );
-        // session === null means email confirmation is required (expected in production).
-        // Treat it as success and send user to the verification screen.
+        // session === null means email confirmation is required.
         if (!session) {
           showToast({ message: "Account created. Please verify your email.", tone: "success" });
           navigation.navigate("EmailVerification", { email: values.email });
           return;
         }
+        // When project auth is auto-confirm, Supabase returns an active session immediately.
+        completeAuth({
+          authProvider: "email",
+          completedOnboarding: false,
+          trackSignInEvent: false,
+        });
+        showToast({ message: "Account created. Continue onboarding.", tone: "success" });
+        return;
       } else {
         const failure = getMockSignUpFailure(values.email);
         if (failure) {
           showToast({ message: failure.message, tone: "error" });
           return;
         }
+        showToast({
+          message: "Running in mock mode. Verification emails are not sent in this mode.",
+          tone: "warning",
+        });
       }
       showToast({ message: "Account created. Please verify your email.", tone: "success" });
       navigation.navigate("EmailVerification", { email: values.email });
@@ -72,7 +86,6 @@ export function SignUpScreen({ navigation }: Props) {
   });
 
   const handleProviderContinue = async (provider: "google" | "apple") => {
-    const providerEmail = provider === "google" ? "google.user@hungry.sg" : "apple.user@hungry.sg";
     try {
       if (getConfiguredDataSource() === "supabase") {
         if (provider === "google") {
@@ -82,10 +95,14 @@ export function SignUpScreen({ navigation }: Props) {
         }
       }
       showToast({
-        message: `Continue with ${provider === "google" ? "Google" : "Apple"} successful.`,
+        message: `Continue with ${provider === "google" ? "Google" : "Apple"} successful. Continue onboarding.`,
         tone: "success",
       });
-      navigation.navigate("EmailVerification", { email: providerEmail });
+      completeAuth({
+        authProvider: provider,
+        completedOnboarding: false,
+        trackSignInEvent: false,
+      });
     } catch {
       showToast({ message: "Could not continue sign-up. Please try again.", tone: "error" });
     }

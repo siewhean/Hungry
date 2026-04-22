@@ -39,7 +39,7 @@
     "@shopify/flash-list": "2.0.2",
     "@shopify/react-native-skia": "2.4.18",
     "@supabase/supabase-js": "^2.103.1",
-    "expo": "~55.0.16",
+    "expo": "~55.0.17",
     "expo-asset": "~55.0.16",
     "expo-audio": "~55.0.14",
     "expo-dev-client": "~55.0.28",

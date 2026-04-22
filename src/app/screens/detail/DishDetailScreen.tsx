@@ -151,10 +151,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const canonicalDishUrl = `https://hungry.sg/dish/${dish.id}`;
 
   return (
-    <FeedErrorBoundary
-      title="Dish details unavailable"
-      body="We couldn't load those delicious details. Our chefs are on it! Please try again."
-    >
+    <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
       <View style={{ flex: 1, backgroundColor: palette.bg }}>
         {/* ─── STICKY HEADER ────────────────────────────────────────────────── */}
         <Animated.View style={[styles.stickyHeader, headerStyle, { zIndex: 100 }]}>
