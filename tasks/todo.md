@@ -68,6 +68,49 @@
 
 ---
 
+## 🔵 DEFERRED — Design Pass Phase 4: Marketing Website
+
+> **Status:** Scoped but not shipping in the current design-pass session (user opted to skip). Revisit after Design-Pass Phases 1–3 land. Plan origin: `~/.claude/plans/fetch-this-design-file-gentle-wilkes.md`.
+> **Goal:** Stand up `marketing/website/` as a real site (not just the existing copy/wireframe markdown) reusing the app's motif + tokens.
+> **Owner:** TBD (Codex implementation; Claude can architect; Gemini reviews visual parity).
+
+### Scope
+
+- [ ] **WEB-01 — Initialise Next.js 14 App Router project** under `marketing/website/` with TypeScript + Tailwind. [Codex]
+- [ ] **WEB-02 — `app/layout.tsx`** — load Fraunces (display) + Nunito (body) via `next/font/google`; mirror app theme tokens. [Codex]
+- [ ] **WEB-03 — `tailwind.config.ts`** — port palette from `src/theme/tokens.ts` (light + warm-charcoal dark). Single source of truth: re-export from the RN tokens file if feasible, else keep in sync. [Codex]
+- [ ] **WEB-04 — `components/MotifHero.tsx`** — web port of `src/components/ui/HungryMotifHero` (curved green band + bubbles + pin illustration). Same props. [Codex]
+- [ ] **WEB-05 — `app/page.tsx` landing** — hero (MotifHero) + tagline ("Find the dish. Not just the restaurant.") + 3 product screenshots + features grid + waitlist form. Reuse copy from `marketing/website/waitlist-page-copy.md`. [Codex]
+- [ ] **WEB-06 — `app/for-merchants/page.tsx`** — merchant pitch page (value prop, verification tiers preview, waitlist form). [Codex]
+- [ ] **WEB-07 — `app/about/page.tsx`** — about + brand tagline + team. [Codex]
+- [ ] **WEB-08 — `public/`** — app screenshots (splash with bite animation, home with motif, discover carousels, wheel, passport), logo assets. [Gemini to export, Codex to wire]
+- [ ] **WEB-09 — Waitlist form API route** — `app/api/waitlist/route.ts` → Supabase insert into `merchant_claim_interests` (existing table) or a new `consumer_waitlist` table. [Codex, requires Sprint 10 merged]
+- [ ] **WEB-10 — SEO + Open Graph** — metadata, OG image with motif, sitemap.xml, robots.txt. [Codex]
+- [ ] **WEB-11 — Deploy to Vercel** with preview URLs on PRs. Link to `hungry.sg` domain. [Codex + user for DNS]
+
+### Reusable assets from Phases 1–3
+
+- `src/theme/tokens.ts` — palette + motif tokens to mirror in Tailwind config.
+- `src/components/ui/HungryMotifHero.tsx` — reference implementation for the web port.
+- Splash bite-the-u animation — reimplement as a hero Lottie/SVG on the landing page.
+- Screenshots of the motif-ified Home, Discover carousels, and new Passport/Merchant/Messaging/Recents screens.
+
+### Verification
+
+- [ ] `cd marketing/website && npm run build` passes.
+- [ ] `npm run dev` → localhost:3000 renders landing, for-merchants, about with motif + fonts.
+- [ ] Lighthouse ≥ 90 performance, ≥ 95 accessibility, ≥ 95 SEO on landing.
+- [ ] Waitlist form submits end-to-end to Supabase and shows success state.
+- [ ] Preview deploy on Vercel works; production deploy live at `hungry.sg` (or staging subdomain first).
+
+### Risks / Callouts
+
+- **Token sync:** if we don't re-export from `src/theme/tokens.ts`, web and app will drift. Recommend a shared `packages/tokens` or generator script before WEB-03.
+- **Screenshot freshness:** page will look stale the moment app UI changes. Consider automating screenshot capture via Detox/Playwright in CI.
+- **Overlap with Phase 8 Merchant Portal:** MP-01 is also a standalone Next.js app. Consider monorepo layout (`apps/website`, `apps/merchant-portal`, `apps/mobile`) before scaling up — flag before WEB-01.
+
+---
+
 ## 🔵 FUTURE — Phase 8: Merchant Portal & QR Ordering (V2)
 
 > **Gate — do NOT start until ALL five are green:**
