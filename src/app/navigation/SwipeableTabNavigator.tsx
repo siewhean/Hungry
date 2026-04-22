@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { View, Pressable, StyleSheet, Dimensions } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { House, Compass, BookOpenText, NotebookPen, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { useAnimatedStyle, withTiming, withDelay } from "react-native-reanimated";
 
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
 import { DiscoverHomeScreen } from "@/app/screens/discover/DiscoverHomeScreen";
@@ -28,7 +27,7 @@ function RateWrapper(props: any) {
 }
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const [highlightVisible, setHighlightVisible] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);

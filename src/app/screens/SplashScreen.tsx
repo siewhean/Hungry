@@ -131,6 +131,13 @@ export function SplashScreen({ navigation }: Props) {
     motion.splashReveal,
     motion.splashTotal,
     navigation,
+    logoScale,
+    logoOpacity,
+    suffixTranslateX,
+    suffixOpacity,
+    taglineOpacity,
+    dotScale,
+    dotOpacity,
   ]);
 
   return (

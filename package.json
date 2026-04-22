@@ -13,7 +13,7 @@
     "update:preview": "npx eas-cli update --channel preview --message \"${npm_config_msg:-preview update}\"",
     "update:production": "npx eas-cli update --channel production --message \"${npm_config_msg:-production update}\"",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test \"src/**/*.test.ts\"",
+    "test": "tsx --test $(find src -type f \\( -name \"*.test.ts\" -o -name \"*.test.tsx\" \\))",
     "seed:generate": "tsx scripts/seed/generateSeedSQL.ts",
     "data:enrich": "python3 scripts/enrich_food_business_workbook.py",
     "lint": "eslint src/ --ext .ts,.tsx",

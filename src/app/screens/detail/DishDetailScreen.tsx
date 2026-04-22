@@ -25,7 +25,6 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { TasteRadar } from "@/components/dish/TasteRadar";
-import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton";
 import { ImageCarousel } from "@/components/dish/ImageCarousel";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { getDataRepository } from "@/lib/services/serviceProvider";
@@ -86,7 +85,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
 
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 

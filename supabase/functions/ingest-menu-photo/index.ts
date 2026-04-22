@@ -38,6 +38,17 @@ function clampConfidence(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
+function bytesToBase64(bytes: Uint8Array): string {
+  // Avoid spreading large arrays into fromCharCode; it overflows the call stack.
+  const chunkSize = 0x8000;
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    const chunk = bytes.subarray(offset, offset + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
+}
+
 function textToVector(text: string, price: number | null): number[] {
   const dimensions = 32;
   const vector = new Array<number>(dimensions + 1).fill(0);
@@ -245,7 +256,7 @@ Deno.serve(async (request) => {
       throw new Error(`image_fetch_failed:${imageResponse.status}`);
     }
     const imageBytes = new Uint8Array(await imageResponse.arrayBuffer());
-    const imageBase64 = btoa(String.fromCharCode(...imageBytes));
+    const imageBase64 = bytesToBase64(imageBytes);
 
     const ocrText = await runVision(visionApiKey, imageBase64);
     const llmResult = await runLlmExtraction(llmApiKey, ocrText);
