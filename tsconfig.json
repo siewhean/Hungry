@@ -9,6 +9,6 @@
       ]
     }
   },
-  "exclude": ["node_modules", "store-layout-editor", ".claude"]
+  "exclude": ["node_modules", "store-layout-editor", ".claude", "marketing"]
 }
 

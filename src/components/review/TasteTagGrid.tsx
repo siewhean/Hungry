@@ -1,14 +1,9 @@
-import { Pressable, View } from "react-native";
-import * as Haptics from "expo-haptics";
+import { Pressable, StyleSheet, View } from "react-native";
+
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui";
 import type { ReviewTasteTag } from "@/types/domain";
 import { REVIEW_TASTE_TAG_META } from "@/types/domain";
-
-interface TasteTagGridProps {
-  selectedTags: ReviewTasteTag[];
-  onToggle: (tag: ReviewTasteTag) => void;
-}
 
 const ALL_TAGS: ReviewTasteTag[] = [
   "spicy",
@@ -25,53 +20,52 @@ const ALL_TAGS: ReviewTasteTag[] = [
   "quick_service",
 ];
 
+interface TasteTagGridProps {
+  selectedTags: ReviewTasteTag[];
+  onToggle: (tag: ReviewTasteTag) => void;
+}
+
 /**
- * 12 tap-only taste tags in a wrapping grid.
- * Per Figma V2: selected = orange bg + white text, unselected = soft bg + grey text.
- * No mandatory text — tags do the work.
+ * 12-tag tap-only taste tag selector grid.
+ * Per Figma V2 Quick Review spec: 3-column wrapping grid,
+ * selected = orange fill + white text, unselected = soft bg + grey text.
  */
 export function TasteTagGrid({ selectedTags, onToggle }: TasteTagGridProps) {
   const { palette, spacing, radii } = useHungryTheme();
 
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: spacing[2],
-      }}
-    >
+    <View style={[styles.grid, { gap: spacing[2.5] }]}>
       {ALL_TAGS.map((tag) => {
         const meta = REVIEW_TASTE_TAG_META[tag];
         const isSelected = selectedTags.includes(tag);
-
         return (
           <Pressable
             key={tag}
-            accessibilityRole="button"
+            onPress={() => onToggle(tag)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: isSelected }}
             accessibilityLabel={`${meta.label} taste tag`}
-            accessibilityState={{ selected: isSelected }}
-            onPress={() => {
-              onToggle(tag);
-              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            }}
-            style={{
-              backgroundColor: isSelected ? palette.orange : palette.bgSoft,
-              borderRadius: radii.md,
-              paddingHorizontal: spacing[3],
-              paddingVertical: spacing[2],
-              minHeight: 40,
-              justifyContent: "center",
-            }}
+            style={[
+              styles.chip,
+              {
+                backgroundColor: isSelected ? palette.orange : palette.bgSoft,
+                borderRadius: radii.pill,
+                paddingHorizontal: spacing[3],
+                paddingVertical: spacing[2],
+                borderWidth: 1.5,
+                borderColor: isSelected ? palette.orange : palette.border,
+              },
+            ]}
           >
+            <AppText style={{ fontSize: 16 }}>{meta.emoji}</AppText>
             <AppText
               variant="bodySmall"
               style={{
-                color: isSelected ? "#FFFFFF" : palette.textMuted,
+                color: isSelected ? "#FFFFFF" : palette.text,
                 fontWeight: isSelected ? "700" : "500",
               }}
             >
-              {meta.emoji} {meta.label}
+              {meta.label}
             </AppText>
           </Pressable>
         );
@@ -79,3 +73,15 @@ export function TasteTagGrid({ selectedTags, onToggle }: TasteTagGridProps) {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+});

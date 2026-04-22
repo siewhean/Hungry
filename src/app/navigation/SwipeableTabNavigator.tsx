@@ -8,6 +8,7 @@ import Animated, { useAnimatedStyle, withTiming, withDelay } from "react-native-
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
 import { DiscoverHomeScreen } from "@/app/screens/discover/DiscoverHomeScreen";
 import { ReviewScreen } from "@/app/screens/review/ReviewScreen";
+import { ReviewFeedScreen } from "@/app/screens/review/ReviewFeedScreen";
 import { ProfileStack } from "@/app/screens/profile/ProfileStack";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -20,7 +21,7 @@ function HomeWrapper() {
 }
 
 function ReviewWrapper() {
-  return <HomeFeedScreen mode="review" />;
+  return <ReviewFeedScreen />;
 }
 
 function RateWrapper(props: any) {

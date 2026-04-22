@@ -1,194 +1,198 @@
-import { View } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Check, Trophy } from "lucide-react-native";
+
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui";
 import type { ReviewTasteTag } from "@/types/domain";
 import { REVIEW_TASTE_TAG_META } from "@/types/domain";
 
 interface ReviewSuccessCardProps {
-  pointsEarned: number;
-  totalPoints: number;
-  currentLevel: string;
-  nextLevel: string;
-  pointsToNextLevel: number;
   dishName: string;
-  venueName: string;
+  stallName: string;
   rating: number;
   selectedTags: ReviewTasteTag[];
+  /** Points earned for this review */
+  pointsEarned?: number;
+  /** Total accumulated points */
+  totalPoints?: number;
+  /** User's current level name */
+  levelName?: string;
+  /** Progress to next level, 0–1 */
+  levelProgress?: number;
 }
 
 /**
- * Gamification points card shown on review success.
- * Builds the habit loop by showing progress to next level.
- * Mirrors Figma V2 specs.
+ * Gamification success card shown after completing a quick review.
+ * Per Figma V2: gradient orange card with points, level progress, and review summary.
  */
 export function ReviewSuccessCard({
-  pointsEarned,
-  totalPoints,
-  currentLevel,
-  nextLevel,
-  pointsToNextLevel,
   dishName,
-  venueName,
+  stallName,
   rating,
   selectedTags,
+  pointsEarned = 25,
+  totalPoints = 150,
+  levelName = "Level 3 Foodie",
+  levelProgress = 0.6,
 }: ReviewSuccessCardProps) {
   const { palette, spacing, radii } = useHungryTheme();
 
-  // Calculate progress percentage (mock logic for demo)
-  const levelSize = 500; // Arbitrary points per level
-  const progressPercent = Math.max(
-    0,
-    Math.min(100, ((levelSize - pointsToNextLevel) / levelSize) * 100),
-  );
-
   return (
-    <View style={{ width: "100%", alignItems: "center", gap: spacing[5] }}>
-      {/* Success animation placeholder */}
-      <View
-        style={{
-          width: 88,
-          height: 88,
-          borderRadius: 44,
-          backgroundColor: "rgba(22, 163, 74, 0.15)", // var(--green-soft)
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <AppText style={{ fontSize: 40 }}>✅</AppText>
-      </View>
-
-      <View style={{ alignItems: "center", gap: spacing[1] }}>
-        <AppText variant="h2" style={{ textAlign: "center", fontWeight: "900", fontSize: 24 }}>
-          Review posted!
-        </AppText>
-        <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
-          Thanks for helping the Hungry community find great food 🙏
-        </AppText>
-      </View>
-
-      {/* Points earned (gamification) */}
+    <View style={[styles.card, { gap: spacing[5] }]}>
+      {/* Points earned badge */}
       <LinearGradient
-        colors={[palette.orange, palette.amber]}
+        colors={["#E8531E", "#F59E0B"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={{
-          borderRadius: radii.xl,
-          padding: spacing[4],
-          paddingHorizontal: spacing[6],
-          alignItems: "center",
-          width: "100%",
-        }}
+        style={[styles.pointsCard, { borderRadius: radii.lg, padding: spacing[5] }]}
       >
-        <AppText
-          style={{
-            fontFamily: "DMMono_400Regular",
-            fontSize: 11,
-            color: "rgba(255,255,255,0.75)",
-            textTransform: "uppercase",
-            letterSpacing: 0.8,
-            marginBottom: spacing[1],
-          }}
-        >
-          Points earned
-        </AppText>
-        <AppText style={{ fontSize: 32, fontWeight: "900", color: "#FFFFFF" }}>
+        <View style={[styles.checkCircle, { marginBottom: spacing[3] }]}>
+          <Check color="#E8531E" size={32} strokeWidth={3} />
+        </View>
+
+        <AppText variant="h1" style={{ color: "#FFFFFF", textAlign: "center", fontWeight: "800" }}>
           +{pointsEarned} pts
         </AppText>
-        <AppText style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>
-          Total: {totalPoints} pts · {currentLevel}
+        <AppText
+          variant="bodySmall"
+          style={{ color: "rgba(255,255,255,0.85)", textAlign: "center" }}
+        >
+          Review submitted!
         </AppText>
 
-        {/* Progress to next level */}
+        {/* Level progress */}
+        <View style={[styles.levelRow, { gap: spacing[2], marginTop: spacing[4] }]}>
+          <Trophy color="rgba(255,255,255,0.9)" size={16} />
+          <AppText
+            variant="bodySmall"
+            style={{ color: "rgba(255,255,255,0.9)", fontWeight: "700" }}
+          >
+            {levelName}
+          </AppText>
+          <AppText variant="micro" style={{ color: "rgba(255,255,255,0.7)" }}>
+            {totalPoints} pts
+          </AppText>
+        </View>
+
         <View
-          style={{
-            backgroundColor: "rgba(255,255,255,0.2)",
-            borderRadius: radii.pill,
-            height: 6,
-            width: "100%",
-            marginTop: spacing[3],
-            overflow: "hidden",
-          }}
+          style={[
+            styles.progressTrack,
+            {
+              backgroundColor: "rgba(255,255,255,0.25)",
+              borderRadius: radii.pill,
+              marginTop: spacing[2],
+            },
+          ]}
         >
           <View
-            style={{
-              width: `${progressPercent}%`,
-              height: "100%",
-              backgroundColor: "#FFFFFF",
-              borderRadius: radii.pill,
-            }}
+            style={[
+              styles.progressFill,
+              {
+                backgroundColor: "#FFFFFF",
+                borderRadius: radii.pill,
+                width: `${Math.min(levelProgress * 100, 100)}%`,
+              },
+            ]}
           />
         </View>
-        <AppText style={{ fontSize: 10, color: "rgba(255,255,255,0.65)", marginTop: spacing[1] }}>
-          {pointsToNextLevel} pts to {nextLevel}
-        </AppText>
       </LinearGradient>
 
       {/* Review summary */}
-      <View
-        style={{
-          width: "100%",
-          backgroundColor: palette.bgSoft,
-          borderRadius: radii.lg,
-          padding: spacing[3],
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: spacing[2],
-            marginBottom: spacing[2],
-          }}
-        >
-          <AppText style={{ fontSize: 20 }}>🍜</AppText>
-          <View style={{ flex: 1 }}>
-            <AppText variant="bodySmall" style={{ fontWeight: "700" }}>
-              {dishName}
-            </AppText>
-            <AppText variant="micro" tone="secondary">
-              {venueName}
-            </AppText>
-          </View>
-          <View style={{ flexDirection: "row", gap: 1 }}>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <AppText
-                key={i}
-                style={{ color: i < rating ? palette.amber : palette.border, fontSize: 12 }}
-              >
-                ★
-              </AppText>
-            ))}
-          </View>
+      <View style={[styles.summary, { gap: spacing[3], padding: spacing[4] }]}>
+        <AppText variant="h3" style={{ color: palette.text }}>
+          Your review
+        </AppText>
+
+        <View style={{ gap: spacing[1] }}>
+          <AppText variant="bodyBold" style={{ color: palette.text }}>
+            {dishName}
+          </AppText>
+          <AppText variant="bodySmall" style={{ color: palette.textSecondary }}>
+            {stallName}
+          </AppText>
         </View>
 
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[1] }}>
-          {selectedTags.map((tag) => {
-            const meta = REVIEW_TASTE_TAG_META[tag];
-            return (
-              <View
-                key={tag}
-                style={{
-                  backgroundColor: "rgba(232, 83, 30, 0.1)", // orange soft
-                  borderRadius: radii.sm,
-                  paddingHorizontal: spacing[2],
-                  paddingVertical: 3,
-                }}
-              >
-                <AppText
-                  style={{
-                    fontSize: 11,
-                    fontWeight: "600",
-                    color: palette.orange,
-                  }}
-                >
-                  {meta.emoji} {meta.label}
-                </AppText>
-              </View>
-            );
-          })}
+        <View style={styles.starsRow}>
+          {Array.from({ length: 5 }, (_, i) => (
+            <AppText key={i} style={{ fontSize: 20 }}>
+              {i < rating ? "★" : "☆"}
+            </AppText>
+          ))}
         </View>
+
+        {selectedTags.length > 0 && (
+          <View style={[styles.tagsRow, { gap: spacing[2] }]}>
+            {selectedTags.map((tag) => {
+              const meta = REVIEW_TASTE_TAG_META[tag];
+              return (
+                <View
+                  key={tag}
+                  style={[
+                    styles.tagChip,
+                    {
+                      backgroundColor: palette.orangeLight,
+                      paddingHorizontal: spacing[2.5],
+                      paddingVertical: spacing[1],
+                      borderRadius: radii.pill,
+                    },
+                  ]}
+                >
+                  <AppText style={{ fontSize: 12 }}>{meta.emoji}</AppText>
+                  <AppText variant="micro" style={{ color: palette.orange, fontWeight: "600" }}>
+                    {meta.label}
+                  </AppText>
+                </View>
+              );
+            })}
+          </View>
+        )}
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    alignItems: "stretch",
+  },
+  pointsCard: {
+    alignItems: "center",
+  },
+  checkCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  levelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  progressTrack: {
+    width: "100%",
+    height: 6,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+  },
+  summary: {
+    borderWidth: 0,
+  },
+  starsRow: {
+    flexDirection: "row",
+    gap: 4,
+  },
+  tagsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  tagChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+});

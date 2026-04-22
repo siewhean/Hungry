@@ -35,8 +35,6 @@ Scope of this plan (confirmed with user): 3 phases. Phase 1 is the foundation pa
 3. **Motif.** Add to tokens:
    ```
    motif: {
-     heroGreen: "#2E5A3A",
-     heroGreenDark: "#1F3E27",
      bubbleOrange: "#F5A623",
      bubbleCream: "#FFF1E6",
    }

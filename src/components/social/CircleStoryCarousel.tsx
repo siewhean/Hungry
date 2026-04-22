@@ -1,74 +1,117 @@
-import React from "react";
 import { ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import { Plus, Utensils } from "lucide-react-native";
+
 import { useHungryTheme } from "@/theme";
 import { AppText } from "../ui";
+import type { StoryItem } from "@/types/domain";
 
-import { Plus, UtensilsCrossed } from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
-
-interface StoryItem {
-  id: string;
-  name: string;
-  avatarUrl: string;
-  hasUnseen?: boolean;
-  isStallAccount?: boolean;
-  isCurrentUser?: boolean;
-}
-
+/**
+ * Mock story data.
+ * Ring colour rule (per user spec):
+ *   - Orange gradient ring  = hasUnseen true  (applies to both stall AND user stories)
+ *   - Grey ring             = hasUnseen false (story already viewed)
+ * Fork badge (🍴) is shown only on isStall stories to identify hawker stalls.
+ */
 const MOCK_STORIES: StoryItem[] = [
   {
-    id: "s1",
-    name: "Your Story",
+    id: "s0",
+    displayName: "Your Story",
     avatarUrl: "https://i.pravatar.cc/150?u=me",
     hasUnseen: false,
-    isCurrentUser: true,
+    isStall: false,
+    isOwn: true,
+  },
+  {
+    id: "s1",
+    displayName: "Tian Tian",
+    avatarUrl: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=150&h=150&fit=crop",
+    hasUnseen: true,
+    isStall: true,
   },
   {
     id: "s2",
-    name: "Tian Tian",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=150",
+    displayName: "Wei Ming",
+    avatarUrl: "https://i.pravatar.cc/150?u=wm",
     hasUnseen: true,
-    isStallAccount: true,
+    isStall: false,
   },
-  { id: "s3", name: "Sarah L.", avatarUrl: "https://i.pravatar.cc/150?u=sl", hasUnseen: true },
+  {
+    id: "s3",
+    displayName: "Hill Street",
+    avatarUrl: "https://images.unsplash.com/photo-1555126634-323283e090fa?w=150&h=150&fit=crop",
+    hasUnseen: true,
+    isStall: true,
+  },
   {
     id: "s4",
-    name: "Han Kee",
-    avatarUrl:
-      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=150",
+    displayName: "Sarah L.",
+    avatarUrl: "https://i.pravatar.cc/150?u=sl",
     hasUnseen: true,
-    isStallAccount: true,
+    isStall: false,
   },
-  { id: "s5", name: "Emma W.", avatarUrl: "https://i.pravatar.cc/150?u=ew", hasUnseen: false },
-  { id: "s6", name: "Ahmad J.", avatarUrl: "https://i.pravatar.cc/150?u=aj", hasUnseen: false },
+  {
+    id: "s5",
+    displayName: "Uncle Tan",
+    avatarUrl: "https://i.pravatar.cc/150?u=ut",
+    hasUnseen: true,
+    isStall: false,
+  },
+  {
+    id: "s6",
+    displayName: "Ah Heng",
+    avatarUrl: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=150&h=150&fit=crop",
+    hasUnseen: false,
+    isStall: true,
+  },
+  {
+    id: "s7",
+    displayName: "Emma W.",
+    avatarUrl: "https://i.pravatar.cc/150?u=ew",
+    hasUnseen: false,
+    isStall: false,
+  },
 ];
 
-export function CircleStoryCarousel() {
+interface CircleStoryCarouselProps {
+  stories?: StoryItem[];
+  onStoryPress?: (story: StoryItem) => void;
+}
+
+export function CircleStoryCarousel({
+  stories = MOCK_STORIES,
+  onStoryPress,
+}: CircleStoryCarouselProps) {
   const { palette, spacing, radii } = useHungryTheme();
 
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[4] }}
+      contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[3] }}
     >
-      {MOCK_STORIES.map((story) => (
-        <Pressable key={story.id} style={styles.item}>
-          <View style={{ position: "relative" }}>
+      {stories.map((story) => (
+        <Pressable
+          key={story.id}
+          style={styles.item}
+          onPress={() => onStoryPress?.(story)}
+          accessibilityLabel={
+            story.isOwn ? "Add to your story" : `View ${story.displayName}'s story`
+          }
+        >
+          <View style={styles.ringOuter}>
+            {/* Ring: orange gradient = unseen (any story type), grey = already seen */}
             {story.hasUnseen ? (
               <LinearGradient
-                colors={
-                  story.isStallAccount
-                    ? [palette.orange, palette.amber]
-                    : [palette.textSecondary, palette.border]
-                }
-                style={[styles.ring, { borderRadius: radii.pill, padding: 3 }]}
+                colors={["#E8531E", "#F59E0B"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.gradientRing, { borderRadius: radii.pill }]}
               >
                 <View
                   style={[
-                    styles.avatarWrap,
+                    styles.avatarInner,
                     { backgroundColor: palette.bg, borderRadius: radii.pill },
                   ]}
                 >
@@ -81,13 +124,16 @@ export function CircleStoryCarousel() {
             ) : (
               <View
                 style={[
-                  styles.ring,
-                  { borderColor: palette.border, borderRadius: radii.pill, padding: 3 },
+                  styles.solidRing,
+                  {
+                    borderColor: palette.border,
+                    borderRadius: radii.pill,
+                  },
                 ]}
               >
                 <View
                   style={[
-                    styles.avatarWrap,
+                    styles.avatarInner,
                     { backgroundColor: palette.bg, borderRadius: radii.pill },
                   ]}
                 >
@@ -99,38 +145,37 @@ export function CircleStoryCarousel() {
               </View>
             )}
 
-            {story.isCurrentUser && (
+            {/* "Your story" + add icon */}
+            {story.isOwn && (
               <View
                 style={[
-                  styles.badge,
-                  {
-                    backgroundColor: palette.orange,
-                    borderColor: palette.bg,
-                    borderRadius: radii.pill,
-                  },
+                  styles.addBadge,
+                  { backgroundColor: palette.orange, borderColor: palette.bg },
                 ]}
               >
-                <Plus color={palette.white} size={12} strokeWidth={3} />
+                <Plus color="#FFFFFF" size={12} strokeWidth={3} />
               </View>
             )}
 
-            {story.isStallAccount && (
+            {/* Stall fork badge */}
+            {story.isStall && !story.isOwn && (
               <View
                 style={[
-                  styles.badge,
-                  {
-                    backgroundColor: palette.orange,
-                    borderColor: palette.bg,
-                    borderRadius: radii.pill,
-                  },
+                  styles.forkBadge,
+                  { backgroundColor: palette.orange, borderColor: palette.bg },
                 ]}
               >
-                <UtensilsCrossed color={palette.white} size={10} strokeWidth={2.5} />
+                <Utensils color="#FFFFFF" size={9} strokeWidth={2.5} />
               </View>
             )}
           </View>
-          <AppText variant="micro" numberOfLines={1} style={styles.label}>
-            {story.name}
+
+          <AppText
+            variant="micro"
+            numberOfLines={1}
+            style={[styles.label, { color: story.isOwn ? palette.textMuted : palette.text }]}
+          >
+            {story.displayName}
           </AppText>
         </Pressable>
       ))}
@@ -144,24 +189,42 @@ const styles = StyleSheet.create({
     gap: 6,
     width: 72,
   },
-  ring: {
-    padding: 2,
-    borderWidth: 2,
-    borderColor: "transparent", // For the non-unseen state fallback
+  ringOuter: {
+    position: "relative",
   },
-  avatarWrap: {
+  gradientRing: {
+    padding: 3,
+  },
+  solidRing: {
+    borderWidth: 2.5,
+    padding: 2,
+  },
+  avatarInner: {
     padding: 2,
   },
   avatar: {
-    width: 64,
-    height: 64,
+    width: 56,
+    height: 56,
   },
-  badge: {
+  addBadge: {
     position: "absolute",
-    bottom: -2,
-    right: -2,
+    bottom: 0,
+    right: 0,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 2,
-    padding: 3,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  forkBadge: {
+    position: "absolute",
+    bottom: -1,
+    right: -1,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
   },

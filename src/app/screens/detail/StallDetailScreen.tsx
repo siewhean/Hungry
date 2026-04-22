@@ -324,13 +324,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   height: 80,
                 }}
               />
-              {/* Rating Pill - Floating */}
+              {/* Rating Pill + Hygiene Shield - Floating */}
               <View
                 style={{
                   position: "absolute",
                   bottom: -spacing[2],
                   left: profile.leftHandedMode ? spacing[4] : undefined,
                   right: profile.leftHandedMode ? undefined : spacing[4],
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing[2],
                 }}
               >
                 <View

@@ -70,22 +70,26 @@
 
 ## 🔵 DEFERRED — Design Pass Phase 4: Marketing Website
 
-> **Status:** Scoped but not shipping in the current design-pass session (user opted to skip). Revisit after Design-Pass Phases 1–3 land. Plan origin: `~/.claude/plans/fetch-this-design-file-gentle-wilkes.md`.
-> **Goal:** Stand up `marketing/website/` as a real site (not just the existing copy/wireframe markdown) reusing the app's motif + tokens.
-> **Owner:** TBD (Codex implementation; Claude can architect; Gemini reviews visual parity).
+> **Status:** ✅ MODERNISED 2026-04-23 — `marketing/web/` now ships a redesigned white-canvas homepage plus `/for-merchants`, `/about`, and `/privacy`.
+> **Goal:** Stand up `marketing/web/` as a real site reusing the app's motif + tokens.
+> **Owner:** Claude implemented; Gemini reviews visual parity; Codex deploys to Vercel.
 
 ### Scope
 
-- [ ] **WEB-01 — Initialise Next.js 14 App Router project** under `marketing/website/` with TypeScript + Tailwind. [Codex]
-- [ ] **WEB-02 — `app/layout.tsx`** — load Fraunces (display) + Nunito (body) via `next/font/google`; mirror app theme tokens. [Codex]
-- [ ] **WEB-03 — `tailwind.config.ts`** — port palette from `src/theme/tokens.ts` (light + warm-charcoal dark). Single source of truth: re-export from the RN tokens file if feasible, else keep in sync. [Codex]
-- [ ] **WEB-04 — `components/MotifHero.tsx`** — web port of `src/components/ui/HungryMotifHero` (curved green band + bubbles + pin illustration). Same props. [Codex]
-- [ ] **WEB-05 — `app/page.tsx` landing** — hero (MotifHero) + tagline ("Find the dish. Not just the restaurant.") + 3 product screenshots + features grid + waitlist form. Reuse copy from `marketing/website/waitlist-page-copy.md`. [Codex]
-- [ ] **WEB-06 — `app/for-merchants/page.tsx`** — merchant pitch page (value prop, verification tiers preview, waitlist form). [Codex]
-- [ ] **WEB-07 — `app/about/page.tsx`** — about + brand tagline + team. [Codex]
-- [ ] **WEB-08 — `public/`** — app screenshots (splash with bite animation, home with motif, discover carousels, wheel, passport), logo assets. [Gemini to export, Codex to wire]
-- [ ] **WEB-09 — Waitlist form API route** — `app/api/waitlist/route.ts` → Supabase insert into `merchant_claim_interests` (existing table) or a new `consumer_waitlist` table. [Codex, requires Sprint 10 merged]
-- [ ] **WEB-10 — SEO + Open Graph** — metadata, OG image with motif, sitemap.xml, robots.txt. [Codex]
+- 2026-04-23 mini-plan — Codex website modernization pass:
+  - Rebuild the homepage in `marketing/web/` with a white main canvas, no emoji usage, and a materially different editorial layout.
+  - Add the linked routes `/for-merchants`, `/about`, and `/privacy` in the same design language.
+  - Clean up site infrastructure: canonicalize root `app/` + `components/`, add metadata/OG asset, mobile nav, and verification.
+- [x] **WEB-01 — Initialise Next.js 16.2.4 App Router project** under `marketing/web/` with TypeScript + Tailwind. [Done 2026-04-22]
+- [x] **WEB-02 — `app/layout.tsx`** — load Fraunces (display) + Nunito (body) + DM Mono via `next/font/google`; mirror app theme tokens. [Done 2026-04-22]
+- [x] **WEB-03 — `tailwind.config.ts` + `globals.css`** — port palette from `src/theme/tokens.ts` via Tailwind v4 `@theme` variables (`--color-hungry-*`). [Done 2026-04-22]
+- [x] **WEB-04 — `components/Hero.tsx`** — hero with floating dish pills, gradient orbs, Fraunces headline, inline waitlist form. [Done 2026-04-22]
+- [x] **WEB-05 — `app/page.tsx` landing** — Navbar + Hero + ProblemSection + FeaturesSection + HowItWorks + LocalSection + HawkerSection + FaqSection + Footer. Copy from `marketing/website/waitlist-page-copy.md`. [Done 2026-04-22]
+- [x] **WEB-06 — Waitlist form** — `components/WaitlistForm.tsx` with name/email/joining-as toggle, API call, success + error states. [Done 2026-04-22]
+- [x] **WEB-07 — `app/for-merchants/page.tsx`** — merchant pitch page (value prop, verification tiers preview, waitlist form). [Done 2026-04-23]
+- [x] **WEB-08 — `app/about/page.tsx`** — about + brand tagline + team. [Done 2026-04-23]
+- [x] **WEB-09 — Waitlist form API route** — `app/api/waitlist/route.ts` → in-memory store (Supabase swap ready); POST with email validation + idempotency; GET for count. [Done 2026-04-22]
+- [x] **WEB-10 — SEO + Open Graph** — full metadata in `layout.tsx` (title template, OG image, Twitter card, robots, locale `en_SG`). [Done 2026-04-22]
 - [ ] **WEB-11 — Deploy to Vercel** with preview URLs on PRs. Link to `hungry.sg` domain. [Codex + user for DNS]
 
 ### Reusable assets from Phases 1–3
@@ -97,8 +101,10 @@
 
 ### Verification
 
-- [ ] `cd marketing/website && npm run build` passes.
-- [ ] `npm run dev` → localhost:3000 renders landing, for-merchants, about with motif + fonts.
+- [x] `cd marketing/web && npm run build` passes. *(2026-04-22 — Exit code 0)*
+- [x] `npm run dev` → localhost:3000 renders landing with motif + fonts. *(2026-04-22 — verified visually)*
+- [x] `cd marketing/web && npm run lint` passes. *(2026-04-23 — no warnings)*
+- [x] `cd marketing/web && npm run build` passes with routes `/`, `/for-merchants`, `/about`, `/privacy`, `/api/waitlist`. *(2026-04-23 — Exit code 0)*
 - [ ] Lighthouse ≥ 90 performance, ≥ 95 accessibility, ≥ 95 SEO on landing.
 - [ ] Waitlist form submits end-to-end to Supabase and shows success state.
 - [ ] Preview deploy on Vercel works; production deploy live at `hungry.sg` (or staging subdomain first).
@@ -226,6 +232,7 @@ All items completed. Verification evidence in session log:
 
 ### Session Entries (recent — full history in git log)
 
+- 2026-04-23 | Codex | Implemented the Hungry website modernization pass in `marketing/web`: replaced the original card-and-emoji landing page with a white-canvas editorial homepage, rewrote the shared website components (hero, contrast strip, dish-first proof, how-it-works, local proof, preview band, hawker module, FAQ, footer), added mobile navigation, converted the merchant/about route CTAs onto the shared waitlist system where applicable, bundled local Nunito + DM Mono fonts for deterministic builds, added a real OG asset/metadata base, and removed the duplicate `marketing/web/src` mirror tree. | Status: website redesign complete in code; Vercel deploy and Supabase-backed waitlist remain open. | Verification: `cd marketing/web && npm run lint` pass; `cd marketing/web && npx tsc --noEmit` pass; `cd marketing/web && npm run build` pass (`/`, `/about`, `/for-merchants`, `/privacy`, `/api/waitlist`). | Next: Lighthouse pass, preview/prod deployment, and optional waitlist persistence swap.
 - 2026-04-22 | Claude (Sonnet 4.6) | Full codebase audit against `tasks/todo.md` + `SECURITY.md`. Findings: TOOL-01..04 all fully implemented (CI bot review comments were stale/incorrect — dismissed); SECURITY.md is correct and Hungry-specific (CmdTab references were in a stale cached version, not the actual file); Phase 7 provisioning complete — moved to Completed Archive; Sprint 10 promoted from NEXT to ACTIVE with 12/13 items done; 2 open security actions added (SEC-01 leaked-password-protection toggle, SEC-02 `.gitignore` for `supabase/.temp/`); Sprint 10 done gate annotated with Node 25/esbuild test blocker context. | Status: documentation updated, pushed to main. | Blockers: 4 staging smoke tests + CLM-04 copy (Gemini). | Next: run staging smokes for OCR e2e + claim CTA insert; fix Node 25 test runner issue; toggle SEC-01 in Supabase dashboard.
 - 2026-04-22 | Codex | Implemented Sprint 10 Phase B (`CLM-03` + curated-menu `CLM-06` decision): added claim submission contracts to `HungryService.supply`, implemented idempotent claim submission mapping in Supabase (`submit_merchant_claim_interest` RPC `uuid|null` -> `created|already_exists`), mirrored idempotency in mock service by `(userId, venueId)` key, wired staging-gated one-tap CTA into `StallDetailScreen` (analytics + auth precheck + toast outcomes + in-flight disable), added analytics event `claim_this_stall_tapped`, and added Sprint 10 contract tests for CTA wiring and curated menu source. | Status: CLM-03 complete in code; CLM-06 implemented as curated-menu decision (no community draft consumer read). | Verification: `npm run typecheck` pass; `npx eslint src/app/screens/detail/StallDetailScreen.tsx src/lib/services/types.ts src/lib/services/supabase/supabaseService.ts src/lib/services/mock/mockService.ts src/lib/analytics/types.ts src/app/screens/sprint10-screen-contracts.test.ts` pass; `npm run test` remains blocked by existing Node 25/esbuild transform issue on React Native tests (`node_modules/react-native/index.js` unexpected `typeof`) with Sprint 10 contract tests passing. | Next: run staging runtime smoke for claim insert + telemetry, then move to CLM-04 copy spec and remaining Sprint 10 runtime done-gates.
 
@@ -252,6 +259,9 @@ All items completed. Verification evidence in session log:
 
 ## 6. Verification Commands Log
 
+- [x] `cd marketing/web && npm run lint` — 2026-04-23 (website modernization pass)
+- [x] `cd marketing/web && npx tsc --noEmit` — 2026-04-23 (website modernization pass)
+- [x] `cd marketing/web && npm run build` — 2026-04-23 (website modernization pass)
 - [x] `npm run typecheck` — 2026-04-22 (Sprint 10 audit; clean)
 - [x] `npm run typecheck` — 2026-04-17 (Sprint 9 Wave 5 gate)
 - [x] `npm run test` — 2026-04-17 (Sprint 9 Wave 5 gate, 68 tests, 0 failures)

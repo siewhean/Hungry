@@ -14,6 +14,7 @@ import type { ReviewTasteTag, DishSummary } from "@/types/domain";
 import { TasteTagGrid } from "@/components/review/TasteTagGrid";
 import { ReviewProgressBar } from "@/components/review/ReviewProgressBar";
 import { ReviewSuccessCard } from "@/components/review/ReviewSuccessCard";
+import { useGamificationStore, POINTS_PER_ACTION } from "@/store/useGamificationStore";
 
 interface QuickReviewSheetProps {
   venueId: string;
@@ -31,6 +32,16 @@ export const QuickReviewSheet = ({
   onSuccess,
 }: QuickReviewSheetProps) => {
   const { palette, spacing, radii } = useHungryTheme();
+
+  // Gamification store — provides live points/tier for the success card
+  const { totalPoints, lastEarnedPoints, awardPoints, tier, levelProgress } =
+    useGamificationStore();
+  const gamificationPoints = {
+    total: totalPoints,
+    lastEarned: lastEarnedPoints || POINTS_PER_ACTION.quickReview,
+    tierName: tier().name,
+    progress: levelProgress(),
+  };
 
   const [step, setStep] = useState(initialDishId ? 2 : 1);
   const [dishes, setDishes] = useState<DishSummary[]>([]);
@@ -105,6 +116,7 @@ export const QuickReviewSheet = ({
       await new Promise((resolve) => setTimeout(resolve, 800));
 
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      awardPoints("quickReview");
       setStep(4); // Go to success step
     } finally {
       setIsSubmitting(false);
@@ -392,13 +404,12 @@ export const QuickReviewSheet = ({
 
       <View style={{ marginTop: spacing[6] }}>
         <ReviewSuccessCard
-          pointsEarned={10 + selectedTags.length * 2}
-          totalPoints={340} // Mock data for demo
-          currentLevel="Level 3 Foodie"
-          nextLevel="Level 4 Hawker Expert"
-          pointsToNextLevel={160}
+          pointsEarned={gamificationPoints.lastEarned}
+          totalPoints={gamificationPoints.total}
+          levelName={gamificationPoints.tierName}
+          levelProgress={gamificationPoints.progress}
           dishName={selectedDishName ?? "Dish"}
-          venueName={venueName}
+          stallName={venueName}
           rating={rating}
           selectedTags={selectedTags}
         />
