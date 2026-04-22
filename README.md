@@ -151,7 +151,7 @@ To override these locally, you can use `.env.development` or modify the constant
 - Reads stays behind a feature flag even though the tab contract exists now.
 - The app is designed to demo end-to-end without backend availability.
 - The `data/` folder also contains the Singapore food-business workbook, a checked-in curated seed snapshot, and the refresh pipeline for rebuilding the database from public datasets plus supplementary hawker- and food-court-source discovery.
-- The `marketing/` workspace now contains repo-grounded launch materials for positioning, waitlist messaging, social content, video briefs, outreach, and brand rules.
+- The `marketing/` workspace now contains repo-grounded launch materials plus the Next.js marketing site in `marketing/web/` with the homepage, `for-merchants`, `about`, and `privacy` routes.
 
 ## Delivery Governance
 
