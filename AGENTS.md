@@ -214,13 +214,13 @@ Rules:
 <claude-mem-context>
 # Memory Context
 
-# [Hungry] recent context, 2026-04-22 4:16am GMT+8
+# [Hungry] recent context, 2026-04-22 12:21pm GMT+8
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 20 obs (5,874t read) | 176,419t work | 97% savings
+Stats: 21 obs (6,407t read) | 213,856t work | 97% savings
 
 ### Apr 17, 2026
 136 2:59p 🔵 Dual radar chart implementations found in codebase
@@ -244,6 +244,8 @@ Stats: 20 obs (5,874t read) | 176,419t work | 97% savings
 167 5:11p 🔵 iOS build fails due to ambiguous Expo module import access level
 168 5:12p 🔴 Fixed ambiguous Expo import by removing internal access modifier
 170 5:20p 🔴 Fixed app crash by binding ReactNativeFactory to ExpoAppDelegate
+### Apr 22, 2026
+172 4:25a 🔵 Sprint 5 QA/QC verification run reveals test tooling failure and mock imports in Supabase repository
 
-Access 176k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 214k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

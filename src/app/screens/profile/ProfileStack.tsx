@@ -5,7 +5,6 @@ import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { EditProfileScreen } from "./EditProfileScreen";
 import { FavouritesScreen } from "./FavouritesScreen";
 import { ProfileHomeScreen } from "./ProfileHomeScreen";
-import { ProfileHomeScreen_Legacy } from "./ProfileHomeScreen_Legacy";
 import { ReviewHistoryScreen } from "./ReviewHistoryScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { ReviewStack } from "@/app/screens/review/ReviewStack";
@@ -21,8 +20,7 @@ export function ProfileStack() {
       body="We hit a snag loading your profile. Your taste data is safe—please try again."
     >
       <Stack.Navigator initialRouteName="ProfileHome" screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="ProfileHome" component={ProfileHomeScreen_Legacy} />
-        {/* @ts-ignore */}
+        <Stack.Screen name="ProfileHome" component={ProfileHomeScreen} />
         <Stack.Screen name="ProfilePremium" component={ProfileHomeScreen} />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
         <Stack.Screen name="Favourites" component={FavouritesScreen} />

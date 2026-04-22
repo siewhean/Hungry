@@ -38,7 +38,7 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
 });
 
 test("Sprint 9 screen contract: routed dish detail uses gallery-backed share flow", () => {
-  const source = read("src/app/screens/detail/DishDetailScreen_Premium.tsx");
+  const source = read("src/app/screens/detail/DishDetailScreen.tsx");
   const navigatorSource = read("src/app/navigation/RootNavigator.tsx");
 
   assert.match(source, /const repository = getDataRepository\(\)/);
@@ -46,5 +46,5 @@ test("Sprint 9 screen contract: routed dish detail uses gallery-backed share flo
   assert.match(source, /const canonicalDishUrl = `https:\/\/hungry\.sg\/dish\/\$\{dish\.id\}`/);
   assert.match(source, /Share\.share\(\{/);
   assert.match(source, /<ImageCarousel/);
-  assert.match(navigatorSource, /component=\{DishDetailScreen_Premium\}/);
+  assert.match(navigatorSource, /component=\{DishDetailScreen\} name=\"DishDetail\"/);
 });

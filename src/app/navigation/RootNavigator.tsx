@@ -17,7 +17,6 @@ import { SplashScreen } from "@/app/screens/SplashScreen";
 import { DeveloperLauncherScreen } from "@/app/screens/dev/DeveloperLauncherScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { DishDetailScreen } from "@/app/screens/detail/DishDetailScreen";
-import { DishDetailScreen_Premium } from "@/app/screens/detail/DishDetailScreen_Premium";
 import { NotFoundScreen } from "@/app/screens/detail/NotFoundScreen";
 import { OfflineStateScreen } from "@/app/screens/detail/OfflineStateScreen";
 import { StallDetailScreen } from "@/app/screens/detail/StallDetailScreen";
@@ -337,9 +336,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={ReviewHistoryScreen} name="ReviewHistory" />
           <RootStack.Screen component={SettingsScreen} name="Settings" />
           <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
-          <RootStack.Screen component={DishDetailScreen_Premium} name="DishDetail" />
-          {/* @ts-ignore */}
-          <RootStack.Screen component={DishDetailScreen} name="DishDetailStandard" />
+          <RootStack.Screen component={DishDetailScreen} name="DishDetail" />
           <RootStack.Screen component={StallDetailScreen} name="StallDetail" />
           <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           <RootStack.Screen component={ReviewStack} name="ReviewStack" />
