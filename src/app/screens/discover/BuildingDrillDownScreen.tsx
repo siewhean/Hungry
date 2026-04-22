@@ -637,7 +637,14 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                       key={record.stall.stallId}
                       accessibilityRole="button"
                       accessibilityLabel={`Open ${record.title} ${record.unitNumber}`}
-                      onPress={() => handleStallSelection(record.stall)}
+                      onPress={() => {
+                        handleStallSelection(record.stall);
+                        if (record.venue) {
+                          navigation.navigate("StallDetail", {
+                            venueId: record.venue.id,
+                          });
+                        }
+                      }}
                       style={{
                         backgroundColor: palette.surface,
                         borderColor: isSelected ? palette.orange : palette.border,
@@ -674,29 +681,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                           }}
                         >
                           <StatusBadge status={status} />
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={`Open ${record.title} stall details`}
-                            hitSlop={10}
-                            onPress={() => {
-                              if (record.venue) {
-                                navigation.navigate("StallDetail", {
-                                  venueId: record.venue.id,
-                                });
-                              }
-                            }}
-                            style={{
-                              alignItems: "center",
-                              borderColor: palette.border,
-                              borderRadius: radii.pill,
-                              borderWidth: 1,
-                              height: 26,
-                              justifyContent: "center",
-                              width: 26,
-                            }}
-                          >
-                            <ChevronRight color={palette.textMuted} size={13} />
-                          </Pressable>
+                          <ChevronRight color={palette.textMuted} size={16} />
                         </View>
                       </View>
                       {record.venue?.closureNotice ? (
