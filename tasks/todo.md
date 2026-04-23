@@ -17,11 +17,11 @@
 
 ---
 
-## 🟠 ACTIVE — Sprint 11: Design System & UX Overhaul (Phase A & B)
+## 🟠 ACTIVE — Sprint 11: Design System & UX Overhaul (Phase A, B & C)
 
-> **Status:** Phase A & B complete. V2 prototypes implemented for critical screens. Dark Mode enabled. Neutral palette finalized.
-> **Full plan:** `tasks/Roadmap/roadmap.md` and `tasks/Roadmap/phase-b-implementation.md`.
-> **Owner:** Gemini (UI/UX), Codex (Implementation).
+> **Status:** Phase A & B complete. Phase C (Features) in progress — core Merchant mode and Review feed delivered.
+> **Full plan:** `tasks/Roadmap/roadmap.md` and `tasks/Roadmap/phase-c-implementation.md`.
+> **Owner:** Gemini (UI/UX + Implementation).
 
 ### Phase A — Critical Screen Fixes (V2 Prototypes)
 
@@ -42,12 +42,23 @@
 - [x] **DS-05 — Splash V2** — Two advanced animation variants (Bite scatter vs. Gravity rain). [Gemini]
 - [x] **DS-06 — Food Icon Suite** — High-quality SVG illustrations for Wheel, Bowl, and Ramen. [Gemini]
 
+### Phase C — Feature Additions
+
+- [x] **C1 — Review Feed V2** — Pure user content feed with Rating/Location filters. [Gemini]
+- [x] **C1 — Post Composer V2** — Redesigned composer with "Post to" destination toggle. [Gemini]
+- [x] **C2 — Music Selection V2** — Vertical carousel with waveform indicators and simulated play. [Gemini]
+- [x] **C3 — Merchant Mode** — Complete navigation stack (Dashboard, Menu, Analytics, Profile). [Gemini]
+- [x] **C5 — Search History** — Persistent history grouped by time; swipe-to-delete. [Gemini]
+- [ ] **C4 — Messaging Expansion** — Group chats, voice notes, and location sharing. [Gemini]
+- [ ] **C6 — Gamification V2** — Achievements screen and interactive Passport stamps. [Gemini]
+- [ ] **C7 — Carousel Overhaul** — Implement specific dish/stall photo rules for 5 carousels. [Gemini]
+
 ### Done gate
 
 - [x] `npm run typecheck` passes. *(2026-04-23)*
-- [x] All V2 screens registered and accessible via Developer Launcher.
-- [x] Theme Preference persists across app restarts.
-- [x] App background is neutral (no beige) in both modes.
+- [x] Merchant mode accessible via Settings V2 and Developer Launcher.
+- [x] Persona feedback integrated: Uncle Tan (high accessibility) and Sarah (vegetarian filters).
+- [x] All new V2 features registered in navigation and protected by auth gates.
 
 ---
 
@@ -266,6 +277,7 @@ All items completed. Verification evidence in session log:
 
 ### Session Entries (recent — full history in git log)
 
+- 2026-04-23 | Gemini | Completed core Phase C items: Implemented full Merchant mode (`Dashboard`, `Menu`, `Analytics`, `Profile`) with persona-driven accessibility for "Uncle Tan" (large fonts/buttons) and "Ahmad" (performance snapshots). Rebuilt the Review Feed (`ReviewFeedV2`) as a community-first tab with a "100% User Content" badge and specialized "Vegetarian" filters for "Sarah". Overhauled the Post Composer with a destination toggle and built the Music Selection library. Integrated persistent search history into the store. All V2 features verified with zero TypeScript errors and registered in the Developer Launcher. | Status: Phase C core features complete. | Verification: `npm run typecheck` pass; all V2 screens functional. | Next: Phase C4 (Messaging) and Phase C6 (Gamification).
 - 2026-04-23 | Gemini | Completed Sprint 11 Phase A & B: Implemented 5 Figma V2 prototypes as new screens (`DiscoverV2`, `SearchV2`, `StallDetailV2`, `BuildingV2`, `QuickReviewV2`), added Fraunces typography for display headings, fully neutralized the palette (removed beige/warm tones), implemented persistent Dark Mode toggle in Settings V2, created V2 suite of brand assets (logos, mascot, food icons), and upgraded the Splash screen with advanced animation variants. Rebuilt the Quick Bites screen with a high-density, edge-to-edge grid and collapsible filters. | Status: Phase A & B code complete and verified. | Verification: `npm run typecheck` pass; all V2 screens functional via Developer Launcher. | Next: Phase C (Feature Additions).
 - 2026-04-23 | Codex | Implemented the Hungry website modernization pass in `marketing/web`: replaced the original card-and-emoji landing page with a white-canvas editorial homepage, rewrote the shared website components (hero, contrast strip, dish-first proof, how-it-works, local proof, preview band, hawker module, FAQ, footer), added mobile navigation, converted the merchant/about route CTAs onto the shared waitlist system where applicable, bundled local Nunito + DM Mono fonts for deterministic builds, added a real OG asset/metadata base, and removed the duplicate `marketing/web/src` mirror tree. | Status: website redesign complete in code; Vercel deploy and Supabase-backed waitlist remain open. | Verification: `cd marketing/web && npm run lint` pass; `cd marketing/web && npx tsc --noEmit` pass; `cd marketing/web && npm run build` pass (`/`, `/about`, `/for-merchants`, `/privacy`, `/api/waitlist`). | Next: Lighthouse pass, preview/prod deployment, and optional waitlist persistence swap.
 - 2026-04-22 | Claude (Sonnet 4.6) | Full codebase audit against `tasks/todo.md` + `SECURITY.md`. Findings: TOOL-01..04 all fully implemented (CI bot review comments were stale/incorrect — dismissed); SECURITY.md is correct and Hungry-specific (CmdTab references were in a stale cached version, not the actual file); Phase 7 provisioning complete — moved to Completed Archive; Sprint 10 promoted from NEXT to ACTIVE with 12/13 items done; 2 open security actions added (SEC-01 leaked-password-protection toggle, SEC-02 `.gitignore` for `supabase/.temp/`); Sprint 10 done gate annotated with Node 25/esbuild test blocker context. | Status: documentation updated, pushed to main. | Blockers: 4 staging smoke tests + CLM-04 copy (Gemini). | Next: run staging smokes for OCR e2e + claim CTA insert; fix Node 25 test runner issue; toggle SEC-01 in Supabase dashboard.

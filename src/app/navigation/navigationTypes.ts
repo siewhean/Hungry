@@ -52,11 +52,19 @@ export type MainTabParamList = {
   Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 
+export type MerchantTabParamList = {
+  Dashboard: undefined;
+  Menu: undefined;
+  Analytics: undefined;
+  Profile: undefined;
+};
+
 export type RootStackParamList = {
   Splash: undefined;
   AuthStack: NavigatorScreenParams<AuthStackParamList>;
   OnboardingStack: NavigatorScreenParams<OnboardingStackParamList>;
   MainTabs: NavigatorScreenParams<MainTabParamList>;
+  MerchantTabs: NavigatorScreenParams<MerchantTabParamList>;
   StallDetail: { venueId?: string; id?: string };
   DishDetail: { dishId?: string; id?: string };
   SearchHome: undefined;
@@ -88,10 +96,11 @@ export type RootStackParamList = {
   ReviewHistory: undefined;
   Settings: undefined;
   EditProfile: undefined;
-  SettingsV2: undefined;
   SplashV2: { variant?: "A" | "B"; stay?: boolean } | undefined;
   DesignGallery: undefined;
   // V2 Prototypes
+  ReviewFeedV2: undefined;
+  PostComposerV2: { venueId?: string; dishId?: string } | undefined;
   DiscoverV2: undefined;
   SearchHomeV2: undefined;
   StallDetailV2: { venueId?: string; id?: string };

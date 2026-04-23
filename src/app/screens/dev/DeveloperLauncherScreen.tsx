@@ -7,12 +7,13 @@
  *  - Singapore building picker — jump directly to any building's floor plan
  *  - Data inspector: shows counts of mock entities
  *  - All section groups collapsed by default, expand on tap
+ *  - V1 vs V2 side-by-side comparison grid with compact buttons
  */
 
 import { useState, useMemo } from "react";
 import { Pressable, ScrollView, Switch, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ChevronDown, ChevronRight, FlaskConical, Wifi, WifiOff, Zap } from "lucide-react-native";
+import { ChevronDown, ChevronRight, Wifi, WifiOff, Zap } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, Screen } from "@/components/ui";
@@ -75,7 +76,7 @@ function CollapsibleSection({
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   return (
-    <Card>
+    <Card style={{ padding: spacing[3] }}>
       <Pressable
         onPress={() => setExpanded((v) => !v)}
         style={{
@@ -92,29 +93,70 @@ function CollapsibleSection({
               gap: spacing[2],
             }}
           >
-            <AppText variant="h3">{title}</AppText>
+            <AppText variant="bodyBold">{title}</AppText>
             {badge ? <Badge label={badge} tone="orange" /> : null}
           </View>
           {subtitle ? (
-            <AppText tone="secondary" variant="bodySmall">
+            <AppText tone="secondary" variant="micro">
               {subtitle}
             </AppText>
           ) : null}
         </View>
         {expanded ? (
-          <ChevronDown size={18} color={palette.textMuted} />
+          <ChevronDown size={16} color={palette.textMuted} />
         ) : (
-          <ChevronRight size={18} color={palette.textMuted} />
+          <ChevronRight size={16} color={palette.textMuted} />
         )}
       </Pressable>
 
-      {expanded ? <View style={{ gap: 10, marginTop: 14 }}>{children}</View> : null}
+      {expanded ? <View style={{ gap: 8, marginTop: 12 }}>{children}</View> : null}
     </Card>
   );
 }
 
-function LaunchButton({ label, onPress }: { label: string; onPress: () => void }) {
-  return <Button label={label} variant="secondary" onPress={onPress} />;
+function DevButton({
+  label,
+  onPress,
+  variant = "secondary" as const,
+  style,
+}: {
+  label: string;
+  onPress: () => void;
+  variant?: "secondary" | "primary" | "ghost" | "destructive";
+  style?: any;
+}) {
+  return (
+    <Button
+      label={label}
+      variant={variant}
+      onPress={onPress}
+      style={[{ minHeight: 32, paddingVertical: 4 }, style]}
+      size="sm"
+      fullWidth={false}
+    />
+  );
+}
+
+function VersionPair({ label, onV1, onV2 }: { label: string; onV1: () => void; onV2: () => void }) {
+  const { spacing } = useHungryTheme();
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 2,
+      }}
+    >
+      <AppText variant="micro" style={{ fontWeight: "700", flex: 1 }}>
+        {label}
+      </AppText>
+      <View style={{ flexDirection: "row", gap: spacing[1] }}>
+        <DevButton label="V1" onPress={onV1} style={{ minWidth: 40 }} />
+        <DevButton label="V2" onPress={onV2} variant="primary" style={{ minWidth: 40 }} />
+      </View>
+    </View>
+  );
 }
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
@@ -247,85 +289,102 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           />
         </View>
 
-        <Button label="Open normal app flow" onPress={() => navigation.replace("Splash")} />
+        <Button
+          label="Open normal app flow"
+          variant="ghost"
+          onPress={() => navigation.replace("Splash")}
+          style={{ minHeight: 40 }}
+        />
 
-        {/* ── Figma V2 Prototypes ───────────────────────── */}
+        {/* ── V1 vs V2 Comparison ───────────────────────── */}
         <CollapsibleSection
-          title="Figma V2 Prototypes"
-          subtitle="New screen implementations from Sprint 11 Phase A & B."
-          badge="V2"
+          title="V1 vs V2 Comparison"
+          subtitle="Direct comparison of original screens and prototypes."
+          badge="Compare"
           defaultExpanded
         >
-          <LaunchButton
-            label="Discover V2 (Unified)"
-            onPress={() => navigation.navigate("DiscoverV2")}
+          <VersionPair
+            label="Discover"
+            onV1={() => navigation.navigate("MainTabs", { screen: "Discover" })}
+            onV2={() => navigation.navigate("DiscoverV2")}
           />
-          <LaunchButton
-            label="Search Home V2"
-            onPress={() => navigation.navigate("SearchHomeV2")}
+          <VersionPair
+            label="Search"
+            onV1={() => navigation.navigate("SearchHome")}
+            onV2={() => navigation.navigate("SearchHomeV2")}
           />
-          <LaunchButton
-            label="Stall Detail V2"
-            onPress={() => {
-              if (!sampleVenue) return;
-              navigation.navigate("StallDetailV2", { venueId: sampleVenue.id });
-            }}
+          <VersionPair
+            label="Stall Detail"
+            onV1={() =>
+              sampleVenue && navigation.navigate("StallDetail", { venueId: sampleVenue.id })
+            }
+            onV2={() =>
+              sampleVenue && navigation.navigate("StallDetailV2", { venueId: sampleVenue.id })
+            }
           />
-          <LaunchButton
-            label="Building Directory V2"
-            onPress={() => navigation.navigate("BuildingDrillDownV2", { buildingId: "hc-maxwell" })}
+          <VersionPair
+            label="Building"
+            onV1={() => openBuilding("hc-maxwell")}
+            onV2={() => navigation.navigate("BuildingDrillDownV2", { buildingId: "hc-maxwell" })}
           />
-          <LaunchButton
-            label="Quick Review Sheet V2"
-            onPress={() => navigation.navigate("QuickReviewV2")}
+          <VersionPair
+            label="QuickReview"
+            onV1={() => navigation.navigate("ReviewStack", { screen: "ReviewMain" })}
+            onV2={() => navigation.navigate("QuickReviewV2")}
           />
-          <LaunchButton label="Quick Bites V1" onPress={() => navigation.navigate("QuickBites")} />
+          <VersionPair
+            label="Review Feed"
+            onV1={() => navigation.navigate("MainTabs", { screen: "Review" })}
+            onV2={() => navigation.navigate("ReviewFeedV2" as any)}
+          />
+          <VersionPair
+            label="Post Composer"
+            onV1={() => navigation.navigate("Post")}
+            onV2={() => navigation.navigate("PostComposerV2" as any)}
+          />
+          <VersionPair
+            label="Settings"
+            onV1={() => navigation.navigate("Settings")}
+            onV2={() => navigation.navigate("Settings")}
+          />
+          <VersionPair
+            label="Splash"
+            onV1={() => navigation.navigate("Splash")}
+            onV2={() => navigation.navigate("SplashV2" as any, { variant: "A", stay: true })}
+          />
 
           <View
-            style={{ height: 1, backgroundColor: palette.border, marginVertical: spacing[4] }}
+            style={{ height: 1, backgroundColor: palette.border, marginVertical: spacing[2] }}
           />
 
-          <AppText variant="micro" style={{ marginBottom: spacing[2], color: palette.textMuted }}>
-            PHASE B ELEMENTS
+          <AppText variant="bodySmallBold" style={{ marginBottom: 4 }}>
+            New Modes & Extras
           </AppText>
-          <LaunchButton
-            label="Settings V2 (Dark Mode Toggle)"
-            onPress={() => navigation.navigate("SettingsV2")}
-          />
-          <LaunchButton
-            label="Design Gallery V2 (Logos/Mascot/Icons)"
-            onPress={() => navigation.navigate("DesignGallery")}
-          />
-          <LaunchButton
-            label="Splash V2 (Option A)"
-            onPress={() => navigation.navigate("SplashV2" as any, { variant: "A", stay: true })}
-          />
-          <LaunchButton
-            label="Splash V2 (Option B)"
-            onPress={() => navigation.navigate("SplashV2" as any, { variant: "B", stay: true })}
-          />
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+            <DevButton label="Quick Bites" onPress={() => navigation.navigate("QuickBites")} />
+            <DevButton
+              label="Design Gallery"
+              onPress={() => navigation.navigate("DesignGallery")}
+            />
+            <DevButton
+              label="Merchant Mode"
+              onPress={() => navigation.navigate("MerchantTabs" as any)}
+              variant="primary"
+            />
+          </View>
         </CollapsibleSection>
 
         {/* ── Session Presets ────────────────────────────── */}
-        <CollapsibleSection
-          title="Session presets"
-          subtitle="Reset session to a known state before testing flows."
-          defaultExpanded
-        >
-          <LaunchButton label="Signed out" onPress={resetToSignedOut} />
-          <LaunchButton
-            label="Authenticated · onboarding incomplete"
-            onPress={resetToAuthIncomplete}
-          />
-          <LaunchButton label="Authenticated · onboarding complete" onPress={resetToAuthComplete} />
+        <CollapsibleSection title="Session presets" subtitle="Reset state.">
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+            <DevButton label="Signed out" onPress={resetToSignedOut} />
+            <DevButton label="Auth only" onPress={resetToAuthIncomplete} />
+            <DevButton label="Auth + Onboard" onPress={resetToAuthComplete} variant="primary" />
+          </View>
         </CollapsibleSection>
 
         {/* ── Feature Flags ──────────────────────────────── */}
-        <CollapsibleSection
-          title="Feature flags"
-          subtitle="Toggle features on/off without restarting."
-          badge="Local"
-        >
+        <CollapsibleSection title="Feature flags" subtitle="Toggle features." badge="Local">
           {(Object.keys(flags) as FlagKey[]).map((key) => (
             <View
               key={key}
@@ -333,9 +392,12 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                 flexDirection: "row",
                 justifyContent: "space-between",
                 alignItems: "center",
+                paddingVertical: 2,
               }}
             >
-              <AppText style={{ flex: 1 }}>{FLAG_LABELS[key]}</AppText>
+              <AppText variant="bodySmall" style={{ flex: 1 }}>
+                {FLAG_LABELS[key]}
+              </AppText>
               <Switch
                 value={flags[key]}
                 onValueChange={() => toggleFlag(key)}
@@ -344,16 +406,165 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                   true: `${palette.orange}66`,
                 }}
                 thumbColor={flags[key] ? palette.orange : palette.textMuted}
+                style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
               />
             </View>
           ))}
         </CollapsibleSection>
 
+        {/* ── Core app ───────────────────────────────────── */}
+        <CollapsibleSection title="Core app flow" defaultExpanded>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+            <DevButton
+              label="Home"
+              onPress={() => navigation.navigate("MainTabs", { screen: "Home" })}
+            />
+            <DevButton
+              label="Discover"
+              onPress={() => navigation.navigate("MainTabs", { screen: "Discover" })}
+            />
+            <DevButton label="Search" onPress={() => navigation.navigate("SearchHome")} />
+            <DevButton label="Map" onPress={() => navigation.navigate("DiscoverMap")} />
+            <DevButton
+              label="Wheel"
+              onPress={() => {
+                const dish = repository.getDecideForMe({
+                  sweet: 3,
+                  spicy: 3,
+                  sour: 3,
+                  salty: 3,
+                  rich: 3,
+                  aromatic: 3,
+                });
+                if (dish) setDecideForMe(dish);
+                navigation.navigate("DecideForMeResult");
+              }}
+            />
+            <DevButton
+              label="Stall"
+              onPress={() =>
+                sampleVenue && navigation.navigate("StallDetail", { venueId: sampleVenue.id })
+              }
+            />
+            <DevButton
+              label="Dish"
+              onPress={() =>
+                sampleDish && navigation.navigate("DishDetail", { dishId: sampleDish.id })
+              }
+            />
+            <DevButton
+              label="Review"
+              onPress={() => navigation.navigate("MainTabs", { screen: "Review" })}
+            />
+            <DevButton
+              label="Article"
+              onPress={() =>
+                sampleArticle && navigation.navigate("BlogPost", { postId: sampleArticle.id })
+              }
+            />
+            <DevButton
+              label="Composer"
+              onPress={() => openProtected("Post", () => navigation.navigate("Post"))}
+            />
+            <DevButton label="Offline" onPress={() => navigation.navigate("Offline")} />
+            <DevButton
+              label="404"
+              onPress={() =>
+                navigation.navigate("NotFound", {
+                  title: "Debug",
+                  body: "Opened from dev launcher.",
+                })
+              }
+            />
+          </View>
+        </CollapsibleSection>
+
+        {/* ── Auth & Onboarding ───────────────────────────── */}
+        <CollapsibleSection title="Auth & Onboarding">
+          <AppText variant="micro" tone="muted" style={{ marginBottom: 4 }}>
+            Auth
+          </AppText>
+          <View
+            style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2], marginBottom: 8 }}
+          >
+            {[
+              { label: "Login", screen: "Login" },
+              { label: "SignUp", screen: "SignUp" },
+              { label: "Verify", screen: "EmailVerification" },
+              { label: "Forgot", screen: "ForgotPassword" },
+              { label: "Reset", screen: "ResetPassword" },
+            ].map(({ label, screen }) => (
+              <DevButton
+                key={label}
+                label={label}
+                onPress={() => navigation.navigate("AuthStack", { screen: screen as any })}
+              />
+            ))}
+          </View>
+          <AppText variant="micro" tone="muted" style={{ marginBottom: 4 }}>
+            Onboarding
+          </AppText>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+            {[
+              { label: "Intro 1", screen: "OnboardingIntro1" },
+              { label: "Intro 2", screen: "OnboardingIntro2" },
+              { label: "Quiz", screen: "TasteQuiz" },
+              { label: "Perms", screen: "LocationPermission" },
+            ].map(({ label, screen }) => (
+              <DevButton
+                key={label}
+                label={label}
+                onPress={() => navigation.navigate("OnboardingStack", { screen: screen as any })}
+              />
+            ))}
+          </View>
+        </CollapsibleSection>
+
+        {/* ── Profile & Review ───────────────────────────── */}
+        <CollapsibleSection title="Profile & Review">
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+            <DevButton
+              label="Profile"
+              onPress={() =>
+                openProtected("Profile", () =>
+                  navigation.navigate("MainTabs", {
+                    screen: "Profile",
+                    params: { screen: "ProfileHome" },
+                  }),
+                )
+              }
+            />
+            <DevButton
+              label="Edit"
+              onPress={() => openProtected("EditProfile", () => navigation.navigate("EditProfile"))}
+            />
+            <DevButton
+              label="Favs"
+              onPress={() => openProtected("Favourites", () => navigation.navigate("Favourites"))}
+            />
+            <DevButton
+              label="History"
+              onPress={() =>
+                openProtected("ReviewHistory", () => navigation.navigate("ReviewHistory"))
+              }
+            />
+            <DevButton
+              label="Settings"
+              onPress={() => openProtected("Settings", () => navigation.navigate("Settings"))}
+            />
+            <DevButton
+              label="QuickRate"
+              onPress={() =>
+                openProtected("Rate", () =>
+                  navigation.navigate("ReviewStack", { screen: "ReviewMain" }),
+                )
+              }
+            />
+          </View>
+        </CollapsibleSection>
+
         {/* ── Network Simulation ─────────────────────────── */}
-        <CollapsibleSection
-          title="Network simulation"
-          subtitle="Simulate connectivity conditions for error state testing."
-        >
+        <CollapsibleSection title="Network simulation" subtitle="Connectivity testing.">
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             {NETWORK_PRESETS.map((preset) => {
               const icon =
@@ -385,14 +596,11 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                     borderColor: network === preset.id ? palette.orange : palette.border,
                     borderWidth: 1,
                     borderRadius: radii.md,
-                    paddingVertical: spacing[3],
+                    paddingVertical: spacing[2],
                   }}
                 >
                   {icon}
-                  <AppText
-                    variant="bodySmall"
-                    tone={network === preset.id ? "inverse" : "secondary"}
-                  >
+                  <AppText variant="micro" tone={network === preset.id ? "inverse" : "secondary"}>
                     {preset.label}
                   </AppText>
                 </Pressable>
@@ -401,204 +609,18 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           </View>
         </CollapsibleSection>
 
-        {/* ── Auth flow ──────────────────────────────────── */}
-        <CollapsibleSection title="Auth flow">
-          {[
-            { label: "Login", screen: "Login" },
-            { label: "Sign Up", screen: "SignUp" },
-            { label: "Email Verification", screen: "EmailVerification" },
-            { label: "Forgot Password", screen: "ForgotPassword" },
-            { label: "Reset Password", screen: "ResetPassword" },
-            { label: "Reset Password Success", screen: "ResetPasswordSuccess" },
-          ].map(({ label, screen }) => (
-            <LaunchButton
-              key={label}
-              label={label}
-              onPress={() => navigation.navigate("AuthStack", { screen: screen as any })}
-            />
-          ))}
-        </CollapsibleSection>
-
-        {/* ── Onboarding flow ────────────────────────────── */}
-        <CollapsibleSection title="Onboarding flow">
-          {[
-            { label: "Intro 1 — Dish first", screen: "OnboardingIntro1" },
-            { label: "Intro 2 — Social cues", screen: "OnboardingIntro2" },
-            { label: "Taste Quiz", screen: "TasteQuiz" },
-            { label: "Location Permission", screen: "LocationPermission" },
-          ].map(({ label, screen }) => (
-            <LaunchButton
-              key={label}
-              label={label}
-              onPress={() =>
-                navigation.navigate("OnboardingStack", {
-                  screen: screen as any,
-                })
-              }
-            />
-          ))}
-        </CollapsibleSection>
-
-        {/* ── Core app ───────────────────────────────────── */}
-        <CollapsibleSection title="Core app" defaultExpanded>
-          <LaunchButton
-            label="Home feed"
-            onPress={() => navigation.navigate("MainTabs", { screen: "Home" })}
-          />
-          <LaunchButton
-            label="Discover"
-            onPress={() => navigation.navigate("MainTabs", { screen: "Discover" })}
-          />
-          <LaunchButton label="Search" onPress={() => navigation.navigate("SearchHome")} />
-          <LaunchButton label="Map Browse" onPress={() => navigation.navigate("DiscoverMap")} />
-          <LaunchButton
-            label="Floor Plan — Maxwell Food Centre"
-            onPress={() => openBuilding("hc-maxwell")}
-          />
-          <LaunchButton
-            label="Floor Plan — Old Airport Road"
-            onPress={() => openBuilding("hc-old-airport-road")}
-          />
-          <LaunchButton
-            label="What to eat? (Dish Roulette)"
-            onPress={() => {
-              const dish = repository.getDecideForMe({
-                sweet: 3,
-                spicy: 3,
-                sour: 3,
-                salty: 3,
-                rich: 3,
-                aromatic: 3,
-              });
-              if (dish) setDecideForMe(dish);
-              navigation.navigate("DecideForMeResult");
-            }}
-          />
-          <LaunchButton
-            label="Stall Detail"
-            onPress={() => {
-              if (!sampleVenue) {
-                showToast({
-                  message: "No sample venue available yet. Wait for data to load.",
-                  tone: "warning",
-                });
-                return;
-              }
-              navigation.navigate("StallDetail", { venueId: sampleVenue.id });
-            }}
-          />
-          <LaunchButton
-            label="Dish Detail"
-            onPress={() => {
-              if (!sampleDish) {
-                showToast({
-                  message: "No sample dish available yet. Wait for data to load.",
-                  tone: "warning",
-                });
-                return;
-              }
-              navigation.navigate("DishDetail", { dishId: sampleDish.id });
-            }}
-          />
-          <LaunchButton
-            label="Review feed"
-            onPress={() => navigation.navigate("MainTabs", { screen: "Review" })}
-          />
-          <LaunchButton
-            label="Article"
-            onPress={() => {
-              if (!sampleArticle) {
-                showToast({
-                  message: "No sample article available yet. Wait for data to load.",
-                  tone: "warning",
-                });
-                return;
-              }
-              navigation.navigate("BlogPost", { postId: sampleArticle.id });
-            }}
-          />
-          <LaunchButton
-            label="Post composer"
-            onPress={() => openProtected("Post", () => navigation.navigate("Post"))}
-          />
-          <LaunchButton label="Offline screen" onPress={() => navigation.navigate("Offline")} />
-          <LaunchButton
-            label="Not found"
-            onPress={() =>
-              navigation.navigate("NotFound", {
-                title: "Debug",
-                body: "Opened from dev launcher.",
-              })
-            }
-          />
-        </CollapsibleSection>
-
-        {/* ── Profile & Review ───────────────────────────── */}
-        <CollapsibleSection title="Profile & Review">
-          <LaunchButton
-            label="Profile"
-            onPress={() =>
-              openProtected("Profile", () =>
-                navigation.navigate("MainTabs", {
-                  screen: "Profile",
-                  params: { screen: "ProfileHome" },
-                }),
-              )
-            }
-          />
-          <LaunchButton
-            label="Edit Profile"
-            onPress={() => openProtected("EditProfile", () => navigation.navigate("EditProfile"))}
-          />
-          <LaunchButton
-            label="Favourites"
-            onPress={() => openProtected("Favourites", () => navigation.navigate("Favourites"))}
-          />
-          <LaunchButton
-            label="Review History"
-            onPress={() =>
-              openProtected("ReviewHistory", () => navigation.navigate("ReviewHistory"))
-            }
-          />
-          <LaunchButton
-            label="Settings"
-            onPress={() => openProtected("Settings", () => navigation.navigate("Settings"))}
-          />
-          <LaunchButton
-            label="Quick Review"
-            onPress={() =>
-              openProtected("Rate", () =>
-                navigation.navigate("ReviewStack", { screen: "ReviewMain" }),
-              )
-            }
-          />
-        </CollapsibleSection>
-
         {/* ── SG Building Picker ─────────────────────────── */}
         <CollapsibleSection
-          title="Singapore Building Picker"
-          subtitle={`${singaporeBuildings.length} buildings in dataset · tap any to open floor plan`}
+          title="SG Building Picker"
+          subtitle={`${singaporeBuildings.length} buildings · jump to floor plan`}
         >
-          <View
-            style={{
-              backgroundColor: palette.surfaceRaised,
-              borderRadius: radii.md,
-              borderWidth: 1,
-              borderColor: palette.border,
-              padding: spacing[3],
-            }}
-          >
-            <AppText variant="bodySmall" tone="muted">
-              Search…
-            </AppText>
-          </View>
           <ScrollView
-            style={{ maxHeight: 320 }}
+            style={{ maxHeight: 200 }}
             nestedScrollEnabled
             showsVerticalScrollIndicator={false}
           >
-            <View style={{ gap: spacing[2] }}>
-              {singaporeBuildings.map((building) => (
+            <View style={{ gap: spacing[1] }}>
+              {filteredBuildings.map((building) => (
                 <Pressable
                   key={building.id}
                   onPress={() => openBuilding(building.id)}
@@ -607,22 +629,15 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                     borderRadius: radii.md,
                     borderWidth: 1,
                     borderColor: palette.border,
-                    padding: spacing[3],
+                    padding: spacing[2],
                     flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
                   }}
                 >
                   <View style={{ flex: 1 }}>
-                    <AppText
-                      variant="bodySmall"
-                      style={{ fontFamily: "Nunito_700Bold" }}
-                      numberOfLines={1}
-                    >
+                    <AppText variant="micro" style={{ fontWeight: "700" }} numberOfLines={1}>
                       {building.name}
-                    </AppText>
-                    <AppText variant="micro" tone="muted">
-                      {building.venueCount} stalls · {building.floors.join(", ")}
                     </AppText>
                   </View>
                   <Badge
@@ -637,16 +652,12 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
 
         {/* ── Data Inspector ─────────────────────────────── */}
         <CollapsibleSection title="Data inspector" badge="Mock">
-          <View style={{ gap: spacing[3] }}>
+          <View style={{ gap: spacing[1] }}>
             {[
-              { label: "Mock buildings", value: stats.buildings },
-              { label: "SG dataset buildings", value: stats.sgBuildings },
-              { label: "Mock venues/stalls", value: stats.venues },
-              { label: "Blog articles", value: stats.articles },
-              {
-                label: "Total dishes",
-                value: repository.listPopularNearby().length,
-              },
+              { label: "Buildings", value: stats.buildings },
+              { label: "Venues", value: stats.venues },
+              { label: "Articles", value: stats.articles },
+              { label: "Dishes", value: repository.listPopularNearby().length },
             ].map(({ label, value }) => (
               <View
                 key={label}
@@ -655,8 +666,12 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                   justifyContent: "space-between",
                 }}
               >
-                <AppText tone="secondary">{label}</AppText>
-                <AppText style={{ fontFamily: "DMMono_400Regular" }}>{value}</AppText>
+                <AppText variant="micro" tone="secondary">
+                  {label}
+                </AppText>
+                <AppText variant="micro" style={{ fontFamily: "DMMono_400Regular" }}>
+                  {value}
+                </AppText>
               </View>
             ))}
           </View>

@@ -42,9 +42,11 @@ import { ReviewSuccessModal } from "@/app/screens/review/ReviewSuccessModal";
 import { QuickReviewModal } from "@/app/screens/review/QuickReviewModal";
 import { QuickReviewSheetV2 } from "@/app/screens/review/QuickReviewSheetV2";
 import { QuickBitesScreen } from "@/app/screens/discover/QuickBitesScreen";
-import { SettingsScreenV2 } from "@/app/screens/profile/SettingsScreenV2";
 import { SplashScreenV2 } from "@/app/screens/SplashScreenV2";
 import { DesignGalleryScreen } from "@/app/screens/dev/DesignGalleryScreen";
+import { MerchantTabs } from "@/app/navigation/MerchantTabs";
+import { ReviewFeedScreenV2 } from "@/app/screens/review/ReviewFeedScreenV2";
+import { PostComposerScreenV2 } from "@/app/screens/post/PostComposerScreenV2";
 import { WheelStack } from "@/app/screens/wheel/WheelStack";
 import { DishSearchScreen } from "@/app/screens/search/DishSearchScreen";
 import { DishSearchScreenV2 } from "@/app/screens/search/DishSearchScreenV2";
@@ -65,10 +67,13 @@ const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 const AUTH_REQUIRED_ROUTES = new Set([
   "MainTabs",
+  "MerchantTabs",
   "SearchHome",
+  "SearchHomeV2",
   "SearchResults",
   "MapZoomedIn",
   "Post",
+  "PostComposerV2",
   "EditProfile",
   "BuildingDrillDown",
   "DecideForMeResult",
@@ -76,8 +81,10 @@ const AUTH_REQUIRED_ROUTES = new Set([
   "Favourites",
   "ReviewHistory",
   "Settings",
+  "SettingsV2",
   "DishDetail",
   "StallDetail",
+  "StallDetailV2",
   "BlogPost",
   "ReviewStack",
 ]);
@@ -314,9 +321,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={BuildingDrillDownScreenV2} name="BuildingDrillDownV2" />
           <RootStack.Screen component={QuickReviewSheetV2} name="QuickReviewV2" />
           <RootStack.Screen component={QuickBitesScreen} name="QuickBites" />
-          <RootStack.Screen component={SettingsScreenV2} name="SettingsV2" />
           <RootStack.Screen component={SplashScreenV2} name="SplashV2" />
           <RootStack.Screen component={DesignGalleryScreen} name="DesignGallery" />
+          <RootStack.Screen component={MerchantTabs} name="MerchantTabs" />
+          <RootStack.Screen component={ReviewFeedScreenV2} name="ReviewFeedV2" />
+          <RootStack.Screen component={PostComposerScreenV2} name="PostComposerV2" />
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />

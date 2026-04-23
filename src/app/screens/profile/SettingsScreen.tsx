@@ -1,24 +1,13 @@
 import Constants from "expo-constants";
 import { useState } from "react";
-import { Alert, View, ScrollView } from "react-native";
+import { Alert, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import {
-  User,
-  Bell,
-  HandMetal,
-  ShieldCheck,
-  Moon,
-  MapPin,
-  Trash2,
-  Info,
-  ExternalLink,
-  ChevronRight,
-} from "lucide-react-native";
+import { User, Bell, HandMetal, ShieldCheck, Moon, MapPin, Trash2 } from "lucide-react-native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Button } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { useLocationStore } from "@/store/useLocationStore";
@@ -35,7 +24,6 @@ export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { palette, spacing } = useHungryTheme();
 
-  const signOut = useSessionStore((state) => state.signOut);
   const clearSession = useSessionStore((state) => state.clearSession);
   const location = useLocationStore((state) => state.manualLocation);
   const resetLocationState = useLocationStore((state) => state.resetLocationState);
@@ -92,11 +80,11 @@ export function SettingsScreen() {
 
   const cycleTheme = () => {
     const next: Record<string, any> = {
-      automatic: "light",
+      system: "light",
       light: "dark",
-      dark: "automatic",
+      dark: "system",
     };
-    setThemePreference(next[themePreference]);
+    setThemePreference(next[themePreference] || "system");
   };
 
   return (

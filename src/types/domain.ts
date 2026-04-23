@@ -240,6 +240,16 @@ export interface StallPost {
   dishLinks?: { name: string; dishId: string }[];
 }
 
+export interface SearchHistoryEntry {
+  id: string;
+  query: string;
+  timestamp: string; // ISO string
+  location?: string;
+  genre?: string;
+  resultCount?: number;
+  rating?: number;
+}
+
 export interface AppSession {
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
