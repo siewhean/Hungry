@@ -17,6 +17,40 @@
 
 ---
 
+## 🟠 ACTIVE — Sprint 11: Design System & UX Overhaul (Phase A & B)
+
+> **Status:** Phase A & B complete. V2 prototypes implemented for critical screens. Dark Mode enabled. Neutral palette finalized.
+> **Full plan:** `tasks/Roadmap/roadmap.md` and `tasks/Roadmap/phase-b-implementation.md`.
+> **Owner:** Gemini (UI/UX), Codex (Implementation).
+
+### Phase A — Critical Screen Fixes (V2 Prototypes)
+
+- [x] **FIG-01 — DiscoverHomeScreenV2** — Unified Discovery (Variant A) with integrated search and intent chips. [Gemini]
+- [x] **FIG-02 — DishSearchScreenV2** — High-fidelity search with category tabs and trending dishes. [Gemini]
+- [x] **FIG-03 — StallDetailScreenV2** — Premium detail view with hero media and info clusters. [Gemini]
+- [x] **FIG-04 — BuildingDrillDownScreenV2** — Segmented floor selector and building hero overlays. [Gemini]
+- [x] **FIG-05 — QuickReviewSheetV2** — 4-step interactive review flow. [Gemini]
+- [x] **FIG-06 — QuickBitesScreen (V1 Update)** — Edge-to-edge high-density food grid with collapsible filters. [Gemini]
+- [x] **MAP-01 — Map Pin Overhaul** — Added 'restaurant' type and fixed tappability/navigation logic. [Gemini]
+
+### Phase B — Design System Upgrades
+
+- [x] **DS-01 — Typography: Fraunces Integration** — Merged Fraunces for display headings across all V2 surfaces. [Gemini]
+- [x] **DS-02 — Dark Mode Persistence** — 3-way toggle (Light / Dark / System) with AsyncStorage persistence. [Gemini]
+- [x] **DS-03 — Neutral Palette Migration** — Removed all 'Paper Warm' tones; app now pure white/neutral grey. [Gemini]
+- [x] **DS-04 — Brand Assets V2** — SVG Logos (Wordmark, Icon, Logomark) and Mascot with expressions. [Gemini]
+- [x] **DS-05 — Splash V2** — Two advanced animation variants (Bite scatter vs. Gravity rain). [Gemini]
+- [x] **DS-06 — Food Icon Suite** — High-quality SVG illustrations for Wheel, Bowl, and Ramen. [Gemini]
+
+### Done gate
+
+- [x] `npm run typecheck` passes. *(2026-04-23)*
+- [x] All V2 screens registered and accessible via Developer Launcher.
+- [x] Theme Preference persists across app restarts.
+- [x] App background is neutral (no beige) in both modes.
+
+---
+
 ## 🔴 ACTIVE — Sprint 10: Supply Priming (Staging Smoke Tests)
 
 > **Status:** Code complete (12/13 items). Remaining: 4 done-gate staging smoke tests + CLM-04 copy spec (Gemini).
@@ -232,6 +266,7 @@ All items completed. Verification evidence in session log:
 
 ### Session Entries (recent — full history in git log)
 
+- 2026-04-23 | Gemini | Completed Sprint 11 Phase A & B: Implemented 5 Figma V2 prototypes as new screens (`DiscoverV2`, `SearchV2`, `StallDetailV2`, `BuildingV2`, `QuickReviewV2`), added Fraunces typography for display headings, fully neutralized the palette (removed beige/warm tones), implemented persistent Dark Mode toggle in Settings V2, created V2 suite of brand assets (logos, mascot, food icons), and upgraded the Splash screen with advanced animation variants. Rebuilt the Quick Bites screen with a high-density, edge-to-edge grid and collapsible filters. | Status: Phase A & B code complete and verified. | Verification: `npm run typecheck` pass; all V2 screens functional via Developer Launcher. | Next: Phase C (Feature Additions).
 - 2026-04-23 | Codex | Implemented the Hungry website modernization pass in `marketing/web`: replaced the original card-and-emoji landing page with a white-canvas editorial homepage, rewrote the shared website components (hero, contrast strip, dish-first proof, how-it-works, local proof, preview band, hawker module, FAQ, footer), added mobile navigation, converted the merchant/about route CTAs onto the shared waitlist system where applicable, bundled local Nunito + DM Mono fonts for deterministic builds, added a real OG asset/metadata base, and removed the duplicate `marketing/web/src` mirror tree. | Status: website redesign complete in code; Vercel deploy and Supabase-backed waitlist remain open. | Verification: `cd marketing/web && npm run lint` pass; `cd marketing/web && npx tsc --noEmit` pass; `cd marketing/web && npm run build` pass (`/`, `/about`, `/for-merchants`, `/privacy`, `/api/waitlist`). | Next: Lighthouse pass, preview/prod deployment, and optional waitlist persistence swap.
 - 2026-04-22 | Claude (Sonnet 4.6) | Full codebase audit against `tasks/todo.md` + `SECURITY.md`. Findings: TOOL-01..04 all fully implemented (CI bot review comments were stale/incorrect — dismissed); SECURITY.md is correct and Hungry-specific (CmdTab references were in a stale cached version, not the actual file); Phase 7 provisioning complete — moved to Completed Archive; Sprint 10 promoted from NEXT to ACTIVE with 12/13 items done; 2 open security actions added (SEC-01 leaked-password-protection toggle, SEC-02 `.gitignore` for `supabase/.temp/`); Sprint 10 done gate annotated with Node 25/esbuild test blocker context. | Status: documentation updated, pushed to main. | Blockers: 4 staging smoke tests + CLM-04 copy (Gemini). | Next: run staging smokes for OCR e2e + claim CTA insert; fix Node 25 test runner issue; toggle SEC-01 in Supabase dashboard.
 - 2026-04-22 | Codex | Implemented Sprint 10 Phase B (`CLM-03` + curated-menu `CLM-06` decision): added claim submission contracts to `HungryService.supply`, implemented idempotent claim submission mapping in Supabase (`submit_merchant_claim_interest` RPC `uuid|null` -> `created|already_exists`), mirrored idempotency in mock service by `(userId, venueId)` key, wired staging-gated one-tap CTA into `StallDetailScreen` (analytics + auth precheck + toast outcomes + in-flight disable), added analytics event `claim_this_stall_tapped`, and added Sprint 10 contract tests for CTA wiring and curated menu source. | Status: CLM-03 complete in code; CLM-06 implemented as curated-menu decision (no community draft consumer read). | Verification: `npm run typecheck` pass; `npx eslint src/app/screens/detail/StallDetailScreen.tsx src/lib/services/types.ts src/lib/services/supabase/supabaseService.ts src/lib/services/mock/mockService.ts src/lib/analytics/types.ts src/app/screens/sprint10-screen-contracts.test.ts` pass; `npm run test` remains blocked by existing Node 25/esbuild transform issue on React Native tests (`node_modules/react-native/index.js` unexpected `typeof`) with Sprint 10 contract tests passing. | Next: run staging runtime smoke for claim insert + telemetry, then move to CLM-04 copy spec and remaining Sprint 10 runtime done-gates.

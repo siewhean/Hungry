@@ -69,11 +69,9 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    if (themePreference === "automatic") {
+    if (themePreference === "system") {
       return;
     }
-
-    Appearance.setColorScheme(themePreference);
   }, [themePreference]);
 
   const resolvedSystemScheme: AppColorScheme =
@@ -83,7 +81,7 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
   const colorScheme = useMemo(() => {
     if (themePreference === "light") return "light";
     if (themePreference === "dark") return "dark";
-    // Fall back to light only if the OS doesn't report a scheme.
+    // system mode: fall back to light only if the OS doesn't report a scheme.
     return resolvedSystemScheme === "dark" ? "dark" : "light";
   }, [themePreference, resolvedSystemScheme]);
 

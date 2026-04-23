@@ -37,61 +37,60 @@ const CUISINES = [
   "Dessert",
 ];
 
-const MOCK_ITEMS: Bite[] = Array.from({ length: 40 }).map((_, i) => {
-  const authorNames = [
-    "Sarah Lim",
-    "Emma Watson",
-    "Tan Ah Teck",
-    "Joy Wang",
-    "Ken Tan",
-    "Lia Low",
-    "Wei Ming",
-    "Ahmad K",
-  ];
-  const dishNames = [
-    "Chicken Rice",
-    "Chicken Satay",
-    "Sliced Fish Ban Mian",
-    "Wagyu Burger",
-    "Salmon Don",
-    "Laksa",
-    "Mala Xiang Guo",
-    "Pandan Cake",
-  ];
-  const photoUrls = [
-    "https://images.unsplash.com/photo-1605098702935-b61af3b4ff3d?w=800",
-    "https://images.unsplash.com/photo-1541529086526-db283c563270?w=800",
-    "https://images.unsplash.com/photo-1555126634-323283e090fa?w=800",
-    "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800",
-    "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800",
-    "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800",
-    "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=800",
-    "https://images.unsplash.com/photo-1621236378699-8597fac6bb4d?w=800",
-  ];
+// Pre-generate 40 items to ensure a long feed
+const AUTHOR_NAMES = [
+  "Sarah Lim",
+  "Emma Watson",
+  "Tan Ah Teck",
+  "Joy Wang",
+  "Ken Tan",
+  "Lia Low",
+  "Wei Ming",
+  "Ahmad K",
+];
+const DISH_NAMES = [
+  "Chicken Rice",
+  "Chicken Satay",
+  "Sliced Fish Ban Mian",
+  "Wagyu Burger",
+  "Salmon Don",
+  "Laksa",
+  "Mala Xiang Guo",
+  "Pandan Cake",
+];
+const PHOTO_URLS = [
+  "https://images.unsplash.com/photo-1605098702935-b61af3b4ff3d?w=800",
+  "https://images.unsplash.com/photo-1541529086526-db283c563270?w=800",
+  "https://images.unsplash.com/photo-1555126634-323283e090fa?w=800",
+  "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800",
+  "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800",
+  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800",
+  "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=800",
+  "https://images.unsplash.com/photo-1621236378699-8597fac6bb4d?w=800",
+];
 
-  return {
-    id: `bite-mock-${i}`,
-    authorId: `user-${i % 8}`,
-    authorName: authorNames[i % 8],
-    authorAvatar: `https://i.pravatar.cc/64?u=${i}`,
-    dishId: `dish-${i % 8}`,
-    dishName: dishNames[i % 8],
-    venueId: `venue-${i % 8}`,
-    venueName: "Delicious Food Stall",
-    unitNumber: `#01-${10 + i}`,
-    buildingId: "building-maxwell",
-    buildingName: "Maxwell Food Centre",
-    photoUrl: photoUrls[i % 8],
-    caption: `Absolutely delicious ${dishNames[i % 8]}! A must-try local favorite. #food #singapore`,
-    tasteStamp: { sweet: 1, spicy: 2, sour: 1, salty: 4, rich: 5, aromatic: 4 },
-    cravingCount: Math.floor(Math.random() * 1000),
-    savedCount: Math.floor(Math.random() * 200),
-    rating: 4.0 + Math.random(),
-    price: 3.5 + Math.random() * 10,
-    expiresAt: new Date(Date.now() + 86400000).toISOString(),
-    createdAt: new Date().toISOString(),
-  };
-});
+const MOCK_ITEMS: Bite[] = Array.from({ length: 40 }).map((_, i) => ({
+  id: `bite-mock-${i}`,
+  authorId: `user-${i % 8}`,
+  authorName: AUTHOR_NAMES[i % 8],
+  authorAvatar: `https://i.pravatar.cc/64?u=${i}`,
+  dishId: `dish-${i % 8}`,
+  dishName: DISH_NAMES[i % 8],
+  venueId: `venue-${i % 8}`,
+  venueName: "Delicious Food Stall",
+  unitNumber: `#01-${10 + i}`,
+  buildingId: "building-maxwell",
+  buildingName: "Maxwell Food Centre",
+  photoUrl: PHOTO_URLS[i % 8],
+  caption: `Absolutely delicious ${DISH_NAMES[i % 8]}! A must-try local favorite. #food #singapore`,
+  tasteStamp: { sweet: 1, spicy: 2, sour: 1, salty: 4, rich: 5, aromatic: 4 },
+  cravingCount: Math.floor(Math.random() * 1000),
+  savedCount: Math.floor(Math.random() * 200),
+  rating: 4.0 + Math.random(),
+  price: 3.5 + Math.random() * 10,
+  expiresAt: new Date(Date.now() + 86400000).toISOString(),
+  createdAt: new Date().toISOString(),
+}));
 
 export function QuickBitesScreen() {
   const navigation = useNavigation<RootNavigation>();
@@ -127,12 +126,30 @@ export function QuickBitesScreen() {
   });
 
   useEffect(() => {
-    // Artificial delay to show variety
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
-  }, []);
+    // Sync with location and real feed if available
+    const loadBites = async () => {
+      try {
+        const feed = await getHomeBitesFeed(currentLocation.latitude, currentLocation.longitude);
+        if (feed && feed.length > 0) {
+          // Prepend real feed to mock items
+          const existingIds = new Set(MOCK_ITEMS.map((b) => b.id));
+          const newUniqueBites = feed
+            .filter((b) => !existingIds.has(b.id))
+            .map((b) => ({
+              ...b,
+              photoUrl:
+                b.photoUrl || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800",
+            }));
+          setBites([...newUniqueBites, ...MOCK_ITEMS]);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch live bites, using fallback list.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    void loadBites();
+  }, [currentLocation]);
 
   const filteredBites = useMemo(() => {
     const list = bites
@@ -142,21 +159,20 @@ export function QuickBitesScreen() {
           !query ||
           bite.authorName.toLowerCase().includes(query) ||
           bite.caption.toLowerCase().includes(query) ||
-          bite.dishName.toLowerCase().includes(query) ||
-          bite.venueName.toLowerCase().includes(query);
+          bite.dishName.toLowerCase().includes(query);
 
         const cuisine = selectedCuisine.toLowerCase();
         const matchesCuisine =
           cuisine === "all" ||
           bite.caption.toLowerCase().includes(cuisine) ||
-          bite.dishName.toLowerCase().includes(cuisine) ||
           bite.dishName.toLowerCase().includes(cuisine);
 
         return matchesSearch && matchesCuisine;
       })
       .map((bite) => {
-        const distance = (parseInt(bite.id.replace(/\D/g, "") || "0") % 800) + 50;
-        return { ...bite, distance };
+        // Assign deterministic distance for mock items
+        const dist = (parseInt(bite.id.replace(/\D/g, "") || "0") % 800) + 50;
+        return { ...bite, distance: dist };
       });
 
     return list.sort((a, b) => a.distance - b.distance);
@@ -186,33 +202,41 @@ export function QuickBitesScreen() {
         <View style={styles.cardContent}>
           <View style={styles.authorBadge}>
             <Avatar uri={item.authorAvatar} name={item.authorName} size={18} />
-            <AppText variant="micro" style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 10 }}>
+            <AppText
+              variant="micro"
+              style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
+            >
               {item.authorName}
             </AppText>
           </View>
           <View style={{ flex: 1 }} />
           <AppText
             variant="bodySmallBold"
-            style={{ color: "#FFFFFF", marginBottom: 2 }}
+            style={{ color: palette.white, marginBottom: 2 }}
             numberOfLines={1}
           >
             {item.dishName}
           </AppText>
           <View style={styles.metaRow}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
-              <MapPinned size={10} color="#FFFFFF" />
+              <MapPinned size={10} color={palette.white} />
               <AppText
                 variant="micro"
-                style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 10 }}
+                style={{ color: palette.white, fontWeight: "600", fontSize: 10 }}
               >
                 {item.distance}m
               </AppText>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-              <Heart size={10} color="#FFFFFF" fill="#FFFFFF" opacity={0.8} />
+              <Heart
+                size={10}
+                color={palette.white}
+                fill={palette.white}
+                style={{ opacity: 0.8 }}
+              />
               <AppText
                 variant="micro"
-                style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 10 }}
+                style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
               >
                 {item.cravingCount}
               </AppText>

@@ -42,6 +42,9 @@ import { ReviewSuccessModal } from "@/app/screens/review/ReviewSuccessModal";
 import { QuickReviewModal } from "@/app/screens/review/QuickReviewModal";
 import { QuickReviewSheetV2 } from "@/app/screens/review/QuickReviewSheetV2";
 import { QuickBitesScreen } from "@/app/screens/discover/QuickBitesScreen";
+import { SettingsScreenV2 } from "@/app/screens/profile/SettingsScreenV2";
+import { SplashScreenV2 } from "@/app/screens/SplashScreenV2";
+import { DesignGalleryScreen } from "@/app/screens/dev/DesignGalleryScreen";
 import { WheelStack } from "@/app/screens/wheel/WheelStack";
 import { DishSearchScreen } from "@/app/screens/search/DishSearchScreen";
 import { DishSearchScreenV2 } from "@/app/screens/search/DishSearchScreenV2";
@@ -311,6 +314,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={BuildingDrillDownScreenV2} name="BuildingDrillDownV2" />
           <RootStack.Screen component={QuickReviewSheetV2} name="QuickReviewV2" />
           <RootStack.Screen component={QuickBitesScreen} name="QuickBites" />
+          <RootStack.Screen component={SettingsScreenV2} name="SettingsV2" />
+          <RootStack.Screen component={SplashScreenV2} name="SplashV2" />
+          <RootStack.Screen component={DesignGalleryScreen} name="DesignGallery" />
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />

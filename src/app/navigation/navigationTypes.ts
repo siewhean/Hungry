@@ -88,6 +88,9 @@ export type RootStackParamList = {
   ReviewHistory: undefined;
   Settings: undefined;
   EditProfile: undefined;
+  SettingsV2: undefined;
+  SplashV2: { variant?: "A" | "B"; stay?: boolean } | undefined;
+  DesignGallery: undefined;
   // V2 Prototypes
   DiscoverV2: undefined;
   SearchHomeV2: undefined;

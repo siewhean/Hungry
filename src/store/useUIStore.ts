@@ -1,4 +1,7 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
+import { hungryPersistStorage } from "./persistStorage";
 
 export type ToastTone = "success" | "error" | "info" | "warning";
 
@@ -24,7 +27,7 @@ export interface ReviewSuccessPayload {
   rating?: number;
 }
 
-export type ThemePreference = "automatic" | "light" | "dark";
+export type ThemePreference = "system" | "light" | "dark";
 
 interface UIState {
   toast: ToastPayload | null;
@@ -48,31 +51,42 @@ interface UIState {
   setThemePreference: (preference: ThemePreference) => void;
 }
 
-export const useUIStore = create<UIState>((set) => ({
-  toast: null,
-  showToast: (payload) => set({ toast: payload }),
-  hideToast: () => set({ toast: null }),
-  clearToast: () => set({ toast: null }),
-  lastScrollY: 0,
-  isHeaderCollapsed: false,
-  scrollBackVisible: false,
-  registerScrollForBack: (y) => {
-    set((state) => {
-      const diff = y - state.lastScrollY;
-      const isHeaderCollapsed = y > 60 && diff > 0;
-      const scrollBackVisible = y > 300 && diff < -20;
-      return { lastScrollY: y, isHeaderCollapsed, scrollBackVisible };
-    });
-  },
-  resetScrollBack: () => set({ scrollBackVisible: false }),
-  quickReview: null,
-  showQuickReview: (payload) => set({ quickReview: payload }),
-  hideQuickReview: () => set({ quickReview: null }),
-  reviewSuccess: null,
-  showReviewSuccess: (payload) => set({ reviewSuccess: payload }),
-  hideReviewSuccess: () => set({ reviewSuccess: null }),
-  isOffline: false,
-  setOffline: (offline) => set({ isOffline: offline }),
-  themePreference: "automatic",
-  setThemePreference: (themePreference) => set({ themePreference }),
-}));
+export const useUIStore = create<UIState>()(
+  persist(
+    (set) => ({
+      toast: null,
+      showToast: (payload) => set({ toast: payload }),
+      hideToast: () => set({ toast: null }),
+      clearToast: () => set({ toast: null }),
+      lastScrollY: 0,
+      isHeaderCollapsed: false,
+      scrollBackVisible: false,
+      registerScrollForBack: (y) => {
+        set((state) => {
+          const diff = y - state.lastScrollY;
+          const isHeaderCollapsed = y > 60 && diff > 0;
+          const scrollBackVisible = y > 300 && diff < -20;
+          return { lastScrollY: y, isHeaderCollapsed, scrollBackVisible };
+        });
+      },
+      resetScrollBack: () => set({ scrollBackVisible: false }),
+      quickReview: null,
+      showQuickReview: (payload) => set({ quickReview: payload }),
+      hideQuickReview: () => set({ quickReview: null }),
+      reviewSuccess: null,
+      showReviewSuccess: (payload) => set({ reviewSuccess: payload }),
+      hideReviewSuccess: () => set({ reviewSuccess: null }),
+      isOffline: false,
+      setOffline: (offline) => set({ isOffline: offline }),
+      themePreference: "system",
+      setThemePreference: (themePreference) => set({ themePreference }),
+    }),
+    {
+      name: "hungry-ui-v1",
+      storage: hungryPersistStorage,
+      partialize: (state) => ({
+        themePreference: state.themePreference,
+      }),
+    },
+  ),
+);

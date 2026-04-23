@@ -252,7 +252,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         {/* ── Figma V2 Prototypes ───────────────────────── */}
         <CollapsibleSection
           title="Figma V2 Prototypes"
-          subtitle="New screen implementations from Sprint 11 Phase A."
+          subtitle="New screen implementations from Sprint 11 Phase A & B."
           badge="V2"
           defaultExpanded
         >
@@ -280,6 +280,30 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             onPress={() => navigation.navigate("QuickReviewV2")}
           />
           <LaunchButton label="Quick Bites V1" onPress={() => navigation.navigate("QuickBites")} />
+
+          <View
+            style={{ height: 1, backgroundColor: palette.border, marginVertical: spacing[4] }}
+          />
+
+          <AppText variant="micro" style={{ marginBottom: spacing[2], color: palette.textMuted }}>
+            PHASE B ELEMENTS
+          </AppText>
+          <LaunchButton
+            label="Settings V2 (Dark Mode Toggle)"
+            onPress={() => navigation.navigate("SettingsV2")}
+          />
+          <LaunchButton
+            label="Design Gallery V2 (Logos/Mascot/Icons)"
+            onPress={() => navigation.navigate("DesignGallery")}
+          />
+          <LaunchButton
+            label="Splash V2 (Option A)"
+            onPress={() => navigation.navigate("SplashV2" as any, { variant: "A", stay: true })}
+          />
+          <LaunchButton
+            label="Splash V2 (Option B)"
+            onPress={() => navigation.navigate("SplashV2" as any, { variant: "B", stay: true })}
+          />
         </CollapsibleSection>
 
         {/* ── Session Presets ────────────────────────────── */}
