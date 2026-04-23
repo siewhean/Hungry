@@ -86,7 +86,8 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
 
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { palette, spacing, radii, typography, shadows } = useHungryTheme();
+  const styles = createStyles({ palette, spacing, radii });
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
@@ -368,62 +369,63 @@ export function DishDetailScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  stickyHeader: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(0,0,0,0.05)",
-  },
-  stickyHeaderContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingLeft: 60, // Ensure title doesn't hit the back button area
-    paddingRight: 16,
-    height: 60,
-    gap: 12,
-  },
-  navOverlay: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    height: 60,
-    alignItems: "center",
-  },
-  navBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  heroContainer: {
-    width: "100%",
-    overflow: "hidden",
-  },
-  radarCard: {
-    padding: 20,
-    alignItems: "center",
-  },
-  actionDock: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    gap: 12,
-    padding: 16,
-    backgroundColor: "rgba(255,255,255,0.95)",
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.05)",
-  },
-});
+const createStyles = ({ palette, spacing, radii }: { palette: any; spacing: any; radii: any }) =>
+  StyleSheet.create({
+    stickyHeader: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      borderBottomWidth: 1,
+      borderBottomColor: "rgba(0,0,0,0.05)",
+    },
+    stickyHeaderContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingLeft: 60, // Ensure title doesn't hit the back button area
+      paddingRight: 16,
+      height: 60,
+      gap: 12,
+    },
+    navOverlay: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      flexDirection: "row",
+      paddingHorizontal: 16,
+      height: 60,
+      alignItems: "center",
+    },
+    navBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: "rgba(255,255,255,0.9)",
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: palette.navy,
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
+      elevation: 5,
+    },
+    heroContainer: {
+      width: "100%",
+      overflow: "hidden",
+    },
+    radarCard: {
+      padding: 20,
+      alignItems: "center",
+    },
+    actionDock: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      flexDirection: "row",
+      gap: 12,
+      padding: 16,
+      backgroundColor: "rgba(255,255,255,0.95)",
+      borderTopWidth: 1,
+      borderTopColor: "rgba(0,0,0,0.05)",
+    },
+  });

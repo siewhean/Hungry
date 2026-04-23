@@ -13,6 +13,8 @@ interface ScreenProps {
   headerRight?: ReactNode;
   scroll?: boolean;
   style?: StyleProp<ViewStyle>;
+  contentContainerStyle?: StyleProp<ViewStyle>;
+  fullWidth?: boolean;
 }
 
 export function Screen({
@@ -22,6 +24,8 @@ export function Screen({
   headerRight,
   scroll = true,
   style,
+  contentContainerStyle,
+  fullWidth = false,
 }: PropsWithChildren<ScreenProps>) {
   const { palette, spacing } = useHungryTheme();
   const styles = createStyles(spacing);
@@ -40,17 +44,23 @@ export function Screen({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.content,
+            !fullWidth && { alignItems: "center", paddingHorizontal: spacing[3] },
             {
-              alignItems: "center",
-              paddingHorizontal: spacing[3],
               paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[12],
               paddingTop: spacing[3],
             },
+            contentContainerStyle,
           ]}
           onScroll={onScroll}
           scrollEventThrottle={scrollEventThrottle}
         >
-          <View style={[styles.inner, { gap: spacing[5] }]}>
+          <View
+            style={[
+              styles.inner,
+              fullWidth && { maxWidth: undefined },
+              !fullWidth && { gap: spacing[5] },
+            ]}
+          >
             {(title || headerRight) && (
               <View
                 style={[
@@ -58,6 +68,7 @@ export function Screen({
                   {
                     paddingLeft: scrollBackVisible ? spacing[12] : 0,
                     paddingTop: scrollBackVisible ? spacing[8] : 0,
+                    paddingHorizontal: fullWidth ? spacing[3] : 0,
                   },
                 ]}
               >
@@ -75,15 +86,21 @@ export function Screen({
         <View
           style={[
             styles.flex,
-            {
+            !fullWidth && {
               alignItems: "center",
               paddingHorizontal: spacing[3],
-              // paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[4],
               paddingTop: spacing[3],
             },
           ]}
         >
-          <View style={[styles.inner, { gap: spacing[5] }]}>
+          <View
+            style={[
+              styles.inner,
+              styles.flex,
+              fullWidth && { maxWidth: undefined },
+              !fullWidth && { gap: spacing[5] },
+            ]}
+          >
             {(title || headerRight) && (
               <View
                 style={[
@@ -91,6 +108,7 @@ export function Screen({
                   {
                     paddingLeft: scrollBackVisible ? spacing[12] : 0,
                     paddingTop: scrollBackVisible ? spacing[8] : 0,
+                    paddingHorizontal: fullWidth ? spacing[3] : 0,
                   },
                 ]}
               >

@@ -21,7 +21,9 @@ import { NotFoundScreen } from "@/app/screens/detail/NotFoundScreen";
 import { OfflineStateScreen } from "@/app/screens/detail/OfflineStateScreen";
 import { StallDetailScreen } from "@/app/screens/detail/StallDetailScreen";
 import { BuildingDrillDownScreen } from "@/app/screens/discover/BuildingDrillDownScreen";
+import { BuildingDrillDownScreenV2 } from "@/app/screens/discover/BuildingDrillDownScreenV2";
 import { DecideForMeResultScreen } from "@/app/screens/discover/DecideForMeResultScreen";
+import { DiscoverHomeScreenV2 } from "@/app/screens/discover/DiscoverHomeScreenV2";
 import { HomeMapScreen } from "@/app/screens/discover/HomeMapScreen";
 import { MapZoomedInScreen } from "@/app/screens/discover/MapZoomedInScreen";
 import { CraveScreen } from "@/app/screens/discover/CraveScreen";
@@ -38,9 +40,13 @@ import { ReviewStack } from "@/app/screens/review/ReviewStack";
 import { MusicSelectionScreen } from "@/app/screens/review/MusicSelectionScreen";
 import { ReviewSuccessModal } from "@/app/screens/review/ReviewSuccessModal";
 import { QuickReviewModal } from "@/app/screens/review/QuickReviewModal";
+import { QuickReviewSheetV2 } from "@/app/screens/review/QuickReviewSheetV2";
+import { QuickBitesScreen } from "@/app/screens/discover/QuickBitesScreen";
 import { WheelStack } from "@/app/screens/wheel/WheelStack";
 import { DishSearchScreen } from "@/app/screens/search/DishSearchScreen";
+import { DishSearchScreenV2 } from "@/app/screens/search/DishSearchScreenV2";
 import { SearchResultsScreen } from "@/app/screens/search/SearchResultsScreen";
+import { StallDetailScreenV2 } from "@/app/screens/detail/StallDetailScreenV2";
 import { TasteFilterScreen } from "@/app/screens/search/TasteFilterScreen";
 import { FloatingToast } from "@/components/ui";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -252,6 +258,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         }}
       >
         <RootStack.Navigator
+          id="Root"
           initialRouteName={__DEV__ ? "DeveloperLauncher" : "Splash"}
           screenOptions={{ headerShown: false }}
         >
@@ -297,6 +304,13 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={BuildingDrillDownScreen} name="BuildingDrillDown" />
           <RootStack.Screen component={OfflineStateScreen} name="Offline" />
           <RootStack.Screen component={NotFoundScreen} name="NotFound" />
+          {/* V2 Prototypes */}
+          <RootStack.Screen component={DiscoverHomeScreenV2} name="DiscoverV2" />
+          <RootStack.Screen component={DishSearchScreenV2} name="SearchHomeV2" />
+          <RootStack.Screen component={StallDetailScreenV2} name="StallDetailV2" />
+          <RootStack.Screen component={BuildingDrillDownScreenV2} name="BuildingDrillDownV2" />
+          <RootStack.Screen component={QuickReviewSheetV2} name="QuickReviewV2" />
+          <RootStack.Screen component={QuickBitesScreen} name="QuickBites" />
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />

@@ -120,6 +120,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 export function SwipeableTabNavigator() {
   return (
     <Tab.Navigator
+      id="Tabs"
       tabBarPosition="bottom"
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{

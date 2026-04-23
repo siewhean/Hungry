@@ -22,6 +22,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "ChatDetail">;
 export function ChatDetailScreen({ navigation, route }: Props) {
   const { name, avatar } = route.params;
   const { palette, spacing, radii } = useHungryTheme();
+  const styles = createStyles({ palette, spacing, radii });
   const insets = useSafeAreaInsets();
   const [message, setMessage] = useState("");
 
@@ -107,53 +108,54 @@ export function ChatDetailScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  backBtn: {
-    marginRight: 12,
-  },
-  userInfo: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-  },
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 20,
-  },
-  messageBubble: {
-    maxWidth: "80%",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 1,
-  },
-  inputRow: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    gap: 12,
-    alignItems: "center",
-  },
-  sendBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
+const createStyles = ({ palette, spacing, radii }: { palette: any; spacing: any; radii: any }) =>
+  StyleSheet.create({
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+    },
+    backBtn: {
+      marginRight: 12,
+    },
+    userInfo: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    avatar: {
+      width: 40,
+      height: 40,
+    },
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 20,
+    },
+    messageBubble: {
+      maxWidth: "80%",
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      shadowColor: palette.navy,
+      shadowOpacity: 0.05,
+      shadowRadius: 10,
+      elevation: 2,
+    },
+    inputRow: {
+      flexDirection: "row",
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      gap: 12,
+      alignItems: "center",
+    },
+    sendBtn: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+  });

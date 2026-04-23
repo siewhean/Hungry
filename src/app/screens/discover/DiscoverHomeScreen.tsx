@@ -470,7 +470,7 @@ export function DiscoverHomeScreen() {
               label="< 15 min"
               sublabel="Quick bites"
               color={palette.statusFast}
-              onPress={() => navigation.navigate("SearchResults")}
+              onPress={() => navigation.navigate("QuickBites")}
             />
             <SituationTile
               icon={<Utensils size={20} color={palette.white} />}

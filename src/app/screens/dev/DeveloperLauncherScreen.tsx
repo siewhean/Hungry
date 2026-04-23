@@ -249,6 +249,39 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
 
         <Button label="Open normal app flow" onPress={() => navigation.replace("Splash")} />
 
+        {/* ── Figma V2 Prototypes ───────────────────────── */}
+        <CollapsibleSection
+          title="Figma V2 Prototypes"
+          subtitle="New screen implementations from Sprint 11 Phase A."
+          badge="V2"
+          defaultExpanded
+        >
+          <LaunchButton
+            label="Discover V2 (Unified)"
+            onPress={() => navigation.navigate("DiscoverV2")}
+          />
+          <LaunchButton
+            label="Search Home V2"
+            onPress={() => navigation.navigate("SearchHomeV2")}
+          />
+          <LaunchButton
+            label="Stall Detail V2"
+            onPress={() => {
+              if (!sampleVenue) return;
+              navigation.navigate("StallDetailV2", { venueId: sampleVenue.id });
+            }}
+          />
+          <LaunchButton
+            label="Building Directory V2"
+            onPress={() => navigation.navigate("BuildingDrillDownV2", { buildingId: "hc-maxwell" })}
+          />
+          <LaunchButton
+            label="Quick Review Sheet V2"
+            onPress={() => navigation.navigate("QuickReviewV2")}
+          />
+          <LaunchButton label="Quick Bites V1" onPress={() => navigation.navigate("QuickBites")} />
+        </CollapsibleSection>
+
         {/* ── Session Presets ────────────────────────────── */}
         <CollapsibleSection
           title="Session presets"

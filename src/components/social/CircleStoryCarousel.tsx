@@ -104,7 +104,7 @@ export function CircleStoryCarousel({
             {/* Ring: orange gradient = unseen (any story type), grey = already seen */}
             {story.hasUnseen ? (
               <LinearGradient
-                colors={["#E8531E", "#F59E0B"]}
+                colors={[palette.orange, palette.amber]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={[styles.gradientRing, { borderRadius: radii.pill }]}

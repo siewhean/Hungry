@@ -241,6 +241,20 @@ export function HomeMapScreen() {
           zoomLevel={currentZoom}
           markers={markers}
           cameraPadding={cameraPadding}
+          selectedMarkerId={selectedBuilding?.id}
+          onMarkerPress={(id) => {
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            if (id.startsWith("stall-")) {
+              const venueId = id.replace("stall-", "");
+              navigation.navigate("StallDetail", { venueId });
+            } else {
+              const building = visibleBuildings.find((b) => b.id === id);
+              if (building) {
+                setSelectedBuilding(toSummary(building));
+                if (currentZoom < 16) setCurrentZoom(17);
+              }
+            }
+          }}
           onMapPress={() => {
             if (displayMode === "carousel") {
               snapTo(isMinimized.current ? CAROUSEL_HEIGHT : MINIMIZED_HEIGHT);

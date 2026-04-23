@@ -82,9 +82,16 @@ export type RootStackParamList = {
   Offline: undefined;
   NotFound: { title?: string; body?: string } | undefined;
   Post: { venueId?: string; dishId?: string } | undefined;
+  QuickBites: undefined;
   DeveloperLauncher: undefined;
   Favourites: undefined;
   ReviewHistory: undefined;
   Settings: undefined;
   EditProfile: undefined;
+  // V2 Prototypes
+  DiscoverV2: undefined;
+  SearchHomeV2: undefined;
+  StallDetailV2: { venueId?: string; id?: string };
+  BuildingDrillDownV2: { buildingId: string };
+  QuickReviewV2: { venueId?: string; dishId?: string } | undefined;
 };

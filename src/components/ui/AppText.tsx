@@ -6,6 +6,7 @@ import { useHungryTheme } from "@/theme";
 type Variant =
   | "display"
   | "displayBold"
+  | "displaySm"
   | "h1"
   | "h2"
   | "h3"

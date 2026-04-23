@@ -25,8 +25,9 @@ type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
 export function SplashScreen({ navigation }: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const { palette, motion, spacing, radii } = useHungryTheme();
+  const { palette, motion, spacing, radii, typography } = useHungryTheme();
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
+  const styles = createStyles({ palette, typography, spacing, radii });
 
   // ── Animated values ───────────────────────────────────────────────────────
   const logoScale = useRef(new Animated.Value(0.4)).current;
@@ -134,7 +135,7 @@ export function SplashScreen({ navigation }: Props) {
   ]);
 
   return (
-    <View style={[styles.root, { backgroundColor: palette.bg, gap: spacing[4] }]}>
+    <View style={styles.root}>
       {/* Brand lockup */}
       <View style={[styles.lockup, { gap: 0 }]}>
         {/* "H" — the "bite" letter */}
@@ -147,9 +148,7 @@ export function SplashScreen({ navigation }: Props) {
           <View
             style={[styles.hContainer, { backgroundColor: palette.orange, borderRadius: radii.xl }]}
           >
-            <AppText tone="inverse" style={styles.hLetter}>
-              H
-            </AppText>
+            <AppText style={styles.hLetter}>H</AppText>
             {/* Bite notch */}
             <View
               style={[styles.biteNotch, { backgroundColor: palette.bg, borderRadius: radii.md }]}
@@ -165,7 +164,7 @@ export function SplashScreen({ navigation }: Props) {
             justifyContent: "center",
           }}
         >
-          <AppText style={[styles.brandSuffix, { color: palette.text }]}>ungry</AppText>
+          <AppText style={styles.brandSuffix}>ungry</AppText>
         </Animated.View>
 
         {/* Pulsing orange dot */}
@@ -185,7 +184,7 @@ export function SplashScreen({ navigation }: Props) {
 
       {/* Tagline */}
       <Animated.View style={{ opacity: taglineOpacity }}>
-        <AppText style={[styles.tagline, { color: palette.textSecondary }]}>
+        <AppText variant="body" tone="secondary" style={styles.tagline}>
           Find the dish. Not just the restaurant.
         </AppText>
       </Animated.View>
@@ -206,49 +205,59 @@ export function SplashScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  lockup: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  hContainer: {
-    width: 72,
-    height: 72,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    position: "relative",
-  },
-  hLetter: {
-    fontSize: 48,
-    lineHeight: 56,
-    fontFamily: "Nunito_800ExtraBold",
-  },
-  biteNotch: {
-    position: "absolute",
-    top: -6,
-    right: -6,
-    width: 24,
-    height: 24,
-  },
-  brandSuffix: {
-    fontSize: 48,
-    lineHeight: 56,
-    fontFamily: "Nunito_800ExtraBold",
-    letterSpacing: -1,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-  },
-  tagline: {
-    fontSize: 15,
-    fontFamily: "Nunito_400Regular",
-    letterSpacing: 0.2,
-  },
-});
+const createStyles = ({
+  palette,
+  typography,
+  spacing,
+  radii,
+}: {
+  palette: any;
+  typography: any;
+  spacing: any;
+  radii: any;
+}) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: palette.bg,
+      gap: spacing[4],
+    },
+    lockup: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    hContainer: {
+      width: 72,
+      height: 72,
+      alignItems: "center",
+      justifyContent: "center",
+      overflow: "hidden",
+      position: "relative",
+    },
+    hLetter: {
+      ...typography.displayBold,
+      color: "#FFFFFF",
+    },
+    biteNotch: {
+      position: "absolute",
+      top: -6,
+      right: -6,
+      width: 24,
+      height: 24,
+    },
+    brandSuffix: {
+      ...typography.displayBold,
+      color: palette.text,
+    },
+    dot: {
+      width: 10,
+      height: 10,
+    },
+    tagline: {
+      ...typography.body,
+      letterSpacing: 0.2,
+      color: palette.textSecondary,
+    },
+  });

@@ -14,6 +14,11 @@ import {
   Nunito_700Bold,
 } from "@expo-google-fonts/nunito";
 import { useFonts as useMonoFonts, DMMono_400Regular } from "@expo-google-fonts/dm-mono";
+import {
+  useFonts as useFrauncesFonts,
+  Fraunces_700Bold,
+  Fraunces_900Black,
+} from "@expo-google-fonts/fraunces";
 
 import { useUIStore } from "@/store/useUIStore";
 import { colors, motion, radii, shadows, spacing, typography, zIndex } from "./tokens";
@@ -88,15 +93,15 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
     () => ({
       card: {
         ...shadows.card,
-        shadowColor: palette.navy,
+        shadowColor: palette.navy as any,
       },
       floating: {
         ...shadows.floating,
-        shadowColor: palette.navy,
+        shadowColor: palette.navy as any,
       },
       bottomSheet: {
         ...shadows.bottomSheet,
-        shadowColor: palette.navy,
+        shadowColor: palette.navy as any,
       },
     }),
     [palette],
@@ -110,6 +115,10 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
   });
   const [monoLoaded] = useMonoFonts({
     DMMono_400Regular,
+  });
+  const [frauncesLoaded] = useFrauncesFonts({
+    Fraunces_700Bold,
+    Fraunces_900Black,
   });
 
   const theme = useMemo<Theme>(() => {
@@ -140,9 +149,9 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
       typography,
       motion,
       zIndex,
-      fontsLoaded: nunitoLoaded && monoLoaded,
+      fontsLoaded: nunitoLoaded && monoLoaded && frauncesLoaded,
     }),
-    [colorScheme, theme, palette, themedShadows, nunitoLoaded, monoLoaded],
+    [colorScheme, theme, palette, themedShadows, nunitoLoaded, monoLoaded, frauncesLoaded],
   );
 
   return (
