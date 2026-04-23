@@ -42,6 +42,7 @@ import {
   EmptyState,
   FeedErrorBoundary,
   FeedStateView,
+  HungryLogo,
   Input,
   Skeleton,
 } from "@/components/ui";
@@ -375,212 +376,185 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       const isExpanded = expandedPostId === item.id;
 
       if (cardMode === "social") {
-        const imageHeight = screenWidth * 1.25; // 4:5 aspect ratio
+        const imageHeight = Math.min(Math.max(screenWidth * 1.12, 360), 460);
 
         return (
-          <View
-            key={item.id}
-            style={[
-              styles.feedItemWrap,
-              { backgroundColor: themeTints.bg, paddingBottom: spacing[6] },
-            ]}
-          >
-            {/* Header */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                paddingHorizontal: spacing[4],
-                paddingVertical: spacing[3],
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-                <Pressable
-                  onPress={() =>
-                    openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
-                  }
-                >
-                  <View style={{ position: "relative" }}>
-                    <View
-                      style={
-                        item.isStallAccount
-                          ? { borderWidth: 2, borderColor: palette.orange, borderRadius: 999 }
-                          : undefined
-                      }
-                    >
-                      <Avatar uri={item.authorAvatarUrl} name={item.authorName} size={36} />
-                    </View>
-                    {item.isStallAccount && (
-                      <View
-                        style={{
-                          position: "absolute",
-                          bottom: -4,
-                          right: -4,
-                          backgroundColor: palette.orange,
-                          borderColor: palette.bg,
-                          borderWidth: 2,
-                          borderRadius: radii.pill,
-                          padding: 2,
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <UtensilsCrossed color={palette.white} size={10} strokeWidth={2.5} />
-                      </View>
-                    )}
-                  </View>
-                </Pressable>
-                <View>
-                  <Pressable
-                    onPress={() =>
-                      openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
-                    }
-                  >
-                    <AppText variant="bodySmallBold" style={{ color: themeTints.text }}>
-                      {item.authorName}
-                    </AppText>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => navigation.navigate("StallDetail", { venueId: item.venueId })}
-                  >
-                    <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                      {item.authorLocation}
-                    </AppText>
-                  </Pressable>
-                </View>
-              </View>
-            </View>
-
-            {/* Media */}
-            <View
-              style={[
-                styles.imageContainer,
-                { height: imageHeight, backgroundColor: palette.navy },
-              ]}
-            >
-              <ZoomableMedia
-                uri={item.mediaUrl}
-                type={item.mediaType === "video" ? "video" : "image"}
+          <View key={item.id} style={[styles.feedItemWrap, { backgroundColor: themeTints.bg }]}>
+            {/* Image Container */}
+            <View style={[styles.imageContainer, { height: imageHeight }]}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${item.dishes[0]?.name ?? item.venue.name} details`}
+                onPress={() => navigateToDish(item.dishes[0]?.id ?? item.venueId)}
                 style={StyleSheet.absoluteFill}
-              />
-              {item.mediaType === "video" && (
-                <View style={styles.playButtonContainer} pointerEvents="none">
-                  <View style={styles.playButtonBackdrop}>
-                    <PlayCircle color={palette.white} size={32} />
-                  </View>
-                </View>
-              )}
-            </View>
-
-            {/* Action Bar */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                paddingHorizontal: spacing[4],
-                paddingVertical: spacing[3],
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[4] }}>
-                <Pressable
-                  hitSlop={10}
-                  onPress={() => toggleLike(item.id)}
-                  style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-                >
-                  <Heart
-                    color={isLiked ? palette.error : themeTints.text}
-                    fill={isLiked ? palette.error : "transparent"}
-                    size={28}
-                  />
-                  {interaction.likeCount > 0 && (
-                    <AppText variant="bodySmallBold" style={{ color: themeTints.text }}>
-                      {interaction.likeCount}
-                    </AppText>
-                  )}
-                </Pressable>
-                <Pressable
-                  hitSlop={10}
-                  onPress={() => openComments(item)}
-                  style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-                >
-                  <MessageCircle color={themeTints.text} size={28} />
-                  {interaction.commentCount > 0 && (
-                    <AppText variant="bodySmallBold" style={{ color: themeTints.text }}>
-                      {interaction.commentCount}
-                    </AppText>
-                  )}
-                </Pressable>
-                <Pressable
-                  hitSlop={10}
-                  onPress={async () => {
-                    if (!item.dishes[0]) return;
-                    await Share.share({
-                      message: `Check out ${item.dishes[0].name} at ${item.venue.name} on Hungry.`,
-                    });
-                    incrementShare(item.id);
-                  }}
-                  style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-                >
-                  <Send color={themeTints.text} size={26} />
-                </Pressable>
-              </View>
-              <Pressable hitSlop={10} onPress={() => toggleSave(item.id)}>
-                <Bookmark
-                  color={isSaved ? palette.orange : themeTints.text}
-                  fill={isSaved ? palette.orange : "transparent"}
-                  size={28}
+              >
+                <ZoomableMedia
+                  uri={item.mediaUrl}
+                  type={item.mediaType === "video" ? "video" : "image"}
+                  style={styles.heroImage}
                 />
               </Pressable>
-            </View>
 
-            {/* Caption & Timestamp */}
-            <View style={{ paddingHorizontal: spacing[4], gap: spacing[1] }}>
-              {interaction.likeCount > 0 && (
-                <AppText variant="bodySmallBold" style={{ color: themeTints.text }}>
-                  {interaction.likeCount.toLocaleString()} likes
-                </AppText>
-              )}
-              <Pressable hitSlop={10} onPress={() => toggleExpandedPost(item.id)}>
-                <AppText
-                  variant="bodySmall"
-                  style={{ color: themeTints.text }}
-                  numberOfLines={isExpanded ? undefined : 2}
-                >
-                  <AppText variant="bodySmallBold">{item.authorName} </AppText>
-                  {item.caption}{" "}
-                  {item.dishes[0] && (
-                    <AppText
-                      variant="bodySmall"
-                      style={{ color: palette.orange, textDecorationLine: "underline" }}
-                      onPress={() => navigateToDish(item.dishes[0].id)}
-                    >
-                      @{item.dishes[0].name}
-                    </AppText>
-                  )}
-                </AppText>
-              </Pressable>
+              {item.mediaType === "video" ? (
+                <View pointerEvents="none" style={styles.playButtonContainer}>
+                  <View style={styles.playButtonBackdrop}>
+                    <PlayCircle color={palette.white} size={54} strokeWidth={1.4} />
+                  </View>
+                </View>
+              ) : null}
+
+              <LinearGradient
+                colors={["transparent", "rgba(0,0,0,0.6)"]}
+                style={[styles.gradientScrim, { height: "40%", top: "60%" }]}
+                pointerEvents="none"
+              />
 
               <View
                 style={{
+                  position: "absolute",
+                  bottom: spacing[3],
+                  left: spacing[3],
+                  right: spacing[3],
+                  gap: spacing[0.5],
+                }}
+                pointerEvents="none"
+              >
+                <AppText variant="h3" style={{ color: palette.white }}>
+                  {item.dishes[0]?.name ?? item.venue.name}
+                </AppText>
+                <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)" }}>
+                  {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
+                </AppText>
+              </View>
+            </View>
+
+            {/* Post Details (Below Image) */}
+            <View
+              style={{
+                paddingHorizontal: spacing[3],
+                paddingVertical: spacing[3],
+                gap: spacing[2],
+              }}
+            >
+              {/* Row 1: Profile & Icons Inline */}
+              <View
+                style={{
                   flexDirection: "row",
+                  justifyContent: "space-between",
                   alignItems: "center",
-                  marginTop: spacing[1],
-                  gap: spacing[2],
+                  marginBottom: spacing[1],
                 }}
               >
-                <AppText variant="micro" tone="muted">
-                  {formatTimeAgo(item.createdAt || new Date().toISOString())}
-                </AppText>
-                {interaction.commentCount > 0 && (
-                  <Pressable onPress={() => openComments(item)}>
-                    <AppText variant="micro" tone="muted" style={{ fontWeight: "600" }}>
-                      View all {interaction.commentCount} comments
+                {/* Profile Info (Left) */}
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                  <Avatar uri={item.authorAvatarUrl} name={item.authorName} size={32} />
+                  <View>
+                    <AppText variant="bodySmallBold" style={{ color: themeTints.text }}>
+                      {item.authorName}
                     </AppText>
+                    <AppText variant="micro" tone="secondary">
+                      {item.authorLocation}
+                    </AppText>
+                  </View>
+                </View>
+
+                {/* Icons (Right) */}
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                    gap: spacing[4],
+                  }}
+                >
+                  <Pressable
+                    hitSlop={10}
+                    onPress={async () => {
+                      if (!item.dishes[0]) return;
+                      await Share.share({
+                        message: `Check out ${item.dishes[0].name} at ${item.venue.name} on Hungry.`,
+                      });
+                      incrementShare(item.id);
+                    }}
+                    style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+                  >
+                    <Send color={themeTints.text} size={24} />
+                    {interaction.shareCount > 0 && (
+                      <AppText
+                        variant="micro"
+                        style={{ color: themeTints.text, fontWeight: "600" }}
+                      >
+                        {interaction.shareCount}
+                      </AppText>
+                    )}
                   </Pressable>
-                )}
+                  <Pressable
+                    hitSlop={10}
+                    onPress={() => toggleSave(item.id)}
+                    style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+                  >
+                    <Bookmark
+                      color={isSaved ? palette.orange : themeTints.text}
+                      fill={isSaved ? palette.orange : "transparent"}
+                      size={24}
+                    />
+                    {interaction.saveCount > 0 && (
+                      <AppText
+                        variant="micro"
+                        style={{ color: themeTints.text, fontWeight: "600" }}
+                      >
+                        {interaction.saveCount}
+                      </AppText>
+                    )}
+                  </Pressable>
+                  <Pressable
+                    hitSlop={10}
+                    onPress={() => openComments(item)}
+                    style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+                  >
+                    <MessageCircle color={themeTints.text} size={24} />
+                    {interaction.commentCount > 0 && (
+                      <AppText
+                        variant="micro"
+                        style={{ color: themeTints.text, fontWeight: "600" }}
+                      >
+                        {interaction.commentCount}
+                      </AppText>
+                    )}
+                  </Pressable>
+                  <Pressable
+                    hitSlop={10}
+                    onPress={() => toggleLike(item.id)}
+                    style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+                  >
+                    <Heart
+                      color={isLiked ? palette.error : themeTints.text}
+                      fill={isLiked ? palette.error : "transparent"}
+                      size={24}
+                    />
+                    {interaction.likeCount > 0 && (
+                      <AppText
+                        variant="micro"
+                        style={{ color: themeTints.text, fontWeight: "600" }}
+                      >
+                        {interaction.likeCount}
+                      </AppText>
+                    )}
+                  </Pressable>
+                </View>
               </View>
+
+              {/* Row 2: Caption */}
+              <AppText
+                variant="bodySmall"
+                style={{
+                  color: themeTints.text,
+                  textAlign: profile.leftHandedMode ? "right" : "left",
+                  marginTop: spacing[1],
+                }}
+              >
+                {item.caption}
+              </AppText>
             </View>
           </View>
         );
@@ -608,7 +582,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             {
               backgroundColor: themeTints.cardBg,
               borderRadius: radii.lg,
-              width: 280,
+              width: 300,
               overflow: "hidden",
               borderWidth: themeTints.isDark ? 0 : 1,
               borderColor: palette.border,
@@ -711,38 +685,21 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 </AppText>
               </View>
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Open ${item.authorName} profile`}
-                onPress={(event) => {
-                  event.stopPropagation();
-                  openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation);
-                }}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${item.authorName} profile`}
+              onPress={() =>
+                openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
+              }
+            >
+              <AppText
+                variant="micro"
+                style={{ color: themeTints.secondaryText }}
+                numberOfLines={1}
               >
-                <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                  {item.authorName}
-                </AppText>
-              </Pressable>
-              <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                {" · "}
+                {item.authorName} · {item.authorLocation}
               </AppText>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Open stall details for ${item.authorLocation}`}
-                onPress={(event) => {
-                  event.stopPropagation();
-                  navigation.navigate("StallDetail", { venueId: item.venueId });
-                }}
-              >
-                <AppText
-                  variant="micro"
-                  style={{ color: themeTints.secondaryText, textDecorationLine: "underline" }}
-                >
-                  {item.authorLocation}
-                </AppText>
-              </Pressable>
-            </View>
+            </Pressable>
 
             <View
               style={{
@@ -1222,6 +1179,7 @@ const createStyles = ({ palette, spacing, radii }: ReturnType<typeof useHungryTh
     },
     feedItemWrap: {
       backgroundColor: palette.navy,
+      marginBottom: spacing[12],
     },
     imageContainer: {
       width: "100%",
