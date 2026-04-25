@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hungry Intent Router"
+  short_description: "Clarify the request and route it."
+  default_prompt: "Use this skill to rewrite a vague Hungry request into a clearer working brief and automatically choose the best next skill, tool, or execution path."

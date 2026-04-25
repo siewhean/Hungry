@@ -8,8 +8,11 @@
 |------|--------|
 | 1 | Read `README.md` — project state and quick reference map |
 | 2 | Read `AGENTS.md` — master harness dictionary and document TOC |
-| 3 | Read `tasks/todo.md` — current task list |
-| 4 | Read `tasks/lessons.md` — rules from past corrections |
+| 3 | Read `WORKFLOW.md` — operating model and role split |
+| 4 | Read `ops/low-token-cheatsheet.md` — default prompt/output compression rules |
+| 5 | Read `tasks/backlog.md` — canonical active task list |
+| 6 | Read `tasks/verification.md` — latest evidence |
+| 7 | Read `tasks/lessons.md` — rules from past corrections |
 
 ---
 
@@ -18,7 +21,7 @@
 ### 1. Plan Mode Default
 - Enter plan mode for any non-trivial task (3+ steps or architectural decisions)
 - Use plan mode for verification steps, not just building
-- Write detailed specs to `tasks/todo.md` upfront to reduce ambiguity
+- Write scoped canonical task rows to `tasks/backlog.md` upfront to reduce ambiguity
 
 ### 2. Subagent Strategy
 - Use subagents liberally to keep main context window clean
@@ -49,12 +52,14 @@
 - Go fix failing CI tests without being told how
 
 ### Task Management
-- **Plan first** — write `tasks/todo.md` with checkable items
+- **Plan first** — update `tasks/backlog.md` with scoped rows
 - **Verify plan** — check in before implementation
-- **Track progress** — mark items complete as you go
+- **Track progress** — update canonical rows as you go
 - **Explain changes** — high-level summary at each step
-- **Document results** — add review section to `tasks/todo.md`
+- **Document results** — record evidence in `tasks/verification.md`
+- **Log execution** — append `tasks/session-log.md`
 - **Capture lessons** — update `tasks/lessons.md` after corrections
+- **Stay compressed** — default to low-token prompts, bounded reads, and delta-only outputs unless a broad narrative is explicitly needed
 
 ---
 
@@ -75,6 +80,7 @@
 | Document | Read before |
 |----------|------------|
 | `tasks/environment.md` | Any code work |
+| `WORKFLOW.md` | Any non-trivial planning or coordination work |
 | `tasks/design-system.md` | Any UI or component work |
 | `tasks/screens.md` | Any screen or navigation work |
 | `tasks/data-contracts.md` | Any data, store, or mock work |
@@ -87,8 +93,9 @@
 ```
 Before ending any session that changed code:
   [ ] npm run typecheck — passes
-  [ ] tasks/todo.md — all done items marked [x]
-  [ ] tasks/todo.md — review section written
+  [ ] tasks/backlog.md — canonical rows updated
+  [ ] tasks/verification.md — verification written
+  [ ] tasks/session-log.md — entry appended
   [ ] tasks/lessons.md — corrections recorded
   [ ] README.md — status updated if progress or decisions changed
 ```
@@ -96,11 +103,12 @@ Then read `AGENTS.md` and follow its workflow, including keeping `README.md` upd
 
 ## Mandatory execution workflow for Hungry
 
-1. Treat `tasks/todo.md` as the shared task contract between Claude and Codex.
-2. For non-trivial work, write/update a scoped plan in `tasks/todo.md` before implementation.
-3. Update checklist status frequently (at least once per focused work block, and always before ending a session).
-4. Do not mark tasks done without recording a verification step.
-5. Append a concise entry in the shared session log section of `tasks/todo.md` with date, actor, status, blockers, and next step.
+1. Treat `tasks/backlog.md` as the shared active task contract between Claude and Codex.
+2. For non-trivial work, write/update scoped rows in `tasks/backlog.md` before implementation.
+3. Update canonical task status frequently (at least once per focused work block, and always before ending a session).
+4. Do not mark tasks done without recording a verification step in `tasks/verification.md`.
+5. Append a concise entry in `tasks/session-log.md` with date, actor, status, blockers, and next step.
+6. Default to low-token mode: bounded scope, canonical docs first, and concise output.
 
 ## graphify
 

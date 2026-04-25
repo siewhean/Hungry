@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hungry Staging Smoke"
+  short_description: "Prove a staging flow works."
+  default_prompt: "Use this skill to run and document quick staging checks that prove a Hungry flow works end to end."

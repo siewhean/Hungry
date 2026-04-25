@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hungry Release Ready"
+  short_description: "Decide if Hungry is ready to ship."
+  default_prompt: "Use this skill to decide whether Hungry is ready to ship based on backlog status, testing evidence, staging proof, security work, deploy checks, and store-policy compliance."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hungry Merchant Copy"
+  short_description: "Write merchant-facing copy."
+  default_prompt: "Use this skill to write clear Hungry merchant copy for claim flows, verification steps, onboarding text, FAQs, and related messaging."

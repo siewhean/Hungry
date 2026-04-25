@@ -10,6 +10,11 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 |------|-------|
 | Start here (agents) | `AGENTS.md` |
 | Workflow rules | `CLAUDE.md` |
+| Operating model | `WORKFLOW.md` |
+| Low-token defaults | `ops/low-token-cheatsheet.md` |
+| Active backlog | `tasks/backlog.md` |
+| Verification evidence | `tasks/verification.md` |
+| Session history | `tasks/session-log.md` |
 | Tech stack + commands | `tasks/environment.md` |
 | Design tokens + components | `tasks/design-system.md` |
 | Screen inventory + navigation | `tasks/screens.md` |
@@ -17,7 +22,7 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 | Testing + feedback loops | `tasks/test-harness.md` |
 | Product requirements (summarised) | `tasks/product-context.md` |
 | Marketing launch kit | `marketing/` |
-| Current task list | `tasks/todo.md` |
+| Historical roadmap + audit trail | `tasks/todo.md` |
 | Past lessons | `tasks/lessons.md` |
 | Product requirements | `Research/01_Product_Requirements_Document_Hungry.docx` |
 | App flow spec | `Research/02_App_Flow_Document_Hungry.docx` |
@@ -113,6 +118,7 @@ To override these locally, you can use `.env.development` or modify the constant
 
 ## Notes
 
+- Default LLM operating mode for this repo is low-token mode: use bounded task IDs or files, canonical docs first, and delta-only output unless a broad summary is explicitly requested.
 - Mock data lives exclusively in `src/lib/services/mock/data.ts`
 - Design tokens live exclusively in `src/theme/tokens.ts` — never hardcode values
 - The app runs fully without network or backend
@@ -155,13 +161,15 @@ To override these locally, you can use `.env.development` or modify the constant
 
 ## Delivery Governance
 
-- Shared task requirements and cross-agent checklist live in `tasks/todo.md`.
-- Claude and Codex should both update `tasks/todo.md` frequently during execution (at minimum once per focused work block and before ending a session).
-- Planning-first execution is required: create/update a scoped mini-plan before non-trivial implementation work, then record verification before checking tasks complete.
+- Shared active task requirements live in `tasks/backlog.md`.
+- Verification evidence lives in `tasks/verification.md`.
+- Claude and Codex should both update the canonical task rows frequently during execution (at minimum once per focused work block and before ending a session).
+- Planning-first execution is required: create/update scoped backlog rows before non-trivial implementation work, then record verification before checking tasks complete.
+- `tasks/todo.md` remains the historical roadmap and audit trail, not the live status surface.
 
 ## Future Roadmap
 
-See `tasks/todo.md` for the full backlog. Key future features include:
+See `tasks/todo.md` for the historical/full roadmap and `tasks/backlog.md` for the currently active work. Key future features include:
 
 - **Digital Ordering & Payments** — In-app ordering + PayNow/card checkout for hawker centres, food courts, and restaurants. Includes a vendor analytics dashboard (top dishes, peak hours, revenue), real-time crowd/busyness indicators per stall, and queue wait-time estimates. Crowd monitoring is derived from active order volume — no hardware sensors required for the MVP signal.
 - **Interactive Indoor Maps** — SVG floor plans with polygon-level stall selection, open/closed colour coding, and pinch-to-zoom (see `design/figma-v2/building-layout.html` for mockups).

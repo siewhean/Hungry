@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hungry Data Harvest"
+  short_description: "Collect and clean Hungry data."
+  default_prompt: "Use this skill to gather, clean, deduplicate, and prepare Hungry venue, stall, menu, and business data for product use."

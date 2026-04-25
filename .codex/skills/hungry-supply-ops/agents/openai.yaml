@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hungry Supply Ops"
+  short_description: "Handle supply-side workflows."
+  default_prompt: "Use this skill for Hungry supply-side work such as menu OCR, merchant claims, Supabase checks, and ops review flows."

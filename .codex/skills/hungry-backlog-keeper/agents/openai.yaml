@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hungry Backlog Keeper"
+  short_description: "Check what is really done."
+  default_prompt: "Use this skill to verify whether Hungry tasks are actually done and update the tracking files to match the real status."

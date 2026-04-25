@@ -11,10 +11,12 @@
 | ---- | ------------------------------ | ------------------------- |
 | 1    | Read project state             | `README.md`               |
 | 2    | Read workflow rules            | `CLAUDE.md`               |
-| 3    | Read tech environment          | `tasks/environment.md`    |
-| 4    | Read current task list         | `tasks/todo.md`           |
-| 5    | Read past lessons              | `tasks/lessons.md`        |
-| 6    | Read relevant domain reference | `tasks/data-contracts.md` |
+| 3    | Read operating model           | `WORKFLOW.md`             |
+| 4    | Read tech environment          | `tasks/environment.md`    |
+| 5    | Read current active backlog    | `tasks/backlog.md`        |
+| 6    | Read current verification      | `tasks/verification.md`   |
+| 7    | Read past lessons              | `tasks/lessons.md`        |
+| 8    | Read relevant domain reference | `tasks/data-contracts.md` |
 
 ---
 
@@ -26,13 +28,19 @@
 | `CLAUDE.md`                     | Workflow rules, planning mode, subagent strategy           | Always                                       |
 | `AGENTS.md`                     | This file — master TOC                                     | Always                                       |
 | `PROJECT_INSTRUCTIONS.md`       | Design philosophy, visual rules, copy rules                | Before any UI work                           |
+| `WORKFLOW.md`                   | Operating model, agent roles, verification bundle          | Always                                       |
+| `ops/low-token-cheatsheet.md`   | Default low-token prompting and output rules for all LLMs  | Always                                       |
+| `.codex/skills/hungry-intent-router/SKILL.md` | Automatic request expansion and skill routing for Hungry work | For vague or multi-step requests |
+| `tasks/backlog.md`              | Canonical active task surface                              | Every session                                |
+| `tasks/verification.md`         | Latest verification evidence                               | Every verification or closeout               |
+| `tasks/session-log.md`          | Append-only execution history                              | End of each focused work block               |
 | `tasks/environment.md`          | Stack versions, paths, commands, constraints               | Before writing any code                      |
 | `tasks/design-system.md`        | Tokens, colors, typography, motion, component patterns     | Before any component work                    |
 | `tasks/screens.md`              | Screen inventory, navigation tree, param types             | Before any navigation or screen work         |
 | `tasks/data-contracts.md`       | Domain types, mock data, store interfaces                  | Before any data or state work                |
 | `tasks/test-harness.md`         | Feedback loops, validation gates, test patterns            | Before any feature or bug-fix work           |
 | `tasks/product-context.md`      | Full PRD summary — personas, features, UX specs, tone      | Before any product feature work              |
-| `tasks/todo.md`                 | Current task checklist                                     | Every session                                |
+| `tasks/todo.md`                 | Historical roadmap, audit trail, and sprint archive        | When roadmap or historical context is needed |
 | `tasks/lessons.md`              | Self-improvement log — rules derived from past corrections | Every session                                |
 | `Research/`                     | PRD, App Flow, Frontend Guidelines (`.docx`)               | When requirements are ambiguous — raw source |
 | `design/`                       | HTML prototypes for each major screen group                | Before UI implementation                     |
@@ -150,8 +158,12 @@ ALWAYS:
   - Use the design token system (useHungryTheme)
   - Keep mock data in data.ts
   - Keep types in domain.ts
-  - Mark tasks in tasks/todo.md as you progress
-  - If a task is completed, immediately update that task's status/progress in tasks/todo.md in the same work session
+  - Mark tasks in `tasks/backlog.md` as you progress
+  - If a task is completed, immediately update its canonical row in `tasks/backlog.md` in the same work session
+  - Record verification in `tasks/verification.md`
+  - Append narrative execution notes to `tasks/session-log.md`
+  - Default to low-token mode: bounded prompts, bounded reads, canonical docs first, delta-only output unless the user explicitly asks for broader narration
+  - Use `hungry-intent-router` as the first-pass skill when a Hungry request is vague, underspecified, or spans multiple workflows
   - Record lessons in tasks/lessons.md after any correction
 ```
 
@@ -178,9 +190,9 @@ See `tasks/test-harness.md` for patterns and examples.
 ```
 Before ending any session that changed code:
   [ ] npm run typecheck — passes
-  [ ] tasks/todo.md — all done items marked [x]
-  [ ] tasks/todo.md — each completed task has updated progress/status notes
-  [ ] tasks/todo.md — review section added
+  [ ] tasks/backlog.md — canonical rows updated
+  [ ] tasks/verification.md — evidence updated
+  [ ] tasks/session-log.md — entry appended
   [ ] tasks/lessons.md — any correction recorded
   [ ] README.md — status section updated if progress/decisions changed
 ```
@@ -214,15 +226,45 @@ Rules:
 <claude-mem-context>
 # Memory Context
 
-# [Hungry] recent context, 2026-04-23 1:02pm GMT+8
+# [Hungry] recent context, 2026-04-23 11:35pm GMT+8
 
-Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision
+Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 21 obs (6,407t read) | 213,856t work | 97% savings
+Stats: 50 obs (18,283t read) | 386,948t work | 95% savings
 
+### Apr 8, 2026
+50 8:58p 🔵 Link REIT malls expose JSON API with store metadata; other malls lack JSON APIs
+51 9:02p 🟣 Created normalized Wisma Atria F&B dataset with 32 stores
+52 9:03p 🔵 Alternative data access methods found for non-WordPress malls
+53 " 🔵 Suntec GraphQL is false positive; store APIs require parameters; sitemaps are viable
+54 9:04p 🔵 Store directory pages do not call /api/stores endpoints during page load
+55 9:05p 🔵 Mall store directories use server-side rendering, not client-side JSON APIs
+56 " 🔵 Store detail pages contain unit numbers, opening hours, and floor levels in HTML text
+57 9:06p 🟣 Implemented async sitemap scraper for 313 Somerset, Parkway Parade, and VivoCity
+58 9:07p 🟣 Successfully scraped 309 F&B stores from 313 Somerset, Parkway Parade, and VivoCity
+59 9:10p 🟣 Link REIT mall scraper for AMK Hub and Jurong Point
+60 " 🔵 F&B dataset spans 17 malls with 936 tenants
+61 9:11p 🔵 VivoCity scraper name extraction bug causes 156 missing records
+62 " 🔵 VivoCity store name extraction fix using title and og:title tags
+63 9:15p 🔴 Fixed VivoCity parser and rebuilt unified F&B dataset
+64 9:23p 🔵 Link REIT mall data availability mapped via pagination and HTML scraping
+### Apr 9, 2026
+68 1:19a 🔵 Domain Model and Data Contracts for Food-Tech Marketplace
+69 10:53a 🔵 security_reminder_hook.py fails due to unquoted $CLAUDE_PLUGIN_ROOT variable with spaces in path
+70 " 🔵 V2 database architecture designed for Hungry food-discovery app (PostgreSQL + PostGIS + pgvector stack)
+71 " 🔴 Fixed security_reminder_hook.py command invocation by quoting $CLAUDE_PLUGIN_ROOT variable
+72 10:55a 🔵 Vercel CLI upgrade failed due to missing pnpm global bin directory configuration
+73 " ✅ Upgraded Vercel CLI to latest version using npm after pnpm global bin configuration issue
 ### Apr 17, 2026
+127 2:01p 🔵 PR #19 merged to main, sprint-8-folding-cleanup branch behind
+128 2:03p ✅ Sprint 8 documentation consolidation and lint tooling added
+129 2:06p ✅ Sprint 7 completed with navigation refactor and mock service layer
+130 " ✅ Sprint planning audit branch created from main
+131 2:07p 🔵 Sprint 6 error boundary coverage completed, README documentation incomplete
+132 " 🔵 Sprint 8 implementation mostly complete but offline connectivity listener missing
+133 2:08p 🔵 Sprint 5/6/8 comprehensive audit completed against merged codebase
 136 2:59p 🔵 Dual radar chart implementations found in codebase
 ### Apr 18, 2026
 137 2:01p 🔴 Removed undefined bindReactNativeFactory call from iOS AppDelegate
@@ -244,8 +286,10 @@ Stats: 21 obs (6,407t read) | 213,856t work | 97% savings
 167 5:11p 🔵 iOS build fails due to ambiguous Expo module import access level
 168 5:12p 🔴 Fixed ambiguous Expo import by removing internal access modifier
 170 5:20p 🔴 Fixed app crash by binding ReactNativeFactory to ExpoAppDelegate
+### Apr 19, 2026
+171 4:25p 🔵 expo-secure-store package missing from node_modules
 ### Apr 22, 2026
 172 4:25a 🔵 Sprint 5 QA/QC verification run reveals test tooling failure and mock imports in Supabase repository
 
-Access 214k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 387k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>
