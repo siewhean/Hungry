@@ -1,6 +1,6 @@
 # Hungry — Master Task Contract
 
-> **Last updated:** 2026-04-22 | **Phase:** Sprint 10 Code-Complete → Staging Smoke Tests
+> **Last updated:** 2026-04-25 | **Phase:** Sprint 10 Code-Complete → Staging Smoke Tests
 > Shared execution contract between Claude, Codex, and all agents.
 > Read `tasks/lessons.md` before any implementation session.
 > **Roadmap:** `tasks/Roadmap/roadmap.md` — single entry point for phase/sprint sequencing.
@@ -49,6 +49,11 @@
 - [x] **C2 — Music Selection V2** — Vertical carousel with waveform indicators and simulated play. [Gemini]
 - [x] **C3 — Merchant Mode** — Complete navigation stack (Dashboard, Menu, Analytics, Profile). [Gemini]
 - [x] **C5 — Search History** — Persistent history grouped by time; swipe-to-delete. [Gemini]
+- [ ] **C8 — Personalisation Habit Learning Engine** — Learn user habits from in-app interactions and recommend based on behavioral patterns (favourite meals/stalls, click behavior, day-of-week and time-of-day). [Codex]
+  - Track events: dish/stall taps, saves/likes, review submissions, search terms, revisit frequency, and session timestamps.
+  - Build habit profile per user: preferred stalls/dishes, recurring visit windows (e.g., weekday lunch), and intent clusters.
+  - Recommendation pass: prioritize feed/discover cards using habit score + recency + diversity guardrail.
+  - Privacy guardrail: add explicit settings toggle to enable/disable behavioral personalisation and clear learned history.
 - [ ] **C4 — Messaging Expansion** — Group chats, voice notes, and location sharing. [Gemini]
 - [ ] **C6 — Gamification V2** — Achievements screen and interactive Passport stamps. [Gemini]
 - [ ] **C7 — Carousel Overhaul** — Implement specific dish/stall photo rules for 5 carousels. [Gemini]
@@ -59,6 +64,7 @@
 - [x] Merchant mode accessible via Settings V2 and Developer Launcher.
 - [x] Persona feedback integrated: Uncle Tan (high accessibility) and Sarah (vegetarian filters).
 - [x] All new V2 features registered in navigation and protected by auth gates.
+- [ ] Personalisation recommendations adapt to day/time habit patterns in staging and can be toggled off from Settings.
 
 ---
 
