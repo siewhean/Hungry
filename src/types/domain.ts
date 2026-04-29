@@ -51,7 +51,7 @@ export type HawkerTasteTag =
   | "sedap" // deeply delicious, umami-rich
   | "power"; // exceptionally strong flavor, standout dish
 
-export type BuildingType = "hawker_centre" | "food_court" | "restaurant";
+export type BuildingType = "hawker_centre" | "food_court" | "restaurant" | "mall";
 export type DeliveryPlatform = "grabfood" | "foodpanda";
 export type DietaryFlag =
   | "halal"

@@ -224,6 +224,11 @@ export interface SubmitMenuPhotoInput {
   reviewText?: string;
 }
 
+export interface AccountDeletionRequest {
+  userId?: string;
+  reason?: string;
+}
+
 export interface MenuPhotoSubmissionResult {
   submissionId: string;
   storagePath: string;
@@ -283,6 +288,7 @@ export interface HungryService {
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;
     signOut(): Promise<void>;
+    requestAccountDeletion(request?: AccountDeletionRequest): Promise<void>;
     forgotPassword(email: string): Promise<void>;
     resetPassword(token: string, password: string): Promise<void>;
     getCurrentSession(): Promise<Session | null>;

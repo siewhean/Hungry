@@ -66,6 +66,7 @@ export type RootStackParamList = {
   MainTabs: NavigatorScreenParams<MainTabParamList>;
   MerchantTabs: NavigatorScreenParams<MerchantTabParamList>;
   StallDetail: { venueId?: string; id?: string };
+  MerchantClaimExplainer: undefined;
   DishDetail: { dishId?: string; id?: string };
   SearchHome: undefined;
   SearchResults: undefined;
@@ -106,4 +107,5 @@ export type RootStackParamList = {
   StallDetailV2: { venueId?: string; id?: string };
   BuildingDrillDownV2: { buildingId: string };
   QuickReviewV2: { venueId?: string; dishId?: string } | undefined;
+  VenueDirectory: { venueId: string };
 };

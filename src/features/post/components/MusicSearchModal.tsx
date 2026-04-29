@@ -1,0 +1,202 @@
+import React, { useState, useCallback, useMemo } from "react";
+import { View, StyleSheet, Pressable, Platform } from "react-native";
+import { Music, Search, X, Check, Play, Pause } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
+import { BottomSheetModal, BottomSheetFlatList } from "@gorhom/bottom-sheet";
+
+import { AppText, Input, IconButton, BottomSheet } from "@/components/ui";
+import { useHungryTheme } from "@/theme";
+import { useComposerStore } from "../useComposerStore";
+import { semanticSpacing } from "@/theme/tokens";
+
+interface Track {
+  id: string;
+  title: string;
+  artist: string;
+  duration: number;
+  tags: string[];
+}
+
+const MOCK_TRACKS: Track[] = [
+  { id: "1", title: "Sunrise Chill", artist: "Lofi Girl", duration: 180, tags: ["chill", "morning", "lofi"] },
+  { id: "2", title: "Midnight Ramen", artist: "Street Food Vibes", duration: 150, tags: ["vibey", "night", "beats"] },
+  { id: "3", title: "Saturday Market", artist: "Fresh Flavors", duration: 210, tags: ["happy", "acoustic", "cheerful"] },
+  { id: "4", title: "Chef's Special", artist: "Kitchen Jazz", duration: 195, tags: ["jazz", "classy", "dinner"] },
+  { id: "5", title: "Spicy Beats", artist: "Hot & Sour", duration: 165, tags: ["energetic", "upbeat", "street"] },
+  { id: "6", title: "Cafe Jasmine", artist: "Tea Time Trio", duration: 185, tags: ["calm", "elegant", "relaxing"] },
+  { id: "7", title: "Dim Sum Soul", artist: "Steamer Basket", duration: 140, tags: ["soul", "smooth", "traditional"] },
+  { id: "8", title: "Hawker Hustle", artist: "Neon Lights", duration: 175, tags: ["fast", "dynamic", "urban"] },
+];
+
+interface MusicSearchModalProps {
+  innerRef: React.RefObject<BottomSheetModal | null>;
+}
+
+export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
+  const { palette, radii, spacing } = useHungryTheme();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
+  
+  const currentMusicId = useComposerStore((state) => state.musicId);
+  const setMusic = useComposerStore((state) => state.setMusic);
+
+  const filteredTracks = useMemo(() => {
+    if (!searchQuery) return MOCK_TRACKS;
+    const query = searchQuery.toLowerCase();
+    return MOCK_TRACKS.filter(
+      (track) =>
+        track.title.toLowerCase().includes(query) ||
+        track.artist.toLowerCase().includes(query) ||
+        track.tags.some((tag) => tag.toLowerCase().includes(query))
+    );
+  }, [searchQuery]);
+
+  const handleSelectTrack = useCallback((track: Track) => {
+    const isSelected = currentMusicId === track.id;
+    if (isSelected) {
+      setMusic(null);
+    } else {
+      setMusic(track.id, track.title, track.artist, track.duration);
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  }, [currentMusicId, setMusic]);
+
+  const togglePlay = useCallback((trackId: string) => {
+    setPlayingTrackId((prev) => (prev === trackId ? null : trackId));
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, []);
+
+  const renderTrackItem = ({ item }: { item: Track }) => {
+    const isSelected = currentMusicId === item.id;
+    const isPlaying = playingTrackId === item.id;
+
+    return (
+      <Pressable
+        onPress={() => handleSelectTrack(item)}
+        style={({ pressed }) => [
+          styles.trackItem,
+          {
+            backgroundColor: isSelected ? palette.orangeLight : (pressed ? palette.surfaceRaised : "transparent"),
+            borderRadius: radii.md,
+          },
+        ]}
+      >
+        <View style={styles.trackInfo}>
+          <Pressable 
+            onPress={(e) => {
+              e.stopPropagation();
+              togglePlay(item.id);
+            }}
+            style={[styles.playButton, { backgroundColor: palette.bgSoft }]}
+          >
+            {isPlaying ? (
+              <Pause size={16} color={palette.orange} fill={palette.orange} />
+            ) : (
+              <Play size={16} color={palette.text} fill={palette.text} />
+            )}
+          </Pressable>
+          <View style={{ flex: 1, gap: 2 }}>
+            <AppText variant="bodyBold" style={{ color: isSelected ? palette.orange : palette.text }}>
+              {item.title}
+            </AppText>
+            <AppText variant="micro" tone="secondary">
+              {item.artist} • {Math.floor(item.duration / 60)}:{(item.duration % 60).toString().padStart(2, '0')}
+            </AppText>
+          </View>
+        </View>
+        {isSelected && <Check size={20} color={palette.orange} />}
+      </Pressable>
+    );
+  };
+
+  return (
+    <BottomSheet ref={innerRef} snapPoints={["85%"]} keyboardBehavior="interactive">
+      <View style={{ flex: 1, marginHorizontal: -16 }}>
+        <View style={styles.header}>
+          <AppText variant="h3">Music Library</AppText>
+          <IconButton 
+            icon={<X size={24} color={palette.text} />} 
+            accessibilityLabel="Close"
+            onPress={() => innerRef.current?.dismiss()} 
+          />
+        </View>
+
+        <View style={styles.searchContainer}>
+          <Input
+            placeholder="Search mood, vibe or genre..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            leftIcon={<Search size={18} color={palette.textMuted} />}
+            rightIcon={
+              searchQuery.length > 0 ? (
+                <Pressable onPress={() => setSearchQuery("")} style={{ padding: 4 }}>
+                  <X size={16} color={palette.textMuted} />
+                </Pressable>
+              ) : undefined
+            }
+          />
+        </View>
+
+        <BottomSheetFlatList
+          data={filteredTracks}
+          keyExtractor={(item) => item.id}
+          renderItem={renderTrackItem}
+          contentContainerStyle={[styles.listContent, { paddingBottom: spacing["12"] || 48 }]}
+          style={{ flex: 1, paddingHorizontal: 16 }}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Music size={48} color={palette.textMuted} style={{ marginBottom: spacing["4"] }} />
+              <AppText tone="secondary">No tracks found matching "{searchQuery}"</AppText>
+            </View>
+          }
+        />
+      </View>
+    </BottomSheet>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  searchInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  trackItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: 12,
+    marginBottom: 4,
+  },
+  trackInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    gap: 12,
+  },
+  playButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  listContent: {
+    paddingVertical: 8,
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 60,
+  },
+});

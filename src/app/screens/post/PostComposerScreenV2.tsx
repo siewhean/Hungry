@@ -1,283 +1,238 @@
-/**
- * PostComposerScreenV2 — Enhanced Content Creation
- * Overhaul of the post composer with a "Post to" toggle.
- * Multi-step feel on a single screen.
- */
-import { useMemo, useState } from "react";
-import { View, ScrollView, Pressable, Switch, useWindowDimensions } from "react-native";
-import { Image } from "expo-image";
+import React, { useEffect } from "react";
+import { View, ScrollView, StyleSheet, Pressable } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Camera, Music, MapPin, Send, Save, Layout, MessageSquare } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Button, Input, Chip, Screen as AppScreen, EmptyState } from "@/components/ui";
-import { POST_CAPTION_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
-import { getDataRepository } from "@/lib/services/serviceProvider";
-import { useSessionStore } from "@/store/useSessionStore";
-import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { useComposerStore } from "@/features/post/useComposerStore";
+
+// Components
+import { ComposerHeader } from "@/features/post/components/ComposerHeader";
+import { TabSwitcher } from "@/features/post/components/TabSwitcher";
+import { MediaManager } from "@/features/post/components/MediaManager";
+import { SharedMetadata } from "@/features/post/components/SharedMetadata";
+import { PostTab } from "@/features/post/components/PostTab";
+import { ReviewTab } from "@/features/post/components/ReviewTab";
+import { ComposerBottomBar } from "@/features/post/components/ComposerBottomBar";
+import { StatusOverlay } from "@/features/post/components/StatusOverlay";
+import { LivePreviewSheet } from "@/features/post/components/LivePreviewSheet";
+import { MediaEditor } from "@/features/post/components/MediaEditor";
+import { MusicSearchModal } from "@/features/post/components/MusicSearchModal";
+import { LocationSearchModal } from "@/features/post/components/LocationSearchModal";
+import { CollaboratorModal } from "@/features/post/components/CollaboratorModal";
+
+import { Sparkles, TrendingUp, Clock, BarChart3, Eye } from "lucide-react-native";
+import { AppText, Card, Button, Dialog } from "@/components/ui";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PostComposerV2">;
 
-export function PostComposerScreenV2({ navigation, route }: Props) {
-  const { spacing, palette, radii } = useHungryTheme();
-  const { width } = useWindowDimensions();
-  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
-  const showToast = useUIStore((state) => state.showToast);
-  const repository = getDataRepository();
+export function PostComposerScreenV2({ navigation }: Props) {
+  const { palette, spacing, semanticSpacing } = useHungryTheme();
+  const insets = useSafeAreaInsets();
+  const activeTab = useComposerStore((state) => state.activeTab);
+  const reset = useComposerStore((state) => state.reset);
+  const editingMediaId = useComposerStore((state) => state.editingMediaId);
+  const setEditingMediaId = useComposerStore((state) => state.setEditingMediaId);
 
-  const [caption, setCaption] = useState("");
-  const [postToReviewFeed, setPostToReviewFeed] = useState(true);
-  const [selectedMusic, setSelectedMusic] = useState<string | null>(null);
+  const musicModalRef = React.useRef<BottomSheetModal>(null);
+  const locationModalRef = React.useRef<BottomSheetModal>(null);
+  const collaboratorModalRef = React.useRef<BottomSheetModal>(null);
 
-  // Derive dish/venue from params
-  const dishes = useMemo(() => repository.listPopularNearby(), [repository]);
-  const fallbackDish = dishes.length > 0 ? dishes[0] : null;
+  const [showExitDialog, setShowExitDialog] = React.useState(false);
+  const [pendingAction, setPendingAction] = React.useState<any>(null);
 
-  const dish = useMemo(() => {
-    if (route.params?.dishId) {
-      return repository.getDishById(route.params.dishId) || fallbackDish;
-    }
-    return fallbackDish;
-  }, [fallbackDish, repository, route.params?.dishId]);
+  // Draft exit handling
+  const postCaption = useComposerStore((state) => state.postCaption);
+  const reviewCaption = useComposerStore((state) => state.reviewCaption);
+  const media = useComposerStore((state) => state.media);
+  const setPublishingState = useComposerStore((state) => state.setPublishingState);
 
-  const venue = useMemo(
-    () => (dish ? repository.getVenueById(dish.venueId) : null),
-    [dish, repository],
-  );
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      // If there's no meaningful content, just leave
+      const hasContent = media.length > 0 || postCaption.trim().length > 0 || reviewCaption.trim().length > 0;
+      
+      if (!hasContent) {
+        return;
+      }
 
-  const handlePublish = () => {
-    if (!isAuthenticated) {
-      setReturnRoute("Post");
-      navigation.navigate("AuthStack", { screen: "Login" });
-      return;
-    }
-
-    if (!dish) {
-      showToast({ message: "Unable to identify dish.", tone: "error" });
-      return;
-    }
-
-    showToast({
-      message: `Published to ${postToReviewFeed ? "Review Feed" : "Home Feed"}!`,
-      tone: "success",
+      // Prevent default behavior of leaving the screen
+      e.preventDefault();
+      setPendingAction(e.data.action);
+      setShowExitDialog(true);
     });
-    navigation.goBack();
+
+    return unsubscribe;
+  }, [navigation, media.length, postCaption, reviewCaption]);
+
+  // Initialize with some mock data if empty
+  const addMedia = useComposerStore((state) => state.addMedia);
+
+  useEffect(() => {
+    if (media.length === 0) {
+      addMedia([
+        {
+          id: "initial-1",
+          uri: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80",
+          type: "image",
+        },
+      ]);
+    }
+  }, []);
+
+  const generateCaptionIdeas = useComposerStore((state) => state.generateCaptionIdeas);
+  const suggestBestTime = useComposerStore((state) => state.suggestBestTime);
+  const optimiseCaption = useComposerStore((state) => state.optimiseCaption);
+  const isAiProcessing = useComposerStore((state) => state.isAiProcessing);
+
+  const handleAiAction = async (action: () => Promise<void>) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await action();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  if (!dish) {
-    return (
-      <AppScreen title="Create Post">
-        <EmptyState title="Loading..." body="Preparing your post composer." />
-      </AppScreen>
-    );
-  }
-
   return (
-    <View style={{ flex: 1, backgroundColor: palette.bg }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: spacing[20] }}>
-        {/* Visual Header / Media Placeholder */}
-        <View style={{ position: "relative" }}>
-          <View
-            style={{
-              width: "100%",
-              height: width * 0.7,
-              backgroundColor: palette.bgSoft,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Image
-              source={{
-                uri: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80",
-              }}
-              style={{ width: "100%", height: "100%", opacity: 0.6 }}
-              contentFit="cover"
-            />
-            <View style={{ position: "absolute", gap: spacing[2], alignItems: "center" }}>
-              <View
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 32,
-                  backgroundColor: palette.orange,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Camera color={palette.white} size={32} />
-              </View>
-              <AppText variant="bodyBold" style={{ color: palette.white }}>
-                Add Photos / Video
-              </AppText>
-            </View>
-          </View>
+    <View style={[styles.container, { backgroundColor: palette.bg }]}>
+      {/* Header */}
+      <View style={{ zIndex: 100 }}>
+        <ComposerHeader onClose={() => navigation.goBack()} />
+      </View>
 
-          {/* Location Overlay */}
-          <View
-            style={{
-              position: "absolute",
-              bottom: spacing[4],
-              left: spacing[4],
-              right: spacing[4],
-              backgroundColor: "rgba(0,0,0,0.5)",
-              padding: spacing[3],
-              borderRadius: radii.lg,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: spacing[2],
-            }}
-          >
-            <MapPin size={16} color={palette.white} />
-            <View style={{ flex: 1 }}>
-              <AppText variant="bodySmallBold" style={{ color: palette.white }}>
-                {dish.name}
-              </AppText>
-              <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)" }}>
-                {venue?.name}
-              </AppText>
-            </View>
-          </View>
+      <ScrollView
+        stickyHeaderIndices={[0]}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: semanticSpacing.sectionGap + semanticSpacing.heroGap + insets.bottom }}
+        style={{ flex: 1 }}
+      >
+        {/* Sticky Tab Switcher */}
+        <TabSwitcher />
+
+        {/* Media Section (Post) */}
+        <MediaManager />
+
+        {/* Tab Specific Content (Caption, Music, etc.) */}
+        {activeTab === "post" ? (
+          <PostTab onOpenMusic={() => musicModalRef.current?.present()} />
+        ) : (
+          <ReviewTab />
+        )}
+
+        {/* Shared Metadata (Location, Collaborators, Tags) */}
+        <View style={{ marginTop: 0 }}>
+          <SharedMetadata 
+            onOpenLocation={() => locationModalRef.current?.present()}
+            onOpenCollaborators={() => collaboratorModalRef.current?.present()}
+          />
         </View>
 
-        {/* Form Content */}
-        <View style={{ padding: spacing[4], gap: spacing[6] }}>
-          {/* Destination Toggle */}
-          <View
-            style={{
+        {/* AI Assistant Section - Global bottom */}
+        <View style={{ padding: spacing.xl, gap: spacing.lg, marginTop: spacing.lg }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm }}>
+            <Sparkles size={18} color={palette.orange} />
+            <AppText variant="bodyBold">AI Creator Suite</AppText>
+          </View>
+          
+          <View 
+            style={{ 
               flexDirection: "row",
-              backgroundColor: palette.surface,
-              padding: spacing[3],
-              borderRadius: radii.xl,
-              alignItems: "center",
-              justifyContent: "space-between",
-              borderWidth: 1,
-              borderColor: palette.border,
+              gap: spacing.md,
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-              <View
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: postToReviewFeed ? palette.orangeLight : palette.bgSoft,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {postToReviewFeed ? (
-                  <MessageSquare size={20} color={palette.orange} />
-                ) : (
-                  <Layout size={20} color={palette.textSecondary} />
-                )}
-              </View>
-              <View>
-                <AppText variant="bodySmallBold">
-                  Post to {postToReviewFeed ? "Review Feed" : "Home Feed"}
-                </AppText>
-                <AppText variant="micro" tone="muted">
-                  {postToReviewFeed
-                    ? "Public rating & community feedback"
-                    : "Your personal food log"}
-                </AppText>
-              </View>
-            </View>
-            <Switch
-              value={postToReviewFeed}
-              onValueChange={setPostToReviewFeed}
-              trackColor={{ false: palette.border, true: palette.orange }}
-            />
+            <Pressable 
+              onPress={() => handleAiAction(generateCaptionIdeas)}
+              style={{ flex: 1 }}
+            >
+              <Card style={[styles.aiCard, { borderColor: palette.orange, backgroundColor: palette.surface, gap: spacing.xs }]}>
+                <TrendingUp size={20} color={palette.orange} />
+                <AppText variant="micro" style={{ fontWeight: "700", textAlign: 'center' }}>Caption Ideas</AppText>
+              </Card>
+            </Pressable>
+            <Pressable 
+              onPress={() => handleAiAction(suggestBestTime)}
+              style={{ flex: 1 }}
+            >
+              <Card style={[styles.aiCard, { backgroundColor: palette.surface, borderColor: palette.border, gap: spacing.xs }]}>
+                <Clock size={20} color={palette.text} />
+                <AppText variant="micro" style={{ fontWeight: "700", textAlign: 'center' }}>Best Time</AppText>
+              </Card>
+            </Pressable>
+            <Pressable 
+              onPress={() => handleAiAction(optimiseCaption)}
+              style={{ flex: 1 }}
+            >
+              <Card style={[styles.aiCard, { backgroundColor: palette.surface, borderColor: palette.border, gap: spacing.xs }]}>
+                <BarChart3 size={20} color={palette.text} />
+                <AppText variant="micro" style={{ fontWeight: "700", textAlign: 'center' }}>Optimise</AppText>
+              </Card>
+            </Pressable>
           </View>
 
-          {/* Caption */}
-          <View style={{ gap: spacing[2] }}>
-            <AppText variant="bodyBold">What&apos;s the verdict?</AppText>
-            <Input
-              multiline
-              numberOfLines={4}
-              placeholder="The sauce was incredible, but the queue was long..."
-              value={caption}
-              onChangeText={(v) => setCaption(sanitizeFreeText(v, POST_CAPTION_MAX_LENGTH))}
-              style={{
-                backgroundColor: palette.surface,
-                borderRadius: radii.lg,
-                paddingTop: spacing[3],
-              }}
-            />
-          </View>
-
-          {/* Music Selection */}
-          <Pressable
-            onPress={() => navigation.navigate("MusicSelection")}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: spacing[4],
-              backgroundColor: palette.surface,
-              borderRadius: radii.lg,
-              borderWidth: 1,
-              borderColor: palette.border,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-              <Music size={20} color={palette.text} />
-              <AppText variant="body">Background Music</AppText>
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <AppText variant="bodySmall" tone="muted">
-                {selectedMusic ?? "None selected"}
-              </AppText>
-              <View
-                style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: palette.orange }}
-              />
-            </View>
-          </Pressable>
-
-          {/* Taste Tags */}
-          <View style={{ gap: spacing[3] }}>
-            <AppText variant="bodyBold">Taste Tags</AppText>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-              {(dish.availabilityFlags || []).map((tag) => (
-                <Chip key={tag} label={tag} onPress={() => {}} />
-              ))}
-              <Chip label="+ Add Tag" onPress={() => {}} />
-            </View>
-          </View>
+          {/* Preview Section */}
+          <Button
+            label="Live Preview"
+            variant="secondary"
+            onPress={() => useComposerStore.getState().setShowPreview(true)}
+            leftIcon={<Eye size={18} color={palette.text} />}
+            style={{ marginTop: spacing.lg }}
+          />
         </View>
       </ScrollView>
 
-      {/* Bottom Actions */}
-      <View
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          padding: spacing[4],
-          backgroundColor: palette.surface,
-          borderTopWidth: 1,
-          borderTopColor: palette.border,
-          flexDirection: "row",
-          gap: spacing[3],
-        }}
-      >
-        <Button
-          variant="secondary"
-          label="Draft"
-          style={{ flex: 1 }}
-          leftIcon={<Save size={18} color={palette.text} />}
-          onPress={() => showToast({ message: "Draft saved.", tone: "info" })}
-        />
-        <Button
-          label="Publish"
-          style={{ flex: 3 }}
-          leftIcon={<Send size={18} color={palette.white} />}
-          onPress={handlePublish}
-        />
-      </View>
+      {/* Overlays & Fixed Components */}
+      <ComposerBottomBar />
+      <StatusOverlay />
+      <LivePreviewSheet />
+      <MediaEditor mediaId={editingMediaId} onClose={() => setEditingMediaId(null)} />
+      <MusicSearchModal innerRef={musicModalRef} />
+      <LocationSearchModal innerRef={locationModalRef} />
+      <CollaboratorModal innerRef={collaboratorModalRef} />
+
+      <Dialog
+        visible={showExitDialog}
+        title="Save Draft?"
+        message="You have unsaved changes. Would you like to save this as a draft before leaving?"
+        onClose={() => setShowExitDialog(false)}
+        buttons={[
+          {
+            text: "Discard",
+            style: "destructive",
+            onPress: () => {
+              reset();
+              navigation.dispatch(pendingAction);
+            },
+          },
+          {
+            text: "Save Draft",
+            onPress: () => {
+              setPublishingState("draft");
+              setTimeout(() => {
+                navigation.dispatch(pendingAction);
+              }, 1500);
+            },
+          },
+          {
+            text: "Keep Editing",
+            style: "cancel",
+            onPress: () => setShowExitDialog(false),
+          },
+        ]}
+      />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  aiCard: {
+    height: 72,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+});

@@ -20,12 +20,14 @@ import { DishDetailScreen } from "@/app/screens/detail/DishDetailScreen";
 import { NotFoundScreen } from "@/app/screens/detail/NotFoundScreen";
 import { OfflineStateScreen } from "@/app/screens/detail/OfflineStateScreen";
 import { StallDetailScreen } from "@/app/screens/detail/StallDetailScreen";
+import { MerchantClaimExplainerScreen } from "@/app/screens/detail/MerchantClaimExplainerScreen";
 import { BuildingDrillDownScreen } from "@/app/screens/discover/BuildingDrillDownScreen";
 import { BuildingDrillDownScreenV2 } from "@/app/screens/discover/BuildingDrillDownScreenV2";
 import { DecideForMeResultScreen } from "@/app/screens/discover/DecideForMeResultScreen";
 import { DiscoverHomeScreenV2 } from "@/app/screens/discover/DiscoverHomeScreenV2";
 import { HomeMapScreen } from "@/app/screens/discover/HomeMapScreen";
 import { MapZoomedInScreen } from "@/app/screens/discover/MapZoomedInScreen";
+import { VenueDirectoryScreen } from "@/app/screens/discover/VenueDirectoryScreen";
 import { CraveScreen } from "@/app/screens/discover/CraveScreen";
 import { DirectMessagesScreen } from "@/app/screens/home/DirectMessagesScreen";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
@@ -158,11 +160,37 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const linking = useMemo(() => createRootLinking(prefix), [prefix]);
 
   const navigateHome = useCallback(() => {
+    const returnRoute = useSessionStore.getState().returnRoute;
     setReturnRoute(undefined);
-    navigationRef.resetRoot({
-      index: 0,
-      routes: [{ name: "MainTabs", params: { screen: "Home" } }],
-    });
+
+    if (!returnRoute) {
+      navigationRef.resetRoot({
+        index: 0,
+        routes: [{ name: "MainTabs", params: { screen: "Home" } }],
+      });
+      return;
+    }
+
+    if (typeof returnRoute === "string") {
+      // If it's a known top-level tab name, navigate to MainTabs
+      const tabNames = ["Home", "Discover", "Review", "Rate", "Profile"];
+      if (tabNames.includes(returnRoute)) {
+        navigationRef.resetRoot({
+          index: 0,
+          routes: [{ name: "MainTabs", params: { screen: returnRoute } }],
+        });
+      } else {
+        navigationRef.resetRoot({
+          index: 0,
+          routes: [{ name: returnRoute as any }],
+        });
+      }
+    } else {
+      navigationRef.resetRoot({
+        index: 0,
+        routes: [{ name: returnRoute.name as any, params: returnRoute.params }],
+      });
+    }
   }, [setReturnRoute]);
 
   useEffect(() => {
@@ -300,6 +328,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
           <RootStack.Screen component={DishDetailScreen} name="DishDetail" />
           <RootStack.Screen component={StallDetailScreen} name="StallDetail" />
+          <RootStack.Screen component={MerchantClaimExplainerScreen} name="MerchantClaimExplainer" />
           <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           <RootStack.Screen component={ReviewStack} name="ReviewStack" />
           <RootStack.Screen component={WheelStack} name="WheelStack" />
@@ -325,7 +354,12 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={DesignGalleryScreen} name="DesignGallery" />
           <RootStack.Screen component={MerchantTabs} name="MerchantTabs" />
           <RootStack.Screen component={ReviewFeedScreenV2} name="ReviewFeedV2" />
-          <RootStack.Screen component={PostComposerScreenV2} name="PostComposerV2" />
+          <RootStack.Screen 
+            component={PostComposerScreenV2} 
+            name="PostComposerV2" 
+            options={{ gestureEnabled: false }}
+          />
+          <RootStack.Screen component={VenueDirectoryScreen} name="VenueDirectory" />
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />

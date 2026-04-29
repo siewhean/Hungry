@@ -81,6 +81,10 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
               navigation.navigate("AuthStack", { screen: "Login" });
               return;
             }
+            if (route.name === "Rate") {
+              navigation.getParent()?.navigate("PostComposerV2");
+              return;
+            }
             navigation.navigate(route.name);
           }
           resetTimer();
