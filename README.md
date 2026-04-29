@@ -138,7 +138,7 @@ To override these locally, you can use `.env.development` or modify the constant
 - Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
 - Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and polygon-based building directory layouts (including Wisma and JEM mall-style floor overlays with vertical level switching).
 - **Design Specifications** — Comprehensive visual, UX, and accessibility specs for all remaining backlog items are now available in `docs/audit/`. These serve as the authoritative implementation guide for Batch 1–8.
-- Current audit status: `npm run typecheck` passes, `npm test` passes, and `npx expo-doctor --verbose` passes (16/16) when run with a writable npm cache path.
+- Current audit status: `npm run typecheck` passes, `npm run test` passes, `npm audit --audit-level=moderate` reports 0 vulnerabilities, and `npx expo-doctor` passes (17/17) when run with a writable npm cache path.
 
 
 ## Commands

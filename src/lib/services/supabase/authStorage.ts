@@ -20,9 +20,9 @@
  *   - On first read of a legacy key that still lives in AsyncStorage (from a
  *     pre-upgrade install), the value is migrated into SecureStore and the
  *     AsyncStorage copy is deleted. This is a one-shot op per key.
- *   - If SecureStore itself throws (unsupported platform, Keychain unavailable),
- *     the adapter transparently falls back to AsyncStorage, then to an
- *     in-memory map — lockout is worse than reduced assurance.
+ *   - If SecureStore itself throws in production, tokens stay memory-only and
+ *     the user must re-authenticate on restart. Plain AsyncStorage fallback is
+ *     only allowed in dev/test via `__DEV__` or HUNGRY_ALLOW_INSECURE_AUTH_STORAGE.
  */
 
 const CHUNK_SIZE = 1800;
@@ -107,6 +107,13 @@ function getAsyncStorage(): AsyncStorageLike | null {
 }
 
 const memoryStore = new Map<string, string>();
+
+function canUsePlaintextTokenFallback(): boolean {
+  return (
+    process.env.HUNGRY_ALLOW_INSECURE_AUTH_STORAGE === "1" ||
+    (typeof __DEV__ !== "undefined" && __DEV__)
+  );
+}
 
 function chunkKey(name: string, index: number): string {
   return `${name}${CHUNK_SUFFIX}${index}`;
@@ -278,6 +285,8 @@ async function migrateLegacyValue(name: string): Promise<string | null> {
     } catch {
       // Keep legacy value readable even if cleanup fails — next launch will retry.
     }
+  } else if (!canUsePlaintextTokenFallback()) {
+    return null;
   }
   return legacy;
 }
@@ -294,7 +303,7 @@ export const supabaseAuthStorage = {
       return migrated;
     }
 
-    const asyncStorage = getAsyncStorage();
+    const asyncStorage = canUsePlaintextTokenFallback() ? getAsyncStorage() : null;
     if (asyncStorage) {
       try {
         const fromAsync = await asyncStorage.getItem(name);
@@ -324,9 +333,9 @@ export const supabaseAuthStorage = {
       return;
     }
 
-    // SecureStore failed — degrade to AsyncStorage then to in-memory so the
-    // user is not logged out on every launch.
-    const asyncStorage = getAsyncStorage();
+    // SecureStore failed. In production, keep tokens memory-only rather than
+    // persisting auth material to plaintext AsyncStorage.
+    const asyncStorage = canUsePlaintextTokenFallback() ? getAsyncStorage() : null;
     if (asyncStorage) {
       try {
         await asyncStorage.setItem(name, value);
@@ -361,4 +370,5 @@ export const __internal = {
   META_SUFFIX,
   chunkKey,
   metaKey,
+  canUsePlaintextTokenFallback,
 };

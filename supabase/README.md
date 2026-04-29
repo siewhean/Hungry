@@ -13,10 +13,14 @@ This folder contains migration, seed, and Edge Function artifacts for Sprint 5 +
 - `migrations/0007_update_dish_rating_trigger.sql` — review aggregate trigger for dish rating/count.
 - `migrations/0008_phase7_auth_scaffold.sql` — guest sessions, orders, chat messages, auth/RLS scaffolding.
 - `migrations/0009_blog_sources.sql` — normalized blog source catalog.
+- `migrations/0016_mobile_storage_security.sql` — mobile media buckets, storage policies, and hardened menu-photo RPC.
 - `seed.sql` — generated seed from mock fixtures (`npm run seed:generate`).
 - `functions/guest-sessions/index.ts` — `POST /functions/v1/guest-sessions` endpoint scaffold.
+- `functions/ingest-menu-photo/index.ts` — authenticated OCR ingestion for menu-photo submissions.
+- `functions/ops-dishes-draft/index.ts` — ops-only dish draft review endpoint.
 - `smoke/postgis_distance.sql` — prepared PostGIS distance smoke query.
 - `smoke/pgvector_similarity.sql` — prepared pgvector cosine/HNSW smoke query.
+- `smoke/mobile_storage_policies.sql` — mobile bucket/policy smoke checks.
 
 ## Commands
 
@@ -36,18 +40,26 @@ supabase functions serve guest-sessions --env-file .env.local
 # 5) Deploy migrations + function to linked project
 supabase db push
 supabase functions deploy guest-sessions --no-verify-jwt
+supabase functions deploy ingest-menu-photo
+supabase functions deploy ops-dishes-draft
 
 # 6) Optional smoke checks against linked DB (via direct Postgres URL)
 psql "$SUPABASE_DB_URL" -f supabase/smoke/postgis_distance.sql
 psql "$SUPABASE_DB_URL" -f supabase/smoke/pgvector_similarity.sql
+psql "$SUPABASE_DB_URL" -f supabase/smoke/mobile_storage_policies.sql
 ```
 
 Required function environment variables:
 
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_ANON_KEY`
 - `GUEST_SESSION_API_KEY` (required header: `x-guest-session-key`)
 - `GUEST_SESSION_ALLOWED_ORIGINS` (comma-separated exact origins, for example `https://hungry.app,https://staging.hungry.app`)
+- `INGEST_MENU_PHOTO_ALLOWED_ORIGINS` (comma-separated exact origins; origin-less native requests are accepted after JWT validation)
+- `GOOGLE_CLOUD_VISION_API_KEY`
+- `GEMINI_API_KEY` (optional; falls back to deterministic OCR parsing when absent)
+- `OPS_DISHES_DRAFT_API_KEY` (required header: `x-ops-api-key`)
 
 ## Guest Session API (scaffold)
 

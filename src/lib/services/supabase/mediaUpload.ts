@@ -11,7 +11,14 @@ export interface MenuPhotoValidationInput {
 }
 
 const ALLOWED_MENU_PHOTO_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/heic"]);
+const ALLOWED_IMAGE_UPLOAD_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/heic",
+  "image/webp",
+]);
 const MAX_MENU_PHOTO_BYTES = 10 * 1024 * 1024;
+const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 function guessContentType(uri: string): string {
   const normalized = uri.toLowerCase();
@@ -57,19 +64,12 @@ async function uploadViaSignedUrl(
   }
 }
 
-async function uploadViaSdk(
-  client: SupabaseClient,
-  bucket: string,
-  path: string,
-  blob: Blob,
-  contentType: string,
-): Promise<void> {
-  const { error } = await client.storage.from(bucket).upload(path, blob, {
-    contentType,
-    upsert: true,
-  });
-  if (error) {
-    throw error;
+function assertValidImageBlob(blob: Blob, contentType: string): void {
+  if (typeof blob.size === "number" && blob.size > MAX_IMAGE_UPLOAD_BYTES) {
+    throw new Error("Image upload exceeds 10MB limit.");
+  }
+  if (!ALLOWED_IMAGE_UPLOAD_MIME_TYPES.has(contentType)) {
+    throw new Error("Image upload must be image/jpeg, image/png, image/heic, or image/webp.");
   }
 }
 
@@ -81,11 +81,12 @@ export async function uploadImageFromUri(params: {
 }): Promise<UploadedAsset> {
   const { client, bucket, path, uri } = params;
   const blob = await fetchBlobFromUri(uri);
-  const contentType = guessContentType(uri);
+  const contentType = blob.type || guessContentType(uri);
+  assertValidImageBlob(blob, contentType);
 
   const signedSucceeded = await uploadViaSignedUrl(client, bucket, path, blob, contentType);
   if (!signedSucceeded) {
-    await uploadViaSdk(client, bucket, path, blob, contentType);
+    throw new Error("Signed upload URL creation failed.");
   }
 
   const { data } = client.storage.from(bucket).getPublicUrl(path);

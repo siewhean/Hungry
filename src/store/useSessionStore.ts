@@ -74,7 +74,7 @@ export const useSessionStore = create<SessionState>()(
         const location = useLocationStore.getState();
         const area =
           location.manualLocation ??
-          `${location.currentLocation.latitude.toFixed(4)},${location.currentLocation.longitude.toFixed(4)}`;
+          `${location.currentLocation.latitude.toFixed(3)},${location.currentLocation.longitude.toFixed(3)}`;
         identifyPostHogUser(profileId, {
           tasteVector: profile?.tasteVector,
           dietaryPreferences: profile?.dietaryPreferences,
@@ -149,7 +149,7 @@ export const useSessionStore = create<SessionState>()(
           const location = useLocationStore.getState();
           const area =
             location.manualLocation ??
-            `${location.currentLocation.latitude.toFixed(4)},${location.currentLocation.longitude.toFixed(4)}`;
+            `${location.currentLocation.latitude.toFixed(3)},${location.currentLocation.longitude.toFixed(3)}`;
           identifyPostHogUser(profileId, {
             tasteVector: profile?.tasteVector,
             dietaryPreferences: profile?.dietaryPreferences,

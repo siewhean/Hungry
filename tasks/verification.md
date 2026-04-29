@@ -25,6 +25,12 @@
 | 2026-04-28 | app (ACCDEL-01) | `npm test -- src/lib/services/mock/service-methods.test.ts` | Pass | Covers new `auth.requestAccountDeletion` mock-safe session clearing behavior |
 | 2026-04-29 | app (claim CTA + CLM-04) | `npm test -- --watch=false` | Pass | 85 tests total; includes Sprint 10 claim contract checks, claim helper telemetry+submission tests, and staging/prod feature flag assertions |
 | 2026-04-29 | app (test runtime trust) | `npm test -- --watch=false` | Pass | Node 25 runtime note documented in `tasks/node25-test-runtime.md`; suite is stable under current tsx harness |
+| 2026-04-29 | app security (SEC-03/SEC-04) | `git ls-files .env.local` | Pass | No current index entry after `git rm --cached .env.local`; `HEAD` retains the file until commit |
+| 2026-04-29 | app security (SEC-04) | `npm audit --audit-level=moderate` | Pass | Root mobile audit reports `found 0 vulnerabilities` |
+| 2026-04-29 | app security (SEC-04) | `npm run typecheck` | Pass | TypeScript strict gate passed after security remediation |
+| 2026-04-29 | app security (SEC-04) | `npm run test` | Pass | 97 tests: 95 pass, 2 skipped |
+| 2026-04-29 | app security (SEC-04) | `npm_config_cache=/tmp/hungry-npm-cache npx expo-doctor` | Pass | 17/17 checks passed; local `.env.local` still loads in Expo Doctor but is no longer tracked |
+| 2026-04-29 | app security (SEC-04) | `gitleaks detect --redact --source .` | Blocked | `gitleaks` binary not installed locally; CI/pre-commit config added |
 
 ## Outstanding Verification
 

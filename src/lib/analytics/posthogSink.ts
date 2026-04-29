@@ -1,5 +1,6 @@
 import PostHog from "posthog-react-native";
 
+import { sanitizeAnalyticsProperties } from "./privacy";
 import type { AnalyticsEventRecord, AnalyticsSink } from "./types";
 
 const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
@@ -56,7 +57,8 @@ function toJsonValue(value: unknown): JsonValue | undefined {
 }
 
 function toPostHogProperties(properties: Record<string, unknown>): PostHogProperties {
-  const normalizedEntries = Object.entries(properties)
+  const sanitized = sanitizeAnalyticsProperties(properties);
+  const normalizedEntries = Object.entries(sanitized)
     .map(([key, value]) => {
       const normalized = toJsonValue(value);
       return normalized === undefined ? null : ([key, normalized] as const);

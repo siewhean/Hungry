@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppText } from "@/components/ui";
 import { HungryThemeProvider, useHungryTheme } from "@/theme";
 import { AppBody } from "@/app/AppBody";
+import { sanitizeSentryEvent } from "@/lib/analytics/privacy";
 
 const appEnv =
   process.env.EXPO_PUBLIC_APP_ENV ??
@@ -20,13 +21,7 @@ if (!sentryInitialized) {
     debug: typeof __DEV__ !== "undefined" ? __DEV__ : false,
     environment: appEnv,
     tracesSampleRate: appEnv === "production" ? 0.1 : 0,
-    beforeSend: (event) => {
-      if (event.user) {
-        delete event.user.email;
-        delete event.user.username;
-      }
-      return event;
-    },
+    beforeSend: (event) => sanitizeSentryEvent(event),
   });
   sentryInitialized = true;
 }

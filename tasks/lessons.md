@@ -37,3 +37,4 @@
 - Keep app and Pod deployment targets aligned (same iOS minimum) to prevent linker warnings about object files built for newer simulator versions.
 - Script-phase warnings like "`[CP-User] ... will be run during every build because it does not specify any outputs`" should be solved by explicitly marking those phases as always out-of-date in generated project settings (or equivalent Podfile automation), not by ignoring them.
 - Any warning fixes made under `node_modules` must be persisted via an automation strategy (for example `patch-package`) or they will be lost after reinstall/update.
+- If `.env.local` ever appears in `git ls-files`, treat it as a security incident: remove it from the index, rotate exposed credentials, and add/update secret-scanning evidence before any push.
