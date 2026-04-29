@@ -27,7 +27,7 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   return (
     <ProfileScreenShell
       title="Review history"
-      subtitle="Submitted reviews stay visible in the mock profile."
+      subtitle="Submitted reviews stay visible in your profile."
     >
       {history.length ? (
         history.map((dish) => {

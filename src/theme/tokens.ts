@@ -78,20 +78,37 @@ export const colors = {
 } as const;
 
 export const spacing = {
-  0.5: 2,
-  1: 4,
-  1.5: 6,
-  2: 8,
-  2.5: 10,
-  3: 12,
-  4: 16,
-  5: 20,
-  6: 24,
-  8: 32,
-  12: 48,
-  16: 64,
-  20: 80,
-  24: 96,
+  "0.5": 2,
+  "1": 4,
+  "1.5": 6,
+  "2": 8,
+  "2.5": 10,
+  "3": 12,
+  "4": 16,
+  "5": 20,
+  "6": 24,
+  "8": 32,
+  "12": 48,
+  "16": 64,
+  "20": 80,
+  "24": 96,
+  // Literal Aliases (Avoids ReferenceErrors by using raw numbers)
+  xs: 2,
+  sm: 4,
+  md: 8,
+  lg: 12,
+  xl: 16,
+  xxl: 24,
+  xxxl: 32,
+} as const;
+
+export const semanticSpacing = {
+  textStack: 4, // sm: Gap between related text lines
+  inlineGaps: 8, // md: Gap between buttons, chips, or horizontal items
+  componentGap: 12, // lg: Gap between distinct UI components
+  screenEdge: 16, // xl: Padding at the edges of the screen
+  sectionGap: 24, // xxl: Vertical gap between major sections
+  heroGap: 32, // xxxl: Large breathing room for hero elements
 } as const;
 
 export const radii = {

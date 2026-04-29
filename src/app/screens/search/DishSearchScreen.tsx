@@ -6,7 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Button, Chip, Input, Screen } from "@/components/ui";
+import { AppText, Button, Chip, IconButton, Input, Screen } from "@/components/ui";
 import { getDiscoverStallCollections, useSearchData } from "@/features/search/search";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -69,10 +69,9 @@ export function DishSearchScreen() {
             gap: spacing[3],
           }}
         >
-          <Pressable
-            accessibilityRole="button"
+          <IconButton
+            variant="ghost"
             accessibilityLabel="Go back"
-            hitSlop={10}
             onPress={() => {
               if (navigation.canGoBack()) {
                 navigation.goBack();
@@ -80,9 +79,8 @@ export function DishSearchScreen() {
               }
               navigation.navigate("MainTabs", { screen: "Discover" });
             }}
-          >
-            <ArrowLeft color={palette.navy} size={18} />
-          </Pressable>
+            icon={<ArrowLeft color={palette.navy} size={18} />}
+          />
           <View style={{ flex: 1 }}>
             <AppText variant="h1">Search</AppText>
             <AppText tone="secondary">

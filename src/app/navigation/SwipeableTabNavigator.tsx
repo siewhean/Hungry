@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { useAnimatedStyle, withTiming, withDelay } from "react-native-reanimated";
 
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
-import { DiscoverHomeScreen } from "@/app/screens/discover/DiscoverHomeScreen";
+import { DiscoverHomeScreenV2 } from "@/app/screens/discover/DiscoverHomeScreenV2";
 import { ReviewScreen } from "@/app/screens/review/ReviewScreen";
 import { ReviewFeedScreen } from "@/app/screens/review/ReviewFeedScreen";
 import { ProfileStack } from "@/app/screens/profile/ProfileStack";
@@ -133,7 +133,7 @@ export function SwipeableTabNavigator() {
       }}
     >
       <Tab.Screen name="Home" component={HomeWrapper} />
-      <Tab.Screen name="Discover" component={DiscoverHomeScreen} />
+      <Tab.Screen name="Discover" component={DiscoverHomeScreenV2} />
       <Tab.Screen name="Review" component={ReviewWrapper} />
       <Tab.Screen name="Rate" component={RateWrapper} />
       <Tab.Screen name="Profile" component={ProfileStack} />

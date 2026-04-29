@@ -78,3 +78,14 @@ test("discovery.decideForMe respects profile dietary preferences", async () => {
     await hungryService.auth.signOut();
   }
 });
+
+test("auth.requestAccountDeletion clears mock session", async () => {
+  await hungryService.auth.signIn("delete-me@hungry.sg", "password");
+  await hungryService.auth.requestAccountDeletion({
+    userId: "mock-user",
+    reason: "test",
+  });
+
+  const session = await hungryService.auth.getCurrentSession();
+  assert.equal(session, null);
+});

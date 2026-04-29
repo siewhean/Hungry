@@ -8,14 +8,21 @@ interface StarRatingProps {
   max?: number;
   editable?: boolean;
   onChange?: (value: number) => void;
+  fullWidth?: boolean;
 }
 
-export function StarRating({ value, max = 5, editable = false, onChange }: StarRatingProps) {
+export function StarRating({
+  value,
+  max = 5,
+  editable = false,
+  onChange,
+  fullWidth = false,
+}: StarRatingProps) {
   const { palette } = useHungryTheme();
 
   return (
     <View
-      style={styles.row}
+      style={[styles.row, fullWidth && { justifyContent: "space-between" }]}
       accessibilityLabel={editable ? "Rating out of 5 stars" : `${value} out of ${max} stars`}
       accessibilityRole={editable ? "adjustable" : "none"}
       accessibilityValue={{ min: 1, max, now: value }}
@@ -60,7 +67,7 @@ export function StarRating({ value, max = 5, editable = false, onChange }: StarR
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
-    gap: 4,
+    gap: 1,
   },
   hitArea: {
     minHeight: 44,

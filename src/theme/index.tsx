@@ -21,13 +21,23 @@ import {
 } from "@expo-google-fonts/fraunces";
 
 import { useUIStore } from "@/store/useUIStore";
-import { colors, motion, radii, shadows, spacing, typography, zIndex } from "./tokens";
+import {
+  colors,
+  motion,
+  radii,
+  shadows,
+  spacing,
+  semanticSpacing,
+  typography,
+  zIndex,
+} from "./tokens";
 
 type HungryTheme = {
   colorScheme: "light" | "dark";
   theme: Theme;
   palette: (typeof colors)[keyof typeof colors];
   spacing: typeof spacing;
+  semanticSpacing: typeof semanticSpacing;
   radii: typeof radii;
   shadows: typeof shadows;
   typography: typeof typography;
@@ -142,6 +152,7 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
       theme,
       palette,
       spacing,
+      semanticSpacing,
       radii,
       shadows: themedShadows,
       typography,

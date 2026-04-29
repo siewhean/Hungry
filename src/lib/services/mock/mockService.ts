@@ -302,6 +302,13 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async requestAccountDeletion() {
+      // Mock-safe stub: production uses external deletion endpoint + legal workflow.
+      _isAuthenticated = false;
+      _profile = { ...guestProfile };
+      return resolve(undefined);
+    },
+
     async forgotPassword(_email) {
       // Mock: no-op — in production sends a reset email
       return resolve(undefined);

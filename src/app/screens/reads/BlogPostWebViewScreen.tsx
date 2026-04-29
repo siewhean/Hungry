@@ -26,10 +26,7 @@ export function BlogPostWebViewScreen({ postId, onOpenVenue }: BlogPostWebViewSc
   }, [post]);
 
   return (
-    <Screen
-      title="Article view"
-      subtitle="The original article opens in the system browser for this mock build."
-    >
+    <Screen title="Article view" subtitle="The original article opens in your system browser.">
       <Card>
         <View style={{ gap: spacing[2] }}>
           <AppText variant="h3">{post.title}</AppText>

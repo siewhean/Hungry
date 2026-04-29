@@ -226,15 +226,17 @@ Rules:
 <claude-mem-context>
 # Memory Context
 
-# [Hungry] recent context, 2026-04-23 11:35pm GMT+8
+# [Hungry] recent context, 2026-04-29 12:49pm GMT+8
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (18,283t read) | 386,948t work | 95% savings
+Stats: 50 obs (18,343t read) | 335,260t work | 95% savings
 
 ### Apr 8, 2026
+48 8:53p 🔵 Wisma Atria F&B stores include floor location data; Paragon uses microsite CPT
+49 8:56p 🔵 Link REIT mall item IDs not exposed in HTML source code
 50 8:58p 🔵 Link REIT malls expose JSON API with store metadata; other malls lack JSON APIs
 51 9:02p 🟣 Created normalized Wisma Atria F&B dataset with 32 stores
 52 9:03p 🔵 Alternative data access methods found for non-WordPress malls
@@ -276,12 +278,10 @@ Stats: 50 obs (18,283t read) | 386,948t work | 95% savings
 150 4:45p 🔵 Git index lock creation blocked by file system permissions
 151 4:46p 🔵 Git index lock creation blocked by file system permissions
 152 4:47p 🔵 iOS Simulator unavailable due to incorrect xcode-select path
-153 4:52p 🔵 iOS Simulator unavailable due to incorrect xcode-select path
-154 " 🔴 Disabled C++ advanced features in fmt library to fix iOS build
+154 4:52p 🔴 Disabled C++ advanced features in fmt library to fix iOS build
 157 4:55p ✅ CocoaPods installation completed with New Architecture and fmt workaround
 160 4:59p ✅ Suppressed invalid constexpr warnings in iOS C++ build
-161 5:01p ✅ Suppressed invalid constexpr warnings in iOS C++ build
-162 " ✅ Extended C++17 standard to RCT-Folly pod target
+162 5:01p ✅ Extended C++17 standard to RCT-Folly pod target
 164 5:02p 🔵 Root cause traced to fmt::basic_format_string consteval errors in RCT-Folly
 167 5:11p 🔵 iOS build fails due to ambiguous Expo module import access level
 168 5:12p 🔴 Fixed ambiguous Expo import by removing internal access modifier
@@ -291,5 +291,5 @@ Stats: 50 obs (18,283t read) | 386,948t work | 95% savings
 ### Apr 22, 2026
 172 4:25a 🔵 Sprint 5 QA/QC verification run reveals test tooling failure and mock imports in Supabase repository
 
-Access 387k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 335k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

@@ -3,7 +3,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { useEffect, useState } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Heart, MapPin, Share2, Star, ChevronLeft } from "lucide-react-native";
+import { Heart, MapPin, Share2, Star, ChevronLeft, CircleHelp } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated from "react-native-reanimated";
 
@@ -14,15 +14,23 @@ import {
   FeedErrorBoundary,
   Button,
   Card,
+  IconButton,
   Input,
   Skeleton,
   StickyBottomBar,
 } from "@/components/ui";
 import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
+import {
+  hasPendingClaimForProfile,
+  submitClaimFromStall,
+} from "@/features/merchantClaim/submitClaimFromStall";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
-import { trackAnalyticsEvent } from "@/lib/analytics";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -93,6 +101,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
     Record<string, ReviewReply[]>
   >({});
   const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
+  const [isClaimPending, setIsClaimPending] = useState(() => hasPendingClaimForProfile(profile.id));
+
+  useEffect(() => {
+    setIsClaimPending(hasPendingClaimForProfile(profile.id));
+  }, [profile.id]);
 
   if (isLoading) {
     return <StallDetailSkeleton />;
@@ -163,44 +176,43 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const handleClaimThisStall = async () => {
     if (isSubmittingClaim) return;
 
-    trackAnalyticsEvent("claim_this_stall_tapped", {
-      venue_id: venue.id,
-      building_id: venue.buildingId,
-      source: "stall_detail",
-    });
-
-    if (!isAuthenticated) {
-      showToast({
-        message: "Please sign in before claiming this stall.",
-        tone: "warning",
-      });
-      return;
-    }
-
     setIsSubmittingClaim(true);
     try {
-      const result = await getHungryService().supply.submitMerchantClaimInterest({
+      const result = await submitClaimFromStall({
+        profileId: profile.id,
         venueId: venue.id,
-        contactName: profile.displayName,
-        contactEmail: profile.email || undefined,
+        buildingId: venue.buildingId,
+        displayName: profile.displayName,
+        email: profile.email || undefined,
+        isAuthenticated,
+        service: getHungryService(),
+        localSingleClaimGuardEnabled: getServiceProvider().mode !== "supabase",
+        devFallbackEnabled: getServiceProvider().mode !== "supabase",
       });
 
-      if (result.status === "created") {
+      if (result.status === "needs_auth") {
+        showToast({
+          message: "Please sign in before claiming this stall.",
+          tone: "warning",
+        });
+      } else if (result.status === "created") {
+        setIsClaimPending(true);
         showToast({
           message: "Claim interest submitted. We will follow up with verification details.",
           tone: "success",
         });
-      } else {
+      } else if (result.status === "already_exists") {
+        setIsClaimPending(true);
         showToast({
-          message: "You have already submitted a claim for this stall.",
+          message: "You have already submitted a claim for a stall.",
           tone: "info",
         });
+      } else {
+        showToast({
+          message: "Unable to submit claim right now. Please try again.",
+          tone: "error",
+        });
       }
-    } catch {
-      showToast({
-        message: "Unable to submit claim right now. Please try again.",
-        tone: "error",
-      });
     } finally {
       setIsSubmittingClaim(false);
     }
@@ -230,68 +242,44 @@ export function StallDetailScreen({ navigation, route }: Props) {
               colors={[palette.overlay, "transparent"]}
               style={[StyleSheet.absoluteFill, { height: 100 }]}
             />
-            <Pressable
+            <IconButton
+              variant="floating"
+              accessibilityLabel="Go back"
               onPress={() => navigation.goBack()}
-              style={[
-                {
-                  width: 44,
-                  height: 44,
-                  borderRadius: radii.pill,
-                  backgroundColor: palette.surface,
-                  alignItems: "center",
-                  justifyContent: "center",
-                },
-                shadows.floating,
-              ]}
-            >
-              <ChevronLeft color={palette.text} size={24} />
-            </Pressable>
+              icon={<ChevronLeft color={palette.text} size={24} />}
+            />
             <View style={{ flex: 1 }} />
             <View style={{ flexDirection: "row", gap: spacing[2] }}>
-              <Pressable
+              <IconButton
+                variant="floating"
+                accessibilityLabel={
+                  profile.favouriteDishIds.includes(leadDish?.id ?? "")
+                    ? "Remove from favourites"
+                    : "Save to favourites"
+                }
                 onPress={() => {
                   if (leadDish) {
                     toggleFavourite(leadDish);
                   }
                 }}
-                style={[
-                  {
-                    width: 44,
-                    height: 44,
-                    borderRadius: radii.pill,
-                    backgroundColor: palette.surface,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  },
-                  shadows.floating,
-                ]}
-              >
-                <Heart
-                  color={palette.text}
-                  fill={
-                    profile.favouriteDishIds.includes(leadDish?.id ?? "")
-                      ? palette.text
-                      : "transparent"
-                  }
-                  size={20}
-                />
-              </Pressable>
-              <Pressable
+                icon={
+                  <Heart
+                    color={palette.text}
+                    fill={
+                      profile.favouriteDishIds.includes(leadDish?.id ?? "")
+                        ? palette.text
+                        : "transparent"
+                    }
+                    size={20}
+                  />
+                }
+              />
+              <IconButton
+                variant="floating"
+                accessibilityLabel="Share stall"
                 onPress={handleShare}
-                style={[
-                  {
-                    width: 44,
-                    height: 44,
-                    borderRadius: radii.pill,
-                    backgroundColor: palette.surface,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  },
-                  shadows.floating,
-                ]}
-              >
-                <Share2 color={palette.text} size={20} />
-              </Pressable>
+                icon={<Share2 color={palette.text} size={20} />}
+              />
             </View>
           </View>
 
@@ -415,24 +403,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   </AppText>
                 </Card>
               </View>
-
-              {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
-                <Card style={{ padding: spacing[4], gap: spacing[3] }}>
-                  <View style={{ gap: spacing[1] }}>
-                    <AppText variant="h3">Own this stall?</AppText>
-                    <AppText variant="bodySmall" tone="secondary">
-                      Tap once to register your claim interest with our team.
-                    </AppText>
-                  </View>
-                  <Button
-                    label={isSubmittingClaim ? "Submitting..." : "Claim this stall"}
-                    onPress={() => {
-                      void handleClaimThisStall();
-                    }}
-                    disabled={isSubmittingClaim}
-                  />
-                </Card>
-              ) : null}
 
               {/* Dishes Grid */}
               <View style={{ gap: spacing[4] }}>
@@ -628,6 +598,40 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   <AppText tone="secondary">No community reviews yet.</AppText>
                 )}
               </View>
+
+              {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
+                <Card style={{ padding: spacing[4], gap: spacing[4] }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <AppText variant="h3">Own this stall?</AppText>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="View verification process"
+                      onPress={() => navigation.navigate("MerchantClaimExplainer")}
+                    >
+                      <CircleHelp color={palette.orange} size={18} />
+                    </Pressable>
+                  </View>
+                  <Button
+                    label={
+                      isSubmittingClaim
+                        ? "Submitting..."
+                        : isClaimPending
+                          ? "Claim Pending"
+                          : "Claim this stall"
+                    }
+                    onPress={() => {
+                      void handleClaimThisStall();
+                    }}
+                    disabled={isSubmittingClaim || isClaimPending}
+                  />
+                </Card>
+              ) : null}
             </View>
           </ScrollView>
 

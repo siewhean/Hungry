@@ -7,15 +7,21 @@ type HungryLogoProps = {
   size?: number;
   showWordmark?: boolean;
   wordmarkColor?: string;
+  opacity?: number;
 };
 
-export function HungryLogo({ size = 64, showWordmark = true, wordmarkColor }: HungryLogoProps) {
+export function HungryLogo({
+  size = 64,
+  showWordmark = true,
+  wordmarkColor,
+  opacity = 1,
+}: HungryLogoProps) {
   const { palette } = useHungryTheme();
   const markSize = Math.max(24, Math.round(size * 0.58));
   const finalWordmarkColor = wordmarkColor ?? palette.orange;
 
   return (
-    <View style={{ alignItems: "center", gap: 8 }}>
+    <View style={{ alignItems: "center", gap: 8, opacity }}>
       <View
         style={{
           alignItems: "center",

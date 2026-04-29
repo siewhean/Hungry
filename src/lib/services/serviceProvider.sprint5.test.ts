@@ -3,7 +3,13 @@ import test from "node:test";
 
 import { getServiceProvider, resetServiceProvider } from "@/lib/services/serviceProvider";
 
-test("service provider resolves supabase mode from HUNGRY_DATA_SOURCE", () => {
+const shouldSkipSupabaseRuntime =
+  process.env.HUNGRY_DISABLE_ASYNC_STORAGE === "1" ||
+  process.env.HUNGRY_DISABLE_SECURE_STORE === "1";
+
+const supabaseModeTest = shouldSkipSupabaseRuntime ? test.skip : test;
+
+supabaseModeTest("service provider resolves supabase mode from HUNGRY_DATA_SOURCE", () => {
   const previousDataSource = process.env.HUNGRY_DATA_SOURCE;
   const previousPublicDataSource = process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE;
 
@@ -21,16 +27,19 @@ test("service provider resolves supabase mode from HUNGRY_DATA_SOURCE", () => {
   resetServiceProvider();
 });
 
-test("service provider resolves supabase mode from EXPO_PUBLIC_HUNGRY_DATA_SOURCE", () => {
-  const previousDataSource = process.env.HUNGRY_DATA_SOURCE;
-  const previousPublicDataSource = process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE;
+supabaseModeTest(
+  "service provider resolves supabase mode from EXPO_PUBLIC_HUNGRY_DATA_SOURCE",
+  () => {
+    const previousDataSource = process.env.HUNGRY_DATA_SOURCE;
+    const previousPublicDataSource = process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE;
 
-  process.env.HUNGRY_DATA_SOURCE = "";
-  process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = "supabase";
-  resetServiceProvider();
-  assert.equal(getServiceProvider().mode, "supabase");
+    process.env.HUNGRY_DATA_SOURCE = "";
+    process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = "supabase";
+    resetServiceProvider();
+    assert.equal(getServiceProvider().mode, "supabase");
 
-  process.env.HUNGRY_DATA_SOURCE = previousDataSource;
-  process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = previousPublicDataSource;
-  resetServiceProvider();
-});
+    process.env.HUNGRY_DATA_SOURCE = previousDataSource;
+    process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = previousPublicDataSource;
+    resetServiceProvider();
+  },
+);

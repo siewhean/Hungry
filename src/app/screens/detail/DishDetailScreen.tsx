@@ -21,6 +21,7 @@ import {
   Card,
   EmptyState,
   FeedErrorBoundary,
+  IconButton,
   Screen,
   Skeleton,
 } from "@/components/ui";
@@ -169,11 +170,16 @@ export function DishDetailScreen({ navigation, route }: Props) {
 
         {/* ─── NAVIGATION OVERLAY ─────────────────────────────────────────── */}
         <View style={[styles.navOverlay, { top: insets.top, zIndex: 101 }]}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.navBtn}>
-            <ChevronLeft color={palette.text} size={24} />
-          </Pressable>
+          <IconButton
+            variant="floating"
+            accessibilityLabel="Go back"
+            onPress={() => navigation.goBack()}
+            icon={<ChevronLeft color={palette.text} size={24} />}
+          />
           <View style={{ flex: 1 }} />
-          <Pressable
+          <IconButton
+            variant="floating"
+            accessibilityLabel="Share dish"
             onPress={() =>
               Share.share({
                 title: `${dish.name} · Hungry`,
@@ -181,10 +187,8 @@ export function DishDetailScreen({ navigation, route }: Props) {
                 url: canonicalDishUrl,
               })
             }
-            style={styles.navBtn}
-          >
-            <Share2 color={palette.text} size={20} />
-          </Pressable>
+            icon={<Share2 color={palette.text} size={20} />}
+          />
         </View>
 
         <Animated.ScrollView
@@ -314,6 +318,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
           <Button
             variant={isSaved ? "secondary" : "primary"}
             label={isSaved ? "Saved to Favourites" : "Save Favorite"}
+            haptics="medium"
             style={{ flex: 2 }}
             onPress={() => {
               if (!isAuthenticated) {

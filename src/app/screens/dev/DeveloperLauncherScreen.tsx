@@ -23,6 +23,8 @@ import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { useComposerStore } from "@/features/post/useComposerStore";
+import { venues as mockVenues } from "@/lib/services/mock/data";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DeveloperLauncher">;
 
@@ -181,6 +183,10 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const setOffline = useUIStore((state) => state.setOffline);
 
+  // Post Composer V2 State
+  const isBusinessMode = useComposerStore((state) => state.isBusinessMode);
+  const setIsBusinessMode = useComposerStore((state) => state.setIsBusinessMode);
+
   // Feature flags
   const [flags, setFlags] = useState<FeatureFlags>(DEFAULT_FLAGS);
   const toggleFlag = (key: FlagKey) => setFlags((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -203,6 +209,24 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     () => (sampleBuilding ? repository.listVenuesByBuilding(sampleBuilding.id)[0] : undefined),
     [sampleBuilding, repository],
   );
+  const sampleStallVenueId = useMemo(() => {
+    if (sampleVenue?.id) {
+      return sampleVenue.id;
+    }
+
+    const firstVenueFromAnyBuilding = repository
+      .listBuildings()
+      .flatMap((building) => repository.listVenuesByBuilding(building.id))[0];
+    if (firstVenueFromAnyBuilding?.id) {
+      return firstVenueFromAnyBuilding.id;
+    }
+
+    if (sampleDish?.venueId) {
+      return sampleDish.venueId;
+    }
+
+    return mockVenues[0]?.id ?? "venue-tian-tian";
+  }, [repository, sampleDish, sampleVenue]);
   const sampleArticle = useMemo(() => repository.listBlogPosts()[0], [repository]);
 
   // Helpers
@@ -258,6 +282,15 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     navigate();
   };
 
+  const openSampleStallDetail = (version: "v1" | "v2" = "v1") => {
+    if (version === "v2") {
+      navigation.navigate("StallDetailV2", { venueId: sampleStallVenueId });
+      return;
+    }
+
+    navigation.navigate("StallDetail", { venueId: sampleStallVenueId });
+  };
+
   // Data inspector stats
   const stats = useMemo(
     () => ({
@@ -296,6 +329,45 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           style={{ minHeight: 40 }}
         />
 
+        {/* ── Post Composer V2 Settings ─────────────────── */}
+        <CollapsibleSection
+          title="Post Composer V2 Settings"
+          subtitle="Configure the V2 composer state for testing."
+          badge="V2"
+          defaultExpanded
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingVertical: 2,
+            }}
+          >
+            <View style={{ flex: 1, gap: 2 }}>
+              <AppText variant="bodySmallBold">Business Mode</AppText>
+              <AppText variant="micro" tone="secondary">
+                Shows business features (Promotions, CTAs, etc.)
+              </AppText>
+            </View>
+            <Switch
+              value={isBusinessMode}
+              onValueChange={setIsBusinessMode}
+              trackColor={{
+                false: palette.border,
+                true: `${palette.orange}66`,
+              }}
+              thumbColor={isBusinessMode ? palette.orange : palette.textMuted}
+            />
+          </View>
+          <DevButton
+            label="Launch V2 Composer"
+            onPress={() => navigation.navigate("PostComposerV2" as any)}
+            variant="primary"
+            style={{ marginTop: 8 }}
+          />
+        </CollapsibleSection>
+
         {/* ── V1 vs V2 Comparison ───────────────────────── */}
         <CollapsibleSection
           title="V1 vs V2 Comparison"
@@ -315,12 +387,8 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           />
           <VersionPair
             label="Stall Detail"
-            onV1={() =>
-              sampleVenue && navigation.navigate("StallDetail", { venueId: sampleVenue.id })
-            }
-            onV2={() =>
-              sampleVenue && navigation.navigate("StallDetailV2", { venueId: sampleVenue.id })
-            }
+            onV1={() => openSampleStallDetail("v1")}
+            onV2={() => openSampleStallDetail("v2")}
           />
           <VersionPair
             label="Building"
@@ -339,7 +407,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           />
           <VersionPair
             label="Post Composer"
-            onV1={() => navigation.navigate("Post")}
+            onV1={() => navigation.navigate("MainTabs", { screen: "Rate" })}
             onV2={() => navigation.navigate("PostComposerV2" as any)}
           />
           <VersionPair
@@ -440,12 +508,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                 navigation.navigate("DecideForMeResult");
               }}
             />
-            <DevButton
-              label="Stall"
-              onPress={() =>
-                sampleVenue && navigation.navigate("StallDetail", { venueId: sampleVenue.id })
-              }
-            />
+            <DevButton label="Stall" onPress={() => openSampleStallDetail("v1")} />
             <DevButton
               label="Dish"
               onPress={() =>

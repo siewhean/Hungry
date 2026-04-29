@@ -10,6 +10,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { Button } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
@@ -24,7 +25,7 @@ export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { palette, spacing } = useHungryTheme();
 
-  const clearSession = useSessionStore((state) => state.clearSession);
+  const signOut = useSessionStore((state) => state.signOut);
   const location = useLocationStore((state) => state.manualLocation);
   const resetLocationState = useLocationStore((state) => state.resetLocationState);
   const clearProfile = useProfileStore((state) => state.clearProfile);
@@ -63,8 +64,12 @@ export function SettingsScreen() {
           style: "destructive",
           onPress: () => {
             void (async () => {
+              await getHungryService().auth.requestAccountDeletion({
+                userId: profile.id,
+                reason: "user_initiated_settings_flow",
+              });
               await purgePersistedAccountData();
-              clearSession();
+              signOut();
               clearProfile();
               clearSearchState();
               resetDraft();

@@ -1,6 +1,6 @@
 import * as Sentry from "@sentry/react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { View } from "react-native";
+import { View, Text } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppText } from "@/components/ui";
@@ -32,24 +32,31 @@ if (!sentryInitialized) {
 }
 
 function SentryFallback() {
-  const { palette, spacing } = useHungryTheme();
-
+  // Use hardcoded safe values and native Text in fallback to avoid crashing if provider fails
   return (
     <View
       style={{
         alignItems: "center",
-        backgroundColor: palette.bg,
+        backgroundColor: "#FFFFFF",
         flex: 1,
         justifyContent: "center",
-        paddingHorizontal: spacing[6],
+        paddingHorizontal: 24,
       }}
     >
-      <AppText variant="h2" style={{ marginBottom: spacing[2], textAlign: "center" }}>
+      <Text
+        style={{
+          fontSize: 22,
+          fontWeight: "600",
+          marginBottom: 8,
+          textAlign: "center",
+          color: "#1A2E44",
+        }}
+      >
         Something went wrong
-      </AppText>
-      <AppText tone="secondary" style={{ textAlign: "center" }}>
+      </Text>
+      <Text style={{ fontSize: 16, textAlign: "center", color: "#41566F" }}>
         The app hit an unexpected error. Please restart and try again.
-      </AppText>
+      </Text>
     </View>
   );
 }
