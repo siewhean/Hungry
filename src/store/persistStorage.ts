@@ -9,6 +9,11 @@ type AsyncStorageLike = {
 let cachedAsyncStorage: AsyncStorageLike | null | undefined;
 
 function getAsyncStorage(): AsyncStorageLike | null {
+  if (process.env.HUNGRY_DISABLE_ASYNC_STORAGE === "1") {
+    cachedAsyncStorage = null;
+    return cachedAsyncStorage;
+  }
+
   if (cachedAsyncStorage !== undefined) {
     return cachedAsyncStorage;
   }

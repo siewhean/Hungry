@@ -54,14 +54,25 @@ export function useAppBootstrap() {
 
     let active = true;
 
-    void client.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      const user = data.session?.user;
-      applyAuthStateFromSession({
-        isAuthenticated: Boolean(user),
-        userId: user?.id ?? null,
+    void client.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!active) return;
+        const user = data.session?.user;
+        applyAuthStateFromSession({
+          isAuthenticated: Boolean(user),
+          userId: user?.id ?? null,
+        });
+      })
+      .catch(() => {
+        if (!active) return;
+        // Network failures during bootstrap should not crash the app.
+        // Fall back to signed-out state and let auth screens retry explicitly.
+        applyAuthStateFromSession({
+          isAuthenticated: false,
+          userId: null,
+        });
       });
-    });
 
     const { data: subscription } = client.auth.onAuthStateChange((_event, session) => {
       const user = session?.user;

@@ -136,8 +136,37 @@ function requireSupabaseClient(): SupabaseClient {
 async function getCurrentSupabaseUserId(): Promise<string | null> {
   const client = getSupabaseClient();
   if (!client) return null;
-  const session = await client.auth.getSession();
-  return session.data.session?.user?.id ?? null;
+  try {
+    const session = await client.auth.getSession();
+    return session.data.session?.user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function ensureCurrentUserProfileRow(client: SupabaseClient): Promise<void> {
+  let sessionData;
+  try {
+    ({ data: sessionData } = await client.auth.getSession());
+  } catch {
+    return;
+  }
+  const user = sessionData.session?.user;
+  if (!user?.id) return;
+
+  const payload = {
+    id: user.id,
+    email: user.email ?? null,
+    display_name:
+      ((user.user_metadata?.name as string | undefined) ??
+        (user.user_metadata?.full_name as string | undefined) ??
+        null),
+  };
+
+  const { error } = await client.from("user_profiles").upsert(payload, { onConflict: "id" });
+  if (error) {
+    throw error;
+  }
 }
 
 async function fetchUserProfile(client: SupabaseClient, userId: string, email?: string) {
@@ -174,9 +203,15 @@ async function getCurrentUserProfileOrGuest(): Promise<UserProfile> {
 }
 
 async function toAppSession(client: SupabaseClient): Promise<Session | null> {
-  const { data } = await client.auth.getSession();
+  let data;
+  try {
+    ({ data } = await client.auth.getSession());
+  } catch {
+    return null;
+  }
   const session = data.session;
   if (!session?.user) return null;
+  await ensureCurrentUserProfileRow(client);
   const profile = await fetchUserProfile(client, session.user.id, session.user.email ?? undefined);
   return {
     userId: session.user.id,
@@ -405,6 +440,11 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const { error } = await client.auth.signOut();
       if (error) throw error;
+    },
+
+    async requestAccountDeletion() {
+      // Stub only: external deletion endpoint is user-owned release work (ACCDEL-01).
+      await this.signOut();
     },
 
     async forgotPassword(email) {
@@ -904,18 +944,16 @@ export const supabaseService: HungryService = {
       if (!userId) {
         throw new Error("You must be signed in to claim a stall.");
       }
+      await ensureCurrentUserProfileRow(client);
 
-      const { data: claimId, error: rpcError } = await client.rpc(
-        "submit_merchant_claim_interest",
-        {
-          p_venue_id: input.venueId,
-          p_contact_name: input.contactName ?? null,
-          p_contact_phone: input.contactPhone ?? null,
-          p_contact_email: input.contactEmail ?? null,
-          p_uen: input.uen ?? null,
-          p_notes: input.notes ?? null,
-        },
-      );
+      const { data: claimId, error: rpcError } = await client.rpc("submit_merchant_claim_interest", {
+        p_venue_id: input.venueId,
+        p_contact_name: input.contactName ?? null,
+        p_contact_phone: input.contactPhone ?? null,
+        p_contact_email: input.contactEmail ?? null,
+        p_uen: input.uen ?? null,
+        p_notes: input.notes ?? null,
+      });
       if (rpcError) {
         throw rpcError;
       }

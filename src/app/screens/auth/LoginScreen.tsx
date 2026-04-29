@@ -73,8 +73,24 @@ export function LoginScreen({ navigation }: Props) {
         }
       }
       completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
+      navigation.getParent()?.reset({
+        index: 0,
+        routes: [{ name: "MainTabs" as never, params: { screen: "Home" } as never }],
+      });
       showToast({ message: "Signed in successfully.", tone: "success" });
-    } catch {
+    } catch (err) {
+      const message = (err as { message?: string })?.message?.toLowerCase() ?? "";
+      if (message.includes("provider is not enabled")) {
+        showToast({
+          message: `${provider === "google" ? "Google" : "Apple"} sign-in is not enabled in Supabase Auth.`,
+          tone: "error",
+        });
+        return;
+      }
+      if (message.includes("cancelled")) {
+        showToast({ message: "Sign in was cancelled.", tone: "warning" });
+        return;
+      }
       showToast({ message: "Sign in failed. Please try again.", tone: "error" });
     }
   };

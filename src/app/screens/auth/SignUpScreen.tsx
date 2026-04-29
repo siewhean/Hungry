@@ -62,7 +62,7 @@ export function SignUpScreen({ navigation }: Props) {
           return;
         }
         showToast({
-          message: "Running in mock mode. Verification emails are not sent in this mode.",
+          message: "Verification email is currently unavailable. You can continue and verify later.",
           tone: "warning",
         });
       }
@@ -103,7 +103,23 @@ export function SignUpScreen({ navigation }: Props) {
         completedOnboarding: false,
         trackSignInEvent: false,
       });
-    } catch {
+      navigation.getParent()?.reset({
+        index: 0,
+        routes: [{ name: "OnboardingStack" as never, params: { screen: "OnboardingIntro1" } as never }],
+      });
+    } catch (err) {
+      const message = (err as { message?: string })?.message?.toLowerCase() ?? "";
+      if (message.includes("provider is not enabled")) {
+        showToast({
+          message: `${provider === "google" ? "Google" : "Apple"} sign-in is not enabled in Supabase Auth.`,
+          tone: "error",
+        });
+        return;
+      }
+      if (message.includes("cancelled")) {
+        showToast({ message: "Sign-up was cancelled.", tone: "warning" });
+        return;
+      }
       showToast({ message: "Could not continue sign-up. Please try again.", tone: "error" });
     }
   };

@@ -1,5 +1,3 @@
-import * as SecureStore from "expo-secure-store";
-
 /**
  * Supabase-compatible async storage adapter backed by `expo-secure-store`
  * (Keychain on iOS, EncryptedSharedPreferences on Android).
@@ -31,15 +29,57 @@ const CHUNK_SIZE = 1800;
 const CHUNK_SUFFIX = ".c";
 const META_SUFFIX = ".cmeta";
 
+type SecureStoreLike = {
+  getItemAsync: (key: string) => Promise<string | null>;
+  setItemAsync: (key: string, value: string, options?: { keychainAccessible?: unknown }) => Promise<void>;
+  deleteItemAsync: (key: string) => Promise<void>;
+  AFTER_FIRST_UNLOCK?: unknown;
+};
+
 type AsyncStorageLike = {
   getItem: (name: string) => Promise<string | null>;
   setItem: (name: string, value: string) => Promise<void>;
   removeItem: (name: string) => Promise<void>;
 };
 
+let cachedSecureStore: SecureStoreLike | null | undefined;
 let cachedAsyncStorage: AsyncStorageLike | null | undefined;
 
+function getSecureStore(): SecureStoreLike | null {
+  if (process.env.HUNGRY_DISABLE_SECURE_STORE === "1") {
+    cachedSecureStore = null;
+    return cachedSecureStore;
+  }
+
+  if (cachedSecureStore !== undefined) {
+    return cachedSecureStore;
+  }
+
+  try {
+    const moduleRef = require("expo-secure-store") as SecureStoreLike;
+    if (
+      moduleRef &&
+      typeof moduleRef.getItemAsync === "function" &&
+      typeof moduleRef.setItemAsync === "function" &&
+      typeof moduleRef.deleteItemAsync === "function"
+    ) {
+      cachedSecureStore = moduleRef;
+      return cachedSecureStore;
+    }
+  } catch {
+    // Native module is not available in this runtime.
+  }
+
+  cachedSecureStore = null;
+  return cachedSecureStore;
+}
+
 function getAsyncStorage(): AsyncStorageLike | null {
+  if (process.env.HUNGRY_DISABLE_ASYNC_STORAGE === "1") {
+    cachedAsyncStorage = null;
+    return cachedAsyncStorage;
+  }
+
   if (cachedAsyncStorage !== undefined) {
     return cachedAsyncStorage;
   }
@@ -98,17 +138,23 @@ function parseMeta(raw: string | null): ChunkMeta | null {
 }
 
 async function secureGet(name: string): Promise<string | null> {
+  const secureStore = getSecureStore();
+  if (!secureStore) return null;
+
   try {
-    return await SecureStore.getItemAsync(name);
+    return await secureStore.getItemAsync(name);
   } catch {
     return null;
   }
 }
 
 async function secureSet(name: string, value: string): Promise<boolean> {
+  const secureStore = getSecureStore();
+  if (!secureStore) return false;
+
   try {
-    await SecureStore.setItemAsync(name, value, {
-      keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+    await secureStore.setItemAsync(name, value, {
+      keychainAccessible: secureStore.AFTER_FIRST_UNLOCK,
     });
     return true;
   } catch {
@@ -117,8 +163,11 @@ async function secureSet(name: string, value: string): Promise<boolean> {
 }
 
 async function secureDelete(name: string): Promise<void> {
+  const secureStore = getSecureStore();
+  if (!secureStore) return;
+
   try {
-    await SecureStore.deleteItemAsync(name);
+    await secureStore.deleteItemAsync(name);
   } catch {
     // Ignore — callers still fall through to other stores.
   }

@@ -1,5 +1,10 @@
-import * as SecureStore from "expo-secure-store";
 import { createJSONStorage, type StateStorage } from "zustand/middleware";
+
+type SecureStoreLike = {
+  getItemAsync: (key: string) => Promise<string | null>;
+  setItemAsync: (key: string, value: string) => Promise<void>;
+  deleteItemAsync: (key: string) => Promise<void>;
+};
 
 type AsyncStorageLike = {
   getItem: (name: string) => Promise<string | null>;
@@ -7,9 +12,44 @@ type AsyncStorageLike = {
   removeItem: (name: string) => Promise<void>;
 };
 
+let cachedSecureStore: SecureStoreLike | null | undefined;
 let cachedAsyncStorage: AsyncStorageLike | null | undefined;
 
+function getSecureStore(): SecureStoreLike | null {
+  if (process.env.HUNGRY_DISABLE_SECURE_STORE === "1") {
+    cachedSecureStore = null;
+    return cachedSecureStore;
+  }
+
+  if (cachedSecureStore !== undefined) {
+    return cachedSecureStore;
+  }
+
+  try {
+    const moduleRef = require("expo-secure-store") as SecureStoreLike;
+    if (
+      moduleRef &&
+      typeof moduleRef.getItemAsync === "function" &&
+      typeof moduleRef.setItemAsync === "function" &&
+      typeof moduleRef.deleteItemAsync === "function"
+    ) {
+      cachedSecureStore = moduleRef;
+      return cachedSecureStore;
+    }
+  } catch {
+    // Native module is not available in this runtime.
+  }
+
+  cachedSecureStore = null;
+  return cachedSecureStore;
+}
+
 function getAsyncStorage(): AsyncStorageLike | null {
+  if (process.env.HUNGRY_DISABLE_ASYNC_STORAGE === "1") {
+    cachedAsyncStorage = null;
+    return cachedAsyncStorage;
+  }
+
   if (cachedAsyncStorage !== undefined) {
     return cachedAsyncStorage;
   }
@@ -50,8 +90,9 @@ const memoryStorage: StateStorage = {
 
 const secureStateStorage: StateStorage = {
   getItem: async (name) => {
+    const secureStore = getSecureStore();
     try {
-      const secureValue = await SecureStore.getItemAsync(name);
+      const secureValue = secureStore ? await secureStore.getItemAsync(name) : null;
       if (secureValue !== null) {
         return secureValue;
       }
@@ -65,7 +106,9 @@ const secureStateStorage: StateStorage = {
         const legacyValue = await asyncStorage.getItem(name);
         if (legacyValue !== null) {
           try {
-            await SecureStore.setItemAsync(name, legacyValue);
+            if (secureStore) {
+              await secureStore.setItemAsync(name, legacyValue);
+            }
             await asyncStorage.removeItem(name);
           } catch {
             // Keep legacy value readable even if migration write fails.
@@ -80,9 +123,12 @@ const secureStateStorage: StateStorage = {
     return memoryStorage.getItem(name);
   },
   setItem: async (name, value) => {
+    const secureStore = getSecureStore();
     try {
-      await SecureStore.setItemAsync(name, value);
-      return;
+      if (secureStore) {
+        await secureStore.setItemAsync(name, value);
+        return;
+      }
     } catch {
       // Fall through to legacy and in-memory writes.
     }
@@ -100,8 +146,11 @@ const secureStateStorage: StateStorage = {
     await memoryStorage.setItem(name, value);
   },
   removeItem: async (name) => {
+    const secureStore = getSecureStore();
     try {
-      await SecureStore.deleteItemAsync(name);
+      if (secureStore) {
+        await secureStore.deleteItemAsync(name);
+      }
     } catch {
       // Continue cleanup across fallback stores.
     }
