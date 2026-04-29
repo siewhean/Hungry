@@ -1,13 +1,13 @@
 # Security Audit Report — Hungry Mobile
 
-Date: 2026-04-29
+Date: 2026-04-30
 Scope: mobile app, Supabase backend, and mobile-root CI only. Web app and non-mobile package surfaces are excluded.
 
 ## Summary
 
 - Status: mobile security remediation applied for secret containment, Supabase OCR authorization, storage policies, auth-token storage fallback, analytics privacy scrubbing, allowlisted external links, and root CI/security gates.
 - Current policy alignment: `SECURITY.md` now reflects implemented controls instead of claiming unimplemented certificate pinning or dashboard-only settings.
-- Required owner action remains: rotate exposed credentials and enable Supabase leaked-password protection (`SEC-01`).
+- Required owner action remains: rotate exposed credentials. Supabase leaked-password protection (`SEC-01`) is blocked until a paid Supabase plan is available.
 
 ## Findings & Remediation
 
@@ -69,17 +69,23 @@ Scope: mobile app, Supabase backend, and mobile-root CI only. Web app and non-mo
 
 ## Verification Run
 
-- `git ls-files .env.local`: pass; no current index entry for `.env.local`. `HEAD` still contains the prior file until the staged deletion is committed.
+- `git ls-files .env.local`: pass; no current index entry for `.env.local`.
 - `npm audit --audit-level=moderate`: pass; `found 0 vulnerabilities`.
 - `npm run typecheck`: pass.
 - `npm run test`: pass; 97 tests, 95 pass, 2 skipped.
 - `npm_config_cache=/tmp/hungry-npm-cache npx expo-doctor`: pass; 17/17 checks.
-- `gitleaks detect --redact --source .`: blocked locally because the `gitleaks` binary is not installed. Pre-commit and CI configuration were added.
+- `brew install gitleaks libpq`: pass; local `gitleaks` and `psql` tooling installed.
+- `gitleaks protect --staged --redact`: pass; no staged leaks found.
+- `gitleaks detect --redact --source .`: fail; 13 historical redacted findings remain in prior commits for `.env.local`, `ios/sentry.properties`, roadmap docs, and Figma concept README.
+- `gitleaks detect --redact --source . --no-git`: fail; 50 local working-tree findings, mostly untracked/ignored `.env.local`, `.claude/worktrees`, web build cache, Pods signatures, and archived design/docs false positives. These are not clean-checkout CI-equivalent.
+- `supabase db push --dry-run`: pass; only `0016_mobile_storage_security.sql` would apply.
+- `supabase db push --yes`: pass; applied migration `0016` to the linked Supabase project.
+- `psql -f supabase/smoke/mobile_storage_policies.sql`: pass; remote now has all four mobile buckets, 17 storage policies, and hardened `submit_menu_photo` prefix validation.
 
 ## Residual Risks / Follow-ups
 
 1. Rotate exposed credentials outside the repo; code cannot perform provider rotation.
-2. Enable Supabase leaked-password protection in the dashboard (`SEC-01`).
+2. Enable Supabase leaked-password protection in the dashboard (`SEC-01`) after upgrading to a paid Supabase plan.
 3. Remove iOS local-network development config from production native builds before public launch.
 4. Certificate/SPKI pinning is not implemented; `SECURITY.md` now documents standard TLS/ATS only.
-5. Live Supabase smoke checks require a linked DB and `SUPABASE_DB_URL`.
+5. Historical gitleaks findings will continue failing full-history scans until credentials are rotated and history is rewritten or findings are explicitly accepted/ignored.

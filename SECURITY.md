@@ -44,14 +44,14 @@ Out of scope: any separate marketing website, unrelated Anthropic products menti
 
 ### Authentication
 - Client-side password validation requires a minimum of 12 characters with uppercase, lowercase, digit, and special-character checks.
-- Supabase leaked-password protection is required before public launch and tracked as `SEC-01`; it must be enabled in the dashboard because it is not repo-configurable.
+- Supabase leaked-password protection is required before public launch and tracked as `SEC-01`; it must be enabled in the dashboard because it is not repo-configurable. As of 2026-04-30, this is blocked on the current Supabase plan because the control is paid.
 - Biometric re-authentication for destructive actions is not currently implemented and remains a pre-launch hardening item.
 
 ## Secret Handling
 
 - Tracked `.env.*` template files must contain only public placeholders or blank secret keys. Real server-only secrets (`SUPABASE_SERVICE_ROLE_KEY`, `MAPBOX_SECRET_TOKEN`, `SENTRY_AUTH_TOKEN`, `EXPO_TOKEN`, `SUPABASE_DB_PASSWORD`) live only in EAS Secrets and untracked local `.env.local`.
 - A `gitleaks` pre-commit hook and CI security workflow gate pushes that would introduce a leak.
-- 2026-04-29 incident note: `.env.local` had been tracked with live values. It has been staged for removal from git tracking in this work session; the deletion is durable after commit, and all exposed credentials must be rotated outside the repo.
+- 2026-04-29 incident note: `.env.local` had been tracked with live values. It has been removed from current git tracking, and all exposed credentials must be rotated outside the repo. Full-history `gitleaks detect --redact --source .` still reports historical redacted findings until history is rewritten or accepted.
 - Rotate credentials immediately if a leak is suspected: service role key, Mapbox secret, Sentry auth token, Expo token, and Apple ASC API key are all rotated under a documented schedule.
 - Public tokens (Supabase anon key, Mapbox public token, PostHog public key, Sentry DSN) are restricted per-platform: Mapbox by bundle identifier and URL, Supabase anon by RLS coverage.
 
@@ -89,5 +89,5 @@ The following Supabase Security Advisor items are currently accepted with docume
 Non-accepted (must fix):
 
 - `Leaked Password Protection Disabled` (Auth)
-  - Status: Action required in Supabase dashboard.
-  - Required action: Enable leaked password protection under Authentication password security settings.
+  - Status: Blocked on current Supabase plan.
+  - Required action: Enable leaked password protection under Authentication password security settings after upgrading to a paid plan.

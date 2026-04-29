@@ -30,7 +30,15 @@
 | 2026-04-29 | app security (SEC-04) | `npm run typecheck` | Pass | TypeScript strict gate passed after security remediation |
 | 2026-04-29 | app security (SEC-04) | `npm run test` | Pass | 97 tests: 95 pass, 2 skipped |
 | 2026-04-29 | app security (SEC-04) | `npm_config_cache=/tmp/hungry-npm-cache npx expo-doctor` | Pass | 17/17 checks passed; local `.env.local` still loads in Expo Doctor but is no longer tracked |
-| 2026-04-29 | app security (SEC-04) | `gitleaks detect --redact --source .` | Blocked | `gitleaks` binary not installed locally; CI/pre-commit config added |
+| 2026-04-30 | app security (SEC-04) | `brew install gitleaks libpq` | Pass | Installed local `gitleaks` and Homebrew `libpq`/`psql` tooling |
+| 2026-04-30 | app security (SEC-04) | `gitleaks protect --staged --redact` | Pass | No staged leaks found |
+| 2026-04-30 | app security (SEC-04) | `gitleaks detect --redact --source .` | Fail | 13 historical redacted findings: prior `.env.local`, `ios/sentry.properties`, roadmap docs, and Figma concept README commits |
+| 2026-04-30 | app security (SEC-04) | `gitleaks detect --redact --source . --no-git` | Fail | 50 local working-tree findings, mostly untracked/ignored `.env.local`, `.claude/worktrees`, web build cache, Pods signatures, and archived design/docs false positives |
+| 2026-04-30 | app security (SEC-04) | `npm_config_cache=/tmp/hungry-npm-cache npx expo-doctor` | Pass | 17/17 checks passed |
+| 2026-04-30 | app security (SEC-04) | `supabase db push --dry-run` | Pass | Would apply only `0016_mobile_storage_security.sql` |
+| 2026-04-30 | app security (SEC-04) | `supabase db push --yes` | Pass | Applied `0016_mobile_storage_security.sql` to linked Supabase project |
+| 2026-04-30 | app security (SEC-04) | `psql -f supabase/smoke/mobile_storage_policies.sql` | Pass | Remote has four mobile buckets, 17 storage policies, and hardened `submit_menu_photo` prefix validation |
+| 2026-04-30 | security (SEC-01) | Supabase Auth leaked-password protection | Blocked | User confirmed feature is unavailable on current paid-plan tier |
 
 ## Outstanding Verification
 
@@ -39,3 +47,4 @@
 | OCR-DG-01 | Sprint 10 OCR | Staging photo upload to `dishes_draft` within 30s | Codex |
 | WEB-11 | Marketing deploy | Preview + production deploy evidence | Codex + User |
 | ACCDEL-01 | Privacy/Legal | External public account deletion web endpoint + in-app/store policy link evidence | User |
+| SEC-01 | Security | Supabase leaked-password protection enabled in dashboard | User; blocked until paid Supabase plan is available |
