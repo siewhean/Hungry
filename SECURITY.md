@@ -36,11 +36,13 @@ Out of scope: any separate marketing website, unrelated Anthropic products menti
 - Every Supabase table has Row-Level Security enabled. Catalog content is `public_select`; all user-scoped rows require `auth.uid() = user_id` for reads and writes.
 - Storage bucket policies gate mobile writes by authenticated user UUID prefix. Mobile media buckets are provisioned in migrations, and app uploads require signed upload URLs.
 - Edge Functions use explicit CORS handling. `guest-sessions` is API-key protected with per-device rate limiting and SHA-256 token hashing. `ingest-menu-photo` requires a valid Supabase JWT and verifies submission ownership before service-role OCR work.
+- Account deletion requests, UGC content reports, and user blocks are written to RLS-protected Supabase tables for store-policy compliance and moderation follow-up.
 
 ### Privacy
 - `ios/Hungry/PrivacyInfo.xcprivacy` enumerates every collected data type with linkage and non-tracking declarations.
 - Google Play Data Safety mirrors the iOS declaration.
 - Sentry and PostHog events pass through shared scrubbers that strip email, phone numbers, token-like values, query strings, and reduce retained coordinates to three decimal places. PostHog identification uses the Supabase user UUID.
+- Location permission is preceded by an in-app disclosure and can be skipped in favor of manual area selection.
 
 ### Authentication
 - Client-side password validation requires a minimum of 12 characters with uppercase, lowercase, digit, and special-character checks.

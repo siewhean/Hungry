@@ -5,7 +5,10 @@ import test from "node:test";
 
 import { sanitizeAnalyticsProperties } from "@/lib/analytics/privacy";
 import { __internal as authStorageInternal } from "@/lib/services/supabase/authStorage";
-import { assertValidMenuPhotoUpload, uploadImageFromUri } from "@/lib/services/supabase/mediaUpload";
+import {
+  assertValidMenuPhotoUpload,
+  uploadImageFromUri,
+} from "@/lib/services/supabase/mediaUpload";
 
 function readRepoFile(pathFromRepoRoot: string): string {
   return readFileSync(resolve(process.cwd(), pathFromRepoRoot), "utf8");
@@ -97,4 +100,30 @@ test("ingest-menu-photo requires auth and verifies submission ownership", () => 
   assert.match(source, /forbidden_submission/);
   assert.match(source, /INGEST_MENU_PHOTO_ALLOWED_ORIGINS/);
   assert.doesNotMatch(source, /"Access-Control-Allow-Origin": "\*"/);
+});
+
+test("store policy controls cover account deletion, UGC moderation, and location disclosure", () => {
+  const migration = readRepoFile("supabase/migrations/0017_store_policy_safety_controls.sql");
+  const serviceTypes = readRepoFile("src/lib/services/types.ts");
+  const supabaseService = readRepoFile("src/lib/services/supabase/supabaseService.ts");
+  const safetyHelper = readRepoFile("src/lib/security/communitySafety.ts");
+  const locationScreen = readRepoFile("src/app/screens/onboarding/LocationPermissionScreen.tsx");
+  const appConfig = readRepoFile("app.json");
+
+  assert.match(migration, /account_deletion_requests/);
+  assert.match(migration, /content_reports/);
+  assert.match(migration, /user_blocks/);
+  assert.match(migration, /enable row level security/);
+  assert.match(serviceTypes, /communitySafety/);
+  assert.match(supabaseService, /account_deletion_requests/);
+  assert.match(supabaseService, /content_reports/);
+  assert.match(supabaseService, /user_blocks/);
+  assert.match(safetyHelper, /promptReportReview/);
+  assert.match(safetyHelper, /promptBlockReviewAuthor/);
+  assert.match(
+    locationScreen,
+    /Hungry collects your approximate device location only while you use the app/,
+  );
+  assert.doesNotMatch(appConfig, /NSLocalNetworkUsageDescription/);
+  assert.doesNotMatch(appConfig, /NSBonjourServices/);
 });
