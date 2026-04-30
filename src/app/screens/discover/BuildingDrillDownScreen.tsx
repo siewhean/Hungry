@@ -7,7 +7,7 @@ import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@g
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { FloorPlanViewer } from "@/components/map/FloorPlanViewer";
-import { AppText, Button, Input } from "@/components/ui";
+import { AppText, Button, IconButton, Input } from "@/components/ui";
 import { getBuildingVenues } from "@/features/discovery/discovery";
 import { getDirectoryDescriptor } from "@/features/discovery/venueDescriptor";
 import { getFloorPlan } from "@/lib/geo/floorPlans";
@@ -253,26 +253,23 @@ function StatusBadge({ status }: { status: VenueStatus }) {
   );
 }
 
-function ZoomControlButton({ onPress, children }: { onPress: () => void; children: ReactNode }) {
-  const { palette, radii } = useHungryTheme();
-
+function ZoomControlButton({
+  onPress,
+  children,
+  accessibilityLabel,
+}: {
+  onPress: () => void;
+  children: ReactNode;
+  accessibilityLabel: string;
+}) {
   return (
-    <Pressable
-      accessibilityRole="button"
+    <IconButton
+      variant="surface"
+      size={44}
+      accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      style={{
-        alignItems: "center",
-        backgroundColor: palette.surface,
-        borderColor: palette.border,
-        borderRadius: radii.pill,
-        borderWidth: 1,
-        height: 44,
-        justifyContent: "center",
-        width: 44,
-      }}
-    >
-      {children}
-    </Pressable>
+      icon={children}
+    />
   );
 }
 
@@ -585,13 +582,22 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                     shadows.floating,
                   ]}
                 >
-                  <ZoomControlButton onPress={zoomOutDirectory}>
+                  <ZoomControlButton
+                    accessibilityLabel="Zoom out directory"
+                    onPress={zoomOutDirectory}
+                  >
                     <Minus color={palette.navy} size={15} />
                   </ZoomControlButton>
-                  <ZoomControlButton onPress={resetDirectoryZoom}>
+                  <ZoomControlButton
+                    accessibilityLabel="Reset directory zoom"
+                    onPress={resetDirectoryZoom}
+                  >
                     <RotateCcw color={palette.navy} size={14} />
                   </ZoomControlButton>
-                  <ZoomControlButton onPress={zoomInDirectory}>
+                  <ZoomControlButton
+                    accessibilityLabel="Zoom in directory"
+                    onPress={zoomInDirectory}
+                  >
                     <Plus color={palette.navy} size={15} />
                   </ZoomControlButton>
                   <AppText variant="micro" style={{ color: palette.textMuted }}>

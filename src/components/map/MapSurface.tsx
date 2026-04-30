@@ -8,7 +8,9 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
+import { Image } from "expo-image";
 import MapboxGL from "@rnmapbox/maps";
+import { Utensils } from "lucide-react-native";
 
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { BuildingType, Coordinate } from "@/types/domain";
@@ -26,6 +28,7 @@ export interface MapSurfaceMarker {
   coordinate: Coordinate;
   accent?: string;
   type?: BuildingType;
+  isTrending?: boolean;
 }
 
 interface MapSurfaceProps extends PropsWithChildren {
@@ -97,15 +100,61 @@ function MarkerVisual({
   selected,
   type,
   zoomLevel = 15,
+  isTrending,
 }: {
   label: string;
   accent: string;
   selected: boolean;
   type?: BuildingType;
   zoomLevel?: number;
+  isTrending?: boolean;
 }) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const showLabel = selected || zoomLevel >= 15.5;
+
+  if (isTrending) {
+    return (
+      <View style={{ alignItems: "center", gap: spacing[1] }}>
+        <View
+          style={[
+            {
+              width: 56,
+              height: 56,
+              borderRadius: radii.lg,
+              borderWidth: 3,
+              borderColor: palette.orange,
+              backgroundColor: palette.surface,
+              overflow: "hidden",
+            },
+            shadows.floating,
+          ]}
+        >
+          <Image
+            source="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=120&q=80"
+            style={{ flex: 1 }}
+            contentFit="cover"
+          />
+        </View>
+        {showLabel && (
+          <View
+            style={{
+              backgroundColor: palette.surface,
+              borderColor: palette.orange,
+              borderRadius: radii.pill,
+              borderWidth: 1,
+              paddingHorizontal: spacing[2],
+              paddingVertical: 4,
+              ...shadows.floating,
+            }}
+          >
+            <AppText variant="micro" style={{ color: palette.text, fontWeight: "800" }}>
+              {label}
+            </AppText>
+          </View>
+        )}
+      </View>
+    );
+  }
 
   if (type) {
     return <BuildingPin name={label} type={type} selected={selected} />;
@@ -122,18 +171,12 @@ function MarkerVisual({
             borderRadius: radii.md,
             width: selected ? 44 : 36,
             height: selected ? 44 : 36,
+            transform: [],
           },
           selected ? shadows.floating : undefined,
         ]}
       >
-        <View
-          style={{
-            backgroundColor: palette.surface,
-            borderRadius: radii.pill,
-            width: 12,
-            height: 12,
-          }}
-        />
+        <Utensils size={selected ? 24 : 18} color={palette.surface} />
       </View>
       {showLabel ? (
         <View
@@ -344,6 +387,7 @@ function FallbackMap({
               accent={marker.accent ?? palette.orange}
               selected={marker.id === selectedMarkerId}
               type={marker.type}
+              isTrending={marker.isTrending}
             />
           </Pressable>
         );
@@ -423,7 +467,7 @@ export function MapSurface({
     >
       <MapboxGL.MapView
         style={styles.map}
-        styleURL={MapboxGL.StyleURL.Street}
+        styleURL="mapbox://styles/mapbox/streets-v12"
         attributionEnabled={false}
         compassEnabled={false}
         logoEnabled={false}
@@ -470,6 +514,7 @@ export function MapSurface({
                 selected={marker.id === selectedMarkerId}
                 type={marker.type}
                 zoomLevel={zoomLevel}
+                isTrending={marker.isTrending}
               />
             </Pressable>
           </MapboxGL.MarkerView>

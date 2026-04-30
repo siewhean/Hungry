@@ -9,6 +9,11 @@
  */
 
 import type { FloorPlan, StallPolygon } from "@/lib/services/types";
+import {
+  adaptFloorPlanSourceToFloorPlan,
+  floorPlanSourceRegistry,
+} from "@/lib/geo/floorPlanSources";
+import { MAXWELL_L1_FLOOR_PLAN } from "@/lib/geo/maxwell_floorplan";
 
 // ─── Helper: generate a simple rectangular stall grid ──────────────────────
 
@@ -2515,9 +2520,9 @@ export const floorPlans: Record<string, FloorPlan> = {
   "hc-maxwell:L1": {
     buildingId: "hc-maxwell",
     floor: "L1",
-    canvasWidth: 730,
-    canvasHeight: 244,
-    stalls: maxwellL1Stalls,
+    canvasWidth: MAXWELL_L1_FLOOR_PLAN.canvasWidth,
+    canvasHeight: MAXWELL_L1_FLOOR_PLAN.canvasHeight,
+    stalls: MAXWELL_L1_FLOOR_PLAN.stalls,
   },
   "hc-maxwell:L2": {
     buildingId: "hc-maxwell",
@@ -2617,6 +2622,11 @@ export function getFloorPlan(
   totalStalls = 12,
 ): FloorPlan {
   const key = `${buildingId}:${floor}`;
+  const directSource = floorPlanSourceRegistry[key];
+  if (directSource) {
+    return adaptFloorPlanSourceToFloorPlan(directSource, buildingId);
+  }
+
   const direct = floorPlans[key];
   if (direct) {
     return direct;
@@ -2624,6 +2634,11 @@ export function getFloorPlan(
 
   const aliasIds = FLOOR_PLAN_BUILDING_ALIASES[buildingId] ?? [];
   for (const aliasId of aliasIds) {
+    const sourceAlias = floorPlanSourceRegistry[`${aliasId}:${floor}`];
+    if (sourceAlias) {
+      return adaptFloorPlanSourceToFloorPlan(sourceAlias, buildingId);
+    }
+
     const aliasPlan = floorPlans[`${aliasId}:${floor}`];
     if (aliasPlan) {
       return {

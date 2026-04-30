@@ -1,0 +1,163 @@
+{
+  "schemaVersion": "floorplan-validation-report.v1",
+  "buildingId": "hc-maxwell",
+  "floor": "L2",
+  "inputCandidateCount": 45,
+  "validatedCount": 25,
+  "unresolvedCount": 20,
+  "hardFailOverlapPairs": 6,
+  "profile": "floorplan_pdf",
+  "thresholds": {
+    "autoAccept": 0.74,
+    "manualReview": 0.52
+  },
+  "unresolved": [
+    {
+      "id": "poly-001",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4302
+    },
+    {
+      "id": "poly-002",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-004",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-020",
+      "reasons": [
+        "self_intersection"
+      ],
+      "confidence": 0.5412
+    },
+    {
+      "id": "poly-023",
+      "reasons": [
+        "self_intersection"
+      ],
+      "confidence": 0.5499999999999999
+    },
+    {
+      "id": "poly-027",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-030",
+      "reasons": [
+        "self_intersection"
+      ],
+      "confidence": 0.7969999999999999
+    },
+    {
+      "id": "poly-058",
+      "reasons": [
+        "self_intersection"
+      ],
+      "confidence": 0.746
+    },
+    {
+      "id": "poly-076",
+      "reasons": [
+        "self_intersection"
+      ],
+      "confidence": 0.7969999999999999
+    },
+    {
+      "id": "poly-093",
+      "reasons": [
+        "self_intersection",
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-102",
+      "reasons": [
+        "self_intersection"
+      ],
+      "confidence": 0.5412
+    },
+    {
+      "id": "poly-106",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-109",
+      "reasons": [
+        "self_intersection"
+      ],
+      "confidence": 0.7969999999999999
+    },
+    {
+      "id": "poly-110",
+      "reasons": [
+        "self_intersection"
+      ],
+      "confidence": 0.746
+    },
+    {
+      "id": "poly-094::poly-096",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-094::poly-097",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-094::poly-099",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-094::poly-100",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-113::poly-114",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-119::poly-120",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    }
+  ]
+}

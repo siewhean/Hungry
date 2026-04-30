@@ -1,0 +1,322 @@
+{
+  "schemaVersion": "floorplan-validation-report.v1",
+  "buildingId": "hc-maxwell",
+  "floor": "L2",
+  "inputCandidateCount": 90,
+  "validatedCount": 48,
+  "unresolvedCount": 42,
+  "hardFailOverlapPairs": 26,
+  "profile": "floorplan_pdf",
+  "thresholds": {
+    "autoAccept": 0.74,
+    "manualReview": 0.52
+  },
+  "unresolved": [
+    {
+      "id": "poly-004",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-010",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4302
+    },
+    {
+      "id": "poly-013",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4302
+    },
+    {
+      "id": "poly-016",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-040",
+      "reasons": [
+        "area_too_large"
+      ],
+      "confidence": 0.5499999999999999
+    },
+    {
+      "id": "poly-047",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-048",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-060",
+      "reasons": [
+        "self_intersection"
+      ],
+      "confidence": 0.746
+    },
+    {
+      "id": "poly-107",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-108",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-127",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-130",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-136",
+      "reasons": [
+        "area_too_large"
+      ],
+      "confidence": 0.5499999999999999
+    },
+    {
+      "id": "poly-166",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-167",
+      "reasons": [
+        "area_too_large"
+      ],
+      "confidence": 0.5499999999999999
+    },
+    {
+      "id": "poly-185",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-035::poly-037",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-035::poly-038",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-035::poly-039",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-042::poly-044",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-045::poly-046",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-050::poly-053",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-057::poly-059",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-064::poly-065",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-066::poly-067",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-080::poly-082",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-080::poly-085",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-091::poly-093",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-096::poly-097",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-096::poly-098",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-096::poly-099",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-104::poly-106",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-117::poly-118",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-124::poly-125",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-124::poly-126",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-124::poly-128",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-124::poly-129",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-131::poly-132",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-131::poly-133",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-131::poly-134",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-144::poly-145",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    },
+    {
+      "id": "poly-146::poly-147",
+      "reasons": [
+        "overlap_hard_fail"
+      ],
+      "overlapRatio": 1.0
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "floorplan-raw-polygons.v1",
+  "buildingId": "hc-maxwell",
+  "floor": "L1",
+  "canvas": {
+    "width": 1000,
+    "height": 700
+  },
+  "inputRectifiedPath": "data/floorplans/hc-maxwell/tmp_page0/L1.rectified.png",
+  "debug": {
+    "contoursTotal": 1,
+    "kept": 0,
+    "dropped": 1
+  },
+  "candidates": []
+}

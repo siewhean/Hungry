@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "floorplan-mapping-report.v1",
+  "buildingId": "hc-maxwell",
+  "floor": "L1",
+  "tenantCount": 11,
+  "mappedCount": 11,
+  "mappingCoverage": 1.0,
+  "unresolved": []
+}

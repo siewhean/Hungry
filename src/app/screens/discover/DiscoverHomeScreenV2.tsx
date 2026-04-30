@@ -19,7 +19,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Chip, Screen, Card, Skeleton } from "@/components/ui";
+import { AppText, Chip, Screen, Card, IconButton, Skeleton } from "@/components/ui";
 import { DecideForMeCard } from "@/components/discover/DecideForMeCard";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
@@ -148,19 +148,12 @@ export function DiscoverHomeScreenV2() {
             {discoverLocationLabel} · {discoverNearbyCount} stalls nearby
           </AppText>
         </View>
-        <Pressable
+        <IconButton
+          variant="surface"
+          accessibilityLabel="Open map"
           onPress={() => navigation.navigate("DiscoverMap")}
-          style={{
-            width: 44,
-            height: 44,
-            backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.1)" : palette.infoSoft,
-            borderRadius: radii.md,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Map color={themeTints.isDark ? palette.white : palette.navy} size={20} />
-        </Pressable>
+          icon={<Map color={palette.orange} size={20} />}
+        />
       </View>
 
       <ScrollView
@@ -171,17 +164,18 @@ export function DiscoverHomeScreenV2() {
         <View style={{ paddingHorizontal: spacing[4], marginTop: spacing[2] }}>
           <Pressable
             onPress={() => navigation.navigate("SearchHomeV2")}
-            style={{
+            style={({ pressed }) => ({
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: palette.bgSoft,
+              backgroundColor: pressed ? palette.surfaceRaised : palette.bgSoft,
               borderWidth: 1,
               borderColor: palette.border,
               borderRadius: radii.pill,
               height: 52,
               paddingHorizontal: spacing[4],
               gap: spacing[3],
-            }}
+              transform: [{ scale: pressed ? 0.99 : 1 }],
+            })}
           >
             <Search color={palette.textMuted} size={18} />
             <AppText style={{ flex: 1, color: palette.textMuted }}>
@@ -235,15 +229,16 @@ export function DiscoverHomeScreenV2() {
         >
           <Pressable
             onPress={() => navigation.navigate("SearchResults")}
-            style={{
+            style={({ pressed }) => ({
               flex: 1,
-              backgroundColor: palette.bgSoft,
+              backgroundColor: pressed ? palette.surfaceRaised : palette.bgSoft,
               borderRadius: radii.lg,
               padding: spacing[4],
               gap: spacing[2],
               borderWidth: 1,
               borderColor: palette.border,
-            }}
+              transform: [{ scale: pressed ? 0.99 : 1 }],
+            })}
           >
             <View
               style={{
@@ -267,15 +262,16 @@ export function DiscoverHomeScreenV2() {
 
           <Pressable
             onPress={() => navigation.navigate("SearchHomeV2")}
-            style={{
+            style={({ pressed }) => ({
               flex: 1,
-              backgroundColor: palette.bgSoft,
+              backgroundColor: pressed ? palette.surfaceRaised : palette.bgSoft,
               borderRadius: radii.lg,
               padding: spacing[4],
               gap: spacing[2],
               borderWidth: 1,
               borderColor: palette.border,
-            }}
+              transform: [{ scale: pressed ? 0.99 : 1 }],
+            })}
           >
             <View
               style={{
