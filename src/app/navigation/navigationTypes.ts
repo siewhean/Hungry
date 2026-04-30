@@ -53,10 +53,23 @@ export type MainTabParamList = {
 };
 
 export type MerchantTabParamList = {
+  // Section landing pages
   Dashboard: undefined;
   Menu: undefined;
   Analytics: undefined;
   Profile: undefined;
+  // Extended sections
+  VerificationCentre: undefined;
+  HomeBasedVerification: undefined;
+  BusinessProfileEditor: undefined;
+  DishEditor: { dishId?: string } | undefined;
+  OCRDrafts: undefined;
+  CustomerInbox: undefined;
+  PromotionBuilder: { promotionId?: string } | undefined;
+  PromotionList: undefined;
+  AIAssistant: undefined;
+  OrdersComingSoon: undefined;
+  MerchantSettings: undefined;
 };
 
 export type RootStackParamList = {

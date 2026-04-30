@@ -18,6 +18,62 @@ import {
 
 import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { useProfileStore } from "@/store/useProfileStore";
+import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
+import { OutletSwitcher } from "@/components/merchant/OutletSwitcher";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
+import { useState } from "react";
+
+// ─── Segmented Control ────────────────────────────────────────────────────────
+
+function DateRangeSelector({
+  selected,
+  onSelect,
+}: {
+  selected: "Today" | "7 Days" | "30 Days";
+  onSelect: (val: "Today" | "7 Days" | "30 Days") => void;
+}) {
+  const { palette, spacing, radii } = useHungryTheme();
+  const options = ["Today", "7 Days", "30 Days"] as const;
+
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        backgroundColor: palette.surface,
+        borderRadius: radii.pill,
+        padding: 4,
+        borderWidth: 1,
+        borderColor: palette.border,
+      }}
+    >
+      {options.map((opt) => (
+        <Pressable
+          key={opt}
+          onPress={() => onSelect(opt)}
+          style={{
+            flex: 1,
+            paddingVertical: spacing[2],
+            alignItems: "center",
+            backgroundColor: selected === opt ? palette.orange : "transparent",
+            borderRadius: radii.pill,
+          }}
+        >
+          <AppText
+            variant="bodySmallBold"
+            style={{
+              color: selected === opt ? palette.white : palette.textSecondary,
+            }}
+          >
+            {opt}
+          </AppText>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
 
 // ─── Dashboard Card ──────────────────────────────────────────────────────────
 
@@ -48,7 +104,7 @@ function MetricCard({ title, value, subtext, icon, color }: any) {
         <AppText variant="bodySmallBold" style={{ color: palette.textSecondary }}>
           {title}
         </AppText>
-        <AppText variant="micro" tone="muted">
+        <AppText variant="micro" style={{ color: palette.success, marginTop: 4 }}>
           {subtext}
         </AppText>
       </View>
@@ -56,25 +112,102 @@ function MetricCard({ title, value, subtext, icon, color }: any) {
   );
 }
 
+// ─── Action Card ─────────────────────────────────────────────────────────────
+
+function ActionCard({ title, description, icon, actionText, onPress, isUrgent = false }: any) {
+  const { palette, spacing, radii } = useHungryTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        {
+          backgroundColor: isUrgent ? palette.amber + "10" : palette.surface,
+          borderRadius: radii.xl,
+          padding: spacing[4],
+          borderWidth: 1,
+          borderColor: isUrgent ? palette.amber : palette.border,
+          flexDirection: "row",
+          gap: spacing[3],
+          opacity: pressed ? 0.8 : 1,
+        },
+      ]}
+    >
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: isUrgent ? palette.amber + "20" : palette.bgSoft,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {icon}
+      </View>
+      <View style={{ flex: 1 }}>
+        <AppText variant="bodyBold" style={{ color: palette.text }}>
+          {title}
+        </AppText>
+        <AppText variant="bodySmall" style={{ color: palette.textSecondary, marginTop: 2 }}>
+          {description}
+        </AppText>
+        <View style={{ flexDirection: "row", alignItems: "center", marginTop: spacing[2], gap: 4 }}>
+          <AppText
+            variant="bodySmallBold"
+            style={{ color: isUrgent ? palette.amber : palette.orange }}
+          >
+            {actionText}
+          </AppText>
+          <ChevronRight size={14} color={isUrgent ? palette.amber : palette.orange} />
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
 // ─── MerchantDashboardScreen ──────────────────────────────────────────────────
 
 export function MerchantDashboardScreen() {
   const { palette, spacing, radii } = useHungryTheme();
+  const profile = useProfileStore((state) => state.profile);
+  const activeOutlet = useMerchantStore(getActiveOutlet);
+  const navigation = useNavigation<NativeStackNavigationProp<MerchantTabParamList>>();
+
+  const [dateRange, setDateRange] = useState<"Today" | "7 Days" | "30 Days">("Today");
+
+  // Mock data based on dateRange
+  const views = dateRange === "Today" ? "1,284" : dateRange === "7 Days" ? "8,432" : "34,291";
+  const viewsSubtext =
+    dateRange === "Today"
+      ? "+12% from yesterday"
+      : dateRange === "7 Days"
+        ? "+5% from last week"
+        : "+18% from last month";
+
+  const rating = dateRange === "Today" ? "4.8" : dateRange === "7 Days" ? "4.7" : "4.8";
+  const ratingSubtext =
+    dateRange === "Today"
+      ? "2 new reviews"
+      : dateRange === "7 Days"
+        ? "14 new reviews"
+        : "42 new reviews";
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
       <ScrollView contentContainerStyle={{ padding: spacing[4], gap: spacing[6] }}>
         {/* Header */}
         <View
-          style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+          }}
         >
-          <View>
+          <View style={{ flex: 1, alignItems: "flex-start", gap: spacing[2] }}>
             <AppText variant="h1" style={{ fontWeight: "900" }}>
-              Hello, Uncle Tan!
+              Hello, {profile.displayName.split(" ")[0]}!
             </AppText>
-            <AppText variant="body" tone="muted">
-              Wonton Mee Stall #01-12
-            </AppText>
+            <OutletSwitcher />
           </View>
           <View
             style={{
@@ -91,31 +224,38 @@ export function MerchantDashboardScreen() {
         </View>
 
         {/* Status Badge */}
-        <View
-          style={{
-            backgroundColor: palette.successSoft,
-            padding: spacing[3],
-            borderRadius: radii.lg,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: spacing[2],
-          }}
-        >
+        {activeOutlet?.verification.status === "verified" ? (
           <View
-            style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: palette.success }}
-          />
-          <AppText variant="bodySmallBold" style={{ color: palette.success }}>
-            STALL IS LIVE & DISCOVERABLE
-          </AppText>
-        </View>
+            style={[
+              {
+                backgroundColor: palette.successSoft,
+                padding: spacing[3],
+                borderRadius: radii.lg,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacing[2],
+              },
+            ]}
+          >
+            <View
+              style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: palette.success }}
+            />
+            <AppText variant="bodySmallBold" style={{ color: palette.success, flex: 1 }}>
+              STALL IS LIVE & DISCOVERABLE
+            </AppText>
+          </View>
+        ) : null}
+
+        {/* Date Range Selector */}
+        <DateRangeSelector selected={dateRange} onSelect={setDateRange} />
 
         {/* Primary Metrics */}
         <View style={{ flexDirection: "row", gap: spacing[4] }}>
           <View style={{ flex: 1 }}>
             <MetricCard
-              title="Today's Views"
-              value="1,284"
-              subtext="+12% from yesterday"
+              title="Views"
+              value={views}
+              subtext={viewsSubtext}
               icon={<Users size={24} color={palette.orange} />}
               color={palette.orange}
             />
@@ -123,12 +263,46 @@ export function MerchantDashboardScreen() {
           <View style={{ flex: 1 }}>
             <MetricCard
               title="Avg Rating"
-              value="4.8"
-              subtext="Based on 42 reviews"
+              value={rating}
+              subtext={ratingSubtext}
               icon={<Star size={24} color={palette.amber} />}
               color={palette.amber}
             />
           </View>
+        </View>
+
+        {/* Action Cards (Dynamic Urgent Tasks) */}
+        <View style={{ gap: spacing[3] }}>
+          <AppText variant="h3" style={{ fontWeight: "800" }}>
+            Actionable Insights
+          </AppText>
+
+          {activeOutlet?.verification.status !== "verified" && (
+            <ActionCard
+              title="Verification Required"
+              description="Verify your stall to make it discoverable to customers on the map."
+              icon={<ClipboardList size={20} color={palette.amber} />}
+              actionText="Complete Verification"
+              onPress={() => navigation.navigate("VerificationCentre")}
+              isUrgent={true}
+            />
+          )}
+
+          <ActionCard
+            title="Incomplete Profile"
+            description="Add your opening hours to help customers know when to visit."
+            icon={<Utensils size={20} color={palette.orange} />}
+            actionText="Edit Profile"
+            onPress={() => navigation.navigate("BusinessProfileEditor")}
+          />
+
+          <ActionCard
+            title="Unreplied Reviews"
+            description="You have 2 new reviews waiting for your response."
+            icon={<MessageSquare size={20} color={palette.textSecondary} />}
+            actionText="Read Reviews"
+            onPress={() => navigation.navigate("CustomerInbox")}
+          />
         </View>
 
         {/* Quick Actions (Big Buttons for Uncle Tan) */}
@@ -138,6 +312,7 @@ export function MerchantDashboardScreen() {
           </AppText>
 
           <Pressable
+            onPress={() => navigation.navigate("Menu")}
             style={[styles.bigButton, { backgroundColor: palette.orange, borderRadius: radii.xl }]}
           >
             <View style={styles.bigButtonIcon}>
@@ -155,6 +330,7 @@ export function MerchantDashboardScreen() {
           </Pressable>
 
           <Pressable
+            onPress={() => navigation.navigate("CustomerInbox")}
             style={[
               styles.bigButton,
               {
