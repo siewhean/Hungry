@@ -22,13 +22,14 @@ export type OnboardingStackParamList = {
   LocationPermission: undefined;
   ManualLocationPicker: undefined;
 };
-
 export type ProfileStackParamList = {
   ProfileHome: undefined;
   ProfilePremium: undefined;
   Favourites: undefined;
   ReviewHistory: undefined;
   Settings: undefined;
+  SocialGrid: { type: "liked" | "saved" };
+  SocialPostDetail: { postId: string; type: "liked" | "saved" };
   EditProfile: undefined;
   ReviewFlow: undefined;
 };
@@ -48,7 +49,6 @@ export type MainTabParamList = {
   Home: undefined;
   Discover: undefined;
   Review: undefined;
-  Rate: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
 
@@ -82,7 +82,9 @@ export type RootStackParamList = {
   MerchantClaimExplainer: undefined;
   DishDetail: { dishId?: string; id?: string };
   SearchHome: undefined;
-  SearchResults: undefined;
+  SearchResults: { browseMode?: "dishes" | "stalls" } | undefined;
+  BrowseDishes: undefined;
+  BrowseStalls: undefined;
   TasteFilter: undefined;
   DiscoverMap: undefined;
   DecideForMeResult: undefined;
@@ -91,6 +93,8 @@ export type RootStackParamList = {
   BlogPost: { postId: string };
   ReviewStack: NavigatorScreenParams<ReviewStackParamList>;
   WheelStack: NavigatorScreenParams<WheelStackParamList>;
+  ActivityInbox: { initialTab?: "messages" | "updates" } | undefined;
+  ActivityPostDetail: { postId: string; updateId?: string };
   DirectMessages: undefined;
   ChatDetail: { chatId: string; name: string; avatar: string };
   Crave: undefined;
@@ -121,4 +125,6 @@ export type RootStackParamList = {
   BuildingDrillDownV2: { buildingId: string };
   QuickReviewV2: { venueId?: string; dishId?: string } | undefined;
   VenueDirectory: { venueId: string };
+  StoryViewer: { initialStoryId: string };
+  AddStory: undefined;
 };

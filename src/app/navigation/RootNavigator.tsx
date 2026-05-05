@@ -28,7 +28,12 @@ import { DiscoverHomeScreenV2 } from "@/app/screens/discover/DiscoverHomeScreenV
 import { HomeMapScreen } from "@/app/screens/discover/HomeMapScreen";
 import { MapZoomedInScreen } from "@/app/screens/discover/MapZoomedInScreen";
 import { VenueDirectoryScreen } from "@/app/screens/discover/VenueDirectoryScreen";
+import { StoryViewerScreen } from "@/app/screens/home/StoryViewerScreen";
+import { AddStoryScreen } from "@/app/screens/home/AddStoryScreen";
 import { CraveScreen } from "@/app/screens/discover/CraveScreen";
+import { ActivityInboxScreen } from "@/app/screens/home/ActivityInboxScreen";
+import { ActivityPostDetailScreen } from "@/app/screens/home/ActivityPostDetailScreen";
+import { ChatDetailScreen } from "@/app/screens/home/ChatDetailScreen";
 import { DirectMessagesScreen } from "@/app/screens/home/DirectMessagesScreen";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
 import { PostComposerScreen } from "@/app/screens/post/PostComposerScreen";
@@ -52,7 +57,11 @@ import { PostComposerScreenV2 } from "@/app/screens/post/PostComposerScreenV2";
 import { WheelStack } from "@/app/screens/wheel/WheelStack";
 import { DishSearchScreen } from "@/app/screens/search/DishSearchScreen";
 import { DishSearchScreenV2 } from "@/app/screens/search/DishSearchScreenV2";
-import { SearchResultsScreen } from "@/app/screens/search/SearchResultsScreen";
+import {
+  BrowseDishesScreen,
+  BrowseStallsScreen,
+  SearchResultsScreen,
+} from "@/app/screens/search/SearchResultsScreen";
 import { StallDetailScreenV2 } from "@/app/screens/detail/StallDetailScreenV2";
 import { TasteFilterScreen } from "@/app/screens/search/TasteFilterScreen";
 import { FloatingToast } from "@/components/ui";
@@ -65,7 +74,7 @@ import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
 import { createRootLinking } from "./linking";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
-const navigationRef = createNavigationContainerRef<RootStackParamList>();
+export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 const AUTH_REQUIRED_ROUTES = new Set([
   "MainTabs",
@@ -73,9 +82,13 @@ const AUTH_REQUIRED_ROUTES = new Set([
   "SearchHome",
   "SearchHomeV2",
   "SearchResults",
+  "BrowseDishes",
+  "BrowseStalls",
   "MapZoomedIn",
   "Post",
   "PostComposerV2",
+  "ActivityInbox",
+  "ActivityPostDetail",
   "EditProfile",
   "BuildingDrillDown",
   "DecideForMeResult",
@@ -173,7 +186,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 
     if (typeof returnRoute === "string") {
       // If it's a known top-level tab name, navigate to MainTabs
-      const tabNames = ["Home", "Discover", "Review", "Rate", "Profile"];
+      const tabNames = ["Home", "Discover", "Review", "Profile"];
       if (tabNames.includes(returnRoute)) {
         navigationRef.resetRoot({
           index: 0,
@@ -317,6 +330,16 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             name="SearchResults"
             options={{ animation: "none" }}
           />
+          <RootStack.Screen
+            component={BrowseDishesScreen}
+            name="BrowseDishes"
+            options={{ animation: "none" }}
+          />
+          <RootStack.Screen
+            component={BrowseStallsScreen}
+            name="BrowseStalls"
+            options={{ animation: "none" }}
+          />
           <RootStack.Screen component={TasteFilterScreen} name="TasteFilter" />
           <RootStack.Screen component={HomeMapScreen} name="DiscoverMap" />
           <RootStack.Screen component={MapZoomedInScreen} name="MapZoomedIn" />
@@ -328,10 +351,16 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
           <RootStack.Screen component={DishDetailScreen} name="DishDetail" />
           <RootStack.Screen component={StallDetailScreen} name="StallDetail" />
-          <RootStack.Screen component={MerchantClaimExplainerScreen} name="MerchantClaimExplainer" />
+          <RootStack.Screen
+            component={MerchantClaimExplainerScreen}
+            name="MerchantClaimExplainer"
+          />
           <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           <RootStack.Screen component={ReviewStack} name="ReviewStack" />
           <RootStack.Screen component={WheelStack} name="WheelStack" />
+          <RootStack.Screen component={ActivityInboxScreen} name="ActivityInbox" />
+          <RootStack.Screen component={ActivityPostDetailScreen} name="ActivityPostDetail" />
+          <RootStack.Screen component={ChatDetailScreen} name="ChatDetail" />
           {FEATURE_FLAGS.directMessagesEnabled ? (
             <RootStack.Screen component={DirectMessagesScreen} name="DirectMessages" />
           ) : null}
@@ -354,12 +383,22 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={DesignGalleryScreen} name="DesignGallery" />
           <RootStack.Screen component={MerchantTabs} name="MerchantTabs" />
           <RootStack.Screen component={ReviewFeedScreenV2} name="ReviewFeedV2" />
-          <RootStack.Screen 
-            component={PostComposerScreenV2} 
-            name="PostComposerV2" 
+          <RootStack.Screen
+            component={PostComposerScreenV2}
+            name="PostComposerV2"
             options={{ gestureEnabled: false }}
           />
           <RootStack.Screen component={VenueDirectoryScreen} name="VenueDirectory" />
+          <RootStack.Screen
+            component={StoryViewerScreen}
+            name="StoryViewer"
+            options={{ presentation: "fullScreenModal", animation: "fade" }}
+          />
+          <RootStack.Screen
+            component={AddStoryScreen}
+            name="AddStory"
+            options={{ presentation: "modal" }}
+          />
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />
