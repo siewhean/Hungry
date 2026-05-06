@@ -102,6 +102,11 @@ export async function publishPostFromComposer(page: Page, caption: string) {
   await expect(page.getByText("Shared!", { exact: true })).toBeVisible();
 }
 
+export async function expectPostCaptionVisible(page: Page, caption: string, testId?: string) {
+  const scope = testId ? page.getByTestId(testId) : page;
+  await expect(scope.getByText(caption).first()).toBeVisible();
+}
+
 export function uniqueCaption(testInfo: TestInfo) {
   const safeTitle = testInfo.title
     .replace(/[^a-z0-9]+/gi, "-")

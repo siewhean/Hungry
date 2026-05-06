@@ -17,6 +17,7 @@ function isKnownNonCriticalIssue(issue: PageIssue) {
     message.includes("props.pointerEvents is deprecated") ||
     message.includes("Animated: `useNativeDriver` is not supported") ||
     message.includes("Failed to load resource: the server responded with a status of 400") ||
+    message.includes("posthog.com") ||
     url.includes("us-assets.i.posthog.com") ||
     url.includes("i.posthog.com") ||
     url.includes("/symbolicate") ||

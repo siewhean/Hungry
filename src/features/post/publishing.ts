@@ -5,7 +5,7 @@ import type { DataRepository } from "@/lib/services/types";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
-import type { DishDetail, VenueSummary } from "@/types/domain";
+import type { DishDetail, StallPost, VenueSummary } from "@/types/domain";
 import { useComposerStore, type MediaItem } from "./useComposerStore";
 
 type PublishMode = "both" | "post" | "review";
@@ -100,14 +100,27 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
     caption,
     tasteStamp: dish.tasteVector ?? NEUTRAL_TASTE_VECTOR,
     rating,
+    author: {
+      id: profile.id,
+      displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl,
+    },
   });
 
-  const post = biteToStallPost(bite, {
+  const transformedPost = biteToStallPost(bite, {
     authorAvatarUrl: bite.authorAvatar ?? profile.avatarUrl ?? media.mediaUrl,
     mediaType: media.mediaType,
     mediaUrls: media.mediaUrls,
     tags: [...state.foodTags, ...state.tasteTags],
   });
+  const post: StallPost = {
+    ...transformedPost,
+    authorId: profile.id,
+    authorName: profile.displayName,
+    authorAvatarUrl: profile.avatarUrl ?? transformedPost.authorAvatarUrl,
+    publishedStatus: "published",
+    visibility: "public",
+  };
 
   usePublishedPostStore.getState().upsertPost(post);
   useSocialStore.getState().initializeInteractions([post]);

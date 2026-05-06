@@ -816,11 +816,12 @@ export const hungryService: HungryService = {
       await hydrateSocial();
       const venue = venues.find((v) => v.id === draft.venueId);
       const building = buildings.find((b) => b.id === venue?.buildingId);
+      const author = draft.author ?? _profile;
       const newBite: Bite = {
         id: `bite-${Date.now()}`,
-        authorId: _profile.id,
-        authorName: _profile.displayName,
-        authorAvatar: undefined,
+        authorId: author.id,
+        authorName: author.displayName,
+        authorAvatar: author.avatarUrl,
         dishId: draft.dishId,
         dishName: dishes.find((d) => d.id === draft.dishId)?.name ?? "Unknown dish",
         venueId: draft.venueId,
@@ -841,7 +842,7 @@ export const hungryService: HungryService = {
       MOCK_BITES_FEED.unshift(newBite);
       await appendPublishedStallPost(
         biteToStallPost(newBite, {
-          authorAvatarUrl: _profile.avatarUrl ?? draft.photoUrl,
+          authorAvatarUrl: author.avatarUrl ?? draft.photoUrl,
           mediaUrls: [draft.photoUrl],
         }),
       );

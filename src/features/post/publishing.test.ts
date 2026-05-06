@@ -53,8 +53,16 @@ test("composer publish writes a shared post visible in feed and profile sources"
   const authorProfilePosts = sharedPosts.filter((post) => post.authorId === sessionA.profile.id);
   assert.ok(authorProfilePosts.some((post) => post.id === published.id));
 
+  usePublishedPostStore.getState().clearPostsForTest();
+  const serviceBackedPosts = await listSharedStallPosts();
+  const serviceBackedPost = serviceBackedPosts.find((post) => post.id === published.id);
+  assert.ok(serviceBackedPost);
+  assert.equal(serviceBackedPost.authorId, sessionA.profile.id);
+  assert.equal(serviceBackedPost.authorName, "Author A");
+
   const authorFeed = await getHomeSocialFeed(sessionA.profile);
   assert.ok(authorFeed.some((post) => post.id === published.id));
+  assert.equal(authorFeed[0]?.id, published.id);
 
   const sessionB = await service.auth.signUp("reader@example.sg", "password123", "Reader B");
   assert.ok(sessionB);
@@ -63,6 +71,7 @@ test("composer publish writes a shared post visible in feed and profile sources"
   const readerFeed = await getHomeSocialFeed(sessionB.profile);
   const readerVisiblePost = readerFeed.find((post) => post.id === published.id);
   assert.ok(readerVisiblePost);
+  assert.equal(readerFeed[0]?.id, published.id);
   assert.notEqual(readerVisiblePost.authorId, sessionB.profile.id);
   assert.equal(readerVisiblePost.authorName, "Author A");
 

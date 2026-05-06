@@ -36,12 +36,11 @@ export async function listSharedStallPosts(repository: DataRepository = getDataR
     bitePosts = [];
   }
 
-  bitePosts.forEach((post) => usePublishedPostStore.getState().upsertPost(post));
+  const localPublishedPosts = usePublishedPostStore.getState().posts;
+  const localPublishedIds = new Set(localPublishedPosts.map((post) => post.id));
+  bitePosts
+    .filter((post) => !localPublishedIds.has(post.id))
+    .forEach((post) => usePublishedPostStore.getState().upsertPost(post));
 
-  return mergeStallPosts(
-    usePublishedPostStore.getState().posts,
-    bitePosts,
-    servicePosts,
-    repository.listStallPosts(),
-  );
+  return mergeStallPosts(localPublishedPosts, bitePosts, servicePosts, repository.listStallPosts());
 }

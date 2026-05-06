@@ -1,6 +1,7 @@
 import { test, expect } from "./fixtures";
 import {
   clickDevButton,
+  expectPostCaptionVisible,
   gotoLauncher,
   publishPostFromComposer,
   uniqueCaption,
@@ -21,10 +22,10 @@ test.describe("feed/profile sync", () => {
 
     await publishPostFromComposer(page, caption);
     await page.getByRole("button", { name: "View Post" }).click();
-    await expect(page.getByText(caption)).toBeVisible();
+    await expectPostCaptionVisible(page, caption, "home-social-feed");
 
     await gotoLauncher(page);
     await clickDevButton(page, "Profile", "Profile & Review");
-    await expect(page.getByText(caption)).toBeVisible();
+    await expectPostCaptionVisible(page, caption, "profile-home-screen");
   });
 });

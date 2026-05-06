@@ -1383,7 +1383,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         body="A display issue occurred while rendering this feed. Please retry."
       >
         {mode === "social" ? (
-          <View style={{ flex: 1 }}>
+          <View testID="home-social-feed" style={{ flex: 1 }}>
             <FlashList
               data={socialFeed}
               keyExtractor={keyExtractor}

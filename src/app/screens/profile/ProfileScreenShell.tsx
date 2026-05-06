@@ -9,6 +9,7 @@ interface ProfileScreenShellProps {
   subtitle?: string;
   headerRight?: ReactNode;
   showBack?: boolean;
+  testID?: string;
 }
 
 export function ProfileScreenShell({
@@ -17,6 +18,7 @@ export function ProfileScreenShell({
   subtitle,
   headerRight,
   showBack = true,
+  testID,
 }: PropsWithChildren<ProfileScreenShellProps>) {
   const { spacing } = useHungryTheme();
 
@@ -29,7 +31,9 @@ export function ProfileScreenShell({
       contentContainerStyle={{ paddingTop: 0 }}
       scroll
     >
-      <View style={{ gap: spacing[4] }}>{children}</View>
+      <View testID={testID} style={{ gap: spacing[4] }}>
+        {children}
+      </View>
     </Screen>
   );
 }

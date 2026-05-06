@@ -58,6 +58,7 @@ export default defineConfig({
           CI: "1",
           HUNGRY_DATA_SOURCE: "mock",
           EXPO_PUBLIC_HUNGRY_DATA_SOURCE: "mock",
+          EXPO_PUBLIC_DISABLE_POSTHOG: "1",
           EXPO_NO_TELEMETRY: "1",
         },
       }

@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures";
-import { publishPostFromComposer, uniqueCaption } from "./helpers/app";
+import { expectPostCaptionVisible, publishPostFromComposer, uniqueCaption } from "./helpers/app";
 
 test.describe("post generation and publishing", () => {
   test.beforeEach(async ({}, testInfo) => {
@@ -15,6 +15,6 @@ test.describe("post generation and publishing", () => {
     await publishPostFromComposer(page, caption);
     await page.getByRole("button", { name: "View Post" }).click();
 
-    await expect(page.getByText(caption)).toBeVisible();
+    await expectPostCaptionVisible(page, caption, "home-social-feed");
   });
 });

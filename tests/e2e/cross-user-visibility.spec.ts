@@ -1,6 +1,7 @@
 import { test, expect } from "./fixtures";
 import {
   clickDevButton,
+  expectPostCaptionVisible,
   gotoLauncher,
   publishPostFromComposer,
   startOnboardedMockSession,
@@ -22,14 +23,14 @@ test.describe("cross-user visibility", () => {
 
     await publishPostFromComposer(page, caption);
     await page.getByRole("button", { name: "View Post" }).click();
-    await expect(page.getByText(caption)).toBeVisible();
+    await expectPostCaptionVisible(page, caption, "home-social-feed");
 
     await gotoLauncher(page);
     await clickDevButton(page, "Signed out", "Session presets");
     await startOnboardedMockSession(page);
     await clickDevButton(page, "Home", "Core app flow");
 
-    await expect(page.getByText(caption)).toBeVisible();
+    await expectPostCaptionVisible(page, caption, "home-social-feed");
     await expect(page.getByRole("button", { name: /delete/i })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /edit/i })).toHaveCount(0);
   });

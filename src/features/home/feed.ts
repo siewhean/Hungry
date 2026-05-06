@@ -47,8 +47,52 @@ async function buildHomeFeedItems(profile: UserProfile): Promise<HomeFeedItem[]>
     });
 }
 
+const RELATIVE_TIME_UNITS: Record<string, number> = {
+  m: 60_000,
+  min: 60_000,
+  minute: 60_000,
+  h: 3_600_000,
+  hr: 3_600_000,
+  hour: 3_600_000,
+  d: 86_400_000,
+  day: 86_400_000,
+  w: 604_800_000,
+  week: 604_800_000,
+};
+
+function getPostTime(post: StallPost, now = Date.now()): number {
+  const timestamp = new Date(post.createdAt).getTime();
+  if (Number.isFinite(timestamp)) {
+    return timestamp;
+  }
+
+  const normalized = post.createdAt.trim().toLowerCase();
+  if (normalized === "now") {
+    return now;
+  }
+  if (normalized === "yesterday") {
+    return now - RELATIVE_TIME_UNITS.day;
+  }
+
+  const relativeMatch = normalized.match(
+    /^(\d+)\s*(m|min|minute|h|hr|hour|d|day|w|week)s?(?:\s+ago)?$/,
+  );
+  if (relativeMatch) {
+    const amount = Number(relativeMatch[1]);
+    const unitMs = RELATIVE_TIME_UNITS[relativeMatch[2] ?? ""];
+    if (Number.isFinite(amount) && unitMs) {
+      return now - amount * unitMs;
+    }
+  }
+
+  return 0;
+}
+
 export async function getHomeSocialFeed(profile: UserProfile): Promise<HomeFeedItem[]> {
-  return buildHomeFeedItems(profile);
+  const now = Date.now();
+  return (await buildHomeFeedItems(profile)).sort(
+    (left, right) => getPostTime(right, now) - getPostTime(left, now),
+  );
 }
 
 export async function getHomeFeed(profile: UserProfile): Promise<HomeFeedSection[]> {

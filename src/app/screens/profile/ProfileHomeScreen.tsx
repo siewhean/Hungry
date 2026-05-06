@@ -257,6 +257,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
       title="Profile"
       subtitle={isAuthenticated ? undefined : "Join Hungry to save dishes and find your taste."}
       showBack={false}
+      testID="profile-home-screen"
       headerRight={
         <View style={{ position: "relative", alignItems: "flex-end" }}>
           <Pressable

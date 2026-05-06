@@ -3,6 +3,7 @@ import PostHog from "posthog-react-native";
 import type { AnalyticsEventRecord, AnalyticsSink } from "./types";
 
 const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
+const POSTHOG_DISABLED = process.env.EXPO_PUBLIC_DISABLE_POSTHOG === "1";
 const POSTHOG_API_KEY = process.env.EXPO_PUBLIC_POSTHOG_API_KEY?.trim();
 const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST?.trim() || DEFAULT_POSTHOG_HOST;
 
@@ -12,7 +13,7 @@ type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string
 type PostHogProperties = { [key: string]: JsonValue };
 
 function getPostHogClient(): PostHog | null {
-  if (!POSTHOG_API_KEY) {
+  if (POSTHOG_DISABLED || !POSTHOG_API_KEY) {
     return null;
   }
 

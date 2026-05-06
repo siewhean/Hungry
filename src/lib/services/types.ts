@@ -180,6 +180,7 @@ export interface BiteDraft {
   caption: string;
   tasteStamp: TasteStamp;
   rating: number;
+  author?: Pick<UserProfile, "id" | "displayName" | "avatarUrl">;
 }
 
 // ─── AI / Recommendation Types ────────────────────────────────────────────────
