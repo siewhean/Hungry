@@ -51,3 +51,4 @@
 - When comparing tab headers, use simulator screenshots from the same rebuilt bundle before adding offsets; do not add a second safe-area inset to a list header already inside `SafeAreaView`.
 - Do not add skeletons for visual reassurance alone. Skeletons must be tied to a real pending/loading condition and the documented known-shape wait threshold; local synchronous filters should render updated content or contextual empty states.
 - For bottom-sheet controls that must remain visible while the list scrolls, verify with a simulator screenshot; absolute children inside scroll content can sit below the visible viewport instead of behaving like a floating overlay.
+- For Expo Web E2E, set both private and `EXPO_PUBLIC_` mock data-source flags in the Playwright web server; bundled web code cannot read private env vars, and tests should prove the rendered read path rather than only the composer success state.

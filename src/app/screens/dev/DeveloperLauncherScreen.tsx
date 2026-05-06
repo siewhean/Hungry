@@ -441,7 +441,12 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           </View>
           <DevButton
             label="Launch V2 Composer"
-            onPress={() => navigation.navigate("PostComposerV2" as any)}
+            onPress={() =>
+              navigation.navigate("PostComposerV2" as any, {
+                dishId: sampleDish?.id,
+                venueId: sampleStallVenueId,
+              })
+            }
             variant="primary"
             style={{ marginTop: 8 }}
           />
@@ -491,8 +496,18 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           />
           <VersionPair
             label="Post Composer"
-            onV1={() => navigation.navigate("PostComposerV2" as any)}
-            onV2={() => navigation.navigate("PostComposerV2" as any)}
+            onV1={() =>
+              navigation.navigate("PostComposerV2" as any, {
+                dishId: sampleDish?.id,
+                venueId: sampleStallVenueId,
+              })
+            }
+            onV2={() =>
+              navigation.navigate("PostComposerV2" as any, {
+                dishId: sampleDish?.id,
+                venueId: sampleStallVenueId,
+              })
+            }
           />
           <VersionPair
             label="Settings"
