@@ -178,7 +178,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /Stalls in \{discoverLocationLabel\}[\s\S]*areaStallCards\.length \? areaStallCards\.map[\s\S]*\) : isDiscoverFiltering \?/,
+    /Stalls in \{discoverLocationLabel\}[\s\S]*areaStallCards\.length \? \([\s\S]*areaStallCards\.map[\s\S]*\) : isDiscoverFiltering \?/,
   );
   assert.match(discover, /No matching results/);
   assert.match(discover, /Try removing a filter or choosing a broader category\./);
@@ -495,10 +495,7 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
   assert.match(searchResults, /<LinearGradient[\s\S]*rgba\(0,0,0,0\.82\)/);
   assert.match(searchResults, /<Avatar uri=\{item\.authorAvatarUrl\}/);
   assert.match(searchResults, /navigation\.navigate\("DishDetail", \{ dishId: item\.dish\.id \}\)/);
-  assert.match(
-    searchResults,
-    /navigation\.navigate\("StallDetail", \{ venueId: item\.venue\.id \}\)/,
-  );
+  assert.doesNotMatch(searchResults, /navigation\.navigate\("StallDetail"/);
   assert.doesNotMatch(searchResults, /Dishes in \$\{areaLabel\}/);
   assert.doesNotMatch(searchResults, /Stalls & restaurants in \$\{areaLabel\}/);
   assert.doesNotMatch(searchResults, /Dishes, stalls, or hawker centres…/);

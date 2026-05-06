@@ -35,6 +35,7 @@ type ExpandableSearchLauncherProps = {
   style?: StyleProp<ViewStyle>;
   inputStyle?: StyleProp<TextStyle>;
   dismissOnTapAway?: boolean;
+  accessibilityLabel?: string;
 };
 
 export function ExpandableSearchLauncher({
@@ -55,6 +56,7 @@ export function ExpandableSearchLauncher({
   inputStyle,
   onBlur,
   dismissOnTapAway = true,
+  accessibilityLabel,
 }: ExpandableSearchLauncherProps) {
   const { palette, shadows } = useHungryTheme();
   const iconColor = palette.textMuted;
@@ -157,7 +159,7 @@ export function ExpandableSearchLauncher({
       >
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={placeholder}
+          accessibilityLabel={accessibilityLabel ?? placeholder}
           onPress={isSearchExpanded ? hideSearch : revealSearch}
           style={{
             width: searchIconSlotWidth,
@@ -177,7 +179,7 @@ export function ExpandableSearchLauncher({
           {
             right: 0,
             top: backingVerticalOffset,
-            width: launcherWidth,
+            width: expandedWidth,
             height: backingHeight,
             opacity: searchInputOpacity,
             backgroundColor: palette.white,

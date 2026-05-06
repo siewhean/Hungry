@@ -159,6 +159,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const signatureGridItemWidth = width / 2;
   const signatureGridItemHeight = signatureGridItemWidth * 1.5;
   const reviewIconSize = 22;
+  const canonicalDishUrl = `https://hungry.sg/dish/${dish.id}`;
   const shareReviewTarget = {
     reviewId: `dish-${dish.id}`,
     postId: dish.id,
@@ -167,7 +168,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     imageUrl: gallery[0] ?? dish.imageUrl,
     authorName: profile.displayName,
     message: `${dish.name} at ${venue.name}. ${formatBasePrice(dish.price)}. ${tasteMatch}% taste match.`,
-    link: `https://hungry.sg/dish/${dish.id}`,
+    link: canonicalDishUrl,
   };
 
   const openShareSheet = () => {

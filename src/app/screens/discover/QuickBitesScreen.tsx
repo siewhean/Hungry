@@ -480,6 +480,7 @@ export function QuickBitesScreen() {
             query={searchQuery}
             onQueryChange={updateSearchQuery}
             onSubmit={submitSearch}
+            accessibilityLabel="Search dishes"
             iconAlignment="right"
             iconSize={40}
             barHeight={40}

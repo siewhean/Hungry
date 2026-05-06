@@ -322,7 +322,7 @@ export function ChatDetailScreen({ navigation, route }: Props) {
                     accessibilityLabel={`Open shared post ${msg.sharedPost.title}`}
                     onPress={() => {
                       if (!msg.sharedPost?.postId) return;
-                      navigation.navigate("ActivityPostDetail", { postId: msg.sharedPost.postId });
+                      navigation.navigate("ActivityPostDetail", { postId: msg.sharedPost!.postId });
                     }}
                     style={[
                       styles.sharedPostCard,

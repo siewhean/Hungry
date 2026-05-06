@@ -15,13 +15,48 @@ import type { Coordinate } from "@/types/domain";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const MOCK_LOCATIONS = [
-  { id: "loc-1", name: "Old Airport Road Food Centre", address: "51 Old Airport Rd, Singapore", coordinate: { latitude: 1.3084, longitude: 103.8859 } },
-  { id: "loc-2", name: "Maxwell Food Centre", address: "1 Kadayanallur St, Singapore", coordinate: { latitude: 1.2803, longitude: 103.8448 } },
-  { id: "loc-3", name: "Newton Food Centre", address: "500 Clemenceau Ave N, Singapore", coordinate: { latitude: 1.3120, longitude: 103.8392 } },
-  { id: "loc-4", name: "Chomp Chomp Food Centre", address: "20 Kensington Park Rd, Singapore", coordinate: { latitude: 1.3645, longitude: 103.8665 } },
-  { id: "loc-5", name: "Lau Pa Sat", address: "18 Raffles Quay, Singapore", coordinate: { latitude: 1.2808, longitude: 103.8504 } },
-  { id: "loc-6", name: "Amoy Street Food Centre", address: "7 Maxwell Rd, Singapore", coordinate: { latitude: 1.2793, longitude: 103.8466 } },
-  { id: "loc-7", name: "Tiong Bahru Food Centre", address: "30 Seng Poh Rd, Singapore", coordinate: { latitude: 1.2850, longitude: 103.8322 } },
+  {
+    id: "loc-1",
+    name: "Old Airport Road Food Centre",
+    address: "51 Old Airport Rd, Singapore",
+    coordinate: { latitude: 1.3084, longitude: 103.8859 },
+  },
+  {
+    id: "loc-2",
+    name: "Maxwell Food Centre",
+    address: "1 Kadayanallur St, Singapore",
+    coordinate: { latitude: 1.2803, longitude: 103.8448 },
+  },
+  {
+    id: "loc-3",
+    name: "Newton Food Centre",
+    address: "500 Clemenceau Ave N, Singapore",
+    coordinate: { latitude: 1.312, longitude: 103.8392 },
+  },
+  {
+    id: "loc-4",
+    name: "Chomp Chomp Food Centre",
+    address: "20 Kensington Park Rd, Singapore",
+    coordinate: { latitude: 1.3645, longitude: 103.8665 },
+  },
+  {
+    id: "loc-5",
+    name: "Lau Pa Sat",
+    address: "18 Raffles Quay, Singapore",
+    coordinate: { latitude: 1.2808, longitude: 103.8504 },
+  },
+  {
+    id: "loc-6",
+    name: "Amoy Street Food Centre",
+    address: "7 Maxwell Rd, Singapore",
+    coordinate: { latitude: 1.2793, longitude: 103.8466 },
+  },
+  {
+    id: "loc-7",
+    name: "Tiong Bahru Food Centre",
+    address: "30 Seng Poh Rd, Singapore",
+    coordinate: { latitude: 1.285, longitude: 103.8322 },
+  },
 ];
 
 interface LocationSearchModalProps {
@@ -39,7 +74,7 @@ function DynamicHeader({ onClose }: { onClose: () => void }) {
       animatedIndex.value,
       [0, 1],
       [16, targetPadding],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
 
     return {
@@ -50,10 +85,10 @@ function DynamicHeader({ onClose }: { onClose: () => void }) {
   return (
     <Animated.View style={[styles.header, animatedStyle]}>
       <AppText variant="h3">Select Location</AppText>
-      <IconButton 
-        icon={<X size={24} color={palette.text} />} 
+      <IconButton
+        icon={<X size={24} color={palette.text} />}
         accessibilityLabel="Close"
-        onPress={onClose} 
+        onPress={onClose}
       />
     </Animated.View>
   );
@@ -61,14 +96,14 @@ function DynamicHeader({ onClose }: { onClose: () => void }) {
 
 function DynamicFooter() {
   const { animatedIndex } = useBottomSheet();
-  
+
   const style = useAnimatedStyle(() => {
     const base = Platform.OS === "ios" ? 40 : 20;
     const height = interpolate(
       animatedIndex.value,
       [0, 1],
       [SCREEN_HEIGHT * 0.1 + base, base],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     return { height };
   });
@@ -82,13 +117,13 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
   const setLocation = useComposerStore((state) => state.setLocation);
 
   const [searchQuery, setSearchQuery] = useState("");
-  
-  const [selectedLoc, setSelectedLoc] = useState<typeof MOCK_LOCATIONS[0] | null>(() => 
-    MOCK_LOCATIONS.find(l => l.id === currentLocation?.id) || null
+
+  const [selectedLoc, setSelectedLoc] = useState<(typeof MOCK_LOCATIONS)[0] | null>(
+    () => MOCK_LOCATIONS.find((l) => l.id === currentLocation?.id) || null,
   );
-  
+
   const [mapCenter, setMapCenter] = useState<Coordinate>(() => {
-    const loc = MOCK_LOCATIONS.find(l => l.id === currentLocation?.id);
+    const loc = MOCK_LOCATIONS.find((l) => l.id === currentLocation?.id);
     return loc ? (loc.coordinate as Coordinate) : { latitude: 1.29027, longitude: 103.851959 };
   });
 
@@ -96,33 +131,36 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
     if (!searchQuery) return MOCK_LOCATIONS;
     const query = searchQuery.toLowerCase();
     return MOCK_LOCATIONS.filter(
-      (loc) =>
-        loc.name.toLowerCase().includes(query) ||
-        loc.address.toLowerCase().includes(query)
+      (loc) => loc.name.toLowerCase().includes(query) || loc.address.toLowerCase().includes(query),
     );
   }, [searchQuery]);
 
-  const handleSelectLocation = useCallback((loc: typeof MOCK_LOCATIONS[0]) => {
-    setSelectedLoc((prev) => {
-      const isDeselecting = prev?.id === loc.id;
-      if (!isDeselecting) {
-        setMapCenter(loc.coordinate as Coordinate);
-        setLocation({ id: loc.id, name: loc.name, address: loc.address });
-      } else {
-        setLocation(null);
-      }
-      return isDeselecting ? null : loc;
-    });
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  }, [setLocation]);
+  const handleSelectLocation = useCallback(
+    (loc: (typeof MOCK_LOCATIONS)[0]) => {
+      setSelectedLoc((prev) => {
+        const isDeselecting = prev?.id === loc.id;
+        if (!isDeselecting) {
+          setMapCenter(loc.coordinate as Coordinate);
+          setLocation({ id: loc.id, name: loc.name, address: loc.address });
+        } else {
+          setLocation(null);
+        }
+        return isDeselecting ? null : loc;
+      });
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    },
+    [setLocation],
+  );
 
   const markers = useMemo((): MapSurfaceMarker[] => {
     if (selectedLoc) {
-      return [{
-        id: selectedLoc.id,
-        label: selectedLoc.name,
-        coordinate: selectedLoc.coordinate as Coordinate,
-      }];
+      return [
+        {
+          id: selectedLoc.id,
+          label: selectedLoc.name,
+          coordinate: selectedLoc.coordinate as Coordinate,
+        },
+      ];
     }
     return [];
   }, [selectedLoc]);
@@ -174,9 +212,16 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
             style={StyleSheet.absoluteFill}
           />
           {selectedLoc && (
-            <View style={[styles.locCard, { backgroundColor: palette.surfaceGlass, borderRadius: radii.md }]}>
+            <View
+              style={[
+                styles.locCard,
+                { backgroundColor: palette.surfaceGlass, borderRadius: radii.md },
+              ]}
+            >
               <AppText variant="bodyBold">{selectedLoc.name}</AppText>
-              <AppText variant="micro" tone="secondary" numberOfLines={1}>{selectedLoc.address}</AppText>
+              <AppText variant="micro" tone="secondary" numberOfLines={1}>
+                {selectedLoc.address}
+              </AppText>
             </View>
           )}
         </View>
@@ -186,9 +231,18 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={true}
           ListEmptyComponent={
-            <View style={{ alignItems: "center", justifyContent: "center", marginTop: 60, paddingHorizontal: 16 }}>
+            <View
+              style={{
+                alignItems: "center",
+                justifyContent: "center",
+                marginTop: 60,
+                paddingHorizontal: 16,
+              }}
+            >
               <MapPin size={48} color={palette.textMuted} style={{ marginBottom: 16 }} />
-              <AppText tone="secondary" style={{ textAlign: "center" }}>No locations found matching "{searchQuery}"</AppText>
+              <AppText tone="secondary" style={{ textAlign: "center" }}>
+                No locations found matching {`"${searchQuery}"`}
+              </AppText>
             </View>
           }
           ListFooterComponent={<DynamicFooter />}
@@ -198,17 +252,30 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
               style={({ pressed }) => [
                 styles.locationItem,
                 {
-                  backgroundColor: selectedLoc?.id === item.id ? palette.orangeLight : (pressed ? palette.surfaceRaised : "transparent"),
+                  backgroundColor:
+                    selectedLoc?.id === item.id
+                      ? palette.orangeLight
+                      : pressed
+                        ? palette.surfaceRaised
+                        : "transparent",
                   borderRadius: radii.md,
                 },
               ]}
             >
-              <MapPin size={20} color={selectedLoc?.id === item.id ? palette.orange : palette.textMuted} />
+              <MapPin
+                size={20}
+                color={selectedLoc?.id === item.id ? palette.orange : palette.textMuted}
+              />
               <View style={{ flex: 1, gap: 2 }}>
-                <AppText variant="bodyBold" style={{ color: selectedLoc?.id === item.id ? palette.orange : palette.text }}>
+                <AppText
+                  variant="bodyBold"
+                  style={{ color: selectedLoc?.id === item.id ? palette.orange : palette.text }}
+                >
                   {item.name}
                 </AppText>
-                <AppText variant="micro" tone="secondary">{item.address}</AppText>
+                <AppText variant="micro" tone="secondary">
+                  {item.address}
+                </AppText>
               </View>
             </Pressable>
           )}

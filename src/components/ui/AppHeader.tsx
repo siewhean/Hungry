@@ -105,7 +105,7 @@ const createStyles = (
     copy: {
       flex: 1,
       gap: spacing[1],
-      justifyContent: "center",
+      justifyContent: "flex-start",
       minHeight: 56,
     },
     title: {

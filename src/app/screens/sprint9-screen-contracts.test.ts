@@ -227,10 +227,9 @@ test("Sprint 9 screen contract: Home feed double tap likes with heart animation"
 test("Sprint 9 screen contract: Home feed header follows app header scale", () => {
   const source = read("src/app/screens/home/HomeFeedScreen.tsx");
 
-  assert.match(source, /style=\{styles\.homeHeader\}/);
-  assert.match(source, /style=\{\[styles\.homeHeaderTitle, \{ color: palette\.orange \}\]\}/);
-  assert.match(source, /fontSize: 24/);
-  assert.match(source, /lineHeight: 30/);
+  assert.match(source, /<AppHeader[\s\S]*title="Hungry"/);
+  assert.match(source, /horizontalPadding=\{semanticSpacing\.screenEdge\}/);
+  assert.match(source, /titleStyle=\{\{ color: palette\.orange \}\}/);
   assert.doesNotMatch(source, /<View style=\{\{ flex: 1, paddingTop: spacing\[3\] \}\}>/);
   assert.doesNotMatch(
     source,
@@ -239,14 +238,15 @@ test("Sprint 9 screen contract: Home feed header follows app header scale", () =
 });
 
 test("Sprint 9 screen contract: routed dish detail uses gallery-backed share flow", () => {
-  const source = read("src/app/screens/detail/DishDetailScreen.tsx");
+  const source = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   const navigatorSource = read("src/app/navigation/RootNavigator.tsx");
 
   assert.match(source, /const repository = getDataRepository\(\)/);
   assert.match(source, /buildDishGallery\(dish\)/);
   assert.match(source, /const canonicalDishUrl = `https:\/\/hungry\.sg\/dish\/\$\{dish\.id\}`/);
-  assert.match(source, /Share\.share\(\{/);
-  assert.match(source, /<ImageCarousel/);
+  assert.match(source, /ReviewShareSheet/);
+  assert.match(source, /shareSheetRef\.current\?\.present\(\)/);
+  assert.match(source, /link: canonicalDishUrl/);
   assert.doesNotMatch(navigatorSource, /import \{ DishDetailScreen \}/);
   assert.match(navigatorSource, /component=\{DishDetailScreenV2\} name=\"DishDetail\"/);
 });
