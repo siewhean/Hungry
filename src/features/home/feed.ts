@@ -1,5 +1,6 @@
 import { getDataRepository, getSimilarityScore } from "@/lib/services/serviceProvider";
 import { dataRepositoryMock as fallbackRepository } from "@/lib/services/mock/repositories";
+import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import type { DishDetail, StallPost, UserProfile, VenueSummary } from "@/types/domain";
 
 export interface HomeFeedItem extends StallPost {
@@ -12,10 +13,10 @@ export interface HomeFeedSection {
   items: HomeFeedItem[];
 }
 
-function buildHomeFeedItems(profile: UserProfile): HomeFeedItem[] {
+async function buildHomeFeedItems(profile: UserProfile): Promise<HomeFeedItem[]> {
   const repository = getDataRepository();
   const postsById = new Map<string, StallPost>();
-  for (const post of repository.listStallPosts()) {
+  for (const post of await listSharedStallPosts(repository)) {
     postsById.set(post.id, post);
   }
   for (const post of fallbackRepository.listStallPosts()) {
@@ -54,12 +55,12 @@ function buildHomeFeedItems(profile: UserProfile): HomeFeedItem[] {
     });
 }
 
-export function getHomeSocialFeed(profile: UserProfile): HomeFeedItem[] {
+export async function getHomeSocialFeed(profile: UserProfile): Promise<HomeFeedItem[]> {
   return buildHomeFeedItems(profile);
 }
 
-export function getHomeFeed(profile: UserProfile): HomeFeedSection[] {
-  const allPosts = buildHomeFeedItems(profile);
+export async function getHomeFeed(profile: UserProfile): Promise<HomeFeedSection[]> {
+  const allPosts = await buildHomeFeedItems(profile);
 
   // 1. Fastest Near You (Shortest distance)
   const fastest = [...allPosts]

@@ -10,10 +10,12 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { ZoomableMedia } from "@/components/social";
 import { AppText, Avatar, Screen } from "@/components/ui";
 import { ACTIVITY_UPDATES } from "@/features/home/activity";
+import { listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { ReviewCommentsSheet, type ActiveReviewCommentTarget } from "@/components/social";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import { useActivityStore } from "@/store/useActivityStore";
+import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useSocialStore, type SocialComment } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
 
@@ -24,7 +26,8 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const { width: screenWidth } = useWindowDimensions();
   const repository = getDataRepository();
   const { postId, updateId } = route.params;
-  const posts = useMemo(() => repository.listStallPosts(), [repository]);
+  const publishedPosts = usePublishedPostStore((state) => state.posts);
+  const posts = useMemo(() => listSharedStallPostsSync(repository), [publishedPosts, repository]);
   const post = posts.find((candidate) => candidate.id === postId);
   const activityUpdates = useActivityStore((state) => state.activityUpdates);
   const interactions = useSocialStore((state) => state.interactions);
@@ -53,7 +56,10 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   }, [markActivityRead, updateId]);
 
   const update = useMemo(() => {
-    return [...ACTIVITY_UPDATES, ...activityUpdates].find((candidate) => candidate.id === updateId);
+    return (
+      ACTIVITY_UPDATES.find((candidate) => candidate.id === updateId) ??
+      activityUpdates.find((candidate) => candidate.id === updateId)
+    );
   }, [activityUpdates, updateId]);
 
   const seededCommentsForActiveReview = useMemo<SocialComment[]>(() => {

@@ -5,12 +5,14 @@ import { FlashList } from "@shopify/flash-list";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
 import { AppText, Screen } from "@/components/ui";
+import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import { useHungryTheme } from "@/theme";
 import { useStoryStore } from "@/store/useStoryStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import type { Story, StallPost, DishDetail } from "@/types/domain";
 
@@ -30,6 +32,7 @@ export function SocialGridScreen() {
   const profile = useProfileStore((state) => state.profile);
   const { stories, loadStories } = useStoryStore();
   const { interactions, initializeInteractions } = useSocialStore();
+  const publishedPosts = usePublishedPostStore((state) => state.posts);
 
   const [stallPosts, setStallPosts] = useState<StallPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,7 +43,7 @@ export function SocialGridScreen() {
       setIsLoading(true);
       try {
         const repository = getDataRepository();
-        const posts = repository.listStallPosts();
+        const posts = await listSharedStallPosts(repository);
 
         await loadStories();
 
@@ -53,7 +56,7 @@ export function SocialGridScreen() {
       }
     }
     void loadData();
-  }, [isAuthenticated, loadStories, initializeInteractions]);
+  }, [isAuthenticated, loadStories, initializeInteractions, publishedPosts]);
 
   const items = useMemo(() => {
     const filteredStories = stories.filter((s) => {

@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { hungryPersistStorage } from "./persistStorage";
 import { getHungryService } from "@/lib/services/serviceProvider";
-import * as Haptics from "expo-haptics";
 import { useActivityStore } from "./useActivityStore";
 import { useProfileStore } from "@/store/useProfileStore";
 
@@ -25,6 +24,21 @@ export interface SocialComment {
 
 export interface SocialReply extends SocialComment {
   parentCommentId: string;
+}
+
+type HapticsModule = typeof import("expo-haptics");
+
+let hapticsModule: HapticsModule | null | undefined;
+
+async function triggerLightImpact() {
+  try {
+    if (hapticsModule === undefined) {
+      hapticsModule = await import("expo-haptics");
+    }
+    await hapticsModule?.impactAsync(hapticsModule.ImpactFeedbackStyle.Light);
+  } catch {
+    hapticsModule = null;
+  }
 }
 
 interface SocialState {
@@ -100,7 +114,7 @@ export const useSocialStore = create<SocialState>()(
       },
 
       toggleLike: async (postId) => {
-        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        void triggerLightImpact();
         const { interactions } = get();
         const { addActivityUpdate } = useActivityStore.getState();
         const actorName = useProfileStore.getState().profile.displayName || "You";
@@ -146,7 +160,7 @@ export const useSocialStore = create<SocialState>()(
       },
 
       toggleSave: async (postId) => {
-        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        void triggerLightImpact();
         const { interactions } = get();
         const current = interactions[postId] ?? {
           liked: false,

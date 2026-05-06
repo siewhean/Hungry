@@ -6,8 +6,14 @@ import { ChevronUp, Send, Save, Check, Calendar, Clock } from "lucide-react-nati
 import { AppText, Button, Card } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
+import { publishComposerPost } from "../publishing";
 
-export function ComposerBottomBar() {
+interface ComposerBottomBarProps {
+  routeDishId?: string;
+  routeVenueId?: string;
+}
+
+export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomBarProps) {
   const { palette, spacing, semanticSpacing, shadows, radii } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const [showOptions, setShowOptions] = useState(false);
@@ -24,11 +30,15 @@ export function ComposerBottomBar() {
   const setScheduledTime = useComposerStore((state) => state.setScheduledTime);
   const reset = useComposerStore((state) => state.reset);
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     setPublishingState("posting");
-    setTimeout(() => {
+    try {
+      await publishComposerPost({ publishMode, routeDishId, routeVenueId });
       setPublishingState("success");
-    }, 2000);
+    } catch (error) {
+      console.error("Failed to publish post", error);
+      setPublishingState("error");
+    }
   };
 
   const handleSchedule = () => {
@@ -81,9 +91,11 @@ export function ComposerBottomBar() {
   return (
     <View style={styles.wrapper} pointerEvents="box-none">
       {showOptions && (
-        <TouchableWithoutFeedback onPress={() => {
-          setShowOptions(false);
-        }}>
+        <TouchableWithoutFeedback
+          onPress={() => {
+            setShowOptions(false);
+          }}
+        >
           <View style={[styles.overlay, { backgroundColor: "transparent" }]} />
         </TouchableWithoutFeedback>
       )}
@@ -128,23 +140,42 @@ export function ComposerBottomBar() {
                   variant="bodySmallBold"
                   style={{ color: publishMode === mode ? palette.orange : palette.text }}
                 >
-                  {mode === "both" ? "Post & Review" : mode === "post" ? "Post Only" : "Review Only"}
+                  {mode === "both"
+                    ? "Post & Review"
+                    : mode === "post"
+                      ? "Post Only"
+                      : "Review Only"}
                 </AppText>
                 {publishMode === mode && <Check size={16} color={palette.orange} />}
               </Pressable>
             ))}
 
-            <View style={{ height: 1, backgroundColor: palette.border, marginVertical: semanticSpacing.textStack }} />
+            <View
+              style={{
+                height: 1,
+                backgroundColor: palette.border,
+                marginVertical: semanticSpacing.textStack,
+              }}
+            />
 
-            <Pressable
-              onPress={handleSchedule}
-              style={styles.optionItem}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: semanticSpacing.componentGap }}>
+            <Pressable onPress={handleSchedule} style={styles.optionItem}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: semanticSpacing.componentGap,
+                }}
+              >
                 <Calendar size={18} color={palette.text} />
                 <AppText variant="bodySmallBold">Schedule Post</AppText>
               </View>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: semanticSpacing.textStack }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: semanticSpacing.textStack,
+                }}
+              >
                 {scheduledTime && (
                   <AppText variant="micro" tone="accent">
                     {scheduledTime.toLocaleDateString([], { month: "short", day: "numeric" })}
@@ -175,7 +206,12 @@ export function ComposerBottomBar() {
               label={getLabel()}
               onPress={handlePublish}
               size="sm"
-              style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0, flex: 1, minHeight: 40 }}
+              style={{
+                borderTopRightRadius: 0,
+                borderBottomRightRadius: 0,
+                flex: 1,
+                minHeight: 40,
+              }}
               leftIcon={<Send size={16} color={palette.textOnPrimary} />}
             />
             <Pressable
@@ -205,7 +241,10 @@ export function ComposerBottomBar() {
         <View
           style={
             Platform.OS === "ios"
-              ? [styles.iosPickerContainer, { backgroundColor: palette.surface, paddingBottom: insets.bottom }]
+              ? [
+                  styles.iosPickerContainer,
+                  { backgroundColor: palette.surface, paddingBottom: insets.bottom },
+                ]
               : null
           }
         >
@@ -236,7 +275,12 @@ export function ComposerBottomBar() {
               </AppText>
               <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                  <AppText key={d} variant="micro" tone="muted" style={{ width: 32, textAlign: "center" }}>
+                  <AppText
+                    key={d}
+                    variant="micro"
+                    tone="muted"
+                    style={{ width: 32, textAlign: "center" }}
+                  >
                     {d}
                   </AppText>
                 ))}
@@ -263,7 +307,10 @@ export function ComposerBottomBar() {
                         backgroundColor: isSelected ? palette.orange : palette.bgSoft,
                       }}
                     >
-                      <AppText variant="micro" style={{ color: isSelected ? palette.white : palette.text }}>
+                      <AppText
+                        variant="micro"
+                        style={{ color: isSelected ? palette.white : palette.text }}
+                      >
                         {date.getDate()}
                       </AppText>
                     </Pressable>
@@ -272,7 +319,9 @@ export function ComposerBottomBar() {
               </View>
             </View>
 
-            <AppText variant="bodySmallBold" style={{ marginTop: 8 }}>Choose time</AppText>
+            <AppText variant="bodySmallBold" style={{ marginTop: 8 }}>
+              Choose time
+            </AppText>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {hourOptions.map((hour) => (
                 <Pressable
@@ -288,7 +337,10 @@ export function ComposerBottomBar() {
                     borderColor: draftHour === hour ? palette.orange : palette.border,
                   }}
                 >
-                  <AppText variant="micro" style={{ color: draftHour === hour ? palette.orange : palette.text }}>
+                  <AppText
+                    variant="micro"
+                    style={{ color: draftHour === hour ? palette.orange : palette.text }}
+                  >
                     {String(hour).padStart(2, "0")}
                   </AppText>
                 </Pressable>
@@ -308,7 +360,10 @@ export function ComposerBottomBar() {
                     borderColor: draftMinute === minute ? palette.orange : palette.border,
                   }}
                 >
-                  <AppText variant="micro" style={{ color: draftMinute === minute ? palette.orange : palette.text }}>
+                  <AppText
+                    variant="micro"
+                    style={{ color: draftMinute === minute ? palette.orange : palette.text }}
+                  >
                     :{String(minute).padStart(2, "0")}
                   </AppText>
                 </Pressable>

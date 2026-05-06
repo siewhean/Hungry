@@ -23,7 +23,6 @@ import {
   merchantCustomerInteractions,
   merchantOCRDrafts,
   merchantPromotions,
-  stallPosts,
   userProfile,
   venues,
 } from "./data";
@@ -74,6 +73,12 @@ import type { ExplicitFeedbackEvent, ImplicitSignal } from "@/lib/ai/tasteEngine
 import { applyVerificationSubmission } from "@/features/merchant/verificationStateMachine";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
 import { loadMockState, saveMockState } from "./persistence";
+import { biteToStallPost } from "@/lib/services/postTransforms";
+import {
+  appendPublishedStallPost,
+  hydratePublishedStallPosts,
+  listMockStallPosts,
+} from "./stallPostState";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -177,6 +182,7 @@ function pruneMockStories() {
 let _isSocialHydrated = false;
 async function hydrateSocial() {
   if (_isSocialHydrated) return;
+  await hydratePublishedStallPosts();
   const s = await loadMockState<Story[]>("stories");
   if (s) _mockStories = s;
   pruneMockStories();
@@ -833,6 +839,12 @@ export const hungryService: HungryService = {
         createdAt: new Date().toISOString(),
       };
       MOCK_BITES_FEED.unshift(newBite);
+      await appendPublishedStallPost(
+        biteToStallPost(newBite, {
+          authorAvatarUrl: _profile.avatarUrl ?? draft.photoUrl,
+          mediaUrls: [draft.photoUrl],
+        }),
+      );
       return resolve(newBite);
     },
 
@@ -974,7 +986,8 @@ export const hungryService: HungryService = {
     },
 
     async listStallPosts() {
-      return resolve([...stallPosts]);
+      await hydrateSocial();
+      return resolve(listMockStallPosts());
     },
 
     async getArticle(id) {

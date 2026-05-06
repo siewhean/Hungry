@@ -228,6 +228,8 @@ export interface SearchFilters {
 
 export interface StallPost {
   id: string;
+  /** Stable author id when the post came from an authenticated publish flow. */
+  authorId?: string;
   venueId: string;
   buildingId: string;
   authorName: string;
@@ -242,6 +244,11 @@ export interface StallPost {
   tags?: string[];
   dishIds: string[];
   createdAt: string;
+  publishedStatus?: "published" | "draft" | "scheduled";
+  visibility?: "public" | "private";
+  likeCount?: number;
+  commentCount?: number;
+  savedCount?: number;
   /** true = stall/merchant account (orange ring + fork badge), false = user (grey ring) */
   isStallAccount?: boolean;
   /** Inline dish link references in caption — tap navigates to dish detail */

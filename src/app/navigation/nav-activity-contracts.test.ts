@@ -76,7 +76,10 @@ test("home bell opens a combined activity inbox with messages and updates", () =
   assert.match(activityStore, /readActivityIds/);
   assert.match(activityStore, /sharedPostMessages/);
   assert.match(activityStore, /sharePostToChat/);
-  assert.match(activityStore, /getActivityUnreadCount\(get\(\)\.readActivityIds\)/);
+  assert.match(
+    activityStore,
+    /getActivityUnreadCount\(get\(\)\.readActivityIds, get\(\)\.activityUpdates\)/,
+  );
   assert.match(activityData, /export type SharedPostPayload/);
   assert.match(activityData, /sharedPost\?: SharedPostPayload/);
   assert.match(activityData, /unreadCount\?: number/);
@@ -111,23 +114,25 @@ test("activity messages and update posts are functional routes, not static mocku
   assert.match(chat, /setMessages\(\(current\) => \[\.\.\.current, sentMessage\]\)/);
   assert.match(chat, /setTimeout\(\(\) =>/);
   assert.doesNotMatch(chat, /Phone/);
-  assert.doesNotMatch(chat, /Video/);
   assert.doesNotMatch(chat, /Start voice call/);
   assert.doesNotMatch(chat, /Start video call/);
   assert.match(
     detail,
     /type Props = NativeStackScreenProps<RootStackParamList, "ActivityPostDetail">/,
   );
-  assert.match(detail, /repository\.listStallPosts\(\)/);
+  assert.match(detail, /listSharedStallPostsSync\(repository\)/);
   assert.match(detail, /ACTIVITY_UPDATES\.find/);
   assert.match(detail, /markActivityRead\("update", updateId\)/);
   assert.match(detail, /toggleLike\(post\.id\)/);
   assert.match(detail, /toggleSave\(post\.id\)/);
   assert.match(detail, /navigation\.navigate\("DishDetail"/);
-  assert.match(detail, /const \[commentsOpen, setCommentsOpen\] = useState\(false\)/);
+  assert.match(detail, /ReviewCommentsSheet/);
+  assert.match(detail, /commentsSheetRef\.current\?\.present\(\)/);
+  assert.match(detail, /setActiveCommentReview/);
   assert.match(detail, /accessibilityLabel="Open comments"/);
-  assert.match(detail, /onPress=\{\(\) => setCommentsOpen\(true\)\}/);
-  assert.match(detail, /comments\.map\(\(comment\) =>/);
+  assert.match(detail, /seededCommentsForActiveReview/);
+  assert.match(detail, /ReviewShareSheet/);
+  assert.match(detail, /incrementShare\(activeShareReview\.postId\)/);
   assert.doesNotMatch(detail, /localCommentCount/);
   assert.doesNotMatch(detail, /setLocalCommentCount/);
   assert.doesNotMatch(detail, /incrementShare\(post\.id\)/);

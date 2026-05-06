@@ -15,8 +15,10 @@ import {
   type ActivityUpdate,
   type ActivityUpdateKind,
 } from "@/features/home/activity";
+import { listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useActivityStore } from "@/store/useActivityStore";
+import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ActivityInbox">;
@@ -30,7 +32,8 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
   const readActivityIds = useActivityStore((state) => state.readActivityIds);
   const activityUpdates = useActivityStore((state) => state.activityUpdates);
   const repository = getDataRepository();
-  const posts = useMemo(() => repository.listStallPosts(), [repository]);
+  const publishedPosts = usePublishedPostStore((state) => state.posts);
+  const posts = useMemo(() => listSharedStallPostsSync(repository), [publishedPosts, repository]);
   const { palette, spacing, semanticSpacing, radii } = useHungryTheme();
   const allUpdates = useMemo(() => {
     return [...ACTIVITY_UPDATES, ...activityUpdates].map((update) => {
@@ -132,7 +135,8 @@ function MessagesTab({ navigation }: Pick<Props, "navigation">) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           gap: spacing[4],
-          padding: semanticSpacing.screenEdge,
+          paddingHorizontal: semanticSpacing.screenEdge,
+          paddingTop: semanticSpacing.screenEdge,
           paddingBottom: spacing[12],
         }}
       >
@@ -165,7 +169,7 @@ function MessagesTab({ navigation }: Pick<Props, "navigation">) {
                 }
 
                 try {
-                  markActivityRead("message", chatId);
+                  markActivityRead("message", chat.id);
                   navigation.navigate("ChatDetail", {
                     chatId,
                     name: normalizedName,
@@ -232,7 +236,8 @@ function UpdatesTab({
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{
         gap: spacing[4],
-        padding: semanticSpacing.screenEdge,
+        paddingHorizontal: semanticSpacing.screenEdge,
+        paddingTop: semanticSpacing.screenEdge,
         paddingBottom: spacing[12],
       }}
     >
@@ -259,17 +264,11 @@ function UpdatesTab({
             }}
             style={[stylesInline.updateRow, { gap: spacing[3] }]}
           >
-            <View
-              style={{
-                alignItems: "center",
-                backgroundColor: palette.bgSoft,
-                borderRadius: radii.pill,
-                height: 44,
-                justifyContent: "center",
-                width: 44,
-              }}
-            >
+            <View style={[stylesInline.kindBadge, { backgroundColor: palette.bgSoft }]}>
               <Icon color={kindColor} size={20} />
+              <AppText variant="micro" style={{ color: kindColor, fontWeight: "800" }}>
+                {update.kind === "like" ? "Like" : "Comment"}
+              </AppText>
             </View>
             <View style={{ flex: 1, gap: spacing[1] }}>
               <View style={stylesInline.rowBetween}>

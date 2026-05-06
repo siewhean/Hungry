@@ -1,19 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { Pressable, StyleSheet, TextInput, View, useWindowDimensions } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
 import { Bookmark, Heart, MessageCircle, PlayCircle, Send } from "lucide-react-native";
+import type { NavigationProp } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
+import { getRootNavigation } from "@/app/navigation/getRootNavigation";
+import type { ProfileStackParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Avatar, Screen } from "@/components/ui";
 import {
   ReviewCommentsSheet,
@@ -21,7 +16,9 @@ import {
   ZoomableMedia,
 } from "@/components/social";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
+import { listSharedStallPosts, listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useSocialStore, type SocialComment } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
 import type { StallPost } from "@/types/domain";
@@ -38,16 +35,30 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
   const toggleSave = useSocialStore((state) => state.toggleSave);
   const incrementShare = useSocialStore((state) => state.incrementShare);
   const repository = getDataRepository();
+  const publishedPosts = usePublishedPostStore((state) => state.posts);
   const insets = useSafeAreaInsets();
   const commentsSheetRef = useRef<BottomSheetModal>(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const commentInputRef = useRef<TextInput | null>(null);
+  const rootNavigation = getRootNavigation(navigation) as NavigationProp<RootStackParamList>;
   const [activeCommentReview, setActiveCommentReview] = useState<ActiveReviewCommentTarget | null>(
     null,
   );
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
 
-  const posts = useMemo(() => repository.listStallPosts(), [repository]);
+  const [posts, setPosts] = useState<StallPost[]>(() => listSharedStallPostsSync(repository));
+
+  useEffect(() => {
+    let isMounted = true;
+    void listSharedStallPosts(repository).then((sharedPosts) => {
+      if (isMounted) {
+        setPosts(sharedPosts);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [publishedPosts, repository]);
 
   useEffect(() => {
     initializeInteractions(posts);
@@ -132,52 +143,22 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
         style={[styles.feedItemWrap, { backgroundColor: palette.bg, marginBottom: spacing[12] }]}
       >
         <View style={[styles.imageContainer, { height: imageHeight }]}>
-          {isCarousel ? (
-            <ScrollView
-              horizontal
-              pagingEnabled
-              bounces={false}
-              showsHorizontalScrollIndicator={false}
-            >
-              {mediaUrls.map((uri, index) => (
-                <Pressable
-                  key={`${feedPost.id}-detail-media-${index}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${primaryDish?.name ?? venue?.name ?? "post"} details`}
-                  onPress={() => {
-                    if (primaryDish) {
-                      navigation.navigate(
-                        "DishDetail" as never,
-                        {
-                          dishId: primaryDish.id,
-                        } as never,
-                      );
-                    }
-                  }}
-                  style={[styles.carouselPage, { width: screenWidth, height: imageHeight }]}
-                >
-                  <ZoomableMedia uri={uri} type="image" style={styles.heroImage} />
-                </Pressable>
-              ))}
-            </ScrollView>
-          ) : (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Open ${primaryDish?.name ?? venue?.name ?? "post"} details`}
-              onPress={() => {
-                if (primaryDish) {
-                  navigation.navigate("DishDetail" as never, { dishId: primaryDish.id } as never);
-                }
-              }}
-              style={StyleSheet.absoluteFill}
-            >
-              <ZoomableMedia
-                uri={mediaUrls[0]}
-                type={feedPost.mediaType === "video" ? "video" : "image"}
-                style={styles.heroImage}
-              />
-            </Pressable>
-          )}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${primaryDish?.name ?? venue?.name ?? "post"} details`}
+            onPress={() => {
+              if (primaryDish) {
+                rootNavigation.navigate("DishDetail", { dishId: primaryDish.id });
+              }
+            }}
+            style={StyleSheet.absoluteFill}
+          >
+            <ZoomableMedia
+              uri={mediaUrls[0]}
+              type={feedPost.mediaType === "video" ? "video" : "image"}
+              style={styles.heroImage}
+            />
+          </Pressable>
 
           {isCarousel ? (
             <View pointerEvents="none" style={styles.carouselBadge}>
@@ -393,9 +374,6 @@ const styles = StyleSheet.create({
   heroImage: {
     width: "100%",
     height: "100%",
-  },
-  carouselPage: {
-    overflow: "hidden",
   },
   carouselBadge: {
     position: "absolute",

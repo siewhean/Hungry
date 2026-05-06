@@ -33,7 +33,7 @@ type BeforeRemoveEvent = {
   preventDefault: () => void;
 };
 
-export function PostComposerScreenV2({ navigation }: Props) {
+export function PostComposerScreenV2({ navigation, route }: Props) {
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const activeTab = useComposerStore((state) => state.activeTab);
@@ -220,7 +220,7 @@ export function PostComposerScreenV2({ navigation }: Props) {
       </ScrollView>
 
       {/* Overlays & Fixed Components */}
-      <ComposerBottomBar />
+      <ComposerBottomBar routeDishId={route.params?.dishId} routeVenueId={route.params?.venueId} />
       <StatusOverlay onFinish={finishAndReturnToHomeFeed} />
       <LivePreviewSheet />
       <MediaEditor mediaId={editingMediaId} onClose={() => setEditingMediaId(null)} />

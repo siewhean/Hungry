@@ -36,7 +36,7 @@ import {
   BottomSheetFooter,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { FlashList } from "@shopify/flash-list";
@@ -78,13 +78,20 @@ import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useStoryStore } from "@/store/useStoryStore";
 import { useSocialStore, type SocialComment, type SocialReply } from "@/store/useSocialStore";
+import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useHungryTheme } from "@/theme";
 import type { StoryItem } from "@/types/domain";
 
 function FeedSkeleton() {
   const { spacing, semanticSpacing, radii, palette } = useHungryTheme();
   return (
-    <View style={{ gap: spacing[6], padding: semanticSpacing.screenEdge }}>
+    <View
+      style={{
+        gap: spacing[6],
+        paddingHorizontal: semanticSpacing.screenEdge,
+        paddingVertical: semanticSpacing.screenEdge,
+      }}
+    >
       <Skeleton width="60%" height={24} />
       <ScrollView
         horizontal
@@ -146,6 +153,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const headerActionSize = spacing[8] + spacing[2.5];
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
+  const publishedPosts = usePublishedPostStore((state) => state.posts);
   const stories = useStoryStore((state) => state.stories);
   const loadStories = useStoryStore((state) => state.loadStories);
   const interactions = useSocialStore((state) => state.interactions);
@@ -223,7 +231,13 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     } catch {
       setFeedState("error");
     }
-  }, [initializeInteractions, profile]);
+  }, [initializeInteractions, profile, publishedPosts]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadFeed();
+    }, [loadFeed]),
+  );
 
   useEffect(() => {
     void loadFeed();

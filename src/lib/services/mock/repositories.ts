@@ -1,12 +1,5 @@
-import {
-  blogPosts,
-  buildings,
-  dishes,
-  guestProfile,
-  stallPosts,
-  userProfile,
-  venues,
-} from "./data";
+import { blogPosts, buildings, dishes, guestProfile, userProfile, venues } from "./data";
+import { listMockStallPosts } from "./stallPostState";
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import type { DecideForMeOptions } from "@/lib/services/types";
@@ -137,7 +130,7 @@ export const dataRepositoryMock = {
     return blogPosts;
   },
   listStallPosts(): StallPost[] {
-    return stallPosts;
+    return listMockStallPosts();
   },
 };
 

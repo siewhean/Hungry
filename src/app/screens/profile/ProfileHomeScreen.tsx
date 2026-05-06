@@ -22,14 +22,16 @@ import {
 
 import { AppText, Card, Button } from "@/components/ui";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
+import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useStoryStore } from "@/store/useStoryStore";
 import { useSocialStore } from "@/store/useSocialStore";
+import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -44,6 +46,7 @@ import {
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { StallPost } from "@/types/domain";
 
 type ProfileRouteName = "ProfileHome" | "ProfilePremium";
 type Props = NativeStackScreenProps<ProfileStackParamList, ProfileRouteName>;
@@ -56,6 +59,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
   const signOut = useSessionStore((state) => state.signOut);
   const merchantAccount = useMerchantStore((state) => state.account);
   const followedAuthors = useSocialStore((state) => state.followedAuthors);
+  const publishedPosts = usePublishedPostStore((state) => state.posts);
   const socialInteractions = useSocialStore((state) => state.interactions);
   const reviewEntries = useProfileStore((state) => state.reviewEntries);
   const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
@@ -66,15 +70,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
   const [selectedShareChatIds, setSelectedShareChatIds] = useState<string[]>([]);
   const [isTasteShareSheetOpen, setIsTasteShareSheetOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [sharedBites, setSharedBites] = useState<
-    {
-      id: string;
-      dishName: string;
-      venueName: string;
-      caption: string;
-      createdAt: string;
-    }[]
-  >([]);
+  const [profilePosts, setProfilePosts] = useState<StallPost[]>([]);
   const [activeShareTab, setActiveShareTab] = useState<"posts" | "reviews">("posts");
 
   const rootNavigation = getRootNavigation(
@@ -89,69 +85,58 @@ export function ProfileHomeScreen({ navigation }: Props) {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setSharedBites([]);
+      setProfilePosts([]);
       return;
     }
 
     let isMounted = true;
 
-    const loadSharedBites = async () => {
+    const loadProfilePosts = async () => {
       try {
-        const bites = await getHungryService().social.getBitesFeed();
+        const posts = await listSharedStallPosts();
         if (!isMounted) return;
-        setSharedBites(
-          bites.filter(
-            (bite) =>
-              bite.authorId === profile.id ||
-              bite.authorName.toLowerCase() === profile.displayName.toLowerCase(),
+        setProfilePosts(
+          posts.filter(
+            (post) =>
+              post.authorId === profile.id ||
+              post.authorName.toLowerCase() === profile.displayName.toLowerCase(),
           ),
         );
       } catch (error) {
-        console.error("Failed to load shared bites:", error);
+        console.error("Failed to load profile posts:", error);
         if (isMounted) {
-          setSharedBites([]);
+          setProfilePosts([]);
         }
       }
     };
 
-    void loadSharedBites();
+    void loadProfilePosts();
 
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, profile.displayName, profile.id]);
+  }, [isAuthenticated, profile.displayName, profile.id, publishedPosts]);
 
   const sharedPosts = useMemo(() => {
-    const fallbackMockPost = isAuthenticated
-      ? [
-          {
-            id: "mock-shared-post-fallback",
-            title: "Chicken Rice",
-            subtitle: "Tian Tian Hainanese",
-            text: "Morning post update: still the gold standard after 10 years.",
-            createdAt: new Date(Date.now() - 60 * 60_000).toISOString(),
-          },
-        ]
-      : [];
+    const repository = getDataRepository();
 
-    const biteItems = sharedBites.map((bite) => ({
-      id: bite.id,
-      title: bite.dishName,
-      subtitle: bite.venueName,
-      text: bite.caption,
-      createdAt: bite.createdAt,
+    const postItems = profilePosts.map((post) => ({
+      id: post.id,
+      title: repository.getDishById(post.dishIds[0])?.name ?? "Shared post",
+      subtitle: repository.getVenueById(post.venueId)?.name ?? post.authorLocation,
+      text: post.caption,
+      createdAt: post.createdAt,
     }));
 
-    const finalPosts = [...biteItems];
-    if (finalPosts.length) {
-      return finalPosts.sort((a, b) => {
+    if (postItems.length) {
+      return postItems.sort((a, b) => {
         if (a.createdAt === b.createdAt) return 0;
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
     }
 
-    return fallbackMockPost;
-  }, [sharedBites, isAuthenticated]);
+    return [];
+  }, [profilePosts]);
 
   const sharedReviews = useMemo(() => {
     const repository = getDataRepository();
@@ -472,6 +457,18 @@ export function ProfileHomeScreen({ navigation }: Props) {
           </Card>
         ) : (
           <View style={{ gap: spacing[4] }}>
+            <View style={{ flexDirection: "row", gap: spacing[2], marginTop: spacing[3] }}>
+              <StatBlock
+                label="Followers"
+                value={socialCounts.followers}
+                icon={<Heart size={14} color={palette.orange} />}
+              />
+              <StatBlock
+                label="Following"
+                value={socialCounts.following}
+                icon={<Send size={14} color={palette.orange} />}
+              />
+            </View>
             <View style={{ flexDirection: "row", gap: spacing[2], marginTop: spacing[3] }}>
               <StatBlock
                 label="Reviews"
