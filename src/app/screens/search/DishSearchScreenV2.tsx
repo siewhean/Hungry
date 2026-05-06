@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -23,6 +23,12 @@ import { useHungryTheme } from "@/theme";
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 const SEARCH_TABS = ["All", "Dishes", "Stalls", "Reads"] as const;
+const TASTE_CHIPS = [
+  { id: "spicy", label: "Spicy", tokens: ["spicy", "mala", "hiam", "heat"] },
+  { id: "coconut", label: "Coconut", tokens: ["coconut", "lemak", "laksa"] },
+  { id: "seafood", label: "Seafood", tokens: ["seafood", "fish", "prawn", "satay"] },
+  { id: "herb", label: "Herb", tokens: ["herb", "aromatic", "ginger", "fresh"] },
+] as const;
 
 export function DishSearchScreenV2() {
   const navigation = useNavigation<RootNavigation>();
@@ -30,9 +36,35 @@ export function DishSearchScreenV2() {
   const { filters } = useSearchData();
   const profile = useProfileStore((state) => state.profile);
   const updateQuery = useSearchStore((state) => state.updateQuery);
-  const collections = getDiscoverStallCollections(profile, filters.query).slice(0, 5);
-
   const [activeTab, setActiveTab] = useState<(typeof SEARCH_TABS)[number]>("Dishes");
+  const [activeTasteFilters, setActiveTasteFilters] = useState<string[]>([]);
+  const baseCollections = useMemo(
+    () => getDiscoverStallCollections(profile, filters.query),
+    [filters.query, profile],
+  );
+  const collections = useMemo(() => {
+    if (activeTab === "Reads") {
+      return [];
+    }
+
+    const filteredByTaste = activeTasteFilters.length
+      ? baseCollections.filter((item) => {
+          const haystack = item.topDishes
+            .map(
+              (dish) => `${dish.name} ${dish.tasteTags.join(" ")} ${dish.dietaryFlags.join(" ")}`,
+            )
+            .join(" ")
+            .toLowerCase();
+          return activeTasteFilters.every((filterId) => {
+            const filter = TASTE_CHIPS.find((chip) => chip.id === filterId);
+            return filter?.tokens.some((token) => haystack.includes(token)) ?? true;
+          });
+        })
+      : baseCollections;
+
+    return filteredByTaste.slice(0, 5);
+  }, [activeTab, activeTasteFilters, baseCollections]);
+
   const { width: screenWidth } = useWindowDimensions();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const searchInputRef = useRef<TextInput | null>(null);
@@ -97,6 +129,12 @@ export function DishSearchScreenV2() {
       searchRevealProgress.setValue(0);
     };
   }, [searchRevealProgress]);
+
+  const toggleTasteFilter = (filterId: string) => {
+    setActiveTasteFilters((current) =>
+      current.includes(filterId) ? current.filter((id) => id !== filterId) : [...current, filterId],
+    );
+  };
 
   const entryY = useRef(new Animated.Value(-10)).current;
   const entryOpacity = useRef(new Animated.Value(0)).current;
@@ -247,6 +285,9 @@ export function DishSearchScreenV2() {
             return (
               <Pressable
                 key={tab}
+                accessibilityRole="button"
+                accessibilityLabel={`Show ${tab.toLowerCase()} search results`}
+                accessibilityState={{ selected: isActive }}
                 onPress={() => setActiveTab(tab)}
                 style={{
                   paddingVertical: spacing[3],
@@ -293,13 +334,37 @@ export function DishSearchScreenV2() {
 
           {/* Results List */}
           <View style={{ paddingHorizontal: spacing[4] }}>
+            {collections.length === 0 ? (
+              <View
+                style={{
+                  alignItems: "center",
+                  paddingHorizontal: spacing[4],
+                  paddingVertical: spacing[8],
+                }}
+              >
+                <AppText variant="h3" style={{ textAlign: "center" }}>
+                  No matches found
+                </AppText>
+                <AppText tone="muted" style={{ marginTop: spacing[1], textAlign: "center" }}>
+                  Try another search tab or taste filter.
+                </AppText>
+              </View>
+            ) : null}
             {collections.map((item) => {
               const dish = item.topDishes[0];
               if (!dish) return null;
               return (
                 <Pressable
                   key={dish.id}
-                  onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    activeTab === "Stalls" ? `Open ${item.venue.name}` : `Open ${dish.name}`
+                  }
+                  onPress={() =>
+                    activeTab === "Stalls"
+                      ? navigation.navigate("StallDetailV2", { venueId: item.venue.id })
+                      : navigation.navigate("DishDetail", { dishId: dish.id })
+                  }
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
@@ -377,10 +442,14 @@ export function DishSearchScreenV2() {
               Filter by taste
             </AppText>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-              <Chip label="🌶️ Spicy" onPress={() => {}} />
-              <Chip label="🥥 Coconut" selected onPress={() => {}} />
-              <Chip label="🍤 Seafood" onPress={() => {}} />
-              <Chip label="🌿 Herb" onPress={() => {}} />
+              {TASTE_CHIPS.map((chip) => (
+                <Chip
+                  key={chip.id}
+                  label={chip.label}
+                  selected={activeTasteFilters.includes(chip.id)}
+                  onPress={() => toggleTasteFilter(chip.id)}
+                />
+              ))}
             </View>
           </View>
         </ScrollView>

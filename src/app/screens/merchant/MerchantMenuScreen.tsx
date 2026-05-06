@@ -5,10 +5,11 @@ import { Plus, Search, MoreVertical, Camera } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
+import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AppText, Button, IconButton, Chip, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
-import { getHungryService } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { DishDetail } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 
@@ -31,6 +32,8 @@ function formatDietaryFlag(flag: string): string {
 export function MerchantMenuScreen() {
   const { palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
+  const rootNavigation = getRootNavigation(navigation as any);
+  const repository = getDataRepository();
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const insets = useSafeAreaInsets();
 
@@ -138,6 +141,23 @@ export function MerchantMenuScreen() {
       { text: "Delete", style: "destructive", onPress: () => handleDelete(dish) },
       { text: "Cancel", style: "cancel" },
     ]);
+  };
+
+  const handlePreviewMenuAsCustomer = () => {
+    const previewVenueId =
+      menu[0]?.venueId ??
+      activeOutlet?.signatureDishIds
+        .map((dishId) => repository.getDishById(dishId)?.venueId)
+        .find(Boolean) ??
+      (activeOutlet?.buildingId
+        ? repository.listVenuesByBuilding(activeOutlet.buildingId)[0]?.id
+        : undefined);
+
+    if (previewVenueId) {
+      rootNavigation.navigate("StallDetail", { venueId: previewVenueId });
+    } else {
+      rootNavigation.navigate("DiscoverMap");
+    }
   };
 
   return (
@@ -288,7 +308,7 @@ export function MerchantMenuScreen() {
           label="Preview menu as customer"
           variant="secondary"
           fullWidth
-          onPress={() => Alert.alert("Preview", "Navigating to customer view...")}
+          onPress={handlePreviewMenuAsCustomer}
         />
       </View>
     </Screen>

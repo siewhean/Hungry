@@ -462,7 +462,7 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
   assert.match(discover, /navigation\.navigate\("BrowseDishes"\)/);
   assert.match(
     navigationTypes,
-    /SearchResults: \{[\s\S]*browseMode\?: "dishes" \| "stalls"[\s\S]*\} \| undefined/,
+    /SearchResults:\s*\|\s*\{[\s\S]*browseMode\?: "dishes" \| "stalls"[\s\S]*\}\s*\|\s*undefined/,
   );
   assert.match(navigationTypes, /BrowseDishes: undefined/);
   assert.match(navigationTypes, /BrowseStalls: undefined/);

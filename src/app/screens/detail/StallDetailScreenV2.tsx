@@ -13,10 +13,15 @@ import type {
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, Card, Screen } from "@/components/ui";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
+import { useCartStore } from "@/store/useCartStore";
+import { useOrderStore } from "@/store/useOrderStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
+import type { DeliveryLink } from "@/types/domain";
 
 type Props = NativeStackScreenProps<RootStackParamList, "StallDetailV2">;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -37,8 +42,12 @@ export function StallDetailScreenV2({ route }: Props) {
   const scrollY = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
+  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const incrementShare = useSocialStore((state) => state.incrementShare);
+  const addItemToCart = useCartStore((state) => state.addItem);
+  const setActiveOrder = useOrderStore((state) => state.setActiveOrder);
+  const showToast = useUIStore((state) => state.showToast);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
@@ -73,6 +82,56 @@ export function StallDetailScreenV2({ route }: Props) {
   };
 
   if (!venue) return null;
+
+  const isSaved = leadDish ? profile.favouriteDishIds.includes(leadDish.id) : false;
+  const deliveryLinks = venue.deliveryLinks ?? [];
+
+  const formatDeliveryPlatform = (platform: DeliveryLink["platform"]) =>
+    platform === "grabfood" ? "GrabFood" : "Foodpanda";
+
+  const handleSaveStall = () => {
+    if (!leadDish) {
+      showToast({ message: "No dish is available to save for this stall.", tone: "info" });
+      return;
+    }
+
+    toggleFavourite(leadDish);
+    showToast({
+      message: isSaved ? "Removed from favourites." : "Saved to favourites.",
+      tone: "success",
+    });
+  };
+
+  const handleAddLeadDishToCart = () => {
+    if (!leadDish) {
+      showToast({ message: "No menu item is available to add yet.", tone: "info" });
+      return;
+    }
+
+    addItemToCart({ dishId: leadDish.id });
+    setActiveOrder({
+      id: `order-${Date.now()}`,
+      venueId: venue.id,
+      totalAmount: leadDish.price,
+      status: "draft",
+      createdAt: new Date().toISOString(),
+    });
+    showToast({ message: `${leadDish.name} added to cart.`, tone: "success" });
+  };
+
+  const handleDeliveryLink = (link: DeliveryLink) => {
+    void openTrustedDeliveryUrl(link.platform, link.nativeUrl, link.webUrl);
+  };
+
+  const handlePrimaryOrderAction = () => {
+    const preferredLink = deliveryLinks[0];
+    if (preferredLink) {
+      handleDeliveryLink(preferredLink);
+      return;
+    }
+
+    handleAddLeadDishToCart();
+  };
 
   return (
     <Screen scroll={false} style={{ backgroundColor: palette.bg }}>
@@ -112,6 +171,9 @@ export function StallDetailScreenV2({ route }: Props) {
           </Pressable>
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={isSaved ? "Remove stall from favourites" : "Save stall"}
+              onPress={handleSaveStall}
               style={{
                 width: 36,
                 height: 36,
@@ -121,9 +183,15 @@ export function StallDetailScreenV2({ route }: Props) {
                 justifyContent: "center",
               }}
             >
-              <Heart color={palette.text} size={18} />
+              <Heart
+                color={isSaved ? palette.error : palette.text}
+                fill={isSaved ? palette.error : "transparent"}
+                size={18}
+              />
             </Pressable>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Share stall"
               style={{
                 width: 36,
                 height: 36,
@@ -255,47 +323,40 @@ export function StallDetailScreenV2({ route }: Props) {
         </View>
 
         {/* Delivery Row */}
-        <View style={{ marginTop: spacing[6], paddingHorizontal: spacing[4] }}>
-          <AppText variant="bodySmallBold" style={{ marginBottom: spacing[2] }}>
-            Order delivery via
-          </AppText>
-          <View style={{ flexDirection: "row", gap: spacing[2] }}>
-            <Pressable
-              style={{
-                flex: 1,
-                paddingVertical: 10,
-                borderRadius: radii.md,
-                backgroundColor: palette.bgSoft,
-                alignItems: "center",
-                justifyContent: "center",
-                borderWidth: 1,
-                borderColor: palette.border,
-                flexDirection: "row",
-                gap: 6,
-              }}
-            >
-              <AppText style={{ fontSize: 16 }}>🟢</AppText>
-              <AppText variant="bodySmallBold">GrabFood</AppText>
-            </Pressable>
-            <Pressable
-              style={{
-                flex: 1,
-                paddingVertical: 10,
-                borderRadius: radii.md,
-                backgroundColor: palette.bgSoft,
-                alignItems: "center",
-                justifyContent: "center",
-                borderWidth: 1,
-                borderColor: palette.border,
-                flexDirection: "row",
-                gap: 6,
-              }}
-            >
-              <AppText style={{ fontSize: 16 }}>🔴</AppText>
-              <AppText variant="bodySmallBold">Panda</AppText>
-            </Pressable>
+        {deliveryLinks.length > 0 ? (
+          <View style={{ marginTop: spacing[6], paddingHorizontal: spacing[4] }}>
+            <AppText variant="bodySmallBold" style={{ marginBottom: spacing[2] }}>
+              Order delivery via
+            </AppText>
+            <View style={{ flexDirection: "row", gap: spacing[2] }}>
+              {deliveryLinks.slice(0, 2).map((link) => (
+                <Pressable
+                  key={`${link.platform}-${link.webUrl}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Order from ${formatDeliveryPlatform(link.platform)}`}
+                  onPress={() => handleDeliveryLink(link)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 10,
+                    borderRadius: radii.md,
+                    backgroundColor: palette.bgSoft,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 1,
+                    borderColor: palette.border,
+                    flexDirection: "row",
+                    gap: 6,
+                  }}
+                >
+                  <AppText style={{ fontSize: 16 }}>
+                    {link.platform === "grabfood" ? "G" : "P"}
+                  </AppText>
+                  <AppText variant="bodySmallBold">{formatDeliveryPlatform(link.platform)}</AppText>
+                </Pressable>
+              ))}
+            </View>
           </View>
-        </View>
+        ) : null}
 
         {/* Taste Profile */}
         <View
@@ -424,13 +485,13 @@ export function StallDetailScreenV2({ route }: Props) {
           style={{ flex: 1, height: 52 }}
           leftIcon={<Navigation size={18} color={palette.text} />}
           label="Directions"
-          onPress={() => {}}
+          onPress={() => navigation.navigate("MapZoomedIn", { buildingId: venue.buildingId })}
         />
         <Button
           variant="primary"
           style={{ flex: 2, height: 52 }}
-          label="Order delivery"
-          onPress={() => {}}
+          label={deliveryLinks.length > 0 ? "Order delivery" : "Add to cart"}
+          onPress={handlePrimaryOrderAction}
         />
       </View>
 

@@ -158,7 +158,7 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(mapSource, /highlightedStallVenueId/);
   assert.match(
     mapSource,
-    /selectedMarkerId=\{highlightedStallVenueId \? `stall-\$\{highlightedStallVenueId\}` : undefined\}/,
+    /selectedMarkerId=\{\s*highlightedStallVenueId \? `stall-\$\{highlightedStallVenueId\}` : undefined\s*\}/,
   );
   assert.doesNotMatch(source, /interaction\.saveCount > 0/);
   assert.doesNotMatch(source, /localCommentsByPostId/);

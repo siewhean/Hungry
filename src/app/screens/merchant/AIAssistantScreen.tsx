@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, StyleSheet, RefreshControl, Pressable, Alert } from "react-native";
+import { View, StyleSheet, Pressable } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
 import {
   TrendingUp,
   AlertCircle,
@@ -13,13 +15,17 @@ import {
 } from "lucide-react-native";
 
 import { AppText, IconButton, Screen } from "@/components/ui";
+import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { AIBusinessInsight } from "@/types/domain";
 
+type MerchantNavigation = BottomTabNavigationProp<MerchantTabParamList>;
+
 export function AIAssistantScreen() {
   const { palette, spacing, radii } = useHungryTheme();
+  const navigation = useNavigation<MerchantNavigation>();
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [insights, setInsights] = useState<AIBusinessInsight[]>([]);
@@ -48,6 +54,25 @@ export function AIAssistantScreen() {
 
   const handleDismiss = (id: string) => {
     setInsights((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  const handleInsightAction = (target?: string) => {
+    switch (target) {
+      case "PromotionBuilder":
+        navigation.navigate("PromotionBuilder");
+        break;
+      case "Menu":
+        navigation.navigate("Menu");
+        break;
+      case "BusinessProfileEditor":
+        navigation.navigate("BusinessProfileEditor");
+        break;
+      case "Analytics":
+        navigation.navigate("Analytics");
+        break;
+      default:
+        navigation.navigate("Dashboard");
+    }
   };
 
   const getInsightIcon = (type: AIBusinessInsight["type"]) => {
@@ -192,7 +217,9 @@ export function AIAssistantScreen() {
 
                   {insight.actionLabel && (
                     <Pressable
-                      onPress={() => Alert.alert("Action", `Navigate to ${insight.actionTarget}`)}
+                      accessibilityRole="button"
+                      accessibilityLabel={insight.actionLabel}
+                      onPress={() => handleInsightAction(insight.actionTarget)}
                       style={[
                         styles.actionButton,
                         { borderColor: palette.border, marginLeft: 48, borderRadius: radii.pill },

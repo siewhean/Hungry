@@ -3,7 +3,6 @@ import {
   View,
   StyleSheet,
   Pressable,
-  Alert,
   Animated,
   PanResponder,
   ActivityIndicator,
@@ -11,7 +10,8 @@ import {
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { X, Heart, MessageCircle, Bookmark, Send } from "lucide-react-native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { X, Heart, MessageCircle, Bookmark } from "lucide-react-native";
 import { AppText, IconButton, Avatar } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useStoryStore } from "@/store/useStoryStore";
@@ -23,6 +23,7 @@ import { useUIStore } from "@/store/useUIStore";
 const STORY_DURATION = 5000;
 const SWIPE_THRESHOLD = 48;
 const STORY_ROTATE_ANGLE = 105;
+type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 const StoryMedia = React.memo(function StoryMedia({
   uri,
@@ -68,7 +69,7 @@ function orderedStoriesFrom<T>(items: T[], startIndex: number): T[] {
 export function StoryViewerScreen() {
   const { palette, spacing, radii } = useHungryTheme();
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const navigation = useNavigation<RootNavigation>();
   const route = useRoute<RouteProp<RootStackParamList, "StoryViewer">>();
   const initialStoryId = route.params.initialStoryId;
 
@@ -293,6 +294,25 @@ export function StoryViewerScreen() {
     }
   };
 
+  const handleStoryMessage = () => {
+    if (!currentStory) {
+      return;
+    }
+
+    if (currentStory.isOwn) {
+      navigation.navigate("AddStory");
+      return;
+    }
+
+    const chatId = `story-${currentStory.displayName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+    navigation.navigate("ChatDetail", {
+      chatId,
+      name: currentStory.displayName,
+      avatar: currentStory.avatarUrl || currentStory.content.url,
+      isOnline: false,
+    });
+  };
+
   // Mark stories for this user as seen when first opened/viewed so the carousel shows grey ring
   useEffect(() => {
     if (currentStory?.hasUnseen) {
@@ -427,12 +447,16 @@ export function StoryViewerScreen() {
       >
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Comment on story"
+          accessibilityLabel={
+            currentStory.isOwn ? "Add another story" : `Message ${currentStory.displayName}`
+          }
           style={styles.inputSimulator}
-          onPress={() => Alert.alert("Reply", "Comment feature coming soon.")}
+          onPress={handleStoryMessage}
         >
           <MessageCircle color={palette.white} size={18} />
-          <AppText style={{ color: palette.white }}>Send message</AppText>
+          <AppText style={{ color: palette.white }}>
+            {currentStory.isOwn ? "Add story" : "Send message"}
+          </AppText>
         </Pressable>
         <View style={styles.actionsRow}>
           <View style={styles.actionButtonStack}>
@@ -465,17 +489,6 @@ export function StoryViewerScreen() {
               accessibilityLabel="Save story"
             />
             <AppText style={styles.actionCountText}> </AppText>
-          </View>
-
-          <View style={styles.actionButtonStack}>
-            <IconButton
-              icon={<Send color={palette.white} size={28} />}
-              onPress={() => Alert.alert("Share", "Share feature coming soon.")}
-              accessibilityLabel="Share story"
-            />
-            <AppText style={styles.actionCountText}>
-              {currentStory.interaction.shareCount > 0 ? currentStory.interaction.shareCount : " "}
-            </AppText>
           </View>
         </View>
       </View>

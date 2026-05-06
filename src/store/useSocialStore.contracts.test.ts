@@ -63,12 +63,12 @@ test("social store contract: comments and replies update visible post counters",
   assert.match(source, /commentsByPostId: \{/);
   assert.match(
     source,
-    /\[postId\]: \[\.\.\.\(prev\.commentsByPostId\[postId\] \?\? \[\]\), comment\]/,
+    /\[postId\]: \[\s*\.\.\.\(prev\.commentsByPostId\[postId\] \?\? \[\]\),\s*comment,?\s*\]/,
   );
   assert.match(source, /repliesByCommentId: \{/);
   assert.match(
     source,
-    /\[reply\.parentCommentId\]: \[\.\.\.\(prev\.repliesByCommentId\[reply\.parentCommentId\] \?\? \[\]\), reply\]/,
+    /\[reply\.parentCommentId\]: \[\s*\.\.\.\(prev\.repliesByCommentId\[reply\.parentCommentId\] \?\? \[\]\),\s*reply,?\s*\]/,
   );
   assert.match(source, /commentCount: current\.commentCount \+ 1/);
 });

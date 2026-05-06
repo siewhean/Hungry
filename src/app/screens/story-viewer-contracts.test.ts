@@ -40,10 +40,17 @@ test("Story viewer contract: cross-user transitions and footer actions are stand
   assert.doesNotMatch(source, /userTransitionBadge/);
   assert.match(source, /loadStories/);
   assert.match(source, /ActivityIndicator/);
-  assert.match(source, /accessibilityLabel="Comment on story"/);
+  assert.match(source, /const handleStoryMessage = \(\) => \{/);
+  assert.match(source, /navigation\.navigate\("ChatDetail", \{/);
+  assert.match(source, /navigation\.navigate\("AddStory"\)/);
+  assert.match(
+    source,
+    /accessibilityLabel=\{\s*currentStory\.isOwn \? "Add another story" : `Message \$\{currentStory\.displayName\}`\s*\}/,
+  );
   assert.match(source, /accessibilityLabel="Like story"/);
   assert.match(source, /accessibilityLabel="Save story"/);
-  assert.match(source, /accessibilityLabel="Share story"/);
+  assert.doesNotMatch(source, /Share feature coming soon/);
+  assert.doesNotMatch(source, /accessibilityLabel="Share story"/);
   assert.match(source, /styles\.actionButtonStack/);
   assert.match(source, /styles\.actionCountText/);
   assert.doesNotMatch(source, /actionIcon/);

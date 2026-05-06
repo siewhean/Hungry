@@ -187,6 +187,41 @@ export function DiscoverHomeScreenV2() {
 
   const recommendedDishes = popularNearby.slice(0, 5);
 
+  const handleIntentChipPress = (chip: (typeof INTENT_CHIPS)[number]) => {
+    trackAnalyticsEvent("discover_intent_chip_tapped", {
+      chip_id: chip.id,
+      category: chip.category,
+    });
+
+    if (chip.id === "near_me") {
+      navigation.navigate("DiscoverMap");
+      return;
+    }
+
+    if (chip.id === "spicy") {
+      updateSearchQuery("spicy");
+      rememberSearch("spicy");
+      navigation.navigate("SearchResults", {
+        browseMode: "dishes",
+        initialQuery: "spicy",
+        initialFilter: "Spicy",
+      });
+      return;
+    }
+
+    if (chip.id === "rated") {
+      navigation.navigate("SearchResults", { browseMode: "dishes" });
+      return;
+    }
+
+    if (chip.id === "hawker") {
+      navigation.navigate("SearchResults", { browseMode: "stalls" });
+      return;
+    }
+
+    navigation.navigate("DecideForMeResult");
+  };
+
   const nearbyStalls = repository
     .listBuildings()
     .flatMap((b) => repository.listVenuesByBuilding(b.id))
@@ -347,7 +382,7 @@ export function DiscoverHomeScreenV2() {
                 key={chip.id}
                 label={chip.label}
                 selected={isActive}
-                onPress={() => {}}
+                onPress={() => handleIntentChipPress(chip)}
                 leftIcon={
                   chip.id === "spicy" ? (
                     <Flame size={14} color={isActive ? palette.orange : palette.textSecondary} />

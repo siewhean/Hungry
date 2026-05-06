@@ -46,7 +46,7 @@ test("profile home contract: profile stats use dynamic profile and social store 
   assert.match(source, /<AppText variant="bodyBold">Detailed Analysis<\/AppText>/);
   assert.match(
     source,
-    /<AppText variant="h3" style=\{\{ color: palette\.text \}\}>\{value\}<\/AppText>/,
+    /<AppText variant="h3" style=\{\{ color: palette\.text \}\}>\s*\{value\}\s*<\/AppText>/,
   );
   assert.match(source, /const headerActionSize = spacing\[8\] \+ spacing\[2\.5\]/);
   assert.match(source, /height: headerActionSize/);

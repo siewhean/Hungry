@@ -23,7 +23,9 @@ import { findBuildingById } from "@/features/discovery/discovery";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import type { DataRepository } from "@/lib/services/types";
+import { useCartStore } from "@/store/useCartStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
+import { useOrderStore } from "@/store/useOrderStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -171,6 +173,8 @@ export function DecideForMeResultScreen() {
   const selectedDish = useDiscoveryStore((state) => state.decideForMe);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const showToast = useUIStore((state) => state.showToast);
+  const addItemToCart = useCartStore((state) => state.addItem);
+  const setActiveOrder = useOrderStore((state) => state.setActiveOrder);
   const [searchRadius, setSearchRadius] = useState(500);
   const [resultIndex, setResultIndex] = useState(0);
 
@@ -262,6 +266,25 @@ export function DecideForMeResultScreen() {
     }
     setDecideForMe(nextDish);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+  };
+
+  const handleAddToCart = () => {
+    if (!dish) {
+      return;
+    }
+
+    addItemToCart({ dishId: dish.id });
+    setActiveOrder({
+      id: `order-${Date.now()}`,
+      venueId: dish.venueId,
+      totalAmount: dish.price,
+      status: "draft",
+      createdAt: new Date().toISOString(),
+    });
+    showToast({
+      message: `${dish.name} added to cart.`,
+      tone: "success",
+    });
   };
 
   if (!dish) {
@@ -420,7 +443,7 @@ export function DecideForMeResultScreen() {
 
       {/* Action Dock */}
       <View style={[styles.actionDock, { paddingBottom: Math.max(insets.bottom, spacing[4]) }]}>
-        <Button label="Order Now" style={{ flex: 1 }} onPress={() => {}} />
+        <Button label="Add to cart" style={{ flex: 1 }} onPress={handleAddToCart} />
       </View>
     </View>
   );

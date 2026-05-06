@@ -33,6 +33,9 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
+import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
+import { useCartStore } from "@/store/useCartStore";
+import { useOrderStore } from "@/store/useOrderStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -95,6 +98,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const showToast = useUIStore((state) => state.showToast);
+  const addItemToCart = useCartStore((state) => state.addItem);
+  const setActiveOrder = useOrderStore((state) => state.setActiveOrder);
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -197,6 +202,33 @@ export function StallDetailScreen({ navigation, route }: Props) {
     requestAnimationFrame(() => {
       shareSheetRef.current?.present();
     });
+  };
+
+  const handleOrderDelivery = () => {
+    const deliveryLink = venue.deliveryLinks[0];
+    if (deliveryLink) {
+      void openTrustedDeliveryUrl(
+        deliveryLink.platform,
+        deliveryLink.nativeUrl,
+        deliveryLink.webUrl,
+      );
+      return;
+    }
+
+    if (!leadDish) {
+      showToast({ message: "No menu item is available to add yet.", tone: "info" });
+      return;
+    }
+
+    addItemToCart({ dishId: leadDish.id });
+    setActiveOrder({
+      id: `order-${Date.now()}`,
+      venueId: venue.id,
+      totalAmount: leadDish.price,
+      status: "draft",
+      createdAt: new Date().toISOString(),
+    });
+    showToast({ message: `${leadDish.name} added to cart.`, tone: "success" });
   };
 
   const handleClaimThisStall = async () => {
@@ -664,11 +696,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
           <StickyBottomBar
             actions={[
               {
-                label: "Order delivery",
+                label: venue.deliveryLinks.length > 0 ? "Order delivery" : "Add to cart",
                 variant: "secondary",
-                onPress: () => {
-                  showToast({ message: "Delivery integration coming soon.", tone: "info" });
-                },
+                onPress: handleOrderDelivery,
               },
               {
                 label: "Directions",

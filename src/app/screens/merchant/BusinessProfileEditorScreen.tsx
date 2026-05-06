@@ -11,10 +11,11 @@ import { useForm, Controller } from "react-hook-form";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
+import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AppText, Button, Screen, Chip } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
-import { getHungryService } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { MerchantOutlet, LocationPrivacy } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 
@@ -39,6 +40,8 @@ type FormData = {
 export function BusinessProfileEditorScreen() {
   const { palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
+  const rootNavigation = getRootNavigation(navigation as any);
+  const repository = getDataRepository();
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const updateOutletProfile = useMerchantStore((state) => state.updateOutletProfile);
 
@@ -125,8 +128,23 @@ export function BusinessProfileEditorScreen() {
   };
 
   const handlePreviewAsCustomer = () => {
-    if (activeOutlet) {
-      Alert.alert("Preview mode", "Navigating to customer preview...");
+    if (!activeOutlet) {
+      return;
+    }
+
+    const signatureDishId = activeOutlet.signatureDishIds[0];
+    const signatureVenueId = signatureDishId
+      ? repository.getDishById(signatureDishId)?.venueId
+      : undefined;
+    const fallbackVenueId = activeOutlet.buildingId
+      ? repository.listVenuesByBuilding(activeOutlet.buildingId)[0]?.id
+      : undefined;
+    const venueId = signatureVenueId ?? fallbackVenueId;
+
+    if (venueId) {
+      rootNavigation.navigate("StallDetail", { venueId });
+    } else {
+      rootNavigation.navigate("DiscoverMap");
     }
   };
 

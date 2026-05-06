@@ -1,24 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { View, ScrollView, StyleSheet, Switch, Alert, Pressable } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  ChevronLeft,
-  Users,
-  Shield,
-  Bell,
-  HelpCircle,
-  LogOut,
-  ChevronRight,
-  UserPlus,
-  Trash2,
-} from "lucide-react-native";
+import { View, StyleSheet, Switch, Alert, Pressable } from "react-native";
+import { Shield, HelpCircle, LogOut, ChevronRight, UserPlus, Trash2 } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { AppText, Button, IconButton, Screen, Chip } from "@/components/ui";
+import { AppText, Button, IconButton, Input, Screen, Chip } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import type { MerchantTeamMember, MerchantNotificationPreferences } from "@/types/domain";
 
 export function MerchantSettingsScreen() {
@@ -28,7 +18,6 @@ export function MerchantSettingsScreen() {
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const account = useMerchantStore((state) => state.account);
   const clearMerchant = useMerchantStore((state) => state.clearMerchant);
-  const insets = useSafeAreaInsets();
 
   const [teamMembers, setTeamMembers] = useState<MerchantTeamMember[]>([]);
   const [notifications, setNotifications] = useState<MerchantNotificationPreferences>({
@@ -39,7 +28,8 @@ export function MerchantSettingsScreen() {
     weeklyDigest: true,
     aiInsights: true,
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [isInviting, setIsInviting] = useState(false);
 
   useEffect(() => {
     async function loadSettingsData() {
@@ -54,7 +44,6 @@ export function MerchantSettingsScreen() {
           console.error(e);
         }
       }
-      setIsLoading(false);
     }
     loadSettingsData();
   }, [account]);
@@ -115,6 +104,25 @@ export function MerchantSettingsScreen() {
     );
   };
 
+  const handleInviteTeamMember = async () => {
+    const email = inviteEmail.trim().toLowerCase();
+    if (!account || isInviting || !email) {
+      return;
+    }
+
+    setIsInviting(true);
+    try {
+      const newMember = await getHungryService().merchant.addTeamMember(account.id, email, "staff");
+      setTeamMembers((prev) => [...prev, newMember]);
+      setInviteEmail("");
+      Alert.alert("Invite sent", `${newMember.email} has been added as staff.`);
+    } catch (e) {
+      Alert.alert("Invite failed", "Check the email address and try again.");
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
   return (
     <Screen title="Settings">
       <View style={{ gap: spacing[5], width: "100%" }}>
@@ -171,12 +179,28 @@ export function MerchantSettingsScreen() {
             <AppText variant="bodySmallBold" tone="muted" style={{ textTransform: "uppercase" }}>
               Team Management
             </AppText>
-            <IconButton
-              accessibilityLabel="Add team member"
-              icon={<UserPlus size={18} color={palette.orange} />}
-              onPress={() => Alert.alert("Coming Soon", "Invite system not connected yet.")}
-            />
+            <UserPlus size={18} color={palette.textSecondary} />
           </View>
+
+          {account?.role === "owner" ? (
+            <View style={{ gap: spacing[2], padding: spacing[3] }}>
+              <Input
+                accessibilityLabel="Team member email"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                onChangeText={setInviteEmail}
+                placeholder="staff@example.com"
+                value={inviteEmail}
+              />
+              <Button
+                label={isInviting ? "Inviting..." : "Invite staff"}
+                variant="secondary"
+                size="sm"
+                disabled={isInviting || !inviteEmail.trim()}
+                onPress={handleInviteTeamMember}
+              />
+            </View>
+          ) : null}
 
           {teamMembers.map((member, index) => (
             <View
@@ -318,7 +342,9 @@ export function MerchantSettingsScreen() {
 
           <Pressable
             style={styles.linkRow}
-            onPress={() => Alert.alert("Support", "Opening merchant support centre...")}
+            accessibilityRole="button"
+            accessibilityLabel="Open merchant help and support"
+            onPress={() => void openTrustedExternalUrl("https://hungry.sg/help")}
           >
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
               <HelpCircle size={20} color={palette.textSecondary} />
