@@ -1,10 +1,21 @@
 import React, { useState } from "react";
 import { View, StyleSheet, Dimensions, Pressable, ScrollView } from "react-native";
 import { Image } from "expo-image";
-import { X, Check, Sun, Contrast, Droplet, Crop, RotateCcw, Wand2, Sparkles } from "lucide-react-native";
+import {
+  X,
+  Check,
+  Sun,
+  Contrast,
+  Droplet,
+  Crop,
+  RotateCcw,
+  Wand2,
+  Sparkles,
+} from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { AppText, IconButton, Button, Badge, Dialog } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { useComposerStore } from "../useComposerStore";
 
 const { width, height } = Dimensions.get("window");
 
@@ -15,9 +26,14 @@ interface Props {
 
 export function MediaEditor({ mediaId, onClose }: Props) {
   const { palette, spacing, radii, shadows } = useHungryTheme();
-  const [dialogConfig, setDialogConfig] = useState<{ visible: boolean; title: string; message: string } | null>(null);
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+  } | null>(null);
+  const media = useComposerStore((state) => state.media.find((item) => item.id === mediaId));
 
-  if (!mediaId) return null;
+  if (!mediaId || !media) return null;
 
   const handleAITool = (tool: string) => {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -32,27 +48,28 @@ export function MediaEditor({ mediaId, onClose }: Props) {
     <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.bg, zIndex: 1100 }]}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: 60 }]}>
-        <IconButton variant="ghost" onPress={onClose} icon={<X size={24} color={palette.text} />} accessibilityLabel="Close" />
+        <IconButton
+          variant="ghost"
+          onPress={onClose}
+          icon={<X size={24} color={palette.text} />}
+          accessibilityLabel="Close"
+        />
         <AppText variant="h3">Edit Media</AppText>
-        <IconButton 
-          variant="ghost" 
+        <IconButton
+          variant="ghost"
           accessibilityLabel="Save"
           onPress={() => {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
             onClose();
-          }} 
-          icon={<Check size={24} color={palette.orange} />} 
+          }}
+          icon={<Check size={24} color={palette.orange} />}
         />
       </View>
 
       {/* Main Image View */}
       <View style={styles.imageContainer}>
-        <Image 
-          source={{ uri: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1200&q=80" }} 
-          style={styles.mainImage} 
-          contentFit="contain" 
-        />
-        
+        <Image source={{ uri: media.uri }} style={styles.mainImage} contentFit="contain" />
+
         <View style={styles.floatingTools}>
           <Badge label="✨ AI ENHANCED" tone="orange" />
         </View>
@@ -66,7 +83,11 @@ export function MediaEditor({ mediaId, onClose }: Props) {
             <Sparkles size={16} color={palette.orange} />
             <AppText variant="bodySmallBold">AI Content Tools</AppText>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: 8 }}
+          >
             <Pressable onPress={() => handleAITool("Auto-Enhance")}>
               <Badge label="Auto-Enhance" tone="orange" />
             </Pressable>
@@ -80,14 +101,14 @@ export function MediaEditor({ mediaId, onClose }: Props) {
         </View>
 
         <View style={styles.toolGroups}>
-          <Pressable 
+          <Pressable
             onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
             style={styles.toolItem}
           >
             <Crop size={24} color={palette.text} />
             <AppText variant="micro">Crop</AppText>
           </Pressable>
-          <Pressable 
+          <Pressable
             onPress={() => {
               void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setDialogConfig({
@@ -99,23 +120,25 @@ export function MediaEditor({ mediaId, onClose }: Props) {
             style={styles.toolItem}
           >
             <Wand2 size={24} color={palette.orange} />
-            <AppText variant="micro" style={{ color: palette.orange }}>Filters</AppText>
+            <AppText variant="micro" style={{ color: palette.orange }}>
+              Filters
+            </AppText>
           </Pressable>
-          <Pressable 
+          <Pressable
             onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
             style={styles.toolItem}
           >
             <Sun size={24} color={palette.text} />
             <AppText variant="micro">Light</AppText>
           </Pressable>
-          <Pressable 
+          <Pressable
             onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
             style={styles.toolItem}
           >
             <Droplet size={24} color={palette.text} />
             <AppText variant="micro">Colour</AppText>
           </Pressable>
-          <Pressable 
+          <Pressable
             onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
             style={styles.toolItem}
           >
@@ -126,18 +149,37 @@ export function MediaEditor({ mediaId, onClose }: Props) {
 
         {/* Adjust Slider Placeholder */}
         <View style={{ height: 44, alignItems: "center", justifyContent: "center" }}>
-          <View style={{ width: "80%", height: 2, backgroundColor: palette.border, position: "relative" }}>
-            <View style={{ position: "absolute", left: "60%", top: -8, width: 18, height: 18, borderRadius: 9, backgroundColor: palette.orange, borderWidth: 3, borderColor: palette.white }} />
+          <View
+            style={{
+              width: "80%",
+              height: 2,
+              backgroundColor: palette.border,
+              position: "relative",
+            }}
+          >
+            <View
+              style={{
+                position: "absolute",
+                left: "60%",
+                top: -8,
+                width: 18,
+                height: 18,
+                borderRadius: 9,
+                backgroundColor: palette.orange,
+                borderWidth: 3,
+                borderColor: palette.white,
+              }}
+            />
           </View>
         </View>
 
-        <Button 
-          label="Apply AI Auto-Crop" 
-          variant="secondary" 
-          size="sm" 
-          fullWidth 
+        <Button
+          label="Apply AI Auto-Crop"
+          variant="secondary"
+          size="sm"
+          fullWidth
           onPress={() => handleAITool("Auto-Crop")}
-          style={{ marginTop: 0 }} 
+          style={{ marginTop: 0 }}
         />
       </View>
 

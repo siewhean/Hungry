@@ -78,6 +78,9 @@ Use the smallest check that matches the change risk.
 | 2026-04-30 | app/Supabase (Merchant Security SEC-06) | `npm run typecheck` | Pass | Strict TypeScript gate passed after merchant RLS hardening tests/docs |
 | 2026-04-30 | app/Supabase (Merchant Security SEC-06) | `TMPDIR=/private/tmp npm test -- --watch=false` | Pass | 132 tests total: 130 pass, 2 skipped |
 | 2026-04-30 | app/Supabase (Merchant Security SEC-06) | `npm audit --audit-level=moderate` | Pass | Root mobile audit reports `found 0 vulnerabilities` |
+| 2026-05-06 | app (QA Batch 5 hardcoded data cleanup) | `npm run typecheck` | Pass | Strict TypeScript gate passed after moving production-facing hardcoded data to repository/service/mock fixture boundaries |
+| 2026-05-06 | app (QA Batch 5 hardcoded data cleanup) | `npm run lint` | Pass | 0 errors, 241 pre-existing warnings remain |
+| 2026-05-06 | app (QA Batch 5 hardcoded data cleanup) | `npm test -- --watch=false` | Pass | 177 tests total: 175 pass, 2 skipped; initial sandbox run hit known `tsx` IPC `EPERM`, rerun with elevated sandbox permissions passed |
 | 2026-04-30 | app/Supabase (Merchant Security SEC-06) | `npm_config_cache=/tmp/hungry-npm-cache npx expo-doctor` | Pass | 17/17 checks passed |
 | 2026-04-30 | app/Supabase (Merchant Security SEC-06) | `gitleaks protect --staged --redact` | Pass | No staged leaks found |
 | 2026-05-01 | app (Merchant menu/OCR/editor functional fix) | `TMPDIR=/private/tmp npx tsx --test src/app/screens/merchant-screen-contracts.test.ts` | Pass | 7/7 merchant screen contract tests pass, now covering image/dietary editor fields, allergen suggestions, OCR edit-before-adding, provider wiring, and inbox report/view-original actions |

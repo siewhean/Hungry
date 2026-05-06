@@ -34,7 +34,7 @@ export function StallDetailScreenV2({ route }: Props) {
   const repository = getDataRepository();
   const { palette, spacing, radii, shadows } = useHungryTheme();
 
-  const venueId = route.params?.venueId ?? "v-maxwell-wanton-mee";
+  const venueId = route.params?.venueId ?? route.params?.id ?? "";
   const venue = useMemo(() => repository.getVenueById(venueId), [venueId, repository]);
   const dishes = useMemo(() => repository.listDishesByVenue(venueId), [venueId, repository]);
   const leadDish = dishes[0];

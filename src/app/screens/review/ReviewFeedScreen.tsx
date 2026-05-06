@@ -28,131 +28,14 @@ import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useSocialStore, type InteractionState, type SocialComment } from "@/store/useSocialStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
-import type { DishDetail, Review } from "@/types/domain";
 import { ReviewShareSheet, type ReviewShareTarget } from "./ReviewShareSheet";
+import { listReviewFeedItems, type ReviewFeedItem } from "@/features/review/reviewFeed";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
-type ReviewFeedItem = {
-  review: Review;
-  dish: DishDetail;
-  dishName: string;
-  venueName: string;
-  venueId: string;
-  dishId: string;
-};
-
 type FilterMode = "recent" | "top_rated" | "dish" | "location";
-
-// ─── Mock review feed data ────────────────────────────────────────────────────
-// Aggregates reviews from all dishes to create a social-style feed.
-
-const MOCK_EXTRA_REVIEWS: ReviewFeedItem[] = [
-  {
-    dishId: "dish-chicken-rice",
-    dishName: "Chicken Rice",
-    venueName: "Tian Tian Chicken Rice",
-    venueId: "venue-tian-tian",
-    review: {
-      id: "feed-r-1",
-      authorName: "Sarah L.",
-      rating: 5,
-      createdAt: "2026-04-21T09:30:00Z",
-      text: "The best chicken rice in Singapore, no contest. The chilli is life-changing. Came at 11am and the queue was already 20 deep — worth every minute.",
-      tags: ["Fragrant", "Juicy", "Must Try"],
-      wouldRecommend: true,
-      photos: ["https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&q=80"],
-    },
-    dish: {} as DishDetail,
-  },
-  {
-    dishId: "dish-laksa",
-    dishName: "Laksa",
-    venueName: "328 Katong Laksa",
-    venueId: "venue-katong-laksa",
-    review: {
-      id: "feed-r-2",
-      authorName: "Ahmad R.",
-      rating: 5,
-      createdAt: "2026-04-20T13:00:00Z",
-      text: "Thick, creamy coconut gravy with perfectly cooked cockles. The cut noodles mean you can eat it with a spoon only — very authentic. Pro tip: go for the large.",
-      tags: ["Creamy", "Spicy", "Rich"],
-      wouldRecommend: true,
-      photos: ["https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=600&q=80"],
-    },
-    dish: {} as DishDetail,
-  },
-  {
-    dishId: "dish-char-kway-teow",
-    dishName: "Char Kway Teow",
-    venueName: "Hill Street Char Kway Teow",
-    venueId: "venue-hill-street-ckt",
-    review: {
-      id: "feed-r-3",
-      authorName: "Wei Ming",
-      rating: 4,
-      createdAt: "2026-04-19T18:45:00Z",
-      text: "Wok hei is real here. The cockles were fresh and the noodles had a nice char. Only gripe: no options for less oil. But if you're here for the full experience, this is it.",
-      tags: ["Wok Hei", "Savoury", "Smoky"],
-      wouldRecommend: true,
-      photos: [],
-    },
-    dish: {} as DishDetail,
-  },
-  {
-    dishId: "dish-bak-chor-mee",
-    dishName: "Bak Chor Mee",
-    venueName: "Bedok 85 Fengshan Centre",
-    venueId: "venue-bedok-85",
-    review: {
-      id: "feed-r-4",
-      authorName: "Emma T.",
-      rating: 5,
-      createdAt: "2026-04-18T12:00:00Z",
-      text: "Minced pork mee pok done right. The vinegar-chilli sauce is perfectly balanced. Pork liver is silky not grainy. Dry version with extra chilli 🔥",
-      tags: ["Tangy", "Savoury", "Spicy"],
-      wouldRecommend: true,
-      photos: ["https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=600&q=80"],
-    },
-    dish: {} as DishDetail,
-  },
-  {
-    dishId: "dish-chicken-rice",
-    dishName: "Chicken Rice",
-    venueName: "Tian Tian Chicken Rice",
-    venueId: "venue-tian-tian",
-    review: {
-      id: "feed-r-5",
-      authorName: "Uncle Tan",
-      rating: 4,
-      createdAt: "2026-04-17T10:15:00Z",
-      text: "Come early or you'll miss the roast chicken. The poached version is better than the roast IMO. Dark soy sauce on the side is a must.",
-      tags: ["Comforting", "Juicy"],
-      wouldRecommend: true,
-      photos: [],
-    },
-    dish: {} as DishDetail,
-  },
-  {
-    dishId: "dish-satay",
-    dishName: "Satay",
-    venueName: "Lau Pa Sat Satay Street",
-    venueId: "venue-lau-pa-sat-satay",
-    review: {
-      id: "feed-r-6",
-      authorName: "Priya S.",
-      rating: 5,
-      createdAt: "2026-04-16T21:30:00Z",
-      text: "Night market vibes. Best eaten outdoors with cold beer. The peanut sauce is thick and fragrant — we went through 3 portions. Great for groups!",
-      tags: ["Smoky", "Rich", "Fragrant"],
-      wouldRecommend: true,
-      photos: ["https://images.unsplash.com/photo-1529564879024-c54e7c2dd0e5?w=600&q=80"],
-    },
-    dish: {} as DishDetail,
-  },
-];
 
 const FILTER_OPTIONS: { id: FilterMode; label: string }[] = [
   { id: "recent", label: "Most Recent" },
@@ -532,36 +415,20 @@ export function ReviewFeedScreen() {
 
   // Gather reviews from all dishes
   const allReviews = useMemo<ReviewFeedItem[]>(() => {
-    const dishes = repository.listBuildings().flatMap((building) =>
-      repository.listVenuesByBuilding(building.id).flatMap((venue) =>
-        repository.listDishesByVenue(venue.id).flatMap((dish) =>
-          dish.reviews.map((review) => ({
-            review,
-            dish,
-            dishId: dish.id,
-            dishName: dish.name,
-            venueName: dish.venueName,
-            venueId: dish.venueId,
-          })),
-        ),
-      ),
-    );
-
-    // Merge with mock extra reviews
-    const combined = [...dishes, ...MOCK_EXTRA_REVIEWS];
+    const reviews = listReviewFeedItems(repository);
 
     // Sort
     if (filterMode === "top_rated") {
-      return [...combined].sort((a, b) => b.review.rating - a.review.rating);
+      return [...reviews].sort((a, b) => b.review.rating - a.review.rating);
     }
     if (filterMode === "dish") {
-      return [...combined].sort((a, b) => a.dishName.localeCompare(b.dishName));
+      return [...reviews].sort((a, b) => a.dishName.localeCompare(b.dishName));
     }
     if (filterMode === "location") {
-      return [...combined].sort((a, b) => a.venueName.localeCompare(b.venueName));
+      return [...reviews].sort((a, b) => a.venueName.localeCompare(b.venueName));
     }
     // Default: most recent
-    return [...combined].sort(
+    return [...reviews].sort(
       (a, b) => new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime(),
     );
   }, [repository, filterMode]);

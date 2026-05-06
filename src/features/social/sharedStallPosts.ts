@@ -1,5 +1,4 @@
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
-import { dataRepositoryMock as fallbackRepository } from "@/lib/services/mock/repositories";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import type { DataRepository } from "@/lib/services/types";
 import type { StallPost } from "@/types/domain";
@@ -44,6 +43,5 @@ export async function listSharedStallPosts(repository: DataRepository = getDataR
     bitePosts,
     servicePosts,
     repository.listStallPosts(),
-    fallbackRepository.listStallPosts(),
   );
 }

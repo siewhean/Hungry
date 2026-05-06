@@ -9,7 +9,6 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getDataRepository } from "@/lib/services/serviceProvider";
-import { dishes as fallbackDishes, venues as fallbackVenues } from "@/lib/services/mock/data";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -45,9 +44,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const repository = getDataRepository();
   const deepLinkedDishId = route.params?.dishId ?? route.params?.id ?? "";
-  const dish =
-    repository.getDishById(deepLinkedDishId) ??
-    fallbackDishes.find((candidate) => candidate.id === deepLinkedDishId);
+  const dish = repository.getDishById(deepLinkedDishId);
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -67,11 +64,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
 
   const venue = useMemo(
-    () =>
-      dish
-        ? (repository.getVenueById(dish.venueId) ??
-          fallbackVenues.find((candidate) => candidate.id === dish.venueId))
-        : undefined,
+    () => (dish ? repository.getVenueById(dish.venueId) : undefined),
     [dish, repository],
   );
   const tasteMatch = useMemo(
@@ -141,7 +134,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
         >
           <EmptyState
             title="Dish not found"
-            body="This dish is no longer available in the current mock dataset."
+            body="This dish is no longer available in the current data source."
           />
         </SafeAreaView>
       </FeedErrorBoundary>

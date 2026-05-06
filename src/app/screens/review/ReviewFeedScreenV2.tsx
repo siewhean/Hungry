@@ -27,82 +27,14 @@ import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useSocialStore, type InteractionState, type SocialComment } from "@/store/useSocialStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
-import type { DishDetail, Review } from "@/types/domain";
 import { ReviewShareSheet, type ReviewShareTarget } from "./ReviewShareSheet";
+import { listReviewFeedItems, type ReviewFeedItem } from "@/features/review/reviewFeed";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
-type ReviewFeedItem = {
-  review: Review;
-  dish: DishDetail;
-  dishName: string;
-  venueName: string;
-  venueId: string;
-  dishId: string;
-  isVegetarian?: boolean; // Added for Sarah
-};
-
 type FilterMode = "Recent" | "Rating" | "Dish" | "Location" | "Vegetarian";
-
-// ─── Mock review feed data ────────────────────────────────────────────────────
-
-const MOCK_REVIEWS_V2: ReviewFeedItem[] = [
-  {
-    dishId: "dish-v-1",
-    dishName: "Vegetarian Bee Hoon",
-    venueName: "Ruyi Vegetarian",
-    venueId: "venue-ruyi",
-    isVegetarian: true,
-    review: {
-      id: "v2-r-1",
-      authorName: "Sarah L.",
-      rating: 5,
-      createdAt: "2026-04-22T10:00:00Z",
-      text: "Hard to find good vegetarian options in Maxwell, but this is a gem! The crispy 'duck' is so good and not too oily. Perfect for vegetarians looking for authentic local taste.",
-      tags: ["Vegetarian", "Crispy", "Local"],
-      wouldRecommend: true,
-      photos: ["https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&q=80"],
-    },
-    dish: {} as DishDetail,
-  },
-  {
-    dishId: "dish-v-2",
-    dishName: "Truffle Roast Duck",
-    venueName: "Fook Seng Golden Duck",
-    venueId: "venue-fook-seng",
-    review: {
-      id: "v2-r-2",
-      authorName: "Ahmad R.",
-      rating: 5,
-      createdAt: "2026-04-21T13:30:00Z",
-      text: "The truffle aroma hits you before the plate even arrives. Duck skin is glass-like. Best roast duck I've had this year. Price is reasonable for the quality.",
-      tags: ["Truffle", "Crispy", "Premium"],
-      wouldRecommend: true,
-      photos: ["https://images.unsplash.com/photo-1518492104633-130d0cc84637?w=600&q=80"],
-    },
-    dish: {} as DishDetail,
-  },
-  {
-    dishId: "dish-v-3",
-    dishName: "Thunder Tea Rice",
-    venueName: "Hakka Thunder Tea",
-    venueId: "venue-hakka-tea",
-    isVegetarian: true,
-    review: {
-      id: "v2-r-3",
-      authorName: "Wei Ming",
-      rating: 4,
-      createdAt: "2026-04-20T12:00:00Z",
-      text: "Very healthy and refreshing. The tea broth is bitter but in a good way. Lots of vegetables and tofu. A bit of a queue during lunch hour.",
-      tags: ["Healthy", "Hakka", "Vegetarian"],
-      wouldRecommend: true,
-      photos: ["https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600&q=80"],
-    },
-    dish: {} as DishDetail,
-  },
-];
 
 const FILTER_CHIPS: FilterMode[] = ["Recent", "Rating", "Dish", "Location", "Vegetarian"];
 
@@ -156,7 +88,7 @@ function ReviewCardV2({
             style={{ width: "100%", height: width * 0.6 }}
             contentFit="cover"
           />
-          {item.isVegetarian && (
+          {item.dish.dietaryFlags.includes("vegetarian") && (
             <View
               style={{
                 position: "absolute",
@@ -429,42 +361,29 @@ export function ReviewFeedScreenV2() {
   const searchBarWidth = screenWidth - spacing[8];
   const headerActionSize = spacing[8] + spacing[2.5];
 
-  // Get data from repository and merge with mocks
+  // Get review feed data from the active repository.
   const allReviews = useMemo<ReviewFeedItem[]>(() => {
-    const fromRepo = repository.listBuildings().flatMap((building) =>
-      repository.listVenuesByBuilding(building.id).flatMap((venue) =>
-        repository.listDishesByVenue(venue.id).flatMap((dish) =>
-          dish.reviews.map((review) => ({
-            review,
-            dish,
-            dishId: dish.id,
-            dishName: dish.name,
-            venueName: dish.venueName,
-            venueId: dish.venueId,
-          })),
-        ),
-      ),
-    );
-
-    const combined = [...MOCK_REVIEWS_V2, ...fromRepo];
+    const reviews = listReviewFeedItems(repository);
 
     // Apply sorting
     if (activeFilter === "Rating") {
-      return combined.sort((a, b) => b.review.rating - a.review.rating);
+      return [...reviews].sort((a, b) => b.review.rating - a.review.rating);
     }
     if (activeFilter === "Dish") {
-      return combined.sort((a, b) => a.dishName.localeCompare(b.dishName));
+      return [...reviews].sort((a, b) => a.dishName.localeCompare(b.dishName));
     }
     if (activeFilter === "Location") {
-      return combined.sort((a, b) => a.venueName.localeCompare(b.venueName));
+      return [...reviews].sort((a, b) => a.venueName.localeCompare(b.venueName));
     }
     if (activeFilter === "Vegetarian") {
-      return combined.filter((item) =>
-        item.review.tags.some((t) => t.toLowerCase() === "vegetarian"),
+      return reviews.filter(
+        (item) =>
+          item.dish.dietaryFlags.includes("vegetarian") ||
+          item.review.tags.some((t) => t.toLowerCase() === "vegetarian"),
       );
     }
 
-    return combined.sort(
+    return [...reviews].sort(
       (a, b) => new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime(),
     );
   }, [repository, activeFilter]);

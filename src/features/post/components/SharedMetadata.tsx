@@ -7,16 +7,6 @@ import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
 import { spacing } from "@/theme/tokens";
 
-const MOCK_LOCATIONS = [
-  { id: "loc-1", name: "Old Airport Road Food Centre", address: "51 Old Airport Rd, Singapore" },
-  { id: "loc-2", name: "Maxwell Food Centre", address: "1 Kadayanallur St, Singapore" },
-  { id: "loc-3", name: "Newton Food Centre", address: "500 Clemenceau Ave N, Singapore" },
-  { id: "loc-4", name: "Chomp Chomp Food Centre", address: "20 Kensington Park Rd, Singapore" },
-  { id: "loc-5", name: "Lau Pa Sat", address: "18 Raffles Quay, Singapore" },
-];
-
-const MOCK_USERS = ["@alex_eats", "@foodie_sarah", "@sg_hawker_king", "@michelin_seeker", "@hungry_nomad"];
-
 interface SharedMetadataProps {
   onOpenLocation?: () => void;
   onOpenCollaborators?: () => void;
@@ -47,13 +37,13 @@ export function SharedMetadata({ onOpenLocation, onOpenCollaborators }: SharedMe
         onPress={handleLocationPress}
         style={({ pressed }) => [
           styles.row,
-          { 
-            backgroundColor: pressed ? palette.surfaceRaised : palette.surface, 
-            borderRadius: radii.lg, 
-            borderBottomWidth: 1, 
+          {
+            backgroundColor: pressed ? palette.surfaceRaised : palette.surface,
+            borderRadius: radii.lg,
+            borderBottomWidth: 1,
             borderBottomColor: palette.border,
             paddingHorizontal: spacing.xl,
-            paddingVertical: spacing.lg
+            paddingVertical: spacing.lg,
           },
         ]}
       >
@@ -76,13 +66,13 @@ export function SharedMetadata({ onOpenLocation, onOpenCollaborators }: SharedMe
         onPress={handleCollaboratorsPress}
         style={({ pressed }) => [
           styles.row,
-          { 
-            backgroundColor: pressed ? palette.surfaceRaised : palette.surface, 
-            borderRadius: radii.lg, 
-            borderBottomWidth: 1, 
+          {
+            backgroundColor: pressed ? palette.surfaceRaised : palette.surface,
+            borderRadius: radii.lg,
+            borderBottomWidth: 1,
             borderBottomColor: palette.border,
             paddingHorizontal: spacing.xl,
-            paddingVertical: spacing.lg
+            paddingVertical: spacing.lg,
           },
         ]}
       >
@@ -101,15 +91,29 @@ export function SharedMetadata({ onOpenLocation, onOpenCollaborators }: SharedMe
       </Pressable>
 
       {/* Tags Section */}
-      <View style={[styles.tagsContainer, { backgroundColor: palette.surface, borderRadius: radii.lg, padding: spacing.xl }]}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, marginBottom: spacing.lg }}>
+      <View
+        style={[
+          styles.tagsContainer,
+          { backgroundColor: palette.surface, borderRadius: radii.lg, padding: spacing.xl },
+        ]}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.md,
+            marginBottom: spacing.lg,
+          }}
+        >
           <Hash size={18} color={palette.textMuted} />
           <AppText variant="bodyBold">Taste Tags</AppText>
         </View>
 
         <View style={{ gap: spacing.lg }}>
           <View>
-            <AppText variant="micro" tone="muted" style={{ marginBottom: spacing.md }}>TASTE PROFILE</AppText>
+            <AppText variant="micro" tone="muted" style={{ marginBottom: spacing.md }}>
+              TASTE PROFILE
+            </AppText>
             <View style={[styles.chipRow, { gap: spacing.md }]}>
               {["Spicy", "Savoury", "Sweet", "Umami", "Smoky"].map((tag) => (
                 <Chip

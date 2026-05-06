@@ -8,73 +8,6 @@ import { useHungryTheme } from "@/theme";
 import { AppText } from "../ui";
 import type { StoryItem } from "@/types/domain";
 
-/**
- * Mock story data.
- * Ring colour rule (per user spec):
- *   - Orange gradient ring  = hasUnseen true  (applies to both stall AND user stories)
- *   - Grey ring             = hasUnseen false (story already viewed)
- * Fork badge (🍴) is shown only on isStall stories to identify hawker stalls.
- */
-const MOCK_STORIES: StoryItem[] = [
-  {
-    id: "s0",
-    displayName: "Your Story",
-    avatarUrl: "https://i.pravatar.cc/150?u=me",
-    hasUnseen: false,
-    isStall: false,
-    isOwn: true,
-  },
-  {
-    id: "s1",
-    displayName: "Tian Tian",
-    avatarUrl: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=150&h=150&fit=crop",
-    hasUnseen: true,
-    isStall: true,
-  },
-  {
-    id: "s2",
-    displayName: "Wei Ming",
-    avatarUrl: "https://i.pravatar.cc/150?u=wm",
-    hasUnseen: true,
-    isStall: false,
-  },
-  {
-    id: "s3",
-    displayName: "Hill Street",
-    avatarUrl: "https://images.unsplash.com/photo-1555126634-323283e090fa?w=150&h=150&fit=crop",
-    hasUnseen: true,
-    isStall: true,
-  },
-  {
-    id: "s4",
-    displayName: "Sarah L.",
-    avatarUrl: "https://i.pravatar.cc/150?u=sl",
-    hasUnseen: true,
-    isStall: false,
-  },
-  {
-    id: "s5",
-    displayName: "Uncle Tan",
-    avatarUrl: "https://i.pravatar.cc/150?u=ut",
-    hasUnseen: true,
-    isStall: false,
-  },
-  {
-    id: "s6",
-    displayName: "Ah Heng",
-    avatarUrl: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=150&h=150&fit=crop",
-    hasUnseen: false,
-    isStall: true,
-  },
-  {
-    id: "s7",
-    displayName: "Emma W.",
-    avatarUrl: "https://i.pravatar.cc/150?u=ew",
-    hasUnseen: false,
-    isStall: false,
-  },
-];
-
 interface CircleStoryCarouselProps {
   stories?: StoryItem[];
   onStoryPress?: (story: StoryItem) => void;
@@ -82,7 +15,7 @@ interface CircleStoryCarouselProps {
 }
 
 export const CircleStoryCarousel = memo(function CircleStoryCarousel({
-  stories = MOCK_STORIES,
+  stories = [],
   onStoryPress,
   onAddStoryPress,
 }: CircleStoryCarouselProps) {

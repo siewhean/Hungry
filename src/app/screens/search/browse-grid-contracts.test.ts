@@ -9,20 +9,17 @@ function read(relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
-test("Browse Stalls falls back to repository mock data before showing empty state", () => {
+test("Browse Stalls uses the active repository before showing empty state", () => {
   const source = read("src/app/screens/search/SearchResultsScreen.tsx");
 
-  assert.match(source, /dataRepositoryMock as fallbackBrowseRepository/);
-  assert.match(source, /const fallbackAllVenues = useMemo/);
-  assert.match(source, /repositoryVenues\.length \? repositoryVenues : fallbackAllVenues/);
+  assert.doesNotMatch(source, /dataRepositoryMock as fallbackBrowseRepository/);
+  assert.doesNotMatch(source, /const fallbackAllVenues = useMemo/);
   assert.match(source, /const getBrowseDishesByVenue = useCallback/);
-  assert.match(source, /fallbackBrowseRepository\.listDishesByVenue\(venueId\)/);
+  assert.match(source, /repository\.listDishesByVenue\(venueId\)/);
   assert.match(source, /const getBrowseDishById = useCallback/);
-  assert.match(source, /fallbackBrowseRepository\.getDishById\(dishId\)/);
+  assert.match(source, /repository\.getDishById\(dishId\)/);
   assert.match(source, /const buildStallItems =/);
-  assert.match(source, /const stallItems = buildStallItems\(browseVenues\)/);
-  assert.match(source, /if \(stallItems\.length\)/);
-  assert.match(source, /return buildStallItems\(\s*fallbackAllVenues\.map/);
+  assert.match(source, /return buildStallItems\(browseVenues\)/);
   assert.match(source, /export function BrowseStallsScreen\(\)/);
   assert.match(source, /return <BrowseGridScreen mode="stalls" \/>/);
 });

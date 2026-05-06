@@ -515,6 +515,7 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
 
 test("Quick Bites contract: empty-state icon is not clipped", () => {
   const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
+  const discoverBites = read("src/features/discover/bites.ts");
   const navigationTypes = read("src/app/navigation/navigationTypes.ts");
 
   assert.match(
@@ -522,39 +523,17 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
     /collection\?: "quickBites" \| "trending" \| "editorChoice" \| "budget" \| "lateNight"/,
   );
   assert.match(quickBites, /export const COLLECTION_COPY/);
-  assert.match(quickBites, /export function getDiscoverBiteCollection/);
-  assert.match(quickBites, /const DISH_IMAGE_URLS: Record<string, string>/);
-  assert.match(
-    quickBites,
-    /"Chicken Rice":\s*"https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/7\/71\/Hainanese_Chicken_Rice\.jpg"/,
-  );
-  assert.match(quickBites, /"Pandan Cake":\s*"https:\/\/images\.unsplash\.com\/photo-/);
-  assert.match(quickBites, /function getDishImageUrl\(dishName: string, photoUrl\?: string\)/);
-  assert.match(
-    quickBites,
-    /return DISH_IMAGE_URLS\[dishName\] \|\| photoUrl\?\.trim\(\) \|\| FALLBACK_DISH_IMAGE_URL/,
-  );
-  assert.match(quickBites, /const DISH_ID_BY_NAME: Record<string, string>/);
-  assert.match(quickBites, /"Chicken Rice": "dish-chicken-rice"/);
-  assert.match(quickBites, /"Wagyu Burger": "dish-wagyu-burger"/);
-  assert.match(quickBites, /"Salmon Don": "dish-salmon-don"/);
-  assert.match(quickBites, /"Mala Xiang Guo": "dish-mala-xiang-guo"/);
-  assert.match(quickBites, /"Pandan Cake": "dish-pandan-cake"/);
-  assert.match(quickBites, /function getDishId\(dishName: string, dishId\?: string\)/);
-  assert.match(quickBites, /function withFoodImages\(bites: Bite\[\]\)/);
-  assert.match(quickBites, /import \{ dishes as mockDishes \} from "@\/lib\/services\/mock\/data"/);
-  assert.match(
-    quickBites,
-    /const DISH_BY_ID = new Map\(mockDishes\.map\(\(dish\) => \[dish\.id, dish\]\)\)/,
-  );
-  assert.match(quickBites, /function getDishSyncedFields\(bite: Bite\)/);
-  assert.match(quickBites, /\.\.\.getDishSyncedFields\(bite\)/);
-  assert.match(quickBites, /dishName: dish\.name/);
-  assert.match(quickBites, /photoUrl: dish\.imageUrl/);
-  assert.match(quickBites, /price: dish\.price/);
-  assert.match(quickBites, /rating: dish\.rating/);
-  assert.match(quickBites, /venueName: dish\.venueName/);
-  assert.match(quickBites, /const bitesWithImages = withFoodImages\(bites\)/);
+  assert.match(quickBites, /getDiscoverBites/);
+  assert.match(discoverBites, /export function getDiscoverBiteCollection/);
+  assert.match(discoverBites, /export function syncBiteWithDish/);
+  assert.match(discoverBites, /dishName: dish\.name/);
+  assert.match(discoverBites, /photoUrl: dish\.imageUrl/);
+  assert.match(discoverBites, /price: dish\.price/);
+  assert.match(discoverBites, /rating: dish\.rating/);
+  assert.match(discoverBites, /venueName: dish\.venueName/);
+  assert.match(discoverBites, /const bitesWithImages = bites\.map/);
+  assert.doesNotMatch(quickBites, /mockDishes/);
+  assert.doesNotMatch(quickBites, /DISH_IMAGE_URLS/);
   assert.match(quickBites, /const list = collectionBites\s*\.filter/);
   assert.doesNotMatch(
     quickBites,
@@ -569,11 +548,8 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   assert.match(mockData, /id: "dish-salmon-don"[\s\S]*name: "Salmon Don"/);
   assert.match(mockData, /id: "dish-mala-xiang-guo"[\s\S]*name: "Mala Xiang Guo"/);
   const detail = read("src/app/screens/detail/DishDetailScreen.tsx");
-  assert.match(
-    detail,
-    /fallbackDishes\.find\(\(candidate\) => candidate\.id === deepLinkedDishId\)/,
-  );
-  assert.match(detail, /fallbackVenues\.find\(\(candidate\) => candidate\.id === dish\.venueId\)/);
+  assert.doesNotMatch(detail, /fallbackDishes/);
+  assert.doesNotMatch(detail, /fallbackVenues/);
   assert.match(
     quickBites,
     /const collection: DiscoverCollection = route\.params\?\.collection \?\? "quickBites"/,
@@ -584,10 +560,10 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
     /<View style=\{styles\.titleRow\}>[\s\S]*navigation\.goBack\(\)[\s\S]*\{collectionCopy\.title\}[\s\S]*<ExpandableSearchLauncher/,
   );
   assert.match(quickBites, /titleRow: \{[\s\S]*flexDirection: "row"[\s\S]*marginBottom: 8/);
-  assert.match(quickBites, /collection === "budget"[\s\S]*bite\.price < 8/);
-  assert.match(quickBites, /collection === "editorChoice"[\s\S]*bite\.rating >= 4\.4/);
-  assert.match(quickBites, /collection === "trending"[\s\S]*b\.cravingCount - a\.cravingCount/);
-  assert.match(quickBites, /collection === "lateNight"/);
+  assert.match(discoverBites, /collection === "budget"[\s\S]*bite\.price < 8/);
+  assert.match(discoverBites, /collection === "editorChoice"[\s\S]*bite\.rating >= 4\.4/);
+  assert.match(discoverBites, /collection === "trending"[\s\S]*b\.cravingCount - a\.cravingCount/);
+  assert.match(discoverBites, /collection === "lateNight"/);
   assert.match(quickBites, /return getDiscoverBiteCollection\(collection, bites\)/);
   assert.match(quickBites, /ListFooterComponent=\{renderFoodCarousel\}/);
   assert.match(quickBites, /key=\{`carousel-\$\{bite\.id\}`\}/);

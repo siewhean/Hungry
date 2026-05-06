@@ -182,7 +182,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       {
         id: "your-story-create",
         displayName: "Your Story",
-        avatarUrl: profile.avatarUrl || "https://i.pravatar.cc/150?u=me",
+        avatarUrl: profile.avatarUrl,
         hasUnseen: false,
         isStall: false,
         isOwn: true,

@@ -11,53 +11,12 @@ import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
 import { MapSurface, MapSurfaceMarker } from "@/components/map/MapSurface";
 import type { Coordinate } from "@/types/domain";
+import {
+  listComposerLocationOptions,
+  type ComposerLocationOption,
+} from "@/features/post/composerOptions";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
-
-const MOCK_LOCATIONS = [
-  {
-    id: "loc-1",
-    name: "Old Airport Road Food Centre",
-    address: "51 Old Airport Rd, Singapore",
-    coordinate: { latitude: 1.3084, longitude: 103.8859 },
-  },
-  {
-    id: "loc-2",
-    name: "Maxwell Food Centre",
-    address: "1 Kadayanallur St, Singapore",
-    coordinate: { latitude: 1.2803, longitude: 103.8448 },
-  },
-  {
-    id: "loc-3",
-    name: "Newton Food Centre",
-    address: "500 Clemenceau Ave N, Singapore",
-    coordinate: { latitude: 1.312, longitude: 103.8392 },
-  },
-  {
-    id: "loc-4",
-    name: "Chomp Chomp Food Centre",
-    address: "20 Kensington Park Rd, Singapore",
-    coordinate: { latitude: 1.3645, longitude: 103.8665 },
-  },
-  {
-    id: "loc-5",
-    name: "Lau Pa Sat",
-    address: "18 Raffles Quay, Singapore",
-    coordinate: { latitude: 1.2808, longitude: 103.8504 },
-  },
-  {
-    id: "loc-6",
-    name: "Amoy Street Food Centre",
-    address: "7 Maxwell Rd, Singapore",
-    coordinate: { latitude: 1.2793, longitude: 103.8466 },
-  },
-  {
-    id: "loc-7",
-    name: "Tiong Bahru Food Centre",
-    address: "30 Seng Poh Rd, Singapore",
-    coordinate: { latitude: 1.285, longitude: 103.8322 },
-  },
-];
 
 interface LocationSearchModalProps {
   innerRef: React.RefObject<BottomSheetModal | null>;
@@ -115,32 +74,33 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
   const { palette, radii, spacing } = useHungryTheme();
   const currentLocation = useComposerStore((state) => state.location);
   const setLocation = useComposerStore((state) => state.setLocation);
+  const locationOptions = useMemo(() => listComposerLocationOptions(), []);
 
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [selectedLoc, setSelectedLoc] = useState<(typeof MOCK_LOCATIONS)[0] | null>(
-    () => MOCK_LOCATIONS.find((l) => l.id === currentLocation?.id) || null,
+  const [selectedLoc, setSelectedLoc] = useState<ComposerLocationOption | null>(
+    () => locationOptions.find((l) => l.id === currentLocation?.id) || null,
   );
 
   const [mapCenter, setMapCenter] = useState<Coordinate>(() => {
-    const loc = MOCK_LOCATIONS.find((l) => l.id === currentLocation?.id);
-    return loc ? (loc.coordinate as Coordinate) : { latitude: 1.29027, longitude: 103.851959 };
+    const loc = locationOptions.find((l) => l.id === currentLocation?.id) ?? locationOptions[0];
+    return loc ? loc.coordinate : { latitude: 1.29027, longitude: 103.851959 };
   });
 
   const filteredLocations = useMemo(() => {
-    if (!searchQuery) return MOCK_LOCATIONS;
+    if (!searchQuery) return locationOptions;
     const query = searchQuery.toLowerCase();
-    return MOCK_LOCATIONS.filter(
+    return locationOptions.filter(
       (loc) => loc.name.toLowerCase().includes(query) || loc.address.toLowerCase().includes(query),
     );
-  }, [searchQuery]);
+  }, [locationOptions, searchQuery]);
 
   const handleSelectLocation = useCallback(
-    (loc: (typeof MOCK_LOCATIONS)[0]) => {
+    (loc: ComposerLocationOption) => {
       setSelectedLoc((prev) => {
         const isDeselecting = prev?.id === loc.id;
         if (!isDeselecting) {
-          setMapCenter(loc.coordinate as Coordinate);
+          setMapCenter(loc.coordinate);
           setLocation({ id: loc.id, name: loc.name, address: loc.address });
         } else {
           setLocation(null);
@@ -158,7 +118,7 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
         {
           id: selectedLoc.id,
           label: selectedLoc.name,
-          coordinate: selectedLoc.coordinate as Coordinate,
+          coordinate: selectedLoc.coordinate,
         },
       ];
     }

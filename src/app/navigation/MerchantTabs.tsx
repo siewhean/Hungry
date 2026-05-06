@@ -29,8 +29,6 @@ import { AIAssistantScreen } from "@/app/screens/merchant/AIAssistantScreen";
 import { OrdersComingSoonScreen } from "@/app/screens/merchant/OrdersComingSoonScreen";
 import { MerchantSettingsScreen } from "@/app/screens/merchant/MerchantSettingsScreen";
 
-import { merchantAccount } from "@/lib/services/mock/data";
-
 const Tab = createBottomTabNavigator<MerchantTabParamList>();
 const verifiedOnlyScreens = new Set<string>(VERIFIED_ONLY_SCREENS);
 
@@ -276,8 +274,8 @@ export function MerchantTabs() {
 
   const handleMockLogin = async () => {
     try {
-      // Always use the mock fixture data for the "Mock Merchant" flow
-      setAccount(merchantAccount);
+      const mockAccount = await getHungryService().merchant.getMerchantAccount();
+      setAccount(mockAccount);
       completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
     } catch (e) {
       console.error(e);

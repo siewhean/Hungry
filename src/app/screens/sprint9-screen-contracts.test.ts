@@ -32,16 +32,10 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   const feedSource = read("src/features/home/feed.ts");
   const mapSource = read("src/app/screens/discover/HomeMapScreen.tsx");
 
-  assert.match(feedSource, /dataRepositoryMock as fallbackRepository/);
-  assert.match(feedSource, /fallbackRepository\.listStallPosts\(\)/);
-  assert.match(
-    feedSource,
-    /repository\.getVenueById\(post\.venueId\) \?\? fallbackRepository\.getVenueById\(post\.venueId\)/,
-  );
-  assert.match(
-    feedSource,
-    /repository\.getDishById\(dishId\) \?\? fallbackRepository\.getDishById\(dishId\)/,
-  );
+  assert.doesNotMatch(feedSource, /dataRepositoryMock as fallbackRepository/);
+  assert.doesNotMatch(feedSource, /fallbackRepository\.listStallPosts\(\)/);
+  assert.match(feedSource, /repository\.getVenueById\(post\.venueId\)/);
+  assert.match(feedSource, /repository\.getDishById\(dishId\)/);
   assert.match(source, /useSocialStore/);
   assert.match(source, /togglePostLike/);
   assert.match(source, /togglePostSave/);
@@ -263,7 +257,10 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
     source,
     /type Props = NativeStackScreenProps<RootStackParamList, "DishDetail" \| "DishDetailV2">/,
   );
-  assert.match(source, /fallbackDishes\.find/);
+  assert.match(
+    source,
+    /const popularDishes = useMemo\(\(\) => repository\.listPopularNearby\(\), \[repository\]\)/,
+  );
   assert.match(source, /buildDishGallery\(dish\)/);
   assert.match(source, /function formatBasePrice\(price: number\)/);
   assert.match(source, /formatBasePrice\(dish\.price\)/);
@@ -279,7 +276,7 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /Opening Hours/);
   assert.match(source, /Signature Dishes/);
   assert.match(source, /From the Community/);
-  assert.match(source, /\.\.\.fallbackDishes,/);
+  assert.match(source, /\.\.\.supplementalDishes,/);
   assert.match(source, /const signatureGridItemWidth = width \/ 2/);
   assert.match(source, /const signatureGridItemHeight = signatureGridItemWidth \* 1\.5/);
   assert.match(source, /marginHorizontal: -spacing\[4\]/);

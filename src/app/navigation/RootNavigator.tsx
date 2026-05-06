@@ -111,7 +111,7 @@ function BlogPostRouteScreen({
   return (
     <BlogPostWebViewScreen
       onOpenVenue={(venueId) => navigation.navigate("StallDetail", { venueId })}
-      postId={route.params?.postId ?? "blog-1"}
+      postId={route.params?.postId}
     />
   );
 }

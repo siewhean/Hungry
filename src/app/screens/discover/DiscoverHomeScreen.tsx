@@ -21,7 +21,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Chip, IconButton, Screen, Skeleton } from "@/components/ui";
-import { getDiscoverBiteCollection } from "@/app/screens/discover/QuickBitesScreen";
+import { getDiscoverBiteCollection } from "@/features/discover/bites";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestBuildings, getNearestSingaporeArea } from "@/lib/geo/singaporeBuildings";
 import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
@@ -50,10 +50,6 @@ const INTENT_CHIPS: readonly {
 
 const DISCOVER_DIETARY_FALLBACKS: readonly DietaryFlag[] = ["halal", "vegetarian", "pork_free"];
 
-const FOOD_STYLE_CHAR_KWAY_TEOW =
-  "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&q=80&w=500";
-const FOOD_STYLE_BAK_CHOR_MEE =
-  "https://images.unsplash.com/photo-1617093727343-374698b1b08d?auto=format&fit=crop&q=80&w=500";
 const STALLS_CARD_GRAPHIC = require("../../../assets/discover/stalls-restaurants-card-wide.png");
 const DISHES_CARD_GRAPHIC = require("../../../assets/discover/dishes-card-wide.png");
 const POPULAR_LAKSA_GRAPHIC = require("../../../assets/discover/popular-laksa-topdown.png");
@@ -92,7 +88,6 @@ const POPULAR_FOOD_STYLES: readonly PopularFoodStyle[] = [
     label: "Char Kway Teow",
     query: "Char Kway Teow",
     imageSource: POPULAR_CHAR_KWAY_TEOW_GRAPHIC,
-    fallbackImageUrl: FOOD_STYLE_CHAR_KWAY_TEOW,
     trending: true,
   },
   {
@@ -100,7 +95,6 @@ const POPULAR_FOOD_STYLES: readonly PopularFoodStyle[] = [
     label: "Bak Chor Mee",
     query: "Bak Chor Mee",
     imageSource: POPULAR_BAK_CHOR_MEE_GRAPHIC,
-    fallbackImageUrl: FOOD_STYLE_BAK_CHOR_MEE,
   },
 ] as const;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;

@@ -230,9 +230,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
         postId: `taste-fingerprint-${profile.id}`,
         title: "Taste Fingerprint",
         subtitle: `${profile.displayName} · Taste profile`,
-        imageUrl:
-          profile.avatarUrl ||
-          "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=1200",
+        imageUrl: profile.avatarUrl ?? "",
         authorName: profile.displayName,
       });
     });

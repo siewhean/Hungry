@@ -111,7 +111,8 @@ test("Home feed contract: story carousel opens existing own story and separates 
   assert.match(carouselSource, /onAddStoryPress/);
   assert.match(carouselSource, /export const CircleStoryCarousel = memo/);
   assert.match(carouselSource, /event\.stopPropagation\(\)/);
-  assert.match(addStorySource, /const GALLERY_ASSETS: GalleryAsset\[\]/);
+  assert.match(addStorySource, /mockGalleryAssets/);
+  assert.doesNotMatch(addStorySource, /const GALLERY_ASSETS/);
   assert.match(addStorySource, /type GalleryFilter = "all" \| StoryContent\["type"\]/);
   assert.match(addStorySource, /asset\.type === "video"/);
   assert.match(

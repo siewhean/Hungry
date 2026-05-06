@@ -6,14 +6,11 @@ import { useNavigation, useRoute, type RouteProp } from "@react-navigation/nativ
 import { AppText, Button, Chip, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
-import { getHungryService } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import type { DietaryFlag, DishDetail } from "@/types/domain";
 
 type RouteProps = RouteProp<MerchantTabParamList, "DishEditor">;
-
-const SAMPLE_DISH_IMAGE_URL =
-  "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?auto=format&fit=crop&w=900&q=80";
 
 const DIETARY_OPTIONS: { label: string; value: DietaryFlag }[] = [
   { label: "Halal", value: "halal" },
@@ -50,6 +47,10 @@ export function DishEditorScreen() {
   const route = useRoute<RouteProps>();
   const dishId = route.params?.dishId;
   const activeOutlet = useMerchantStore(getActiveOutlet);
+  const repository = getDataRepository();
+  const sampleImageUrl = activeOutlet?.signatureDishIds
+    .map((signatureDishId) => repository.getDishById(signatureDishId)?.imageUrl)
+    .find((candidate): candidate is string => Boolean(candidate));
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -248,10 +249,13 @@ export function DishEditorScreen() {
             autoCapitalize="none"
           />
           <Button
-            label="Use sample photo"
+            label="Use signature photo"
             variant="secondary"
             fullWidth={false}
-            onPress={() => setImageUrl(SAMPLE_DISH_IMAGE_URL)}
+            disabled={!sampleImageUrl}
+            onPress={() => {
+              if (sampleImageUrl) setImageUrl(sampleImageUrl);
+            }}
             style={{ marginTop: spacing[2] }}
           />
         </View>

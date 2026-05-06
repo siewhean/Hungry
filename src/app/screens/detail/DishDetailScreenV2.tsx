@@ -18,7 +18,6 @@ import {
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
-import { dishes as fallbackDishes, venues as fallbackVenues } from "@/lib/services/mock/data";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -59,14 +58,13 @@ function formatBasePrice(price: number) {
   return `S$${price.toFixed(2)}`;
 }
 
-function getSignatureDishes(currentDish: DishDetail, venueDishes: DishDetail[]) {
+function getSignatureDishes(
+  currentDish: DishDetail,
+  venueDishes: DishDetail[],
+  supplementalDishes: DishDetail[],
+) {
   const byId = new Map<string, DishDetail>();
-  [
-    currentDish,
-    ...venueDishes,
-    ...fallbackDishes.filter((dish) => dish.venueId === currentDish.venueId),
-    ...fallbackDishes,
-  ].forEach((dish) => {
+  [currentDish, ...venueDishes, ...supplementalDishes].forEach((dish) => {
     byId.set(dish.id, dish);
   });
   return Array.from(byId.values()).slice(0, 4);
@@ -75,8 +73,7 @@ function getSignatureDishes(currentDish: DishDetail, venueDishes: DishDetail[]) 
 export function DishDetailScreenV2({ navigation, route }: Props) {
   const repository = getDataRepository();
   const dishId = route.params?.dishId ?? route.params?.id ?? "";
-  const dish =
-    repository.getDishById(dishId) ?? fallbackDishes.find((candidate) => candidate.id === dishId);
+  const dish = repository.getDishById(dishId);
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -91,11 +88,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const shareSheetRef = useRef<BottomSheetModal>(null);
 
   const venue = useMemo(
-    () =>
-      dish
-        ? (repository.getVenueById(dish.venueId) ??
-          fallbackVenues.find((candidate) => candidate.id === dish.venueId))
-        : undefined,
+    () => (dish ? repository.getVenueById(dish.venueId) : undefined),
     [dish, repository],
   );
 
@@ -109,9 +102,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     () => (dish ? repository.listDishesByVenue(dish.venueId) : []),
     [dish, repository],
   );
+  const popularDishes = useMemo(() => repository.listPopularNearby(), [repository]);
   const signatureDishes = useMemo(
-    () => (dish ? getSignatureDishes(dish, venueDishes) : []),
-    [dish, venueDishes],
+    () => (dish ? getSignatureDishes(dish, venueDishes, popularDishes) : []),
+    [dish, popularDishes, venueDishes],
   );
 
   if (!dish || !venue || !heroImage) {

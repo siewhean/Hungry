@@ -7,7 +7,7 @@ import { resetServiceProvider, setServiceProvider } from "@/lib/services/service
 import type { DataRepository, HungryService } from "@/lib/services/types";
 import { userProfile } from "@/lib/services/mock/data";
 
-test("Home social feed appends fallback mock posts when active repository only has seeded posts", async () => {
+test("Home social feed uses the active repository instead of hidden mock fallbacks", async () => {
   const mockPosts = dataRepositoryMock.listStallPosts();
   const partialRepository: DataRepository = {
     ...dataRepositoryMock,
@@ -23,8 +23,8 @@ test("Home social feed appends fallback mock posts when active repository only h
 
   try {
     const feed = await getHomeSocialFeed(userProfile);
-    assert.ok(feed.length >= mockPosts.length);
-    assert.ok(feed.some((post) => post.id === "post-8"));
+    assert.equal(feed.length, 3);
+    assert.ok(!feed.some((post) => post.id === "post-8"));
   } finally {
     resetServiceProvider();
   }

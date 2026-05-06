@@ -17,13 +17,36 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Screen, Avatar, Button } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
+import { getActiveOutlet, useMerchantStore } from "@/store/useMerchantStore";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type ProfileItemProps = {
+  icon: React.ComponentType<{ size: number; color: string }>;
+  label: string;
+  value: string;
+  onPress: () => void;
+};
 
 export function MerchantProfileScreen() {
   const { palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const signOut = useSessionStore((state) => state.signOut);
+  const account = useMerchantStore((state) => state.account);
+  const activeOutlet = useMerchantStore(getActiveOutlet);
+  const repository = getDataRepository();
+  const outletBuilding = activeOutlet?.buildingId
+    ? repository.listBuildings().find((building) => building.id === activeOutlet.buildingId)
+    : undefined;
+  const outletPhoto =
+    activeOutlet?.profilePhotoUrl ?? activeOutlet?.coverPhotoUrl ?? activeOutlet?.galleryUrls[0];
+  const outletLocation = [outletBuilding?.name, activeOutlet?.floor, activeOutlet?.unitNumber]
+    .filter(Boolean)
+    .join(" ");
+  const outletContact =
+    activeOutlet?.contactPhone ?? activeOutlet?.contactEmail ?? "No contact added";
+  const verificationLabel =
+    activeOutlet?.verification.status === "verified" ? "Verified Merchant" : "Verification pending";
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <View style={{ marginBottom: spacing[6] }}>
@@ -34,7 +57,7 @@ export function MerchantProfileScreen() {
     </View>
   );
 
-  const ProfileItem = ({ icon: Icon, label, value, onPress }: any) => (
+  const ProfileItem = ({ icon: Icon, label, value, onPress }: ProfileItemProps) => (
     <Pressable
       onPress={onPress}
       style={[
@@ -55,6 +78,22 @@ export function MerchantProfileScreen() {
     </Pressable>
   );
 
+  if (!activeOutlet) {
+    return (
+      <Screen title="Stall Profile" subtitle="Manage your stall information">
+        <View style={{ paddingVertical: spacing[8], gap: spacing[4] }}>
+          <AppText tone="muted" style={{ textAlign: "center" }}>
+            No merchant outlet is linked to this account yet.
+          </AppText>
+          <Button
+            label="Open verification"
+            onPress={() => navigation.navigate("VerificationCentre" as any)}
+          />
+        </View>
+      </Screen>
+    );
+  }
+
   return (
     <Screen title="Stall Profile" subtitle="Manage your stall information">
       <ScrollView
@@ -63,18 +102,14 @@ export function MerchantProfileScreen() {
       >
         {/* Stall Identity */}
         <View style={{ alignItems: "center", marginVertical: spacing[6] }}>
-          <Avatar
-            uri="https://images.unsplash.com/photo-1552611052-33e04de081de?w=200"
-            name="Maxwell Laksa"
-            size={80}
-          />
+          <Avatar uri={outletPhoto} name={activeOutlet.name} size={80} />
           <AppText variant="h2" style={{ marginTop: spacing[3] }}>
-            Maxwell Laksa
+            {activeOutlet.name}
           </AppText>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
             <ShieldCheck size={14} color={palette.success} />
             <AppText variant="micro" style={{ color: palette.success }}>
-              Verified Merchant
+              {verificationLabel}
             </AppText>
           </View>
         </View>
@@ -83,19 +118,19 @@ export function MerchantProfileScreen() {
           <ProfileItem
             icon={MapPin}
             label="Location"
-            value="Maxwell Food Centre #01-15"
+            value={outletLocation || "Location not set"}
             onPress={() => navigation.navigate("BusinessProfileEditor" as any)}
           />
           <ProfileItem
             icon={Clock}
             label="Operating Hours"
-            value="Daily, 10am - 8pm"
+            value={activeOutlet.operatingHours || "Hours not set"}
             onPress={() => navigation.navigate("BusinessProfileEditor" as any)}
           />
           <ProfileItem
             icon={Phone}
             label="Contact"
-            value="+65 9123 4567"
+            value={outletContact}
             onPress={() => navigation.navigate("BusinessProfileEditor" as any)}
           />
         </Section>
@@ -104,13 +139,13 @@ export function MerchantProfileScreen() {
           <ProfileItem
             icon={CreditCard}
             label="Bank Account"
-            value="DBS **** 8821"
+            value={account?.role === "owner" ? "Configure in settings" : "Owner access required"}
             onPress={() => navigation.navigate("MerchantSettings" as any)}
           />
           <ProfileItem
             icon={SettingsIcon}
             label="Platform Fees"
-            value="1.5% Hungry Fee"
+            value="View current settings"
             onPress={() => navigation.navigate("MerchantSettings" as any)}
           />
         </Section>

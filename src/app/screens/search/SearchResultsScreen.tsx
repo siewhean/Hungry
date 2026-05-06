@@ -27,7 +27,6 @@ import {
   type SearchSortMode,
   useSearchData,
 } from "@/features/search/search";
-import { dataRepositoryMock as fallbackBrowseRepository } from "@/lib/services/mock/repositories";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
@@ -72,35 +71,23 @@ function BrowseGridScreen({
   const repository = getDataRepository();
   const getBrowseDishesByVenue = useCallback(
     (venueId: string) => {
-      const primaryDishes = repository.listDishesByVenue(venueId);
-      return primaryDishes.length
-        ? primaryDishes
-        : fallbackBrowseRepository.listDishesByVenue(venueId);
+      return repository.listDishesByVenue(venueId);
     },
     [repository],
   );
   const getBrowseDishById = useCallback(
-    (dishId: string) =>
-      repository.getDishById(dishId) ?? fallbackBrowseRepository.getDishById(dishId),
+    (dishId: string) => repository.getDishById(dishId),
     [repository],
   );
   const areaBuildings = useMemo(
     () => getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 3, 14),
     [currentLocation.latitude, currentLocation.longitude],
   );
-  const fallbackAllVenues = useMemo(
-    () =>
-      fallbackBrowseRepository
-        .listBuildings()
-        .flatMap((building) => fallbackBrowseRepository.listVenuesByBuilding(building.id)),
-    [],
-  );
   const allVenues = useMemo(() => {
-    const repositoryVenues = repository
+    return repository
       .listBuildings()
       .flatMap((building) => repository.listVenuesByBuilding(building.id));
-    return repositoryVenues.length ? repositoryVenues : fallbackAllVenues;
-  }, [fallbackAllVenues, repository]);
+  }, [repository]);
   const areaVenues = useMemo(() => {
     const scopedVenues = areaBuildings.flatMap((building) =>
       repository.listVenuesByBuilding(building.id),
@@ -144,7 +131,7 @@ function BrowseGridScreen({
     const postFallback = stallPosts[0];
 
     if (isDishGrid) {
-      return browseDishes.map((dish, index) => {
+      return browseDishes.map((dish) => {
         const post =
           stallPosts.find((candidate) => candidate.dishIds.includes(dish.id)) ??
           stallPosts.find((candidate) => candidate.venueId === dish.venueId) ??
@@ -155,10 +142,10 @@ function BrowseGridScreen({
           title: dish.name,
           venueName: dish.venueName,
           imageUrl: dish.imageUrl,
-          authorName: post?.authorName ?? "Hungry Guide",
+          authorName: post?.authorName ?? dish.venueName,
           authorAvatarUrl: post?.authorAvatarUrl ?? dish.imageUrl,
           distanceMeters: dish.distanceMeters,
-          likeCount: dish.reviewCount + index * 17,
+          likeCount: dish.reviewCount,
           dish,
         };
       });
@@ -171,7 +158,7 @@ function BrowseGridScreen({
         dishes: DishDetail[];
       }[],
     ) =>
-      venues.flatMap(({ venue, topDish: venueTopDish, dishes }, index) => {
+      venues.flatMap(({ venue, topDish: venueTopDish, dishes }) => {
         const topDish = normalizedQuery
           ? dishes.find((dish) => dish.name.toLowerCase().includes(normalizedQuery))
           : venueTopDish;
@@ -190,34 +177,17 @@ function BrowseGridScreen({
           title: topDish.name,
           venueName: venue.name,
           imageUrl: topDish.imageUrl,
-          authorName: post?.authorName ?? "Hungry Guide",
+          authorName: post?.authorName ?? venue.name,
           authorAvatarUrl: post?.authorAvatarUrl ?? topDish.imageUrl,
           distanceMeters: topDish.distanceMeters,
-          likeCount: topDish.reviewCount + index * 23,
+          likeCount: topDish.reviewCount,
           dish: topDish,
           venue,
         };
       });
 
-    const stallItems = buildStallItems(browseVenues);
-    if (stallItems.length) {
-      return stallItems;
-    }
-
-    return buildStallItems(
-      fallbackAllVenues.map((venue) => {
-        const dishes = fallbackBrowseRepository
-          .listDishesByVenue(venue.id)
-          .sort((left, right) => right.rating - left.rating);
-
-        return {
-          venue,
-          dishes,
-          topDish: dishes[0] ?? fallbackBrowseRepository.getDishById(venue.topDishId),
-        };
-      }),
-    );
-  }, [browseDishes, browseVenues, fallbackAllVenues, isDishGrid, normalizedQuery, stallPosts]);
+    return buildStallItems(browseVenues);
+  }, [browseDishes, browseVenues, isDishGrid, normalizedQuery, stallPosts]);
   const filteredFeedItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     const filter = selectedFilter.toLowerCase();

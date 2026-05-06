@@ -7,16 +7,7 @@ import { BottomSheetModal, BottomSheetFlatList } from "@gorhom/bottom-sheet";
 import { AppText, Input, IconButton, BottomSheet, Button, Avatar } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
-
-const MOCK_USERS = [
-  { id: "u1", name: "Alex eats", handle: "@alex_eats", avatar: "https://i.pravatar.cc/150?u=u1" },
-  { id: "u2", name: "Sarah Foodie", handle: "@foodie_sarah", avatar: "https://i.pravatar.cc/150?u=u2" },
-  { id: "u3", name: "Hawker King", handle: "@sg_hawker_king", avatar: "https://i.pravatar.cc/150?u=u3" },
-  { id: "u4", name: "Michelin Seeker", handle: "@michelin_seeker", avatar: "https://i.pravatar.cc/150?u=u4" },
-  { id: "u5", name: "Hungry Nomad", handle: "@hungry_nomad", avatar: "https://i.pravatar.cc/150?u=u5" },
-  { id: "u6", name: "Chef Lim", handle: "@chef_lim", avatar: "https://i.pravatar.cc/150?u=u6" },
-  { id: "u7", name: "Taste of SG", handle: "@taste_sg", avatar: "https://i.pravatar.cc/150?u=u7" },
-];
+import { listComposerCollaboratorOptions } from "@/features/post/composerOptions";
 
 interface CollaboratorModalProps {
   innerRef: React.RefObject<BottomSheetModal | null>;
@@ -25,19 +16,19 @@ interface CollaboratorModalProps {
 export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
   const { palette, radii, spacing } = useHungryTheme();
   const [searchQuery, setSearchQuery] = useState("");
-  
+  const users = useMemo(() => listComposerCollaboratorOptions(), []);
+
   const collaborators = useComposerStore((state) => state.collaborators);
   const toggleCollaborator = useComposerStore((state) => state.toggleCollaborator);
 
   const filteredUsers = useMemo(() => {
-    if (!searchQuery) return MOCK_USERS;
+    if (!searchQuery) return users;
     const query = searchQuery.toLowerCase();
-    return MOCK_USERS.filter(
+    return users.filter(
       (user) =>
-        user.name.toLowerCase().includes(query) ||
-        user.handle.toLowerCase().includes(query)
+        user.name.toLowerCase().includes(query) || user.handle.toLowerCase().includes(query),
     );
-  }, [searchQuery]);
+  }, [searchQuery, users]);
 
   const handleToggle = (handle: string) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -49,10 +40,10 @@ export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
       <View style={{ flex: 1, marginHorizontal: -16 }}>
         <View style={styles.header}>
           <AppText variant="h3">Tag Collaborators</AppText>
-          <IconButton 
-            icon={<X size={24} color={palette.text} />} 
+          <IconButton
+            icon={<X size={24} color={palette.text} />}
             accessibilityLabel="Close"
-            onPress={() => innerRef.current?.dismiss()} 
+            onPress={() => innerRef.current?.dismiss()}
           />
         </View>
 
@@ -83,17 +74,26 @@ export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
                 style={({ pressed }) => [
                   styles.userItem,
                   {
-                    backgroundColor: isSelected ? palette.orangeLight : (pressed ? palette.surfaceRaised : "transparent"),
+                    backgroundColor: isSelected
+                      ? palette.orangeLight
+                      : pressed
+                        ? palette.surfaceRaised
+                        : "transparent",
                     borderRadius: radii.md,
                   },
                 ]}
               >
                 <Avatar uri={item.avatar} name={item.name} size={40} />
                 <View style={{ flex: 1, gap: 2 }}>
-                  <AppText variant="bodyBold" style={{ color: isSelected ? palette.orange : palette.text }}>
+                  <AppText
+                    variant="bodyBold"
+                    style={{ color: isSelected ? palette.orange : palette.text }}
+                  >
                     {item.name}
                   </AppText>
-                  <AppText variant="micro" tone="secondary">{item.handle}</AppText>
+                  <AppText variant="micro" tone="secondary">
+                    {item.handle}
+                  </AppText>
                 </View>
                 {isSelected && <Check size={20} color={palette.orange} />}
               </Pressable>
@@ -103,7 +103,12 @@ export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
           contentContainerStyle={{ paddingBottom: 100 }}
         />
 
-        <View style={[styles.footer, { paddingBottom: Platform.OS === "ios" ? 40 : 20, paddingHorizontal: 16 }]}>
+        <View
+          style={[
+            styles.footer,
+            { paddingBottom: Platform.OS === "ios" ? 40 : 20, paddingHorizontal: 16 },
+          ]}
+        >
           <Button
             label={`Done (${collaborators.length} tagged)`}
             variant="primary"

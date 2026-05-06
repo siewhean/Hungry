@@ -285,7 +285,7 @@ export function SearchResultsView({
                   {dish.rating.toFixed(1)}
                 </AppText>
                 <AppText variant="micro" tone="secondary">
-                  ({Math.floor(Math.random() * 200) + 50})
+                  ({dish.reviewCount})
                 </AppText>
               </View>
               <AppText style={{ color: palette.orange, fontWeight: "800" }}>

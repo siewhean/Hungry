@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { hungryPersistStorage } from "./persistStorage";
-import { hungryService } from "@/lib/services/mock/mockService";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import type { Story, StoryContent } from "@/types/domain";
 
 interface StoryState {
@@ -58,7 +58,7 @@ export const useStoryStore = create<StoryState>()(
       loadStories: async () => {
         set({ isLoading: true, error: null });
         try {
-          const stories = await hungryService.social.getStories();
+          const stories = await getHungryService().social.getStories();
           const { seenStoryIds } = get();
           const freshStories = pruneExpiredStories(stories).map((story) =>
             seenStoryIds[story.id] ? { ...story, hasUnseen: false } : story,
@@ -92,7 +92,7 @@ export const useStoryStore = create<StoryState>()(
         set({ stories: newStories });
 
         try {
-          await hungryService.social.likeStory(storyId);
+          await getHungryService().social.likeStory(storyId);
         } catch (e) {
           // Revert
           set({ stories: previousStories });
@@ -120,7 +120,7 @@ export const useStoryStore = create<StoryState>()(
         set({ stories: newStories });
 
         try {
-          await hungryService.social.saveStory(storyId);
+          await getHungryService().social.saveStory(storyId);
         } catch (e) {
           // Revert
           set({ stories: previousStories });
@@ -130,7 +130,7 @@ export const useStoryStore = create<StoryState>()(
 
       addStory: async (content: StoryContent) => {
         try {
-          const newStory = await hungryService.social.addStory(content);
+          const newStory = await getHungryService().social.addStory(content);
           const { stories } = get();
           const freshStories = pruneExpiredStories(stories);
           const yourStoryIndex = freshStories.findIndex((s) => s.isOwn);
