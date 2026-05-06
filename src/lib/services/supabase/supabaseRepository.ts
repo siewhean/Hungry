@@ -26,6 +26,8 @@ const DEFAULT_AUTH_PROFILE: UserProfile = {
     dishesReviewed: 0,
     stallsVisited: 0,
     favouritesCount: 0,
+    followersCount: 0,
+    followingCount: 0,
   },
 };
 
@@ -155,6 +157,9 @@ function mapBlogPost(row: Row): BlogPost {
 }
 
 function mapStallPost(row: Row): StallPost {
+  const mediaUrls = toStringArray(row.media_urls);
+  const tags = toStringArray(row.tags);
+
   return {
     id: toString(row.id),
     venueId: toString(row.venue_id),
@@ -164,7 +169,9 @@ function mapStallPost(row: Row): StallPost {
     authorAvatarUrl: toString(row.author_avatar_url),
     mediaType: (toString(row.media_type) as StallPost["mediaType"]) || "photo",
     mediaUrl: toString(row.media_url),
+    mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
     caption: toString(row.caption),
+    tags: tags.length > 0 ? tags : undefined,
     dishIds: toStringArray(row.dish_ids),
     createdAt: toString(row.created_at) || new Date().toISOString(),
   };
@@ -343,5 +350,11 @@ const supabaseRepositoryImpl: DataRepository = {
 
 // Kick off hydration on module load for low-latency first read.
 ensureHydrated();
+
+export function invalidateSupabaseRepositoryCache(): void {
+  hydrated = false;
+  hydratedAt = 0;
+  void refreshCache(true);
+}
 
 export const supabaseRepository: DataRepository = supabaseRepositoryImpl;

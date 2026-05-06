@@ -54,6 +54,11 @@
   - Build habit profile per user: preferred stalls/dishes, recurring visit windows (e.g., weekday lunch), and intent clusters.
   - Recommendation pass: prioritize feed/discover cards using habit score + recency + diversity guardrail.
   - Privacy guardrail: add explicit settings toggle to enable/disable behavioral personalisation and clear learned history.
+- [ ] **C9 — Realistic Floorplan Polygon Pipeline (Phase 1)** — Convert real floorplan assets into realistic stall polygons with canonical source contracts and app integration for one venue/floor (`hc-maxwell:L1`). [Codex]
+  - Add CV extraction scripts (`prepare_floorplan.py`, `extract_polygons.py`, `score_validate_polygons.py`, `export_floorplan.py`, `render_qa_overlay.py`).
+  - Add mapping workflow (`map_stalls.py`) to map `unitNumber -> venueId` and generate unresolved reports.
+  - Add canonical `FloorPlanSourceV1` source contract + adapter and make `getFloorPlan()` prefer canonical sources before hardcoded/generic fallback.
+  - Add repo artifacts at `data/floorplans/hc-maxwell/` (`L1.hungry.json`, `L1.geojson`, mapping CSV template).
 - [ ] **C4 — Messaging Expansion** — Group chats, voice notes, and location sharing. [Gemini]
 - [ ] **C6 — Gamification V2** — Achievements screen and interactive Passport stamps. [Gemini]
 - [ ] **C7 — Carousel Overhaul** — Implement specific dish/stall photo rules for 5 carousels. [Gemini]
@@ -65,6 +70,11 @@
 - [x] Persona feedback integrated: Uncle Tan (high accessibility) and Sarah (vegetarian filters).
 - [x] All new V2 features registered in navigation and protected by auth gates.
 - [ ] Personalisation recommendations adapt to day/time habit patterns in staging and can be toggled off from Settings.
+- [x] Polygon extraction pipeline generates schema-valid canonical floorplan JSON for `hc-maxwell:L1`. *(Added `data/floorplans/hc-maxwell/L1.hungry.json` + `L1.geojson` with `floorplan-source.v1` contract fields.)*
+- [ ] Geometry validation passes (0 self-intersections/degenerate polygons, all polygons inside outline, no tenant overlap > 5%).
+- [x] Unit mapping report is generated with coverage summary and unresolved reason tags. *(`map_stalls.py` smoke run produced `/tmp/L1.mapping-report.json` with coverage + unresolved reason tags.)*
+- [ ] Visual overlay QA artifact is generated for manual review (`output/qa/floorplans/hc-maxwell-L1-overlay.png`).
+- [ ] Map interaction QA passes (polygon taps open correct stall details >= 95% sampled pass rate; no redbox/fatal).
 
 ---
 
@@ -285,6 +295,8 @@ All items completed. Verification evidence in session log:
 
 ### Session Entries (recent — full history in git log)
 
+- 2026-04-29 | Codex | Implemented Sprint 11 C9 Phase-1 realistic indoor layout pipeline for `hc-maxwell:L1`: added canonical `FloorPlanSourceV1` contracts, source adapter + precedence loading in `getFloorPlan()`, map polygon derivation from adapted floorplans, CV extraction scripts (`prepare_floorplan.py`, `extract_polygons.py`, `score_validate_polygons.py`, `export_floorplan.py`, `render_qa_overlay.py`), unit mapping workflow (`map_stalls.py`), and canonical artifacts under `data/floorplans/hc-maxwell/` (`L1.hungry.json`, `L1.geojson`, `L1.unit-map.csv`). Added adapter/fallback tests. | Status: implementation complete, QA checklist added; Expo dependency hygiene still open. | Verification: `python3 -m py_compile scripts/floorplan/*.py` pass; `npx tsx --test src/lib/geo/floorPlanSources.test.ts` pass (4/4); `npm run typecheck` pass; `npm run test` pass (90 pass, 0 fail). | Blockers: `npx expo-doctor` reports dependency mismatches (`@react-native-community/datetimepicker` expected 8.6.0 found 9.1.0, `expo` expected `~55.0.18` found `55.0.17`). | Next: run `npx expo install --check` and align SDK package versions before closing final done-gate.
+- 2026-04-29 | Codex | Sprint 11 C9 follow-up: aligned Expo package versions to satisfy doctor gate (`expo` -> `~55.0.18`, `@react-native-community/datetimepicker` -> `8.6.0`) and reran verification suite. | Status: automated terminal gates closed. | Verification: `npm run typecheck` pass; `npm run test` pass (90 pass, 0 fail); `npx expo-doctor` pass (17/17). | Next: run manual polygon overlay QA + in-app interaction QA to close remaining C9 done-gate items.
 - 2026-04-23 | Gemini | Completed core Phase C items: Implemented full Merchant mode (`Dashboard`, `Menu`, `Analytics`, `Profile`) with persona-driven accessibility for "Uncle Tan" (large fonts/buttons) and "Ahmad" (performance snapshots). Rebuilt the Review Feed (`ReviewFeedV2`) as a community-first tab with a "100% User Content" badge and specialized "Vegetarian" filters for "Sarah". Overhauled the Post Composer with a destination toggle and built the Music Selection library. Integrated persistent search history into the store. All V2 features verified with zero TypeScript errors and registered in the Developer Launcher. | Status: Phase C core features complete. | Verification: `npm run typecheck` pass; all V2 screens functional. | Next: Phase C4 (Messaging) and Phase C6 (Gamification).
 - 2026-04-23 | Gemini | Completed Sprint 11 Phase A & B: Implemented 5 Figma V2 prototypes as new screens (`DiscoverV2`, `SearchV2`, `StallDetailV2`, `BuildingV2`, `QuickReviewV2`), added Fraunces typography for display headings, fully neutralized the palette (removed beige/warm tones), implemented persistent Dark Mode toggle in Settings V2, created V2 suite of brand assets (logos, mascot, food icons), and upgraded the Splash screen with advanced animation variants. Rebuilt the Quick Bites screen with a high-density, edge-to-edge grid and collapsible filters. | Status: Phase A & B code complete and verified. | Verification: `npm run typecheck` pass; all V2 screens functional via Developer Launcher. | Next: Phase C (Feature Additions).
 - 2026-04-23 | Codex | Implemented the Hungry website modernization pass in `marketing/web`: replaced the original card-and-emoji landing page with a white-canvas editorial homepage, rewrote the shared website components (hero, contrast strip, dish-first proof, how-it-works, local proof, preview band, hawker module, FAQ, footer), added mobile navigation, converted the merchant/about route CTAs onto the shared waitlist system where applicable, bundled local Nunito + DM Mono fonts for deterministic builds, added a real OG asset/metadata base, and removed the duplicate `marketing/web/src` mirror tree. | Status: website redesign complete in code; Vercel deploy and Supabase-backed waitlist remain open. | Verification: `cd marketing/web && npm run lint` pass; `cd marketing/web && npx tsc --noEmit` pass; `cd marketing/web && npm run build` pass (`/`, `/about`, `/for-merchants`, `/privacy`, `/api/waitlist`). | Next: Lighthouse pass, preview/prod deployment, and optional waitlist persistence swap.
@@ -317,6 +329,11 @@ All items completed. Verification evidence in session log:
 - [x] `cd marketing/web && npm run lint` — 2026-04-23 (website modernization pass)
 - [x] `cd marketing/web && npx tsc --noEmit` — 2026-04-23 (website modernization pass)
 - [x] `cd marketing/web && npm run build` — 2026-04-23 (website modernization pass)
+- [x] `python3 -m py_compile scripts/floorplan/*.py` — 2026-04-29 (Sprint 11 C9 syntax gate)
+- [x] `npx tsx --test src/lib/geo/floorPlanSources.test.ts` — 2026-04-29 (Sprint 11 C9 adapter/preference tests, 4/4)
+- [x] `npm run typecheck` — 2026-04-29 (Sprint 11 C9 gate; clean)
+- [x] `npm run test` — 2026-04-29 (Sprint 11 C9 gate; 90 pass, 0 fail)
+- [x] `npx expo-doctor` — 2026-04-29 (Sprint 11 C9 gate; 17/17 checks passed)
 - [x] `npm run typecheck` — 2026-04-22 (Sprint 10 audit; clean)
 - [x] `npm run typecheck` — 2026-04-17 (Sprint 9 Wave 5 gate)
 - [x] `npm run test` — 2026-04-17 (Sprint 9 Wave 5 gate, 68 tests, 0 failures)

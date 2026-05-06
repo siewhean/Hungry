@@ -29,6 +29,9 @@ import { AppText, Card, Button, Dialog } from "@/components/ui";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PostComposerV2">;
+type BeforeRemoveEvent = {
+  preventDefault: () => void;
+};
 
 export function PostComposerScreenV2({ navigation }: Props) {
   const { palette, spacing, semanticSpacing } = useHungryTheme();
@@ -41,9 +44,9 @@ export function PostComposerScreenV2({ navigation }: Props) {
   const musicModalRef = React.useRef<BottomSheetModal>(null);
   const locationModalRef = React.useRef<BottomSheetModal>(null);
   const collaboratorModalRef = React.useRef<BottomSheetModal>(null);
+  const allowExitRef = React.useRef(false);
 
   const [showExitDialog, setShowExitDialog] = React.useState(false);
-  const [pendingAction, setPendingAction] = React.useState<any>(null);
 
   // Draft exit handling
   const postCaption = useComposerStore((state) => state.postCaption);
@@ -51,38 +54,39 @@ export function PostComposerScreenV2({ navigation }: Props) {
   const media = useComposerStore((state) => state.media);
   const setPublishingState = useComposerStore((state) => state.setPublishingState);
 
+  const returnToHomeFeed = React.useCallback(() => {
+    navigation.dispatch({
+      type: "POP_TO",
+      payload: { name: "MainTabs", params: { screen: "Home" } },
+    });
+  }, [navigation]);
+
+  const finishAndReturnToHomeFeed = React.useCallback(() => {
+    allowExitRef.current = true;
+    returnToHomeFeed();
+  }, [returnToHomeFeed]);
+
   useEffect(() => {
-    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e: BeforeRemoveEvent) => {
+      if (allowExitRef.current) {
+        return;
+      }
+
       // If there's no meaningful content, just leave
-      const hasContent = media.length > 0 || postCaption.trim().length > 0 || reviewCaption.trim().length > 0;
-      
+      const hasContent =
+        media.length > 0 || postCaption.trim().length > 0 || reviewCaption.trim().length > 0;
+
       if (!hasContent) {
         return;
       }
 
       // Prevent default behavior of leaving the screen
       e.preventDefault();
-      setPendingAction(e.data.action);
       setShowExitDialog(true);
     });
 
     return unsubscribe;
   }, [navigation, media.length, postCaption, reviewCaption]);
-
-  // Initialize with some mock data if empty
-  const addMedia = useComposerStore((state) => state.addMedia);
-
-  useEffect(() => {
-    if (media.length === 0) {
-      addMedia([
-        {
-          id: "initial-1",
-          uri: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80",
-          type: "image",
-        },
-      ]);
-    }
-  }, []);
 
   const generateCaptionIdeas = useComposerStore((state) => state.generateCaptionIdeas);
   const suggestBestTime = useComposerStore((state) => state.suggestBestTime);
@@ -99,13 +103,15 @@ export function PostComposerScreenV2({ navigation }: Props) {
     <View style={[styles.container, { backgroundColor: palette.bg }]}>
       {/* Header */}
       <View style={{ zIndex: 100 }}>
-        <ComposerHeader onClose={() => navigation.goBack()} />
+        <ComposerHeader onClose={returnToHomeFeed} />
       </View>
 
       <ScrollView
         stickyHeaderIndices={[0]}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: semanticSpacing.sectionGap + semanticSpacing.heroGap + insets.bottom }}
+        contentContainerStyle={{
+          paddingBottom: semanticSpacing.sectionGap + semanticSpacing.heroGap + insets.bottom,
+        }}
         style={{ flex: 1 }}
       >
         {/* Sticky Tab Switcher */}
@@ -123,7 +129,7 @@ export function PostComposerScreenV2({ navigation }: Props) {
 
         {/* Shared Metadata (Location, Collaborators, Tags) */}
         <View style={{ marginTop: 0 }}>
-          <SharedMetadata 
+          <SharedMetadata
             onOpenLocation={() => locationModalRef.current?.present()}
             onOpenCollaborators={() => collaboratorModalRef.current?.present()}
           />
@@ -131,42 +137,73 @@ export function PostComposerScreenV2({ navigation }: Props) {
 
         {/* AI Assistant Section - Global bottom */}
         <View style={{ padding: spacing.xl, gap: spacing.lg, marginTop: spacing.lg }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: spacing.md,
+              marginBottom: spacing.sm,
+            }}
+          >
             <Sparkles size={18} color={palette.orange} />
             <AppText variant="bodyBold">AI Creator Suite</AppText>
           </View>
-          
-          <View 
-            style={{ 
+
+          <View
+            style={{
               flexDirection: "row",
               gap: spacing.md,
             }}
           >
-            <Pressable 
-              onPress={() => handleAiAction(generateCaptionIdeas)}
-              style={{ flex: 1 }}
-            >
-              <Card style={[styles.aiCard, { borderColor: palette.orange, backgroundColor: palette.surface, gap: spacing.xs }]}>
+            <Pressable onPress={() => handleAiAction(generateCaptionIdeas)} style={{ flex: 1 }}>
+              <Card
+                style={[
+                  styles.aiCard,
+                  {
+                    borderColor: palette.orange,
+                    backgroundColor: palette.surface,
+                    gap: spacing.xs,
+                  },
+                ]}
+              >
                 <TrendingUp size={20} color={palette.orange} />
-                <AppText variant="micro" style={{ fontWeight: "700", textAlign: 'center' }}>Caption Ideas</AppText>
+                <AppText variant="micro" style={{ fontWeight: "700", textAlign: "center" }}>
+                  Caption Ideas
+                </AppText>
               </Card>
             </Pressable>
-            <Pressable 
-              onPress={() => handleAiAction(suggestBestTime)}
-              style={{ flex: 1 }}
-            >
-              <Card style={[styles.aiCard, { backgroundColor: palette.surface, borderColor: palette.border, gap: spacing.xs }]}>
+            <Pressable onPress={() => handleAiAction(suggestBestTime)} style={{ flex: 1 }}>
+              <Card
+                style={[
+                  styles.aiCard,
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    gap: spacing.xs,
+                  },
+                ]}
+              >
                 <Clock size={20} color={palette.text} />
-                <AppText variant="micro" style={{ fontWeight: "700", textAlign: 'center' }}>Best Time</AppText>
+                <AppText variant="micro" style={{ fontWeight: "700", textAlign: "center" }}>
+                  Best Time
+                </AppText>
               </Card>
             </Pressable>
-            <Pressable 
-              onPress={() => handleAiAction(optimiseCaption)}
-              style={{ flex: 1 }}
-            >
-              <Card style={[styles.aiCard, { backgroundColor: palette.surface, borderColor: palette.border, gap: spacing.xs }]}>
+            <Pressable onPress={() => handleAiAction(optimiseCaption)} style={{ flex: 1 }}>
+              <Card
+                style={[
+                  styles.aiCard,
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    gap: spacing.xs,
+                  },
+                ]}
+              >
                 <BarChart3 size={20} color={palette.text} />
-                <AppText variant="micro" style={{ fontWeight: "700", textAlign: 'center' }}>Optimise</AppText>
+                <AppText variant="micro" style={{ fontWeight: "700", textAlign: "center" }}>
+                  Optimise
+                </AppText>
               </Card>
             </Pressable>
           </View>
@@ -184,7 +221,7 @@ export function PostComposerScreenV2({ navigation }: Props) {
 
       {/* Overlays & Fixed Components */}
       <ComposerBottomBar />
-      <StatusOverlay />
+      <StatusOverlay onFinish={finishAndReturnToHomeFeed} />
       <LivePreviewSheet />
       <MediaEditor mediaId={editingMediaId} onClose={() => setEditingMediaId(null)} />
       <MusicSearchModal innerRef={musicModalRef} />
@@ -201,16 +238,19 @@ export function PostComposerScreenV2({ navigation }: Props) {
             text: "Discard",
             style: "destructive",
             onPress: () => {
+              setShowExitDialog(false);
               reset();
-              navigation.dispatch(pendingAction);
+              finishAndReturnToHomeFeed();
             },
           },
           {
             text: "Save Draft",
             onPress: () => {
               setPublishingState("draft");
+              setShowExitDialog(false);
               setTimeout(() => {
-                navigation.dispatch(pendingAction);
+                reset();
+                finishAndReturnToHomeFeed();
               }, 1500);
             },
           },

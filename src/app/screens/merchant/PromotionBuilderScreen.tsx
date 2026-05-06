@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { View, ScrollView, TextInput, StyleSheet, Alert, Switch, Pressable } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { ChevronLeft, Calendar } from "lucide-react-native";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { Calendar } from "lucide-react-native";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
-import { AppText, Button, IconButton, Screen, Chip } from "@/components/ui";
+import { AppText, Button, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
-import { hungryService } from "@/lib/services/mock/mockService";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import type { MerchantPromotion, PromotionTargetAudience, PromotionStatus } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 
@@ -38,8 +37,7 @@ export function PromotionBuilderScreen() {
     async function loadPromotion() {
       if (promotionId && activeOutlet) {
         try {
-          // We fetch all and find, since there's no single getPromotion mock yet
-          const promos = await hungryService.merchant.getPromotions(activeOutlet.id);
+          const promos = await getHungryService().merchant.getPromotions(activeOutlet.id);
           const promo = promos.find((p) => p.id === promotionId);
           if (promo) {
             setTitle(promo.title);
@@ -56,7 +54,7 @@ export function PromotionBuilderScreen() {
       }
       setIsLoading(false);
     }
-    loadPromotion();
+    void loadPromotion();
   }, [promotionId, activeOutlet]);
 
   const toggleAudience = (audience: PromotionTargetAudience) => {
@@ -98,9 +96,9 @@ export function PromotionBuilderScreen() {
       };
 
       if (promotionId) {
-        await hungryService.merchant.updatePromotion(promotionId, promoData);
+        await getHungryService().merchant.updatePromotion(promotionId, promoData);
       } else {
-        await hungryService.merchant.createPromotion(activeOutlet.id, promoData as any);
+        await getHungryService().merchant.createPromotion(activeOutlet.id, promoData as any);
       }
 
       Alert.alert("Success", `Promotion ${publish ? "published" : "saved as draft"}!`);
@@ -115,8 +113,8 @@ export function PromotionBuilderScreen() {
 
   if (isLoading) {
     return (
-      <Screen style={{ backgroundColor: palette.bg }}>
-        <AppText>Loading...</AppText>
+      <Screen title="Loading...">
+        <AppText>Fetching promotion details...</AppText>
       </Screen>
     );
   }
@@ -153,24 +151,10 @@ export function PromotionBuilderScreen() {
   };
 
   return (
-    <Screen style={{ backgroundColor: palette.bg }}>
-      <View style={[styles.header, { paddingTop: spacing[3], paddingHorizontal: spacing[4] }]}>
-        <IconButton
-          accessibilityLabel="Go back"
-          icon={<ChevronLeft size={24} color={palette.text} />}
-          onPress={() => navigation.goBack()}
-        />
-        <AppText variant="h2" style={{ fontWeight: "800" }}>
-          {promotionId ? "Edit Promo" : "New Promo"}
-        </AppText>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ padding: spacing[4], gap: spacing[4], paddingBottom: 100 }}
-      >
+    <Screen title={promotionId ? "Edit Promotion" : "New Promotion"}>
+      <View style={{ gap: spacing[5], width: "100%" }}>
         {/* Preview Card */}
-        <View style={{ marginBottom: spacing[2] }}>
+        <View>
           <AppText
             variant="bodySmallBold"
             tone="muted"
@@ -317,7 +301,7 @@ export function PromotionBuilderScreen() {
           </View>
         </View>
 
-        <View style={{ marginTop: spacing[2] }}>
+        <View>
           <AppText variant="bodyBold" style={{ marginBottom: spacing[1] }}>
             Target Audience
           </AppText>
@@ -344,41 +328,29 @@ export function PromotionBuilderScreen() {
             )}
           </View>
         </View>
-      </ScrollView>
 
-      <View
-        style={[
-          styles.footer,
-          { backgroundColor: palette.surface, borderTopColor: palette.border },
-        ]}
-      >
-        <Button
-          label={isSaving ? "Saving..." : "Save as Draft"}
-          variant="secondary"
-          style={{ flex: 1 }}
-          onPress={() => handleSave(false)}
-          disabled={isSaving}
-        />
-        <Button
-          label={isSaving ? "Publishing..." : "Publish Now"}
-          variant="primary"
-          style={{ flex: 1 }}
-          onPress={() => handleSave(true)}
-          disabled={isSaving}
-        />
+        <View style={{ flexDirection: "row", gap: spacing[3], marginTop: spacing[4] }}>
+          <Button
+            label={isSaving ? "Saving..." : "Save as Draft"}
+            variant="secondary"
+            style={{ flex: 1 }}
+            onPress={() => void handleSave(false)}
+            disabled={isSaving}
+          />
+          <Button
+            label={isSaving ? "Publishing..." : "Publish Now"}
+            variant="primary"
+            style={{ flex: 1 }}
+            onPress={() => void handleSave(true)}
+            disabled={isSaving}
+          />
+        </View>
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 8,
-    paddingBottom: 12,
-  },
   input: {
     borderWidth: 1,
     borderRadius: 8,
@@ -404,12 +376,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderWidth: 1,
-  },
-  footer: {
-    flexDirection: "row",
-    gap: 12,
-    padding: 16,
-    borderTopWidth: 1,
-    paddingBottom: 32,
   },
 });

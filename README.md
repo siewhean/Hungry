@@ -37,7 +37,7 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 |-----|-------|
 | Product | Hungry — dish-first food discovery |
 | Market | Singapore (hawker centres, food courts, restaurants) |
-| Platform | iOS + Android (Expo SDK 54 / React Native 0.81) |
+| Platform | iOS + Android (Expo SDK 55 / React Native 0.83.6) |
 | Phase | Consumer app, frontend-only, mock data only |
 | Not in scope | Website, admin portal, backend API, business portal |
 | Core idea | Find the dish you want, then see which stall serves it — not the other way around |
@@ -49,7 +49,7 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 
 | Layer | Choice |
 |-------|--------|
-| Framework | Expo SDK 54 + React Native 0.81 |
+| Framework | Expo SDK 55 + React Native 0.83.6 |
 | Language | TypeScript (strict mode) |
 | Navigation | React Navigation v7 |
 | State | Zustand |
@@ -135,6 +135,7 @@ To override these locally, you can use `.env.development` or modify the constant
 - Review compose now supports real library photo attachments via `expo-image-picker` (dev client/native build required).
 - The current runtime shell is auth-first. Signed-out users route through Splash into Auth before the main app shell.
 - In `__DEV__`, app now boots into the Developer Launcher to speed QA state setup (signed out / onboarding incomplete / onboarding complete presets).
+- Developer Launcher Merchant Mode now seeds the dev merchant state and bypasses the merchant sign-in gate before opening MerchantTabs.
 - Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
 - Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and polygon-based building directory layouts (including Wisma and JEM mall-style floor overlays with vertical level switching).
 - **Design Specifications** — Comprehensive visual, UX, and accessibility specs for all remaining backlog items are now available in `docs/audit/`. These serve as the authoritative implementation guide for Batch 1–8.

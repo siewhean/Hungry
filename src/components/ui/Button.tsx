@@ -16,8 +16,6 @@ import { AppText } from "./AppText";
 type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive" | "glass";
 type ButtonSize = "sm" | "md" | "lg";
 
-type ButtonHaptics = false | "light" | "medium";
-
 interface ButtonProps extends Omit<PressableProps, "style"> {
   label: string;
   variant?: ButtonVariant;
@@ -27,8 +25,6 @@ interface ButtonProps extends Omit<PressableProps, "style"> {
   style?: StyleProp<ViewStyle>;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
-  haptics?: ButtonHaptics;
-  accessibilityHint?: string;
 }
 
 export function Button({
@@ -41,8 +37,6 @@ export function Button({
   style,
   leftIcon,
   rightIcon,
-  haptics = "light",
-  accessibilityHint,
   ...props
 }: ButtonProps) {
   const { palette, radii, spacing } = useHungryTheme();
@@ -76,67 +70,34 @@ export function Button({
     },
   };
 
-  const disabledVariantStyle: Record<ButtonVariant, ViewStyle> = {
-    primary: { backgroundColor: palette.orangeDark, borderColor: palette.orangeDark },
-    destructive: { backgroundColor: palette.error, borderColor: palette.error },
-    secondary: { backgroundColor: palette.surfaceRaised, borderColor: palette.border },
-    ghost: { backgroundColor: "transparent", borderColor: "transparent" },
-    glass: {
-      backgroundColor: "rgba(255, 255, 255, 0.12)",
-      borderColor: "rgba(255, 255, 255, 0.28)",
-    },
-  };
-
   const sizeStyle: Record<ButtonSize, ViewStyle> = {
     sm: { minHeight: 36, paddingVertical: spacing[1.5], paddingHorizontal: spacing[3] },
     md: { minHeight: 52, paddingVertical: spacing[3], paddingHorizontal: spacing[4] },
     lg: { minHeight: 60, paddingVertical: spacing[4], paddingHorizontal: spacing[6] },
   };
 
-  const labelTone =
-    variant === "primary" || variant === "destructive" || variant === "glass"
-      ? "inverse"
-      : "default";
-
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityHint={accessibilityHint}
       disabled={isDisabled}
       onPressIn={() => {
         if (!isDisabled) {
-          if (haptics === "light") {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
-          if (haptics === "medium") {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          }
+          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
       }}
       style={({ pressed }) => [
         styles.base,
-        isDisabled ? disabledVariantStyle[variant] : variantStyle[variant],
+        variantStyle[variant],
         sizeStyle[size],
         {
           borderRadius: radii.pill,
-          opacity: isDisabled ? (variant === "ghost" ? 0.45 : 0.62) : 1,
+          opacity: isDisabled ? 0.5 : 1,
           width: fullWidth ? "100%" : undefined,
-          transform: [{ scale: pressed ? 0.985 : 1 }, { translateY: pressed ? 1 : 0 }],
+          transform: [{ translateY: pressed ? 1 : 0 }],
         },
-        pressed && !isDisabled && variant === "primary"
-          ? { backgroundColor: palette.orangeDark }
-          : null,
-        pressed && !isDisabled && variant === "secondary"
-          ? { backgroundColor: palette.surfaceRaised }
-          : null,
-        pressed && !isDisabled && variant === "ghost"
-          ? { backgroundColor: palette.surfaceRaised }
-          : null,
-        pressed && !isDisabled && variant === "destructive" ? { opacity: 0.9 } : null,
-        pressed && !isDisabled && variant === "glass"
-          ? { backgroundColor: "rgba(255, 255, 255, 0.28)" }
-          : null,
+        pressed && variant === "secondary" ? { backgroundColor: palette.surfaceRaised } : null,
+        pressed && variant === "ghost" ? { backgroundColor: palette.surfaceRaised } : null,
+        pressed && variant === "glass" ? { backgroundColor: "rgba(255, 255, 255, 0.3)" } : null,
         style,
       ]}
       {...props}
@@ -154,7 +115,14 @@ export function Button({
           }}
         >
           {leftIcon}
-          <AppText variant={size === "sm" ? "bodySmallBold" : "h3"} tone={labelTone}>
+          <AppText
+            variant={size === "sm" ? "bodySmallBold" : "h3"}
+            tone={
+              variant === "primary" || variant === "destructive" || variant === "glass"
+                ? "inverse"
+                : "default"
+            }
+          >
             {label}
           </AppText>
           {rightIcon}

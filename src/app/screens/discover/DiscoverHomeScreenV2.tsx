@@ -1,6 +1,14 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import {
+  Animated,
+  Easing,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import {
@@ -8,6 +16,7 @@ import {
   Map,
   Mic,
   Search,
+  X,
   Star,
   Flame,
   Home,
@@ -19,10 +28,10 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Chip, Screen, Card, IconButton, Skeleton } from "@/components/ui";
+import { AppHeader, AppText, Chip, Screen, Card, IconButton, Skeleton } from "@/components/ui";
 import { DecideForMeCard } from "@/components/discover/DecideForMeCard";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
+import { getNearestBuildings, getNearestSingaporeArea } from "@/lib/geo/singaporeBuildings";
 import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -47,11 +56,13 @@ export function DiscoverHomeScreenV2() {
   const navigation = useNavigation<RootNavigation>();
   const repository = getDataRepository();
   const { width: screenWidth } = useWindowDimensions();
-  const { palette, radii, spacing, shadows, motion, colorScheme } = useHungryTheme();
+  const { palette, radii, spacing, semanticSpacing, shadows, motion, colorScheme } =
+    useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
   const locationPermission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
+  const grantLocation = useLocationStore((state) => state.grantLocation);
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,6 +71,12 @@ export function DiscoverHomeScreenV2() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    if (locationPermission !== "granted" && !manualLocation) {
+      void grantLocation();
+    }
+  }, [locationPermission, manualLocation, grantLocation]);
+
   const popularNearby = useDiscoveryStore((state) => state.popularNearby ?? []);
   const refreshPopularNearby = useDiscoveryStore((state) => state.refreshPopularNearby);
 
@@ -67,14 +84,94 @@ export function DiscoverHomeScreenV2() {
     void refreshPopularNearby();
   }, [refreshPopularNearby]);
 
-  const selectedCategories = useSearchStore((state) => state.filters.categories);
-  const toggleCategory = useSearchStore((state) => state.toggleCategory);
+  const searchQuery = useSearchStore((state) => state.filters.query);
+  const updateSearchQuery = useSearchStore((state) => state.updateQuery);
+  const rememberSearch = useSearchStore((state) => state.rememberSearch);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const searchInputRef = useRef<TextInput | null>(null);
+  const searchRevealProgress = useRef(new Animated.Value(0)).current;
+  const searchBarWidth = useMemo(
+    () => Math.max(screenWidth - spacing[4] * 2, 240),
+    [screenWidth, spacing],
+  );
+  const searchIconSize = 52;
+
+  const revealSearch = useCallback(() => {
+    if (isSearchExpanded) return;
+    setIsSearchExpanded(true);
+    const revealDuration = Math.max(motion.screenTransition, 340);
+    searchRevealProgress.stopAnimation();
+    searchRevealProgress.setValue(0);
+    Animated.timing(searchRevealProgress, {
+      toValue: 1,
+      duration: revealDuration,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start(() => {
+      searchInputRef.current?.focus();
+    });
+  }, [isSearchExpanded, motion.screenTransition, searchRevealProgress]);
+
+  const hideSearch = useCallback(() => {
+    const hideDuration = Math.max(motion.microInteraction, 260);
+    if (!isSearchExpanded) return;
+    searchRevealProgress.stopAnimation(() =>
+      Animated.timing(searchRevealProgress, {
+        toValue: 0,
+        duration: hideDuration,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: false,
+      }).start(() => {
+        setIsSearchExpanded(false);
+        searchInputRef.current?.blur();
+      }),
+    );
+  }, [isSearchExpanded, motion.microInteraction, searchRevealProgress]);
+
+  useEffect(() => {
+    return () => {
+      searchRevealProgress.stopAnimation();
+      searchRevealProgress.setValue(0);
+    };
+  }, [searchRevealProgress]);
+
+  const submitSearch = useCallback(() => {
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery) {
+      rememberSearch(trimmedQuery);
+    }
+    navigation.navigate("SearchHomeV2");
+    hideSearch();
+  }, [hideSearch, navigation, rememberSearch, searchQuery]);
+
+  const cancelSearch = useCallback(() => {
+    updateSearchQuery("");
+    hideSearch();
+  }, [hideSearch, updateSearchQuery]);
+
+  const searchPanelWidth = useMemo(() => Math.max(searchBarWidth, 240), [searchBarWidth]);
+  const searchEntryWidth = searchRevealProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, searchPanelWidth],
+    extrapolate: "clamp",
+  });
+  const searchInputOpacity = searchRevealProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+  const searchInputScale = searchRevealProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.85, 1],
+    extrapolate: "clamp",
+  });
 
   const nearbyBuildings = useMemo(
     () => getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 3, 14),
     [currentLocation.latitude, currentLocation.longitude],
   );
-  const discoverLocationLabel = manualLocation ?? nearbyBuildings[0]?.name ?? "Nearby";
+  const discoverLocationLabel =
+    manualLocation ?? getNearestSingaporeArea(currentLocation.latitude, currentLocation.longitude);
   const discoverNearbyCount = nearbyBuildings.length || repository.listBuildings().length;
 
   const themeTints = useMemo(() => {
@@ -128,61 +225,109 @@ export function DiscoverHomeScreenV2() {
   }
 
   return (
-    <Screen scroll={false} style={{ backgroundColor: themeTints.bg }}>
+    <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
       {/* Header */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: spacing[4],
-          paddingTop: spacing[3],
-          paddingBottom: spacing[2],
-        }}
-      >
-        <View>
-          <AppText variant="h1" style={{ fontSize: 22, fontWeight: "900" }}>
-            Discover
-          </AppText>
-          <AppText variant="micro" tone="secondary">
-            {discoverLocationLabel} · {discoverNearbyCount} stalls nearby
-          </AppText>
-        </View>
-        <IconButton
-          variant="surface"
-          accessibilityLabel="Open map"
-          onPress={() => navigation.navigate("DiscoverMap")}
-          icon={<Map color={palette.orange} size={20} />}
-        />
-      </View>
+      <AppHeader
+        title="Discover"
+        subtitle={`${discoverLocationLabel} · ${discoverNearbyCount} stalls nearby`}
+        horizontalPadding={semanticSpacing.screenEdge}
+        right={
+          <IconButton
+            variant="surface"
+            accessibilityLabel="Open map"
+            onPress={() => navigation.navigate("DiscoverMap")}
+            icon={<Map color={palette.orange} size={20} />}
+          />
+        }
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: spacing[8] }}
       >
         {/* Search Bar */}
-        <View style={{ paddingHorizontal: spacing[4], marginTop: spacing[2] }}>
-          <Pressable
-            onPress={() => navigation.navigate("SearchHomeV2")}
-            style={({ pressed }) => ({
+        <View
+          style={{ alignItems: "flex-end", paddingHorizontal: spacing[4], marginTop: spacing[2] }}
+        >
+          <View
+            style={{
+              width: isSearchExpanded ? searchPanelWidth : searchIconSize,
+              position: "relative",
+              alignItems: "flex-end",
+            }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Search dishes, stalls, or hawker centres"
+              onPress={isSearchExpanded ? hideSearch : revealSearch}
+              style={{
+                width: searchIconSize,
+                height: 52,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Search color={palette.textMuted} size={18} />
+            </Pressable>
+          </View>
+
+          <Animated.View
+            pointerEvents={isSearchExpanded ? "auto" : "none"}
+            style={{
+              position: "absolute",
+              right: 0,
+              top: 0,
+              height: 52,
+              borderRadius: radii.pill,
+              overflow: "hidden",
+              backgroundColor: palette.bgSoft,
+              width: searchEntryWidth,
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: pressed ? palette.surfaceRaised : palette.bgSoft,
+              justifyContent: "center",
+              gap: spacing[3],
               borderWidth: 1,
               borderColor: palette.border,
-              borderRadius: radii.pill,
-              height: 52,
-              paddingHorizontal: spacing[4],
-              gap: spacing[3],
-              transform: [{ scale: pressed ? 0.99 : 1 }],
-            })}
+              paddingRight: spacing[3],
+              opacity: searchInputOpacity,
+              transform: [{ scaleX: searchInputScale }],
+            }}
           >
-            <Search color={palette.textMuted} size={18} />
-            <AppText style={{ flex: 1, color: palette.textMuted }}>
-              Dishes, stalls, or hawker centres…
-            </AppText>
-            <Mic color={palette.textMuted} size={18} />
-          </Pressable>
+            <Animated.View
+              style={{
+                flex: 1,
+                opacity: searchInputOpacity,
+                overflow: "hidden",
+              }}
+            >
+              <TextInput
+                ref={searchInputRef}
+                value={searchQuery}
+                onChangeText={updateSearchQuery}
+                placeholder="Dishes, stalls, or hawker centres…"
+                placeholderTextColor={palette.textMuted}
+                returnKeyType="search"
+                clearButtonMode="while-editing"
+                style={{
+                  color: palette.text,
+                  fontSize: 15,
+                  fontFamily: "Nunito_400Regular",
+                  height: 52,
+                  width: "100%",
+                }}
+                onSubmitEditing={submitSearch}
+              />
+            </Animated.View>
+            <Animated.View style={{ opacity: searchInputOpacity }}>
+              {searchQuery.length > 0 ? (
+                <Pressable accessibilityRole="button" onPress={cancelSearch}>
+                  <X size={17} color={palette.textMuted} />
+                </Pressable>
+              ) : (
+                <Mic color={palette.textMuted} size={18} />
+              )}
+            </Animated.View>
+          </Animated.View>
         </View>
 
         {/* Intent Chips */}
@@ -250,7 +395,7 @@ export function DiscoverHomeScreenV2() {
                 justifyContent: "center",
               }}
             >
-              <AppText style={{ fontSize: 18 }}>🏪</AppText>
+              <MapPinned color={palette.orange} size={18} />
             </View>
             <View>
               <AppText variant="bodyBold">Stalls & Restaurants</AppText>
@@ -283,7 +428,7 @@ export function DiscoverHomeScreenV2() {
                 justifyContent: "center",
               }}
             >
-              <AppText style={{ fontSize: 18 }}>🍜</AppText>
+              <Utensils color={palette.orange} size={18} />
             </View>
             <View>
               <AppText variant="bodyBold">Dishes</AppText>

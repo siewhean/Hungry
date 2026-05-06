@@ -14,6 +14,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthScreenShell } from "./AuthScreenShell";
+import { navigationRef } from "@/app/navigation/RootNavigator";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
@@ -73,10 +74,6 @@ export function LoginScreen({ navigation }: Props) {
         }
       }
       completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
-      navigation.getParent()?.reset({
-        index: 0,
-        routes: [{ name: "MainTabs" as never, params: { screen: "Home" } as never }],
-      });
       showToast({ message: "Signed in successfully.", tone: "success" });
     } catch (err) {
       const message = (err as { message?: string })?.message?.toLowerCase() ?? "";

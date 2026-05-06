@@ -18,6 +18,20 @@ test("validateFixtureBundle passes for default fixtures", () => {
   assert.equal(result.issues.length, 0);
 });
 
+test("stall post fixtures include tagged carousel posts with longer captions", () => {
+  const taggedCarouselPosts = stallPosts.filter(
+    (post) => (post.tags?.length ?? 0) >= 4 && (post.mediaUrls?.length ?? 0) >= 3,
+  );
+  const longCaptionPosts = taggedCarouselPosts.filter((post) => post.caption.length >= 120);
+
+  assert.ok(stallPosts.length >= 8);
+  assert.ok(taggedCarouselPosts.length >= 6);
+  assert.ok(longCaptionPosts.length >= 4);
+  for (const post of taggedCarouselPosts) {
+    assert.equal(post.mediaUrls?.[0], post.mediaUrl);
+  }
+});
+
 test("validateFixtureBundle catches broken venue references", () => {
   const result = validateFixtureBundle({
     buildings,

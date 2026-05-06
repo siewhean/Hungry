@@ -1,18 +1,24 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Easing, Pressable, ScrollView, View } from "react-native";
-import { Image } from "expo-image";
-import { ArrowLeft, Mic, Search as SearchIcon, X, Star } from "lucide-react-native";
+import {
+  Animated,
+  Easing,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { Search as SearchIcon, X, Star } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Chip, Input, Screen } from "@/components/ui";
+import { AppText, Chip, Screen } from "@/components/ui";
 import { getDiscoverStallCollections, useSearchData } from "@/features/search/search";
-import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
-import type { SearchCategory } from "@/types/domain";
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -20,15 +26,77 @@ const SEARCH_TABS = ["All", "Dishes", "Stalls", "Reads"] as const;
 
 export function DishSearchScreenV2() {
   const navigation = useNavigation<RootNavigation>();
-  const { motion, palette, radii, spacing, shadows } = useHungryTheme();
+  const { palette, radii, spacing } = useHungryTheme();
   const { filters } = useSearchData();
   const profile = useProfileStore((state) => state.profile);
   const updateQuery = useSearchStore((state) => state.updateQuery);
-  const selectedCategories = useSearchStore((state) => state.filters.categories);
-  const toggleCategory = useSearchStore((state) => state.toggleCategory);
   const collections = getDiscoverStallCollections(profile, filters.query).slice(0, 5);
 
   const [activeTab, setActiveTab] = useState<(typeof SEARCH_TABS)[number]>("Dishes");
+  const { width: screenWidth } = useWindowDimensions();
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const searchInputRef = useRef<TextInput | null>(null);
+  const searchRevealProgress = useRef(new Animated.Value(0)).current;
+  const searchBarWidth = Math.max(screenWidth - spacing[4] * 2, 240);
+  const searchIconSize = 56;
+  const searchEntryAnimWidth = searchRevealProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, searchBarWidth],
+    extrapolate: "clamp",
+  });
+  const searchInputOpacity = searchRevealProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+  const searchInputScale = searchRevealProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.85, 1],
+    extrapolate: "clamp",
+  });
+
+  const revealSearch = () => {
+    if (isSearchExpanded) {
+      return;
+    }
+
+    setIsSearchExpanded(true);
+    searchRevealProgress.stopAnimation();
+    searchRevealProgress.setValue(0);
+    Animated.timing(searchRevealProgress, {
+      toValue: 1,
+      duration: 340,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start(() => {
+      searchInputRef.current?.focus();
+    });
+  };
+
+  const hideSearch = () => {
+    if (!isSearchExpanded) {
+      return;
+    }
+
+    searchRevealProgress.stopAnimation(() =>
+      Animated.timing(searchRevealProgress, {
+        toValue: 0,
+        duration: 260,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: false,
+      }).start(() => {
+        setIsSearchExpanded(false);
+        searchInputRef.current?.blur();
+      }),
+    );
+  };
+
+  useEffect(() => {
+    return () => {
+      searchRevealProgress.stopAnimation();
+      searchRevealProgress.setValue(0);
+    };
+  }, [searchRevealProgress]);
 
   const entryY = useRef(new Animated.Value(-10)).current;
   const entryOpacity = useRef(new Animated.Value(0)).current;
@@ -39,12 +107,12 @@ export function DishSearchScreenV2() {
         toValue: 0,
         duration: 200,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(entryOpacity, {
         toValue: 1,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
   }, [entryOpacity, entryY]);
@@ -54,10 +122,20 @@ export function DishSearchScreenV2() {
       <Animated.View
         style={{
           flex: 1,
+          position: "relative",
           opacity: entryOpacity,
           transform: [{ translateY: entryY }],
         }}
       >
+        {isSearchExpanded ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss search"
+            onPress={hideSearch}
+            style={searchStyles.searchDismissOverlay}
+          />
+        ) : null}
+
         {/* Header */}
         <View
           style={{
@@ -75,32 +153,82 @@ export function DishSearchScreenV2() {
         <View style={{ paddingHorizontal: spacing[4], marginBottom: spacing[2] }}>
           <View
             style={{
-              flexDirection: "row",
               alignItems: "center",
-              backgroundColor: palette.surface,
-              borderWidth: 2,
-              borderColor: palette.orange,
-              borderRadius: radii.pill,
-              height: 52,
-              paddingHorizontal: spacing[4],
-              gap: spacing[3],
+              width: isSearchExpanded ? searchBarWidth : searchIconSize,
+              zIndex: 30,
             }}
           >
-            <SearchIcon color={palette.orange} size={18} />
-            <Input
-              placeholder="Search..."
-              value={filters.query}
-              onChangeText={updateQuery}
-              style={{ flex: 1, height: "100%", fontSize: 16, fontWeight: "600" }}
-              autoFocus
-            />
-            {filters.query.length > 0 ? (
-              <Pressable onPress={() => updateQuery("")}>
-                <X color={palette.textMuted} size={18} />
-              </Pressable>
-            ) : (
-              <Mic color={palette.textMuted} size={18} />
-            )}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Search"
+              onPress={isSearchExpanded ? hideSearch : revealSearch}
+              style={{
+                width: searchIconSize,
+                height: 56,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <SearchIcon color={palette.orange} size={20} />
+            </Pressable>
+
+            <Animated.View
+              pointerEvents={isSearchExpanded ? "auto" : "none"}
+              style={{
+                position: "absolute",
+                right: 0,
+                top: 0,
+                height: 56,
+                borderRadius: radii.pill,
+                overflow: "hidden",
+                width: searchEntryAnimWidth,
+                backgroundColor: palette.surface,
+                borderWidth: 1,
+                borderColor: palette.orange,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacing[2],
+                paddingHorizontal: spacing[3],
+                opacity: searchInputOpacity,
+                transform: [{ scaleX: searchInputScale }],
+              }}
+            >
+              <Animated.View
+                style={{
+                  flex: 1,
+                  opacity: searchInputOpacity,
+                }}
+              >
+                <TextInput
+                  ref={searchInputRef}
+                  autoCorrect={false}
+                  onBlur={hideSearch}
+                  placeholder="Search..."
+                  onChangeText={updateQuery}
+                  placeholderTextColor={palette.textMuted}
+                  style={{
+                    color: palette.text,
+                    fontFamily: "Nunito_400Regular",
+                    fontSize: 16,
+                    height: 56,
+                    padding: 0,
+                    textAlignVertical: "center",
+                  }}
+                  value={filters.query}
+                />
+              </Animated.View>
+              <Animated.View style={{ opacity: searchInputOpacity }}>
+                {filters.query.length > 0 ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear search"
+                    onPress={() => updateQuery("")}
+                  >
+                    <X color={palette.textMuted} size={18} />
+                  </Pressable>
+                ) : null}
+              </Animated.View>
+            </Animated.View>
           </View>
         </View>
 
@@ -260,3 +388,11 @@ export function DishSearchScreenV2() {
     </Screen>
   );
 }
+
+const searchStyles = StyleSheet.create({
+  searchDismissOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "transparent",
+    zIndex: 20,
+  },
+});

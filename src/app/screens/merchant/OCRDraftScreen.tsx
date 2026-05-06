@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { View, ScrollView, StyleSheet, Alert, Pressable } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { ChevronLeft, Check, X, Edit2 } from "lucide-react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import { Image, View, StyleSheet, Alert } from "react-native";
+import { Check, Edit2, RefreshCw, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { AppText, Button, IconButton, Screen, Chip } from "@/components/ui";
+import { AppText, Button, Screen, Chip } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
-import { hungryService } from "@/lib/services/mock/mockService";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import type { OCRDishDraft } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 
@@ -18,39 +17,57 @@ export function OCRDraftScreen() {
   const { palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const activeOutlet = useMerchantStore(getActiveOutlet);
-  const insets = useSafeAreaInsets();
 
   const [drafts, setDrafts] = useState<OCRDishDraft[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadDrafts() {
-      if (activeOutlet) {
-        try {
-          const data = await hungryService.merchant.getOCRDrafts(activeOutlet.id);
-          setDrafts(data.filter((d) => d.status === "pending"));
-        } catch (e) {
-          console.error(e);
-        }
-      }
+  const loadDrafts = useCallback(async () => {
+    if (!activeOutlet) {
+      setDrafts([]);
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const data = await getHungryService().merchant.getOCRDrafts(activeOutlet.id);
+      setDrafts(data.filter((draft) => draft.status === "pending"));
+    } catch (e) {
+      console.error(e);
+      Alert.alert("Error", "Failed to load OCR drafts.");
+    } finally {
       setIsLoading(false);
     }
-    loadDrafts();
   }, [activeOutlet]);
 
-  const handleAccept = async (draftId: string) => {
+  useEffect(() => {
+    void loadDrafts();
+  }, [loadDrafts]);
+
+  const handleAccept = async (draftId: string, options: { silent?: boolean } = {}) => {
     try {
-      await hungryService.merchant.acceptOCRDraft(draftId);
+      await getHungryService().merchant.acceptOCRDraft(draftId);
       setDrafts((prev) => prev.filter((d) => d.id !== draftId));
-      Alert.alert("Success", "Dish added to your menu.");
+      if (!options.silent) {
+        Alert.alert("Success", "Dish added to your menu.");
+      }
     } catch (e) {
       Alert.alert("Error", "Failed to accept draft.");
     }
   };
 
+  const handleEditDraft = async (draftId: string) => {
+    try {
+      const dish = await getHungryService().merchant.acceptOCRDraft(draftId);
+      setDrafts((prev) => prev.filter((draft) => draft.id !== draftId));
+      navigation.navigate("DishEditor", { dishId: dish.id });
+    } catch (e) {
+      Alert.alert("Error", "Failed to open OCR draft for editing.");
+    }
+  };
+
   const handleReject = async (draftId: string) => {
     try {
-      await hungryService.merchant.rejectOCRDraft(draftId);
+      await getHungryService().merchant.rejectOCRDraft(draftId);
       setDrafts((prev) => prev.filter((d) => d.id !== draftId));
     } catch (e) {
       Alert.alert("Error", "Failed to reject draft.");
@@ -67,8 +84,9 @@ export function OCRDraftScreen() {
           text: "Accept All",
           onPress: async () => {
             for (const draft of drafts) {
-              await handleAccept(draft.id);
+              await handleAccept(draft.id, { silent: true });
             }
+            Alert.alert("Success", "OCR drafts added to your menu.");
           },
         },
       ],
@@ -76,22 +94,8 @@ export function OCRDraftScreen() {
   };
 
   return (
-    <Screen style={{ backgroundColor: palette.bg }}>
-      <View style={[styles.header, { paddingTop: spacing[3], paddingHorizontal: spacing[4] }]}>
-        <IconButton
-          accessibilityLabel="Go back"
-          icon={<ChevronLeft size={24} color={palette.text} />}
-          onPress={() => navigation.goBack()}
-        />
-        <AppText variant="h2" style={{ fontWeight: "800" }}>
-          Menu Photo Scan
-        </AppText>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ padding: spacing[4], gap: spacing[4], paddingBottom: 100 }}
-      >
+    <Screen title="Menu Photo Scan">
+      <View style={{ gap: spacing[4], width: "100%" }}>
         <View
           style={{ backgroundColor: palette.infoSoft, padding: spacing[4], borderRadius: radii.md }}
         >
@@ -102,6 +106,23 @@ export function OCRDraftScreen() {
             We scanned your uploaded menu photo and found these dishes. Review them before adding to
             your menu.
           </AppText>
+        </View>
+
+        <View style={{ flexDirection: "row", gap: spacing[2] }}>
+          <Button
+            label="Add manually"
+            variant="primary"
+            style={{ flex: 1 }}
+            onPress={() => navigation.navigate("DishEditor")}
+            leftIcon={<Edit2 size={16} color={palette.white} />}
+          />
+          <Button
+            label="Refresh scans"
+            variant="secondary"
+            style={{ flex: 1 }}
+            onPress={loadDrafts}
+            leftIcon={<RefreshCw size={16} color={palette.textSecondary} />}
+          />
         </View>
 
         {drafts.length > 0 && (
@@ -161,11 +182,40 @@ export function OCRDraftScreen() {
                 </View>
               </View>
 
+              {draft.sourcePhotoUrl ? (
+                <Image source={{ uri: draft.sourcePhotoUrl }} style={styles.sourceImage} />
+              ) : null}
+
               {draft.suggestedDescription && (
                 <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[3] }}>
                   {draft.suggestedDescription}
                 </AppText>
               )}
+
+              {draft.suggestedTasteTags && draft.suggestedTasteTags.length > 0 && (
+                <View style={styles.tagRow}>
+                  {draft.suggestedTasteTags.slice(0, 4).map((tag) => (
+                    <Chip key={tag} label={tag} selected={false} />
+                  ))}
+                </View>
+              )}
+
+              {draft.suggestedDietaryTags && draft.suggestedDietaryTags.length > 0 && (
+                <View style={styles.tagRow}>
+                  {draft.suggestedDietaryTags.slice(0, 4).map((tag) => (
+                    <Chip key={tag} label={tag.replace(/_/g, "-")} selected={false} />
+                  ))}
+                </View>
+              )}
+
+              <Button
+                label="Edit before adding"
+                variant="secondary"
+                fullWidth
+                onPress={() => handleEditDraft(draft.id)}
+                leftIcon={<Edit2 size={16} color={palette.textSecondary} />}
+                style={{ marginBottom: spacing[2] }}
+              />
 
               <View style={{ flexDirection: "row", gap: spacing[2] }}>
                 <Button
@@ -186,22 +236,27 @@ export function OCRDraftScreen() {
             </View>
           ))
         )}
-      </ScrollView>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 8,
-    paddingBottom: 12,
-  },
   draftCard: {
     padding: 16,
     borderWidth: 1,
+  },
+  sourceImage: {
+    width: "100%",
+    height: 160,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  tagRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
   },
   emptyContainer: {
     padding: 40,

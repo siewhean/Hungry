@@ -6,7 +6,11 @@ import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export function StatusOverlay() {
+interface StatusOverlayProps {
+  onFinish?: () => void;
+}
+
+export function StatusOverlay({ onFinish }: StatusOverlayProps) {
   const { palette, spacing, radii } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const publishingState = useComposerStore((state) => state.publishingState);
@@ -26,15 +30,30 @@ export function StatusOverlay() {
 
   if (publishingState === "scheduled") {
     return (
-      <View 
-        style={[styles.toastContainer, { top: insets.top + spacing.md, paddingHorizontal: spacing.xl }]}
+      <View
+        style={[
+          styles.toastContainer,
+          { top: insets.top + spacing.md, paddingHorizontal: spacing.xl },
+        ]}
         pointerEvents="box-none"
       >
-        <View style={[styles.toast, { backgroundColor: palette.surface, borderRadius: radii.md, padding: spacing.lg, borderColor: palette.border }]}>
+        <View
+          style={[
+            styles.toast,
+            {
+              backgroundColor: palette.surface,
+              borderRadius: radii.md,
+              padding: spacing.lg,
+              borderColor: palette.border,
+            },
+          ]}
+        >
           <Calendar size={20} color={palette.orange} />
           <View style={{ flex: 1, gap: spacing.sm }}>
             <AppText variant="bodySmallBold">Post Scheduled!</AppText>
-            <AppText variant="micro" tone="secondary">Your post will go live at the set time.</AppText>
+            <AppText variant="micro" tone="secondary">
+              Your post will go live at the set time.
+            </AppText>
           </View>
         </View>
       </View>
@@ -60,7 +79,12 @@ export function StatusOverlay() {
         },
       ]}
     >
-      <View style={[styles.card, { backgroundColor: palette.surface, borderRadius: radii.xl, padding: spacing.xxl }]}>
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: palette.surface, borderRadius: radii.xl, padding: spacing.xxl },
+        ]}
+      >
         {isProcessing ? (
           <View style={styles.content}>
             <ActivityIndicator size="large" color={palette.orange} />
@@ -69,10 +93,10 @@ export function StatusOverlay() {
                 {publishingState === "posting"
                   ? "Publishing..."
                   : publishingState === "uploading"
-                  ? "Uploading Media..."
-                  : publishingState === "ai_processing"
-                  ? "AI Creator Suite..."
-                  : "Processing Media..."}
+                    ? "Uploading Media..."
+                    : publishingState === "ai_processing"
+                      ? "AI Creator Suite..."
+                      : "Processing Media..."}
               </AppText>
               <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
                 {publishingState === "ai_processing"
@@ -90,7 +114,15 @@ export function StatusOverlay() {
                 Your content is now live. Get ready for the cravings to start.
               </AppText>
             </View>
-            <Button label="View Post" variant="primary" fullWidth onPress={() => setPublishingState("editing")} />
+            <Button
+              label="View Post"
+              variant="primary"
+              fullWidth
+              onPress={() => {
+                reset();
+                onFinish?.();
+              }}
+            />
             <Button label="Create Another" variant="ghost" fullWidth onPress={reset} />
           </View>
         ) : publishingState === "draft" ? (
@@ -102,8 +134,21 @@ export function StatusOverlay() {
                 Your changes have been saved to your local drafts.
               </AppText>
             </View>
-            <Button label="Keep Editing" variant="primary" fullWidth onPress={() => setPublishingState("editing")} />
-            <Button label="Finish Later" variant="ghost" fullWidth onPress={reset} />
+            <Button
+              label="Keep Editing"
+              variant="primary"
+              fullWidth
+              onPress={() => setPublishingState("editing")}
+            />
+            <Button
+              label="Finish Later"
+              variant="ghost"
+              fullWidth
+              onPress={() => {
+                reset();
+                onFinish?.();
+              }}
+            />
           </View>
         ) : publishingState === "error" ? (
           <View style={styles.content}>
@@ -111,11 +156,21 @@ export function StatusOverlay() {
             <View style={{ alignItems: "center", gap: spacing.sm }}>
               <AppText variant="h3">Something went wrong</AppText>
               <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-                We couldn't publish your post. Please check your connection and try again.
+                We couldn&apos;t publish your post. Please check your connection and try again.
               </AppText>
             </View>
-            <Button label="Try Again" variant="primary" fullWidth onPress={() => setPublishingState("posting")} />
-            <Button label="Cancel" variant="ghost" fullWidth onPress={() => setPublishingState("editing")} />
+            <Button
+              label="Try Again"
+              variant="primary"
+              fullWidth
+              onPress={() => setPublishingState("posting")}
+            />
+            <Button
+              label="Cancel"
+              variant="ghost"
+              fullWidth
+              onPress={() => setPublishingState("editing")}
+            />
           </View>
         ) : null}
 

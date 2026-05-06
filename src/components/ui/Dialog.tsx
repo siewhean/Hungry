@@ -21,37 +21,46 @@ interface DialogProps {
 export function Dialog({ visible, title, message, buttons, onClose }: DialogProps) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
 
+  if (!visible) {
+    return null;
+  }
+
   return (
-    <Modal
-      transparent
-      visible={visible}
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={[
-          styles.container, 
-          { 
-            backgroundColor: palette.surface, 
-            borderRadius: radii.xl,
-            padding: spacing[6],
-            ...shadows.floating
-          }
-        ]}>
-          <AppText variant="h3" style={{ marginBottom: spacing[2] }}>{title}</AppText>
+        <View
+          style={[
+            styles.container,
+            {
+              backgroundColor: palette.surface,
+              borderRadius: radii.xl,
+              padding: spacing[6],
+              ...shadows.floating,
+            },
+          ]}
+        >
+          <AppText variant="h3" style={{ marginBottom: spacing[2] }}>
+            {title}
+          </AppText>
           {message ? (
             <AppText variant="bodySmall" tone="secondary" style={{ marginBottom: spacing[6] }}>
               {message}
             </AppText>
           ) : null}
-          
+
           <View style={{ gap: spacing[3] }}>
             {buttons.map((btn, index) => (
               <Button
                 key={index}
                 label={btn.text}
-                variant={btn.style === "destructive" ? "primary" : btn.style === "cancel" ? "ghost" : "secondary"}
+                variant={
+                  btn.style === "destructive"
+                    ? "primary"
+                    : btn.style === "cancel"
+                      ? "ghost"
+                      : "secondary"
+                }
                 onPress={() => {
                   btn.onPress?.();
                   onClose();

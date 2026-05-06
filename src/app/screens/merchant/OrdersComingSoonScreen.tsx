@@ -1,71 +1,44 @@
 import React from "react";
-import { View, ScrollView, StyleSheet, Image } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  ChevronLeft,
-  QrCode,
-  Smartphone,
-  CreditCard,
-  Clock,
-  CheckCircle2,
-} from "lucide-react-native";
-import { useNavigation } from "@react-navigation/native";
+import { View, StyleSheet } from "react-native";
+import { QrCode, Smartphone, CreditCard, Clock } from "lucide-react-native";
 
-import { AppText, Button, IconButton, Screen } from "@/components/ui";
+import { AppText, Button, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
 export function OrdersComingSoonScreen() {
   const { palette, spacing, radii } = useHungryTheme();
-  const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
 
   return (
-    <Screen style={{ backgroundColor: palette.bg }}>
-      <View style={[styles.header, { paddingTop: spacing[3], paddingHorizontal: spacing[4] }]}>
-        <IconButton
-          accessibilityLabel="Go back"
-          icon={<ChevronLeft size={24} color={palette.text} />}
-          onPress={() => navigation.goBack()}
-        />
-        <AppText variant="h2" style={{ fontWeight: "800" }}>
-          In-App Ordering
-        </AppText>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ padding: spacing[4], gap: spacing[5], paddingBottom: 100 }}
-      >
+    <Screen title="In-App Ordering">
+      <View style={{ gap: spacing[8], width: "100%" }}>
         {/* Hero Section */}
-        <View style={{ alignItems: "center", paddingVertical: spacing[4] }}>
+        <View style={{ alignItems: "center", paddingVertical: spacing[4], gap: spacing[4] }}>
           <View
-            style={[styles.heroIcon, { backgroundColor: palette.orangeLight, borderRadius: 48 }]}
+            style={[
+              styles.heroIcon,
+              { backgroundColor: palette.orangeLight, borderRadius: radii.pill },
+            ]}
           >
             <QrCode size={48} color={palette.orange} />
           </View>
-          <AppText
-            variant="h2"
-            style={{ fontWeight: "bold", textAlign: "center", marginTop: spacing[4] }}
-          >
-            Coming Soon to Hungry
-          </AppText>
-          <AppText
-            variant="body"
-            tone="muted"
-            style={{ textAlign: "center", marginTop: spacing[2], paddingHorizontal: spacing[4] }}
-          >
-            Skip the queue. Let customers order and pay directly from their phones.
-          </AppText>
-          <Button
-            label="Join the Pilot Program"
-            variant="primary"
-            style={{ marginTop: spacing[4], width: "100%" }}
-          />
+          <View style={{ gap: spacing[2], alignItems: "center" }}>
+            <AppText variant="h2" style={{ fontWeight: "bold", textAlign: "center" }}>
+              Coming Soon to Hungry
+            </AppText>
+            <AppText
+              variant="body"
+              tone="muted"
+              style={{ textAlign: "center", paddingHorizontal: spacing[4] }}
+            >
+              Skip the queue. Let customers order and pay directly from their phones.
+            </AppText>
+          </View>
+          <Button label="Join the Pilot Program" variant="primary" fullWidth />
         </View>
 
         {/* How it works */}
-        <View>
-          <AppText variant="h3" style={{ fontWeight: "bold", marginBottom: spacing[3] }}>
+        <View style={{ gap: spacing[3] }}>
+          <AppText variant="h3" style={{ fontWeight: "bold" }}>
             How it works
           </AppText>
           <View
@@ -146,8 +119,8 @@ export function OrdersComingSoonScreen() {
         </View>
 
         {/* QR Preview */}
-        <View>
-          <AppText variant="h3" style={{ fontWeight: "bold", marginBottom: spacing[3] }}>
+        <View style={{ gap: spacing[3] }}>
+          <AppText variant="h3" style={{ fontWeight: "bold" }}>
             Preview your QR Code
           </AppText>
           <View
@@ -239,8 +212,8 @@ export function OrdersComingSoonScreen() {
         </View>
 
         {/* Setup Checklist */}
-        <View>
-          <AppText variant="h3" style={{ fontWeight: "bold", marginBottom: spacing[3] }}>
+        <View style={{ gap: spacing[3] }}>
+          <AppText variant="h3" style={{ fontWeight: "bold" }}>
             Setup Checklist
           </AppText>
           <View
@@ -275,19 +248,12 @@ export function OrdersComingSoonScreen() {
             </View>
           </View>
         </View>
-      </ScrollView>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 8,
-    paddingBottom: 12,
-  },
   heroIcon: {
     width: 96,
     height: 96,
@@ -304,7 +270,7 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     marginBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6", // Hardcoded light gray just for the internal dividers
+    borderBottomColor: "#F3F4F6",
   },
   stepIcon: {
     width: 40,

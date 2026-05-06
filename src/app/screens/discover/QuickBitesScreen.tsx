@@ -6,24 +6,71 @@ import {
   ScrollView,
   useWindowDimensions,
   ActivityIndicator,
-  TextInput,
   Animated,
 } from "react-native";
 import { Image } from "expo-image";
-import { ArrowLeft, Search, Mic, MapPinned, Heart, X } from "lucide-react-native";
+import { ArrowLeft, MapPinned, Heart } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { FlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Chip, Screen, Avatar } from "@/components/ui";
+import { AppText, Chip, ExpandableSearchLauncher, Screen, Avatar } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useLocationStore } from "@/store/useLocationStore";
 import { getHomeBitesFeed } from "@/features/home/bites";
+import { dishes as mockDishes } from "@/lib/services/mock/data";
 import type { Bite } from "@/lib/services/types";
+import { useSearchStore } from "@/store/useSearchStore";
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
+type QuickBitesRoute = RouteProp<RootStackParamList, "QuickBites">;
+export type DiscoverCollection = NonNullable<
+  NonNullable<RootStackParamList["QuickBites"]>["collection"]
+>;
+
+export const COLLECTION_COPY: Record<
+  NonNullable<DiscoverCollection>,
+  {
+    title: string;
+    placeholder: string;
+    emptyTitle: string;
+    emptyBody: string;
+  }
+> = {
+  quickBites: {
+    title: "Quick Bites",
+    placeholder: "Find quick bites...",
+    emptyTitle: "No quick bites found nearby",
+    emptyBody: "Try changing your filters or search query.",
+  },
+  trending: {
+    title: "Trending",
+    placeholder: "Find trending dishes...",
+    emptyTitle: "No trending dishes found nearby",
+    emptyBody: "Try another filter or search for a dish.",
+  },
+  editorChoice: {
+    title: "Editor's Choice",
+    placeholder: "Find curated dishes...",
+    emptyTitle: "No editor's picks found nearby",
+    emptyBody: "Try another filter or search for a dish.",
+  },
+  budget: {
+    title: "Budget Under S$8",
+    placeholder: "Find budget dishes...",
+    emptyTitle: "No budget dishes found nearby",
+    emptyBody: "Try another filter or search for a dish.",
+  },
+  lateNight: {
+    title: "Late Night Makan",
+    placeholder: "Find late night food...",
+    emptyTitle: "No late night dishes found nearby",
+    emptyBody: "Try another filter or search for a dish.",
+  },
+};
 
 const CUISINES = [
   "All",
@@ -58,30 +105,89 @@ const DISH_NAMES = [
   "Mala Xiang Guo",
   "Pandan Cake",
 ];
-const PHOTO_URLS = [
-  "https://images.unsplash.com/photo-1605098702935-b61af3b4ff3d?w=800",
-  "https://images.unsplash.com/photo-1541529086526-db283c563270?w=800",
-  "https://images.unsplash.com/photo-1555126634-323283e090fa?w=800",
-  "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800",
-  "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=800",
-  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800",
-  "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=800",
-  "https://images.unsplash.com/photo-1621236378699-8597fac6bb4d?w=800",
-];
+const FALLBACK_DISH_IMAGE_URL =
+  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=800";
+const DISH_IMAGE_URLS: Record<string, string> = {
+  "Chicken Rice": "https://upload.wikimedia.org/wikipedia/commons/7/71/Hainanese_Chicken_Rice.jpg",
+  "Chicken Satay":
+    "https://images.unsplash.com/photo-1529563021893-cc83c992d75d?auto=format&fit=crop&q=80&w=800",
+  "Sliced Fish Ban Mian":
+    "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&q=80&w=800",
+  "Wagyu Burger":
+    "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=800",
+  "Salmon Don":
+    "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=800",
+  Laksa:
+    "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?auto=format&fit=crop&q=80&w=800",
+  "Mala Xiang Guo":
+    "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&q=80&w=800",
+  "Pandan Cake":
+    "https://images.unsplash.com/photo-1621236378699-8597fac6bb4d?auto=format&fit=crop&q=80&w=800",
+};
+const DISH_ID_BY_NAME: Record<string, string> = {
+  "Chicken Rice": "dish-chicken-rice",
+  "Chicken Satay": "dish-satay",
+  "Sliced Fish Ban Mian": "dish-ban-mian",
+  "Wagyu Burger": "dish-wagyu-burger",
+  "Salmon Don": "dish-salmon-don",
+  Laksa: "dish-laksa",
+  "Mala Xiang Guo": "dish-mala-xiang-guo",
+  "Pandan Cake": "dish-pandan-cake",
+};
+const DISH_BY_ID = new Map(mockDishes.map((dish) => [dish.id, dish]));
+
+function getDishImageUrl(dishName: string, photoUrl?: string) {
+  return DISH_IMAGE_URLS[dishName] || photoUrl?.trim() || FALLBACK_DISH_IMAGE_URL;
+}
+
+function getDishId(dishName: string, dishId?: string) {
+  return DISH_ID_BY_NAME[dishName] || dishId || "dish-chicken-rice";
+}
+
+function withFoodImages(bites: Bite[]) {
+  return bites.map((bite) => ({
+    ...bite,
+    ...getDishSyncedFields(bite),
+  }));
+}
+
+function getDishSyncedFields(bite: Bite) {
+  const dishId = getDishId(bite.dishName, bite.dishId);
+  const dish = DISH_BY_ID.get(dishId);
+
+  if (!dish) {
+    return {
+      dishId,
+      photoUrl: getDishImageUrl(bite.dishName, bite.photoUrl),
+    };
+  }
+
+  return {
+    buildingId: dish.buildingId,
+    dishId: dish.id,
+    dishName: dish.name,
+    photoUrl: dish.imageUrl,
+    price: dish.price,
+    rating: dish.rating,
+    unitNumber: dish.unitNumber,
+    venueId: dish.venueId,
+    venueName: dish.venueName,
+  };
+}
 
 const MOCK_ITEMS: Bite[] = Array.from({ length: 40 }).map((_, i) => ({
   id: `bite-mock-${i}`,
   authorId: `user-${i % 8}`,
   authorName: AUTHOR_NAMES[i % 8],
   authorAvatar: `https://i.pravatar.cc/64?u=${i}`,
-  dishId: `dish-${i % 8}`,
+  dishId: getDishId(DISH_NAMES[i % 8]),
   dishName: DISH_NAMES[i % 8],
   venueId: `venue-${i % 8}`,
   venueName: "Delicious Food Stall",
   unitNumber: `#01-${10 + i}`,
   buildingId: "building-maxwell",
   buildingName: "Maxwell Food Centre",
-  photoUrl: PHOTO_URLS[i % 8],
+  photoUrl: getDishImageUrl(DISH_NAMES[i % 8]),
   caption: `Absolutely delicious ${DISH_NAMES[i % 8]}! A must-try local favorite. #food #singapore`,
   tasteStamp: { sweet: 1, spicy: 2, sour: 1, salty: 4, rich: 5, aromatic: 4 },
   cravingCount: Math.floor(Math.random() * 1000),
@@ -92,16 +198,59 @@ const MOCK_ITEMS: Bite[] = Array.from({ length: 40 }).map((_, i) => ({
   createdAt: new Date().toISOString(),
 }));
 
+export function getDiscoverBiteCollection(
+  collection: DiscoverCollection,
+  bites: Bite[] = MOCK_ITEMS,
+) {
+  const bitesWithImages = withFoodImages(bites);
+  if (collection === "budget") {
+    return bitesWithImages.filter((bite) => bite.price < 8);
+  }
+  if (collection === "editorChoice") {
+    return bitesWithImages.filter((bite) => bite.rating >= 4.4);
+  }
+  if (collection === "trending") {
+    return [...bitesWithImages].sort((a, b) => b.cravingCount - a.cravingCount);
+  }
+  if (collection === "lateNight") {
+    return bitesWithImages.filter(
+      (bite) =>
+        bite.caption.toLowerCase().includes("late") ||
+        bite.dishName.toLowerCase().includes("satay") ||
+        bite.dishName.toLowerCase().includes("laksa") ||
+        bite.dishName.toLowerCase().includes("mala"),
+    );
+  }
+  return bitesWithImages;
+}
+
 export function QuickBitesScreen() {
   const navigation = useNavigation<RootNavigation>();
+  const route = useRoute<QuickBitesRoute>();
   const { palette, spacing, radii } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const currentLocation = useLocationStore((state) => state.currentLocation);
+  const collection: DiscoverCollection = route.params?.collection ?? "quickBites";
+  const collectionCopy = COLLECTION_COPY[collection];
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState("All");
   const [bites, setBites] = useState<Bite[]>(MOCK_ITEMS);
   const [isLoading, setIsLoading] = useState(true);
+  const searchQuery = useSearchStore((state) => state.filters.query);
+  const updateSearchQuery = useSearchStore((state) => state.updateQuery);
+  const rememberSearch = useSearchStore((state) => state.rememberSearch);
+  const searchBarWidth = useMemo(
+    () => Math.max(screenWidth - spacing[4] * 2 - 32 - 12, 240),
+    [screenWidth, spacing],
+  );
+
+  const submitSearch = useCallback(() => {
+    const trimmed = searchQuery.trim();
+    if (trimmed) {
+      rememberSearch(trimmed);
+    }
+    navigation.navigate("SearchHome");
+  }, [navigation, rememberSearch, searchQuery]);
 
   // ── Animation Logic ────────────────────────────────────────────────────────
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -137,8 +286,8 @@ export function QuickBitesScreen() {
             .filter((b) => !existingIds.has(b.id))
             .map((b) => ({
               ...b,
-              photoUrl:
-                b.photoUrl || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800",
+              dishId: getDishId(b.dishName, b.dishId),
+              photoUrl: getDishImageUrl(b.dishName, b.photoUrl),
             }));
           setBites([...newUniqueBites, ...MOCK_ITEMS]);
         }
@@ -151,23 +300,20 @@ export function QuickBitesScreen() {
     void loadBites();
   }, [currentLocation]);
 
-  const filteredBites = useMemo(() => {
-    const list = bites
-      .filter((bite) => {
-        const query = searchQuery.toLowerCase();
-        const matchesSearch =
-          !query ||
-          bite.authorName.toLowerCase().includes(query) ||
-          bite.caption.toLowerCase().includes(query) ||
-          bite.dishName.toLowerCase().includes(query);
+  const collectionBites = useMemo(() => {
+    return getDiscoverBiteCollection(collection, bites);
+  }, [bites, collection]);
 
+  const filteredBites = useMemo(() => {
+    const list = collectionBites
+      .filter((bite) => {
         const cuisine = selectedCuisine.toLowerCase();
         const matchesCuisine =
           cuisine === "all" ||
           bite.caption.toLowerCase().includes(cuisine) ||
           bite.dishName.toLowerCase().includes(cuisine);
 
-        return matchesSearch && matchesCuisine;
+        return matchesCuisine;
       })
       .map((bite) => {
         // Assign deterministic distance for mock items
@@ -176,7 +322,7 @@ export function QuickBitesScreen() {
       });
 
     return list.sort((a, b) => a.distance - b.distance);
-  }, [bites, searchQuery, selectedCuisine]);
+  }, [collectionBites, selectedCuisine]);
 
   const numColumns = 2;
   const itemWidth = screenWidth / numColumns;
@@ -184,7 +330,7 @@ export function QuickBitesScreen() {
   const renderBiteItem = useCallback(
     ({ item }: { item: Bite & { distance: number } }) => (
       <Pressable
-        onPress={() => navigation.navigate("StallDetail", { venueId: item.venueId })}
+        onPress={() => navigation.navigate("DishDetail", { dishId: item.dishId })}
         style={{
           width: itemWidth,
           height: itemWidth * 1.35,
@@ -248,6 +394,66 @@ export function QuickBitesScreen() {
     [itemWidth, palette, navigation],
   );
 
+  const renderFoodCarousel = useCallback(
+    () =>
+      filteredBites.length ? (
+        <View style={{ paddingVertical: spacing[5], gap: spacing[3] }}>
+          <View style={{ paddingHorizontal: spacing[4] }}>
+            <AppText variant="h3">{collectionCopy.title}</AppText>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[4] }}
+          >
+            {filteredBites.map((bite) => (
+              <Pressable
+                key={`carousel-${bite.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${bite.dishName} at ${bite.venueName}`}
+                onPress={() => navigation.navigate("DishDetail", { dishId: bite.dishId })}
+                style={[
+                  styles.carouselCard,
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    borderRadius: radii.lg,
+                  },
+                ]}
+              >
+                <Image
+                  source={{ uri: bite.photoUrl }}
+                  style={{ height: 104, width: "100%" }}
+                  contentFit="cover"
+                />
+                <View style={{ padding: spacing[2], gap: 2 }}>
+                  <AppText variant="bodySmallBold" numberOfLines={1}>
+                    {bite.dishName}
+                  </AppText>
+                  <AppText variant="micro" tone="secondary" numberOfLines={1}>
+                    {bite.venueName}
+                  </AppText>
+                  <AppText variant="price" style={{ color: palette.orange }}>
+                    S${bite.price.toFixed(2)}
+                  </AppText>
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null,
+    [
+      collectionCopy.title,
+      filteredBites,
+      navigation,
+      palette.border,
+      palette.orange,
+      palette.surface,
+      radii.lg,
+      spacing,
+    ],
+  );
+
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: palette.bg }}>
       <View
@@ -263,37 +469,27 @@ export function QuickBitesScreen() {
           },
         ]}
       >
-        <View style={styles.searchRow}>
+        <View style={styles.titleRow}>
           <Pressable onPress={() => navigation.goBack()} style={styles.backBtn} hitSlop={12}>
             <ArrowLeft color={palette.text} size={24} />
           </Pressable>
-          <View
-            style={[
-              styles.searchBar,
-              {
-                backgroundColor: palette.surface,
-                borderRadius: radii.md,
-                borderColor: palette.border,
-              },
-            ]}
-          >
-            <Search color={palette.textMuted} size={18} />
-            <TextInput
-              placeholder="Find quick bites..."
-              placeholderTextColor={palette.textMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              style={[styles.textInput, { color: palette.text }]}
-              autoCorrect={false}
-            />
-            {searchQuery.length > 0 ? (
-              <Pressable onPress={() => setSearchQuery("")} hitSlop={8}>
-                <X color={palette.textMuted} size={18} />
-              </Pressable>
-            ) : (
-              <Mic color={palette.textMuted} size={18} />
-            )}
-          </View>
+          <AppText variant="h2" style={{ flex: 1 }}>
+            {collectionCopy.title}
+          </AppText>
+          <ExpandableSearchLauncher
+            query={searchQuery}
+            onQueryChange={updateSearchQuery}
+            onSubmit={submitSearch}
+            iconAlignment="right"
+            iconSize={40}
+            barHeight={40}
+            placeholder="Search dishes..."
+            expandedWidth={searchBarWidth}
+            borderColor={palette.border}
+            backgroundColor={palette.bgSoft}
+            textColor={palette.text}
+            onClear={() => updateSearchQuery("")}
+          />
         </View>
 
         <Animated.View
@@ -349,19 +545,20 @@ export function QuickBitesScreen() {
                   width: "100%",
                 }}
               >
-                <AppText style={{ fontSize: 48 }}>🥣</AppText>
+                <AppText style={styles.emptyStateIcon}>🥣</AppText>
                 <View
                   style={{ alignItems: "center", gap: spacing[1], paddingHorizontal: spacing[8] }}
                 >
                   <AppText variant="h3" style={{ textAlign: "center" }}>
-                    No bites found nearby
+                    {collectionCopy.emptyTitle}
                   </AppText>
                   <AppText tone="muted" style={{ textAlign: "center" }}>
-                    Try changing your filters or search query.
+                    {collectionCopy.emptyBody}
                   </AppText>
                 </View>
               </View>
             }
+            ListFooterComponent={renderFoodCarousel}
           />
         )}
       </View>
@@ -371,18 +568,20 @@ export function QuickBitesScreen() {
 
 const styles = StyleSheet.create({
   header: { paddingBottom: 12 },
-  searchRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  backBtn: { width: 32, height: 40, alignItems: "center", justifyContent: "center" },
-  searchBar: {
-    flex: 1,
-    flexDirection: "row",
+  titleRow: {
     alignItems: "center",
-    height: 44,
-    paddingHorizontal: 12,
-    gap: 8,
-    borderWidth: 1,
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 8,
   },
-  textInput: { flex: 1, height: "100%", fontSize: 16, paddingVertical: 0 },
+  backBtn: { width: 32, height: 40, alignItems: "center", justifyContent: "center" },
+  emptyStateIcon: {
+    fontSize: 48,
+    height: 72,
+    lineHeight: 64,
+    textAlign: "center",
+    width: 72,
+  },
   cardContent: { ...StyleSheet.absoluteFillObject, padding: 10, justifyContent: "flex-end" },
   authorBadge: {
     position: "absolute",
@@ -397,4 +596,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   metaRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  carouselCard: {
+    borderWidth: 1,
+    overflow: "hidden",
+    width: 168,
+  },
 });

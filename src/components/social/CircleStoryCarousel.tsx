@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
@@ -77,11 +78,13 @@ const MOCK_STORIES: StoryItem[] = [
 interface CircleStoryCarouselProps {
   stories?: StoryItem[];
   onStoryPress?: (story: StoryItem) => void;
+  onAddStoryPress?: () => void;
 }
 
-export function CircleStoryCarousel({
+export const CircleStoryCarousel = memo(function CircleStoryCarousel({
   stories = MOCK_STORIES,
   onStoryPress,
+  onAddStoryPress,
 }: CircleStoryCarouselProps) {
   const { palette, spacing, radii } = useHungryTheme();
 
@@ -126,7 +129,7 @@ export function CircleStoryCarousel({
                 style={[
                   styles.solidRing,
                   {
-                    borderColor: palette.border,
+                    borderColor: palette.textMuted,
                     borderRadius: radii.pill,
                   },
                 ]}
@@ -147,14 +150,20 @@ export function CircleStoryCarousel({
 
             {/* "Your story" + add icon */}
             {story.isOwn && (
-              <View
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Create a story"
                 style={[
                   styles.addBadge,
                   { backgroundColor: palette.orange, borderColor: palette.bg },
                 ]}
+                onPress={(event) => {
+                  event.stopPropagation();
+                  onAddStoryPress?.();
+                }}
               >
                 <Plus color="#FFFFFF" size={12} strokeWidth={3} />
-              </View>
+              </Pressable>
             )}
 
             {/* Stall fork badge */}
@@ -181,7 +190,7 @@ export function CircleStoryCarousel({
       ))}
     </ScrollView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   item: {

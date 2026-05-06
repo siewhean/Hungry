@@ -89,6 +89,7 @@ export const UNVERIFIED_ALLOWED_SCREENS = ["VerificationCentre", "HomeBasedVerif
 export const VERIFIED_ONLY_SCREENS = [
   "Dashboard",
   "Menu",
+  "Profile",
   "DishEditor",
   "OCRDrafts",
   "CustomerInbox",
@@ -96,6 +97,7 @@ export const VERIFIED_ONLY_SCREENS = [
   "PromotionList",
   "AIAssistant",
   "BusinessProfileEditor",
+  "OrdersComingSoon",
   "MerchantSettings",
   "Analytics",
 ] as const;

@@ -7,7 +7,7 @@ Default rule for every prompt below:
 
 ## Codex — Implementation
 
-“Implement `<TASK_ID>` only. Use `tasks/backlog.md` as the canonical task surface. Update the task row, run the Hungry verification bundle if needed, record evidence in `tasks/verification.md`, and append a concise note to `tasks/session-log.md`.”
+“Implement `<TASK_ID>` only. Use `tasks/backlog.md` as the canonical task surface. Update the task row, run the smallest relevant verification for the change, record evidence in `tasks/verification.md` when task/release work changed, and append a concise note to `tasks/session-log.md`.”
 
 ## Codex — Verification
 

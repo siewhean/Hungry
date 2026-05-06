@@ -1,22 +1,34 @@
 /**
  * ReviewFeedScreenV2 — Enhanced Tab 3
  * Pure user-review feed with optimized filtering and search.
- * 100% user-generated content badge.
  * Filter by Dish, Location, Rating, and Recent.
  */
-import { useCallback, useMemo, useState } from "react";
-import { FlatList, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  FlatList,
+  Pressable,
+  ScrollView,
+  type TextInput,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { Image } from "expo-image";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Star, Search, Filter, ShieldCheck, Heart } from "lucide-react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { Bookmark, Filter, Heart, MessageCircle, Send, Star } from "lucide-react-native";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Input, Chip, EmptyState } from "@/components/ui";
+import { ReviewCommentsSheet, type ActiveReviewCommentTarget } from "@/components/social";
+import { AppHeader, AppText, Chip, EmptyState, ExpandableSearchLauncher } from "@/components/ui";
+import { promptBlockReviewAuthor, promptReportReview } from "@/lib/security/communitySafety";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { useSocialStore, type InteractionState, type SocialComment } from "@/store/useSocialStore";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail, Review } from "@/types/domain";
+import { ReviewShareSheet, type ReviewShareTarget } from "./ReviewShareSheet";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -98,14 +110,28 @@ const FILTER_CHIPS: FilterMode[] = ["Recent", "Rating", "Dish", "Location", "Veg
 
 function ReviewCardV2({
   item,
+  interaction,
+  onCommentPress,
   onPressDish,
+  onSavePress,
+  onSharePress,
+  onLikePress,
 }: {
   item: ReviewFeedItem;
+  interaction: InteractionState;
+  onCommentPress: (item: ReviewFeedItem) => void;
   onPressDish: (dishId: string) => void;
+  onSavePress: (item: ReviewFeedItem) => void;
+  onSharePress: (item: ReviewFeedItem) => void;
+  onLikePress: (reviewId: string) => void;
 }) {
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { palette, radii, spacing, shadows, typography } = useHungryTheme();
   const { width } = useWindowDimensions();
   const hasPhoto = item.review.photos.length > 0;
+  const reviewDate = new Date(item.review.createdAt).toLocaleDateString("en-SG", {
+    month: "short",
+    day: "numeric",
+  });
 
   return (
     <View
@@ -177,8 +203,8 @@ function ReviewCardV2({
             </View>
             <View>
               <AppText variant="bodyBold">{item.review.authorName}</AppText>
-              <AppText variant="micro" tone="muted">
-                {new Date(item.review.createdAt).toLocaleDateString()}
+              <AppText variant="micro" tone="muted" numberOfLines={1}>
+                {item.venueName}
               </AppText>
             </View>
           </View>
@@ -224,27 +250,149 @@ function ReviewCardV2({
         </Pressable>
 
         {/* Review Body */}
-        <AppText variant="body" style={{ color: palette.text, lineHeight: 22 }}>
+        <AppText
+          variant="body"
+          style={{ color: palette.text, lineHeight: typography.body.lineHeight }}
+        >
           {item.review.text}
         </AppText>
 
         {/* Tags */}
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {item.review.tags.map((tag) => (
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: 8,
+          }}
+        >
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, flex: 1, minWidth: 0 }}>
+            {item.review.tags.map((tag) => (
+              <View
+                key={tag}
+                style={{
+                  backgroundColor: palette.border,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderRadius: 8,
+                }}
+              >
+                <AppText variant="micro" style={{ color: palette.textSecondary }}>
+                  #{tag}
+                </AppText>
+              </View>
+            ))}
+          </View>
+          <AppText variant="micro" tone="muted" style={{ textAlign: "right" }}>
+            {reviewDate}
+          </AppText>
+        </View>
+
+        <View
+          style={{
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            paddingTop: spacing[1],
+          }}
+        >
+          <View style={{ flexDirection: "row", gap: spacing[4] }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Report review by ${item.review.authorName}`}
+              onPress={() =>
+                promptReportReview({
+                  reviewId: item.review.id,
+                  authorName: item.review.authorName,
+                })
+              }
+            >
+              <AppText variant="micro" tone="muted">
+                Report
+              </AppText>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Block ${item.review.authorName}`}
+              onPress={() =>
+                promptBlockReviewAuthor({
+                  reviewId: item.review.id,
+                  authorName: item.review.authorName,
+                })
+              }
+            >
+              <AppText variant="micro" tone="muted">
+                Block user
+              </AppText>
+            </Pressable>
+          </View>
+
+          <View style={{ alignItems: "flex-end", gap: spacing[1.5] }}>
             <View
-              key={tag}
               style={{
-                backgroundColor: palette.border,
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                borderRadius: 8,
+                alignItems: "center",
+                flexDirection: "row",
+                gap: spacing[4],
+                justifyContent: "flex-end",
               }}
             >
-              <AppText variant="micro" style={{ color: palette.textSecondary }}>
-                #{tag}
-              </AppText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Share review"
+                onPress={() => onSharePress(item)}
+                style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
+              >
+                <Send color={palette.text} size={22} />
+                {interaction.shareCount > 0 ? (
+                  <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
+                    {interaction.shareCount}
+                  </AppText>
+                ) : null}
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={interaction.saved ? "Unsave review" : "Save review"}
+                onPress={() => onSavePress(item)}
+                style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
+              >
+                <Bookmark
+                  color={interaction.saved ? palette.orange : palette.text}
+                  fill={interaction.saved ? palette.orange : "transparent"}
+                  size={22}
+                />
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Open review comments"
+                onPress={() => onCommentPress(item)}
+                style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
+              >
+                <MessageCircle color={palette.text} size={22} />
+                {interaction.commentCount > 0 ? (
+                  <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
+                    {interaction.commentCount}
+                  </AppText>
+                ) : null}
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={interaction.liked ? "Unlike review" : "Like review"}
+                onPress={() => onLikePress(item.review.id)}
+                style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
+              >
+                <Heart
+                  color={interaction.liked ? palette.error : palette.text}
+                  fill={interaction.liked ? palette.error : "transparent"}
+                  size={22}
+                />
+                {interaction.likeCount > 0 ? (
+                  <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
+                    {interaction.likeCount}
+                  </AppText>
+                ) : null}
+              </Pressable>
             </View>
-          ))}
+          </View>
         </View>
       </View>
     </View>
@@ -255,11 +403,31 @@ function ReviewCardV2({
 
 export function ReviewFeedScreenV2() {
   const navigation = useNavigation<RootNavigation>();
-  const { palette, spacing, radii } = useHungryTheme();
+  const { palette, spacing, semanticSpacing } = useHungryTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const repository = getDataRepository();
+  const interactions = useSocialStore((state) => state.interactions);
+  const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
+  const repliesByCommentId = useSocialStore((state) => state.repliesByCommentId);
+  const initializeInteractions = useSocialStore((state) => state.initializeInteractions);
+  const toggleLike = useSocialStore((state) => state.toggleLike);
+  const toggleSave = useSocialStore((state) => state.toggleSave);
+  const incrementShare = useSocialStore((state) => state.incrementShare);
+  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterMode>("Recent");
+  const [activeCommentReview, setActiveCommentReview] = useState<ActiveReviewCommentTarget | null>(
+    null,
+  );
+  const commentsSheetRef = useRef<BottomSheetModal>(null);
+  const shareSheetRef = useRef<BottomSheetModal>(null);
+  const commentInputRef = useRef<TextInput>(null);
+  const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+  const stallPosts = useMemo(() => repository.listStallPosts(), [repository]);
+  const searchBarWidth = screenWidth - spacing[8];
+  const headerActionSize = spacing[8] + spacing[2.5];
 
   // Get data from repository and merge with mocks
   const allReviews = useMemo<ReviewFeedItem[]>(() => {
@@ -301,6 +469,17 @@ export function ReviewFeedScreenV2() {
     );
   }, [repository, activeFilter]);
 
+  useEffect(() => {
+    initializeInteractions(
+      allReviews.map((item) => ({
+        id: item.review.id,
+        commentCount: 1,
+        likeCount: item.review.rating,
+        savedCount: 0,
+      })),
+    );
+  }, [allReviews, initializeInteractions]);
+
   const filteredData = useMemo(() => {
     if (!searchQuery) return allReviews;
     const q = searchQuery.toLowerCase();
@@ -312,59 +491,153 @@ export function ReviewFeedScreenV2() {
     );
   }, [allReviews, searchQuery]);
 
+  const openReviewComments = useCallback((item: ReviewFeedItem) => {
+    setActiveCommentReview({
+      id: item.review.id,
+      authorName: item.review.authorName,
+      dishName: item.dishName,
+      caption: item.review.text,
+    });
+    requestAnimationFrame(() => {
+      commentsSheetRef.current?.present();
+      commentsSheetRef.current?.snapToIndex(0);
+    });
+  }, []);
+
+  const seededCommentsForActiveReview = useMemo<SocialComment[]>(() => {
+    if (!activeCommentReview) {
+      return [];
+    }
+
+    const matchingItem = filteredData.find((item) => item.review.id === activeCommentReview.id);
+    if (!matchingItem) {
+      return [];
+    }
+
+    return [
+      {
+        id: matchingItem.review.id,
+        authorName: matchingItem.review.authorName,
+        authorAvatarUrl: undefined,
+        text: matchingItem.review.text,
+        createdAt: matchingItem.review.createdAt,
+      },
+    ];
+  }, [activeCommentReview, filteredData]);
+
+  const openShareReview = useCallback(
+    (item: ReviewFeedItem) => {
+      const linkedPost =
+        stallPosts.find((post) => post.dishIds.includes(item.dishId)) ??
+        stallPosts.find((post) => post.venueId === item.venueId) ??
+        stallPosts[0];
+      const linkedDish = item.dish.imageUrl ? item.dish : repository.getDishById(item.dishId);
+      setActiveShareReview({
+        reviewId: item.review.id,
+        postId: linkedPost?.id ?? item.review.id,
+        title: item.dishName,
+        subtitle: `${item.venueName} · ${item.review.authorName}`,
+        imageUrl: item.review.photos[0] ?? linkedDish?.imageUrl ?? linkedPost?.mediaUrl ?? "",
+        authorName: item.review.authorName,
+        message: `${item.review.authorName} reviewed ${item.dishName} at ${item.venueName} on Hungry: ${item.review.text}`,
+        link: `https://hungry.sg/reviews/${item.review.id}`,
+      });
+      requestAnimationFrame(() => {
+        shareSheetRef.current?.present();
+      });
+    },
+    [repository, stallPosts],
+  );
+
+  const handleSavePress = useCallback(
+    (item: ReviewFeedItem) => {
+      void toggleSave(item.review.id);
+
+      const dish = repository.getDishById(item.dishId) ?? item.dish;
+      if (dish?.id) {
+        toggleFavourite(dish);
+      }
+    },
+    [repository, toggleFavourite, toggleSave],
+  );
+
   const renderItem = useCallback(
-    ({ item }: { item: ReviewFeedItem }) => (
-      <ReviewCardV2
-        item={item}
-        onPressDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
-      />
-    ),
-    [navigation],
+    ({ item }: { item: ReviewFeedItem }) => {
+      const baseInteraction = interactions[item.review.id] ?? {
+        liked: false,
+        saved: false,
+        likeCount: 0,
+        saveCount: 0,
+        shareCount: 0,
+        commentCount: 1,
+      };
+      const postComments = commentsByPostId[item.review.id] ?? [];
+      const commentIds = new Set<string>([
+        item.review.id,
+        ...postComments.map((comment) => comment.id),
+      ]);
+      const replyCount = Object.values(repliesByCommentId).reduce((acc, replies) => {
+        const repliesForPost = replies.filter((reply) => commentIds.has(reply.parentCommentId));
+        return acc + repliesForPost.length;
+      }, 0);
+      const computedCommentCount = Math.max(
+        baseInteraction.commentCount,
+        commentIds.size + replyCount,
+      );
+
+      return (
+        <ReviewCardV2
+          item={item}
+          interaction={{ ...baseInteraction, commentCount: computedCommentCount }}
+          onCommentPress={openReviewComments}
+          onLikePress={(reviewId) => void toggleLike(reviewId)}
+          onPressDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
+          onSavePress={handleSavePress}
+          onSharePress={openShareReview}
+        />
+      );
+    },
+    [
+      interactions,
+      navigation,
+      openReviewComments,
+      openShareReview,
+      handleSavePress,
+      toggleLike,
+      commentsByPostId,
+      repliesByCommentId,
+    ],
   );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
       {/* Header Section */}
-      <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[2], gap: spacing[4] }}>
-        <View
-          style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
-        >
-          <View>
-            <AppText variant="h1" style={{ fontWeight: "900" }}>
-              Feed
-            </AppText>
-            <AppText variant="micro" tone="muted">
-              What&apos;s the community eating?
-            </AppText>
-          </View>
-          <View
-            style={{
-              backgroundColor: palette.successSoft,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 6,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-              borderRadius: 20,
-            }}
-          >
-            <ShieldCheck size={14} color={palette.success} />
-            <AppText variant="micro" style={{ color: palette.success, fontWeight: "700" }}>
-              100% USER CONTENT
-            </AppText>
-          </View>
-        </View>
-
-        {/* Search Bar */}
-        <View style={{ position: "relative" }}>
-          <Input
-            placeholder="Search dish or location..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            leftIcon={<Search size={18} color={palette.textMuted} />}
-            style={{ borderRadius: radii.pill, backgroundColor: palette.surface }}
-          />
-        </View>
+      <View
+        style={{ paddingHorizontal: semanticSpacing.screenEdge, paddingTop: 0, gap: spacing[4] }}
+      >
+        <AppHeader
+          title="Reviews"
+          right={
+            <ExpandableSearchLauncher
+              query={searchQuery}
+              onQueryChange={setSearchQuery}
+              onSubmit={() => undefined}
+              onClear={() => setSearchQuery("")}
+              placeholder="Search dish or location..."
+              expandedWidth={searchBarWidth}
+              iconAlignment="right"
+              iconSize={headerActionSize}
+              barHeight={headerActionSize}
+              borderColor={palette.border}
+              backgroundColor={palette.bgSoft}
+              textColor={palette.text}
+              placeholderColor={palette.textSecondary}
+            />
+          }
+        />
+        <AppText variant="bodySmall" tone="secondary">
+          What&apos;s the community eating?
+        </AppText>
 
         {/* Filters */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
@@ -396,6 +669,20 @@ export function ReviewFeedScreenV2() {
         ListEmptyComponent={
           <EmptyState title="No reviews found" body="Try adjusting your filters or search query." />
         }
+      />
+      <ReviewCommentsSheet
+        activeReview={activeCommentReview}
+        inputRef={commentInputRef}
+        innerRef={commentsSheetRef}
+        seededComments={seededCommentsForActiveReview}
+        onDismiss={() => setActiveCommentReview(null)}
+      />
+      <ReviewShareSheet
+        activeReview={activeShareReview}
+        bottomInset={insets.bottom}
+        innerRef={shareSheetRef}
+        onDismiss={() => setActiveShareReview(null)}
+        onShared={incrementShare}
       />
     </SafeAreaView>
   );

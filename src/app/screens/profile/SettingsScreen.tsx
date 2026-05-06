@@ -1,6 +1,6 @@
 import Constants from "expo-constants";
 import { useState } from "react";
-import { Alert, View } from "react-native";
+import { Alert, View, Linking } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { User, Bell, HandMetal, ShieldCheck, Moon, MapPin, Trash2 } from "lucide-react-native";
@@ -9,14 +9,12 @@ import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { Button } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
-import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
-import { getHungryService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
-import { useUIStore } from "@/store/useUIStore";
+import { ThemePreference, useUIStore } from "@/store/useUIStore";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
@@ -25,7 +23,7 @@ export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { palette, spacing } = useHungryTheme();
 
-  const signOut = useSessionStore((state) => state.signOut);
+  const clearSession = useSessionStore((state) => state.clearSession);
   const location = useLocationStore((state) => state.manualLocation);
   const resetLocationState = useLocationStore((state) => state.resetLocationState);
   const clearProfile = useProfileStore((state) => state.clearProfile);
@@ -41,6 +39,10 @@ export function SettingsScreen() {
   const [dietaryEnabled, setDietaryEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
+  const normalizedThemePreference: ThemePreference =
+    themePreference === "system" || themePreference === "light" || themePreference === "dark"
+      ? themePreference
+      : "system";
 
   const purgePersistedAccountData = async () => {
     if (!hungryPersistStorage) return;
@@ -64,12 +66,8 @@ export function SettingsScreen() {
           style: "destructive",
           onPress: () => {
             void (async () => {
-              await getHungryService().auth.requestAccountDeletion({
-                userId: profile.id,
-                reason: "user_initiated_settings_flow",
-              });
               await purgePersistedAccountData();
-              signOut();
+              clearSession();
               clearProfile();
               clearSearchState();
               resetDraft();
@@ -84,12 +82,10 @@ export function SettingsScreen() {
   };
 
   const cycleTheme = () => {
-    const next: Record<string, any> = {
-      system: "light",
-      light: "dark",
-      dark: "system",
-    };
-    setThemePreference(next[themePreference] || "system");
+    const cycle: ThemePreference[] = ["system", "light", "dark"];
+    const currentIndex = cycle.indexOf(normalizedThemePreference);
+    const nextIndex = (currentIndex + 1) % cycle.length;
+    setThemePreference(cycle[nextIndex] ?? "system");
   };
 
   return (
@@ -140,7 +136,12 @@ export function SettingsScreen() {
           label="Theme"
           icon={<Moon size={20} color={palette.orange} />}
           type="navigation"
-          value={themePreference.charAt(0).toUpperCase() + themePreference.slice(1)}
+          value={
+            normalizedThemePreference === "system"
+              ? "Automatic"
+              : normalizedThemePreference.charAt(0).toUpperCase() +
+                normalizedThemePreference.slice(1)
+          }
           onPress={cycleTheme}
           isLast
         />
@@ -149,15 +150,15 @@ export function SettingsScreen() {
       <SettingsSection title="Support">
         <SettingsRow
           label="Help Center"
-          onPress={() => void openTrustedExternalUrl("https://hungry.sg/help")}
+          onPress={() => Linking.openURL("https://hungry.sg/help")}
         />
         <SettingsRow
           label="Privacy Policy"
-          onPress={() => void openTrustedExternalUrl("https://hungry.sg/privacy")}
+          onPress={() => Linking.openURL("https://hungry.sg/privacy")}
         />
         <SettingsRow
           label="Terms of Service"
-          onPress={() => void openTrustedExternalUrl("https://hungry.sg/terms")}
+          onPress={() => Linking.openURL("https://hungry.sg/terms")}
           isLast
         />
       </SettingsSection>

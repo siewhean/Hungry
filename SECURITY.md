@@ -28,12 +28,15 @@ Out of scope: any separate marketing website, unrelated Anthropic products menti
 - Cart, discovery, profile, and UI preferences use a non-secure AsyncStorage adapter; no credentials, tokens, or PII should be placed in these stores.
 
 ### Networking
-- iOS App Transport Security is enabled with `NSAllowsArbitraryLoads=false`. Current native config still includes local-network development support; remove it from release builds before public launch.
+- iOS App Transport Security is enabled with `NSAllowsArbitraryLoads=false`. Release config does not declare local-network Bonjour usage.
 - Android uses the platform HTTPS trust store through Expo-managed configuration. No production certificate/SPKI pinning is currently implemented.
 - Public-key pinning is a future hardening item, not a current shipped control. Until then, Hungry relies on standard TLS/ATS plus provider-side token restrictions.
 
 ### Backend
 - Every Supabase table has Row-Level Security enabled. Catalog content is `public_select`; all user-scoped rows require `auth.uid() = user_id` for reads and writes.
+- Merchant Centre tables use owner/manager/member RLS policies. Merchant writes to linked venues, dishes, review replies, promotions, notification preferences, and interaction reports are restricted to merchant accounts connected to the target outlet or venue.
+- Merchant venue and dish writes are additionally guarded by database triggers so merchants cannot mutate trust, aggregate, live-status, or system-managed catalog fields.
+- Merchant review replies are protected by a database trigger: merchants can only change `merchant_reply_text` and `merchant_replied_at`, while review authors cannot change identity fields or merchant reply fields.
 - Storage bucket policies gate mobile writes by authenticated user UUID prefix. Mobile media buckets are provisioned in migrations, and app uploads require signed upload URLs.
 - Edge Functions use explicit CORS handling. `guest-sessions` is API-key protected with per-device rate limiting and SHA-256 token hashing. `ingest-menu-photo` requires a valid Supabase JWT and verifies submission ownership before service-role OCR work.
 - Account deletion requests, UGC content reports, and user blocks are written to RLS-protected Supabase tables for store-policy compliance and moderation follow-up.

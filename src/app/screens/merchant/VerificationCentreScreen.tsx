@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -9,15 +9,14 @@ import {
   Home,
   ChevronRight,
   AlertCircle,
-  ArrowLeft,
 } from "lucide-react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useHungryTheme } from "@/theme";
-import { AppText, Button, Screen, IconButton } from "@/components/ui";
+import { AppText, Button, Screen } from "@/components/ui";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
-import { hungryService } from "@/lib/services/mock/mockService";
+import { getHungryService } from "@/lib/services/serviceProvider";
 
 type Props = NativeStackScreenProps<MerchantTabParamList, "VerificationCentre">;
 
@@ -30,7 +29,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
 
   if (!activeOutlet) {
     return (
-      <Screen style={styles.center}>
+      <Screen title="Error">
         <AppText style={{ color: palette.textSecondary }}>No outlet selected.</AppText>
       </Screen>
     );
@@ -43,12 +42,12 @@ export function VerificationCentreScreen({ navigation }: Props) {
   ) => {
     setIsSimulatingUpload(true);
     try {
-      await hungryService.merchant.submitVerification(activeOutlet.id, {
+      await getHungryService().merchant.submitVerification(activeOutlet.id, {
         method,
         fileUrl: "mock-url://uploaded-file.mp4",
       });
       // Refresh account to get updated status
-      const updatedAccount = await hungryService.merchant.getMerchantAccount();
+      const updatedAccount = await getHungryService().merchant.getMerchantAccount();
       if (updatedAccount) setAccount(updatedAccount);
     } catch (e) {
       console.error(e);
@@ -61,12 +60,17 @@ export function VerificationCentreScreen({ navigation }: Props) {
     switch (status) {
       case "verified":
         return (
-          <View style={[styles.headerBanner, { backgroundColor: palette.successSoft }]}>
+          <View
+            style={[
+              styles.headerBanner,
+              { backgroundColor: palette.successSoft, borderRadius: radii.lg },
+            ]}
+          >
             <ShieldCheck size={32} color={palette.success} />
-            <AppText variant="h3" style={{ color: palette.success, marginTop: spacing.sm }}>
+            <AppText variant="h3" style={{ color: palette.success, marginTop: spacing[2] }}>
               Verified Outlet
             </AppText>
-            <AppText style={{ color: palette.text, marginTop: spacing.xs, textAlign: "center" }}>
+            <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
               Your outlet has been fully verified and is visible to customers.
             </AppText>
           </View>
@@ -74,37 +78,52 @@ export function VerificationCentreScreen({ navigation }: Props) {
       case "submitted":
       case "in_review":
         return (
-          <View style={[styles.headerBanner, { backgroundColor: palette.warningSoft }]}>
-            <Clock size={32} color={palette.warning} />
-            <AppText variant="h3" style={{ color: palette.warning, marginTop: spacing.sm }}>
+          <View
+            style={[
+              styles.headerBanner,
+              { backgroundColor: palette.orangeLight, borderRadius: radii.lg },
+            ]}
+          >
+            <Clock size={32} color={palette.orange} />
+            <AppText variant="h3" style={{ color: palette.orange, marginTop: spacing[2] }}>
               Verification Pending
             </AppText>
-            <AppText style={{ color: palette.text, marginTop: spacing.xs, textAlign: "center" }}>
+            <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
               We are currently reviewing your documents. This usually takes 1-3 business days.
             </AppText>
           </View>
         );
       case "rejected":
         return (
-          <View style={[styles.headerBanner, { backgroundColor: palette.errorSoft }]}>
+          <View
+            style={[
+              styles.headerBanner,
+              { backgroundColor: palette.errorSoft, borderRadius: radii.lg },
+            ]}
+          >
             <AlertCircle size={32} color={palette.error} />
-            <AppText variant="h3" style={{ color: palette.error, marginTop: spacing.sm }}>
+            <AppText variant="h3" style={{ color: palette.error, marginTop: spacing[2] }}>
               Verification Rejected
             </AppText>
-            <AppText style={{ color: palette.text, marginTop: spacing.xs, textAlign: "center" }}>
+            <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
               We could not verify your business with the provided information. Please try again.
             </AppText>
           </View>
         );
       default:
         return (
-          <View style={[styles.headerBanner, { backgroundColor: palette.surface }]}>
+          <View
+            style={[
+              styles.headerBanner,
+              { backgroundColor: palette.bgSoft, borderRadius: radii.lg },
+            ]}
+          >
             <ShieldAlert size={32} color={palette.orange} />
-            <AppText variant="h3" style={{ color: palette.text, marginTop: spacing.sm }}>
+            <AppText variant="h3" style={{ color: palette.text, marginTop: spacing[2] }}>
               Verify Your Outlet
             </AppText>
             <AppText
-              style={{ color: palette.textSecondary, marginTop: spacing.xs, textAlign: "center" }}
+              style={{ color: palette.textSecondary, marginTop: spacing[1], textAlign: "center" }}
             >
               Verified stalls rank higher and get a trusted badge. Select a verification method
               below.
@@ -121,7 +140,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
 
     return (
       <View style={styles.methodsContainer}>
-        <AppText variant="h3" style={{ color: palette.text, marginBottom: spacing.md }}>
+        <AppText variant="h3" style={{ color: palette.text, marginBottom: spacing[4] }}>
           Available Methods
         </AppText>
 
@@ -153,30 +172,15 @@ export function VerificationCentreScreen({ navigation }: Props) {
   };
 
   return (
-    <Screen scroll={false} fullWidth>
-      <View style={[styles.header, { borderBottomColor: palette.border }]}>
-        <IconButton
-          icon={<ArrowLeft size={20} color={palette.text} />}
-          onPress={() => navigation.goBack()}
-          size={24}
-          variant="ghost"
-          accessibilityLabel="Back"
-        />
-        <AppText variant="h3" style={{ color: palette.text }}>
-          Verification Centre
-        </AppText>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView contentContainerStyle={{ padding: spacing.md }}>
+    <Screen title="Verification Centre">
+      <View style={{ gap: spacing[6], width: "100%" }}>
         {renderStatusHeader()}
         {renderVerificationMethods()}
-      </ScrollView>
+      </View>
     </Screen>
   );
 }
 
-// Inline helper for method cards
 function MethodCard({
   icon,
   title,
@@ -191,80 +195,64 @@ function MethodCard({
   isLoading: boolean;
 }) {
   const { palette, spacing, radii } = useHungryTheme();
-
   return (
-    <View
+    <Pressable
+      onPress={onPress}
+      disabled={isLoading}
       style={[
         styles.methodCard,
-        { backgroundColor: palette.surface, borderColor: palette.border, borderRadius: radii.md },
+        {
+          backgroundColor: palette.surface,
+          borderColor: palette.border,
+          borderRadius: radii.lg,
+        },
       ]}
     >
-      <View style={[styles.methodIcon, { backgroundColor: palette.orangeLight }]}>{icon}</View>
-      <View style={styles.methodContent}>
-        <AppText style={{ color: palette.text, fontWeight: "bold", marginBottom: 2 }}>
-          {title}
-        </AppText>
-        <AppText variant="bodySmall" style={{ color: palette.textSecondary }}>
+      <View
+        style={[styles.methodIcon, { backgroundColor: palette.bgSoft, borderRadius: radii.md }]}
+      >
+        {icon}
+      </View>
+      <View style={{ flex: 1, paddingRight: spacing[2] }}>
+        <AppText variant="bodyBold">{title}</AppText>
+        <AppText variant="bodySmall" tone="muted" style={{ marginTop: 2 }}>
           {description}
         </AppText>
       </View>
-      <View style={styles.methodAction}>
-        <Button
-          label="Start"
-          variant="secondary"
-          size="sm"
-          onPress={onPress}
-          loading={isLoading}
-          disabled={isLoading}
-        />
-      </View>
-    </View>
+      {isLoading ? (
+        <ActivityIndicator size="small" color={palette.orange} />
+      ) : (
+        <ChevronRight size={20} color={palette.textMuted} />
+      )}
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   center: {
     flex: 1,
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
   },
   headerBanner: {
-    alignItems: "center",
     padding: 24,
-    borderRadius: 16,
-    marginBottom: 24,
+    alignItems: "center",
+    justifyContent: "center",
   },
   methodsContainer: {
-    marginTop: 8,
+    gap: 16,
   },
   methodCard: {
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
     borderWidth: 1,
-    marginBottom: 12,
+    gap: 16,
   },
   methodIcon: {
     width: 48,
     height: 48,
-    borderRadius: 24,
-    justifyContent: "center",
     alignItems: "center",
-    marginRight: 16,
-  },
-  methodContent: {
-    flex: 1,
-    marginRight: 12,
-  },
-  methodAction: {
-    minWidth: 80,
+    justifyContent: "center",
   },
 });

@@ -11,6 +11,9 @@ export function resolveFeatureFlags(appEnvRaw = process.env.EXPO_PUBLIC_APP_ENV)
   const merchantClaimCtaEnabled =
     appEnv === "staging" || (typeof __DEV__ !== "undefined" && __DEV__ === true);
 
+  const merchantCentreEnabled =
+    appEnv === "staging" || (typeof __DEV__ !== "undefined" && __DEV__ === true);
+
   return {
     readsEnabled: true,
     notificationsEnabled: false,
@@ -20,6 +23,7 @@ export function resolveFeatureFlags(appEnvRaw = process.env.EXPO_PUBLIC_APP_ENV)
     commentsEnabled: true,
     craveEnabled: true,
     merchantClaimCtaEnabled,
+    merchantCentreEnabled,
   } as const;
 }
 

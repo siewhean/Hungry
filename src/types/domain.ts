@@ -120,6 +120,7 @@ export interface VenueSummary {
   operatingHours: string;
   closureNotice?: string;
   deliveryLinks: DeliveryLink[];
+  verificationStatus?: VerificationStatus;
 }
 
 export interface DishSummary {
@@ -141,6 +142,7 @@ export interface DishSummary {
   tasteTags: string[];
   tasteVector: TasteVector;
   dietaryFlags: DietaryFlag[];
+  venueVerificationStatus?: VerificationStatus;
 }
 
 export interface Review {
@@ -195,6 +197,8 @@ export interface UserProfile {
     dishesReviewed: number;
     stallsVisited: number;
     favouritesCount: number;
+    followersCount: number;
+    followingCount: number;
   };
   recommendationSignals?: RecommendationSignalState;
   leftHandedMode?: boolean;
@@ -231,7 +235,11 @@ export interface StallPost {
   authorAvatarUrl: string;
   mediaType: "photo" | "video";
   mediaUrl: string;
+  /** Optional carousel media. Keep mediaUrl as the first/canonical image for legacy consumers. */
+  mediaUrls?: string[];
   caption: string;
+  /** Post-authored social tags. Falls back to dish taste tags when omitted. */
+  tags?: string[];
   dishIds: string[];
   createdAt: string;
   /** true = stall/merchant account (orange ring + fork badge), false = user (grey ring) */
@@ -315,6 +323,232 @@ export interface WheelEntry {
   addedAt: string;
 }
 
+// ─── Merchant Centre ─────────────────────────────────────────────────────────
+
+export type BusinessType =
+  | "hawker_stall"
+  | "food_court_stall"
+  | "restaurant"
+  | "cafe"
+  | "mall_tenant"
+  | "home_based";
+
+export type VerificationStatus =
+  | "not_started"
+  | "draft"
+  | "submitted"
+  | "in_review"
+  | "verified"
+  | "rejected"
+  | "more_info_needed";
+
+export type VerificationMethod =
+  | "video_walkaround"
+  | "licence_upload"
+  | "singpass_myinfo"
+  | "home_based_declaration";
+
+export type LocationPrivacy = "exact" | "approximate" | "hidden";
+
+export type MerchantRole = "owner" | "manager" | "staff";
+
+export interface VerificationEvidence {
+  id: string;
+  method: VerificationMethod;
+  /** URI to the uploaded file or video */
+  fileUrl: string;
+  uploadedAt: string;
+  /** Review notes from ops (visible to merchant only for rejected/more_info_needed) */
+  reviewNote?: string;
+}
+
+export interface MerchantVerification {
+  status: VerificationStatus;
+  method?: VerificationMethod;
+  evidence: VerificationEvidence[];
+  submittedAt?: string;
+  verifiedAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  expiresAt?: string;
+}
+
+export interface MerchantOutlet {
+  id: string;
+  merchantAccountId: string;
+  name: string;
+  businessType: BusinessType;
+  buildingId?: string;
+  unitNumber?: string;
+  floor?: string;
+  coordinate?: Coordinate;
+  locationPrivacy: LocationPrivacy;
+  description: string;
+  cuisineCategories: string[];
+  operatingHours: string;
+  temporaryClosure?: string;
+  profilePhotoUrl?: string;
+  coverPhotoUrl?: string;
+  galleryUrls: string[];
+  contactPhone?: string;
+  contactEmail?: string;
+  socialLinks: { platform: string; url: string }[];
+  deliveryLinks: DeliveryLink[];
+  dietaryLabels: DietaryFlag[];
+  tasteTags: string[];
+  signatureDishIds: string[];
+  isLive: boolean;
+  verification: MerchantVerification;
+}
+
+export interface MerchantAccount {
+  id: string;
+  userId: string;
+  displayName: string;
+  email: string;
+  role: MerchantRole;
+  outlets: MerchantOutlet[];
+  createdAt: string;
+}
+
+export interface MerchantTeamMember {
+  id: string;
+  merchantAccountId: string;
+  userId: string;
+  displayName: string;
+  email: string;
+  role: MerchantRole;
+  addedAt: string;
+}
+
+/** Analytics snapshot for a single outlet and date range */
+export interface MerchantAnalytics {
+  outletId: string;
+  dateRange: "today" | "7d" | "30d";
+  profileVisits: number;
+  menuViews: number;
+  dishViews: number;
+  directionTaps: number;
+  saves: number;
+  shares: number;
+  contactTaps: number;
+  socialLinkTaps: number;
+  postInteractions: number;
+  reviewCount: number;
+  averageRating: number;
+  topDishes: { dishId: string; name: string; views: number; saves: number }[];
+  mostSearchedKeywords: string[];
+  peakDiscoveryHours: number[];
+  customerTasteTags: { tag: string; count: number }[];
+  previousPeriodComparison: {
+    profileVisits: number;
+    menuViews: number;
+    reviewCount: number;
+    averageRating: number;
+  };
+}
+
+export type PromotionStatus = "draft" | "scheduled" | "active" | "ended";
+
+export type PromotionTargetAudience =
+  | "nearby_users"
+  | "saved_stall_users"
+  | "taste_match_users"
+  | "followers";
+
+export interface MerchantPromotion {
+  id: string;
+  outletId: string;
+  title: string;
+  description: string;
+  /** Dish ID if promoting a specific dish, else outlet-level */
+  targetDishId?: string;
+  startDate: string;
+  endDate: string;
+  targetAudience: PromotionTargetAudience[];
+  status: PromotionStatus;
+  createdAt: string;
+  analytics?: {
+    impressions: number;
+    clicks: number;
+    saves: number;
+    profileVisits: number;
+    dishViews: number;
+  };
+}
+
+export type InteractionType = "review" | "comment" | "post_mention" | "question";
+
+export interface CustomerInteraction {
+  id: string;
+  outletId: string;
+  type: InteractionType;
+  authorName: string;
+  authorAvatarUrl?: string;
+  rating?: number;
+  text: string;
+  tags?: string[];
+  createdAt: string;
+  /** Merchant's reply, if any */
+  reply?: {
+    text: string;
+    repliedAt: string;
+  };
+  /** ID of the source review/post for "View original" navigation */
+  sourceId?: string;
+  sentiment?: "positive" | "neutral" | "negative";
+}
+
+export interface OCRDishDraft {
+  id: string;
+  outletId: string;
+  /** Extracted dish name from menu photo OCR */
+  name: string;
+  /** Extracted price, if detected */
+  price?: number;
+  /** OCR extraction confidence 0–1 */
+  confidence: number;
+  /** URL of the source menu photo */
+  sourcePhotoUrl: string;
+  /** AI-suggested description */
+  suggestedDescription?: string;
+  /** AI-suggested dietary tags */
+  suggestedDietaryTags?: DietaryFlag[];
+  /** AI-suggested taste tags */
+  suggestedTasteTags?: string[];
+  status: "pending" | "accepted" | "rejected";
+  createdAt: string;
+}
+
+export interface MerchantNotificationPreferences {
+  newReviews: boolean;
+  lowRatingAlerts: boolean;
+  newComments: boolean;
+  promotionUpdates: boolean;
+  weeklyDigest: boolean;
+  aiInsights: boolean;
+}
+
+export interface AIBusinessInsight {
+  id: string;
+  outletId: string;
+  type:
+    | "profile_improvement"
+    | "menu_cleanup"
+    | "demand_insight"
+    | "promotion_tip"
+    | "photo_enhancement"
+    | "weekly_summary";
+  title: string;
+  body: string;
+  /** Action label, e.g. "Fix missing ingredients" */
+  actionLabel?: string;
+  /** Screen to navigate to when action is tapped */
+  actionTarget?: string;
+  createdAt: string;
+  isDismissed: boolean;
+}
+
 // ─── Figma V2 Feed Types ─────────────────────────────────────────────────────
 
 /** Story rail item — rendered as circular avatar with ring colour based on isStall */
@@ -328,6 +562,25 @@ export interface StoryItem {
   hasUnseen: boolean;
   /** "Your story" entry — shows + add icon instead of ring */
   isOwn?: boolean;
+}
+
+export interface StoryContent {
+  type: "image" | "video";
+  url: string;
+}
+
+export interface StoryInteraction {
+  liked: boolean;
+  saved: boolean;
+  likeCount: number;
+  commentCount: number;
+  shareCount: number;
+}
+
+export interface Story extends StoryItem {
+  content: StoryContent;
+  createdAt: string;
+  interaction: StoryInteraction;
 }
 
 /**

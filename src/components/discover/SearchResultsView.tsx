@@ -1,9 +1,18 @@
-import { useState } from "react";
-import { View, Pressable, ScrollView } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Animated,
+  Easing,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { Search, X, SlidersHorizontal, Star } from "lucide-react-native";
 import { Image } from "expo-image";
 
-import { AppText, Input } from "@/components/ui";
+import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
 
@@ -27,50 +36,177 @@ export function SearchResultsView({
   onResultPress,
 }: SearchResultsViewProps) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { width: screenWidth } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<FilterTab>("All");
-
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const searchInputRef = useRef<TextInput | null>(null);
+  const searchRevealProgress = useRef(new Animated.Value(0)).current;
+  const searchBarWidth = useMemo(
+    () => Math.max(screenWidth - spacing[4] * 2, 240),
+    [screenWidth, spacing],
+  );
+  const searchIconSize = 56;
+  const searchEntryWidth = searchRevealProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, searchBarWidth],
+    extrapolate: "clamp",
+  });
+  const searchInputOpacity = searchRevealProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+  const searchInputScale = searchRevealProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.85, 1],
+    extrapolate: "clamp",
+  });
   const TABS: FilterTab[] = ["All", "Dishes", "Stalls", "Reads"];
 
+  const revealSearch = useCallback(() => {
+    if (isSearchExpanded) return;
+    setIsSearchExpanded(true);
+    searchRevealProgress.stopAnimation();
+    searchRevealProgress.setValue(0);
+    Animated.timing(searchRevealProgress, {
+      toValue: 1,
+      duration: 340,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start(() => {
+      searchInputRef.current?.focus();
+    });
+  }, [isSearchExpanded, searchRevealProgress]);
+
+  const hideSearch = useCallback(() => {
+    if (!isSearchExpanded) {
+      return;
+    }
+
+    searchRevealProgress.stopAnimation(() =>
+      Animated.timing(searchRevealProgress, {
+        toValue: 0,
+        duration: 260,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: false,
+      }).start(() => {
+        setIsSearchExpanded(false);
+        searchInputRef.current?.blur();
+      }),
+    );
+  }, [isSearchExpanded, searchRevealProgress]);
+
+  useEffect(() => {
+    return () => {
+      searchRevealProgress.stopAnimation();
+      searchRevealProgress.setValue(0);
+    };
+  }, [searchRevealProgress]);
+
   return (
-    <View style={{ flex: 1, backgroundColor: palette.bg }}>
-      {/* Orange-bordered Search Bar */}
+    <View style={{ flex: 1, backgroundColor: palette.bg, position: "relative" }}>
+      {isSearchExpanded ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss search"
+          onPress={hideSearch}
+          style={searchResultsStyles.searchDismissOverlay}
+        />
+      ) : null}
       <View style={{ paddingHorizontal: spacing[4], paddingVertical: spacing[2] }}>
         <View
-          style={[
-            shadows.card,
-            {
-              backgroundColor: palette.surface,
-              borderRadius: radii.pill,
-              flexDirection: "row",
-              alignItems: "center",
-              paddingHorizontal: spacing[4],
-              height: 56,
-              gap: spacing[2],
-              borderWidth: 1,
-              borderColor: palette.orange,
-            },
-          ]}
+          style={{
+            alignItems: "center",
+            position: "relative",
+            width: isSearchExpanded ? searchBarWidth : searchIconSize,
+            zIndex: 30,
+          }}
         >
-          <Search color={palette.orange} size={20} />
-          <Input
-            value={query}
-            onChangeText={onQueryChange}
-            placeholder="Search..."
-            style={{ flex: 1, height: "100%", paddingHorizontal: 0 }}
-          />
-          {query.length > 0 && (
+          <View
+            style={{
+              width: searchBarWidth,
+              height: 56,
+              alignItems: "center",
+              justifyContent: "flex-start",
+              flexDirection: "row",
+            }}
+          >
             <Pressable
-              onPress={onClear}
               accessibilityRole="button"
-              accessibilityLabel="Clear search"
+              accessibilityLabel="Search"
+              onPress={isSearchExpanded ? hideSearch : revealSearch}
+              style={{
+                width: searchIconSize,
+                height: 56,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
             >
-              <X color={palette.textMuted} size={20} />
+              <Search color={palette.orange} size={20} />
             </Pressable>
-          )}
+          </View>
+
+          {isSearchExpanded ? (
+            <Animated.View
+              pointerEvents="auto"
+              style={{
+                position: "absolute",
+                right: 0,
+                top: 0,
+                height: 56,
+                borderRadius: radii.pill,
+                overflow: "hidden",
+                width: searchEntryWidth,
+                backgroundColor: palette.surface,
+                borderWidth: 1,
+                borderColor: palette.orange,
+                ...shadows.card,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacing[2],
+                paddingHorizontal: spacing[3],
+              }}
+            >
+              <Animated.View
+                style={{
+                  flex: 1,
+                  opacity: searchInputOpacity,
+                  transform: [{ scale: searchInputScale }],
+                }}
+              >
+                <TextInput
+                  ref={searchInputRef}
+                  value={query}
+                  onChangeText={onQueryChange}
+                  onBlur={hideSearch}
+                  placeholder="Search..."
+                  placeholderTextColor={palette.textMuted}
+                  style={{
+                    color: palette.text,
+                    fontFamily: "Nunito_400Regular",
+                    fontSize: 16,
+                    height: 56,
+                    padding: 0,
+                    textAlignVertical: "center",
+                  }}
+                />
+              </Animated.View>
+              <Animated.View style={{ opacity: searchInputOpacity }}>
+                {query.length > 0 ? (
+                  <Pressable
+                    onPress={onClear}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear search"
+                  >
+                    <X color={palette.textMuted} size={20} />
+                  </Pressable>
+                ) : null}
+              </Animated.View>
+            </Animated.View>
+          ) : null}
         </View>
       </View>
 
-      {/* Type Filter Tabs */}
       <View
         style={{
           flexDirection: "row",
@@ -106,7 +242,6 @@ export function SearchResultsView({
         })}
       </View>
 
-      {/* Taste Filter Quick Access */}
       <View style={{ paddingHorizontal: spacing[4], paddingTop: spacing[4] }}>
         <Pressable
           onPress={onTasteFilterPress}
@@ -128,7 +263,6 @@ export function SearchResultsView({
         </Pressable>
       </View>
 
-      {/* Results List */}
       <ScrollView contentContainerStyle={{ padding: spacing[4], gap: spacing[4] }}>
         {results.map((dish) => (
           <Pressable
@@ -164,3 +298,11 @@ export function SearchResultsView({
     </View>
   );
 }
+
+const searchResultsStyles = StyleSheet.create({
+  searchDismissOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "transparent",
+    zIndex: 20,
+  },
+});

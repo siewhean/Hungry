@@ -55,7 +55,7 @@
 | Key              | Value                                                                        |
 | ---------------- | ---------------------------------------------------------------------------- |
 | Product name     | Hungry                                                                       |
-| Platform         | iOS + Android (Expo SDK 54 / React Native 0.81)                              |
+| Platform         | iOS + Android (Expo SDK 55 / React Native 0.83.6)                            |
 | Phase            | Consumer mobile app, frontend-only, mock-first                               |
 | Out of scope     | Website, admin portal, backend API, push notifications                       |
 | Market           | Singapore — hawker centres, food courts, restaurants                         |
@@ -107,14 +107,22 @@ Source: `src/constants/featureFlags.ts`
 
 ---
 
-## 6. Validation Gates (run in order, must all pass)
+## 6. Verification Budget
 
-| Gate              | Command                           | Must pass before       |
+Choose the smallest verification set that matches the risk of the change.
+
+| Change size | Examples | Expected checks |
+| ----------- | -------- | --------------- |
+| Small iterative | Copy, spacing, styling, one-screen UI polish, docs, narrowly scoped follow-up fixes | No full QA/QC, no `npm run ios`, no full test suite, and no default `npm run typecheck`; run only a focused check if directly relevant, or state "not run — small iterative change" |
+| Medium bounded | 1-3 files with logic, props, store usage, navigation params, or a focused behavior change | Run the most relevant focused test or contract; add `npm run typecheck` only when TypeScript contracts/imports/props changed |
+| Broad/risky | Shared stores/services, navigation architecture, auth, Supabase, dependencies, native config, release gates, many files, or regression-prone flows | Run `npm run typecheck`, relevant tests, and simulator/manual smoke as applicable |
+
+| Gate              | Command                           | Required when          |
 | ----------------- | --------------------------------- | ---------------------- |
-| Type check        | `npm run typecheck`               | Every commit           |
-| Dependency health | `npx expo-doctor`                 | Every dep change       |
-| Component smoke   | `npm run test` (when tests exist) | Every component change |
-| Manual simulator  | `npm run ios`                     | Feature completion     |
+| Type check        | `npm run typecheck`               | Broad/risky changes, commits, release gates, or TS contract changes |
+| Dependency health | `npx expo-doctor`                 | Dependency or Expo/native config changes |
+| Component smoke   | `npm run test` / focused test     | Logic, store, component, or contract changes |
+| Manual simulator  | `npm run ios`                     | Native/runtime/navigation-risk changes, release smoke, or explicit user request |
 
 See `tasks/test-harness.md` for full feedback loop specification.
 
@@ -154,13 +162,13 @@ DO NOT:
   - Add placeholder testimonials or fake marketing copy
 
 ALWAYS:
-  - Keep TypeScript strict — run typecheck after every change
+  - Keep TypeScript strict; choose checks from the verification budget instead of running broad gates for every small iteration
   - Use the design token system (useHungryTheme)
   - Keep mock data in data.ts
   - Keep types in domain.ts
   - Mark tasks in `tasks/backlog.md` as you progress
   - If a task is completed, immediately update its canonical row in `tasks/backlog.md` in the same work session
-  - Record verification in `tasks/verification.md`
+  - Record verification in `tasks/verification.md` for task/release work; for small iterative changes, final-response evidence is enough unless a task row is updated
   - Append narrative execution notes to `tasks/session-log.md`
   - Default to low-token mode: bounded prompts, bounded reads, canonical docs first, delta-only output unless the user explicitly asks for broader narration
   - Use `hungry-intent-router` as the first-pass skill when a Hungry request is vague, underspecified, or spans multiple workflows
@@ -189,9 +197,9 @@ See `tasks/test-harness.md` for patterns and examples.
 
 ```
 Before ending any session that changed code:
-  [ ] npm run typecheck — passes
+  [ ] Verification budget selected — focused check run or intentionally skipped for small iterative change
   [ ] tasks/backlog.md — canonical rows updated
-  [ ] tasks/verification.md — evidence updated
+  [ ] tasks/verification.md — evidence updated when task/release work was changed
   [ ] tasks/session-log.md — entry appended
   [ ] tasks/lessons.md — any correction recorded
   [ ] README.md — status section updated if progress/decisions changed
@@ -226,7 +234,7 @@ Rules:
 <claude-mem-context>
 # Memory Context
 
-# [Hungry] recent context, 2026-04-29 12:49pm GMT+8
+# [Hungry] recent context, 2026-05-06 4:21pm GMT+8
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE

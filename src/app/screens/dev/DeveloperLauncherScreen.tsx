@@ -17,14 +17,23 @@ import { ChevronDown, ChevronRight, Wifi, WifiOff, Zap } from "lucide-react-nati
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, Screen } from "@/components/ui";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  resetServiceProvider,
+  setMockServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { singaporeBuildings } from "@/lib/geo/singaporeBuildings";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "@/features/post/useComposerStore";
-import { venues as mockVenues } from "@/lib/services/mock/data";
+import {
+  dishes as mockDishes,
+  merchantAccount,
+  venues as mockVenues,
+} from "@/lib/services/mock/data";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DeveloperLauncher">;
 
@@ -173,6 +182,9 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const clearSession = useSessionStore((state) => state.clearSession);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const setMerchantAccount = useMerchantStore((state) => state.setAccount);
+  const setDeveloperMerchantMode = useMerchantStore((state) => state.setDeveloperMerchantMode);
+  const merchantModeEnabled = useMerchantStore((state) => state.account !== null);
 
   // Discovery
   const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
@@ -203,7 +215,10 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   }, [buildingSearch]);
 
   // Sample data
-  const sampleDish = useMemo(() => repository.listPopularNearby()[0], [repository]);
+  const sampleDish = useMemo(
+    () => repository.listPopularNearby()[0] ?? mockDishes[0],
+    [repository],
+  );
   const sampleBuilding = useMemo(() => repository.listBuildings()[0], [repository]);
   const sampleVenue = useMemo(
     () => (sampleBuilding ? repository.listVenuesByBuilding(sampleBuilding.id)[0] : undefined),
@@ -255,6 +270,32 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     showToast({ message: "Session → Fully authenticated", tone: "success" });
   };
 
+  const enterMerchantMode = () => {
+    clearSession();
+    completeAuth();
+    completeOnboarding(false);
+    setDeveloperMerchantMode(true);
+    setMockServiceProvider();
+    setMerchantAccount(JSON.parse(JSON.stringify(merchantAccount)));
+    setReturnRoute(undefined);
+    hideReviewSuccess();
+    showToast({ message: "Developer mode → Merchant", tone: "success" });
+    navigation.navigate("MerchantTabs" as any);
+  };
+
+  const enterUserMode = () => {
+    setDeveloperMerchantMode(false);
+    resetServiceProvider();
+    setMerchantAccount(null);
+    clearSession();
+    completeAuth();
+    completeOnboarding(false);
+    setReturnRoute(undefined);
+    hideReviewSuccess();
+    showToast({ message: "Developer mode → User", tone: "info" });
+    navigation.navigate("MainTabs", { screen: "Home" });
+  };
+
   const openBuilding = (buildingId: string) => {
     const building = singaporeBuildings.find((b) => b.id === buildingId);
     if (!building) return;
@@ -289,6 +330,21 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     }
 
     navigation.navigate("StallDetail", { venueId: sampleStallVenueId });
+  };
+
+  const openSampleDishDetail = (version: "v1" | "v2" = "v1") => {
+    const dish = sampleDish ?? mockDishes[0];
+    if (!dish) {
+      showToast({ message: "No sample dish is available.", tone: "error" });
+      return;
+    }
+
+    if (!isAuthenticated) {
+      completeAuth();
+      completeOnboarding(false);
+    }
+
+    navigation.navigate(version === "v2" ? "DishDetailV2" : "DishDetail", { dishId: dish.id });
   };
 
   // Data inspector stats
@@ -328,6 +384,29 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           onPress={() => navigation.replace("Splash")}
           style={{ minHeight: 40 }}
         />
+
+        <CollapsibleSection
+          title="Developer mode"
+          subtitle="Toggle between customer and merchant surfaces."
+          badge="Portal"
+          defaultExpanded
+        >
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+            <DevButton
+              label="Use Merchant Portal"
+              onPress={enterMerchantMode}
+              variant={merchantModeEnabled ? "primary" : "ghost"}
+            />
+            <DevButton
+              label="Use User App"
+              onPress={enterUserMode}
+              variant={!merchantModeEnabled ? "primary" : "ghost"}
+            />
+          </View>
+          <AppText variant="micro" tone="secondary" style={{ marginTop: spacing[2] }}>
+            Current mode: {merchantModeEnabled ? "Merchant portal" : "User app"}
+          </AppText>
+        </CollapsibleSection>
 
         {/* ── Post Composer V2 Settings ─────────────────── */}
         <CollapsibleSection
@@ -391,6 +470,11 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             onV2={() => openSampleStallDetail("v2")}
           />
           <VersionPair
+            label="Dish Detail"
+            onV1={() => openSampleDishDetail("v1")}
+            onV2={() => openSampleDishDetail("v2")}
+          />
+          <VersionPair
             label="Building"
             onV1={() => openBuilding("hc-maxwell")}
             onV2={() => navigation.navigate("BuildingDrillDownV2", { buildingId: "hc-maxwell" })}
@@ -407,7 +491,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           />
           <VersionPair
             label="Post Composer"
-            onV1={() => navigation.navigate("MainTabs", { screen: "Rate" })}
+            onV1={() => navigation.navigate("PostComposerV2" as any)}
             onV2={() => navigation.navigate("PostComposerV2" as any)}
           />
           <VersionPair
@@ -434,11 +518,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
               label="Design Gallery"
               onPress={() => navigation.navigate("DesignGallery")}
             />
-            <DevButton
-              label="Merchant Mode"
-              onPress={() => navigation.navigate("MerchantTabs" as any)}
-              variant="primary"
-            />
+            <DevButton label="Merchant Mode" onPress={enterMerchantMode} variant="primary" />
           </View>
         </CollapsibleSection>
 
@@ -509,12 +589,8 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
               }}
             />
             <DevButton label="Stall" onPress={() => openSampleStallDetail("v1")} />
-            <DevButton
-              label="Dish"
-              onPress={() =>
-                sampleDish && navigation.navigate("DishDetail", { dishId: sampleDish.id })
-              }
-            />
+            <DevButton label="Dish" onPress={() => openSampleDishDetail("v1")} />
+            <DevButton label="Dish V2" onPress={() => openSampleDishDetail("v2")} />
             <DevButton
               label="Review"
               onPress={() => navigation.navigate("MainTabs", { screen: "Review" })}
@@ -618,7 +694,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             <DevButton
               label="QuickRate"
               onPress={() =>
-                openProtected("Rate", () =>
+                openProtected("ReviewStack", () =>
                   navigation.navigate("ReviewStack", { screen: "ReviewMain" }),
                 )
               }

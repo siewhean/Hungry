@@ -7,7 +7,7 @@
 
 import { Pressable, View, StyleSheet } from "react-native";
 import { Image } from "expo-image";
-import { Heart, MessageCircle } from "lucide-react-native";
+import { Bookmark, Heart, MessageCircle } from "lucide-react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
@@ -28,9 +28,15 @@ interface BiteCardProps {
   onPress?: () => void;
   onDishPress?: () => void;
   width?: number;
+  variant?: "portrait" | "compact";
   liked?: boolean;
+  saved?: boolean;
   commented?: boolean;
+  commentCount?: number;
+  likeCount?: number;
+  saveCount?: number;
   onToggleLike?: () => void;
+  onToggleSave?: () => void;
   onCommentPress?: () => void;
 }
 
@@ -39,9 +45,15 @@ export function BiteCard({
   onPress,
   onDishPress,
   width = 160,
+  variant = "portrait",
   liked = false,
+  saved = false,
   commented = false,
+  commentCount,
+  likeCount,
+  saveCount,
   onToggleLike,
+  onToggleSave,
   onCommentPress,
 }: BiteCardProps) {
   const { palette, radii, spacing, motion } = useHungryTheme();
@@ -70,9 +82,117 @@ export function BiteCard({
       }
     });
 
-  const displayHeartCount = bite.cravingCount + (liked ? 1 : 0);
-  const displayCommentCount = commented ? 1 : 0;
+  const displayHeartCount = likeCount ?? bite.cravingCount + (liked ? 1 : 0);
+  const displayCommentCount = commentCount ?? (commented ? 1 : 0);
+  const displaySaveCount = saveCount ?? bite.savedCount + (saved ? 1 : 0);
   const openDishDetails = onDishPress ?? onPress;
+
+  if (variant === "compact") {
+    return (
+      <View
+        style={{
+          width,
+          borderWidth: 1,
+          borderColor: palette.border,
+          borderRadius: radii.md,
+          backgroundColor: palette.surfaceRaised,
+          overflow: "hidden",
+        }}
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${bite.dishName} from ${bite.authorName}'s bite`}
+          onPress={openDishDetails}
+          disabled={!openDishDetails}
+        >
+          <View style={{ flexDirection: "row" }}>
+            <Image
+              source={{ uri: bite.photoUrl }}
+              style={{ width: 72, height: 92 }}
+              contentFit="cover"
+            />
+            <View style={{ flex: 1, padding: spacing[2], gap: spacing[1] }}>
+              <AppText variant="micro" numberOfLines={1}>
+                {bite.authorName}
+              </AppText>
+              <AppText variant="bodySmall" numberOfLines={2} tone="secondary">
+                {bite.caption}
+              </AppText>
+              <AppText variant="micro" tone="muted" numberOfLines={1}>
+                {formatTimeAgo(bite.createdAt)}
+              </AppText>
+            </View>
+          </View>
+        </Pressable>
+
+        <View
+          style={{
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "flex-end",
+            gap: spacing[2],
+            paddingBottom: spacing[2],
+            paddingHorizontal: spacing[2],
+          }}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${saved ? "Unsave" : "Save"} ${bite.dishName}`}
+            accessibilityState={{ selected: saved }}
+            hitSlop={10}
+            onPress={onToggleSave}
+            style={{ alignItems: "center", flexDirection: "row", gap: 3 }}
+          >
+            <Bookmark
+              size={16}
+              color={saved ? palette.orange : palette.textMuted}
+              fill={saved ? palette.orange : "transparent"}
+            />
+            {displaySaveCount > 0 ? (
+              <AppText variant="micro" tone="muted">
+                {displaySaveCount}
+              </AppText>
+            ) : null}
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Comment on ${bite.dishName}`}
+            hitSlop={10}
+            onPress={onCommentPress}
+            style={{ alignItems: "center", flexDirection: "row", gap: 3 }}
+          >
+            <MessageCircle size={16} color={palette.textMuted} />
+            {displayCommentCount > 0 ? (
+              <AppText variant="micro" tone="muted">
+                {displayCommentCount}
+              </AppText>
+            ) : null}
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${liked ? "Unlike" : "Like"} ${bite.dishName}`}
+            accessibilityState={{ selected: liked }}
+            hitSlop={10}
+            onPress={onToggleLike}
+            style={{ alignItems: "center", flexDirection: "row", gap: 3 }}
+          >
+            <Heart
+              size={16}
+              color={liked ? palette.error : palette.textMuted}
+              fill={liked ? palette.error : "transparent"}
+            />
+            {displayHeartCount > 0 ? (
+              <AppText variant="micro" tone="muted">
+                {displayHeartCount}
+              </AppText>
+            ) : null}
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View
@@ -211,7 +331,7 @@ export function BiteCard({
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`${commented ? "Undo comment" : "Comment on"} ${bite.dishName}`}
+            accessibilityLabel={`Comment on ${bite.dishName}`}
             hitSlop={10}
             onPress={onCommentPress}
             disabled={!onCommentPress}
@@ -225,6 +345,31 @@ export function BiteCard({
             <AppText variant="micro" tone="muted">
               {displayCommentCount}
             </AppText>
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${saved ? "Unsave" : "Save"} ${bite.dishName}`}
+            accessibilityState={{ selected: saved }}
+            hitSlop={10}
+            onPress={onToggleSave}
+            disabled={!onToggleSave}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            <Bookmark
+              size={18}
+              color={saved ? palette.orange : palette.textMuted}
+              fill={saved ? palette.orange : "transparent"}
+            />
+            {displaySaveCount > 0 ? (
+              <AppText variant="micro" tone="muted">
+                {displaySaveCount}
+              </AppText>
+            ) : null}
           </Pressable>
 
           <Pressable

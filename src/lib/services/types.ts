@@ -6,16 +6,31 @@
  */
 
 import type {
+  AIBusinessInsight,
   BlogPost,
   BuildingSummary,
+  CustomerInteraction,
   DishDetail,
   DietaryFlag,
   HawkerTasteTag,
+  InteractionType,
+  MerchantAccount,
+  MerchantAnalytics,
+  MerchantNotificationPreferences,
+  MerchantOutlet,
+  MerchantPromotion,
+  MerchantTeamMember,
+  MerchantRole,
+  OCRDishDraft,
+  PromotionStatus,
   SearchFilters,
   StallPost,
+  Story,
+  StoryContent,
   TasteProfile,
   TasteVector,
   UserProfile,
+  VerificationEvidence,
   VenueSummary,
 } from "@/types/domain";
 
@@ -76,6 +91,52 @@ export interface FloorPlan {
     opacity?: number;
   };
   stalls: StallPolygon[];
+}
+
+// ─── Canonical Floor Plan Source Types ───────────────────────────────────────
+
+export type FloorPlanSourceType =
+  | "imported_svg"
+  | "imported_geojson"
+  | "cv_extracted"
+  | "fallback_demo";
+
+export interface FloorPlanSourceCanvas {
+  width: number;
+  height: number;
+}
+
+export interface FloorPlanSourceOutline {
+  polygon: [number, number][];
+  label?: string;
+}
+
+export interface FloorPlanSourceStall {
+  id: string;
+  unitNumber: string;
+  polygon: [number, number][];
+  kind: FloorPolygonKind;
+  facilityType?: FacilityType;
+  label?: string;
+  venueId?: string;
+  statusDefault: StallStatus;
+}
+
+export interface FloorPlanSourceMeta {
+  sourceType: FloorPlanSourceType;
+  sourceConfidence: number;
+  verified: boolean;
+  updatedAt: string;
+}
+
+export interface FloorPlanSourceV1 {
+  schemaVersion: "floorplan-source.v1";
+  buildingId: string;
+  floor: string;
+  canvas: FloorPlanSourceCanvas;
+  buildingOutline: FloorPlanSourceOutline;
+  stalls: FloorPlanSourceStall[];
+  meta: FloorPlanSourceMeta;
 }
 
 // ─── Bites (Social) Types ─────────────────────────────────────────────────────
@@ -229,6 +290,20 @@ export interface AccountDeletionRequest {
   reason?: string;
 }
 
+export type ContentReportTargetType = "review" | "bite" | "reply" | "profile";
+
+export interface ContentReportRequest {
+  targetType: ContentReportTargetType;
+  targetId: string;
+  targetAuthorKey?: string;
+  reason: string;
+}
+
+export interface BlockUserRequest {
+  blockedUserKey: string;
+  reason?: string;
+}
+
 export interface MenuPhotoSubmissionResult {
   submissionId: string;
   storagePath: string;
@@ -338,6 +413,21 @@ export interface HungryService {
     getBitesFeed(lat?: number, lng?: number): Promise<Bite[]>;
     postBite(draft: BiteDraft): Promise<Bite>;
     reactToBite(biteId: string, reaction: "craving" | "save"): Promise<void>;
+
+    // Stories
+    getStories(): Promise<Story[]>;
+    likeStory(storyId: string): Promise<void>;
+    saveStory(storyId: string): Promise<void>;
+    addStory(content: StoryContent): Promise<Story>;
+    getLikedStories(): Promise<Story[]>;
+    getSavedStories(): Promise<Story[]>;
+    getSavedBites(): Promise<Bite[]>;
+    getLikedBites(): Promise<Bite[]>;
+  };
+
+  communitySafety: {
+    reportContent(request: ContentReportRequest): Promise<void>;
+    blockUser(request: BlockUserRequest): Promise<void>;
   };
 
   // Content
@@ -370,6 +460,96 @@ export interface HungryService {
     // Extended — Community Calibration
     getTagSuggestions(dishId: string): Promise<HawkerTasteTag[]>;
     submitCommunityTags(dishId: string, tags: HawkerTasteTag[]): Promise<void>;
+  };
+
+  // Merchant Centre
+  merchant: {
+    // Account & Outlets
+    getMerchantAccount(): Promise<MerchantAccount | null>;
+    getOutlets(): Promise<MerchantOutlet[]>;
+    switchOutlet(outletId: string): Promise<MerchantOutlet>;
+
+    // Verification
+    getVerificationStatus(outletId: string): Promise<MerchantOutlet["verification"]>;
+    submitVerification(
+      outletId: string,
+      evidence: Omit<VerificationEvidence, "id" | "uploadedAt">,
+    ): Promise<void>;
+    resubmitVerification(
+      outletId: string,
+      evidence: Omit<VerificationEvidence, "id" | "uploadedAt">,
+    ): Promise<void>;
+
+    // Profile
+    updateBusinessProfile(
+      outletId: string,
+      updates: Partial<MerchantOutlet>,
+    ): Promise<MerchantOutlet>;
+
+    // Menu
+    getMenu(outletId: string): Promise<DishDetail[]>;
+    addDish(outletId: string, dish: Partial<DishDetail>): Promise<DishDetail>;
+    editDish(outletId: string, dishId: string, updates: Partial<DishDetail>): Promise<DishDetail>;
+    deleteDish(outletId: string, dishId: string): Promise<void>;
+    toggleSoldOut(outletId: string, dishId: string): Promise<boolean>;
+    toggleFeatured(outletId: string, dishId: string): Promise<boolean>;
+
+    // OCR Drafts
+    getOCRDrafts(outletId: string): Promise<OCRDishDraft[]>;
+    acceptOCRDraft(draftId: string): Promise<DishDetail>;
+    rejectOCRDraft(draftId: string): Promise<void>;
+
+    // Customer Inbox
+    getInbox(
+      outletId: string,
+      filters?: { type?: InteractionType; unrepliedOnly?: boolean },
+    ): Promise<CustomerInteraction[]>;
+    replyToInteraction(interactionId: string, text: string): Promise<void>;
+    reportInteraction(interactionId: string, reason: string): Promise<void>;
+
+    // Promotions
+    getPromotions(outletId: string, status?: PromotionStatus): Promise<MerchantPromotion[]>;
+    createPromotion(
+      outletId: string,
+      promo: Omit<MerchantPromotion, "id" | "outletId" | "createdAt" | "analytics">,
+    ): Promise<MerchantPromotion>;
+    updatePromotion(
+      promoId: string,
+      updates: Partial<MerchantPromotion>,
+    ): Promise<MerchantPromotion>;
+    getPromotionAnalytics(promoId: string): Promise<NonNullable<MerchantPromotion["analytics"]>>;
+
+    // Analytics
+    getAnalytics(outletId: string, dateRange: "today" | "7d" | "30d"): Promise<MerchantAnalytics>;
+
+    // AI Tools
+    generateDishDescription(dishName: string, ingredients?: string[]): Promise<string>;
+    suggestIngredients(dishName: string): Promise<string[]>;
+    suggestAllergens(ingredients: string[]): Promise<string[]>;
+    suggestTags(dishName: string, description?: string): Promise<string[]>;
+    generateAIReply(interactionId: string): Promise<string>;
+    getAIInsights(outletId: string): Promise<AIBusinessInsight[]>;
+    getWeeklySummary(outletId: string): Promise<AIBusinessInsight>;
+    getProfileSuggestions(outletId: string): Promise<AIBusinessInsight[]>;
+    getMenuCleanupSuggestions(outletId: string): Promise<AIBusinessInsight[]>;
+    getDemandInsights(outletId: string): Promise<AIBusinessInsight[]>;
+
+    // Team Management
+    getTeamMembers(merchantAccountId: string): Promise<MerchantTeamMember[]>;
+    addTeamMember(
+      merchantAccountId: string,
+      email: string,
+      role: MerchantRole,
+    ): Promise<MerchantTeamMember>;
+    removeTeamMember(memberId: string): Promise<void>;
+    updateTeamMemberRole(memberId: string, role: MerchantRole): Promise<void>;
+
+    // Notification Preferences
+    getNotificationPreferences(merchantAccountId: string): Promise<MerchantNotificationPreferences>;
+    updateNotificationPreferences(
+      merchantAccountId: string,
+      prefs: Partial<MerchantNotificationPreferences>,
+    ): Promise<void>;
   };
 
   // Supply priming (developer/ops-only)

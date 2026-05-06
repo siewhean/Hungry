@@ -1,47 +1,13 @@
-import { View, ScrollView, Pressable } from "react-native";
+import { Alert, View, ScrollView, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronLeft, Search, Edit3, MessageCircle } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Image } from "expo-image";
 import Animated from "react-native-reanimated";
 
-import { AppText, Input, Screen } from "@/components/ui";
+import { AppText, Input } from "@/components/ui";
+import { ACTIVITY_MESSAGES } from "@/features/home/activity";
 import { useHungryTheme } from "@/theme";
-
-const MOCK_CHATS = [
-  {
-    id: "1",
-    name: "Ahmad",
-    lastMessage: "That chicken rice was amazing!",
-    time: "2m",
-    avatar:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&auto=format&fit=crop",
-  },
-  {
-    id: "2",
-    name: "Sarah",
-    lastMessage: "Are we still on for Maxwell later?",
-    time: "1h",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop",
-  },
-  {
-    id: "3",
-    name: "Uncle Tan",
-    lastMessage: "The laksa here is very spicy ah.",
-    time: "3h",
-    avatar:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=100&auto=format&fit=crop",
-  },
-  {
-    id: "4",
-    name: "Wei Ling",
-    lastMessage: "Check out this new stall I found!",
-    time: "5h",
-    avatar:
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=100&auto=format&fit=crop",
-  },
-];
 
 export function DirectMessagesScreen() {
   const navigation = useNavigation<any>();
@@ -88,49 +54,65 @@ export function DirectMessagesScreen() {
             gap: spacing[4],
           }}
         >
-          {MOCK_CHATS.map((chat) => (
-            <Pressable
-              key={chat.id}
-              onPress={() =>
-                navigation.navigate("ChatDetail", {
-                  chatId: chat.id,
-                  name: chat.name,
-                  avatar: chat.avatar,
-                })
-              }
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: spacing[3],
-              }}
-            >
-              <Animated.View>
-                <Image
-                  source={{ uri: chat.avatar }}
-                  style={{ width: 56, height: 56, borderRadius: radii.pill }}
-                />
-              </Animated.View>
-              <View style={{ flex: 1, gap: spacing[1] }}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <AppText variant="bodyBold">{chat.name}</AppText>
-                  <AppText variant="micro" tone="secondary">
-                    {chat.time}
+          {ACTIVITY_MESSAGES.map((chat) =>
+            !chat?.id || !chat?.name || !chat?.avatar ? null : (
+              <Pressable
+                key={chat.id}
+                onPress={() => {
+                  const chatId = String(chat.id).trim();
+                  const name = typeof chat?.name === "string" ? chat.name.trim() : "";
+                  const avatar = typeof chat?.avatar === "string" ? chat.avatar.trim() : "";
+                  const isOnline = typeof chat?.isOnline === "boolean" ? chat.isOnline : undefined;
+
+                  if (!chatId || !name || !avatar) {
+                    return;
+                  }
+
+                  try {
+                    navigation.navigate("ChatDetail", {
+                      chatId,
+                      name,
+                      avatar,
+                      isOnline,
+                    });
+                  } catch {
+                    Alert.alert("Could not open chat", "Please try again in a moment.");
+                  }
+                }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing[3],
+                }}
+              >
+                <Animated.View>
+                  <Image
+                    source={{ uri: chat.avatar }}
+                    style={{ width: 56, height: 56, borderRadius: radii.pill }}
+                  />
+                </Animated.View>
+                <View style={{ flex: 1, gap: spacing[1] }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <AppText variant="bodyBold">{chat.name}</AppText>
+                    <AppText variant="micro" tone="secondary">
+                      {chat.time}
+                    </AppText>
+                  </View>
+                  <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                    {chat.lastMessage}
                   </AppText>
                 </View>
-                <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-                  {chat.lastMessage}
-                </AppText>
-              </View>
-            </Pressable>
-          ))}
+              </Pressable>
+            ),
+          )}
 
-          {MOCK_CHATS.length === 0 && (
+          {ACTIVITY_MESSAGES.length === 0 && (
             <View
               style={{
                 flex: 1,

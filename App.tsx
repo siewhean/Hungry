@@ -12,18 +12,23 @@ const appEnv =
   process.env.EXPO_PUBLIC_APP_ENV ??
   (typeof __DEV__ !== "undefined" && __DEV__ ? "development" : "production");
 const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
+const shouldEnableSentry = Boolean(sentryDsn);
+const globalForSentry = globalThis as typeof globalThis & {
+  __hungrySentryInitialized?: boolean;
+};
 
 let sentryInitialized = false;
-if (!sentryInitialized) {
+if (shouldEnableSentry && !sentryInitialized && !globalForSentry.__hungrySentryInitialized) {
   Sentry.init({
     dsn: sentryDsn,
-    enabled: Boolean(sentryDsn),
+    enabled: true,
     debug: typeof __DEV__ !== "undefined" ? __DEV__ : false,
     environment: appEnv,
     tracesSampleRate: appEnv === "production" ? 0.1 : 0,
     beforeSend: (event) => sanitizeSentryEvent(event),
   });
   sentryInitialized = true;
+  globalForSentry.__hungrySentryInitialized = true;
 }
 
 function SentryFallback() {
@@ -56,16 +61,22 @@ function SentryFallback() {
   );
 }
 
-export default Sentry.wrap(function App() {
+function AppContent() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <HungryThemeProvider>
-          <Sentry.ErrorBoundary fallback={<SentryFallback />}>
+          {shouldEnableSentry ? (
+            <Sentry.ErrorBoundary fallback={<SentryFallback />}>
+              <AppBody />
+            </Sentry.ErrorBoundary>
+          ) : (
             <AppBody />
-          </Sentry.ErrorBoundary>
+          )}
         </HungryThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
-});
+}
+
+export default shouldEnableSentry ? Sentry.wrap(AppContent) : AppContent;

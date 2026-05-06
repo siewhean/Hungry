@@ -1,16 +1,9 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Animated, Dimensions, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import {
-  ArrowLeft,
-  ChevronRight,
-  Heart,
-  MapPin,
-  MessageSquare,
-  Navigation,
-  Share2,
-  Star,
-} from "lucide-react-native";
+import { ArrowLeft, Heart, MapPin, Navigation, Send, Star } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type {
   NativeStackNavigationProp,
@@ -20,8 +13,10 @@ import type {
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, Card, Screen } from "@/components/ui";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { useProfileStore } from "@/store/useProfileStore";
+import { useSocialStore } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
-import type { DishDetail, VenueSummary } from "@/types/domain";
+import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 
 type Props = NativeStackScreenProps<RootStackParamList, "StallDetailV2">;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -37,8 +32,45 @@ export function StallDetailScreenV2({ route }: Props) {
   const venueId = route.params?.venueId ?? "v-maxwell-wanton-mee";
   const venue = useMemo(() => repository.getVenueById(venueId), [venueId, repository]);
   const dishes = useMemo(() => repository.listDishesByVenue(venueId), [venueId, repository]);
+  const leadDish = dishes[0];
 
   const scrollY = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
+  const profile = useProfileStore((state) => state.profile);
+  const shareSheetRef = useRef<BottomSheetModal>(null);
+  const incrementShare = useSocialStore((state) => state.incrementShare);
+  const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+  const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
+    return {
+      reviewId: `stall-${venue?.id ?? ""}`,
+      postId: venue?.id ?? "",
+      title: venue?.name ?? "Stall",
+      subtitle:
+        `${venue?.buildingId ?? ""}${venue?.unitNumber ? ` · ${venue.unitNumber}` : ""}`.trim(),
+      imageUrl: leadDish?.imageUrl ?? "",
+      authorName: profile.displayName,
+      message: `Check out ${venue?.name ?? "this stall"} at ${venue?.buildingId ?? "Hungry"}!`,
+      link: `https://hungry.sg/stall/${venue?.id ?? ""}`,
+    };
+  }, [
+    leadDish?.imageUrl,
+    profile.displayName,
+    venue?.buildingId,
+    venue?.id,
+    venue?.name,
+    venue?.unitNumber,
+  ]);
+
+  const openShareSheet = () => {
+    if (!venue) {
+      return;
+    }
+
+    setActiveShareReview(shareReviewTarget);
+    requestAnimationFrame(() => {
+      shareSheetRef.current?.present();
+    });
+  };
 
   if (!venue) return null;
 
@@ -100,8 +132,9 @@ export function StallDetailScreenV2({ route }: Props) {
                 alignItems: "center",
                 justifyContent: "center",
               }}
+              onPress={openShareSheet}
             >
-              <Share2 color={palette.text} size={18} />
+              <Send color={palette.text} size={18} />
             </Pressable>
           </View>
         </View>
@@ -400,6 +433,18 @@ export function StallDetailScreenV2({ route }: Props) {
           onPress={() => {}}
         />
       </View>
+
+      <ReviewShareSheet
+        activeReview={activeShareReview}
+        innerRef={shareSheetRef}
+        bottomInset={insets.bottom}
+        onDismiss={() => {
+          setActiveShareReview(null);
+        }}
+        onShared={(reviewId) => {
+          incrementShare(reviewId);
+        }}
+      />
     </Screen>
   );
 }

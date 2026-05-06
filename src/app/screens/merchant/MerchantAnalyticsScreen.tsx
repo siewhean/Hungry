@@ -1,116 +1,113 @@
-import { View, ScrollView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { BarChart3, LineChart, PieChart, TrendingUp, Heart, Eye } from "lucide-react-native";
-import Svg, { Polyline } from "react-native-svg";
+import React, { useState, useEffect, useMemo } from "react";
+import { View, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
+import { BarChart3, TrendingUp, PieChart, Star, Users } from "lucide-react-native";
 
-import { AppText } from "@/components/ui";
+import { AppText, Screen, Card, Chip } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
+import { getHungryService } from "@/lib/services/serviceProvider";
+import type { MerchantAnalytics } from "@/types/domain";
 
-// ─── Mock Data ───────────────────────────────────────────────────────────────
-
-const POPULAR_HOURS = [
-  { time: "11a", value: 0.3 },
-  { time: "12p", value: 0.8 },
-  { time: "1p", value: 1.0 },
-  { time: "2p", value: 0.5 },
-  { time: "5p", value: 0.4 },
-  { time: "6p", value: 0.7 },
-  { time: "7p", value: 0.9 },
-  { time: "8p", value: 0.6 },
-];
-
-const MONTHLY_GROWTH = [40, 45, 60, 55, 70, 85, 100]; // normalized 0-100
-
-const DEMOGRAPHICS = {
-  returning: 65,
-  new: 35,
-};
-
-const TOP_DISHES = [
-  { id: "1", name: "Signature Char Siew Rice", views: 842, saves: 124 },
-  { id: "2", name: "Roasted Pork Belly", views: 521, saves: 89 },
-  { id: "3", name: "Wonton Noodle Soup", views: 312, saves: 45 },
-];
-
-const TASTE_PROFILE = [
-  { label: "Rich", score: 8.5 },
-  { label: "Salty", score: 7.2 },
-  { label: "Sweet", score: 6.0 },
-  { label: "Aromatic", score: 5.5 },
-];
+const DEMOGRAPHICS = { returning: 65, new: 35 };
 
 export function MerchantAnalyticsScreen() {
   const { palette, spacing, radii, shadows } = useHungryTheme();
+  const activeOutlet = useMerchantStore(getActiveOutlet);
+
+  const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [range, setRange] = useState<"today" | "7d" | "30d">("7d");
+
+  useEffect(() => {
+    async function loadAnalytics() {
+      if (activeOutlet) {
+        setIsLoading(true);
+        try {
+          const data = await getHungryService().merchant.getAnalytics(activeOutlet.id, range);
+          setAnalytics(data);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    }
+    void loadAnalytics();
+  }, [activeOutlet, range]);
+
+  if (isLoading || !analytics) {
+    return (
+      <Screen title="Analytics">
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 100 }}>
+          <ActivityIndicator color={palette.orange} />
+        </View>
+      </Screen>
+    );
+  }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
-      <ScrollView contentContainerStyle={{ padding: spacing[4], gap: spacing[6] }}>
-        <AppText variant="h1" style={{ fontWeight: "900" }}>
-          Performance
-        </AppText>
+    <Screen title="Performance">
+      <View style={{ gap: spacing[6], width: "100%" }}>
+        {/* Range Selector */}
+        <View style={{ flexDirection: "row", gap: spacing[2], paddingHorizontal: spacing[1] }}>
+          <Chip label="Today" selected={range === "today"} onPress={() => setRange("today")} />
+          <Chip label="7 Days" selected={range === "7d"} onPress={() => setRange("7d")} />
+          <Chip label="30 Days" selected={range === "30d"} onPress={() => setRange("30d")} />
+        </View>
 
         <View style={{ gap: spacing[4] }}>
-          {/* Popular Hours Bar Chart */}
-          <View
-            style={{
-              backgroundColor: palette.surface,
-              padding: spacing[4],
-              borderRadius: radii.xl,
-              gap: spacing[4],
-              borderWidth: 1,
-              borderColor: palette.border,
-              ...shadows.card,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <BarChart3 size={20} color={palette.orange} />
-              <AppText variant="bodyBold">Popular Hours</AppText>
-            </View>
-            <View
-              style={{
-                height: 120,
-                flexDirection: "row",
-                alignItems: "flex-end",
-                justifyContent: "space-between",
-                paddingTop: spacing[4],
-              }}
-            >
-              {POPULAR_HOURS.map((item, index) => (
-                <View key={index} style={{ alignItems: "center", gap: 4 }}>
-                  <View
-                    style={{
-                      width: 24,
-                      height: 100 * item.value,
-                      backgroundColor: item.value > 0.7 ? palette.orange : palette.orangeLight,
-                      borderRadius: radii.sm,
-                    }}
-                  />
-                  <AppText variant="micro" tone="muted">
-                    {item.time}
-                  </AppText>
-                </View>
-              ))}
-            </View>
+          {/* Key Metrics Grid */}
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
+            <MetricCard
+              label="Visits"
+              value={analytics.profileVisits.toString()}
+              trend="+12%"
+              icon={<Users size={16} color={palette.orange} />}
+            />
+            <MetricCard
+              label="Menu Views"
+              value={analytics.menuViews.toString()}
+              trend="+8%"
+              icon={<BarChart3 size={16} color={palette.info} />}
+            />
+            <MetricCard
+              label="Avg Rating"
+              value={analytics.averageRating.toFixed(1)}
+              trend="Stable"
+              icon={<Star size={16} color={palette.amber} />}
+            />
+            <MetricCard
+              label="Saves"
+              value={analytics.saves.toString()}
+              trend="+24%"
+              icon={<TrendingUp size={16} color={palette.success} />}
+            />
           </View>
 
-          {/* Customer Demographics Horizontal Bar */}
+          {/* Demographics Card */}
           <View
-            style={{
-              backgroundColor: palette.surface,
-              padding: spacing[4],
-              borderRadius: radii.xl,
-              gap: spacing[4],
-              borderWidth: 1,
-              borderColor: palette.border,
-              ...shadows.card,
-            }}
+            style={[
+              styles.chartCard,
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderRadius: radii.xl,
+              },
+            ]}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: spacing[4],
+              }}
+            >
               <PieChart size={20} color={palette.amber} />
               <AppText variant="bodyBold">Customer Demographics</AppText>
             </View>
 
-            <View style={{ gap: spacing[2], marginTop: spacing[2] }}>
+            <View style={{ gap: spacing[2] }}>
               <View
                 style={{
                   flexDirection: "row",
@@ -145,159 +142,74 @@ export function MerchantAnalyticsScreen() {
               </View>
             </View>
           </View>
-
-          {/* Monthly Growth Line Chart */}
-          <View
-            style={{
-              backgroundColor: palette.surface,
-              padding: spacing[4],
-              borderRadius: radii.xl,
-              gap: spacing[4],
-              borderWidth: 1,
-              borderColor: palette.border,
-              ...shadows.card,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <LineChart size={20} color={palette.success} />
-                <AppText variant="bodyBold">Monthly Growth</AppText>
-              </View>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <TrendingUp size={16} color={palette.success} />
-                <AppText variant="bodySmallBold" style={{ color: palette.success }}>
-                  +15%
-                </AppText>
-              </View>
-            </View>
-
-            <View
-              style={{
-                height: 100,
-                marginTop: spacing[2],
-                backgroundColor: palette.bgSoft,
-                borderRadius: radii.lg,
-                overflow: "hidden",
-              }}
-            >
-              <Svg height="100%" width="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <Polyline
-                  points={MONTHLY_GROWTH.map(
-                    (val, i) => `${(i / (MONTHLY_GROWTH.length - 1)) * 100},${100 - val}`,
-                  ).join(" ")}
-                  fill="none"
-                  stroke={palette.success}
-                  strokeWidth="3"
-                />
-              </Svg>
-            </View>
-          </View>
-
-          {/* Top Dishes */}
-          <View
-            style={{
-              backgroundColor: palette.surface,
-              padding: spacing[4],
-              borderRadius: radii.xl,
-              gap: spacing[4],
-              borderWidth: 1,
-              borderColor: palette.border,
-              ...shadows.card,
-            }}
-          >
-            <AppText variant="h3" style={{ fontWeight: "800" }}>
-              Top Dishes
-            </AppText>
-            <View style={{ gap: spacing[3] }}>
-              {TOP_DISHES.map((dish, index) => (
-                <View
-                  key={dish.id}
-                  style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}
-                >
-                  <AppText variant="bodyBold" style={{ color: palette.textSecondary, width: 20 }}>
-                    #{index + 1}
-                  </AppText>
-                  <View style={{ flex: 1 }}>
-                    <AppText variant="bodySmallBold">{dish.name}</AppText>
-                  </View>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                      <Eye size={14} color={palette.textSecondary} />
-                      <AppText variant="micro" tone="muted">
-                        {dish.views}
-                      </AppText>
-                    </View>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                      <Heart size={14} color={palette.orange} />
-                      <AppText variant="micro" tone="muted">
-                        {dish.saves}
-                      </AppText>
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-
-          {/* Customer Taste Tags */}
-          <View
-            style={{
-              backgroundColor: palette.surface,
-              padding: spacing[4],
-              borderRadius: radii.xl,
-              gap: spacing[4],
-              borderWidth: 1,
-              borderColor: palette.border,
-              ...shadows.card,
-            }}
-          >
-            <AppText variant="h3" style={{ fontWeight: "800" }}>
-              Customer Taste Profile
-            </AppText>
-            <AppText variant="bodySmall" tone="muted" style={{ marginTop: -8 }}>
-              Based on users who favorited your stall
-            </AppText>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-              {TASTE_PROFILE.map((tag) => (
-                <View
-                  key={tag.label}
-                  style={{
-                    backgroundColor: palette.bgSoft,
-                    paddingHorizontal: spacing[3],
-                    paddingVertical: spacing[2],
-                    borderRadius: radii.pill,
-                    borderWidth: 1,
-                    borderColor: palette.border,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                >
-                  <AppText variant="bodySmallBold">{tag.label}</AppText>
-                  <View
-                    style={{
-                      backgroundColor: palette.orange,
-                      paddingHorizontal: 6,
-                      paddingVertical: 2,
-                      borderRadius: radii.sm,
-                    }}
-                  >
-                    <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                      {tag.score}
-                    </AppText>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </View>
+    </Screen>
   );
 }
+
+function MetricCard({
+  label,
+  value,
+  trend,
+  icon,
+}: {
+  label: string;
+  value: string;
+  trend: string;
+  icon: React.ReactNode;
+}) {
+  const { palette, spacing, radii, shadows } = useHungryTheme();
+  return (
+    <View
+      style={[
+        styles.metricCard,
+        {
+          backgroundColor: palette.surface,
+          borderColor: palette.border,
+          borderRadius: radii.lg,
+          ...shadows.card,
+        },
+      ]}
+    >
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+        <View style={{ backgroundColor: palette.bgSoft, padding: 6, borderRadius: radii.md }}>
+          {icon}
+        </View>
+        <AppText
+          variant="micro"
+          style={{
+            color: trend.startsWith("+") ? palette.success : palette.textMuted,
+            fontWeight: "700",
+          }}
+        >
+          {trend}
+        </AppText>
+      </View>
+      <View style={{ marginTop: spacing[3] }}>
+        <AppText variant="h2" style={{ fontWeight: "900" }}>
+          {value}
+        </AppText>
+        <AppText
+          variant="micro"
+          tone="muted"
+          style={{ textTransform: "uppercase", marginTop: 2, fontWeight: "700" }}
+        >
+          {label}
+        </AppText>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  metricCard: {
+    width: "47.5%",
+    padding: 16,
+    borderWidth: 1,
+  },
+  chartCard: {
+    padding: 20,
+    borderWidth: 1,
+  },
+});

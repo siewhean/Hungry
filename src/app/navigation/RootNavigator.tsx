@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SplashScreen } from "@/app/screens/SplashScreen";
 import { DeveloperLauncherScreen } from "@/app/screens/dev/DeveloperLauncherScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
-import { DishDetailScreen } from "@/app/screens/detail/DishDetailScreen";
+import { DishDetailScreenV2 } from "@/app/screens/detail/DishDetailScreenV2";
 import { NotFoundScreen } from "@/app/screens/detail/NotFoundScreen";
 import { OfflineStateScreen } from "@/app/screens/detail/OfflineStateScreen";
 import { StallDetailScreen } from "@/app/screens/detail/StallDetailScreen";
@@ -98,6 +98,7 @@ const AUTH_REQUIRED_ROUTES = new Set([
   "Settings",
   "SettingsV2",
   "DishDetail",
+  "DishDetailV2",
   "StallDetail",
   "StallDetailV2",
   "BlogPost",
@@ -128,6 +129,7 @@ function GlobalScrollBackButton() {
     !scrollBackVisible ||
     !navigationRef.isReady() ||
     !navigationRef.canGoBack() ||
+    rootRouteName === "MainTabs" ||
     rootRouteName === "OnboardingStack"
   ) {
     return null;
@@ -154,7 +156,7 @@ function GlobalScrollBackButton() {
           },
         ]}
       >
-        <ArrowLeft color={palette.navy} size={18} />
+        <ArrowLeft color={palette.text} size={18} />
       </Pressable>
     </View>
   );
@@ -341,7 +343,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             options={{ animation: "none" }}
           />
           <RootStack.Screen component={TasteFilterScreen} name="TasteFilter" />
-          <RootStack.Screen component={HomeMapScreen} name="DiscoverMap" />
+          <RootStack.Screen
+            component={HomeMapScreen}
+            name="DiscoverMap"
+            options={{ gestureEnabled: true }}
+          />
           <RootStack.Screen component={MapZoomedInScreen} name="MapZoomedIn" />
           <RootStack.Screen component={PostComposerScreen} name="Post" />
           <RootStack.Screen component={EditProfileScreen} name="EditProfile" />
@@ -349,7 +355,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={ReviewHistoryScreen} name="ReviewHistory" />
           <RootStack.Screen component={SettingsScreen} name="Settings" />
           <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
-          <RootStack.Screen component={DishDetailScreen} name="DishDetail" />
+          <RootStack.Screen component={DishDetailScreenV2} name="DishDetail" />
           <RootStack.Screen component={StallDetailScreen} name="StallDetail" />
           <RootStack.Screen
             component={MerchantClaimExplainerScreen}
@@ -374,6 +380,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={NotFoundScreen} name="NotFound" />
           {/* V2 Prototypes */}
           <RootStack.Screen component={DiscoverHomeScreenV2} name="DiscoverV2" />
+          <RootStack.Screen component={DishDetailScreenV2} name="DishDetailV2" />
           <RootStack.Screen component={DishSearchScreenV2} name="SearchHomeV2" />
           <RootStack.Screen component={StallDetailScreenV2} name="StallDetailV2" />
           <RootStack.Screen component={BuildingDrillDownScreenV2} name="BuildingDrillDownV2" />

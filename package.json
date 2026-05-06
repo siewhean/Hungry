@@ -4,10 +4,10 @@
   "private": true,
   "main": "index.ts",
   "scripts": {
-    "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
+    "start": "node ./scripts/run-expo.cjs start",
+    "android": "node ./scripts/run-expo.cjs run:android",
+    "ios": "node ./scripts/run-expo.cjs run:ios --no-build-cache",
+    "web": "node ./scripts/run-expo.cjs start --web",
     "eas:channel:preview": "npx eas-cli channel:create preview --non-interactive || true",
     "eas:channel:production": "npx eas-cli channel:create production --non-interactive || true",
     "update:preview": "npx eas-cli update --channel preview --message \"${npm_config_msg:-preview update}\"",
@@ -21,7 +21,7 @@
     "format": "prettier --write src/",
     "format:check": "prettier --check src/",
     "prepare": "husky",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package && node ./scripts/repair-expo-autolinking-ruby.cjs && node ./scripts/repair-expo-build-jsx.cjs"
   },
   "dependencies": {
     "@expo-google-fonts/dm-mono": "^0.2.3",

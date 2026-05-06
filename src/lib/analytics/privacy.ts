@@ -15,7 +15,12 @@ function sanitizeString(value: string): string {
 
 function isCoordinateKey(key: string): boolean {
   const normalized = key.toLowerCase();
-  return normalized === "latitude" || normalized === "longitude" || normalized.endsWith("_lat") || normalized.endsWith("_lng");
+  return (
+    normalized === "latitude" ||
+    normalized === "longitude" ||
+    normalized.endsWith("_lat") ||
+    normalized.endsWith("_lng")
+  );
 }
 
 function sanitizeValue(key: string, value: unknown): JsonValue | undefined {
@@ -42,7 +47,9 @@ function sanitizeValue(key: string, value: unknown): JsonValue | undefined {
   return undefined;
 }
 
-export function sanitizeAnalyticsProperties(properties: Record<string, unknown>): Record<string, JsonValue> {
+export function sanitizeAnalyticsProperties(
+  properties: Record<string, unknown>,
+): Record<string, JsonValue> {
   return Object.fromEntries(
     Object.entries(properties)
       .map(([key, value]) => {
@@ -53,19 +60,32 @@ export function sanitizeAnalyticsProperties(properties: Record<string, unknown>)
   );
 }
 
-export function sanitizeSentryEvent<T extends { user?: Record<string, unknown>; extra?: Record<string, unknown>; tags?: Record<string, unknown> }>(
-  event: T,
-): T {
-  if (event.user) {
-    event.user = sanitizeAnalyticsProperties(event.user);
-    delete event.user.email;
-    delete event.user.username;
+export function sanitizeSentryEvent<
+  T extends {
+    user?: Record<string, unknown>;
+    extra?: Record<string, unknown>;
+    tags?: Record<string, unknown>;
+  },
+>(event: T): T {
+  const sanitizedUser = event.user ? sanitizeAnalyticsProperties(event.user) : undefined;
+  const sanitizedExtra = event.extra ? sanitizeAnalyticsProperties(event.extra) : undefined;
+  const sanitizedTags = event.tags ? sanitizeAnalyticsProperties(event.tags) : undefined;
+
+  if (sanitizedUser) {
+    const userWithoutEmail = { ...sanitizedUser };
+    delete userWithoutEmail.email;
+    delete userWithoutEmail.username;
+    return {
+      ...event,
+      user: userWithoutEmail,
+      ...(sanitizedExtra ? { extra: sanitizedExtra } : {}),
+      ...(sanitizedTags ? { tags: sanitizedTags } : {}),
+    };
   }
-  if (event.extra) {
-    event.extra = sanitizeAnalyticsProperties(event.extra);
-  }
-  if (event.tags) {
-    event.tags = sanitizeAnalyticsProperties(event.tags);
-  }
-  return event;
+
+  return {
+    ...event,
+    ...(sanitizedExtra ? { extra: sanitizedExtra } : {}),
+    ...(sanitizedTags ? { tags: sanitizedTags } : {}),
+  };
 }

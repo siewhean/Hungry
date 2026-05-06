@@ -127,3 +127,25 @@ test("store policy controls cover account deletion, UGC moderation, and location
   assert.doesNotMatch(appConfig, /NSLocalNetworkUsageDescription/);
   assert.doesNotMatch(appConfig, /NSBonjourServices/);
 });
+
+test("merchant portal RLS hardening protects merchant-only surfaces", () => {
+  const migration = readRepoFile("supabase/migrations/0020_merchant_rls_hardening.sql");
+  const authorGuard = readRepoFile("supabase/migrations/0021_review_author_update_guard.sql");
+  const catalogGuard = readRepoFile("supabase/migrations/0022_merchant_catalog_column_guards.sql");
+
+  assert.match(migration, /merchant_can_manage_venue/);
+  assert.match(migration, /enforce_merchant_review_reply_update/);
+  assert.match(migration, /interaction_reports_insert_merchant_owner_or_manager/);
+  assert.match(migration, /notification_prefs_select_member/);
+  assert.match(migration, /notification_prefs_update_owner_or_manager/);
+  assert.match(migration, /merchant review updates are limited to reply fields/);
+  assert.match(authorGuard, /review authors cannot change identity or merchant reply fields/);
+  assert.match(authorGuard, /new\.merchant_replied_at is distinct from old\.merchant_replied_at/);
+  assert.match(catalogGuard, /enforce_merchant_venue_update_guard/);
+  assert.match(catalogGuard, /enforce_merchant_dish_write_guard/);
+  assert.match(catalogGuard, /merchant venue updates are limited to profile fields/);
+  assert.match(
+    catalogGuard,
+    /merchant dish updates cannot change identity, aggregate, or live fields/,
+  );
+});

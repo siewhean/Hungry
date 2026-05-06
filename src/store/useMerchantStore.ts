@@ -21,6 +21,8 @@ interface MerchantState {
   analyticsCache: MerchantAnalytics | null;
   /** Notification preferences */
   notificationPreferences: MerchantNotificationPreferences;
+  /** Dev-only bypass used by the launcher to open merchant tools without the sign-in gate */
+  developerMerchantMode: boolean;
 }
 
 interface MerchantActions {
@@ -30,6 +32,7 @@ interface MerchantActions {
   updateOutletProfile: (outletId: string, updates: Partial<MerchantOutlet>) => void;
   setAnalyticsCache: (analytics: MerchantAnalytics | null) => void;
   setNotificationPreferences: (prefs: Partial<MerchantNotificationPreferences>) => void;
+  setDeveloperMerchantMode: (enabled: boolean) => void;
   clearMerchant: () => void;
 }
 
@@ -49,6 +52,7 @@ const INITIAL_STATE: MerchantState = {
   activeOutletId: null,
   analyticsCache: null,
   notificationPreferences: DEFAULT_NOTIFICATION_PREFS,
+  developerMerchantMode: false,
 };
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -101,6 +105,8 @@ export const useMerchantStore = create<MerchantState & MerchantActions>()(
             ...prefs,
           },
         })),
+
+      setDeveloperMerchantMode: (enabled) => set({ developerMerchantMode: enabled }),
 
       clearMerchant: () => set(INITIAL_STATE),
     }),

@@ -17,7 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import { AppText, Button, IconButton, Screen, Chip } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
-import { hungryService } from "@/lib/services/mock/mockService";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import type { MerchantTeamMember, MerchantNotificationPreferences } from "@/types/domain";
 
 export function MerchantSettingsScreen() {
@@ -43,10 +43,10 @@ export function MerchantSettingsScreen() {
     async function loadSettingsData() {
       if (account) {
         try {
-          const members = await hungryService.merchant.getTeamMembers(account.id);
+          const members = await getHungryService().merchant.getTeamMembers(account.id);
           setTeamMembers(members);
 
-          const prefs = await hungryService.merchant.getNotificationPreferences(account.id);
+          const prefs = await getHungryService().merchant.getNotificationPreferences(account.id);
           if (prefs) setNotifications(prefs);
         } catch (e) {
           console.error(e);
@@ -64,7 +64,7 @@ export function MerchantSettingsScreen() {
     setNotifications(nextPrefs);
 
     try {
-      await hungryService.merchant.updateNotificationPreferences(account.id, nextPrefs);
+      await getHungryService().merchant.updateNotificationPreferences(account.id, nextPrefs);
     } catch (e) {
       // Revert on failure
       setNotifications(notifications);
@@ -102,7 +102,7 @@ export function MerchantSettingsScreen() {
           onPress: async () => {
             if (!account) return;
             try {
-              await hungryService.merchant.removeTeamMember(member.id);
+              await getHungryService().merchant.removeTeamMember(member.id);
               setTeamMembers((prev) => prev.filter((m) => m.id !== member.id));
             } catch (e) {
               Alert.alert("Error", "Failed to remove team member.");
@@ -114,22 +114,8 @@ export function MerchantSettingsScreen() {
   };
 
   return (
-    <Screen style={{ backgroundColor: palette.bg }}>
-      <View style={[styles.header, { paddingTop: spacing[3], paddingHorizontal: spacing[4] }]}>
-        <IconButton
-          accessibilityLabel="Go back"
-          icon={<ChevronLeft size={24} color={palette.text} />}
-          onPress={() => navigation.goBack()}
-        />
-        <AppText variant="h2" style={{ fontWeight: "800" }}>
-          Settings
-        </AppText>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ padding: spacing[4], gap: spacing[5], paddingBottom: 100 }}
-      >
+    <Screen title="Settings">
+      <View style={{ gap: spacing[5], width: "100%" }}>
         {/* Account Info */}
         <View
           style={[
@@ -348,7 +334,7 @@ export function MerchantSettingsScreen() {
           onPress={handleLogout}
           style={{ borderColor: palette.errorSoft }}
         />
-      </ScrollView>
+      </View>
     </Screen>
   );
 }

@@ -1,51 +1,174 @@
-/**
- * CustomerInboxScreen
- * Central hub for merchant-customer interactions.
- * Allows reading and replying to reviews, comments, and mentions.
- */
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   ScrollView,
-  Pressable,
-  StyleSheet,
-  ActivityIndicator,
   TextInput,
-  KeyboardAvoidingView,
-  Platform,
+  StyleSheet,
+  Pressable,
+  ActivityIndicator,
   Alert,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   MessageSquare,
   Star,
-  ChevronLeft,
   Send,
-  Sparkles,
-  CheckCircle2,
   MoreVertical,
+  CheckCircle2,
+  Sparkles,
+  X,
 } from "lucide-react-native";
-import { useNavigation } from "@react-navigation/native";
 
-import { AppText, Button, Avatar, Badge, Chip, Screen, IconButton } from "@/components/ui";
+import { AppText, Button, IconButton, Chip, Screen, Avatar } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
-import { hungryService } from "@/lib/services/mock/mockService";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import type { CustomerInteraction, InteractionType } from "@/types/domain";
 
-// ─── Sentiment Summary Card ──────────────────────────────────────────────────
+export function CustomerInboxScreen() {
+  const { palette, spacing } = useHungryTheme();
+  const activeOutlet = useMerchantStore(getActiveOutlet);
+
+  const [interactions, setInteractions] = useState<CustomerInteraction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [filter, setFilter] = useState<InteractionType | "all" | "unreplied">("all");
+  const [replyingTo, setReplyingTo] = useState<CustomerInteraction | null>(null);
+
+  const fetchInteractions = useCallback(async () => {
+    if (!activeOutlet) return;
+    setIsLoading(true);
+    try {
+      const data = await getHungryService().merchant.getInbox(activeOutlet.id, {
+        type: filter === "all" || filter === "unreplied" ? undefined : filter,
+        unrepliedOnly: filter === "unreplied",
+      });
+      setInteractions(data);
+    } catch (e) {
+      console.error("Failed to fetch interactions", e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeOutlet, filter]);
+
+  useEffect(() => {
+    void fetchInteractions();
+  }, [fetchInteractions]);
+
+  const handleViewOriginal = useCallback((interaction: CustomerInteraction) => {
+    if (!interaction.sourceId) {
+      Alert.alert("Original unavailable", "This interaction is not linked to a source post.");
+      return;
+    }
+    Alert.alert("Original source", `Source ID: ${interaction.sourceId}`);
+  }, []);
+
+  const handleReportInteraction = useCallback((interaction: CustomerInteraction) => {
+    Alert.alert("Report Interaction", "Flag this interaction for moderation review?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Report",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await getHungryService().merchant.reportInteraction(
+              interaction.id,
+              "Merchant reported from customer inbox",
+            );
+            Alert.alert("Reported", "Interaction sent for moderation review.");
+          } catch (e) {
+            Alert.alert("Error", "Failed to report interaction.");
+          }
+        },
+      },
+    ]);
+  }, []);
+
+  return (
+    <Screen title="Customer Inbox">
+      <View style={{ gap: spacing[4], width: "100%" }}>
+        {/* Filters */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: spacing[2], paddingHorizontal: spacing[1] }}
+        >
+          <Chip label="All" selected={filter === "all"} onPress={() => setFilter("all")} />
+          <Chip
+            label="Unreplied"
+            selected={filter === "unreplied"}
+            onPress={() => setFilter("unreplied")}
+          />
+          <Chip
+            label="Reviews"
+            selected={filter === "review"}
+            onPress={() => setFilter("review")}
+          />
+          <Chip
+            label="Comments"
+            selected={filter === "comment"}
+            onPress={() => setFilter("comment")}
+          />
+          <Chip
+            label="Mentions"
+            selected={filter === "post_mention"}
+            onPress={() => setFilter("post_mention")}
+          />
+        </ScrollView>
+
+        {/* Sentiment Summary */}
+        <SentimentSummary interactions={interactions} />
+
+        {/* Interaction List */}
+        <View style={{ gap: spacing[3], paddingBottom: 100 }}>
+          {isLoading && interactions.length === 0 ? (
+            <ActivityIndicator color={palette.orange} style={{ marginTop: spacing[12] }} />
+          ) : interactions.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <CheckCircle2 size={48} color={palette.success} />
+              <AppText variant="bodyBold" style={{ marginTop: spacing[3] }}>
+                All caught up!
+              </AppText>
+              <AppText variant="bodySmall" tone="muted">
+                No {filter !== "all" ? filter : ""} interactions to show.
+              </AppText>
+            </View>
+          ) : (
+            interactions.map((item) => (
+              <InteractionCard
+                key={item.id}
+                interaction={item}
+                onReply={setReplyingTo}
+                onViewOriginal={handleViewOriginal}
+                onReport={handleReportInteraction}
+              />
+            ))
+          )}
+        </View>
+      </View>
+
+      {/* Reply Composer Modal (Simulated) */}
+      {replyingTo && (
+        <ReplyComposer
+          interaction={replyingTo}
+          onClose={() => setReplyingTo(null)}
+          onSent={() => {
+            setReplyingTo(null);
+            void fetchInteractions();
+          }}
+        />
+      )}
+    </Screen>
+  );
+}
 
 function SentimentSummary({ interactions }: { interactions: CustomerInteraction[] }) {
   const { palette, spacing, radii } = useHungryTheme();
 
   const stats = useMemo(() => {
+    if (interactions.length === 0) return null;
     const total = interactions.length;
-    if (total === 0) return null;
-
-    const positive = interactions.filter((i) => i.sentiment === "positive").length;
-    const negative = interactions.filter((i) => i.sentiment === "negative").length;
-    const neutral = interactions.filter((i) => i.sentiment === "neutral").length;
-
+    const positive = interactions.filter((i) => (i.rating || 0) >= 4).length;
+    const negative = interactions.filter((i) => (i.rating || 0) > 0 && (i.rating || 0) <= 2).length;
+    const neutral = total - positive - negative;
     return {
       positive: Math.round((positive / total) * 100),
       negative: Math.round((negative / total) * 100),
@@ -109,68 +232,44 @@ function SentimentSummary({ interactions }: { interactions: CustomerInteraction[
   );
 }
 
-// ─── Interaction Card ────────────────────────────────────────────────────────
-
-interface InteractionCardProps {
+function InteractionCard({
+  interaction,
+  onReply,
+  onViewOriginal,
+  onReport,
+}: {
   interaction: CustomerInteraction;
-  onReply: (interaction: CustomerInteraction) => void;
-}
-
-function InteractionCard({ interaction, onReply }: InteractionCardProps) {
+  onReply: (item: CustomerInteraction) => void;
+  onViewOriginal: (item: CustomerInteraction) => void;
+  onReport: (item: CustomerInteraction) => void;
+}) {
   const { palette, spacing, radii } = useHungryTheme();
 
-  const typeLabel = useMemo(() => {
-    switch (interaction.type) {
-      case "review":
-        return "Review";
-      case "comment":
-        return "Comment";
-      case "post_mention":
-        return "Mention";
-      case "question":
-        return "Question";
-      default:
-        return "Interaction";
-    }
-  }, [interaction.type]);
-
-  const handleReport = () => {
-    Alert.alert(
-      "Report Interaction",
-      "Are you sure you want to report this interaction as abusive or spam?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Report",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await hungryService.merchant.reportInteraction(interaction.id, "abusive");
-              Alert.alert("Reported", "Thank you for reporting. Our team will review this.");
-            } catch (e) {
-              Alert.alert("Error", "Failed to report interaction.");
-            }
-          },
-        },
-      ],
-    );
+  const typeLabel = interaction.type.charAt(0).toUpperCase() + interaction.type.slice(1);
+  const showMoreActions = () => {
+    Alert.alert("Interaction Actions", interaction.authorName, [
+      ...(interaction.sourceId
+        ? [{ text: "View original", onPress: () => onViewOriginal(interaction) }]
+        : []),
+      { text: "Report", style: "destructive" as const, onPress: () => onReport(interaction) },
+      { text: "Cancel", style: "cancel" as const },
+    ]);
   };
 
   return (
     <View
       style={[
         styles.interactionCard,
-        {
-          backgroundColor: palette.surface,
-          borderRadius: radii.lg,
-          padding: spacing[4],
-          borderColor: palette.border,
-          borderWidth: 1,
-        },
+        { backgroundColor: palette.surface, borderColor: palette.border, borderRadius: radii.lg },
       ]}
     >
       <View
-        style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: spacing[2] }}
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: spacing[3],
+        }}
       >
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
           <Avatar size={32} uri={interaction.authorAvatarUrl} name={interaction.authorName} />
@@ -182,14 +281,9 @@ function InteractionCard({ interaction, onReply }: InteractionCardProps) {
           </View>
         </View>
         <IconButton
-          icon={<MoreVertical size={18} color={palette.textSecondary} />}
           accessibilityLabel="More actions"
-          onPress={() => {
-            Alert.alert("Actions", undefined, [
-              { text: "Report Abusive", onPress: handleReport, style: "destructive" },
-              { text: "Cancel", style: "cancel" },
-            ]);
-          }}
+          icon={<MoreVertical size={18} color={palette.textSecondary} />}
+          onPress={showMoreActions}
         />
       </View>
 
@@ -209,31 +303,6 @@ function InteractionCard({ interaction, onReply }: InteractionCardProps) {
       <AppText variant="body" style={{ marginBottom: spacing[3] }}>
         {interaction.text}
       </AppText>
-
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: spacing[3],
-        }}
-      >
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[1] }}>
-          {interaction.tags &&
-            interaction.tags.map((tag) => <Badge key={tag} label={tag} tone="neutral" />)}
-        </View>
-
-        {interaction.sourceId && (
-          <Pressable onPress={() => {}}>
-            <AppText
-              variant="micro"
-              style={{ color: palette.orange, textDecorationLine: "underline" }}
-            >
-              View original
-            </AppText>
-          </Pressable>
-        )}
-      </View>
 
       {interaction.reply ? (
         <View
@@ -255,64 +324,62 @@ function InteractionCard({ interaction, onReply }: InteractionCardProps) {
           <AppText variant="bodySmall">{interaction.reply.text}</AppText>
         </View>
       ) : (
-        <Button
-          label="Reply"
-          variant="secondary"
-          size="sm"
-          fullWidth={false}
-          onPress={() => onReply(interaction)}
-          leftIcon={<MessageSquare size={16} color={palette.orange} />}
-        />
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+          <Button
+            label="Reply"
+            variant="secondary"
+            size="sm"
+            fullWidth={false}
+            onPress={() => onReply(interaction)}
+            leftIcon={<MessageSquare size={16} color={palette.orange} />}
+          />
+          {interaction.sourceId ? (
+            <Button
+              label="View original"
+              variant="ghost"
+              size="sm"
+              fullWidth={false}
+              onPress={() => onViewOriginal(interaction)}
+            />
+          ) : null}
+        </View>
       )}
     </View>
   );
 }
 
-// ─── Reply Composer ──────────────────────────────────────────────────────────
-
-interface ReplyComposerProps {
+function ReplyComposer({
+  interaction,
+  onClose,
+  onSent,
+}: {
   interaction: CustomerInteraction;
   onClose: () => void;
   onSent: () => void;
-}
-
-function ReplyComposer({ interaction, onClose, onSent }: ReplyComposerProps) {
+}) {
   const { palette, spacing, radii } = useHungryTheme();
   const [text, setText] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-
-  const quickReplies = [
-    "Thank you for the feedback!",
-    "We're glad you enjoyed it!",
-    "Sorry for the wait, we'll improve.",
-    "Hope to see you again soon!",
-  ];
+  const [suggestion, setSuggestion] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadSuggestions() {
-      setIsLoadingSuggestions(true);
+    async function loadSuggestion() {
       try {
-        const suggestion = await hungryService.merchant.generateAIReply(interaction.id);
-        setSuggestions([suggestion]);
-      } catch (e) {
-        console.error("Failed to load suggestions", e);
-      } finally {
-        setIsLoadingSuggestions(false);
-      }
+        const res = await getHungryService().merchant.generateAIReply(interaction.id);
+        setSuggestion(res);
+      } catch (e) {}
     }
-    loadSuggestions();
+    void loadSuggestion();
   }, [interaction.id]);
 
   const handleSend = async () => {
     if (!text.trim()) return;
     setIsSending(true);
     try {
-      await hungryService.merchant.replyToInteraction(interaction.id, text);
+      await getHungryService().merchant.replyToInteraction(interaction.id, text);
       onSent();
     } catch (e) {
-      console.error("Failed to send reply", e);
+      Alert.alert("Error", "Failed to send reply.");
     } finally {
       setIsSending(false);
     }
@@ -321,101 +388,63 @@ function ReplyComposer({ interaction, onClose, onSent }: ReplyComposerProps) {
   return (
     <View
       style={[
-        styles.composerContainer,
-        { backgroundColor: palette.surface, borderTopWidth: 1, borderTopColor: palette.border },
+        StyleSheet.absoluteFill,
+        { backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
       ]}
     >
+      <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: spacing[3],
-        }}
+        style={[
+          styles.composer,
+          {
+            backgroundColor: palette.surface,
+            borderTopLeftRadius: radii.xl,
+            borderTopRightRadius: radii.xl,
+          },
+        ]}
       >
-        <AppText variant="bodyBold">Replying to {interaction.authorName}</AppText>
-        <IconButton
-          icon={
-            <ChevronLeft
-              size={24}
-              color={palette.textSecondary}
-              style={{ transform: [{ rotate: "-90deg" }] }}
-            />
-          }
-          accessibilityLabel="Close composer"
-          onPress={onClose}
-        />
-      </View>
-
-      <View style={{ gap: spacing[2], marginBottom: spacing[2] }}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: spacing[3], gap: spacing[2] }}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: spacing[4],
+          }}
         >
-          {isLoadingSuggestions ? (
-            <ActivityIndicator
-              size="small"
-              color={palette.orange}
-              style={{ marginHorizontal: spacing[4] }}
-            />
-          ) : (
-            suggestions.map((suggestion, idx) => (
-              <Pressable
-                key={`suggest-${idx}`}
-                onPress={() => setText(suggestion)}
-                style={[
-                  styles.suggestionChip,
-                  {
-                    backgroundColor: palette.orangeLight,
-                    borderRadius: radii.pill,
-                    borderColor: palette.orange,
-                  },
-                ]}
-              >
-                <Sparkles size={12} color={palette.orange} />
-                <AppText variant="micro" style={{ color: palette.orange }}>
-                  {suggestion.slice(0, 40)}...
-                </AppText>
-              </Pressable>
-            ))
-          )}
-        </ScrollView>
+          <AppText variant="h3" style={{ fontWeight: "bold" }}>
+            Reply to {interaction.authorName}
+          </AppText>
+          <IconButton
+            accessibilityLabel="Close reply composer"
+            icon={<X size={24} color={palette.text} />}
+            onPress={onClose}
+          />
+        </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: spacing[3], gap: spacing[2] }}
-        >
-          {quickReplies.map((reply, idx) => (
-            <Pressable
-              key={`quick-${idx}`}
-              onPress={() => setText(reply)}
-              style={[
-                styles.suggestionChip,
-                {
-                  backgroundColor: palette.bgSoft,
-                  borderRadius: radii.pill,
-                  borderColor: palette.border,
-                },
-              ]}
-            >
-              <AppText variant="micro" tone="muted">
-                {reply}
+        {suggestion && (
+          <Pressable
+            onPress={() => setText(suggestion)}
+            style={[
+              styles.aiChip,
+              {
+                backgroundColor: palette.orangeLight,
+                borderColor: palette.orange,
+                borderRadius: radii.md,
+              },
+            ]}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+              <Sparkles size={14} color={palette.orange} />
+              <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
+                AI Suggestion
               </AppText>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </View>
+            </View>
+            <AppText variant="bodySmall" numberOfLines={2}>
+              {suggestion}
+            </AppText>
+          </Pressable>
+        )}
 
-      <View
-        style={{
-          padding: spacing[3],
-          flexDirection: "row",
-          gap: spacing[2],
-          alignItems: "flex-end",
-        }}
-      >
         <TextInput
           style={[
             styles.input,
@@ -424,202 +453,60 @@ function ReplyComposer({ interaction, onClose, onSent }: ReplyComposerProps) {
               borderRadius: radii.lg,
               color: palette.text,
               borderColor: palette.border,
-              borderWidth: 1,
             },
           ]}
-          placeholder="Type your reply..."
+          placeholder="Type your message..."
           placeholderTextColor={palette.textMuted}
           multiline
           value={text}
           onChangeText={setText}
+          autoFocus
         />
-        <IconButton
-          icon={<Send size={24} color={text.trim() ? palette.orange : palette.textMuted} />}
-          accessibilityLabel="Send reply"
-          onPress={handleSend}
+
+        <Button
+          label={isSending ? "Sending..." : "Send Reply"}
+          variant="primary"
+          fullWidth
           disabled={!text.trim() || isSending}
+          onPress={handleSend}
+          style={{ marginTop: spacing[4] }}
+          rightIcon={<Send size={18} color={palette.white} />}
         />
       </View>
-      <View style={{ paddingHorizontal: spacing[3], paddingBottom: spacing[3] }}>
-        <AppText variant="micro" tone="muted">
-          AI-generated suggestion — review before sending
-        </AppText>
-      </View>
     </View>
-  );
-}
-
-// ─── CustomerInboxScreen ──────────────────────────────────────────────────────
-
-export function CustomerInboxScreen() {
-  const { palette, spacing } = useHungryTheme();
-  const navigation = useNavigation();
-  const insets = useSafeAreaInsets();
-  const activeOutlet = useMerchantStore(getActiveOutlet);
-
-  const [interactions, setInteractions] = useState<CustomerInteraction[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<InteractionType | "all" | "unreplied">("all");
-  const [replyingTo, setReplyingTo] = useState<CustomerInteraction | null>(null);
-
-  const fetchInteractions = useCallback(async () => {
-    if (!activeOutlet) return;
-    setIsLoading(true);
-    try {
-      const data = await hungryService.merchant.getInbox(activeOutlet.id, {
-        type: filter === "all" || filter === "unreplied" ? undefined : filter,
-        unrepliedOnly: filter === "unreplied",
-      });
-      setInteractions(data);
-    } catch (e) {
-      console.error("Failed to fetch interactions", e);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeOutlet, filter]);
-
-  useEffect(() => {
-    fetchInteractions();
-  }, [fetchInteractions]);
-
-  const renderFilter = (id: typeof filter, label: string) => (
-    <View style={{ marginRight: spacing[2] }}>
-      <Chip label={label} selected={filter === id} onPress={() => setFilter(id)} />
-    </View>
-  );
-
-  return (
-    <Screen style={{ backgroundColor: palette.bg }}>
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + spacing[2] }]}>
-        <IconButton
-          icon={<ChevronLeft size={24} color={palette.text} />}
-          accessibilityLabel="Go back"
-          onPress={() => navigation.goBack()}
-        />
-        <AppText variant="h3" style={{ fontWeight: "800" }}>
-          Customer Inbox
-        </AppText>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ padding: spacing[4], gap: spacing[4], paddingBottom: 100 }}
-        stickyHeaderIndices={[1]}
-      >
-        <SentimentSummary interactions={interactions} />
-
-        <View style={{ backgroundColor: palette.bg, paddingVertical: spacing[2] }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {renderFilter("all", "All")}
-            {renderFilter("unreplied", "Unreplied")}
-            {renderFilter("review", "Reviews")}
-            {renderFilter("comment", "Comments")}
-            {renderFilter("post_mention", "Mentions")}
-          </ScrollView>
-        </View>
-
-        {isLoading ? (
-          <View style={{ marginTop: 100 }}>
-            <ActivityIndicator size="large" color={palette.orange} />
-          </View>
-        ) : interactions.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <View style={[styles.emptyIcon, { backgroundColor: palette.bgSoft }]}>
-              <MessageSquare size={40} color={palette.textMuted} />
-            </View>
-            <AppText variant="bodyBold" style={{ marginTop: spacing[4] }}>
-              No messages found
-            </AppText>
-            <AppText
-              variant="bodySmall"
-              tone="muted"
-              style={{ textAlign: "center", marginTop: spacing[1] }}
-            >
-              When customers review or comment on your stall, they will appear here.
-            </AppText>
-          </View>
-        ) : (
-          interactions.map((item) => (
-            <InteractionCard key={item.id} interaction={item} onReply={setReplyingTo} />
-          ))
-        )}
-      </ScrollView>
-
-      {replyingTo && (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.composerWrapper}
-        >
-          <ReplyComposer
-            interaction={replyingTo}
-            onClose={() => setReplyingTo(null)}
-            onSent={() => {
-              setReplyingTo(null);
-              fetchInteractions();
-            }}
-          />
-        </KeyboardAvoidingView>
-      )}
-    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
+  emptyContainer: {
+    padding: 60,
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 8,
-    paddingBottom: 12,
+    justifyContent: "center",
   },
   summaryCard: {
-    // styles moved inline for palette access
+    padding: 16,
   },
   interactionCard: {
-    // styles moved inline for palette access
+    padding: 16,
+    borderWidth: 1,
   },
   replyBox: {
-    marginTop: 12,
+    marginTop: 8,
   },
-  emptyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 100,
-    paddingHorizontal: 40,
-  },
-  emptyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  composerWrapper: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  composerContainer: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
+  composer: {
+    padding: 20,
+    paddingBottom: 40,
   },
   input: {
-    flex: 1,
-    padding: 12,
-    fontSize: 16,
-    maxHeight: 120,
-  },
-  suggestionChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    gap: 6,
+    height: 120,
+    padding: 16,
     borderWidth: 1,
+    textAlignVertical: "top",
+    fontSize: 16,
+  },
+  aiChip: {
+    padding: 12,
+    borderWidth: 1,
+    marginBottom: 16,
   },
 });

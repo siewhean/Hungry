@@ -361,15 +361,19 @@ export function MerchantDashboardScreen() {
           <AppText variant="h3" style={{ fontWeight: "800" }}>
             Recent Feedback
           </AppText>
-          <View
-            style={{
-              backgroundColor: palette.surface,
-              borderRadius: radii.xl,
-              padding: spacing[4],
-              gap: spacing[4],
-              borderWidth: 1,
-              borderColor: palette.border,
-            }}
+          <Pressable
+            onPress={() => navigation.navigate("CustomerInbox")}
+            style={({ pressed }) => [
+              {
+                backgroundColor: palette.surface,
+                borderRadius: radii.xl,
+                padding: spacing[4],
+                gap: spacing[4],
+                borderWidth: 1,
+                borderColor: palette.border,
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}
           >
             <View style={{ flexDirection: "row", gap: spacing[3] }}>
               <View
@@ -397,7 +401,7 @@ export function MerchantDashboardScreen() {
                 </AppText>
               </View>
             </View>
-          </View>
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>

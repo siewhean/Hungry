@@ -25,20 +25,34 @@ function createMockProvider(): ServiceProvider {
 }
 
 function createSupabaseProvider(): ServiceProvider {
-  // Lazy require prevents @supabase/supabase-js from being evaluated at module
-  // load time, which avoids a [runtime not ready] TypeError in Hermes 0.85
-  // when polyfillGlobalThis() in @supabase/auth-js runs before the JS runtime
-  // has fully initialised the globalThis binding.
+  // Lazy getters prevent expo/react-native modules from loading during
+  // Node-based tests that only inspect provider mode.
+  let cachedService: HungryService | null = null;
+  let cachedRepository: DataRepository | null = null;
 
-  const { supabaseRepository } =
-    require("@/lib/services/supabase/supabaseRepository") as typeof import("@/lib/services/supabase/supabaseRepository");
+  const loadModules = () => {
+    if (cachedService && cachedRepository) return;
 
-  const { supabaseService } =
-    require("@/lib/services/supabase/supabaseService") as typeof import("@/lib/services/supabase/supabaseService");
+    const { supabaseRepository } =
+      require("@/lib/services/supabase/supabaseRepository") as typeof import("@/lib/services/supabase/supabaseRepository");
+
+    const { supabaseService } =
+      require("@/lib/services/supabase/supabaseService") as typeof import("@/lib/services/supabase/supabaseService");
+
+    cachedRepository = supabaseRepository;
+    cachedService = supabaseService;
+  };
+
   return {
     mode: "supabase",
-    service: supabaseService,
-    repository: supabaseRepository,
+    get service() {
+      loadModules();
+      return cachedService as HungryService;
+    },
+    get repository() {
+      loadModules();
+      return cachedRepository as DataRepository;
+    },
     similarityScore,
   };
 }
@@ -55,6 +69,10 @@ export function getServiceProvider(): ServiceProvider {
 
 export function setServiceProvider(provider: ServiceProvider): void {
   activeProvider = provider;
+}
+
+export function setMockServiceProvider(): void {
+  activeProvider = createMockProvider();
 }
 
 export function resetServiceProvider(): void {

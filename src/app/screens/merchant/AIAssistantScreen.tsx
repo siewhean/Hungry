@@ -1,36 +1,26 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { View, ScrollView, StyleSheet, RefreshControl, Pressable, Alert } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  ChevronLeft,
-  Sparkles,
   TrendingUp,
   AlertCircle,
   Image as ImageIcon,
   MessageSquare,
   ChevronRight,
   X,
+  BarChart2,
+  CheckCircle2,
+  Sparkles,
 } from "lucide-react-native";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { AppText, Button, IconButton, Screen } from "@/components/ui";
+import { AppText, IconButton, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
-import { hungryService } from "@/lib/services/mock/mockService";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import type { AIBusinessInsight } from "@/types/domain";
-import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
-
-// Need to import missing icons at the top that were referenced in the code
-import { BarChart2, CheckCircle2 } from "lucide-react-native";
-
-type NavigationProp = NativeStackNavigationProp<MerchantTabParamList, "AIAssistant">;
 
 export function AIAssistantScreen() {
   const { palette, spacing, radii } = useHungryTheme();
-  const navigation = useNavigation<NavigationProp>();
   const activeOutlet = useMerchantStore(getActiveOutlet);
-  const insets = useSafeAreaInsets();
 
   const [insights, setInsights] = useState<AIBusinessInsight[]>([]);
   const [weeklySummary, setWeeklySummary] = useState<AIBusinessInsight | null>(null);
@@ -40,10 +30,10 @@ export function AIAssistantScreen() {
     if (!activeOutlet) return;
     setIsLoading(true);
     try {
-      const data = await hungryService.merchant.getAIInsights(activeOutlet.id);
+      const data = await getHungryService().merchant.getAIInsights(activeOutlet.id);
       setInsights(data.filter((i) => i.type !== "weekly_summary" && !i.isDismissed));
 
-      const summary = await hungryService.merchant.getWeeklySummary(activeOutlet.id);
+      const summary = await getHungryService().merchant.getWeeklySummary(activeOutlet.id);
       setWeeklySummary(summary);
     } catch (e) {
       console.error(e);
@@ -53,33 +43,11 @@ export function AIAssistantScreen() {
   }, [activeOutlet]);
 
   useEffect(() => {
-    loadInsights();
+    void loadInsights();
   }, [loadInsights]);
 
   const handleDismiss = (id: string) => {
     setInsights((prev) => prev.filter((i) => i.id !== id));
-  };
-
-  const handleAction = (insight: AIBusinessInsight) => {
-    if (!insight.actionTarget) return;
-
-    // Navigate based on actionTarget
-    switch (insight.actionTarget) {
-      case "Menu":
-        navigation.navigate("Menu");
-        break;
-      case "BusinessProfileEditor":
-        navigation.navigate("BusinessProfileEditor");
-        break;
-      case "PromotionBuilder":
-        navigation.navigate("PromotionBuilder");
-        break;
-      case "CustomerInbox":
-        navigation.navigate("CustomerInbox");
-        break;
-      default:
-        Alert.alert("Action", "Navigating to feature...");
-    }
   };
 
   const getInsightIcon = (type: AIBusinessInsight["type"]) => {
@@ -100,27 +68,9 @@ export function AIAssistantScreen() {
   };
 
   return (
-    <Screen style={{ backgroundColor: palette.bg }}>
-      <View style={[styles.header, { paddingTop: spacing[3], paddingHorizontal: spacing[4] }]}>
-        <IconButton
-          accessibilityLabel="Go back"
-          icon={<ChevronLeft size={24} color={palette.text} />}
-          onPress={() => navigation.goBack()}
-        />
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Sparkles size={20} color={palette.orange} />
-          <AppText variant="h2" style={{ fontWeight: "800" }}>
-            AI Assistant
-          </AppText>
-        </View>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ padding: spacing[4], gap: spacing[4], paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadInsights} />}
-      >
-        <AppText variant="body" tone="muted" style={{ marginBottom: spacing[2] }}>
+    <Screen title="AI Assistant">
+      <View style={{ gap: spacing[6], width: "100%" }}>
+        <AppText variant="body" tone="muted" style={{ paddingHorizontal: spacing[1] }}>
           AI-powered insights to help you optimize your menu, attract more customers, and boost
           sales.
         </AppText>
@@ -163,8 +113,8 @@ export function AIAssistantScreen() {
           </View>
         )}
 
-        <View style={{ marginTop: spacing[2] }}>
-          <AppText variant="h3" style={{ fontWeight: "bold", marginBottom: spacing[3] }}>
+        <View style={{ gap: spacing[4] }}>
+          <AppText variant="h3" style={{ fontWeight: "bold", paddingHorizontal: spacing[1] }}>
             Actionable Insights
           </AppText>
 
@@ -208,7 +158,7 @@ export function AIAssistantScreen() {
                       style={{
                         flexDirection: "row",
                         alignItems: "center",
-                        gap: spacing[2],
+                        gap: spacing[3],
                         flex: 1,
                       }}
                     >
@@ -225,25 +175,27 @@ export function AIAssistantScreen() {
                         {insight.title}
                       </AppText>
                     </View>
-                    <Pressable onPress={() => handleDismiss(insight.id)} hitSlop={10}>
-                      <X size={18} color={palette.textMuted} />
-                    </Pressable>
+                    <IconButton
+                      icon={<X size={18} color={palette.textMuted} />}
+                      onPress={() => handleDismiss(insight.id)}
+                      accessibilityLabel="Dismiss insight"
+                    />
                   </View>
 
                   <AppText
                     variant="body"
                     tone="muted"
-                    style={{ marginBottom: insight.actionLabel ? spacing[3] : 0, marginLeft: 44 }}
+                    style={{ marginBottom: spacing[3], marginLeft: 48 }}
                   >
                     {insight.body}
                   </AppText>
 
                   {insight.actionLabel && (
                     <Pressable
-                      onPress={() => handleAction(insight)}
+                      onPress={() => Alert.alert("Action", `Navigate to ${insight.actionTarget}`)}
                       style={[
                         styles.actionButton,
-                        { borderColor: palette.border, marginLeft: 44, borderRadius: radii.pill },
+                        { borderColor: palette.border, marginLeft: 48, borderRadius: radii.pill },
                       ]}
                     >
                       <AppText variant="bodySmallBold">{insight.actionLabel}</AppText>
@@ -257,31 +209,19 @@ export function AIAssistantScreen() {
         </View>
 
         <View
-          style={{
-            padding: spacing[4],
-            backgroundColor: palette.bgSoft,
-            borderRadius: radii.md,
-            marginTop: spacing[4],
-          }}
+          style={{ padding: spacing[4], backgroundColor: palette.bgSoft, borderRadius: radii.md }}
         >
           <AppText variant="micro" tone="muted" style={{ textAlign: "center" }}>
             AI insights are generated automatically based on your stall&apos;s data. These are
             suggestions and drafts; nothing is published automatically.
           </AppText>
         </View>
-      </ScrollView>
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 8,
-    paddingBottom: 12,
-  },
   summaryCard: {
     padding: 20,
     borderWidth: 1,
@@ -298,12 +238,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderWidth: 1,
     alignSelf: "flex-start",
+    gap: 4,
   },
   emptyContainer: {
     padding: 40,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 20,
     borderWidth: 1,
     borderColor: "#E5E7EB",
     borderRadius: 16,

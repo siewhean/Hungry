@@ -267,7 +267,7 @@ export function DecideForMeResultScreen() {
   if (!dish) {
     const upcomingRadius = nextRadius(searchRadius);
     return (
-      <Screen title="Recommended for you" subtitle="A single dish picked for your taste profile.">
+      <Screen title="Recommended for you" subtitle="No matching dish for current filters yet.">
         <EmptyState
           title="No match found"
           body={`No dish fits your current filters within ${(searchRadius / 1000).toFixed(1)} km.`}

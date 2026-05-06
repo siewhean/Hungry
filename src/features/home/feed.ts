@@ -1,4 +1,5 @@
 import { getDataRepository, getSimilarityScore } from "@/lib/services/serviceProvider";
+import { dataRepositoryMock as fallbackRepository } from "@/lib/services/mock/repositories";
 import type { DishDetail, StallPost, UserProfile, VenueSummary } from "@/types/domain";
 
 export interface HomeFeedItem extends StallPost {
@@ -13,12 +14,22 @@ export interface HomeFeedSection {
 
 function buildHomeFeedItems(profile: UserProfile): HomeFeedItem[] {
   const repository = getDataRepository();
-  return repository
-    .listStallPosts()
+  const postsById = new Map<string, StallPost>();
+  for (const post of repository.listStallPosts()) {
+    postsById.set(post.id, post);
+  }
+  for (const post of fallbackRepository.listStallPosts()) {
+    if (!postsById.has(post.id)) {
+      postsById.set(post.id, post);
+    }
+  }
+
+  return [...postsById.values()]
     .map((post) => {
-      const venue = repository.getVenueById(post.venueId);
+      const venue =
+        repository.getVenueById(post.venueId) ?? fallbackRepository.getVenueById(post.venueId);
       const dishes = post.dishIds
-        .map((dishId) => repository.getDishById(dishId))
+        .map((dishId) => repository.getDishById(dishId) ?? fallbackRepository.getDishById(dishId))
         .filter(Boolean) as DishDetail[];
 
       if (!venue) return null;

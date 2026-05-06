@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, type StyleProp, View, type ViewStyle } from "react-native";
 import * as Haptics from "expo-haptics";
 
 import { useHungryTheme } from "@/theme";
@@ -10,9 +10,10 @@ interface ChipProps {
   selected?: boolean;
   onPress?: () => void;
   leftIcon?: ReactNode;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function Chip({ label, selected = false, onPress, leftIcon }: ChipProps) {
+export function Chip({ label, selected = false, onPress, leftIcon, style }: ChipProps) {
   const { palette, radii, spacing, colorScheme } = useHungryTheme();
 
   return (
@@ -39,6 +40,7 @@ export function Chip({ label, selected = false, onPress, leftIcon }: ChipProps) 
           opacity: pressed ? 0.85 : 1,
           justifyContent: "center",
         },
+        style,
       ]}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
@@ -46,8 +48,10 @@ export function Chip({ label, selected = false, onPress, leftIcon }: ChipProps) 
         <AppText
           style={{
             color: selected ? palette.orange : palette.textSecondary,
+            flexShrink: 1,
             fontWeight: selected ? "700" : "500",
           }}
+          numberOfLines={1}
         >
           {label}
         </AppText>

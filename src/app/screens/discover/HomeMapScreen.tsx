@@ -16,7 +16,6 @@ import {
   Map as MapIcon,
   ChevronRight,
   Star,
-  Search,
   Filter,
   Utensils,
   Heart,
@@ -30,7 +29,13 @@ import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { MapSurface, type MapSurfaceMarker, BuildingLegend } from "@/components/map";
-import { AppText, Chip, Button, FeedErrorBoundary, IconButton, Badge } from "@/components/ui";
+import {
+  AppText,
+  Chip,
+  Button,
+  FeedErrorBoundary,
+  ExpandableSearchLauncher,
+} from "@/components/ui";
 import {
   getBuildingById,
   getNearestBuildings,
@@ -40,11 +45,9 @@ import {
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
+import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
-import { StallCard } from "@/components/stall";
-
-import { LinearGradient } from "expo-linear-gradient";
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
 
@@ -110,11 +113,19 @@ export function HomeMapScreen() {
   const repository = getDataRepository();
   const insets = useSafeAreaInsets();
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { width: screenWidth } = useWindowDimensions();
+  const searchQuery = useSearchStore((state) => state.filters.query);
+  const updateSearchQuery = useSearchStore((state) => state.updateQuery);
+  const rememberSearch = useSearchStore((state) => state.rememberSearch);
+  const searchBarWidth = useMemo(
+    () => Math.max(screenWidth - spacing[3] * 2 - 78, 240),
+    [screenWidth, spacing],
+  );
 
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
+  const highlightedStallVenueId = useDiscoveryStore((state) => state.highlightedStallVenueId);
   const mapFilters = useDiscoveryStore((state) => state.mapFilters);
   const toggleMapFilter = useDiscoveryStore((state) => state.toggleMapFilter);
 
@@ -136,90 +147,24 @@ export function HomeMapScreen() {
     });
   }, [activeBuildingRecord, currentLocation]);
 
-  const areaStalls = useMemo(() => {
-    return visibleBuildings.flatMap((b) => repository.listVenuesByBuilding(b.id));
-  }, [repository, visibleBuildings]);
-
   const areaPopularDishes = useMemo(() => {
-    const dishes = areaStalls
+    const allVenues = visibleBuildings.flatMap((b) => repository.listVenuesByBuilding(b.id));
+    return allVenues
       .map((v) => repository.getDishById(v.topDishId))
       .filter((d): d is DishDetail => !!d)
       .slice(0, 10);
+  }, [repository, visibleBuildings]);
 
-    // Fallback for demo purposes if no dishes found nearby
-    if (dishes.length === 0) {
-      return [
-        {
-          id: "demo-1",
-          name: "Wild Truffle Tagliatelle",
-          price: 28,
-          description: "Handmade egg pasta, seasonal black truffle, parmigiano-reggiano emulsion.",
-          imageUrl:
-            "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
-          venueName: "Pasta Express",
-          dietaryFlags: [],
-          tasteTags: [],
-          rating: 4.9,
-          reviewCount: 45,
-          distanceMeters: 120,
-        } as unknown as DishDetail,
-        {
-          id: "demo-2",
-          name: "Burrata & Prosciutto Pizza",
-          price: 24,
-          description: "Wood-fired crust, creamy burrata, 24-month aged prosciutto di parma.",
-          imageUrl:
-            "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80",
-          venueName: "Napoli Pizza",
-          dietaryFlags: [],
-          tasteTags: [],
-          rating: 4.7,
-          reviewCount: 89,
-          distanceMeters: 350,
-        } as unknown as DishDetail,
-      ];
-    }
-    return dishes;
-  }, [repository, areaStalls]);
-
-  const [currentZoom, setCurrentZoom] = useState(15.5);
+  const [currentZoom, setCurrentZoom] = useState(highlightedStallVenueId ? 17.1 : 15.5);
   const [displayMode, setDisplayMode] = useState<"carousel" | "list">("carousel");
   const [showLegend, setShowLegend] = useState(false);
-  const [selectedStallId, setSelectedStallId] = useState<string | null>(null);
 
-  const selectedStall = useMemo(() => {
-    if (!selectedStallId) return null;
-    const allVenues = visibleBuildings.flatMap((b) => repository.listVenuesByBuilding(b.id));
-    return allVenues.find((v) => v.id === selectedStallId) || null;
-  }, [selectedStallId, repository, visibleBuildings]);
-
-  const CAROUSEL_HEIGHT = 160;
+  const CAROUSEL_HEIGHT = 240;
   const MINIMIZED_HEIGHT = 60;
   const FULL_HEIGHT = 620;
 
   const animatedHeight = useRef(new Animated.Value(CAROUSEL_HEIGHT)).current;
   const isMinimized = useRef(false);
-
-  // Width and Snapping Constants
-  const CARD_WIDTH = screenWidth * 0.82; // Slightly wider
-  const CARD_GAP = spacing[3];
-  const SNAP_INTERVAL = CARD_WIDTH + CARD_GAP;
-
-  // Fading logic: carousel fades out as it approaches 30% of screen height
-  const FADE_START = 160;
-  const FADE_END = 240;
-
-  const carouselOpacity = animatedHeight.interpolate({
-    inputRange: [CAROUSEL_HEIGHT, FADE_START, FADE_END],
-    outputRange: [1, 1, 0],
-    extrapolate: "clamp",
-  });
-
-  const gradientOpacity = animatedHeight.interpolate({
-    inputRange: [FADE_START, FADE_END],
-    outputRange: [0, 1],
-    extrapolate: "clamp",
-  });
 
   const snapTo = (height: number) => {
     Animated.spring(animatedHeight, {
@@ -236,21 +181,18 @@ export function HomeMapScreen() {
     navigation.navigate("DishDetail", { dishId: dish.id });
   };
 
+  const submitSearch = useCallback(() => {
+    const trimmed = searchQuery.trim();
+    if (trimmed) {
+      rememberSearch(trimmed);
+    }
+    navigation.navigate("SearchHome");
+  }, [navigation, rememberSearch, searchQuery]);
+
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gestureState) =>
-        Math.abs(gestureState.dy) > 10 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
-      onPanResponderMove: (_, gestureState) => {
-        const newHeight = isMinimized.current
-          ? MINIMIZED_HEIGHT - gestureState.dy
-          : CAROUSEL_HEIGHT - gestureState.dy;
-
-        // Clamp height
-        if (newHeight >= MINIMIZED_HEIGHT && newHeight <= FULL_HEIGHT) {
-          animatedHeight.setValue(newHeight);
-        }
-      },
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 10,
       onPanResponderRelease: (_, gestureState) => {
         if (displayMode === "list") {
           if (gestureState.dy > 100) snapTo(CAROUSEL_HEIGHT);
@@ -262,41 +204,41 @@ export function HomeMapScreen() {
         if (gestureState.dy > 50) {
           snapTo(MINIMIZED_HEIGHT);
           isMinimized.current = true;
-        } else if (
-          gestureState.dy < -50 ||
-          (gestureState.dy < 0 && Math.abs(gestureState.dy) > 50)
-        ) {
+        } else if (gestureState.dy < -50) {
           snapTo(CAROUSEL_HEIGHT);
           isMinimized.current = false;
-        } else {
-          // Snap back
-          snapTo(isMinimized.current ? MINIMIZED_HEIGHT : CAROUSEL_HEIGHT);
         }
       },
     }),
   ).current;
+
+  const edgeBackPanResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_, gestureState) =>
+          gestureState.dx > 12 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5,
+        onPanResponderRelease: (_, gestureState) => {
+          if ((gestureState.dx > 64 || gestureState.vx > 0.35) && navigation.canGoBack()) {
+            navigation.goBack();
+          }
+        },
+      }),
+    [navigation],
+  );
 
   useEffect(() => {
     snapTo(CAROUSEL_HEIGHT);
   }, [displayMode]);
 
   const markers = useMemo<MapSurfaceMarker[]>(() => {
-    const filteredBuildings = visibleBuildings.filter((b) => {
-      if (mapFilters.hawkerOnly && b.type !== "hawker_centre") return false;
-      if (mapFilters.mallOnly && b.type !== "mall") return false;
-      return true;
-    });
-
-    const bMarkers = filteredBuildings.map((b) => ({
+    const bMarkers = visibleBuildings.map((b) => ({
       id: b.id,
       label: b.name.replace(" Food Centre", ""),
       coordinate: b.coordinate,
       accent: b.type === "hawker_centre" ? palette.orange : palette.teal,
       type: b.type,
-      // For V2: Imagine we have trending info. Let's mock it for Maxwell.
-      isTrending: b.id === "hc-maxwell" && mapFilters.trendingOnly,
     }));
-
     if (currentZoom > 16.5) {
       const venues = repository.listVenuesByBuilding(activeBuildingRecord.id);
       const stallMarkers = venues.map((v, index) => {
@@ -309,13 +251,21 @@ export function HomeMapScreen() {
             latitude: activeBuildingRecord.coordinate.latitude + latitudeOffset,
             longitude: activeBuildingRecord.coordinate.longitude + longitudeOffset,
           },
-          accent: palette.orange,
+          accent: v.id === highlightedStallVenueId ? palette.error : palette.orange,
+          isTrending: v.id === highlightedStallVenueId,
         };
       });
       return [...bMarkers, ...stallMarkers];
     }
     return bMarkers;
-  }, [palette, repository, visibleBuildings, currentZoom, activeBuildingRecord, mapFilters]);
+  }, [
+    palette,
+    repository,
+    visibleBuildings,
+    currentZoom,
+    activeBuildingRecord,
+    highlightedStallVenueId,
+  ]);
 
   const cameraPadding = useMemo(
     () => ({
@@ -336,23 +286,6 @@ export function HomeMapScreen() {
           zoomLevel={currentZoom}
           markers={markers}
           cameraPadding={cameraPadding}
-          selectedMarkerId={selectedBuilding?.id}
-          onMarkerPress={(id) => {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            if (id.startsWith("stall-")) {
-              const venueId = id.replace("stall-", "");
-              setSelectedStallId(venueId);
-            } else {
-              setSelectedStallId(null);
-              const building = visibleBuildings.find((b) => b.id === id);
-              if (building) {
-                setSelectedBuilding(toSummary(building));
-                if (currentZoom < 16) setCurrentZoom(17);
-              }
-            }
-            snapTo(CAROUSEL_HEIGHT);
-            isMinimized.current = false;
-          }}
           onMapPress={() => {
             if (displayMode === "carousel") {
               snapTo(isMinimized.current ? CAROUSEL_HEIGHT : MINIMIZED_HEIGHT);
@@ -360,8 +293,23 @@ export function HomeMapScreen() {
             }
           }}
           onZoomChange={setCurrentZoom}
+          selectedMarkerId={
+            highlightedStallVenueId ? `stall-${highlightedStallVenueId}` : undefined
+          }
         />
       </FeedErrorBoundary>
+
+      <View
+        {...edgeBackPanResponder.panHandlers}
+        pointerEvents="box-only"
+        style={[
+          styles.edgeBackGestureZone,
+          {
+            width: Math.max(28, insets.left + 24),
+            zIndex: zIndex.overlay + 1,
+          },
+        ]}
+      />
 
       {/* Top Floating UI */}
       <SafeAreaView
@@ -388,36 +336,22 @@ export function HomeMapScreen() {
               alignItems: "center",
             }}
           >
+            <ExpandableSearchLauncher
+              query={searchQuery}
+              onQueryChange={updateSearchQuery}
+              onSubmit={submitSearch}
+              onClear={() => updateSearchQuery("")}
+              placeholder="Search dishes or stalls..."
+              expandedWidth={searchBarWidth}
+              iconAlignment="left"
+              barHeight={52}
+              backgroundColor={palette.surface}
+              borderColor={palette.border}
+              textColor={palette.text}
+              placeholderColor={palette.textSecondary}
+            />
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Search dishes or stalls"
-              onPress={() => navigation.navigate("SearchHome")}
-              style={[
-                styles.searchBar,
-                {
-                  backgroundColor: palette.surface,
-                  borderRadius: radii.pill,
-                  flex: 1,
-                  ...shadows.floating,
-                },
-              ]}
-            >
-              <Search color={palette.textMuted} size={20} />
-              <AppText tone="secondary" style={{ flex: 1 }}>
-                Search dishes or stalls...
-              </AppText>
-              <View
-                style={{
-                  width: 1,
-                  height: 20,
-                  backgroundColor: palette.border,
-                }}
-              />
-              <Filter color={palette.orange} size={20} />
-            </Pressable>
-            <IconButton
-              variant="floating"
-              size={52}
               accessibilityLabel={
                 displayMode === "carousel" ? "Switch to list view" : "Switch to carousel view"
               }
@@ -426,14 +360,24 @@ export function HomeMapScreen() {
                 setDisplayMode(next);
                 void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }}
-              icon={
-                displayMode === "carousel" ? (
-                  <Utensils color={palette.orange} size={22} />
-                ) : (
-                  <MapIcon color={palette.orange} size={22} />
-                )
-              }
-            />
+              style={[
+                {
+                  width: 52,
+                  height: 52,
+                  borderRadius: 26,
+                  backgroundColor: palette.surface,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  ...shadows.floating,
+                },
+              ]}
+            >
+              {displayMode === "carousel" ? (
+                <Utensils color={palette.orange} size={22} />
+              ) : (
+                <MapIcon color={palette.orange} size={22} />
+              )}
+            </Pressable>
           </View>
           <ScrollView
             horizontal
@@ -452,25 +396,14 @@ export function HomeMapScreen() {
               }
             />
             <Chip
-              label="Trending"
-              selected={mapFilters.trendingOnly}
-              onPress={() => toggleMapFilter("trendingOnly")}
-              leftIcon={
-                <Flame
-                  size={14}
-                  color={mapFilters.trendingOnly ? palette.orange : palette.textMuted}
-                />
-              }
-            />
-            <Chip
               label="Hawker"
               selected={mapFilters.hawkerOnly}
               onPress={() => toggleMapFilter("hawkerOnly")}
             />
             <Chip
-              label="Mall"
-              selected={mapFilters.mallOnly}
-              onPress={() => toggleMapFilter("mallOnly")}
+              label="Top Rated"
+              selected={mapFilters.topRated}
+              onPress={() => toggleMapFilter("topRated")}
             />
             <Chip
               label="Open Now"
@@ -481,113 +414,69 @@ export function HomeMapScreen() {
         </View>
       </SafeAreaView>
 
-      {/* Floating Spotlight Carousel - Anchored to card top */}
-      <Animated.View
+      {/* Floating Buttons & Legend */}
+      <View
         style={{
           position: "absolute",
-          bottom: animatedHeight, // Direct anchor
-          left: 0,
-          right: 0,
-          zIndex: zIndex.sheet - 1,
-          opacity: carouselOpacity,
-          transform: [{ translateY: -spacing["1.5"] }], // Tighter, constant gap
-          paddingBottom: spacing["1.5"],
+          bottom: CAROUSEL_HEIGHT + spacing[4],
+          left: spacing[4],
+          right: spacing[4],
+          zIndex: zIndex.overlay,
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
         }}
         pointerEvents="box-none"
       >
-        {!selectedStall && (
-          <View style={{ width: screenWidth }}>
-            <ScrollView
-              horizontal
-              snapToInterval={SNAP_INTERVAL}
-              snapToAlignment="center"
-              decelerationRate="fast"
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                paddingHorizontal: (screenWidth - CARD_WIDTH) / 2,
-                gap: CARD_GAP,
-                paddingBottom: spacing[2],
-              }}
-              {...panResponder.panHandlers}
-            >
-              {areaPopularDishes.map((dish) => (
-                <View key={dish.id} style={{ width: CARD_WIDTH }}>
-                  <Pressable
-                    onPress={() => handleCardPress(dish)}
-                    style={[
-                      {
-                        backgroundColor: palette.surface,
-                        borderRadius: radii.xl,
-                        overflow: "hidden",
-                      },
-                      shadows.floating,
-                    ]}
-                  >
-                    <View style={{ height: 120 }}>
-                      <Image
-                        source={{ uri: dish.imageUrl }}
-                        style={StyleSheet.absoluteFill}
-                        contentFit="cover"
-                      />
-                      <View style={{ position: "absolute", top: 12, left: 12 }}>
-                        <Badge label="TOP PICK" tone="orange" />
-                      </View>
-                    </View>
-                    <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          alignItems: "flex-start",
-                        }}
-                      >
-                        <AppText
-                          variant="bodyBold"
-                          numberOfLines={1}
-                          style={{ flex: 1, marginRight: spacing[2], fontSize: 18 }}
-                        >
-                          {dish.name}
-                        </AppText>
-                        <AppText variant="bodyBold" style={{ color: palette.orange, fontSize: 18 }}>
-                          ${Math.round(dish.price)}
-                        </AppText>
-                      </View>
-                      <AppText
-                        variant="micro"
-                        tone="secondary"
-                        numberOfLines={2}
-                        style={{ lineHeight: 16 }}
-                      >
-                        {dish.description ||
-                          "Handmade with fresh ingredients and seasonal spices for an authentic taste."}
-                      </AppText>
-                    </View>
-                  </Pressable>
+        <View style={{ gap: spacing[3], alignItems: "flex-start" }}>
+          {showLegend && <BuildingLegend />}
+          <Pressable
+            onPress={() => {
+              setShowLegend(!showLegend);
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+            style={[
+              {
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: palette.surface,
+                alignItems: "center",
+                justifyContent: "center",
+                ...shadows.floating,
+              },
+            ]}
+          >
+            <MapIcon color={palette.orange} size={20} />
+          </Pressable>
+        </View>
 
-                  {/* Directional Fade Overlay - Simulates Top-to-Bottom Fade */}
-                  <Animated.View
-                    style={[
-                      StyleSheet.absoluteFill,
-                      { opacity: gradientOpacity, borderRadius: radii.xl, overflow: "hidden" },
-                    ]}
-                    pointerEvents="none"
-                  >
-                    <LinearGradient
-                      colors={[palette.bg, "transparent"]}
-                      style={StyleSheet.absoluteFill}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 0, y: 0.6 }}
-                    />
-                  </Animated.View>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-      </Animated.View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Recenter map to default building"
+          onPress={() => {
+            setSelectedBuilding(toSummary(getBuildingById(DEFAULT_BUILDING_ID)!));
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }}
+          style={[
+            {
+              width: 52,
+              height: 52,
+              borderRadius: 26,
+              backgroundColor: palette.surface,
+              alignItems: "center",
+              justifyContent: "center",
+              ...shadows.floating,
+            },
+          ]}
+        >
+          <LocateFixed color={palette.orange} size={24} />
+        </Pressable>
+      </View>
 
       {/* Bottom UI Container */}
       <Animated.View
+        {...panResponder.panHandlers}
         style={[
           styles.animatedCard,
           {
@@ -595,163 +484,159 @@ export function HomeMapScreen() {
             height: animatedHeight,
             zIndex: zIndex.sheet,
             bottom: 0,
+            paddingHorizontal: displayMode === "list" ? spacing[4] : 0,
             borderTopLeftRadius: radii.xl,
             borderTopRightRadius: radii.xl,
             ...shadows.floating,
           },
         ]}
       >
-        {/* Interactive Header Area for Dragging */}
-        <View {...panResponder.panHandlers}>
-          <View style={styles.dragHandle}>
-            <View style={[styles.dragBar, { backgroundColor: palette.border }]} />
-          </View>
-
-          {activeBuildingRecord && !selectedStall && (
-            <View
-              style={{ paddingHorizontal: spacing[4], paddingBottom: spacing[2], gap: spacing[3] }}
-            >
-              <View>
-                <AppText variant="h2" numberOfLines={1}>
-                  {activeBuildingRecord.name}
-                </AppText>
-                <AppText variant="micro" tone="secondary" numberOfLines={1}>
-                  {activeBuildingRecord.type.replace("_", " ")} · {activeBuildingRecord.address}
-                </AppText>
-                <View style={{ flexDirection: "row", gap: spacing[2], marginTop: 2 }}>
-                  <AppText variant="micro" tone="secondary">
-                    {activeBuildingRecord.openStalls} / {activeBuildingRecord.totalStalls} Stalls
-                    Open
-                  </AppText>
-                </View>
-              </View>
-              <Button
-                label="View Directory"
-                onPress={() =>
-                  navigation.navigate("VenueDirectory", { venueId: activeBuildingRecord.id })
-                }
-                style={{ backgroundColor: palette.orange }}
-              />
-            </View>
-          )}
+        <View style={styles.dragHandle}>
+          <View style={[styles.dragBar, { backgroundColor: palette.border }]} />
         </View>
 
-        <View style={{ flex: 1 }}>
-          {selectedStall ? (
-            <View
-              style={{
-                paddingHorizontal: spacing[4],
-                paddingBottom: insets.bottom + spacing[4],
-                gap: spacing[4],
-              }}
-            >
-              <StallCard
-                venue={selectedStall}
-                topDish={
-                  selectedStall.topDishId
-                    ? repository.getDishById(selectedStall.topDishId)
-                    : undefined
-                }
-                onPress={() => navigation.navigate("StallDetail", { venueId: selectedStall.id })}
-              />
-              <Button
-                label="View Full Stall Details"
-                onPress={() => navigation.navigate("StallDetail", { venueId: selectedStall.id })}
-              />
-            </View>
-          ) : (
-            <>
-              {displayMode === "list" && (
-                <ScrollView
-                  contentContainerStyle={{
-                    paddingHorizontal: spacing[4],
-                    gap: spacing[4],
-                    paddingBottom: insets.bottom + spacing[12],
+        {displayMode === "list" ? (
+          <ScrollView
+            contentContainerStyle={{
+              paddingHorizontal: spacing[3],
+              gap: spacing[4],
+              paddingBottom: insets.bottom + spacing[12],
+            }}
+          >
+            <AppText variant="h2" style={{ marginBottom: spacing[2] }}>
+              Nearby Stalls
+            </AppText>
+            {visibleBuildings
+              .flatMap((b) => repository.listVenuesByBuilding(b.id))
+              .map((venue) => (
+                <Pressable
+                  key={venue.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${venue.name} stall details`}
+                  onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
+                  style={{
+                    backgroundColor: palette.bgSoft,
+                    borderRadius: radii.md,
+                    padding: spacing[3],
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: spacing[3],
+                    borderWidth: 1,
+                    borderColor: palette.border,
                   }}
                 >
-                  <AppText variant="h2" style={{ marginBottom: spacing[2], marginTop: spacing[2] }}>
-                    Nearby Stalls
-                  </AppText>
-                  {visibleBuildings
-                    .flatMap((b) => repository.listVenuesByBuilding(b.id))
-                    .map((venue) => (
-                      <Pressable
-                        key={venue.id}
-                        onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
-                        style={{
-                          backgroundColor: palette.bgSoft,
-                          borderRadius: radii.md,
-                          padding: spacing[3],
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: spacing[3],
-                          borderWidth: 1,
-                          borderColor: palette.border,
-                        }}
-                      >
-                        <View style={{ flex: 1, gap: spacing[1] }}>
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                            }}
-                          >
-                            <AppText variant="h3">{venue.name}</AppText>
-                            <CrowdIndicator level={venue.liveCrowd} />
-                          </View>
-                          <AppText variant="micro" tone="secondary">
-                            {venue.floor} {venue.unitNumber} · {venue.operatingHours}
-                          </AppText>
-                        </View>
-                        <ChevronRight size={16} color={palette.orange} />
-                      </Pressable>
-                    ))}
-                </ScrollView>
-              )}
-            </>
-          )}
-        </View>
-      </Animated.View>
-
-      {/* Floating Action Buttons - Following the card top */}
-      <Animated.View
-        style={{
-          position: "absolute",
-          bottom: Animated.add(animatedHeight, spacing[4]),
-          right: spacing[4],
-          zIndex: zIndex.overlay,
-        }}
-        pointerEvents="box-none"
-      >
-        <IconButton
-          variant="floating"
-          size={52}
-          accessibilityLabel="Recenter map"
-          onPress={() => {
-            setSelectedStallId(null);
-            setSelectedBuilding(toSummary(getBuildingById(DEFAULT_BUILDING_ID)!));
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          }}
-          icon={<LocateFixed color={palette.orange} size={24} />}
-        />
+                  <View style={{ flex: 1, gap: spacing[1] }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <AppText variant="h3">{venue.name}</AppText>
+                      <CrowdIndicator level={venue.liveCrowd} />
+                    </View>
+                    <AppText variant="micro" tone="secondary">
+                      {venue.floor} {venue.unitNumber} · {venue.operatingHours}
+                    </AppText>
+                  </View>
+                  <ChevronRight size={16} color={palette.orange} />
+                </Pressable>
+              ))}
+          </ScrollView>
+        ) : (
+          <Animated.View
+            style={{
+              height: CAROUSEL_HEIGHT,
+              paddingTop: spacing[2],
+              transform: [
+                {
+                  translateY: animatedHeight.interpolate({
+                    inputRange: [MINIMIZED_HEIGHT, CAROUSEL_HEIGHT],
+                    outputRange: [CAROUSEL_HEIGHT - MINIMIZED_HEIGHT, 0],
+                    extrapolate: "clamp",
+                  }),
+                },
+              ],
+            }}
+          >
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                gap: spacing[4],
+                paddingHorizontal: spacing[4],
+              }}
+            >
+              {areaPopularDishes.map((dish) => (
+                <Pressable
+                  key={dish.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Preview ${dish.name} at ${dish.venueName}`}
+                  onPress={() => handleCardPress(dish)}
+                  style={[
+                    {
+                      backgroundColor: palette.surface,
+                      borderRadius: radii.xl,
+                      overflow: "hidden",
+                      width: 320,
+                    },
+                    shadows.floating,
+                  ]}
+                >
+                  <View style={{ height: 160 }}>
+                    <AnimatedReanimated.View style={StyleSheet.absoluteFill}>
+                      <Image
+                        source={{ uri: dish.imageUrl }}
+                        style={StyleSheet.absoluteFill}
+                        contentFit="cover"
+                      />
+                    </AnimatedReanimated.View>
+                    {dish.liveCrowd && (
+                      <View style={{ position: "absolute", top: 12, right: 12 }}>
+                        <CrowdIndicator level={dish.liveCrowd} />
+                      </View>
+                    )}
+                  </View>
+                  <View style={{ padding: spacing[3], gap: spacing[1] }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <AppText style={{ fontWeight: "800", flex: 1 }} numberOfLines={1}>
+                        {dish.name}
+                      </AppText>
+                      <AppText style={{ color: palette.orange, fontWeight: "800" }}>
+                        S${Math.round(dish.price)}
+                      </AppText>
+                    </View>
+                    <AppText variant="micro" tone="secondary">
+                      {dish.venueName}
+                    </AppText>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </Animated.View>
+        )}
       </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    height: 52,
-    gap: 8,
-  },
   animatedCard: {
     position: "absolute",
     left: 0,
     right: 0,
+  },
+  edgeBackGestureZone: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    top: 0,
   },
   dragHandle: {
     width: "100%",

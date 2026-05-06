@@ -1,9 +1,10 @@
-import { Pressable, ScrollView, Share, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Heart, MapPin, Share2, Star, ChevronLeft, CircleHelp } from "lucide-react-native";
+import { Heart, MapPin, Send, Star, ChevronLeft, CircleHelp } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated from "react-native-reanimated";
 
@@ -33,9 +34,11 @@ import {
 } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSocialStore } from "@/store/useSocialStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 
 function StallDetailSkeleton() {
   const { spacing, radii, palette } = useHungryTheme();
@@ -95,6 +98,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const shareSheetRef = useRef<BottomSheetModal>(null);
+  const incrementShare = useSocialStore((state) => state.incrementShare);
   const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(null);
   const [replyDraftByReviewId, setReplyDraftByReviewId] = useState<Record<string, string>>({});
   const [localRepliesByReviewId, setLocalRepliesByReviewId] = useState<
@@ -102,6 +107,27 @@ export function StallDetailScreen({ navigation, route }: Props) {
   >({});
   const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
   const [isClaimPending, setIsClaimPending] = useState(() => hasPendingClaimForProfile(profile.id));
+  const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+
+  const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
+    return {
+      reviewId: `stall-${venue?.id ?? ""}`,
+      postId: venue?.id ?? "",
+      title: venue?.name ?? "Stall",
+      subtitle: `${building?.name ?? "Hungry"} · ${venue?.unitNumber ?? ""}`.trim(),
+      imageUrl: leadDish?.imageUrl ?? "",
+      authorName: profile.displayName,
+      message: `Check out ${venue?.name ?? "this stall"} at ${building?.name ?? "Hungry"}!`,
+      link: `https://hungry.sg/stall/${venue?.id ?? ""}`,
+    };
+  }, [
+    building?.name,
+    leadDish?.imageUrl,
+    profile.displayName,
+    venue?.id,
+    venue?.name,
+    venue?.unitNumber,
+  ]);
 
   useEffect(() => {
     setIsClaimPending(hasPendingClaimForProfile(profile.id));
@@ -162,15 +188,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
     }));
   };
 
-  const handleShare = async () => {
-    try {
-      await Share.share({
-        message: `Check out ${venue.name} at ${building?.name ?? "Hungry"}!`,
-        url: `https://hungry.sg/stall/${venue.id}`,
-      });
-    } catch (error) {
-      console.error("Sharing failed", error);
+  const openShareSheet = () => {
+    if (!venue) {
+      return;
     }
+
+    setActiveShareReview(shareReviewTarget);
+    requestAnimationFrame(() => {
+      shareSheetRef.current?.present();
+    });
   };
 
   const handleClaimThisStall = async () => {
@@ -277,8 +303,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
               <IconButton
                 variant="floating"
                 accessibilityLabel="Share stall"
-                onPress={handleShare}
-                icon={<Share2 color={palette.text} size={20} />}
+                onPress={openShareSheet}
+                icon={<Send color={palette.text} size={20} />}
               />
             </View>
           </View>
@@ -653,6 +679,18 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 },
               },
             ]}
+          />
+
+          <ReviewShareSheet
+            activeReview={activeShareReview}
+            innerRef={shareSheetRef}
+            bottomInset={insets.bottom}
+            onDismiss={() => {
+              setActiveShareReview(null);
+            }}
+            onShared={(reviewId) => {
+              incrementShare(reviewId);
+            }}
           />
         </View>
       </SafeAreaView>

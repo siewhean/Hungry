@@ -175,6 +175,10 @@ export function LocationPermissionScreen({ navigation }: Props) {
           paddingHorizontal: ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
         }}
       >
+        <AppText variant="micro" tone="muted" style={{ textAlign: "center" }}>
+          Hungry collects your approximate device location only while you use the app to rank nearby
+          dishes and map results. You can skip this and enter an area manually.
+        </AppText>
         <Button label="Continue" onPress={allowDeviceLocation} style={shadows.floating} />
         <Button
           label="Enter Manually"

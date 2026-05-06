@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { View, Pressable, StyleSheet, Dimensions } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import { House, Compass, BookOpenText, NotebookPen, User } from "lucide-react-native";
+import type { MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
+import { House, Compass, BookOpenText, Plus, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { useAnimatedStyle, withTiming, withDelay } from "react-native-reanimated";
 
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
-import { DiscoverHomeScreenV2 } from "@/app/screens/discover/DiscoverHomeScreenV2";
-import { ReviewScreen } from "@/app/screens/review/ReviewScreen";
+import { DiscoverHomeScreen } from "@/app/screens/discover/DiscoverHomeScreen";
 import { ReviewFeedScreen } from "@/app/screens/review/ReviewFeedScreen";
 import { ProfileStack } from "@/app/screens/profile/ProfileStack";
+import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
 import type { MainTabParamList } from "./navigationTypes";
@@ -22,10 +23,6 @@ function HomeWrapper() {
 
 function ReviewWrapper() {
   return <ReviewFeedScreen />;
-}
-
-function RateWrapper(props: any) {
-  return <ReviewScreen {...props} />;
 }
 
 function CustomTabBar({ state, descriptors, navigation }: any) {
@@ -51,6 +48,14 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const routeByName = new Map(state.routes.map((route: any) => [route.name, route]));
+  const tabItems = [
+    { key: "Home", route: routeByName.get("Home"), icon: House, label: "Home" },
+    { key: "Discover", route: routeByName.get("Discover"), icon: Compass, label: "Discover" },
+    { key: "Create", isCreateAction: true, icon: Plus, label: "Create post" },
+    { key: "Review", route: routeByName.get("Review"), icon: BookOpenText, label: "Review" },
+    { key: "Profile", route: routeByName.get("Profile"), icon: User, label: "Profile" },
+  ].filter((item) => item.isCreateAction || item.route);
 
   return (
     <View
@@ -58,16 +63,31 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         styles.tabBarContainer,
         {
           backgroundColor: palette.bg,
-          height: 70 + Math.max(insets.bottom, spacing[2]),
+          height: 62 + Math.max(insets.bottom, spacing[2]),
           paddingBottom: Math.max(insets.bottom, spacing[2]),
-          paddingTop: spacing[4], // Increased top padding
+          paddingTop: spacing[2],
         },
       ]}
     >
-      {state.routes.map((route: any, index: number) => {
-        const isFocused = state.index === index;
+      {tabItems.map((item: any) => {
+        const route = item.route;
+        const isCreateAction = item.isCreateAction === true;
+        const routeIndex = route ? state.routes.indexOf(route) : -1;
+        const isFocused = !isCreateAction && state.index === routeIndex;
 
         const onPress = () => {
+          if (isCreateAction) {
+            if (!isAuthenticated) {
+              setReturnRoute({ name: "PostComposerV2" });
+              navigation.navigate("AuthStack", { screen: "Login" });
+              return;
+            }
+
+            navigation.getParent()?.navigate("PostComposerV2");
+            resetTimer();
+            return;
+          }
+
           const event = navigation.emit({
             type: "tabPress",
             target: route.key,
@@ -76,13 +96,9 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
           if (!isFocused && !event.defaultPrevented) {
             // Special handling for protected routes
-            if ((route.name === "Rate" || route.name === "Profile") && !isAuthenticated) {
+            if (route.name === "Profile" && !isAuthenticated) {
               setReturnRoute(route.name);
               navigation.navigate("AuthStack", { screen: "Login" });
-              return;
-            }
-            if (route.name === "Rate") {
-              navigation.getParent()?.navigate("PostComposerV2");
               return;
             }
             navigation.navigate(route.name);
@@ -90,16 +106,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           resetTimer();
         };
 
-        const Icon =
-          route.name === "Home"
-            ? House
-            : route.name === "Discover"
-              ? Compass
-              : route.name === "Review"
-                ? BookOpenText
-                : route.name === "Rate"
-                  ? NotebookPen
-                  : User;
+        const Icon = item.icon;
 
         const activeColor = palette.orange;
         const inactiveColor = palette.textMuted;
@@ -107,13 +114,42 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
         return (
           <Pressable
-            key={route.key}
+            key={isCreateAction ? "create-post-action" : route.key}
             onPress={onPress}
             style={styles.tabItem}
             accessibilityRole="button"
             accessibilityState={isFocused ? { selected: true } : {}}
+            accessibilityLabel={item.label}
           >
-            <Icon color={currentColor} size={30} />
+            <View
+              style={
+                isCreateAction
+                  ? [
+                      styles.createButton,
+                      {
+                        backgroundColor: palette.orange,
+                        borderRadius: radii.pill,
+                      },
+                    ]
+                  : styles.iconSlot
+              }
+            >
+              <Icon color={isCreateAction ? palette.white : currentColor} size={26} />
+            </View>
+            {isCreateAction ? null : (
+              <AppText
+                variant="micro"
+                numberOfLines={1}
+                style={{
+                  color: currentColor,
+                  fontSize: 10,
+                  fontWeight: isFocused ? "800" : "700",
+                  lineHeight: 12,
+                }}
+              >
+                {item.label}
+              </AppText>
+            )}
           </Pressable>
         );
       })}
@@ -126,16 +162,15 @@ export function SwipeableTabNavigator() {
     <Tab.Navigator
       id="Tabs"
       tabBarPosition="bottom"
-      tabBar={(props) => <CustomTabBar {...props} />}
+      tabBar={(props: MaterialTopTabBarProps) => <CustomTabBar {...props} />}
       screenOptions={{
         swipeEnabled: true,
         animationEnabled: false,
       }}
     >
       <Tab.Screen name="Home" component={HomeWrapper} />
-      <Tab.Screen name="Discover" component={DiscoverHomeScreenV2} />
+      <Tab.Screen name="Discover" component={DiscoverHomeScreen} />
       <Tab.Screen name="Review" component={ReviewWrapper} />
-      <Tab.Screen name="Rate" component={RateWrapper} />
       <Tab.Screen name="Profile" component={ProfileStack} />
     </Tab.Navigator>
   );
@@ -152,5 +187,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    gap: 2,
+  },
+  iconSlot: {
+    alignItems: "center",
+    height: 28,
+    justifyContent: "center",
+    width: 40,
+  },
+  createButton: {
+    alignItems: "center",
+    height: 40,
+    justifyContent: "center",
+    width: 40,
   },
 });

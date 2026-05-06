@@ -14,9 +14,3 @@ major_version = 17
 
 [functions.guest-sessions]
 verify_jwt = false
-
-[functions.ingest-menu-photo]
-verify_jwt = true
-
-[functions.ops-dishes-draft]
-verify_jwt = true

@@ -80,14 +80,39 @@ export function MerchantProfileScreen() {
         </View>
 
         <Section title="Basic Info">
-          <ProfileItem icon={MapPin} label="Location" value="Maxwell Food Centre #01-15" />
-          <ProfileItem icon={Clock} label="Operating Hours" value="Daily, 10am - 8pm" />
-          <ProfileItem icon={Phone} label="Contact" value="+65 9123 4567" />
+          <ProfileItem
+            icon={MapPin}
+            label="Location"
+            value="Maxwell Food Centre #01-15"
+            onPress={() => navigation.navigate("BusinessProfileEditor" as any)}
+          />
+          <ProfileItem
+            icon={Clock}
+            label="Operating Hours"
+            value="Daily, 10am - 8pm"
+            onPress={() => navigation.navigate("BusinessProfileEditor" as any)}
+          />
+          <ProfileItem
+            icon={Phone}
+            label="Contact"
+            value="+65 9123 4567"
+            onPress={() => navigation.navigate("BusinessProfileEditor" as any)}
+          />
         </Section>
 
         <Section title="Payouts & Billing">
-          <ProfileItem icon={CreditCard} label="Bank Account" value="DBS **** 8821" />
-          <ProfileItem icon={SettingsIcon} label="Platform Fees" value="1.5% Hungry Fee" />
+          <ProfileItem
+            icon={CreditCard}
+            label="Bank Account"
+            value="DBS **** 8821"
+            onPress={() => navigation.navigate("MerchantSettings" as any)}
+          />
+          <ProfileItem
+            icon={SettingsIcon}
+            label="Platform Fees"
+            value="1.5% Hungry Fee"
+            onPress={() => navigation.navigate("MerchantSettings" as any)}
+          />
         </Section>
 
         <View style={{ marginTop: spacing[8], gap: spacing[3] }}>

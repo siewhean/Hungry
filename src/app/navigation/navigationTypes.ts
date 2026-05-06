@@ -27,6 +27,9 @@ export type ProfileStackParamList = {
   ProfilePremium: undefined;
   Favourites: undefined;
   ReviewHistory: undefined;
+  Followers: undefined;
+  Following: undefined;
+  VisitedStalls: undefined;
   Settings: undefined;
   SocialGrid: { type: "liked" | "saved" };
   SocialPostDetail: { postId: string; type: "liked" | "saved" };
@@ -81,8 +84,23 @@ export type RootStackParamList = {
   StallDetail: { venueId?: string; id?: string };
   MerchantClaimExplainer: undefined;
   DishDetail: { dishId?: string; id?: string };
+  DishDetailV2: { dishId?: string; id?: string };
   SearchHome: undefined;
-  SearchResults: { browseMode?: "dishes" | "stalls" } | undefined;
+  SearchResults:
+    | {
+        browseMode?: "dishes" | "stalls";
+        initialQuery?: string;
+        initialFilter?:
+          | "All"
+          | "Local"
+          | "Halal"
+          | "Japanese"
+          | "Western"
+          | "Noodles"
+          | "Rice"
+          | "Spicy";
+      }
+    | undefined;
   BrowseDishes: undefined;
   BrowseStalls: undefined;
   TasteFilter: undefined;
@@ -96,7 +114,7 @@ export type RootStackParamList = {
   ActivityInbox: { initialTab?: "messages" | "updates" } | undefined;
   ActivityPostDetail: { postId: string; updateId?: string };
   DirectMessages: undefined;
-  ChatDetail: { chatId: string; name: string; avatar: string };
+  ChatDetail: { chatId: string; name: string; avatar: string; isOnline?: boolean };
   Crave: undefined;
   MusicSelection: undefined;
   DishDetailStandard: { dishId: string };
@@ -108,7 +126,9 @@ export type RootStackParamList = {
   Offline: undefined;
   NotFound: { title?: string; body?: string } | undefined;
   Post: { venueId?: string; dishId?: string } | undefined;
-  QuickBites: undefined;
+  QuickBites:
+    | { collection?: "quickBites" | "trending" | "editorChoice" | "budget" | "lateNight" }
+    | undefined;
   DeveloperLauncher: undefined;
   Favourites: undefined;
   ReviewHistory: undefined;

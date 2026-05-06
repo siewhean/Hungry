@@ -5,18 +5,28 @@
 
 ---
 
+## Verification Budget
+
+Run the smallest useful check for the change. Small iterative builds do not require full QA/QC, `npm run ios`, the full test suite, or default `npm run typecheck`.
+
+| Change size | Examples | Expected checks |
+|-------------|----------|-----------------|
+| Small iterative | Copy, spacing, styling, docs, one-screen polish, narrow follow-up fixes | No broad checks by default; run a focused command only if it directly covers the change, or state "not run — small iterative change" |
+| Medium bounded | A few files with logic, props, store usage, route params, or behavior | Focused contract/unit test; add `npm run typecheck` only when TS contracts/imports/props changed |
+| Broad/risky | Shared stores/services, navigation, auth, Supabase, dependencies, native config, many files, release gates | Typecheck, relevant tests, dependency/native health, and simulator/manual smoke as applicable |
+
 ## Validation Gate Sequence
 
-Run in this order. Never skip a gate to move forward.
+When broad/risky verification is warranted, run in this order.
 
 ```
 Gate 1: Type Check      → npm run typecheck
 Gate 2: Dep Health      → npx expo-doctor          (after dep changes only)
 Gate 3: Unit Tests      → npm run test              (after component/logic changes)
-Gate 4: Manual Smoke    → npm run ios               (after screen/flow changes)
+Gate 4: Manual Smoke    → npm run ios               (after native/runtime/navigation-risk changes)
 ```
 
-**A task is NOT complete until Gate 1 and Gate 3 pass.**
+**Small iterative changes are complete with a focused check or an explicit "not run — small iterative change" note. Broad/risky tasks are not complete until the relevant gates pass.**
 
 ---
 
@@ -25,6 +35,7 @@ Gate 4: Manual Smoke    → npm run ios               (after screen/flow changes
 | Command | `npm run typecheck` |
 |---------|-------------------|
 | Expected | Exit 0, no errors |
+| When required | Broad/risky changes, commits, release gates, or TS contract/import/prop changes |
 | On failure | Fix type errors immediately — do not proceed |
 | Common causes | Missing type annotations, wrong prop types, unresolved imports, `any` usage |
 
@@ -59,7 +70,7 @@ Gate 4: Manual Smoke    → npm run ios               (after screen/flow changes
 
 | Command | `npm run ios` |
 |---------|-------------|
-| When required | After any screen or navigation change |
+| When required | Native/runtime/navigation-risk changes, release smoke, or explicit user request |
 | Checklist | See smoke test checklist below |
 
 ---
@@ -248,9 +259,9 @@ it('DishCard renders dish name', () => {
 2. Read the error message fully — do not guess
 3. Locate the source file (use Grep or Glob to find the exact location)
 4. Apply the minimal fix
-5. Run Gate 1 (typecheck) — verify fix doesn't break types
-6. Run Gate 3 (tests) — verify fix doesn't break tests
-7. If visual: run Gate 4 (simulator) — verify correct render
+5. Select the smallest relevant check for the changed surface
+6. Run Gate 1 / Gate 3 only when the fix changes TS contracts or test-covered logic
+7. Run Gate 4 only for native/runtime/navigation-risk changes or explicit request
 8. Record: if correction required was non-obvious → update tasks/lessons.md
 ```
 
@@ -266,9 +277,9 @@ it('DishCard renders dish name', () => {
    - tasks/data-contracts.md (if data work)
 3. Read the existing file(s) that will change
 4. Write the implementation
-5. Run Gate 1 — npm run typecheck (must pass)
+5. Select the smallest relevant verification budget
 6. Write/update tests for changed logic
-7. Run Gate 3 — npm run test (must pass)
+7. Run focused tests or broad gates according to the selected budget
 8. Mark todo item [x]
 9. Update tasks/todo.md review section
 10. Update README.md if status changed
@@ -291,7 +302,7 @@ it('DishCard renders dish name', () => {
 
 ## CI-Equivalent Local Check
 
-Run this before any push:
+Run this before broad pushes or release gates:
 
 ```bash
 npm run typecheck && npm run test

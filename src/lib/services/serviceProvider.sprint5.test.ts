@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getServiceProvider, resetServiceProvider } from "@/lib/services/serviceProvider";
+import {
+  getServiceProvider,
+  resetServiceProvider,
+  setMockServiceProvider,
+} from "@/lib/services/serviceProvider";
 
 const shouldSkipSupabaseRuntime =
   process.env.HUNGRY_DISABLE_ASYNC_STORAGE === "1" ||
@@ -43,3 +47,20 @@ supabaseModeTest(
     resetServiceProvider();
   },
 );
+
+test("service provider can be forced into mock mode for developer shortcuts", () => {
+  const previousDataSource = process.env.HUNGRY_DATA_SOURCE;
+  const previousPublicDataSource = process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE;
+
+  process.env.HUNGRY_DATA_SOURCE = "supabase";
+  process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = "supabase";
+  resetServiceProvider();
+  assert.equal(getServiceProvider().mode, "supabase");
+
+  setMockServiceProvider();
+  assert.equal(getServiceProvider().mode, "mock");
+
+  process.env.HUNGRY_DATA_SOURCE = previousDataSource;
+  process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = previousPublicDataSource;
+  resetServiceProvider();
+});

@@ -10,16 +10,22 @@ import {
   runRecommendationPipeline,
 } from "@/lib/ai/tasteEngine";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
-import { supabaseRepository } from "@/lib/services/supabase/supabaseRepository";
+import {
+  invalidateSupabaseRepositoryCache,
+  supabaseRepository,
+} from "@/lib/services/supabase/supabaseRepository";
 import { getSupabaseClient } from "@/lib/services/supabase/client";
 import {
   assertValidMenuPhotoUpload,
   uploadImageFromUri,
 } from "@/lib/services/supabase/mediaUpload";
+import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
 import type {
   Bite,
   BiteDraft,
+  BlockUserRequest,
   BuildingDetail,
+  ContentReportRequest,
   HungryService,
   ImplicitSignalInput,
   QuizAnswer,
@@ -28,16 +34,30 @@ import type {
   SubmitReviewInput,
 } from "@/lib/services/types";
 import type {
+  AIBusinessInsight,
+  CustomerInteraction,
   DietaryFlag,
   DishDetail,
   HawkerTasteTag,
+  InteractionType,
+  MerchantAccount,
+  MerchantAnalytics,
+  MerchantNotificationPreferences,
+  MerchantOutlet,
+  MerchantPromotion,
+  MerchantRole,
+  MerchantTeamMember,
+  OCRDishDraft,
+  PromotionStatus,
   SearchFilters,
   TasteProfile,
   TasteVector,
   UserProfile,
+  VerificationEvidence,
 } from "@/types/domain";
 
 type Row = Record<string, unknown>;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const DEFAULT_AUTH_PROFILE: UserProfile = {
   id: "supabase-user",
@@ -47,7 +67,13 @@ const DEFAULT_AUTH_PROFILE: UserProfile = {
   dietaryPreferences: [],
   favouriteDishIds: [],
   reviewedDishIds: [],
-  stats: { dishesReviewed: 0, stallsVisited: 0, favouritesCount: 0 },
+  stats: {
+    dishesReviewed: 0,
+    stallsVisited: 0,
+    favouritesCount: 0,
+    followersCount: 0,
+    followingCount: 0,
+  },
 };
 
 const DEFAULT_GUEST_PROFILE: UserProfile = {
@@ -158,9 +184,9 @@ async function ensureCurrentUserProfileRow(client: SupabaseClient): Promise<void
     id: user.id,
     email: user.email ?? null,
     display_name:
-      ((user.user_metadata?.name as string | undefined) ??
-        (user.user_metadata?.full_name as string | undefined) ??
-        null),
+      (user.user_metadata?.name as string | undefined) ??
+      (user.user_metadata?.full_name as string | undefined) ??
+      null,
   };
 
   const { error } = await client.from("user_profiles").upsert(payload, { onConflict: "id" });
@@ -190,6 +216,8 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
       dishesReviewed: asNumber(row.dishes_reviewed) ?? reviewedDishIds.length,
       stallsVisited: asNumber(row.stalls_visited) ?? 0,
       favouritesCount: asNumber(row.favourites_count) ?? favouriteDishIds.length,
+      followersCount: asNumber(row.followers_count) ?? 0,
+      followingCount: asNumber(row.following_count) ?? 0,
     },
   } satisfies UserProfile;
 }
@@ -347,6 +375,289 @@ function getAuthTokensFromCallback(url: string): {
   };
 }
 
+const DEFAULT_MERCHANT_NOTIFICATION_PREFERENCES: MerchantNotificationPreferences = {
+  newReviews: true,
+  lowRatingAlerts: true,
+  newComments: true,
+  promotionUpdates: true,
+  weeklyDigest: true,
+  aiInsights: true,
+};
+
+function asMerchantRole(value: unknown): MerchantRole {
+  const role = asString(value);
+  return role === "manager" || role === "staff" ? role : "owner";
+}
+
+function normalizeAvailabilityFlag(flag: string): string {
+  return flag.toLowerCase().replace(/[\s-]+/g, "_");
+}
+
+function mergeAvailabilityFlag(currentFlags: string[], flag: string, enabled: boolean): string[] {
+  const normalized = normalizeAvailabilityFlag(flag);
+  const withoutFlag = currentFlags.filter(
+    (currentFlag) => normalizeAvailabilityFlag(currentFlag) !== normalized,
+  );
+  return enabled ? [...withoutFlag, flag] : withoutFlag;
+}
+
+function toMerchantVerification(
+  row?: Row,
+  evidence?: VerificationEvidence[],
+): MerchantOutlet["verification"] {
+  return {
+    status: (asString(row?.status) as MerchantOutlet["verification"]["status"]) ?? "not_started",
+    method: (asString(row?.method) as MerchantOutlet["verification"]["method"]) ?? undefined,
+    evidence: evidence ?? [],
+    submittedAt: asString(row?.submitted_at),
+    verifiedAt: asString(row?.verified_at),
+    rejectedAt: asString(row?.rejected_at),
+    rejectionReason: asString(row?.rejection_reason),
+    expiresAt: asString(row?.expires_at),
+  };
+}
+
+async function fetchVerificationForOutlet(
+  client: SupabaseClient,
+  outletId: string,
+): Promise<MerchantOutlet["verification"]> {
+  const { data, error } = await client
+    .from("merchant_verifications")
+    .select("*")
+    .eq("outlet_id", outletId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return toMerchantVerification();
+
+  const { data: evidenceRows, error: evidenceError } = await client
+    .from("merchant_verification_evidence")
+    .select("*")
+    .eq("verification_id", (data as Row).id);
+  if (evidenceError) throw evidenceError;
+
+  const evidence = (Array.isArray(evidenceRows) ? (evidenceRows as Row[]) : []).map((row) => ({
+    id: asString(row.id) ?? "",
+    method: (asString(row.method) as VerificationEvidence["method"]) ?? "video_walkaround",
+    fileUrl: asString(row.file_url) ?? "",
+    uploadedAt: asString(row.uploaded_at) ?? new Date().toISOString(),
+    reviewNote: asString(row.review_note),
+  }));
+  return toMerchantVerification(data as Row, evidence);
+}
+
+async function toMerchantOutlet(client: SupabaseClient, row: Row): Promise<MerchantOutlet> {
+  const venueId = asString(row.venue_id);
+  const venue = venueId ? supabaseRepository.getVenueById(venueId) : undefined;
+  const venueDishes = venueId ? supabaseRepository.listDishesByVenue(venueId) : [];
+  return {
+    id: asString(row.id) ?? "",
+    merchantAccountId: asString(row.merchant_account_id) ?? "",
+    name: asString(row.name) ?? venue?.name ?? "",
+    businessType: (asString(row.business_type) as MerchantOutlet["businessType"]) ?? "hawker_stall",
+    buildingId: asString(row.building_id) ?? venue?.buildingId,
+    unitNumber: asString(row.unit_number) ?? venue?.unitNumber,
+    floor: asString(row.floor) ?? venue?.floor,
+    locationPrivacy:
+      (asString(row.location_privacy) as MerchantOutlet["locationPrivacy"]) ?? "approximate",
+    description: asString(row.description) ?? "",
+    cuisineCategories: [],
+    operatingHours: asString(row.operating_hours) ?? venue?.operatingHours ?? "",
+    galleryUrls: [],
+    socialLinks: [],
+    deliveryLinks: venue?.deliveryLinks ?? [],
+    dietaryLabels: [],
+    tasteTags: [],
+    signatureDishIds: venueDishes.slice(0, 3).map((dish) => dish.id),
+    isLive: asBoolean(row.is_live) ?? false,
+    verification: await fetchVerificationForOutlet(client, asString(row.id) ?? ""),
+  };
+}
+
+async function getMerchantAccountRows(client: SupabaseClient): Promise<Row | null> {
+  const userId = await getCurrentSupabaseUserId();
+  if (!userId) return null;
+
+  const direct = await client
+    .from("merchant_accounts")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (direct.error) throw direct.error;
+  if (direct.data) return direct.data as Row;
+
+  const role = await client
+    .from("merchant_roles")
+    .select("merchant_account_id")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
+  if (role.error) throw role.error;
+  const accountId = asString((role.data as Row | null)?.merchant_account_id);
+  if (!accountId) return null;
+
+  const account = await client
+    .from("merchant_accounts")
+    .select("*")
+    .eq("id", accountId)
+    .maybeSingle();
+  if (account.error) throw account.error;
+  return (account.data as Row | null) ?? null;
+}
+
+async function getSupabaseMerchantAccount(
+  client = requireSupabaseClient(),
+): Promise<MerchantAccount | null> {
+  const account = await getMerchantAccountRows(client);
+  if (!account) return null;
+  const { data: outletRows, error } = await client
+    .from("merchant_outlets")
+    .select("*")
+    .eq("merchant_account_id", account.id);
+  if (error) throw error;
+  const outlets = await Promise.all(
+    (Array.isArray(outletRows) ? (outletRows as Row[]) : []).map((row) =>
+      toMerchantOutlet(client, row),
+    ),
+  );
+  return {
+    id: asString(account.id) ?? "",
+    userId: asString(account.user_id) ?? "",
+    displayName: asString(account.display_name) ?? "",
+    email: asString(account.email) ?? "",
+    role: "owner",
+    outlets,
+    createdAt: asString(account.created_at) ?? new Date().toISOString(),
+  };
+}
+
+async function getMerchantOutletRow(client: SupabaseClient, outletId: string): Promise<Row> {
+  if (UUID_PATTERN.test(outletId)) {
+    const { data, error } = await client
+      .from("merchant_outlets")
+      .select("*")
+      .eq("id", outletId)
+      .single();
+    if (error) throw error;
+    return data as Row;
+  }
+
+  const account = await getMerchantAccountRows(client);
+  const accountId = asString(account?.id);
+  if (!accountId) {
+    throw new Error("Merchant account is not available for the current Supabase user.");
+  }
+
+  const { data, error } = await client
+    .from("merchant_outlets")
+    .select("*")
+    .eq("merchant_account_id", accountId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) {
+    throw new Error(`Merchant outlet ${outletId} was not found for the current Supabase user.`);
+  }
+  return data as Row;
+}
+
+function mapSupabaseDish(row: Row, venue?: Row): DishDetail {
+  const imageUrl = asString(row.image_url) ?? "";
+  return {
+    id: asString(row.id) ?? "",
+    venueId: asString(row.venue_id) ?? asString(venue?.id) ?? "",
+    buildingId: asString(row.building_id) ?? asString(venue?.building_id) ?? "",
+    venueName: asString(venue?.name) ?? "",
+    unitNumber: asString(venue?.unit_number) ?? "",
+    floor: asString(venue?.floor) ?? "",
+    name: asString(row.name) ?? "",
+    imageUrl,
+    blurhash: asString(row.blurhash),
+    distanceMeters: asNumber(row.distance_meters) ?? 0,
+    rating: asNumber(row.rating_avg) ?? 0,
+    reviewCount: asNumber(row.review_count) ?? 0,
+    price: asNumber(row.price) ?? 0,
+    priceRange: asString(row.price_range) ?? "",
+    liveCrowd: (asString(row.live_crowd) as DishDetail["liveCrowd"]) ?? undefined,
+    tasteTags: asStringArray(row.taste_tags),
+    tasteVector: { ...NEUTRAL_TASTE_VECTOR },
+    dietaryFlags: [],
+    gallery: imageUrl ? [imageUrl] : [],
+    description: asString(row.description),
+    mustOrder: asBoolean(row.must_order) ?? false,
+    availabilityFlags: asStringArray(row.availability_flags),
+    reviews: [],
+  };
+}
+
+async function fetchVenueRow(client: SupabaseClient, venueId: string): Promise<Row | undefined> {
+  const { data, error } = await client.from("venues").select("*").eq("id", venueId).maybeSingle();
+  if (error) throw error;
+  return (data as Row | null) ?? undefined;
+}
+
+async function requireLinkedMerchantOutlet(client: SupabaseClient, outletId: string): Promise<Row> {
+  const outlet = await getMerchantOutletRow(client, outletId);
+  if (!asString(outlet.venue_id)) {
+    throw new Error("Merchant outlet is not linked to a consumer venue.");
+  }
+  return outlet;
+}
+
+function buildDishPayload(outlet: Row, dish: Partial<DishDetail>): Row {
+  const venueId = asString(outlet.venue_id) ?? "";
+  const buildingId = asString(outlet.building_id) ?? "";
+  const price = asNumber(dish.price) ?? 0;
+  return {
+    id: dish.id ?? `merchant-dish-${Date.now()}`,
+    venue_id: venueId,
+    building_id: buildingId,
+    name: dish.name ?? "New dish",
+    description: dish.description ?? null,
+    image_url: dish.imageUrl ?? null,
+    blurhash: dish.blurhash ?? null,
+    price,
+    price_range: dish.priceRange ?? `S$${price.toFixed(2)}`,
+    taste_tags: dish.tasteTags ?? [],
+    must_order: dish.mustOrder ?? false,
+    availability_flags: dish.availabilityFlags ?? [],
+  };
+}
+
+function buildPromotionAnalytics(
+  promotion: Pick<MerchantPromotion, "status" | "analytics">,
+): NonNullable<MerchantPromotion["analytics"]> {
+  if (promotion.analytics) return promotion.analytics;
+  if (promotion.status === "draft" || promotion.status === "scheduled") {
+    return { impressions: 0, clicks: 0, saves: 0, profileVisits: 0, dishViews: 0 };
+  }
+  return { impressions: 0, clicks: 0, saves: 0, profileVisits: 0, dishViews: 0 };
+}
+
+function mapPromotion(row: Row): MerchantPromotion {
+  const status = (asString(row.status) as PromotionStatus) ?? "draft";
+  const analytics = {
+    impressions: asNumber(row.impressions) ?? 0,
+    clicks: asNumber(row.clicks) ?? 0,
+    saves: asNumber(row.saves) ?? 0,
+    profileVisits: asNumber(row.profile_visits) ?? 0,
+    dishViews: asNumber(row.dish_views) ?? 0,
+  };
+  return {
+    id: asString(row.id) ?? "",
+    outletId: asString(row.outlet_id) ?? "",
+    title: asString(row.title) ?? "",
+    description: asString(row.description) ?? "",
+    targetDishId: asString(row.target_dish_id),
+    startDate: asString(row.start_date) ?? new Date().toISOString(),
+    endDate: asString(row.end_date) ?? new Date().toISOString(),
+    targetAudience: asStringArray(row.target_audience) as MerchantPromotion["targetAudience"],
+    status,
+    createdAt: asString(row.created_at) ?? new Date().toISOString(),
+    analytics,
+  };
+}
+
 async function signInWithOAuthProvider(provider: "google" | "apple"): Promise<Session> {
   const client = requireSupabaseClient();
   const redirectTo = getAuthEmailRedirectTo();
@@ -442,8 +753,17 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
-    async requestAccountDeletion() {
-      // Stub only: external deletion endpoint is user-owned release work (ACCDEL-01).
+    async requestAccountDeletion(request) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to request account deletion.");
+
+      const { error } = await client.from("account_deletion_requests").insert({
+        user_id: userId,
+        reason: request?.reason ?? "user_initiated_settings_flow",
+      });
+      if (error) throw error;
+
       await this.signOut();
     },
 
@@ -874,6 +1194,74 @@ export const supabaseService: HungryService = {
       );
       if (error) throw error;
     },
+
+    async getStories() {
+      console.warn("getStories not implemented in Supabase");
+      return [];
+    },
+
+    async likeStory(_storyId) {
+      console.warn("likeStory not implemented in Supabase");
+    },
+
+    async saveStory(_storyId) {
+      console.warn("saveStory not implemented in Supabase");
+    },
+
+    async addStory(_content) {
+      console.warn("addStory not implemented in Supabase");
+      throw new Error("Not implemented");
+    },
+
+    async getLikedStories() {
+      console.warn("getLikedStories not implemented in Supabase");
+      return [];
+    },
+
+    async getSavedStories() {
+      console.warn("getSavedStories not implemented in Supabase");
+      return [];
+    },
+
+    async getSavedBites() {
+      console.warn("getSavedBites not implemented in Supabase");
+      return [];
+    },
+
+    async getLikedBites() {
+      console.warn("getLikedBites not implemented in Supabase");
+      return [];
+    },
+  },
+
+  communitySafety: {
+    async reportContent(request: ContentReportRequest) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to report content.");
+
+      const { error } = await client.from("content_reports").insert({
+        reporter_id: userId,
+        target_type: request.targetType,
+        target_id: request.targetId,
+        target_author_key: request.targetAuthorKey,
+        reason: request.reason,
+      });
+      if (error) throw error;
+    },
+
+    async blockUser(request: BlockUserRequest) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to block users.");
+
+      const { error } = await client.from("user_blocks").upsert({
+        blocker_id: userId,
+        blocked_user_key: request.blockedUserKey,
+        reason: request.reason ?? "user_initiated_block",
+      });
+      if (error) throw error;
+    },
   },
 
   content: {
@@ -946,14 +1334,18 @@ export const supabaseService: HungryService = {
       }
       await ensureCurrentUserProfileRow(client);
 
-      const { data: claimId, error: rpcError } = await client.rpc("submit_merchant_claim_interest", {
+      const claimPayload = {
         p_venue_id: input.venueId,
         p_contact_name: input.contactName ?? null,
         p_contact_phone: input.contactPhone ?? null,
         p_contact_email: input.contactEmail ?? null,
         p_uen: input.uen ?? null,
         p_notes: input.notes ?? null,
-      });
+      };
+      const { data: claimId, error: rpcError } = await client.rpc(
+        "submit_merchant_claim_interest",
+        claimPayload,
+      );
       if (rpcError) {
         throw rpcError;
       }
@@ -1021,6 +1413,650 @@ export const supabaseService: HungryService = {
           notes: notes ?? null,
         },
       });
+      if (error) throw error;
+    },
+  },
+
+  merchant: {
+    async getMerchantAccount() {
+      return getSupabaseMerchantAccount();
+    },
+
+    async getOutlets() {
+      return (await getSupabaseMerchantAccount())?.outlets ?? [];
+    },
+
+    async switchOutlet(outletId) {
+      const client = requireSupabaseClient();
+      return toMerchantOutlet(client, await getMerchantOutletRow(client, outletId));
+    },
+
+    async getVerificationStatus(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      return fetchVerificationForOutlet(client, asString(outlet.id) ?? outletId);
+    },
+
+    async submitVerification(outletId, evidence) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const { data, error } = await client
+        .from("merchant_verifications")
+        .upsert(
+          {
+            outlet_id: resolvedOutletId,
+            status: "submitted",
+            method: evidence.method,
+            submitted_at: new Date().toISOString(),
+            rejected_at: null,
+            rejection_reason: null,
+          },
+          { onConflict: "outlet_id" },
+        )
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      const userId = await getCurrentSupabaseUserId();
+      const { error: evidenceError } = await client.from("merchant_verification_evidence").insert({
+        verification_id: (data as Row).id,
+        method: evidence.method,
+        file_url: evidence.fileUrl,
+        uploaded_by: userId,
+        review_note: evidence.reviewNote ?? null,
+      });
+      if (evidenceError) throw evidenceError;
+    },
+
+    async resubmitVerification(outletId, evidence) {
+      return this.submitVerification(outletId, evidence);
+    },
+
+    async updateBusinessProfile(outletId, updates) {
+      const client = requireSupabaseClient();
+      const currentOutlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(currentOutlet.id) ?? outletId;
+      const normalized = validateMerchantProfileUpdates(updates);
+      const payload: Row = {};
+      if (normalized.name !== undefined) payload.name = normalized.name;
+      if (normalized.businessType !== undefined) payload.business_type = normalized.businessType;
+      if (normalized.buildingId !== undefined) payload.building_id = normalized.buildingId;
+      if (normalized.unitNumber !== undefined) payload.unit_number = normalized.unitNumber;
+      if (normalized.floor !== undefined) payload.floor = normalized.floor;
+      if (normalized.locationPrivacy !== undefined) {
+        payload.location_privacy = normalized.locationPrivacy;
+      }
+      if (normalized.description !== undefined) payload.description = normalized.description;
+      if (normalized.operatingHours !== undefined) {
+        payload.operating_hours = normalized.operatingHours;
+      }
+      if (normalized.isLive !== undefined) payload.is_live = normalized.isLive;
+
+      const { data, error } = await client
+        .from("merchant_outlets")
+        .update(payload)
+        .eq("id", resolvedOutletId)
+        .select("*")
+        .single();
+      if (error) throw error;
+
+      const outlet = data as Row;
+      const venueId = asString(outlet.venue_id);
+      if (venueId) {
+        const venuePayload: Row = {};
+        if (normalized.name !== undefined) venuePayload.name = normalized.name;
+        if (normalized.buildingId !== undefined) venuePayload.building_id = normalized.buildingId;
+        if (normalized.unitNumber !== undefined) venuePayload.unit_number = normalized.unitNumber;
+        if (normalized.floor !== undefined) venuePayload.floor = normalized.floor;
+        if (normalized.operatingHours !== undefined) {
+          venuePayload.operating_hours = normalized.operatingHours;
+        }
+        if (Object.keys(venuePayload).length > 0) {
+          const { error: venueError } = await client
+            .from("venues")
+            .update(venuePayload)
+            .eq("id", venueId);
+          if (venueError) throw venueError;
+          invalidateSupabaseRepositoryCache();
+        }
+      }
+      return toMerchantOutlet(client, outlet);
+    },
+
+    async getMenu(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      const venueId = asString(outlet.venue_id) ?? "";
+      const venue = await fetchVenueRow(client, venueId);
+      const { data, error } = await client
+        .from("dishes")
+        .select("*")
+        .eq("venue_id", venueId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (Array.isArray(data) ? (data as Row[]) : []).map((row) => mapSupabaseDish(row, venue));
+    },
+
+    async addDish(outletId, dish) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      const { data, error } = await client
+        .from("dishes")
+        .insert(buildDishPayload(outlet, dish))
+        .select("*")
+        .single();
+      if (error) throw error;
+      invalidateSupabaseRepositoryCache();
+      return mapSupabaseDish(
+        data as Row,
+        await fetchVenueRow(client, asString(outlet.venue_id) ?? ""),
+      );
+    },
+
+    async editDish(outletId, dishId, updates) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      const venueId = asString(outlet.venue_id) ?? "";
+      const payload = buildDishPayload(outlet, { ...updates, id: dishId });
+      delete payload.id;
+      const { data, error } = await client
+        .from("dishes")
+        .update(payload)
+        .eq("id", dishId)
+        .eq("venue_id", venueId)
+        .select("*")
+        .single();
+      if (error) throw error;
+      invalidateSupabaseRepositoryCache();
+      return mapSupabaseDish(data as Row, await fetchVenueRow(client, venueId));
+    },
+
+    async deleteDish(outletId, dishId) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      const { error } = await client
+        .from("dishes")
+        .delete()
+        .eq("id", dishId)
+        .eq("venue_id", asString(outlet.venue_id) ?? "");
+      if (error) throw error;
+      invalidateSupabaseRepositoryCache();
+    },
+
+    async toggleSoldOut(outletId, dishId) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      const venueId = asString(outlet.venue_id) ?? "";
+      const { data, error } = await client
+        .from("dishes")
+        .select("availability_flags")
+        .eq("id", dishId)
+        .eq("venue_id", venueId)
+        .single();
+      if (error) throw error;
+      const current = asStringArray((data as Row).availability_flags);
+      const enabled = !current.some((flag) => normalizeAvailabilityFlag(flag) === "sold_out");
+      const { error: updateError } = await client
+        .from("dishes")
+        .update({ availability_flags: mergeAvailabilityFlag(current, "sold_out", enabled) })
+        .eq("id", dishId)
+        .eq("venue_id", venueId);
+      if (updateError) throw updateError;
+      invalidateSupabaseRepositoryCache();
+      return enabled;
+    },
+
+    async toggleFeatured(outletId, dishId) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      const venueId = asString(outlet.venue_id) ?? "";
+      const { data, error } = await client
+        .from("dishes")
+        .select("availability_flags")
+        .eq("id", dishId)
+        .eq("venue_id", venueId)
+        .single();
+      if (error) throw error;
+      const current = asStringArray((data as Row).availability_flags);
+      const enabled = !current.some((flag) => normalizeAvailabilityFlag(flag) === "featured");
+      const { error: updateError } = await client
+        .from("dishes")
+        .update({ availability_flags: mergeAvailabilityFlag(current, "featured", enabled) })
+        .eq("id", dishId)
+        .eq("venue_id", venueId);
+      if (updateError) throw updateError;
+      invalidateSupabaseRepositoryCache();
+      return enabled;
+    },
+
+    async getOCRDrafts(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      const { data, error } = await client
+        .from("dishes_draft")
+        .select("*")
+        .eq("venue_id", asString(outlet.venue_id) ?? "")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (Array.isArray(data) ? (data as Row[]) : []).map((row) => ({
+        id: asString(row.id) ?? "",
+        outletId,
+        name: asString(row.name) ?? "",
+        price: asNumber(row.price_cents) ? (asNumber(row.price_cents) ?? 0) / 100 : undefined,
+        confidence: asNumber(row.extraction_confidence) ?? 0,
+        sourcePhotoUrl: asString(row.source_photo_url) ?? "",
+        suggestedDescription: asString(row.ocr_raw_text),
+        suggestedDietaryTags: [],
+        suggestedTasteTags: [],
+        status: (asString(row.review_status) === "rejected"
+          ? "rejected"
+          : asString(row.review_status) === "accepted"
+            ? "accepted"
+            : "pending") as OCRDishDraft["status"],
+        createdAt: asString(row.created_at) ?? new Date().toISOString(),
+      }));
+    },
+
+    async acceptOCRDraft(draftId) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client
+        .from("dishes_draft")
+        .select("*")
+        .eq("id", draftId)
+        .single();
+      if (error) throw error;
+      const draft = data as Row;
+      const venueId = asString(draft.venue_id) ?? "";
+      const { data: outletData, error: outletError } = await client
+        .from("merchant_outlets")
+        .select("*")
+        .eq("venue_id", venueId)
+        .limit(1)
+        .single();
+      if (outletError) throw outletError;
+      const dish = await this.addDish(asString((outletData as Row).id) ?? "", {
+        id: `dish-from-${draftId}`,
+        name: asString(draft.name) ?? "New dish",
+        price: asNumber(draft.price_cents) ? (asNumber(draft.price_cents) ?? 0) / 100 : 0,
+        tasteTags: [],
+      });
+      const { error: updateError } = await client
+        .from("dishes_draft")
+        .update({ review_status: "accepted", promoted_dish_id: dish.id })
+        .eq("id", draftId);
+      if (updateError) throw updateError;
+      return dish;
+    },
+
+    async rejectOCRDraft(draftId) {
+      const { error } = await requireSupabaseClient()
+        .from("dishes_draft")
+        .update({ review_status: "rejected" })
+        .eq("id", draftId);
+      if (error) throw error;
+    },
+
+    async getInbox(outletId, filters) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      const venueId = asString(outlet.venue_id) ?? "";
+      const { data, error } = await client
+        .from("reviews")
+        .select("*")
+        .eq("venue_id", venueId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      let interactions = (Array.isArray(data) ? (data as Row[]) : []).map((row) => {
+        const rating = asNumber(row.rating);
+        return {
+          id: asString(row.id) ?? "",
+          outletId,
+          type: "review" as InteractionType,
+          authorName: asString(row.author_name) ?? "Hungry diner",
+          rating,
+          text: asString(row.text) ?? "",
+          tags: asStringArray(row.tags),
+          createdAt: asString(row.created_at) ?? new Date().toISOString(),
+          reply: asString(row.merchant_reply_text)
+            ? {
+                text: asString(row.merchant_reply_text) ?? "",
+                repliedAt: asString(row.merchant_replied_at) ?? new Date().toISOString(),
+              }
+            : undefined,
+          sourceId: asString(row.id),
+          sentiment:
+            rating === undefined
+              ? "neutral"
+              : rating >= 4
+                ? "positive"
+                : rating <= 2
+                  ? "negative"
+                  : "neutral",
+        } satisfies CustomerInteraction;
+      });
+      if (filters?.type) interactions = interactions.filter((item) => item.type === filters.type);
+      if (filters?.unrepliedOnly) interactions = interactions.filter((item) => !item.reply);
+      return interactions;
+    },
+
+    async replyToInteraction(interactionId, text) {
+      const trimmedText = text.trim();
+      if (!trimmedText) throw new Error("Reply text is required");
+      const { error } = await requireSupabaseClient()
+        .from("reviews")
+        .update({
+          merchant_reply_text: trimmedText,
+          merchant_replied_at: new Date().toISOString(),
+        })
+        .eq("id", interactionId);
+      if (error) throw error;
+    },
+
+    async reportInteraction(interactionId, reason) {
+      const trimmedReason = reason.trim();
+      if (!trimmedReason) throw new Error("Report reason is required");
+      const { error } = await requireSupabaseClient().from("customer_interaction_reports").insert({
+        interaction_id: interactionId,
+        reason: trimmedReason,
+      });
+      if (error) throw error;
+    },
+
+    async getPromotions(outletId, status) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const query = client
+        .from("merchant_promotions")
+        .select("*")
+        .eq("outlet_id", resolvedOutletId)
+        .order("created_at", { ascending: false });
+      const { data, error } = status ? await query.eq("status", status) : await query;
+      if (error) throw error;
+      return (Array.isArray(data) ? (data as Row[]) : []).map(mapPromotion);
+    },
+
+    async createPromotion(outletId, promo) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const analytics = buildPromotionAnalytics(promo);
+      const { data, error } = await client
+        .from("merchant_promotions")
+        .insert({
+          outlet_id: resolvedOutletId,
+          title: promo.title,
+          description: promo.description,
+          target_dish_id: promo.targetDishId ?? null,
+          start_date: promo.startDate,
+          end_date: promo.endDate,
+          target_audience: promo.targetAudience,
+          status: promo.status,
+          impressions: analytics.impressions,
+          clicks: analytics.clicks,
+          saves: analytics.saves,
+          profile_visits: analytics.profileVisits,
+          dish_views: analytics.dishViews,
+        })
+        .select("*")
+        .single();
+      if (error) throw error;
+      return mapPromotion(data as Row);
+    },
+
+    async updatePromotion(promoId, updates) {
+      const payload: Row = {};
+      if (updates.title !== undefined) payload.title = updates.title;
+      if (updates.description !== undefined) payload.description = updates.description;
+      if (updates.targetDishId !== undefined) payload.target_dish_id = updates.targetDishId;
+      if (updates.startDate !== undefined) payload.start_date = updates.startDate;
+      if (updates.endDate !== undefined) payload.end_date = updates.endDate;
+      if (updates.targetAudience !== undefined) payload.target_audience = updates.targetAudience;
+      if (updates.status !== undefined) payload.status = updates.status;
+      if (updates.analytics) {
+        payload.impressions = updates.analytics.impressions;
+        payload.clicks = updates.analytics.clicks;
+        payload.saves = updates.analytics.saves;
+        payload.profile_visits = updates.analytics.profileVisits;
+        payload.dish_views = updates.analytics.dishViews;
+      }
+      const { data, error } = await requireSupabaseClient()
+        .from("merchant_promotions")
+        .update(payload)
+        .eq("id", promoId)
+        .select("*")
+        .single();
+      if (error) throw error;
+      return mapPromotion(data as Row);
+    },
+
+    async getPromotionAnalytics(promoId) {
+      const { data, error } = await requireSupabaseClient()
+        .from("merchant_promotions")
+        .select("*")
+        .eq("id", promoId)
+        .single();
+      if (error) throw error;
+      return mapPromotion(data as Row).analytics ?? buildPromotionAnalytics({ status: "draft" });
+    },
+
+    async getAnalytics(outletId, dateRange) {
+      const menu = await this.getMenu(outletId);
+      const inbox = await this.getInbox(outletId);
+      const reviewRatings = inbox
+        .map((interaction) => interaction.rating)
+        .filter((rating): rating is number => typeof rating === "number");
+      return {
+        outletId,
+        dateRange,
+        profileVisits: 0,
+        menuViews: 0,
+        dishViews: 0,
+        directionTaps: 0,
+        saves: 0,
+        shares: 0,
+        contactTaps: 0,
+        socialLinkTaps: 0,
+        postInteractions: inbox.length,
+        reviewCount: reviewRatings.length,
+        averageRating:
+          reviewRatings.length === 0
+            ? 0
+            : reviewRatings.reduce((sum, rating) => sum + rating, 0) / reviewRatings.length,
+        topDishes: menu.slice(0, 3).map((dish) => ({
+          dishId: dish.id,
+          name: dish.name,
+          views: 0,
+          saves: 0,
+        })),
+        mostSearchedKeywords: menu.slice(0, 4).map((dish) => dish.name.toLowerCase()),
+        peakDiscoveryHours: [],
+        customerTasteTags: [],
+        previousPeriodComparison: {
+          profileVisits: 0,
+          menuViews: 0,
+          reviewCount: 0,
+          averageRating: 0,
+        },
+      } satisfies MerchantAnalytics;
+    },
+
+    async generateDishDescription(dishName, ingredients) {
+      const ingredientText = ingredients?.join(", ") || "fresh, quality ingredients";
+      return `A delicious ${dishName} made with ${ingredientText}. Prepared fresh and ready for Hungry diners.`;
+    },
+
+    async suggestIngredients(dishName) {
+      return dishName.toLowerCase().includes("wonton")
+        ? ["egg noodles", "wonton wrappers", "minced pork", "char siu", "spring onions"]
+        : ["salt", "pepper", "garlic", "oil"];
+    },
+
+    async suggestAllergens(ingredients) {
+      const lower = ingredients.map((ingredient) => ingredient.toLowerCase());
+      return [
+        ...(lower.some((ingredient) => ingredient.includes("egg")) ? ["Eggs"] : []),
+        ...(lower.some((ingredient) => ingredient.includes("soy")) ? ["Soy"] : []),
+        ...(lower.some((ingredient) => ingredient.includes("noodle")) ? ["Gluten"] : []),
+      ];
+    },
+
+    async suggestTags(dishName) {
+      return dishName.toLowerCase().includes("wonton")
+        ? ["Savoury", "Springy noodles", "Comfort food"]
+        : ["Fresh", "Savoury"];
+    },
+
+    async generateAIReply(interactionId) {
+      const { data } = await requireSupabaseClient()
+        .from("reviews")
+        .select("rating")
+        .eq("id", interactionId)
+        .maybeSingle();
+      const rating = asNumber((data as Row | null)?.rating);
+      if (rating !== undefined && rating <= 2) {
+        return "We are sorry about your experience. We will review this with the team and improve.";
+      }
+      return "Thank you for sharing your feedback. We appreciate your support and hope to see you again.";
+    },
+
+    async getAIInsights(outletId) {
+      const analytics = await this.getAnalytics(outletId, "7d");
+      return [
+        {
+          id: `weekly-${outletId}`,
+          outletId,
+          type: "weekly_summary",
+          title: "Weekly summary",
+          body: `${analytics.reviewCount} customer reviews and ${analytics.topDishes.length} menu items are linked to this outlet.`,
+          actionLabel: "Open analytics",
+          actionTarget: "Analytics",
+          createdAt: new Date().toISOString(),
+          isDismissed: false,
+        },
+      ] satisfies AIBusinessInsight[];
+    },
+
+    async getWeeklySummary(outletId) {
+      return (await this.getAIInsights(outletId))[0];
+    },
+
+    async getProfileSuggestions(outletId) {
+      return (await this.getAIInsights(outletId)).filter(
+        (insight) => insight.type === "profile_improvement",
+      );
+    },
+
+    async getMenuCleanupSuggestions(outletId) {
+      return (await this.getAIInsights(outletId)).filter(
+        (insight) => insight.type === "menu_cleanup" || insight.type === "photo_enhancement",
+      );
+    },
+
+    async getDemandInsights(outletId) {
+      return (await this.getAIInsights(outletId)).filter(
+        (insight) => insight.type === "demand_insight" || insight.type === "promotion_tip",
+      );
+    },
+
+    async getTeamMembers(merchantAccountId) {
+      const { data, error } = await requireSupabaseClient()
+        .from("merchant_roles")
+        .select("*")
+        .eq("merchant_account_id", merchantAccountId);
+      if (error) throw error;
+      return (Array.isArray(data) ? (data as Row[]) : []).map((row) => ({
+        id: asString(row.id) ?? "",
+        merchantAccountId,
+        userId: asString(row.user_id) ?? "",
+        displayName: asString(row.display_name) ?? asString(row.email) ?? "Team member",
+        email: asString(row.email) ?? "",
+        role: asMerchantRole(row.role),
+        addedAt: asString(row.created_at) ?? new Date().toISOString(),
+      }));
+    },
+
+    async addTeamMember(merchantAccountId, email, role) {
+      const normalizedEmail = email.trim().toLowerCase();
+      if (!normalizedEmail || !normalizedEmail.includes("@")) {
+        throw new Error("Valid team member email is required");
+      }
+      const { data, error } = await requireSupabaseClient()
+        .from("merchant_roles")
+        .insert({
+          merchant_account_id: merchantAccountId,
+          user_id: null,
+          email: normalizedEmail,
+          display_name: normalizedEmail.split("@")[0],
+          role,
+        })
+        .select("*")
+        .single();
+      if (error) throw error;
+      return {
+        id: asString((data as Row).id) ?? "",
+        merchantAccountId,
+        userId: asString((data as Row).user_id) ?? "",
+        displayName: asString((data as Row).display_name) ?? normalizedEmail,
+        email: asString((data as Row).email) ?? normalizedEmail,
+        role,
+        addedAt: asString((data as Row).created_at) ?? new Date().toISOString(),
+      };
+    },
+
+    async removeTeamMember(memberId) {
+      const { error } = await requireSupabaseClient()
+        .from("merchant_roles")
+        .delete()
+        .eq("id", memberId);
+      if (error) throw error;
+    },
+
+    async updateTeamMemberRole(memberId, role) {
+      const { error } = await requireSupabaseClient()
+        .from("merchant_roles")
+        .update({ role })
+        .eq("id", memberId);
+      if (error) throw error;
+    },
+
+    async getNotificationPreferences(merchantAccountId) {
+      const { data, error } = await requireSupabaseClient()
+        .from("merchant_notification_preferences")
+        .select("*")
+        .eq("merchant_account_id", merchantAccountId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return DEFAULT_MERCHANT_NOTIFICATION_PREFERENCES;
+      const row = data as Row;
+      return {
+        newReviews: asBoolean(row.new_reviews) ?? true,
+        lowRatingAlerts: asBoolean(row.low_rating_alerts) ?? true,
+        newComments: asBoolean(row.new_comments) ?? true,
+        promotionUpdates: asBoolean(row.promotion_updates) ?? true,
+        weeklyDigest: asBoolean(row.weekly_digest) ?? true,
+        aiInsights: asBoolean(row.ai_insights) ?? true,
+      };
+    },
+
+    async updateNotificationPreferences(merchantAccountId, prefs) {
+      const current = await this.getNotificationPreferences(merchantAccountId);
+      const next = { ...current, ...prefs };
+      const { error } = await requireSupabaseClient()
+        .from("merchant_notification_preferences")
+        .upsert(
+          {
+            merchant_account_id: merchantAccountId,
+            new_reviews: next.newReviews,
+            low_rating_alerts: next.lowRatingAlerts,
+            new_comments: next.newComments,
+            promotion_updates: next.promotionUpdates,
+            weekly_digest: next.weeklyDigest,
+            ai_insights: next.aiInsights,
+          },
+          { onConflict: "merchant_account_id" },
+        );
       if (error) throw error;
     },
   },

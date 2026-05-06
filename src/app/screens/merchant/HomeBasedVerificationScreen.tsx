@@ -7,7 +7,7 @@ import { useHungryTheme } from "@/theme";
 import { AppText, Button, Screen, IconButton, Input, Card } from "@/components/ui";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
-import { hungryService } from "@/lib/services/mock/mockService";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import type { LocationPrivacy } from "@/types/domain";
 
 type Props = NativeStackScreenProps<MerchantTabParamList, "HomeBasedVerification">;
@@ -36,18 +36,18 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
     setIsSubmitting(true);
     try {
       // First update the profile with the specific home-based details
-      await hungryService.merchant.updateBusinessProfile(activeOutlet.id, {
+      await getHungryService().merchant.updateBusinessProfile(activeOutlet.id, {
         name: displayName,
         locationPrivacy: privacy,
       });
 
       // Then submit the verification request
-      await hungryService.merchant.submitVerification(activeOutlet.id, {
+      await getHungryService().merchant.submitVerification(activeOutlet.id, {
         method: "home_based_declaration",
         fileUrl: "mock-url://home-based-photos",
       });
 
-      const updatedAccount = await hungryService.merchant.getMerchantAccount();
+      const updatedAccount = await getHungryService().merchant.getMerchantAccount();
       if (updatedAccount) setAccount(updatedAccount);
 
       // Go back to the Verification Centre to see the pending status

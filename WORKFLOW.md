@@ -117,7 +117,7 @@ Use when:
 
 Output:
 - code changes
-- verification bundle run
+- risk-appropriate verification selected
 - task row updated
 - session log appended
 
@@ -136,17 +136,17 @@ Required output:
 
 ---
 
-## 6. Verification Bundle
+## 6. Verification Budget
 
-Default Hungry verification bundle:
+Default to the smallest check that gives useful evidence.
 
-1. `npm run typecheck`
-2. `npm test -- --runInBand`
-3. `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor`
+| Scope | Use when | Verification |
+|------|----------|--------------|
+| Small iterative | Docs, copy, spacing, styling, one-screen polish, or narrow follow-up fixes | Do not run full QA/QC, `npm run ios`, full tests, or default `npm run typecheck`; run a focused check only if directly relevant, or state that checks were skipped by design |
+| Medium bounded | A few files with behavior, props, state, or route params | Run focused tests/contracts; add `npm run typecheck` only if TS contracts/imports/props changed |
+| Broad/risky/release | Shared services/stores, auth, Supabase, navigation architecture, dependencies, native config, many files, or release readiness | Run `npm run typecheck`, relevant tests, `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor` for dependency/native health, and simulator smoke when runtime risk warrants it |
 
-When a task does not need all three, explicitly state why.
-
-Record results in `tasks/verification.md`.
+Record results in `tasks/verification.md` for tracked task, release, security, or broad verification work. For small iterative work, a concise final-response note is enough unless a canonical task row is updated.
 
 ---
 
@@ -157,7 +157,7 @@ Record results in `tasks/verification.md`.
 1. Claude defines scope and acceptance criteria
 2. Gemini provides design direction if UI changes are required
 3. Codex implements
-4. Codex runs verification bundle
+4. Codex selects risk-appropriate verification
 5. Claude audits final result
 
 ### Closeout / bug-fix
@@ -189,7 +189,7 @@ Prefer:
 ## 9. Recommended Prompt Style
 
 Good:
-- “Implement `C4` only. Update `tasks/backlog.md`, run the verification bundle, and record residual risk.”
+- “Implement `C4` only. Update `tasks/backlog.md`, run the smallest relevant verification for the change, and record residual risk.”
 - “Verify `SEC-02` and `WEB-11` against current code and docs. Return only mismatches.”
 - “Run closeout mode for Sprint 10 staging smoke tasks.”
 - “Return only blockers for `OCR-DG-01`.”

@@ -1,16 +1,48 @@
 import React, { useState, useEffect } from "react";
-import { View, ScrollView, TextInput, StyleSheet, Alert, Switch, Pressable } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ChevronLeft, Sparkles } from "lucide-react-native";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { Image, View, TextInput, StyleSheet, Alert, Switch, Pressable } from "react-native";
+import { Sparkles } from "lucide-react-native";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
-import { AppText, Button, IconButton, Screen, Chip } from "@/components/ui";
+import { AppText, Button, Chip, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
-import { hungryService } from "@/lib/services/mock/mockService";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
+import type { DietaryFlag, DishDetail } from "@/types/domain";
 
 type RouteProps = RouteProp<MerchantTabParamList, "DishEditor">;
+
+const SAMPLE_DISH_IMAGE_URL =
+  "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?auto=format&fit=crop&w=900&q=80";
+
+const DIETARY_OPTIONS: { label: string; value: DietaryFlag }[] = [
+  { label: "Halal", value: "halal" },
+  { label: "Vegetarian", value: "vegetarian" },
+  { label: "Vegan", value: "vegan" },
+  { label: "Pork-free", value: "pork_free" },
+  { label: "Nut-free", value: "nut_free" },
+  { label: "Gluten-free", value: "gluten_free" },
+  { label: "Dairy-free", value: "dairy_free" },
+  { label: "Shellfish-free", value: "shellfish_free" },
+];
+
+function parseCommaSeparated(value: string): string[] {
+  return Array.from(
+    new Set(
+      value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+function hasAvailabilityFlag(flags: readonly string[] | undefined, target: string): boolean {
+  const normalizedTarget = target.toLowerCase().replace(/[\s-]+/g, "_");
+  return (
+    flags?.some((flag) => flag.toLowerCase().replace(/[\s-]+/g, "_") === normalizedTarget) ?? false
+  );
+}
 
 export function DishEditorScreen() {
   const { palette, spacing, radii } = useHungryTheme();
@@ -25,6 +57,8 @@ export function DishEditorScreen() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [ingredients, setIngredients] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [dietaryFlags, setDietaryFlags] = useState<DietaryFlag[]>([]);
   const [isAvailable, setIsAvailable] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
 
@@ -32,13 +66,16 @@ export function DishEditorScreen() {
     async function loadDish() {
       if (dishId) {
         try {
-          const dish = await hungryService.discovery.getDish(dishId);
+          const dish = await getHungryService().discovery.getDish(dishId);
           if (dish) {
             setName(dish.name);
             setPrice(dish.price.toString());
-            setDescription(dish.tasteTags.join(", ")); // Using taste tags as mock description
-            setIsAvailable(!dish.availabilityFlags?.includes("sold_out"));
-            setIsFeatured(dish.availabilityFlags?.includes("featured") || false);
+            setDescription(dish.description ?? "");
+            setIngredients(dish.tasteTags.join(", "));
+            setImageUrl(dish.imageUrl || dish.gallery?.[0] || "");
+            setDietaryFlags(dish.dietaryFlags ?? []);
+            setIsAvailable(!hasAvailabilityFlag(dish.availabilityFlags, "sold_out"));
+            setIsFeatured(hasAvailabilityFlag(dish.availabilityFlags, "featured"));
           }
         } catch (e) {
           Alert.alert("Error", "Failed to load dish details.");
@@ -46,7 +83,7 @@ export function DishEditorScreen() {
       }
       setIsLoading(false);
     }
-    loadDish();
+    void loadDish();
   }, [dishId]);
 
   const handleSave = async () => {
@@ -58,9 +95,17 @@ export function DishEditorScreen() {
 
     setIsSaving(true);
     try {
-      const updates = {
-        name,
-        price: parseFloat(price) || 0,
+      const parsedPrice = parseFloat(price) || 0;
+      const trimmedImageUrl = imageUrl.trim();
+      const updates: Partial<DishDetail> = {
+        name: name.trim(),
+        price: parsedPrice,
+        priceRange: `S$${parsedPrice.toFixed(2)}`,
+        description: description.trim(),
+        imageUrl: trimmedImageUrl,
+        gallery: trimmedImageUrl ? [trimmedImageUrl] : [],
+        tasteTags: parseCommaSeparated(ingredients),
+        dietaryFlags,
         availabilityFlags: [
           ...(!isAvailable ? ["sold_out"] : []),
           ...(isFeatured ? ["featured"] : []),
@@ -68,9 +113,9 @@ export function DishEditorScreen() {
       };
 
       if (dishId) {
-        await hungryService.merchant.editDish(activeOutlet.id, dishId, updates);
+        await getHungryService().merchant.editDish(activeOutlet.id, dishId, updates);
       } else {
-        await hungryService.merchant.addDish(activeOutlet.id, updates as any);
+        await getHungryService().merchant.addDish(activeOutlet.id, updates);
       }
 
       Alert.alert("Success", `Dish ${dishId ? "updated" : "added"} successfully!`);
@@ -88,7 +133,7 @@ export function DishEditorScreen() {
       Alert.alert("Notice", "Please enter a dish name first.");
       return;
     }
-    const generated = await hungryService.merchant.generateDishDescription(
+    const generated = await getHungryService().merchant.generateDishDescription(
       name,
       ingredients
         .split(",")
@@ -103,35 +148,42 @@ export function DishEditorScreen() {
       Alert.alert("Notice", "Please enter a dish name first.");
       return;
     }
-    const suggestions = await hungryService.merchant.suggestIngredients(name);
+    const suggestions = await getHungryService().merchant.suggestIngredients(name);
     setIngredients(suggestions.join(", "));
+  };
+
+  const handleSuggestAllergens = async () => {
+    const ingredientList = parseCommaSeparated(ingredients);
+    if (ingredientList.length === 0) {
+      Alert.alert("Notice", "Add ingredients before running the allergen check.");
+      return;
+    }
+    const allergens = await getHungryService().merchant.suggestAllergens(ingredientList);
+    Alert.alert(
+      "Ingredient check",
+      allergens.length > 0
+        ? `Detected: ${allergens.join(", ")}. Choose matching customer indicators below.`
+        : "No common allergens detected from these ingredients.",
+    );
+  };
+
+  const toggleDietaryFlag = (flag: DietaryFlag) => {
+    setDietaryFlags((current) =>
+      current.includes(flag) ? current.filter((item) => item !== flag) : [...current, flag],
+    );
   };
 
   if (isLoading) {
     return (
-      <Screen style={{ backgroundColor: palette.bg }}>
-        <AppText>Loading...</AppText>
+      <Screen title="Loading...">
+        <AppText>Fetching dish details...</AppText>
       </Screen>
     );
   }
 
   return (
-    <Screen style={{ backgroundColor: palette.bg }}>
-      <View style={[styles.header, { paddingTop: spacing[3], paddingHorizontal: spacing[4] }]}>
-        <IconButton
-          accessibilityLabel="Go back"
-          icon={<ChevronLeft size={24} color={palette.text} />}
-          onPress={() => navigation.goBack()}
-        />
-        <AppText variant="h2" style={{ fontWeight: "800" }}>
-          {dishId ? "Edit Dish" : "Add Dish"}
-        </AppText>
-        <View style={{ width: 40 }} />
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ padding: spacing[4], gap: spacing[4], paddingBottom: 100 }}
-      >
+    <Screen title={dishId ? "Edit Dish" : "Add Dish"}>
+      <View style={{ gap: spacing[5], width: "100%" }}>
         <View>
           <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
             Dish Name *
@@ -174,6 +226,37 @@ export function DishEditorScreen() {
         </View>
 
         <View>
+          <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
+            Dish Picture
+          </AppText>
+          {imageUrl.trim() ? (
+            <Image source={{ uri: imageUrl.trim() }} style={styles.imagePreview} />
+          ) : null}
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                color: palette.text,
+              },
+            ]}
+            value={imageUrl}
+            onChangeText={setImageUrl}
+            placeholder="Paste image URL or use the sample photo"
+            placeholderTextColor={palette.textMuted}
+            autoCapitalize="none"
+          />
+          <Button
+            label="Use sample photo"
+            variant="secondary"
+            fullWidth={false}
+            onPress={() => setImageUrl(SAMPLE_DISH_IMAGE_URL)}
+            style={{ marginTop: spacing[2] }}
+          />
+        </View>
+
+        <View>
           <View
             style={{
               flexDirection: "row",
@@ -208,6 +291,32 @@ export function DishEditorScreen() {
             placeholderTextColor={palette.textMuted}
             multiline
           />
+          <Button
+            label="Check ingredient indicators"
+            variant="secondary"
+            fullWidth={false}
+            onPress={handleSuggestAllergens}
+            style={{ marginTop: spacing[2] }}
+          />
+        </View>
+
+        <View>
+          <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
+            Ingredient Indicators
+          </AppText>
+          <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[3] }}>
+            Choose customer-facing labels for dietary needs and ingredient exclusions.
+          </AppText>
+          <View style={styles.chipWrap}>
+            {DIETARY_OPTIONS.map((option) => (
+              <Chip
+                key={option.value}
+                label={option.label}
+                selected={dietaryFlags.includes(option.value)}
+                onPress={() => toggleDietaryFlag(option.value)}
+              />
+            ))}
+          </View>
         </View>
 
         <View>
@@ -294,36 +403,21 @@ export function DishEditorScreen() {
             trackColor={{ true: palette.orange, false: palette.border }}
           />
         </View>
-      </ScrollView>
 
-      <View
-        style={[
-          styles.footer,
-          { backgroundColor: palette.surface, borderTopColor: palette.border },
-        ]}
-      >
         <Button
           label={isSaving ? "Saving..." : "Save Dish"}
           variant="primary"
           fullWidth
           onPress={handleSave}
           disabled={isSaving}
+          style={{ marginTop: spacing[4] }}
         />
       </View>
     </Screen>
   );
 }
 
-export default DishEditorScreen;
-
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 8,
-    paddingBottom: 12,
-  },
   input: {
     borderWidth: 1,
     borderRadius: 8,
@@ -337,9 +431,15 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
   },
-  footer: {
-    padding: 16,
-    borderTopWidth: 1,
-    paddingBottom: 32,
+  imagePreview: {
+    width: "100%",
+    height: 180,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  chipWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
   },
 });

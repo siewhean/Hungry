@@ -142,6 +142,26 @@ Source: `src/theme/tokens.ts → motion`
 
 ---
 
+## Loading Feedback Rules
+
+| Situation | Required pattern |
+|-----------|------------------|
+| Known page/content shape and wait is more than 300ms | Use skeletons matching the eventual buttons, cards, lists, feeds, rows, articles, or page sections, with the same reserved space as the final UI |
+| Wait is less than 300ms and duration is unknown | Use a spinner |
+| Change/update completes in less than 300ms | Show no loading UI |
+| Upload has a known percentage and takes more than 3 seconds | Use a progress bar with the known percentage |
+| High-confidence interaction expected to succeed at least 99% of the time | Use optimistic UI with rollback on failure, for example likes, saves, and bookmarks |
+
+**Rules:**
+- Skeletons must preserve the final layout shape and avoid layout jumps.
+- Skeletons must take up the same width, height, padding, and spacing as the actual button, card, row, or component they replace.
+- Do not show skeletons for sub-300ms updates.
+- Spinners are for brief, unknown-duration waits where no stable content shape is worth skeletonizing.
+- Progress bars are for measurable uploads, not generic loading.
+- Optimistic UI must include a rollback path and should not be used for low-confidence writes, payments, account changes, or destructive actions.
+
+---
+
 ## Z-Index Layer System
 
 | Token | Value | Layer |

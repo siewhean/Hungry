@@ -32,7 +32,7 @@ test("Sprint 10 contract: StallDetail menu remains curated from dishes", () => {
 test("Sprint 10 contract: claim RPC null result maps to already_exists", () => {
   const source = read("src/lib/services/supabase/supabaseService.ts");
 
-  assert.match(source, /rpc\("submit_merchant_claim_interest"/);
+  assert.match(source, /rpc\(\s*"submit_merchant_claim_interest"/);
   assert.match(source, /claimId: claimId \? String\(claimId\) : null/);
   assert.match(source, /status: claimId \? "created" : "already_exists"/);
 });

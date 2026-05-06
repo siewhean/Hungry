@@ -220,7 +220,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -e\n\nif [ -f \"$PODS_ROOT/../.xcode.env\" ]; then\n  . \"$PODS_ROOT/../.xcode.env\"\nfi\nif [ -f \"$PODS_ROOT/../.xcode.env.local\" ]; then\n  . \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n: \"${NODE_BINARY:=node}\"\n\nREACT_NATIVE_XCODE_SH=\"$(\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\")\"\n\n# On simulator/debug, bypass Sentry wrapper to avoid path-splitting issues when\n# project paths contain spaces (e.g. /Users/Siew Hean/...).\nif [ \"$CONFIGURATION\" = \"Debug\" ] || [ \"$PLATFORM_NAME\" = \"iphonesimulator\" ]; then\n  /bin/sh \"$REACT_NATIVE_XCODE_SH\"\n  exit 0\nfi\n\nSENTRY_XCODE_SH=\"$(\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'\")\"\n/bin/sh \"$SENTRY_XCODE_SH\" \"$REACT_NATIVE_XCODE_SH\"\n";
+			shellScript = "set -e\n\nif [ -f \"$PODS_ROOT/../.xcode.env\" ]; then\n  . \"$PODS_ROOT/../.xcode.env\"\nfi\nif [ -f \"$PODS_ROOT/../.xcode.env.local\" ]; then\n  . \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n: \"${NODE_BINARY:=node}\"\n: \"${ENTRY_FILE:=index.ts}\"\n\nSENTRY_XCODE_SH=\"$(\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'\")\"\nREACT_NATIVE_XCODE_SH=\"$(\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\")\"\n\nif [ \"$CONFIGURATION\" = \"Debug\" ] || [ \"$PLATFORM_NAME\" = \"iphonesimulator\" ]; then\n  /bin/sh \"$REACT_NATIVE_XCODE_SH\"\n  exit 0\nfi\n\n/bin/sh \"$SENTRY_XCODE_SH\" \"$REACT_NATIVE_XCODE_SH\"\n";
 		};
 		08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -267,6 +267,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-Hungry/expo-configure-project.sh\"\n";
+		};
+		66E2B0A8767640828F33E30D /* [Expo Dev Launcher] Strip Local Network Keys for Release */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "[Expo Dev Launcher] Strip Local Network Keys for Release";
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/expo-dev-launcher-strip-local-network-keys.stamp",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Strip dev-launcher-specific local network permission keys from non-Debug builds\n# This only removes _expo._tcp Bonjour services and the dev-launcher usage description.\n# Other Bonjour services and custom descriptions are preserved for production use.\n\nif [ \"$CONFIGURATION\" != \"Debug\" ]; then\n  PLIST_PATH=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n  if [ -f \"$PLIST_PATH\" ]; then\n    # Check if NSBonjourServices exists\n    if /usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" >/dev/null 2>&1; then\n      # Get the count of services\n      COUNT=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null | grep \"^    \" | wc -l | tr -d ' ')\n\n      # Remove _expo._tcp\n      for ((i=COUNT-1; i>=0; i--)); do\n        SERVICE=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices:$i\" \"$PLIST_PATH\" 2>/dev/null || echo \"\")\n        if echo \"$SERVICE\" | grep -q \"_expo._tcp\"; then\n          /usr/libexec/PlistBuddy -c \"Delete :NSBonjourServices:$i\" \"$PLIST_PATH\" 2>/dev/null || true\n        fi\n      done\n\n      # If the array is now empty, remove it entirely\n      REMAINING=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null | grep \"^    \" | wc -l | tr -d ' ')\n      if [ \"$REMAINING\" -eq \"0\" ]; then\n        /usr/libexec/PlistBuddy -c \"Delete :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null || true\n      fi\n    fi\n\n    # Only delete the description if it matches the dev-launcher default text\n    DESC=$(/usr/libexec/PlistBuddy -c \"Print :NSLocalNetworkUsageDescription\" \"$PLIST_PATH\" 2>/dev/null || echo \"\")\n    if echo \"$DESC\" | grep -q \"Expo Dev Launcher\"; then\n      /usr/libexec/PlistBuddy -c \"Delete :NSLocalNetworkUsageDescription\" \"$PLIST_PATH\" 2>/dev/null || true\n    fi\n  fi\nfi\n\ntouch \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 		};
 		6812790F3A6C4DFBA2F23C94 /* Upload Debug Symbols to Sentry */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -319,54 +334,6 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Hungry/Pods-Hungry-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		66E2B0A8767640828F33E30D /* [Expo Dev Launcher] Strip Local Network Keys for Release */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			name = "[Expo Dev Launcher] Strip Local Network Keys for Release";
-			inputPaths = (
-			);
-			outputPaths = (
-			);
-			shellPath = /bin/sh;
-			shellScript = "# Strip dev-launcher-specific local network permission keys from non-Debug builds
-# This only removes _expo._tcp Bonjour services and the dev-launcher usage description.
-# Other Bonjour services and custom descriptions are preserved for production use.
-
-if [ \"$CONFIGURATION\" != \"Debug\" ]; then
-  PLIST_PATH=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"
-  if [ -f \"$PLIST_PATH\" ]; then
-    # Check if NSBonjourServices exists
-    if /usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" >/dev/null 2>&1; then
-      # Get the count of services
-      COUNT=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null | grep \"^    \" | wc -l | tr -d ' ')
-
-      # Remove _expo._tcp
-      for ((i=COUNT-1; i>=0; i--)); do
-        SERVICE=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices:$i\" \"$PLIST_PATH\" 2>/dev/null || echo \"\")
-        if echo \"$SERVICE\" | grep -q \"_expo._tcp\"; then
-          /usr/libexec/PlistBuddy -c \"Delete :NSBonjourServices:$i\" \"$PLIST_PATH\" 2>/dev/null || true
-        fi
-      done
-
-      # If the array is now empty, remove it entirely
-      REMAINING=$(/usr/libexec/PlistBuddy -c \"Print :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null | grep \"^    \" | wc -l | tr -d ' ')
-      if [ \"$REMAINING\" -eq \"0\" ]; then
-        /usr/libexec/PlistBuddy -c \"Delete :NSBonjourServices\" \"$PLIST_PATH\" 2>/dev/null || true
-      fi
-    fi
-
-    # Only delete the description if it matches the dev-launcher default text
-    DESC=$(/usr/libexec/PlistBuddy -c \"Print :NSLocalNetworkUsageDescription\" \"$PLIST_PATH\" 2>/dev/null || echo \"\")
-    if echo \"$DESC\" | grep -q \"Expo Dev Launcher\"; then
-      /usr/libexec/PlistBuddy -c \"Delete :NSLocalNetworkUsageDescription\" \"$PLIST_PATH\" 2>/dev/null || true
-    fi
-  fi
-fi
-";
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -391,6 +358,7 @@ fi
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = Hungry/Hungry.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94R58J6LA2;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -409,13 +377,12 @@ fi
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = app.hungry.mobile;
-				PRODUCT_NAME = "Hungry";
+				PRODUCT_NAME = Hungry;
 				SWIFT_OBJC_BRIDGING_HEADER = "Hungry/Hungry-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 				VERSIONING_SYSTEM = "apple-generic";
-				DEVELOPMENT_TEAM = 94R58J6LA2;
 			};
 			name = Debug;
 		};
@@ -428,6 +395,7 @@ fi
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = Hungry/Hungry.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 94R58J6LA2;
 				INFOPLIST_FILE = Hungry/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -441,12 +409,11 @@ fi
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = app.hungry.mobile;
-				PRODUCT_NAME = "Hungry";
+				PRODUCT_NAME = Hungry;
 				SWIFT_OBJC_BRIDGING_HEADER = "Hungry/Hungry-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1";
+				TARGETED_DEVICE_FAMILY = 1;
 				VERSIONING_SYSTEM = "apple-generic";
-				DEVELOPMENT_TEAM = 94R58J6LA2;
 			};
 			name = Release;
 		};

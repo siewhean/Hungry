@@ -37,8 +37,8 @@
 
 ### 4. Verification Before Done
 - Never mark a task complete without proving it works
-- Run `npm run typecheck` — must pass
-- Run `npm run test` — must pass
+- For small iterative changes, do not require full QA/QC, `npm run ios`, full tests, or default `npm run typecheck`; run a focused check only if useful, or state that checks were skipped by design
+- For medium/broad/risky changes, choose the verification budget in `AGENTS.md` / `tasks/test-harness.md`
 - Ask: "Would a staff engineer approve this?"
 
 ### 5. Demand Elegance (Balanced)
@@ -92,9 +92,9 @@
 
 ```
 Before ending any session that changed code:
-  [ ] npm run typecheck — passes
+  [ ] Verification budget selected — focused check run or intentionally skipped for small iterative change
   [ ] tasks/backlog.md — canonical rows updated
-  [ ] tasks/verification.md — verification written
+  [ ] tasks/verification.md — verification written when task/release work changed
   [ ] tasks/session-log.md — entry appended
   [ ] tasks/lessons.md — corrections recorded
   [ ] README.md — status updated if progress or decisions changed

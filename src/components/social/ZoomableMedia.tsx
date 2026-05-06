@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, View, Pressable } from "react-native";
+import { StyleSheet, View, Pressable, type GestureResponderEvent } from "react-native";
 import { Image } from "expo-image";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { Pause, Volume2, VolumeX } from "lucide-react-native";
@@ -17,7 +17,7 @@ import { AppText } from "../ui";
 interface ZoomableMediaProps {
   uri: string;
   type: "image" | "video";
-  onPress?: () => void;
+  onPress?: (event: GestureResponderEvent) => void;
   style?: any;
 }
 

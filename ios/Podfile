@@ -1,7 +1,21 @@
+unless [].respond_to?(:filter_map)
+  class Array
+    def filter_map
+      return enum_for(:filter_map) unless block_given?
+
+      each_with_object([]) do |item, result|
+        value = yield item
+        result << value if value
+      end
+    end
+  end
+end
+
 require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
 require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
 
 require 'json'
+require 'shellwords'
 podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties.json'))) rescue {}
 
 def ccache_enabled?(podfile_properties)
@@ -10,6 +24,16 @@ def ccache_enabled?(podfile_properties)
   
   # Fall back to Podfile properties
   podfile_properties['apple.ccacheEnabled'] == 'true'
+end
+
+def build_setting_words(value)
+  return [] if value.nil?
+
+  if value.respond_to?(:to_a) && !value.is_a?(String)
+    return value.to_a.flat_map { |item| build_setting_words(item) }
+  end
+
+  Shellwords.split(value.to_s)
 end
 
 ENV['RCT_NEW_ARCH_ENABLED'] ||= '0' if podfile_properties['newArchEnabled'] == 'false'
@@ -68,16 +92,21 @@ target 'Hungry' do
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |build_config|
         build_config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = deployment_target
+        build_config.build_settings['GCC_WARN_INHIBIT_ALL_WARNINGS'] = 'YES'
+        build_config.build_settings['SWIFT_SUPPRESS_WARNINGS'] = 'YES'
+        build_config.build_settings['CLANG_WARN_NULLABLE_TO_NONNULL_CONVERSION'] = 'NO'
+        build_config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+        build_config.build_settings['OTHER_LIBTOOLFLAGS'] = '$(inherited) -no_warning_for_no_symbols'
 
         if target.name == 'fmt' || target.name == 'RCT-Folly'
           defs = build_config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
-          defs = [defs] unless defs.is_a?(Array)
+          defs = build_setting_words(defs)
           defs << 'FMT_USE_CONSTEXPR=0' unless defs.include?('FMT_USE_CONSTEXPR=0')
           defs << 'FMT_USE_CONSTEVAL=0' unless defs.include?('FMT_USE_CONSTEVAL=0')
           build_config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = defs
 
           cxx_flags = build_config.build_settings['OTHER_CPLUSPLUSFLAGS'] ||= ['$(inherited)']
-          cxx_flags = [cxx_flags] unless cxx_flags.is_a?(Array)
+          cxx_flags = build_setting_words(cxx_flags)
           cxx_flags << '-Wno-invalid-constexpr' unless cxx_flags.include?('-Wno-invalid-constexpr')
           build_config.build_settings['OTHER_CPLUSPLUSFLAGS'] = cxx_flags
         end
@@ -152,9 +181,15 @@ target 'Hungry' do
             fi
 
             : "${NODE_BINARY:=node}"
+            : "${ENTRY_FILE:=index.ts}"
 
             SENTRY_XCODE_SH="$("$NODE_BINARY" --print "require('path').dirname(require.resolve('@sentry/react-native/package.json')) + '/scripts/sentry-xcode.sh'")"
             REACT_NATIVE_XCODE_SH="$("$NODE_BINARY" --print "require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'")"
+
+            if [ "$CONFIGURATION" = "Debug" ] || [ "$PLATFORM_NAME" = "iphonesimulator" ]; then
+              /bin/sh "$REACT_NATIVE_XCODE_SH"
+              exit 0
+            fi
 
             /bin/sh "$SENTRY_XCODE_SH" "$REACT_NATIVE_XCODE_SH"
           SCRIPT
