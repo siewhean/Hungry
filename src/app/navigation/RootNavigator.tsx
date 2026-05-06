@@ -96,7 +96,6 @@ const AUTH_REQUIRED_ROUTES = new Set([
   "Favourites",
   "ReviewHistory",
   "Settings",
-  "SettingsV2",
   "DishDetail",
   "DishDetailV2",
   "StallDetail",

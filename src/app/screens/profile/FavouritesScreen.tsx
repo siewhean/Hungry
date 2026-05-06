@@ -123,7 +123,7 @@ export function FavouritesScreen({ navigation }: Props) {
           title="No favorites yet"
           body="Start exploring dishes to build your personalized list!"
           ctaLabel="Discover Dishes"
-          onPress={() => rootNavigation.navigate("Discover")}
+          onPress={() => rootNavigation.navigate("MainTabs", { screen: "Discover" })}
         />
       )}
     </ProfileScreenShell>

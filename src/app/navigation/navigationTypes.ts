@@ -5,7 +5,7 @@ export type AuthStackParamList = {
   SignUp: undefined;
   EmailVerification: { email: string } | undefined;
   ForgotPassword: undefined;
-  ResetPassword: { email: string; code: string } | undefined;
+  ResetPassword: { email?: string; code?: string } | undefined;
   ResetPasswordSuccess: undefined;
 };
 
@@ -15,8 +15,10 @@ export type OnboardingStackParamList = {
   OnboardingIntro3: undefined;
   CuisineSelection: undefined;
   FoodSelection: { cuisines: string[] };
-  TasteQuiz: { mode?: "onboarding" | "profile" } | undefined;
-  DietaryPreferences: undefined;
+  TasteQuiz: { mode?: "onboarding" | "profile"; initialPhase?: "taste" | "dietary" } | undefined;
+  DietaryPreferences:
+    | { mode?: "onboarding" | "profile"; initialPhase?: "taste" | "dietary" }
+    | undefined;
   TasteProfileLoading: undefined;
   TasteProfileResult: undefined;
   LocationPermission: undefined;
@@ -117,7 +119,6 @@ export type RootStackParamList = {
   ChatDetail: { chatId: string; name: string; avatar: string; isOnline?: boolean };
   Crave: undefined;
   MusicSelection: undefined;
-  DishDetailStandard: { dishId: string };
   UserProfile: {
     authorName: string;
     authorAvatarUrl?: string;

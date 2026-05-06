@@ -171,32 +171,30 @@ function BrowseGridScreen({
         dishes: DishDetail[];
       }[],
     ) =>
-      venues.flatMap(({ venue, topDish, dishes }, index) => {
-        const matchedDish = normalizedQuery
+      venues.flatMap(({ venue, topDish: venueTopDish, dishes }, index) => {
+        const topDish = normalizedQuery
           ? dishes.find((dish) => dish.name.toLowerCase().includes(normalizedQuery))
-          : topDish;
+          : venueTopDish;
 
-        if (!matchedDish) {
+        if (!topDish) {
           return [];
         }
 
-        const dishToShow = matchedDish;
-
         const post =
           stallPosts.find((candidate) => candidate.venueId === venue.id) ??
-          stallPosts.find((candidate) => candidate.dishIds.includes(dishToShow.id)) ??
+          stallPosts.find((candidate) => candidate.dishIds.includes(topDish.id)) ??
           postFallback;
 
         return {
           id: `stall-${venue.id}`,
-          title: dishToShow.name,
+          title: topDish.name,
           venueName: venue.name,
-          imageUrl: dishToShow.imageUrl,
+          imageUrl: topDish.imageUrl,
           authorName: post?.authorName ?? "Hungry Guide",
-          authorAvatarUrl: post?.authorAvatarUrl ?? dishToShow.imageUrl,
-          distanceMeters: dishToShow.distanceMeters,
-          likeCount: dishToShow.reviewCount + index * 23,
-          dish: dishToShow,
+          authorAvatarUrl: post?.authorAvatarUrl ?? topDish.imageUrl,
+          distanceMeters: topDish.distanceMeters,
+          likeCount: topDish.reviewCount + index * 23,
+          dish: topDish,
           venue,
         };
       });
@@ -321,11 +319,6 @@ function BrowseGridScreen({
         accessibilityRole="button"
         accessibilityLabel={`Open ${item.title}`}
         onPress={() => {
-          if (item.venue?.id) {
-            navigation.navigate("StallDetail", { venueId: item.venue.id });
-            return;
-          }
-
           navigation.navigate("DishDetail", { dishId: item.dish.id });
         }}
         style={{

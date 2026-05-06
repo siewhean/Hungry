@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { View, Pressable, StyleSheet, Dimensions } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import type { MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
+import type { NavigationProp } from "@react-navigation/native";
 import { House, Compass, BookOpenText, Plus, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { useAnimatedStyle, withTiming, withDelay } from "react-native-reanimated";
@@ -13,7 +14,7 @@ import { ProfileStack } from "@/app/screens/profile/ProfileStack";
 import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
-import type { MainTabParamList } from "./navigationTypes";
+import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 
 const Tab = createMaterialTopTabNavigator<MainTabParamList>();
 
@@ -25,11 +26,12 @@ function ReviewWrapper() {
   return <ReviewFeedScreen />;
 }
 
-function CustomTabBar({ state, descriptors, navigation }: any) {
+function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   const { palette, spacing, radii } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const [highlightVisible, setHighlightVisible] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>();
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -79,11 +81,11 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           if (isCreateAction) {
             if (!isAuthenticated) {
               setReturnRoute({ name: "PostComposerV2" });
-              navigation.navigate("AuthStack", { screen: "Login" });
+              rootNavigation?.navigate("AuthStack", { screen: "Login" });
               return;
             }
 
-            navigation.getParent()?.navigate("PostComposerV2");
+            rootNavigation?.navigate("PostComposerV2");
             resetTimer();
             return;
           }
@@ -98,7 +100,7 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
             // Special handling for protected routes
             if (route.name === "Profile" && !isAuthenticated) {
               setReturnRoute(route.name);
-              navigation.navigate("AuthStack", { screen: "Login" });
+              rootNavigation?.navigate("AuthStack", { screen: "Login" });
               return;
             }
             navigation.navigate(route.name);

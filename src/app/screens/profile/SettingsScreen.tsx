@@ -21,6 +21,7 @@ import { ProfileScreenShell } from "./ProfileScreenShell";
 
 export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const rootNavigation = getRootNavigation(navigation);
   const { palette, spacing } = useHungryTheme();
 
   const clearSession = useSessionStore((state) => state.clearSession);
@@ -72,7 +73,6 @@ export function SettingsScreen() {
               clearSearchState();
               resetDraft();
               resetLocationState();
-              const rootNavigation = getRootNavigation(navigation);
               rootNavigation.navigate("AuthStack", { screen: "SignUp" });
             })();
           },
@@ -100,7 +100,9 @@ export function SettingsScreen() {
         <SettingsRow
           label="Location"
           icon={<MapPin size={20} color={palette.orange} />}
-          onPress={() => navigation.navigate("ManualLocationPicker" as any)}
+          onPress={() =>
+            rootNavigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" })
+          }
           value={location || "Use GPS"}
           isLast
         />

@@ -14,6 +14,7 @@ import {
 } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 
+import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AppText, Button, IconButton, Screen, Chip } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
@@ -23,6 +24,7 @@ import type { MerchantTeamMember, MerchantNotificationPreferences } from "@/type
 export function MerchantSettingsScreen() {
   const { palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation();
+  const rootNavigation = getRootNavigation(navigation as any);
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const account = useMerchantStore((state) => state.account);
   const clearMerchant = useMerchantStore((state) => state.clearMerchant);
@@ -83,7 +85,7 @@ export function MerchantSettingsScreen() {
           style: "destructive",
           onPress: () => {
             clearMerchant();
-            navigation.navigate("Profile" as never);
+            rootNavigation.navigate("MainTabs", { screen: "Profile" });
           },
         },
       ],
