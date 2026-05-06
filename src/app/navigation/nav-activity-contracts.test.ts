@@ -19,19 +19,28 @@ test("bottom navigation puts create post in the center and review fourth", () =>
     /key: "Home"[\s\S]*key: "Discover"[\s\S]*key: "Create"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
   );
   assert.match(tabs, /isCreateAction[\s\S]*navigate\("PostComposerV2"\)/);
-  assert.match(tabs, /height: 62 \+ Math\.max\(insets\.bottom, spacing\[2\]\)/);
+  assert.match(
+    tabs,
+    /height: componentSizes\.bottomTabBar \+ Math\.max\(insets\.bottom, spacing\[2\]\)/,
+  );
   assert.match(tabs, /paddingTop: spacing\[2\]/);
   assert.match(tabs, /backgroundColor: palette\.orange[\s\S]*borderRadius: radii\.pill/);
   assert.match(
     tabs,
-    /<Icon color=\{isCreateAction \? palette\.white : currentColor\} size=\{26\} \/>/,
+    /<Icon[\s\S]*color=\{isCreateAction \? palette\.white : currentColor\}[\s\S]*size=\{componentSizes\.bottomTabIcon\}[\s\S]*\/>/,
   );
   assert.match(
     tabs,
     /\{isCreateAction \? null : \(\s*<AppText[\s\S]*\{item\.label\}[\s\S]*<\/AppText>\s*\)\}/,
   );
-  assert.match(tabs, /iconSlot: \{[\s\S]*height: 28[\s\S]*width: 40/);
-  assert.match(tabs, /createButton: \{[\s\S]*height: 40[\s\S]*width: 40/);
+  assert.match(
+    tabs,
+    /iconSlot: \{[\s\S]*height: componentSizes\.bottomTabIconSlotHeight[\s\S]*width: componentSizes\.bottomTabIconSlotWidth/,
+  );
+  assert.match(
+    tabs,
+    /createButton: \{[\s\S]*height: componentSizes\.bottomTabCreateButton[\s\S]*width: componentSizes\.bottomTabCreateButton/,
+  );
   assert.doesNotMatch(tabs, /createTabItem/);
   assert.doesNotMatch(tabs, /borderWidth: 4/);
   assert.doesNotMatch(tabs, /<Tab\.Screen name="Create"/);

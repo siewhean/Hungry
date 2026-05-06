@@ -10,26 +10,28 @@ interface SkeletonProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export function Skeleton({ width = "100%", height = 20, borderRadius = 8, style }: SkeletonProps) {
-  const { motion, palette } = useHungryTheme();
-  const opacity = useRef(new Animated.Value(0.3)).current;
+export function Skeleton({ width = "100%", height, borderRadius, style }: SkeletonProps) {
+  const { componentSizes, motion, opacity: opacityTokens, palette, radii } = useHungryTheme();
+  const opacity = useRef(new Animated.Value(opacityTokens.skeletonMin)).current;
+  const resolvedHeight = height ?? componentSizes.skeletonLine;
+  const resolvedRadius = borderRadius ?? radii.sm;
 
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
         Animated.timing(opacity, {
-          toValue: 0.7,
+          toValue: opacityTokens.skeletonMax,
           duration: Math.round(motion.skeleton / 2),
           useNativeDriver: true,
         }),
         Animated.timing(opacity, {
-          toValue: 0.3,
+          toValue: opacityTokens.skeletonMin,
           duration: Math.round(motion.skeleton / 2),
           useNativeDriver: true,
         }),
       ]),
     ).start();
-  }, [motion.skeleton, opacity]);
+  }, [motion.skeleton, opacity, opacityTokens.skeletonMax, opacityTokens.skeletonMin]);
 
   return (
     <Animated.View
@@ -38,9 +40,9 @@ export function Skeleton({ width = "100%", height = 20, borderRadius = 8, style 
       style={[
         {
           width: width as DimensionValue,
-          height: height as DimensionValue,
+          height: resolvedHeight as DimensionValue,
           backgroundColor: palette.border,
-          borderRadius,
+          borderRadius: resolvedRadius,
           opacity,
         },
         style,

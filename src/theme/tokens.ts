@@ -111,6 +111,29 @@ export const semanticSpacing = {
   heroGap: 32, // xxxl: Large breathing room for hero elements
 } as const;
 
+export const componentSizes = {
+  touchTarget: 44,
+  iconButton: 44,
+  headerMinHeight: 56,
+  headerBackButton: 38,
+  inputMinHeight: 54,
+  searchIconSlot: 56,
+  searchBarHeight: 52,
+  bottomTabBar: 62,
+  merchantTabBar: 70,
+  bottomTabIconSlotWidth: 40,
+  bottomTabIconSlotHeight: 28,
+  bottomTabCreateButton: 40,
+  bottomTabIcon: 26,
+  bottomTabLabelFontSize: 10,
+  bottomTabLabelLineHeight: 12,
+  merchantTabIcon: 30,
+  buttonSmMinHeight: 36,
+  buttonMdMinHeight: 52,
+  buttonLgMinHeight: 60,
+  skeletonLine: 20,
+} as const;
+
 export const radii = {
   sm: 8,
   md: 12,
@@ -118,6 +141,16 @@ export const radii = {
   xl: 24,
   xxl: 32,
   pill: 999,
+} as const;
+
+export const opacity = {
+  disabled: 0.5,
+  disabledSubtle: 0.6,
+  pressed: 0.85,
+  pressedScale: 0.96,
+  backdrop: 0.5,
+  skeletonMin: 0.3,
+  skeletonMax: 0.7,
 } as const;
 
 export const shadows = {
@@ -197,6 +230,8 @@ export const motion = {
   idlePulse: 800,
   microInteraction: 200,
   doubleTapWindow: 260,
+  searchExpand: 320,
+  searchCollapse: 140,
 } as const;
 
 export const zIndex = {

@@ -23,16 +23,19 @@ interface LocationSearchModalProps {
 }
 
 function DynamicHeader({ onClose }: { onClose: () => void }) {
-  const { palette } = useHungryTheme();
+  const { palette, semanticSpacing, spacing } = useHungryTheme();
   const { animatedIndex } = useBottomSheet();
   const insets = useSafeAreaInsets();
 
   const animatedStyle = useAnimatedStyle(() => {
-    const targetPadding = Platform.OS === "ios" ? Math.max(insets.top, 16) : 16;
+    const targetPadding =
+      Platform.OS === "ios"
+        ? Math.max(insets.top, semanticSpacing.screenEdge)
+        : semanticSpacing.screenEdge;
     const paddingTop = interpolate(
       animatedIndex.value,
       [0, 1],
-      [16, targetPadding],
+      [semanticSpacing.screenEdge, targetPadding],
       Extrapolation.CLAMP,
     );
 
@@ -42,7 +45,13 @@ function DynamicHeader({ onClose }: { onClose: () => void }) {
   });
 
   return (
-    <Animated.View style={[styles.header, animatedStyle]}>
+    <Animated.View
+      style={[
+        styles.header,
+        { marginBottom: spacing[2], paddingHorizontal: semanticSpacing.screenEdge },
+        animatedStyle,
+      ]}
+    >
       <AppText variant="h3">Select Location</AppText>
       <IconButton
         icon={<X size={24} color={palette.text} />}
@@ -55,13 +64,14 @@ function DynamicHeader({ onClose }: { onClose: () => void }) {
 
 function DynamicFooter() {
   const { animatedIndex } = useBottomSheet();
+  const { spacing } = useHungryTheme();
+  const baseFooterHeight = Platform.OS === "ios" ? spacing[8] + spacing[2] : spacing[5];
 
   const style = useAnimatedStyle(() => {
-    const base = Platform.OS === "ios" ? 40 : 20;
     const height = interpolate(
       animatedIndex.value,
       [0, 1],
-      [SCREEN_HEIGHT * 0.1 + base, base],
+      [SCREEN_HEIGHT * 0.1 + baseFooterHeight, baseFooterHeight],
       Extrapolation.CLAMP,
     );
     return { height };
@@ -71,7 +81,7 @@ function DynamicFooter() {
 }
 
 export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { opacity, palette, radii, semanticSpacing, shadows, spacing } = useHungryTheme();
   const currentLocation = useComposerStore((state) => state.location);
   const setLocation = useComposerStore((state) => state.setLocation);
   const locationOptions = useMemo(() => listComposerLocationOptions(), []);
@@ -127,9 +137,14 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
 
   const renderBackdrop = useCallback(
     (props: any) => (
-      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={opacity.backdrop}
+      />
     ),
-    [],
+    [opacity.backdrop],
   );
 
   const snapPoints = useMemo(() => ["90%", "100%"], []);
@@ -148,7 +163,12 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
       <View style={{ flex: 1 }}>
         <DynamicHeader onClose={() => innerRef.current?.dismiss()} />
 
-        <View style={styles.searchContainer}>
+        <View
+          style={[
+            styles.searchContainer,
+            { marginBottom: spacing[2], paddingHorizontal: semanticSpacing.screenEdge },
+          ]}
+        >
           <Input
             placeholder="Search stalls, malls or streets..."
             value={searchQuery}
@@ -156,7 +176,7 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
             leftIcon={<Search size={18} color={palette.textMuted} />}
             rightIcon={
               searchQuery.length > 0 ? (
-                <Pressable onPress={() => setSearchQuery("")} style={{ padding: 4 }}>
+                <Pressable onPress={() => setSearchQuery("")} style={{ padding: spacing[1] }}>
                   <X size={16} color={palette.textMuted} />
                 </Pressable>
               ) : undefined
@@ -175,7 +195,15 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
             <View
               style={[
                 styles.locCard,
-                { backgroundColor: palette.surfaceGlass, borderRadius: radii.md },
+                {
+                  ...shadows.card,
+                  backgroundColor: palette.surfaceGlass,
+                  borderRadius: radii.md,
+                  bottom: spacing[3],
+                  left: spacing[3],
+                  padding: spacing[3],
+                  right: spacing[3],
+                },
               ]}
             >
               <AppText variant="bodyBold">{selectedLoc.name}</AppText>
@@ -195,11 +223,11 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
               style={{
                 alignItems: "center",
                 justifyContent: "center",
-                marginTop: 60,
-                paddingHorizontal: 16,
+                marginTop: spacing[12] + spacing[3],
+                paddingHorizontal: semanticSpacing.screenEdge,
               }}
             >
-              <MapPin size={48} color={palette.textMuted} style={{ marginBottom: 16 }} />
+              <MapPin size={48} color={palette.textMuted} style={{ marginBottom: spacing[4] }} />
               <AppText tone="secondary" style={{ textAlign: "center" }}>
                 No locations found matching {`"${searchQuery}"`}
               </AppText>
@@ -219,6 +247,8 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
                         ? palette.surfaceRaised
                         : "transparent",
                   borderRadius: radii.md,
+                  gap: spacing[3],
+                  padding: spacing[3],
                 },
               ]}
             >
@@ -226,7 +256,7 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
                 size={20}
                 color={selectedLoc?.id === item.id ? palette.orange : palette.textMuted}
               />
-              <View style={{ flex: 1, gap: 2 }}>
+              <View style={{ flex: 1, gap: spacing[0.5] }}>
                 <AppText
                   variant="bodyBold"
                   style={{ color: selectedLoc?.id === item.id ? palette.orange : palette.text }}
@@ -239,7 +269,7 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
               </View>
             </Pressable>
           )}
-          style={{ flex: 1, paddingHorizontal: 16, marginTop: spacing["4"] }}
+          style={{ flex: 1, paddingHorizontal: semanticSpacing.screenEdge, marginTop: spacing[4] }}
           contentContainerStyle={{ paddingTop: 0 }}
         />
       </View>
@@ -252,13 +282,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    marginBottom: 8,
   },
-  searchContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
+  searchContainer: {},
   mapWrapper: {
     height: 260,
     width: "100%",
@@ -266,21 +291,9 @@ const styles = StyleSheet.create({
   },
   locCard: {
     position: "absolute",
-    bottom: 12,
-    left: 12,
-    right: 12,
-    padding: 12,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
   locationItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
-    gap: 12,
   },
 });

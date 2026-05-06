@@ -41,7 +41,7 @@ function MerchantAccessGate({
   routeName: MerchantRouteName;
   children: React.ReactNode;
 }) {
-  const { spacing, palette } = useHungryTheme();
+  const { spacing } = useHungryTheme();
   const navigation = useNavigation();
   const account = useMerchantStore((state) => state.account);
   const setAccount = useMerchantStore((state) => state.setAccount);
@@ -159,7 +159,7 @@ const GuardedMerchantSettingsScreen = createGuardedScreen(
 );
 
 function MerchantTabBar({ state, descriptors, navigation }: any) {
-  const { palette, spacing } = useHungryTheme();
+  const { componentSizes, palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
 
   return (
@@ -168,7 +168,7 @@ function MerchantTabBar({ state, descriptors, navigation }: any) {
         styles.tabBarContainer,
         {
           backgroundColor: palette.bg,
-          height: 70 + Math.max(insets.bottom, spacing[2]),
+          height: componentSizes.merchantTabBar + Math.max(insets.bottom, spacing[2]),
           paddingBottom: Math.max(insets.bottom, spacing[2]),
           paddingTop: spacing[4],
         },
@@ -215,7 +215,7 @@ function MerchantTabBar({ state, descriptors, navigation }: any) {
             accessibilityRole="button"
             accessibilityState={isFocused ? { selected: true } : {}}
           >
-            <Icon color={color} size={30} />
+            <Icon color={color} size={componentSizes.merchantTabIcon} />
           </Pressable>
         );
       })}
@@ -224,7 +224,7 @@ function MerchantTabBar({ state, descriptors, navigation }: any) {
 }
 
 export function MerchantTabs() {
-  const { spacing } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
   const navigation = useNavigation();
   const account = useMerchantStore((state) => state.account);
   const developerMerchantMode = useMerchantStore((state) => state.developerMerchantMode);
@@ -286,8 +286,12 @@ export function MerchantTabs() {
     return (
       <Screen title="Merchant Centre">
         <View style={styles.accessGate}>
-          <ActivityIndicator size="large" color="#F97316" />
-          <AppText variant="body" tone="muted" style={{ textAlign: "center", marginTop: 16 }}>
+          <ActivityIndicator size="large" color={palette.orange} />
+          <AppText
+            variant="body"
+            tone="muted"
+            style={{ textAlign: "center", marginTop: spacing[4] }}
+          >
             Loading your merchant account...
           </AppText>
         </View>

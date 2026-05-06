@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { View, Pressable, StyleSheet, Dimensions } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import type { MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
 import type { NavigationProp } from "@react-navigation/native";
 import { House, Compass, BookOpenText, Plus, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { useAnimatedStyle, withTiming, withDelay } from "react-native-reanimated";
 
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
 import { DiscoverHomeScreen } from "@/app/screens/discover/DiscoverHomeScreen";
@@ -27,7 +26,8 @@ function ReviewWrapper() {
 }
 
 function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentSizes, palette, radii, spacing } = useHungryTheme();
+  const styles = createStyles(componentSizes, spacing);
   const insets = useSafeAreaInsets();
   const [highlightVisible, setHighlightVisible] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -65,7 +65,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         styles.tabBarContainer,
         {
           backgroundColor: palette.bg,
-          height: 62 + Math.max(insets.bottom, spacing[2]),
+          height: componentSizes.bottomTabBar + Math.max(insets.bottom, spacing[2]),
           paddingBottom: Math.max(insets.bottom, spacing[2]),
           paddingTop: spacing[2],
         },
@@ -136,7 +136,10 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
                   : styles.iconSlot
               }
             >
-              <Icon color={isCreateAction ? palette.white : currentColor} size={26} />
+              <Icon
+                color={isCreateAction ? palette.white : currentColor}
+                size={componentSizes.bottomTabIcon}
+              />
             </View>
             {isCreateAction ? null : (
               <AppText
@@ -144,9 +147,9 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
                 numberOfLines={1}
                 style={{
                   color: currentColor,
-                  fontSize: 10,
+                  fontSize: componentSizes.bottomTabLabelFontSize,
                   fontWeight: isFocused ? "800" : "700",
-                  lineHeight: 12,
+                  lineHeight: componentSizes.bottomTabLabelLineHeight,
                 }}
               >
                 {item.label}
@@ -178,29 +181,33 @@ export function SwipeableTabNavigator() {
   );
 }
 
-const styles = StyleSheet.create({
-  tabBarContainer: {
-    flexDirection: "row",
-    borderTopWidth: 0,
-    elevation: 0,
-    shadowOpacity: 0,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 2,
-  },
-  iconSlot: {
-    alignItems: "center",
-    height: 28,
-    justifyContent: "center",
-    width: 40,
-  },
-  createButton: {
-    alignItems: "center",
-    height: 40,
-    justifyContent: "center",
-    width: 40,
-  },
-});
+const createStyles = (
+  componentSizes: ReturnType<typeof useHungryTheme>["componentSizes"],
+  spacing: ReturnType<typeof useHungryTheme>["spacing"],
+) =>
+  StyleSheet.create({
+    tabBarContainer: {
+      flexDirection: "row",
+      borderTopWidth: 0,
+      elevation: 0,
+      shadowOpacity: 0,
+    },
+    tabItem: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing[0.5],
+    },
+    iconSlot: {
+      alignItems: "center",
+      height: componentSizes.bottomTabIconSlotHeight,
+      justifyContent: "center",
+      width: componentSizes.bottomTabIconSlotWidth,
+    },
+    createButton: {
+      alignItems: "center",
+      height: componentSizes.bottomTabCreateButton,
+      justifyContent: "center",
+      width: componentSizes.bottomTabCreateButton,
+    },
+  });

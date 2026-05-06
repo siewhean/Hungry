@@ -40,9 +40,9 @@ export function AppHeader({
   onBackPress,
   backIconSize = 20,
 }: AppHeaderProps) {
-  const { spacing, palette, typography } = useHungryTheme();
+  const { componentSizes, palette, radii, spacing, typography } = useHungryTheme();
   const navigation = useNavigation();
-  const styles = createStyles(spacing, typography);
+  const styles = createStyles(componentSizes, radii, spacing, typography);
   const canGoBack = navigation.canGoBack();
   const shouldShowBack = showBack && !left && canGoBack;
   const resolvedOnBackPress = onBackPress ?? (() => navigation.goBack());
@@ -90,6 +90,8 @@ export function AppHeader({
 }
 
 const createStyles = (
+  componentSizes: ReturnType<typeof useHungryTheme>["componentSizes"],
+  radii: ReturnType<typeof useHungryTheme>["radii"],
   spacing: ReturnType<typeof useHungryTheme>["spacing"],
   typography: ReturnType<typeof useHungryTheme>["typography"],
 ) =>
@@ -98,7 +100,7 @@ const createStyles = (
       alignItems: "center",
       flexDirection: "row",
       gap: spacing[3],
-      minHeight: 56,
+      minHeight: componentSizes.headerMinHeight,
       paddingBottom: spacing[2],
       paddingTop: spacing[1],
     },
@@ -106,7 +108,7 @@ const createStyles = (
       flex: 1,
       gap: spacing[1],
       justifyContent: "flex-start",
-      minHeight: 56,
+      minHeight: componentSizes.headerMinHeight,
     },
     title: {
       ...typography.h1,
@@ -117,13 +119,13 @@ const createStyles = (
     side: {
       alignItems: "center",
       justifyContent: "center",
-      minHeight: 56,
+      minHeight: componentSizes.headerMinHeight,
     },
     backButton: {
       alignItems: "center",
-      borderRadius: 999,
-      height: 38,
+      borderRadius: radii.pill,
+      height: componentSizes.headerBackButton,
       justifyContent: "center",
-      width: 38,
+      width: componentSizes.headerBackButton,
     },
   });

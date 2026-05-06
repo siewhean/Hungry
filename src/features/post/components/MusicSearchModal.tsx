@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { View, StyleSheet, Pressable, Platform } from "react-native";
+import { View, StyleSheet, Pressable } from "react-native";
 import { Music, Search, X, Check, Play, Pause } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { BottomSheetModal, BottomSheetFlatList } from "@gorhom/bottom-sheet";
@@ -7,7 +7,6 @@ import { BottomSheetModal, BottomSheetFlatList } from "@gorhom/bottom-sheet";
 import { AppText, Input, IconButton, BottomSheet } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
-import { semanticSpacing } from "@/theme/tokens";
 
 interface Track {
   id: string;
@@ -81,7 +80,7 @@ interface MusicSearchModalProps {
 }
 
 export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentSizes, palette, radii, semanticSpacing, spacing } = useHungryTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
 
@@ -133,16 +132,26 @@ export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
                 ? palette.surfaceRaised
                 : "transparent",
             borderRadius: radii.md,
+            marginBottom: spacing[1],
+            padding: spacing[3],
           },
         ]}
       >
-        <View style={styles.trackInfo}>
+        <View style={[styles.trackInfo, { gap: spacing[3] }]}>
           <Pressable
             onPress={(e) => {
               e.stopPropagation();
               togglePlay(item.id);
             }}
-            style={[styles.playButton, { backgroundColor: palette.bgSoft }]}
+            style={[
+              styles.playButton,
+              {
+                backgroundColor: palette.bgSoft,
+                borderRadius: radii.pill,
+                height: componentSizes.buttonSmMinHeight,
+                width: componentSizes.buttonSmMinHeight,
+              },
+            ]}
           >
             {isPlaying ? (
               <Pause size={16} color={palette.orange} fill={palette.orange} />
@@ -170,8 +179,13 @@ export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
 
   return (
     <BottomSheet ref={innerRef} snapPoints={["85%"]} keyboardBehavior="interactive">
-      <View style={{ flex: 1, marginHorizontal: -16 }}>
-        <View style={styles.header}>
+      <View style={{ flex: 1, marginHorizontal: -semanticSpacing.screenEdge }}>
+        <View
+          style={[
+            styles.header,
+            { marginBottom: spacing[4], paddingHorizontal: semanticSpacing.screenEdge },
+          ]}
+        >
           <AppText variant="h3">Music Library</AppText>
           <IconButton
             icon={<X size={24} color={palette.text} />}
@@ -180,7 +194,12 @@ export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
           />
         </View>
 
-        <View style={styles.searchContainer}>
+        <View
+          style={[
+            styles.searchContainer,
+            { marginBottom: spacing[4], paddingHorizontal: semanticSpacing.screenEdge },
+          ]}
+        >
           <Input
             placeholder="Search mood, vibe or genre..."
             value={searchQuery}
@@ -188,7 +207,7 @@ export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
             leftIcon={<Search size={18} color={palette.textMuted} />}
             rightIcon={
               searchQuery.length > 0 ? (
-                <Pressable onPress={() => setSearchQuery("")} style={{ padding: 4 }}>
+                <Pressable onPress={() => setSearchQuery("")} style={{ padding: spacing[1] }}>
                   <X size={16} color={palette.textMuted} />
                 </Pressable>
               ) : undefined
@@ -200,11 +219,14 @@ export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
           data={filteredTracks}
           keyExtractor={(item) => item.id}
           renderItem={renderTrackItem}
-          contentContainerStyle={[styles.listContent, { paddingBottom: spacing["12"] || 48 }]}
-          style={{ flex: 1, paddingHorizontal: 16 }}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: spacing[12], paddingVertical: spacing[2] },
+          ]}
+          style={{ flex: 1, paddingHorizontal: semanticSpacing.screenEdge }}
           ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Music size={48} color={palette.textMuted} style={{ marginBottom: spacing["4"] }} />
+            <View style={[styles.emptyState, { marginTop: spacing[12] + spacing[3] }]}>
+              <Music size={48} color={palette.textMuted} style={{ marginBottom: spacing[4] }} />
               <AppText tone="secondary">No tracks found matching {`"${searchQuery}"`}</AppText>
             </View>
           }
@@ -219,43 +241,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    marginBottom: 16,
   },
-  searchContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  searchInputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+  searchContainer: {},
   trackItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 12,
-    marginBottom: 4,
   },
   trackInfo: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
-    gap: 12,
   },
   playButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
   },
-  listContent: {
-    paddingVertical: 8,
-  },
+  listContent: {},
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 60,
   },
 });

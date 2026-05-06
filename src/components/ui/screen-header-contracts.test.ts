@@ -36,7 +36,10 @@ test("Screen header contract: shared app headers use one fixed title treatment",
   const expandableSearch = read("src/components/ui/ExpandableSearchLauncher.tsx");
 
   assert.match(screenSource, /<AppHeader/);
-  assert.match(source, /const \{ spacing, palette, typography \} = useHungryTheme\(\)/);
+  assert.match(
+    source,
+    /const \{ componentSizes, palette, radii, spacing, typography \} = useHungryTheme\(\)/,
+  );
   assert.match(source, /\.\.\.typography\.h1/);
   assert.match(source, /\.\.\.typography\.bodySmall/);
   assert.match(source, /titleStyle\?: TextStyle/);
@@ -45,18 +48,23 @@ test("Screen header contract: shared app headers use one fixed title treatment",
   assert.doesNotMatch(source, /fontSize: 24/);
   assert.doesNotMatch(source, /lineHeight: 30/);
   assert.doesNotMatch(source, /fontWeight: "900"/);
-  assert.match(source, /minHeight: 56/);
+  assert.match(source, /minHeight: componentSizes\.headerMinHeight/);
+  assert.match(source, /borderRadius: radii\.pill/);
+  assert.match(source, /height: componentSizes\.headerBackButton/);
   assert.doesNotMatch(screenSource, /paddingLeft: scrollBackVisible/);
   assert.doesNotMatch(screenSource, /paddingTop: scrollBackVisible/);
   assert.match(expandableSearch, /dismissOnTapAway = true/);
   assert.match(expandableSearch, /accessibilityLabel="Close search"/);
   assert.match(expandableSearch, /styles\.tapAwayLayer/);
   assert.match(expandableSearch, /useNativeDriver: false/);
-  assert.match(expandableSearch, /duration: 320/);
+  assert.match(expandableSearch, /duration: motion\.searchExpand/);
   assert.match(expandableSearch, /outputRange: \[0\.92, 1\]/);
   assert.match(expandableSearch, /width: expandedWidth/);
   assert.doesNotMatch(expandableSearch, /outputRange: \[0, expandedWidth\]/);
-  assert.match(expandableSearch, /const backingHeight = Math\.max\(barHeight, 56\)/);
+  assert.match(
+    expandableSearch,
+    /const backingHeight = Math\.max\(resolvedBarHeight, componentSizes\.headerMinHeight\)/,
+  );
   assert.match(expandableSearch, /styles\.expandedBacking/);
   assert.match(expandableSearch, /backgroundColor: palette\.white/);
 });

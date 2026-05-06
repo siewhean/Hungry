@@ -118,7 +118,7 @@ function BlogPostRouteScreen({
 
 function GlobalScrollBackButton() {
   const insets = useSafeAreaInsets();
-  const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
+  const { componentSizes, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const scrollBackVisible = useUIStore((state) => state.scrollBackVisible);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
   const rootState = navigationRef.isReady() ? navigationRef.getRootState() : undefined;
@@ -149,8 +149,10 @@ function GlobalScrollBackButton() {
             backgroundColor: palette.surface,
             borderColor: palette.border,
             borderRadius: radii.pill,
+            height: componentSizes.bottomTabCreateButton,
             left: spacing[4],
             top: insets.top + spacing[1],
+            width: componentSizes.bottomTabCreateButton,
             zIndex: zIndex.globalBack,
           },
         ]}
@@ -426,9 +428,7 @@ const styles = StyleSheet.create({
   globalBackButton: {
     alignItems: "center",
     borderWidth: 1,
-    height: 40,
     justifyContent: "center",
     position: "absolute",
-    width: 40,
   },
 });

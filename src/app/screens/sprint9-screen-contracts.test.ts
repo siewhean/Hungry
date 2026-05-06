@@ -276,7 +276,7 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /Opening Hours/);
   assert.match(source, /Signature Dishes/);
   assert.match(source, /From the Community/);
-  assert.match(source, /\.\.\.supplementalDishes,/);
+  assert.match(source, /\.\.\.supplementalDishes/);
   assert.match(source, /const signatureGridItemWidth = width \/ 2/);
   assert.match(source, /const signatureGridItemHeight = signatureGridItemWidth \* 1\.5/);
   assert.match(source, /marginHorizontal: -spacing\[4\]/);

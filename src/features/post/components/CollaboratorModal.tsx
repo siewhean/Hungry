@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { View, StyleSheet, Pressable, Platform } from "react-native";
-import { Users, Search, X, Check } from "lucide-react-native";
+import { Search, X, Check } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { BottomSheetModal, BottomSheetFlatList } from "@gorhom/bottom-sheet";
 
@@ -14,7 +14,7 @@ interface CollaboratorModalProps {
 }
 
 export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { palette, radii, semanticSpacing, spacing } = useHungryTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const users = useMemo(() => listComposerCollaboratorOptions(), []);
 
@@ -37,8 +37,13 @@ export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
 
   return (
     <BottomSheet ref={innerRef} snapPoints={["80%"]} keyboardBehavior="interactive">
-      <View style={{ flex: 1, marginHorizontal: -16 }}>
-        <View style={styles.header}>
+      <View style={{ flex: 1, marginHorizontal: -semanticSpacing.screenEdge }}>
+        <View
+          style={[
+            styles.header,
+            { marginBottom: spacing[2], paddingHorizontal: semanticSpacing.screenEdge },
+          ]}
+        >
           <AppText variant="h3">Tag Collaborators</AppText>
           <IconButton
             icon={<X size={24} color={palette.text} />}
@@ -47,7 +52,12 @@ export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
           />
         </View>
 
-        <View style={styles.searchContainer}>
+        <View
+          style={[
+            styles.searchContainer,
+            { marginBottom: spacing[2], paddingHorizontal: semanticSpacing.screenEdge },
+          ]}
+        >
           <Input
             placeholder="Search by name or @handle..."
             value={searchQuery}
@@ -55,7 +65,7 @@ export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
             leftIcon={<Search size={18} color={palette.textMuted} />}
             rightIcon={
               searchQuery.length > 0 ? (
-                <Pressable onPress={() => setSearchQuery("")} style={{ padding: 4 }}>
+                <Pressable onPress={() => setSearchQuery("")} style={{ padding: spacing[1] }}>
                   <X size={16} color={palette.textMuted} />
                 </Pressable>
               ) : undefined
@@ -80,11 +90,14 @@ export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
                         ? palette.surfaceRaised
                         : "transparent",
                     borderRadius: radii.md,
+                    gap: spacing[3],
+                    marginVertical: spacing[0.5],
+                    padding: spacing[3],
                   },
                 ]}
               >
                 <Avatar uri={item.avatar} name={item.name} size={40} />
-                <View style={{ flex: 1, gap: 2 }}>
+                <View style={{ flex: 1, gap: spacing[0.5] }}>
                   <AppText
                     variant="bodyBold"
                     style={{ color: isSelected ? palette.orange : palette.text }}
@@ -99,14 +112,19 @@ export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
               </Pressable>
             );
           }}
-          style={{ flex: 1, paddingHorizontal: 16 }}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          style={{ flex: 1, paddingHorizontal: semanticSpacing.screenEdge }}
+          contentContainerStyle={{ paddingBottom: spacing[20] + spacing[5] }}
         />
 
         <View
           style={[
             styles.footer,
-            { paddingBottom: Platform.OS === "ios" ? 40 : 20, paddingHorizontal: 16 },
+            {
+              borderTopColor: palette.border,
+              padding: spacing[4],
+              paddingBottom: Platform.OS === "ios" ? spacing[8] + spacing[2] : spacing[5],
+              paddingHorizontal: semanticSpacing.screenEdge,
+            },
           ]}
         >
           <Button
@@ -126,27 +144,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    marginBottom: 8,
   },
-  searchContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  searchInputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+  searchContainer: {},
   userItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
-    gap: 12,
-    marginVertical: 2,
   },
   footer: {
-    padding: 16,
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.05)",
   },
 });

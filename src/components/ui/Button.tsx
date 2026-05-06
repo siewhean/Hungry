@@ -39,7 +39,7 @@ export function Button({
   rightIcon,
   ...props
 }: ButtonProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentSizes, opacity, palette, radii, spacing } = useHungryTheme();
   const isDisabled = disabled || loading;
 
   const variantStyle: Record<ButtonVariant, ViewStyle> = {
@@ -64,16 +64,28 @@ export function Button({
       borderWidth: 1,
     },
     glass: {
-      backgroundColor: "rgba(255, 255, 255, 0.2)",
-      borderColor: "rgba(255, 255, 255, 0.4)",
+      backgroundColor: palette.surfaceGlass,
+      borderColor: palette.surfaceTranslucent,
       borderWidth: 1,
     },
   };
 
   const sizeStyle: Record<ButtonSize, ViewStyle> = {
-    sm: { minHeight: 36, paddingVertical: spacing[1.5], paddingHorizontal: spacing[3] },
-    md: { minHeight: 52, paddingVertical: spacing[3], paddingHorizontal: spacing[4] },
-    lg: { minHeight: 60, paddingVertical: spacing[4], paddingHorizontal: spacing[6] },
+    sm: {
+      minHeight: componentSizes.buttonSmMinHeight,
+      paddingVertical: spacing[1.5],
+      paddingHorizontal: spacing[3],
+    },
+    md: {
+      minHeight: componentSizes.buttonMdMinHeight,
+      paddingVertical: spacing[3],
+      paddingHorizontal: spacing[4],
+    },
+    lg: {
+      minHeight: componentSizes.buttonLgMinHeight,
+      paddingVertical: spacing[4],
+      paddingHorizontal: spacing[6],
+    },
   };
 
   return (
@@ -91,13 +103,13 @@ export function Button({
         sizeStyle[size],
         {
           borderRadius: radii.pill,
-          opacity: isDisabled ? 0.5 : 1,
+          opacity: isDisabled ? opacity.disabled : 1,
           width: fullWidth ? "100%" : undefined,
           transform: [{ translateY: pressed ? 1 : 0 }],
         },
         pressed && variant === "secondary" ? { backgroundColor: palette.surfaceRaised } : null,
         pressed && variant === "ghost" ? { backgroundColor: palette.surfaceRaised } : null,
-        pressed && variant === "glass" ? { backgroundColor: "rgba(255, 255, 255, 0.3)" } : null,
+        pressed && variant === "glass" ? { backgroundColor: palette.surfaceTranslucent } : null,
         style,
       ]}
       {...props}

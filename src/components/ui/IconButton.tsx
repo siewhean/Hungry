@@ -1,5 +1,11 @@
 import type { ReactNode } from "react";
-import { Pressable, StyleSheet, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  type PressableProps,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 import * as Haptics from "expo-haptics";
 
 import { useHungryTheme } from "@/theme";
@@ -20,21 +26,22 @@ export function IconButton({
   accessibilityLabel,
   accessibilityHint,
   variant = "surface",
-  size = 44,
+  size,
   style,
   disabled,
   ...props
 }: Props) {
-  const { palette, radii, shadows } = useHungryTheme();
+  const { componentSizes, opacity, palette, radii, shadows, spacing } = useHungryTheme();
   const isDisabled = Boolean(disabled);
+  const resolvedSize = size ?? componentSizes.iconButton;
 
   const baseStyle: ViewStyle = {
-    width: size,
-    height: size,
-    borderRadius: Math.min(radii.pill, size / 2),
+    width: resolvedSize,
+    height: resolvedSize,
+    borderRadius: Math.min(radii.pill, resolvedSize / 2),
     alignItems: "center",
     justifyContent: "center",
-    opacity: isDisabled ? 0.6 : 1,
+    opacity: isDisabled ? opacity.disabledSubtle : 1,
   };
 
   const variantStyle: Record<IconButtonVariant, ViewStyle> = {
@@ -62,7 +69,7 @@ export function IconButton({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
-      hitSlop={10}
+      hitSlop={spacing[2.5]}
       disabled={disabled}
       onPressIn={() => {
         if (!isDisabled) {
@@ -73,7 +80,9 @@ export function IconButton({
         styles.base,
         baseStyle,
         variantStyle[variant],
-        pressed && !isDisabled ? { transform: [{ scale: 0.96 }], backgroundColor: palette.surfaceRaised } : null,
+        pressed && !isDisabled
+          ? { transform: [{ scale: opacity.pressedScale }], backgroundColor: palette.surfaceRaised }
+          : null,
         style,
       ]}
       {...props}
@@ -88,4 +97,3 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
 });
-

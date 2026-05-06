@@ -27,7 +27,15 @@ export function Dialog({ visible, title, message, buttons, onClose }: DialogProp
 
   return (
     <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
-      <View style={styles.overlay}>
+      <View
+        style={[
+          styles.overlay,
+          {
+            backgroundColor: palette.overlay,
+            padding: spacing[6],
+          },
+        ]}
+      >
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <View
           style={[
@@ -79,9 +87,7 @@ export function Dialog({ visible, title, message, buttons, onClose }: DialogProp
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
-    padding: 24,
   },
   container: {
     width: "100%",

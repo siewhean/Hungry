@@ -23,7 +23,9 @@ import {
 import { useUIStore } from "@/store/useUIStore";
 import {
   colors,
+  componentSizes,
   motion,
+  opacity,
   radii,
   shadows,
   spacing,
@@ -43,6 +45,8 @@ type HungryTheme = {
   typography: typeof typography;
   motion: typeof motion;
   zIndex: typeof zIndex;
+  componentSizes: typeof componentSizes;
+  opacity: typeof opacity;
   fontsLoaded: boolean;
 };
 
@@ -158,6 +162,8 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
       typography,
       motion,
       zIndex,
+      componentSizes,
+      opacity,
       fontsLoaded: nunitoLoaded && monoLoaded && frauncesLoaded,
     }),
     [colorScheme, theme, palette, themedShadows, nunitoLoaded, monoLoaded, frauncesLoaded],

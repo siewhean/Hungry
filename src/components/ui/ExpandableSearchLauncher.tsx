@@ -46,8 +46,8 @@ export function ExpandableSearchLauncher({
   placeholder,
   expandedWidth,
   iconAlignment = "left",
-  iconSize = 56,
-  barHeight = 52,
+  iconSize,
+  barHeight,
   placeholderColor,
   borderColor,
   backgroundColor,
@@ -58,12 +58,14 @@ export function ExpandableSearchLauncher({
   dismissOnTapAway = true,
   accessibilityLabel,
 }: ExpandableSearchLauncherProps) {
-  const { palette, shadows } = useHungryTheme();
+  const { componentSizes, motion, palette, shadows, spacing, typography } = useHungryTheme();
   const iconColor = palette.textMuted;
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const searchInputRef = useRef<TextInput | null>(null);
   const searchRevealProgress = useRef(new Animated.Value(0)).current;
-  const searchIconSlotWidth = iconSize;
+  const resolvedIconSize = iconSize ?? componentSizes.searchIconSlot;
+  const resolvedBarHeight = barHeight ?? componentSizes.searchBarHeight;
+  const searchIconSlotWidth = resolvedIconSize;
   const searchInputOpacity = searchRevealProgress.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 1],
@@ -95,13 +97,13 @@ export function ExpandableSearchLauncher({
     searchRevealProgress.setValue(0);
     Animated.timing(searchRevealProgress, {
       toValue: 1,
-      duration: 320,
+      duration: motion.searchExpand,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start(() => {
       searchInputRef.current?.focus();
     });
-  }, [isSearchExpanded, searchRevealProgress]);
+  }, [isSearchExpanded, motion.searchExpand, searchRevealProgress]);
 
   const hideSearch = useCallback(() => {
     if (!isSearchExpanded) return;
@@ -109,7 +111,7 @@ export function ExpandableSearchLauncher({
     searchRevealProgress.stopAnimation(() =>
       Animated.timing(searchRevealProgress, {
         toValue: 0,
-        duration: 140,
+        duration: motion.searchCollapse,
         easing: Easing.in(Easing.cubic),
         useNativeDriver: false,
       }).start(() => {
@@ -118,7 +120,7 @@ export function ExpandableSearchLauncher({
         onBlur?.();
       }),
     );
-  }, [isSearchExpanded, onBlur, searchRevealProgress]);
+  }, [isSearchExpanded, motion.searchCollapse, onBlur, searchRevealProgress]);
 
   const handleClear = useCallback(() => {
     onQueryChange("");
@@ -134,8 +136,8 @@ export function ExpandableSearchLauncher({
   const launcherRowDirection = iconAlignment === "right" ? "row-reverse" : "row";
   const launcherAlignment =
     iconAlignment === "right" ? styles.alignLauncherRight : styles.alignLauncherLeft;
-  const backingHeight = Math.max(barHeight, 56);
-  const backingVerticalOffset = -(backingHeight - barHeight) / 2;
+  const backingHeight = Math.max(resolvedBarHeight, componentSizes.headerMinHeight);
+  const backingVerticalOffset = -(backingHeight - resolvedBarHeight) / 2;
 
   return (
     <View style={[launcherAlignment, { width: searchIconSlotWidth }, style]}>
@@ -150,7 +152,7 @@ export function ExpandableSearchLauncher({
       <Animated.View
         style={{
           width: launcherWidth,
-          height: barHeight,
+          height: resolvedBarHeight,
           alignItems: "center",
           justifyContent: "flex-start",
           flexDirection: launcherRowDirection,
@@ -163,7 +165,7 @@ export function ExpandableSearchLauncher({
           onPress={isSearchExpanded ? hideSearch : revealSearch}
           style={{
             width: searchIconSlotWidth,
-            height: barHeight,
+            height: resolvedBarHeight,
             alignItems: "center",
             justifyContent: "center",
           }}
@@ -192,14 +194,15 @@ export function ExpandableSearchLauncher({
           styles.expandedInput,
           {
             right: 0,
+            gap: spacing[2],
             zIndex: 40,
             width: launcherWidth,
-            height: barHeight,
+            height: resolvedBarHeight,
             borderColor: borderColor ?? palette.textMuted,
             backgroundColor: backgroundColor ?? palette.surface,
             borderWidth: 1,
-            borderRadius: barHeight / 2,
-            paddingHorizontal: 16,
+            borderRadius: resolvedBarHeight / 2,
+            paddingHorizontal: spacing[4],
           },
           iconAlignment === "right" ? styles.inputFromRight : null,
           expandedAnchorStyle,
@@ -228,9 +231,10 @@ export function ExpandableSearchLauncher({
             style={[
               styles.textInput,
               {
-                height: barHeight,
+                height: resolvedBarHeight,
+                fontFamily: typography.body.fontFamily,
+                fontSize: typography.body.fontSize,
                 color: textColor ?? palette.text,
-                fontSize: 15,
               },
               inputStyle,
             ]}
@@ -266,7 +270,6 @@ const styles = StyleSheet.create({
     top: 0,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
     overflow: "hidden",
   },
   expandedBacking: {
@@ -287,7 +290,6 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
-    fontFamily: "Nunito_400Regular",
     padding: 0,
     textAlignVertical: "center",
   },

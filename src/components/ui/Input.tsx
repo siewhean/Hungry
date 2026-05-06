@@ -31,14 +31,15 @@ export const Input = forwardRef<TextInput, InputProps>(
     },
     ref,
   ) => {
-    const { palette, radii, spacing, typography } = useHungryTheme();
+    const { componentSizes, palette, radii, semanticSpacing, spacing, typography } =
+      useHungryTheme();
     const isSecureField = Boolean(secureTextEntry);
     const resolvedAutoCorrect = autoCorrect ?? !isSecureField;
     const resolvedSpellCheck = spellCheck ?? !isSecureField;
     const resolvedAutoComplete = autoComplete ?? (isSecureField ? "off" : undefined);
 
     return (
-      <View style={styles.container}>
+      <View style={{ gap: semanticSpacing.textStack }}>
         {label ? (
           <AppText variant="bodySmall" tone="secondary">
             {label}
@@ -52,12 +53,16 @@ export const Input = forwardRef<TextInput, InputProps>(
               borderColor: error ? palette.error : palette.border,
               borderRadius: radii.md,
               gap: spacing[2],
-              minHeight: 54,
+              minHeight: componentSizes.inputMinHeight,
               paddingHorizontal: spacing[3],
             },
           ]}
         >
-          {leftIcon ? <View style={styles.iconWrap}>{leftIcon}</View> : null}
+          {leftIcon ? (
+            <View style={[styles.iconWrap, { minHeight: componentSizes.touchTarget }]}>
+              {leftIcon}
+            </View>
+          ) : null}
           <TextInput
             ref={ref}
             placeholderTextColor={palette.textMuted}
@@ -70,14 +75,18 @@ export const Input = forwardRef<TextInput, InputProps>(
               {
                 color: palette.text,
                 flex: 1,
-                minHeight: 54,
+                minHeight: componentSizes.inputMinHeight,
                 paddingVertical: spacing[3],
               },
               style,
             ]}
             {...props}
           />
-          {rightIcon ? <View style={styles.iconWrap}>{rightIcon}</View> : null}
+          {rightIcon ? (
+            <View style={[styles.iconWrap, { minHeight: componentSizes.touchTarget }]}>
+              {rightIcon}
+            </View>
+          ) : null}
         </View>
         {error && errorText ? (
           <AppText
@@ -100,9 +109,6 @@ export const Input = forwardRef<TextInput, InputProps>(
 Input.displayName = "Input";
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 4, // Intional small gap for label proximity
-  },
   field: {
     alignItems: "center",
     borderWidth: 1,
@@ -111,7 +117,6 @@ const styles = StyleSheet.create({
   iconWrap: {
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 44,
     minWidth: 24,
   },
 });
