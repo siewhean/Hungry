@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hungry - For Foodies</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "text-primary": "#111827",
+                        "hawker-amber": "#F5A623",
+                        "tertiary-fixed-dim": "#9bcbff",
+                        "on-background": "#261814",
+                        "hungry-orange": "#E8531E",
+                        "paper-warm": "#FFF7EE",
+                        "inverse-primary": "#ffb59e",
+                        "primary-fixed": "#ffdbd0",
+                        "surface": "#fff8f6",
+                        "on-secondary-fixed": "#061d32",
+                        "surface-tint": "#ad3200",
+                        "secondary-container": "#cde1fe",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#ffb59e",
+                        "on-tertiary-fixed": "#001d34",
+                        "line-border": "#E7DED4",
+                        "autumn-green": "#4F7E17",
+                        "inverse-surface": "#3d2d28",
+                        "surface-container-highest": "#f8ddd5",
+                        "on-secondary-fixed-variant": "#35485f",
+                        "outline": "#8e7067",
+                        "russian-red": "#CD0302",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-white": "#FFFFFF",
+                        "outline-variant": "#e3bfb4",
+                        "on-tertiary-fixed-variant": "#004a79",
+                        "primary-container": "#d1430b",
+                        "on-surface": "#261814",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#5a4139",
+                        "error-container": "#ffdad6",
+                        "primary": "#a93100",
+                        "secondary-fixed": "#d1e4ff",
+                        "surface-container-high": "#fee2db",
+                        "on-error-container": "#93000a",
+                        "background": "#fff8f6",
+                        "on-primary": "#ffffff",
+                        "secondary": "#4c6078",
+                        "surface-container-low": "#fff1ed",
+                        "on-secondary-container": "#51647d",
+                        "tertiary": "#00609b",
+                        "on-tertiary-container": "#fdfcff",
+                        "surface-bright": "#fff8f6",
+                        "deep-navy": "#1A2E44",
+                        "tertiary-container": "#0079c3",
+                        "on-primary-container": "#fffbff",
+                        "on-primary-fixed": "#3a0b00",
+                        "on-primary-fixed-variant": "#842500",
+                        "tertiary-fixed": "#d0e4ff",
+                        "surface-dim": "#efd4cd",
+                        "surface-variant": "#f8ddd5",
+                        "surface-container": "#ffe9e3",
+                        "inverse-on-surface": "#ffede8",
+                        "secondary-fixed-dim": "#b4c8e4",
+                        "surface-container-lowest": "#ffffff",
+                        "text-muted": "#6B7280",
+                        "text-secondary": "#374151"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "screen-edge": "16px",
+                        "lg": "20px",
+                        "xl": "24px",
+                        "xs": "4px",
+                        "md": "12px",
+                        "xxl": "32px",
+                        "section-gap": "20px",
+                        "huge": "48px",
+                        "base": "16px",
+                        "sm": "8px",
+                        "region-gap": "24px"
+                    },
+                    "fontFamily": {
+                        "mono-price": ["Space Grotesk"],
+                        "display": ["Plus Jakarta Sans"],
+                        "body": ["Be Vietnam Pro"],
+                        "micro": ["Be Vietnam Pro"],
+                        "body-sm": ["Be Vietnam Pro"],
+                        "h1": ["Plus Jakarta Sans"],
+                        "h2": ["Plus Jakarta Sans"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "h3": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "mono-price": ["15px", { "lineHeight": "22px", "fontWeight": "500" }],
+                        "display": ["32px", { "lineHeight": "38px", "fontWeight": "700" }],
+                        "body": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "micro": ["11px", { "lineHeight": "14px", "fontWeight": "500" }],
+                        "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "h1": ["24px", { "lineHeight": "30px", "fontWeight": "700" }],
+                        "h2": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+                        "body-lg": ["17px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "h3": ["17px", { "lineHeight": "22px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+</head>
+<body class="bg-paper-warm text-text-primary antialiased font-body">
+<!-- TopNavBar Component -->
+<nav class="sticky top-0 w-full z-50 border-b border-[#E7DED4] dark:border-stone-800 bg-[#FDFCFB] dark:bg-stone-950 font-['Plus_Jakarta_Sans'] antialiased flex justify-between items-center h-20 px-6 md:px-12 max-w-7xl mx-auto">
+<div class="text-2xl font-extrabold tracking-tight text-[#E8531E] dark:text-[#FF6B35]">Hungry</div>
+<div class="hidden md:flex space-x-8 items-center">
+<!-- Active state for "For Foodies" based on the page prompt -->
+<a class="text-[#E8531E] dark:text-[#FF6B35] font-bold border-b-2 border-[#E8531E] pb-1 transition-all duration-200 ease-in-out hover:opacity-80" href="#">For Foodies</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-all duration-200 ease-in-out hover:opacity-80" href="#">For Merchants</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-all duration-200 ease-in-out hover:opacity-80" href="#">About</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-all duration-200 ease-in-out hover:opacity-80" href="#">Merchant Portal</a>
+</div>
+<button class="bg-[#E8531E] text-white px-6 py-2 rounded-full font-h3 text-h3 hover:opacity-90 transition-opacity hidden md:block">Join Waitlist</button>
+<button class="md:hidden text-[#E8531E]">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</nav>
+<!-- Hero Section -->
+<section class="max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+<div class="space-y-8">
+<h1 class="font-display text-display text-text-primary leading-tight md:text-[48px] md:leading-[56px]">
+                Find what to eat before hunger turns into <span class="text-hungry-orange">indecision.</span>
+</h1>
+<p class="font-body-lg text-body-lg text-text-secondary max-w-lg">
+                Your local guide to the best hawker stalls and hidden gems. Image-led menus, honest reviews, and seamless discovery.
+            </p>
+<div class="flex flex-col sm:flex-row gap-4">
+<button class="bg-hungry-orange text-white px-8 py-4 rounded-[18px] font-h3 text-h3 hover:opacity-90 transition-opacity min-h-[52px] flex items-center justify-center gap-2">
+                    Join the Foodie Waitlist
+                    <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<div class="relative w-full aspect-[4/5] rounded-[24px] overflow-hidden shadow-sm border border-line-border">
+<img alt="Vibrant Singaporean Hawker Center food collage" class="w-full h-full object-cover" data-alt="A vibrant, warm, and highly appetizing close-up of a Singaporean hawker center table filled with local dishes like Hainanese chicken rice and laksa. The lighting is bright and inviting, capturing the tactile warmth of the paper-warm background and the rich colors of the food. The scene is shot from a top-down, local-guide perspective, emphasizing an image-led, authentic culinary experience without feeling like a sterile corporate ad. Deep hungry-orange accents are subtly present in the chili sauces and ambient lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBN1ikCOmfyrm3QL0xZ0Ooaxr-NZAYjgJ3BnVZz9yxEKqDMHZfeL416vBpLtEGgCKGyHbLCkrEQOI3V6aS451KhArM0Xhmmtue3Ue-FS3unxFBrr14WSMNR6-ar12BKCRorWvbdEduCRbyX505JaLhN324x0p0tjcgrozBxhIY57XGq5nQC96PsfNiJUbDmejJDd3OoBM5bNK9d4VwFugBvTNHpplJ5cml1KuxmQVGbSX8BMgO7UagCtkP_vrNUfHScbf3eZRU85zE"/>
+<!-- Floating badge -->
+<div class="absolute bottom-6 left-6 right-6 bg-surface-white/90 backdrop-blur-md p-4 rounded-xl border border-line-border flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-hungry-orange flex items-center justify-center text-white">
+<span class="material-symbols-outlined">local_dining</span>
+</div>
+<div>
+<h3 class="font-h3 text-h3 text-text-primary">Tian Tian Chicken Rice</h3>
+<p class="font-body-sm text-body-sm text-text-secondary">Maxwell Food Centre • 2.4km</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Features Bento Grid -->
+<section class="max-w-7xl mx-auto px-6 md:px-12 py-16 md:py-24 bg-surface-container-lowest rounded-[32px] my-12 border border-line-border">
+<div class="text-center mb-16 space-y-4">
+<h2 class="font-h1 text-h1 text-text-primary">Your personal local guide</h2>
+<p class="font-body text-body text-text-secondary max-w-2xl mx-auto">Everything you need to decide on your next meal, built around the dish itself.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
+<!-- Feature 1: Discover nearby food -->
+<div class="col-span-1 md:col-span-2 bg-surface rounded-[24px] border border-line-border p-8 relative overflow-hidden flex flex-col justify-end">
+<div class="absolute top-0 right-0 w-2/3 h-full opacity-80 mix-blend-multiply">
+<img alt="Map showing nearby food places" class="w-full h-full object-cover object-left" data-alt="A stylized, warm-toned map interface showing local food spots in a Singaporean neighborhood. The map uses soft paper-warm backgrounds with crisp white location pins accented in hungry-orange. The style is modern, premium, and spatial, avoiding generic tech maps. It feels like a carefully curated local guide's personal map, glowing softly under warm lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDe2A2oD4RdkQEaPsWCf1u3UhHopSD6bL1Wcxa7a-8aBeaqz-0vHI6FawE0mTBAEY14jz-mtw2n21l3L9NzFu_IQY75DTZjfRzFBWCG2TJqBoZ8JhrZIfVd1Br7sRl-kc5DLBoiEiJD505IrlZTKZy-tten0Er9X2pv10h01h_31nXifJnyjAUaRjCfP8zONHlCq7ioKw4p1-fCtzbjHM9kuh4bjXaE6HGQClZd8UmQCPazH-DbEAIXPcgyJRF4VgY8OOVYbU9exA"/>
+</div>
+<div class="relative z-10 w-full md:w-1/2 bg-surface-white/95 backdrop-blur-sm p-6 rounded-xl border border-line-border">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center mb-4">
+<span class="material-symbols-outlined">explore</span>
+</div>
+<h3 class="font-h2 text-h2 text-text-primary mb-2">Discover nearby food</h3>
+<p class="font-body-sm text-body-sm text-text-secondary">Find the best local stalls around you right now.</p>
+</div>
+</div>
+<!-- Feature 2: Find the dish -->
+<div class="col-span-1 bg-surface rounded-[24px] border border-line-border p-8 relative overflow-hidden group">
+<div class="absolute inset-0">
+<img alt="Close up of a specific dish" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A highly appetizing, macro shot of a bowl of spicy Singaporean Laksa, focusing on the rich coconut broth, prawns, and noodles. The image is warm, inviting, and tactile, shot with a shallow depth of field to make the dish the undisputed focal point against a soft, blurred background. The lighting highlights the vibrant orange and red tones of the dish." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdYDrvxyqyFaICeK_UZgc8NBJqXP7OFu83U011VW8FrhTgPYpVQV-GeRGw0q_KhcRTsthuWmEn_0-Fk46Kc18tP3ysd4Sgr1Gvnb7edHDnfkFjitVSwnuXT3FdmA6Hnb08FP_UHHiz1rioxVOq8CWrY82bj3Z5w0g__l3S41N92cBx3kZRTt19sZeg-d5ltcRrqmKN6T3pJEuPmQQjUENWA5VNjZhm0l88hVNIPqn6inLLrYszUUdlCwiutFMsdQses9MMBl_cZas"/>
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+<div class="relative z-10 h-full flex flex-col justify-end">
+<h3 class="font-h2 text-h2 text-surface-white mb-2">Find the dish</h3>
+<p class="font-body-sm text-body-sm text-surface-container-highest">Search by craving, not just venue.</p>
+</div>
+</div>
+<!-- Feature 3: See menus before you go -->
+<div class="col-span-1 bg-surface-container rounded-[24px] border border-line-border p-8 flex flex-col items-start justify-center">
+<div class="w-12 h-12 rounded-full bg-surface-white text-hungry-orange flex items-center justify-center mb-6 shadow-sm">
+<span class="material-symbols-outlined" data-weight="fill">menu_book</span>
+</div>
+<h3 class="font-h2 text-h2 text-text-primary mb-3">See menus before you go</h3>
+<p class="font-body text-body text-text-secondary">Browse visual menus with actual photos of the food, so you know exactly what to order.</p>
+</div>
+<!-- Feature 4: Know what is open -->
+<div class="col-span-1 md:col-span-2 bg-surface-variant rounded-[24px] border border-line-border p-8 relative overflow-hidden flex items-center">
+<div class="w-full md:w-1/2 z-10 space-y-4">
+<div class="inline-flex items-center gap-2 bg-surface-white px-3 py-1.5 rounded-full border border-line-border shadow-sm mb-2">
+<span class="w-2.5 h-2.5 rounded-full bg-autumn-green"></span>
+<span class="font-micro text-micro text-text-primary uppercase tracking-wide">Open Now</span>
+</div>
+<h3 class="font-h2 text-h2 text-text-primary">Know what is open</h3>
+<p class="font-body text-body text-text-secondary">Accurate operating hours from real community updates, avoiding disappointed trips.</p>
+</div>
+<div class="hidden md:block absolute -right-10 -bottom-10 w-2/3 h-[120%] rotate-[-10deg]">
+<img alt="Restaurant storefront at night" class="w-full h-full object-cover rounded-[24px] border border-line-border shadow-lg" data-alt="A warm, glowing night shot of a bustling local eatery or hawker stall in Singapore. The sign is brightly lit, inviting customers in from the dark street. The mood is social and lively, characterized by deep, warm lighting that contrasts with the night sky. The scene feels authentic and community-trusted, perfectly encapsulating the 'open late' vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZ9uzyKnMPPM0P5VWYkYOFt74ZhoEd85h1XGpjeKkD41wTbDXQlMKgdCjN3uuygtE0PTwMMooao7Xp_PzsHGOHnfs11gyA6boV5xNWFMLFGnC_YupDHO5rOoZgDQaK32mBDTziJgSF2tZ0koYpzBw9-SKo2i0op5VsoMPofFOdhH3CjPfFqCaxykBeBOYPjIAQgKJmji5kR_dcSL1vRxFfklojcLLtRzNHUJpqO1mJp_P57n3Lg1YuBTXks4ytD0SwrouLvVX4TBI"/>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="max-w-4xl mx-auto px-6 md:px-12 py-24 text-center space-y-8">
+<h2 class="font-display text-display text-text-primary">Ready to eat better?</h2>
+<p class="font-body-lg text-body-lg text-text-secondary max-w-xl mx-auto">
+            Join the waitlist to get early access to Hungry. We're launching in select neighborhoods soon.
+        </p>
+<div class="flex flex-col sm:flex-row justify-center items-center gap-4 max-w-md mx-auto">
+<input class="w-full h-[52px] rounded-[18px] border border-line-border bg-surface-white px-4 font-body text-body text-text-primary focus:outline-none focus:border-hungry-orange focus:ring-1 focus:ring-hungry-orange" placeholder="Your email address" type="email"/>
+<button class="w-full sm:w-auto bg-hungry-orange text-white px-8 h-[52px] rounded-[18px] font-h3 text-h3 hover:opacity-90 transition-opacity whitespace-nowrap">
+                Join the Foodie Waitlist
+            </button>
+</div>
+</section>
+<!-- Footer Component -->
+<footer class="w-full py-12 border-t border-[#E7DED4] dark:border-stone-800 bg-[#FDFCFB] dark:bg-stone-950 mt-12">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8 px-6 md:px-12 max-w-7xl mx-auto">
+<!-- Brand Column -->
+<div class="col-span-1 md:col-span-1 space-y-4">
+<div class="text-xl font-bold text-[#E8531E] dark:text-[#FF6B35] font-['Plus_Jakarta_Sans']">Hungry</div>
+<p class="font-['Plus_Jakarta_Sans'] text-sm text-stone-500 dark:text-stone-400">© 2024 Hungry Singapore. Your trusted guide to the local makan scene.</p>
+</div>
+<!-- Links Column -->
+<div class="col-span-1 md:col-span-3 flex flex-wrap gap-x-8 gap-y-4 md:justify-end items-start font-['Plus_Jakarta_Sans'] text-sm">
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Terms of Service</a>
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Privacy Policy</a>
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Hawker Centres</a>
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Nearby Makan</a>
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Merchant Support</a>
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Contact Us</a>
+</div>
+</div>
+</footer>
+</body></html>

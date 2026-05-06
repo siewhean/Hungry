@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Makan Merchant - Stall Profile Editor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;family=Be+Vietnam+Pro:wght@400;500&amp;family=Space+Grotesk:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "hungry-orange": "#E8531E",
+                        "surface-container-highest": "#f8ddd5",
+                        "inverse-surface": "#3d2d28",
+                        "error": "#ba1a1a",
+                        "text-muted": "#6B7280",
+                        "on-primary-fixed": "#3a0b00",
+                        "primary": "#a93100",
+                        "on-surface-variant": "#5a4139",
+                        "russian-red": "#CD0302",
+                        "primary-fixed-dim": "#ffb59e",
+                        "on-tertiary": "#ffffff",
+                        "text-secondary": "#374151",
+                        "on-surface": "#261814",
+                        "deep-navy": "#1A2E44",
+                        "secondary-fixed-dim": "#b4c8e4",
+                        "background": "#fff8f6",
+                        "secondary-container": "#cde1fe",
+                        "on-primary-fixed-variant": "#842500",
+                        "surface-container-high": "#fee2db",
+                        "outline-variant": "#e3bfb4",
+                        "inverse-primary": "#ffb59e",
+                        "autumn-green": "#4F7E17",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-white": "#FFFFFF",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#efd4cd",
+                        "tertiary-fixed-dim": "#9bcbff",
+                        "on-primary-container": "#fffbff",
+                        "on-secondary-fixed-variant": "#35485f",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#f8ddd5",
+                        "on-secondary-fixed": "#061d32",
+                        "inverse-on-surface": "#ffede8",
+                        "surface-tint": "#ad3200",
+                        "on-tertiary-fixed": "#001d34",
+                        "primary-fixed": "#ffdbd0",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#0079c3",
+                        "outline": "#8e7067",
+                        "on-background": "#261814",
+                        "on-tertiary-fixed-variant": "#004a79",
+                        "tertiary-fixed": "#d0e4ff",
+                        "on-tertiary-container": "#fdfcff",
+                        "line-border": "#E7DED4",
+                        "paper-warm": "#FFF7EE",
+                        "secondary": "#4c6078",
+                        "surface-container": "#ffe9e3",
+                        "surface-container-low": "#fff1ed",
+                        "hawker-amber": "#F5A623",
+                        "tertiary": "#00609b",
+                        "surface-bright": "#fff8f6",
+                        "primary-container": "#d1430b",
+                        "on-secondary-container": "#51647d",
+                        "surface": "#fff8f6",
+                        "text-primary": "#111827",
+                        "secondary-fixed": "#d1e4ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "20px",
+                        "xxl": "32px",
+                        "sm": "8px",
+                        "huge": "48px",
+                        "xs": "4px",
+                        "screen-edge": "16px",
+                        "md": "12px",
+                        "base": "16px",
+                        "xl": "24px",
+                        "section-gap": "20px",
+                        "region-gap": "24px"
+                    },
+                    "fontFamily": {
+                        "micro": ["Be Vietnam Pro"],
+                        "mono-price": ["Space Grotesk"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "h3": ["Plus Jakarta Sans"],
+                        "display": ["Plus Jakarta Sans"],
+                        "h1": ["Plus Jakarta Sans"],
+                        "h2": ["Plus Jakarta Sans"],
+                        "body": ["Be Vietnam Pro"],
+                        "body-sm": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                        "micro": ["11px", { "lineHeight": "14px", "fontWeight": "500" }],
+                        "mono-price": ["15px", { "lineHeight": "22px", "fontWeight": "500" }],
+                        "body-lg": ["17px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "h3": ["17px", { "lineHeight": "22px", "fontWeight": "600" }],
+                        "display": ["32px", { "lineHeight": "38px", "fontWeight": "700" }],
+                        "h1": ["24px", { "lineHeight": "30px", "fontWeight": "700" }],
+                        "h2": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+                        "body": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-paper-warm text-on-surface font-body min-h-screen flex">
+<!-- SideNavBar (Web) -->
+<nav class="hidden md:flex flex-col bg-white border-r border-[#E7DED4] h-screen w-64 pt-16 fixed left-0 top-0 transition-all duration-200 ease-in-out z-40">
+<div class="px-6 mb-8">
+<h1 class="font-display text-lg font-black text-[#E8531E]">Makan Merchant</h1>
+<div class="mt-4 flex items-center space-x-3">
+<img alt="Stall Logo" class="w-10 h-10 rounded-full border border-line-border object-cover" data-alt="A small, circular profile picture showing a vibrant, stylized logo of a Singaporean hawker stall. The logo features a steaming bowl of noodles in warm orange and amber tones, set against a clean white background. The overall aesthetic is modern, appetizing, and culturally authentic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBRy5M-xolUc6rUDrxK_19kMoj-odhcs94G9uZAMoAIMaC07c44CtWKQGrG66ICeNILmHeNSAW2Z_BkRGTPdjwjELVwzT76Cx71OvZ7tyzATW-7uyt61o2wXV0PWh_Z530eUmh4CmCzSnc1QFIgSXZJcJTz7gw9Hy4uPkhHdq9QQucLPs49HpcTdBbcYzQjuCMzzRKFNaZEAcxpGuOnwfJRgj2vWIcugIWgHFLN8CZ661qf5VXK2HYO6B4iP5tx39qEnXgYssnf0Q"/>
+<div>
+<h2 class="font-h3 text-h3 text-on-surface">Hawker Central</h2>
+<p class="font-micro text-micro text-text-muted">Verified Merchant</p>
+</div>
+</div>
+<button class="mt-4 w-full py-2 border border-line-border rounded-lg font-body-sm text-body-sm text-deep-navy font-medium hover:bg-surface-container transition-colors">
+                View Public Page
+            </button>
+</div>
+<div class="flex-1 overflow-y-auto px-4 space-y-2">
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-[#F9F6F2] font-['Plus_Jakarta_Sans'] text-sm font-medium transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-[#E8531E] bg-orange-50 border-r-4 border-[#E8531E] font-['Plus_Jakarta_Sans'] text-sm font-medium transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+<span>Stall Profile</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-[#F9F6F2] font-['Plus_Jakarta_Sans'] text-sm font-medium transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
+<span>Menu</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-[#F9F6F2] font-['Plus_Jakarta_Sans'] text-sm font-medium transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+<span>Opening Hours</span>
+</a>
+</div>
+<div class="p-4 border-t border-line-border space-y-2">
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-[#F9F6F2] font-['Plus_Jakarta_Sans'] text-sm font-medium transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-[#F9F6F2] font-['Plus_Jakarta_Sans'] text-sm font-medium transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+<span>Support</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 flex flex-col min-h-screen">
+<!-- TopAppBar (Mobile & Web Header) -->
+<header class="bg-[#F9F6F2] border-b border-[#E7DED4] docked full-width top-0 z-50 flex justify-between items-center px-6 py-3 w-full sticky">
+<div class="flex items-center space-x-4 md:hidden">
+<button class="text-slate-600 hover:bg-[#E7DED4] p-2 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<span class="font-['Plus_Jakarta_Sans'] text-xl font-bold text-slate-900">Makan Merchant</span>
+</div>
+<div class="hidden md:block">
+<h2 class="font-h2 text-h2 text-on-surface">Stall Profile Editor</h2>
+</div>
+<div class="flex items-center space-x-2">
+<button class="text-slate-600 hover:bg-[#E7DED4] p-2 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-slate-600 hover:bg-[#E7DED4] p-2 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<img alt="Merchant Profile Avatar" class="w-8 h-8 rounded-full border border-line-border object-cover ml-2" data-alt="A small, professional headshot of an Asian man in his 40s, smiling warmly. He is wearing a clean, casual chef's apron. The background is a slightly blurred, bright indoor setting suggesting a modern kitchen or cafe. Lighting is soft and flattering, creating a welcoming and trustworthy merchant profile picture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3jkV4b0ILUA3vxzZYDQ9sL6BR53nVMS9PgkBB3j6l6cB5Eo2fbemzaU6Jig2fuIKcquaaIP2yfr7OLapEvdLjE8_88tR82vHEKWmijqdlQlExL5fOiazml0TX8pyyOHfGBqBV8SNuYAF8sjqMkbyO466TAgxelgeis2scp1zTpjf7SO-91GfsfDOAnm9-8JB9_9TXV66-9jrIwNYPSoEv6-bRNpp4NypvSsshrA4W_MSFZKQnwH0HCOo4thLryOnRaVeP-NgiK2E"/>
+</div>
+</header>
+<!-- Form and Preview Content -->
+<div class="flex-1 p-screen-edge md:p-xl overflow-y-auto">
+<div class="max-w-6xl mx-auto flex flex-col lg:flex-row gap-region-gap">
+<!-- Editor Form (Left Column) -->
+<div class="flex-1 space-y-section-gap">
+<!-- Image Upload Area -->
+<section class="bg-surface-white rounded-xl p-base border border-line-border shadow-sm">
+<h3 class="font-h3 text-h3 text-on-surface mb-md">Main Stall Photo</h3>
+<p class="font-body-sm text-body-sm text-text-muted mb-base">This is the first image customers see. Make it appetizing!</p>
+<div class="border-2 border-dashed border-line-border rounded-lg bg-surface-bright flex flex-col items-center justify-center p-8 hover:bg-surface-container-low transition-colors cursor-pointer group h-64 relative overflow-hidden">
+<!-- Overlay/Upload State -->
+<div class="absolute inset-0 flex flex-col items-center justify-center z-10 bg-white/40 group-hover:bg-white/60 transition-colors backdrop-blur-[2px]">
+<div class="bg-white p-3 rounded-full shadow-sm mb-3">
+<span class="material-symbols-outlined text-hungry-orange" data-icon="add_a_photo" style="font-variation-settings: 'FILL' 1;">add_a_photo</span>
+</div>
+<span class="font-body text-body text-deep-navy font-medium">Click to upload or drag and drop</span>
+<span class="font-micro text-micro text-text-muted mt-1">PNG, JPG, max 5MB. Ratio 16:9 recommended.</span>
+</div>
+<!-- Background Image (Current Photo) -->
+<img alt="Current Stall Photo" class="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-multiply" data-alt="A high-quality, mouth-watering close-up photograph of traditional Singaporean Hainanese Chicken Rice. The succulent, glistening poached chicken is neatly arranged next to fragrant, oily rice, accompanied by a small dish of bright red chili sauce and dark soy sauce. The setting is a clean, modern hawker center table with a warm, inviting light-mode aesthetic. The colors are vibrant, highlighting the appetizing hungry-orange tones of the chili and the warm paper-warm background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuACb810aTFOz-audCmnKk_vllrMyb1OjxEBtOUjoFl7ivg8XoG9XPWAgn2eumIcL_ulZfbJZSmaUitS05EsUGoqPx31q_THyrPX_7gBDs0PzwC2JdCVraZkpBM8DHoiAre0yUY1goJWr7wjToVb50rj45igoqr7iomT9kTqhGd7i2Fi7hgBq9OiP7SXjDwQmJ4OYGeyhWYS4Kt6EmG45b-YmDbKuOSN4tgKCkWEJSIdG2FwmBnBgN-6ie-GfEaG1GL_lgVtf6C7C_4"/>
+</div>
+</section>
+<!-- Stall Details Form -->
+<section class="bg-surface-white rounded-xl p-base border border-line-border shadow-sm space-y-md">
+<h3 class="font-h3 text-h3 text-on-surface mb-xs">Basic Information</h3>
+<div>
+<label class="block font-body-sm text-body-sm text-text-secondary mb-xs" for="stall-name">Stall Name</label>
+<input class="w-full h-[48px] px-4 rounded-[18px] border border-line-border bg-surface-bright focus:border-hungry-orange focus:ring-1 focus:ring-hungry-orange font-body text-body text-on-surface transition-shadow" id="stall-name" type="text" value="Hawker Central Hainanese Chicken Rice"/>
+</div>
+<div>
+<label class="block font-body-sm text-body-sm text-text-secondary mb-xs" for="description">Description</label>
+<textarea class="w-full p-4 rounded-[18px] border border-line-border bg-surface-bright focus:border-hungry-orange focus:ring-1 focus:ring-hungry-orange font-body text-body text-on-surface transition-shadow resize-none" id="description" rows="3">Serving authentic Hainanese Chicken Rice using an old family recipe passed down for 3 generations. Tender chicken, fragrant rice, and our signature fiery chili sauce.</textarea>
+</div>
+<div>
+<label class="block font-body-sm text-body-sm text-text-secondary mb-xs" for="address">Location / Stall Number</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" data-icon="location_on">location_on</span>
+<input class="w-full h-[48px] pl-12 pr-4 rounded-[18px] border border-line-border bg-surface-bright focus:border-hungry-orange focus:ring-1 focus:ring-hungry-orange font-body text-body text-on-surface transition-shadow" id="address" type="text" value="Maxwell Food Centre, Stall #01-15"/>
+</div>
+</div>
+</section>
+<!-- Tags & Categories -->
+<section class="bg-surface-white rounded-xl p-base border border-line-border shadow-sm">
+<h3 class="font-h3 text-h3 text-on-surface mb-xs">Tags &amp; Amenities</h3>
+<p class="font-body-sm text-body-sm text-text-muted mb-md">Help customers find you easily by adding relevant tags.</p>
+<div class="flex flex-wrap gap-2 mb-4">
+<!-- Active Tags -->
+<span class="inline-flex items-center px-3 h-8 rounded-full bg-surface-container text-deep-navy font-body-sm text-body-sm border border-line-border">
+                                Halal
+                                <button class="ml-2 text-text-muted hover:text-error"><span class="material-symbols-outlined text-[16px]" data-icon="close">close</span></button>
+</span>
+<span class="inline-flex items-center px-3 h-8 rounded-full bg-surface-container text-deep-navy font-body-sm text-body-sm border border-line-border">
+                                Cash Only
+                                <button class="ml-2 text-text-muted hover:text-error"><span class="material-symbols-outlined text-[16px]" data-icon="close">close</span></button>
+</span>
+<span class="inline-flex items-center px-3 h-8 rounded-full bg-surface-container text-deep-navy font-body-sm text-body-sm border border-line-border">
+                                Chicken Rice
+                                <button class="ml-2 text-text-muted hover:text-error"><span class="material-symbols-outlined text-[16px]" data-icon="close">close</span></button>
+</span>
+</div>
+<!-- Add Tag Input -->
+<div class="flex gap-2">
+<input class="flex-1 h-[48px] px-4 rounded-[18px] border border-line-border bg-surface-bright focus:border-hungry-orange focus:ring-1 focus:ring-hungry-orange font-body text-body text-on-surface" placeholder="e.g. Vegetarian, Accepts PayLah!" type="text"/>
+<button class="h-[48px] px-6 rounded-[18px] bg-white border border-deep-navy text-deep-navy font-body text-body font-medium hover:bg-surface-container-low transition-colors">Add</button>
+</div>
+</section>
+<!-- Form Actions -->
+<div class="flex justify-end gap-3 pt-4">
+<button class="h-[52px] px-6 rounded-[18px] bg-white border border-deep-navy text-deep-navy font-body-lg text-body-lg font-medium hover:bg-surface-container-low transition-colors">
+                            Discard Changes
+                        </button>
+<button class="h-[52px] px-8 rounded-[18px] bg-hungry-orange text-white font-body-lg text-body-lg font-medium shadow-sm hover:bg-primary transition-colors">
+                            Save Profile
+                        </button>
+</div>
+</div>
+<!-- Preview Area (Right Column - Desktop only, or bottom on mobile) -->
+<div class="w-full lg:w-[360px] flex-shrink-0">
+<div class="sticky top-24">
+<h3 class="font-h3 text-h3 text-on-surface mb-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-text-muted" data-icon="smartphone">smartphone</span>
+                            Consumer Preview
+                        </h3>
+<!-- Mock Phone Frame -->
+<div class="bg-surface-white border-4 border-slate-800 rounded-[2rem] overflow-hidden shadow-lg h-[700px] flex flex-col relative">
+<!-- Notch/Status Bar mock -->
+<div class="h-6 bg-white w-full flex justify-center absolute top-0 z-20">
+<div class="w-1/3 h-4 bg-slate-800 rounded-b-xl"></div>
+</div>
+<!-- App Content -->
+<div class="flex-1 bg-paper-warm overflow-y-auto pb-16 pt-6">
+<!-- Hero Image -->
+<div class="relative h-48 w-full">
+<img alt="Preview Stall Photo" class="w-full h-full object-cover" data-alt="A high-quality, mouth-watering close-up photograph of traditional Singaporean Hainanese Chicken Rice. The succulent, glistening poached chicken is neatly arranged next to fragrant, oily rice, accompanied by a small dish of bright red chili sauce and dark soy sauce. The setting is a clean, modern hawker center table with a warm, inviting light-mode aesthetic. The colors are vibrant, highlighting the appetizing hungry-orange tones of the chili and the warm paper-warm background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAo1SYwnMWRJyv0_7rzPN5x0Oiz9Ykp6Iybexvhm0gpfUDDwhaz3ItKGWemhPEHBf7eVlrZy9trM6f7rX2LFX44EVx2RCErcyH_wNtm7Bcd-3lM1z_rvi_Am-mIPlBoBkNnr7k5X_tUuSeH3_Jl2ioi-M8bKIYiuT2nrl90SO8_ntAYdo7Yf7fO7-n4KY8lINJY6-nwMcmcKOwMtZVsrnWl8oMWLQEtOrNXsTqg51tRtuBDBj0JcbDSO-HghPJn6Qt96FqOIhHHC68"/>
+<button class="absolute top-4 left-4 w-8 h-8 bg-white/80 backdrop-blur rounded-full flex items-center justify-center text-on-surface shadow-sm">
+<span class="material-symbols-outlined text-[20px]" data-icon="arrow_back">arrow_back</span>
+</button>
+<button class="absolute top-4 right-4 w-8 h-8 bg-white/80 backdrop-blur rounded-full flex items-center justify-center text-on-surface shadow-sm">
+<span class="material-symbols-outlined text-[20px]" data-icon="favorite_border">favorite_border</span>
+</button>
+</div>
+<!-- Stall Info Card -->
+<div class="bg-white rounded-t-3xl -mt-6 relative z-10 px-4 pt-6 pb-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+<h2 class="font-h2 text-h2 text-on-surface mb-1">Hawker Central Hainanese Chicken Rice</h2>
+<p class="font-body-sm text-body-sm text-text-muted mb-3 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="location_on">location_on</span>
+                                        Maxwell Food Centre, Stall #01-15
+                                    </p>
+<div class="flex flex-wrap gap-2 mb-4">
+<span class="inline-flex h-[24px] items-center px-2 rounded-md bg-surface-container-low border border-line-border font-micro text-micro text-deep-navy">Halal</span>
+<span class="inline-flex h-[24px] items-center px-2 rounded-md bg-surface-container-low border border-line-border font-micro text-micro text-deep-navy">Cash Only</span>
+<span class="inline-flex h-[24px] items-center px-2 rounded-md bg-surface-container-low border border-line-border font-micro text-micro text-hawker-amber">
+<span class="material-symbols-outlined text-[12px] mr-1" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+                                            4.8 (120)
+                                        </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-3">
+                                        Serving authentic Hainanese Chicken Rice using an old family recipe passed down for 3 generations. Tender chicken, fragrant rice, and our signature fiery chili sauce.
+                                    </p>
+</div>
+<!-- Menu Preview Area -->
+<div class="px-4 py-4 space-y-3">
+<h3 class="font-h3 text-h3 text-on-surface mb-2">Popular Dishes</h3>
+<!-- Dish Item 1 -->
+<div class="bg-white rounded-xl p-3 flex gap-3 shadow-sm border border-line-border">
+<div class="flex-1">
+<h4 class="font-body text-body font-medium text-on-surface">Signature Steamed Chicken Set</h4>
+<p class="font-body-sm text-body-sm text-text-muted line-clamp-2 mt-1">Includes fragrant rice, clear soup, and dark soy sauce.</p>
+<p class="font-mono-price text-mono-price text-hungry-orange mt-2">$6.50</p>
+</div>
+<div class="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 bg-surface-container-low">
+<img alt="Dish Preview" class="w-full h-full object-cover" data-alt="A small, square preview image of a single portion of Hainanese Chicken Rice. The chicken looks tender and glossy, plated simply on a white dish against a warm paper-warm background. The lighting is bright and appetizing, typical of modern food delivery app photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuANFms2htb2hxHJSjkY5AnAgs83j0SAE8Yu_4TTCwFsWoW5987_KG1BZqs9joppFqLzlTGXBty15CjSFjYzqhuHe_91-OGH4ScW-UEAE6o-AJteIeCLli7tqDpI0-YFV0lPfQTatWGyxad7n4y3OiR2T5kxQTdCM1DiNSLycnh1_x_wrkSwxC9iJUubjysYrzsyNyO5ODMFB12Qm6SVNoy8a7hCV8d3XgtkmdVJrOaTGZDDBurRD2piunOPxtK1vA57T8UBNhEnyd0"/>
+</div>
+</div>
+<!-- Dish Item 2 -->
+<div class="bg-white rounded-xl p-3 flex gap-3 shadow-sm border border-line-border">
+<div class="flex-1">
+<h4 class="font-body text-body font-medium text-on-surface">Roasted Chicken Quarter</h4>
+<p class="font-body-sm text-body-sm text-text-muted line-clamp-2 mt-1">Crispy skin roasted chicken, thigh or breast cut.</p>
+<p class="font-mono-price text-mono-price text-hungry-orange mt-2">$7.00</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Action Dock Mock -->
+<div class="absolute bottom-0 w-full bg-white border-t border-line-border p-4 z-20 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+<button class="w-full h-[48px] rounded-[18px] bg-hungry-orange text-white font-body text-body font-medium flex items-center justify-center gap-2">
+<span class="material-symbols-outlined" data-icon="directions_walk">directions_walk</span>
+                                    Navigate Here
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

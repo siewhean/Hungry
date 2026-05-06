@@ -1,45 +1,126 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// In-memory store for development (replace with Supabase in production)
+type JoiningAs = "diner" | "hawker" | "both";
+
 const waitlist: {
   email: string;
   name?: string;
-  joining_as: "diner" | "hawker" | "both";
+  establishment_type?: string;
+  joining_as: JoiningAs;
   created_at: string;
 }[] = [];
 
+function normalizeJoiningAs(value: unknown): JoiningAs {
+  if (value === "hawker" || value === "merchant") {
+    return "hawker";
+  }
+
+  if (value === "both") {
+    return "both";
+  }
+
+  return "diner";
+}
+
+async function parseSubmission(req: NextRequest) {
+  const contentType = req.headers.get("content-type") ?? "";
+
+  if (
+    contentType.includes("application/x-www-form-urlencoded") ||
+    contentType.includes("multipart/form-data")
+  ) {
+    const formData = await req.formData();
+
+    return {
+      email: formData.get("email"),
+      name: formData.get("name"),
+      establishment_type: formData.get("establishment_type"),
+      joining_as: formData.get("joining_as"),
+      mode: "form" as const,
+    };
+  }
+
+  const body = await req.json();
+
+  return {
+    email: body.email,
+    name: body.name,
+    establishment_type: body.establishment_type,
+    joining_as: body.joining_as,
+    mode: "json" as const,
+  };
+}
+
+function redirectToWaitlist(
+  req: NextRequest,
+  status: "submitted" | ("name" | "email" | "establishment")[],
+  joiningAs?: JoiningAs,
+) {
+  const url = new URL("/join-waitlist", req.url);
+  if (joiningAs === "hawker" || joiningAs === "both") {
+    url.searchParams.set("joining_as", joiningAs);
+  }
+
+  if (status === "submitted") {
+    url.searchParams.set("submitted", "1");
+  } else {
+    url.searchParams.set("error", status.join(","));
+  }
+
+  return NextResponse.redirect(url, { status: 303 });
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { email, name, joining_as } = body;
+    const submission = await parseSubmission(req);
+    const { email, name, establishment_type, mode } = submission;
+    const joiningAs = normalizeJoiningAs(submission.joining_as);
+    const errors: ("name" | "email" | "establishment")[] = [];
 
-    if (!email || typeof email !== "string") {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    if (typeof name !== "string" || !name.trim()) {
+      errors.push("name");
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json({ error: "Invalid email address" }, { status: 400 });
+    if (!email || typeof email !== "string" || !emailRegex.test(email)) {
+      errors.push("email");
     }
 
-    // Check duplicate
-    const existing = waitlist.find((w) => w.email.toLowerCase() === email.toLowerCase());
-    if (existing) {
-      // Return success (idempotent — user is already on the list)
-      return NextResponse.json({ success: true, already_exists: true });
+    const needsEstablishment = joiningAs === "hawker" || joiningAs === "both";
+    if (
+      needsEstablishment &&
+      (typeof establishment_type !== "string" || !establishment_type.trim())
+    ) {
+      errors.push("establishment");
     }
 
-    // Add to list
-    waitlist.push({
-      email: email.toLowerCase().trim(),
-      name: name?.trim() ?? undefined,
-      joining_as: joining_as ?? "diner",
-      created_at: new Date().toISOString(),
-    });
+    if (errors.length > 0) {
+      return mode === "form"
+        ? redirectToWaitlist(req, errors, joiningAs)
+        : NextResponse.json({ errors }, { status: 400 });
+    }
 
-    console.log(`[waitlist] New signup: ${email} (${joining_as})`);
+    const normalizedEmail = email.toLowerCase().trim();
+    const existing = waitlist.find((entry) => entry.email === normalizedEmail);
 
-    return NextResponse.json({ success: true });
+    if (!existing) {
+      waitlist.push({
+        email: normalizedEmail,
+        name: typeof name === "string" && name.trim() ? name.trim() : undefined,
+        establishment_type:
+          typeof establishment_type === "string" && establishment_type.trim()
+            ? establishment_type.trim()
+            : undefined,
+        joining_as: joiningAs,
+        created_at: new Date().toISOString(),
+      });
+    }
+
+    if (mode === "form") {
+      return redirectToWaitlist(req, "submitted", joiningAs);
+    }
+
+    return NextResponse.json({ success: true, already_exists: Boolean(existing) });
   } catch (err) {
     console.error("[waitlist] Error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -47,6 +128,5 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  // Simple health check / count endpoint
   return NextResponse.json({ count: waitlist.length });
 }

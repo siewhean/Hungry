@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hungry - App Mockup Showcase</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;family=Space+Grotesk:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-highest": "#f8ddd5",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#9bcbff",
+                        "hawker-amber": "#F5A623",
+                        "surface-container-low": "#fff1ed",
+                        "russian-red": "#CD0302",
+                        "paper-warm": "#FFF7EE",
+                        "text-secondary": "#374151",
+                        "on-primary-fixed-variant": "#842500",
+                        "line-border": "#E7DED4",
+                        "on-secondary": "#ffffff",
+                        "text-primary": "#111827",
+                        "inverse-surface": "#3d2d28",
+                        "primary-fixed": "#ffdbd0",
+                        "on-background": "#261814",
+                        "surface-variant": "#f8ddd5",
+                        "on-secondary-fixed-variant": "#35485f",
+                        "surface-dim": "#efd4cd",
+                        "on-tertiary": "#ffffff",
+                        "surface": "#fff8f6",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#fff8f6",
+                        "secondary": "#4c6078",
+                        "deep-navy": "#1A2E44",
+                        "secondary-fixed-dim": "#b4c8e4",
+                        "on-tertiary-fixed-variant": "#004a79",
+                        "on-secondary-fixed": "#061d32",
+                        "primary-container": "#d1430b",
+                        "primary-fixed-dim": "#ffb59e",
+                        "on-tertiary-fixed": "#001d34",
+                        "tertiary-fixed": "#d0e4ff",
+                        "tertiary": "#00609b",
+                        "on-tertiary-container": "#fdfcff",
+                        "surface-container-high": "#fee2db",
+                        "on-surface-variant": "#5a4139",
+                        "outline": "#8e7067",
+                        "text-muted": "#6B7280",
+                        "secondary-fixed": "#d1e4ff",
+                        "surface-tint": "#ad3200",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#ffede8",
+                        "tertiary-container": "#0079c3",
+                        "background": "#fff8f6",
+                        "hungry-orange": "#E8531E",
+                        "surface-white": "#FFFFFF",
+                        "outline-variant": "#e3bfb4",
+                        "autumn-green": "#4F7E17",
+                        "surface-container": "#ffe9e3",
+                        "on-primary-fixed": "#3a0b00",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#51647d",
+                        "inverse-primary": "#ffb59e",
+                        "error-container": "#ffdad6",
+                        "on-primary-container": "#fffbff",
+                        "secondary-container": "#cde1fe",
+                        "primary": "#a93100",
+                        "on-surface": "#261814",
+                        "error": "#ba1a1a"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    },
+                    spacing: {
+                        "region-gap": "24px",
+                        "screen-edge": "16px",
+                        "huge": "48px",
+                        "sm": "8px",
+                        "lg": "20px",
+                        "md": "12px",
+                        "xl": "24px",
+                        "base": "16px",
+                        "section-gap": "20px",
+                        "xs": "4px",
+                        "xxl": "32px"
+                    },
+                    fontFamily: {
+                        "body-lg": ["Be Vietnam Pro"],
+                        "mono-price": ["Space Grotesk"],
+                        "body": ["Be Vietnam Pro"],
+                        "h3": ["Plus Jakarta Sans"],
+                        "display": ["Plus Jakarta Sans"],
+                        "body-sm": ["Be Vietnam Pro"],
+                        "h1": ["Plus Jakarta Sans"],
+                        "h2": ["Plus Jakarta Sans"],
+                        "micro": ["Be Vietnam Pro"]
+                    },
+                    fontSize: {
+                        "body-lg": ["17px", { lineHeight: "24px", fontWeight: "400" }],
+                        "mono-price": ["15px", { lineHeight: "22px", fontWeight: "500" }],
+                        "body": ["15px", { lineHeight: "22px", fontWeight: "400" }],
+                        "h3": ["17px", { lineHeight: "22px", fontWeight: "600" }],
+                        "display": ["32px", { lineHeight: "38px", fontWeight: "700" }],
+                        "body-sm": ["13px", { lineHeight: "18px", fontWeight: "400" }],
+                        "h1": ["24px", { lineHeight: "30px", fontWeight: "700" }],
+                        "h2": ["20px", { lineHeight: "26px", fontWeight: "600" }],
+                        "micro": ["11px", { lineHeight: "14px", fontWeight: "500" }]
+                    }
+                }
+            }
+        };
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-paper-warm text-on-background font-body min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="sticky top-0 w-full z-50 bg-[#FDFCFB] dark:bg-stone-950 border-b border-[#E7DED4] dark:border-stone-800">
+<div class="flex justify-between items-center h-20 px-6 md:px-12 max-w-7xl mx-auto">
+<div class="text-2xl font-extrabold tracking-tight text-[#E8531E] dark:text-[#FF6B35]">
+                Hungry
+            </div>
+<div class="hidden md:flex space-x-8">
+<a class="font-['Plus_Jakarta_Sans'] antialiased text-[#E8531E] dark:text-[#FF6B35] font-bold border-b-2 border-[#E8531E] pb-1 transition-all duration-200 ease-in-out hover:opacity-80" href="#">For Foodies</a>
+<a class="font-['Plus_Jakarta_Sans'] antialiased text-stone-600 dark:text-stone-400 font-medium hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-all duration-200 ease-in-out hover:opacity-80" href="#">For Merchants</a>
+<a class="font-['Plus_Jakarta_Sans'] antialiased text-stone-600 dark:text-stone-400 font-medium hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-all duration-200 ease-in-out hover:opacity-80" href="#">About</a>
+<a class="font-['Plus_Jakarta_Sans'] antialiased text-stone-600 dark:text-stone-400 font-medium hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-all duration-200 ease-in-out hover:opacity-80" href="#">Merchant Portal</a>
+</div>
+<button class="bg-hungry-orange text-white font-body-lg rounded-xl px-6 py-3 min-h-[52px] hover:opacity-90 transition-opacity">
+                Join Waitlist
+            </button>
+</div>
+</nav>
+<!-- App Mockup Showcase Section -->
+<section class="py-huge flex-grow overflow-hidden relative">
+<div class="max-w-7xl mx-auto px-screen-edge mb-xl text-center md:text-left md:flex md:justify-between md:items-end">
+<div>
+<h2 class="font-display text-text-primary mb-sm">The Local Makan Experience</h2>
+<p class="font-body-lg text-text-muted max-w-2xl">A sneak peek into our upcoming mobile app. Designed to be your warm, local guide to the best hawker centres and hidden culinary gems across Singapore.</p>
+</div>
+<div class="mt-lg md:mt-0 flex items-center justify-center md:justify-end gap-sm">
+<span class="inline-flex items-center px-4 py-2 rounded-full bg-surface-container-highest text-hungry-orange font-h3 border border-outline-variant">
+<span class="material-symbols-outlined mr-xs text-[20px]" style="font-variation-settings: 'FILL' 1;">rocket_launch</span>
+                    Coming Soon
+                </span>
+</div>
+</div>
+<!-- Horizontal Gallery -->
+<div class="flex overflow-x-auto gap-xl px-screen-edge pb-huge pt-lg snap-x snap-mandatory no-scrollbar w-full relative z-10" style="padding-left: max(16px, calc((100vw - 1280px) / 2 + 16px)); padding-right: max(16px, calc((100vw - 1280px) / 2 + 16px));">
+<!-- Mockup 1: Home Feed -->
+<div class="snap-center shrink-0 w-[300px] md:w-[340px] flex flex-col relative group">
+<div class="absolute -inset-4 bg-gradient-to-b from-surface-container to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl -z-10 blur-xl"></div>
+<div class="bg-surface-white rounded-[40px] p-2 border-[8px] border-text-primary shadow-2xl relative h-[680px] overflow-hidden flex flex-col">
+<!-- Dynamic Island / Notch Area -->
+<div class="absolute top-0 inset-x-0 h-7 flex justify-center z-20">
+<div class="w-32 h-6 bg-text-primary rounded-b-3xl"></div>
+</div>
+<!-- App Content -->
+<div class="flex-1 bg-paper-warm rounded-[32px] overflow-hidden flex flex-col relative">
+<!-- Simulated App Header -->
+<div class="px-base pt-xl pb-md bg-surface-white flex justify-between items-center border-b border-line-border z-10">
+<div>
+<p class="font-micro text-text-muted uppercase tracking-wider">Location</p>
+<p class="font-h3 text-text-primary flex items-center gap-xs">
+                                    Tiong Bahru
+                                    <span class="material-symbols-outlined text-[16px] text-hungry-orange">keyboard_arrow_down</span>
+</p>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-hungry-orange">
+<span class="material-symbols-outlined">person</span>
+</div>
+</div>
+<!-- Feed Content -->
+<div class="flex-1 overflow-y-auto p-base space-y-lg no-scrollbar pb-24">
+<h3 class="font-h2 text-text-primary">Trending Nearby</h3>
+<!-- Card 1 -->
+<div class="bg-surface-white rounded-xl overflow-hidden border border-line-border">
+<div class="h-40 w-full relative">
+<img class="w-full h-full object-cover" data-alt="A high-quality, appetite-inducing close-up photograph of a traditional Singaporean Hainanese chicken rice dish. The succulent poached chicken is glistening, served on fragrant rice with dark soy sauce, chilli, and ginger paste on the side. The lighting is bright and natural, capturing the tactile warmth of a bustling local hawker centre environment. The composition focuses heavily on the dish as the atomic unit, embodying a modern, premium food photography style against a clean, slightly warm background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHA-ZyWBVFLcnc4kzK8kCOMPKM-G5r7Vbf7Hc47-MP1HFWjVkLkSnmu7NijIqgRtWzclUwpAKZfyZGlfnLan7NPcCZT9TTdGd0IgiqPzKafUhiLRjV4aYcE1i84ilZVmvjRX80uuXPz8D_WhY2mXMJgyI6-TBmZt7BIXWqx5Kh6NL8uChNdw9pU1QxeDW59CAzkLfa0GAyECOBXgT25ioQni1vjhWjbYGeLx_H03mkdRHgqkxUw--4oJKG8osYFK2DiWWlZe-gFWE"/>
+<div class="absolute top-sm right-sm bg-surface-white/90 backdrop-blur-sm rounded-full px-sm py-xs flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px] text-hawker-amber" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-mono-price text-text-primary text-xs">4.8</span>
+</div>
+</div>
+<div class="p-md">
+<h4 class="font-h3 text-text-primary mb-xs">Tian Tian Chicken Rice</h4>
+<p class="font-body-sm text-text-muted line-clamp-1">Maxwell Food Centre • 1.2km</p>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-white rounded-xl overflow-hidden border border-line-border">
+<div class="h-40 w-full relative">
+<img class="w-full h-full object-cover" data-alt="A warm, engaging photograph of a steaming bowl of Laksa, a spicy noodle soup. The rich coconut milk broth is vibrant orange, topped with fresh prawns, fish cake, and cockles. The image feels socially alive and specifically tailored to the Singapore culinary scene, utilizing a bright, clean lighting setup that highlights the textures of the ingredients. The background hints at a clean, white card surface, aligning with a premium yet local aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBBzhfxJ7VkFIhaYKUV2VxQuPRId_f7ShjJ93APkHJT9kEmL1pC2CVhjMz-VOHSEOaTaUCM1Mtt3WNAXqUx5cVCVyixJuBDme9TJA6Zuplh3xTpW8zmrwtjaahCKYP86vB7G5_HBwxWksnkijeutLHCPuxK0A8cOfU6vT8jui9vE_897n0vwN5-y5_NNhptLuq8Hlk2asV47I8PRP82m9_WVstxXVvTEb7HrKX7QSwSe4XYXe5vfVCbO3J9VaLL0O5IQIOw2DELKM"/>
+</div>
+<div class="p-md">
+<h4 class="font-h3 text-text-primary mb-xs">Sungei Road Laksa</h4>
+<p class="font-body-sm text-text-muted line-clamp-1">Jalan Berseh • 2.5km</p>
+</div>
+</div>
+</div>
+<!-- Simulated Bottom Nav -->
+<div class="absolute bottom-0 w-full bg-surface-white border-t border-line-border flex justify-around py-md z-10">
+<div class="flex flex-col items-center gap-xs text-hungry-orange">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-micro">Home</span>
+</div>
+<div class="flex flex-col items-center gap-xs text-text-muted">
+<span class="material-symbols-outlined">search</span>
+<span class="font-micro">Search</span>
+</div>
+<div class="flex flex-col items-center gap-xs text-text-muted">
+<span class="material-symbols-outlined">bookmark</span>
+<span class="font-micro">Saved</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-lg text-center">
+<h4 class="font-h3 text-text-primary">Curated Feed</h4>
+<p class="font-body-sm text-text-muted mt-xs">Discover the best local eats based on your location and taste.</p>
+</div>
+</div>
+<!-- Mockup 2: Dish Search -->
+<div class="snap-center shrink-0 w-[300px] md:w-[340px] flex flex-col relative group">
+<div class="absolute -inset-4 bg-gradient-to-b from-surface-container to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl -z-10 blur-xl"></div>
+<div class="bg-surface-white rounded-[40px] p-2 border-[8px] border-text-primary shadow-2xl relative h-[680px] overflow-hidden flex flex-col">
+<div class="absolute top-0 inset-x-0 h-7 flex justify-center z-20">
+<div class="w-32 h-6 bg-text-primary rounded-b-3xl"></div>
+</div>
+<div class="flex-1 bg-paper-warm rounded-[32px] overflow-hidden flex flex-col relative">
+<div class="px-base pt-xl pb-md bg-surface-white border-b border-line-border z-10">
+<div class="relative mt-2">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-text-muted">search</span>
+<input class="w-full h-12 bg-paper-warm border border-line-border rounded-xl pl-10 pr-4 font-body text-text-primary focus:ring-1 focus:ring-hungry-orange focus:border-hungry-orange outline-none" placeholder="Search dish, hawker, location..." type="text" value="Char Kway Teow"/>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-base no-scrollbar pb-24">
+<!-- Filter Chips -->
+<div class="flex gap-sm overflow-x-auto no-scrollbar mb-lg pb-1">
+<span class="shrink-0 h-8 px-4 bg-hungry-orange text-white font-body-sm rounded-full flex items-center">All</span>
+<span class="shrink-0 h-8 px-4 bg-surface-white border border-line-border text-text-secondary font-body-sm rounded-full flex items-center">Wok Hei</span>
+<span class="shrink-0 h-8 px-4 bg-surface-white border border-line-border text-text-secondary font-body-sm rounded-full flex items-center">Spicy</span>
+<span class="shrink-0 h-8 px-4 bg-surface-white border border-line-border text-text-secondary font-body-sm rounded-full flex items-center">Seafood</span>
+</div>
+<!-- Bento Grid Layout for Search Results -->
+<div class="grid grid-cols-2 gap-sm">
+<div class="col-span-2 bg-surface-white rounded-xl overflow-hidden border border-line-border relative h-48">
+<img class="w-full h-full object-cover" data-alt="A dynamic, appetite-led shot of Char Kway Teow being wok-fried. Flames lick the edges of a well-seasoned wok, capturing the essence of 'wok hei' (breath of the wok). The dark, smoky noodles are mixed with egg, Chinese sausage, and cockles. The aesthetic leans towards tactile warmth and local authenticity, shot with high-end food photography techniques to elevate the humble street food." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmu00DOBK6NxalOfae4TS9QRqJ7XfXyxwTKTIJGn0bGYx3plnqANNaenTSUargo_jzvn012RKB-20Y3inZ4wAoaHR1CwDc1zZatTZoXsuIbkzECFiJz_7TyF1yefTdjLNbx8tgHLkvE-wZPGEXI04oiSxXE06SpljuAy5003ZEeMg3tEefGol2UByJxUSKGQbL5y6-b4kI3sSKy4PTJJyTwEZC9bZ9pvAIK5GOusd5iRtxf0_FWWmgErNAJn74DwVHJZ3jdcVciJs"/>
+<div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-md pt-lg">
+<h4 class="font-h3 text-white">Outram Park Fried Kway Teow</h4>
+<p class="font-body-sm text-surface-container-high">Hong Lim Food Centre</p>
+</div>
+</div>
+<div class="bg-surface-white rounded-xl overflow-hidden border border-line-border aspect-square relative">
+<img class="w-full h-full object-cover" data-alt="Close up of a plate of Hokkien Mee, a popular Singaporean noodle dish with a rich prawn broth, squid, and sambal chili on the side. Bright, natural lighting highlights the wet, savory texture of the noodles. The composition is focused entirely on the dish, adhering to the atomic unit design principle." src="https://lh3.googleusercontent.com/aida-public/AB6AXuABV2dF_-080l1hos5N3umGItoegKDUdyEU09eO7IOi8Vv2dlMb3MtY2ecV9imZsjmTdz69Wb7nbc2Qcm4IL-vxHQo97QG4dClum_dmt5rtCuq6HHlxy02cE2vOkxwjiJTOkMegctgPcPewQm7f3oa4ku_eeNhjHlYzZGrFcEMozXXLGTeKYxZgHBDOrBcax-uIvASBhRVUGo7bVTusB9UBLuB5D2fwvWE0I9RIqWV2NpfSdCeIbWHWgVmyYp3eYHAv_vX9ikOYiCE"/>
+</div>
+<div class="bg-surface-white rounded-xl overflow-hidden border border-line-border aspect-square relative p-md flex flex-col justify-between">
+<h4 class="font-h3 text-text-primary">Hill Street Char Kway Teow</h4>
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-hungry-orange">local_fire_department</span>
+<span class="font-body-sm text-text-secondary">High Wok Hei</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Simulated Bottom Nav -->
+<div class="absolute bottom-0 w-full bg-surface-white border-t border-line-border flex justify-around py-md z-10">
+<div class="flex flex-col items-center gap-xs text-text-muted">
+<span class="material-symbols-outlined">home</span>
+<span class="font-micro">Home</span>
+</div>
+<div class="flex flex-col items-center gap-xs text-hungry-orange">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">search</span>
+<span class="font-micro">Search</span>
+</div>
+<div class="flex flex-col items-center gap-xs text-text-muted">
+<span class="material-symbols-outlined">bookmark</span>
+<span class="font-micro">Saved</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-lg text-center">
+<h4 class="font-h3 text-text-primary">Dish-Centric Search</h4>
+<p class="font-body-sm text-text-muted mt-xs">Find exactly what you crave, down to specific taste profiles like Wok Hei.</p>
+</div>
+</div>
+<!-- Mockup 3: Stall Details -->
+<div class="snap-center shrink-0 w-[300px] md:w-[340px] flex flex-col relative group">
+<div class="absolute -inset-4 bg-gradient-to-b from-surface-container to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl -z-10 blur-xl"></div>
+<div class="bg-surface-white rounded-[40px] p-2 border-[8px] border-text-primary shadow-2xl relative h-[680px] overflow-hidden flex flex-col">
+<div class="absolute top-0 inset-x-0 h-7 flex justify-center z-20">
+<div class="w-32 h-6 bg-text-primary rounded-b-3xl"></div>
+</div>
+<div class="flex-1 bg-paper-warm rounded-[32px] overflow-hidden flex flex-col relative">
+<!-- Header Image -->
+<div class="h-64 relative">
+<img class="w-full h-full object-cover" data-alt="A wide, atmospheric shot of a bustling Singapore hawker centre stall front. The stall signage is slightly blurred in the background, focusing on the vibrant array of ingredients displayed in the glass cabinet—roasted meats hanging, fresh vegetables, and bubbling broths. The lighting is warm and slightly dramatic, capturing the tactile, community-trusted feel of the local makan scene." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAW5g5794yjiWkDrwWEIgjqeWRfjiwPeh42I69Vz421s1zwr_LXb_zu5x4S4ypaSwuSnx-FELPRKEYAxbWlIvU6otWIZ9t55snZMR4JpKZzy6zfCSKcUAP-t4jpvCkkmbYZgtxS99S1CWF_sTn83W4oSu3Mr_UHnp4n9r1aYatBFbo-v5KHtPpChybDh9PBZPnst_ZL-Ypc-WKQ9FZDaCp--suKNMim20m-wIIlF-seGczHx3Xmc_CaoeauIgNUhoMAvC5Q1bsgzXE"/>
+<div class="absolute top-xl left-base w-10 h-10 bg-surface-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-text-primary">
+<span class="material-symbols-outlined">arrow_back</span>
+</div>
+<div class="absolute top-xl right-base w-10 h-10 bg-surface-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-text-primary">
+<span class="material-symbols-outlined">share</span>
+</div>
+</div>
+<!-- Detail Content (Sheet-like) -->
+<div class="flex-1 bg-surface-white rounded-t-[24px] -mt-6 z-10 p-base overflow-y-auto no-scrollbar pb-24 relative shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+<div class="flex justify-between items-start mb-md">
+<div>
+<h2 class="font-h1 text-text-primary mb-xs leading-tight">Roast Paradise</h2>
+<p class="font-body text-text-muted">Old Airport Road Food Centre</p>
+</div>
+<div class="bg-surface-container px-sm py-xs rounded-lg flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px] text-hawker-amber" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-mono-price text-text-primary">4.9</span>
+</div>
+</div>
+<div class="flex gap-sm mb-lg">
+<span class="h-7 px-3 bg-paper-warm border border-line-border text-text-secondary font-micro rounded-full flex items-center">Char Siew</span>
+<span class="h-7 px-3 bg-paper-warm border border-line-border text-text-secondary font-micro rounded-full flex items-center">Roast Pork</span>
+</div>
+<p class="font-body text-text-primary mb-xl">Famous for their KL-style char siew, deeply caramelized and intensely savory. A must-try for any roast meat enthusiast.</p>
+<h3 class="font-h3 text-text-primary mb-md">Top Dishes</h3>
+<div class="space-y-md">
+<div class="flex gap-md p-md bg-paper-warm rounded-xl border border-line-border">
+<img class="w-16 h-16 rounded-lg object-cover" data-alt="A macro shot of glistening, caramelized KL-style Char Siew (barbecue pork). The meat is thickly sliced, showcasing a perfect ratio of lean meat to melting fat, coated in a dark, sticky glaze. The aesthetic is incredibly warm and appetite-led, set against a pristine white plate to emphasize the premium quality of the food." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCV8AkFyzLp4gE9lxij-2ExB62CbAntIFDWYv_p_uLWEnQRVLvREbhlr2mz9TB08KuStEEx55dnY2AV3DsPRI32EKyIEmzAe0nuEv3UQq_M_vOKxJ5rMyXCl4FPFCX6jRsWxnoyslT4sJPyBol4LuchXhRIKXH4nEthIMptSkr-60dWX4UQw4gCMLoGA2dW9_0wyiRH2kvjjP-ZE6jZU5gwwqC9oI8Te0qwaRHm8fTeEyE1_yR473XMwSbtz5y5kHMPW1xUQz5ST8k"/>
+<div class="flex-1">
+<h4 class="font-h3 text-text-primary">Premium Char Siew Rice</h4>
+<p class="font-mono-price text-hungry-orange mt-xs">$6.50</p>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-white border border-line-border flex items-center justify-center text-text-secondary">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+</div>
+</div>
+<!-- CTA Dock -->
+<div class="absolute bottom-0 w-full bg-surface-white border-t border-line-border p-base z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+<button class="w-full h-[52px] bg-hungry-orange text-white font-h3 rounded-[18px] flex justify-center items-center gap-xs hover:bg-primary transition-colors">
+<span class="material-symbols-outlined">directions</span>
+                                Get Directions
+                            </button>
+</div>
+</div>
+</div>
+<div class="mt-lg text-center">
+<h4 class="font-h3 text-text-primary">Rich Stall Details</h4>
+<p class="font-body-sm text-text-muted mt-xs">In-depth metadata, top dishes, and reviews for informed dining choices.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="w-full py-12 bg-[#FDFCFB] dark:bg-stone-950 border-t border-[#E7DED4] dark:border-stone-800">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8 px-6 md:px-12 max-w-7xl mx-auto font-['Plus_Jakarta_Sans'] text-sm text-[#E8531E] dark:text-[#FF6B35]">
+<div class="md:col-span-1">
+<div class="text-xl font-bold text-[#E8531E] dark:text-[#FF6B35] mb-4">Hungry</div>
+<p class="text-stone-500 dark:text-stone-500 font-['Plus_Jakarta_Sans'] text-sm">© 2024 Hungry Singapore. Your trusted guide to the local makan scene.</p>
+</div>
+<div class="flex flex-col space-y-2">
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Terms of Service</a>
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Privacy Policy</a>
+</div>
+<div class="flex flex-col space-y-2">
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Hawker Centres</a>
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Nearby Makan</a>
+</div>
+<div class="flex flex-col space-y-2">
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Merchant Support</a>
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Contact Us</a>
+</div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Trust &amp; Local Identity</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500&amp;family=Space+Grotesk:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#f8ddd5",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#9bcbff",
+                        "hawker-amber": "#F5A623",
+                        "surface-container-low": "#fff1ed",
+                        "russian-red": "#CD0302",
+                        "paper-warm": "#FFF7EE",
+                        "text-secondary": "#374151",
+                        "on-primary-fixed-variant": "#842500",
+                        "line-border": "#E7DED4",
+                        "on-secondary": "#ffffff",
+                        "text-primary": "#111827",
+                        "inverse-surface": "#3d2d28",
+                        "primary-fixed": "#ffdbd0",
+                        "on-background": "#261814",
+                        "surface-variant": "#f8ddd5",
+                        "on-secondary-fixed-variant": "#35485f",
+                        "surface-dim": "#efd4cd",
+                        "on-tertiary": "#ffffff",
+                        "surface": "#fff8f6",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#fff8f6",
+                        "secondary": "#4c6078",
+                        "deep-navy": "#1A2E44",
+                        "secondary-fixed-dim": "#b4c8e4",
+                        "on-tertiary-fixed-variant": "#004a79",
+                        "on-secondary-fixed": "#061d32",
+                        "primary-container": "#d1430b",
+                        "primary-fixed-dim": "#ffb59e",
+                        "on-tertiary-fixed": "#001d34",
+                        "tertiary-fixed": "#d0e4ff",
+                        "tertiary": "#00609b",
+                        "on-tertiary-container": "#fdfcff",
+                        "surface-container-high": "#fee2db",
+                        "on-surface-variant": "#5a4139",
+                        "outline": "#8e7067",
+                        "text-muted": "#6B7280",
+                        "secondary-fixed": "#d1e4ff",
+                        "surface-tint": "#ad3200",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#ffede8",
+                        "tertiary-container": "#0079c3",
+                        "background": "#fff8f6",
+                        "hungry-orange": "#E8531E",
+                        "surface-white": "#FFFFFF",
+                        "outline-variant": "#e3bfb4",
+                        "autumn-green": "#4F7E17",
+                        "surface-container": "#ffe9e3",
+                        "on-primary-fixed": "#3a0b00",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#51647d",
+                        "inverse-primary": "#ffb59e",
+                        "error-container": "#ffdad6",
+                        "on-primary-container": "#fffbff",
+                        "secondary-container": "#cde1fe",
+                        "primary": "#a93100",
+                        "on-surface": "#261814",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "region-gap": "24px",
+                        "screen-edge": "16px",
+                        "huge": "48px",
+                        "sm": "8px",
+                        "lg": "20px",
+                        "md": "12px",
+                        "xl": "24px",
+                        "base": "16px",
+                        "section-gap": "20px",
+                        "xs": "4px",
+                        "xxl": "32px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Be Vietnam Pro"],
+                        "mono-price": ["Space Grotesk"],
+                        "body": ["Be Vietnam Pro"],
+                        "h3": ["Plus Jakarta Sans"],
+                        "display": ["Plus Jakarta Sans"],
+                        "body-sm": ["Be Vietnam Pro"],
+                        "h1": ["Plus Jakarta Sans"],
+                        "h2": ["Plus Jakarta Sans"],
+                        "micro": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["17px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "mono-price": ["15px", {"lineHeight": "22px", "fontWeight": "500"}],
+                        "body": ["15px", {"lineHeight": "22px", "fontWeight": "400"}],
+                        "h3": ["17px", {"lineHeight": "22px", "fontWeight": "600"}],
+                        "display": ["32px", {"lineHeight": "38px", "fontWeight": "700"}],
+                        "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "h1": ["24px", {"lineHeight": "30px", "fontWeight": "700"}],
+                        "h2": ["20px", {"lineHeight": "26px", "fontWeight": "600"}],
+                        "micro": ["11px", {"lineHeight": "14px", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-paper-warm text-text-primary antialiased">
+<!-- TopNavBar -->
+<nav class="sticky top-0 w-full z-50 bg-[#FDFCFB] dark:bg-stone-950 border-b border-[#E7DED4] dark:border-stone-800 font-['Plus_Jakarta_Sans'] antialiased">
+<div class="flex justify-between items-center h-20 px-6 md:px-12 max-w-7xl mx-auto">
+<div class="text-2xl font-extrabold tracking-tight text-[#E8531E] dark:text-[#FF6B35]">
+                Hungry
+            </div>
+<div class="hidden md:flex space-x-8">
+<a class="text-[#E8531E] dark:text-[#FF6B35] font-bold border-b-2 border-[#E8531E] pb-1 transition-all duration-200 ease-in-out hover:opacity-80" href="#">About</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-all duration-200 ease-in-out hover:opacity-80" href="#">For Foodies</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-all duration-200 ease-in-out hover:opacity-80" href="#">For Merchants</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-all duration-200 ease-in-out hover:opacity-80" href="#">Merchant Portal</a>
+</div>
+<button class="bg-hungry-orange text-surface-white px-6 py-3 rounded-[18px] font-body-lg text-body-lg font-medium transition-all duration-200 ease-in-out hover:opacity-80">
+                Join Waitlist
+            </button>
+</div>
+</nav>
+<!-- Trust & Local Identity Section -->
+<section class="py-huge px-screen-edge md:px-12 max-w-7xl mx-auto">
+<div class="text-center mb-huge">
+<h1 class="font-display text-display text-text-primary mb-sm">Made for Singapore’s local food scene.</h1>
+<p class="font-body-lg text-body-lg text-text-secondary max-w-2xl mx-auto">
+                We believe the dish is the atomic unit of discovery. Our platform is built from the ground up to respect the hawker culture, ensuring accurate, community-verified data that feels like a trusted local guide.
+            </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-xl">
+<!-- Trust Card 1: Built for hawkers -->
+<div class="bg-surface-white border border-line-border rounded-xl p-xl flex flex-col items-start relative overflow-hidden group">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined text-hungry-orange" data-icon="storefront" style="font-variation-settings: 'FILL' 1;">storefront</span>
+</div>
+<h3 class="font-h3 text-h3 text-text-primary mb-xs">Built for hawkers</h3>
+<p class="font-body text-body text-text-secondary">Designed with the unique needs of Singaporean hawkers in mind, ensuring they get the visibility they deserve without unfair fees.</p>
+<div class="absolute -bottom-4 -right-4 w-24 h-24 bg-hawker-amber opacity-10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
+</div>
+<!-- Trust Card 2: Dish-focused -->
+<div class="bg-surface-white border border-line-border rounded-xl p-xl flex flex-col items-start relative overflow-hidden group">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined text-hungry-orange" data-icon="restaurant" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+</div>
+<h3 class="font-h3 text-h3 text-text-primary mb-xs">Dish-focused</h3>
+<p class="font-body text-body text-text-secondary">We focus on the food, not just the venue. Find the best specific dishes recommended by locals, elevating culinary gems.</p>
+<div class="absolute -bottom-4 -right-4 w-24 h-24 bg-russian-red opacity-10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
+</div>
+<!-- Trust Card 3: Accurate data -->
+<div class="bg-surface-white border border-line-border rounded-xl p-xl flex flex-col items-start relative overflow-hidden group">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined text-hungry-orange" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<h3 class="font-h3 text-h3 text-text-primary mb-xs">Accurate data</h3>
+<p class="font-body text-body text-text-secondary">Tired of wrong opening hours? Our data is meticulously verified and updated, so you never arrive at a closed stall.</p>
+<div class="absolute -bottom-4 -right-4 w-24 h-24 bg-tertiary opacity-10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
+</div>
+<!-- Trust Card 4: Community-powered -->
+<div class="bg-surface-white border border-line-border rounded-xl p-xl flex flex-col items-start relative overflow-hidden group">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center mb-lg">
+<span class="material-symbols-outlined text-hungry-orange" data-icon="groups" style="font-variation-settings: 'FILL' 1;">groups</span>
+</div>
+<h3 class="font-h3 text-h3 text-text-primary mb-xs">Community-powered</h3>
+<p class="font-body text-body text-text-secondary">Driven by the people who know makan best. Authentic reviews, tips, and photos from local foodies you can trust.</p>
+<div class="absolute -bottom-4 -right-4 w-24 h-24 bg-autumn-green opacity-10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500"></div>
+</div>
+</div>
+<!-- Visual Anchor -->
+<div class="mt-huge rounded-xl overflow-hidden h-64 md:h-96 relative border border-line-border">
+<img alt="Singapore Hawker Centre" class="w-full h-full object-cover" data-alt="A warm, vibrant photograph of a bustling Singaporean hawker centre at evening. The scene is illuminated by warm, inviting string lights and fluorescent stall signs, capturing the energetic atmosphere. Locals are gathered around tables, enjoying steaming plates of food. The photography style is modern, appetizing, and rich in local texture, embodying the 'Paper Warm' and 'Tactile Warmth' aesthetic of the brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdCL4yb4v0Cry8PyeOXF5IfCgZZkt-NU5f3vZR924Ip6epm_e4nPwC0wmHGhzJqW2I4tilaGtKqpmV_GqimdYzRvfz8YH51w4rANByqLwcjudm1kNLL9cuyo18GYaEmenL8cHIyuUvACIB0lU6oKiclZrXd7At7uN1fT6wAOEBGsohLa7KcPSG-ffsRBpb9R2PIjPClRZnoKHBE1a5u6G8Td0dn4a1Cf4fIsMc_ypb2eSLYqT0qDIqprDULhEHC6b_2LUBum0POo8"/>
+<div class="absolute inset-0 bg-gradient-to-t from-deep-navy/80 to-transparent flex items-end p-xl">
+<div>
+<span class="bg-surface-white text-text-primary px-3 py-1 rounded-full font-micro text-micro uppercase tracking-wider mb-sm inline-block shadow-sm">The Local Touch</span>
+<p class="font-h2 text-h2 text-surface-white">Celebrating the unsung heroes of our culinary landscape.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="w-full py-12 bg-[#FDFCFB] dark:bg-stone-950 border-t border-[#E7DED4] dark:border-stone-800 font-['Plus_Jakarta_Sans'] text-sm">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8 px-6 md:px-12 max-w-7xl mx-auto">
+<div class="flex flex-col space-y-4">
+<div class="text-xl font-bold text-[#E8531E] dark:text-[#FF6B35]">
+                    Hungry
+                </div>
+<p class="text-stone-500 dark:text-stone-500">
+                    © 2024 Hungry Singapore. Your trusted guide to the local makan scene.
+                </p>
+</div>
+<div class="flex flex-col space-y-3">
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Hawker Centres</a>
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Nearby Makan</a>
+</div>
+<div class="flex flex-col space-y-3">
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Merchant Support</a>
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Contact Us</a>
+</div>
+<div class="flex flex-col space-y-3">
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Terms of Service</a>
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Privacy Policy</a>
+</div>
+</div>
+</footer>
+</body></html>

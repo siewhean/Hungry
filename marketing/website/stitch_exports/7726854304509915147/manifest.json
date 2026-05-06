@@ -1,0 +1,245 @@
+{
+  "project": {
+    "id": "7726854304509915147",
+    "title": "Markdown Design System"
+  },
+  "exportedAt": "2026-05-04T16:31:54Z",
+  "source": "Stitch",
+  "outputMode": "reference-archive",
+  "screens": [
+    {
+      "index": 1,
+      "title": "Merchant Login",
+      "screenId": "91ae482421f9479aaebbe04d9858c12d",
+      "screenResourceName": "projects/7726854304509915147/screens/91ae482421f9479aaebbe04d9858c12d",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "htmlCode": {
+        "mimeType": "text/html",
+        "resourceName": "projects/7726854304509915147/files/6139434d24104c2cbc3e2b1503ddbd11",
+        "localPath": "html/01-merchant-login-91ae482421f9479aaebbe04d9858c12d.html"
+      },
+      "screenshot": {
+        "resourceName": "projects/7726854304509915147/files/5d616f62b8954837a81e43cfd23677b6",
+        "localPath": "screenshots/01-merchant-login-91ae482421f9479aaebbe04d9858c12d.png"
+      }
+    },
+    {
+      "index": 2,
+      "title": "Join Waitlist",
+      "screenId": "0433941bacaf455d81851e2f401082e5",
+      "screenResourceName": "projects/7726854304509915147/screens/0433941bacaf455d81851e2f401082e5",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "htmlCode": {
+        "mimeType": "text/html",
+        "resourceName": "projects/7726854304509915147/files/9dfd81232f02446dbf61a449c69965c1",
+        "localPath": "html/02-join-waitlist-0433941bacaf455d81851e2f401082e5.html"
+      },
+      "screenshot": {
+        "resourceName": "projects/7726854304509915147/files/8a416d91456b4790b59974c0b5439827",
+        "localPath": "screenshots/02-join-waitlist-0433941bacaf455d81851e2f401082e5.png"
+      }
+    },
+    {
+      "index": 3,
+      "title": "About Hungry",
+      "screenId": "448b7cd38b77430dbe06f68e169472fd",
+      "screenResourceName": "projects/7726854304509915147/screens/448b7cd38b77430dbe06f68e169472fd",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 3780,
+      "htmlCode": {
+        "mimeType": "text/html",
+        "resourceName": "projects/7726854304509915147/files/59cb22e7c9594dc89e284d243c7408e7",
+        "localPath": "html/03-about-hungry-448b7cd38b77430dbe06f68e169472fd.html"
+      },
+      "screenshot": {
+        "resourceName": "projects/7726854304509915147/files/35a81f0edd9f43b68ba9aa119636fac0",
+        "localPath": "screenshots/03-about-hungry-448b7cd38b77430dbe06f68e169472fd.png"
+      }
+    },
+    {
+      "index": 4,
+      "title": "For Merchants",
+      "screenId": "68e53927663040ca98098852cb9d9613",
+      "screenResourceName": "projects/7726854304509915147/screens/68e53927663040ca98098852cb9d9613",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 4754,
+      "htmlCode": {
+        "mimeType": "text/html",
+        "resourceName": "projects/7726854304509915147/files/297c99ad305549ce80f13517bc449913",
+        "localPath": "html/04-for-merchants-68e53927663040ca98098852cb9d9613.html"
+      },
+      "screenshot": {
+        "resourceName": "projects/7726854304509915147/files/c581fc9c17af42ababc96f07b4f76162",
+        "localPath": "screenshots/04-for-merchants-68e53927663040ca98098852cb9d9613.png"
+      }
+    },
+    {
+      "index": 5,
+      "title": "For Foodies",
+      "screenId": "81f90fcdc4734ad2829458ba7829af64",
+      "screenResourceName": "projects/7726854304509915147/screens/81f90fcdc4734ad2829458ba7829af64",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 5302,
+      "htmlCode": {
+        "mimeType": "text/html",
+        "resourceName": "projects/7726854304509915147/files/baec19c8924e4bed9918f46bcb571801",
+        "localPath": "html/05-for-foodies-81f90fcdc4734ad2829458ba7829af64.html"
+      },
+      "screenshot": {
+        "resourceName": "projects/7726854304509915147/files/ba5711727b2a45d7a74b24613b99502a",
+        "localPath": "screenshots/05-for-foodies-81f90fcdc4734ad2829458ba7829af64.png"
+      }
+    },
+    {
+      "index": 6,
+      "title": "App Mockup Showcase",
+      "screenId": "81475fc2ccb74916a02d59864f7ce1cd",
+      "screenResourceName": "projects/7726854304509915147/screens/81475fc2ccb74916a02d59864f7ce1cd",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2612,
+      "htmlCode": {
+        "mimeType": "text/html",
+        "resourceName": "projects/7726854304509915147/files/41ad9e9988c547a98447480d136b79cf",
+        "localPath": "html/06-app-mockup-showcase-81475fc2ccb74916a02d59864f7ce1cd.html"
+      },
+      "screenshot": {
+        "resourceName": "projects/7726854304509915147/files/59e661b26e5b408bb9f13339783a6b8c",
+        "localPath": "screenshots/06-app-mockup-showcase-81475fc2ccb74916a02d59864f7ce1cd.png"
+      }
+    },
+    {
+      "index": 7,
+      "title": "Trust & Identity Section",
+      "screenId": "1e858e53dc7f462b87b9ab911b69b818",
+      "screenResourceName": "projects/7726854304509915147/screens/1e858e53dc7f462b87b9ab911b69b818",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2420,
+      "htmlCode": {
+        "mimeType": "text/html",
+        "resourceName": "projects/7726854304509915147/files/5ee862a8577a4568948a77290a189ff4",
+        "localPath": "html/07-trust-identity-section-1e858e53dc7f462b87b9ab911b69b818.html"
+      },
+      "screenshot": {
+        "resourceName": "projects/7726854304509915147/files/dadcbd76335b41e3bdfd0728364a645c",
+        "localPath": "screenshots/07-trust-identity-section-1e858e53dc7f462b87b9ab911b69b818.png"
+      }
+    },
+    {
+      "index": 8,
+      "title": "Foodie Hero - Visual Feast",
+      "screenId": "60812b7af2db4eca813b95bf7c0f5709",
+      "screenResourceName": "projects/7726854304509915147/screens/60812b7af2db4eca813b95bf7c0f5709",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2434,
+      "htmlCode": {
+        "mimeType": "text/html",
+        "resourceName": "projects/7726854304509915147/files/829f92433a4c4d0eb55e0cd9980cf67b",
+        "localPath": "html/08-foodie-hero-visual-feast-60812b7af2db4eca813b95bf7c0f5709.html"
+      },
+      "screenshot": {
+        "resourceName": "projects/7726854304509915147/files/b4d1a0399fc04df8bc2eefc329a9c75f",
+        "localPath": "screenshots/08-foodie-hero-visual-feast-60812b7af2db4eca813b95bf7c0f5709.png"
+      }
+    },
+    {
+      "index": 9,
+      "title": "Menu Management",
+      "screenId": "f0505749325f4fc18f177058b88c6573",
+      "screenResourceName": "projects/7726854304509915147/screens/f0505749325f4fc18f177058b88c6573",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "htmlCode": {
+        "mimeType": "text/html",
+        "resourceName": "projects/7726854304509915147/files/c4cbb10454a24ff2913f8f57c006dd0e",
+        "localPath": "html/09-menu-management-f0505749325f4fc18f177058b88c6573.html"
+      },
+      "screenshot": {
+        "resourceName": "projects/7726854304509915147/files/3aef23fecb8c42318ed5f54cdb566c21",
+        "localPath": "screenshots/09-menu-management-f0505749325f4fc18f177058b88c6573.png"
+      }
+    },
+    {
+      "index": 10,
+      "title": "Opening Hours Editor",
+      "screenId": "a8aefac410fb476f9b072cddbe8e0192",
+      "screenResourceName": "projects/7726854304509915147/screens/a8aefac410fb476f9b072cddbe8e0192",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2190,
+      "htmlCode": {
+        "mimeType": "text/html",
+        "resourceName": "projects/7726854304509915147/files/6c52f08aeca6490595b516a44eb9e761",
+        "localPath": "html/10-opening-hours-editor-a8aefac410fb476f9b072cddbe8e0192.html"
+      },
+      "screenshot": {
+        "resourceName": "projects/7726854304509915147/files/e5d7ca631cb74c27a82718eb944692fb",
+        "localPath": "screenshots/10-opening-hours-editor-a8aefac410fb476f9b072cddbe8e0192.png"
+      }
+    },
+    {
+      "index": 11,
+      "title": "Stall Profile Editor",
+      "screenId": "dab9af68b47d4835866c29bca8ccd535",
+      "screenResourceName": "projects/7726854304509915147/screens/dab9af68b47d4835866c29bca8ccd535",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2302,
+      "htmlCode": {
+        "mimeType": "text/html",
+        "resourceName": "projects/7726854304509915147/files/e5b63b4cc3c543348f854e3d82ba8912",
+        "localPath": "html/11-stall-profile-editor-dab9af68b47d4835866c29bca8ccd535.html"
+      },
+      "screenshot": {
+        "resourceName": "projects/7726854304509915147/files/cb7d9193a1cf467fbdae8d475fd6ee08",
+        "localPath": "screenshots/11-stall-profile-editor-dab9af68b47d4835866c29bca8ccd535.png"
+      }
+    },
+    {
+      "index": 12,
+      "title": "Search Analytics",
+      "screenId": "264fb0568f64460cb003884e7df76222",
+      "screenResourceName": "projects/7726854304509915147/screens/264fb0568f64460cb003884e7df76222",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "htmlCode": {
+        "mimeType": "text/html",
+        "resourceName": "projects/7726854304509915147/files/492f90a1b5314c7496b2e8a64ce2a04e",
+        "localPath": "html/12-search-analytics-264fb0568f64460cb003884e7df76222.html"
+      },
+      "screenshot": {
+        "resourceName": "projects/7726854304509915147/files/7c731a176ea949e0b216608e42a8aa80",
+        "localPath": "screenshots/12-search-analytics-264fb0568f64460cb003884e7df76222.png"
+      }
+    },
+    {
+      "index": 13,
+      "title": "Merchant Dashboard Detail",
+      "screenId": "84ca45f0daa847019ed235e2ae6fa29f",
+      "screenResourceName": "projects/7726854304509915147/screens/84ca45f0daa847019ed235e2ae6fa29f",
+      "deviceType": "DESKTOP",
+      "width": 2560,
+      "height": 2048,
+      "htmlCode": {
+        "mimeType": "text/html",
+        "resourceName": "projects/7726854304509915147/files/855915f8a8954a1b894131435a2ee6d5",
+        "localPath": "html/13-merchant-dashboard-detail-84ca45f0daa847019ed235e2ae6fa29f.html"
+      },
+      "screenshot": {
+        "resourceName": "projects/7726854304509915147/files/4ce256b5ab9547c5bcb483754b47ff1f",
+        "localPath": "screenshots/13-merchant-dashboard-detail-84ca45f0daa847019ed235e2ae6fa29f.png"
+      }
+    }
+  ]
+}
