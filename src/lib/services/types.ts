@@ -163,7 +163,11 @@ export interface Bite {
   buildingId: string;
   buildingName: string;
   photoUrl: string;
+  mediaUrls?: string[];
+  mediaType?: "photo" | "video";
+  mediaTypes?: ("photo" | "video")[];
   caption: string;
+  tags?: string[];
   tasteStamp: TasteStamp;
   cravingCount: number;
   savedCount: number;
@@ -177,7 +181,11 @@ export interface BiteDraft {
   dishId: string;
   venueId: string;
   photoUrl: string;
+  mediaUrls?: string[];
+  mediaType?: "photo" | "video";
+  mediaTypes?: ("photo" | "video")[];
   caption: string;
+  tags?: string[];
   tasteStamp: TasteStamp;
   rating: number;
   author?: Pick<UserProfile, "id" | "displayName" | "avatarUrl">;

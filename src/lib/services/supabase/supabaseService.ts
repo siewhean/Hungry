@@ -11,13 +11,14 @@ import {
 } from "@/lib/ai/tasteEngine";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import {
-  invalidateSupabaseRepositoryCache,
+  refreshSupabaseRepositoryCache,
   supabaseRepository,
 } from "@/lib/services/supabase/supabaseRepository";
 import { getSupabaseClient } from "@/lib/services/supabase/client";
 import {
   assertValidMenuPhotoUpload,
   uploadImageFromUri,
+  uploadPostMediaFromUri,
 } from "@/lib/services/supabase/mediaUpload";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
 import type {
@@ -46,7 +47,6 @@ import type {
   MerchantOutlet,
   MerchantPromotion,
   MerchantRole,
-  MerchantTeamMember,
   OCRDishDraft,
   PromotionStatus,
   SearchFilters,
@@ -57,6 +57,11 @@ import type {
 } from "@/types/domain";
 
 type Row = Record<string, unknown>;
+type DishPresentation = {
+  gallery: string[];
+  dietaryFlags: DietaryFlag[];
+  tasteVector?: TasteVector;
+};
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const DEFAULT_AUTH_PROFILE: UserProfile = {
@@ -125,8 +130,22 @@ function asStringArray(value: unknown): string[] {
   return [];
 }
 
+function asRecord(value: unknown): Row {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Row) : {};
+}
+
 function isLocalUri(value: string): boolean {
   return value.startsWith("file://") || value.startsWith("content://") || value.startsWith("/");
+}
+
+function sanitizeStorageSegment(value: string): string {
+  return value.replace(/[^a-zA-Z0-9._-]/g, "-") || "asset";
+}
+
+function extensionFromUri(uri: string): string {
+  const extension = uri.split("?")[0]?.split(".").pop()?.toLowerCase();
+  if (extension && /^[a-z0-9]+$/.test(extension)) return extension;
+  return "jpg";
 }
 
 function toTasteVector(row?: Row): TasteVector {
@@ -293,6 +312,284 @@ async function uploadAvatarIfNeeded(
     uri: avatarUri,
   });
   return uploaded.publicUrl;
+}
+
+function isVideoUri(value: string): boolean {
+  const normalized = value.split("?")[0]?.toLowerCase() ?? "";
+  return normalized.endsWith(".mp4") || normalized.endsWith(".mov") || normalized.endsWith(".webm");
+}
+
+function postMediaTypeFromUri(uri: string, fallback?: BiteDraft["mediaType"]): "image" | "video" {
+  if (fallback === "video" || isVideoUri(uri)) return "video";
+  return "image";
+}
+
+async function createSignedStorageUrl(
+  client: SupabaseClient,
+  bucket: string,
+  path: string,
+): Promise<string | undefined> {
+  try {
+    const { data, error } = await client.storage.from(bucket).createSignedUrl(path, 60 * 60);
+    if (error || !data?.signedUrl) return undefined;
+    return data.signedUrl;
+  } catch {
+    return undefined;
+  }
+}
+
+async function resolvePostMediaDisplayUrl(client: SupabaseClient, row: Row): Promise<string> {
+  const bucket = asString(row.storage_bucket);
+  const path = asString(row.storage_path) ?? "";
+  const publicUrl = asString(row.public_url);
+  if (bucket === "post-media" && path) {
+    return (await createSignedStorageUrl(client, bucket, path)) ?? publicUrl ?? "";
+  }
+  return publicUrl ?? path;
+}
+
+async function buildPostMediaRows(
+  client: SupabaseClient,
+  userId: string,
+  postId: string,
+  mediaUrls: string[],
+  mediaTypes?: BiteDraft["mediaTypes"],
+  fallbackMediaType?: BiteDraft["mediaType"],
+): Promise<{
+  rows: Row[];
+  displayUrls: string[];
+  canonicalMediaType: Bite["mediaType"];
+}> {
+  const rows: Row[] = [];
+  const displayUrls: string[] = [];
+  let hasVideo = false;
+
+  for (let index = 0; index < mediaUrls.length; index += 1) {
+    const uri = mediaUrls[index];
+    if (!uri) continue;
+    const mediaKind = postMediaTypeFromUri(uri, mediaTypes?.[index] ?? fallbackMediaType);
+    hasVideo = hasVideo || mediaKind === "video";
+
+    if (isLocalUri(uri)) {
+      const extension = extensionFromUri(uri);
+      const storagePath = `${userId}/${postId}/media-${index}-${Date.now()}.${extension}`;
+      const uploaded = await uploadPostMediaFromUri({
+        client,
+        bucket: "post-media",
+        path: storagePath,
+        uri,
+      });
+      rows.push({
+        post_id: postId,
+        media_type: mediaKind,
+        storage_bucket: "post-media",
+        storage_path: uploaded.path,
+        public_url: uploaded.publicUrl,
+        mime_type: uploaded.contentType,
+        size_bytes: uploaded.sizeBytes ?? null,
+        sort_order: index,
+      });
+      displayUrls.push(
+        (await createSignedStorageUrl(client, "post-media", uploaded.path)) ?? uploaded.publicUrl,
+      );
+      continue;
+    }
+
+    rows.push({
+      post_id: postId,
+      media_type: mediaKind,
+      storage_bucket: "external",
+      storage_path: uri,
+      public_url: uri,
+      mime_type: mediaKind === "video" ? "video/external" : "image/external",
+      sort_order: index,
+    });
+    displayUrls.push(uri);
+  }
+
+  return {
+    rows,
+    displayUrls,
+    canonicalMediaType: hasVideo ? "video" : "photo",
+  };
+}
+
+function postTypeForMedia(mediaRows: Row[], mediaType: Bite["mediaType"]): string {
+  if (mediaType === "video") return "video";
+  if (mediaRows.length > 1) return "multi_image";
+  if (mediaRows.length > 0) return "image";
+  return "text";
+}
+
+function tasteStampFromPostMeta(meta: Row): Bite["tasteStamp"] {
+  const tasteStamp = asRecord(meta.tasteStamp);
+  return {
+    sweet: asNumber(tasteStamp.sweet) ?? NEUTRAL_TASTE_VECTOR.sweet,
+    spicy: asNumber(tasteStamp.spicy) ?? NEUTRAL_TASTE_VECTOR.spicy,
+    sour: asNumber(tasteStamp.sour) ?? NEUTRAL_TASTE_VECTOR.sour,
+    salty: asNumber(tasteStamp.salty) ?? NEUTRAL_TASTE_VECTOR.salty,
+    rich: asNumber(tasteStamp.rich) ?? NEUTRAL_TASTE_VECTOR.rich,
+    aromatic: asNumber(tasteStamp.aromatic) ?? NEUTRAL_TASTE_VECTOR.aromatic,
+  };
+}
+
+function resolvePostBiteMediaType(mediaRows: Row[], meta: Row): Bite["mediaType"] {
+  if (asString(meta.mediaType) === "video") return "video";
+  return mediaRows.some((row) => asString(row.media_type) === "video") ? "video" : "photo";
+}
+
+function groupRowsByStringKey(rows: Row[], key: string): Map<string, Row[]> {
+  const grouped = new Map<string, Row[]>();
+  rows.forEach((row) => {
+    const value = asString(row[key]);
+    if (!value) return;
+    const current = grouped.get(value) ?? [];
+    current.push(row);
+    grouped.set(value, current);
+  });
+  return grouped;
+}
+
+async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Promise<Bite[]> {
+  const { data, error } = await client
+    .from("posts")
+    .select("*")
+    .eq("status", "published")
+    .is("deleted_at", null)
+    .order("published_at", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error || !Array.isArray(data)) return [];
+
+  const postRows = data as Row[];
+  const postIds = postRows.map((row) => asString(row.id)).filter((id): id is string => !!id);
+  const mediaRows =
+    postIds.length > 0
+      ? await client
+          .from("post_media")
+          .select("*")
+          .in("post_id", postIds)
+          .order("sort_order", { ascending: true })
+          .then(({ data: mediaData, error: mediaError }) =>
+            mediaError || !Array.isArray(mediaData) ? [] : (mediaData as Row[]),
+          )
+      : [];
+
+  const dishIds = [
+    ...new Set(postRows.map((row) => asString(row.dish_id)).filter((id): id is string => !!id)),
+  ];
+  const venueIds = [
+    ...new Set(postRows.map((row) => asString(row.venue_id)).filter((id): id is string => !!id)),
+  ];
+
+  const [dishRows, venueRows] = await Promise.all([
+    dishIds.length > 0
+      ? client
+          .from("dishes")
+          .select("id,name,price,rating_avg,rating,image_url,venue_id,building_id")
+          .in("id", dishIds)
+          .then(({ data: rows, error: rowsError }) =>
+            rowsError || !Array.isArray(rows) ? [] : (rows as Row[]),
+          )
+      : [],
+    venueIds.length > 0
+      ? client
+          .from("venues")
+          .select("id,name,unit_number,building_id")
+          .in("id", venueIds)
+          .then(({ data: rows, error: rowsError }) =>
+            rowsError || !Array.isArray(rows) ? [] : (rows as Row[]),
+          )
+      : [],
+  ]);
+
+  const buildingIds = [
+    ...new Set(
+      [
+        ...postRows.map((row) => asString(row.building_id)),
+        ...venueRows.map((row) => asString(row.building_id)),
+        ...dishRows.map((row) => asString(row.building_id)),
+      ].filter((id): id is string => !!id),
+    ),
+  ];
+  const buildingRows =
+    buildingIds.length > 0
+      ? await client
+          .from("buildings")
+          .select("id,name")
+          .in("id", buildingIds)
+          .then(({ data: rows, error: rowsError }) =>
+            rowsError || !Array.isArray(rows) ? [] : (rows as Row[]),
+          )
+      : [];
+
+  const mediaByPostId = groupRowsByStringKey(mediaRows, "post_id");
+  const dishById = new Map(dishRows.map((row) => [asString(row.id) ?? "", row]));
+  const venueById = new Map(venueRows.map((row) => [asString(row.id) ?? "", row]));
+  const buildingById = new Map(buildingRows.map((row) => [asString(row.id) ?? "", row]));
+
+  return Promise.all(
+    postRows.map(async (row) => {
+      const meta = asRecord(row.generated_content);
+      const authorMeta = asRecord(meta.author);
+      const dishMeta = asRecord(meta.dish);
+      const venueMeta = asRecord(meta.venue);
+      const postId = asString(row.id) ?? `post-${Date.now()}`;
+      const dishId = asString(row.dish_id) ?? asString(dishMeta.id) ?? "";
+      const venueId = asString(row.venue_id) ?? asString(venueMeta.id) ?? "";
+      const dishRow = dishById.get(dishId);
+      const venueRow = venueById.get(venueId);
+      const buildingId =
+        asString(row.building_id) ??
+        asString(venueRow?.building_id) ??
+        asString(dishRow?.building_id) ??
+        asString(venueMeta.buildingId) ??
+        "";
+      const buildingRow = buildingById.get(buildingId);
+      const mediaForPost = mediaByPostId.get(postId) ?? [];
+      const mediaUrls = (
+        await Promise.all(
+          mediaForPost.map((mediaRow) => resolvePostMediaDisplayUrl(client, mediaRow)),
+        )
+      ).filter((url): url is string => url.length > 0);
+      const fallbackImage =
+        asString(dishRow?.image_url) ??
+        asString(dishMeta.imageUrl) ??
+        asString(row.public_url) ??
+        "";
+      const photoUrl = mediaUrls[0] ?? fallbackImage;
+      const mediaType = resolvePostBiteMediaType(mediaForPost, meta);
+
+      return {
+        id: postId,
+        authorId: asString(row.author_id) ?? "unknown-author",
+        authorName: asString(authorMeta.displayName) ?? "Hungry User",
+        authorAvatar: asString(authorMeta.avatarUrl),
+        dishId,
+        dishName: asString(dishRow?.name) ?? asString(dishMeta.name) ?? "Unknown dish",
+        venueId,
+        venueName: asString(venueRow?.name) ?? asString(venueMeta.name) ?? "Unknown venue",
+        unitNumber: asString(venueRow?.unit_number) ?? asString(venueMeta.unitNumber) ?? "",
+        buildingId,
+        buildingName: asString(buildingRow?.name) ?? asString(venueMeta.buildingName) ?? "",
+        photoUrl,
+        mediaUrls: mediaUrls.length > 0 ? mediaUrls : photoUrl ? [photoUrl] : [],
+        mediaType,
+        caption: asString(row.caption) ?? "",
+        tags: asStringArray(meta.tags),
+        tasteStamp: tasteStampFromPostMeta(meta),
+        cravingCount: asNumber(row.like_count) ?? 0,
+        savedCount: asNumber(row.save_count) ?? 0,
+        rating:
+          asNumber(meta.rating) ?? asNumber(dishRow?.rating_avg) ?? asNumber(dishRow?.rating) ?? 0,
+        price: asNumber(dishRow?.price) ?? asNumber(dishMeta.price) ?? 0,
+        expiresAt:
+          asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+        createdAt:
+          asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+      } satisfies Bite;
+    }),
+  );
 }
 
 function listAllDishesFromRepository(): DishDetail[] {
@@ -561,8 +858,9 @@ async function getMerchantOutletRow(client: SupabaseClient, outletId: string): P
   return data as Row;
 }
 
-function mapSupabaseDish(row: Row, venue?: Row): DishDetail {
-  const imageUrl = asString(row.image_url) ?? "";
+function mapSupabaseDish(row: Row, venue?: Row, presentation?: DishPresentation): DishDetail {
+  const gallery = presentation?.gallery ?? [];
+  const imageUrl = asString(row.image_url) ?? gallery[0] ?? "";
   return {
     id: asString(row.id) ?? "",
     venueId: asString(row.venue_id) ?? asString(venue?.id) ?? "",
@@ -580,14 +878,88 @@ function mapSupabaseDish(row: Row, venue?: Row): DishDetail {
     priceRange: asString(row.price_range) ?? "",
     liveCrowd: (asString(row.live_crowd) as DishDetail["liveCrowd"]) ?? undefined,
     tasteTags: asStringArray(row.taste_tags),
-    tasteVector: { ...NEUTRAL_TASTE_VECTOR },
-    dietaryFlags: [],
-    gallery: imageUrl ? [imageUrl] : [],
+    tasteVector: presentation?.tasteVector ?? { ...NEUTRAL_TASTE_VECTOR },
+    dietaryFlags: presentation?.dietaryFlags ?? [],
+    gallery: gallery.length > 0 ? gallery : imageUrl ? [imageUrl] : [],
     description: asString(row.description),
     mustOrder: asBoolean(row.must_order) ?? false,
     availabilityFlags: asStringArray(row.availability_flags),
     reviews: [],
   };
+}
+
+async function fetchDishPresentationMap(
+  client: SupabaseClient,
+  dishIds: string[],
+): Promise<Map<string, DishPresentation>> {
+  const uniqueDishIds = Array.from(new Set(dishIds.filter(Boolean)));
+  const presentationByDishId = new Map<string, DishPresentation>();
+  if (uniqueDishIds.length === 0) return presentationByDishId;
+
+  const [imageRows, vectorRows, linkRows, flagRows] = await Promise.all([
+    client.from("dish_images").select("dish_id,url,sort_order").in("dish_id", uniqueDishIds),
+    client
+      .from("dish_taste_vectors")
+      .select("dish_id,sweet,spicy,sour,salty,rich,aromatic")
+      .in("dish_id", uniqueDishIds),
+    client
+      .from("dish_dietary_flags")
+      .select("dish_id,dietary_flag_id")
+      .in("dish_id", uniqueDishIds),
+    client.from("dietary_flags").select("id,slug"),
+  ]);
+
+  const ensurePresentation = (dishId: string): DishPresentation => {
+    const existing = presentationByDishId.get(dishId);
+    if (existing) return existing;
+    const next = { gallery: [], dietaryFlags: [] };
+    presentationByDishId.set(dishId, next);
+    return next;
+  };
+
+  if (!imageRows.error && Array.isArray(imageRows.data)) {
+    (imageRows.data as Row[])
+      .slice()
+      .sort((left, right) => (asNumber(left.sort_order) ?? 0) - (asNumber(right.sort_order) ?? 0))
+      .forEach((row) => {
+        const dishId = asString(row.dish_id) ?? "";
+        const url = asString(row.url) ?? "";
+        if (!dishId || !url) return;
+        const presentation = ensurePresentation(dishId);
+        if (!presentation.gallery.includes(url)) presentation.gallery.push(url);
+      });
+  }
+
+  if (!vectorRows.error && Array.isArray(vectorRows.data)) {
+    (vectorRows.data as Row[]).forEach((row) => {
+      const dishId = asString(row.dish_id) ?? "";
+      if (!dishId) return;
+      ensurePresentation(dishId).tasteVector = toTasteVector(row);
+    });
+  }
+
+  const flagSlugById = new Map<string, string>();
+  if (!flagRows.error && Array.isArray(flagRows.data)) {
+    (flagRows.data as Row[]).forEach((row) => {
+      const id = asString(row.id) ?? "";
+      const slug = asString(row.slug) ?? "";
+      if (id && slug) flagSlugById.set(id, slug);
+    });
+  }
+
+  if (!linkRows.error && Array.isArray(linkRows.data)) {
+    (linkRows.data as Row[]).forEach((row) => {
+      const dishId = asString(row.dish_id) ?? "";
+      const slug = flagSlugById.get(asString(row.dietary_flag_id) ?? "");
+      if (!dishId || !slug) return;
+      const presentation = ensurePresentation(dishId);
+      if (!presentation.dietaryFlags.includes(slug as DietaryFlag)) {
+        presentation.dietaryFlags.push(slug as DietaryFlag);
+      }
+    });
+  }
+
+  return presentationByDishId;
 }
 
 async function fetchVenueRow(client: SupabaseClient, venueId: string): Promise<Row | undefined> {
@@ -608,13 +980,14 @@ function buildDishPayload(outlet: Row, dish: Partial<DishDetail>): Row {
   const venueId = asString(outlet.venue_id) ?? "";
   const buildingId = asString(outlet.building_id) ?? "";
   const price = asNumber(dish.price) ?? 0;
+  const imageUrl = dish.imageUrl ?? dish.gallery?.[0] ?? null;
   return {
     id: dish.id ?? `merchant-dish-${Date.now()}`,
     venue_id: venueId,
     building_id: buildingId,
     name: dish.name ?? "New dish",
     description: dish.description ?? null,
-    image_url: dish.imageUrl ?? null,
+    image_url: imageUrl,
     blurhash: dish.blurhash ?? null,
     price,
     price_range: dish.priceRange ?? `S$${price.toFixed(2)}`,
@@ -622,6 +995,150 @@ function buildDishPayload(outlet: Row, dish: Partial<DishDetail>): Row {
     must_order: dish.mustOrder ?? false,
     availability_flags: dish.availabilityFlags ?? [],
   };
+}
+
+function buildDishUpdatePayload(updates: Partial<DishDetail>): Row {
+  const payload: Row = {};
+  if (updates.buildingId !== undefined) payload.building_id = updates.buildingId;
+  if (updates.name !== undefined) payload.name = updates.name;
+  if (updates.description !== undefined) payload.description = updates.description || null;
+  if (updates.imageUrl !== undefined) payload.image_url = updates.imageUrl || null;
+  if (updates.gallery !== undefined && updates.imageUrl === undefined) {
+    payload.image_url = updates.gallery[0] ?? null;
+  }
+  if (updates.blurhash !== undefined) payload.blurhash = updates.blurhash ?? null;
+  if (updates.price !== undefined) payload.price = updates.price;
+  if (updates.priceRange !== undefined) payload.price_range = updates.priceRange;
+  if (updates.price !== undefined && updates.priceRange === undefined) {
+    payload.price_range = `S$${updates.price.toFixed(2)}`;
+  }
+  if (updates.tasteTags !== undefined) payload.taste_tags = updates.tasteTags;
+  if (updates.mustOrder !== undefined) payload.must_order = updates.mustOrder;
+  if (updates.availabilityFlags !== undefined)
+    payload.availability_flags = updates.availabilityFlags;
+  return payload;
+}
+
+async function resolveMerchantDishGalleryUrls(
+  client: SupabaseClient,
+  outlet: Row,
+  dishId: string,
+  dish: Partial<DishDetail>,
+): Promise<string[] | undefined> {
+  if (dish.imageUrl === undefined && dish.gallery === undefined) return undefined;
+
+  const requestedUrls = Array.from(
+    new Set([dish.imageUrl, ...(dish.gallery ?? [])].filter((url): url is string => Boolean(url))),
+  );
+  if (requestedUrls.length === 0) return [];
+
+  const userId = await getCurrentSupabaseUserId();
+  const venueId = asString(outlet.venue_id) ?? "unlinked";
+  const safeDishId = sanitizeStorageSegment(dishId);
+  const uploadedUrls: string[] = [];
+
+  for (let index = 0; index < requestedUrls.length; index += 1) {
+    const url = requestedUrls[index];
+    if (!isLocalUri(url)) {
+      uploadedUrls.push(url);
+      continue;
+    }
+    if (!userId) throw new Error("You must be signed in to upload merchant dish images.");
+    const extension = extensionFromUri(url);
+    const uploaded = await uploadImageFromUri({
+      client,
+      bucket: "merchant-dish-images",
+      path: `${userId}/${venueId}/${safeDishId}/image-${index}-${Date.now()}.${extension}`,
+      uri: url,
+    });
+    uploadedUrls.push(uploaded.publicUrl);
+  }
+
+  return uploadedUrls;
+}
+
+async function replaceDishImages(
+  client: SupabaseClient,
+  dishId: string,
+  galleryUrls: string[] | undefined,
+): Promise<void> {
+  if (galleryUrls === undefined) return;
+  const { error: deleteError } = await client.from("dish_images").delete().eq("dish_id", dishId);
+  if (deleteError) throw deleteError;
+  const rows = galleryUrls
+    .filter(Boolean)
+    .map((url, sortOrder) => ({ dish_id: dishId, url, sort_order: sortOrder }));
+  if (rows.length === 0) return;
+  const { error } = await client.from("dish_images").insert(rows);
+  if (error) throw error;
+}
+
+async function replaceDishDietaryFlags(
+  client: SupabaseClient,
+  dishId: string,
+  dietaryFlags: DietaryFlag[] | undefined,
+): Promise<void> {
+  if (dietaryFlags === undefined) return;
+  const uniqueFlags = Array.from(new Set(dietaryFlags));
+  const { error: deleteError } = await client
+    .from("dish_dietary_flags")
+    .delete()
+    .eq("dish_id", dishId);
+  if (deleteError) throw deleteError;
+  if (uniqueFlags.length === 0) return;
+
+  const { data, error } = await client
+    .from("dietary_flags")
+    .select("id,slug")
+    .in("slug", uniqueFlags);
+  if (error) throw error;
+  const idBySlug = new Map(
+    (Array.isArray(data) ? (data as Row[]) : [])
+      .map((row) => [asString(row.slug) ?? "", asString(row.id) ?? ""] as const)
+      .filter(([slug, id]) => slug.length > 0 && id.length > 0),
+  );
+  const missingFlags = uniqueFlags.filter((flag) => !idBySlug.has(flag));
+  if (missingFlags.length > 0) {
+    throw new Error(`Unknown dietary flags: ${missingFlags.join(", ")}`);
+  }
+
+  const { error: insertError } = await client.from("dish_dietary_flags").insert(
+    uniqueFlags.map((flag) => ({
+      dish_id: dishId,
+      dietary_flag_id: idBySlug.get(flag),
+    })),
+  );
+  if (insertError) throw insertError;
+}
+
+async function replaceDishTasteVector(
+  client: SupabaseClient,
+  dishId: string,
+  tasteVector: TasteVector | undefined,
+): Promise<void> {
+  if (tasteVector === undefined) return;
+  const { error } = await client.from("dish_taste_vectors").upsert(
+    {
+      dish_id: dishId,
+      sweet: tasteVector.sweet,
+      spicy: tasteVector.spicy,
+      sour: tasteVector.sour,
+      salty: tasteVector.salty,
+      rich: tasteVector.rich,
+      aromatic: tasteVector.aromatic,
+      vector: [
+        tasteVector.sweet,
+        tasteVector.spicy,
+        tasteVector.sour,
+        tasteVector.salty,
+        tasteVector.rich,
+        tasteVector.aromatic,
+      ],
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "dish_id" },
+  );
+  if (error) throw error;
 }
 
 function buildPromotionAnalytics(
@@ -1072,48 +1589,15 @@ export const supabaseService: HungryService = {
   social: {
     async getBitesFeed() {
       const client = requireSupabaseClient();
-      const { data, error } = await client
-        .from("bites")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(40);
-      if (error || !Array.isArray(data)) return [];
-
-      return (data as Row[]).map((row) => ({
-        id: asString(row.id) ?? `bite-${Date.now()}`,
-        authorId: asString(row.author_id) ?? "unknown-author",
-        authorName: asString(row.author_name) ?? "Hungry User",
-        authorAvatar: asString(row.author_avatar),
-        dishId: asString(row.dish_id) ?? "",
-        dishName: asString(row.dish_name) ?? "Unknown dish",
-        venueId: asString(row.venue_id) ?? "",
-        venueName: asString(row.venue_name) ?? "Unknown venue",
-        unitNumber: asString(row.unit_number) ?? "",
-        buildingId: asString(row.building_id) ?? "",
-        buildingName: asString(row.building_name) ?? "",
-        photoUrl:
-          asString(row.photo_url) ??
-          "https://images.unsplash.com/photo-1498654896293-37aacf113fd9?w=1200&auto=format&fit=crop",
-        caption: asString(row.caption) ?? "",
-        tasteStamp: {
-          sweet: asNumber(row.sweet) ?? 5,
-          spicy: asNumber(row.spicy) ?? 5,
-          sour: asNumber(row.sour) ?? 5,
-          salty: asNumber(row.salty) ?? 5,
-          rich: asNumber(row.rich) ?? 5,
-          aromatic: asNumber(row.aromatic) ?? 5,
-        },
-        cravingCount: asNumber(row.craving_count) ?? 0,
-        savedCount: asNumber(row.saved_count) ?? 0,
-        rating: asNumber(row.rating) ?? 0,
-        price: asNumber(row.price) ?? 0,
-        expiresAt: asString(row.expires_at) ?? new Date(Date.now() + 7 * 86_400_000).toISOString(),
-        createdAt: asString(row.created_at) ?? new Date().toISOString(),
-      }));
+      return fetchPublishedPostBites(client);
     },
 
     async postBite(draft: BiteDraft) {
       const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) {
+        throw new Error("You must be signed in to publish a post.");
+      }
       const user = await supabaseService.profile.getProfile();
       const dish = supabaseRepository.getDishById(draft.dishId);
       const venue = supabaseRepository.getVenueById(draft.venueId);
@@ -1121,62 +1605,118 @@ export const supabaseService: HungryService = {
         .listBuildings()
         .find((item) => item.id === venue?.buildingId || item.id === dish?.buildingId);
 
-      const photoUrl = isLocalUri(draft.photoUrl)
-        ? (
-            await uploadImageFromUri({
-              client,
-              bucket: "bites-media",
-              path: `${user.id}/bite-${Date.now()}.jpg`,
-              uri: draft.photoUrl,
-            })
-          ).publicUrl
-        : draft.photoUrl;
-
-      const payload = {
-        author_id: user.id,
-        author_name: user.displayName,
-        dish_id: draft.dishId,
-        dish_name: dish?.name ?? "",
-        venue_id: draft.venueId,
-        venue_name: venue?.name ?? "",
-        unit_number: venue?.unitNumber ?? "",
-        building_id: venue?.buildingId ?? dish?.buildingId ?? "",
-        building_name: building?.name ?? "",
-        photo_url: photoUrl,
-        caption: draft.caption,
-        sweet: draft.tasteStamp.sweet,
-        spicy: draft.tasteStamp.spicy,
-        sour: draft.tasteStamp.sour,
-        salty: draft.tasteStamp.salty,
-        rich: draft.tasteStamp.rich,
-        aromatic: draft.tasteStamp.aromatic,
+      const author = draft.author ?? user;
+      const postMeta = {
+        source: "post_composer",
+        author: {
+          displayName: author.displayName,
+          avatarUrl: author.avatarUrl,
+        },
+        dish: {
+          id: draft.dishId,
+          name: dish?.name ?? "",
+          price: dish?.price ?? 0,
+          imageUrl: dish?.imageUrl,
+        },
+        venue: {
+          id: draft.venueId,
+          name: venue?.name ?? "",
+          unitNumber: venue?.unitNumber ?? "",
+          buildingId: venue?.buildingId ?? dish?.buildingId ?? "",
+          buildingName: building?.name ?? "",
+        },
+        tasteStamp: draft.tasteStamp,
         rating: draft.rating,
-        price: dish?.price ?? 0,
+        tags: draft.tags ?? [],
+        mediaType: draft.mediaType ?? "photo",
+        mediaTypes: draft.mediaTypes ?? [],
       };
-      const { data, error } = await client.from("bites").insert(payload).select("*").maybeSingle();
-      if (error || !data) throw error ?? new Error("Failed to create bite.");
+
+      const initialPayload = {
+        author_id: userId,
+        post_type: "text",
+        status: "draft",
+        visibility: "public",
+        caption: draft.caption,
+        generated_content: postMeta,
+        dish_id: draft.dishId,
+        venue_id: draft.venueId,
+        building_id: venue?.buildingId ?? dish?.buildingId ?? null,
+      };
+
+      const { data: postData, error: postError } = await client
+        .from("posts")
+        .insert(initialPayload)
+        .select("*")
+        .maybeSingle();
+      if (postError || !postData) throw postError ?? new Error("Failed to create post draft.");
+
+      const postId = asString((postData as Row).id) ?? "";
+      if (!postId) {
+        throw new Error("Failed to create post id.");
+      }
+
+      const mediaUrls = draft.mediaUrls?.length
+        ? draft.mediaUrls
+        : [draft.photoUrl].filter(Boolean);
+      const media = await buildPostMediaRows(
+        client,
+        userId,
+        postId,
+        mediaUrls,
+        draft.mediaTypes,
+        draft.mediaType,
+      );
+      if (media.rows.length > 0) {
+        const { error: mediaError } = await client.from("post_media").insert(media.rows);
+        if (mediaError) throw mediaError;
+      }
+
+      const publishedAt = new Date().toISOString();
+      const postType = postTypeForMedia(media.rows, media.canonicalMediaType);
+      const { data: publishedPostData, error: publishError } = await client
+        .from("posts")
+        .update({
+          post_type: postType,
+          status: "published",
+          published_at: publishedAt,
+          updated_at: publishedAt,
+        })
+        .eq("id", postId)
+        .select("*")
+        .maybeSingle();
+      if (publishError || !publishedPostData) {
+        throw publishError ?? new Error("Failed to publish post.");
+      }
+
+      await refreshSupabaseRepositoryCache();
+
+      const primaryMediaUrl = media.displayUrls[0] ?? draft.photoUrl;
 
       return {
-        id: asString(data.id) ?? `bite-${Date.now()}`,
-        authorId: asString(data.author_id) ?? user.id,
-        authorName: asString(data.author_name) ?? user.displayName,
-        authorAvatar: asString(data.author_avatar),
-        dishId: asString(data.dish_id) ?? draft.dishId,
-        dishName: asString(data.dish_name) ?? dish?.name ?? "Unknown dish",
-        venueId: asString(data.venue_id) ?? draft.venueId,
-        venueName: asString(data.venue_name) ?? venue?.name ?? "Unknown venue",
-        unitNumber: asString(data.unit_number) ?? venue?.unitNumber ?? "",
-        buildingId: asString(data.building_id) ?? venue?.buildingId ?? dish?.buildingId ?? "",
-        buildingName: asString(data.building_name) ?? building?.name ?? "",
-        photoUrl: asString(data.photo_url) ?? photoUrl,
-        caption: asString(data.caption) ?? draft.caption,
+        id: postId,
+        authorId: userId,
+        authorName: author.displayName,
+        authorAvatar: author.avatarUrl,
+        dishId: draft.dishId,
+        dishName: dish?.name ?? "Unknown dish",
+        venueId: draft.venueId,
+        venueName: venue?.name ?? "Unknown venue",
+        unitNumber: venue?.unitNumber ?? "",
+        buildingId: venue?.buildingId ?? dish?.buildingId ?? "",
+        buildingName: building?.name ?? "",
+        photoUrl: primaryMediaUrl,
+        mediaUrls: media.displayUrls.length > 0 ? media.displayUrls : [primaryMediaUrl],
+        mediaType: media.canonicalMediaType,
+        caption: draft.caption,
+        tags: draft.tags,
         tasteStamp: draft.tasteStamp,
-        cravingCount: asNumber(data.craving_count) ?? 0,
-        savedCount: asNumber(data.saved_count) ?? 0,
-        rating: asNumber(data.rating) ?? draft.rating,
-        price: asNumber(data.price) ?? dish?.price ?? 0,
-        expiresAt: asString(data.expires_at) ?? new Date(Date.now() + 7 * 86_400_000).toISOString(),
-        createdAt: asString(data.created_at) ?? new Date().toISOString(),
+        cravingCount: 0,
+        savedCount: 0,
+        rating: draft.rating,
+        price: dish?.price ?? 0,
+        expiresAt: publishedAt,
+        createdAt: publishedAt,
       } satisfies Bite;
     },
 
@@ -1184,14 +1724,24 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to react.");
-      const { error } = await client.from("bite_reactions").upsert(
-        {
-          bite_id: biteId,
-          user_id: userId,
-          reaction,
-        },
-        { onConflict: "bite_id,user_id,reaction" },
-      );
+      const table = reaction === "craving" ? "post_likes" : "post_saves";
+      const existing = await client
+        .from(table)
+        .select("id")
+        .eq("post_id", biteId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (existing.error) throw existing.error;
+      if ((existing.data as Row | null)?.id) {
+        const { error } = await client
+          .from(table)
+          .delete()
+          .eq("post_id", biteId)
+          .eq("user_id", userId);
+        if (error) throw error;
+        return;
+      }
+      const { error } = await client.from(table).insert({ post_id: biteId, user_id: userId });
       if (error) throw error;
     },
 
@@ -1224,13 +1774,33 @@ export const supabaseService: HungryService = {
     },
 
     async getSavedBites() {
-      console.warn("getSavedBites not implemented in Supabase");
-      return [];
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return [];
+      const { data, error } = await client
+        .from("post_saves")
+        .select("post_id")
+        .eq("user_id", userId);
+      if (error || !Array.isArray(data)) return [];
+      const savedIds = new Set(
+        (data as Row[]).map((row) => asString(row.post_id)).filter((id): id is string => !!id),
+      );
+      return (await fetchPublishedPostBites(client)).filter((bite) => savedIds.has(bite.id));
     },
 
     async getLikedBites() {
-      console.warn("getLikedBites not implemented in Supabase");
-      return [];
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return [];
+      const { data, error } = await client
+        .from("post_likes")
+        .select("post_id")
+        .eq("user_id", userId);
+      if (error || !Array.isArray(data)) return [];
+      const likedIds = new Set(
+        (data as Row[]).map((row) => asString(row.post_id)).filter((id): id is string => !!id),
+      );
+      return (await fetchPublishedPostBites(client)).filter((bite) => likedIds.has(bite.id));
     },
   },
 
@@ -1518,7 +2088,7 @@ export const supabaseService: HungryService = {
             .update(venuePayload)
             .eq("id", venueId);
           if (venueError) throw venueError;
-          invalidateSupabaseRepositoryCache();
+          await refreshSupabaseRepositoryCache();
         }
       }
       return toMerchantOutlet(client, outlet);
@@ -1535,22 +2105,38 @@ export const supabaseService: HungryService = {
         .eq("venue_id", venueId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (Array.isArray(data) ? (data as Row[]) : []).map((row) => mapSupabaseDish(row, venue));
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      const presentationByDishId = await fetchDishPresentationMap(
+        client,
+        rows.map((row) => asString(row.id) ?? ""),
+      );
+      return rows.map((row) =>
+        mapSupabaseDish(row, venue, presentationByDishId.get(asString(row.id) ?? "")),
+      );
     },
 
     async addDish(outletId, dish) {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
-      const { data, error } = await client
-        .from("dishes")
-        .insert(buildDishPayload(outlet, dish))
-        .select("*")
-        .single();
+      const dishId = dish.id ?? `merchant-dish-${Date.now()}`;
+      const galleryUrls = await resolveMerchantDishGalleryUrls(client, outlet, dishId, dish);
+      const payload = buildDishPayload(outlet, {
+        ...dish,
+        id: dishId,
+        imageUrl: galleryUrls?.[0] ?? dish.imageUrl,
+        gallery: galleryUrls ?? dish.gallery,
+      });
+      const { data, error } = await client.from("dishes").insert(payload).select("*").single();
       if (error) throw error;
-      invalidateSupabaseRepositoryCache();
+      await replaceDishImages(client, dishId, galleryUrls);
+      await replaceDishDietaryFlags(client, dishId, dish.dietaryFlags);
+      await replaceDishTasteVector(client, dishId, dish.tasteVector);
+      await refreshSupabaseRepositoryCache();
+      const presentationByDishId = await fetchDishPresentationMap(client, [dishId]);
       return mapSupabaseDish(
         data as Row,
         await fetchVenueRow(client, asString(outlet.venue_id) ?? ""),
+        presentationByDishId.get(dishId),
       );
     },
 
@@ -1558,18 +2144,43 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
       const venueId = asString(outlet.venue_id) ?? "";
-      const payload = buildDishPayload(outlet, { ...updates, id: dishId });
-      delete payload.id;
-      const { data, error } = await client
-        .from("dishes")
-        .update(payload)
-        .eq("id", dishId)
-        .eq("venue_id", venueId)
-        .select("*")
-        .single();
-      if (error) throw error;
-      invalidateSupabaseRepositoryCache();
-      return mapSupabaseDish(data as Row, await fetchVenueRow(client, venueId));
+      const galleryUrls = await resolveMerchantDishGalleryUrls(client, outlet, dishId, updates);
+      const payload = buildDishUpdatePayload({
+        ...updates,
+        imageUrl: galleryUrls?.[0] ?? updates.imageUrl,
+        gallery: galleryUrls ?? updates.gallery,
+      });
+      let row: Row;
+      if (Object.keys(payload).length > 0) {
+        const { data, error } = await client
+          .from("dishes")
+          .update(payload)
+          .eq("id", dishId)
+          .eq("venue_id", venueId)
+          .select("*")
+          .single();
+        if (error) throw error;
+        row = data as Row;
+      } else {
+        const { data, error } = await client
+          .from("dishes")
+          .select("*")
+          .eq("id", dishId)
+          .eq("venue_id", venueId)
+          .single();
+        if (error) throw error;
+        row = data as Row;
+      }
+      await replaceDishImages(client, dishId, galleryUrls);
+      await replaceDishDietaryFlags(client, dishId, updates.dietaryFlags);
+      await replaceDishTasteVector(client, dishId, updates.tasteVector);
+      await refreshSupabaseRepositoryCache();
+      const presentationByDishId = await fetchDishPresentationMap(client, [dishId]);
+      return mapSupabaseDish(
+        row,
+        await fetchVenueRow(client, venueId),
+        presentationByDishId.get(dishId),
+      );
     },
 
     async deleteDish(outletId, dishId) {
@@ -1581,7 +2192,7 @@ export const supabaseService: HungryService = {
         .eq("id", dishId)
         .eq("venue_id", asString(outlet.venue_id) ?? "");
       if (error) throw error;
-      invalidateSupabaseRepositoryCache();
+      await refreshSupabaseRepositoryCache();
     },
 
     async toggleSoldOut(outletId, dishId) {
@@ -1603,7 +2214,7 @@ export const supabaseService: HungryService = {
         .eq("id", dishId)
         .eq("venue_id", venueId);
       if (updateError) throw updateError;
-      invalidateSupabaseRepositoryCache();
+      await refreshSupabaseRepositoryCache();
       return enabled;
     },
 
@@ -1626,7 +2237,7 @@ export const supabaseService: HungryService = {
         .eq("id", dishId)
         .eq("venue_id", venueId);
       if (updateError) throw updateError;
-      invalidateSupabaseRepositoryCache();
+      await refreshSupabaseRepositoryCache();
       return enabled;
     },
 

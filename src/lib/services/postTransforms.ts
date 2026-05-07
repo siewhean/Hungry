@@ -11,7 +11,11 @@ export function biteToStallPost(
   } = {},
 ): StallPost {
   const mediaUrl = bite.photoUrl;
-  const mediaUrls = options.mediaUrls?.length ? options.mediaUrls : [mediaUrl];
+  const mediaUrls = options.mediaUrls?.length
+    ? options.mediaUrls
+    : bite.mediaUrls?.length
+      ? bite.mediaUrls
+      : [mediaUrl];
 
   return {
     id: bite.id,
@@ -21,11 +25,11 @@ export function biteToStallPost(
     authorName: bite.authorName,
     authorLocation: bite.venueName || bite.buildingName,
     authorAvatarUrl: options.authorAvatarUrl ?? bite.authorAvatar ?? mediaUrl,
-    mediaType: options.mediaType ?? "photo",
+    mediaType: options.mediaType ?? bite.mediaType ?? "photo",
     mediaUrl,
     mediaUrls,
     caption: bite.caption,
-    tags: options.tags?.length ? options.tags : undefined,
+    tags: options.tags?.length ? options.tags : bite.tags?.length ? bite.tags : undefined,
     dishIds: [bite.dishId],
     createdAt: bite.createdAt,
     publishedStatus: "published",

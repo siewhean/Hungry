@@ -17,10 +17,43 @@ test("Supabase merchant service is wired to linked consumer venue and dish table
   assert.match(service, /from\("merchant_outlets"\)/);
   assert.match(service, /from\("venues"\)/);
   assert.match(service, /from\("dishes"\)/);
-  assert.match(service, /invalidateSupabaseRepositoryCache/);
+  assert.match(service, /refreshSupabaseRepositoryCache/);
   assert.match(service, /requireLinkedMerchantOutlet/);
   assert.match(service, /UUID_PATTERN/);
   assert.match(service, /merchant_account_id/);
+});
+
+test("Supabase merchant dish writes persist user-visible metadata and media", () => {
+  const service = read("src/lib/services/supabase/supabaseService.ts");
+
+  assert.match(service, /resolveMerchantDishGalleryUrls/);
+  assert.match(service, /bucket: "merchant-dish-images"/);
+  assert.match(service, /uploadImageFromUri/);
+  assert.match(service, /replaceDishImages/);
+  assert.match(service, /from\("dish_images"\)/);
+  assert.match(service, /replaceDishDietaryFlags/);
+  assert.match(service, /from\("dish_dietary_flags"\)/);
+  assert.match(service, /from\("dietary_flags"\)/);
+  assert.match(service, /replaceDishTasteVector/);
+  assert.match(service, /from\("dish_taste_vectors"\)\.upsert/);
+  assert.match(service, /buildDishUpdatePayload/);
+  assert.match(service, /fetchDishPresentationMap/);
+  assert.match(service, /mapSupabaseDish\(row, venue, presentationByDishId/);
+});
+
+test("Supabase repository reads dish metadata from normalized catalog tables", () => {
+  const repository = read("src/lib/services/supabase/supabaseRepository.ts");
+
+  assert.match(repository, /from\("dishes"\)\.select\("\*"\)/);
+  assert.match(repository, /from\("dish_images"\)\.select\("dish_id,url,sort_order"\)/);
+  assert.match(repository, /from\("dish_taste_vectors"\)/);
+  assert.match(repository, /from\("dish_dietary_flags"\)/);
+  assert.match(repository, /from\("dietary_flags"\)/);
+  assert.match(repository, /buildDishPresentationMap/);
+  assert.match(repository, /presentationByDishId\.get/);
+  assert.doesNotMatch(repository, /from\("dishes"\)\.select\([^)]*dietary_flags/);
+  assert.doesNotMatch(repository, /from\("dishes"\)\.select\([^)]*sweet/);
+  assert.doesNotMatch(repository, /from\("dishes"\)\.select\([^)]*gallery/);
 });
 
 test("Supabase migration links merchant writes to non-merchant read surfaces", () => {
@@ -59,4 +92,29 @@ test("Supabase merchant RLS hardening limits review replies and settings writes"
   assert.match(smoke, /trg_enforce_merchant_venue_update_guard/);
   assert.match(smoke, /trg_enforce_merchant_dish_write_guard/);
   assert.match(smoke, /security_definer/);
+});
+
+test("Supabase merchant catalog metadata RLS covers images and dietary links", () => {
+  const migration = read("supabase/migrations/0024_merchant_catalog_metadata_rls.sql");
+  const smoke = read("supabase/smoke/merchant_rls_policies.sql");
+
+  assert.match(migration, /dairy_free/);
+  assert.match(migration, /egg_free/);
+  assert.match(migration, /peanut_free/);
+  assert.match(migration, /shellfish_free/);
+  assert.match(migration, /soy_free/);
+  assert.match(migration, /sulphite_free/);
+  assert.match(migration, /dish_images_insert_merchant_owner_or_manager/);
+  assert.match(migration, /dish_images_update_merchant_owner_or_manager/);
+  assert.match(migration, /dish_images_delete_merchant_owner_or_manager/);
+  assert.match(migration, /dish_taste_vectors_insert_merchant_owner_or_manager/);
+  assert.match(migration, /dish_taste_vectors_update_merchant_owner_or_manager/);
+  assert.match(migration, /dish_taste_vectors_delete_merchant_owner_or_manager/);
+  assert.match(migration, /dish_dietary_flags_insert_merchant_owner_or_manager/);
+  assert.match(migration, /dish_dietary_flags_update_merchant_owner_or_manager/);
+  assert.match(migration, /dish_dietary_flags_delete_merchant_owner_or_manager/);
+  assert.match(migration, /merchant_can_manage_venue\(d\.venue_id\)/);
+  assert.match(smoke, /dish_images_%_merchant/);
+  assert.match(smoke, /dish_taste_vectors_%_merchant/);
+  assert.match(smoke, /dish_dietary_flags_%_merchant/);
 });

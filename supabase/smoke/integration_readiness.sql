@@ -60,6 +60,34 @@ select policyname
 from pg_policies
 where schemaname = 'public';
 
+with expected_storage_policies(policyname) as (
+  values
+    ('post_media_select_author_prefix'),
+    ('post_media_select_visible_post_objects'),
+    ('integration_media_insert_authenticated_own_prefix'),
+    ('integration_media_delete_authenticated_own_prefix')
+)
+select policyname
+from expected_storage_policies
+except
+select policyname
+from pg_policies
+where schemaname = 'storage'
+  and tablename = 'objects';
+
+with expected_triggers(trigger_name) as (
+  values
+    ('trg_post_likes_sync_counts'),
+    ('trg_post_saves_sync_counts'),
+    ('trg_post_shares_sync_counts')
+)
+select trigger_name
+from expected_triggers
+except
+select tgname
+from pg_trigger
+where not tgisinternal;
+
 with expected_buckets(bucket_id) as (
   values
     ('post-media'),

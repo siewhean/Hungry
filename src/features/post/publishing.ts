@@ -72,10 +72,14 @@ function resolvePublishTarget(
 function resolveMedia(media: MediaItem[], fallbackImageUrl: string) {
   const mediaUrls = media.length ? media.map((item) => item.uri) : [fallbackImageUrl];
   const firstMedia = media[0];
+  const mediaTypes = media.length
+    ? media.map((item) => (item.type === "video" ? ("video" as const) : ("photo" as const)))
+    : [firstMedia?.type === "video" ? ("video" as const) : ("photo" as const)];
   return {
     mediaType: firstMedia?.type === "video" ? ("video" as const) : ("photo" as const),
     mediaUrl: mediaUrls[0] ?? fallbackImageUrl,
     mediaUrls,
+    mediaTypes,
   };
 }
 
@@ -97,7 +101,11 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
     dishId: dish.id,
     venueId: venue.id,
     photoUrl: media.mediaUrl,
+    mediaUrls: media.mediaUrls,
+    mediaType: media.mediaType,
+    mediaTypes: media.mediaTypes,
     caption,
+    tags: [...state.foodTags, ...state.tasteTags],
     tasteStamp: dish.tasteVector ?? NEUTRAL_TASTE_VECTOR,
     rating,
     author: {
@@ -108,9 +116,9 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
   });
 
   const transformedPost = biteToStallPost(bite, {
-    authorAvatarUrl: bite.authorAvatar ?? profile.avatarUrl ?? media.mediaUrl,
-    mediaType: media.mediaType,
-    mediaUrls: media.mediaUrls,
+    authorAvatarUrl: bite.authorAvatar ?? profile.avatarUrl ?? bite.photoUrl,
+    mediaType: bite.mediaType ?? media.mediaType,
+    mediaUrls: bite.mediaUrls ?? media.mediaUrls,
     tags: [...state.foodTags, ...state.tasteTags],
   });
   const post: StallPost = {

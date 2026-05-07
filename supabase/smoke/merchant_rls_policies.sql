@@ -36,12 +36,18 @@ where schemaname = 'public'
     'merchant_notification_preferences',
     'venues',
     'dishes',
+    'dish_images',
+    'dish_taste_vectors',
+    'dish_dietary_flags',
     'reviews'
   )
   and (
     policyname like 'merchant_%'
     or policyname like 'venues_update_merchant%'
     or policyname like 'dishes_write_merchant%'
+    or policyname like 'dish_images_%_merchant%'
+    or policyname like 'dish_taste_vectors_%_merchant%'
+    or policyname like 'dish_dietary_flags_%_merchant%'
     or policyname like 'reviews_update_merchant%'
     or policyname like 'interaction_reports_%'
     or policyname like 'notification_prefs_%'

@@ -830,7 +830,10 @@ export const hungryService: HungryService = {
         buildingId: venue?.buildingId ?? "",
         buildingName: building?.name ?? "",
         photoUrl: draft.photoUrl,
+        mediaUrls: draft.mediaUrls,
+        mediaType: draft.mediaType,
         caption: draft.caption,
+        tags: draft.tags,
         tasteStamp: draft.tasteStamp,
         cravingCount: 0,
         savedCount: 0,
@@ -843,7 +846,9 @@ export const hungryService: HungryService = {
       await appendPublishedStallPost(
         biteToStallPost(newBite, {
           authorAvatarUrl: author.avatarUrl ?? draft.photoUrl,
-          mediaUrls: [draft.photoUrl],
+          mediaType: draft.mediaType,
+          mediaUrls: draft.mediaUrls ?? [draft.photoUrl],
+          tags: draft.tags,
         }),
       );
       return resolve(newBite);

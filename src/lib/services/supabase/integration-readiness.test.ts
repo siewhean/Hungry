@@ -132,6 +132,10 @@ test("integration readiness smoke SQL checks schema, policies, buckets, and real
   assert.match(smoke, /messages/i);
   assert.match(smoke, /expected_policies/i);
   assert.match(smoke, /messages_insert_sender_participant/i);
+  assert.match(smoke, /expected_storage_policies/i);
+  assert.match(smoke, /post_media_select_visible_post_objects/i);
+  assert.match(smoke, /expected_triggers/i);
+  assert.match(smoke, /trg_post_likes_sync_counts/i);
   assert.match(smoke, /expected_buckets/i);
   assert.match(smoke, /merchant-dish-images/i);
   assert.match(smoke, /pg_publication/i);

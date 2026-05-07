@@ -8,11 +8,17 @@ import type {
   DietaryFlag,
   SearchFilters,
   StallPost,
+  TasteVector,
   UserProfile,
   VenueSummary,
 } from "@/types/domain";
 
 type Row = Record<string, unknown>;
+type DishPresentation = {
+  gallery: string[];
+  dietaryFlags: DietaryFlag[];
+  tasteVector?: TasteVector;
+};
 
 const DEFAULT_AUTH_PROFILE: UserProfile = {
   id: "supabase-user",
@@ -59,7 +65,34 @@ function toBool(value: unknown, fallback = false): boolean {
 
 function toStringArray(value: unknown): string[] {
   if (Array.isArray(value)) return value.map((item) => toString(item)).filter(Boolean);
+  if (typeof value === "string" && value.trim().length > 0) {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (Array.isArray(parsed)) return parsed.map((item) => toString(item)).filter(Boolean);
+    } catch {
+      return value
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
+    }
+  }
   return [];
+}
+
+function toRecord(value: unknown): Row {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Row) : {};
+}
+
+function mapTasteVector(row?: Row): TasteVector | undefined {
+  if (!row) return undefined;
+  return {
+    sweet: toNumber(row.sweet, 5),
+    spicy: toNumber(row.spicy, 5),
+    sour: toNumber(row.sour, 5),
+    salty: toNumber(row.salty, 5),
+    rich: toNumber(row.rich, 5),
+    aromatic: toNumber(row.aromatic, 5),
+  };
 }
 
 let hydrated = false;
@@ -107,23 +140,18 @@ function mapVenue(row: Row): VenueSummary {
   };
 }
 
-function mapDish(row: Row): DishDetail {
-  const sweet = toNumber(row.sweet, 5);
-  const spicy = toNumber(row.spicy, 5);
-  const sour = toNumber(row.sour, 5);
-  const salty = toNumber(row.salty, 5);
-  const rich = toNumber(row.rich, 5);
-  const aromatic = toNumber(row.aromatic, 5);
-  const gallery = toStringArray(row.gallery);
+function mapDish(row: Row, venue?: VenueSummary, presentation?: DishPresentation): DishDetail {
+  const gallery = presentation?.gallery ?? [];
+  const imageUrl = toString(row.image_url) || gallery[0] || "";
   return {
     id: toString(row.id),
     venueId: toString(row.venue_id),
-    buildingId: toString(row.building_id),
-    venueName: toString(row.venue_name),
-    unitNumber: toString(row.unit_number),
-    floor: toString(row.floor),
+    buildingId: toString(row.building_id, venue?.buildingId ?? ""),
+    venueName: venue?.name ?? "",
+    unitNumber: venue?.unitNumber ?? "",
+    floor: venue?.floor ?? "",
     name: toString(row.name),
-    imageUrl: toString(row.image_url),
+    imageUrl,
     blurhash: toString(row.blurhash) || undefined,
     distanceMeters: toNumber(row.distance_meters),
     rating: toNumber(row.rating_avg, toNumber(row.rating)),
@@ -132,9 +160,16 @@ function mapDish(row: Row): DishDetail {
     priceRange: toString(row.price_range),
     liveCrowd: (toString(row.live_crowd) as DishDetail["liveCrowd"]) || undefined,
     tasteTags: toStringArray(row.taste_tags),
-    tasteVector: { sweet, spicy, sour, salty, rich, aromatic },
-    dietaryFlags: toStringArray(row.dietary_flags) as DietaryFlag[],
-    gallery: gallery.length > 0 ? gallery : [toString(row.image_url)],
+    tasteVector: presentation?.tasteVector ?? {
+      sweet: 5,
+      spicy: 5,
+      sour: 5,
+      salty: 5,
+      rich: 5,
+      aromatic: 5,
+    },
+    dietaryFlags: presentation?.dietaryFlags ?? [],
+    gallery: gallery.length > 0 ? gallery : imageUrl ? [imageUrl] : [],
     description: toString(row.description) || undefined,
     mustOrder: toBool(row.must_order),
     availabilityFlags: toStringArray(row.availability_flags),
@@ -177,6 +212,118 @@ function mapStallPost(row: Row): StallPost {
   };
 }
 
+function groupRowsByStringKey(rows: Row[], key: string): Map<string, Row[]> {
+  const grouped = new Map<string, Row[]>();
+  rows.forEach((row) => {
+    const value = toString(row[key]);
+    if (!value) return;
+    const current = grouped.get(value) ?? [];
+    current.push(row);
+    grouped.set(value, current);
+  });
+  return grouped;
+}
+
+function mapPostRowToStallPost(
+  row: Row,
+  mediaRows: Row[],
+  venue?: VenueSummary,
+  building?: BuildingSummary,
+  dish?: DishDetail,
+): StallPost {
+  const meta = toRecord(row.generated_content);
+  const authorMeta = toRecord(meta.author);
+  const dishMeta = toRecord(meta.dish);
+  const venueMeta = toRecord(meta.venue);
+  const mediaUrls = mediaRows
+    .slice()
+    .sort((left, right) => toNumber(left.sort_order) - toNumber(right.sort_order))
+    .map((mediaRow) => toString(mediaRow.public_url) || toString(mediaRow.storage_path))
+    .filter(Boolean);
+  const fallbackImage = dish?.imageUrl ?? toString(dishMeta.imageUrl);
+  const mediaUrl = mediaUrls[0] ?? fallbackImage;
+  const mediaType = mediaRows.some((mediaRow) => toString(mediaRow.media_type) === "video")
+    ? "video"
+    : "photo";
+
+  return {
+    id: toString(row.id),
+    authorId: toString(row.author_id),
+    venueId: toString(row.venue_id) || venue?.id || toString(venueMeta.id),
+    buildingId:
+      toString(row.building_id) ||
+      venue?.buildingId ||
+      dish?.buildingId ||
+      toString(venueMeta.buildingId),
+    authorName: toString(authorMeta.displayName, "Hungry User"),
+    authorLocation: venue?.name || toString(venueMeta.name) || building?.name || "",
+    authorAvatarUrl: toString(authorMeta.avatarUrl) || mediaUrl,
+    mediaType,
+    mediaUrl,
+    mediaUrls: mediaUrls.length > 0 ? mediaUrls : mediaUrl ? [mediaUrl] : undefined,
+    caption: toString(row.caption),
+    tags: toStringArray(meta.tags),
+    dishIds: [toString(row.dish_id) || dish?.id || toString(dishMeta.id)].filter(Boolean),
+    createdAt: toString(row.published_at) || toString(row.created_at) || new Date().toISOString(),
+    publishedStatus: "published",
+    visibility: toString(row.visibility) === "private" ? "private" : "public",
+    likeCount: toNumber(row.like_count),
+    commentCount: toNumber(row.comment_count),
+    savedCount: toNumber(row.save_count),
+  };
+}
+
+function buildDishPresentationMap(
+  imageRows: Row[],
+  tasteVectorRows: Row[],
+  dishDietaryFlagRows: Row[],
+  dietaryFlagRows: Row[],
+): Map<string, DishPresentation> {
+  const presentationByDishId = new Map<string, DishPresentation>();
+  const flagSlugById = new Map(
+    dietaryFlagRows
+      .map((row) => [toString(row.id), toString(row.slug)] as const)
+      .filter(([id, slug]) => id.length > 0 && slug.length > 0),
+  );
+
+  const ensurePresentation = (dishId: string): DishPresentation => {
+    const current = presentationByDishId.get(dishId);
+    if (current) return current;
+    const next = { gallery: [], dietaryFlags: [] };
+    presentationByDishId.set(dishId, next);
+    return next;
+  };
+
+  imageRows
+    .slice()
+    .sort((left, right) => toNumber(left.sort_order) - toNumber(right.sort_order))
+    .forEach((row) => {
+      const dishId = toString(row.dish_id);
+      const url = toString(row.url);
+      if (!dishId || !url) return;
+      const presentation = ensurePresentation(dishId);
+      if (!presentation.gallery.includes(url)) presentation.gallery.push(url);
+    });
+
+  tasteVectorRows.forEach((row) => {
+    const dishId = toString(row.dish_id);
+    if (!dishId) return;
+    ensurePresentation(dishId).tasteVector = mapTasteVector(row);
+  });
+
+  dishDietaryFlagRows.forEach((row) => {
+    const dishId = toString(row.dish_id);
+    const slug = flagSlugById.get(toString(row.dietary_flag_id));
+    if (!dishId || !slug) return;
+    const presentation = ensurePresentation(dishId);
+    if (!presentation.dietaryFlags.includes(slug as DietaryFlag)) {
+      presentation.dietaryFlags.push(slug as DietaryFlag);
+    }
+  });
+
+  return presentationByDishId;
+}
+
 async function refreshCache(force = false): Promise<void> {
   if (!isSupabaseConfigured()) return;
   if (hydrating) return;
@@ -186,61 +333,115 @@ async function refreshCache(force = false): Promise<void> {
   if (!client) return;
   hydrating = true;
   try {
-    const [buildingsResult, venuesResult, dishesResult, blogResult, stallResult] =
-      await Promise.all([
-        client.from("buildings").select("*"),
-        client.from("venues").select("*"),
-        client
-          .from("dishes")
-          .select(
-            [
-              "id",
-              "venue_id",
-              "building_id",
-              "name",
-              "description",
-              "image_url",
-              "blurhash",
-              "distance_meters",
-              "rating_avg",
-              "review_count",
-              "price",
-              "price_range",
-              "live_crowd",
-              "taste_tags",
-              "must_order",
-              "availability_flags",
-              "sweet",
-              "spicy",
-              "sour",
-              "salty",
-              "rich",
-              "aromatic",
-              "venue_name",
-              "unit_number",
-              "floor",
-              "dietary_flags",
-              "gallery",
-            ].join(","),
-          ),
-        client.from("blog_posts").select("*"),
-        client.from("stall_posts").select("*"),
-      ]);
+    const [
+      buildingsResult,
+      venuesResult,
+      dishesResult,
+      dishImagesResult,
+      dishTasteVectorsResult,
+      dishDietaryFlagsResult,
+      dietaryFlagsResult,
+      blogResult,
+      stallResult,
+      postsResult,
+      postMediaResult,
+    ] = await Promise.all([
+      client.from("buildings").select("*"),
+      client.from("venues").select("*"),
+      client.from("dishes").select("*"),
+      client.from("dish_images").select("dish_id,url,sort_order").order("sort_order"),
+      client.from("dish_taste_vectors").select("dish_id,sweet,spicy,sour,salty,rich,aromatic"),
+      client.from("dish_dietary_flags").select("dish_id,dietary_flag_id"),
+      client.from("dietary_flags").select("id,slug"),
+      client.from("blog_posts").select("*"),
+      client.from("stall_posts").select("*"),
+      client
+        .from("posts")
+        .select("*")
+        .eq("status", "published")
+        .is("deleted_at", null)
+        .order("published_at", { ascending: false })
+        .order("created_at", { ascending: false }),
+      client.from("post_media").select("*").order("sort_order", { ascending: true }),
+    ]);
 
     if (Array.isArray(buildingsResult.data) && !buildingsResult.error) {
       cachedBuildings = (buildingsResult.data as unknown as Row[]).map(mapBuilding);
     }
+    let mappedVenues = cachedVenues;
     if (Array.isArray(venuesResult.data) && !venuesResult.error) {
-      cachedVenues = (venuesResult.data as unknown as Row[]).map(mapVenue);
+      mappedVenues = (venuesResult.data as unknown as Row[]).map(mapVenue);
+      cachedVenues = mappedVenues;
     }
     if (Array.isArray(dishesResult.data) && !dishesResult.error) {
-      cachedDishes = (dishesResult.data as unknown as Row[]).map(mapDish);
+      const imageRows =
+        Array.isArray(dishImagesResult.data) && !dishImagesResult.error
+          ? (dishImagesResult.data as unknown as Row[])
+          : [];
+      const tasteVectorRows =
+        Array.isArray(dishTasteVectorsResult.data) && !dishTasteVectorsResult.error
+          ? (dishTasteVectorsResult.data as unknown as Row[])
+          : [];
+      const dishDietaryFlagRows =
+        Array.isArray(dishDietaryFlagsResult.data) && !dishDietaryFlagsResult.error
+          ? (dishDietaryFlagsResult.data as unknown as Row[])
+          : [];
+      const dietaryFlagRows =
+        Array.isArray(dietaryFlagsResult.data) && !dietaryFlagsResult.error
+          ? (dietaryFlagsResult.data as unknown as Row[])
+          : [];
+      const presentationByDishId = buildDishPresentationMap(
+        imageRows,
+        tasteVectorRows,
+        dishDietaryFlagRows,
+        dietaryFlagRows,
+      );
+      cachedDishes = (dishesResult.data as unknown as Row[]).map((row) =>
+        mapDish(
+          row,
+          mappedVenues.find((venue) => venue.id === toString(row.venue_id)),
+          presentationByDishId.get(toString(row.id)),
+        ),
+      );
     }
     if (Array.isArray(blogResult.data) && !blogResult.error) {
       cachedBlogPosts = (blogResult.data as unknown as Row[]).map(mapBlogPost);
     }
-    if (Array.isArray(stallResult.data) && !stallResult.error) {
-      cachedStallPosts = (stallResult.data as unknown as Row[]).map(mapStallPost);
+    const legacyStallPosts =
+      Array.isArray(stallResult.data) && !stallResult.error
+        ? (stallResult.data as unknown as Row[]).map(mapStallPost)
+        : cachedStallPosts;
+    if (Array.isArray(postsResult.data) && !postsResult.error) {
+      const postRows = postsResult.data as unknown as Row[];
+      const postMediaRows =
+        Array.isArray(postMediaResult.data) && !postMediaResult.error
+          ? (postMediaResult.data as unknown as Row[])
+          : [];
+      const mediaByPostId = groupRowsByStringKey(postMediaRows, "post_id");
+      const postStallPosts = postRows.map((row) => {
+        const venue = mappedVenues.find((item) => item.id === toString(row.venue_id));
+        const dish = cachedDishes.find((item) => item.id === toString(row.dish_id));
+        const building = cachedBuildings.find(
+          (item) =>
+            item.id === toString(row.building_id) ||
+            item.id === venue?.buildingId ||
+            item.id === dish?.buildingId,
+        );
+        return mapPostRowToStallPost(
+          row,
+          mediaByPostId.get(toString(row.id)) ?? [],
+          venue,
+          building,
+          dish,
+        );
+      });
+      const publishedIds = new Set(postStallPosts.map((post) => post.id));
+      cachedStallPosts = [
+        ...postStallPosts,
+        ...legacyStallPosts.filter((post) => !publishedIds.has(post.id)),
+      ].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
+    } else {
+      cachedStallPosts = legacyStallPosts;
     }
 
     hydrated = true;
@@ -355,6 +556,12 @@ export function invalidateSupabaseRepositoryCache(): void {
   hydrated = false;
   hydratedAt = 0;
   void refreshCache(true);
+}
+
+export async function refreshSupabaseRepositoryCache(): Promise<void> {
+  hydrated = false;
+  hydratedAt = 0;
+  await refreshCache(true);
 }
 
 export const supabaseRepository: DataRepository = supabaseRepositoryImpl;
