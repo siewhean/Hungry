@@ -121,7 +121,12 @@ function ZoomableVideo({ uri, style }: Pick<ZoomableMediaProps, "uri" | "style">
       )}
 
       {/* Mute Button */}
-      <Pressable onPress={handleToggleMute} style={styles.muteButton}>
+      <Pressable
+        onPress={handleToggleMute}
+        style={styles.muteButton}
+        accessibilityRole="button"
+        accessibilityLabel={isMuted ? "Unmute video" : "Mute video"}
+      >
         {isMuted ? (
           <VolumeX color={palette.white} size={20} />
         ) : (

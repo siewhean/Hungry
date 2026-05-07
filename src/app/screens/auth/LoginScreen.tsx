@@ -138,7 +138,12 @@ export function LoginScreen({ navigation }: Props) {
                     onChangeText={onChange}
                     leftIcon={<Lock color={palette.textMuted} size={18} />}
                     rightIcon={
-                      <Pressable onPress={() => setShowPassword((current) => !current)} hitSlop={8}>
+                      <Pressable
+                        onPress={() => setShowPassword((current) => !current)}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                      >
                         {showPassword ? (
                           <EyeOff color={palette.textMuted} size={18} />
                         ) : (

@@ -103,7 +103,12 @@ export function ResetPasswordScreen({ navigation }: Props) {
                 error={!!errors.password}
                 errorText={errors.password?.message}
                 rightIcon={
-                  <Pressable onPress={() => setShowPassword((current) => !current)} hitSlop={8}>
+                  <Pressable
+                    onPress={() => setShowPassword((current) => !current)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                  >
                     {showPassword ? (
                       <EyeOff color={palette.textMuted} size={15} />
                     ) : (
