@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
   Animated,
   PanResponder,
@@ -15,7 +15,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Button, HungryLogo } from "@/components/ui";
+import { AppText, Button } from "@/components/ui";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
@@ -29,12 +29,11 @@ export function CraveScreen() {
   const repository = getDataRepository();
   const insets = useSafeAreaInsets();
   const { palette, spacing, radii, shadows, motion, zIndex } = useHungryTheme();
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { width: screenWidth } = useWindowDimensions();
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
-  const profile = useProfileStore((state) => state.profile);
 
   // Get a set of appealing dishes for swiping
-  const [dishes, setDishes] = useState<DishDetail[]>(() => {
+  const [dishes] = useState<DishDetail[]>(() => {
     return repository
       .listBuildings()
       .flatMap((b) => repository.listVenuesByBuilding(b.id))

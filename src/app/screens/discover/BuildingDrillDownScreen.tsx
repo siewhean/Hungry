@@ -423,7 +423,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
       openCount: allOnFloor.filter((s) => s.isOpen).length,
       dessertCount: allOnFloor.filter((s) => s.isDessert).length,
     };
-  }, [tenantPolygons, venueById]);
+  }, [tenantPolygons, venueById, repository]);
 
   const menuPreview = useMemo(
     () =>

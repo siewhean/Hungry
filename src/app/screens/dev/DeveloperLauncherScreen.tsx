@@ -12,7 +12,7 @@
 import { useState, useMemo } from "react";
 import { Pressable, ScrollView, Switch, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ChevronDown, ChevronRight, FlaskConical, Wifi, WifiOff, Zap } from "lucide-react-native";
+import { ChevronDown, ChevronRight, Wifi, WifiOff, Zap } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, Screen } from "@/components/ui";
@@ -145,14 +145,6 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
 
   // Network
   const [network, setNetwork] = useState<"live" | "slow" | "offline">("live");
-
-  // Building search
-  const [buildingSearch, setBuildingSearch] = useState("");
-  const filteredBuildings = useMemo(() => {
-    if (!buildingSearch.trim()) return singaporeBuildings.slice(0, 10);
-    const q = buildingSearch.toLowerCase();
-    return singaporeBuildings.filter((b) => b.name.toLowerCase().includes(q)).slice(0, 10);
-  }, [buildingSearch]);
 
   // Sample data
   const sampleDish = useMemo(() => repository.listPopularNearby()[0], [repository]);
