@@ -14,6 +14,9 @@ This folder contains migration, seed, and Edge Function artifacts for Sprint 5 +
 - `migrations/0008_phase7_auth_scaffold.sql` — guest sessions, orders, chat messages, auth/RLS scaffolding.
 - `migrations/0009_blog_sources.sql` — normalized blog source catalog.
 - `migrations/0016_mobile_storage_security.sql` — mobile media buckets, storage policies, and hardened menu-photo RPC.
+- `migrations/0018_merchant_centre_verification_schema.sql` — merchant account, outlet, role, and verification foundations.
+- `migrations/0019_merchant_consumer_linkage.sql` through `0022_merchant_catalog_column_guards.sql` — merchant writes linked to consumer venue/dish/review rows with RLS and column guards.
+- `migrations/0023_integration_posts_privacy_chat.sql` — integration readiness schema for privacy, posts, post media, participant chat, read receipts, realtime publication, and merchant/post media buckets.
 - `seed.sql` — generated seed from mock fixtures (`npm run seed:generate`).
 - `functions/guest-sessions/index.ts` — `POST /functions/v1/guest-sessions` endpoint scaffold.
 - `functions/ingest-menu-photo/index.ts` — authenticated OCR ingestion for menu-photo submissions.
@@ -21,6 +24,8 @@ This folder contains migration, seed, and Edge Function artifacts for Sprint 5 +
 - `smoke/postgis_distance.sql` — prepared PostGIS distance smoke query.
 - `smoke/pgvector_similarity.sql` — prepared pgvector cosine/HNSW smoke query.
 - `smoke/mobile_storage_policies.sql` — mobile bucket/policy smoke checks.
+- `smoke/merchant_rls_policies.sql` — merchant RLS and catalog guard smoke checks.
+- `smoke/integration_readiness.sql` — post/privacy/chat/storage/realtime readiness smoke checks.
 
 ## Commands
 
@@ -47,6 +52,8 @@ supabase functions deploy ops-dishes-draft
 psql "$SUPABASE_DB_URL" -f supabase/smoke/postgis_distance.sql
 psql "$SUPABASE_DB_URL" -f supabase/smoke/pgvector_similarity.sql
 psql "$SUPABASE_DB_URL" -f supabase/smoke/mobile_storage_policies.sql
+psql "$SUPABASE_DB_URL" -f supabase/smoke/merchant_rls_policies.sql
+psql "$SUPABASE_DB_URL" -f supabase/smoke/integration_readiness.sql
 ```
 
 Required function environment variables:

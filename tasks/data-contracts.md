@@ -336,6 +336,28 @@ When adding new fixture data:
 
 ---
 
+## Production Integration Source Policy
+
+Mock fixtures remain valid for developer/prototype surfaces, but production-like user flows must share the same service-backed source across writers and readers.
+
+| Flow | Write source | Read source | Public visibility rule |
+|------|--------------|-------------|------------------------|
+| Merchant stall/profile updates | Supabase `merchant_outlets` + linked `venues` | Consumer stall/detail repository reads `venues` | Verified merchant-owned outlet only; public user side reads published/live venue fields |
+| Merchant dish/menu updates | Supabase `dishes` + `dish_images` / merchant image bucket | Consumer dish/detail/stall-menu repository reads `dishes` | Verified merchant-owned outlet only; draft/unsaved changes are not public |
+| Post drafts | Supabase `posts.status = 'draft'` + optional `post_media` | Author-only draft surface | Author only |
+| Published posts | Supabase `posts.status = 'published'` + `post_media` | Home feed, author profile, post detail | Public accounts visible to authenticated users; private accounts visible to author and approved followers |
+| Deleted posts | Supabase `posts.status = 'deleted'` or `deleted_at` | No public route should render deleted content | Author/service cleanup only |
+| Chat messages | Supabase `conversations`, `conversation_participants`, `messages` | Participant inbox/thread reads + realtime subscription | Conversation participants only |
+| Read/unread state | Supabase `read_receipts` / participant `last_read_at` | Activity bell badge, inbox previews, chat thread | Conversation participants only |
+
+Rules:
+- Do not treat Zustand or AsyncStorage persistence as cross-user/shared persistence.
+- Do not show save/publish/send success unless the service call has completed or an explicit optimistic rollback path exists.
+- Do not let user-side screens import mock data directly except for developer-only routes and tests.
+- Use run-id-prefixed data for integration tests and cleanup all rows/storage objects by that prefix.
+
+---
+
 ## Mock Repository Pattern
 
 Source: `src/lib/services/mock/repositories.ts`
@@ -351,3 +373,87 @@ const dish = await getDishById(dishId)
 ```
 
 All repositories return `Promise<T>` to mirror the future real API contract.
+
+---
+
+## Image Storage Policy
+
+Use this policy when Hungry moves image assets into Supabase Storage or another owned object store.
+
+### Source Rules
+
+| Source | Store permanently? | Notes |
+|--------|--------------------|-------|
+| User uploads | Yes | Resize/compress before upload; store review ownership metadata |
+| Merchant uploads | Yes | Resize/compress before upload; allow cover/gallery management |
+| Hungry seed images | Yes | Use app-owned or licensed assets only |
+| Existing official/NEA URLs | Prefer reference URL first | Cache only when rights permit |
+| Google Places photo metadata | Metadata only | Do not fetch/store photo media unless explicitly enabled and licensed for use |
+| Random scraped web images | No | Avoid copyright, hotlinking, and reliability issues |
+
+### Derivatives
+
+Do not store raw originals by default. Store controlled derivatives:
+
+| Variant | Target | Use |
+|---------|--------|-----|
+| `thumb` | 300px wide | Lists, cards, grid previews |
+| `medium` | 900-1200px wide | Detail pages and feed media |
+| `original` | Optional/admin only | Temporary retention for merchant/admin workflows |
+
+Rules:
+- Prefer WebP; use JPEG fallback where needed.
+- Use quality `70-80`.
+- Strip EXIF metadata.
+- Cap final `medium` assets around `300-600KB`.
+- Enforce upload limits before compression, e.g. `5MB` max incoming file.
+
+### Storage Paths
+
+```text
+food-images/
+  venues/{venue_id}/cover.webp
+  venues/{venue_id}/gallery/{image_id}_medium.webp
+  dishes/{dish_id}/thumb.webp
+  dishes/{dish_id}/medium.webp
+  reviews/{review_id}/{image_id}_thumb.webp
+  reviews/{review_id}/{image_id}_medium.webp
+```
+
+### Metadata Contract
+
+Store metadata in Postgres rather than storing blobs in tables.
+
+```ts
+interface StoredImageMetadata {
+  id: string
+  ownerEntityType: "venue" | "dish" | "review" | "profile"
+  ownerEntityId: string
+  storagePath: string
+  publicUrl?: string
+  width: number
+  height: number
+  sizeBytes: number
+  blurhash?: string
+  contentHash: string
+  sourceType: "user_upload" | "merchant_upload" | "seed" | "official_reference" | "google_metadata"
+  uploadedBy?: string
+  createdAt: string
+}
+```
+
+### Storage Controls
+
+| Control | Default |
+|---------|---------|
+| Review photos | `3-5` per review |
+| Merchant gallery | `10-20` images |
+| Dish image | 1 primary image plus optional gallery only when needed |
+| Duplicate detection | Hash original bytes and reuse existing stored asset |
+| Cleanup | Scheduled deletion for orphaned paths not referenced by metadata |
+
+Default Hungry policy:
+- Reviews store `thumb` + `medium`, no original.
+- Venue profiles store one `cover` plus bounded gallery images.
+- Dish cards store one `thumb` and one `medium`.
+- External image URLs remain references unless Hungry has the rights to cache them.

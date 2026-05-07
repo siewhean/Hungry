@@ -387,6 +387,10 @@ Use the smallest check that matches the change risk.
 | 2026-05-07 | app (QA Batch 8b QA follow-up) | `npm run lint` | Pass | ESLint completed with 0 errors and 229 existing warnings |
 | 2026-05-07 | app (QA Batch 8b QA follow-up) | `npm test -- --watch=false` | Pass | Native Node test runner passed in sandbox: 178 tests total, 176 passing, 2 skipped |
 | 2026-05-07 | app (QA Batch 8b QA follow-up) | `npm run test:e2e` | Pass | Full Playwright suite passed after elevated Expo Web run: 16/16, including post-generation, feed/profile sync, cross-user visibility, and mobile iOS/Android smoke |
+| 2026-05-07 | app (Integration Batch 1 Supabase readiness) | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/lib/services/supabase/integration-readiness.test.ts` | Pass | 4/4 focused contract checks pass for the new privacy/posts/post-media/chat/read-receipt/storage/realtime migration and smoke SQL, including QA follow-up checks for follower approval, participant self-join prevention, private post-media buckets, and read-receipt message/conversation integrity |
+| 2026-05-07 | app (Integration Batch 1 Supabase readiness) | `npm run typecheck` | Pass | Strict TypeScript gate passed after adding the integration readiness migration/test and minimal token/import fixes in already-dirty UI files |
+| 2026-05-07 | app (Integration Batch 1 Supabase readiness) | `npm run lint` | Pass | ESLint completed with 0 errors and 325 existing warnings after fixing one already-dirty conditional story hook ordering error |
+| 2026-05-07 | app (Integration Batch 1 Supabase readiness) | `npm test -- --watch=false` | Fail | New integration contracts pass, but the full suite is blocked by 11 current dirty-worktree UI source-contract regressions in `ReviewFeedScreen*`, `HomeFeedScreen`, `StoryViewerScreen`, `useStoryStore`/story persistence, `DiscoverHomeScreen`, and `QuickBitesScreen`; handle these as the next cleanup batch before release gates are trusted |
 
 ## Outstanding Verification
 
