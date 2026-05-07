@@ -47,10 +47,18 @@ export async function gotoLauncher(page: Page) {
 
 export async function clickDevButton(page: Page, label: string, section?: string) {
   const button = page.getByRole("button", { name: new RegExp(`^${escapeRegExp(label)}$`) }).first();
-  if ((await button.count()) === 0 && section) {
-    await page.getByText(section, { exact: true }).click();
-  } else if (!(await button.isVisible().catch(() => false)) && section) {
-    await page.getByText(section, { exact: true }).click();
+  if (section && (!(await button.count()) || !(await button.isVisible().catch(() => false)))) {
+    const sectionToggle = page
+      .getByRole("button", { name: new RegExp(`^${escapeRegExp(section)}$`) })
+      .first();
+    if (await sectionToggle.count()) {
+      await sectionToggle.scrollIntoViewIfNeeded();
+      await sectionToggle.click();
+    } else {
+      const sectionText = page.getByText(section, { exact: true }).first();
+      await sectionText.scrollIntoViewIfNeeded();
+      await sectionText.click({ force: true });
+    }
   }
   await expect(button).toBeVisible();
   await button.click();

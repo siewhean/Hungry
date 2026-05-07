@@ -89,6 +89,9 @@ function CollapsibleSection({
   return (
     <Card style={{ padding: spacing[3] }}>
       <Pressable
+        accessibilityLabel={title}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
         onPress={() => setExpanded((v) => !v)}
         style={{
           flexDirection: "row",
@@ -184,7 +187,10 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const setMerchantAccount = useMerchantStore((state) => state.setAccount);
   const setDeveloperMerchantMode = useMerchantStore((state) => state.setDeveloperMerchantMode);
-  const merchantModeEnabled = useMerchantStore((state) => state.account !== null);
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isMerchantMode = useMerchantStore((state) => state.account !== null);
+  const canAccessMaps = isDeveloperMode || isMerchantMode;
+  const currentModeLabel = isDeveloperMode ? "Developer" : isMerchantMode ? "Merchant" : "User";
 
   // Discovery
   const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
@@ -274,13 +280,26 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     clearSession();
     completeAuth();
     completeOnboarding(false);
-    setDeveloperMerchantMode(true);
+    setDeveloperMerchantMode(false);
     setMockServiceProvider();
     setMerchantAccount(JSON.parse(JSON.stringify(merchantAccount)));
     setReturnRoute(undefined);
     hideReviewSuccess();
-    showToast({ message: "Developer mode → Merchant", tone: "success" });
+    showToast({ message: "Mode → Merchant", tone: "success" });
     navigation.navigate("MerchantTabs" as any);
+  };
+
+  const enterDeveloperMode = () => {
+    clearSession();
+    completeAuth();
+    completeOnboarding(false);
+    setDeveloperMerchantMode(true);
+    setMockServiceProvider();
+    setMerchantAccount(null);
+    setReturnRoute(undefined);
+    hideReviewSuccess();
+    showToast({ message: "Mode → Developer", tone: "success" });
+    navigation.navigate("MainTabs", { screen: "Home" });
   };
 
   const enterUserMode = () => {
@@ -292,7 +311,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     completeOnboarding(false);
     setReturnRoute(undefined);
     hideReviewSuccess();
-    showToast({ message: "Developer mode → User", tone: "info" });
+    showToast({ message: "Mode → User", tone: "info" });
     navigation.navigate("MainTabs", { screen: "Home" });
   };
 
@@ -391,21 +410,26 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           badge="Portal"
           defaultExpanded
         >
+          <AppText variant="micro" tone="secondary" style={{ marginBottom: spacing[2] }}>
+            Current mode: {currentModeLabel}
+          </AppText>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             <DevButton
-              label="Use Merchant Portal"
-              onPress={enterMerchantMode}
-              variant={merchantModeEnabled ? "primary" : "ghost"}
+              label="Developer"
+              onPress={enterDeveloperMode}
+              variant={isDeveloperMode ? "primary" : "ghost"}
             />
             <DevButton
-              label="Use User App"
+              label="Merchant"
+              onPress={enterMerchantMode}
+              variant={isMerchantMode && !isDeveloperMode ? "primary" : "ghost"}
+            />
+            <DevButton
+              label="User"
               onPress={enterUserMode}
-              variant={!merchantModeEnabled ? "primary" : "ghost"}
+              variant={!isMerchantMode ? "primary" : "ghost"}
             />
           </View>
-          <AppText variant="micro" tone="secondary" style={{ marginTop: spacing[2] }}>
-            Current mode: {merchantModeEnabled ? "Merchant portal" : "User app"}
-          </AppText>
         </CollapsibleSection>
 
         {/* ── Post Composer V2 Settings ─────────────────── */}
@@ -587,7 +611,9 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
               onPress={() => navigation.navigate("MainTabs", { screen: "Discover" })}
             />
             <DevButton label="Search" onPress={() => navigation.navigate("SearchHome")} />
-            <DevButton label="Map" onPress={() => navigation.navigate("DiscoverMap")} />
+            {canAccessMaps ? (
+              <DevButton label="Map" onPress={() => navigation.navigate("DiscoverMap")} />
+            ) : null}
             <DevButton
               label="Wheel"
               onPress={() => {
