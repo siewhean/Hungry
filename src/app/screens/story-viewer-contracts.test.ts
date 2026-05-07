@@ -131,9 +131,11 @@ test("Story persistence contract: viewed stories persist and expire after 24 hou
   assert.match(storeSource, /seenStoryIds: Record<string, string>/);
   assert.match(storeSource, /const STORY_TTL_MS = 24 \* 60 \* 60 \* 1000/);
   assert.match(storeSource, /pruneExpiredStories\(stories\)/);
+  assert.match(storeSource, /function pruneExpiredSeenStoryIds/);
+  assert.match(storeSource, /Date\.now\(\) - seenTime < STORY_TTL_MS/);
   assert.match(
     storeSource,
-    /seenStoryIds\[story\.id\] \? \{ \.\.\.story, hasUnseen: false \} : story/,
+    /freshSeenStoryIds\[story\.id\] \? \{ \.\.\.story, hasUnseen: false \} : story/,
   );
   assert.match(storeSource, /nextSeenStoryIds\[story\.id\] = seenAt/);
   assert.match(mockServiceSource, /const STORY_TTL_MS = 24 \* 60 \* 60 \* 1000/);

@@ -137,7 +137,7 @@ export function QuickBitesScreen() {
         } else {
           setBites(getDiscoverBites());
         }
-      } catch (err) {
+      } catch {
         setBites(getDiscoverBites());
       } finally {
         setIsLoading(false);

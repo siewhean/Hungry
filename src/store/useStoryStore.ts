@@ -29,6 +29,18 @@ function pruneExpiredStories(stories: Story[]): Story[] {
   return stories.filter(isFreshStory);
 }
 
+function isFreshSeenRecord(seenAt: string): boolean {
+  const seenTime = new Date(seenAt).getTime();
+  if (!Number.isFinite(seenTime)) return false;
+  return Date.now() - seenTime < STORY_TTL_MS;
+}
+
+function pruneExpiredSeenStoryIds(seenStoryIds: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(seenStoryIds).filter(([, seenAt]) => isFreshSeenRecord(seenAt)),
+  );
+}
+
 function orderStories(stories: Story[]): Story[] {
   const own: Story[] = [];
   const unseen: Story[] = [];
@@ -60,11 +72,16 @@ export const useStoryStore = create<StoryState>()(
         try {
           const stories = await getHungryService().social.getStories();
           const { seenStoryIds } = get();
+          const freshSeenStoryIds = pruneExpiredSeenStoryIds(seenStoryIds);
           const freshStories = pruneExpiredStories(stories).map((story) =>
-            seenStoryIds[story.id] ? { ...story, hasUnseen: false } : story,
+            freshSeenStoryIds[story.id] ? { ...story, hasUnseen: false } : story,
           );
-          set({ stories: orderStories(freshStories), isLoading: false });
-        } catch (e) {
+          set({
+            stories: orderStories(freshStories),
+            seenStoryIds: freshSeenStoryIds,
+            isLoading: false,
+          });
+        } catch {
           set({ error: "Failed to load stories", isLoading: false });
         }
       },
@@ -150,12 +167,20 @@ export const useStoryStore = create<StoryState>()(
       markSeenForDisplayName: (displayName: string) => {
         const { stories, seenStoryIds } = get();
         const freshStories = pruneExpiredStories(stories);
+        const freshSeenStoryIds = pruneExpiredSeenStoryIds(seenStoryIds);
+        const didPruneSeenStoryIds =
+          Object.keys(freshSeenStoryIds).length !== Object.keys(seenStoryIds).length;
         const matchingStories = freshStories.filter((s) => s.displayName === displayName);
         const hasUnseen = matchingStories.some((s) => s.displayName === displayName && s.hasUnseen);
-        if (!hasUnseen && matchingStories.every((story) => seenStoryIds[story.id])) return;
+        if (!hasUnseen && matchingStories.every((story) => freshSeenStoryIds[story.id])) {
+          if (didPruneSeenStoryIds) {
+            set({ seenStoryIds: freshSeenStoryIds });
+          }
+          return;
+        }
 
         const seenAt = new Date().toISOString();
-        const nextSeenStoryIds = { ...seenStoryIds };
+        const nextSeenStoryIds = { ...freshSeenStoryIds };
         matchingStories.forEach((story) => {
           nextSeenStoryIds[story.id] = seenAt;
         });
