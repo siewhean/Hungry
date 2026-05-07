@@ -1,82 +1,43 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
-  View,
-  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
-  KeyboardAvoidingView,
+  StyleSheet,
   TextInput,
-  Platform,
+  View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { ChevronLeft, Send, Paperclip, Utensils } from "lucide-react-native";
+import { ChevronLeft, Send } from "lucide-react-native";
 import { Image } from "expo-image";
 import Animated, { FadeIn } from "react-native-reanimated";
-import * as ImagePicker from "expo-image-picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText } from "@/components/ui";
-import {
-  ACTIVITY_CHAT_MESSAGES,
-  ACTIVITY_MESSAGES,
-  type ActivityChatMessage,
-  type ActivityMediaAttachment,
-} from "@/features/home/activity";
-import { useActivityStore } from "@/store/useActivityStore";
+import { getHungryService } from "@/lib/services/serviceProvider";
+import type { ChatMessage } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ChatDetail">;
 
-const EMPTY_MESSAGE_LIST: ActivityChatMessage[] = [];
+function appendUniqueMessage(messages: ChatMessage[], message: ChatMessage): ChatMessage[] {
+  if (messages.some((candidate) => candidate.id === message.id)) return messages;
+  return [...messages, message];
+}
 
-const sanitizeMessages = (incoming: ActivityChatMessage[]) =>
-  incoming
-    .filter(
-      (item) =>
-        Boolean(item?.id) &&
-        typeof item.id === "string" &&
-        typeof item.text === "string" &&
-        typeof item.sent === "boolean" &&
-        typeof item.createdAt === "string",
-    )
-    .map((item) => ({
-      ...item,
-      media:
-        item.media?.uri && item.media.mediaType
-          ? {
-              uri: item.media.uri,
-              mediaType: item.media.mediaType,
-              fileName: item.media.fileName,
-              mimeType: item.media.mimeType,
-            }
-          : undefined,
-      sharedPost:
-        item.sharedPost?.postId &&
-        item.sharedPost?.title &&
-        item.sharedPost?.subtitle &&
-        item.sharedPost?.imageUrl
-          ? item.sharedPost
-          : undefined,
-    }));
-
-const isSameMessage = (left: ActivityChatMessage, right: ActivityChatMessage) =>
-  left.id === right.id &&
-  left.text === right.text &&
-  left.sent === right.sent &&
-  left.createdAt === right.createdAt &&
-  left.media?.uri === right.media?.uri &&
-  left.media?.mediaType === right.media?.mediaType &&
-  left.media?.fileName === right.media?.fileName &&
-  left.media?.mimeType === right.media?.mimeType &&
-  left.sharedPost?.postId === right.sharedPost?.postId &&
-  left.sharedPost?.title === right.sharedPost?.title &&
-  left.sharedPost?.subtitle === right.sharedPost?.subtitle &&
-  left.sharedPost?.imageUrl === right.sharedPost?.imageUrl;
-
-const isMessageListEqual = (left: ActivityChatMessage[], right: ActivityChatMessage[]) =>
-  left.length === right.length && left.every((item, index) => isSameMessage(item, right[index]));
+function formatChatTime(value: string): string {
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return value;
+  const diffMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60_000));
+  if (diffMinutes < 1) return "now";
+  if (diffMinutes < 60) return `${diffMinutes}m`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h`;
+  return `${Math.floor(diffHours / 24)}d`;
+}
 
 export function ChatDetailScreen({ navigation, route }: Props) {
   const safeParams = route.params ?? {};
@@ -89,48 +50,21 @@ export function ChatDetailScreen({ navigation, route }: Props) {
   const { palette, spacing, semanticSpacing, radii } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const [message, setMessage] = useState("");
-  const [pendingMedia, setPendingMedia] = useState<ActivityMediaAttachment | null>(null);
-  const markActivityRead = useActivityStore((state) => state.markActivityRead);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const chatId =
     typeof rawChatId === "string" && rawChatId.trim()
       ? rawChatId.trim()
       : typeof rawChatId === "number"
         ? String(rawChatId).trim()
         : "";
-  const resolvedChat = useMemo(
-    () => ACTIVITY_MESSAGES.find((message) => message.id === chatId) ?? null,
-    [chatId],
-  );
-  const name =
-    typeof rawName === "string" && rawName.trim()
-      ? rawName
-      : (resolvedChat?.name ?? "Unknown user");
-  const avatar =
-    typeof rawAvatar === "string" && rawAvatar.trim() ? rawAvatar : (resolvedChat?.avatar ?? "");
-  const isOnline = useMemo(() => {
-    if (typeof initialIsOnline === "boolean") return initialIsOnline;
-    return resolvedChat?.isOnline ?? false;
-  }, [chatId, initialIsOnline]);
-  const hasValidChatTarget = Boolean(chatId && name && avatar);
-  const rawSharedPostMessages = useActivityStore(
-    (state) => state.sharedPostMessages[chatId] ?? EMPTY_MESSAGE_LIST,
-  );
-  const sharedPostMessages = useMemo(
-    () =>
-      Array.isArray(rawSharedPostMessages)
-        ? sanitizeMessages(rawSharedPostMessages)
-        : EMPTY_MESSAGE_LIST,
-    [rawSharedPostMessages],
-  );
-  const baseMessages = useMemo(
-    () =>
-      sanitizeMessages([
-        ...((ACTIVITY_CHAT_MESSAGES[chatId] ?? []) as ActivityChatMessage[]),
-        ...sharedPostMessages,
-      ]),
-    [chatId, sharedPostMessages],
-  );
-  const [messages, setMessages] = useState<ActivityChatMessage[]>(baseMessages);
+  const name = typeof rawName === "string" && rawName.trim() ? rawName.trim() : "Conversation";
+  const avatar = typeof rawAvatar === "string" && rawAvatar.trim() ? rawAvatar.trim() : "";
+  const isOnline = typeof initialIsOnline === "boolean" ? initialIsOnline : false;
+  const hasValidChatTarget = Boolean(chatId);
 
   const styles = useMemo(
     () => createStyles({ palette, spacing, semanticSpacing, radii }),
@@ -139,95 +73,72 @@ export function ChatDetailScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     if (!hasValidChatTarget) {
-      return;
+      setIsLoading(false);
+      return undefined;
     }
 
-    markActivityRead("message", chatId);
-  }, [chatId, markActivityRead]);
+    let isActive = true;
+    const service = getHungryService().chat;
 
-  useEffect(() => {
-    if (!hasValidChatTarget) return;
-    setMessages((current) => (isMessageListEqual(current, baseMessages) ? current : baseMessages));
-  }, [baseMessages, hasValidChatTarget]);
+    setIsLoading(true);
+    setLoadError(null);
+    service
+      .listMessages(chatId)
+      .then((loadedMessages) => {
+        if (!isActive) return;
+        setMessages(loadedMessages);
+        void service.markConversationRead(chatId);
+      })
+      .catch((error: unknown) => {
+        if (!isActive) return;
+        setLoadError(error instanceof Error ? error.message : "This chat could not be loaded.");
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false);
+      });
 
-  const sendMessage = () => {
-    const text = message.trim();
-    if (!text && !pendingMedia) return;
-
-    const media = pendingMedia
-      ? {
-          uri: pendingMedia.uri,
-          mediaType: pendingMedia.mediaType,
-          fileName: pendingMedia.fileName,
-          mimeType: pendingMedia.mimeType,
+    const subscription = service.subscribeToConversation(chatId, {
+      onMessage: (incomingMessage) => {
+        setMessages((current) => appendUniqueMessage(current, incomingMessage));
+        if (!incomingMessage.sentByCurrentUser) {
+          void service.markConversationRead(chatId);
         }
-      : undefined;
+      },
+      onReadReceipt: (messageId, readAt) => {
+        setMessages((current) =>
+          current.map((item) => (item.id === messageId ? { ...item, readAt } : item)),
+        );
+      },
+      onError: () => {
+        setLoadError(
+          "Realtime updates are unavailable. Pull back and reopen this chat to refresh.",
+        );
+      },
+    });
 
-    const sentMessage: ActivityChatMessage = {
-      id: `local-${Date.now()}`,
-      text: text || (media ? `Shared ${media.mediaType}` : ""),
-      sent: true,
-      createdAt: "now",
-      media,
+    return () => {
+      isActive = false;
+      subscription.unsubscribe();
     };
-    setMessages((current) => [...current, sentMessage]);
-    setMessage("");
-    setPendingMedia(null);
+  }, [chatId, hasValidChatTarget]);
 
-    setTimeout(() => {
-      setMessages((current) => [
-        ...current,
-        {
-          id: `reply-${Date.now()}`,
-          text: "Got it. Send me the post if you want me to try it too.",
-          sent: false,
-          createdAt: "now",
-        },
-      ]);
-    }, 650);
-  };
+  const sendMessage = async () => {
+    const text = message.trim();
+    if (!text || isSending || !hasValidChatTarget) return;
 
-  const openMediaPicker = async (mediaTypes: ("images" | "videos")[]) => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert(
-        "Permission required",
-        "Please allow media library access to upload attachments.",
-      );
-      return;
+    setIsSending(true);
+    try {
+      const sentMessage = await getHungryService().chat.sendMessage({
+        conversationId: chatId,
+        body: text,
+      });
+      setMessages((current) => appendUniqueMessage(current, sentMessage));
+      setMessage("");
+    } catch {
+      Alert.alert("Message not sent", "Please check your connection and try again.");
+    } finally {
+      setIsSending(false);
     }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes,
-      quality: 0.75,
-      allowsEditing: false,
-    });
-
-    if (result.canceled || result.assets.length === 0) {
-      return;
-    }
-
-    const asset = result.assets[0];
-    if (!asset.uri) {
-      return;
-    }
-
-    const type = asset.type === "video" ? "video" : "image";
-    setPendingMedia({
-      uri: asset.uri,
-      mediaType: type,
-      fileName: asset.fileName ?? undefined,
-      mimeType: asset.mimeType ?? undefined,
-    });
-  };
-
-  const openMediaMenu = () => {
-    Alert.alert("Upload media", "Choose media type", [
-      { text: "Photo", onPress: () => void openMediaPicker(["images"]) },
-      { text: "Video", onPress: () => void openMediaPicker(["videos"]) },
-      { text: "Any media", onPress: () => void openMediaPicker(["images", "videos"]) },
-      { text: "Cancel", style: "cancel" },
-    ]);
   };
 
   if (!hasValidChatTarget) {
@@ -246,12 +157,10 @@ export function ChatDetailScreen({ navigation, route }: Props) {
             <AppText variant="bodyBold">Chat unavailable</AppText>
           </View>
         </View>
-        <View style={styles.chatContent}>
-          <View style={styles.unavailableContainer}>
-            <AppText variant="body" tone="muted">
-              This chat could not be loaded.
-            </AppText>
-          </View>
+        <View style={styles.unavailableContainer}>
+          <AppText variant="body" tone="muted">
+            This chat could not be loaded.
+          </AppText>
         </View>
       </SafeAreaView>
     );
@@ -259,7 +168,6 @@ export function ChatDetailScreen({ navigation, route }: Props) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
-      {/* Header */}
       <View style={[styles.header, { borderBottomColor: palette.border }]}>
         <Pressable
           accessibilityRole="button"
@@ -271,9 +179,13 @@ export function ChatDetailScreen({ navigation, route }: Props) {
         </Pressable>
 
         <View style={styles.userInfo}>
-          <Animated.View>
+          {avatar ? (
             <Image source={{ uri: avatar }} style={[styles.avatar, { borderRadius: radii.pill }]} />
-          </Animated.View>
+          ) : (
+            <View style={[styles.avatarFallback, { borderRadius: radii.pill }]}>
+              <AppText variant="bodySmallBold">{name.slice(0, 1).toUpperCase()}</AppText>
+            </View>
+          )}
           <View>
             <AppText variant="bodyBold">{name}</AppText>
             {isOnline ? (
@@ -288,7 +200,6 @@ export function ChatDetailScreen({ navigation, route }: Props) {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         <View style={styles.chatContent}>
           <ScrollView
@@ -301,109 +212,55 @@ export function ChatDetailScreen({ navigation, route }: Props) {
             showsVerticalScrollIndicator={false}
             style={styles.messageList}
           >
+            {isLoading ? (
+              <View style={styles.unavailableContainer}>
+                <AppText variant="body" tone="muted">
+                  Loading messages...
+                </AppText>
+              </View>
+            ) : null}
+            {!isLoading && loadError ? (
+              <View style={styles.unavailableContainer}>
+                <AppText variant="body" tone="muted">
+                  {loadError}
+                </AppText>
+              </View>
+            ) : null}
+            {!isLoading && !loadError && messages.length === 0 ? (
+              <View style={styles.unavailableContainer}>
+                <AppText variant="body" tone="muted">
+                  Start with a text message.
+                </AppText>
+              </View>
+            ) : null}
             {messages.map((msg) => (
               <Animated.View
                 key={msg.id}
-                entering={FadeIn.delay(100)}
+                entering={FadeIn.delay(80)}
                 style={[
                   styles.messageBubble,
                   {
-                    alignSelf: msg.sent ? "flex-end" : "flex-start",
-                    backgroundColor: msg.sent ? palette.orange : palette.surface,
+                    alignSelf: msg.sentByCurrentUser ? "flex-end" : "flex-start",
+                    backgroundColor: msg.sentByCurrentUser ? palette.orange : palette.surface,
                     borderRadius: radii.md,
-                    borderBottomRightRadius: msg.sent ? 2 : radii.md,
-                    borderBottomLeftRadius: msg.sent ? radii.md : 2,
+                    borderBottomRightRadius: msg.sentByCurrentUser ? 2 : radii.md,
+                    borderBottomLeftRadius: msg.sentByCurrentUser ? radii.md : 2,
                   },
                 ]}
               >
-                {msg.sharedPost ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open shared post ${msg.sharedPost.title}`}
-                    onPress={() => {
-                      if (!msg.sharedPost?.postId) return;
-                      navigation.navigate("ActivityPostDetail", { postId: msg.sharedPost!.postId });
-                    }}
-                    style={[
-                      styles.sharedPostCard,
-                      {
-                        backgroundColor: msg.sent ? "rgba(255,255,255,0.16)" : palette.bgSoft,
-                        borderColor: msg.sent ? "rgba(255,255,255,0.28)" : palette.border,
-                        borderRadius: radii.md,
-                      },
-                    ]}
-                  >
-                    <Image
-                      source={{ uri: msg.sharedPost.imageUrl }}
-                      style={[styles.sharedPostImage, { borderRadius: radii.sm }]}
-                    />
-                    <View style={{ flex: 1, gap: spacing[0.5] }}>
-                      <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-                        <Utensils color={msg.sent ? palette.white : palette.orange} size={13} />
-                        <AppText
-                          variant="micro"
-                          style={{
-                            color: msg.sent ? "rgba(255,255,255,0.78)" : palette.orange,
-                            fontWeight: "900",
-                          }}
-                        >
-                          POST
-                        </AppText>
-                      </View>
-                      <AppText
-                        variant="bodySmallBold"
-                        numberOfLines={1}
-                        style={{ color: msg.sent ? palette.white : palette.text }}
-                      >
-                        {msg.sharedPost.title}
-                      </AppText>
-                      <AppText
-                        variant="micro"
-                        numberOfLines={1}
-                        style={{ color: msg.sent ? "rgba(255,255,255,0.78)" : palette.textMuted }}
-                      >
-                        {msg.sharedPost.subtitle}
-                      </AppText>
-                    </View>
-                  </Pressable>
-                ) : null}
-                {msg.media ? (
-                  <View style={styles.mediaAttachment}>
-                    {msg.media.mediaType === "image" ? (
-                      <Image
-                        source={{ uri: msg.media.uri }}
-                        style={[styles.attachmentImage, { borderRadius: radii.sm }]}
-                      />
-                    ) : (
-                      <View style={styles.videoAttachment}>
-                        <AppText
-                          variant="bodySmall"
-                          style={{ color: msg.sent ? palette.white : palette.text }}
-                        >
-                          🎞️ Video attachment
-                        </AppText>
-                      </View>
-                    )}
-                    {msg.text && msg.text !== `Shared ${msg.media.mediaType}` ? (
-                      <AppText style={{ color: msg.sent ? palette.white : palette.text }}>
-                        {msg.text}
-                      </AppText>
-                    ) : null}
-                  </View>
-                ) : (
-                  <AppText style={{ color: msg.sent ? palette.white : palette.text }}>
-                    {msg.text}
-                  </AppText>
-                )}
+                <AppText style={{ color: msg.sentByCurrentUser ? palette.white : palette.text }}>
+                  {msg.body}
+                </AppText>
                 <AppText
                   variant="micro"
                   style={{
-                    alignSelf: msg.sent ? "flex-end" : "flex-start",
-                    color: msg.sent ? "rgba(255,255,255,0.72)" : palette.textMuted,
+                    alignSelf: msg.sentByCurrentUser ? "flex-end" : "flex-start",
+                    color: msg.sentByCurrentUser ? "rgba(255,255,255,0.72)" : palette.textMuted,
                     marginTop: spacing[1],
                   }}
                 >
-                  {msg.createdAt}
+                  {formatChatTime(msg.createdAt)}
+                  {msg.sentByCurrentUser && msg.readAt ? " · Read" : ""}
                 </AppText>
               </Animated.View>
             ))}
@@ -415,46 +272,37 @@ export function ChatDetailScreen({ navigation, route }: Props) {
               { borderTopColor: palette.border, paddingBottom: insets.bottom },
             ]}
           >
-            {pendingMedia ? (
-              <View style={styles.pendingMediaPreview}>
-                <AppText variant="micro" numberOfLines={1}>
-                  {pendingMedia.mediaType === "image" ? "📷 Image" : "🎞️ Video"} ready
-                </AppText>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Remove attached media"
-                  onPress={() => setPendingMedia(null)}
-                >
-                  <AppText variant="micro" tone="muted">
-                    Remove
-                  </AppText>
-                </Pressable>
-              </View>
-            ) : null}
+            <View style={styles.composerCopy}>
+              <AppText variant="micro" tone="muted">
+                Text messages only for now.
+              </AppText>
+            </View>
             <View style={styles.textInputContainer}>
               <TextInput
                 placeholder="Type a message..."
                 value={message}
                 onChangeText={setMessage}
+                editable={!isSending}
                 style={styles.textInput}
                 placeholderTextColor={palette.textMuted}
               />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Upload media"
-                onPress={openMediaMenu}
-                style={styles.mediaIconButton}
-              >
-                <Paperclip color={palette.textMuted} size={20} />
-              </Pressable>
             </View>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Send message"
+              accessibilityState={{ disabled: !message.trim() || isSending }}
               onPress={sendMessage}
-              style={[styles.sendBtn, { backgroundColor: palette.orange }]}
+              style={[
+                styles.sendBtn,
+                {
+                  backgroundColor: message.trim() && !isSending ? palette.orange : palette.bgSoft,
+                },
+              ]}
             >
-              <Send color={palette.white} size={20} />
+              <Send
+                color={message.trim() && !isSending ? palette.white : palette.textMuted}
+                size={20}
+              />
             </Pressable>
           </View>
         </View>
@@ -490,46 +338,12 @@ const createStyles = ({
       width: 40,
       height: 40,
     },
-    messageBubble: {
-      maxWidth: "80%",
-      paddingHorizontal: semanticSpacing.screenEdge,
-      paddingVertical: spacing[2.5],
-      shadowColor: "#000",
-      shadowOpacity: 0.05,
-      shadowRadius: 5,
-      elevation: 1,
-    },
-    mediaAttachment: {
-      gap: spacing[2],
-      width: "100%",
-    },
-    attachmentImage: {
-      height: 130,
-      width: "100%",
-      minHeight: 130,
-      minWidth: "100%",
-    },
-    videoAttachment: {
-      height: 72,
-      width: "100%",
-      borderWidth: 1,
-      borderRadius: radii.md,
-      borderColor: "rgba(255,255,255,0.3)",
+    avatarFallback: {
+      width: 40,
+      height: 40,
       alignItems: "center",
       justifyContent: "center",
-      paddingHorizontal: spacing[2],
-    },
-    sharedPostCard: {
-      alignItems: "center",
-      borderWidth: 1,
-      flexDirection: "row",
-      gap: spacing[2],
-      minWidth: 250,
-      padding: spacing[2],
-    },
-    sharedPostImage: {
-      height: 58,
-      width: 58,
+      backgroundColor: palette.bgSoft,
     },
     chatContent: {
       flex: 1,
@@ -543,6 +357,15 @@ const createStyles = ({
       justifyContent: "center",
       padding: semanticSpacing.screenEdge,
     },
+    messageBubble: {
+      maxWidth: "80%",
+      paddingHorizontal: semanticSpacing.screenEdge,
+      paddingVertical: spacing[2.5],
+      shadowColor: palette.text,
+      shadowOpacity: 0.05,
+      shadowRadius: 5,
+      elevation: 1,
+    },
     inputContainer: {
       flexDirection: "row",
       alignItems: "center",
@@ -551,6 +374,11 @@ const createStyles = ({
       gap: spacing[3],
       borderTopWidth: 1,
       backgroundColor: palette.bg,
+    },
+    composerCopy: {
+      position: "absolute",
+      left: semanticSpacing.screenEdge,
+      top: spacing[0.5],
     },
     textInputContainer: {
       flex: 1,
@@ -561,8 +389,9 @@ const createStyles = ({
       borderRadius: radii.md,
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: spacing[2],
+      paddingHorizontal: spacing[3],
       backgroundColor: palette.surface,
+      marginTop: spacing[3],
     },
     textInput: {
       flex: 1,
@@ -571,35 +400,12 @@ const createStyles = ({
       color: palette.text,
       paddingVertical: spacing[3],
     },
-    mediaIconButton: {
-      minWidth: 36,
-      minHeight: 36,
-      marginLeft: spacing[1],
-      alignItems: "center",
-      justifyContent: "center",
-      paddingHorizontal: 2,
-    },
-    pendingMediaPreview: {
-      position: "absolute",
-      left: semanticSpacing.screenEdge,
-      right: semanticSpacing.screenEdge,
-      top: -44,
-      backgroundColor: palette.bgSoft,
-      borderWidth: 1,
-      borderRadius: radii.md,
-      borderColor: palette.border,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingHorizontal: spacing[2],
-      paddingVertical: spacing[1],
-      gap: spacing[2],
-    },
     sendBtn: {
       width: 48,
       height: 48,
       borderRadius: radii.pill,
       alignItems: "center",
       justifyContent: "center",
+      marginTop: spacing[3],
     },
   });

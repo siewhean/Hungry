@@ -1,22 +1,20 @@
-import { useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import { ChevronLeft, Heart, MessageCircle } from "lucide-react-native";
+import { ChevronLeft, Heart, MessageCircleMore } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppHeader, AppText, EmptyState, IconButton } from "@/components/ui";
 import {
-  ACTIVITY_MESSAGES,
   ACTIVITY_UPDATES,
-  getActivityMessageUnreadCount,
   getActivityReadKey,
   type ActivityUpdate,
-  type ActivityUpdateKind,
 } from "@/features/home/activity";
 import { listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import type { ChatConversation } from "@/lib/services/types";
 import { useActivityStore } from "@/store/useActivityStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useHungryTheme } from "@/theme";
@@ -26,9 +24,23 @@ type ActivityTab = "messages" | "updates";
 
 const TABS: ActivityTab[] = ["messages", "updates"];
 
+function formatActivityChatTime(value: string): string {
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return value;
+  const diffMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60_000));
+  if (diffMinutes < 1) return "now";
+  if (diffMinutes < 60) return `${diffMinutes}m`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h`;
+  return `${Math.floor(diffHours / 24)}d`;
+}
+
 export function ActivityInboxScreen({ navigation, route }: Props) {
   const initialTab = route.params?.initialTab ?? "updates";
   const [activeTab, setActiveTab] = useState<ActivityTab>(initialTab);
+  const [conversations, setConversations] = useState<ChatConversation[]>([]);
+  const [isMessagesLoading, setIsMessagesLoading] = useState(true);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
   const readActivityIds = useActivityStore((state) => state.readActivityIds);
   const activityUpdates = useActivityStore((state) => state.activityUpdates);
   const repository = getDataRepository();
@@ -52,6 +64,29 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
     [spacing, semanticSpacing, radii],
   );
 
+  useEffect(() => {
+    let isActive = true;
+    setIsMessagesLoading(true);
+    setMessagesError(null);
+    getHungryService()
+      .chat.listConversations()
+      .then((loadedConversations) => {
+        if (!isActive) return;
+        setConversations(loadedConversations);
+      })
+      .catch((error: unknown) => {
+        if (!isActive) return;
+        setMessagesError(error instanceof Error ? error.message : "Messages could not be loaded.");
+        setConversations([]);
+      })
+      .finally(() => {
+        if (isActive) setIsMessagesLoading(false);
+      });
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top"]}>
       <View style={styles.container}>
@@ -73,11 +108,7 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
             const isActive = activeTab === tab;
             const unreadCount =
               tab === "messages"
-                ? ACTIVITY_MESSAGES.reduce(
-                    (total, message) =>
-                      total + getActivityMessageUnreadCount(message, readActivityIds),
-                    0,
-                  )
+                ? conversations.reduce((total, conversation) => total + conversation.unreadCount, 0)
                 : allUpdates.filter(
                     (update) =>
                       update.unread &&
@@ -114,7 +145,21 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
         </View>
 
         {activeTab === "messages" ? (
-          <MessagesTab navigation={navigation} />
+          <MessagesTab
+            conversations={conversations}
+            isLoading={isMessagesLoading}
+            loadError={messagesError}
+            navigation={navigation}
+            onConversationRead={(conversationId) => {
+              setConversations((current) =>
+                current.map((conversation) =>
+                  conversation.id === conversationId
+                    ? { ...conversation, unreadCount: 0 }
+                    : conversation,
+                ),
+              );
+            }}
+          />
         ) : (
           <UpdatesTab navigation={navigation} updates={allUpdates} />
         )}
@@ -123,11 +168,19 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
   );
 }
 
-function MessagesTab({ navigation }: Pick<Props, "navigation">) {
+function MessagesTab({
+  conversations,
+  isLoading,
+  loadError,
+  navigation,
+  onConversationRead,
+}: Pick<Props, "navigation"> & {
+  conversations: ChatConversation[];
+  isLoading: boolean;
+  loadError: string | null;
+  onConversationRead: (conversationId: string) => void;
+}) {
   const { palette, spacing, semanticSpacing, radii } = useHungryTheme();
-  const readActivityIds = useActivityStore((state) => state.readActivityIds);
-  const markActivityRead = useActivityStore((state) => state.markActivityRead);
-  const sharedPostMessages = useActivityStore((state) => state.sharedPostMessages);
 
   return (
     <View style={{ flex: 1 }}>
@@ -140,78 +193,90 @@ function MessagesTab({ navigation }: Pick<Props, "navigation">) {
           paddingBottom: spacing[12],
         }}
       >
-        {ACTIVITY_MESSAGES.map((chat) => {
-          const chatId = typeof chat?.id === "string" ? chat.id.trim() : "";
-          const normalizedName = typeof chat?.name === "string" ? chat.name.trim() : "";
-          const normalizedAvatar = typeof chat?.avatar === "string" ? chat.avatar.trim() : "";
-          const isOnline = typeof chat?.isOnline === "boolean" ? chat.isOnline : undefined;
+        {isLoading ? (
+          <EmptyState title="Loading messages" body="Fetching conversations..." />
+        ) : null}
+        {!isLoading && loadError ? (
+          <EmptyState title="Messages unavailable" body={loadError} />
+        ) : null}
+        {!isLoading &&
+          !loadError &&
+          conversations.map((chat) => {
+            const chatId = chat.id.trim();
+            const normalizedName = chat.title.trim();
+            const normalizedAvatar = chat.avatarUrl?.trim() ?? "";
+            const isOnline = chat.isOnline;
 
-          if (!chatId || !normalizedName || !normalizedAvatar) {
-            return null;
-          }
+            if (!chatId || !normalizedName) {
+              return null;
+            }
 
-          const unreadCount = getActivityMessageUnreadCount(chat, readActivityIds);
-          const chatSharedMessages = sharedPostMessages[chatId] ?? [];
-          const latestSharedPost = chatSharedMessages[chatSharedMessages.length - 1];
-          const lastMessage = latestSharedPost?.sharedPost
-            ? `Shared a post: ${latestSharedPost.sharedPost.title}`
-            : chat.lastMessage;
-          const time = latestSharedPost?.createdAt ?? chat.time;
+            const unreadCount = chat.unreadCount;
+            const lastMessage = chat.lastMessage ?? "No messages yet";
+            const time = chat.lastMessageAt ? formatActivityChatTime(chat.lastMessageAt) : "";
 
-          return (
-            <Pressable
-              key={chat.id}
-              accessibilityRole="button"
-              accessibilityLabel={`Open chat with ${chat.name}`}
-              onPress={() => {
-                if (!chatId || !normalizedName || !normalizedAvatar) {
-                  return;
-                }
+            return (
+              <Pressable
+                key={chatId}
+                accessibilityRole="button"
+                accessibilityLabel={`Open chat with ${normalizedName}`}
+                onPress={() => {
+                  if (!chatId || !normalizedName) {
+                    return;
+                  }
 
-                try {
-                  markActivityRead("message", chat.id);
+                  onConversationRead(chatId);
+                  void getHungryService().chat.markConversationRead(chatId);
                   navigation.navigate("ChatDetail", {
                     chatId,
                     name: normalizedName,
                     avatar: normalizedAvatar,
                     isOnline,
                   });
-                } catch {
-                  Alert.alert("Could not open chat", "Please try again in a moment.");
-                }
-              }}
-              style={[stylesInline.messageRow, { gap: spacing[3] }]}
-            >
-              <View style={stylesInline.messageAvatarSlot}>
-                <Image
-                  source={{ uri: chat.avatar }}
-                  style={{ width: 56, height: 56, borderRadius: radii.pill }}
-                />
-                {unreadCount > 0 ? (
-                  <UnreadCountBadge
-                    accessibilityLabel={`${unreadCount} unread messages`}
-                    backgroundColor={palette.orange}
-                    borderColor={palette.bg}
-                    count={unreadCount}
-                  />
-                ) : null}
-              </View>
-              <View style={{ flex: 1, gap: spacing[1] }}>
-                <View style={stylesInline.rowBetween}>
-                  <AppText variant="bodyBold">{chat.name}</AppText>
-                  <AppText variant="micro" tone="secondary">
-                    {time}
+                }}
+                style={[stylesInline.messageRow, { gap: spacing[3] }]}
+              >
+                <View style={stylesInline.messageAvatarSlot}>
+                  {normalizedAvatar ? (
+                    <Image
+                      source={{ uri: normalizedAvatar }}
+                      style={{ width: 56, height: 56, borderRadius: radii.pill }}
+                    />
+                  ) : (
+                    <View
+                      style={[
+                        stylesInline.avatarFallback,
+                        { backgroundColor: palette.bgSoft, borderRadius: radii.pill },
+                      ]}
+                    >
+                      <AppText variant="bodySmallBold">{normalizedName.slice(0, 1)}</AppText>
+                    </View>
+                  )}
+                  {unreadCount > 0 ? (
+                    <UnreadCountBadge
+                      accessibilityLabel={`${unreadCount} unread messages`}
+                      backgroundColor={palette.orange}
+                      borderColor={palette.bg}
+                      count={unreadCount}
+                    />
+                  ) : null}
+                </View>
+                <View style={{ flex: 1, gap: spacing[1] }}>
+                  <View style={stylesInline.rowBetween}>
+                    <AppText variant="bodyBold">{normalizedName}</AppText>
+                    <AppText variant="micro" tone="secondary">
+                      {time}
+                    </AppText>
+                  </View>
+                  <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                    {lastMessage}
                   </AppText>
                 </View>
-                <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-                  {lastMessage}
-                </AppText>
-              </View>
-            </Pressable>
-          );
-        })}
+              </Pressable>
+            );
+          })}
 
-        {ACTIVITY_MESSAGES.length === 0 ? (
+        {!isLoading && !loadError && conversations.length === 0 ? (
           <EmptyState title="No messages yet" body="Chats from food friends will appear here." />
         ) : null}
       </ScrollView>
@@ -242,7 +307,6 @@ function UpdatesTab({
       }}
     >
       {updates.map((update) => {
-        const Icon = getUpdateIcon(update.kind);
         const post = repository
           .listStallPosts()
           .find((candidate) => candidate.id === update.postId);
@@ -265,7 +329,11 @@ function UpdatesTab({
             style={[stylesInline.updateRow, { gap: spacing[3] }]}
           >
             <View style={[stylesInline.kindBadge, { backgroundColor: palette.bgSoft }]}>
-              <Icon color={kindColor} size={20} />
+              {update.kind === "like" ? (
+                <Heart color={kindColor} size={20} />
+              ) : (
+                <MessageCircleMore color={kindColor} size={20} />
+              )}
               <AppText variant="micro" style={{ color: kindColor, fontWeight: "800" }}>
                 {update.kind === "like" ? "Like" : "Comment"}
               </AppText>
@@ -364,11 +432,6 @@ function UnreadCountBadge({
   );
 }
 
-function getUpdateIcon(kind: ActivityUpdateKind) {
-  if (kind === "like") return Heart;
-  return MessageCircle;
-}
-
 const stylesInline = StyleSheet.create({
   messageRow: {
     alignItems: "center",
@@ -377,6 +440,12 @@ const stylesInline = StyleSheet.create({
   messageAvatarSlot: {
     height: 56,
     position: "relative",
+    width: 56,
+  },
+  avatarFallback: {
+    alignItems: "center",
+    height: 56,
+    justifyContent: "center",
     width: 56,
   },
   rowBetween: {

@@ -12,6 +12,7 @@ import type {
   UserProfile,
   VenueSummary,
 } from "@/types/domain";
+import type { ChatConversation, ChatMessage } from "@/lib/services/types";
 import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 
 const FOOD_1 = "https://upload.wikimedia.org/wikipedia/commons/7/71/Hainanese_Chicken_Rice.jpg";
@@ -1137,3 +1138,166 @@ export const merchantAIInsights: AIBusinessInsight[] = [
     isDismissed: false,
   },
 ];
+
+export const chatConversations: ChatConversation[] = [
+  {
+    id: "1",
+    type: "user",
+    title: "Ahmad",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&auto=format&fit=crop",
+    isOnline: true,
+    participants: [
+      {
+        kind: "user",
+        userId: "user-1",
+        displayName: "Wei Ming",
+        avatarUrl: userProfile.avatarUrl,
+        isCurrentUser: true,
+      },
+      {
+        kind: "user",
+        userId: "user-ahmad",
+        displayName: "Ahmad",
+        avatarUrl:
+          "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&auto=format&fit=crop",
+      },
+    ],
+    lastMessage: "Yes, and the chilli was sharp.",
+    lastMessageAt: new Date(Date.now() - 2 * 60_000).toISOString(),
+    unreadCount: 3,
+    updatedAt: new Date(Date.now() - 2 * 60_000).toISOString(),
+  },
+  {
+    id: "2",
+    type: "user",
+    title: "Sarah",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop",
+    isOnline: false,
+    participants: [
+      {
+        kind: "user",
+        userId: "user-1",
+        displayName: "Wei Ming",
+        avatarUrl: userProfile.avatarUrl,
+        isCurrentUser: true,
+      },
+      {
+        kind: "user",
+        userId: "user-sarah",
+        displayName: "Sarah",
+        avatarUrl:
+          "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&auto=format&fit=crop",
+      },
+    ],
+    lastMessage: "Yes, after 7 works.",
+    lastMessageAt: new Date(Date.now() - 60 * 60_000).toISOString(),
+    unreadCount: 1,
+    updatedAt: new Date(Date.now() - 60 * 60_000).toISOString(),
+  },
+  {
+    id: "3",
+    type: "merchant",
+    title: "Uncle Tan",
+    avatarUrl:
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=100&auto=format&fit=crop",
+    isOnline: true,
+    participants: [
+      {
+        kind: "user",
+        userId: "user-1",
+        displayName: "Wei Ming",
+        avatarUrl: userProfile.avatarUrl,
+        isCurrentUser: true,
+      },
+      {
+        kind: "merchant",
+        merchantAccountId: merchantAccount.id,
+        displayName: "Uncle Tan",
+        avatarUrl:
+          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=100&auto=format&fit=crop",
+      },
+    ],
+    lastMessage: "Can. Ask for half chilli.",
+    lastMessageAt: new Date(Date.now() - 3 * 60 * 60_000).toISOString(),
+    unreadCount: 0,
+    updatedAt: new Date(Date.now() - 3 * 60 * 60_000).toISOString(),
+  },
+];
+
+export const chatMessages: Record<string, ChatMessage[]> = {
+  "1": [
+    {
+      id: "1-1",
+      conversationId: "1",
+      body: "That chicken rice was amazing!",
+      sender: chatConversations[0].participants[1],
+      sentByCurrentUser: false,
+      createdAt: new Date(Date.now() - 4 * 60_000).toISOString(),
+    },
+    {
+      id: "1-2",
+      conversationId: "1",
+      body: "The rice was fragrant right?",
+      sender: chatConversations[0].participants[0],
+      sentByCurrentUser: true,
+      readAt: new Date(Date.now() - 2 * 60_000).toISOString(),
+      createdAt: new Date(Date.now() - 3 * 60_000).toISOString(),
+    },
+    {
+      id: "1-3",
+      conversationId: "1",
+      body: "Yes, and the chilli was sharp.",
+      sender: chatConversations[0].participants[1],
+      sentByCurrentUser: false,
+      createdAt: new Date(Date.now() - 2 * 60_000).toISOString(),
+    },
+  ],
+  "2": [
+    {
+      id: "2-1",
+      conversationId: "2",
+      body: "Are we still on for Maxwell later?",
+      sender: chatConversations[1].participants[1],
+      sentByCurrentUser: false,
+      createdAt: new Date(Date.now() - 62 * 60_000).toISOString(),
+    },
+    {
+      id: "2-2",
+      conversationId: "2",
+      body: "Yes, after 7 works.",
+      sender: chatConversations[1].participants[0],
+      sentByCurrentUser: true,
+      readAt: new Date(Date.now() - 58 * 60_000).toISOString(),
+      createdAt: new Date(Date.now() - 58 * 60_000).toISOString(),
+    },
+  ],
+  "3": [
+    {
+      id: "3-1",
+      conversationId: "3",
+      body: "The laksa here is very spicy ah.",
+      sender: chatConversations[2].participants[1],
+      sentByCurrentUser: false,
+      createdAt: new Date(Date.now() - 3 * 60 * 60_000).toISOString(),
+    },
+    {
+      id: "3-2",
+      conversationId: "3",
+      body: "Worth trying if I order less chilli?",
+      sender: chatConversations[2].participants[0],
+      sentByCurrentUser: true,
+      readAt: new Date(Date.now() - 2 * 60 * 60_000).toISOString(),
+      createdAt: new Date(Date.now() - 2 * 60 * 60_000).toISOString(),
+    },
+    {
+      id: "3-3",
+      conversationId: "3",
+      body: "Can. Ask for half chilli.",
+      sender: chatConversations[2].participants[1],
+      sentByCurrentUser: false,
+      createdAt: new Date(Date.now() - 2 * 60 * 60_000).toISOString(),
+    },
+  ],
+};

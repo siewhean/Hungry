@@ -163,18 +163,9 @@ export function getActivityUnreadCount(
   activityUpdates: ActivityUpdate[] = ACTIVITY_UPDATES,
 ) {
   const readIds = new Set(readActivityIds);
-  return (
-    ACTIVITY_MESSAGES.reduce(
-      (total, message) =>
-        message.unread && !readIds.has(getActivityReadKey("message", message.id))
-          ? total + (message.unreadCount ?? 1)
-          : total,
-      0,
-    ) +
-    activityUpdates.filter(
-      (update) => update.unread && !readIds.has(getActivityReadKey("update", update.id)),
-    ).length
-  );
+  return activityUpdates.filter(
+    (update) => update.unread && !readIds.has(getActivityReadKey("update", update.id)),
+  ).length;
 }
 
 export function getActivityMessageUnreadCount(

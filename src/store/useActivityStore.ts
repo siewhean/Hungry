@@ -9,6 +9,7 @@ import {
   type ActivityChatMessage,
   type SharedPostPayload,
 } from "@/features/home/activity";
+import { getHungryService } from "@/lib/services/serviceProvider";
 
 import { hungryPersistStorage } from "./persistStorage";
 
@@ -19,7 +20,7 @@ interface ActivityState {
   markActivityRead: (type: ActivityItemType, id: string) => void;
   isActivityUnread: (type: ActivityItemType, id: string, initialUnread?: boolean) => boolean;
   getUnreadCount: () => number;
-  sharePostToChat: (chatId: string, post: SharedPostPayload) => void;
+  sharePostToChat: (chatId: string, post: SharedPostPayload) => Promise<void>;
   addActivityUpdate: (update: Omit<ActivityUpdate, "id">) => void;
 }
 
@@ -52,10 +53,17 @@ export const useActivityStore = create<ActivityState>()(
           ],
         }));
       },
-      sharePostToChat: (chatId, post) => {
+      sharePostToChat: async (chatId, post) => {
+        const shareBody = `Shared ${post.title}\n${post.subtitle}`;
+        await getHungryService().chat.sendMessage({
+          conversationId: chatId,
+          body: shareBody,
+          clientNonce: `share-${post.postId}-${Date.now()}`,
+        });
+
         const message: ActivityChatMessage = {
           id: `shared-${post.postId}-${Date.now()}`,
-          text: `Shared ${post.title}`,
+          text: shareBody,
           sent: true,
           createdAt: "now",
           sharedPost: post,

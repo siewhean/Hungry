@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState, type RefObject } from "react";
-import { Clipboard, Share, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState, type RefObject } from "react";
+import { Clipboard, Share } from "react-native";
 import {
   BottomSheetBackdrop,
   BottomSheetFooter,
@@ -9,8 +9,9 @@ import {
 } from "@gorhom/bottom-sheet";
 import { Copy, Share2 } from "lucide-react-native";
 
-import { ACTIVITY_MESSAGES } from "@/features/home/activity";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
+import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -45,7 +46,23 @@ export function ReviewShareSheet({
   const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
   const showToast = useUIStore((state) => state.showToast);
   const [selectedChatIds, setSelectedChatIds] = useState<string[]>([]);
+  const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
   const snapPoints = useMemo(() => ["62%"], []);
+
+  const loadChatConversations = useCallback(async () => {
+    try {
+      const conversations = await getHungryService().chat.listConversations();
+      setShareRecipients(conversations.map(toChatShareRecipient));
+    } catch {
+      setShareRecipients([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeReview) {
+      void loadChatConversations();
+    }
+  }, [activeReview, loadChatConversations]);
 
   const toggleChat = useCallback((chatId: string) => {
     setSelectedChatIds((current) =>
@@ -60,18 +77,25 @@ export function ReviewShareSheet({
     onDismiss();
   }, [onDismiss]);
 
-  const sendToHungryUsers = useCallback(() => {
+  const sendToHungryUsers = useCallback(async () => {
     if (!activeReview || selectedChatIds.length === 0) return;
 
-    selectedChatIds.forEach((chatId) => {
-      sharePostToChat(chatId, {
-        postId: activeReview.postId,
-        title: activeReview.title,
-        subtitle: activeReview.subtitle,
-        imageUrl: activeReview.imageUrl,
-        authorName: activeReview.authorName,
-      });
-    });
+    try {
+      await Promise.all(
+        selectedChatIds.map((chatId) =>
+          sharePostToChat(chatId, {
+            postId: activeReview.postId,
+            title: activeReview.title,
+            subtitle: activeReview.subtitle,
+            imageUrl: activeReview.imageUrl,
+            authorName: activeReview.authorName,
+          }),
+        ),
+      );
+    } catch {
+      showToast({ message: "Could not share review. Please try again.", tone: "error" });
+      return;
+    }
     onShared(activeReview.reviewId);
     showToast({
       message: `Review shared with ${selectedChatIds.length} ${
@@ -156,7 +180,7 @@ export function ReviewShareSheet({
                   onPress: () => void shareOutsideHungry(),
                 },
               ]}
-              recipients={ACTIVITY_MESSAGES}
+              recipients={shareRecipients}
               selectedRecipientIds={selectedChatIds}
               onToggleRecipient={toggleChat}
               onSend={sendToHungryUsers}

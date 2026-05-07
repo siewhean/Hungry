@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Clipboard,
   Pressable,
@@ -68,10 +69,11 @@ import {
   type HomeFeedItem,
   type HomeFeedSection,
 } from "@/features/home/feed";
-import { ACTIVITY_MESSAGES } from "@/features/home/activity";
+import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getBuildingById, toSummary } from "@/lib/geo/singaporeBuildings";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
@@ -168,7 +170,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const addPostReply = useSocialStore((state) => state.addReply);
   const followedAuthors = useSocialStore((state) => state.followedAuthors);
   const toggleAuthorFollow = useSocialStore((state) => state.toggleAuthorFollow);
-  const activityUnreadCount = useActivityStore((state) => state.getUnreadCount());
+  const updateUnreadCount = useActivityStore((state) => state.getUnreadCount());
+  const [chatUnreadCount, setChatUnreadCount] = useState(0);
+  const activityUnreadCount = updateUnreadCount + chatUnreadCount;
   const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
   const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
   const setSelectedFloor = useDiscoveryStore((state) => state.setSelectedFloor);
@@ -196,6 +200,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const [socialFeed, setSocialFeed] = useState<HomeFeedItem[]>([]);
   const [activeCommentItem, setActiveCommentItem] = useState<HomeFeedItem | null>(null);
   const [activeShareItem, setActiveShareItem] = useState<HomeFeedItem | null>(null);
+  const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
   const [selectedShareChatIds, setSelectedShareChatIds] = useState<string[]>([]);
   const [draftComment, setDraftComment] = useState("");
   const [activeReplyCommentId, setActiveReplyCommentId] = useState<string | null>(null);
@@ -253,13 +258,30 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     });
   }, []);
 
-  const openShareSheet = useCallback((item: HomeFeedItem) => {
-    setActiveShareItem(item);
-    setSelectedShareChatIds([]);
-    requestAnimationFrame(() => {
-      shareSheetRef.current?.present();
-    });
+  const loadChatConversations = useCallback(async () => {
+    try {
+      const conversations = await getHungryService().chat.listConversations();
+      setChatUnreadCount(
+        conversations.reduce((total, conversation) => total + conversation.unreadCount, 0),
+      );
+      setShareRecipients(conversations.map(toChatShareRecipient));
+    } catch {
+      setChatUnreadCount(0);
+      setShareRecipients([]);
+    }
   }, []);
+
+  const openShareSheet = useCallback(
+    (item: HomeFeedItem) => {
+      setActiveShareItem(item);
+      setSelectedShareChatIds([]);
+      void loadChatConversations();
+      requestAnimationFrame(() => {
+        shareSheetRef.current?.present();
+      });
+    },
+    [loadChatConversations],
+  );
 
   const toggleShareChat = useCallback((chatId: string) => {
     setSelectedShareChatIds((current) =>
@@ -269,18 +291,25 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     );
   }, []);
 
-  const sendPostToHungryUsers = useCallback(() => {
+  const sendPostToHungryUsers = useCallback(async () => {
     if (!activeShareItem || selectedShareChatIds.length === 0) return;
 
-    selectedShareChatIds.forEach((chatId) => {
-      sharePostToChat(chatId, {
-        postId: activeShareItem.id,
-        title: activeShareItem.dishes[0]?.name ?? activeShareItem.venue.name,
-        subtitle: `${activeShareItem.venue.name} · ${activeShareItem.authorName}`,
-        imageUrl: activeShareItem.mediaUrl,
-        authorName: activeShareItem.authorName,
-      });
-    });
+    try {
+      await Promise.all(
+        selectedShareChatIds.map((chatId) =>
+          sharePostToChat(chatId, {
+            postId: activeShareItem.id,
+            title: activeShareItem.dishes[0]?.name ?? activeShareItem.venue.name,
+            subtitle: `${activeShareItem.venue.name} · ${activeShareItem.authorName}`,
+            imageUrl: activeShareItem.mediaUrl,
+            authorName: activeShareItem.authorName,
+          }),
+        ),
+      );
+    } catch {
+      Alert.alert("Could not share post", "Please try again.");
+      return;
+    }
     incrementPostShare(activeShareItem.id);
     setActiveShareItem(null);
     setSelectedShareChatIds([]);
@@ -558,6 +587,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       void loadStories();
     }
   }, [loadStories, stories.length]);
+
+  useEffect(() => {
+    void loadChatConversations();
+  }, [loadChatConversations]);
 
   useEffect(
     () => () => {
@@ -1704,15 +1737,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     paddingTop: spacing[4],
                   }}
                 >
-                  <MessageCircle
-                    size={48}
-                    color={palette.border}
-                    style={{ marginBottom: spacing[4] }}
+                  <EmptyState
+                    title="No comments yet"
+                    body="Be the first to share your review!"
+                    icon={<MessageCircle size={42} color={palette.textMuted} />}
                   />
-                  <AppText tone="secondary">No comments yet</AppText>
-                  <AppText variant="bodySmall" tone="muted">
-                    Be the first to share your review!
-                  </AppText>
                 </View>
               )}
             </BottomSheetScrollView>
@@ -1775,11 +1804,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     onPress: () => void sharePostOutsideApp(),
                   },
                 ]}
-                recipients={ACTIVITY_MESSAGES}
+                recipients={shareRecipients}
                 selectedRecipientIds={selectedShareChatIds}
                 onToggleRecipient={toggleShareChat}
                 onSend={sendPostToHungryUsers}
-                lastRecipientId={ACTIVITY_MESSAGES[ACTIVITY_MESSAGES.length - 1]?.id}
+                lastRecipientId={shareRecipients[shareRecipients.length - 1]?.id}
                 recipientAccessibilityLabelPrefix="Share post to"
               />
             </BottomSheetScrollView>

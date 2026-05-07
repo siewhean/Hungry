@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Clipboard, Pressable, Share, View } from "react-native";
+import { Alert, Clipboard, Pressable, Share, View } from "react-native";
 import {
   ChevronRight,
   Settings,
@@ -20,12 +20,13 @@ import {
   Image,
 } from "lucide-react-native";
 
-import { AppText, Card, Button } from "@/components/ui";
+import { AppText, Card, Button, EmptyState } from "@/components/ui";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
+import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
 import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -35,7 +36,6 @@ import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { ACTIVITY_MESSAGES } from "@/features/home/activity";
 import { useActivityStore } from "@/store/useActivityStore";
 import type { ProfileStackParamList } from "./ProfileStack";
 import {
@@ -68,10 +68,20 @@ export function ProfileHomeScreen({ navigation }: Props) {
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const shareSnapPoints = useMemo(() => ["45%"], []);
   const [selectedShareChatIds, setSelectedShareChatIds] = useState<string[]>([]);
+  const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
   const [isTasteShareSheetOpen, setIsTasteShareSheetOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profilePosts, setProfilePosts] = useState<StallPost[]>([]);
   const [activeShareTab, setActiveShareTab] = useState<"posts" | "reviews">("posts");
+
+  const loadChatConversations = useCallback(async () => {
+    try {
+      const conversations = await getHungryService().chat.listConversations();
+      setShareRecipients(conversations.map(toChatShareRecipient));
+    } catch {
+      setShareRecipients([]);
+    }
+  }, []);
 
   const rootNavigation = getRootNavigation(
     navigation as NativeStackNavigationProp<ProfileStackParamList, "ProfileHome">,
@@ -198,8 +208,9 @@ export function ProfileHomeScreen({ navigation }: Props) {
   const handleShareTaste = useCallback(async () => {
     if (!isAuthenticated) return;
     setIsTasteShareSheetOpen(true);
+    await loadChatConversations();
     shareSheetRef.current?.present();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, loadChatConversations]);
 
   const tasteShareMessage = useMemo(() => {
     const topTastes = Object.entries(profile.tasteVector)
@@ -222,18 +233,25 @@ export function ProfileHomeScreen({ navigation }: Props) {
     }
   }, [tasteShareMessage]);
 
-  const sendTasteProfileToHungryUsers = useCallback(() => {
+  const sendTasteProfileToHungryUsers = useCallback(async () => {
     if (selectedShareChatIds.length === 0) return;
 
-    selectedShareChatIds.forEach((chatId) => {
-      sharePostToChat(chatId, {
-        postId: `taste-fingerprint-${profile.id}`,
-        title: "Taste Fingerprint",
-        subtitle: `${profile.displayName} · Taste profile`,
-        imageUrl: profile.avatarUrl ?? "",
-        authorName: profile.displayName,
-      });
-    });
+    try {
+      await Promise.all(
+        selectedShareChatIds.map((chatId) =>
+          sharePostToChat(chatId, {
+            postId: `taste-fingerprint-${profile.id}`,
+            title: "Taste Fingerprint",
+            subtitle: `${profile.displayName} · Taste profile`,
+            imageUrl: profile.avatarUrl ?? "",
+            authorName: profile.displayName,
+          }),
+        ),
+      );
+    } catch {
+      Alert.alert("Could not share taste profile", "Please try again.");
+      return;
+    }
 
     setSelectedShareChatIds([]);
     shareSheetRef.current?.dismiss();
@@ -456,7 +474,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
           </Card>
         ) : (
           <View style={{ gap: spacing[4] }}>
-            <View style={{ flexDirection: "row", gap: spacing[2], marginTop: spacing[3] }}>
+            <View style={{ flexDirection: "row", gap: spacing[2], marginTop: spacing[2] }}>
               <StatBlock
                 label="Followers"
                 value={socialCounts.followers}
@@ -468,7 +486,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
                 icon={<Send size={14} color={palette.orange} />}
               />
             </View>
-            <View style={{ flexDirection: "row", gap: spacing[2], marginTop: spacing[3] }}>
+            <View style={{ flexDirection: "row", gap: spacing[2] }}>
               <StatBlock
                 label="Reviews"
                 value={profile.stats.dishesReviewed}
@@ -641,23 +659,15 @@ export function ProfileHomeScreen({ navigation }: Props) {
                   ))}
                 </View>
               ) : (
-                <View
-                  style={{
-                    alignItems: "center",
-                    gap: spacing[2],
-                    padding: spacing[4],
-                  }}
-                >
-                  <Image size={36} color={palette.textSecondary} />
-                  <AppText variant="h3">
-                    No {activeShareTab === "posts" ? "posts" : "reviews"} yet
-                  </AppText>
-                  <AppText style={{ textAlign: "center" }} tone="secondary">
-                    {activeShareTab === "posts"
+                <EmptyState
+                  title={`No ${activeShareTab === "posts" ? "posts" : "reviews"} yet`}
+                  body={
+                    activeShareTab === "posts"
                       ? "Shared posts will appear here."
-                      : "Dish reviews you share will appear here."}
-                  </AppText>
-                </View>
+                      : "Dish reviews you share will appear here."
+                  }
+                  icon={<Image size={36} color={palette.textSecondary} />}
+                />
               )}
             </View>
           </View>
@@ -719,11 +729,11 @@ export function ProfileHomeScreen({ navigation }: Props) {
                     onPress: () => void shareTasteProfileOutsideApp(),
                   },
                 ]}
-                recipients={ACTIVITY_MESSAGES}
+                recipients={shareRecipients}
                 selectedRecipientIds={selectedShareChatIds}
                 onToggleRecipient={toggleShareChat}
                 onSend={sendTasteProfileToHungryUsers}
-                lastRecipientId={ACTIVITY_MESSAGES[ACTIVITY_MESSAGES.length - 1]?.id}
+                lastRecipientId={shareRecipients[shareRecipients.length - 1]?.id}
                 recipientAccessibilityLabelPrefix="Share taste profile to"
               />
             </BottomSheetScrollView>

@@ -58,6 +58,9 @@ test("home bell opens a combined activity inbox with messages and updates", () =
   assert.match(home, /<Bell color=\{palette\.text\} size=\{22\}/);
   assert.match(home, /navigation\.navigate\("ActivityInbox", \{ initialTab: "updates" \}\)/);
   assert.match(home, /useActivityStore\(\(state\) => state\.getUnreadCount\(\)\)/);
+  assert.match(home, /getHungryService\(\)[\s\S]*\.chat\.listConversations\(\)/);
+  assert.match(home, /recipients=\{shareRecipients\}/);
+  assert.doesNotMatch(home, /ACTIVITY_MESSAGES/);
   assert.match(rootNavigator, /component=\{ActivityInboxScreen\} name="ActivityInbox"/);
   assert.match(rootNavigator, /component=\{ActivityPostDetailScreen\} name="ActivityPostDetail"/);
   assert.match(rootNavigator, /component=\{ChatDetailScreen\} name="ChatDetail"/);
@@ -66,15 +69,13 @@ test("home bell opens a combined activity inbox with messages and updates", () =
   assert.match(activity, /stylesInline\.kindBadge/);
   assert.match(activity, /type ActivityTab = "messages" \| "updates"/);
   assert.match(activity, /const TABS: ActivityTab\[\] = \["messages", "updates"\]/);
-  assert.match(activity, /getActivityMessageUnreadCount\(message, readActivityIds\)/);
-  assert.match(
-    activity,
-    /const unreadCount = getActivityMessageUnreadCount\(chat, readActivityIds\)/,
-  );
+  assert.match(activity, /getHungryService\(\)[\s\S]*\.chat\.listConversations\(\)/);
+  assert.match(activity, /type \{ ChatConversation \}/);
+  assert.match(activity, /conversation\.unreadCount/);
+  assert.match(activity, /void getHungryService\(\)\.chat\.markConversationRead\(chatId\)/);
   assert.match(activity, /<UnreadCountBadge/);
   assert.match(activity, /accessibilityLabel=\{`\$\{unreadCount\} unread messages`\}/);
   assert.match(activity, /stylesInline\.unreadCountBadge/);
-  assert.match(activity, /markActivityRead\("message", chat\.id\)/);
   assert.match(activity, /markActivityRead\("update", update\.id\)/);
   assert.match(activity, /stylesInline\.updateMediaSlot/);
   assert.match(activity, /stylesInline\.updateUnreadSlot/);
@@ -83,8 +84,6 @@ test("home bell opens a combined activity inbox with messages and updates", () =
   assert.match(activity, /updateUnreadSlot: \{[\s\S]*width: 14/);
   assert.match(activityStore, /name: "hungry-activity-v1"/);
   assert.match(activityStore, /readActivityIds/);
-  assert.match(activityStore, /sharedPostMessages/);
-  assert.match(activityStore, /sharePostToChat/);
   assert.match(
     activityStore,
     /getActivityUnreadCount\(get\(\)\.readActivityIds, get\(\)\.activityUpdates\)/,
@@ -93,9 +92,8 @@ test("home bell opens a combined activity inbox with messages and updates", () =
   assert.match(activityData, /sharedPost\?: SharedPostPayload/);
   assert.match(activityData, /unreadCount\?: number/);
   assert.match(activityData, /export function getActivityMessageUnreadCount/);
-  assert.match(activityData, /total \+ \(message\.unreadCount \?\? 1\)/);
+  assert.match(activityData, /message\.unreadCount \?\? 1/);
   assert.match(activityData, /ACTIVITY_MESSAGES/);
-  assert.match(activityData, /ACTIVITY_CHAT_MESSAGES/);
   assert.match(activityData, /ACTIVITY_UPDATES/);
   assert.match(activityData, /postId: "post-/);
   assert.match(activityData, /kind: "comment"/);
@@ -109,19 +107,17 @@ test("activity messages and update posts are functional routes, not static mocku
   const types = read("src/app/navigation/navigationTypes.ts");
 
   assert.match(types, /ActivityPostDetail: \{ postId: string; updateId\?: string \}/);
-  assert.match(chat, /const \[messages, setMessages\]/);
-  assert.match(chat, /markActivityRead\("message", chatId\)/);
-  assert.match(chat, /ACTIVITY_CHAT_MESSAGES\[chatId\]/);
-  assert.match(chat, /sharedPostMessages/);
-  assert.match(chat, /msg\.sharedPost/);
-  assert.match(chat, /styles\.sharedPostCard/);
-  assert.match(
-    chat,
-    /navigation\.navigate\("ActivityPostDetail", \{ postId: msg\.sharedPost!\.postId \}\)/,
-  );
-  assert.match(chat, /const sendMessage = \(\) =>/);
-  assert.match(chat, /setMessages\(\(current\) => \[\.\.\.current, sentMessage\]\)/);
-  assert.match(chat, /setTimeout\(\(\) =>/);
+  assert.match(chat, /getHungryService\(\)\.chat/);
+  assert.match(chat, /\.listMessages\(chatId\)/);
+  assert.match(chat, /\.markConversationRead\(chatId\)/);
+  assert.match(chat, /\.subscribeToConversation\(chatId/);
+  assert.match(chat, /\.sendMessage\(\{/);
+  assert.match(chat, /Text messages only for now/);
+  assert.doesNotMatch(chat, /ACTIVITY_CHAT_MESSAGES/);
+  assert.doesNotMatch(chat, /sharedPostMessages/);
+  assert.doesNotMatch(chat, /setTimeout\(\(\) =>/);
+  assert.doesNotMatch(chat, /ImagePicker/);
+  assert.doesNotMatch(chat, /Paperclip/);
   assert.doesNotMatch(chat, /Phone/);
   assert.doesNotMatch(chat, /Start voice call/);
   assert.doesNotMatch(chat, /Start video call/);

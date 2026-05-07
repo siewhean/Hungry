@@ -68,7 +68,9 @@ test("Review feed cards do not render bottom bites sections", () => {
     /placeholder=\{activeReplyCommentId \? "Write a reply\.\.\." : "Add a comment\.\.\."\}/,
   );
 
-  assert.match(reviewShareSheet, /recipients=\{ACTIVITY_MESSAGES\}/);
+  assert.match(reviewShareSheet, /recipients=\{shareRecipients\}/);
+  assert.match(reviewShareSheet, /toChatShareRecipient/);
+  assert.doesNotMatch(reviewShareSheet, /ACTIVITY_MESSAGES/);
   assert.match(reviewShareSheet, /selectedChatIds/);
   assert.match(reviewShareSheet, /sharePostToChat\(chatId,/);
   assert.match(reviewShareSheet, /Clipboard\.setString\(activeReview\.link\)/);

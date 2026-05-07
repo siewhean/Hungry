@@ -348,6 +348,67 @@ export interface DraftDishRow {
   createdAt: string;
 }
 
+// ─── Chat ────────────────────────────────────────────────────────────────────
+
+export type ChatParticipantKind = "user" | "merchant";
+export type ChatConversationType = "user" | "merchant";
+
+export interface ChatParticipant {
+  kind: ChatParticipantKind;
+  userId?: string;
+  merchantAccountId?: string;
+  displayName: string;
+  avatarUrl?: string;
+  isCurrentUser?: boolean;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  body: string;
+  sender: ChatParticipant;
+  sentByCurrentUser: boolean;
+  clientNonce?: string;
+  deliveredAt?: string;
+  readAt?: string;
+  createdAt: string;
+}
+
+export interface ChatConversation {
+  id: string;
+  type: ChatConversationType;
+  title: string;
+  avatarUrl?: string;
+  isOnline?: boolean;
+  participants: ChatParticipant[];
+  lastMessage?: string;
+  lastMessageAt?: string;
+  unreadCount: number;
+  updatedAt: string;
+}
+
+export interface OpenChatConversationInput {
+  target: ChatParticipant;
+  type?: ChatConversationType;
+}
+
+export interface SendChatMessageInput {
+  conversationId: string;
+  body: string;
+  clientNonce?: string;
+  senderMerchantAccountId?: string;
+}
+
+export interface ChatSubscriptionHandlers {
+  onMessage?: (message: ChatMessage) => void;
+  onReadReceipt?: (messageId: string, readAt: string) => void;
+  onError?: (error: Error) => void;
+}
+
+export interface ChatSubscription {
+  unsubscribe(): void;
+}
+
 // ─── Building Detail ──────────────────────────────────────────────────────────
 
 export interface BuildingDetail extends BuildingSummary {
@@ -432,6 +493,18 @@ export interface HungryService {
     getSavedStories(): Promise<Story[]>;
     getSavedBites(): Promise<Bite[]>;
     getLikedBites(): Promise<Bite[]>;
+  };
+
+  chat: {
+    listConversations(): Promise<ChatConversation[]>;
+    openConversation(input: OpenChatConversationInput): Promise<ChatConversation>;
+    listMessages(conversationId: string): Promise<ChatMessage[]>;
+    sendMessage(input: SendChatMessageInput): Promise<ChatMessage>;
+    markConversationRead(conversationId: string): Promise<void>;
+    subscribeToConversation(
+      conversationId: string,
+      handlers: ChatSubscriptionHandlers,
+    ): ChatSubscription;
   };
 
   communitySafety: {

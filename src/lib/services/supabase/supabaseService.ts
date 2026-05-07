@@ -26,6 +26,10 @@ import type {
   BiteDraft,
   BlockUserRequest,
   BuildingDetail,
+  ChatConversation,
+  ChatMessage,
+  ChatParticipant,
+  ChatSubscriptionHandlers,
   ContentReportRequest,
   HungryService,
   ImplicitSignalInput,
@@ -1217,6 +1221,251 @@ async function signInWithOAuthProvider(provider: "google" | "apple"): Promise<Se
   return session;
 }
 
+function participantKey(participant: ChatParticipant): string {
+  return participant.kind === "merchant"
+    ? `merchant:${participant.merchantAccountId ?? ""}`
+    : `user:${participant.userId ?? ""}`;
+}
+
+function buildConversationDedupeKey(
+  currentUserId: string,
+  target: ChatParticipant,
+  type: "user" | "merchant",
+): string {
+  if (type === "merchant") {
+    return `merchant:${currentUserId}:${target.merchantAccountId ?? target.userId ?? ""}`;
+  }
+  return ["user", currentUserId, target.userId ?? ""].sort().join(":");
+}
+
+function toFallbackParticipant(row: Row, currentUserId: string): ChatParticipant {
+  const participantKind = asString(row.participant_kind) === "merchant" ? "merchant" : "user";
+  const userId = asString(row.participant_user_id);
+  const merchantAccountId = asString(row.participant_merchant_account_id);
+  return {
+    kind: participantKind,
+    userId,
+    merchantAccountId,
+    displayName:
+      participantKind === "merchant"
+        ? `Merchant ${merchantAccountId?.slice(0, 6) ?? ""}`.trim()
+        : userId === currentUserId
+          ? "You"
+          : `User ${userId?.slice(0, 6) ?? ""}`.trim(),
+    isCurrentUser: userId === currentUserId,
+  };
+}
+
+async function hydrateChatParticipants(
+  client: SupabaseClient,
+  participantRows: Row[],
+  currentUserId: string,
+): Promise<Map<string, ChatParticipant>> {
+  const userIds = Array.from(
+    new Set(
+      participantRows
+        .map((row) => asString(row.participant_user_id))
+        .filter((userId): userId is string => Boolean(userId)),
+    ),
+  );
+  const merchantIds = Array.from(
+    new Set(
+      participantRows
+        .map((row) => asString(row.participant_merchant_account_id))
+        .filter((merchantId): merchantId is string => Boolean(merchantId)),
+    ),
+  );
+
+  const profileRows = new Map<string, Row>();
+  if (userIds.length > 0) {
+    const { data } = await client
+      .from("user_profiles")
+      .select("id,display_name,email,avatar_url")
+      .in("id", userIds);
+    (Array.isArray(data) ? (data as Row[]) : []).forEach((row) => {
+      const id = asString(row.id);
+      if (id) profileRows.set(id, row);
+    });
+  }
+
+  const merchantRows = new Map<string, Row>();
+  if (merchantIds.length > 0) {
+    const { data } = await client
+      .from("merchant_accounts")
+      .select("id,display_name,email")
+      .in("id", merchantIds);
+    (Array.isArray(data) ? (data as Row[]) : []).forEach((row) => {
+      const id = asString(row.id);
+      if (id) merchantRows.set(id, row);
+    });
+  }
+
+  const participants = new Map<string, ChatParticipant>();
+  participantRows.forEach((row) => {
+    const fallback = toFallbackParticipant(row, currentUserId);
+    const profile = fallback.userId ? profileRows.get(fallback.userId) : undefined;
+    const merchant = fallback.merchantAccountId
+      ? merchantRows.get(fallback.merchantAccountId)
+      : undefined;
+    const participant: ChatParticipant = {
+      ...fallback,
+      displayName:
+        asString(profile?.display_name) ??
+        asString(profile?.email) ??
+        asString(merchant?.display_name) ??
+        asString(merchant?.email) ??
+        fallback.displayName,
+      avatarUrl: asString(profile?.avatar_url) ?? fallback.avatarUrl,
+    };
+    participants.set(participantKey(participant), participant);
+  });
+  return participants;
+}
+
+function mapChatMessage(
+  row: Row,
+  currentUserId: string,
+  participantsByKey: Map<string, ChatParticipant>,
+): ChatMessage {
+  const senderUserId = asString(row.sender_user_id);
+  const senderMerchantAccountId = asString(row.sender_merchant_account_id);
+  const senderKind = senderMerchantAccountId ? "merchant" : "user";
+  const fallbackSender: ChatParticipant = {
+    kind: senderKind,
+    userId: senderUserId,
+    merchantAccountId: senderMerchantAccountId,
+    displayName:
+      senderUserId === currentUserId
+        ? "You"
+        : senderKind === "merchant"
+          ? `Merchant ${senderMerchantAccountId?.slice(0, 6) ?? ""}`.trim()
+          : `User ${senderUserId?.slice(0, 6) ?? ""}`.trim(),
+    isCurrentUser: senderUserId === currentUserId,
+  };
+  const sender = participantsByKey.get(participantKey(fallbackSender)) ?? fallbackSender;
+  return {
+    id: asString(row.id) ?? "",
+    conversationId: asString(row.conversation_id) ?? "",
+    body: asString(row.body) ?? "",
+    sender,
+    sentByCurrentUser: senderUserId === currentUserId,
+    clientNonce: asString(row.client_nonce),
+    deliveredAt: asString(row.delivered_at),
+    readAt: asString(row.read_at),
+    createdAt: asString(row.created_at) ?? new Date().toISOString(),
+  };
+}
+
+async function listConversationParticipantRows(
+  client: SupabaseClient,
+  conversationIds?: string[],
+): Promise<Row[]> {
+  const query = client
+    .from("conversation_participants")
+    .select(
+      "conversation_id,participant_kind,participant_user_id,participant_merchant_account_id,last_read_at,joined_at",
+    );
+  const { data, error } =
+    conversationIds && conversationIds.length > 0
+      ? await query.in("conversation_id", conversationIds)
+      : await query;
+  if (error) throw error;
+  return Array.isArray(data) ? (data as Row[]) : [];
+}
+
+async function listMessagesForConversations(
+  client: SupabaseClient,
+  conversationIds: string[],
+): Promise<Row[]> {
+  if (conversationIds.length === 0) return [];
+  const { data, error } = await client
+    .from("messages")
+    .select(
+      "id,conversation_id,sender_user_id,sender_merchant_account_id,body,client_nonce,delivered_at,created_at",
+    )
+    .in("conversation_id", conversationIds)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return Array.isArray(data) ? (data as Row[]) : [];
+}
+
+async function listReadReceiptsForMessages(
+  client: SupabaseClient,
+  conversationId: string,
+  messageIds: string[],
+): Promise<Map<string, string>> {
+  if (messageIds.length === 0) return new Map();
+  const { data, error } = await client
+    .from("read_receipts")
+    .select("message_id,read_at")
+    .eq("conversation_id", conversationId)
+    .in("message_id", messageIds)
+    .order("read_at", { ascending: false });
+  if (error) throw error;
+  const readAtByMessageId = new Map<string, string>();
+  (Array.isArray(data) ? (data as Row[]) : []).forEach((row) => {
+    const messageId = asString(row.message_id);
+    const readAt = asString(row.read_at);
+    if (messageId && readAt && !readAtByMessageId.has(messageId)) {
+      readAtByMessageId.set(messageId, readAt);
+    }
+  });
+  return readAtByMessageId;
+}
+
+async function mapConversationRows(
+  client: SupabaseClient,
+  conversationRows: Row[],
+  participantRows: Row[],
+  messageRows: Row[],
+  currentUserId: string,
+): Promise<ChatConversation[]> {
+  const participantsByKey = await hydrateChatParticipants(client, participantRows, currentUserId);
+  return conversationRows
+    .map((conversation) => {
+      const conversationId = asString(conversation.id) ?? "";
+      const participants = participantRows
+        .filter((row) => asString(row.conversation_id) === conversationId)
+        .map((row) => {
+          const fallback = toFallbackParticipant(row, currentUserId);
+          return participantsByKey.get(participantKey(fallback)) ?? fallback;
+        });
+      const ownParticipantRow = participantRows.find(
+        (row) =>
+          asString(row.conversation_id) === conversationId &&
+          asString(row.participant_user_id) === currentUserId,
+      );
+      const lastReadAt = new Date(asString(ownParticipantRow?.last_read_at) ?? 0).getTime();
+      const conversationMessages = messageRows.filter(
+        (row) => asString(row.conversation_id) === conversationId,
+      );
+      const latestMessage = conversationMessages[conversationMessages.length - 1];
+      const unreadCount = conversationMessages.filter((row) => {
+        const sentByCurrentUser = asString(row.sender_user_id) === currentUserId;
+        const createdAt = new Date(asString(row.created_at) ?? 0).getTime();
+        return !sentByCurrentUser && (!Number.isFinite(lastReadAt) || createdAt > lastReadAt);
+      }).length;
+      const otherParticipant =
+        participants.find((participant) => !participant.isCurrentUser) ?? participants[0];
+      return {
+        id: conversationId,
+        type: asString(conversation.conversation_type) === "merchant" ? "merchant" : "user",
+        title: otherParticipant?.displayName ?? "Conversation",
+        avatarUrl: otherParticipant?.avatarUrl,
+        participants,
+        lastMessage: asString(latestMessage?.body),
+        lastMessageAt: asString(latestMessage?.created_at),
+        unreadCount,
+        updatedAt: asString(conversation.updated_at) ?? new Date().toISOString(),
+      } satisfies ChatConversation;
+    })
+    .filter((conversation) => conversation.id.length > 0)
+    .sort(
+      (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+    );
+}
+
 export const supabaseService: HungryService = {
   auth: {
     async signUp(email, password, name) {
@@ -1801,6 +2050,278 @@ export const supabaseService: HungryService = {
         (data as Row[]).map((row) => asString(row.post_id)).filter((id): id is string => !!id),
       );
       return (await fetchPublishedPostBites(client)).filter((bite) => likedIds.has(bite.id));
+    },
+  },
+
+  chat: {
+    async listConversations() {
+      const client = requireSupabaseClient();
+      const currentUserId = await getCurrentSupabaseUserId();
+      if (!currentUserId) throw new Error("You must be signed in to view messages.");
+      await ensureCurrentUserProfileRow(client);
+
+      const participantRows = await listConversationParticipantRows(client);
+      const conversationIds = Array.from(
+        new Set(
+          participantRows
+            .map((row) => asString(row.conversation_id))
+            .filter((id): id is string => Boolean(id)),
+        ),
+      );
+      if (conversationIds.length === 0) return [];
+
+      const { data, error } = await client
+        .from("conversations")
+        .select("id,conversation_type,subject_merchant_account_id,created_by_user_id,updated_at")
+        .in("id", conversationIds);
+      if (error) throw error;
+
+      const messageRows = await listMessagesForConversations(client, conversationIds);
+      return mapConversationRows(
+        client,
+        Array.isArray(data) ? (data as Row[]) : [],
+        participantRows,
+        messageRows,
+        currentUserId,
+      );
+    },
+
+    async openConversation(input) {
+      const client = requireSupabaseClient();
+      const currentUserId = await getCurrentSupabaseUserId();
+      if (!currentUserId) throw new Error("You must be signed in to start a chat.");
+      await ensureCurrentUserProfileRow(client);
+      const type = input.type ?? (input.target.kind === "merchant" ? "merchant" : "user");
+      const dedupeKey = buildConversationDedupeKey(currentUserId, input.target, type);
+
+      const existing = await client
+        .from("conversations")
+        .select("id,conversation_type,subject_merchant_account_id,created_by_user_id,updated_at")
+        .eq("dedupe_key", dedupeKey)
+        .maybeSingle();
+      if (existing.error) throw existing.error;
+
+      let conversationRow = existing.data as Row | null;
+      if (!conversationRow) {
+        const { data, error } = await client
+          .from("conversations")
+          .insert({
+            conversation_type: type,
+            dedupe_key: dedupeKey,
+            subject_merchant_account_id: input.target.merchantAccountId ?? null,
+            created_by_user_id: currentUserId,
+          })
+          .select("id,conversation_type,subject_merchant_account_id,created_by_user_id,updated_at")
+          .maybeSingle();
+        if (error || !data) throw error ?? new Error("Failed to create conversation.");
+        conversationRow = data as Row;
+
+        const conversationId = asString(conversationRow.id);
+        if (!conversationId) throw new Error("Conversation id missing after create.");
+        const participantRows = [
+          {
+            conversation_id: conversationId,
+            participant_kind: "user",
+            participant_user_id: currentUserId,
+            participant_merchant_account_id: null,
+          },
+          {
+            conversation_id: conversationId,
+            participant_kind: input.target.kind,
+            participant_user_id: input.target.kind === "user" ? input.target.userId : null,
+            participant_merchant_account_id:
+              input.target.kind === "merchant" ? input.target.merchantAccountId : null,
+          },
+        ];
+        const { error: participantError } = await client
+          .from("conversation_participants")
+          .insert(participantRows);
+        if (participantError) throw participantError;
+      }
+
+      const conversationId = asString(conversationRow.id);
+      if (!conversationId) throw new Error("Conversation id is unavailable.");
+      const participantRows = await listConversationParticipantRows(client, [conversationId]);
+      const conversations = await mapConversationRows(
+        client,
+        [conversationRow],
+        participantRows,
+        await listMessagesForConversations(client, [conversationId]),
+        currentUserId,
+      );
+      return conversations[0];
+    },
+
+    async listMessages(conversationId) {
+      const client = requireSupabaseClient();
+      const currentUserId = await getCurrentSupabaseUserId();
+      if (!currentUserId) throw new Error("You must be signed in to view messages.");
+      const participantRows = await listConversationParticipantRows(client, [conversationId]);
+      const participantsByKey = await hydrateChatParticipants(
+        client,
+        participantRows,
+        currentUserId,
+      );
+      const messageRows = await listMessagesForConversations(client, [conversationId]);
+      const messageIds = messageRows
+        .map((row) => asString(row.id))
+        .filter((messageId): messageId is string => Boolean(messageId));
+      const readAtByMessageId = await listReadReceiptsForMessages(
+        client,
+        conversationId,
+        messageIds,
+      );
+      return messageRows.map((row) => {
+        const messageId = asString(row.id);
+        return mapChatMessage(
+          {
+            ...row,
+            read_at: messageId ? readAtByMessageId.get(messageId) : undefined,
+          },
+          currentUserId,
+          participantsByKey,
+        );
+      });
+    },
+
+    async sendMessage(input) {
+      const client = requireSupabaseClient();
+      const currentUserId = await getCurrentSupabaseUserId();
+      if (!currentUserId) throw new Error("You must be signed in to send messages.");
+      const body = input.body.trim();
+      if (!body) throw new Error("Message cannot be empty.");
+
+      const now = new Date().toISOString();
+      const { data, error } = await client
+        .from("messages")
+        .insert({
+          conversation_id: input.conversationId,
+          sender_user_id: input.senderMerchantAccountId ? null : currentUserId,
+          sender_merchant_account_id: input.senderMerchantAccountId ?? null,
+          body,
+          client_nonce: input.clientNonce ?? `${currentUserId}-${Date.now()}`,
+          delivered_at: now,
+        })
+        .select(
+          "id,conversation_id,sender_user_id,sender_merchant_account_id,body,client_nonce,delivered_at,created_at",
+        )
+        .maybeSingle();
+      if (error || !data) throw error ?? new Error("Failed to send message.");
+
+      const { error: updateError } = await client
+        .from("conversations")
+        .update({ updated_at: now })
+        .eq("id", input.conversationId);
+      if (updateError) throw updateError;
+
+      const participantRows = await listConversationParticipantRows(client, [input.conversationId]);
+      const participantsByKey = await hydrateChatParticipants(
+        client,
+        participantRows,
+        currentUserId,
+      );
+      return mapChatMessage(data as Row, currentUserId, participantsByKey);
+    },
+
+    async markConversationRead(conversationId) {
+      const client = requireSupabaseClient();
+      const currentUserId = await getCurrentSupabaseUserId();
+      if (!currentUserId) return;
+      const now = new Date().toISOString();
+      const { error: participantError } = await client
+        .from("conversation_participants")
+        .update({ last_read_at: now })
+        .eq("conversation_id", conversationId)
+        .eq("participant_user_id", currentUserId);
+      if (participantError) throw participantError;
+
+      const { data, error } = await client
+        .from("messages")
+        .select("id,conversation_id,sender_user_id")
+        .eq("conversation_id", conversationId)
+        .is("deleted_at", null);
+      if (error) throw error;
+      const receiptRows = (Array.isArray(data) ? (data as Row[]) : [])
+        .filter((row) => asString(row.sender_user_id) !== currentUserId)
+        .map((row) => ({
+          message_id: asString(row.id),
+          conversation_id: conversationId,
+          reader_user_id: currentUserId,
+          read_at: now,
+        }))
+        .filter((row) => Boolean(row.message_id));
+      if (receiptRows.length === 0) return;
+      const messageIds = receiptRows
+        .map((row) => row.message_id)
+        .filter((messageId): messageId is string => Boolean(messageId));
+      const { data: existingReceipts, error: existingError } = await client
+        .from("read_receipts")
+        .select("message_id")
+        .eq("conversation_id", conversationId)
+        .eq("reader_user_id", currentUserId)
+        .in("message_id", messageIds);
+      if (existingError) throw existingError;
+
+      const existingMessageIds = new Set(
+        (Array.isArray(existingReceipts) ? (existingReceipts as Row[]) : [])
+          .map((row) => asString(row.message_id))
+          .filter((messageId): messageId is string => Boolean(messageId)),
+      );
+      const missingReceiptRows = receiptRows.filter(
+        (row) => row.message_id && !existingMessageIds.has(row.message_id),
+      );
+      if (missingReceiptRows.length === 0) return;
+
+      const { error: receiptError } = await client.from("read_receipts").insert(missingReceiptRows);
+      if (receiptError) throw receiptError;
+    },
+
+    subscribeToConversation(conversationId, handlers: ChatSubscriptionHandlers) {
+      const client = requireSupabaseClient();
+      let currentUserId: string | null = null;
+      void getCurrentSupabaseUserId().then((userId) => {
+        currentUserId = userId;
+      });
+      const channel = client
+        .channel(`conversation:${conversationId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "messages",
+            filter: `conversation_id=eq.${conversationId}`,
+          },
+          (payload) => {
+            const row = payload.new as Row;
+            if (asString(row.deleted_at)) return;
+            const userId = currentUserId ?? "";
+            handlers.onMessage?.(mapChatMessage(row, userId, new Map()));
+          },
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "read_receipts",
+            filter: `conversation_id=eq.${conversationId}`,
+          },
+          (payload) => {
+            const row = payload.new as Row;
+            const messageId = asString(row.message_id);
+            const readAt = asString(row.read_at);
+            if (messageId && readAt) handlers.onReadReceipt?.(messageId, readAt);
+          },
+        )
+        .subscribe((status, error) => {
+          if (error) handlers.onError?.(error);
+        });
+      return {
+        unsubscribe() {
+          void client.removeChannel(channel);
+        },
+      };
     },
   },
 
