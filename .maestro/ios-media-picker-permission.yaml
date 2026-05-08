@@ -1,0 +1,28 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: deny
+- assertVisible: "Developer Launcher"
+- tapOn:
+    id: "dev-section-toggle-session-presets"
+- tapOn:
+    id: "dev-button-auth-onboard"
+- tapOn:
+    id: "dev-button-launch-v2-composer"
+- assertVisible:
+    id: "post-composer-screen"
+- assertVisible: "New post"
+- assertVisible:
+    id: "post-composer-add-media"
+- tapOn:
+    id: "post-composer-add-media"
+- tapOn:
+    text: "Don’t Allow"
+    optional: true
+- tapOn:
+    text: "Don't Allow"
+    optional: true
+- assertVisible: "Permission Required"
+- tapOn: "OK"

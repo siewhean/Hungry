@@ -17,12 +17,16 @@ export function MediaManager() {
   const removeMedia = useComposerStore((state) => state.removeMedia);
   const setEditingMediaId = useComposerStore((state) => state.setEditingMediaId);
 
-  const [dialogConfig, setDialogConfig] = useState<{ visible: boolean; title: string; message: string } | null>(null);
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+  } | null>(null);
 
   const handlePickMedia = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
+
       if (status !== "granted") {
         setDialogConfig({
           visible: true,
@@ -60,11 +64,19 @@ export function MediaManager() {
   };
 
   return (
-    <View style={[styles.container, { paddingVertical: semanticSpacing.componentGap, gap: semanticSpacing.componentGap }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingVertical: semanticSpacing.componentGap, gap: semanticSpacing.componentGap },
+      ]}
+    >
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: semanticSpacing.screenEdge, gap: semanticSpacing.componentGap }}
+        contentContainerStyle={{
+          paddingHorizontal: semanticSpacing.screenEdge,
+          gap: semanticSpacing.componentGap,
+        }}
       >
         {media.map((item) => (
           <Pressable
@@ -79,27 +91,32 @@ export function MediaManager() {
               accessibilityLabel="Remove media"
               onPress={() => removeMedia(item.id)}
               style={styles.removeBtn}
-              icon={<Plus size={14} color={palette.text} style={{ transform: [{ rotate: "45deg" }] }} />}
+              icon={
+                <Plus size={14} color={palette.text} style={{ transform: [{ rotate: "45deg" }] }} />
+              }
             />
             <View style={[styles.mediaActions, { gap: semanticSpacing.textStack + 2 }]}>
-              <IconButton 
-                variant="surface" 
-                size={28} 
+              <IconButton
+                variant="surface"
+                size={28}
                 accessibilityLabel="Edit with AI"
-                icon={<Wand2 size={14} color={palette.orange} />} 
+                icon={<Wand2 size={14} color={palette.orange} />}
               />
-              <IconButton 
-                variant="surface" 
-                size={28} 
+              <IconButton
+                variant="surface"
+                size={28}
                 accessibilityLabel="Trim video"
-                icon={<Scissors size={14} color={palette.text} />} 
+                icon={<Scissors size={14} color={palette.text} />}
               />
             </View>
           </Pressable>
         ))}
 
         <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Add media from gallery"
           onPress={handlePickMedia}
+          testID="post-composer-add-media"
           style={[
             styles.addMediaBtn,
             {

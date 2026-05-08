@@ -100,7 +100,7 @@ export function PostComposerScreenV2({ navigation, route }: Props) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: palette.bg }]}>
+    <View testID="post-composer-screen" style={[styles.container, { backgroundColor: palette.bg }]}>
       {/* Header */}
       <View style={{ zIndex: 100 }}>
         <ComposerHeader onClose={returnToHomeFeed} />

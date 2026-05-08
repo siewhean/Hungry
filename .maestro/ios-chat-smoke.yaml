@@ -1,0 +1,26 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Developer Launcher"
+- tapOn:
+    id: "dev-section-toggle-session-presets"
+- tapOn:
+    id: "dev-button-auth-onboard"
+- tapOn:
+    id: "dev-button-home"
+- tapOn: "Open activity inbox"
+- tapOn:
+    id: "activity-tab-messages"
+- tapOn:
+    id: "activity-chat-row-1"
+- assertVisible:
+    id: "chat-detail-screen"
+- assertVisible: "Text messages only for now."
+- assertNotVisible: "Add media"
+- tapOn:
+    id: "chat-message-input"
+- inputText: "Native smoke chat message"
+- tapOn:
+    id: "chat-send-message"
+- assertVisible: "Native smoke chat message"

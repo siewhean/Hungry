@@ -127,6 +127,7 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
                 accessibilityRole="tab"
                 accessibilityState={{ selected: isActive }}
                 onPress={() => setActiveTab(tab)}
+                testID={`activity-tab-${tab}`}
                 style={[
                   styles.segment,
                   {
@@ -226,6 +227,7 @@ function MessagesTab({
                 key={chatId}
                 accessibilityRole="button"
                 accessibilityLabel={`Open chat with ${normalizedName}`}
+                testID={`activity-chat-row-${chatId}`}
                 onPress={() => {
                   if (!chatId || !normalizedName) {
                     return;

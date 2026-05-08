@@ -167,7 +167,11 @@ export function ChatDetailScreen({ navigation, route }: Props) {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
+    <SafeAreaView
+      testID="chat-detail-screen"
+      style={{ flex: 1, backgroundColor: palette.bg }}
+      edges={["top"]}
+    >
       <View style={[styles.header, { borderBottomColor: palette.border }]}>
         <Pressable
           accessibilityRole="button"
@@ -204,6 +208,7 @@ export function ChatDetailScreen({ navigation, route }: Props) {
         <View style={styles.chatContent}>
           <ScrollView
             keyboardShouldPersistTaps="handled"
+            testID="chat-message-list"
             contentContainerStyle={{
               padding: semanticSpacing.screenEdge,
               paddingBottom: 120,
@@ -237,6 +242,7 @@ export function ChatDetailScreen({ navigation, route }: Props) {
               <Animated.View
                 key={msg.id}
                 entering={FadeIn.delay(80)}
+                testID={msg.sentByCurrentUser ? "chat-message-sent" : "chat-message-received"}
                 style={[
                   styles.messageBubble,
                   {
@@ -272,13 +278,15 @@ export function ChatDetailScreen({ navigation, route }: Props) {
               { borderTopColor: palette.border, paddingBottom: insets.bottom },
             ]}
           >
-            <View style={styles.composerCopy}>
+            <View testID="chat-text-only-copy" style={styles.composerCopy}>
               <AppText variant="micro" tone="muted">
                 Text messages only for now.
               </AppText>
             </View>
             <View style={styles.textInputContainer}>
               <TextInput
+                accessibilityLabel="Message input"
+                testID="chat-message-input"
                 placeholder="Type a message..."
                 value={message}
                 onChangeText={setMessage}
@@ -292,6 +300,7 @@ export function ChatDetailScreen({ navigation, route }: Props) {
               accessibilityLabel="Send message"
               accessibilityState={{ disabled: !message.trim() || isSending }}
               onPress={sendMessage}
+              testID="chat-send-message"
               style={[
                 styles.sendBtn,
                 {

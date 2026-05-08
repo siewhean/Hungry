@@ -15,6 +15,12 @@ Use the smallest check that matches the change risk.
 
 | date | scope | command | result | notes |
 |---|---|---|---|---|
+| 2026-05-08 | app (INT-BATCH-07) | `/bin/zsh -lc 'node --check scripts/run-maestro-smoke.mjs'` | Pass | Native Maestro runner parses successfully |
+| 2026-05-08 | app (INT-BATCH-07) | `/bin/zsh -lc 'npm run smoke:native'` | Pass / skipped | Skip-safe run exits 0 and reports Maestro CLI is not installed or not on PATH; no live simulator/device smoke was executed |
+| 2026-05-08 | app (INT-BATCH-07) | `/bin/zsh -lc 'node --import tsx --test src/app/native-smoke-contracts.test.ts'` | Pass | 3/3 focused native smoke contracts pass for runner wiring, iOS chat text-only flow, and media-picker permission entry point |
+| 2026-05-08 | app (INT-BATCH-07) | `/bin/zsh -lc 'npm run typecheck'` | Pass | Strict TypeScript gate passed |
+| 2026-05-08 | app (INT-BATCH-07) | `/bin/zsh -lc 'npm run lint'` | Pass | 0 errors, 284 warnings; warnings are existing project debt outside this batch |
+| 2026-05-08 | app (INT-BATCH-07) | `/bin/zsh -lc 'npm test -- --watch=false'` | Pass | 199 tests total: 197 pass, 2 skipped |
 | 2026-05-08 | app (INT-BATCH-06) | `/bin/zsh -lc 'node --check scripts/supabase-chat-smoke.mjs'` | Pass | Supabase chat smoke script parses successfully after explicit realtime auth-token wiring |
 | 2026-05-08 | app (INT-BATCH-06) | `/bin/zsh -lc 'npm run smoke:supabase-chat'` | Pass / skipped | Skip-safe local run exits 0 and reports missing `HUNGRY_SUPABASE_SMOKE_URL`, `HUNGRY_SUPABASE_SMOKE_SERVICE_ROLE_KEY`, `HUNGRY_SUPABASE_SMOKE_ANON_KEY`, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`; no live Supabase credentials were present |
 | 2026-05-08 | app (INT-BATCH-06) | `/bin/zsh -lc 'node --import tsx --test src/lib/services/supabase/chat-service-contract.test.ts'` | Pass | 4/4 focused chat contracts pass, including the new smoke-script guard |
