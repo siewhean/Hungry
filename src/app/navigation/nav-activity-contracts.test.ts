@@ -69,7 +69,7 @@ test("home bell opens a combined activity inbox with messages and updates", () =
   assert.match(activity, /stylesInline\.kindBadge/);
   assert.match(activity, /type ActivityTab = "messages" \| "updates"/);
   assert.match(activity, /const TABS: ActivityTab\[\] = \["messages", "updates"\]/);
-  assert.match(activity, /getHungryService\(\)[\s\S]*\.chat\.listConversations\(\)/);
+  assert.match(activity, /getHungryService\(\)[\s\S]*\.chat[\s\S]*\.listConversations\(\)/);
   assert.match(activity, /type \{ ChatConversation \}/);
   assert.match(activity, /conversation\.unreadCount/);
   assert.match(activity, /void getHungryService\(\)\.chat\.markConversationRead\(chatId\)/);

@@ -2,8 +2,15 @@ import { expect, type Page, type TestInfo } from "@playwright/test";
 
 const CAPTION_PLACEHOLDER = "Write your masterpiece... Use @ to tag or # for topics.";
 
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function toDevTestId(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function devButtonTestId(label: string) {
+  return `dev-button-${toDevTestId(label)}`;
 }
 
 async function clearBrowserStorage(page: Page) {
@@ -46,21 +53,27 @@ export async function gotoLauncher(page: Page) {
 }
 
 export async function clickDevButton(page: Page, label: string, section?: string) {
-  const button = page.getByRole("button", { name: new RegExp(`^${escapeRegExp(label)}$`) }).first();
-  if (section && (!(await button.count()) || !(await button.isVisible().catch(() => false)))) {
-    const sectionToggle = page
-      .getByRole("button", { name: new RegExp(`^${escapeRegExp(section)}$`) })
-      .first();
-    if (await sectionToggle.count()) {
+  if (section) {
+    const sectionId = toDevTestId(section);
+    const sectionToggle = page.getByTestId(`dev-section-toggle-${sectionId}`);
+    const sectionBody = page.getByTestId(`dev-section-body-${sectionId}`);
+
+    if (!(await sectionBody.isVisible().catch(() => false))) {
       await sectionToggle.scrollIntoViewIfNeeded();
       await sectionToggle.click();
-    } else {
-      const sectionText = page.getByText(section, { exact: true }).first();
-      await sectionText.scrollIntoViewIfNeeded();
-      await sectionText.click({ force: true });
+      await expect(sectionBody).toBeVisible();
     }
+
+    const scopedButton = sectionBody.getByTestId(devButtonTestId(label)).first();
+    await expect(scopedButton).toBeVisible();
+    await scopedButton.scrollIntoViewIfNeeded();
+    await scopedButton.click();
+    return;
   }
+
+  const button = page.getByTestId(devButtonTestId(label)).first();
   await expect(button).toBeVisible();
+  await button.scrollIntoViewIfNeeded();
   await button.click();
 }
 

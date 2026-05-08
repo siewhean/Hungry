@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { ChevronLeft, Heart, MessageCircleMore } from "lucide-react-native";
@@ -64,28 +65,33 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
     [spacing, semanticSpacing, radii],
   );
 
-  useEffect(() => {
-    let isActive = true;
+  const loadConversations = useCallback(async () => {
     setIsMessagesLoading(true);
     setMessagesError(null);
-    getHungryService()
+    return getHungryService()
       .chat.listConversations()
       .then((loadedConversations) => {
-        if (!isActive) return;
         setConversations(loadedConversations);
       })
       .catch((error: unknown) => {
-        if (!isActive) return;
         setMessagesError(error instanceof Error ? error.message : "Messages could not be loaded.");
         setConversations([]);
       })
       .finally(() => {
-        if (isActive) setIsMessagesLoading(false);
+        setIsMessagesLoading(false);
       });
-    return () => {
-      isActive = false;
-    };
   }, []);
+
+  useEffect(() => {
+    void loadConversations();
+  }, [loadConversations]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadConversations();
+      return undefined;
+    }, [loadConversations]),
+  );
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top"]}>

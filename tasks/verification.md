@@ -15,6 +15,10 @@ Use the smallest check that matches the change risk.
 
 | date | scope | command | result | notes |
 |---|---|---|---|---|
+| 2026-05-08 | app (INT-BATCH-05) | `npm run typecheck` | Pass | Initial run hit a transient Node `uv_cwd` `EINTR`; immediate rerun passed with no TypeScript errors |
+| 2026-05-08 | app (INT-BATCH-05) | `npm run lint` | Pass | 0 errors, 284 warnings; no new lint errors introduced by launcher/chat smoke changes |
+| 2026-05-08 | app (INT-BATCH-05) | `npm test -- --watch=false` | Pass | 195 tests total: 193 pass, 2 skipped; updated stale activity contract regex to allow the existing multiline `.chat` -> `.listConversations()` chain |
+| 2026-05-08 | app (INT-BATCH-05) | `E2E_PORT=8129 npx playwright test tests/e2e/chat.spec.ts --project=chromium` | Pass | Focused chat smoke opens Activity Inbox from Home, switches to Messages, opens seeded Ahmad conversation, sends a message through the service layer, and verifies the inbox preview refreshes on return |
 | 2026-04-23 | app | `npm run typecheck` | Pass | Recorded in `tasks/todo.md` Sprint 11 gate |
 | 2026-04-23 | app | `npm run test -- --runInBand` | Pass | Current suite green after follow-up fixes |
 | 2026-04-23 | app | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor` | Pass | Requires writable npm cache path |
