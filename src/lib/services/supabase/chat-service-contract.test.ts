@@ -56,3 +56,32 @@ test("Mock service keeps chat in the service layer, not UI-only state", () => {
   assert.match(mockService, /sendMessage\(input\)/);
   assert.match(mockService, /subscribeToConversation\(conversationId, handlers/);
 });
+
+test("Supabase chat smoke script is explicit, cleanup-safe, and service-role gated", () => {
+  const script = read("scripts/supabase-chat-smoke.mjs");
+  const packageJson = read("package.json");
+
+  assert.match(packageJson, /"smoke:supabase-chat": "node scripts\/supabase-chat-smoke\.mjs"/);
+  assert.match(script, /HUNGRY_SUPABASE_SMOKE_URL/);
+  assert.match(script, /HUNGRY_SUPABASE_SMOKE_ANON_KEY/);
+  assert.match(script, /HUNGRY_SUPABASE_SMOKE_SERVICE_ROLE_KEY/);
+  assert.match(script, /HUNGRY_SUPABASE_SMOKE_PROJECT_REF/);
+  assert.match(script, /HUNGRY_ALLOW_SERVICE_ROLE_SMOKE/);
+  assert.match(script, /assertSmokeTargetIsAllowed/);
+  assert.match(script, /hostname\.split\("\."\)\[0\]/);
+  assert.match(script, /auth\.admin\.createUser/);
+  assert.match(script, /auth\.admin\.deleteUser/);
+  assert.match(script, /cleanup failed/);
+  assert.match(script, /users\.push\(userA\)/);
+  assert.match(script, /\.from\("conversations"\)/);
+  assert.match(script, /\.from\("conversation_participants"\)/);
+  assert.match(script, /\.from\("messages"\)/);
+  assert.match(script, /\.from\("read_receipts"\)/);
+  assert.match(script, /clientC[\s\S]*user C could read a conversation/);
+  assert.match(script, /user C non-participant message insert/);
+  assert.match(script, /user C non-participant read receipt insert/);
+  assert.match(script, /removeChannel/);
+  assert.doesNotMatch(script, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.doesNotMatch(script, /EXPO_PUBLIC_SUPABASE_URL/);
+  assert.doesNotMatch(script, /EXPO_PUBLIC_SUPABASE_ANON_KEY/);
+});

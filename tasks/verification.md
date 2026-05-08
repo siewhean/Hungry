@@ -15,6 +15,12 @@ Use the smallest check that matches the change risk.
 
 | date | scope | command | result | notes |
 |---|---|---|---|---|
+| 2026-05-08 | app (INT-BATCH-06) | `/bin/zsh -lc 'node --check scripts/supabase-chat-smoke.mjs'` | Pass | Supabase chat smoke script parses successfully after explicit realtime auth-token wiring |
+| 2026-05-08 | app (INT-BATCH-06) | `/bin/zsh -lc 'npm run smoke:supabase-chat'` | Pass / skipped | Skip-safe local run exits 0 and reports missing `HUNGRY_SUPABASE_SMOKE_URL`, `HUNGRY_SUPABASE_SMOKE_SERVICE_ROLE_KEY`, `HUNGRY_SUPABASE_SMOKE_ANON_KEY`, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`; no live Supabase credentials were present |
+| 2026-05-08 | app (INT-BATCH-06) | `/bin/zsh -lc 'node --import tsx --test src/lib/services/supabase/chat-service-contract.test.ts'` | Pass | 4/4 focused chat contracts pass, including the new smoke-script guard |
+| 2026-05-08 | app (INT-BATCH-06) | `/bin/zsh -lc 'npm run typecheck'` | Pass | Strict TypeScript gate passed |
+| 2026-05-08 | app (INT-BATCH-06) | `/bin/zsh -lc 'npm run lint'` | Pass | 0 errors, 284 warnings; warnings are existing project debt outside this batch |
+| 2026-05-08 | app (INT-BATCH-06) | `/bin/zsh -lc 'npm test -- --watch=false'` | Pass | 196 tests total: 194 pass, 2 skipped |
 | 2026-05-08 | app (INT-BATCH-05) | `npm run typecheck` | Pass | Initial run hit a transient Node `uv_cwd` `EINTR`; immediate rerun passed with no TypeScript errors |
 | 2026-05-08 | app (INT-BATCH-05) | `npm run lint` | Pass | 0 errors, 284 warnings; no new lint errors introduced by launcher/chat smoke changes |
 | 2026-05-08 | app (INT-BATCH-05) | `npm test -- --watch=false` | Pass | 195 tests total: 193 pass, 2 skipped; updated stale activity contract regex to allow the existing multiline `.chat` -> `.listConversations()` chain |
