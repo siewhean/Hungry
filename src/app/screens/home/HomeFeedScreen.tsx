@@ -612,6 +612,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           icon={<Bell color={palette.text} size={22} />}
           onPress={() => navigation.navigate("ActivityInbox", { initialTab: "updates" })}
           size={headerActionSize}
+          testID="home-activity-inbox-button"
           variant="ghost"
         />
         {activityUnreadCount > 0 ? (

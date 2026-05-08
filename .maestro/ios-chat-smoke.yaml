@@ -2,14 +2,34 @@ appId: ${APP_ID}
 ---
 - launchApp:
     clearState: true
-- assertVisible: "Developer Launcher"
 - tapOn:
-    id: "dev-section-toggle-session-presets"
+    text: "Hungry, http://.*:8081"
+    optional: true
 - tapOn:
-    id: "dev-button-auth-onboard"
+    text: "Continue"
+    optional: true
 - tapOn:
-    id: "dev-button-home"
-- tapOn: "Open activity inbox"
+    text: "Close"
+    optional: true
+- extendedWaitUntil:
+    visible: "Developer Launcher"
+    timeout: 60000
+- tapOn: "Open normal app flow"
+- tapOn:
+    text: "Close"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "home-activity-inbox-button"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    id: "home-activity-inbox-button"
+- extendedWaitUntil:
+    visible:
+      id: "activity-tab-messages"
+    timeout: 30000
 - tapOn:
     id: "activity-tab-messages"
 - tapOn:

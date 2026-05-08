@@ -35,12 +35,20 @@ test("native chat smoke is text-only and uses stable selectors", () => {
   const flow = read(".maestro/ios-chat-smoke.yaml");
   const chat = read("src/app/screens/home/ChatDetailScreen.tsx");
   const activity = read("src/app/screens/home/ActivityInboxScreen.tsx");
+  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   const activityContracts = read("src/app/navigation/nav-activity-contracts.test.ts");
 
   assert.match(flow, /appId: \$\{APP_ID\}/);
-  assert.match(flow, /dev-button-auth-onboard/);
-  assert.match(flow, /dev-button-home/);
-  assert.match(flow, /Open activity inbox/);
+  assert.match(flow, /text: "Hungry, http:\/\/\.\*:8081"/);
+  assert.match(flow, /text: "Continue"/);
+  assert.match(flow, /text: "Close"/);
+  assert.match(flow, /extendedWaitUntil:\n\s+visible: "Developer Launcher"\n\s+timeout: 60000/);
+  assert.match(flow, /Open normal app flow/);
+  assert.match(flow, /home-activity-inbox-button/);
+  assert.match(flow, /extendedWaitUntil:\n\s+visible:\n\s+id: "home-activity-inbox-button"\n\s+timeout: 30000/);
+  assert.match(flow, /waitForAnimationToEnd:\n\s+timeout: 5000/);
+  assert.match(flow, /extendedWaitUntil:\n\s+visible:\n\s+id: "activity-tab-messages"\n\s+timeout: 30000/);
+  assert.match(home, /testID="home-activity-inbox-button"/);
   assert.match(flow, /activity-tab-messages/);
   assert.match(flow, /activity-chat-row-1/);
   assert.match(flow, /chat-detail-screen/);
@@ -71,7 +79,10 @@ test("native media picker smoke reaches the post composer gallery entry point", 
 
   assert.match(flow, /appId: \$\{APP_ID\}/);
   assert.match(flow, /permissions:\n\s+all: deny/);
-  assert.match(flow, /dev-button-auth-onboard/);
+  assert.match(flow, /text: "Hungry, http:\/\/\.\*:8081"/);
+  assert.match(flow, /text: "Continue"/);
+  assert.match(flow, /text: "Close"/);
+  assert.match(flow, /extendedWaitUntil:\n\s+visible: "Developer Launcher"\n\s+timeout: 60000/);
   assert.match(flow, /dev-button-launch-v2-composer/);
   assert.match(flow, /post-composer-screen/);
   assert.match(flow, /post-composer-add-media/);

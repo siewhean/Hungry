@@ -4,11 +4,18 @@ appId: ${APP_ID}
     clearState: true
     permissions:
       all: deny
-- assertVisible: "Developer Launcher"
 - tapOn:
-    id: "dev-section-toggle-session-presets"
+    text: "Hungry, http://.*:8081"
+    optional: true
 - tapOn:
-    id: "dev-button-auth-onboard"
+    text: "Continue"
+    optional: true
+- tapOn:
+    text: "Close"
+    optional: true
+- extendedWaitUntil:
+    visible: "Developer Launcher"
+    timeout: 60000
 - tapOn:
     id: "dev-button-launch-v2-composer"
 - assertVisible:

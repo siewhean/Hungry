@@ -15,6 +15,13 @@ Use the smallest check that matches the change risk.
 
 | date | scope | command | result | notes |
 |---|---|---|---|---|
+| 2026-05-08 | app (INT-BATCH-08) | `/bin/zsh -lc 'node --import tsx --test src/app/native-smoke-contracts.test.ts'` | Pass | 3/3 focused native smoke contracts pass after adding Expo development-build server picker handling, development-menu dismissal, Home activity-inbox test ID, and Activity transition waits |
+| 2026-05-08 | app (INT-BATCH-08) | `/bin/zsh -lc 'node --check scripts/run-maestro-smoke.mjs'` | Pass | Native smoke runner parses successfully |
+| 2026-05-08 | app (INT-BATCH-08) | `git diff --check -- .maestro/ios-chat-smoke.yaml .maestro/ios-media-picker-permission.yaml src/app/native-smoke-contracts.test.ts src/app/screens/home/HomeFeedScreen.tsx` | Pass | Touched native-smoke files have no whitespace errors |
+| 2026-05-08 | app (INT-BATCH-08) | `/bin/zsh -lc 'npm run smoke:native:ios'` | Pass / skipped | Skip-safe run exits 0 and reports Maestro CLI is not installed or not on PATH; live rerun is blocked until Maestro/JDK are installed or the temporary CLI/JDK cache is restored |
+| 2026-05-08 | app (INT-BATCH-08) | `/bin/zsh -lc 'npm run typecheck'` | Pass | Strict TypeScript gate passed |
+| 2026-05-08 | app (INT-BATCH-08) | `/bin/zsh -lc 'npm run lint'` | Pass | 0 errors, 283 warnings; warnings are existing project debt outside this batch |
+| 2026-05-08 | app (INT-BATCH-08) | `/bin/zsh -lc 'npm test -- --watch=false'` | Pass | 199 tests total: 197 pass, 2 skipped |
 | 2026-05-08 | app (INT-BATCH-07) | `/bin/zsh -lc 'node --check scripts/run-maestro-smoke.mjs'` | Pass | Native Maestro runner parses successfully |
 | 2026-05-08 | app (INT-BATCH-07) | `/bin/zsh -lc 'npm run smoke:native'` | Pass / skipped | Skip-safe run exits 0 and reports Maestro CLI is not installed or not on PATH; no live simulator/device smoke was executed |
 | 2026-05-08 | app (INT-BATCH-07) | `/bin/zsh -lc 'node --import tsx --test src/app/native-smoke-contracts.test.ts'` | Pass | 3/3 focused native smoke contracts pass for runner wiring, iOS chat text-only flow, and media-picker permission entry point |
