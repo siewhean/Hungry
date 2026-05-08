@@ -10,12 +10,25 @@ function read(pathFromRepoRoot: string): string {
 test("native Maestro smoke scripts are skip-safe and target the Hungry app id", () => {
   const packageJson = read("package.json");
   const runner = read("scripts/run-maestro-smoke.mjs");
+  const preparedRunner = read("scripts/prepare-maestro-smoke.mjs");
 
   assert.match(packageJson, /"smoke:native": "node scripts\/run-maestro-smoke\.mjs ios"/);
   assert.match(packageJson, /"smoke:native:ios": "node scripts\/run-maestro-smoke\.mjs ios"/);
   assert.match(
     packageJson,
     /"smoke:native:ios:chat": "node scripts\/run-maestro-smoke\.mjs ios-chat"/,
+  );
+  assert.match(
+    packageJson,
+    /"smoke:native:ios:prepared": "node scripts\/prepare-maestro-smoke\.mjs ios"/,
+  );
+  assert.match(
+    packageJson,
+    /"smoke:native:ios:chat:prepared": "node scripts\/prepare-maestro-smoke\.mjs ios-chat"/,
+  );
+  assert.match(
+    packageJson,
+    /"smoke:native:ios:media:prepared": "node scripts\/prepare-maestro-smoke\.mjs ios-media"/,
   );
   assert.match(
     packageJson,
@@ -29,6 +42,15 @@ test("native Maestro smoke scripts are skip-safe and target the Hungry app id", 
   assert.match(runner, /APP_ID=\$\{appId\}/);
   assert.match(runner, /\.maestro\/ios-chat-smoke\.yaml/);
   assert.match(runner, /\.maestro\/ios-media-picker-permission\.yaml/);
+  assert.match(preparedRunner, /HUNGRY_NATIVE_SMOKE_CACHE_DIR/);
+  assert.match(preparedRunner, /\/private\/tmp\/hungry-native-smoke-tools/);
+  assert.match(preparedRunner, /hungry-native-smoke-tools/);
+  assert.match(preparedRunner, /\.download/);
+  assert.match(preparedRunner, /maestro\/releases\/latest\/download\/maestro\.zip/);
+  assert.match(preparedRunner, /api\.adoptium\.net\/v3\/binary\/latest\/17/);
+  assert.match(preparedRunner, /scripts\/run-maestro-smoke\.mjs/);
+  assert.match(preparedRunner, /--require-maestro/);
+  assert.match(preparedRunner, /MAESTRO_CLI_NO_ANALYTICS/);
 });
 
 test("native chat smoke is text-only and uses stable selectors", () => {
@@ -45,9 +67,15 @@ test("native chat smoke is text-only and uses stable selectors", () => {
   assert.match(flow, /extendedWaitUntil:\n\s+visible: "Developer Launcher"\n\s+timeout: 60000/);
   assert.match(flow, /Open normal app flow/);
   assert.match(flow, /home-activity-inbox-button/);
-  assert.match(flow, /extendedWaitUntil:\n\s+visible:\n\s+id: "home-activity-inbox-button"\n\s+timeout: 30000/);
+  assert.match(
+    flow,
+    /extendedWaitUntil:\n\s+visible:\n\s+id: "home-activity-inbox-button"\n\s+timeout: 30000/,
+  );
   assert.match(flow, /waitForAnimationToEnd:\n\s+timeout: 5000/);
-  assert.match(flow, /extendedWaitUntil:\n\s+visible:\n\s+id: "activity-tab-messages"\n\s+timeout: 30000/);
+  assert.match(
+    flow,
+    /extendedWaitUntil:\n\s+visible:\n\s+id: "activity-tab-messages"\n\s+timeout: 30000/,
+  );
   assert.match(home, /testID="home-activity-inbox-button"/);
   assert.match(flow, /activity-tab-messages/);
   assert.match(flow, /activity-chat-row-1/);

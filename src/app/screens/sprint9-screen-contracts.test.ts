@@ -13,8 +13,9 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   const source = read("src/app/screens/auth/LoginScreen.tsx");
 
   assert.match(source, /getHungryService\(\)\.auth\.signIn\(/);
-  assert.match(source, /getHungryService\(\)\.auth\.signInWithGoogle\(/);
-  assert.match(source, /getHungryService\(\)\.auth\.signInWithApple\(/);
+  assert.match(source, /const service = getHungryService\(\)/);
+  assert.match(source, /service\.auth\.signInWithGoogle\(/);
+  assert.match(source, /service\.auth\.signInWithApple\(/);
   assert.match(source, /<FeedErrorBoundary/);
 });
 
