@@ -14,7 +14,7 @@ import {
 } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Screen, Avatar, Button } from "@/components/ui";
+import { AppText, Screen, Avatar, Button, EmptyState } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
 import { getActiveOutlet, useMerchantStore } from "@/store/useMerchantStore";
@@ -82,9 +82,10 @@ export function MerchantProfileScreen() {
     return (
       <Screen title="Stall Profile" subtitle="Manage your stall information">
         <View style={{ paddingVertical: spacing[8], gap: spacing[4] }}>
-          <AppText tone="muted" style={{ textAlign: "center" }}>
-            No merchant outlet is linked to this account yet.
-          </AppText>
+          <EmptyState
+            title="No merchant outlet yet"
+            body="No merchant outlet is linked to this account yet."
+          />
           <Button
             label="Open verification"
             onPress={() => navigation.navigate("VerificationCentre" as any)}

@@ -165,6 +165,7 @@ function GlobalScrollBackButton() {
 
 export function RootNavigator({ theme }: { theme: Theme }) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const sessionExpired = useSessionStore((state) => state.sessionExpired);
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
@@ -221,6 +222,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     if (!navigationRef.isReady()) {
       return;
     }
+    if (!isAuthReady) {
+      return;
+    }
 
     const rootState = navigationRef.getRootState();
     const currentTopRoute = rootState.routes[rootState.index]?.name;
@@ -241,10 +245,13 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     if (currentTopRoute === "OnboardingStack" && hasCompletedOnboarding) {
       navigateHome();
     }
-  }, [hasCompletedOnboarding, isAuthenticated, navigateHome]);
+  }, [hasCompletedOnboarding, isAuthenticated, isAuthReady, navigateHome]);
 
   useEffect(() => {
     if (!navigationRef.isReady()) {
+      return;
+    }
+    if (!isAuthReady) {
       return;
     }
 
@@ -278,7 +285,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         routes: [{ name: "AuthStack", params: { screen: "Login" } }],
       });
     }
-  }, [isAuthenticated, setReturnRoute]);
+  }, [isAuthenticated, isAuthReady, setReturnRoute]);
 
   useEffect(() => {
     if (!navigationRef.isReady()) {

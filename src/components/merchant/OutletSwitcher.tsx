@@ -1,5 +1,5 @@
 import React, { useRef, useCallback } from "react";
-import { View, TouchableOpacity, StyleSheet, Pressable } from "react-native";
+import { View, TouchableOpacity, Pressable } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { ChevronDown, Store, CheckCircle2 } from "lucide-react-native";
 
@@ -26,7 +26,13 @@ export const OutletSwitcher: React.FC = () => {
         activeOpacity={0.7}
         onPress={handlePresentModalPress}
         style={[
-          styles.container,
+          {
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: spacing[3],
+            paddingVertical: spacing[2],
+            gap: spacing[2],
+          },
           {
             backgroundColor: palette.surface,
             borderRadius: radii.pill,
@@ -60,7 +66,11 @@ export const OutletSwitcher: React.FC = () => {
                     bottomSheetRef.current?.dismiss();
                   }}
                   style={({ pressed }) => [
-                    styles.outletRow,
+                    {
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    },
                     {
                       backgroundColor: isActive
                         ? palette.orangeLight
@@ -104,17 +114,3 @@ export const OutletSwitcher: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    gap: 6,
-  },
-  outletRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-});

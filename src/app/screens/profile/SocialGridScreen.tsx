@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import { FlashList } from "@shopify/flash-list";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
-import { AppText, Screen } from "@/components/ui";
+import { AppText, EmptyState, Screen } from "@/components/ui";
 import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import { useHungryTheme } from "@/theme";
 import { useStoryStore } from "@/store/useStoryStore";
@@ -138,9 +138,10 @@ export function SocialGridScreen() {
           <ActivityIndicator color={palette.orange} size="large" />
         </View>
       ) : items.length === 0 ? (
-        <View style={styles.center}>
-          <AppText tone="secondary">No {type} content found.</AppText>
-        </View>
+        <EmptyState
+          title={`No ${type} content found`}
+          body="Add content to see it appear in this grid."
+        />
       ) : (
         <FlashList
           data={items}

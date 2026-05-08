@@ -134,7 +134,7 @@ export function OCRDraftScreen() {
         )}
 
         {drafts.length === 0 && !isLoading ? (
-          <View style={styles.emptyContainer}>
+          <View style={[styles.emptyContainer, { padding: spacing[8], marginTop: spacing[8] }]}>
             <Check size={48} color={palette.success} />
             <AppText variant="bodyBold" style={{ marginTop: spacing[3] }}>
               All caught up!
@@ -153,6 +153,7 @@ export function OCRDraftScreen() {
                   backgroundColor: palette.surface,
                   borderColor: palette.border,
                   borderRadius: radii.lg,
+                  padding: spacing[4],
                 },
               ]}
             >
@@ -183,7 +184,7 @@ export function OCRDraftScreen() {
               </View>
 
               {draft.sourcePhotoUrl ? (
-                <Image source={{ uri: draft.sourcePhotoUrl }} style={styles.sourceImage} />
+                <Image source={{ uri: draft.sourcePhotoUrl }} style={[styles.sourceImage, { borderRadius: radii.md, marginBottom: spacing[3] }]} />
               ) : null}
 
               {draft.suggestedDescription && (
@@ -193,7 +194,7 @@ export function OCRDraftScreen() {
               )}
 
               {draft.suggestedTasteTags && draft.suggestedTasteTags.length > 0 && (
-                <View style={styles.tagRow}>
+                <View style={[styles.tagRow, { gap: spacing[2], marginBottom: spacing[3] }]}>
                   {draft.suggestedTasteTags.slice(0, 4).map((tag) => (
                     <Chip key={tag} label={tag} selected={false} />
                   ))}
@@ -201,7 +202,7 @@ export function OCRDraftScreen() {
               )}
 
               {draft.suggestedDietaryTags && draft.suggestedDietaryTags.length > 0 && (
-                <View style={styles.tagRow}>
+                <View style={[styles.tagRow, { gap: spacing[2], marginBottom: spacing[3] }]}>
                   {draft.suggestedDietaryTags.slice(0, 4).map((tag) => (
                     <Chip key={tag} label={tag.replace(/_/g, "-")} selected={false} />
                   ))}
@@ -243,25 +244,18 @@ export function OCRDraftScreen() {
 
 const styles = StyleSheet.create({
   draftCard: {
-    padding: 16,
     borderWidth: 1,
   },
   sourceImage: {
     width: "100%",
     height: 160,
-    borderRadius: 8,
-    marginBottom: 12,
   },
   tagRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 12,
   },
   emptyContainer: {
-    padding: 40,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 40,
   },
 });

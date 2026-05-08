@@ -36,6 +36,7 @@ import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
@@ -63,6 +64,9 @@ export function DiscoverHomeScreenV2() {
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
   const grantLocation = useLocationStore((state) => state.grantLocation);
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isMerchantMode = useMerchantStore((state) => state.account !== null);
+  const canAccessMap = isDeveloperMode || isMerchantMode;
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -194,7 +198,11 @@ export function DiscoverHomeScreenV2() {
     });
 
     if (chip.id === "near_me") {
-      navigation.navigate("DiscoverMap");
+      if (canAccessMap) {
+        navigation.navigate("DiscoverMap");
+      } else {
+        navigation.navigate("SearchResults", { browseMode: "stalls" });
+      }
       return;
     }
 
@@ -267,12 +275,14 @@ export function DiscoverHomeScreenV2() {
         subtitle={`${discoverLocationLabel} · ${discoverNearbyCount} stalls nearby`}
         horizontalPadding={semanticSpacing.screenEdge}
         right={
-          <IconButton
-            variant="surface"
-            accessibilityLabel="Open map"
-            onPress={() => navigation.navigate("DiscoverMap")}
-            icon={<Map color={palette.orange} size={20} />}
-          />
+          canAccessMap ? (
+            <IconButton
+              variant="surface"
+              accessibilityLabel="Open map"
+              onPress={() => navigation.navigate("DiscoverMap")}
+              icon={<Map color={palette.orange} size={20} />}
+            />
+          ) : undefined
         }
       />
 
@@ -553,11 +563,20 @@ export function DiscoverHomeScreenV2() {
             <AppText variant="h2" style={{ fontWeight: "800" }}>
               Stalls near you
             </AppText>
-            <Pressable onPress={() => navigation.navigate("DiscoverMap")}>
-              <AppText variant="bodySmallBold" tone="accent">
-                Map view
-              </AppText>
-            </Pressable>
+            {canAccessMap ? (
+              <Pressable onPress={() => navigation.navigate("DiscoverMap")}>
+                <AppText variant="bodySmallBold" tone="accent">
+                  Map view
+                </AppText>
+              </Pressable>
+            ) : null}
+            {isDeveloperMode ? null : (
+              <Pressable onPress={() => navigation.navigate("SearchResults", { browseMode: "stalls" })}>
+                <AppText variant="bodySmallBold" tone="accent">
+                  View all
+                </AppText>
+              </Pressable>
+            )}
           </View>
 
           <View style={{ paddingHorizontal: spacing[4] }}>

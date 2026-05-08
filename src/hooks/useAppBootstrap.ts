@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import { posthogSink } from "@/lib/analytics/posthogSink";
 import { getConfiguredDataSource, getSupabaseClient } from "@/lib/services/supabase/client";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -10,7 +11,9 @@ import { useUIStore } from "@/store/useUIStore";
 export function useAppBootstrap() {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const syncProfile = useProfileStore((state) => state.syncProfile);
+  const applyProfile = useProfileStore((state) => state.applyProfile);
   const applyAuthStateFromSession = useSessionStore((state) => state.applyAuthStateFromSession);
+  const markAuthReady = useSessionStore((state) => state.markAuthReady);
   const setOffline = useUIStore((state) => state.setOffline);
   const previousAuth = useRef<boolean | undefined>(undefined);
   const hasTrackedLaunch = useRef(false);
@@ -43,6 +46,7 @@ export function useAppBootstrap() {
 
   useEffect(() => {
     if (getConfiguredDataSource() !== "supabase") {
+      markAuthReady();
       return;
     }
 
@@ -56,13 +60,18 @@ export function useAppBootstrap() {
 
     void client.auth
       .getSession()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (!active) return;
         const user = data.session?.user;
         applyAuthStateFromSession({
           isAuthenticated: Boolean(user),
           userId: user?.id ?? null,
         });
+        if (user) {
+          const profile = await getHungryService().profile.getProfile();
+          if (!active) return;
+          applyProfile(profile);
+        }
       })
       .catch(() => {
         if (!active) return;
@@ -80,13 +89,20 @@ export function useAppBootstrap() {
         isAuthenticated: Boolean(user),
         userId: user?.id ?? null,
       });
+      if (!user) return;
+      void getHungryService()
+        .profile.getProfile()
+        .then((profile) => {
+          if (active) applyProfile(profile);
+        })
+        .catch(() => undefined);
     });
 
     return () => {
       active = false;
       subscription.subscription.unsubscribe();
     };
-  }, [applyAuthStateFromSession]);
+  }, [applyAuthStateFromSession, applyProfile, markAuthReady]);
 
   useEffect(() => {
     // Keep persisted profile customisations on cold start.

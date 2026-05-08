@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Image, View, TextInput, StyleSheet, Alert, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Plus, Search, MoreVertical, Camera } from "lucide-react-native";
+import { Plus, Search, MoreVertical, Camera, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { AppText, Button, IconButton, Chip, Screen } from "@/components/ui";
+import { AppText, Button, IconButton, EmptyState, Chip, Screen, Skeleton } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
@@ -41,16 +41,18 @@ export function MerchantMenuScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "available" | "sold_out">("all");
+  const [error, setError] = useState(false);
 
   const loadMenu = useCallback(async () => {
     if (!activeOutlet) return;
     setIsLoading(true);
+    setError(false);
     try {
       const data = await getHungryService().merchant.getMenu(activeOutlet.id);
       setMenu(data);
     } catch (e) {
       console.error(e);
-      Alert.alert("Error", "Failed to load menu.");
+      setError(true);
     } finally {
       setIsLoading(false);
     }
@@ -186,7 +188,14 @@ export function MerchantMenuScreen() {
           <View
             style={[
               styles.searchBar,
-              { backgroundColor: palette.surface, borderColor: palette.border },
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                paddingHorizontal: spacing[3],
+                paddingVertical: spacing[2],
+                borderRadius: radii.md,
+                gap: spacing[2],
+              },
             ]}
           >
             <Search size={20} color={palette.textMuted} />
@@ -215,13 +224,26 @@ export function MerchantMenuScreen() {
         </View>
 
         <View style={{ gap: spacing[3] }}>
-          {filteredMenu.length === 0 && !isLoading ? (
-            <View style={styles.emptyContainer}>
-              <AppText variant="bodyBold">No dishes found</AppText>
-              <AppText variant="body" tone="muted" style={{ textAlign: "center", marginTop: 8 }}>
-                Try adding a new dish or importing from a photo using OCR Drafts.
-              </AppText>
+          {isLoading && filteredMenu.length === 0 ? (
+            <View style={{ gap: spacing[3] }}>
+              <Skeleton height={110} borderRadius={radii.lg} />
+              <Skeleton height={110} borderRadius={radii.lg} />
+              <Skeleton height={110} borderRadius={radii.lg} />
             </View>
+          ) : error ? (
+            <EmptyState
+              title="Failed to load menu"
+              body="There was a problem loading your dishes."
+              icon={<X size={48} color={palette.error} />}
+              ctaLabel="Retry"
+              onPress={loadMenu}
+            />
+          ) : filteredMenu.length === 0 && !isLoading ? (
+            <EmptyState
+              title="No dishes found"
+              body="Try adding a new dish or importing from a photo using OCR Drafts."
+              icon={<Search size={36} color={palette.textMuted} />}
+            />
           ) : (
             filteredMenu.map((dish) => {
               const isSoldOut = hasAvailabilityFlag(dish.availabilityFlags, "sold_out");
@@ -237,16 +259,21 @@ export function MerchantMenuScreen() {
                       backgroundColor: palette.surface,
                       borderColor: palette.border,
                       borderRadius: radii.lg,
+                      padding: spacing[4],
+                      gap: spacing[3],
                     },
                   ]}
                 >
                   {imageUrl ? (
-                    <Image source={{ uri: imageUrl }} style={styles.dishImage} />
+                    <Image
+                      source={{ uri: imageUrl }}
+                      style={[styles.dishImage, { borderRadius: radii.md }]}
+                    />
                   ) : (
                     <View
                       style={[
                         styles.dishImagePlaceholder,
-                        { backgroundColor: palette.surfaceRaised },
+                        { backgroundColor: palette.surfaceRaised, borderRadius: radii.md },
                       ]}
                     >
                       <Camera size={22} color={palette.textMuted} />
@@ -265,7 +292,7 @@ export function MerchantMenuScreen() {
                         {dish.name}
                       </AppText>
                       {isSoldOut && (
-                        <View style={{ backgroundColor: palette.errorSoft, borderRadius: 16 }}>
+                        <View style={{ backgroundColor: palette.errorSoft, borderRadius: radii.pill }}>
                           <Chip label="Sold Out" selected={false} />
                         </View>
                       )}
@@ -274,7 +301,7 @@ export function MerchantMenuScreen() {
                       {dish.priceRange} • {dish.tasteTags.slice(0, 3).join(", ")}
                     </AppText>
                     {dish.dietaryFlags.length > 0 && (
-                      <View style={styles.flagRow}>
+                      <View style={[styles.flagRow, { gap: spacing[2], marginTop: spacing[2] }]}>
                         {dish.dietaryFlags.slice(0, 3).map((flag) => (
                           <Chip key={flag} label={formatDietaryFlag(flag)} selected={false} />
                         ))}
@@ -299,6 +326,7 @@ export function MerchantMenuScreen() {
           {
             backgroundColor: palette.surface,
             borderTopColor: palette.border,
+            padding: spacing[4],
             paddingBottom: Math.max(insets.bottom, spacing[4]),
             marginTop: spacing[8],
           },
@@ -316,20 +344,10 @@ export function MerchantMenuScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingBottom: 16,
-  },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
     borderWidth: 1,
-    gap: 8,
   },
   searchInput: {
     flex: 1,
@@ -338,39 +356,27 @@ const styles = StyleSheet.create({
   dishCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
     borderWidth: 1,
-    gap: 12,
   },
   dishImage: {
     width: 64,
     height: 64,
-    borderRadius: 8,
   },
   dishImagePlaceholder: {
     width: 64,
     height: 64,
-    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
   flagRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 6,
-    marginTop: 8,
-  },
-  emptyContainer: {
-    padding: 40,
-    alignItems: "center",
-    justifyContent: "center",
   },
   footer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
     borderTopWidth: 1,
   },
 });

@@ -108,6 +108,7 @@ export function AIAssistantScreen() {
                 backgroundColor: palette.orangeLight,
                 borderColor: palette.orange,
                 borderRadius: radii.lg,
+                padding: spacing[5] || 20,
               },
             ]}
           >
@@ -144,7 +145,7 @@ export function AIAssistantScreen() {
           </AppText>
 
           {insights.length === 0 && !isLoading ? (
-            <View style={styles.emptyContainer}>
+            <View style={[styles.emptyContainer, { borderColor: palette.border, borderRadius: radii.xl, padding: spacing[8] }]}>
               <CheckCircle2 size={48} color={palette.success} />
               <AppText variant="bodyBold" style={{ marginTop: spacing[3] }}>
                 You&apos;re all set!
@@ -168,6 +169,7 @@ export function AIAssistantScreen() {
                       backgroundColor: palette.surface,
                       borderColor: palette.border,
                       borderRadius: radii.lg,
+                      padding: spacing[4],
                     },
                   ]}
                 >
@@ -222,7 +224,7 @@ export function AIAssistantScreen() {
                       onPress={() => handleInsightAction(insight.actionTarget)}
                       style={[
                         styles.actionButton,
-                        { borderColor: palette.border, marginLeft: 48, borderRadius: radii.pill },
+                        { borderColor: palette.border, marginLeft: 48, borderRadius: radii.pill, paddingVertical: spacing[2], paddingHorizontal: spacing[3] },
                       ]}
                     >
                       <AppText variant="bodySmallBold">{insight.actionLabel}</AppText>
@@ -250,30 +252,23 @@ export function AIAssistantScreen() {
 
 const styles = StyleSheet.create({
   summaryCard: {
-    padding: 20,
     borderWidth: 1,
   },
   insightCard: {
-    padding: 16,
     borderWidth: 1,
   },
   actionButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
     borderWidth: 1,
     alignSelf: "flex-start",
     gap: 4,
   },
   emptyContainer: {
-    padding: 40,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    borderRadius: 16,
     borderStyle: "dashed",
   },
 });

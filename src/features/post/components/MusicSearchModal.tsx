@@ -4,7 +4,7 @@ import { Music, Search, X, Check, Play, Pause } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { BottomSheetModal, BottomSheetFlatList } from "@gorhom/bottom-sheet";
 
-import { AppText, Input, IconButton, BottomSheet } from "@/components/ui";
+import { AppText, EmptyState, Input, IconButton, BottomSheet } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
 
@@ -223,12 +223,13 @@ export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
             styles.listContent,
             { paddingBottom: spacing[12], paddingVertical: spacing[2] },
           ]}
-          style={{ flex: 1, paddingHorizontal: semanticSpacing.screenEdge }}
+        style={{ flex: 1, paddingHorizontal: semanticSpacing.screenEdge }}
           ListEmptyComponent={
-            <View style={[styles.emptyState, { marginTop: spacing[12] + spacing[3] }]}>
-              <Music size={48} color={palette.textMuted} style={{ marginBottom: spacing[4] }} />
-              <AppText tone="secondary">No tracks found matching {`"${searchQuery}"`}</AppText>
-            </View>
+            <EmptyState
+              title="No tracks found"
+              body={`No tracks matching "${searchQuery}" were found.`}
+              icon={<Music size={38} color={palette.textMuted} />}
+            />
           }
         />
       </View>

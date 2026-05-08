@@ -10,6 +10,7 @@ import { validateEmail, validatePassword, validateRequired } from "@/features/au
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -22,6 +23,7 @@ type FormValues = { displayName: string; email: string; password: string };
 export function SignUpScreen({ navigation }: Props) {
   const { palette, spacing } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
+  const applyProfile = useProfileStore((state) => state.applyProfile);
   const showToast = useUIStore((state) => state.showToast);
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const {
@@ -47,6 +49,7 @@ export function SignUpScreen({ navigation }: Props) {
           navigation.navigate("EmailVerification", { email: values.email });
           return;
         }
+        applyProfile(session.profile);
         // When project auth is auto-confirm, Supabase returns an active session immediately.
         completeAuth({
           authProvider: "email",
@@ -88,11 +91,14 @@ export function SignUpScreen({ navigation }: Props) {
   const handleProviderContinue = async (provider: "google" | "apple") => {
     try {
       if (getConfiguredDataSource() === "supabase") {
+        const service = getHungryService();
+        let session;
         if (provider === "google") {
-          await getHungryService().auth.signInWithGoogle();
+          session = await service.auth.signInWithGoogle();
         } else {
-          await getHungryService().auth.signInWithApple();
+          session = await service.auth.signInWithApple();
         }
+        applyProfile(session.profile);
       }
       showToast({
         message: `Continue with ${provider === "google" ? "Google" : "Apple"} successful. Continue onboarding.`,

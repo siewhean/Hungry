@@ -9,12 +9,12 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { Search as SearchIcon, X, Star } from "lucide-react-native";
+import { Search as SearchIcon, X, Star, ChefHat } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Chip, Screen } from "@/components/ui";
+import { AppText, Chip, EmptyState, Screen } from "@/components/ui";
 import { getDiscoverStallCollections, useSearchData } from "@/features/search/search";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
@@ -335,20 +335,11 @@ export function DishSearchScreenV2() {
           {/* Results List */}
           <View style={{ paddingHorizontal: spacing[4] }}>
             {collections.length === 0 ? (
-              <View
-                style={{
-                  alignItems: "center",
-                  paddingHorizontal: spacing[4],
-                  paddingVertical: spacing[8],
-                }}
-              >
-                <AppText variant="h3" style={{ textAlign: "center" }}>
-                  No matches found
-                </AppText>
-                <AppText tone="muted" style={{ marginTop: spacing[1], textAlign: "center" }}>
-                  Try another search tab or taste filter.
-                </AppText>
-              </View>
+              <EmptyState
+                icon={<ChefHat size={34} color={palette.orange} style={{ opacity: 0.9 }} />}
+                title="No food available right now"
+                body="There are no dishes in the database at the moment. Try again later or adjust your search."
+              />
             ) : null}
             {collections.map((item) => {
               const dish = item.topDishes[0];

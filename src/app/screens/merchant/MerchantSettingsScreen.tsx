@@ -207,7 +207,7 @@ export function MerchantSettingsScreen() {
               key={member.id}
               style={[
                 styles.teamMemberRow,
-                { borderBottomColor: palette.border },
+                { borderBottomColor: palette.border, padding: spacing[4] },
                 index === teamMembers.length - 1 && { borderBottomWidth: 0 },
               ]}
             >
@@ -256,7 +256,7 @@ export function MerchantSettingsScreen() {
             </AppText>
           </View>
 
-          <View style={[styles.settingRow, { borderBottomColor: palette.border }]}>
+          <View style={[styles.settingRow, { borderBottomColor: palette.border, padding: spacing[4] }]}>
             <View style={{ flex: 1, paddingRight: spacing[3] }}>
               <AppText variant="bodyBold">New Reviews</AppText>
               <AppText variant="bodySmall" tone="muted">
@@ -270,7 +270,7 @@ export function MerchantSettingsScreen() {
             />
           </View>
 
-          <View style={[styles.settingRow, { borderBottomColor: palette.border }]}>
+          <View style={[styles.settingRow, { borderBottomColor: palette.border, padding: spacing[4] }]}>
             <View style={{ flex: 1, paddingRight: spacing[3] }}>
               <AppText variant="bodyBold">Low Rating Alerts</AppText>
               <AppText variant="bodySmall" tone="muted">
@@ -284,7 +284,7 @@ export function MerchantSettingsScreen() {
             />
           </View>
 
-          <View style={[styles.settingRow, { borderBottomColor: palette.border }]}>
+          <View style={[styles.settingRow, { borderBottomColor: palette.border, padding: spacing[4] }]}>
             <View style={{ flex: 1, paddingRight: spacing[3] }}>
               <AppText variant="bodyBold">Weekly Digest</AppText>
               <AppText variant="bodySmall" tone="muted">
@@ -298,7 +298,7 @@ export function MerchantSettingsScreen() {
             />
           </View>
 
-          <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
+          <View style={[styles.settingRow, { borderBottomWidth: 0, padding: spacing[4] }]}>
             <View style={{ flex: 1, paddingRight: spacing[3] }}>
               <AppText variant="bodyBold">AI Insights</AppText>
               <AppText variant="bodySmall" tone="muted">
@@ -325,7 +325,7 @@ export function MerchantSettingsScreen() {
           ]}
         >
           <Pressable
-            style={[styles.linkRow, { borderBottomColor: palette.border }]}
+            style={[styles.linkRow, { borderBottomColor: palette.border, padding: spacing[4] }]}
             onPress={() => navigation.navigate("VerificationCentre" as never)}
           >
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
@@ -341,7 +341,7 @@ export function MerchantSettingsScreen() {
           </Pressable>
 
           <Pressable
-            style={styles.linkRow}
+            style={[styles.linkRow, { padding: spacing[4] }]}
             accessibilityRole="button"
             accessibilityLabel="Open merchant help and support"
             onPress={() => void openTrustedExternalUrl("https://hungry.sg/help")}
@@ -372,8 +372,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 8,
-    paddingBottom: 12,
   },
   section: {
     borderWidth: 1,
@@ -383,21 +381,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
     borderBottomWidth: 1,
   },
   settingRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
     borderBottomWidth: 1,
   },
   linkRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
     borderBottomWidth: 1,
   },
 });

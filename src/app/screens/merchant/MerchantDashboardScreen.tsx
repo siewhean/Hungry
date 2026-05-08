@@ -4,7 +4,7 @@
  * Features large numbers, big buttons, and simple navigation.
  * Feedback-driven for 'Uncle Tan' and 'Ahmad'.
  */
-import { View, ScrollView, Pressable, StyleSheet } from "react-native";
+import { View, ScrollView, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   TrendingUp,
@@ -16,7 +16,7 @@ import {
   ChevronRight,
 } from "lucide-react-native";
 
-import { AppText } from "@/components/ui";
+import { AppText, Skeleton } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
@@ -24,7 +24,9 @@ import { OutletSwitcher } from "@/components/merchant/OutletSwitcher";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getHungryService } from "@/lib/services/serviceProvider";
+import type { MerchantAnalytics } from "@/types/domain";
 
 // ─── Segmented Control ────────────────────────────────────────────────────────
 
@@ -77,36 +79,55 @@ function DateRangeSelector({
 
 // ─── Dashboard Card ──────────────────────────────────────────────────────────
 
-function MetricCard({ title, value, subtext, icon, color }: any) {
+function MetricCard({
+  title,
+  value,
+  subtext,
+  icon,
+  color,
+}: {
+  title: string;
+  value: string | React.ReactNode;
+  subtext: string | React.ReactNode;
+  icon: React.ReactNode;
+  color: string;
+}) {
   const { palette, spacing, radii, shadows } = useHungryTheme();
   return (
     <View
-      style={[
-        styles.metricCard,
-        {
-          backgroundColor: palette.surface,
-          borderRadius: radii.xl,
-          padding: spacing[4],
-          ...shadows.card,
-        },
-      ]}
+      style={{
+        borderColor: palette.border,
+        borderWidth: 1,
+        backgroundColor: palette.surface,
+        borderRadius: radii.xl,
+        padding: spacing[4],
+        ...shadows.card,
+      }}
     >
       <View
         style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}
       >
-        <View style={[styles.iconBox, { backgroundColor: color + "15" }]}>{icon}</View>
+        <View style={{ width: 48, height: 48, borderRadius: radii.md, alignItems: "center", justifyContent: "center", backgroundColor: color + "15" }}>{icon}</View>
         <TrendingUp size={16} color={palette.success} />
       </View>
       <View style={{ marginTop: spacing[3] }}>
-        <AppText variant="h2" style={{ fontWeight: "900" }}>
-          {value}
-        </AppText>
+        {typeof value === "string" ? (
+          <AppText variant="h2" style={{ fontWeight: "900" }}>
+            {value}
+          </AppText>
+        ) : (
+          <View style={{ height: 32, justifyContent: "center" }}>{value}</View>
+        )}
         <AppText variant="bodySmallBold" style={{ color: palette.textSecondary }}>
           {title}
         </AppText>
-        <AppText variant="micro" style={{ color: palette.success, marginTop: 4 }}>
-          {subtext}
-        </AppText>
+        {typeof subtext === "string" ? (
+          <AppText variant="micro" style={{ color: palette.success, marginTop: 4 }}>
+            {subtext}
+          </AppText>
+        ) : (
+          <View style={{ height: 16, justifyContent: "center", marginTop: 4 }}>{subtext}</View>
+        )}
       </View>
     </View>
   );
@@ -114,7 +135,21 @@ function MetricCard({ title, value, subtext, icon, color }: any) {
 
 // ─── Action Card ─────────────────────────────────────────────────────────────
 
-function ActionCard({ title, description, icon, actionText, onPress, isUrgent = false }: any) {
+function ActionCard({
+  title,
+  description,
+  icon,
+  actionText,
+  onPress,
+  isUrgent = false,
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  actionText: string;
+  onPress: () => void;
+  isUrgent?: boolean;
+}) {
   const { palette, spacing, radii } = useHungryTheme();
   return (
     <Pressable
@@ -174,23 +209,47 @@ export function MerchantDashboardScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MerchantTabParamList>>();
 
   const [dateRange, setDateRange] = useState<"Today" | "7 Days" | "30 Days">("Today");
+  const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
 
-  // Mock data based on dateRange
-  const views = dateRange === "Today" ? "1,284" : dateRange === "7 Days" ? "8,432" : "34,291";
-  const viewsSubtext =
-    dateRange === "Today"
-      ? "+12% from yesterday"
-      : dateRange === "7 Days"
-        ? "+5% from last week"
-        : "+18% from last month";
+  useEffect(() => {
+    if (!activeOutlet) return;
+    const fetchAnalytics = async () => {
+      const mappedRange = dateRange === "Today" ? "today" : dateRange === "7 Days" ? "7d" : "30d";
+      try {
+        const data = await getHungryService().merchant.getAnalytics(activeOutlet.id, mappedRange);
+        setAnalytics(data);
+      } catch (err) {
+        console.error("Failed to fetch analytics:", err);
+      }
+    };
+    fetchAnalytics();
+  }, [activeOutlet, dateRange]);
 
-  const rating = dateRange === "Today" ? "4.8" : dateRange === "7 Days" ? "4.7" : "4.8";
-  const ratingSubtext =
+  const views = analytics ? (
+    (analytics.profileVisits + analytics.menuViews).toLocaleString()
+  ) : (
+    <Skeleton height={24} width={80} borderRadius={radii.sm} />
+  );
+  const viewsSubtext = analytics ? (
     dateRange === "Today"
-      ? "2 new reviews"
+      ? "vs yesterday"
       : dateRange === "7 Days"
-        ? "14 new reviews"
-        : "42 new reviews";
+        ? "vs last week"
+        : "vs last month"
+  ) : (
+    <Skeleton height={12} width={60} borderRadius={radii.sm} />
+  );
+
+  const rating = analytics ? (
+    analytics.averageRating.toFixed(1)
+  ) : (
+    <Skeleton height={24} width={40} borderRadius={radii.sm} />
+  );
+  const ratingSubtext = analytics ? (
+    `${analytics.reviewCount} new reviews`
+  ) : (
+    <Skeleton height={12} width={80} borderRadius={radii.sm} />
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
@@ -313,9 +372,25 @@ export function MerchantDashboardScreen() {
 
           <Pressable
             onPress={() => navigation.navigate("Menu")}
-            style={[styles.bigButton, { backgroundColor: palette.orange, borderRadius: radii.xl }]}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              padding: spacing[4],
+              gap: spacing[3],
+              backgroundColor: palette.orange,
+              borderRadius: radii.xl,
+            }}
           >
-            <View style={styles.bigButtonIcon}>
+            <View
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: radii.lg,
+                backgroundColor: palette.orangeLight + "40",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               <ClipboardList color={palette.white} size={28} />
             </View>
             <View style={{ flex: 1 }}>
@@ -331,17 +406,27 @@ export function MerchantDashboardScreen() {
 
           <Pressable
             onPress={() => navigation.navigate("CustomerInbox")}
-            style={[
-              styles.bigButton,
-              {
-                backgroundColor: palette.surface,
-                borderRadius: radii.xl,
-                borderWidth: 2,
-                borderColor: palette.orange,
-              },
-            ]}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              padding: spacing[4],
+              gap: spacing[3],
+              backgroundColor: palette.surface,
+              borderRadius: radii.xl,
+              borderWidth: 2,
+              borderColor: palette.orange,
+            }}
           >
-            <View style={[styles.bigButtonIcon, { backgroundColor: palette.orangeLight }]}>
+            <View
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: radii.lg,
+                backgroundColor: palette.orangeLight,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               <MessageSquare color={palette.orange} size={28} />
             </View>
             <View style={{ flex: 1 }}>
@@ -408,30 +493,3 @@ export function MerchantDashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  metricCard: {
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bigButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 20,
-    gap: 16,
-  },
-  bigButtonIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

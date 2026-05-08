@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Pressable, View } from "react-native";
 import { Image } from "expo-image";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { MapPin, MessageCircle, Star, Utensils } from "lucide-react-native";
+import { MapPin, MessageCircle, MessageCircleMore, Star, Utensils } from "lucide-react-native";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Card, EmptyState, Screen } from "@/components/ui";
@@ -103,7 +105,7 @@ export function UserProfileScreen({ navigation, route }: Props) {
               value={posts.length}
             />
             <StatChip
-              icon={<MessageCircle color={palette.orange} size={14} />}
+              icon={<CommentIcon color={palette.orange} size={14} />}
               label="Comments"
               value={totalComments}
             />

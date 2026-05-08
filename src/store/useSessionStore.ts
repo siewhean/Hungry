@@ -17,6 +17,7 @@ export interface PendingRoute {
 
 interface SessionState {
   hasHydrated: boolean;
+  isAuthReady: boolean;
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
   hasSkippedTasteQuiz: boolean;
@@ -36,6 +37,7 @@ interface SessionState {
   signOut: () => void;
   clearSession: () => void;
   markHydrated: () => void;
+  markAuthReady: () => void;
   applyAuthStateFromSession: (session: {
     isAuthenticated: boolean;
     userId?: string | null;
@@ -46,6 +48,7 @@ interface SessionState {
 
 const initialState = {
   hasHydrated: false,
+  isAuthReady: false,
   isAuthenticated: false,
   hasCompletedOnboarding: false,
   hasSkippedTasteQuiz: false,
@@ -63,6 +66,7 @@ export const useSessionStore = create<SessionState>()(
       ...initialState,
       completeAuth: (options) => {
         set((state) => ({
+          isAuthReady: true,
           isAuthenticated: true,
           hasCompletedOnboarding: options?.completedOnboarding ?? state.hasCompletedOnboarding,
           hasSkippedTasteQuiz: options?.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
@@ -117,7 +121,7 @@ export const useSessionStore = create<SessionState>()(
             .auth.signOut()
             .catch(() => undefined);
         }
-        set({ ...initialState });
+        set({ ...initialState, isAuthReady: true });
         useProfileStore.getState().clearProfile();
         useProfileStore.getState().syncProfile(false);
         resetPostHogUser();
@@ -125,19 +129,21 @@ export const useSessionStore = create<SessionState>()(
       },
       clearSession: () => {
         const profileId = getSafeProfileId();
-        set({ ...initialState });
+        set({ ...initialState, isAuthReady: true });
         useProfileStore.getState().clearProfile();
         useProfileStore.getState().syncProfile(false);
         resetPostHogUser();
         trackAnalyticsEvent("sign_out", { reason: "clear_session" }, { userId: profileId });
       },
       markHydrated: () => set({ hasHydrated: true }),
+      markAuthReady: () => set({ isAuthReady: true }),
       applyAuthStateFromSession: (session) => {
         const currentlyAuthenticated = useSessionStore.getState().isAuthenticated;
 
         if (session.isAuthenticated) {
           set((state) => ({
             isAuthenticated: true,
+            isAuthReady: true,
             hasCompletedOnboarding: session.completedOnboarding ?? state.hasCompletedOnboarding,
             hasSkippedTasteQuiz: session.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
             sessionExpired: false,
@@ -171,12 +177,14 @@ export const useSessionStore = create<SessionState>()(
         }
 
         if (!currentlyAuthenticated) {
+          set({ isAuthReady: true });
           return;
         }
 
         const profileId = getSafeProfileId();
         set({
           isAuthenticated: false,
+          isAuthReady: true,
           sessionExpired: false,
         });
         useProfileStore.getState().syncProfile(false);

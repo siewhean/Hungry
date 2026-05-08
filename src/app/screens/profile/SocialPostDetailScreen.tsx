@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, TextInput, View, useWindowDimensions } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import { Bookmark, Heart, MessageCircle, PlayCircle, Send } from "lucide-react-native";
+import { Bookmark, Heart, MessageCircle, MessageCircleMore, PlayCircle, Send } from "lucide-react-native";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 import type { NavigationProp } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -287,7 +289,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
                   });
                 }}
               >
-                <MessageCircle color={palette.text} size={24} />
+                <CommentIcon color={palette.text} size={24} />
                 {interaction.commentCount > 0 && (
                   <AppText
                     variant="micro"

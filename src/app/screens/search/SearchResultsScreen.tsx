@@ -18,7 +18,7 @@ import { FlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Avatar, Chip, Screen } from "@/components/ui";
+import { AppText, Avatar, Chip, EmptyState, Screen } from "@/components/ui";
 import { SearchResultsView } from "@/components/discover/SearchResultsView";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import {
@@ -504,21 +504,10 @@ function BrowseGridScreen({
           contentContainerStyle={{ paddingBottom: spacing[12] }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <View
-              style={{
-                alignItems: "center",
-                gap: spacing[2],
-                paddingHorizontal: spacing[8],
-                paddingTop: spacing[12],
-              }}
-            >
-              <AppText variant="h3" style={{ textAlign: "center" }}>
-                No matches found
-              </AppText>
-              <AppText tone="muted" style={{ textAlign: "center" }}>
-                Try another search or filter.
-              </AppText>
-            </View>
+            <EmptyState
+              title="No matches found"
+              body="Try another search or filter."
+            />
           }
         />
       </View>

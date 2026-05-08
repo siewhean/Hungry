@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { View, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
-import { BarChart3, TrendingUp, PieChart, Star, Users } from "lucide-react-native";
+import { BarChart3, TrendingUp, PieChart, Star, Users, Clock, Flame } from "lucide-react-native";
 
-import { AppText, Screen, Card, Chip } from "@/components/ui";
+import { AppText, Screen, Card, Chip, Skeleton } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -38,16 +38,27 @@ export function MerchantAnalyticsScreen() {
   if (isLoading || !analytics) {
     return (
       <Screen title="Analytics">
-        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 100 }}>
-          <ActivityIndicator color={palette.orange} />
+        <View style={{ padding: spacing[4], gap: spacing[4] }}>
+          <View style={{ flexDirection: "row", gap: spacing[2] }}>
+            <Skeleton height={32} width={80} borderRadius={radii.pill} />
+            <Skeleton height={32} width={80} borderRadius={radii.pill} />
+            <Skeleton height={32} width={80} borderRadius={radii.pill} />
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
+             <Skeleton height={100} width="47%" borderRadius={radii.lg} />
+             <Skeleton height={100} width="47%" borderRadius={radii.lg} />
+             <Skeleton height={100} width="47%" borderRadius={radii.lg} />
+             <Skeleton height={100} width="47%" borderRadius={radii.lg} />
+          </View>
+          <Skeleton height={200} borderRadius={radii.lg} />
         </View>
       </Screen>
     );
   }
 
   return (
-    <Screen title="Performance">
-      <View style={{ gap: spacing[6], width: "100%" }}>
+    <Screen title="Performance" scroll={false}>
+      <ScrollView contentContainerStyle={{ padding: spacing[4], gap: spacing[6] }}>
         {/* Range Selector */}
         <View style={{ flexDirection: "row", gap: spacing[2], paddingHorizontal: spacing[1] }}>
           <Chip label="Today" selected={range === "today"} onPress={() => setRange("today")} />
@@ -92,6 +103,7 @@ export function MerchantAnalyticsScreen() {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
                 borderRadius: radii.xl,
+                padding: spacing[5],
               },
             ]}
           >
@@ -142,8 +154,87 @@ export function MerchantAnalyticsScreen() {
               </View>
             </View>
           </View>
+
+          {/* Top Dishes */}
+          <View style={[styles.chartCard, { backgroundColor: palette.surface, borderColor: palette.border, borderRadius: radii.xl, padding: spacing[5] }]}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: spacing[4] }}>
+              <Flame size={20} color={palette.orange} />
+              <AppText variant="bodyBold">Top Performing Dishes</AppText>
+            </View>
+            <View style={{ gap: spacing[3] }}>
+              {analytics.topDishes.map((dish, idx) => (
+                <View key={dish.dishId} style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
+                  <AppText variant="bodyBold" style={{ width: 20, color: palette.textMuted }}>{idx + 1}</AppText>
+                  <View style={{ flex: 1 }}>
+                    <AppText variant="bodyBold">{dish.name}</AppText>
+                  </View>
+                  <View style={{ alignItems: "flex-end" }}>
+                    <AppText variant="bodySmallBold">{dish.views} views</AppText>
+                    <AppText variant="micro" tone="muted">{dish.saves} saves</AppText>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Customer Taste Tags */}
+          <View style={[styles.chartCard, { backgroundColor: palette.surface, borderColor: palette.border, borderRadius: radii.xl, padding: spacing[5] }]}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: spacing[4] }}>
+              <Star size={20} color={palette.amber} />
+              <AppText variant="bodyBold">Customer Taste Profile</AppText>
+            </View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+              {analytics.customerTasteTags.map((tagObj) => (
+                <View
+                  key={tagObj.tag}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: palette.bgSoft,
+                    paddingHorizontal: spacing[3],
+                    paddingVertical: spacing[2],
+                    borderRadius: radii.pill,
+                    gap: spacing[2],
+                  }}
+                >
+                  <AppText variant="bodySmallBold">{tagObj.tag}</AppText>
+                  <View style={{ backgroundColor: palette.surface, paddingHorizontal: 6, paddingVertical: 2, borderRadius: radii.pill }}>
+                    <AppText variant="micro" tone="muted">{tagObj.count}</AppText>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Peak Discovery Hours */}
+          <View style={[styles.chartCard, { backgroundColor: palette.surface, borderColor: palette.border, borderRadius: radii.xl, padding: spacing[5] }]}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: spacing[4] }}>
+              <Clock size={20} color={palette.info} />
+              <AppText variant="bodyBold">Peak Discovery Hours</AppText>
+            </View>
+            <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[4] }}>
+              When customers are viewing your stall
+            </AppText>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+              {analytics.peakDiscoveryHours.map((hour) => (
+                <View
+                  key={hour}
+                  style={{
+                    backgroundColor: palette.info + "20",
+                    paddingHorizontal: spacing[3],
+                    paddingVertical: spacing[2],
+                    borderRadius: radii.md,
+                  }}
+                >
+                  <AppText variant="bodySmallBold" style={{ color: palette.info }}>
+                    {hour === 12 ? "12 PM" : hour > 12 ? `${hour - 12} PM` : `${hour} AM`}
+                  </AppText>
+                </View>
+              ))}
+            </View>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </Screen>
   );
 }
@@ -168,6 +259,7 @@ function MetricCard({
           backgroundColor: palette.surface,
           borderColor: palette.border,
           borderRadius: radii.lg,
+          padding: spacing[4],
           ...shadows.card,
         },
       ]}
@@ -205,11 +297,9 @@ function MetricCard({
 const styles = StyleSheet.create({
   metricCard: {
     width: "47.5%",
-    padding: 16,
     borderWidth: 1,
   },
   chartCard: {
-    padding: 20,
     borderWidth: 1,
   },
 });

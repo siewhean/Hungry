@@ -14,7 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Check, ChevronRight, Search } from "lucide-react-native";
 
-import { Button, AppText, Card, Input } from "@/components/ui";
+import { Button, AppText, Card, EmptyState, Input } from "@/components/ui";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -421,9 +421,10 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                     );
                   })}
                   {!filteredDietaryOptions.length ? (
-                    <AppText tone="secondary" variant="bodySmall">
-                      No matching restrictions found.
-                    </AppText>
+                    <EmptyState
+                      title="No matching restrictions found"
+                      body="Try adjusting your dietary preferences."
+                    />
                   ) : null}
                 </ScrollView>
               </Card>

@@ -24,6 +24,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
 
 export function SplashScreen({ navigation }: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
+  const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const { palette, motion, spacing, radii, typography } = useHungryTheme();
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
@@ -95,6 +96,10 @@ export function SplashScreen({ navigation }: Props) {
 
     // Navigate after full animation
     const timer = setTimeout(() => {
+      if (!isAuthReady) {
+        return;
+      }
+
       if (!isAuthenticated) {
         navigation.reset({
           index: 0,
@@ -125,6 +130,7 @@ export function SplashScreen({ navigation }: Props) {
     return () => clearTimeout(timer);
   }, [
     hasCompletedOnboarding,
+    isAuthReady,
     isAuthenticated,
     motion.splashDot,
     motion.splashFast,

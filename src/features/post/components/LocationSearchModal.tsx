@@ -6,7 +6,7 @@ import { BottomSheetModal, BottomSheetBackdrop, useBottomSheet } from "@gorhom/b
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { useAnimatedStyle, interpolate, Extrapolation } from "react-native-reanimated";
 
-import { AppText, Input, IconButton } from "@/components/ui";
+import { AppText, EmptyState, Input, IconButton } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
 import { MapSurface, MapSurfaceMarker } from "@/components/map/MapSurface";
@@ -219,19 +219,11 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={true}
           ListEmptyComponent={
-            <View
-              style={{
-                alignItems: "center",
-                justifyContent: "center",
-                marginTop: spacing[12] + spacing[3],
-                paddingHorizontal: semanticSpacing.screenEdge,
-              }}
-            >
-              <MapPin size={48} color={palette.textMuted} style={{ marginBottom: spacing[4] }} />
-              <AppText tone="secondary" style={{ textAlign: "center" }}>
-                No locations found matching {`"${searchQuery}"`}
-              </AppText>
-            </View>
+            <EmptyState
+              title="No locations found"
+              body={`Try another location query for "${searchQuery}".`}
+              icon={<MapPin size={34} color={palette.textMuted} />}
+            />
           }
           ListFooterComponent={<DynamicFooter />}
           renderItem={({ item }) => (

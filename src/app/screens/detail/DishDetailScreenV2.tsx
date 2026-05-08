@@ -9,6 +9,7 @@ import {
   Bookmark,
   Clock3,
   MapPin,
+  MessageCircleMore,
   MessageCircle,
   Send,
   Sparkles,
@@ -29,6 +30,8 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import type { DishDetail } from "@/types/domain";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 type Props = NativeStackScreenProps<RootStackParamList, "DishDetail" | "DishDetailV2">;
 
@@ -551,19 +554,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         {review.text}
                       </AppText>
                     </View>
-                  ))
-                ) : (
-                  <View
-                    style={{
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      borderRadius: radii.lg,
-                      borderWidth: 1,
-                      padding: spacing[4],
-                    }}
-                  >
-                    <AppText tone="secondary">No reviews yet. Be the first to add one.</AppText>
-                  </View>
+                ))
+              ) : (
+                  <EmptyState
+                    title="No reviews yet"
+                    body="Be the first to add one."
+                    icon={<Star size={36} color={palette.textMuted} />}
+                  />
                 )}
               </View>
             </View>
@@ -616,7 +613,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 width: undefined,
               }}
             >
-              <MessageCircle color={palette.text} size={reviewIconSize} />
+              <CommentIcon color={palette.text} size={reviewIconSize} />
             </Pressable>
           </View>
 

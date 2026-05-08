@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { QrCode, Smartphone, CreditCard, Clock } from "lucide-react-native";
 
 import { AppText, Button, Screen } from "@/components/ui";
@@ -33,7 +33,7 @@ export function OrdersComingSoonScreen() {
               Skip the queue. Let customers order and pay directly from their phones.
             </AppText>
           </View>
-          <Button label="Join the Pilot Program" variant="primary" fullWidth />
+          <Button label="Join the Pilot Program" variant="primary" fullWidth onPress={() => Alert.alert("Pilot", "Registration coming soon")} />
         </View>
 
         {/* How it works */}
@@ -48,10 +48,11 @@ export function OrdersComingSoonScreen() {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
                 borderRadius: radii.lg,
+                padding: spacing[4],
               },
             ]}
           >
-            <View style={styles.stepRow}>
+            <View style={[styles.stepRow, { borderBottomColor: palette.border, gap: spacing[4], paddingBottom: spacing[4], marginBottom: spacing[4] }]}>
               <View
                 style={[
                   styles.stepIcon,
@@ -67,7 +68,7 @@ export function OrdersComingSoonScreen() {
                 </AppText>
               </View>
             </View>
-            <View style={styles.stepRow}>
+            <View style={[styles.stepRow, { borderBottomColor: palette.border, gap: spacing[4], paddingBottom: spacing[4], marginBottom: spacing[4] }]}>
               <View
                 style={[
                   styles.stepIcon,
@@ -83,7 +84,7 @@ export function OrdersComingSoonScreen() {
                 </AppText>
               </View>
             </View>
-            <View style={styles.stepRow}>
+            <View style={[styles.stepRow, { borderBottomColor: palette.border, gap: spacing[4], paddingBottom: spacing[4], marginBottom: spacing[4] }]}>
               <View
                 style={[
                   styles.stepIcon,
@@ -99,7 +100,7 @@ export function OrdersComingSoonScreen() {
                 </AppText>
               </View>
             </View>
-            <View style={[styles.stepRow, { borderBottomWidth: 0, paddingBottom: 0 }]}>
+            <View style={[styles.stepRow, { borderBottomWidth: 0, paddingBottom: 0, gap: spacing[4], marginBottom: spacing[4] }]}>
               <View
                 style={[
                   styles.stepIcon,
@@ -130,6 +131,7 @@ export function OrdersComingSoonScreen() {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
                 borderRadius: radii.lg,
+                padding: spacing[5] || 24,
               },
             ]}
           >
@@ -140,7 +142,7 @@ export function OrdersComingSoonScreen() {
               >
                 Order Here
               </AppText>
-              <View style={[styles.qrBox, { borderColor: palette.border, borderRadius: radii.md }]}>
+              <View style={[styles.qrBox, { borderColor: palette.border, borderRadius: radii.md, backgroundColor: palette.surface }]}>
                 {/* Fake QR code using squares */}
                 <View
                   style={{
@@ -157,7 +159,7 @@ export function OrdersComingSoonScreen() {
                       style={{
                         width: 14,
                         height: 14,
-                        backgroundColor: Math.random() > 0.4 ? palette.text : "transparent",
+                        backgroundColor: (i * 7) % 10 > 4 ? palette.text : "transparent",
                         margin: 1,
                       }}
                     />
@@ -207,6 +209,7 @@ export function OrdersComingSoonScreen() {
               label="Download PDF Mockup"
               variant="secondary"
               style={{ marginTop: spacing[4], width: "100%" }}
+              onPress={() => Alert.alert("Download", "PDF mockup generation coming soon")}
             />
           </View>
         </View>
@@ -223,25 +226,26 @@ export function OrdersComingSoonScreen() {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
                 borderRadius: radii.lg,
+                padding: spacing[4],
               },
             ]}
           >
-            <View style={[styles.checklistItem, { borderColor: palette.border }]}>
-              <View style={[styles.circle, { borderColor: palette.textMuted }]} />
+            <View style={[styles.checklistItem, { borderColor: palette.border, gap: spacing[3], paddingVertical: spacing[3] }]}>
+              <View style={[styles.circle, { borderColor: palette.textMuted, borderRadius: radii.pill }]} />
               <AppText variant="body" style={{ flex: 1, color: palette.textMuted }}>
                 Complete Business Verification
               </AppText>
             </View>
-            <View style={[styles.checklistItem, { borderColor: palette.border }]}>
-              <View style={[styles.circle, { borderColor: palette.textMuted }]} />
+            <View style={[styles.checklistItem, { borderColor: palette.border, gap: spacing[3], paddingVertical: spacing[3] }]}>
+              <View style={[styles.circle, { borderColor: palette.textMuted, borderRadius: radii.pill }]} />
               <AppText variant="body" style={{ flex: 1, color: palette.textMuted }}>
                 Add your full menu with prices
               </AppText>
             </View>
             <View
-              style={[styles.checklistItem, { borderColor: palette.border, borderBottomWidth: 0 }]}
+              style={[styles.checklistItem, { borderColor: palette.border, borderBottomWidth: 0, gap: spacing[3], paddingVertical: spacing[3] }]}
             >
-              <View style={[styles.circle, { borderColor: palette.textMuted }]} />
+              <View style={[styles.circle, { borderColor: palette.textMuted, borderRadius: radii.pill }]} />
               <AppText variant="body" style={{ flex: 1, color: palette.textMuted }}>
                 Link bank account (Coming soon)
               </AppText>
@@ -261,16 +265,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   card: {
-    padding: 16,
     borderWidth: 1,
   },
   stepRow: {
     flexDirection: "row",
-    gap: 16,
-    paddingBottom: 16,
-    marginBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6",
   },
   stepIcon: {
     width: 40,
@@ -279,7 +278,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   qrPreview: {
-    padding: 24,
     borderWidth: 1,
     alignItems: "center",
   },
@@ -289,19 +287,15 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
   },
   checklistItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    paddingVertical: 12,
     borderBottomWidth: 1,
   },
   circle: {
     width: 24,
     height: 24,
-    borderRadius: 12,
     borderWidth: 2,
   },
 });

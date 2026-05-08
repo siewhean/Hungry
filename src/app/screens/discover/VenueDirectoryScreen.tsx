@@ -5,7 +5,7 @@ import { ChevronLeft, Info, MapPin } from "lucide-react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Button, Badge } from "@/components/ui";
+import { AppText, Button, Badge, EmptyState } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { getDataRepository } from "@/lib/services/serviceProvider";
@@ -199,12 +199,14 @@ export function VenueDirectoryScreen({ route, navigation }: Props) {
                     </AppText>
                   </View>
                   <ChevronRight size={16} color={palette.border} />
-                </Pressable>
+            </Pressable>
               ))
             ) : (
-              <AppText tone="secondary">
-                No stall directory data is available for this floor yet.
-              </AppText>
+              <EmptyState
+                title="No stalls on this floor"
+                body="No stall directory data is available for this floor yet."
+                icon={<MapPin size={36} color={palette.textMuted} />}
+              />
             )}
           </View>
         </View>

@@ -22,6 +22,7 @@ interface ProfileState {
     string,
     { rating: number; text: string; tags: string[]; createdAt: string }
   >;
+  applyProfile: (profile: UserProfile) => void;
   syncProfile: (isAuthenticated: boolean) => void;
   toggleFavourite: (dish: DishDetail) => void;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email" | "avatarUrl">>) => void;
@@ -86,6 +87,14 @@ export const useProfileStore = create<ProfileState>()(
       profile: getDataRepository().getProfile(false),
       tasteProfile: NEUTRAL_TASTE_PROFILE,
       reviewEntries: {},
+      applyProfile: (profile) =>
+        set({
+          profile,
+          tasteProfile: profile.tasteProfile ?? {
+            ...NEUTRAL_TASTE_PROFILE,
+            vector: profile.tasteVector,
+          },
+        }),
       syncProfile: (isAuthenticated) => {
         set({ profile: getDataRepository().getProfile(isAuthenticated) });
       },

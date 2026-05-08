@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, Pressable, ActivityIndicator } from "react-native";
+import { View, ScrollView, Pressable, ActivityIndicator } from "react-native";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -13,7 +13,7 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useHungryTheme } from "@/theme";
-import { AppText, Button, Screen } from "@/components/ui";
+import { AppText, Button, EmptyState, Screen } from "@/components/ui";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -30,7 +30,11 @@ export function VerificationCentreScreen({ navigation }: Props) {
   if (!activeOutlet) {
     return (
       <Screen title="Error">
-        <AppText style={{ color: palette.textSecondary }}>No outlet selected.</AppText>
+        <EmptyState
+          title="No outlet selected"
+          body="Choose an outlet to continue with verification."
+          icon={<Home size={36} color={palette.textMuted} />}
+        />
       </Screen>
     );
   }
@@ -62,7 +66,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
         return (
           <View
             style={[
-              styles.headerBanner,
+              { padding: spacing[6], alignItems: "center", justifyContent: "center" },
               { backgroundColor: palette.successSoft, borderRadius: radii.lg },
             ]}
           >
@@ -80,7 +84,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
         return (
           <View
             style={[
-              styles.headerBanner,
+              { padding: spacing[6], alignItems: "center", justifyContent: "center" },
               { backgroundColor: palette.orangeLight, borderRadius: radii.lg },
             ]}
           >
@@ -97,7 +101,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
         return (
           <View
             style={[
-              styles.headerBanner,
+              { padding: spacing[6], alignItems: "center", justifyContent: "center" },
               { backgroundColor: palette.errorSoft, borderRadius: radii.lg },
             ]}
           >
@@ -114,7 +118,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
         return (
           <View
             style={[
-              styles.headerBanner,
+              { padding: spacing[6], alignItems: "center", justifyContent: "center" },
               { backgroundColor: palette.bgSoft, borderRadius: radii.lg },
             ]}
           >
@@ -139,7 +143,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
     }
 
     return (
-      <View style={styles.methodsContainer}>
+      <View style={{ gap: spacing[4] }}>
         <AppText variant="h3" style={{ color: palette.text, marginBottom: spacing[4] }}>
           Available Methods
         </AppText>
@@ -200,7 +204,7 @@ function MethodCard({
       onPress={onPress}
       disabled={isLoading}
       style={[
-        styles.methodCard,
+        { flexDirection: "row", alignItems: "center", padding: spacing[4], borderWidth: 1, gap: spacing[4] },
         {
           backgroundColor: palette.surface,
           borderColor: palette.border,
@@ -209,7 +213,7 @@ function MethodCard({
       ]}
     >
       <View
-        style={[styles.methodIcon, { backgroundColor: palette.bgSoft, borderRadius: radii.md }]}
+        style={[{ width: 48, height: 48, alignItems: "center", justifyContent: "center" }, { backgroundColor: palette.bgSoft, borderRadius: radii.md }]}
       >
         {icon}
       </View>
@@ -227,32 +231,3 @@ function MethodCard({
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerBanner: {
-    padding: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  methodsContainer: {
-    gap: 16,
-  },
-  methodCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderWidth: 1,
-    gap: 16,
-  },
-  methodIcon: {
-    width: 48,
-    height: 48,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

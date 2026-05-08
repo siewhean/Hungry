@@ -20,7 +20,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Chip, IconButton, Screen, Skeleton } from "@/components/ui";
+import { AppText, Chip, EmptyState, IconButton, Screen, Skeleton } from "@/components/ui";
 import { getDiscoverBiteCollection } from "@/features/discover/bites";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestBuildings, getNearestSingaporeArea } from "@/lib/geo/singaporeBuildings";
@@ -225,52 +225,45 @@ function PopularFoodStyleSkeleton() {
   );
 }
 
-function FilteredResultsEmptyState() {
-  const { palette, spacing } = useHungryTheme();
-
+function FilteredResultsEmptyState({
+  preserveHeight,
+  minHeight,
+}: {
+  preserveHeight?: boolean;
+  minHeight?: number;
+}) {
+  const { palette } = useHungryTheme();
   return (
     <View
-      style={{
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: 132,
-        paddingHorizontal: spacing[5],
-        paddingVertical: spacing[2],
-        width: "100%",
-        gap: spacing[0.5],
-      }}
+      style={
+        preserveHeight && minHeight
+          ? {
+              alignItems: "center",
+              minHeight,
+              justifyContent: "center",
+              paddingTop: 0,
+              paddingBottom: 0,
+            }
+          : undefined
+      }
     >
-      <View
-        style={{
-          alignItems: "center",
-          height: 28,
-          justifyContent: "center",
-          width: 28,
-        }}
-      >
-        <SearchX color={palette.textSecondary} size={22} />
-      </View>
-      <AppText
-        variant="h3"
-        style={{
-          color: palette.text,
-          textAlign: "center",
-          marginTop: spacing[0.5],
-        }}
-      >
-        No matching results
-      </AppText>
-      <AppText
-        variant="bodySmall"
-        style={{
-          color: palette.textSecondary,
-          maxWidth: 280,
-          textAlign: "center",
-        }}
-      >
-        Try removing a filter or choosing a broader category.
-      </AppText>
+      <EmptyState
+        title="No matching results"
+        body="Try removing a filter or choosing a broader category."
+        icon={<SearchX color={palette.textSecondary} size={28} />}
+      />
     </View>
+  );
+}
+
+function NoFoodSectionEmptyState({ title }: { title: string }) {
+  const { palette } = useHungryTheme();
+  return (
+    <EmptyState
+      title={title}
+      body={"No food found for this section right now.\nTry again later or adjust your filters."}
+      icon={<SearchX color={palette.textSecondary} size={28} />}
+    />
   );
 }
 
@@ -298,6 +291,7 @@ export function DiscoverHomeScreen() {
   const discoverRailCardWidth = screenWidth * 0.55;
   const discoverRailImageHeight = 130;
   const decisionCardWidth = (screenWidth - spacing[8] - spacing[3]) / 2;
+  const popularFoodButtonHeight = 72 + spacing[1.5] + typography.bodySmallBold.lineHeight * 2;
   const edgeToEdgeHorizontalScrollStyle = {
     width: screenWidth,
   };
@@ -874,7 +868,7 @@ export function DiscoverHomeScreen() {
               ))}
             </ScrollView>
           ) : isDiscoverFiltering ? (
-            <FilteredResultsEmptyState />
+            <FilteredResultsEmptyState preserveHeight minHeight={popularFoodButtonHeight} />
           ) : null}
         </View>
 
@@ -1233,7 +1227,9 @@ export function DiscoverHomeScreen() {
             </ScrollView>
           ) : isDiscoverFiltering ? (
             <FilteredResultsEmptyState />
-          ) : null}
+          ) : (
+            <NoFoodSectionEmptyState title="No quick bites found" />
+          )}
         </View>
 
         {/* Recommended Dishes (Carousel) */}
@@ -1325,7 +1321,9 @@ export function DiscoverHomeScreen() {
             </ScrollView>
           ) : isDiscoverFiltering ? (
             <FilteredResultsEmptyState />
-          ) : null}
+          ) : (
+            <NoFoodSectionEmptyState title="No trending food found" />
+          )}
         </View>
 
         {/* Editor's Choice Carousel */}
@@ -1443,7 +1441,9 @@ export function DiscoverHomeScreen() {
             </ScrollView>
           ) : isDiscoverFiltering ? (
             <FilteredResultsEmptyState />
-          ) : null}
+          ) : (
+            <NoFoodSectionEmptyState title="No editor's choice food found" />
+          )}
         </View>
 
         {/* Budget < S$8 Dish Carousel */}
@@ -1539,7 +1539,9 @@ export function DiscoverHomeScreen() {
             </ScrollView>
           ) : isDiscoverFiltering ? (
             <FilteredResultsEmptyState />
-          ) : null}
+          ) : (
+            <NoFoodSectionEmptyState title="No budget-friendly food found" />
+          )}
         </View>
 
         {/* Late Night Makan */}
@@ -1626,10 +1628,12 @@ export function DiscoverHomeScreen() {
                     </View>
                   </Pressable>
                 ))}
-              </ScrollView>
-            ) : isDiscoverFiltering ? (
-              <FilteredResultsEmptyState />
-            ) : null}
+            </ScrollView>
+          ) : isDiscoverFiltering ? (
+            <FilteredResultsEmptyState />
+          ) : (
+            <NoFoodSectionEmptyState title="No late-night food found" />
+          )}
           </View>
         ) : null}
 

@@ -32,6 +32,7 @@ export function PromotionBuilderScreen() {
   const [targetAudiences, setTargetAudiences] = useState<Set<PromotionTargetAudience>>(
     new Set(["nearby_users"]),
   );
+  const [dateErrors, setDateErrors] = useState({ start: false, end: false });
 
   useEffect(() => {
     async function loadPromotion() {
@@ -71,12 +72,19 @@ export function PromotionBuilderScreen() {
 
   const handleSave = async (publish: boolean) => {
     if (!activeOutlet) return;
-    if (!title.trim() || !description.trim()) {
-      Alert.alert("Validation", "Title and description are required.");
+    if (!title || !description || !startDate || !endDate) {
+      Alert.alert("Missing Fields", "Please fill out all required fields.");
       return;
     }
-    if (targetAudiences.size === 0) {
-      Alert.alert("Validation", "Select at least one target audience.");
+
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+    const isStartValid = dateRegex.test(startDate);
+    const isEndValid = dateRegex.test(endDate);
+
+    setDateErrors({ start: !isStartValid, end: !isEndValid });
+
+    if (!isStartValid || !isEndValid) {
+      Alert.alert("Invalid Date", "Please ensure dates are in YYYY-MM-DD format.");
       return;
     }
 
@@ -89,8 +97,8 @@ export function PromotionBuilderScreen() {
         title,
         description,
         targetDishId,
-        startDate: new Date(startDate).toISOString(),
-        endDate: new Date(endDate).toISOString(),
+        startDate: `${startDate}T00:00:00Z`,
+        endDate: `${endDate}T23:59:59Z`,
         status: newStatus,
         targetAudience: Array.from(targetAudiences),
       };
@@ -127,9 +135,10 @@ export function PromotionBuilderScreen() {
         style={[
           styles.audienceCard,
           {
-            backgroundColor: palette.surface,
+            backgroundColor: isSelected ? palette.orangeLight : palette.surface,
             borderColor: isSelected ? palette.orange : palette.border,
             borderRadius: radii.md,
+            padding: spacing[4],
           },
         ]}
       >
@@ -169,6 +178,7 @@ export function PromotionBuilderScreen() {
                 backgroundColor: palette.surface,
                 borderColor: palette.orange,
                 borderRadius: radii.lg,
+                padding: spacing[4],
               },
             ]}
           >
@@ -220,6 +230,8 @@ export function PromotionBuilderScreen() {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
                 color: palette.text,
+                borderRadius: radii.md,
+                padding: spacing[3],
               },
             ]}
             value={title}
@@ -242,6 +254,8 @@ export function PromotionBuilderScreen() {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
                 color: palette.text,
+                borderRadius: radii.md,
+                padding: spacing[3],
               },
             ]}
             value={description}
@@ -262,8 +276,10 @@ export function PromotionBuilderScreen() {
                 styles.dateInput,
                 {
                   backgroundColor: palette.surface,
-                  borderColor: palette.border,
+                  borderColor: dateErrors.start ? palette.error : palette.border,
                   borderRadius: radii.md,
+                  paddingHorizontal: spacing[3],
+                  paddingVertical: spacing[2],
                 },
               ]}
             >
@@ -271,10 +287,18 @@ export function PromotionBuilderScreen() {
               <TextInput
                 style={{ flex: 1, color: palette.text, fontSize: 16 }}
                 value={startDate}
-                onChangeText={setStartDate}
+                onChangeText={(text) => {
+                  setStartDate(text);
+                  setDateErrors((prev) => ({ ...prev, start: false }));
+                }}
                 placeholder="YYYY-MM-DD"
               />
             </View>
+            {dateErrors.start && (
+              <AppText variant="micro" style={{ color: palette.error, marginTop: spacing[1] }}>
+                Format: YYYY-MM-DD
+              </AppText>
+            )}
           </View>
           <View style={{ flex: 1 }}>
             <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
@@ -285,8 +309,10 @@ export function PromotionBuilderScreen() {
                 styles.dateInput,
                 {
                   backgroundColor: palette.surface,
-                  borderColor: palette.border,
+                  borderColor: dateErrors.end ? palette.error : palette.border,
                   borderRadius: radii.md,
+                  paddingHorizontal: spacing[3],
+                  paddingVertical: spacing[2],
                 },
               ]}
             >
@@ -294,10 +320,18 @@ export function PromotionBuilderScreen() {
               <TextInput
                 style={{ flex: 1, color: palette.text, fontSize: 16 }}
                 value={endDate}
-                onChangeText={setEndDate}
+                onChangeText={(text) => {
+                  setEndDate(text);
+                  setDateErrors((prev) => ({ ...prev, end: false }));
+                }}
                 placeholder="YYYY-MM-DD"
               />
             </View>
+            {dateErrors.end && (
+              <AppText variant="micro" style={{ color: palette.error, marginTop: spacing[1] }}>
+                Format: YYYY-MM-DD
+              </AppText>
+            )}
           </View>
         </View>
 
@@ -353,12 +387,9 @@ export function PromotionBuilderScreen() {
 const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
     fontSize: 16,
   },
   previewCard: {
-    padding: 16,
     borderWidth: 1,
     borderStyle: "dashed",
   },
@@ -366,15 +397,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
     gap: 8,
   },
   audienceCard: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
     borderWidth: 1,
   },
 });

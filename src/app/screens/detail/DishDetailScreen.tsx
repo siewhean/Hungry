@@ -477,7 +477,11 @@ export function DishDetailScreen({ navigation, route }: Props) {
                     </Card>
                   ))
                 ) : (
-                  <AppText tone="secondary">No reviews yet. Be the first!</AppText>
+                  <EmptyState
+                    title="No reviews yet"
+                    body="Be the first to review this dish."
+                    icon={<Star size={36} color={palette.textMuted} />}
+                  />
                 )}
               </View>
             </View>

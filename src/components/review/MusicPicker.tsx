@@ -5,7 +5,7 @@ import type { AudioPlayer, AudioStatus } from "expo-audio";
 import { Music, Play, Pause, Check, Search } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
-import { AppText, Card, Input } from "../ui";
+import { AppText, Card, EmptyState, Input } from "../ui";
 import { TRENDING_MUSIC, type MusicTrack } from "@/features/review/musicData";
 
 interface MusicPickerProps {
@@ -152,9 +152,11 @@ export function MusicPicker({ selectedMusicId, onSelectMusic }: MusicPickerProps
         })}
 
         {filteredMusic.length === 0 && (
-          <View style={{ paddingVertical: spacing[8], alignItems: "center" }}>
-            <AppText tone="secondary">No music found for &quot;{query}&quot;</AppText>
-          </View>
+          <EmptyState
+            title="No music found"
+            body={`Try a different music query than "${query}".`}
+            icon={<Music size={34} color={palette.textMuted} />}
+          />
         )}
       </ScrollView>
     </View>

@@ -6,10 +6,12 @@ import {
   BottomSheetModal,
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
-import { X } from "lucide-react-native";
+import { MessageCircle, MessageCircleMore, X } from "lucide-react-native";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, Avatar, Input } from "@/components/ui";
+import { AppText, Avatar, EmptyState, Input } from "@/components/ui";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import type { Bite } from "@/lib/services/types";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -257,12 +259,11 @@ export function BiteCommentsSheet({
             </View>
           ))
         ) : (
-          <View style={{ alignItems: "center", justifyContent: "center", paddingTop: spacing[12] }}>
-            <AppText tone="secondary">No comments yet</AppText>
-            <AppText variant="bodySmall" tone="muted">
-              Be the first to share your review!
-            </AppText>
-          </View>
+          <EmptyState
+            title="No comments yet"
+            body="Be the first to share your review!"
+            icon={<CommentIcon size={36} color={palette.textMuted} />}
+          />
         )}
       </BottomSheetScrollView>
     </BottomSheetModal>

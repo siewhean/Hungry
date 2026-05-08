@@ -196,6 +196,8 @@ export function DishEditorScreen() {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
                 color: palette.text,
+                borderRadius: radii.md,
+                padding: spacing[3],
               },
             ]}
             value={name}
@@ -216,6 +218,8 @@ export function DishEditorScreen() {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
                 color: palette.text,
+                borderRadius: radii.md,
+                padding: spacing[3],
               },
             ]}
             value={price}
@@ -231,7 +235,7 @@ export function DishEditorScreen() {
             Dish Picture
           </AppText>
           {imageUrl.trim() ? (
-            <Image source={{ uri: imageUrl.trim() }} style={styles.imagePreview} />
+            <Image source={{ uri: imageUrl.trim() }} style={[styles.imagePreview, { borderRadius: radii.md, marginBottom: spacing[3] }]} />
           ) : null}
           <TextInput
             style={[
@@ -240,6 +244,8 @@ export function DishEditorScreen() {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
                 color: palette.text,
+                borderRadius: radii.md,
+                padding: spacing[3],
               },
             ]}
             value={imageUrl}
@@ -287,6 +293,8 @@ export function DishEditorScreen() {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
                 color: palette.text,
+                borderRadius: radii.md,
+                padding: spacing[3],
               },
             ]}
             value={ingredients}
@@ -311,7 +319,7 @@ export function DishEditorScreen() {
           <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[3] }}>
             Choose customer-facing labels for dietary needs and ingredient exclusions.
           </AppText>
-          <View style={styles.chipWrap}>
+          <View style={[styles.chipWrap, { gap: spacing[2] }]}>
             {DIETARY_OPTIONS.map((option) => (
               <Chip
                 key={option.value}
@@ -352,6 +360,8 @@ export function DishEditorScreen() {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
                 color: palette.text,
+                borderRadius: radii.md,
+                padding: spacing[3],
               },
             ]}
             value={description}
@@ -369,6 +379,7 @@ export function DishEditorScreen() {
               backgroundColor: palette.surface,
               borderColor: palette.border,
               borderRadius: radii.md,
+              padding: spacing[4],
             },
           ]}
         >
@@ -392,6 +403,7 @@ export function DishEditorScreen() {
               backgroundColor: palette.surface,
               borderColor: palette.border,
               borderRadius: radii.md,
+              padding: spacing[4],
             },
           ]}
         >
@@ -424,26 +436,20 @@ export function DishEditorScreen() {
 const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
     fontSize: 16,
   },
   switchRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
     borderWidth: 1,
   },
   imagePreview: {
     width: "100%",
     height: 180,
-    borderRadius: 8,
-    marginBottom: 12,
   },
   chipWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
   },
 });

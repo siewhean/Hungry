@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Heart, MapPin, Send, Star, ChevronLeft, CircleHelp } from "lucide-react-native";
+import { ChevronLeft, CircleHelp, Heart, MapPin, MessageCircle, MessageCircleMore, Send, Star } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated from "react-native-reanimated";
 
@@ -38,6 +38,8 @@ import { useCartStore } from "@/store/useCartStore";
 import { useOrderStore } from "@/store/useOrderStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -651,9 +653,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         </View>
                       ) : null}
                     </View>
-                  ))
-                ) : (
-                  <AppText tone="secondary">No community reviews yet.</AppText>
+                ))
+              ) : (
+                <EmptyState
+                  title="No community reviews yet"
+                  body="Write your first review for this stall."
+                  icon={<CommentIcon size={36} color={palette.textMuted} />}
+                />
                 )}
               </View>
 

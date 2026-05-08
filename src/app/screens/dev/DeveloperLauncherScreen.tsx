@@ -68,6 +68,13 @@ const NETWORK_PRESETS = [
   { id: "offline" as const, label: "Offline", icon: "offline" },
 ];
 
+function toDevTestId(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function CollapsibleSection({
@@ -85,14 +92,16 @@ function CollapsibleSection({
 }) {
   const { palette, spacing } = useHungryTheme();
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const sectionId = toDevTestId(title);
 
   return (
-    <Card style={{ padding: spacing[3] }}>
+    <Card style={{ padding: spacing[3] }} testID={`dev-section-${sectionId}`}>
       <Pressable
         accessibilityLabel={title}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
         onPress={() => setExpanded((v) => !v)}
+        testID={`dev-section-toggle-${sectionId}`}
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
@@ -123,7 +132,11 @@ function CollapsibleSection({
         )}
       </Pressable>
 
-      {expanded ? <View style={{ gap: 8, marginTop: 12 }}>{children}</View> : null}
+      {expanded ? (
+        <View style={{ gap: 8, marginTop: 12 }} testID={`dev-section-body-${sectionId}`}>
+          {children}
+        </View>
+      ) : null}
     </Card>
   );
 }
@@ -144,6 +157,7 @@ function DevButton({
       label={label}
       variant={variant}
       onPress={onPress}
+      testID={`dev-button-${toDevTestId(label)}`}
       style={[{ minHeight: 32, paddingVertical: 4 }, style]}
       size="sm"
       fullWidth={false}

@@ -6,10 +6,12 @@ import {
   BottomSheetModal,
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
-import { MessageCircle, X } from "lucide-react-native";
+import { MessageCircle, MessageCircleMore, X } from "lucide-react-native";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, Avatar, Input } from "@/components/ui";
+import { AppText, Avatar, EmptyState, Input } from "@/components/ui";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore, type SocialComment, type SocialReply } from "@/store/useSocialStore";
@@ -215,21 +217,11 @@ export function ReviewCommentsSheet({
               ) : null}
             </View>
             {!hasComments ? (
-              <View
-                style={{
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: spacing[2],
-                  paddingTop: spacing[2],
-                  paddingBottom: spacing[2],
-                }}
-              >
-                <MessageCircle size={36} color={palette.border} />
-                <AppText tone="secondary">No comments yet</AppText>
-                <AppText variant="bodySmall" tone="muted">
-                  Be the first to reply to this review.
-                </AppText>
-              </View>
+              <EmptyState
+                title="No comments yet"
+                body="Be the first to reply to this review."
+                icon={<CommentIcon size={36} color={palette.textMuted} />}
+              />
             ) : null}
           </>
         ) : null}

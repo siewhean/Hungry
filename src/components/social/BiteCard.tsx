@@ -7,7 +7,9 @@
 
 import { Pressable, View, StyleSheet } from "react-native";
 import { Image } from "expo-image";
-import { Bookmark, Heart, MessageCircle } from "lucide-react-native";
+import { Bookmark, Heart, MessageCircle, MessageCircleMore } from "lucide-react-native";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
@@ -162,7 +164,7 @@ export function BiteCard({
             onPress={onCommentPress}
             style={{ alignItems: "center", flexDirection: "row", gap: 3 }}
           >
-            <MessageCircle size={16} color={palette.textMuted} />
+            <CommentIcon size={16} color={palette.textMuted} />
             {displayCommentCount > 0 ? (
               <AppText variant="micro" tone="muted">
                 {displayCommentCount}
@@ -341,7 +343,7 @@ export function BiteCard({
               gap: 4,
             }}
           >
-            <MessageCircle size={18} color={commented ? palette.orange : palette.textMuted} />
+            <CommentIcon size={18} color={commented ? palette.orange : palette.textMuted} />
             <AppText variant="micro" tone="muted">
               {displayCommentCount}
             </AppText>

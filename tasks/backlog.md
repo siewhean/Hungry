@@ -6,6 +6,7 @@
 
 | id | owner | area | status | evidence | verification | last_updated | notes |
 |---|---|---|---|---|---|---|---|
+| AUTH-SUPABASE-01 | Codex | Supabase Auth | In Progress | `src/store/useSessionStore.ts`, `src/hooks/useAppBootstrap.ts`, `src/app/navigation/RootNavigator.tsx`, `src/app/screens/auth/LoginScreen.tsx`, `src/app/screens/auth/SignUpScreen.tsx` | focused auth guard test + `npm run typecheck` pending | 2026-05-08 | Wire Supabase session restore into protected routes so valid sessions are not redirected to Login before `auth.getSession()` resolves; connector project access currently requires reauthentication |
 | SEC-01 | User | Security | Blocked | `SECURITY.md` | Supabase dashboard toggle confirmed manually | 2026-04-30 | Enable Leaked Password Protection in Supabase dashboard; currently blocked because the control requires a paid Supabase plan |
 | SEC-02 | Codex | Security | Done | `.gitignore` | `rg -n "supabase/.temp|secrets\\*" .gitignore` | 2026-04-29 | `supabase/.temp/` and `secrets*` ignore coverage present |
 | SEC-03 | Codex | Security | Done | `.env.local`, `SECURITY.md`, `security_report.md` | `git ls-files .env.local` produced no tracked index entry | 2026-04-29 | Staged local secret file deletion from git index; durable after commit; owner must rotate exposed credentials |

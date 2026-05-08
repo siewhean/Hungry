@@ -18,24 +18,26 @@ import {
   X,
 } from "lucide-react-native";
 
-import { AppText, Button, IconButton, Chip, Screen, Avatar } from "@/components/ui";
+import { AppText, Button, IconButton, Chip, Screen, Avatar, Skeleton, EmptyState } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { CustomerInteraction, InteractionType } from "@/types/domain";
 
 export function CustomerInboxScreen() {
-  const { palette, spacing } = useHungryTheme();
+  const { palette, spacing, radii } = useHungryTheme();
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [interactions, setInteractions] = useState<CustomerInteraction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<InteractionType | "all" | "unreplied">("all");
   const [replyingTo, setReplyingTo] = useState<CustomerInteraction | null>(null);
+  const [error, setError] = useState(false);
 
   const fetchInteractions = useCallback(async () => {
     if (!activeOutlet) return;
     setIsLoading(true);
+    setError(false);
     try {
       const data = await getHungryService().merchant.getInbox(activeOutlet.id, {
         type: filter === "all" || filter === "unreplied" ? undefined : filter,
@@ -44,6 +46,7 @@ export function CustomerInboxScreen() {
       setInteractions(data);
     } catch (e) {
       console.error("Failed to fetch interactions", e);
+      setError(true);
     } finally {
       setIsLoading(false);
     }
@@ -120,9 +123,21 @@ export function CustomerInboxScreen() {
         {/* Interaction List */}
         <View style={{ gap: spacing[3], paddingBottom: 100 }}>
           {isLoading && interactions.length === 0 ? (
-            <ActivityIndicator color={palette.orange} style={{ marginTop: spacing[12] }} />
+            <View style={{ gap: spacing[3], marginTop: spacing[4] }}>
+              <Skeleton height={150} borderRadius={radii.md} />
+              <Skeleton height={150} borderRadius={radii.md} />
+              <Skeleton height={150} borderRadius={radii.md} />
+            </View>
+          ) : error ? (
+            <EmptyState
+              title="Failed to load inbox"
+              body="There was a problem loading your customer interactions."
+              icon={<X size={48} color={palette.error} />}
+              ctaLabel="Retry"
+              onPress={fetchInteractions}
+            />
           ) : interactions.length === 0 ? (
-            <View style={styles.emptyContainer}>
+            <View style={[styles.emptyContainer, { padding: 60 }]}>
               <CheckCircle2 size={48} color={palette.success} />
               <AppText variant="bodyBold" style={{ marginTop: spacing[3] }}>
                 All caught up!
@@ -260,7 +275,7 @@ function InteractionCard({
     <View
       style={[
         styles.interactionCard,
-        { backgroundColor: palette.surface, borderColor: palette.border, borderRadius: radii.lg },
+        { backgroundColor: palette.surface, borderColor: palette.border, borderRadius: radii.lg, padding: spacing[4] },
       ]}
     >
       <View
@@ -308,7 +323,7 @@ function InteractionCard({
         <View
           style={[
             styles.replyBox,
-            { backgroundColor: palette.bgSoft, borderRadius: radii.md, padding: spacing[3] },
+            { backgroundColor: palette.bgSoft, borderRadius: radii.md, padding: spacing[3], marginTop: spacing[2] },
           ]}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
@@ -400,6 +415,8 @@ function ReplyComposer({
             backgroundColor: palette.surface,
             borderTopLeftRadius: radii.xl,
             borderTopRightRadius: radii.xl,
+            padding: spacing[5],
+            paddingBottom: 40,
           },
         ]}
       >
@@ -430,6 +447,8 @@ function ReplyComposer({
                 backgroundColor: palette.orangeLight,
                 borderColor: palette.orange,
                 borderRadius: radii.md,
+                padding: spacing[3],
+                marginBottom: spacing[4],
               },
             ]}
           >
@@ -453,6 +472,7 @@ function ReplyComposer({
               borderRadius: radii.lg,
               color: palette.text,
               borderColor: palette.border,
+              padding: spacing[4],
             },
           ]}
           placeholder="Type your message..."
@@ -479,34 +499,25 @@ function ReplyComposer({
 
 const styles = StyleSheet.create({
   emptyContainer: {
-    padding: 60,
     alignItems: "center",
     justifyContent: "center",
   },
   summaryCard: {
-    padding: 16,
   },
   interactionCard: {
-    padding: 16,
     borderWidth: 1,
   },
   replyBox: {
-    marginTop: 8,
   },
   composer: {
-    padding: 20,
-    paddingBottom: 40,
   },
   input: {
     height: 120,
-    padding: 16,
     borderWidth: 1,
     textAlignVertical: "top",
     fontSize: 16,
   },
   aiChip: {
-    padding: 12,
     borderWidth: 1,
-    marginBottom: 16,
   },
 });
