@@ -15,6 +15,8 @@ Use the smallest check that matches the change risk.
 
 | date | scope | command | result | notes |
 |---|---|---|---|---|
+| 2026-05-08 | app (AUTH-SUPABASE-01) | `node --import tsx --test src/app/navigation/supabase-auth-guards.test.ts` | Pass | 2/2 focused contracts pass for Supabase auth-ready route gating and profile hydration from Supabase auth/session responses |
+| 2026-05-08 | app (AUTH-SUPABASE-01) | `npm run typecheck` | Pass | Strict TypeScript gate passed after Supabase auth store, bootstrap, Splash, navigation guard, and auth-screen updates |
 | 2026-05-08 | app (INT-BATCH-08) | `/bin/zsh -lc 'node --import tsx --test src/app/native-smoke-contracts.test.ts'` | Pass | 3/3 focused native smoke contracts pass after adding Expo development-build server picker handling, development-menu dismissal, Home activity-inbox test ID, and Activity transition waits |
 | 2026-05-08 | app (INT-BATCH-08) | `/bin/zsh -lc 'node --check scripts/run-maestro-smoke.mjs'` | Pass | Native smoke runner parses successfully |
 | 2026-05-08 | app (INT-BATCH-08) | `git diff --check -- .maestro/ios-chat-smoke.yaml .maestro/ios-media-picker-permission.yaml src/app/native-smoke-contracts.test.ts src/app/screens/home/HomeFeedScreen.tsx` | Pass | Touched native-smoke files have no whitespace errors |
