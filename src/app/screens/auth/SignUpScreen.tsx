@@ -65,7 +65,8 @@ export function SignUpScreen({ navigation }: Props) {
           return;
         }
         showToast({
-          message: "Verification email is currently unavailable. You can continue and verify later.",
+          message:
+            "Verification email is currently unavailable. You can continue and verify later.",
           tone: "warning",
         });
       }
@@ -111,7 +112,9 @@ export function SignUpScreen({ navigation }: Props) {
       });
       navigation.getParent()?.reset({
         index: 0,
-        routes: [{ name: "OnboardingStack" as never, params: { screen: "OnboardingIntro1" } as never }],
+        routes: [
+          { name: "OnboardingStack" as never, params: { screen: "OnboardingIntro1" } as never },
+        ],
       });
     } catch (err) {
       const message = (err as { message?: string })?.message?.toLowerCase() ?? "";

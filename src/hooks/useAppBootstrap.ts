@@ -68,9 +68,13 @@ export function useAppBootstrap() {
           userId: user?.id ?? null,
         });
         if (user) {
-          const profile = await getHungryService().profile.getProfile();
-          if (!active) return;
-          applyProfile(profile);
+          try {
+            const profile = await getHungryService().profile.getProfile();
+            if (!active) return;
+            applyProfile(profile);
+          } catch {
+            // Keep the restored auth session even if profile hydration needs to retry later.
+          }
         }
       })
       .catch(() => {
