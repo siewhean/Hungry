@@ -13,6 +13,10 @@ function devButtonTestId(label: string) {
   return `dev-button-${toDevTestId(label)}`;
 }
 
+const DEV_BUTTON_SECTIONS: Record<string, string> = {
+  "Launch V2 Composer": "Post Composer V2 Settings",
+};
+
 async function clearBrowserStorage(page: Page) {
   await page.evaluate(async () => {
     window.localStorage.clear();
@@ -40,6 +44,20 @@ async function clearBrowserStorage(page: Page) {
   });
 }
 
+export async function openDevSection(page: Page, section: string) {
+  const sectionId = toDevTestId(section);
+  const sectionToggle = page.getByTestId(`dev-section-toggle-${sectionId}`);
+  const sectionBody = page.getByTestId(`dev-section-body-${sectionId}`);
+
+  if (!(await sectionBody.isVisible().catch(() => false))) {
+    await sectionToggle.scrollIntoViewIfNeeded();
+    await sectionToggle.click();
+    await expect(sectionBody).toBeVisible();
+  }
+
+  return sectionBody;
+}
+
 export async function resetAppState(page: Page) {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await clearBrowserStorage(page);
@@ -53,16 +71,10 @@ export async function gotoLauncher(page: Page) {
 }
 
 export async function clickDevButton(page: Page, label: string, section?: string) {
-  if (section) {
-    const sectionId = toDevTestId(section);
-    const sectionToggle = page.getByTestId(`dev-section-toggle-${sectionId}`);
-    const sectionBody = page.getByTestId(`dev-section-body-${sectionId}`);
+  const resolvedSection = section ?? DEV_BUTTON_SECTIONS[label];
 
-    if (!(await sectionBody.isVisible().catch(() => false))) {
-      await sectionToggle.scrollIntoViewIfNeeded();
-      await sectionToggle.click();
-      await expect(sectionBody).toBeVisible();
-    }
+  if (resolvedSection) {
+    const sectionBody = await openDevSection(page, resolvedSection);
 
     const scopedButton = sectionBody.getByTestId(devButtonTestId(label)).first();
     await expect(scopedButton).toBeVisible();

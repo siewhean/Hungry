@@ -493,6 +493,13 @@ Use the smallest check that matches the change risk.
 | 2026-05-09 | app (PERF-BATCH-06 Developer + Merchant Optimization) | `npm test -- --watch=false` | Pass | Full Node test suite passed with 208 tests total: 206 passing and 2 skipped |
 | 2026-05-09 | app (PERF-BATCH-06 Developer + Merchant Optimization) | `git diff --check` | Pass | Current worktree diff has no whitespace errors |
 | 2026-05-09 | app (PERF-BATCH-06 Developer + Merchant Optimization) | `npm run test:e2e` | Blocked | Playwright webServer failed before app load because Expo Web exited in non-interactive mode asking `Use port null instead?`; no route test executed. This matches the local Expo Web harness/port-startup class of blocker rather than a runtime regression in the PERF-BATCH-06 app diff |
+| 2026-05-09 | app (PERF-BATCH-07 E2E Launcher Harness Follow-up) | `E2E_PORT=8130 npm run test:e2e -- --reporter=line` | Fail | Diagnostic elevated rerun started Expo Web successfully, then 7/17 specs failed because `Launch V2 Composer` had moved behind the collapsed `Post Composer V2 Settings` Developer Launcher section after PERF-BATCH-06 |
+| 2026-05-09 | app (PERF-BATCH-07 E2E Launcher Harness Follow-up) | `E2E_PORT=8131 npm run test:e2e -- --reporter=line` | Pass | Full Playwright web/mobile-browser suite passed 17/17 after teaching the shared launcher helper to expand the relevant Developer Launcher section before clicking relocated actions |
+| 2026-05-09 | app (PERF-BATCH-07 E2E Launcher Harness Follow-up) | `E2E_PORT=8134 npx playwright test tests/e2e/routes.spec.ts --project=chromium --reporter=line` | Pass | QA focused rerun passed route smoke 7/7, including the previously flaky Review route, after route content assertions were given the same lazy-hydration tolerance as the newly deferred route modules |
+| 2026-05-09 | app (PERF-BATCH-07 E2E Launcher Harness Follow-up) | `npm run typecheck` | Pass | Strict TypeScript gate passed after the E2E helper and button-smoke update |
+| 2026-05-09 | app (PERF-BATCH-07 E2E Launcher Harness Follow-up) | `npm run lint` | Pass | ESLint completed with 0 errors and 333 warnings; warnings remain the existing repo-wide debt plus intentional lazy `require()` paths |
+| 2026-05-09 | app (PERF-BATCH-07 E2E Launcher Harness Follow-up) | `npm test -- --watch=false` | Pass | Full Node test suite passed with 208 tests total: 206 passing and 2 skipped |
+| 2026-05-09 | app (PERF-BATCH-07 E2E Launcher Harness Follow-up) | `git diff --check` | Pass | Current worktree diff has no whitespace errors after the Playwright helper/docs updates |
 
 ## Outstanding Verification
 

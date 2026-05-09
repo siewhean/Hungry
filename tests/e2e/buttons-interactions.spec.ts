@@ -1,5 +1,10 @@
 import { test, expect } from "./fixtures";
-import { clickDevButton, openComposerFromLauncher, resetAppState } from "./helpers/app";
+import {
+  clickDevButton,
+  openComposerFromLauncher,
+  openDevSection,
+  resetAppState,
+} from "./helpers/app";
 
 test.describe("buttons and interactions", () => {
   test.beforeEach(async ({}, testInfo) => {
@@ -13,6 +18,7 @@ test.describe("buttons and interactions", () => {
     await resetAppState(page);
     await expect(page.getByRole("button", { name: "Open normal app flow" })).toBeVisible();
     await expect(page.getByRole("button", { name: "User" })).toBeVisible();
+    await openDevSection(page, "Post Composer V2 Settings");
     await expect(page.getByRole("button", { name: "Launch V2 Composer" })).toBeVisible();
 
     await clickDevButton(page, "User");
