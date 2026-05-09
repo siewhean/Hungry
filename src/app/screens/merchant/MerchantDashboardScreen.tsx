@@ -4,6 +4,7 @@
  * Features large numbers, big buttons, and simple navigation.
  * Feedback-driven for 'Uncle Tan' and 'Ahmad'.
  */
+import { useCallback, useEffect, useState } from "react";
 import { View, ScrollView, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -21,10 +22,10 @@ import { useHungryTheme } from "@/theme";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { OutletSwitcher } from "@/components/merchant/OutletSwitcher";
+import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
-import { useState, useEffect } from "react";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { MerchantAnalytics } from "@/types/domain";
 
@@ -107,7 +108,18 @@ function MetricCard({
       <View
         style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}
       >
-        <View style={{ width: 48, height: 48, borderRadius: radii.md, alignItems: "center", justifyContent: "center", backgroundColor: color + "15" }}>{icon}</View>
+        <View
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: radii.md,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: color + "15",
+          }}
+        >
+          {icon}
+        </View>
         <TrendingUp size={16} color={palette.success} />
       </View>
       <View style={{ marginTop: spacing[3] }}>
@@ -141,6 +153,7 @@ function ActionCard({
   icon,
   actionText,
   onPress,
+  onPressIn,
   isUrgent = false,
 }: {
   title: string;
@@ -148,11 +161,13 @@ function ActionCard({
   icon: React.ReactNode;
   actionText: string;
   onPress: () => void;
+  onPressIn?: () => void;
   isUrgent?: boolean;
 }) {
   const { palette, spacing, radii } = useHungryTheme();
   return (
     <Pressable
+      onPressIn={onPressIn}
       onPress={onPress}
       style={({ pressed }) => [
         {
@@ -210,6 +225,13 @@ export function MerchantDashboardScreen() {
 
   const [dateRange, setDateRange] = useState<"Today" | "7 Days" | "30 Days">("Today");
   const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
+  const prefetchMerchantRoute = useCallback(
+    (routeName: keyof MerchantTabParamList) => {
+      prefetchMerchantTab(routeName, activeOutlet?.id, activeOutlet?.merchantAccountId);
+      preloadRoute(navigation, routeName);
+    },
+    [activeOutlet?.id, activeOutlet?.merchantAccountId, navigation],
+  );
 
   useEffect(() => {
     if (!activeOutlet) return;
@@ -231,11 +253,13 @@ export function MerchantDashboardScreen() {
     <Skeleton height={24} width={80} borderRadius={radii.sm} />
   );
   const viewsSubtext = analytics ? (
-    dateRange === "Today"
-      ? "vs yesterday"
-      : dateRange === "7 Days"
-        ? "vs last week"
-        : "vs last month"
+    dateRange === "Today" ? (
+      "vs yesterday"
+    ) : dateRange === "7 Days" ? (
+      "vs last week"
+    ) : (
+      "vs last month"
+    )
   ) : (
     <Skeleton height={12} width={60} borderRadius={radii.sm} />
   );
@@ -342,6 +366,7 @@ export function MerchantDashboardScreen() {
               description="Verify your stall to make it discoverable to customers on the map."
               icon={<ClipboardList size={20} color={palette.amber} />}
               actionText="Complete Verification"
+              onPressIn={() => prefetchMerchantRoute("VerificationCentre")}
               onPress={() => navigation.navigate("VerificationCentre")}
               isUrgent={true}
             />
@@ -352,6 +377,7 @@ export function MerchantDashboardScreen() {
             description="Add your opening hours to help customers know when to visit."
             icon={<Utensils size={20} color={palette.orange} />}
             actionText="Edit Profile"
+            onPressIn={() => prefetchMerchantRoute("BusinessProfileEditor")}
             onPress={() => navigation.navigate("BusinessProfileEditor")}
           />
 
@@ -360,6 +386,7 @@ export function MerchantDashboardScreen() {
             description="You have 2 new reviews waiting for your response."
             icon={<MessageSquare size={20} color={palette.textSecondary} />}
             actionText="Read Reviews"
+            onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
             onPress={() => navigation.navigate("CustomerInbox")}
           />
         </View>
@@ -371,6 +398,7 @@ export function MerchantDashboardScreen() {
           </AppText>
 
           <Pressable
+            onPressIn={() => prefetchMerchantRoute("Menu")}
             onPress={() => navigation.navigate("Menu")}
             style={{
               flexDirection: "row",
@@ -405,6 +433,7 @@ export function MerchantDashboardScreen() {
           </Pressable>
 
           <Pressable
+            onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
             onPress={() => navigation.navigate("CustomerInbox")}
             style={{
               flexDirection: "row",
@@ -447,6 +476,7 @@ export function MerchantDashboardScreen() {
             Recent Feedback
           </AppText>
           <Pressable
+            onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
             onPress={() => navigation.navigate("CustomerInbox")}
             style={({ pressed }) => [
               {
@@ -492,4 +522,3 @@ export function MerchantDashboardScreen() {
     </SafeAreaView>
   );
 }
-

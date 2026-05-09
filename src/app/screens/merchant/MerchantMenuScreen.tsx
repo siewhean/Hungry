@@ -7,6 +7,12 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AppText, Button, IconButton, EmptyState, Chip, Screen, Skeleton } from "@/components/ui";
+import {
+  prefetchDishDetail,
+  prefetchImages,
+  prefetchStallDetail,
+  preloadRoute,
+} from "@/features/navigation/prefetch";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
@@ -79,6 +85,46 @@ export function MerchantMenuScreen() {
     return result;
   }, [menu, searchQuery, filter]);
 
+  useEffect(() => {
+    prefetchImages(
+      menu.map((dish) => dish.imageUrl || dish.gallery?.[0]),
+      8,
+    );
+  }, [menu]);
+
+  const previewVenueId = useMemo(
+    () =>
+      menu[0]?.venueId ??
+      activeOutlet?.signatureDishIds
+        .map((dishId) => repository.getDishById(dishId)?.venueId)
+        .find(Boolean) ??
+      (activeOutlet?.buildingId
+        ? repository.listVenuesByBuilding(activeOutlet.buildingId)[0]?.id
+        : undefined),
+    [activeOutlet, menu, repository],
+  );
+
+  const prefetchDishEditorRoute = useCallback(
+    (dish?: DishDetail) => {
+      if (dish?.id) {
+        prefetchDishDetail(dish.id, repository);
+        preloadRoute(navigation, "DishEditor", { dishId: dish.id });
+        return;
+      }
+      preloadRoute(navigation, "DishEditor");
+    },
+    [navigation, repository],
+  );
+
+  const prefetchPreviewMenuAsCustomer = useCallback(() => {
+    if (previewVenueId) {
+      prefetchStallDetail(previewVenueId, repository);
+      preloadRoute(rootNavigation, "StallDetail", { venueId: previewVenueId });
+      return;
+    }
+    preloadRoute(rootNavigation, "DiscoverMap");
+  }, [previewVenueId, repository, rootNavigation]);
+
   const handleToggleSoldOut = async (dish: DishDetail) => {
     if (!activeOutlet) return;
     try {
@@ -146,15 +192,6 @@ export function MerchantMenuScreen() {
   };
 
   const handlePreviewMenuAsCustomer = () => {
-    const previewVenueId =
-      menu[0]?.venueId ??
-      activeOutlet?.signatureDishIds
-        .map((dishId) => repository.getDishById(dishId)?.venueId)
-        .find(Boolean) ??
-      (activeOutlet?.buildingId
-        ? repository.listVenuesByBuilding(activeOutlet.buildingId)[0]?.id
-        : undefined);
-
     if (previewVenueId) {
       rootNavigation.navigate("StallDetail", { venueId: previewVenueId });
     } else {
@@ -170,6 +207,7 @@ export function MerchantMenuScreen() {
           <IconButton
             accessibilityLabel="Scan menu (OCR)"
             icon={<Camera size={24} color={palette.textSecondary} />}
+            onPressIn={() => preloadRoute(navigation, "OCRDrafts")}
             onPress={() => navigation.navigate("OCRDrafts")}
           />
           <Button
@@ -178,6 +216,7 @@ export function MerchantMenuScreen() {
             size="sm"
             fullWidth={false}
             leftIcon={<Plus size={16} color={palette.white} />}
+            onPressIn={() => prefetchDishEditorRoute()}
             onPress={() => navigation.navigate("DishEditor")}
           />
         </View>
@@ -251,6 +290,7 @@ export function MerchantMenuScreen() {
               return (
                 <Pressable
                   key={dish.id}
+                  onPressIn={() => prefetchDishEditorRoute(dish)}
                   onLongPress={() => showDishOptions(dish)}
                   onPress={() => navigation.navigate("DishEditor", { dishId: dish.id })}
                   style={[
@@ -292,7 +332,9 @@ export function MerchantMenuScreen() {
                         {dish.name}
                       </AppText>
                       {isSoldOut && (
-                        <View style={{ backgroundColor: palette.errorSoft, borderRadius: radii.pill }}>
+                        <View
+                          style={{ backgroundColor: palette.errorSoft, borderRadius: radii.pill }}
+                        >
                           <Chip label="Sold Out" selected={false} />
                         </View>
                       )}
@@ -336,6 +378,7 @@ export function MerchantMenuScreen() {
           label="Preview menu as customer"
           variant="secondary"
           fullWidth
+          onPressIn={prefetchPreviewMenuAsCustomer}
           onPress={handlePreviewMenuAsCustomer}
         />
       </View>

@@ -2,9 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, TextInput, View, useWindowDimensions } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import { Bookmark, Heart, MessageCircle, MessageCircleMore, PlayCircle, Send } from "lucide-react-native";
-
-const CommentIcon = MessageCircle ?? MessageCircleMore;
+import {
+  Bookmark,
+  Heart,
+  MessageCircle,
+  MessageCircleMore,
+  PlayCircle,
+  Send,
+} from "lucide-react-native";
 import type { NavigationProp } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +22,7 @@ import {
   type ActiveReviewCommentTarget,
   ZoomableMedia,
 } from "@/components/social";
+import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import { listSharedStallPosts, listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
 import { getDataRepository } from "@/lib/services/serviceProvider";
@@ -24,6 +30,8 @@ import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useSocialStore, type SocialComment } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
 import type { StallPost } from "@/types/domain";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "SocialPostDetail">;
 
@@ -148,6 +156,11 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Open ${primaryDish?.name ?? venue?.name ?? "post"} details`}
+            onPressIn={() => {
+              if (!primaryDish) return;
+              prefetchDishDetail(primaryDish.id, repository);
+              preloadRoute(rootNavigation, "DishDetail", { dishId: primaryDish.id });
+            }}
             onPress={() => {
               if (primaryDish) {
                 rootNavigation.navigate("DishDetail", { dishId: primaryDish.id });

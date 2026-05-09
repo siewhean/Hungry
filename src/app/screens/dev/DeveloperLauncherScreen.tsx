@@ -173,7 +173,19 @@ function DevButton({
   );
 }
 
-function VersionPair({ label, onV1, onV2 }: { label: string; onV1: () => void; onV2: () => void }) {
+function VersionPair({
+  label,
+  onV1,
+  onV2,
+  onV1PressIn,
+  onV2PressIn,
+}: {
+  label: string;
+  onV1: () => void;
+  onV2: () => void;
+  onV1PressIn?: () => void;
+  onV2PressIn?: () => void;
+}) {
   const { spacing } = useHungryTheme();
   return (
     <View
@@ -188,8 +200,14 @@ function VersionPair({ label, onV1, onV2 }: { label: string; onV1: () => void; o
         {label}
       </AppText>
       <View style={{ flexDirection: "row", gap: spacing[1] }}>
-        <DevButton label="V1" onPress={onV1} style={{ minWidth: 40 }} />
-        <DevButton label="V2" onPress={onV2} variant="primary" style={{ minWidth: 40 }} />
+        <DevButton label="V1" onPressIn={onV1PressIn} onPress={onV1} style={{ minWidth: 40 }} />
+        <DevButton
+          label="V2"
+          onPressIn={onV2PressIn}
+          onPress={onV2}
+          variant="primary"
+          style={{ minWidth: 40 }}
+        />
       </View>
     </View>
   );
@@ -388,6 +406,22 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     navigation.navigate(version === "v2" ? "DishDetailV2" : "DishDetail", { dishId: dish.id });
   };
 
+  const prefetchSampleStallDetail = (version: "v1" | "v2" = "v1") => {
+    prefetchStallDetail(sampleStallVenueId, repository);
+    preloadRoute(navigation, version === "v2" ? "StallDetailV2" : "StallDetail", {
+      venueId: sampleStallVenueId,
+    });
+  };
+
+  const prefetchSampleDishDetail = (version: "v1" | "v2" = "v1") => {
+    const dish = sampleDish ?? mockDishes[0];
+    if (!dish) return;
+    prefetchDishDetail(dish.id, repository);
+    preloadRoute(navigation, version === "v2" ? "DishDetailV2" : "DishDetail", {
+      dishId: dish.id,
+    });
+  };
+
   // Data inspector stats
   const stats = useMemo(
     () => ({
@@ -513,41 +547,71 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         >
           <VersionPair
             label="Discover"
+            onV1PressIn={() => preloadRoute(navigation, "MainTabs", { screen: "Discover" })}
+            onV2PressIn={() => preloadRoute(navigation, "DiscoverV2")}
             onV1={() => navigation.navigate("MainTabs", { screen: "Discover" })}
             onV2={() => navigation.navigate("DiscoverV2")}
           />
           <VersionPair
             label="Search"
+            onV1PressIn={() => preloadRoute(navigation, "SearchHome")}
+            onV2PressIn={() => preloadRoute(navigation, "SearchHomeV2")}
             onV1={() => navigation.navigate("SearchHome")}
             onV2={() => navigation.navigate("SearchHomeV2")}
           />
           <VersionPair
             label="Stall Detail"
+            onV1PressIn={() => prefetchSampleStallDetail("v1")}
+            onV2PressIn={() => prefetchSampleStallDetail("v2")}
             onV1={() => openSampleStallDetail("v1")}
             onV2={() => openSampleStallDetail("v2")}
           />
           <VersionPair
             label="Dish Detail"
+            onV1PressIn={() => prefetchSampleDishDetail("v1")}
+            onV2PressIn={() => prefetchSampleDishDetail("v2")}
             onV1={() => openSampleDishDetail("v1")}
             onV2={() => openSampleDishDetail("v2")}
           />
           <VersionPair
             label="Building"
+            onV1PressIn={() =>
+              preloadRoute(navigation, "BuildingDrillDown", { buildingId: "hc-maxwell" })
+            }
+            onV2PressIn={() =>
+              preloadRoute(navigation, "BuildingDrillDownV2", { buildingId: "hc-maxwell" })
+            }
             onV1={() => openBuilding("hc-maxwell")}
             onV2={() => navigation.navigate("BuildingDrillDownV2", { buildingId: "hc-maxwell" })}
           />
           <VersionPair
             label="QuickReview"
+            onV1PressIn={() => preloadRoute(navigation, "ReviewStack", { screen: "ReviewMain" })}
+            onV2PressIn={() => preloadRoute(navigation, "QuickReviewV2")}
             onV1={() => navigation.navigate("ReviewStack", { screen: "ReviewMain" })}
             onV2={() => navigation.navigate("QuickReviewV2")}
           />
           <VersionPair
             label="Review Feed"
+            onV1PressIn={() => preloadRoute(navigation, "MainTabs", { screen: "Review" })}
+            onV2PressIn={() => preloadRoute(navigation, "ReviewFeedV2")}
             onV1={() => navigation.navigate("MainTabs", { screen: "Review" })}
             onV2={() => navigation.navigate("ReviewFeedV2" as any)}
           />
           <VersionPair
             label="Post Composer"
+            onV1PressIn={() =>
+              preloadRoute(navigation, "PostComposerV2", {
+                dishId: sampleDish?.id,
+                venueId: sampleStallVenueId,
+              })
+            }
+            onV2PressIn={() =>
+              preloadRoute(navigation, "PostComposerV2", {
+                dishId: sampleDish?.id,
+                venueId: sampleStallVenueId,
+              })
+            }
             onV1={() =>
               navigation.navigate("PostComposerV2" as any, {
                 dishId: sampleDish?.id,

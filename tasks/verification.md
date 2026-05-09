@@ -482,6 +482,11 @@ Use the smallest check that matches the change risk.
 | 2026-05-09 | app (PERF-BATCH-04 Discover/Search Render Path) | `npm run lint` | Pass | ESLint completed with 0 errors and 328 warnings; remaining warnings are existing repo-wide debt and intentional lazy `require()` paths |
 | 2026-05-09 | app (PERF-BATCH-04 Discover/Search Render Path) | `npm test -- --watch=false` | Pass | Full Node test suite passed with 206 tests total: 204 passing and 2 skipped |
 | 2026-05-09 | app (PERF-BATCH-04 Discover/Search Render Path) | `git diff --check` | Pass | Current worktree diff has no whitespace errors |
+| 2026-05-09 | app (PERF-BATCH-05 Link Prefetch Coverage) | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/app/performance-prefetch-contracts.test.ts` | Pass | 6/6 focused performance contracts pass, including the new guard that shared Button/IconButton, profile rows/cards, merchant dashboard/menu actions, merchant account prefetch routes, and Developer Launcher V1/V2 buttons preserve route/data/image prefetch on press intent |
+| 2026-05-09 | app (PERF-BATCH-05 Link Prefetch Coverage) | `npm run typecheck` | Pass | Strict TypeScript gate passed after adding remaining high-traffic profile, merchant, and developer prefetch wiring |
+| 2026-05-09 | app (PERF-BATCH-05 Link Prefetch Coverage) | `npm run lint` | Pass | ESLint completed with 0 errors and 329 warnings; remaining warnings are existing repo-wide debt and intentional lazy `require()` paths |
+| 2026-05-09 | app (PERF-BATCH-05 Link Prefetch Coverage) | `npm test -- --watch=false` | Pass | Full Node test suite passed with 207 tests total: 205 passing and 2 skipped |
+| 2026-05-09 | app (PERF-BATCH-05 Link Prefetch Coverage) | `git diff --check` | Pass | Current worktree diff has no whitespace errors |
 
 ## Outstanding Verification
 

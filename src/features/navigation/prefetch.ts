@@ -10,6 +10,8 @@ type MerchantPrefetchRoute =
   | "Analytics"
   | "Profile"
   | "CustomerInbox"
+  | "BusinessProfileEditor"
+  | "VerificationCentre"
   | string;
 
 const prefetchedImages = new Set<string>();
@@ -160,7 +162,12 @@ export function prefetchMerchantTab(
         await merchant.getInbox(outletId);
         return;
       }
-      if (routeName === "Profile" || routeName === "MerchantSettings") {
+      if (
+        routeName === "Profile" ||
+        routeName === "MerchantSettings" ||
+        routeName === "BusinessProfileEditor" ||
+        routeName === "VerificationCentre"
+      ) {
         await merchant.getMerchantAccount();
       }
     } catch {

@@ -23,6 +23,7 @@ import {
 import { AppText, Card, Button, EmptyState } from "@/components/ui";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
+import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
 import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
@@ -86,6 +87,11 @@ export function ProfileHomeScreen({ navigation }: Props) {
   const rootNavigation = getRootNavigation(
     navigation as NativeStackNavigationProp<ProfileStackParamList, "ProfileHome">,
   );
+  const prefetchMerchantDashboard = useCallback(() => {
+    const outlet = merchantAccount?.outlets[0];
+    prefetchMerchantTab("Dashboard", outlet?.id, merchantAccount?.id);
+    preloadRoute(rootNavigation, "MerchantTabs");
+  }, [merchantAccount, rootNavigation]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -319,6 +325,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
                 <MenuRow
                   label="Merchant Dashboard"
                   icon={<Store size={20} color={palette.orange} />}
+                  onPressIn={prefetchMerchantDashboard}
                   onPress={() => {
                     setMenuOpen(false);
                     rootNavigation.navigate("MerchantTabs" as any);
@@ -329,6 +336,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
                 <MenuRow
                   label="Liked Content"
                   icon={<Heart size={20} color={palette.error} fill={palette.error} />}
+                  onPressIn={() => preloadRoute(navigation, "SocialGrid", { type: "liked" })}
                   onPress={() => {
                     setMenuOpen(false);
                     navigation.navigate("SocialGrid", { type: "liked" });
@@ -338,6 +346,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
               <MenuRow
                 label="Review History"
                 icon={<PencilLine size={20} color={palette.text} />}
+                onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
                 onPress={() => {
                   setMenuOpen(false);
                   navigation.navigate("ReviewHistory");
@@ -346,6 +355,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
               <MenuRow
                 label="Settings"
                 icon={<Settings size={20} color={palette.text} />}
+                onPressIn={() => preloadRoute(navigation, "Settings")}
                 onPress={() => {
                   setMenuOpen(false);
                   navigation.navigate("Settings");
@@ -410,6 +420,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
             </View>
             {isAuthenticated && (
               <Pressable
+                onPressIn={() => preloadRoute(navigation, "EditProfile")}
                 onPress={() => navigation.navigate("EditProfile")}
                 style={{
                   position: "absolute",
@@ -469,6 +480,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
             </View>
             <Button
               label="Sign In / Create Account"
+              onPressIn={() => preloadRoute(rootNavigation, "AuthStack", { screen: "Login" })}
               onPress={() => navigation.navigate("AuthStack" as any, { screen: "Login" })}
             />
           </Card>
@@ -491,18 +503,21 @@ export function ProfileHomeScreen({ navigation }: Props) {
                 label="Reviews"
                 value={profile.stats.dishesReviewed}
                 icon={<PencilLine size={14} color={palette.orange} />}
+                onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
                 onPress={() => navigation.navigate("ReviewHistory")}
               />
               <StatBlock
                 label="Stalls"
                 value={profile.stats.stallsVisited}
                 icon={<Utensils size={14} color={palette.orange} />}
+                onPressIn={() => preloadRoute(navigation, "VisitedStalls")}
                 onPress={() => navigation.navigate("VisitedStalls")}
               />
               <StatBlock
                 label="Saved"
                 value={socialCounts.saved}
                 icon={<Bookmark size={14} color={palette.orange} />}
+                onPressIn={() => preloadRoute(navigation, "SocialGrid", { type: "saved" })}
                 onPress={() => navigation.navigate("SocialGrid", { type: "saved" })}
               />
             </View>
@@ -799,11 +814,13 @@ function StatBlock({
   label,
   value,
   icon,
+  onPressIn,
   onPress,
 }: {
   label: string;
   value: number;
   icon: ReactNode;
+  onPressIn?: () => void;
   onPress?: () => void;
 }) {
   const { palette, spacing, radii, colorScheme } = useHungryTheme();
@@ -844,6 +861,7 @@ function StatBlock({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${label} ${value}`}
+      onPressIn={onPressIn}
       onPress={onPress}
       style={({ pressed }) => {
         const pressedStyle =
@@ -862,15 +880,18 @@ function StatBlock({
 function MenuRow({
   label,
   icon,
+  onPressIn,
   onPress,
 }: {
   label: string;
   icon: ReactNode;
+  onPressIn?: () => void;
   onPress: () => void;
 }) {
   const { palette, spacing, radii } = useHungryTheme();
   return (
     <Pressable
+      onPressIn={onPressIn}
       onPress={onPress}
       style={({ pressed }) => [
         {

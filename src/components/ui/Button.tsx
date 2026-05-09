@@ -37,6 +37,7 @@ export function Button({
   style,
   leftIcon,
   rightIcon,
+  onPressIn,
   ...props
 }: ButtonProps) {
   const { componentSizes, opacity, palette, radii, spacing } = useHungryTheme();
@@ -92,9 +93,10 @@ export function Button({
     <Pressable
       accessibilityRole="button"
       disabled={isDisabled}
-      onPressIn={() => {
+      onPressIn={(event) => {
         if (!isDisabled) {
           void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          onPressIn?.(event);
         }
       }}
       style={({ pressed }) => [

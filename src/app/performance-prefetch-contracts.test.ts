@@ -131,3 +131,64 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(zoomableMedia, /require\("\.\/ZoomableVideo"\)/);
   assert.match(zoomableVideo, /from "expo-video"/);
 });
+
+test("remaining high-traffic profile, developer, and merchant links prefetch on intent", () => {
+  const button = read("src/components/ui/Button.tsx");
+  const iconButton = read("src/components/ui/IconButton.tsx");
+  const merchantDashboard = read("src/app/screens/merchant/MerchantDashboardScreen.tsx");
+  const merchantMenu = read("src/app/screens/merchant/MerchantMenuScreen.tsx");
+  const favourites = read("src/app/screens/profile/FavouritesScreen.tsx");
+  const profileHome = read("src/app/screens/profile/ProfileHomeScreen.tsx");
+  const socialPostDetail = read("src/app/screens/profile/SocialPostDetailScreen.tsx");
+  const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
+  const prefetch = read("src/features/navigation/prefetch.ts");
+
+  assert.match(button, /onPressIn\?\.\(event\)/);
+  assert.match(iconButton, /onPressIn\?\.\(event\)/);
+
+  assert.match(merchantDashboard, /function ActionCard[\s\S]*onPressIn\?: \(\) => void/);
+  assert.match(merchantDashboard, /const prefetchMerchantRoute = useCallback/);
+  assert.match(merchantDashboard, /prefetchMerchantTab\(routeName, activeOutlet\?\.id/);
+  assert.match(prefetch, /routeName === "BusinessProfileEditor"/);
+  assert.match(prefetch, /routeName === "VerificationCentre"/);
+  assert.match(prefetch, /await merchant\.getMerchantAccount\(\)/);
+  assert.match(merchantDashboard, /onPressIn=\{\(\) => prefetchMerchantRoute\("Menu"\)\}/);
+  assert.match(merchantDashboard, /onPressIn=\{\(\) => prefetchMerchantRoute\("CustomerInbox"\)\}/);
+  assert.match(
+    merchantDashboard,
+    /onPressIn=\{\(\) => prefetchMerchantRoute\("BusinessProfileEditor"\)\}/,
+  );
+  assert.match(
+    merchantDashboard,
+    /onPressIn=\{\(\) => prefetchMerchantRoute\("VerificationCentre"\)\}/,
+  );
+
+  assert.match(merchantMenu, /const prefetchDishEditorRoute = useCallback/);
+  assert.match(merchantMenu, /const prefetchPreviewMenuAsCustomer = useCallback/);
+  assert.match(merchantMenu, /onPressIn=\{\(\) => preloadRoute\(navigation, "OCRDrafts"\)\}/);
+  assert.match(merchantMenu, /onPressIn=\{\(\) => prefetchDishEditorRoute\(\)\}/);
+  assert.match(merchantMenu, /onPressIn=\{\(\) => prefetchDishEditorRoute\(dish\)\}/);
+  assert.match(merchantMenu, /onPressIn=\{prefetchPreviewMenuAsCustomer\}/);
+
+  assert.match(favourites, /onPressIn=\{\(\) => \{[\s\S]*prefetchDishDetail\(dish\.id/);
+  assert.match(favourites, /preloadRoute\(rootNavigation, "DishDetail", \{ dishId: dish\.id \}\)/);
+  assert.match(
+    socialPostDetail,
+    /onPressIn=\{\(\) => \{[\s\S]*preloadRoute\(rootNavigation, "DishDetail"/,
+  );
+
+  assert.match(profileHome, /const prefetchMerchantDashboard = useCallback/);
+  assert.match(profileHome, /function MenuRow[\s\S]*onPressIn\?: \(\) => void/);
+  assert.match(profileHome, /function StatBlock[\s\S]*onPressIn\?: \(\) => void/);
+  assert.match(profileHome, /onPressIn=\{prefetchMerchantDashboard\}/);
+  assert.match(profileHome, /onPressIn=\{\(\) => preloadRoute\(navigation, "SocialGrid"/);
+  assert.match(profileHome, /onPressIn=\{\(\) => preloadRoute\(navigation, "ReviewHistory"\)\}/);
+  assert.match(profileHome, /onPressIn=\{\(\) => preloadRoute\(navigation, "Settings"\)\}/);
+
+  assert.match(developerLauncher, /onV1PressIn\?: \(\) => void/);
+  assert.match(developerLauncher, /const prefetchSampleStallDetail =/);
+  assert.match(developerLauncher, /const prefetchSampleDishDetail =/);
+  assert.match(developerLauncher, /onV1PressIn=\{\(\) => prefetchSampleStallDetail\("v1"\)\}/);
+  assert.match(developerLauncher, /onV2PressIn=\{\(\) => prefetchSampleDishDetail\("v2"\)\}/);
+  assert.match(developerLauncher, /onV1PressIn=\{\(\) => preloadRoute\(navigation, "MainTabs"/);
+});
