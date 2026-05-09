@@ -25,7 +25,9 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.doesNotMatch(tabs, /import \{ ProfileStack \}/);
   assert.match(tabs, /lazy:\s*true/);
   assert.match(tabs, /lazyPlaceholder:\s*TabLazyPlaceholder/);
-  assert.match(tabs, /lazyPreloadDistance:\s*0/);
+  assert.match(tabs, /InteractionManager\.runAfterInteractions/);
+  assert.match(tabs, /tabPreloadEnabled/);
+  assert.match(tabs, /lazyPreloadDistance:\s*tabPreloadEnabled \? 1 : 0/);
 });
 
 test("startup does not block indefinitely on fonts or analytics", () => {
@@ -76,12 +78,21 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
   assert.doesNotMatch(homeScreen, /getHomeFeed\(profile\)/);
   assert.doesNotMatch(homeScreen, /getHomeSocialFeed\(profile\)/);
   assert.doesNotMatch(homeScreen, /useEffect\(\(\) => \{\s*void loadFeed\(\);/);
+  assert.match(homeScreen, /InteractionManager\.runAfterInteractions/);
+  assert.match(homeScreen, /FEED_LOAD_DEDUPE_MS = 1500/);
+  assert.match(homeScreen, /lastLoadedFeedKeyRef/);
+  assert.match(homeScreen, /lastLoadedFeedAtRef/);
+  assert.match(homeScreen, /activeFeedLoadIdRef/);
+  assert.doesNotMatch(homeScreen, /const publishedPosts = usePublishedPostStore/);
   assert.match(discover, /getDiscoverBites\(repository\)/);
   assert.match(
     discover,
     /getDiscoverBiteCollection\("quickBites", discoverBaseBites, repository\)/,
   );
-  assert.match(quickBites, /useState\(false\)/);
+  assert.equal((quickBites.match(/getDiscoverBites\(/g) ?? []).length, 1);
+  assert.match(quickBites, /const fallbackBites = useMemo\(\(\) => getDiscoverBites\(\), \[\]\)/);
+  assert.doesNotMatch(quickBites, /ActivityIndicator/);
+  assert.doesNotMatch(quickBites, /isLoading/);
 });
 
 test("prefetch layer warms images, data, and route modules without blocking navigation", () => {

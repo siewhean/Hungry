@@ -5,7 +5,6 @@ import {
   Pressable,
   ScrollView,
   useWindowDimensions,
-  ActivityIndicator,
   Animated,
 } from "react-native";
 import { Image } from "expo-image";
@@ -89,10 +88,10 @@ export function QuickBitesScreen() {
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const collection: DiscoverCollection = route.params?.collection ?? "quickBites";
   const collectionCopy = COLLECTION_COPY[collection];
+  const fallbackBites = useMemo(() => getDiscoverBites(), []);
 
   const [selectedCuisine, setSelectedCuisine] = useState("All");
-  const [bites, setBites] = useState<Bite[]>(() => getDiscoverBites());
-  const [isLoading, setIsLoading] = useState(false);
+  const [bites, setBites] = useState<Bite[]>(fallbackBites);
   const searchQuery = useSearchStore((state) => state.filters.query);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
@@ -146,20 +145,17 @@ export function QuickBitesScreen() {
       try {
         const feed = await getHomeBitesFeed(currentLocation.latitude, currentLocation.longitude);
         if (feed && feed.length > 0) {
-          const fallbackBites = getDiscoverBites();
           const feedIds = new Set(feed.map((bite) => bite.id));
           setBites([...feed, ...fallbackBites.filter((bite) => !feedIds.has(bite.id))]);
         } else {
-          setBites(getDiscoverBites());
+          setBites(fallbackBites);
         }
       } catch {
-        setBites(getDiscoverBites());
-      } finally {
-        setIsLoading(false);
+        setBites(fallbackBites);
       }
     };
     void loadBites();
-  }, [currentLocation]);
+  }, [currentLocation, fallbackBites]);
 
   const collectionBites = useMemo(() => {
     return getDiscoverBiteCollection(collection, bites);
@@ -388,49 +384,43 @@ export function QuickBitesScreen() {
       </View>
 
       <View style={{ flex: 1, width: "100%" }}>
-        {isLoading ? (
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-            <ActivityIndicator color={palette.orange} size="large" />
-          </View>
-        ) : (
-          <FlashList
-            data={filteredBites}
-            renderItem={renderBiteItem}
-            keyExtractor={(item) => item.id}
-            onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-              useNativeDriver: false,
-            })}
-            scrollEventThrottle={16}
-            // @ts-ignore
-            estimatedItemSize={220}
-            numColumns={numColumns}
-            contentContainerStyle={{ paddingBottom: spacing[12] }}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
+        <FlashList
+          data={filteredBites}
+          renderItem={renderBiteItem}
+          keyExtractor={(item) => item.id}
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+            useNativeDriver: false,
+          })}
+          scrollEventThrottle={16}
+          // @ts-ignore
+          estimatedItemSize={220}
+          numColumns={numColumns}
+          contentContainerStyle={{ paddingBottom: spacing[12] }}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View
+              style={{
+                marginTop: spacing[12],
+                alignItems: "center",
+                gap: spacing[4],
+                width: "100%",
+              }}
+            >
+              <AppText style={styles.emptyStateIcon}>🥣</AppText>
               <View
-                style={{
-                  marginTop: spacing[12],
-                  alignItems: "center",
-                  gap: spacing[4],
-                  width: "100%",
-                }}
+                style={{ alignItems: "center", gap: spacing[1], paddingHorizontal: spacing[8] }}
               >
-                <AppText style={styles.emptyStateIcon}>🥣</AppText>
-                <View
-                  style={{ alignItems: "center", gap: spacing[1], paddingHorizontal: spacing[8] }}
-                >
-                  <AppText variant="h3" style={{ textAlign: "center" }}>
-                    {collectionCopy.emptyTitle}
-                  </AppText>
-                  <AppText tone="muted" style={{ textAlign: "center" }}>
-                    {collectionCopy.emptyBody}
-                  </AppText>
-                </View>
+                <AppText variant="h3" style={{ textAlign: "center" }}>
+                  {collectionCopy.emptyTitle}
+                </AppText>
+                <AppText tone="muted" style={{ textAlign: "center" }}>
+                  {collectionCopy.emptyBody}
+                </AppText>
               </View>
-            }
-            ListFooterComponent={renderFoodCarousel}
-          />
-        )}
+            </View>
+          }
+          ListFooterComponent={renderFoodCarousel}
+        />
       </View>
     </Screen>
   );

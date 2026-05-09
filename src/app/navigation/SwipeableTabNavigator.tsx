@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { View, Pressable, StyleSheet } from "react-native";
+import { InteractionManager, View, Pressable, StyleSheet } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import type { MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
 import type { NavigationProp } from "@react-navigation/native";
@@ -191,6 +191,18 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 }
 
 export function SwipeableTabNavigator() {
+  const [tabPreloadEnabled, setTabPreloadEnabled] = useState(false);
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setTabPreloadEnabled(true);
+    });
+
+    return () => {
+      task.cancel();
+    };
+  }, []);
+
   return (
     <Tab.Navigator
       id="Tabs"
@@ -201,7 +213,7 @@ export function SwipeableTabNavigator() {
         animationEnabled: false,
         lazy: true,
         lazyPlaceholder: TabLazyPlaceholder,
-        lazyPreloadDistance: 0,
+        lazyPreloadDistance: tabPreloadEnabled ? 1 : 0,
       }}
     >
       <Tab.Screen name="Home" component={HomeWrapper} />

@@ -5,6 +5,7 @@ import {
   Alert,
   Animated,
   Clipboard,
+  InteractionManager,
   Pressable,
   ScrollView,
   Share,
@@ -119,6 +120,7 @@ type HomeFeedScreenProps = {
 
 const DOUBLE_TAP_DELAY_MS = 280;
 const COLLAPSED_CAPTION_MAX_CHARS = 118;
+const FEED_LOAD_DEDUPE_MS = 1500;
 const MAP_BUILDING_ID_ALIASES: Record<string, string> = {
   "building-amoy": "hc-amoy",
   "building-lau-pa-sat": "hc-lau-pa-sat",
@@ -157,7 +159,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const headerActionSize = spacing[8] + spacing[2.5];
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
-  const publishedPosts = usePublishedPostStore((state) => state.posts);
+  const publishedPostsVersion = usePublishedPostStore((state) => state.version);
   const stories = useStoryStore((state) => state.stories);
   const loadStories = useStoryStore((state) => state.loadStories);
   const interactions = useSocialStore((state) => state.interactions);
@@ -225,26 +227,75 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     originX: number;
     originY: number;
   } | null>(null);
+  const activeFeedLoadIdRef = useRef(0);
+  const lastLoadedFeedAtRef = useRef(0);
+  const lastLoadedFeedKeyRef = useRef<string | null>(null);
+  const profileFeedKey = useMemo(() => {
+    const tasteSignature = Object.entries(profile.tasteVector)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, value]) => `${key}:${value}`)
+      .join(",");
+    return [
+      profile.id,
+      profile.dietaryPreferences.join(","),
+      tasteSignature,
+      publishedPostsVersion,
+    ].join("|");
+  }, [profile.dietaryPreferences, profile.id, profile.tasteVector, publishedPostsVersion]);
 
-  const loadFeed = useCallback(async () => {
-    setFeedState("loading");
-    try {
-      const bundle = await getHomeFeedBundle(profile);
-      setSections(bundle.sections);
-      setSocialFeed(bundle.socialFeed);
-      initializeInteractions([
-        ...bundle.socialFeed,
-        ...bundle.sections.flatMap((section) => section.items),
-      ]);
-      setFeedState("ready");
-    } catch {
-      setFeedState("error");
-    }
-  }, [initializeInteractions, profile, publishedPosts]);
+  const loadFeed = useCallback(
+    async (options?: { force?: boolean }) => {
+      const requestKey = profileFeedKey;
+      const now = Date.now();
+      if (
+        !options?.force &&
+        lastLoadedFeedKeyRef.current === requestKey &&
+        now - lastLoadedFeedAtRef.current < FEED_LOAD_DEDUPE_MS
+      ) {
+        return;
+      }
+
+      const loadId = activeFeedLoadIdRef.current + 1;
+      activeFeedLoadIdRef.current = loadId;
+      setFeedState((current) => (current === "ready" && !options?.force ? current : "loading"));
+      try {
+        const bundle = await getHomeFeedBundle(profile);
+        if (activeFeedLoadIdRef.current !== loadId) {
+          return;
+        }
+        setSections(bundle.sections);
+        setSocialFeed(bundle.socialFeed);
+        initializeInteractions([
+          ...bundle.socialFeed,
+          ...bundle.sections.flatMap((section) => section.items),
+        ]);
+        lastLoadedFeedKeyRef.current = requestKey;
+        lastLoadedFeedAtRef.current = Date.now();
+        setFeedState("ready");
+      } catch {
+        if (activeFeedLoadIdRef.current !== loadId) {
+          return;
+        }
+        setFeedState("error");
+      }
+    },
+    [initializeInteractions, profile, profileFeedKey],
+  );
 
   useFocusEffect(
     useCallback(() => {
-      void loadFeed();
+      let cancelled = false;
+      const task = InteractionManager.runAfterInteractions(() => {
+        if (!cancelled) {
+          void loadFeed();
+        }
+      });
+
+      return () => {
+        cancelled = true;
+        task.cancel();
+        activeFeedLoadIdRef.current += 1;
+      };
     }, [loadFeed]),
   );
 
@@ -1411,7 +1462,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       >
         <FeedErrorBoundary
           onRetry={() => {
-            void loadFeed();
+            void loadFeed({ force: true });
           }}
         >
           {mode === "social" ? (
@@ -1447,7 +1498,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       >
         <FeedErrorBoundary
           onRetry={() => {
-            void loadFeed();
+            void loadFeed({ force: true });
           }}
         >
           <FeedStateView
@@ -1455,7 +1506,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             title="Something went wrong"
             body="We couldn't load your feed right now. Please check your connection and try again."
             ctaLabel="Retry"
-            onPress={loadFeed}
+            onPress={() => {
+              void loadFeed({ force: true });
+            }}
           />
         </FeedErrorBoundary>
       </SafeAreaView>
@@ -1469,7 +1522,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     >
       <FeedErrorBoundary
         onRetry={() => {
-          void loadFeed();
+          void loadFeed({ force: true });
         }}
         title="Feed temporarily unavailable"
         body="A display issue occurred while rendering this feed. Please retry."
