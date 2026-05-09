@@ -4,15 +4,16 @@ import { Image } from "expo-image";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { MapPin, MessageCircle, MessageCircleMore, Star, Utensils } from "lucide-react-native";
 
-const CommentIcon = MessageCircle ?? MessageCircleMore;
-
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Card, EmptyState, Screen } from "@/components/ui";
+import { prefetchPostDetail, preloadRoute } from "@/features/navigation/prefetch";
 import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useHungryTheme } from "@/theme";
 import type { StallPost } from "@/types/domain";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 type Props = NativeStackScreenProps<RootStackParamList, "UserProfile">;
 
@@ -124,6 +125,10 @@ export function UserProfileScreen({ navigation, route }: Props) {
                   key={post.id}
                   accessibilityRole="button"
                   accessibilityLabel={`Open post at ${post.authorLocation}`}
+                  onPressIn={() => {
+                    prefetchPostDetail(post, repository);
+                    preloadRoute(navigation, "ActivityPostDetail", { postId: post.id });
+                  }}
                   onPress={() =>
                     navigation.navigate("ActivityPostDetail", {
                       postId: post.id,

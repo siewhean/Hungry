@@ -16,54 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SplashScreen } from "@/app/screens/SplashScreen";
 import { DeveloperLauncherScreen } from "@/app/screens/dev/DeveloperLauncherScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
-import { DishDetailScreenV2 } from "@/app/screens/detail/DishDetailScreenV2";
-import { NotFoundScreen } from "@/app/screens/detail/NotFoundScreen";
-import { OfflineStateScreen } from "@/app/screens/detail/OfflineStateScreen";
-import { StallDetailScreen } from "@/app/screens/detail/StallDetailScreen";
-import { MerchantClaimExplainerScreen } from "@/app/screens/detail/MerchantClaimExplainerScreen";
-import { BuildingDrillDownScreen } from "@/app/screens/discover/BuildingDrillDownScreen";
-import { BuildingDrillDownScreenV2 } from "@/app/screens/discover/BuildingDrillDownScreenV2";
-import { DecideForMeResultScreen } from "@/app/screens/discover/DecideForMeResultScreen";
-import { DiscoverHomeScreenV2 } from "@/app/screens/discover/DiscoverHomeScreenV2";
-import { HomeMapScreen } from "@/app/screens/discover/HomeMapScreen";
-import { MapZoomedInScreen } from "@/app/screens/discover/MapZoomedInScreen";
-import { VenueDirectoryScreen } from "@/app/screens/discover/VenueDirectoryScreen";
-import { StoryViewerScreen } from "@/app/screens/home/StoryViewerScreen";
-import { AddStoryScreen } from "@/app/screens/home/AddStoryScreen";
-import { CraveScreen } from "@/app/screens/discover/CraveScreen";
-import { ActivityInboxScreen } from "@/app/screens/home/ActivityInboxScreen";
-import { ActivityPostDetailScreen } from "@/app/screens/home/ActivityPostDetailScreen";
-import { ChatDetailScreen } from "@/app/screens/home/ChatDetailScreen";
-import { DirectMessagesScreen } from "@/app/screens/home/DirectMessagesScreen";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
-import { PostComposerScreen } from "@/app/screens/post/PostComposerScreen";
-import { EditProfileScreen } from "@/app/screens/profile/EditProfileScreen";
-import { FavouritesScreen } from "@/app/screens/profile/FavouritesScreen";
-import { ReviewHistoryScreen } from "@/app/screens/profile/ReviewHistoryScreen";
-import { SettingsScreen } from "@/app/screens/profile/SettingsScreen";
-import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
-import { BlogPostWebViewScreen } from "@/app/screens/reads/BlogPostWebViewScreen";
-import { ReviewStack } from "@/app/screens/review/ReviewStack";
-import { MusicSelectionScreen } from "@/app/screens/review/MusicSelectionScreen";
-import { ReviewSuccessModal } from "@/app/screens/review/ReviewSuccessModal";
-import { QuickReviewModal } from "@/app/screens/review/QuickReviewModal";
-import { QuickReviewSheetV2 } from "@/app/screens/review/QuickReviewSheetV2";
-import { QuickBitesScreen } from "@/app/screens/discover/QuickBitesScreen";
-import { SplashScreenV2 } from "@/app/screens/SplashScreenV2";
-import { DesignGalleryScreen } from "@/app/screens/dev/DesignGalleryScreen";
-import { MerchantTabs } from "@/app/navigation/MerchantTabs";
-import { ReviewFeedScreenV2 } from "@/app/screens/review/ReviewFeedScreenV2";
-import { PostComposerScreenV2 } from "@/app/screens/post/PostComposerScreenV2";
-import { WheelStack } from "@/app/screens/wheel/WheelStack";
-import { DishSearchScreen } from "@/app/screens/search/DishSearchScreen";
-import { DishSearchScreenV2 } from "@/app/screens/search/DishSearchScreenV2";
-import {
-  BrowseDishesScreen,
-  BrowseStallsScreen,
-  SearchResultsScreen,
-} from "@/app/screens/search/SearchResultsScreen";
-import { StallDetailScreenV2 } from "@/app/screens/detail/StallDetailScreenV2";
-import { TasteFilterScreen } from "@/app/screens/search/TasteFilterScreen";
 import { FloatingToast } from "@/components/ui";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -104,10 +57,178 @@ const AUTH_REQUIRED_ROUTES = new Set([
   "ReviewStack",
 ]);
 
+const loadDishSearchScreen = () =>
+  (
+    require("@/app/screens/search/DishSearchScreen") as typeof import("@/app/screens/search/DishSearchScreen")
+  ).DishSearchScreen;
+const loadSearchResultsScreen = () =>
+  (
+    require("@/app/screens/search/SearchResultsScreen") as typeof import("@/app/screens/search/SearchResultsScreen")
+  ).SearchResultsScreen;
+const loadBrowseDishesScreen = () =>
+  (
+    require("@/app/screens/search/SearchResultsScreen") as typeof import("@/app/screens/search/SearchResultsScreen")
+  ).BrowseDishesScreen;
+const loadBrowseStallsScreen = () =>
+  (
+    require("@/app/screens/search/SearchResultsScreen") as typeof import("@/app/screens/search/SearchResultsScreen")
+  ).BrowseStallsScreen;
+const loadTasteFilterScreen = () =>
+  (
+    require("@/app/screens/search/TasteFilterScreen") as typeof import("@/app/screens/search/TasteFilterScreen")
+  ).TasteFilterScreen;
+const loadHomeMapScreen = () =>
+  (
+    require("@/app/screens/discover/HomeMapScreen") as typeof import("@/app/screens/discover/HomeMapScreen")
+  ).HomeMapScreen;
+const loadMapZoomedInScreen = () =>
+  (
+    require("@/app/screens/discover/MapZoomedInScreen") as typeof import("@/app/screens/discover/MapZoomedInScreen")
+  ).MapZoomedInScreen;
+const loadPostComposerScreen = () =>
+  (
+    require("@/app/screens/post/PostComposerScreen") as typeof import("@/app/screens/post/PostComposerScreen")
+  ).PostComposerScreen;
+const loadEditProfileScreen = () =>
+  (
+    require("@/app/screens/profile/EditProfileScreen") as typeof import("@/app/screens/profile/EditProfileScreen")
+  ).EditProfileScreen;
+const loadFavouritesScreen = () =>
+  (
+    require("@/app/screens/profile/FavouritesScreen") as typeof import("@/app/screens/profile/FavouritesScreen")
+  ).FavouritesScreen;
+const loadReviewHistoryScreen = () =>
+  (
+    require("@/app/screens/profile/ReviewHistoryScreen") as typeof import("@/app/screens/profile/ReviewHistoryScreen")
+  ).ReviewHistoryScreen;
+const loadSettingsScreen = () =>
+  (
+    require("@/app/screens/profile/SettingsScreen") as typeof import("@/app/screens/profile/SettingsScreen")
+  ).SettingsScreen;
+const loadUserProfileScreen = () =>
+  (
+    require("@/app/screens/profile/UserProfileScreen") as typeof import("@/app/screens/profile/UserProfileScreen")
+  ).UserProfileScreen;
+const loadDishDetailScreenV2 = () =>
+  (
+    require("@/app/screens/detail/DishDetailScreenV2") as typeof import("@/app/screens/detail/DishDetailScreenV2")
+  ).DishDetailScreenV2;
+const loadStallDetailScreen = () =>
+  (
+    require("@/app/screens/detail/StallDetailScreen") as typeof import("@/app/screens/detail/StallDetailScreen")
+  ).StallDetailScreen;
+const loadMerchantClaimExplainerScreen = () =>
+  (
+    require("@/app/screens/detail/MerchantClaimExplainerScreen") as typeof import("@/app/screens/detail/MerchantClaimExplainerScreen")
+  ).MerchantClaimExplainerScreen;
+const loadReviewStack = () =>
+  (require("@/app/screens/review/ReviewStack") as typeof import("@/app/screens/review/ReviewStack"))
+    .ReviewStack;
+const loadWheelStack = () =>
+  (require("@/app/screens/wheel/WheelStack") as typeof import("@/app/screens/wheel/WheelStack"))
+    .WheelStack;
+const loadActivityInboxScreen = () =>
+  (
+    require("@/app/screens/home/ActivityInboxScreen") as typeof import("@/app/screens/home/ActivityInboxScreen")
+  ).ActivityInboxScreen;
+const loadActivityPostDetailScreen = () =>
+  (
+    require("@/app/screens/home/ActivityPostDetailScreen") as typeof import("@/app/screens/home/ActivityPostDetailScreen")
+  ).ActivityPostDetailScreen;
+const loadChatDetailScreen = () =>
+  (
+    require("@/app/screens/home/ChatDetailScreen") as typeof import("@/app/screens/home/ChatDetailScreen")
+  ).ChatDetailScreen;
+const loadDirectMessagesScreen = () =>
+  (
+    require("@/app/screens/home/DirectMessagesScreen") as typeof import("@/app/screens/home/DirectMessagesScreen")
+  ).DirectMessagesScreen;
+const loadCraveScreen = () =>
+  (
+    require("@/app/screens/discover/CraveScreen") as typeof import("@/app/screens/discover/CraveScreen")
+  ).CraveScreen;
+const loadMusicSelectionScreen = () =>
+  (
+    require("@/app/screens/review/MusicSelectionScreen") as typeof import("@/app/screens/review/MusicSelectionScreen")
+  ).MusicSelectionScreen;
+const loadDecideForMeResultScreen = () =>
+  (
+    require("@/app/screens/discover/DecideForMeResultScreen") as typeof import("@/app/screens/discover/DecideForMeResultScreen")
+  ).DecideForMeResultScreen;
+const loadBuildingDrillDownScreen = () =>
+  (
+    require("@/app/screens/discover/BuildingDrillDownScreen") as typeof import("@/app/screens/discover/BuildingDrillDownScreen")
+  ).BuildingDrillDownScreen;
+const loadOfflineStateScreen = () =>
+  (
+    require("@/app/screens/detail/OfflineStateScreen") as typeof import("@/app/screens/detail/OfflineStateScreen")
+  ).OfflineStateScreen;
+const loadNotFoundScreen = () =>
+  (
+    require("@/app/screens/detail/NotFoundScreen") as typeof import("@/app/screens/detail/NotFoundScreen")
+  ).NotFoundScreen;
+const loadDiscoverHomeScreenV2 = () =>
+  (
+    require("@/app/screens/discover/DiscoverHomeScreenV2") as typeof import("@/app/screens/discover/DiscoverHomeScreenV2")
+  ).DiscoverHomeScreenV2;
+const loadDishSearchScreenV2 = () =>
+  (
+    require("@/app/screens/search/DishSearchScreenV2") as typeof import("@/app/screens/search/DishSearchScreenV2")
+  ).DishSearchScreenV2;
+const loadStallDetailScreenV2 = () =>
+  (
+    require("@/app/screens/detail/StallDetailScreenV2") as typeof import("@/app/screens/detail/StallDetailScreenV2")
+  ).StallDetailScreenV2;
+const loadBuildingDrillDownScreenV2 = () =>
+  (
+    require("@/app/screens/discover/BuildingDrillDownScreenV2") as typeof import("@/app/screens/discover/BuildingDrillDownScreenV2")
+  ).BuildingDrillDownScreenV2;
+const loadQuickReviewSheetV2 = () =>
+  (
+    require("@/app/screens/review/QuickReviewSheetV2") as typeof import("@/app/screens/review/QuickReviewSheetV2")
+  ).QuickReviewSheetV2;
+const loadQuickBitesScreen = () =>
+  (
+    require("@/app/screens/discover/QuickBitesScreen") as typeof import("@/app/screens/discover/QuickBitesScreen")
+  ).QuickBitesScreen;
+const loadSplashScreenV2 = () =>
+  (require("@/app/screens/SplashScreenV2") as typeof import("@/app/screens/SplashScreenV2"))
+    .SplashScreenV2;
+const loadDesignGalleryScreen = () =>
+  (
+    require("@/app/screens/dev/DesignGalleryScreen") as typeof import("@/app/screens/dev/DesignGalleryScreen")
+  ).DesignGalleryScreen;
+const loadMerchantTabs = () =>
+  (require("@/app/navigation/MerchantTabs") as typeof import("@/app/navigation/MerchantTabs"))
+    .MerchantTabs;
+const loadReviewFeedScreenV2 = () =>
+  (
+    require("@/app/screens/review/ReviewFeedScreenV2") as typeof import("@/app/screens/review/ReviewFeedScreenV2")
+  ).ReviewFeedScreenV2;
+const loadPostComposerScreenV2 = () =>
+  (
+    require("@/app/screens/post/PostComposerScreenV2") as typeof import("@/app/screens/post/PostComposerScreenV2")
+  ).PostComposerScreenV2;
+const loadVenueDirectoryScreen = () =>
+  (
+    require("@/app/screens/discover/VenueDirectoryScreen") as typeof import("@/app/screens/discover/VenueDirectoryScreen")
+  ).VenueDirectoryScreen;
+const loadStoryViewerScreen = () =>
+  (
+    require("@/app/screens/home/StoryViewerScreen") as typeof import("@/app/screens/home/StoryViewerScreen")
+  ).StoryViewerScreen;
+const loadAddStoryScreen = () =>
+  (
+    require("@/app/screens/home/AddStoryScreen") as typeof import("@/app/screens/home/AddStoryScreen")
+  ).AddStoryScreen;
+
 function BlogPostRouteScreen({
   navigation,
   route,
 }: NativeStackScreenProps<RootStackParamList, "BlogPost">) {
+  const { BlogPostWebViewScreen } =
+    require("@/app/screens/reads/BlogPostWebViewScreen") as typeof import("@/app/screens/reads/BlogPostWebViewScreen");
+
   return (
     <BlogPostWebViewScreen
       onOpenVenue={(venueId) => navigation.navigate("StallDetail", { venueId })}
@@ -161,6 +282,28 @@ function GlobalScrollBackButton() {
       </Pressable>
     </View>
   );
+}
+
+function QuickReviewModalHost() {
+  const payload = useUIStore((state) => state.quickReview);
+  if (!payload) {
+    return null;
+  }
+
+  const { QuickReviewModal } =
+    require("@/app/screens/review/QuickReviewModal") as typeof import("@/app/screens/review/QuickReviewModal");
+  return <QuickReviewModal />;
+}
+
+function ReviewSuccessModalHost({ onOpenHistory }: { onOpenHistory: () => void }) {
+  const payload = useUIStore((state) => state.reviewSuccess);
+  if (!payload) {
+    return null;
+  }
+
+  const { ReviewSuccessModal } =
+    require("@/app/screens/review/ReviewSuccessModal") as typeof import("@/app/screens/review/ReviewSuccessModal");
+  return <ReviewSuccessModal onOpenHistory={onOpenHistory} />;
 }
 
 export function RootNavigator({ theme }: { theme: Theme }) {
@@ -331,94 +474,97 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={OnboardingStack} name="OnboardingStack" />
           <RootStack.Screen component={SwipeableTabNavigator} name="MainTabs" />
           <RootStack.Screen
-            component={DishSearchScreen}
+            getComponent={loadDishSearchScreen}
             name="SearchHome"
             options={{ animation: "none" }}
           />
           <RootStack.Screen
-            component={SearchResultsScreen}
+            getComponent={loadSearchResultsScreen}
             name="SearchResults"
             options={{ animation: "none" }}
           />
           <RootStack.Screen
-            component={BrowseDishesScreen}
+            getComponent={loadBrowseDishesScreen}
             name="BrowseDishes"
             options={{ animation: "none" }}
           />
           <RootStack.Screen
-            component={BrowseStallsScreen}
+            getComponent={loadBrowseStallsScreen}
             name="BrowseStalls"
             options={{ animation: "none" }}
           />
-          <RootStack.Screen component={TasteFilterScreen} name="TasteFilter" />
+          <RootStack.Screen getComponent={loadTasteFilterScreen} name="TasteFilter" />
           <RootStack.Screen
-            component={HomeMapScreen}
+            getComponent={loadHomeMapScreen}
             name="DiscoverMap"
             options={{ gestureEnabled: true }}
           />
-          <RootStack.Screen component={MapZoomedInScreen} name="MapZoomedIn" />
-          <RootStack.Screen component={PostComposerScreen} name="Post" />
-          <RootStack.Screen component={EditProfileScreen} name="EditProfile" />
-          <RootStack.Screen component={FavouritesScreen} name="Favourites" />
-          <RootStack.Screen component={ReviewHistoryScreen} name="ReviewHistory" />
-          <RootStack.Screen component={SettingsScreen} name="Settings" />
-          <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
-          <RootStack.Screen component={DishDetailScreenV2} name="DishDetail" />
-          <RootStack.Screen component={StallDetailScreen} name="StallDetail" />
+          <RootStack.Screen getComponent={loadMapZoomedInScreen} name="MapZoomedIn" />
+          <RootStack.Screen getComponent={loadPostComposerScreen} name="Post" />
+          <RootStack.Screen getComponent={loadEditProfileScreen} name="EditProfile" />
+          <RootStack.Screen getComponent={loadFavouritesScreen} name="Favourites" />
+          <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
+          <RootStack.Screen getComponent={loadSettingsScreen} name="Settings" />
+          <RootStack.Screen getComponent={loadUserProfileScreen} name="UserProfile" />
+          <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
+          <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
           <RootStack.Screen
-            component={MerchantClaimExplainerScreen}
+            getComponent={loadMerchantClaimExplainerScreen}
             name="MerchantClaimExplainer"
           />
           <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
-          <RootStack.Screen component={ReviewStack} name="ReviewStack" />
-          <RootStack.Screen component={WheelStack} name="WheelStack" />
-          <RootStack.Screen component={ActivityInboxScreen} name="ActivityInbox" />
-          <RootStack.Screen component={ActivityPostDetailScreen} name="ActivityPostDetail" />
-          <RootStack.Screen component={ChatDetailScreen} name="ChatDetail" />
+          <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
+          <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
+          <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
+          <RootStack.Screen getComponent={loadActivityPostDetailScreen} name="ActivityPostDetail" />
+          <RootStack.Screen getComponent={loadChatDetailScreen} name="ChatDetail" />
           {FEATURE_FLAGS.directMessagesEnabled ? (
-            <RootStack.Screen component={DirectMessagesScreen} name="DirectMessages" />
+            <RootStack.Screen getComponent={loadDirectMessagesScreen} name="DirectMessages" />
           ) : null}
           {FEATURE_FLAGS.craveEnabled ? (
-            <RootStack.Screen component={CraveScreen} name="Crave" />
+            <RootStack.Screen getComponent={loadCraveScreen} name="Crave" />
           ) : null}
-          <RootStack.Screen component={MusicSelectionScreen} name="MusicSelection" />
-          <RootStack.Screen component={DecideForMeResultScreen} name="DecideForMeResult" />
-          <RootStack.Screen component={BuildingDrillDownScreen} name="BuildingDrillDown" />
-          <RootStack.Screen component={OfflineStateScreen} name="Offline" />
-          <RootStack.Screen component={NotFoundScreen} name="NotFound" />
+          <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
+          <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
+          <RootStack.Screen getComponent={loadBuildingDrillDownScreen} name="BuildingDrillDown" />
+          <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
+          <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />
           {/* V2 Prototypes */}
-          <RootStack.Screen component={DiscoverHomeScreenV2} name="DiscoverV2" />
-          <RootStack.Screen component={DishDetailScreenV2} name="DishDetailV2" />
-          <RootStack.Screen component={DishSearchScreenV2} name="SearchHomeV2" />
-          <RootStack.Screen component={StallDetailScreenV2} name="StallDetailV2" />
-          <RootStack.Screen component={BuildingDrillDownScreenV2} name="BuildingDrillDownV2" />
-          <RootStack.Screen component={QuickReviewSheetV2} name="QuickReviewV2" />
-          <RootStack.Screen component={QuickBitesScreen} name="QuickBites" />
-          <RootStack.Screen component={SplashScreenV2} name="SplashV2" />
-          <RootStack.Screen component={DesignGalleryScreen} name="DesignGallery" />
-          <RootStack.Screen component={MerchantTabs} name="MerchantTabs" />
-          <RootStack.Screen component={ReviewFeedScreenV2} name="ReviewFeedV2" />
+          <RootStack.Screen getComponent={loadDiscoverHomeScreenV2} name="DiscoverV2" />
+          <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetailV2" />
+          <RootStack.Screen getComponent={loadDishSearchScreenV2} name="SearchHomeV2" />
+          <RootStack.Screen getComponent={loadStallDetailScreenV2} name="StallDetailV2" />
           <RootStack.Screen
-            component={PostComposerScreenV2}
+            getComponent={loadBuildingDrillDownScreenV2}
+            name="BuildingDrillDownV2"
+          />
+          <RootStack.Screen getComponent={loadQuickReviewSheetV2} name="QuickReviewV2" />
+          <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
+          <RootStack.Screen getComponent={loadSplashScreenV2} name="SplashV2" />
+          <RootStack.Screen getComponent={loadDesignGalleryScreen} name="DesignGallery" />
+          <RootStack.Screen getComponent={loadMerchantTabs} name="MerchantTabs" />
+          <RootStack.Screen getComponent={loadReviewFeedScreenV2} name="ReviewFeedV2" />
+          <RootStack.Screen
+            getComponent={loadPostComposerScreenV2}
             name="PostComposerV2"
             options={{ gestureEnabled: false }}
           />
-          <RootStack.Screen component={VenueDirectoryScreen} name="VenueDirectory" />
+          <RootStack.Screen getComponent={loadVenueDirectoryScreen} name="VenueDirectory" />
           <RootStack.Screen
-            component={StoryViewerScreen}
+            getComponent={loadStoryViewerScreen}
             name="StoryViewer"
             options={{ presentation: "fullScreenModal", animation: "fade" }}
           />
           <RootStack.Screen
-            component={AddStoryScreen}
+            getComponent={loadAddStoryScreen}
             name="AddStory"
             options={{ presentation: "modal" }}
           />
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />
-      <QuickReviewModal />
-      <ReviewSuccessModal onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
+      <QuickReviewModalHost />
+      <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
       <FloatingToast />
     </>
   );

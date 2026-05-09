@@ -18,6 +18,11 @@ import { ChevronDown, ChevronRight, Wifi, WifiOff, Zap } from "lucide-react-nati
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, Screen } from "@/components/ui";
 import {
+  prefetchDishDetail,
+  prefetchStallDetail,
+  preloadRoute,
+} from "@/features/navigation/prefetch";
+import {
   getDataRepository,
   resetServiceProvider,
   setMockServiceProvider,
@@ -144,11 +149,13 @@ function CollapsibleSection({
 function DevButton({
   label,
   onPress,
+  onPressIn,
   variant = "secondary" as const,
   style,
 }: {
   label: string;
   onPress: () => void;
+  onPressIn?: () => void;
   variant?: "secondary" | "primary" | "ghost" | "destructive";
   style?: any;
 }) {
@@ -157,6 +164,7 @@ function DevButton({
       label={label}
       variant={variant}
       onPress={onPress}
+      onPressIn={onPressIn}
       testID={`dev-button-${toDevTestId(label)}`}
       style={[{ minHeight: 32, paddingVertical: 4 }, style]}
       size="sm"
@@ -479,6 +487,12 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           </View>
           <DevButton
             label="Launch V2 Composer"
+            onPressIn={() =>
+              preloadRoute(navigation, "PostComposerV2", {
+                dishId: sampleDish?.id,
+                venueId: sampleStallVenueId,
+              })
+            }
             onPress={() =>
               navigation.navigate("PostComposerV2" as any, {
                 dishId: sampleDish?.id,
@@ -566,12 +580,22 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             New Modes & Extras
           </AppText>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-            <DevButton label="Quick Bites" onPress={() => navigation.navigate("QuickBites")} />
+            <DevButton
+              label="Quick Bites"
+              onPressIn={() => preloadRoute(navigation, "QuickBites")}
+              onPress={() => navigation.navigate("QuickBites")}
+            />
             <DevButton
               label="Design Gallery"
+              onPressIn={() => preloadRoute(navigation, "DesignGallery")}
               onPress={() => navigation.navigate("DesignGallery")}
             />
-            <DevButton label="Merchant Mode" onPress={enterMerchantMode} variant="primary" />
+            <DevButton
+              label="Merchant Mode"
+              onPressIn={() => preloadRoute(navigation, "MerchantTabs")}
+              onPress={enterMerchantMode}
+              variant="primary"
+            />
           </View>
         </CollapsibleSection>
 
@@ -618,18 +642,29 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             <DevButton
               label="Home"
+              onPressIn={() => preloadRoute(navigation, "MainTabs", { screen: "Home" })}
               onPress={() => navigation.navigate("MainTabs", { screen: "Home" })}
             />
             <DevButton
               label="Discover"
+              onPressIn={() => preloadRoute(navigation, "MainTabs", { screen: "Discover" })}
               onPress={() => navigation.navigate("MainTabs", { screen: "Discover" })}
             />
-            <DevButton label="Search" onPress={() => navigation.navigate("SearchHome")} />
+            <DevButton
+              label="Search"
+              onPressIn={() => preloadRoute(navigation, "SearchHome")}
+              onPress={() => navigation.navigate("SearchHome")}
+            />
             {canAccessMaps ? (
-              <DevButton label="Map" onPress={() => navigation.navigate("DiscoverMap")} />
+              <DevButton
+                label="Map"
+                onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
+                onPress={() => navigation.navigate("DiscoverMap")}
+              />
             ) : null}
             <DevButton
               label="Wheel"
+              onPressIn={() => preloadRoute(navigation, "DecideForMeResult")}
               onPress={() => {
                 const dish = repository.getDecideForMe({
                   sweet: 3,
@@ -643,11 +678,37 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
                 navigation.navigate("DecideForMeResult");
               }}
             />
-            <DevButton label="Stall" onPress={() => openSampleStallDetail("v1")} />
-            <DevButton label="Dish" onPress={() => openSampleDishDetail("v1")} />
-            <DevButton label="Dish V2" onPress={() => openSampleDishDetail("v2")} />
+            <DevButton
+              label="Stall"
+              onPressIn={() => {
+                prefetchStallDetail(sampleStallVenueId, repository);
+                preloadRoute(navigation, "StallDetail", { venueId: sampleStallVenueId });
+              }}
+              onPress={() => openSampleStallDetail("v1")}
+            />
+            <DevButton
+              label="Dish"
+              onPressIn={() => {
+                if (sampleDish?.id) {
+                  prefetchDishDetail(sampleDish.id, repository);
+                  preloadRoute(navigation, "DishDetail", { dishId: sampleDish.id });
+                }
+              }}
+              onPress={() => openSampleDishDetail("v1")}
+            />
+            <DevButton
+              label="Dish V2"
+              onPressIn={() => {
+                if (sampleDish?.id) {
+                  prefetchDishDetail(sampleDish.id, repository);
+                  preloadRoute(navigation, "DishDetailV2", { dishId: sampleDish.id });
+                }
+              }}
+              onPress={() => openSampleDishDetail("v2")}
+            />
             <DevButton
               label="Review"
+              onPressIn={() => preloadRoute(navigation, "MainTabs", { screen: "Review" })}
               onPress={() => navigation.navigate("MainTabs", { screen: "Review" })}
             />
             <DevButton
@@ -658,11 +719,22 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             />
             <DevButton
               label="Composer"
+              onPressIn={() => preloadRoute(navigation, "Post")}
               onPress={() => openProtected("Post", () => navigation.navigate("Post"))}
             />
-            <DevButton label="Offline" onPress={() => navigation.navigate("Offline")} />
+            <DevButton
+              label="Offline"
+              onPressIn={() => preloadRoute(navigation, "Offline")}
+              onPress={() => navigation.navigate("Offline")}
+            />
             <DevButton
               label="404"
+              onPressIn={() =>
+                preloadRoute(navigation, "NotFound", {
+                  title: "Debug",
+                  body: "Opened from dev launcher.",
+                })
+              }
               onPress={() =>
                 navigation.navigate("NotFound", {
                   title: "Debug",

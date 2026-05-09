@@ -8,22 +8,24 @@ import { useHungryTheme } from "@/theme";
 import { useAppBootstrap } from "@/hooks/useAppBootstrap";
 import { RootNavigator } from "@/app/navigation/RootNavigator";
 
+const APP_SHELL_FONT_GRACE_MS = 900;
+
 export function AppBody() {
   useAppBootstrap();
   const { colorScheme, theme, palette, spacing, fontsLoaded } = useHungryTheme();
-  const [fontTimeoutReached, setFontTimeoutReached] = useState(false);
+  const [fontGraceReached, setFontGraceReached] = useState(false);
 
   useEffect(() => {
     if (fontsLoaded) {
-      setFontTimeoutReached(false);
+      setFontGraceReached(false);
       return;
     }
 
-    const timeout = setTimeout(() => setFontTimeoutReached(true), 5000);
+    const timeout = setTimeout(() => setFontGraceReached(true), APP_SHELL_FONT_GRACE_MS);
     return () => clearTimeout(timeout);
   }, [fontsLoaded]);
 
-  if (!fontsLoaded && !fontTimeoutReached) {
+  if (!fontsLoaded && !fontGraceReached) {
     return (
       <View
         style={{
@@ -36,28 +38,6 @@ export function AppBody() {
       >
         <AppText variant="h3" style={{ textAlign: "center" }}>
           Loading fonts…
-        </AppText>
-      </View>
-    );
-  }
-
-  if (!fontsLoaded && fontTimeoutReached) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: palette.bg,
-          alignItems: "center",
-          justifyContent: "center",
-          paddingHorizontal: spacing[6],
-          gap: spacing[2],
-        }}
-      >
-        <AppText variant="h3" style={{ textAlign: "center" }}>
-          Font load delayed
-        </AppText>
-        <AppText tone="secondary" style={{ textAlign: "center" }}>
-          Continue using system fonts while assets finish loading.
         </AppText>
       </View>
     );

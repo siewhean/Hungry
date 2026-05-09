@@ -93,7 +93,8 @@ test("Screen header contract: V2 Discover, Review, and New Post headers use AppH
     /getNearestSingaporeArea\(currentLocation\.latitude, currentLocation\.longitude\)/,
   );
   assert.doesNotMatch(discoverV2, /\?\? "Nearby"/);
-  assert.match(tabs, /<Tab\.Screen name="Discover" component=\{DiscoverHomeScreen\}/);
+  assert.match(tabs, /<Tab\.Screen name="Discover" component=\{DiscoverWrapper\}/);
+  assert.match(tabs, /require\("@\/app\/screens\/discover\/DiscoverHomeScreen"\)/);
   assert.doesNotMatch(tabs, /<Tab\.Screen name="Discover" component=\{DiscoverHomeScreenV2\}/);
   assert.match(home, /<AppHeader[\s\S]*title="Hungry"/);
   assert.match(home, /horizontalPadding=\{semanticSpacing\.screenEdge\}/);
@@ -211,7 +212,14 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const filterDiscoverBites = useCallback/);
   assert.match(discover, /activeDiscoverChipIds\.every\(\(chipId\) =>/);
   assert.match(discover, /const discoverBiteCollections = useMemo/);
-  assert.match(discover, /quickBites: getDiscoverBiteCollection\("quickBites"\)/);
+  assert.match(
+    discover,
+    /const discoverBaseBites = useMemo\(\(\) => getDiscoverBites\(repository\)/,
+  );
+  assert.match(
+    discover,
+    /quickBites: getDiscoverBiteCollection\("quickBites", discoverBaseBites, repository\)/,
+  );
   assert.match(discover, /function PopularFoodStyleSkeleton/);
   assert.doesNotMatch(discover, /setShowPopularFoodSkeleton/);
   assert.match(

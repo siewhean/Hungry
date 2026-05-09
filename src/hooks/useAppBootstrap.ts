@@ -1,12 +1,19 @@
 import { useEffect, useRef } from "react";
+import { InteractionManager } from "react-native";
 
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
-import { posthogSink } from "@/lib/analytics/posthogSink";
 import { getConfiguredDataSource, getSupabaseClient } from "@/lib/services/supabase/client";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
+
+function shouldEnablePostHogSink() {
+  return (
+    process.env.EXPO_PUBLIC_DISABLE_POSTHOG !== "1" &&
+    Boolean(process.env.EXPO_PUBLIC_POSTHOG_API_KEY?.trim())
+  );
+}
 
 export function useAppBootstrap() {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -24,8 +31,19 @@ export function useAppBootstrap() {
       return;
     }
 
-    setAnalyticsSink(posthogSink);
     hasConfiguredAnalyticsSink.current = true;
+
+    const task = InteractionManager.runAfterInteractions(() => {
+      if (!shouldEnablePostHogSink()) {
+        return;
+      }
+
+      const { posthogSink } =
+        require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
+      setAnalyticsSink(posthogSink);
+    });
+
+    return () => task.cancel();
   }, []);
 
   useEffect(() => {
@@ -33,9 +51,14 @@ export function useAppBootstrap() {
       return;
     }
     hasTrackedLaunch.current = true;
-    trackAnalyticsEvent("app_launched", {
-      is_authenticated: isAuthenticated,
+
+    const task = InteractionManager.runAfterInteractions(() => {
+      trackAnalyticsEvent("app_launched", {
+        is_authenticated: isAuthenticated,
+      });
     });
+
+    return () => task.cancel();
   }, [isAuthenticated]);
 
   useEffect(() => {

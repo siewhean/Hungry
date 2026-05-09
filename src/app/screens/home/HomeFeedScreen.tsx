@@ -63,13 +63,15 @@ import {
   InAppShareCard,
   ZoomableMedia,
 } from "@/components/social";
-import {
-  getHomeFeed,
-  getHomeSocialFeed,
-  type HomeFeedItem,
-  type HomeFeedSection,
-} from "@/features/home/feed";
+import { getHomeFeedBundle, type HomeFeedItem, type HomeFeedSection } from "@/features/home/feed";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
+import {
+  prefetchDishDetail,
+  prefetchImages,
+  prefetchPostDetail,
+  prefetchStallDetail,
+  preloadRoute,
+} from "@/features/navigation/prefetch";
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getBuildingById, toSummary } from "@/lib/geo/singaporeBuildings";
@@ -227,11 +229,13 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const loadFeed = useCallback(async () => {
     setFeedState("loading");
     try {
-      const data = await getHomeFeed(profile);
-      const socialData = await getHomeSocialFeed(profile);
-      setSections(data);
-      setSocialFeed(socialData);
-      initializeInteractions([...socialData, ...data.flatMap((section) => section.items)]);
+      const bundle = await getHomeFeedBundle(profile);
+      setSections(bundle.sections);
+      setSocialFeed(bundle.socialFeed);
+      initializeInteractions([
+        ...bundle.socialFeed,
+        ...bundle.sections.flatMap((section) => section.items),
+      ]);
       setFeedState("ready");
     } catch {
       setFeedState("error");
@@ -245,8 +249,16 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   );
 
   useEffect(() => {
-    void loadFeed();
-  }, [loadFeed]);
+    const leadingItems = [
+      ...socialFeed.slice(0, 4),
+      ...sections.flatMap((section) => section.items).slice(0, 4),
+    ];
+    leadingItems.forEach((item) => prefetchPostDetail(item));
+    prefetchImages(
+      leadingItems.map((item) => item.mediaUrls?.[0] ?? item.mediaUrl),
+      8,
+    );
+  }, [sections, socialFeed]);
 
   const openComments = useCallback((item: HomeFeedItem) => {
     setActiveCommentItem(item);
@@ -343,6 +355,41 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         authorAvatarUrl,
         authorLocation,
       });
+    },
+    [navigation],
+  );
+
+  const prefetchUserProfileRoute = useCallback(
+    (item: HomeFeedItem) => {
+      preloadRoute(navigation, "UserProfile", {
+        authorName: item.authorName,
+        authorAvatarUrl: item.authorAvatarUrl,
+        authorLocation: item.authorLocation,
+      });
+      prefetchImages([item.authorAvatarUrl], 1);
+    },
+    [navigation],
+  );
+
+  const prefetchMapRoute = useCallback(
+    (item: HomeFeedItem) => {
+      prefetchStallDetail(item.venueId);
+      preloadRoute(navigation, "DiscoverMap");
+    },
+    [navigation],
+  );
+
+  const prefetchFeedCardRoute = useCallback(
+    (item: HomeFeedItem) => {
+      prefetchPostDetail(item);
+      const primaryDishId = item.dishes[0]?.id;
+      if (primaryDishId) {
+        prefetchDishDetail(primaryDishId);
+        preloadRoute(navigation, "DishDetail", { dishId: primaryDishId });
+        return;
+      }
+      prefetchStallDetail(item.venueId);
+      preloadRoute(navigation, "StallDetail", { venueId: item.venueId });
     },
     [navigation],
   );
@@ -611,6 +658,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           accessibilityHint="Shows messages, comments, likes, and shares"
           icon={<Bell color={palette.text} size={22} />}
           onPress={() => navigation.navigate("ActivityInbox", { initialTab: "updates" })}
+          onPressIn={() => preloadRoute(navigation, "ActivityInbox", { initialTab: "updates" })}
           size={headerActionSize}
           testID="home-activity-inbox-button"
           variant="ghost"
@@ -722,6 +770,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${item.authorName} profile photo`}
                   hitSlop={8}
+                  onPressIn={() => prefetchUserProfileRoute(item)}
                   onPress={() =>
                     openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
                   }
@@ -733,6 +782,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     accessibilityRole="button"
                     accessibilityLabel={`Open ${item.authorName} profile`}
                     hitSlop={8}
+                    onPressIn={() => prefetchUserProfileRoute(item)}
                     onPress={() =>
                       openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
                     }
@@ -746,6 +796,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       accessibilityRole="button"
                       accessibilityLabel={`Show ${item.authorLocation} on map`}
                       hitSlop={8}
+                      onPressIn={() => prefetchMapRoute(item)}
                       onPress={() => openVenueOnMap(item)}
                     >
                       <AppText variant="micro" tone="secondary">
@@ -920,6 +971,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   accessibilityRole="button"
                   accessibilityLabel={`Show ${item.venue.name} on map`}
                   hitSlop={8}
+                  onPressIn={() => prefetchMapRoute(item)}
                   onPress={() => openVenueOnMap(item)}
                 >
                   <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)" }}>
@@ -1126,6 +1178,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               ? `Open details for ${item.dishes[0]?.name ?? "dish"}`
               : `Open stall details for ${item.venue.name}`
           }
+          onPressIn={() => prefetchFeedCardRoute(item)}
           onPress={() => {
             const primaryDishId = item.dishes[0]?.id;
             if (primaryDishId) {
@@ -1246,6 +1299,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Open ${item.authorName} profile`}
+                onPressIn={() => prefetchUserProfileRoute(item)}
                 onPress={() =>
                   openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
                 }
@@ -1264,6 +1318,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Show ${item.authorLocation} on map`}
+                onPressIn={() => prefetchMapRoute(item)}
                 onPress={() => openVenueOnMap(item)}
               >
                 <AppText
@@ -1339,6 +1394,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       openComments,
       openVenueOnMap,
       openUserProfile,
+      prefetchFeedCardRoute,
+      prefetchMapRoute,
+      prefetchUserProfileRoute,
       profile.leftHandedMode,
       palette.white,
       carouselIndexByPostId,

@@ -15,7 +15,7 @@ test("Discover map keeps left-edge swipe back enabled", () => {
 
   assert.match(
     rootNavigator,
-    /<RootStack\.Screen[\s\S]*component=\{HomeMapScreen\}[\s\S]*name="DiscoverMap"[\s\S]*options=\{\{ gestureEnabled: true \}\}/,
+    /<RootStack\.Screen[\s\S]*getComponent=\{loadHomeMapScreen\}[\s\S]*name="DiscoverMap"[\s\S]*options=\{\{ gestureEnabled: true \}\}/,
   );
   assert.match(homeMap, /const edgeBackPanResponder = useMemo/);
   assert.match(homeMap, /gestureState\.dx > 12/);

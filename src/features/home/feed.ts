@@ -12,6 +12,11 @@ export interface HomeFeedSection {
   items: HomeFeedItem[];
 }
 
+export interface HomeFeedBundle {
+  sections: HomeFeedSection[];
+  socialFeed: HomeFeedItem[];
+}
+
 async function buildHomeFeedItems(profile: UserProfile): Promise<HomeFeedItem[]> {
   const repository = getDataRepository();
   const postsById = new Map<string, StallPost>();
@@ -89,14 +94,19 @@ function getPostTime(post: StallPost, now = Date.now()): number {
 }
 
 export async function getHomeSocialFeed(profile: UserProfile): Promise<HomeFeedItem[]> {
-  const now = Date.now();
-  return (await buildHomeFeedItems(profile)).sort(
-    (left, right) => getPostTime(right, now) - getPostTime(left, now),
-  );
+  return (await getHomeFeedBundle(profile)).socialFeed;
 }
 
 export async function getHomeFeed(profile: UserProfile): Promise<HomeFeedSection[]> {
+  return (await getHomeFeedBundle(profile)).sections;
+}
+
+export async function getHomeFeedBundle(profile: UserProfile): Promise<HomeFeedBundle> {
   const allPosts = await buildHomeFeedItems(profile);
+  const now = Date.now();
+  const socialFeed = [...allPosts].sort(
+    (left, right) => getPostTime(right, now) - getPostTime(left, now),
+  );
 
   // 1. Fastest Near You (Shortest distance)
   const fastest = [...allPosts]
@@ -117,9 +127,12 @@ export async function getHomeFeed(profile: UserProfile): Promise<HomeFeedSection
     .sort((a, b) => (b.dishes[0]?.rating ?? 0) - (a.dishes[0]?.rating ?? 0))
     .slice(0, 5);
 
-  return [
-    { title: "Fastest Near You", items: fastest },
-    { title: "Comfort Food / Rich & Savory", items: comfort },
-    { title: "Top Rated by Community", items: topRated },
-  ];
+  return {
+    socialFeed,
+    sections: [
+      { title: "Fastest Near You", items: fastest },
+      { title: "Comfort Food / Rich & Savory", items: comfort },
+      { title: "Top Rated by Community", items: topRated },
+    ],
+  };
 }

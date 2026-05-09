@@ -21,7 +21,13 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Chip, EmptyState, IconButton, Screen, Skeleton } from "@/components/ui";
-import { getDiscoverBiteCollection } from "@/features/discover/bites";
+import { getDiscoverBiteCollection, getDiscoverBites } from "@/features/discover/bites";
+import {
+  prefetchDishDetail,
+  prefetchImages,
+  prefetchStallDetail,
+  preloadRoute,
+} from "@/features/navigation/prefetch";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestBuildings, getNearestSingaporeArea } from "@/lib/geo/singaporeBuildings";
 import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
@@ -124,11 +130,13 @@ function FoodStyleButton({
   imageSource,
   label,
   trending,
+  onPressIn,
   onPress,
 }: {
   imageSource: string | number;
   label: string;
   trending?: boolean;
+  onPressIn?: () => void;
   onPress: () => void;
 }) {
   const { palette, radii, spacing, shadows, typography } = useHungryTheme();
@@ -140,6 +148,7 @@ function FoodStyleButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Search for ${label}`}
+      onPressIn={onPressIn}
       onPress={onPress}
       style={{ alignItems: "center", height: buttonHeight, width: 88 }}
     >
@@ -496,15 +505,16 @@ export function DiscoverHomeScreen() {
     },
     [activeDiscoverChipIds, discoverDietaryFlags],
   );
+  const discoverBaseBites = useMemo(() => getDiscoverBites(repository), [repository]);
   const discoverBiteCollections = useMemo(
     () => ({
-      quickBites: getDiscoverBiteCollection("quickBites"),
-      trending: getDiscoverBiteCollection("trending"),
-      editorChoice: getDiscoverBiteCollection("editorChoice"),
-      budget: getDiscoverBiteCollection("budget"),
-      lateNight: getDiscoverBiteCollection("lateNight"),
+      quickBites: getDiscoverBiteCollection("quickBites", discoverBaseBites, repository),
+      trending: getDiscoverBiteCollection("trending", discoverBaseBites, repository),
+      editorChoice: getDiscoverBiteCollection("editorChoice", discoverBaseBites, repository),
+      budget: getDiscoverBiteCollection("budget", discoverBaseBites, repository),
+      lateNight: getDiscoverBiteCollection("lateNight", discoverBaseBites, repository),
     }),
-    [],
+    [discoverBaseBites, repository],
   );
   const getBiteDish = useCallback(
     (bite: ReturnType<typeof getDiscoverBiteCollection>[number]) =>
@@ -704,6 +714,51 @@ export function DiscoverHomeScreen() {
     [navigation, rememberSearch, updateSearchQuery],
   );
 
+  const prefetchFoodStyle = useCallback(
+    (item: PopularFoodStyle) => {
+      if (item.dishId) {
+        prefetchDishDetail(item.dishId, repository);
+      }
+      preloadRoute(navigation, "SearchResults", {
+        browseMode: "stalls",
+        initialQuery: item.query,
+      });
+    },
+    [navigation, repository],
+  );
+
+  const prefetchBiteCard = useCallback(
+    (bite: ReturnType<typeof getDiscoverBiteCollection>[number]) => {
+      prefetchDishDetail(bite.dishId, repository);
+      prefetchStallDetail(bite.venueId, repository);
+      preloadRoute(navigation, "DishDetail", { dishId: bite.dishId });
+    },
+    [navigation, repository],
+  );
+
+  const prefetchBiteCollectionRoute = useCallback(
+    (collection: keyof typeof discoverBiteCollections) => {
+      prefetchImages(
+        discoverBiteCollections[collection].map((bite) => bite.photoUrl),
+        5,
+      );
+      preloadRoute(navigation, "QuickBites", { collection });
+    },
+    [discoverBiteCollections, navigation],
+  );
+
+  useEffect(() => {
+    const leadingBites = [
+      ...quickBiteCards.slice(0, 3),
+      ...trendingCards.slice(0, 3),
+      ...editorChoiceCards.slice(0, 2),
+    ];
+    prefetchImages(
+      leadingBites.map((bite) => bite.photoUrl),
+      8,
+    );
+  }, [editorChoiceCards, quickBiteCards, trendingCards]);
+
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
       <ScrollView
@@ -748,6 +803,7 @@ export function DiscoverHomeScreen() {
                 variant="ghost"
                 accessibilityLabel="Open map view"
                 size={spacing[8] + spacing[2.5]}
+                onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
                 onPress={() => navigation.navigate("DiscoverMap")}
                 icon={
                   <MapPinned color={themeTints.isDark ? palette.white : palette.orange} size={20} />
@@ -762,6 +818,7 @@ export function DiscoverHomeScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Search dishes, stalls, or hawker centres"
+            onPressIn={() => preloadRoute(navigation, "SearchHome")}
             onPress={openSearchHome}
             style={{
               width: searchBarWidth,
@@ -863,6 +920,7 @@ export function DiscoverHomeScreen() {
                   imageSource={item.imageSource}
                   label={item.label}
                   trending={item.trending}
+                  onPressIn={() => prefetchFoodStyle(item)}
                   onPress={() => handleFoodStylePress(item.query)}
                 />
               ))}
@@ -877,6 +935,7 @@ export function DiscoverHomeScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Decide for me"
+            onPressIn={() => preloadRoute(navigation, "DecideForMeResult")}
             onPress={() => navigation.navigate("DecideForMeResult")}
             style={({ pressed }) => [
               shadows.card,
@@ -923,6 +982,7 @@ export function DiscoverHomeScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Open hungry wheel"
+            onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
             onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
             style={({ pressed }) => [
               shadows.card,
@@ -963,6 +1023,12 @@ export function DiscoverHomeScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Browse stalls and restaurants"
+              onPressIn={() => {
+                areaVenues
+                  .slice(0, 5)
+                  .forEach((venue) => prefetchStallDetail(venue.id, repository));
+                preloadRoute(navigation, "BrowseStalls");
+              }}
               onPress={() => navigation.navigate("BrowseStalls")}
               style={[
                 shadows.card,
@@ -1014,6 +1080,10 @@ export function DiscoverHomeScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Browse dishes"
+              onPressIn={() => {
+                areaDishPool.slice(0, 6).forEach((dish) => prefetchDishDetail(dish.id, repository));
+                preloadRoute(navigation, "BrowseDishes");
+              }}
               onPress={() => navigation.navigate("BrowseDishes")}
               style={[
                 shadows.card,
@@ -1071,6 +1141,7 @@ export function DiscoverHomeScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Open daily crave"
+              onPressIn={() => preloadRoute(navigation, "Crave")}
               onPress={() => navigation.navigate("Crave")}
               style={[
                 shadows.card,
@@ -1149,6 +1220,7 @@ export function DiscoverHomeScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="See all quick bites under 15 minutes"
+              onPressIn={() => prefetchBiteCollectionRoute("quickBites")}
               onPress={() => navigation.navigate("QuickBites", { collection: "quickBites" })}
             >
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
@@ -1168,6 +1240,7 @@ export function DiscoverHomeScreen() {
                   key={`quick-${bite.id}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Quick bite: ${bite.dishName}`}
+                  onPressIn={() => prefetchBiteCard(bite)}
                   onPress={() => navigation.navigate("DishDetail", { dishId: bite.dishId })}
                   style={[
                     shadows.card,
@@ -1245,6 +1318,7 @@ export function DiscoverHomeScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`See all trending dishes in ${discoverLocationLabel}`}
+              onPressIn={() => prefetchBiteCollectionRoute("trending")}
               onPress={() => navigation.navigate("QuickBites", { collection: "trending" })}
             >
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
@@ -1264,6 +1338,7 @@ export function DiscoverHomeScreen() {
                   key={`trending-${bite.id}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${bite.dishName} at ${bite.venueName}`}
+                  onPressIn={() => prefetchBiteCard(bite)}
                   onPress={() => navigation.navigate("DishDetail", { dishId: bite.dishId })}
                   style={[
                     shadows.card,
@@ -1355,6 +1430,7 @@ export function DiscoverHomeScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="See all editor's choice dishes"
+              onPressIn={() => prefetchBiteCollectionRoute("editorChoice")}
               onPress={() => navigation.navigate("QuickBites", { collection: "editorChoice" })}
             >
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
@@ -1374,6 +1450,7 @@ export function DiscoverHomeScreen() {
                   key={`ec-${bite.id}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Editor's choice: ${bite.dishName}`}
+                  onPressIn={() => prefetchBiteCard(bite)}
                   onPress={() => navigation.navigate("DishDetail", { dishId: bite.dishId })}
                   style={[
                     shadows.card,
@@ -1475,6 +1552,7 @@ export function DiscoverHomeScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="See all budget dishes under $8"
+              onPressIn={() => prefetchBiteCollectionRoute("budget")}
               onPress={() => navigation.navigate("QuickBites", { collection: "budget" })}
             >
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
@@ -1494,6 +1572,7 @@ export function DiscoverHomeScreen() {
                   key={`budget-${bite.id}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Budget meal: ${bite.dishName} at S$${bite.price.toFixed(2)}`}
+                  onPressIn={() => prefetchBiteCard(bite)}
                   onPress={() => navigation.navigate("DishDetail", { dishId: bite.dishId })}
                   style={[
                     shadows.card,
@@ -1574,6 +1653,7 @@ export function DiscoverHomeScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="See all late night stalls"
+                onPressIn={() => prefetchBiteCollectionRoute("lateNight")}
                 onPress={() => navigation.navigate("QuickBites", { collection: "lateNight" })}
               >
                 <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
@@ -1593,6 +1673,7 @@ export function DiscoverHomeScreen() {
                     key={`night-${bite.id}`}
                     accessibilityRole="button"
                     accessibilityLabel={`Late night option: ${bite.dishName}`}
+                    onPressIn={() => prefetchBiteCard(bite)}
                     onPress={() => navigation.navigate("DishDetail", { dishId: bite.dishId })}
                     style={[
                       shadows.card,
@@ -1628,12 +1709,12 @@ export function DiscoverHomeScreen() {
                     </View>
                   </Pressable>
                 ))}
-            </ScrollView>
-          ) : isDiscoverFiltering ? (
-            <FilteredResultsEmptyState />
-          ) : (
-            <NoFoodSectionEmptyState title="No late-night food found" />
-          )}
+              </ScrollView>
+            ) : isDiscoverFiltering ? (
+              <FilteredResultsEmptyState />
+            ) : (
+              <NoFoodSectionEmptyState title="No late-night food found" />
+            )}
           </View>
         ) : null}
 
@@ -1652,6 +1733,7 @@ export function DiscoverHomeScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="View hawker centres on map"
+              onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
               onPress={() => navigation.navigate("DiscoverMap")}
             >
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
@@ -1666,6 +1748,15 @@ export function DiscoverHomeScreen() {
                   key={venue.id}
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${venue.name} in map zoomed view`}
+                  onPressIn={() => {
+                    prefetchStallDetail(venue.id, repository);
+                    if (topDish?.id) {
+                      prefetchDishDetail(topDish.id, repository);
+                    }
+                    preloadRoute(navigation, "MapZoomedIn", {
+                      buildingId: venue.buildingId,
+                    });
+                  }}
                   onPress={() =>
                     navigation.navigate("MapZoomedIn", {
                       buildingId: venue.buildingId,

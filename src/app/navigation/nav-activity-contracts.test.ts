@@ -61,9 +61,12 @@ test("home bell opens a combined activity inbox with messages and updates", () =
   assert.match(home, /getHungryService\(\)[\s\S]*\.chat\.listConversations\(\)/);
   assert.match(home, /recipients=\{shareRecipients\}/);
   assert.doesNotMatch(home, /ACTIVITY_MESSAGES/);
-  assert.match(rootNavigator, /component=\{ActivityInboxScreen\} name="ActivityInbox"/);
-  assert.match(rootNavigator, /component=\{ActivityPostDetailScreen\} name="ActivityPostDetail"/);
-  assert.match(rootNavigator, /component=\{ChatDetailScreen\} name="ChatDetail"/);
+  assert.match(rootNavigator, /getComponent=\{loadActivityInboxScreen\} name="ActivityInbox"/);
+  assert.match(
+    rootNavigator,
+    /getComponent=\{loadActivityPostDetailScreen\} name="ActivityPostDetail"/,
+  );
+  assert.match(rootNavigator, /getComponent=\{loadChatDetailScreen\} name="ChatDetail"/);
   assert.match(activity, /navigation\.navigate\("ActivityPostDetail"/);
   assert.match(activity, /postId: update\.postId/);
   assert.match(activity, /stylesInline\.kindBadge/);

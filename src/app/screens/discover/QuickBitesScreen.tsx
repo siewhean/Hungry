@@ -18,6 +18,12 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Chip, ExpandableSearchLauncher, Screen, Avatar } from "@/components/ui";
+import {
+  prefetchDishDetail,
+  prefetchImages,
+  prefetchStallDetail,
+  preloadRoute,
+} from "@/features/navigation/prefetch";
 import { useHungryTheme } from "@/theme";
 import { useLocationStore } from "@/store/useLocationStore";
 import { getHomeBitesFeed } from "@/features/home/bites";
@@ -86,7 +92,7 @@ export function QuickBitesScreen() {
 
   const [selectedCuisine, setSelectedCuisine] = useState("All");
   const [bites, setBites] = useState<Bite[]>(() => getDiscoverBites());
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const searchQuery = useSearchStore((state) => state.filters.query);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
@@ -102,6 +108,15 @@ export function QuickBitesScreen() {
     }
     navigation.navigate("SearchHome");
   }, [navigation, rememberSearch, searchQuery]);
+
+  const prefetchBiteRoute = useCallback(
+    (bite: Bite) => {
+      prefetchDishDetail(bite.dishId);
+      prefetchStallDetail(bite.venueId);
+      preloadRoute(navigation, "DishDetail", { dishId: bite.dishId });
+    },
+    [navigation],
+  );
 
   // ── Animation Logic ────────────────────────────────────────────────────────
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -168,12 +183,20 @@ export function QuickBitesScreen() {
     return list.sort((a, b) => a.distance - b.distance);
   }, [collectionBites, selectedCuisine]);
 
+  useEffect(() => {
+    prefetchImages(
+      filteredBites.map((bite) => bite.photoUrl),
+      8,
+    );
+  }, [filteredBites]);
+
   const numColumns = 2;
   const itemWidth = screenWidth / numColumns;
 
   const renderBiteItem = useCallback(
     ({ item }: { item: Bite & { distance: number } }) => (
       <Pressable
+        onPressIn={() => prefetchBiteRoute(item)}
         onPress={() => navigation.navigate("DishDetail", { dishId: item.dishId })}
         style={{
           width: itemWidth,
@@ -235,7 +258,7 @@ export function QuickBitesScreen() {
         </View>
       </Pressable>
     ),
-    [itemWidth, palette, navigation],
+    [itemWidth, palette, navigation, prefetchBiteRoute],
   );
 
   const renderFoodCarousel = useCallback(
@@ -255,6 +278,7 @@ export function QuickBitesScreen() {
                 key={`carousel-${bite.id}`}
                 accessibilityRole="button"
                 accessibilityLabel={`Open ${bite.dishName} at ${bite.venueName}`}
+                onPressIn={() => prefetchBiteRoute(bite)}
                 onPress={() => navigation.navigate("DishDetail", { dishId: bite.dishId })}
                 style={[
                   styles.carouselCard,
@@ -293,6 +317,7 @@ export function QuickBitesScreen() {
       palette.border,
       palette.orange,
       palette.surface,
+      prefetchBiteRoute,
       radii.lg,
       spacing,
     ],

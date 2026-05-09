@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Button, Screen } from "@/components/ui";
 import { resolveMerchantAccess, VERIFIED_ONLY_SCREENS } from "@/features/merchant/merchantGuards";
+import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useHungryTheme } from "@/theme";
 import { getActiveOutlet, useMerchantStore } from "@/store/useMerchantStore";
@@ -161,6 +162,8 @@ const GuardedMerchantSettingsScreen = createGuardedScreen(
 function MerchantTabBar({ state, descriptors, navigation }: any) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
+  const account = useMerchantStore((storeState) => storeState.account);
+  const activeOutlet = useMerchantStore(getActiveOutlet);
 
   return (
     <View
@@ -210,6 +213,10 @@ function MerchantTabBar({ state, descriptors, navigation }: any) {
         return (
           <Pressable
             key={route.key}
+            onPressIn={() => {
+              prefetchMerchantTab(route.name, activeOutlet?.id, account?.id);
+              preloadRoute(navigation, route.name);
+            }}
             onPress={onPress}
             style={styles.tabItem}
             accessibilityRole="button"

@@ -27,6 +27,12 @@ import {
   type SearchSortMode,
   useSearchData,
 } from "@/features/search/search";
+import {
+  prefetchDishDetail,
+  prefetchImages,
+  prefetchStallDetail,
+  preloadRoute,
+} from "@/features/navigation/prefetch";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
@@ -214,6 +220,18 @@ function BrowseGridScreen({
 
     return filtered.length || query ? filtered : feedItems;
   }, [feedItems, searchQuery, selectedFilter]);
+  useEffect(() => {
+    prefetchImages(
+      filteredFeedItems.map((item) => item.imageUrl),
+      8,
+    );
+    filteredFeedItems.slice(0, 8).forEach((item) => {
+      prefetchDishDetail(item.dish.id, repository);
+      if (item.venue?.id) {
+        prefetchStallDetail(item.venue.id, repository);
+      }
+    });
+  }, [filteredFeedItems, repository]);
   const numColumns = 2;
   const itemWidth = screenWidth / numColumns;
   const browseTitle = isDishGrid ? "Dishes" : "Stalls & Restaurants";
@@ -288,6 +306,13 @@ function BrowseGridScreen({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Open ${item.title}`}
+        onPressIn={() => {
+          prefetchDishDetail(item.dish.id, repository);
+          if (item.venue?.id) {
+            prefetchStallDetail(item.venue.id, repository);
+          }
+          preloadRoute(navigation, "DishDetail", { dishId: item.dish.id });
+        }}
         onPress={() => {
           navigation.navigate("DishDetail", { dishId: item.dish.id });
         }}
@@ -353,7 +378,7 @@ function BrowseGridScreen({
         </View>
       </Pressable>
     ),
-    [itemWidth, navigation, palette],
+    [itemWidth, navigation, palette, repository],
   );
 
   return (
@@ -504,10 +529,7 @@ function BrowseGridScreen({
           contentContainerStyle={{ paddingBottom: spacing[12] }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <EmptyState
-              title="No matches found"
-              body="Try another search or filter."
-            />
+            <EmptyState title="No matches found" body="Try another search or filter." />
           }
         />
       </View>
@@ -579,6 +601,14 @@ export function SearchResultsScreen() {
     [profile.tasteVector, rawResults, sortMode],
   );
 
+  useEffect(() => {
+    prefetchImages(
+      results.map((dish) => dish.imageUrl),
+      8,
+    );
+    results.slice(0, 8).forEach((dish) => prefetchDishDetail(dish.id));
+  }, [results]);
+
   if (browseMode) {
     return <BrowseGridScreen mode={browseMode} initialSearchQuery={initialQuery} />;
   }
@@ -591,6 +621,10 @@ export function SearchResultsScreen() {
         onClear={() => updateQuery("")}
         onTasteFilterPress={() => navigation.navigate("TasteFilter")}
         results={results}
+        onResultPressIn={(dish) => {
+          prefetchDishDetail(dish.id);
+          preloadRoute(navigation, "DishDetail", { dishId: dish.id });
+        }}
         onResultPress={(dish) => {
           rememberSearch(filters.query);
           navigation.navigate("DishDetail", { dishId: dish.id });

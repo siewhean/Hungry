@@ -42,7 +42,9 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(source, /togglePostSave/);
   assert.match(source, /addPostComment/);
   assert.match(source, /addPostReply/);
-  assert.match(source, /initializeInteractions\(\[\.\.\.socialData/);
+  assert.match(source, /const bundle = await getHomeFeedBundle\(profile\)/);
+  assert.match(source, /\.\.\.bundle\.socialFeed/);
+  assert.match(source, /\.\.\.bundle\.sections\.flatMap\(\(section\) => section\.items\)/);
   assert.match(source, /const \[activeShareItem, setActiveShareItem\]/);
   assert.match(source, /const shareSheetRef = useRef<BottomSheetModal>\(null\)/);
   assert.match(source, /openShareSheet\(item\)/);
@@ -245,7 +247,7 @@ test("Sprint 9 screen contract: routed dish detail uses gallery-backed share flo
   assert.match(source, /shareSheetRef\.current\?\.present\(\)/);
   assert.match(source, /link: canonicalDishUrl/);
   assert.doesNotMatch(navigatorSource, /import \{ DishDetailScreen \}/);
-  assert.match(navigatorSource, /component=\{DishDetailScreenV2\} name=\"DishDetail\"/);
+  assert.match(navigatorSource, /getComponent=\{loadDishDetailScreenV2\} name="DishDetail"/);
 });
 
 test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and data-backed", () => {
@@ -293,8 +295,8 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.doesNotMatch(source, /\{dish\.priceRange\}/);
   assert.doesNotMatch(source, /\{item\.priceRange\}/);
   assert.match(source, /navigation\.navigate\(\"DishDetailV2\", \{ dishId: item\.id \}\)/);
-  assert.match(navigatorSource, /import \{ DishDetailScreenV2 \}/);
-  assert.match(navigatorSource, /component=\{DishDetailScreenV2\} name=\"DishDetailV2\"/);
+  assert.match(navigatorSource, /const loadDishDetailScreenV2 =/);
+  assert.match(navigatorSource, /getComponent=\{loadDishDetailScreenV2\} name="DishDetailV2"/);
   assert.match(navigationTypes, /DishDetailV2: \{ dishId\?: string; id\?: string \};/);
   assert.match(
     mockDataSource,

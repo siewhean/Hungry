@@ -24,6 +24,7 @@ interface SearchResultsViewProps {
   onClear: () => void;
   onTasteFilterPress: () => void;
   results: DishDetail[];
+  onResultPressIn?: (dish: DishDetail) => void;
   onResultPress: (dish: DishDetail) => void;
 }
 
@@ -33,6 +34,7 @@ export function SearchResultsView({
   onClear,
   onTasteFilterPress,
   results,
+  onResultPressIn,
   onResultPress,
 }: SearchResultsViewProps) {
   const { palette, radii, spacing, shadows } = useHungryTheme();
@@ -267,6 +269,7 @@ export function SearchResultsView({
         {results.map((dish) => (
           <Pressable
             key={dish.id}
+            onPressIn={() => onResultPressIn?.(dish)}
             onPress={() => onResultPress(dish)}
             style={{ flexDirection: "row", gap: spacing[3] }}
           >

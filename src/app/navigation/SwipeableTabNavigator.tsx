@@ -7,10 +7,8 @@ import { House, Compass, BookOpenText, Plus, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
-import { DiscoverHomeScreen } from "@/app/screens/discover/DiscoverHomeScreen";
-import { ReviewFeedScreen } from "@/app/screens/review/ReviewFeedScreen";
-import { ProfileStack } from "@/app/screens/profile/ProfileStack";
 import { AppText } from "@/components/ui";
+import { preloadRoute } from "@/features/navigation/prefetch";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
@@ -22,7 +20,26 @@ function HomeWrapper() {
 }
 
 function ReviewWrapper() {
+  const { ReviewFeedScreen } =
+    require("@/app/screens/review/ReviewFeedScreen") as typeof import("@/app/screens/review/ReviewFeedScreen");
   return <ReviewFeedScreen />;
+}
+
+function DiscoverWrapper() {
+  const { DiscoverHomeScreen } =
+    require("@/app/screens/discover/DiscoverHomeScreen") as typeof import("@/app/screens/discover/DiscoverHomeScreen");
+  return <DiscoverHomeScreen />;
+}
+
+function ProfileWrapper() {
+  const { ProfileStack } =
+    require("@/app/screens/profile/ProfileStack") as typeof import("@/app/screens/profile/ProfileStack");
+  return <ProfileStack />;
+}
+
+function TabLazyPlaceholder() {
+  const { palette } = useHungryTheme();
+  return <View style={{ flex: 1, backgroundColor: palette.bg }} />;
 }
 
 function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
@@ -108,6 +125,16 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
           resetTimer();
         };
 
+        const onPressIn = () => {
+          if (isCreateAction) {
+            preloadRoute(rootNavigation, "PostComposerV2");
+            return;
+          }
+          if (route?.name) {
+            preloadRoute(navigation, route.name);
+          }
+        };
+
         const Icon = item.icon;
 
         const activeColor = palette.orange;
@@ -118,6 +145,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
           <Pressable
             key={isCreateAction ? "create-post-action" : route.key}
             onPress={onPress}
+            onPressIn={onPressIn}
             style={styles.tabItem}
             accessibilityRole="button"
             accessibilityState={isFocused ? { selected: true } : {}}
@@ -171,12 +199,15 @@ export function SwipeableTabNavigator() {
       screenOptions={{
         swipeEnabled: true,
         animationEnabled: false,
+        lazy: true,
+        lazyPlaceholder: TabLazyPlaceholder,
+        lazyPreloadDistance: 0,
       }}
     >
       <Tab.Screen name="Home" component={HomeWrapper} />
-      <Tab.Screen name="Discover" component={DiscoverHomeScreen} />
+      <Tab.Screen name="Discover" component={DiscoverWrapper} />
       <Tab.Screen name="Review" component={ReviewWrapper} />
-      <Tab.Screen name="Profile" component={ProfileStack} />
+      <Tab.Screen name="Profile" component={ProfileWrapper} />
     </Tab.Navigator>
   );
 }

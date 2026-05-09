@@ -48,7 +48,9 @@ test("profile grid contract: liked and saved posts read from the persisted socia
   const gridSource = read("src/app/screens/profile/SocialGridScreen.tsx");
 
   assert.match(homeSource, /useSocialStore/);
-  assert.match(homeSource, /initializeInteractions\(\[\.\.\.socialData/);
+  assert.match(homeSource, /getHomeFeedBundle\(profile\)/);
+  assert.match(homeSource, /\.\.\.bundle\.socialFeed/);
+  assert.match(homeSource, /\.\.\.bundle\.sections\.flatMap\(\(section\) => section\.items\)/);
   assert.match(homeSource, /togglePostLike/);
   assert.match(homeSource, /togglePostSave/);
   assert.match(gridSource, /useSocialStore/);

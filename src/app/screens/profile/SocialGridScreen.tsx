@@ -5,6 +5,12 @@ import { FlashList } from "@shopify/flash-list";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
 import { AppText, EmptyState, Screen } from "@/components/ui";
+import {
+  prefetchDishDetail,
+  prefetchImage,
+  prefetchPostDetail,
+  preloadRoute,
+} from "@/features/navigation/prefetch";
 import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import { useHungryTheme } from "@/theme";
 import { useStoryStore } from "@/store/useStoryStore";
@@ -95,6 +101,21 @@ export function SocialGridScreen() {
     return (
       <Pressable
         style={styles.gridItem}
+        onPressIn={() => {
+          if (isStory) {
+            prefetchImage((item as Story).content.url);
+            preloadRoute(navigation, "StoryViewer", { initialStoryId: (item as Story).id });
+          } else if (isDish) {
+            prefetchDishDetail((item as DishDetail).id);
+            preloadRoute(navigation, "DishDetail", { dishId: (item as DishDetail).id });
+          } else {
+            prefetchPostDetail(item as StallPost);
+            preloadRoute(navigation, "SocialPostDetail", {
+              postId: (item as StallPost).id,
+              type,
+            });
+          }
+        }}
         onPress={() => {
           if (isStory) {
             navigation.navigate("StoryViewer", { initialStoryId: (item as Story).id });

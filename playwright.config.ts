@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const port = Number(process.env.E2E_PORT ?? 8082);
+const requestedPort = process.env.E2E_PORT ? Number(process.env.E2E_PORT) : 8082;
+const port = Number.isFinite(requestedPort) && requestedPort > 0 ? requestedPort : 8082;
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${port}`;
 const shouldStartWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER !== "1";
 
@@ -49,7 +50,7 @@ export default defineConfig({
   ],
   webServer: shouldStartWebServer
     ? {
-        command: `node ./scripts/run-expo.cjs start --localhost --port ${port} --clear`,
+        command: `node ./scripts/run-expo.cjs start --web --localhost --port ${port} --clear`,
         url: baseURL,
         timeout: 120_000,
         reuseExistingServer: !process.env.CI,
