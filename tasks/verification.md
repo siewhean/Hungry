@@ -487,6 +487,12 @@ Use the smallest check that matches the change risk.
 | 2026-05-09 | app (PERF-BATCH-05 Link Prefetch Coverage) | `npm run lint` | Pass | ESLint completed with 0 errors and 329 warnings; remaining warnings are existing repo-wide debt and intentional lazy `require()` paths |
 | 2026-05-09 | app (PERF-BATCH-05 Link Prefetch Coverage) | `npm test -- --watch=false` | Pass | Full Node test suite passed with 207 tests total: 205 passing and 2 skipped |
 | 2026-05-09 | app (PERF-BATCH-05 Link Prefetch Coverage) | `git diff --check` | Pass | Current worktree diff has no whitespace errors |
+| 2026-05-09 | app (PERF-BATCH-06 Developer + Merchant Optimization) | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/app/screens/sprint9-screen-contracts.test.ts src/app/performance-prefetch-contracts.test.ts src/app/screens/merchant-screen-contracts.test.ts` | Pass | 21/21 focused contracts pass after updating the stale Dish Detail V2 launcher assertion to accept the new lazy `getSampleDish` helper instead of requiring a static mock dish import |
+| 2026-05-09 | app (PERF-BATCH-06 Developer + Merchant Optimization) | `npm run typecheck` | Pass | Strict TypeScript gate passed after lazy Developer Launcher route loading, merchant screen `getComponent` loaders, cached account sync metadata, and expanded merchant prefetch coverage |
+| 2026-05-09 | app (PERF-BATCH-06 Developer + Merchant Optimization) | `npm run lint` | Pass | ESLint completed with 0 errors and 333 warnings; new warnings are intentional lazy `require()` paths used for route/component deferral, with remaining warnings existing repo-wide debt |
+| 2026-05-09 | app (PERF-BATCH-06 Developer + Merchant Optimization) | `npm test -- --watch=false` | Pass | Full Node test suite passed with 208 tests total: 206 passing and 2 skipped |
+| 2026-05-09 | app (PERF-BATCH-06 Developer + Merchant Optimization) | `git diff --check` | Pass | Current worktree diff has no whitespace errors |
+| 2026-05-09 | app (PERF-BATCH-06 Developer + Merchant Optimization) | `npm run test:e2e` | Blocked | Playwright webServer failed before app load because Expo Web exited in non-interactive mode asking `Use port null instead?`; no route test executed. This matches the local Expo Web harness/port-startup class of blocker rather than a runtime regression in the PERF-BATCH-06 app diff |
 
 ## Outstanding Verification
 

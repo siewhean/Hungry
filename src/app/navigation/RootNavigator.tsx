@@ -14,7 +14,6 @@ import { ArrowLeft } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
-import { DeveloperLauncherScreen } from "@/app/screens/dev/DeveloperLauncherScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
 import { FloatingToast } from "@/components/ui";
@@ -221,6 +220,10 @@ const loadAddStoryScreen = () =>
   (
     require("@/app/screens/home/AddStoryScreen") as typeof import("@/app/screens/home/AddStoryScreen")
   ).AddStoryScreen;
+const loadDeveloperLauncherScreen = () =>
+  (
+    require("@/app/screens/dev/DeveloperLauncherScreen") as typeof import("@/app/screens/dev/DeveloperLauncherScreen")
+  ).DeveloperLauncherScreen;
 
 function BlogPostRouteScreen({
   navigation,
@@ -467,7 +470,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           screenOptions={{ headerShown: false }}
         >
           {__DEV__ ? (
-            <RootStack.Screen component={DeveloperLauncherScreen} name="DeveloperLauncher" />
+            <RootStack.Screen getComponent={loadDeveloperLauncherScreen} name="DeveloperLauncher" />
           ) : null}
           <RootStack.Screen component={SplashScreen} name="Splash" />
           <RootStack.Screen component={AuthStack} name="AuthStack" />

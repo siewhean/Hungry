@@ -302,8 +302,9 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
     mockDataSource,
     /const FOOD_1 =\s*"https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/7\/71\/Hainanese_Chicken_Rice\.jpg"/,
   );
-  assert.match(launcherSource, /dishes as mockDishes/);
-  assert.match(launcherSource, /repository\.listPopularNearby\(\)\[0\] \?\? mockDishes\[0\]/);
+  assert.match(launcherSource, /function getSampleDish\(repository = getLauncherRepository\(\)\)/);
+  assert.match(launcherSource, /const \{ dishes \} = getMockData\(\);/);
+  assert.match(launcherSource, /repository\.listPopularNearby\(\)\[0\] \?\? dishes\[0\]/);
   assert.match(launcherSource, /const openSampleDishDetail = \(version: "v1" \| "v2" = "v1"\)/);
   assert.match(launcherSource, /completeAuth\(\);[\s\S]*completeOnboarding\(false\);/);
   assert.match(

@@ -22,25 +22,70 @@ import {
   prefetchStallDetail,
   preloadRoute,
 } from "@/features/navigation/prefetch";
-import {
-  getDataRepository,
-  resetServiceProvider,
-  setMockServiceProvider,
-} from "@/lib/services/serviceProvider";
-import { singaporeBuildings } from "@/lib/geo/singaporeBuildings";
+import { resetServiceProvider, setMockServiceProvider } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import { useComposerStore } from "@/features/post/useComposerStore";
-import {
-  dishes as mockDishes,
-  merchantAccount,
-  venues as mockVenues,
-} from "@/lib/services/mock/data";
+import type { DataRepository } from "@/lib/services/types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DeveloperLauncher">;
+type SingaporeBuilding =
+  (typeof import("@/lib/geo/singaporeBuildings"))["singaporeBuildings"][number];
+
+function getLauncherRepository(): DataRepository {
+  const { getDataRepository } =
+    require("@/lib/services/serviceProvider") as typeof import("@/lib/services/serviceProvider");
+  return getDataRepository();
+}
+
+function getSingaporeBuildings(): SingaporeBuilding[] {
+  return (require("@/lib/geo/singaporeBuildings") as typeof import("@/lib/geo/singaporeBuildings"))
+    .singaporeBuildings;
+}
+
+function getMockData() {
+  return require("@/lib/services/mock/data") as typeof import("@/lib/services/mock/data");
+}
+
+function getSampleDish(repository = getLauncherRepository()) {
+  const { dishes } = getMockData();
+  return repository.listPopularNearby()[0] ?? dishes[0];
+}
+
+function getSampleVenueId(repository = getLauncherRepository()) {
+  const sampleDish = getSampleDish(repository);
+  const sampleBuilding = repository.listBuildings()[0];
+  const sampleVenue = sampleBuilding
+    ? repository.listVenuesByBuilding(sampleBuilding.id)[0]
+    : undefined;
+
+  if (sampleVenue?.id) {
+    return sampleVenue.id;
+  }
+
+  const firstVenueFromAnyBuilding = repository
+    .listBuildings()
+    .flatMap((building) => repository.listVenuesByBuilding(building.id))[0];
+  if (firstVenueFromAnyBuilding?.id) {
+    return firstVenueFromAnyBuilding.id;
+  }
+
+  if (sampleDish?.venueId) {
+    return sampleDish.venueId;
+  }
+
+  return getMockData().venues[0]?.id ?? "venue-tian-tian";
+}
+
+function getSampleComposerParams(repository = getLauncherRepository()) {
+  const dish = getSampleDish(repository);
+  return {
+    dishId: dish?.id,
+    venueId: getSampleVenueId(repository),
+  };
+}
 
 // ─── Feature Flags (local state — resets on restart) ─────────────────────────
 
@@ -213,11 +258,141 @@ function VersionPair({
   );
 }
 
+function SGBuildingPickerContent({
+  onOpenBuilding,
+}: {
+  onOpenBuilding: (buildingId: string) => void;
+}) {
+  const { palette, spacing, radii } = useHungryTheme();
+  const buildings = useMemo(() => getSingaporeBuildings().slice(0, 10), []);
+
+  return (
+    <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+      <View style={{ gap: spacing[1] }}>
+        {buildings.map((building) => (
+          <Pressable
+            key={building.id}
+            onPress={() => onOpenBuilding(building.id)}
+            style={{
+              backgroundColor: palette.surfaceRaised,
+              borderRadius: radii.md,
+              borderWidth: 1,
+              borderColor: palette.border,
+              padding: spacing[2],
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <AppText variant="micro" style={{ fontWeight: "700" }} numberOfLines={1}>
+                {building.name}
+              </AppText>
+            </View>
+            <Badge
+              label={building.type === "food_court" ? "FC" : "HC"}
+              tone={building.type === "food_court" ? "success" : "orange"}
+            />
+          </Pressable>
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+
+function DataInspectorContent() {
+  const { spacing } = useHungryTheme();
+  const stats = useMemo(() => {
+    const repository = getLauncherRepository();
+    return {
+      buildings: repository.listBuildings().length,
+      venues: repository
+        .listBuildings()
+        .flatMap((building) => repository.listVenuesByBuilding(building.id)).length,
+      articles: repository.listBlogPosts().length,
+      dishes: repository.listPopularNearby().length,
+    };
+  }, []);
+
+  return (
+    <View style={{ gap: spacing[1] }}>
+      {[
+        { label: "Buildings", value: stats.buildings },
+        { label: "Venues", value: stats.venues },
+        { label: "Articles", value: stats.articles },
+        { label: "Dishes", value: stats.dishes },
+      ].map(({ label, value }) => (
+        <View
+          key={label}
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+          }}
+        >
+          <AppText variant="micro" tone="secondary">
+            {label}
+          </AppText>
+          <AppText variant="micro" style={{ fontFamily: "DMMono_400Regular" }}>
+            {value}
+          </AppText>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function PostComposerSettingsContent({
+  navigation,
+}: {
+  navigation: NativeStackScreenProps<RootStackParamList, "DeveloperLauncher">["navigation"];
+}) {
+  const { palette } = useHungryTheme();
+  const { useComposerStore } =
+    require("@/features/post/useComposerStore") as typeof import("@/features/post/useComposerStore");
+  const isBusinessMode = useComposerStore((state) => state.isBusinessMode);
+  const setIsBusinessMode = useComposerStore((state) => state.setIsBusinessMode);
+
+  return (
+    <>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingVertical: 2,
+        }}
+      >
+        <View style={{ flex: 1, gap: 2 }}>
+          <AppText variant="bodySmallBold">Business Mode</AppText>
+          <AppText variant="micro" tone="secondary">
+            Shows business features (Promotions, CTAs, etc.)
+          </AppText>
+        </View>
+        <Switch
+          value={isBusinessMode}
+          onValueChange={setIsBusinessMode}
+          trackColor={{
+            false: palette.border,
+            true: `${palette.orange}66`,
+          }}
+          thumbColor={isBusinessMode ? palette.orange : palette.textMuted}
+        />
+      </View>
+      <DevButton
+        label="Launch V2 Composer"
+        onPressIn={() => preloadRoute(navigation, "PostComposerV2", getSampleComposerParams())}
+        onPress={() => navigation.navigate("PostComposerV2" as any, getSampleComposerParams())}
+        variant="primary"
+        style={{ marginTop: 8 }}
+      />
+    </>
+  );
+}
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export function DeveloperLauncherScreen({ navigation }: Props) {
   const { palette, spacing, radii } = useHungryTheme();
-  const repository = getDataRepository();
 
   // Session
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -241,54 +416,12 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const setOffline = useUIStore((state) => state.setOffline);
 
-  // Post Composer V2 State
-  const isBusinessMode = useComposerStore((state) => state.isBusinessMode);
-  const setIsBusinessMode = useComposerStore((state) => state.setIsBusinessMode);
-
   // Feature flags
   const [flags, setFlags] = useState<FeatureFlags>(DEFAULT_FLAGS);
   const toggleFlag = (key: FlagKey) => setFlags((prev) => ({ ...prev, [key]: !prev[key] }));
 
   // Network
   const [network, setNetwork] = useState<"live" | "slow" | "offline">("live");
-
-  // Building search
-  const [buildingSearch, setBuildingSearch] = useState("");
-  const filteredBuildings = useMemo(() => {
-    if (!buildingSearch.trim()) return singaporeBuildings.slice(0, 10);
-    const q = buildingSearch.toLowerCase();
-    return singaporeBuildings.filter((b) => b.name.toLowerCase().includes(q)).slice(0, 10);
-  }, [buildingSearch]);
-
-  // Sample data
-  const sampleDish = useMemo(
-    () => repository.listPopularNearby()[0] ?? mockDishes[0],
-    [repository],
-  );
-  const sampleBuilding = useMemo(() => repository.listBuildings()[0], [repository]);
-  const sampleVenue = useMemo(
-    () => (sampleBuilding ? repository.listVenuesByBuilding(sampleBuilding.id)[0] : undefined),
-    [sampleBuilding, repository],
-  );
-  const sampleStallVenueId = useMemo(() => {
-    if (sampleVenue?.id) {
-      return sampleVenue.id;
-    }
-
-    const firstVenueFromAnyBuilding = repository
-      .listBuildings()
-      .flatMap((building) => repository.listVenuesByBuilding(building.id))[0];
-    if (firstVenueFromAnyBuilding?.id) {
-      return firstVenueFromAnyBuilding.id;
-    }
-
-    if (sampleDish?.venueId) {
-      return sampleDish.venueId;
-    }
-
-    return mockVenues[0]?.id ?? "venue-tian-tian";
-  }, [repository, sampleDish, sampleVenue]);
-  const sampleArticle = useMemo(() => repository.listBlogPosts()[0], [repository]);
 
   // Helpers
   const resetToSignedOut = () => {
@@ -322,7 +455,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     completeOnboarding(false);
     setDeveloperMerchantMode(false);
     setMockServiceProvider();
-    setMerchantAccount(JSON.parse(JSON.stringify(merchantAccount)));
+    setMerchantAccount(JSON.parse(JSON.stringify(getMockData().merchantAccount)));
     setReturnRoute(undefined);
     hideReviewSuccess();
     showToast({ message: "Mode → Merchant", tone: "success" });
@@ -356,7 +489,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   };
 
   const openBuilding = (buildingId: string) => {
-    const building = singaporeBuildings.find((b) => b.id === buildingId);
+    const building = getSingaporeBuildings().find((b) => b.id === buildingId);
     if (!building) return;
     const summary = {
       id: building.id,
@@ -383,6 +516,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   };
 
   const openSampleStallDetail = (version: "v1" | "v2" = "v1") => {
+    const sampleStallVenueId = getSampleVenueId();
     if (version === "v2") {
       navigation.navigate("StallDetailV2", { venueId: sampleStallVenueId });
       return;
@@ -392,7 +526,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   };
 
   const openSampleDishDetail = (version: "v1" | "v2" = "v1") => {
-    const dish = sampleDish ?? mockDishes[0];
+    const dish = getSampleDish();
     if (!dish) {
       showToast({ message: "No sample dish is available.", tone: "error" });
       return;
@@ -407,6 +541,8 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   };
 
   const prefetchSampleStallDetail = (version: "v1" | "v2" = "v1") => {
+    const repository = getLauncherRepository();
+    const sampleStallVenueId = getSampleVenueId(repository);
     prefetchStallDetail(sampleStallVenueId, repository);
     preloadRoute(navigation, version === "v2" ? "StallDetailV2" : "StallDetail", {
       venueId: sampleStallVenueId,
@@ -414,25 +550,14 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   };
 
   const prefetchSampleDishDetail = (version: "v1" | "v2" = "v1") => {
-    const dish = sampleDish ?? mockDishes[0];
+    const repository = getLauncherRepository();
+    const dish = getSampleDish(repository);
     if (!dish) return;
     prefetchDishDetail(dish.id, repository);
     preloadRoute(navigation, version === "v2" ? "DishDetailV2" : "DishDetail", {
       dishId: dish.id,
     });
   };
-
-  // Data inspector stats
-  const stats = useMemo(
-    () => ({
-      buildings: repository.listBuildings().length,
-      sgBuildings: singaporeBuildings.length,
-      venues: repository.listBuildings().flatMap((b) => repository.listVenuesByBuilding(b.id))
-        .length,
-      articles: repository.listBlogPosts().length,
-    }),
-    [repository],
-  );
 
   return (
     <Screen
@@ -493,49 +618,8 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           title="Post Composer V2 Settings"
           subtitle="Configure the V2 composer state for testing."
           badge="V2"
-          defaultExpanded
         >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingVertical: 2,
-            }}
-          >
-            <View style={{ flex: 1, gap: 2 }}>
-              <AppText variant="bodySmallBold">Business Mode</AppText>
-              <AppText variant="micro" tone="secondary">
-                Shows business features (Promotions, CTAs, etc.)
-              </AppText>
-            </View>
-            <Switch
-              value={isBusinessMode}
-              onValueChange={setIsBusinessMode}
-              trackColor={{
-                false: palette.border,
-                true: `${palette.orange}66`,
-              }}
-              thumbColor={isBusinessMode ? palette.orange : palette.textMuted}
-            />
-          </View>
-          <DevButton
-            label="Launch V2 Composer"
-            onPressIn={() =>
-              preloadRoute(navigation, "PostComposerV2", {
-                dishId: sampleDish?.id,
-                venueId: sampleStallVenueId,
-              })
-            }
-            onPress={() =>
-              navigation.navigate("PostComposerV2" as any, {
-                dishId: sampleDish?.id,
-                venueId: sampleStallVenueId,
-              })
-            }
-            variant="primary"
-            style={{ marginTop: 8 }}
-          />
+          <PostComposerSettingsContent navigation={navigation} />
         </CollapsibleSection>
 
         {/* ── V1 vs V2 Comparison ───────────────────────── */}
@@ -601,29 +685,13 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           <VersionPair
             label="Post Composer"
             onV1PressIn={() =>
-              preloadRoute(navigation, "PostComposerV2", {
-                dishId: sampleDish?.id,
-                venueId: sampleStallVenueId,
-              })
+              preloadRoute(navigation, "PostComposerV2", getSampleComposerParams())
             }
             onV2PressIn={() =>
-              preloadRoute(navigation, "PostComposerV2", {
-                dishId: sampleDish?.id,
-                venueId: sampleStallVenueId,
-              })
+              preloadRoute(navigation, "PostComposerV2", getSampleComposerParams())
             }
-            onV1={() =>
-              navigation.navigate("PostComposerV2" as any, {
-                dishId: sampleDish?.id,
-                venueId: sampleStallVenueId,
-              })
-            }
-            onV2={() =>
-              navigation.navigate("PostComposerV2" as any, {
-                dishId: sampleDish?.id,
-                venueId: sampleStallVenueId,
-              })
-            }
+            onV1={() => navigation.navigate("PostComposerV2" as any, getSampleComposerParams())}
+            onV2={() => navigation.navigate("PostComposerV2" as any, getSampleComposerParams())}
           />
           <VersionPair
             label="Settings"
@@ -730,6 +798,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
               label="Wheel"
               onPressIn={() => preloadRoute(navigation, "DecideForMeResult")}
               onPress={() => {
+                const repository = getLauncherRepository();
                 const dish = repository.getDecideForMe({
                   sweet: 3,
                   spicy: 3,
@@ -745,6 +814,8 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             <DevButton
               label="Stall"
               onPressIn={() => {
+                const repository = getLauncherRepository();
+                const sampleStallVenueId = getSampleVenueId(repository);
                 prefetchStallDetail(sampleStallVenueId, repository);
                 preloadRoute(navigation, "StallDetail", { venueId: sampleStallVenueId });
               }}
@@ -753,9 +824,11 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             <DevButton
               label="Dish"
               onPressIn={() => {
-                if (sampleDish?.id) {
-                  prefetchDishDetail(sampleDish.id, repository);
-                  preloadRoute(navigation, "DishDetail", { dishId: sampleDish.id });
+                const repository = getLauncherRepository();
+                const dish = getSampleDish(repository);
+                if (dish?.id) {
+                  prefetchDishDetail(dish.id, repository);
+                  preloadRoute(navigation, "DishDetail", { dishId: dish.id });
                 }
               }}
               onPress={() => openSampleDishDetail("v1")}
@@ -763,9 +836,11 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             <DevButton
               label="Dish V2"
               onPressIn={() => {
-                if (sampleDish?.id) {
-                  prefetchDishDetail(sampleDish.id, repository);
-                  preloadRoute(navigation, "DishDetailV2", { dishId: sampleDish.id });
+                const repository = getLauncherRepository();
+                const dish = getSampleDish(repository);
+                if (dish?.id) {
+                  prefetchDishDetail(dish.id, repository);
+                  preloadRoute(navigation, "DishDetailV2", { dishId: dish.id });
                 }
               }}
               onPress={() => openSampleDishDetail("v2")}
@@ -777,9 +852,12 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             />
             <DevButton
               label="Article"
-              onPress={() =>
-                sampleArticle && navigation.navigate("BlogPost", { postId: sampleArticle.id })
-              }
+              onPress={() => {
+                const sampleArticle = getLauncherRepository().listBlogPosts()[0];
+                if (sampleArticle) {
+                  navigation.navigate("BlogPost", { postId: sampleArticle.id });
+                }
+              }}
             />
             <DevButton
               label="Composer"
@@ -940,71 +1018,13 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         </CollapsibleSection>
 
         {/* ── SG Building Picker ─────────────────────────── */}
-        <CollapsibleSection
-          title="SG Building Picker"
-          subtitle={`${singaporeBuildings.length} buildings · jump to floor plan`}
-        >
-          <ScrollView
-            style={{ maxHeight: 200 }}
-            nestedScrollEnabled
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={{ gap: spacing[1] }}>
-              {filteredBuildings.map((building) => (
-                <Pressable
-                  key={building.id}
-                  onPress={() => openBuilding(building.id)}
-                  style={{
-                    backgroundColor: palette.surfaceRaised,
-                    borderRadius: radii.md,
-                    borderWidth: 1,
-                    borderColor: palette.border,
-                    padding: spacing[2],
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <View style={{ flex: 1 }}>
-                    <AppText variant="micro" style={{ fontWeight: "700" }} numberOfLines={1}>
-                      {building.name}
-                    </AppText>
-                  </View>
-                  <Badge
-                    label={building.type === "food_court" ? "FC" : "HC"}
-                    tone={building.type === "food_court" ? "success" : "orange"}
-                  />
-                </Pressable>
-              ))}
-            </View>
-          </ScrollView>
+        <CollapsibleSection title="SG Building Picker" subtitle="Jump to floor plan">
+          <SGBuildingPickerContent onOpenBuilding={openBuilding} />
         </CollapsibleSection>
 
         {/* ── Data Inspector ─────────────────────────────── */}
         <CollapsibleSection title="Data inspector" badge="Mock">
-          <View style={{ gap: spacing[1] }}>
-            {[
-              { label: "Buildings", value: stats.buildings },
-              { label: "Venues", value: stats.venues },
-              { label: "Articles", value: stats.articles },
-              { label: "Dishes", value: repository.listPopularNearby().length },
-            ].map(({ label, value }) => (
-              <View
-                key={label}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <AppText variant="micro" tone="secondary">
-                  {label}
-                </AppText>
-                <AppText variant="micro" style={{ fontFamily: "DMMono_400Regular" }}>
-                  {value}
-                </AppText>
-              </View>
-            ))}
-          </View>
+          <DataInspectorContent />
         </CollapsibleSection>
 
         {/* Safety footer */}

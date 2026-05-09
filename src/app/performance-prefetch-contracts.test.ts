@@ -14,9 +14,11 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.doesNotMatch(rootNavigator, /import \{ HomeMapScreen \}/);
   assert.doesNotMatch(rootNavigator, /import \{ PostComposerScreenV2 \}/);
   assert.doesNotMatch(rootNavigator, /import \{ MerchantTabs \}/);
+  assert.doesNotMatch(rootNavigator, /import \{ DeveloperLauncherScreen \}/);
   assert.match(rootNavigator, /getComponent=\{loadHomeMapScreen\}/);
   assert.match(rootNavigator, /getComponent=\{loadMerchantTabs\}/);
   assert.match(rootNavigator, /getComponent=\{loadPostComposerScreenV2\}/);
+  assert.match(rootNavigator, /getComponent=\{loadDeveloperLauncherScreen\}/);
   assert.match(rootNavigator, /QuickReviewModalHost/);
   assert.match(rootNavigator, /ReviewSuccessModalHost/);
 
@@ -191,4 +193,44 @@ test("remaining high-traffic profile, developer, and merchant links prefetch on 
   assert.match(developerLauncher, /onV1PressIn=\{\(\) => prefetchSampleStallDetail\("v1"\)\}/);
   assert.match(developerLauncher, /onV2PressIn=\{\(\) => prefetchSampleDishDetail\("v2"\)\}/);
   assert.match(developerLauncher, /onV1PressIn=\{\(\) => preloadRoute\(navigation, "MainTabs"/);
+});
+
+test("developer and merchant surfaces defer non-selected work", () => {
+  const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
+  const merchantTabs = read("src/app/navigation/MerchantTabs.tsx");
+  const merchantStore = read("src/store/useMerchantStore.ts");
+  const prefetch = read("src/features/navigation/prefetch.ts");
+
+  assert.doesNotMatch(developerLauncher, /from "@\/lib\/geo\/singaporeBuildings"/);
+  assert.doesNotMatch(developerLauncher, /from "@\/lib\/services\/mock\/data"/);
+  assert.doesNotMatch(developerLauncher, /from "@\/features\/post\/useComposerStore"/);
+  assert.match(developerLauncher, /function getLauncherRepository/);
+  assert.match(developerLauncher, /function SGBuildingPickerContent/);
+  assert.match(developerLauncher, /function DataInspectorContent/);
+  assert.match(developerLauncher, /function PostComposerSettingsContent/);
+
+  assert.doesNotMatch(merchantTabs, /from "@\/app\/screens\/merchant\/MerchantDashboardScreen"/);
+  assert.doesNotMatch(merchantTabs, /from "@\/app\/screens\/merchant\/DishEditorScreen"/);
+  assert.match(merchantTabs, /getComponent=\{loadMerchantDashboardScreen\}/);
+  assert.match(merchantTabs, /getComponent=\{loadDishEditorScreen\}/);
+  assert.match(merchantTabs, /MERCHANT_ACCOUNT_SYNC_TTL_MS = 5 \* 60 \* 1000/);
+  assert.match(merchantTabs, /hasFreshCachedAccount/);
+  assert.match(merchantTabs, /InteractionManager\.runAfterInteractions/);
+
+  assert.match(merchantStore, /accountSyncedAt: number \| null/);
+  assert.match(merchantStore, /activeOutletStillExists/);
+  assert.match(merchantStore, /activeOutletStillExists[\s\S]*state\.activeOutletId/);
+
+  assert.match(prefetch, /routeName === "Analytics"/);
+  assert.match(prefetch, /merchant\.getAnalytics\(outletId, "7d"\)/);
+  assert.match(prefetch, /routeName === "PromotionList"/);
+  assert.match(prefetch, /merchant\.getPromotions\(outletId\)/);
+  assert.match(prefetch, /routeName === "AIAssistant"/);
+  assert.match(prefetch, /merchant\.getAIInsights\(outletId\)/);
+  assert.match(prefetch, /merchant\.getWeeklySummary\(outletId\)/);
+  assert.match(prefetch, /routeName === "OCRDrafts"/);
+  assert.match(prefetch, /merchant\.getOCRDrafts\(outletId\)/);
+  assert.match(prefetch, /routeName === "MerchantSettings"/);
+  assert.match(prefetch, /merchant\.getNotificationPreferences\(accountId\)/);
+  assert.match(prefetch, /merchant\.getTeamMembers\(accountId\)/);
 });

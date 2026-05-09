@@ -15,6 +15,8 @@ import { hungryPersistStorage } from "./persistStorage";
 interface MerchantState {
   /** Current merchant account (null if user is not a merchant) */
   account: MerchantAccount | null;
+  /** Last successful merchant-account sync timestamp */
+  accountSyncedAt: number | null;
   /** Currently selected outlet ID for multi-outlet accounts */
   activeOutletId: string | null;
   /** Cached analytics for the active outlet */
@@ -49,6 +51,7 @@ const DEFAULT_NOTIFICATION_PREFS: MerchantNotificationPreferences = {
 
 const INITIAL_STATE: MerchantState = {
   account: null,
+  accountSyncedAt: null,
   activeOutletId: null,
   analyticsCache: null,
   notificationPreferences: DEFAULT_NOTIFICATION_PREFS,
@@ -63,9 +66,16 @@ export const useMerchantStore = create<MerchantState & MerchantActions>()(
       ...INITIAL_STATE,
 
       setAccount: (account) =>
-        set({
-          account,
-          activeOutletId: account?.outlets[0]?.id ?? null,
+        set((state) => {
+          const activeOutletStillExists =
+            account?.outlets.some((outlet) => outlet.id === state.activeOutletId) ?? false;
+          return {
+            account,
+            accountSyncedAt: account ? Date.now() : null,
+            activeOutletId: activeOutletStillExists
+              ? state.activeOutletId
+              : (account?.outlets[0]?.id ?? null),
+          };
         }),
 
       setActiveOutlet: (outletId) => set({ activeOutletId: outletId, analyticsCache: null }),
@@ -115,6 +125,7 @@ export const useMerchantStore = create<MerchantState & MerchantActions>()(
       storage: hungryPersistStorage,
       partialize: (state) => ({
         account: state.account,
+        accountSyncedAt: state.accountSyncedAt,
         activeOutletId: state.activeOutletId,
         notificationPreferences: state.notificationPreferences,
       }),

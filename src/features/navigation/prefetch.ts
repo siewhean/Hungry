@@ -12,6 +12,10 @@ type MerchantPrefetchRoute =
   | "CustomerInbox"
   | "BusinessProfileEditor"
   | "VerificationCentre"
+  | "PromotionList"
+  | "AIAssistant"
+  | "OCRDrafts"
+  | "MerchantSettings"
   | string;
 
 const prefetchedImages = new Set<string>();
@@ -158,13 +162,35 @@ export function prefetchMerchantTab(
         );
         return;
       }
+      if (routeName === "Analytics" && outletId) {
+        await merchant.getAnalytics(outletId, "7d");
+        return;
+      }
       if (routeName === "CustomerInbox" && outletId) {
         await merchant.getInbox(outletId);
         return;
       }
+      if (routeName === "PromotionList" && outletId) {
+        await merchant.getPromotions(outletId);
+        return;
+      }
+      if (routeName === "AIAssistant" && outletId) {
+        await Promise.all([merchant.getAIInsights(outletId), merchant.getWeeklySummary(outletId)]);
+        return;
+      }
+      if (routeName === "OCRDrafts" && outletId) {
+        await merchant.getOCRDrafts(outletId);
+        return;
+      }
+      if (routeName === "MerchantSettings" && accountId) {
+        await Promise.all([
+          merchant.getNotificationPreferences(accountId),
+          merchant.getTeamMembers(accountId),
+        ]);
+        return;
+      }
       if (
         routeName === "Profile" ||
-        routeName === "MerchantSettings" ||
         routeName === "BusinessProfileEditor" ||
         routeName === "VerificationCentre"
       ) {

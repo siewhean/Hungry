@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Pressable, StyleSheet, ActivityIndicator, InteractionManager } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
@@ -14,24 +14,10 @@ import { useHungryTheme } from "@/theme";
 import { getActiveOutlet, useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
-import { MerchantDashboardScreen } from "@/app/screens/merchant/MerchantDashboardScreen";
-import { MerchantMenuScreen } from "@/app/screens/merchant/MerchantMenuScreen";
-import { MerchantAnalyticsScreen } from "@/app/screens/merchant/MerchantAnalyticsScreen";
-import { MerchantProfileScreen } from "@/app/screens/merchant/MerchantProfileScreen";
-import { VerificationCentreScreen } from "@/app/screens/merchant/VerificationCentreScreen";
-import { HomeBasedVerificationScreen } from "@/app/screens/merchant/HomeBasedVerificationScreen";
-import { CustomerInboxScreen } from "@/app/screens/merchant/CustomerInboxScreen";
-import { BusinessProfileEditorScreen } from "@/app/screens/merchant/BusinessProfileEditorScreen";
-import { DishEditorScreen } from "@/app/screens/merchant/DishEditorScreen";
-import { OCRDraftScreen } from "@/app/screens/merchant/OCRDraftScreen";
-import { PromotionListScreen } from "@/app/screens/merchant/PromotionListScreen";
-import { PromotionBuilderScreen } from "@/app/screens/merchant/PromotionBuilderScreen";
-import { AIAssistantScreen } from "@/app/screens/merchant/AIAssistantScreen";
-import { OrdersComingSoonScreen } from "@/app/screens/merchant/OrdersComingSoonScreen";
-import { MerchantSettingsScreen } from "@/app/screens/merchant/MerchantSettingsScreen";
 
 const Tab = createBottomTabNavigator<MerchantTabParamList>();
 const verifiedOnlyScreens = new Set<string>(VERIFIED_ONLY_SCREENS);
+const MERCHANT_ACCOUNT_SYNC_TTL_MS = 5 * 60 * 1000;
 
 type MerchantRouteName = keyof MerchantTabParamList;
 
@@ -125,39 +111,111 @@ function createGuardedScreen<Props extends object>(
   };
 }
 
-const GuardedDashboardScreen = createGuardedScreen("Dashboard", MerchantDashboardScreen);
-const GuardedMenuScreen = createGuardedScreen("Menu", MerchantMenuScreen);
-const GuardedAnalyticsScreen = createGuardedScreen("Analytics", MerchantAnalyticsScreen);
-const GuardedProfileScreen = createGuardedScreen("Profile", MerchantProfileScreen);
-const GuardedVerificationCentreScreen = createGuardedScreen(
-  "VerificationCentre",
-  VerificationCentreScreen,
-);
-const GuardedHomeBasedVerificationScreen = createGuardedScreen(
-  "HomeBasedVerification",
-  HomeBasedVerificationScreen,
-);
-const GuardedCustomerInboxScreen = createGuardedScreen("CustomerInbox", CustomerInboxScreen);
-const GuardedBusinessProfileEditorScreen = createGuardedScreen(
-  "BusinessProfileEditor",
-  BusinessProfileEditorScreen,
-);
-const GuardedDishEditorScreen = createGuardedScreen("DishEditor", DishEditorScreen);
-const GuardedOCRDraftScreen = createGuardedScreen("OCRDrafts", OCRDraftScreen);
-const GuardedPromotionListScreen = createGuardedScreen("PromotionList", PromotionListScreen);
-const GuardedPromotionBuilderScreen = createGuardedScreen(
-  "PromotionBuilder",
-  PromotionBuilderScreen,
-);
-const GuardedAIAssistantScreen = createGuardedScreen("AIAssistant", AIAssistantScreen);
-const GuardedOrdersComingSoonScreen = createGuardedScreen(
-  "OrdersComingSoon",
-  OrdersComingSoonScreen,
-);
-const GuardedMerchantSettingsScreen = createGuardedScreen(
-  "MerchantSettings",
-  MerchantSettingsScreen,
-);
+const loadMerchantDashboardScreen = () =>
+  createGuardedScreen(
+    "Dashboard",
+    (
+      require("@/app/screens/merchant/MerchantDashboardScreen") as typeof import("@/app/screens/merchant/MerchantDashboardScreen")
+    ).MerchantDashboardScreen,
+  );
+const loadMerchantMenuScreen = () =>
+  createGuardedScreen(
+    "Menu",
+    (
+      require("@/app/screens/merchant/MerchantMenuScreen") as typeof import("@/app/screens/merchant/MerchantMenuScreen")
+    ).MerchantMenuScreen,
+  );
+const loadMerchantAnalyticsScreen = () =>
+  createGuardedScreen(
+    "Analytics",
+    (
+      require("@/app/screens/merchant/MerchantAnalyticsScreen") as typeof import("@/app/screens/merchant/MerchantAnalyticsScreen")
+    ).MerchantAnalyticsScreen,
+  );
+const loadMerchantProfileScreen = () =>
+  createGuardedScreen(
+    "Profile",
+    (
+      require("@/app/screens/merchant/MerchantProfileScreen") as typeof import("@/app/screens/merchant/MerchantProfileScreen")
+    ).MerchantProfileScreen,
+  );
+const loadVerificationCentreScreen = () =>
+  createGuardedScreen(
+    "VerificationCentre",
+    (
+      require("@/app/screens/merchant/VerificationCentreScreen") as typeof import("@/app/screens/merchant/VerificationCentreScreen")
+    ).VerificationCentreScreen,
+  );
+const loadHomeBasedVerificationScreen = () =>
+  createGuardedScreen(
+    "HomeBasedVerification",
+    (
+      require("@/app/screens/merchant/HomeBasedVerificationScreen") as typeof import("@/app/screens/merchant/HomeBasedVerificationScreen")
+    ).HomeBasedVerificationScreen,
+  );
+const loadCustomerInboxScreen = () =>
+  createGuardedScreen(
+    "CustomerInbox",
+    (
+      require("@/app/screens/merchant/CustomerInboxScreen") as typeof import("@/app/screens/merchant/CustomerInboxScreen")
+    ).CustomerInboxScreen,
+  );
+const loadBusinessProfileEditorScreen = () =>
+  createGuardedScreen(
+    "BusinessProfileEditor",
+    (
+      require("@/app/screens/merchant/BusinessProfileEditorScreen") as typeof import("@/app/screens/merchant/BusinessProfileEditorScreen")
+    ).BusinessProfileEditorScreen,
+  );
+const loadDishEditorScreen = () =>
+  createGuardedScreen(
+    "DishEditor",
+    (
+      require("@/app/screens/merchant/DishEditorScreen") as typeof import("@/app/screens/merchant/DishEditorScreen")
+    ).DishEditorScreen,
+  );
+const loadOCRDraftScreen = () =>
+  createGuardedScreen(
+    "OCRDrafts",
+    (
+      require("@/app/screens/merchant/OCRDraftScreen") as typeof import("@/app/screens/merchant/OCRDraftScreen")
+    ).OCRDraftScreen,
+  );
+const loadPromotionListScreen = () =>
+  createGuardedScreen(
+    "PromotionList",
+    (
+      require("@/app/screens/merchant/PromotionListScreen") as typeof import("@/app/screens/merchant/PromotionListScreen")
+    ).PromotionListScreen,
+  );
+const loadPromotionBuilderScreen = () =>
+  createGuardedScreen(
+    "PromotionBuilder",
+    (
+      require("@/app/screens/merchant/PromotionBuilderScreen") as typeof import("@/app/screens/merchant/PromotionBuilderScreen")
+    ).PromotionBuilderScreen,
+  );
+const loadAIAssistantScreen = () =>
+  createGuardedScreen(
+    "AIAssistant",
+    (
+      require("@/app/screens/merchant/AIAssistantScreen") as typeof import("@/app/screens/merchant/AIAssistantScreen")
+    ).AIAssistantScreen,
+  );
+const loadOrdersComingSoonScreen = () =>
+  createGuardedScreen(
+    "OrdersComingSoon",
+    (
+      require("@/app/screens/merchant/OrdersComingSoonScreen") as typeof import("@/app/screens/merchant/OrdersComingSoonScreen")
+    ).OrdersComingSoonScreen,
+  );
+const loadMerchantSettingsScreen = () =>
+  createGuardedScreen(
+    "MerchantSettings",
+    (
+      require("@/app/screens/merchant/MerchantSettingsScreen") as typeof import("@/app/screens/merchant/MerchantSettingsScreen")
+    ).MerchantSettingsScreen,
+  );
 
 function MerchantTabBar({ state, descriptors, navigation }: any) {
   const { componentSizes, palette, spacing } = useHungryTheme();
@@ -234,6 +292,7 @@ export function MerchantTabs() {
   const { palette, spacing } = useHungryTheme();
   const navigation = useNavigation();
   const account = useMerchantStore((state) => state.account);
+  const accountSyncedAt = useMerchantStore((state) => state.accountSyncedAt);
   const developerMerchantMode = useMerchantStore((state) => state.developerMerchantMode);
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const setAccount = useMerchantStore((state) => state.setAccount);
@@ -247,14 +306,22 @@ export function MerchantTabs() {
 
   useEffect(() => {
     let isMounted = true;
-    async function syncMerchantAccount() {
-      if (developerMerchantMode) {
-        if (isMounted) {
-          setIsSyncingAccount(false);
-        }
-        return;
-      }
+    let deferredSync: { cancel?: () => void } | undefined;
 
+    const hasFreshCachedAccount =
+      Boolean(account) &&
+      Boolean(activeOutlet) &&
+      Boolean(accountSyncedAt) &&
+      Date.now() - Number(accountSyncedAt) < MERCHANT_ACCOUNT_SYNC_TTL_MS;
+
+    if (developerMerchantMode || hasFreshCachedAccount) {
+      setIsSyncingAccount(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    async function syncMerchantAccount() {
       if (!isAuthenticated && getServiceProvider().mode !== "mock") {
         setIsSyncingAccount(false);
         return;
@@ -273,11 +340,21 @@ export function MerchantTabs() {
         }
       }
     }
-    void syncMerchantAccount();
+
+    if (account) {
+      setIsSyncingAccount(false);
+      deferredSync = InteractionManager.runAfterInteractions(() => {
+        void syncMerchantAccount();
+      });
+    } else {
+      void syncMerchantAccount();
+    }
+
     return () => {
       isMounted = false;
+      deferredSync?.cancel?.();
     };
-  }, [developerMerchantMode, setAccount, isAuthenticated]);
+  }, [account, accountSyncedAt, activeOutlet, developerMerchantMode, setAccount, isAuthenticated]);
 
   const handleMockLogin = async () => {
     try {
@@ -346,63 +423,63 @@ export function MerchantTabs() {
       tabBar={(props: BottomTabBarProps) => <MerchantTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
-      <Tab.Screen name="Dashboard" component={GuardedDashboardScreen} />
-      <Tab.Screen name="Menu" component={GuardedMenuScreen} />
-      <Tab.Screen name="Analytics" component={GuardedAnalyticsScreen} />
-      <Tab.Screen name="Profile" component={GuardedProfileScreen} />
+      <Tab.Screen name="Dashboard" getComponent={loadMerchantDashboardScreen} />
+      <Tab.Screen name="Menu" getComponent={loadMerchantMenuScreen} />
+      <Tab.Screen name="Analytics" getComponent={loadMerchantAnalyticsScreen} />
+      <Tab.Screen name="Profile" getComponent={loadMerchantProfileScreen} />
       <Tab.Screen
         name="VerificationCentre"
-        component={GuardedVerificationCentreScreen}
+        getComponent={loadVerificationCentreScreen}
         options={{ tabBarStyle: { display: "none" } }}
       />
       <Tab.Screen
         name="HomeBasedVerification"
-        component={GuardedHomeBasedVerificationScreen}
+        getComponent={loadHomeBasedVerificationScreen}
         options={{ tabBarStyle: { display: "none" } }}
       />
       <Tab.Screen
         name="CustomerInbox"
-        component={GuardedCustomerInboxScreen}
+        getComponent={loadCustomerInboxScreen}
         options={{ tabBarStyle: { display: "none" } }}
       />
       <Tab.Screen
         name="BusinessProfileEditor"
-        component={GuardedBusinessProfileEditorScreen}
+        getComponent={loadBusinessProfileEditorScreen}
         options={{ tabBarStyle: { display: "none" } }}
       />
       <Tab.Screen
         name="DishEditor"
-        component={GuardedDishEditorScreen}
+        getComponent={loadDishEditorScreen}
         options={{ tabBarStyle: { display: "none" } }}
       />
       <Tab.Screen
         name="OCRDrafts"
-        component={GuardedOCRDraftScreen}
+        getComponent={loadOCRDraftScreen}
         options={{ tabBarStyle: { display: "none" } }}
       />
       <Tab.Screen
         name="PromotionList"
-        component={GuardedPromotionListScreen}
+        getComponent={loadPromotionListScreen}
         options={{ tabBarStyle: { display: "none" } }}
       />
       <Tab.Screen
         name="PromotionBuilder"
-        component={GuardedPromotionBuilderScreen}
+        getComponent={loadPromotionBuilderScreen}
         options={{ tabBarStyle: { display: "none" } }}
       />
       <Tab.Screen
         name="AIAssistant"
-        component={GuardedAIAssistantScreen}
+        getComponent={loadAIAssistantScreen}
         options={{ tabBarStyle: { display: "none" } }}
       />
       <Tab.Screen
         name="OrdersComingSoon"
-        component={GuardedOrdersComingSoonScreen}
+        getComponent={loadOrdersComingSoonScreen}
         options={{ tabBarStyle: { display: "none" } }}
       />
       <Tab.Screen
         name="MerchantSettings"
-        component={GuardedMerchantSettingsScreen}
+        getComponent={loadMerchantSettingsScreen}
         options={{ tabBarStyle: { display: "none" } }}
       />
     </Tab.Navigator>
