@@ -3,7 +3,6 @@ import {
   Animated,
   Easing,
   Pressable,
-  ScrollView,
   StyleSheet,
   TextInput,
   View,
@@ -11,6 +10,7 @@ import {
 } from "react-native";
 import { Search, X, SlidersHorizontal, Star } from "lucide-react-native";
 import { Image } from "expo-image";
+import { FlashList } from "@shopify/flash-list";
 
 import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -64,6 +64,41 @@ export function SearchResultsView({
     extrapolate: "clamp",
   });
   const TABS: FilterTab[] = ["All", "Dishes", "Stalls", "Reads"];
+  const renderResult = useCallback(
+    ({ item: dish }: { item: DishDetail }) => (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Open ${dish.name}`}
+        onPressIn={() => onResultPressIn?.(dish)}
+        onPress={() => onResultPress(dish)}
+        style={{ flexDirection: "row", gap: spacing[3] }}
+      >
+        <Image
+          source={{ uri: dish.imageUrl }}
+          style={{ width: 80, height: 80, borderRadius: radii.md }}
+          contentFit="cover"
+        />
+        <View style={{ flex: 1, justifyContent: "center", gap: spacing[1] }}>
+          <AppText variant="bodyBold" numberOfLines={1}>
+            {dish.name}
+          </AppText>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+            <Star color={palette.amber} fill={palette.amber} size={14} />
+            <AppText variant="micro" style={{ fontWeight: "700" }}>
+              {dish.rating.toFixed(1)}
+            </AppText>
+            <AppText variant="micro" tone="secondary">
+              ({dish.reviewCount})
+            </AppText>
+          </View>
+          <AppText style={{ color: palette.orange, fontWeight: "800" }}>
+            S${dish.price.toFixed(2)}
+          </AppText>
+        </View>
+      </Pressable>
+    ),
+    [onResultPress, onResultPressIn, palette.amber, palette.orange, radii.md, spacing],
+  );
 
   const revealSearch = useCallback(() => {
     if (isSearchExpanded) return;
@@ -265,39 +300,16 @@ export function SearchResultsView({
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: spacing[4], gap: spacing[4] }}>
-        {results.map((dish) => (
-          <Pressable
-            key={dish.id}
-            onPressIn={() => onResultPressIn?.(dish)}
-            onPress={() => onResultPress(dish)}
-            style={{ flexDirection: "row", gap: spacing[3] }}
-          >
-            <Image
-              source={{ uri: dish.imageUrl }}
-              style={{ width: 80, height: 80, borderRadius: radii.md }}
-              contentFit="cover"
-            />
-            <View style={{ flex: 1, justifyContent: "center", gap: spacing[1] }}>
-              <AppText variant="bodyBold" numberOfLines={1}>
-                {dish.name}
-              </AppText>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                <Star color={palette.amber} fill={palette.amber} size={14} />
-                <AppText variant="micro" style={{ fontWeight: "700" }}>
-                  {dish.rating.toFixed(1)}
-                </AppText>
-                <AppText variant="micro" tone="secondary">
-                  ({dish.reviewCount})
-                </AppText>
-              </View>
-              <AppText style={{ color: palette.orange, fontWeight: "800" }}>
-                S${dish.price.toFixed(2)}
-              </AppText>
-            </View>
-          </Pressable>
-        ))}
-      </ScrollView>
+      <FlashList
+        data={results}
+        keyExtractor={(dish) => dish.id}
+        renderItem={renderResult}
+        ItemSeparatorComponent={() => <View style={{ height: spacing[4] }} />}
+        // @ts-ignore FlashList v2 runtime supports this prop but its bundled RN type omits it.
+        estimatedItemSize={96}
+        contentContainerStyle={{ padding: spacing[4] }}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 }

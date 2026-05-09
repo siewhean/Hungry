@@ -15,6 +15,8 @@ type MerchantPrefetchRoute =
 const prefetchedImages = new Set<string>();
 const imagePrefetches = new Map<string, Promise<boolean>>();
 const merchantPrefetches = new Set<string>();
+const prefetchedDishDetails = new Set<string>();
+const prefetchedStallDetails = new Set<string>();
 
 export function prefetchImage(uri?: string | null) {
   if (!uri || prefetchedImages.has(uri)) {
@@ -53,19 +55,24 @@ export function prefetchDishDetail(
   dishId?: string | null,
   repository: DataRepository = getDataRepository(),
 ) {
-  if (!dishId) {
+  if (!dishId || prefetchedDishDetails.has(dishId)) {
     return;
   }
 
-  const dish = repository.getDishById(dishId);
-  if (!dish) {
-    return;
-  }
+  try {
+    const dish = repository.getDishById(dishId);
+    if (!dish) {
+      return;
+    }
 
-  prefetchImages([dish.imageUrl, ...dish.gallery], 5);
-  const venue = repository.getVenueById(dish.venueId);
-  if (venue?.topDishId && venue.topDishId !== dishId) {
-    prefetchImage(repository.getDishById(venue.topDishId)?.imageUrl);
+    prefetchedDishDetails.add(dishId);
+    prefetchImages([dish.imageUrl, ...dish.gallery], 5);
+    const venue = repository.getVenueById(dish.venueId);
+    if (venue?.topDishId && venue.topDishId !== dishId) {
+      prefetchImage(repository.getDishById(venue.topDishId)?.imageUrl);
+    }
+  } catch {
+    prefetchedDishDetails.delete(dishId);
   }
 }
 
@@ -73,18 +80,23 @@ export function prefetchStallDetail(
   venueId?: string | null,
   repository: DataRepository = getDataRepository(),
 ) {
-  if (!venueId) {
+  if (!venueId || prefetchedStallDetails.has(venueId)) {
     return;
   }
 
-  const venue = repository.getVenueById(venueId);
-  const dishes = repository.listDishesByVenue(venueId);
-  prefetchImages(
-    dishes.map((dish) => dish.imageUrl),
-    6,
-  );
-  if (venue?.topDishId) {
-    prefetchDishDetail(venue.topDishId, repository);
+  try {
+    prefetchedStallDetails.add(venueId);
+    const venue = repository.getVenueById(venueId);
+    const dishes = repository.listDishesByVenue(venueId);
+    prefetchImages(
+      dishes.map((dish) => dish.imageUrl),
+      6,
+    );
+    if (venue?.topDishId) {
+      prefetchDishDetail(venue.topDishId, repository);
+    }
+  } catch {
+    prefetchedStallDetails.delete(venueId);
   }
 }
 

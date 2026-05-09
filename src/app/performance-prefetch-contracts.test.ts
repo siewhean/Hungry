@@ -85,10 +85,10 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
   assert.match(homeScreen, /activeFeedLoadIdRef/);
   assert.doesNotMatch(homeScreen, /const publishedPosts = usePublishedPostStore/);
   assert.match(discover, /getDiscoverBites\(repository\)/);
-  assert.match(
-    discover,
-    /getDiscoverBiteCollection\("quickBites", discoverBaseBites, repository\)/,
-  );
+  assert.match(discover, /getDiscoverBiteCollections\(discoverBaseBites, repository\)/);
+  assert.match(discover, /const discoverDishById = useMemo/);
+  assert.match(discover, /discoverDishById\.get\(bite\.dishId\)/);
+  assert.doesNotMatch(discover, /getDiscoverBiteCollection\("quickBites"/);
   assert.equal((quickBites.match(/getDiscoverBites\(/g) ?? []).length, 1);
   assert.match(quickBites, /const fallbackBites = useMemo\(\(\) => getDiscoverBites\(\), \[\]\)/);
   assert.doesNotMatch(quickBites, /ActivityIndicator/);
@@ -100,11 +100,14 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   const homeScreen = read("src/app/screens/home/HomeFeedScreen.tsx");
   const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
   const search = read("src/app/screens/search/SearchResultsScreen.tsx");
+  const searchResultsView = read("src/components/discover/SearchResultsView.tsx");
   const merchantTabs = read("src/app/navigation/MerchantTabs.tsx");
   const zoomableMedia = read("src/components/social/ZoomableMedia.tsx");
   const zoomableVideo = read("src/components/social/ZoomableVideo.tsx");
 
   assert.match(prefetch, /ExpoImage\.prefetch/);
+  assert.match(prefetch, /const prefetchedDishDetails = new Set<string>\(\)/);
+  assert.match(prefetch, /const prefetchedStallDetails = new Set<string>\(\)/);
   assert.match(prefetch, /export function prefetchDishDetail/);
   assert.match(prefetch, /export function prefetchStallDetail/);
   assert.match(prefetch, /export function prefetchPostDetail/);
@@ -114,6 +117,15 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(homeScreen, /onPressIn=\{\(\) => prefetchFeedCardRoute\(item\)\}/);
   assert.match(discover, /onPressIn=\{\(\) => prefetchBiteCard\(bite\)\}/);
   assert.match(search, /onPressIn=\{\(\) =>/);
+  assert.match(search, /const browsePostIndexes = useMemo/);
+  assert.match(search, /postByDishId\.get\(dish\.id\)/);
+  assert.match(search, /postByVenueId\.get\(venue\.id\)/);
+  assert.doesNotMatch(search, /stallPosts\.find/);
+  assert.doesNotMatch(search, /results\.slice\(0, 8\)\.forEach/);
+  assert.doesNotMatch(search, /filteredFeedItems\.slice\(0, 8\)\.forEach/);
+  assert.match(searchResultsView, /import \{ FlashList \} from "@shopify\/flash-list"/);
+  assert.match(searchResultsView, /renderItem=\{renderResult\}/);
+  assert.doesNotMatch(searchResultsView, /results\.map/);
   assert.match(merchantTabs, /prefetchMerchantTab\(route\.name/);
   assert.doesNotMatch(zoomableMedia, /from "expo-video"/);
   assert.match(zoomableMedia, /require\("\.\/ZoomableVideo"\)/);

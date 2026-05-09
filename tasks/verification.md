@@ -15,8 +15,18 @@ Use the smallest check that matches the change risk.
 
 | date | scope | command | result | notes |
 |---|---|---|---|---|
+| 2026-05-08 | db security (SEC-07) | `supabase db query --linked --file supabase/migrations/0027_spatial_ref_sys_rls.sql` | Blocked | Remote apply failed with `ERROR: 42501: must be owner of table spatial_ref_sys`; normal migration removed and replaced with privileged admin SQL at `supabase/manual/spatial_ref_sys_rls_admin.sql` |
+| 2026-05-08 | db security (SEC-07) | `supabase db query --linked "select ... from pg_class/pg_tables/pg_extension"` | Pass | Confirmed linked project `public.spatial_ref_sys` and PostGIS extension are owned by `supabase_admin`; project `postgres` cannot assume `supabase_admin` |
+| 2026-05-08 | db security (SEC-07) | `supabase db advisors --linked --type security --level error` | Blocked | Advisor still reports only the `RLS Disabled in Public` error for `public.spatial_ref_sys` |
 | 2026-05-08 | app (AUTH-SUPABASE-01) | `node --import tsx --test src/app/navigation/supabase-auth-guards.test.ts` | Pass | 2/2 focused contracts pass for Supabase auth-ready route gating and profile hydration from Supabase auth/session responses |
 | 2026-05-08 | app (AUTH-SUPABASE-01) | `npm run typecheck` | Pass | Strict TypeScript gate passed after Supabase auth store, bootstrap, Splash, navigation guard, and auth-screen updates |
+| 2026-05-08 | app (INT-BATCH-10) | `/bin/zsh -lc 'node --check scripts/native-smoke-preflight.mjs && node --check scripts/prepare-maestro-smoke.mjs'` | Pass | Native smoke preflight and prepared runner both parse successfully |
+| 2026-05-08 | app (INT-BATCH-10) | `/bin/zsh -lc 'node --import tsx --test src/app/native-smoke-contracts.test.ts'` | Pass | 3/3 focused native smoke contracts pass after adding simulator preflight coverage |
+| 2026-05-08 | app (INT-BATCH-10) | `/bin/zsh -lc 'npm run smoke:native:ios:prepared'` | Blocked | Prepared smoke now fails fast with `[native-smoke-preflight] CoreSimulator is unavailable (CoreSimulatorService connection became invalid)` instead of reaching Maestro with a misleading 0-device failure |
+| 2026-05-08 | app (INT-BATCH-10) | `/bin/zsh -lc 'npm run typecheck'` | Pass | Strict TypeScript gate passed after native preflight updates |
+| 2026-05-08 | app (INT-BATCH-10) | `/bin/zsh -lc 'npm run lint'` | Pass | 0 errors, 283 warnings; warnings are existing project debt outside this batch |
+| 2026-05-08 | app (INT-BATCH-10) | `/bin/zsh -lc 'npm test -- --watch=false'` | Pass | 201 tests total: 199 pass, 2 skipped |
+| 2026-05-08 | app (INT-BATCH-10) | `git diff --check -- scripts/native-smoke-preflight.mjs scripts/prepare-maestro-smoke.mjs package.json src/app/native-smoke-contracts.test.ts tasks/backlog.md tasks/verification.md tasks/session-log.md` | Pass | Touched INT-BATCH-10 files have no whitespace errors |
 | 2026-05-08 | app (INT-BATCH-09) | `/bin/zsh -lc 'node --check scripts/prepare-maestro-smoke.mjs'` | Pass | Prepared native smoke toolchain runner parses successfully |
 | 2026-05-08 | app (INT-BATCH-09) | `/bin/zsh -lc 'node --import tsx --test src/app/native-smoke-contracts.test.ts'` | Pass | 3/3 focused native smoke contracts pass after adding prepared full/chat/media scripts and `/private/tmp` toolchain cache checks |
 | 2026-05-08 | app (INT-BATCH-09) | `/bin/zsh -lc 'npm run smoke:native:ios:prepared'` | Blocked | Script downloaded/restored Maestro and Java 17 under `/private/tmp/hungry-native-smoke-tools` and reached Maestro; live smoke failed because Maestro reported 0 connected devices |
@@ -466,6 +476,12 @@ Use the smallest check that matches the change risk.
 | 2026-05-09 | app (PERF-BATCH-03 Tab + Feed Load Optimization) | `npm test -- --watch=false` | Pass | Full Node test suite passed with 206 tests total: 204 passing and 2 skipped |
 | 2026-05-09 | app (PERF-BATCH-03 Tab + Feed Load Optimization) | `npm run test:e2e -- --reporter=line` | Pass | Sandboxed run hit the known Expo Web non-interactive port prompt; approved elevated rerun passed full Playwright web/mobile-browser coverage 17/17 |
 | 2026-05-09 | app (PERF-BATCH-03 Tab + Feed Load Optimization) | `git diff --check -- src/app/navigation/SwipeableTabNavigator.tsx src/app/screens/home/HomeFeedScreen.tsx src/app/screens/discover/QuickBitesScreen.tsx src/app/performance-prefetch-contracts.test.ts tasks/backlog.md tasks/verification.md tasks/session-log.md` | Pass | Touched PERF-BATCH-03 files have no whitespace errors |
+| 2026-05-09 | app (PERF-BATCH-04 Discover/Search Render Path) | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/app/performance-prefetch-contracts.test.ts` | Pass | 5/5 focused performance contracts pass after adding shared Discover collection construction, Discover dish lookup maps, Search/Browse post indexes, virtualized search results, and id-deduped detail prefetch assertions |
+| 2026-05-09 | app (PERF-BATCH-04 Discover/Search Render Path) | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/components/ui/screen-header-contracts.test.ts src/app/performance-prefetch-contracts.test.ts` | Pass | 10/10 focused Discover/Search/performance contracts pass after updating stale per-section Discover assertions to the new shared collection-builder shape |
+| 2026-05-09 | app (PERF-BATCH-04 Discover/Search Render Path) | `npm run typecheck` | Pass | Strict TypeScript gate passed after Discover/Search/prefetch implementation and contract-test updates |
+| 2026-05-09 | app (PERF-BATCH-04 Discover/Search Render Path) | `npm run lint` | Pass | ESLint completed with 0 errors and 328 warnings; remaining warnings are existing repo-wide debt and intentional lazy `require()` paths |
+| 2026-05-09 | app (PERF-BATCH-04 Discover/Search Render Path) | `npm test -- --watch=false` | Pass | Full Node test suite passed with 206 tests total: 204 passing and 2 skipped |
+| 2026-05-09 | app (PERF-BATCH-04 Discover/Search Render Path) | `git diff --check` | Pass | Current worktree diff has no whitespace errors |
 
 ## Outstanding Verification
 

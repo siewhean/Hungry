@@ -9,6 +9,8 @@ export type DiscoverCollection =
   | "budget"
   | "lateNight";
 
+export type DiscoverBiteCollections = Record<DiscoverCollection, Bite[]>;
+
 export const DISCOVER_CUISINE_FILTERS = [
   "All",
   "Local",
@@ -132,26 +134,53 @@ export function getDiscoverBiteCollection(
   bites: Bite[] = getDiscoverBites(),
   repository: DataRepository = getDataRepository(),
 ) {
-  const bitesWithImages = bites.map((bite) => syncBiteWithDish(bite, repository));
-  if (collection === "budget") {
-    return bitesWithImages.filter((bite) => bite.price < 8);
-  }
-  if (collection === "editorChoice") {
-    return bitesWithImages.filter((bite) => bite.rating >= 4.4);
-  }
-  if (collection === "trending") {
-    return [...bitesWithImages].sort((a, b) => b.cravingCount - a.cravingCount);
-  }
-  if (collection === "lateNight") {
-    return bitesWithImages.filter((bite) => {
-      const dish = repository.getDishById(bite.dishId);
+  return getDiscoverBiteCollections(bites, repository)[collection];
+}
+
+export function getDiscoverBiteCollections(
+  bites: Bite[] = getDiscoverBites(),
+  repository: DataRepository = getDataRepository(),
+): DiscoverBiteCollections {
+  const syncedBites = bites.map((bite) => {
+    const dish = repository.getDishById(bite.dishId);
+    if (!dish) {
+      return { bite, dish: undefined };
+    }
+
+    return {
+      bite: {
+        ...bite,
+        buildingId: dish.buildingId,
+        dishId: dish.id,
+        dishName: dish.name,
+        photoUrl: dish.imageUrl,
+        price: dish.price,
+        rating: dish.rating,
+        unitNumber: dish.unitNumber,
+        venueId: dish.venueId,
+        venueName: dish.venueName,
+      },
+      dish,
+    };
+  });
+  const bitesWithImages = syncedBites.map(({ bite }) => bite);
+
+  const lateNight = syncedBites
+    .filter(({ bite, dish }) => {
       return (
         dish?.availabilityFlags.some((flag) => flag.toLowerCase().includes("dinner")) ||
         bite.dishName.toLowerCase().includes("satay") ||
         bite.dishName.toLowerCase().includes("laksa") ||
         bite.dishName.toLowerCase().includes("mala")
       );
-    });
-  }
-  return bitesWithImages;
+    })
+    .map(({ bite }) => bite);
+
+  return {
+    quickBites: bitesWithImages,
+    budget: bitesWithImages.filter((bite) => bite.price < 8),
+    editorChoice: bitesWithImages.filter((bite) => bite.rating >= 4.4),
+    trending: [...bitesWithImages].sort((a, b) => b.cravingCount - a.cravingCount),
+    lateNight,
+  };
 }

@@ -21,7 +21,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Chip, EmptyState, IconButton, Screen, Skeleton } from "@/components/ui";
-import { getDiscoverBiteCollection, getDiscoverBites } from "@/features/discover/bites";
+import { getDiscoverBiteCollections, getDiscoverBites } from "@/features/discover/bites";
 import {
   prefetchDishDetail,
   prefetchImages,
@@ -32,6 +32,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestBuildings, getNearestSingaporeArea } from "@/lib/geo/singaporeBuildings";
 import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import type { Bite } from "@/lib/services/types";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
@@ -507,19 +508,22 @@ export function DiscoverHomeScreen() {
   );
   const discoverBaseBites = useMemo(() => getDiscoverBites(repository), [repository]);
   const discoverBiteCollections = useMemo(
-    () => ({
-      quickBites: getDiscoverBiteCollection("quickBites", discoverBaseBites, repository),
-      trending: getDiscoverBiteCollection("trending", discoverBaseBites, repository),
-      editorChoice: getDiscoverBiteCollection("editorChoice", discoverBaseBites, repository),
-      budget: getDiscoverBiteCollection("budget", discoverBaseBites, repository),
-      lateNight: getDiscoverBiteCollection("lateNight", discoverBaseBites, repository),
-    }),
+    () => getDiscoverBiteCollections(discoverBaseBites, repository),
     [discoverBaseBites, repository],
   );
+  const discoverDishById = useMemo(() => {
+    const dishById = new Map<string, DishDetail>();
+    discoverBaseBites.forEach((bite) => {
+      const dish = repository.getDishById(bite.dishId);
+      if (dish) {
+        dishById.set(bite.dishId, dish);
+      }
+    });
+    return dishById;
+  }, [discoverBaseBites, repository]);
   const getBiteDish = useCallback(
-    (bite: ReturnType<typeof getDiscoverBiteCollection>[number]) =>
-      repository.getDishById(bite.dishId),
-    [repository],
+    (bite: Bite) => discoverDishById.get(bite.dishId),
+    [discoverDishById],
   );
   const unfilteredQuickBiteCards = useMemo(
     () => discoverBiteCollections.quickBites.slice(0, 6),
@@ -542,7 +546,7 @@ export function DiscoverHomeScreen() {
     [discoverBiteCollections.lateNight],
   );
   const filterDiscoverBites = useCallback(
-    (bites: ReturnType<typeof getDiscoverBiteCollection>[number][]) =>
+    (bites: Bite[]) =>
       bites.filter((bite) =>
         matchesDiscoverChipSelection(getBiteDish(bite), [
           bite.dishName,
@@ -728,7 +732,7 @@ export function DiscoverHomeScreen() {
   );
 
   const prefetchBiteCard = useCallback(
-    (bite: ReturnType<typeof getDiscoverBiteCollection>[number]) => {
+    (bite: Bite) => {
       prefetchDishDetail(bite.dishId, repository);
       prefetchStallDetail(bite.venueId, repository);
       preloadRoute(navigation, "DishDetail", { dishId: bite.dishId });

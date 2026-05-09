@@ -133,15 +133,33 @@ function BrowseGridScreen({
 
   const isDishGrid = mode === "dishes";
   const stallPosts = useMemo(() => repository.listStallPosts(), [repository]);
+  const browsePostIndexes = useMemo(() => {
+    const postByDishId = new Map<string, (typeof stallPosts)[number]>();
+    const postByVenueId = new Map<string, (typeof stallPosts)[number]>();
+
+    stallPosts.forEach((post) => {
+      if (!postByVenueId.has(post.venueId)) {
+        postByVenueId.set(post.venueId, post);
+      }
+      post.dishIds.forEach((dishId) => {
+        if (!postByDishId.has(dishId)) {
+          postByDishId.set(dishId, post);
+        }
+      });
+    });
+
+    return {
+      fallbackPost: stallPosts[0],
+      postByDishId,
+      postByVenueId,
+    };
+  }, [stallPosts]);
   const feedItems = useMemo<BrowseFeedItem[]>(() => {
-    const postFallback = stallPosts[0];
+    const { fallbackPost, postByDishId, postByVenueId } = browsePostIndexes;
 
     if (isDishGrid) {
       return browseDishes.map((dish) => {
-        const post =
-          stallPosts.find((candidate) => candidate.dishIds.includes(dish.id)) ??
-          stallPosts.find((candidate) => candidate.venueId === dish.venueId) ??
-          postFallback;
+        const post = postByDishId.get(dish.id) ?? postByVenueId.get(dish.venueId) ?? fallbackPost;
 
         return {
           id: `dish-${dish.id}`,
@@ -173,10 +191,7 @@ function BrowseGridScreen({
           return [];
         }
 
-        const post =
-          stallPosts.find((candidate) => candidate.venueId === venue.id) ??
-          stallPosts.find((candidate) => candidate.dishIds.includes(topDish.id)) ??
-          postFallback;
+        const post = postByVenueId.get(venue.id) ?? postByDishId.get(topDish.id) ?? fallbackPost;
 
         return {
           id: `stall-${venue.id}`,
@@ -193,7 +208,7 @@ function BrowseGridScreen({
       });
 
     return buildStallItems(browseVenues);
-  }, [browseDishes, browseVenues, isDishGrid, normalizedQuery, stallPosts]);
+  }, [browseDishes, browsePostIndexes, browseVenues, isDishGrid, normalizedQuery]);
   const filteredFeedItems = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     const filter = selectedFilter.toLowerCase();
@@ -225,13 +240,7 @@ function BrowseGridScreen({
       filteredFeedItems.map((item) => item.imageUrl),
       8,
     );
-    filteredFeedItems.slice(0, 8).forEach((item) => {
-      prefetchDishDetail(item.dish.id, repository);
-      if (item.venue?.id) {
-        prefetchStallDetail(item.venue.id, repository);
-      }
-    });
-  }, [filteredFeedItems, repository]);
+  }, [filteredFeedItems]);
   const numColumns = 2;
   const itemWidth = screenWidth / numColumns;
   const browseTitle = isDishGrid ? "Dishes" : "Stalls & Restaurants";
@@ -606,7 +615,6 @@ export function SearchResultsScreen() {
       results.map((dish) => dish.imageUrl),
       8,
     );
-    results.slice(0, 8).forEach((dish) => prefetchDishDetail(dish.id));
   }, [results]);
 
   if (browseMode) {

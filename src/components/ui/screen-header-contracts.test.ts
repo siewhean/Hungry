@@ -216,10 +216,9 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /const discoverBaseBites = useMemo\(\(\) => getDiscoverBites\(repository\)/,
   );
-  assert.match(
-    discover,
-    /quickBites: getDiscoverBiteCollection\("quickBites", discoverBaseBites, repository\)/,
-  );
+  assert.match(discover, /getDiscoverBiteCollections\(discoverBaseBites, repository\)/);
+  assert.match(discover, /const discoverDishById = useMemo/);
+  assert.match(discover, /discoverDishById\.get\(bite\.dishId\)/);
   assert.match(discover, /function PopularFoodStyleSkeleton/);
   assert.doesNotMatch(discover, /setShowPopularFoodSkeleton/);
   assert.match(
@@ -547,7 +546,7 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   assert.match(discoverBites, /price: dish\.price/);
   assert.match(discoverBites, /rating: dish\.rating/);
   assert.match(discoverBites, /venueName: dish\.venueName/);
-  assert.match(discoverBites, /const bitesWithImages = bites\.map/);
+  assert.match(discoverBites, /const bitesWithImages = syncedBites\.map/);
   assert.doesNotMatch(quickBites, /mockDishes/);
   assert.doesNotMatch(quickBites, /DISH_IMAGE_URLS/);
   assert.match(quickBites, /const list = collectionBites\s*\.filter/);
@@ -576,10 +575,16 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
     /<View style=\{styles\.titleRow\}>[\s\S]*navigation\.goBack\(\)[\s\S]*\{collectionCopy\.title\}[\s\S]*<ExpandableSearchLauncher/,
   );
   assert.match(quickBites, /titleRow: \{[\s\S]*flexDirection: "row"[\s\S]*marginBottom: 8/);
-  assert.match(discoverBites, /collection === "budget"[\s\S]*bite\.price < 8/);
-  assert.match(discoverBites, /collection === "editorChoice"[\s\S]*bite\.rating >= 4\.4/);
-  assert.match(discoverBites, /collection === "trending"[\s\S]*b\.cravingCount - a\.cravingCount/);
-  assert.match(discoverBites, /collection === "lateNight"/);
+  assert.match(discoverBites, /budget: bitesWithImages\.filter\(\(bite\) => bite\.price < 8\)/);
+  assert.match(
+    discoverBites,
+    /editorChoice: bitesWithImages\.filter\(\(bite\) => bite\.rating >= 4\.4\)/,
+  );
+  assert.match(
+    discoverBites,
+    /trending: \[\.\.\.bitesWithImages\]\.sort\(\(a, b\) => b\.cravingCount - a\.cravingCount\)/,
+  );
+  assert.match(discoverBites, /const lateNight = syncedBites/);
   assert.match(quickBites, /return getDiscoverBiteCollection\(collection, bites\)/);
   assert.match(quickBites, /ListFooterComponent=\{renderFoodCarousel\}/);
   assert.match(quickBites, /key=\{`carousel-\$\{bite\.id\}`\}/);
