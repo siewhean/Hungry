@@ -2,11 +2,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { identifyPostHogUser, resetPostHogUser } from "@/lib/analytics/posthogSink";
 import type { AuthProvider } from "@/lib/services/types";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { getHungryService } from "@/lib/services/serviceProvider";
-import { useProfileStore } from "./useProfileStore";
 import { useLocationStore } from "./useLocationStore";
 import { hungrySecurePersistStorage } from "./secureStorage";
 
@@ -56,8 +54,40 @@ const initialState = {
   sessionExpired: false,
 } as const;
 
+function getProfileStoreState() {
+  const { useProfileStore } = require("./useProfileStore") as typeof import("./useProfileStore");
+  return useProfileStore.getState();
+}
+
 function getSafeProfileId(): string {
-  return useProfileStore.getState().profile?.id ?? "guest-user";
+  return getProfileStoreState().profile?.id ?? "guest-user";
+}
+
+function shouldEnablePostHogIdentity() {
+  return (
+    process.env.EXPO_PUBLIC_DISABLE_POSTHOG !== "1" &&
+    Boolean(process.env.EXPO_PUBLIC_POSTHOG_API_KEY?.trim())
+  );
+}
+
+function identifyPostHogUser(userId: string, properties: Record<string, unknown>): void {
+  if (!shouldEnablePostHogIdentity()) {
+    return;
+  }
+
+  const { identifyPostHogUser: identify } =
+    require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
+  identify(userId, properties);
+}
+
+function resetPostHogUser(): void {
+  if (!shouldEnablePostHogIdentity()) {
+    return;
+  }
+
+  const { resetPostHogUser: reset } =
+    require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
+  reset();
 }
 
 export const useSessionStore = create<SessionState>()(
@@ -72,8 +102,8 @@ export const useSessionStore = create<SessionState>()(
           hasSkippedTasteQuiz: options?.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
           sessionExpired: false,
         }));
-        useProfileStore.getState().syncProfile(true);
-        const profile = useProfileStore.getState().profile;
+        getProfileStoreState().syncProfile(true);
+        const profile = getProfileStoreState().profile;
         const profileId = profile?.id ?? "guest-user";
         const location = useLocationStore.getState();
         const area =
@@ -122,16 +152,16 @@ export const useSessionStore = create<SessionState>()(
             .catch(() => undefined);
         }
         set({ ...initialState, isAuthReady: true });
-        useProfileStore.getState().clearProfile();
-        useProfileStore.getState().syncProfile(false);
+        getProfileStoreState().clearProfile();
+        getProfileStoreState().syncProfile(false);
         resetPostHogUser();
         trackAnalyticsEvent("sign_out", { reason: "manual" }, { userId: profileId });
       },
       clearSession: () => {
         const profileId = getSafeProfileId();
         set({ ...initialState, isAuthReady: true });
-        useProfileStore.getState().clearProfile();
-        useProfileStore.getState().syncProfile(false);
+        getProfileStoreState().clearProfile();
+        getProfileStoreState().syncProfile(false);
         resetPostHogUser();
         trackAnalyticsEvent("sign_out", { reason: "clear_session" }, { userId: profileId });
       },
@@ -148,9 +178,9 @@ export const useSessionStore = create<SessionState>()(
             hasSkippedTasteQuiz: session.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
             sessionExpired: false,
           }));
-          useProfileStore.getState().syncProfile(true);
+          getProfileStoreState().syncProfile(true);
 
-          const profile = useProfileStore.getState().profile;
+          const profile = getProfileStoreState().profile;
           const profileId = session.userId ?? profile?.id ?? "guest-user";
           const location = useLocationStore.getState();
           const area =
@@ -187,7 +217,7 @@ export const useSessionStore = create<SessionState>()(
           isAuthReady: true,
           sessionExpired: false,
         });
-        useProfileStore.getState().syncProfile(false);
+        getProfileStoreState().syncProfile(false);
         resetPostHogUser();
         trackAnalyticsEvent(
           "sign_out",

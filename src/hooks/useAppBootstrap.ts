@@ -4,9 +4,9 @@ import { InteractionManager } from "react-native";
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import { getConfiguredDataSource, getSupabaseClient } from "@/lib/services/supabase/client";
 import { getHungryService } from "@/lib/services/serviceProvider";
-import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
+import type { UserProfile } from "@/types/domain";
 
 function shouldEnablePostHogSink() {
   return (
@@ -15,10 +15,22 @@ function shouldEnablePostHogSink() {
   );
 }
 
+function getProfileStoreState() {
+  const { useProfileStore } =
+    require("@/store/useProfileStore") as typeof import("@/store/useProfileStore");
+  return useProfileStore.getState();
+}
+
+function applyProfile(profile: UserProfile) {
+  getProfileStoreState().applyProfile(profile);
+}
+
+function syncProfile(isAuthenticated: boolean) {
+  getProfileStoreState().syncProfile(isAuthenticated);
+}
+
 export function useAppBootstrap() {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const syncProfile = useProfileStore((state) => state.syncProfile);
-  const applyProfile = useProfileStore((state) => state.applyProfile);
   const applyAuthStateFromSession = useSessionStore((state) => state.applyAuthStateFromSession);
   const markAuthReady = useSessionStore((state) => state.markAuthReady);
   const setOffline = useUIStore((state) => state.setOffline);
@@ -129,7 +141,7 @@ export function useAppBootstrap() {
       active = false;
       subscription.subscription.unsubscribe();
     };
-  }, [applyAuthStateFromSession, applyProfile, markAuthReady]);
+  }, [applyAuthStateFromSession, markAuthReady]);
 
   useEffect(() => {
     // Keep persisted profile customisations on cold start.
@@ -145,5 +157,5 @@ export function useAppBootstrap() {
 
     syncProfile(isAuthenticated);
     previousAuth.current = isAuthenticated;
-  }, [isAuthenticated, syncProfile]);
+  }, [isAuthenticated]);
 }

@@ -455,6 +455,11 @@ Use the smallest check that matches the change risk.
 | 2026-05-09 | app (PERF-BATCH-01 Performance + Prefetch) | `npm test -- --watch=false` | Pass | Full Node test suite passed with 205 tests total: 203 passing and 2 skipped, including updated stale lazy-navigation/feed-bundle source contracts |
 | 2026-05-09 | app (PERF-BATCH-01 Performance + Prefetch) | `npm run test:e2e -- --reporter=line` | Pass | Full Playwright web/mobile-browser suite passed 17/17 after installing the missing Playwright Chromium bundle and fixing the webServer command to start Expo Web explicitly; sandboxed localhost port detection still requires elevated access in this environment |
 | 2026-05-09 | app (PERF-BATCH-01 Performance + Prefetch) | `python3 -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"` | Blocked | AST extraction reached 16338/16338 files, then produced no output for more than two minutes; process was stopped so no background verification remained running |
+| 2026-05-09 | app (PERF-BATCH-02 Startup Module Deferral) | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/app/performance-prefetch-contracts.test.ts` | Pass | 5/5 focused performance contracts pass, including the new guard that startup defers profile, mock data, service provider, and native PostHog identity loading |
+| 2026-05-09 | app (PERF-BATCH-02 Startup Module Deferral) | `npm run typecheck` | Pass | Strict TypeScript gate passed after lazy service-provider, bootstrap profile-store, and session analytics changes |
+| 2026-05-09 | app (PERF-BATCH-02 Startup Module Deferral) | `npm run lint` | Pass | ESLint completed with 0 errors and 329 warnings; remaining warnings are repo-wide debt and intentional lazy `require()` paths |
+| 2026-05-09 | app (PERF-BATCH-02 Startup Module Deferral) | `npm test -- --watch=false` | Pass | Full Node test suite passed with 206 tests total: 204 passing and 2 skipped |
+| 2026-05-09 | app (PERF-BATCH-02 Startup Module Deferral) | `npm run test:e2e -- --reporter=line` | Pass | Sandboxed run hit the known Expo Web non-interactive port prompt; approved elevated rerun passed full Playwright web/mobile-browser coverage 17/17 |
 
 ## Outstanding Verification
 

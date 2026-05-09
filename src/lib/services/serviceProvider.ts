@@ -61,10 +61,17 @@ function createProviderFromEnv(): ServiceProvider {
   return getConfiguredDataSource() === "supabase" ? createSupabaseProvider() : createMockProvider();
 }
 
-let activeProvider: ServiceProvider = createProviderFromEnv();
+let activeProvider: ServiceProvider | null = null;
+
+function getActiveProvider(): ServiceProvider {
+  if (!activeProvider) {
+    activeProvider = createProviderFromEnv();
+  }
+  return activeProvider;
+}
 
 export function getServiceProvider(): ServiceProvider {
-  return activeProvider;
+  return getActiveProvider();
 }
 
 export function setServiceProvider(provider: ServiceProvider): void {
@@ -76,19 +83,19 @@ export function setMockServiceProvider(): void {
 }
 
 export function resetServiceProvider(): void {
-  activeProvider = createProviderFromEnv();
+  activeProvider = null;
 }
 
 export function getHungryService(): HungryService {
-  return activeProvider.service;
+  return getActiveProvider().service;
 }
 
 export function getDataRepository(): DataRepository {
-  return activeProvider.repository;
+  return getActiveProvider().repository;
 }
 
 export function getSimilarityScore(left: TasteVector, right: TasteVector): number {
-  return activeProvider.similarityScore(left, right);
+  return getActiveProvider().similarityScore(left, right);
 }
 
 // Compatibility layer for legacy callsites migrating off direct mock imports.

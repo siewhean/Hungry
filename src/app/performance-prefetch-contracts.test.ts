@@ -41,6 +41,29 @@ test("startup does not block indefinitely on fonts or analytics", () => {
   assert.doesNotMatch(bootstrap, /import \{ posthogSink \}/);
 });
 
+test("startup defers profile, mock data, and native analytics module loading", () => {
+  const bootstrap = read("src/hooks/useAppBootstrap.ts");
+  const sessionStore = read("src/store/useSessionStore.ts");
+  const serviceProvider = read("src/lib/services/serviceProvider.ts");
+
+  assert.doesNotMatch(bootstrap, /import \{ useProfileStore \}/);
+  assert.match(bootstrap, /require\("@\/store\/useProfileStore"\)/);
+
+  assert.doesNotMatch(sessionStore, /import \{ useProfileStore \}/);
+  assert.doesNotMatch(sessionStore, /from "@\/lib\/analytics\/posthogSink"/);
+  assert.match(sessionStore, /require\("\.\/useProfileStore"\)/);
+  assert.match(sessionStore, /require\("@\/lib\/analytics\/posthogSink"\)/);
+  assert.match(sessionStore, /shouldEnablePostHogIdentity/);
+
+  assert.match(serviceProvider, /let activeProvider: ServiceProvider \| null = null/);
+  assert.match(serviceProvider, /function getActiveProvider/);
+  assert.match(serviceProvider, /activeProvider = createProviderFromEnv\(\)/);
+  assert.doesNotMatch(
+    serviceProvider,
+    /let activeProvider: ServiceProvider = createProviderFromEnv\(\)/,
+  );
+});
+
 test("home, discover, and quick bites avoid duplicate render-time data work", () => {
   const homeFeed = read("src/features/home/feed.ts");
   const homeScreen = read("src/app/screens/home/HomeFeedScreen.tsx");
