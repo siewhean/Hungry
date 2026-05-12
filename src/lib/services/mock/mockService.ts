@@ -74,9 +74,8 @@ import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
 import {
   runRecommendationPipeline,
   processExplicitFeedback as processExplicitFeedbackCore,
-  processImplicitFeedback as processImplicitFeedbackCore,
 } from "@/lib/ai/tasteEngine";
-import type { ExplicitFeedbackEvent, ImplicitSignal } from "@/lib/ai/tasteEngine";
+import type { ExplicitFeedbackEvent } from "@/lib/ai/tasteEngine";
 import { applyVerificationSubmission } from "@/features/merchant/verificationStateMachine";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
 import { loadMockState, saveMockState } from "./persistence";
@@ -1378,22 +1377,8 @@ export const hungryService: HungryService = {
       return resolve(updatedVector);
     },
 
-    async processImplicitFeedback(signals: ImplicitSignalInput[]): Promise<TasteVector> {
-      const coreSignals: ImplicitSignal[] = signals
-        .map((s) => {
-          const dish = dishes.find((d) => d.id === s.dishId);
-          if (!dish) return null;
-          return {
-            type: s.type,
-            dishVector: dish.tasteVector,
-            timestamp: s.timestamp,
-          };
-        })
-        .filter((s): s is ImplicitSignal => s !== null);
-
-      const updatedVector = processImplicitFeedbackCore(_profile.tasteVector, coreSignals);
-      _profile = { ..._profile, tasteVector: updatedVector };
-      return resolve(updatedVector);
+    async processImplicitFeedback(_signals: ImplicitSignalInput[]): Promise<TasteVector> {
+      return resolve(_profile.tasteVector);
     },
 
     // Extended — Community Calibration

@@ -79,6 +79,55 @@ test("discovery.decideForMe respects profile dietary preferences", async () => {
   }
 });
 
+test("recommendations.getSlate returns shared recommendation shape with hard dietary filters", async () => {
+  const slate = await hungryService.recommendations.getSlate({
+    surface: "discover",
+    tasteProfile: NEUTRAL_TASTE_VECTOR,
+    dietaryFlags: ["vegetarian"],
+    limit: 5,
+  });
+
+  assert.equal(slate.surface, "discover");
+  assert.ok(slate.generatedAt.length > 0);
+  assert.ok(slate.items.length > 0);
+  assert.ok(slate.items.every((item) => item.dish.dietaryFlags.includes("vegetarian")));
+  assert.ok(slate.items.every((item) => item.matchScore >= 0 && item.matchScore <= 1));
+});
+
+test("recommendations.recordExplicitFeedback applies food-specific click signals", async () => {
+  const dish = dishes[0];
+  assert.ok(dish, "Expected fixture dish for recommendation feedback");
+
+  const beforeProfile = await hungryService.profile.getProfile();
+  const result = await hungryService.recommendations.recordExplicitFeedback({
+    feedbackType: "food_button_click",
+    surface: "home",
+    dishId: dish.id,
+    buttonId: "view_stall",
+  });
+
+  assert.equal(result.applied, true);
+  assert.notDeepEqual(result.tasteVector, beforeProfile.tasteVector);
+});
+
+test("ai.processImplicitFeedback is no-op while explicit learning stabilizes", async () => {
+  const dish = dishes[0];
+  assert.ok(dish, "Expected fixture dish for implicit feedback no-op test");
+
+  const beforeProfile = await hungryService.profile.getProfile();
+  const result = await hungryService.ai.processImplicitFeedback([
+    {
+      type: "dwell_time",
+      dishId: dish.id,
+      timestamp: Date.now(),
+    },
+  ]);
+  const afterProfile = await hungryService.profile.getProfile();
+
+  assert.deepEqual(result, beforeProfile.tasteVector);
+  assert.deepEqual(afterProfile.tasteVector, beforeProfile.tasteVector);
+});
+
 test("auth.requestAccountDeletion clears mock session", async () => {
   await hungryService.auth.signIn("delete-me@hungry.sg", "password");
   await hungryService.auth.requestAccountDeletion({
