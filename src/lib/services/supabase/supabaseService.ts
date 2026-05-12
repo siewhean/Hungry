@@ -5,8 +5,8 @@ import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
 import {
-  processExplicitFeedback,
-  processImplicitFeedback,
+  averageTasteVectors,
+  processExplicitFeedback as processExplicitFeedbackCore,
   runRecommendationPipeline,
 } from "@/lib/ai/tasteEngine";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
@@ -31,9 +31,12 @@ import type {
   ChatParticipant,
   ChatSubscriptionHandlers,
   ContentReportRequest,
+  ExplicitFeedbackInput,
   HungryService,
   ImplicitSignalInput,
   QuizAnswer,
+  RankedRecommendation,
+  RecommendationSlateRequest,
   SearchResult,
   Session,
   SubmitReviewInput,
@@ -55,6 +58,8 @@ import type {
   PromotionStatus,
   SearchFilters,
   TasteProfile,
+  TasteInteractionEvent,
+  TasteInteractionType,
   TasteVector,
   UserProfile,
   VerificationEvidence,
@@ -72,6 +77,7 @@ const DEFAULT_AUTH_PROFILE: UserProfile = {
   id: "supabase-user",
   displayName: "Hungry User",
   email: "",
+  profileVisibility: "public",
   tasteVector: { ...NEUTRAL_TASTE_VECTOR },
   dietaryPreferences: [],
   favouriteDishIds: [],
@@ -220,9 +226,16 @@ async function ensureCurrentUserProfileRow(client: SupabaseClient): Promise<void
 
 async function fetchUserProfile(client: SupabaseClient, userId: string, email?: string) {
   const { data } = await client.from("user_profiles").select("*").eq("id", userId).maybeSingle();
+  const { data: privacyData } = await client
+    .from("privacy_settings")
+    .select("account_visibility")
+    .eq("user_id", userId)
+    .maybeSingle();
   const row = (data ?? {}) as Row;
+  const privacyRow = (privacyData ?? {}) as Row;
   const favouriteDishIds = asStringArray(row.favourite_dish_ids);
   const reviewedDishIds = asStringArray(row.reviewed_dish_ids);
+  const accountVisibility = asString(privacyRow.account_visibility);
   return {
     ...DEFAULT_AUTH_PROFILE,
     id: userId,
@@ -230,6 +243,7 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
       asString(row.display_name) ?? asString(row.displayName) ?? DEFAULT_AUTH_PROFILE.displayName,
     email: asString(row.email) ?? email ?? "",
     avatarUrl: asString(row.avatar_url),
+    profileVisibility: accountVisibility === "private" ? "private" : "public",
     tasteVector: toTasteVector(row),
     tasteProfile: (row.taste_profile as TasteProfile | undefined) ?? undefined,
     dietaryPreferences: asStringArray(row.dietary_preferences) as DietaryFlag[],
@@ -601,6 +615,321 @@ function listAllDishesFromRepository(): DishDetail[] {
     .listBuildings()
     .flatMap((building) => supabaseRepository.listVenuesByBuilding(building.id))
     .flatMap((venue) => supabaseRepository.listDishesByVenue(venue.id));
+}
+
+function matchesRecommendationQuery(dish: DishDetail, query?: string) {
+  const normalized = query?.trim().toLowerCase();
+  if (!normalized) return true;
+  return `${dish.name} ${dish.venueName} ${dish.tasteTags.join(" ")}`
+    .toLowerCase()
+    .includes(normalized);
+}
+
+function getRankedRecommendations(
+  request: RecommendationSlateRequest,
+  profile: UserProfile = DEFAULT_AUTH_PROFILE,
+): RankedRecommendation[] {
+  const dishes = listAllDishesFromRepository().filter((dish) =>
+    matchesRecommendationQuery(dish, request.query),
+  );
+  const ranked = runRecommendationPipeline(dishes, {
+    userVector: request.tasteProfile,
+    dietaryFlags: request.dietaryFlags ?? profile.dietaryPreferences,
+    neophiliaIndex: request.neophiliaIndex ?? 5,
+    latitude: request.latitude,
+    longitude: request.longitude,
+    radiusMeters: request.radiusMeters,
+    excludeDishIds: request.excludeDishIds,
+  }).slice(0, request.limit ?? 20);
+
+  return ranked
+    .map((item) => {
+      const dish = dishes.find((candidate) => candidate.id === item.dishId);
+      if (!dish) return null;
+      return {
+        dish,
+        matchScore: item.score,
+        matchPercent: item.matchPercent,
+        matchReason: item.explanation,
+        isSerendipitous: item.isSerendipitous,
+      };
+    })
+    .filter((item): item is RankedRecommendation => Boolean(item));
+}
+
+function tasteVectorToArray(vector: TasteVector): number[] {
+  return [vector.sweet, vector.spicy, vector.sour, vector.salty, vector.rich, vector.aromatic];
+}
+
+function clampTasteAxis(value: number | undefined): number {
+  return Math.max(0, Math.min(10, Number.isFinite(value) ? (value as number) : 5));
+}
+
+function clampTasteVector(vector: TasteVector): TasteVector {
+  return {
+    sweet: clampTasteAxis(vector.sweet),
+    spicy: clampTasteAxis(vector.spicy),
+    sour: clampTasteAxis(vector.sour),
+    salty: clampTasteAxis(vector.salty),
+    rich: clampTasteAxis(vector.rich),
+    aromatic: clampTasteAxis(vector.aromatic),
+  };
+}
+
+function mapRecommendationRpcRows(rows: Row[]): RankedRecommendation[] {
+  return rows
+    .map((row) => {
+      const dishId = asString(row.dish_id);
+      const dish = dishId ? supabaseRepository.getDishById(dishId) : undefined;
+      if (!dish) return null;
+
+      const matchScore = asNumber(row.match_score) ?? 0;
+      return {
+        dish,
+        matchScore,
+        matchPercent:
+          asNumber(row.match_percent) ?? Math.max(0, Math.min(100, Math.round(matchScore * 100))),
+        matchReason: asString(row.match_reason) ?? "Taste profile match",
+        isSerendipitous: asBoolean(row.is_serendipitous) ?? false,
+      };
+    })
+    .filter((item): item is RankedRecommendation => Boolean(item));
+}
+
+async function getLiveTasteRecommendations(
+  client: SupabaseClient,
+  request: RecommendationSlateRequest,
+  profile: UserProfile,
+): Promise<RankedRecommendation[] | undefined> {
+  const { data, error } = await client.rpc("get_taste_recommendations", {
+    p_surface: request.surface,
+    p_user_vector: tasteVectorToArray(request.tasteProfile),
+    p_dietary_flags: request.dietaryFlags ?? profile.dietaryPreferences,
+    p_query: request.query ?? null,
+    p_lat: request.latitude ?? null,
+    p_lng: request.longitude ?? null,
+    p_radius_meters: request.radiusMeters ?? null,
+    p_exclude_dish_ids: request.excludeDishIds ?? [],
+    p_limit: request.limit ?? 20,
+  });
+
+  if (error) {
+    console.warn("Failed to fetch live taste recommendations", error.message);
+    return undefined;
+  }
+  if (!Array.isArray(data)) return undefined;
+
+  const rows = data as Row[];
+  let mapped = mapRecommendationRpcRows(rows);
+  if (rows.length > 0 && mapped.length === 0) {
+    await refreshSupabaseRepositoryCache();
+    mapped = mapRecommendationRpcRows(rows);
+  }
+  return mapped;
+}
+
+function toCoreFeedbackType(
+  feedback: ExplicitFeedbackInput,
+): Parameters<typeof processExplicitFeedbackCore>[1]["type"] {
+  if (feedback.feedbackType === "rating" || feedback.feedbackType === "review") {
+    const rating = feedback.rating ?? 3;
+    if (rating >= 5) return "rating_5_star";
+    if (rating >= 4) return "rating_4_star";
+    if (rating >= 3) return "rating_3_star";
+    if (rating >= 2) return "rating_2_star";
+    return "rating_1_star";
+  }
+  if (feedback.feedbackType === "save") return "saved";
+  if (feedback.feedbackType === "unsave") return "unsaved";
+  if (feedback.feedbackType === "search_query") return "search_query";
+  if (feedback.feedbackType === "dish_result_click") return "dish_result_click";
+  if (feedback.feedbackType === "dish_like") return "dish_like";
+  if (feedback.feedbackType === "food_button_click") return "food_button_click";
+  if (feedback.feedbackType === "dismissed") return "dismissed";
+  return "hawker_tag_positive";
+}
+
+function toPersistedFeedbackType(feedback: ExplicitFeedbackInput): TasteInteractionType {
+  if (feedback.feedbackType === "save") return "saved";
+  if (feedback.feedbackType === "unsave") return "unsaved";
+  return feedback.feedbackType;
+}
+
+const LOW_VALUE_FEEDBACK_WINDOW_MS = 10 * 60 * 1000;
+const LOW_VALUE_FEEDBACK_CAP = 3;
+const CAPPED_FEEDBACK_TYPES = new Set<TasteInteractionType>([
+  "search_query",
+  "dish_result_click",
+  "food_button_click",
+]);
+
+function createServiceTasteEvent({
+  type,
+  feedback,
+  vectorBefore,
+  vectorAfter,
+  applied,
+  createdAt,
+  reason,
+}: {
+  type: TasteInteractionType;
+  feedback: ExplicitFeedbackInput;
+  vectorBefore: TasteVector;
+  vectorAfter: TasteVector;
+  applied: boolean;
+  createdAt: string;
+  reason?: TasteInteractionEvent["reason"];
+}): TasteInteractionEvent {
+  return {
+    id: `taste-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    type,
+    surface: feedback.surface ?? "search",
+    dishId: feedback.dishId,
+    query: feedback.query,
+    chipId: feedback.chipId,
+    buttonId: feedback.buttonId,
+    rating: feedback.rating,
+    createdAt,
+    userVectorBefore: vectorBefore,
+    userVectorAfter: vectorAfter,
+    applied,
+    reason,
+  };
+}
+
+function feedbackMetadata(
+  feedback: ExplicitFeedbackInput,
+  reason?: TasteInteractionEvent["reason"],
+): Row {
+  return {
+    ...(feedback.metadata ?? {}),
+    ...(reason ? { reason } : {}),
+    ...(feedback.hawkerTags?.length ? { hawkerTags: feedback.hawkerTags } : {}),
+  };
+}
+
+async function isLiveFeedbackCapped(
+  client: SupabaseClient,
+  userId: string,
+  feedback: ExplicitFeedbackInput,
+  persistedType: TasteInteractionType,
+  createdAt: string,
+): Promise<boolean> {
+  if (!CAPPED_FEEDBACK_TYPES.has(persistedType)) return false;
+
+  const cutoff = new Date(
+    new Date(createdAt).getTime() - LOW_VALUE_FEEDBACK_WINDOW_MS,
+  ).toISOString();
+  let query = client
+    .from("taste_interaction_events")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("type", persistedType)
+    .eq("surface", feedback.surface ?? "search")
+    .eq("applied", true)
+    .gte("created_at", cutoff);
+
+  query = feedback.dishId ? query.eq("dish_id", feedback.dishId) : query.is("dish_id", null);
+  query = feedback.query ? query.eq("query", feedback.query) : query.is("query", null);
+  query = feedback.chipId ? query.eq("chip_id", feedback.chipId) : query.is("chip_id", null);
+  query = feedback.buttonId
+    ? query.eq("button_id", feedback.buttonId)
+    : query.is("button_id", null);
+
+  const { count, error } = await query;
+
+  if (error) {
+    console.warn("Failed to check taste feedback cap", error.message);
+    return false;
+  }
+  return (count ?? 0) >= LOW_VALUE_FEEDBACK_CAP;
+}
+
+async function persistFeedbackEvent({
+  persistedType,
+  feedback,
+  vectorBefore,
+  vectorAfter,
+  applied,
+  createdAt,
+  reason,
+  dishId,
+}: {
+  persistedType: TasteInteractionType;
+  feedback: ExplicitFeedbackInput;
+  vectorBefore: TasteVector;
+  vectorAfter: TasteVector;
+  applied: boolean;
+  createdAt: string;
+  reason?: TasteInteractionEvent["reason"];
+  dishId?: string;
+}): Promise<boolean> {
+  const client = getSupabaseClient();
+  const userId = await getCurrentSupabaseUserId();
+  if (!client || !userId) return false;
+
+  const metadata = feedbackMetadata(feedback, reason);
+  const { error } = await client.rpc("record_taste_interaction_event", {
+    p_type: persistedType,
+    p_surface: feedback.surface ?? "search",
+    p_user_vector_before: tasteVectorToArray(vectorBefore),
+    p_user_vector_after: tasteVectorToArray(vectorAfter),
+    p_dish_id: dishId ?? null,
+    p_query: feedback.query ?? null,
+    p_chip_id: feedback.chipId ?? null,
+    p_button_id: feedback.buttonId ?? null,
+    p_rating: feedback.rating ?? null,
+    p_applied: applied,
+    p_confidence_delta: confidenceDeltaForFeedback(feedback),
+    p_source: "explicit_feedback",
+    p_created_at: createdAt,
+    p_metadata: metadata,
+  });
+
+  if (!error) {
+    return true;
+  }
+
+  console.warn("Failed to persist taste interaction event via RPC", error.message);
+  const { error: insertError } = await client.from("taste_interaction_events").insert({
+    user_id: userId,
+    type: persistedType,
+    surface: feedback.surface ?? "search",
+    dish_id: dishId ?? null,
+    query: feedback.query ?? null,
+    chip_id: feedback.chipId ?? null,
+    button_id: feedback.buttonId ?? null,
+    rating: feedback.rating ?? null,
+    user_vector_before: tasteVectorToArray(vectorBefore),
+    user_vector_after: tasteVectorToArray(vectorAfter),
+    applied,
+    metadata,
+    created_at: createdAt,
+  });
+  if (insertError) {
+    console.warn("Failed to persist taste interaction event", insertError.message);
+  }
+
+  return false;
+}
+
+function confidenceDeltaForFeedback(feedback: ExplicitFeedbackInput): number {
+  if (feedback.feedbackType === "rating" || feedback.feedbackType === "review") {
+    const rating = feedback.rating ?? 3;
+    if (rating >= 5) return 0.03;
+    if (rating >= 4) return 0.02;
+    if (rating >= 3) return 0.01;
+    if (rating >= 2) return 0.015;
+    return 0.02;
+  }
+  if (feedback.feedbackType === "save") return 0.04;
+  if (feedback.feedbackType === "unsave") return 0.005;
+  if (feedback.feedbackType === "search_query") return 0.003;
+  if (feedback.feedbackType === "dish_result_click") return 0.012;
+  if (feedback.feedbackType === "dish_like") return 0.018;
+  if (feedback.feedbackType === "food_button_click") return 0.012;
+  if (feedback.feedbackType === "dismissed") return 0.01;
+  return 0.01;
 }
 
 function buildTasteVectorFromAnswers(answers: QuizAnswer[]): TasteVector {
@@ -1723,8 +2052,21 @@ export const supabaseService: HungryService = {
       if (updates.avatarUrl !== undefined) {
         payload.avatar_url = await uploadAvatarIfNeeded(client, userId, updates.avatarUrl);
       }
-      const { error } = await client.from("user_profiles").upsert(payload, { onConflict: "id" });
-      if (error) throw error;
+      if (Object.keys(payload).length > 1) {
+        const { error } = await client.from("user_profiles").upsert(payload, { onConflict: "id" });
+        if (error) throw error;
+      }
+      if (updates.profileVisibility !== undefined) {
+        const { error } = await client.from("privacy_settings").upsert(
+          {
+            user_id: userId,
+            account_visibility: updates.profileVisibility,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" },
+        );
+        if (error) throw error;
+      }
 
       return fetchUserProfile(client, userId, updates.email);
     },
@@ -3193,6 +3535,156 @@ export const supabaseService: HungryService = {
     },
   },
 
+  recommendations: {
+    async getSlate(request) {
+      const profile = await supabaseService.profile.getProfile();
+      const client = getSupabaseClient();
+      const liveItems = client
+        ? await getLiveTasteRecommendations(client, request, profile)
+        : undefined;
+
+      return {
+        surface: request.surface,
+        generatedAt: new Date().toISOString(),
+        items: liveItems ?? getRankedRecommendations(request, profile),
+      };
+    },
+
+    async recordExplicitFeedback(feedback) {
+      const profile = await supabaseService.profile.getProfile();
+      const vectorBefore = clampTasteVector(feedback.userVectorBefore ?? profile.tasteVector);
+      const createdAt = feedback.createdAt ?? new Date().toISOString();
+      const persistedType = toPersistedFeedbackType(feedback);
+      const dish = feedback.dishId ? supabaseRepository.getDishById(feedback.dishId) : undefined;
+      if (!dish && feedback.feedbackType !== "search_query") {
+        const event = createServiceTasteEvent({
+          type: persistedType,
+          feedback,
+          vectorBefore,
+          vectorAfter: vectorBefore,
+          applied: false,
+          createdAt,
+          reason: "missing_dish",
+        });
+        await persistFeedbackEvent({
+          persistedType,
+          feedback,
+          vectorBefore,
+          vectorAfter: vectorBefore,
+          applied: false,
+          createdAt,
+          reason: "missing_dish",
+        });
+        return {
+          tasteVector: profile.tasteVector,
+          event,
+          applied: false,
+          reason: "missing_dish",
+        };
+      }
+
+      const searchVectors =
+        feedback.feedbackType === "search_query" && feedback.query
+          ? getRankedRecommendations(
+              {
+                surface: feedback.surface ?? "search",
+                tasteProfile: profile.tasteVector,
+                dietaryFlags: profile.dietaryPreferences,
+                query: feedback.query,
+                limit: 5,
+              },
+              profile,
+            ).map((item) => item.dish.tasteVector)
+          : [];
+      const dishVector =
+        dish?.tasteVector ??
+        (searchVectors.length
+          ? averageTasteVectors(searchVectors, profile.tasteVector)
+          : undefined);
+
+      if (!dishVector) {
+        const event = createServiceTasteEvent({
+          type: persistedType,
+          feedback,
+          vectorBefore,
+          vectorAfter: vectorBefore,
+          applied: false,
+          createdAt,
+          reason: "missing_signal",
+        });
+        await persistFeedbackEvent({
+          persistedType,
+          feedback,
+          vectorBefore,
+          vectorAfter: vectorBefore,
+          applied: false,
+          createdAt,
+          reason: "missing_signal",
+          dishId: dish?.id,
+        });
+        return {
+          tasteVector: profile.tasteVector,
+          event,
+          applied: false,
+          reason: "missing_signal",
+        };
+      }
+
+      const client = getSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      const capped =
+        feedback.applied === false
+          ? feedback.reason === "capped"
+          : client && userId
+            ? await isLiveFeedbackCapped(client, userId, feedback, persistedType, createdAt)
+            : false;
+      const applied = feedback.applied !== undefined ? feedback.applied : !capped;
+      const reason: TasteInteractionEvent["reason"] | undefined = !applied
+        ? (feedback.reason ?? (capped ? "capped" : undefined))
+        : undefined;
+      const updatedVector = applied
+        ? clampTasteVector(
+            feedback.userVectorAfter ??
+              processExplicitFeedbackCore(vectorBefore, {
+                type: toCoreFeedbackType(feedback),
+                dishVector,
+                hawkerTags: feedback.hawkerTags,
+                timestamp: createdAt ? new Date(createdAt).getTime() : Date.now(),
+              }),
+          )
+        : vectorBefore;
+      const event = createServiceTasteEvent({
+        type: persistedType,
+        feedback,
+        vectorBefore,
+        vectorAfter: updatedVector,
+        applied,
+        createdAt,
+        reason,
+      });
+      const persistedWithRpc = await persistFeedbackEvent({
+        persistedType,
+        feedback,
+        vectorBefore,
+        vectorAfter: updatedVector,
+        applied,
+        createdAt,
+        reason,
+        dishId: dish?.id,
+      });
+
+      if (applied && !persistedWithRpc) {
+        await supabaseService.profile.updateTasteVector(updatedVector);
+      }
+      return {
+        tasteVector: updatedVector,
+        event,
+        applied,
+        reason,
+      };
+    },
+  },
+
   ai: {
     computeTasteVector(answers: QuizAnswer[]) {
       return buildTasteVectorFromAnswers(answers);
@@ -3256,48 +3748,20 @@ export const supabaseService: HungryService = {
 
     async processExplicitFeedback(feedback) {
       const profile = await supabaseService.profile.getProfile();
+      if (!feedback.dishId) return profile.tasteVector;
       const dish = supabaseRepository.getDishById(feedback.dishId);
       if (!dish) return profile.tasteVector;
 
-      let feedbackType: Parameters<typeof processExplicitFeedback>[1]["type"] = "saved";
-      if (feedback.feedbackType === "save") feedbackType = "saved";
-      if (feedback.feedbackType === "unsave") feedbackType = "unsaved";
-      if (feedback.feedbackType === "rating") {
-        const rating = feedback.rating ?? 3;
-        if (rating >= 5) feedbackType = "rating_5_star";
-        else if (rating >= 4) feedbackType = "rating_4_star";
-        else if (rating >= 3) feedbackType = "rating_3_star";
-        else if (rating >= 2) feedbackType = "rating_2_star";
-        else feedbackType = "rating_1_star";
-      }
-      if (feedback.feedbackType === "hawker_tag") {
-        feedbackType = "hawker_tag_positive";
-      }
-
-      return processExplicitFeedback(profile.tasteVector, {
-        type: feedbackType,
+      return processExplicitFeedbackCore(profile.tasteVector, {
+        type: toCoreFeedbackType(feedback),
         dishVector: dish.tasteVector,
         timestamp: Date.now(),
       });
     },
 
-    async processImplicitFeedback(signals: ImplicitSignalInput[]) {
+    async processImplicitFeedback(_signals: ImplicitSignalInput[]) {
       const profile = await supabaseService.profile.getProfile();
-      const mappedSignals = signals
-        .map((signal) => {
-          const dish = supabaseRepository.getDishById(signal.dishId);
-          if (!dish) return null;
-          return {
-            type: signal.type,
-            dishVector: dish.tasteVector,
-            timestamp: signal.timestamp,
-          };
-        })
-        .filter((item): item is NonNullable<typeof item> => Boolean(item));
-      if (mappedSignals.length === 0) {
-        return profile.tasteVector;
-      }
-      return processImplicitFeedback(profile.tasteVector, mappedSignals);
+      return profile.tasteVector;
     },
 
     async getTagSuggestions(dishId) {
