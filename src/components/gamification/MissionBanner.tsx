@@ -1,0 +1,148 @@
+/**
+ * MissionBanner — compact inline summary for the HomeScreen.
+ *
+ * Shows the most-in-progress incomplete mission with a progress bar.
+ * Tapping navigates to MissionsScreen.
+ */
+
+import { View, Pressable, StyleSheet } from "react-native";
+import { ChevronRight, Target } from "lucide-react-native";
+
+import { useHungryTheme } from "@/theme";
+import { AppText } from "@/components/ui/AppText";
+import { useMissionStore } from "@/store/useMissionStore";
+
+interface MissionBannerProps {
+  onPress?: () => void;
+}
+
+export function MissionBanner({ onPress }: MissionBannerProps) {
+  const { palette, radii, spacing } = useHungryTheme();
+  const activeMissions = useMissionStore((s) => s.getActiveMissions());
+  const progressMap = useMissionStore((s) => s.progressMap);
+  const completedMissions = useMissionStore((s) => s.getCompletedMissions());
+
+  // Pick the most-in-progress active mission to feature
+  const featured = activeMissions.slice().sort((a, b) => {
+    const pa = progressMap[a.id]?.currentCount ?? 0;
+    const pb = progressMap[b.id]?.currentCount ?? 0;
+    const ra = pa / a.requirementCount;
+    const rb = pb / b.requirementCount;
+    return rb - ra;
+  })[0];
+
+  const allDone = activeMissions.length === 0 && completedMissions.length > 0;
+
+  if (!featured && !allDone) return null;
+
+  if (allDone) {
+    return (
+      <Pressable
+        accessibilityLabel="Weekly missions complete"
+        accessibilityRole="button"
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.container,
+          {
+            backgroundColor: pressed ? palette.successSoft : palette.successSoft,
+            borderColor: palette.success,
+            borderRadius: radii.xl,
+            borderWidth: 1,
+            paddingHorizontal: spacing[4],
+            paddingVertical: spacing[3],
+          },
+        ]}
+      >
+        <View style={styles.row}>
+          <Target size={16} color={palette.success} style={{ marginRight: spacing[2] }} />
+          <AppText
+            variant="bodySmall"
+            style={{ color: palette.success, fontWeight: "700", flex: 1 }}
+          >
+            All missions complete this week!
+          </AppText>
+          <ChevronRight size={16} color={palette.success} />
+        </View>
+      </Pressable>
+    );
+  }
+
+  const currentCount = progressMap[featured!.id]?.currentCount ?? 0;
+  const total = featured!.requirementCount;
+  const fraction = Math.min(currentCount / total, 1);
+
+  return (
+    <Pressable
+      accessibilityLabel={`Mission: ${featured!.title}`}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.container,
+        {
+          backgroundColor: pressed ? palette.bgSoft : palette.surface,
+          borderColor: palette.border,
+          borderRadius: radii.xl,
+          borderWidth: 1,
+          paddingHorizontal: spacing[4],
+          paddingVertical: spacing[3],
+          gap: spacing[2],
+        },
+      ]}
+    >
+      {/* Header row */}
+      <View style={[styles.row, { justifyContent: "space-between" }]}>
+        <View style={styles.row}>
+          <Target size={16} color={palette.orange} style={{ marginRight: spacing[2] }} />
+          <AppText variant="bodySmall" style={{ color: palette.orange, fontWeight: "700" }}>
+            This week
+          </AppText>
+        </View>
+        <ChevronRight size={16} color={palette.textMuted} />
+      </View>
+
+      {/* Mission title */}
+      <AppText variant="bodySmall" numberOfLines={1}>
+        {featured!.title}
+      </AppText>
+
+      {/* Progress bar + label */}
+      <View style={{ gap: spacing[1] }}>
+        <View
+          style={{
+            backgroundColor: palette.border,
+            borderRadius: radii.pill,
+            height: 5,
+            overflow: "hidden",
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: palette.orange,
+              borderRadius: radii.pill,
+              height: 5,
+              width: `${fraction * 100}%`,
+            }}
+          />
+        </View>
+        <View style={[styles.row, { justifyContent: "space-between" }]}>
+          <AppText tone="muted" variant="micro">
+            {currentCount}/{total}
+          </AppText>
+          {completedMissions.length > 0 && (
+            <AppText tone="muted" variant="micro">
+              {completedMissions.length} done
+            </AppText>
+          )}
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {},
+  row: {
+    alignItems: "center",
+    flexDirection: "row",
+  },
+});

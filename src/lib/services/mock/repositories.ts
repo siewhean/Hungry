@@ -1,4 +1,16 @@
-import { blogPosts, buildings, dishes, guestProfile, userProfile, venues } from "./data";
+import {
+  blogPosts,
+  buildings,
+  dishes,
+  guestProfile,
+  mockCollectionItems,
+  mockCollections,
+  mockStallInteractions,
+  mockUserFoodCred,
+  mockUserMissionProgress,
+  userProfile,
+  venues,
+} from "./data";
 import { listMockStallPosts } from "./stallPostState";
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { similarityScore } from "@/lib/ai/similarityScore";
@@ -6,14 +18,21 @@ import type { DecideForMeOptions } from "@/lib/services/types";
 import type {
   BlogPost,
   BuildingSummary,
+  CollectionItem,
   DietaryFlag,
   DishDetail,
+  FoodCollection,
   SearchFilters,
+  StallInteraction,
   StallPost,
   TasteVector,
+  UserFoodCred,
+  UserMissionProgress,
   UserProfile,
   VenueSummary,
+  WeeklyMission,
 } from "@/types/domain";
+import { MOCK_ACTIVE_MISSIONS } from "@/constants/missionTemplates";
 
 const BUILDING_ID_ALIASES: Record<string, string[]> = {
   "building-maxwell": ["hc-maxwell"],
@@ -121,6 +140,59 @@ export const dataRepositoryMock = {
   },
   listStallPosts(): StallPost[] {
     return listMockStallPosts();
+  },
+
+  // ─── Gamification Repositories ─────────────────────────────────────────────
+
+  /** Returns all featured + public official collections */
+  listCollections(): Promise<FoodCollection[]> {
+    return Promise.resolve(mockCollections.filter((c) => c.visibility === "public"));
+  },
+
+  /** Returns featured collections only */
+  listFeaturedCollections(): Promise<FoodCollection[]> {
+    return Promise.resolve(mockCollections.filter((c) => c.isFeatured));
+  },
+
+  /** Returns a single collection by ID */
+  getCollectionById(collectionId: string): Promise<FoodCollection | null> {
+    return Promise.resolve(mockCollections.find((c) => c.id === collectionId) ?? null);
+  },
+
+  /** Returns all stall items for a collection, ordered by displayOrder */
+  listCollectionItems(collectionId: string): Promise<CollectionItem[]> {
+    return Promise.resolve(
+      mockCollectionItems
+        .filter((item) => item.collectionId === collectionId)
+        .sort((a, b) => a.displayOrder - b.displayOrder),
+    );
+  },
+
+  /** Returns the stall interaction state for a user+stall pair */
+  getStallInteraction(userId: string, stallId: string): Promise<StallInteraction | null> {
+    const found = mockStallInteractions.find((i) => i.userId === userId && i.stallId === stallId);
+    return Promise.resolve(found ?? null);
+  },
+
+  /** Returns all stall interactions for a user */
+  listStallInteractions(userId: string): Promise<StallInteraction[]> {
+    return Promise.resolve(mockStallInteractions.filter((i) => i.userId === userId));
+  },
+
+  /** Returns the user's Food Cred summary */
+  getUserFoodCred(userId: string): Promise<UserFoodCred | null> {
+    if (mockUserFoodCred.userId === userId) return Promise.resolve(mockUserFoodCred);
+    return Promise.resolve(null);
+  },
+
+  /** Returns the currently active weekly missions */
+  listActiveMissions(): Promise<WeeklyMission[]> {
+    return Promise.resolve(MOCK_ACTIVE_MISSIONS);
+  },
+
+  /** Returns the user's progress on all active missions */
+  listUserMissionProgress(userId: string): Promise<UserMissionProgress[]> {
+    return Promise.resolve(mockUserMissionProgress.filter((p) => p.userId === userId));
   },
 };
 

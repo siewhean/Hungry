@@ -672,3 +672,211 @@ export type WheelChannelEvent =
   | { type: "trigger_update"; triggerMode: WheelTriggerMode; triggerValue?: TriggerValue }
   | { type: "member_joined"; member: WheelMember }
   | { type: "member_left"; memberId: string };
+
+// ─── Gamification ─────────────────────────────────────────────────────────────
+
+/**
+ * Every discrete action that earns Food Cred.
+ * Used in both the event ledger and the points config table.
+ */
+export type FoodCredAction =
+  | "review_created"
+  | "photo_uploaded"
+  | "stall_saved"
+  | "stall_marked_tried"
+  | "helpful_vote_received"
+  | "stall_info_corrected"
+  | "tag_added"
+  | "collection_created"
+  | "post_created"
+  | "mission_completed";
+
+/**
+ * Immutable event record: one row per cred-earning action.
+ * Append-only — never mutated after creation.
+ */
+export interface FoodCredEvent {
+  id: string;
+  userId: string;
+  sourceAction: FoodCredAction;
+  points: number;
+  relatedEntityId?: string;
+  relatedEntityType?: "stall" | "review" | "post" | "collection" | "mission";
+  createdAt: string; // ISO 8601
+}
+
+/**
+ * Materialized summary of a user's total Food Cred.
+ * Derived from food_cred_events; updated via RPC after each event.
+ */
+export interface UserFoodCred {
+  userId: string;
+  totalPoints: number;
+  /** Index into FOOD_CRED_LEVELS array */
+  levelIndex: number;
+}
+
+/**
+ * One tier in the Food Cred progression ladder.
+ * Names are professional — no emojis, no game-world language.
+ */
+export interface FoodCredLevel {
+  index: number;
+  name: string;
+  /** Minimum cumulative points to reach this tier */
+  minPoints: number;
+  /** Short descriptor shown on profile badges */
+  badgeLabel: string;
+}
+
+// ─── Stall Interactions ───────────────────────────────────────────────────────
+
+/**
+ * Per-user, per-stall interaction state.
+ * Primary key: (userId, stallId).
+ */
+export interface StallInteraction {
+  userId: string;
+  stallId: string;
+  isSaved: boolean;
+  isTried: boolean;
+  isReviewed: boolean;
+  savedAt?: string;
+  triedAt?: string;
+  reviewedAt?: string;
+}
+
+// ─── Helpful Voting ───────────────────────────────────────────────────────────
+
+export interface ReviewHelpfulVote {
+  userId: string;
+  reviewId: string;
+  createdAt: string;
+}
+
+// ─── Passport ─────────────────────────────────────────────────────────────────
+
+/** Top-level dimension of the Hungry Passport */
+export type PassportCategoryType = "cuisine" | "neighbourhood";
+
+/**
+ * A single passport category (e.g. "Japanese Explorer", "CBD Lunch Explorer").
+ * These are config/seed data — not user-generated.
+ */
+export interface PassportCategory {
+  id: string;
+  name: string;
+  description: string;
+  type: PassportCategoryType;
+  /** The tag value to match against stall metadata (cuisineTag or neighbourhoodTag) */
+  matchTag: string;
+  /** Milestone thresholds (tried counts) at which a stamp is awarded */
+  stampThresholds: number[];
+}
+
+/**
+ * A user's computed progress within one passport category.
+ * Computed from user_stall_interactions — not stored independently for MVP.
+ */
+export interface UserPassportProgress {
+  categoryId: string;
+  /** Count of unique stalls tried that match this category */
+  triedCount: number;
+  /** Index of the next stamp milestone to reach */
+  nextStampIndex: number;
+  /** Thresholds for which stamps have been awarded */
+  earnedStampThresholds: number[];
+}
+
+// ─── Collections ──────────────────────────────────────────────────────────────
+
+export type CollectionVisibility = "public" | "friends" | "private";
+export type CollectionCreator = "hungry" | "user";
+export type CollectionSegment = "students" | "office_workers" | "families" | "general";
+
+/**
+ * A curated list of stalls.
+ * Phase 1: only Hungry-official collections with public visibility.
+ * Phase 2: user-created collections with configurable visibility.
+ */
+export interface FoodCollection {
+  id: string;
+  title: string;
+  description: string;
+  coverImageUrl?: string;
+  createdBy: CollectionCreator;
+  creatorUserId?: string;
+  visibility: CollectionVisibility;
+  targetSegment: CollectionSegment;
+  tags: string[];
+  /** Denormalised count — updated when items are added/removed */
+  itemCount: number;
+  saveCount: number;
+  isFeatured: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** A single stall entry within a collection */
+export interface CollectionItem {
+  id: string;
+  collectionId: string;
+  stallId: string;
+  /** 0-based display order */
+  displayOrder: number;
+  /** Optional editorial note for this stall in this collection */
+  note?: string;
+  addedAt: string;
+}
+
+/**
+ * Whether a user has saved a collection.
+ * Per-user, per-collection — primary key: (userId, collectionId).
+ */
+export interface UserCollectionSave {
+  userId: string;
+  collectionId: string;
+  savedAt: string;
+}
+
+// ─── Weekly Missions ──────────────────────────────────────────────────────────
+
+export type MissionType =
+  | "save_stalls"
+  | "create_post"
+  | "write_review"
+  | "mark_tried"
+  | "add_to_collection"
+  | "helpful_vote";
+
+export type MissionRewardType = "food_cred" | "passport_progress" | "badge";
+
+/**
+ * A weekly mission template. Active missions are surfaced on the home feed.
+ * Rotated weekly — same pool for all users at launch.
+ */
+export interface WeeklyMission {
+  id: string;
+  title: string;
+  description: string;
+  missionType: MissionType;
+  /** Number of qualifying actions required to complete */
+  requirementCount: number;
+  rewardType: MissionRewardType;
+  /** Food Cred awarded on completion, or passport step count, etc. */
+  rewardValue: number;
+  weekStart: string; // ISO date (YYYY-MM-DD)
+  weekEnd: string;
+  isActive: boolean;
+}
+
+/**
+ * Per-user progress on a specific weekly mission.
+ * Primary key: (userId, missionId).
+ */
+export interface UserMissionProgress {
+  userId: string;
+  missionId: string;
+  currentCount: number;
+  completedAt?: string;
+}

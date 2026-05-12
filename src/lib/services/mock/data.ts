@@ -2,13 +2,18 @@ import type {
   AIBusinessInsight,
   BlogPost,
   BuildingSummary,
+  CollectionItem,
   CustomerInteraction,
   DishDetail,
+  FoodCollection,
   MerchantAccount,
   MerchantAnalytics,
   MerchantPromotion,
   OCRDishDraft,
+  StallInteraction,
   StallPost,
+  UserFoodCred,
+  UserMissionProgress,
   UserProfile,
   VenueSummary,
 } from "@/types/domain";
@@ -1301,3 +1306,209 @@ export const chatMessages: Record<string, ChatMessage[]> = {
     },
   ],
 };
+
+// ─── Gamification Mock Data ───────────────────────────────────────────────────
+
+/**
+ * Official Hungry-curated collections for Phase 1 launch.
+ * Phase 2 adds user-created collections.
+ */
+export const mockCollections: FoodCollection[] = [
+  {
+    id: "col-singapore-classics",
+    title: "Singapore Classics",
+    description: "The essential hawker dishes every Singapore food lover should try.",
+    coverImageUrl: "https://upload.wikimedia.org/wikipedia/commons/7/71/Hainanese_Chicken_Rice.jpg",
+    createdBy: "hungry",
+    visibility: "public",
+    targetSegment: "general",
+    tags: ["hawker", "local", "classics"],
+    itemCount: 6,
+    saveCount: 128,
+    isFeatured: true,
+    createdAt: "2025-01-15T08:00:00.000Z",
+    updatedAt: "2025-01-15T08:00:00.000Z",
+  },
+  {
+    id: "col-student-budget",
+    title: "Best Student Meals",
+    description: "Great food under S$6 — perfect for students on a budget.",
+    coverImageUrl:
+      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800",
+    createdBy: "hungry",
+    visibility: "public",
+    targetSegment: "students",
+    tags: ["budget", "student", "affordable"],
+    itemCount: 8,
+    saveCount: 95,
+    isFeatured: true,
+    createdAt: "2025-01-15T08:00:00.000Z",
+    updatedAt: "2025-01-15T08:00:00.000Z",
+  },
+  {
+    id: "col-office-lunch",
+    title: "Office Lunch Picks",
+    description: "Quick, satisfying lunches for busy weekdays.",
+    coverImageUrl:
+      "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800",
+    createdBy: "hungry",
+    visibility: "public",
+    targetSegment: "office_workers",
+    tags: ["quick", "weekday", "cbd"],
+    itemCount: 7,
+    saveCount: 72,
+    isFeatured: false,
+    createdAt: "2025-01-15T08:00:00.000Z",
+    updatedAt: "2025-01-15T08:00:00.000Z",
+  },
+  {
+    id: "col-halal-finds",
+    title: "Halal Food Finds",
+    description: "Delicious halal-certified options across Singapore.",
+    coverImageUrl:
+      "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800",
+    createdBy: "hungry",
+    visibility: "public",
+    targetSegment: "general",
+    tags: ["halal", "certified", "muslim-friendly"],
+    itemCount: 10,
+    saveCount: 61,
+    isFeatured: false,
+    createdAt: "2025-01-15T08:00:00.000Z",
+    updatedAt: "2025-01-15T08:00:00.000Z",
+  },
+  {
+    id: "col-hidden-gems",
+    title: "Hidden Gems",
+    description: "Under-the-radar spots that locals swear by.",
+    coverImageUrl:
+      "https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&q=80&w=800",
+    createdBy: "hungry",
+    visibility: "public",
+    targetSegment: "general",
+    tags: ["hidden", "local-secret", "underrated"],
+    itemCount: 5,
+    saveCount: 84,
+    isFeatured: true,
+    createdAt: "2025-01-15T08:00:00.000Z",
+    updatedAt: "2025-01-15T08:00:00.000Z",
+  },
+];
+
+/**
+ * Collection items mapping stalls to their parent collections.
+ * Using existing mock venue IDs.
+ */
+export const mockCollectionItems: CollectionItem[] = [
+  // Singapore Classics
+  {
+    id: "ci-sc-1",
+    collectionId: "col-singapore-classics",
+    stallId: "venue-tian-tian",
+    displayOrder: 0,
+    note: "Legendary chicken rice — arrive before 12pm to avoid sellout.",
+    addedAt: "2025-01-15T08:00:00.000Z",
+  },
+  {
+    id: "ci-sc-2",
+    collectionId: "col-singapore-classics",
+    stallId: "venue-maxwell-laksa",
+    displayOrder: 1,
+    addedAt: "2025-01-15T08:00:00.000Z",
+  },
+  {
+    id: "ci-sc-3",
+    collectionId: "col-singapore-classics",
+    stallId: "venue-satay-street",
+    displayOrder: 2,
+    addedAt: "2025-01-15T08:00:00.000Z",
+  },
+  // Student Budget
+  {
+    id: "ci-sb-1",
+    collectionId: "col-student-budget",
+    stallId: "venue-kopi-club",
+    displayOrder: 0,
+    note: "Kaya toast set is under S$5.",
+    addedAt: "2025-01-15T08:00:00.000Z",
+  },
+  {
+    id: "ci-sb-2",
+    collectionId: "col-student-budget",
+    stallId: "venue-maxwell-laksa",
+    displayOrder: 1,
+    addedAt: "2025-01-15T08:00:00.000Z",
+  },
+];
+
+/**
+ * Mock stall interactions for the demo authenticated user (Wei Ming).
+ * Pre-seeds a believable user state: some saves, some tried, one reviewed.
+ */
+export const mockStallInteractions: StallInteraction[] = [
+  {
+    userId: "user-1",
+    stallId: "venue-tian-tian",
+    isSaved: true,
+    isTried: true,
+    isReviewed: true,
+    savedAt: "2025-03-01T10:00:00.000Z",
+    triedAt: "2025-03-05T12:30:00.000Z",
+    reviewedAt: "2025-03-05T13:00:00.000Z",
+  },
+  {
+    userId: "user-1",
+    stallId: "venue-maxwell-laksa",
+    isSaved: true,
+    isTried: true,
+    isReviewed: false,
+    savedAt: "2025-03-10T11:00:00.000Z",
+    triedAt: "2025-03-12T12:00:00.000Z",
+  },
+  {
+    userId: "user-1",
+    stallId: "venue-satay-street",
+    isSaved: true,
+    isTried: false,
+    isReviewed: false,
+    savedAt: "2025-03-15T09:00:00.000Z",
+  },
+];
+
+/**
+ * Mock Food Cred state for the demo authenticated user.
+ * Starts at 150 points (Reviewer tier) to show a meaningful profile state.
+ */
+export const mockUserFoodCred: UserFoodCred = {
+  userId: "user-1",
+  totalPoints: 150,
+  levelIndex: 1, // "Regular" (50–199 pts)
+};
+
+/**
+ * Mock user mission progress for the current week.
+ * The user has partially completed 2 of the 4 active missions.
+ */
+export const mockUserMissionProgress: UserMissionProgress[] = [
+  {
+    userId: "user-1",
+    missionId: "mission-save-3-stalls",
+    currentCount: 2, // 1 more to complete
+  },
+  {
+    userId: "user-1",
+    missionId: "mission-write-review",
+    currentCount: 1,
+    completedAt: "2025-03-05T13:00:00.000Z",
+  },
+  {
+    userId: "user-1",
+    missionId: "mission-mark-tried",
+    currentCount: 1, // 1 more to complete
+  },
+  {
+    userId: "user-1",
+    missionId: "mission-post-photo",
+    currentCount: 0,
+  },
+];

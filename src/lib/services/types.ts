@@ -9,9 +9,11 @@ import type {
   AIBusinessInsight,
   BlogPost,
   BuildingSummary,
+  CollectionItem,
   CustomerInteraction,
   DishDetail,
   DietaryFlag,
+  FoodCollection,
   HawkerTasteTag,
   InteractionType,
   MerchantAccount,
@@ -25,15 +27,19 @@ import type {
   PromotionStatus,
   RecommendationSurface,
   SearchFilters,
+  StallInteraction,
   StallPost,
   Story,
   StoryContent,
   TasteProfile,
   TasteInteractionEvent,
   TasteVector,
+  UserFoodCred,
+  UserMissionProgress,
   UserProfile,
   VerificationEvidence,
   VenueSummary,
+  WeeklyMission,
 } from "@/types/domain";
 
 export interface DecideForMeOptions {
@@ -57,6 +63,17 @@ export interface DataRepository {
   getDecideForMe(tasteProfile: TasteVector, options?: DecideForMeOptions): DishDetail | undefined;
   listBlogPosts(): BlogPost[];
   listStallPosts(): StallPost[];
+
+  // ─── Gamification (optional — not all implementations required at launch) ────
+  listCollections?(): Promise<FoodCollection[]>;
+  listFeaturedCollections?(): Promise<FoodCollection[]>;
+  getCollectionById?(collectionId: string): Promise<FoodCollection | null>;
+  listCollectionItems?(collectionId: string): Promise<CollectionItem[]>;
+  getStallInteraction?(userId: string, stallId: string): Promise<StallInteraction | null>;
+  listStallInteractions?(userId: string): Promise<StallInteraction[]>;
+  getUserFoodCred?(userId: string): Promise<UserFoodCred | null>;
+  listActiveMissions?(): Promise<WeeklyMission[]>;
+  listUserMissionProgress?(userId: string): Promise<UserMissionProgress[]>;
 }
 
 // ─── Floor Plan Types ──────────────────────────────────────────────────────────
