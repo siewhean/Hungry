@@ -170,6 +170,7 @@ export function DecideForMeResultScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
+  const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const selectedDish = useDiscoveryStore((state) => state.decideForMe);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const showToast = useUIStore((state) => state.showToast);
@@ -245,6 +246,14 @@ export function DecideForMeResultScreen() {
   };
 
   const handleTryAnother = () => {
+    if (dish) {
+      recordTasteInteraction({
+        type: "dismissed",
+        surface: "decide",
+        dish,
+        buttonId: "try_another_pick",
+      });
+    }
     const nextDish = getNextDistinctDish(candidates, dish?.id, resultIndex);
     if (!nextDish || nextDish.id === dish?.id) {
       const upcomingRadius = nextRadius(searchRadius);
@@ -274,6 +283,12 @@ export function DecideForMeResultScreen() {
     }
 
     addItemToCart({ dishId: dish.id });
+    recordTasteInteraction({
+      type: "food_button_click",
+      surface: "decide",
+      dish,
+      buttonId: "add_to_cart",
+    });
     setActiveOrder({
       id: `order-${Date.now()}`,
       venueId: dish.venueId,
@@ -429,7 +444,15 @@ export function DecideForMeResultScreen() {
             <Button
               label="View Stall Details"
               variant="secondary"
-              onPress={() => navigation.navigate("StallDetail", { venueId: dish.venueId })}
+              onPress={() => {
+                recordTasteInteraction({
+                  type: "food_button_click",
+                  surface: "decide",
+                  dish,
+                  buttonId: "view_stall_details",
+                });
+                navigation.navigate("StallDetail", { venueId: dish.venueId });
+              }}
             />
             <Button
               label="Try Another Pick"

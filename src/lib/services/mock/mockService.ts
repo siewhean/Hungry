@@ -46,6 +46,7 @@ import type {
   RankedRecommendation,
   RecommendationContext,
   RecommendationResult,
+  RecommendationSlateRequest,
   ScenarioQuizAnswer,
   SearchResult,
   Session,
@@ -173,6 +174,60 @@ let _mockStories: Story[] = [
     interaction: { liked: false, saved: false, likeCount: 45, commentCount: 3, shareCount: 1 },
   },
 ];
+
+function matchesRecommendationQuery(dish: DishDetail, query?: string) {
+  const normalized = query?.trim().toLowerCase();
+  if (!normalized) return true;
+  return `${dish.name} ${dish.venueName} ${dish.tasteTags.join(" ")}`
+    .toLowerCase()
+    .includes(normalized);
+}
+
+function getRankedRecommendations(request: RecommendationSlateRequest): RankedRecommendation[] {
+  const candidateDishes = dishes.filter((dish) => matchesRecommendationQuery(dish, request.query));
+  const pipelineResults = runRecommendationPipeline(candidateDishes, {
+    userVector: request.tasteProfile,
+    dietaryFlags: request.dietaryFlags ?? _profile.dietaryPreferences,
+    neophiliaIndex: request.neophiliaIndex ?? _profile.tasteProfile?.neophiliaIndex ?? 5,
+    latitude: request.latitude,
+    longitude: request.longitude,
+    radiusMeters: request.radiusMeters,
+    excludeDishIds: request.excludeDishIds,
+  }).slice(0, request.limit ?? 20);
+
+  return pipelineResults
+    .map((result) => {
+      const dish = dishes.find((item) => item.id === result.dishId);
+      if (!dish) return null;
+      return {
+        dish,
+        matchScore: result.score,
+        matchPercent: result.matchPercent,
+        matchReason: result.explanation,
+        isSerendipitous: result.isSerendipitous,
+      };
+    })
+    .filter((result): result is RankedRecommendation => Boolean(result));
+}
+
+function toCoreFeedbackType(feedback: ExplicitFeedbackInput): ExplicitFeedbackEvent["type"] {
+  if (feedback.feedbackType === "rating" || feedback.feedbackType === "review") {
+    const rating = feedback.rating ?? 3;
+    if (rating >= 5) return "rating_5_star";
+    if (rating >= 4) return "rating_4_star";
+    if (rating >= 3) return "rating_3_star";
+    if (rating >= 2) return "rating_2_star";
+    return "rating_1_star";
+  }
+  if (feedback.feedbackType === "save") return "saved";
+  if (feedback.feedbackType === "unsave") return "unsaved";
+  if (feedback.feedbackType === "search_query") return "search_query";
+  if (feedback.feedbackType === "dish_result_click") return "dish_result_click";
+  if (feedback.feedbackType === "dish_like") return "dish_like";
+  if (feedback.feedbackType === "food_button_click") return "food_button_click";
+  if (feedback.feedbackType === "dismissed") return "dismissed";
+  return "hawker_tag_positive";
+}
 
 function isFreshStory(story: Story): boolean {
   const createdAt = new Date(story.createdAt).getTime();
@@ -1146,6 +1201,76 @@ export const hungryService: HungryService = {
     },
   },
 
+  // ── Recommendations ─────────────────────────────────────────────────────────
+
+  recommendations: {
+    async getSlate(request) {
+      return resolve({
+        surface: request.surface,
+        generatedAt: new Date().toISOString(),
+        items: getRankedRecommendations(request),
+      });
+    },
+
+    async recordExplicitFeedback(feedback) {
+      const dish = feedback.dishId ? dishes.find((item) => item.id === feedback.dishId) : undefined;
+      if (!dish && feedback.feedbackType !== "search_query") {
+        return resolve({
+          tasteVector: _profile.tasteVector,
+          applied: false,
+          reason: "missing_dish",
+        });
+      }
+
+      const searchVector =
+        feedback.feedbackType === "search_query" && feedback.query
+          ? getRankedRecommendations({
+              surface: feedback.surface ?? "search",
+              tasteProfile: _profile.tasteVector,
+              dietaryFlags: _profile.dietaryPreferences,
+              query: feedback.query,
+              limit: 5,
+            }).map((item) => item.dish.tasteVector)
+          : [];
+      const dishVector =
+        dish?.tasteVector ??
+        (searchVector.length
+          ? searchVector.reduce<TasteVector>(
+              (sum, vector, _index, array) => ({
+                sweet: sum.sweet + vector.sweet / array.length,
+                spicy: sum.spicy + vector.spicy / array.length,
+                sour: sum.sour + vector.sour / array.length,
+                salty: sum.salty + vector.salty / array.length,
+                rich: sum.rich + vector.rich / array.length,
+                aromatic: sum.aromatic + vector.aromatic / array.length,
+              }),
+              { sweet: 0, spicy: 0, sour: 0, salty: 0, rich: 0, aromatic: 0 },
+            )
+          : undefined);
+
+      if (!dishVector) {
+        return resolve({
+          tasteVector: _profile.tasteVector,
+          applied: false,
+          reason: "missing_signal",
+        });
+      }
+
+      const updatedVector = processExplicitFeedbackCore(_profile.tasteVector, {
+        type: toCoreFeedbackType(feedback),
+        dishVector,
+        hawkerTags: feedback.hawkerTags,
+        timestamp: feedback.createdAt ? new Date(feedback.createdAt).getTime() : Date.now(),
+      });
+      _profile = { ..._profile, tasteVector: updatedVector };
+
+      return resolve({
+        tasteVector: updatedVector,
+        applied: true,
+      });
+    },
+  },
+
   // ── AI ───────────────────────────────────────────────────────────────────────
 
   ai: {
@@ -1243,27 +1368,8 @@ export const hungryService: HungryService = {
       const dish = dishes.find((d) => d.id === feedback.dishId);
       if (!dish) return resolve(_profile.tasteVector);
 
-      // Map input to core feedback event
-      let feedbackType: ExplicitFeedbackEvent["type"] = "rating_3_star";
-      if (feedback.feedbackType === "rating" && feedback.rating !== undefined) {
-        const ratingMap: Record<number, ExplicitFeedbackEvent["type"]> = {
-          5: "rating_5_star",
-          4: "rating_4_star",
-          3: "rating_3_star",
-          2: "rating_2_star",
-          1: "rating_1_star",
-        };
-        feedbackType = ratingMap[feedback.rating] ?? "rating_3_star";
-      } else if (feedback.feedbackType === "save") {
-        feedbackType = "saved";
-      } else if (feedback.feedbackType === "unsave") {
-        feedbackType = "unsaved";
-      } else if (feedback.feedbackType === "hawker_tag") {
-        feedbackType = "hawker_tag_positive";
-      }
-
       const updatedVector = processExplicitFeedbackCore(_profile.tasteVector, {
-        type: feedbackType,
+        type: toCoreFeedbackType(feedback),
         dishVector: dish.tasteVector,
         hawkerTags: feedback.hawkerTags,
       });

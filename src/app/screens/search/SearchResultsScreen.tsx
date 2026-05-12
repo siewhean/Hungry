@@ -35,6 +35,7 @@ import {
 } from "@/features/navigation/prefetch";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail, VenueSummary } from "@/types/domain";
@@ -73,7 +74,9 @@ function BrowseGridScreen({
   const [selectedFilter, setSelectedFilter] = useState("All");
   const searchInputRef = useRef<TextInput | null>(null);
   const normalizedQuery = searchQuery.trim().toLowerCase();
+  const lastRecordedBrowseQueryRef = useRef("");
   const currentLocation = useLocationStore((state) => state.currentLocation);
+  const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const repository = getDataRepository();
   const getBrowseDishesByVenue = useCallback(
     (venueId: string) => {
@@ -303,6 +306,19 @@ function BrowseGridScreen({
       }),
     );
   };
+  const recordBrowseSearchQuery = useCallback(() => {
+    if (!normalizedQuery || lastRecordedBrowseQueryRef.current === normalizedQuery) {
+      return;
+    }
+    lastRecordedBrowseQueryRef.current = normalizedQuery;
+    recordTasteInteraction({
+      type: "search_query",
+      surface: "search",
+      query: normalizedQuery,
+      chipId: selectedFilter === "All" ? undefined : selectedFilter,
+    });
+  }, [normalizedQuery, recordTasteInteraction, selectedFilter]);
+
   useEffect(() => {
     return () => {
       searchRevealProgress.stopAnimation();
@@ -323,6 +339,13 @@ function BrowseGridScreen({
           preloadRoute(navigation, "DishDetail", { dishId: item.dish.id });
         }}
         onPress={() => {
+          recordTasteInteraction({
+            type: "dish_result_click",
+            surface: "search",
+            dish: item.dish,
+            query: searchQuery,
+            buttonId: `${mode}_browse_card`,
+          });
           navigation.navigate("DishDetail", { dishId: item.dish.id });
         }}
         style={{
@@ -387,7 +410,7 @@ function BrowseGridScreen({
         </View>
       </Pressable>
     ),
-    [itemWidth, navigation, palette, repository],
+    [itemWidth, mode, navigation, palette, recordTasteInteraction, repository, searchQuery],
   );
 
   return (
@@ -485,8 +508,10 @@ function BrowseGridScreen({
                       autoCorrect={false}
                       onBlur={hideSearch}
                       onChangeText={setSearchQuery}
+                      onSubmitEditing={recordBrowseSearchQuery}
                       placeholder={searchPlaceholder}
                       placeholderTextColor={palette.textMuted}
+                      returnKeyType="search"
                       style={[
                         browseStyles.textInput,
                         { color: palette.text, textAlignVertical: "center" },
@@ -598,6 +623,8 @@ export function SearchResultsScreen() {
   const { profile, filters } = useSearchData();
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const updateQuery = useSearchStore((state) => state.updateQuery);
+  const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
+  const lastRecordedQueryRef = useRef("");
   const sortMode: SearchSortMode = "best_match";
   const browseMode = route.params?.browseMode;
   const initialQuery = route.params?.initialQuery ?? "";
@@ -617,6 +644,22 @@ export function SearchResultsScreen() {
     );
   }, [results]);
 
+  const recordCommittedSearchQuery = useCallback(
+    (query: string) => {
+      const normalizedQuery = query.trim().toLowerCase();
+      if (!normalizedQuery || lastRecordedQueryRef.current === normalizedQuery) {
+        return;
+      }
+      lastRecordedQueryRef.current = normalizedQuery;
+      recordTasteInteraction({
+        type: "search_query",
+        surface: "search",
+        query: normalizedQuery,
+      });
+    },
+    [recordTasteInteraction],
+  );
+
   if (browseMode) {
     return <BrowseGridScreen mode={browseMode} initialSearchQuery={initialQuery} />;
   }
@@ -627,6 +670,7 @@ export function SearchResultsScreen() {
         query={filters.query}
         onQueryChange={updateQuery}
         onClear={() => updateQuery("")}
+        onSubmitQuery={recordCommittedSearchQuery}
         onTasteFilterPress={() => navigation.navigate("TasteFilter")}
         results={results}
         onResultPressIn={(dish) => {
@@ -634,6 +678,13 @@ export function SearchResultsScreen() {
           preloadRoute(navigation, "DishDetail", { dishId: dish.id });
         }}
         onResultPress={(dish) => {
+          recordTasteInteraction({
+            type: "dish_result_click",
+            surface: "search",
+            dish,
+            query: filters.query,
+            buttonId: "search_result",
+          });
           rememberSearch(filters.query);
           navigation.navigate("DishDetail", { dishId: dish.id });
         }}

@@ -30,7 +30,7 @@ export function getSearchResults(filters: SearchFilters, tasteVector = filters.t
 export function sortSearchResults(
   results: DishDetail[],
   mode: SearchSortMode,
-  tasteVector: UserProfile["tasteVector"],
+  _tasteVector: UserProfile["tasteVector"],
 ) {
   const cloned = [...results];
 
@@ -46,11 +46,7 @@ export function sortSearchResults(
     return cloned.sort((left, right) => left.price - right.price);
   }
 
-  return cloned.sort(
-    (left, right) =>
-      getSimilarityScore(right.tasteVector, tasteVector) -
-      getSimilarityScore(left.tasteVector, tasteVector),
-  );
+  return cloned;
 }
 
 export function getDecideForMeDish() {
@@ -118,7 +114,7 @@ export function getDiscoverStallCollections(profile: UserProfile, query: string)
   const posts = repository.listStallPosts();
   const buildings = repository.listBuildings();
   const seenVenues = new Set<string>();
-  const collections: Array<DiscoverStallCollection & { nearestDistanceMeters: number }> = [];
+  const collections: (DiscoverStallCollection & { nearestDistanceMeters: number })[] = [];
 
   for (const building of buildings) {
     const venues = repository.listVenuesByBuilding(building.id);

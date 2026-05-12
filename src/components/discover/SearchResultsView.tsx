@@ -22,6 +22,7 @@ interface SearchResultsViewProps {
   query: string;
   onQueryChange: (query: string) => void;
   onClear: () => void;
+  onSubmitQuery?: (query: string) => void;
   onTasteFilterPress: () => void;
   results: DishDetail[];
   onResultPressIn?: (dish: DishDetail) => void;
@@ -32,6 +33,7 @@ export function SearchResultsView({
   query,
   onQueryChange,
   onClear,
+  onSubmitQuery,
   onTasteFilterPress,
   results,
   onResultPressIn,
@@ -215,9 +217,11 @@ export function SearchResultsView({
                   ref={searchInputRef}
                   value={query}
                   onChangeText={onQueryChange}
+                  onSubmitEditing={() => onSubmitQuery?.(query)}
                   onBlur={hideSearch}
                   placeholder="Search..."
                   placeholderTextColor={palette.textMuted}
+                  returnKeyType="search"
                   style={{
                     color: palette.text,
                     fontFamily: "Nunito_400Regular",

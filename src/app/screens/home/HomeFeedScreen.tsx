@@ -167,6 +167,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const togglePostLike = useSocialStore((state) => state.toggleLike);
   const togglePostSave = useSocialStore((state) => state.toggleSave);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
+  const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const incrementPostShare = useSocialStore((state) => state.incrementShare);
   const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
   const repliesByCommentId = useSocialStore((state) => state.repliesByCommentId);
@@ -311,15 +312,33 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     );
   }, [sections, socialFeed]);
 
-  const openComments = useCallback((item: HomeFeedItem) => {
-    setActiveCommentItem(item);
-    setDraftComment("");
-    setActiveReplyCommentId(null);
-    requestAnimationFrame(() => {
-      commentsSheetRef.current?.present();
-      commentsSheetRef.current?.snapToIndex(0);
-    });
-  }, []);
+  const recordPostDishInteraction = useCallback(
+    (item: HomeFeedItem, buttonId: string, type: "dish_like" | "food_button_click") => {
+      const primaryDish = item.dishes[0];
+      if (!primaryDish) return;
+      recordTasteInteraction({
+        type,
+        surface: "home",
+        dish: primaryDish,
+        buttonId,
+      });
+    },
+    [recordTasteInteraction],
+  );
+
+  const openComments = useCallback(
+    (item: HomeFeedItem) => {
+      recordPostDishInteraction(item, "comments", "food_button_click");
+      setActiveCommentItem(item);
+      setDraftComment("");
+      setActiveReplyCommentId(null);
+      requestAnimationFrame(() => {
+        commentsSheetRef.current?.present();
+        commentsSheetRef.current?.snapToIndex(0);
+      });
+    },
+    [recordPostDishInteraction],
+  );
 
   const loadChatConversations = useCallback(async () => {
     try {
@@ -336,6 +355,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   const openShareSheet = useCallback(
     (item: HomeFeedItem) => {
+      recordPostDishInteraction(item, "share", "food_button_click");
       setActiveShareItem(item);
       setSelectedShareChatIds([]);
       void loadChatConversations();
@@ -343,7 +363,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         shareSheetRef.current?.present();
       });
     },
-    [loadChatConversations],
+    [loadChatConversations, recordPostDishInteraction],
   );
 
   const toggleShareChat = useCallback((chatId: string) => {
@@ -459,6 +479,17 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     [navigation, setHighlightedStallVenueId, setSelectedBuilding, setSelectedFloor],
   );
 
+  const handlePostLike = useCallback(
+    (item: HomeFeedItem) => {
+      const wasLiked = interactions[item.id]?.liked;
+      void togglePostLike(item.id);
+      if (!wasLiked) {
+        recordPostDishInteraction(item, "like", "dish_like");
+      }
+    },
+    [interactions, recordPostDishInteraction, togglePostLike],
+  );
+
   const handlePostSave = useCallback(
     (item: HomeFeedItem) => {
       void togglePostSave(item.id);
@@ -556,10 +587,21 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   }, [palette, colorScheme]);
 
   const navigateToDish = useCallback(
-    (dishId: string) => {
-      navigation.navigate("DishDetail", { dishId });
+    (item: HomeFeedItem) => {
+      const primaryDish = item.dishes[0];
+      if (!primaryDish) {
+        navigation.navigate("StallDetail", { venueId: item.venueId });
+        return;
+      }
+      recordTasteInteraction({
+        type: "dish_result_click",
+        surface: "home",
+        dish: primaryDish,
+        buttonId: "feed_card",
+      });
+      navigation.navigate("DishDetail", { dishId: primaryDish.id });
     },
-    [navigation],
+    [navigation, recordTasteInteraction],
   );
 
   const runDoubleTapHeartAnimation = useCallback(
@@ -608,7 +650,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         }
 
         if (!interactions[item.id]?.liked) {
-          void togglePostLike(item.id);
+          handlePostLike(item);
         }
         runDoubleTapHeartAnimation(item.id, tapOrigin);
         return;
@@ -657,7 +699,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         singleTapTimerRef.current = null;
       }, DOUBLE_TAP_DELAY_MS);
     },
-    [interactions, runDoubleTapHeartAnimation, togglePostLike, carouselIndexByPostId, screenWidth],
+    [carouselIndexByPostId, handlePostLike, interactions, runDoubleTapHeartAnimation, screenWidth],
   );
 
   const handleStoryPress = useCallback(
@@ -1140,7 +1182,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   </Pressable>
                   <Pressable
                     hitSlop={10}
-                    onPress={() => void togglePostLike(item.id)}
+                    onPress={() => handlePostLike(item)}
                     style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
                   >
                     <Heart
@@ -1231,12 +1273,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           }
           onPressIn={() => prefetchFeedCardRoute(item)}
           onPress={() => {
-            const primaryDishId = item.dishes[0]?.id;
-            if (primaryDishId) {
-              navigateToDish(primaryDishId);
-              return;
-            }
-            navigation.navigate("StallDetail", { venueId: item.venueId });
+            navigateToDish(item);
           }}
           style={[
             shadows.card,
@@ -1269,7 +1306,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             <Pressable
               onPress={(event) => {
                 event.stopPropagation();
-                void togglePostLike(item.id);
+                handlePostLike(item);
               }}
               style={{
                 width: 36,
@@ -1435,7 +1472,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       palette.amber,
       palette.bgSoft,
       spacing,
-      togglePostLike,
+      handlePostLike,
       handlePostSave,
       toggleAuthorFollow,
       incrementPostShare,

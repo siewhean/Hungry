@@ -306,6 +306,7 @@ export function DiscoverHomeScreen() {
     width: screenWidth,
   };
   const profile = useProfileStore((state) => state.profile);
+  const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const locationPermission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
@@ -446,11 +447,25 @@ export function DiscoverHomeScreen() {
       profile.dietaryPreferences.length ? profile.dietaryPreferences : DISCOVER_DIETARY_FALLBACKS,
     [profile.dietaryPreferences],
   );
-  const toggleDiscoverChip = useCallback((chipId: DiscoverChipId) => {
-    setActiveDiscoverChipIds((current) =>
-      current.includes(chipId) ? current.filter((value) => value !== chipId) : [...current, chipId],
-    );
-  }, []);
+  const toggleDiscoverChip = useCallback(
+    (chipId: DiscoverChipId) => {
+      const wasActive = activeDiscoverChipIds.includes(chipId);
+      if (!wasActive && chipId !== "dietary") {
+        recordTasteInteraction({
+          type: "search_query",
+          surface: "discover",
+          query: chipId,
+          chipId,
+        });
+      }
+      setActiveDiscoverChipIds((current) =>
+        current.includes(chipId)
+          ? current.filter((value) => value !== chipId)
+          : [...current, chipId],
+      );
+    },
+    [activeDiscoverChipIds, recordTasteInteraction],
+  );
   const matchesDiscoverChipSelection = useCallback(
     (dish?: DishDetail, textParts: string[] = []) => {
       if (!activeDiscoverChipIds.length) {
@@ -701,21 +716,36 @@ export function DiscoverHomeScreen() {
     }
 
     if (picked) {
+      recordTasteInteraction({
+        type: "food_button_click",
+        surface: "decide",
+        dish: picked,
+        buttonId: "decide_for_me",
+      });
       setDecideForMe(picked);
     }
     navigation.navigate("DecideForMeResult");
   };
 
   const handleFoodStylePress = useCallback(
-    (query: string) => {
-      updateSearchQuery(query);
-      rememberSearch(query);
+    (item: PopularFoodStyle & { dish?: DishDetail }) => {
+      recordTasteInteraction({
+        type: "search_query",
+        surface: "discover",
+        dish: item.dish,
+        dishId: item.dishId,
+        query: item.query,
+        chipId: item.id,
+        buttonId: "popular_right_now",
+      });
+      updateSearchQuery(item.query);
+      rememberSearch(item.query);
       navigation.navigate("SearchResults", {
         browseMode: "stalls",
-        initialQuery: query,
+        initialQuery: item.query,
       });
     },
-    [navigation, rememberSearch, updateSearchQuery],
+    [navigation, recordTasteInteraction, rememberSearch, updateSearchQuery],
   );
 
   const prefetchFoodStyle = useCallback(
@@ -738,6 +768,20 @@ export function DiscoverHomeScreen() {
       preloadRoute(navigation, "DishDetail", { dishId: bite.dishId });
     },
     [navigation, repository],
+  );
+
+  const openBiteDish = useCallback(
+    (bite: Bite, buttonId: string) => {
+      recordTasteInteraction({
+        type: "dish_result_click",
+        surface: "discover",
+        dish: getBiteDish(bite),
+        dishId: bite.dishId,
+        buttonId,
+      });
+      navigation.navigate("DishDetail", { dishId: bite.dishId });
+    },
+    [getBiteDish, navigation, recordTasteInteraction],
   );
 
   const prefetchBiteCollectionRoute = useCallback(
@@ -925,7 +969,7 @@ export function DiscoverHomeScreen() {
                   label={item.label}
                   trending={item.trending}
                   onPressIn={() => prefetchFoodStyle(item)}
-                  onPress={() => handleFoodStylePress(item.query)}
+                  onPress={() => handleFoodStylePress(item)}
                 />
               ))}
             </ScrollView>
@@ -1245,7 +1289,7 @@ export function DiscoverHomeScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`Quick bite: ${bite.dishName}`}
                   onPressIn={() => prefetchBiteCard(bite)}
-                  onPress={() => navigation.navigate("DishDetail", { dishId: bite.dishId })}
+                  onPress={() => openBiteDish(bite, "quick_bite_card")}
                   style={[
                     shadows.card,
                     {
@@ -1343,7 +1387,7 @@ export function DiscoverHomeScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${bite.dishName} at ${bite.venueName}`}
                   onPressIn={() => prefetchBiteCard(bite)}
-                  onPress={() => navigation.navigate("DishDetail", { dishId: bite.dishId })}
+                  onPress={() => openBiteDish(bite, "trending_bite_card")}
                   style={[
                     shadows.card,
                     {
@@ -1455,7 +1499,7 @@ export function DiscoverHomeScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`Editor's choice: ${bite.dishName}`}
                   onPressIn={() => prefetchBiteCard(bite)}
-                  onPress={() => navigation.navigate("DishDetail", { dishId: bite.dishId })}
+                  onPress={() => openBiteDish(bite, "editor_choice_bite_card")}
                   style={[
                     shadows.card,
                     {
@@ -1577,7 +1621,7 @@ export function DiscoverHomeScreen() {
                   accessibilityRole="button"
                   accessibilityLabel={`Budget meal: ${bite.dishName} at S$${bite.price.toFixed(2)}`}
                   onPressIn={() => prefetchBiteCard(bite)}
-                  onPress={() => navigation.navigate("DishDetail", { dishId: bite.dishId })}
+                  onPress={() => openBiteDish(bite, "budget_bite_card")}
                   style={[
                     shadows.card,
                     {
@@ -1678,7 +1722,7 @@ export function DiscoverHomeScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={`Late night option: ${bite.dishName}`}
                     onPressIn={() => prefetchBiteCard(bite)}
-                    onPress={() => navigation.navigate("DishDetail", { dishId: bite.dishId })}
+                    onPress={() => openBiteDish(bite, "late_night_bite_card")}
                     style={[
                       shadows.card,
                       {

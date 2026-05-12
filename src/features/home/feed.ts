@@ -1,4 +1,5 @@
-import { getDataRepository, getSimilarityScore } from "@/lib/services/serviceProvider";
+import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
+import { getDataRepository } from "@/lib/services/serviceProvider";
 import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import type { DishDetail, StallPost, UserProfile, VenueSummary } from "@/types/domain";
 
@@ -17,13 +18,30 @@ export interface HomeFeedBundle {
   socialFeed: HomeFeedItem[];
 }
 
+function rankHomeFeedItems(items: HomeFeedItem[], profile: UserProfile): HomeFeedItem[] {
+  const candidateDishes = items.map((item) => item.dishes[0]).filter(Boolean) as DishDetail[];
+  const ranked = runRecommendationPipeline(candidateDishes, {
+    userVector: profile.tasteVector,
+    dietaryFlags: profile.dietaryPreferences,
+    neophiliaIndex: profile.tasteProfile?.neophiliaIndex ?? 5,
+    radiusMeters: Number.MAX_SAFE_INTEGER,
+  });
+  const ranks = new Map(ranked.map((result, index) => [result.dishId, index]));
+
+  return [...items].sort((left, right) => {
+    const leftRank = ranks.get(left.dishes[0]?.id ?? "") ?? Number.MAX_SAFE_INTEGER;
+    const rightRank = ranks.get(right.dishes[0]?.id ?? "") ?? Number.MAX_SAFE_INTEGER;
+    return leftRank - rightRank;
+  });
+}
+
 async function buildHomeFeedItems(profile: UserProfile): Promise<HomeFeedItem[]> {
   const repository = getDataRepository();
   const postsById = new Map<string, StallPost>();
   for (const post of await listSharedStallPosts(repository)) {
     postsById.set(post.id, post);
   }
-  return [...postsById.values()]
+  const items = [...postsById.values()]
     .map((post) => {
       const venue = repository.getVenueById(post.venueId);
       const dishes = post.dishIds
@@ -38,18 +56,9 @@ async function buildHomeFeedItems(profile: UserProfile): Promise<HomeFeedItem[]>
         dishes,
       } satisfies HomeFeedItem;
     })
-    .filter((p): p is HomeFeedItem => !!p)
-    .sort((left, right) => {
-      const leftDish = left.dishes[0];
-      const rightDish = right.dishes[0];
-      const leftScore = leftDish
-        ? getSimilarityScore(leftDish.tasteVector, profile.tasteVector)
-        : 0;
-      const rightScore = rightDish
-        ? getSimilarityScore(rightDish.tasteVector, profile.tasteVector)
-        : 0;
-      return rightScore - leftScore;
-    });
+    .filter((p): p is HomeFeedItem => !!p);
+
+  return rankHomeFeedItems(items, profile);
 }
 
 const RELATIVE_TIME_UNITS: Record<string, number> = {

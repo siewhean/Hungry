@@ -1,4 +1,4 @@
-import { similarityScore } from "@/lib/ai/similarityScore";
+import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
 import type { DataRepository } from "@/lib/services/types";
 import type {
@@ -515,27 +515,30 @@ const supabaseRepositoryImpl: DataRepository = {
         dish.distanceMeters <= (filters.radius || Number.MAX_SAFE_INTEGER)
       );
     });
-    return matched.sort((a, b) => {
-      const scoreA = similarityScore(a.tasteVector, filters.tasteValues || tasteProfile);
-      const scoreB = similarityScore(b.tasteVector, filters.tasteValues || tasteProfile);
-      return scoreB - scoreA;
+    const ranked = runRecommendationPipeline(matched, {
+      userVector: filters.tasteValues || tasteProfile,
+      dietaryFlags: filters.dietaryFlags,
+      radiusMeters: filters.radius || Number.MAX_SAFE_INTEGER,
+      neophiliaIndex: 5,
     });
+
+    return ranked
+      .map((result) => matched.find((dish) => dish.id === result.dishId))
+      .filter((dish): dish is DishDetail => Boolean(dish));
   },
 
   getDecideForMe(tasteProfile, options) {
     ensureHydrated();
-    const excluded = new Set(options?.excludeDishIds ?? []);
-    const withinRadius = cachedDishes.filter(
-      (dish) =>
-        !excluded.has(dish.id) &&
-        dish.distanceMeters <= (options?.radiusMeters ?? Number.MAX_SAFE_INTEGER),
-    );
-    const ranked = [...withinRadius].sort(
-      (left, right) =>
-        similarityScore(right.tasteVector, tasteProfile) -
-        similarityScore(left.tasteVector, tasteProfile),
-    );
-    return ranked[0];
+    const ranked = runRecommendationPipeline(cachedDishes, {
+      userVector: tasteProfile,
+      dietaryFlags: options?.dietaryFlags ?? [],
+      neophiliaIndex: options?.neophiliaIndex ?? 5,
+      latitude: options?.latitude,
+      longitude: options?.longitude,
+      radiusMeters: options?.radiusMeters,
+      excludeDishIds: options?.excludeDishIds,
+    });
+    return ranked[0] ? cachedDishes.find((dish) => dish.id === ranked[0]?.dishId) : undefined;
   },
 
   listBlogPosts(): BlogPost[] {

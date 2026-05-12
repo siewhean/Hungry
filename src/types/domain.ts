@@ -182,6 +182,44 @@ export interface RecommendationSignalState {
   lastSignalAt?: string;
 }
 
+export type RecommendationSurface =
+  | "home"
+  | "discover"
+  | "search"
+  | "decide"
+  | "dish_detail"
+  | "review"
+  | "profile";
+
+export type TasteInteractionType =
+  | "quiz_completed"
+  | "search_query"
+  | "dish_result_click"
+  | "dish_like"
+  | "saved"
+  | "unsaved"
+  | "rating"
+  | "review"
+  | "dismissed"
+  | "food_button_click"
+  | "hawker_tag";
+
+export interface TasteInteractionEvent {
+  id: string;
+  type: TasteInteractionType;
+  surface: RecommendationSurface;
+  dishId?: string;
+  query?: string;
+  chipId?: string;
+  buttonId?: string;
+  rating?: number;
+  createdAt: string;
+  userVectorBefore: TasteVector;
+  userVectorAfter: TasteVector;
+  applied: boolean;
+  reason?: "missing_dish" | "missing_signal" | "capped";
+}
+
 export interface UserProfile {
   id: string;
   displayName: string;

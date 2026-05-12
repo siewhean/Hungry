@@ -36,14 +36,6 @@ function resolveBuildingIds(buildingId: string) {
   return new Set([buildingId, ...(BUILDING_ID_ALIASES[buildingId] ?? [])]);
 }
 
-function distanceScore(distanceMeters: number) {
-  return Math.max(0, 1 - distanceMeters / 800);
-}
-
-function ratingScore(rating: number) {
-  return rating / 5;
-}
-
 export const dataRepositoryMock = {
   getProfile(isAuthenticated: boolean): UserProfile {
     return isAuthenticated ? userProfile : guestProfile;
@@ -85,18 +77,16 @@ export const dataRepositoryMock = {
       );
     });
 
-    return results.sort((a, b) => {
-      const scoreA =
-        distanceScore(a.distanceMeters) +
-        ratingScore(a.rating) +
-        similarityScore(a.tasteVector, filters.tasteValues || tasteProfile);
-      const scoreB =
-        distanceScore(b.distanceMeters) +
-        ratingScore(b.rating) +
-        similarityScore(b.tasteVector, filters.tasteValues || tasteProfile);
-
-      return scoreB - scoreA;
+    const ranked = runRecommendationPipeline(results, {
+      userVector: filters.tasteValues || tasteProfile,
+      dietaryFlags: filters.dietaryFlags,
+      radiusMeters: filters.radius,
+      neophiliaIndex: 5,
     });
+
+    return ranked
+      .map((result) => results.find((dish) => dish.id === result.dishId))
+      .filter((dish): dish is DishDetail => Boolean(dish));
   },
   getDecideForMe(tasteProfile: TasteVector, options: DecideForMeOptions = {}) {
     const dietaryFlags: DietaryFlag[] = options.dietaryFlags ?? [];

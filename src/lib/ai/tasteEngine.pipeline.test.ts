@@ -36,7 +36,7 @@ function buildDish(id: string, venueId: string, tasteVector: TasteVector): DishS
 }
 
 function dominantTasteDimension(vector: TasteVector): keyof TasteVector {
-  const keys: Array<keyof TasteVector> = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"];
+  const keys: (keyof TasteVector)[] = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"];
 
   let dominant = keys[0];
   for (const key of keys) {
@@ -88,6 +88,42 @@ test("processExplicitFeedback decays older feedback impact", () => {
 
   assert.ok(freshDelta > staleDelta, "Fresh signals should weigh more than stale ones");
   assert.ok(staleDelta > 0, "Stale signals should still contribute a small positive update");
+});
+
+test("explicit search and click feedback use bounded relative weights", () => {
+  const aromaticDishVector: TasteVector = {
+    ...BASE_VECTOR,
+    aromatic: 10,
+  };
+
+  const searched = processExplicitFeedback(BASE_VECTOR, {
+    type: "search_query",
+    dishVector: aromaticDishVector,
+    timestamp: Date.now(),
+  });
+  const clicked = processExplicitFeedback(BASE_VECTOR, {
+    type: "dish_result_click",
+    dishVector: aromaticDishVector,
+    timestamp: Date.now(),
+  });
+  const liked = processExplicitFeedback(BASE_VECTOR, {
+    type: "dish_like",
+    dishVector: aromaticDishVector,
+    timestamp: Date.now(),
+  });
+
+  assert.ok(
+    searched.aromatic > BASE_VECTOR.aromatic,
+    "Search should lightly move toward matching dishes",
+  );
+  assert.ok(
+    clicked.aromatic - BASE_VECTOR.aromatic > searched.aromatic - BASE_VECTOR.aromatic,
+    "Clicked dish results should outweigh search-only intent",
+  );
+  assert.ok(
+    liked.aromatic - BASE_VECTOR.aromatic > clicked.aromatic - BASE_VECTOR.aromatic,
+    "Likes should outweigh result clicks",
+  );
 });
 
 test("runRecommendationPipeline enforces venue and dominant-axis diversity caps", () => {

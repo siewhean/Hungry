@@ -23,11 +23,13 @@ import type {
   MerchantRole,
   OCRDishDraft,
   PromotionStatus,
+  RecommendationSurface,
   SearchFilters,
   StallPost,
   Story,
   StoryContent,
   TasteProfile,
+  TasteInteractionEvent,
   TasteVector,
   UserProfile,
   VerificationEvidence,
@@ -238,11 +240,57 @@ export interface RankedRecommendation {
   isSerendipitous: boolean;
 }
 
+export interface RecommendationSlateRequest {
+  surface: RecommendationSurface;
+  tasteProfile: TasteVector;
+  dietaryFlags?: DietaryFlag[];
+  latitude?: number;
+  longitude?: number;
+  radiusMeters?: number;
+  excludeDishIds?: string[];
+  query?: string;
+  limit?: number;
+  neophiliaIndex?: number;
+}
+
+export interface RecommendationSlate {
+  surface: RecommendationSurface;
+  generatedAt: string;
+  items: RankedRecommendation[];
+}
+
 export interface ExplicitFeedbackInput {
-  dishId: string;
-  feedbackType: "rating" | "save" | "unsave" | "hawker_tag";
+  dishId?: string;
+  feedbackType:
+    | "rating"
+    | "review"
+    | "save"
+    | "unsave"
+    | "search_query"
+    | "dish_result_click"
+    | "dish_like"
+    | "food_button_click"
+    | "dismissed"
+    | "hawker_tag";
+  surface?: RecommendationSurface;
+  query?: string;
+  chipId?: string;
+  buttonId?: string;
   rating?: number;
   hawkerTags?: HawkerTasteTag[];
+  createdAt?: string;
+  applied?: boolean;
+  reason?: "missing_dish" | "missing_signal" | "capped";
+  userVectorBefore?: TasteVector;
+  userVectorAfter?: TasteVector;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RecordRecommendationFeedbackResult {
+  tasteVector: TasteVector;
+  event?: TasteInteractionEvent;
+  applied: boolean;
+  reason?: "missing_dish" | "missing_signal" | "capped";
 }
 
 export interface ImplicitSignalInput {
@@ -517,6 +565,13 @@ export interface HungryService {
     listArticles(): Promise<BlogPost[]>;
     listStallPosts(): Promise<StallPost[]>;
     getArticle(id: string): Promise<BlogPost | undefined>;
+  };
+
+  recommendations: {
+    getSlate(request: RecommendationSlateRequest): Promise<RecommendationSlate>;
+    recordExplicitFeedback(
+      feedback: ExplicitFeedbackInput,
+    ): Promise<RecordRecommendationFeedbackResult>;
   };
 
   // AI

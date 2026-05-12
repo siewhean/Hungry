@@ -180,7 +180,7 @@ test("Sprint 9 screen contract: Home feed double tap likes with heart animation"
   assert.doesNotMatch(source, /const targetDishId = item\.dishes\[0\]\?\.id \?\? item\.venueId/);
   assert.doesNotMatch(source, /navigateToDish\(targetDishId\)/);
   assert.match(source, /if \(!interactions\[item\.id\]\?\.liked\)/);
-  assert.match(source, /void togglePostLike\(item\.id\)/);
+  assert.match(source, /handlePostLike\(item\)/);
   assert.match(source, /runDoubleTapHeartAnimation/);
   assert.match(source, /duration: 980/);
   assert.match(
@@ -234,6 +234,34 @@ test("Sprint 9 screen contract: Home feed header follows app header scale", () =
     source,
     /variant="displayBold" style=\{\{ color: palette\.orange, fontSize: 32 \}\}/,
   );
+});
+
+test("Taste recommendation contract: core surfaces use shared ranking and explicit signals", () => {
+  const homeFeedSource = read("src/features/home/feed.ts");
+  const searchSource = read("src/features/search/search.ts");
+  const mockRepositorySource = read("src/lib/services/mock/repositories.ts");
+  const supabaseRepositorySource = read("src/lib/services/supabase/supabaseRepository.ts");
+  const homeScreenSource = read("src/app/screens/home/HomeFeedScreen.tsx");
+  const discoverSource = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const searchScreenSource = read("src/app/screens/search/SearchResultsScreen.tsx");
+  const decideSource = read("src/app/screens/discover/DecideForMeResultScreen.tsx");
+  const profileStoreSource = read("src/store/useProfileStore.ts");
+
+  assert.match(homeFeedSource, /runRecommendationPipeline/);
+  assert.match(mockRepositorySource, /runRecommendationPipeline\(results/);
+  assert.match(supabaseRepositorySource, /runRecommendationPipeline\(matched/);
+  assert.match(searchSource, /return cloned;/);
+  assert.match(homeScreenSource, /recordTasteInteraction/);
+  assert.match(homeScreenSource, /type: "dish_like"/);
+  assert.match(profileStoreSource, /recommendations\.recordExplicitFeedback/);
+  assert.match(discoverSource, /type: "search_query"/);
+  assert.match(discoverSource, /type: "dish_result_click"/);
+  assert.match(searchScreenSource, /type: "search_query"/);
+  assert.match(searchScreenSource, /type: "dish_result_click"/);
+  assert.match(searchScreenSource, /onSubmitQuery=\{recordCommittedSearchQuery\}/);
+  assert.match(decideSource, /type: "dismissed"/);
+  assert.match(decideSource, /type: "food_button_click"/);
+  assert.doesNotMatch(decideSource, /dish: nextDish,[\s\S]*buttonId: "try_another_pick"/);
 });
 
 test("Sprint 9 screen contract: routed dish detail uses gallery-backed share flow", () => {
