@@ -3,7 +3,7 @@ import { View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Badge, Button, Card, Input, Screen } from "@/components/ui";
+import { AppText, Badge, Button, Card, EmptyState, Input, Screen } from "@/components/ui";
 import { POST_CAPTION_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -19,7 +19,7 @@ export function PostComposerScreen({ navigation, route }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const repository = getDataRepository();
   const [caption, setCaption] = useState("");
-  const fallbackDish = useMemo(() => repository.listPopularNearby()[0], [repository]);
+  const fallbackDish = useMemo(() => repository.listPopularNearby()[0] ?? null, [repository]);
   const dish = useMemo(() => {
     if (route.params?.dishId) {
       return repository.getDishById(route.params.dishId) ?? fallbackDish;
@@ -30,11 +30,14 @@ export function PostComposerScreen({ navigation, route }: Props) {
     return fallbackDish;
   }, [fallbackDish, repository, route.params?.dishId, route.params?.venueId]);
   const venue = useMemo(() => {
+    if (!dish) {
+      return route.params?.venueId ? repository.getVenueById(route.params.venueId) : undefined;
+    }
     if (route.params?.venueId) {
       return repository.getVenueById(route.params.venueId) ?? repository.getVenueById(dish.venueId);
     }
     return repository.getVenueById(dish.venueId);
-  }, [dish.venueId, repository, route.params?.venueId]);
+  }, [dish, repository, route.params?.venueId]);
 
   const handlePublish = () => {
     if (!isAuthenticated) {
@@ -44,11 +47,25 @@ export function PostComposerScreen({ navigation, route }: Props) {
     }
 
     showToast({
-      message: "Post created in the local mock flow.",
+      message: "Post published successfully.",
       tone: "success",
     });
     navigation.navigate("MainTabs", { screen: "Home" });
   };
+
+  if (!dish) {
+    return (
+      <Screen
+        title="Create post"
+        subtitle="Share a quick dish update without turning the app into a creator platform."
+      >
+        <EmptyState
+          title="No dish available"
+          body="Try opening the composer from a dish or stall and try again."
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen

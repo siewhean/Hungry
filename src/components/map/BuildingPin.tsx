@@ -19,7 +19,9 @@ export function BuildingPin({ name, type, selected = false, onPress }: BuildingP
       ? palette.orange
       : type === "food_court"
         ? palette.teal
-        : palette.textMuted;
+        : type === "restaurant"
+          ? palette.navy
+          : palette.textMuted;
 
   return (
     <Pressable

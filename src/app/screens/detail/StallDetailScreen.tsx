@@ -1,9 +1,19 @@
-import { Pressable, ScrollView, Share, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Heart, MapPin, Share2, Star, ChevronLeft } from "lucide-react-native";
+import {
+  ChevronLeft,
+  CircleHelp,
+  Heart,
+  MapPin,
+  MessageCircle,
+  MessageCircleMore,
+  Send,
+  Star,
+} from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated from "react-native-reanimated";
 
@@ -12,22 +22,37 @@ import {
   AppText,
   EmptyState,
   FeedErrorBoundary,
-  FAB,
   Button,
   Card,
+  IconButton,
   Input,
   Skeleton,
+  StickyBottomBar,
 } from "@/components/ui";
 import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
+import {
+  hasPendingClaimForProfile,
+  submitClaimFromStall,
+} from "@/features/merchantClaim/submitClaimFromStall";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
-import { trackAnalyticsEvent } from "@/lib/analytics";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
+import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
+import { useCartStore } from "@/store/useCartStore";
+import { useOrderStore } from "@/store/useOrderStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSocialStore } from "@/store/useSocialStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 function StallDetailSkeleton() {
   const { spacing, radii, palette } = useHungryTheme();
@@ -84,15 +109,45 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const showToast = useUIStore((state) => state.showToast);
+  const addItemToCart = useCartStore((state) => state.addItem);
+  const setActiveOrder = useOrderStore((state) => state.setActiveOrder);
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const shareSheetRef = useRef<BottomSheetModal>(null);
+  const incrementShare = useSocialStore((state) => state.incrementShare);
   const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(null);
   const [replyDraftByReviewId, setReplyDraftByReviewId] = useState<Record<string, string>>({});
   const [localRepliesByReviewId, setLocalRepliesByReviewId] = useState<
     Record<string, ReviewReply[]>
   >({});
   const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
+  const [isClaimPending, setIsClaimPending] = useState(() => hasPendingClaimForProfile(profile.id));
+  const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+
+  const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
+    return {
+      reviewId: `stall-${venue?.id ?? ""}`,
+      postId: venue?.id ?? "",
+      title: venue?.name ?? "Stall",
+      subtitle: `${building?.name ?? "Hungry"} · ${venue?.unitNumber ?? ""}`.trim(),
+      imageUrl: leadDish?.imageUrl ?? "",
+      authorName: profile.displayName,
+      message: `Check out ${venue?.name ?? "this stall"} at ${building?.name ?? "Hungry"}!`,
+      link: `https://hungry.sg/stall/${venue?.id ?? ""}`,
+    };
+  }, [
+    building?.name,
+    leadDish?.imageUrl,
+    profile.displayName,
+    venue?.id,
+    venue?.name,
+    venue?.unitNumber,
+  ]);
+
+  useEffect(() => {
+    setIsClaimPending(hasPendingClaimForProfile(profile.id));
+  }, [profile.id]);
 
   if (isLoading) {
     return <StallDetailSkeleton />;
@@ -149,58 +204,84 @@ export function StallDetailScreen({ navigation, route }: Props) {
     }));
   };
 
-  const handleShare = async () => {
-    try {
-      await Share.share({
-        message: `Check out ${venue.name} at ${building?.name ?? "Hungry"}!`,
-        url: `https://hungry.sg/stall/${venue.id}`,
-      });
-    } catch (error) {
-      console.error("Sharing failed", error);
+  const openShareSheet = () => {
+    if (!venue) {
+      return;
     }
+
+    setActiveShareReview(shareReviewTarget);
+    requestAnimationFrame(() => {
+      shareSheetRef.current?.present();
+    });
+  };
+
+  const handleOrderDelivery = () => {
+    const deliveryLink = venue.deliveryLinks[0];
+    if (deliveryLink) {
+      void openTrustedDeliveryUrl(
+        deliveryLink.platform,
+        deliveryLink.nativeUrl,
+        deliveryLink.webUrl,
+      );
+      return;
+    }
+
+    if (!leadDish) {
+      showToast({ message: "No menu item is available to add yet.", tone: "info" });
+      return;
+    }
+
+    addItemToCart({ dishId: leadDish.id });
+    setActiveOrder({
+      id: `order-${Date.now()}`,
+      venueId: venue.id,
+      totalAmount: leadDish.price,
+      status: "draft",
+      createdAt: new Date().toISOString(),
+    });
+    showToast({ message: `${leadDish.name} added to cart.`, tone: "success" });
   };
 
   const handleClaimThisStall = async () => {
     if (isSubmittingClaim) return;
 
-    trackAnalyticsEvent("claim_this_stall_tapped", {
-      venue_id: venue.id,
-      building_id: venue.buildingId,
-      source: "stall_detail",
-    });
-
-    if (!isAuthenticated) {
-      showToast({
-        message: "Please sign in before claiming this stall.",
-        tone: "warning",
-      });
-      return;
-    }
-
     setIsSubmittingClaim(true);
     try {
-      const result = await getHungryService().supply.submitMerchantClaimInterest({
+      const result = await submitClaimFromStall({
+        profileId: profile.id,
         venueId: venue.id,
-        contactName: profile.displayName,
-        contactEmail: profile.email || undefined,
+        buildingId: venue.buildingId,
+        displayName: profile.displayName,
+        email: profile.email || undefined,
+        isAuthenticated,
+        service: getHungryService(),
+        localSingleClaimGuardEnabled: getServiceProvider().mode !== "supabase",
+        devFallbackEnabled: getServiceProvider().mode !== "supabase",
       });
 
-      if (result.status === "created") {
+      if (result.status === "needs_auth") {
+        showToast({
+          message: "Please sign in before claiming this stall.",
+          tone: "warning",
+        });
+      } else if (result.status === "created") {
+        setIsClaimPending(true);
         showToast({
           message: "Claim interest submitted. We will follow up with verification details.",
           tone: "success",
         });
-      } else {
+      } else if (result.status === "already_exists") {
+        setIsClaimPending(true);
         showToast({
-          message: "You have already submitted a claim for this stall.",
+          message: "You have already submitted a claim for a stall.",
           tone: "info",
         });
+      } else {
+        showToast({
+          message: "Unable to submit claim right now. Please try again.",
+          tone: "error",
+        });
       }
-    } catch {
-      showToast({
-        message: "Unable to submit claim right now. Please try again.",
-        tone: "error",
-      });
     } finally {
       setIsSubmittingClaim(false);
     }
@@ -230,50 +311,56 @@ export function StallDetailScreen({ navigation, route }: Props) {
               colors={[palette.overlay, "transparent"]}
               style={[StyleSheet.absoluteFill, { height: 100 }]}
             />
-            <Pressable
+            <IconButton
+              variant="floating"
+              accessibilityLabel="Go back"
               onPress={() => navigation.goBack()}
-              style={[
-                {
-                  width: 44,
-                  height: 44,
-                  borderRadius: radii.pill,
-                  backgroundColor: palette.surface,
-                  alignItems: "center",
-                  justifyContent: "center",
-                },
-                shadows.floating,
-              ]}
-            >
-              <ChevronLeft color={palette.text} size={24} />
-            </Pressable>
+              icon={<ChevronLeft color={palette.text} size={24} />}
+            />
             <View style={{ flex: 1 }} />
-            <Pressable
-              onPress={handleShare}
-              style={[
-                {
-                  width: 44,
-                  height: 44,
-                  borderRadius: radii.pill,
-                  backgroundColor: palette.surface,
-                  alignItems: "center",
-                  justifyContent: "center",
-                },
-                shadows.floating,
-              ]}
-            >
-              <Share2 color={palette.text} size={20} />
-            </Pressable>
+            <View style={{ flexDirection: "row", gap: spacing[2] }}>
+              <IconButton
+                variant="floating"
+                accessibilityLabel={
+                  profile.favouriteDishIds.includes(leadDish?.id ?? "")
+                    ? "Remove from favourites"
+                    : "Save to favourites"
+                }
+                onPress={() => {
+                  if (leadDish) {
+                    toggleFavourite(leadDish);
+                  }
+                }}
+                icon={
+                  <Heart
+                    color={palette.text}
+                    fill={
+                      profile.favouriteDishIds.includes(leadDish?.id ?? "")
+                        ? palette.text
+                        : "transparent"
+                    }
+                    size={20}
+                  />
+                }
+              />
+              <IconButton
+                variant="floating"
+                accessibilityLabel="Share stall"
+                onPress={openShareSheet}
+                icon={<Send color={palette.text} size={20} />}
+              />
+            </View>
           </View>
 
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: insets.bottom + spacing[20] }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + spacing[24] }}
           >
-            {/* Hero image - 4:3 Ratio */}
+            {/* Hero image - 16:9 Ratio */}
             <View
               style={{
                 width: screenWidth,
-                height: screenWidth * 0.75,
+                height: screenWidth * (9 / 16),
                 position: "relative",
               }}
             >
@@ -294,13 +381,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   height: 80,
                 }}
               />
-              {/* Rating Pill - Floating */}
+              {/* Rating Pill + Hygiene Shield - Floating */}
               <View
                 style={{
                   position: "absolute",
                   bottom: -spacing[2],
                   left: profile.leftHandedMode ? spacing[4] : undefined,
                   right: profile.leftHandedMode ? undefined : spacing[4],
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing[2],
                 }}
               >
                 <View
@@ -382,24 +472,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   </AppText>
                 </Card>
               </View>
-
-              {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
-                <Card style={{ padding: spacing[4], gap: spacing[3] }}>
-                  <View style={{ gap: spacing[1] }}>
-                    <AppText variant="h3">Own this stall?</AppText>
-                    <AppText variant="bodySmall" tone="secondary">
-                      Tap once to register your claim interest with our team.
-                    </AppText>
-                  </View>
-                  <Button
-                    label={isSubmittingClaim ? "Submitting..." : "Claim this stall"}
-                    onPress={() => {
-                      void handleClaimThisStall();
-                    }}
-                    disabled={isSubmittingClaim}
-                  />
-                </Card>
-              ) : null}
 
               {/* Dishes Grid */}
               <View style={{ gap: spacing[4] }}>
@@ -592,43 +664,79 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     </View>
                   ))
                 ) : (
-                  <AppText tone="secondary">No community reviews yet.</AppText>
+                  <EmptyState
+                    title="No community reviews yet"
+                    body="Write your first review for this stall."
+                    icon={<CommentIcon size={36} color={palette.textMuted} />}
+                  />
                 )}
               </View>
+
+              {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
+                <Card style={{ padding: spacing[4], gap: spacing[4] }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <AppText variant="h3">Own this stall?</AppText>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="View verification process"
+                      onPress={() => navigation.navigate("MerchantClaimExplainer")}
+                    >
+                      <CircleHelp color={palette.orange} size={18} />
+                    </Pressable>
+                  </View>
+                  <Button
+                    label={
+                      isSubmittingClaim
+                        ? "Submitting..."
+                        : isClaimPending
+                          ? "Claim Pending"
+                          : "Claim this stall"
+                    }
+                    onPress={() => {
+                      void handleClaimThisStall();
+                    }}
+                    disabled={isSubmittingClaim || isClaimPending}
+                  />
+                </Card>
+              ) : null}
             </View>
           </ScrollView>
 
-          {/* Floating Save Button */}
-          <FAB>
-            <Pressable
-              onPress={() => {
-                if (leadDish) {
-                  toggleFavourite(leadDish);
-                }
-              }}
-              style={({ pressed }) => [
-                {
-                  width: 56,
-                  height: 56,
-                  borderRadius: radii.pill,
-                  backgroundColor: palette.orange,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  opacity: pressed ? 0.9 : 1,
-                  ...shadows.floating,
+          <StickyBottomBar
+            actions={[
+              {
+                label: venue.deliveryLinks.length > 0 ? "Order delivery" : "Add to cart",
+                variant: "secondary",
+                onPress: handleOrderDelivery,
+              },
+              {
+                label: "Directions",
+                variant: "primary",
+                icon: <MapPin color={palette.textOnPrimary} size={18} />,
+                onPress: () => {
+                  navigation.navigate("MapZoomedIn", { buildingId: venue.buildingId });
                 },
-              ]}
-            >
-              <Heart
-                color={palette.textOnPrimary}
-                fill={
-                  profile.favouriteDishIds.includes(leadDish?.id ?? "")
-                    ? palette.textOnPrimary
-                    : "transparent"
-                }
-              />
-            </Pressable>
-          </FAB>
+              },
+            ]}
+          />
+
+          <ReviewShareSheet
+            activeReview={activeShareReview}
+            innerRef={shareSheetRef}
+            bottomInset={insets.bottom}
+            onDismiss={() => {
+              setActiveShareReview(null);
+            }}
+            onShared={(reviewId) => {
+              incrementShare(reviewId);
+            }}
+          />
         </View>
       </SafeAreaView>
     </FeedErrorBoundary>

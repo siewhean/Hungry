@@ -23,7 +23,9 @@ import { findBuildingById } from "@/features/discovery/discovery";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import type { DataRepository } from "@/lib/services/types";
+import { useCartStore } from "@/store/useCartStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
+import { useOrderStore } from "@/store/useOrderStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -168,9 +170,12 @@ export function DecideForMeResultScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
+  const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const selectedDish = useDiscoveryStore((state) => state.decideForMe);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const showToast = useUIStore((state) => state.showToast);
+  const addItemToCart = useCartStore((state) => state.addItem);
+  const setActiveOrder = useOrderStore((state) => state.setActiveOrder);
   const [searchRadius, setSearchRadius] = useState(500);
   const [resultIndex, setResultIndex] = useState(0);
 
@@ -241,6 +246,14 @@ export function DecideForMeResultScreen() {
   };
 
   const handleTryAnother = () => {
+    if (dish) {
+      recordTasteInteraction({
+        type: "dismissed",
+        surface: "decide",
+        dish,
+        buttonId: "try_another_pick",
+      });
+    }
     const nextDish = getNextDistinctDish(candidates, dish?.id, resultIndex);
     if (!nextDish || nextDish.id === dish?.id) {
       const upcomingRadius = nextRadius(searchRadius);
@@ -264,10 +277,35 @@ export function DecideForMeResultScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   };
 
+  const handleAddToCart = () => {
+    if (!dish) {
+      return;
+    }
+
+    addItemToCart({ dishId: dish.id });
+    recordTasteInteraction({
+      type: "food_button_click",
+      surface: "decide",
+      dish,
+      buttonId: "add_to_cart",
+    });
+    setActiveOrder({
+      id: `order-${Date.now()}`,
+      venueId: dish.venueId,
+      totalAmount: dish.price,
+      status: "draft",
+      createdAt: new Date().toISOString(),
+    });
+    showToast({
+      message: `${dish.name} added to cart.`,
+      tone: "success",
+    });
+  };
+
   if (!dish) {
     const upcomingRadius = nextRadius(searchRadius);
     return (
-      <Screen title="Recommended for you" subtitle="A single dish picked for your taste profile.">
+      <Screen title="Recommended for you" subtitle="No matching dish for current filters yet.">
         <EmptyState
           title="No match found"
           body={`No dish fits your current filters within ${(searchRadius / 1000).toFixed(1)} km.`}
@@ -406,7 +444,15 @@ export function DecideForMeResultScreen() {
             <Button
               label="View Stall Details"
               variant="secondary"
-              onPress={() => navigation.navigate("StallDetail", { venueId: dish.venueId })}
+              onPress={() => {
+                recordTasteInteraction({
+                  type: "food_button_click",
+                  surface: "decide",
+                  dish,
+                  buttonId: "view_stall_details",
+                });
+                navigation.navigate("StallDetail", { venueId: dish.venueId });
+              }}
             />
             <Button
               label="Try Another Pick"
@@ -420,7 +466,7 @@ export function DecideForMeResultScreen() {
 
       {/* Action Dock */}
       <View style={[styles.actionDock, { paddingBottom: Math.max(insets.bottom, spacing[4]) }]}>
-        <Button label="Order Now" style={{ flex: 1 }} onPress={() => {}} />
+        <Button label="Add to cart" style={{ flex: 1 }} onPress={handleAddToCart} />
       </View>
     </View>
   );

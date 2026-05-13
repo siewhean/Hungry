@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { View, Pressable, StyleSheet } from "react-native";
+import { InteractionManager, View, Pressable, StyleSheet } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import { House, Compass, BookOpenText, NotebookPen, User } from "lucide-react-native";
+import type { MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
+import type { NavigationProp } from "@react-navigation/native";
+import { House, Compass, BookOpenText, Plus, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
-import { DiscoverHomeScreen } from "@/app/screens/discover/DiscoverHomeScreen";
-import { ReviewScreen } from "@/app/screens/review/ReviewScreen";
-import { ProfileStack } from "@/app/screens/profile/ProfileStack";
+import { AppText } from "@/components/ui";
+import { preloadRoute } from "@/features/navigation/prefetch";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
-import type { MainTabParamList } from "./navigationTypes";
+import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 
 const Tab = createMaterialTopTabNavigator<MainTabParamList>();
 
@@ -19,18 +20,35 @@ function HomeWrapper() {
 }
 
 function ReviewWrapper() {
-  return <HomeFeedScreen mode="review" />;
+  const { ReviewFeedScreen } =
+    require("@/app/screens/review/ReviewFeedScreen") as typeof import("@/app/screens/review/ReviewFeedScreen");
+  return <ReviewFeedScreen />;
 }
 
-function RateWrapper(props: any) {
-  return <ReviewScreen {...props} />;
+function DiscoverWrapper() {
+  const { DiscoverHomeScreen } =
+    require("@/app/screens/discover/DiscoverHomeScreen") as typeof import("@/app/screens/discover/DiscoverHomeScreen");
+  return <DiscoverHomeScreen />;
 }
 
-function CustomTabBar({ state, descriptors, navigation }: any) {
-  const { palette, spacing } = useHungryTheme();
+function ProfileWrapper() {
+  const { ProfileStack } =
+    require("@/app/screens/profile/ProfileStack") as typeof import("@/app/screens/profile/ProfileStack");
+  return <ProfileStack />;
+}
+
+function TabLazyPlaceholder() {
+  const { palette } = useHungryTheme();
+  return <View style={{ flex: 1, backgroundColor: palette.bg }} />;
+}
+
+function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
+  const { componentSizes, palette, radii, spacing } = useHungryTheme();
+  const styles = createStyles(componentSizes, spacing);
   const insets = useSafeAreaInsets();
   const [highlightVisible, setHighlightVisible] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>();
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -49,6 +67,14 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const routeByName = new Map(state.routes.map((route: any) => [route.name, route]));
+  const tabItems = [
+    { key: "Home", route: routeByName.get("Home"), icon: House, label: "Home" },
+    { key: "Discover", route: routeByName.get("Discover"), icon: Compass, label: "Discover" },
+    { key: "Create", isCreateAction: true, icon: Plus, label: "Create post" },
+    { key: "Review", route: routeByName.get("Review"), icon: BookOpenText, label: "Review" },
+    { key: "Profile", route: routeByName.get("Profile"), icon: User, label: "Profile" },
+  ].filter((item) => item.isCreateAction || item.route);
 
   return (
     <View
@@ -56,16 +82,31 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
         styles.tabBarContainer,
         {
           backgroundColor: palette.bg,
-          height: 70 + Math.max(insets.bottom, spacing[2]),
+          height: componentSizes.bottomTabBar + Math.max(insets.bottom, spacing[2]),
           paddingBottom: Math.max(insets.bottom, spacing[2]),
-          paddingTop: spacing[4], // Increased top padding
+          paddingTop: spacing[2],
         },
       ]}
     >
-      {state.routes.map((route: any, index: number) => {
-        const isFocused = state.index === index;
+      {tabItems.map((item: any) => {
+        const route = item.route;
+        const isCreateAction = item.isCreateAction === true;
+        const routeIndex = route ? state.routes.indexOf(route) : -1;
+        const isFocused = !isCreateAction && state.index === routeIndex;
 
         const onPress = () => {
+          if (isCreateAction) {
+            if (!isAuthenticated) {
+              setReturnRoute({ name: "PostComposerV2" });
+              rootNavigation?.navigate("AuthStack", { screen: "Login" });
+              return;
+            }
+
+            rootNavigation?.navigate("PostComposerV2");
+            resetTimer();
+            return;
+          }
+
           const event = navigation.emit({
             type: "tabPress",
             target: route.key,
@@ -74,9 +115,9 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
           if (!isFocused && !event.defaultPrevented) {
             // Special handling for protected routes
-            if ((route.name === "Rate" || route.name === "Profile") && !isAuthenticated) {
+            if (route.name === "Profile" && !isAuthenticated) {
               setReturnRoute(route.name);
-              navigation.navigate("AuthStack", { screen: "Login" });
+              rootNavigation?.navigate("AuthStack", { screen: "Login" });
               return;
             }
             navigation.navigate(route.name);
@@ -84,16 +125,17 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
           resetTimer();
         };
 
-        const Icon =
-          route.name === "Home"
-            ? House
-            : route.name === "Discover"
-              ? Compass
-              : route.name === "Review"
-                ? BookOpenText
-                : route.name === "Rate"
-                  ? NotebookPen
-                  : User;
+        const onPressIn = () => {
+          if (isCreateAction) {
+            preloadRoute(rootNavigation, "PostComposerV2");
+            return;
+          }
+          if (route?.name) {
+            preloadRoute(navigation, route.name);
+          }
+        };
+
+        const Icon = item.icon;
 
         const activeColor = palette.orange;
         const inactiveColor = palette.textMuted;
@@ -101,13 +143,46 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 
         return (
           <Pressable
-            key={route.key}
+            key={isCreateAction ? "create-post-action" : route.key}
             onPress={onPress}
+            onPressIn={onPressIn}
             style={styles.tabItem}
             accessibilityRole="button"
             accessibilityState={isFocused ? { selected: true } : {}}
+            accessibilityLabel={item.label}
           >
-            <Icon color={currentColor} size={30} />
+            <View
+              style={
+                isCreateAction
+                  ? [
+                      styles.createButton,
+                      {
+                        backgroundColor: palette.orange,
+                        borderRadius: radii.pill,
+                      },
+                    ]
+                  : styles.iconSlot
+              }
+            >
+              <Icon
+                color={isCreateAction ? palette.white : currentColor}
+                size={componentSizes.bottomTabIcon}
+              />
+            </View>
+            {isCreateAction ? null : (
+              <AppText
+                variant="micro"
+                numberOfLines={1}
+                style={{
+                  color: currentColor,
+                  fontSize: componentSizes.bottomTabLabelFontSize,
+                  fontWeight: isFocused ? "800" : "700",
+                  lineHeight: componentSizes.bottomTabLabelLineHeight,
+                }}
+              >
+                {item.label}
+              </AppText>
+            )}
           </Pressable>
         );
       })}
@@ -116,34 +191,66 @@ function CustomTabBar({ state, descriptors, navigation }: any) {
 }
 
 export function SwipeableTabNavigator() {
+  const [tabPreloadEnabled, setTabPreloadEnabled] = useState(false);
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setTabPreloadEnabled(true);
+    });
+
+    return () => {
+      task.cancel();
+    };
+  }, []);
+
   return (
     <Tab.Navigator
+      id="Tabs"
       tabBarPosition="bottom"
-      tabBar={(props) => <CustomTabBar {...props} />}
+      tabBar={(props: MaterialTopTabBarProps) => <CustomTabBar {...props} />}
       screenOptions={{
         swipeEnabled: true,
         animationEnabled: false,
+        lazy: true,
+        lazyPlaceholder: TabLazyPlaceholder,
+        lazyPreloadDistance: tabPreloadEnabled ? 1 : 0,
       }}
     >
       <Tab.Screen name="Home" component={HomeWrapper} />
-      <Tab.Screen name="Discover" component={DiscoverHomeScreen} />
+      <Tab.Screen name="Discover" component={DiscoverWrapper} />
       <Tab.Screen name="Review" component={ReviewWrapper} />
-      <Tab.Screen name="Rate" component={RateWrapper} />
-      <Tab.Screen name="Profile" component={ProfileStack} />
+      <Tab.Screen name="Profile" component={ProfileWrapper} />
     </Tab.Navigator>
   );
 }
 
-const styles = StyleSheet.create({
-  tabBarContainer: {
-    flexDirection: "row",
-    borderTopWidth: 0,
-    elevation: 0,
-    shadowOpacity: 0,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
+const createStyles = (
+  componentSizes: ReturnType<typeof useHungryTheme>["componentSizes"],
+  spacing: ReturnType<typeof useHungryTheme>["spacing"],
+) =>
+  StyleSheet.create({
+    tabBarContainer: {
+      flexDirection: "row",
+      borderTopWidth: 0,
+      elevation: 0,
+      shadowOpacity: 0,
+    },
+    tabItem: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing[0.5],
+    },
+    iconSlot: {
+      alignItems: "center",
+      height: componentSizes.bottomTabIconSlotHeight,
+      justifyContent: "center",
+      width: componentSizes.bottomTabIconSlotWidth,
+    },
+    createButton: {
+      alignItems: "center",
+      height: componentSizes.bottomTabCreateButton,
+      justifyContent: "center",
+      width: componentSizes.bottomTabCreateButton,
+    },
+  });

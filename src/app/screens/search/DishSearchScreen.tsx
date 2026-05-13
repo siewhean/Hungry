@@ -6,7 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Button, Chip, Input, Screen } from "@/components/ui";
+import { AppText, Button, Chip, IconButton, Input, Screen } from "@/components/ui";
 import { getDiscoverStallCollections, useSearchData } from "@/features/search/search";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -42,13 +42,13 @@ export function DishSearchScreen() {
         toValue: 0,
         duration: motion.screenTransition,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
       Animated.timing(entryOpacity, {
         toValue: 1,
         duration: motion.screenTransition,
         easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     ]).start();
   }, [entryOpacity, entryY, motion.screenTransition]);
@@ -69,10 +69,9 @@ export function DishSearchScreen() {
             gap: spacing[3],
           }}
         >
-          <Pressable
-            accessibilityRole="button"
+          <IconButton
+            variant="ghost"
             accessibilityLabel="Go back"
-            hitSlop={10}
             onPress={() => {
               if (navigation.canGoBack()) {
                 navigation.goBack();
@@ -80,14 +79,10 @@ export function DishSearchScreen() {
               }
               navigation.navigate("MainTabs", { screen: "Discover" });
             }}
-          >
-            <ArrowLeft color={palette.navy} size={18} />
-          </Pressable>
+            icon={<ArrowLeft color={palette.navy} size={18} />}
+          />
           <View style={{ flex: 1 }}>
             <AppText variant="h1">Search</AppText>
-            <AppText tone="secondary">
-              Search by dish, then decide whether the stall is worth the walk.
-            </AppText>
           </View>
         </View>
 
@@ -102,7 +97,7 @@ export function DishSearchScreen() {
           {SEARCH_CATEGORIES.map((category) => (
             <Chip
               key={category}
-              label={category}
+              label={category.replace(/\b\w/g, (char) => char.toUpperCase())}
               selected={selectedCategories.includes(category)}
               onPress={() => toggleCategory(category)}
             />

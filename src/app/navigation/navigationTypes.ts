@@ -5,7 +5,7 @@ export type AuthStackParamList = {
   SignUp: undefined;
   EmailVerification: { email: string } | undefined;
   ForgotPassword: undefined;
-  ResetPassword: { email: string; code: string } | undefined;
+  ResetPassword: { email?: string; code?: string } | undefined;
   ResetPasswordSuccess: undefined;
 };
 
@@ -15,20 +15,26 @@ export type OnboardingStackParamList = {
   OnboardingIntro3: undefined;
   CuisineSelection: undefined;
   FoodSelection: { cuisines: string[] };
-  TasteQuiz: { mode?: "onboarding" | "profile" } | undefined;
-  DietaryPreferences: undefined;
+  TasteQuiz: { mode?: "onboarding" | "profile"; initialPhase?: "taste" | "dietary" } | undefined;
+  DietaryPreferences:
+    | { mode?: "onboarding" | "profile"; initialPhase?: "taste" | "dietary" }
+    | undefined;
   TasteProfileLoading: undefined;
   TasteProfileResult: undefined;
   LocationPermission: undefined;
   ManualLocationPicker: undefined;
 };
-
 export type ProfileStackParamList = {
   ProfileHome: undefined;
   ProfilePremium: undefined;
   Favourites: undefined;
   ReviewHistory: undefined;
+  Followers: undefined;
+  Following: undefined;
+  VisitedStalls: undefined;
   Settings: undefined;
+  SocialGrid: { type: "liked" | "saved" };
+  SocialPostDetail: { postId: string; type: "liked" | "saved" };
   EditProfile: undefined;
   ReviewFlow: undefined;
 };
@@ -48,8 +54,27 @@ export type MainTabParamList = {
   Home: undefined;
   Discover: undefined;
   Review: undefined;
-  Rate: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
+};
+
+export type MerchantTabParamList = {
+  // Section landing pages
+  Dashboard: undefined;
+  Menu: undefined;
+  Analytics: undefined;
+  Profile: undefined;
+  // Extended sections
+  VerificationCentre: undefined;
+  HomeBasedVerification: undefined;
+  BusinessProfileEditor: undefined;
+  DishEditor: { dishId?: string } | undefined;
+  OCRDrafts: undefined;
+  CustomerInbox: undefined;
+  PromotionBuilder: { promotionId?: string } | undefined;
+  PromotionList: undefined;
+  AIAssistant: undefined;
+  OrdersComingSoon: undefined;
+  MerchantSettings: undefined;
 };
 
 export type RootStackParamList = {
@@ -57,10 +82,29 @@ export type RootStackParamList = {
   AuthStack: NavigatorScreenParams<AuthStackParamList>;
   OnboardingStack: NavigatorScreenParams<OnboardingStackParamList>;
   MainTabs: NavigatorScreenParams<MainTabParamList>;
+  MerchantTabs: NavigatorScreenParams<MerchantTabParamList>;
   StallDetail: { venueId?: string; id?: string };
+  MerchantClaimExplainer: undefined;
   DishDetail: { dishId?: string; id?: string };
+  DishDetailV2: { dishId?: string; id?: string };
   SearchHome: undefined;
-  SearchResults: undefined;
+  SearchResults:
+    | {
+        browseMode?: "dishes" | "stalls";
+        initialQuery?: string;
+        initialFilter?:
+          | "All"
+          | "Local"
+          | "Halal"
+          | "Japanese"
+          | "Western"
+          | "Noodles"
+          | "Rice"
+          | "Spicy";
+      }
+    | undefined;
+  BrowseDishes: undefined;
+  BrowseStalls: undefined;
   TasteFilter: undefined;
   DiscoverMap: undefined;
   DecideForMeResult: undefined;
@@ -69,11 +113,12 @@ export type RootStackParamList = {
   BlogPost: { postId: string };
   ReviewStack: NavigatorScreenParams<ReviewStackParamList>;
   WheelStack: NavigatorScreenParams<WheelStackParamList>;
+  ActivityInbox: { initialTab?: "messages" | "updates" } | undefined;
+  ActivityPostDetail: { postId: string; updateId?: string };
   DirectMessages: undefined;
-  ChatDetail: { chatId: string; name: string; avatar: string };
+  ChatDetail: { chatId: string; name: string; avatar: string; isOnline?: boolean };
   Crave: undefined;
   MusicSelection: undefined;
-  DishDetailStandard: { dishId: string };
   UserProfile: {
     authorName: string;
     authorAvatarUrl?: string;
@@ -82,9 +127,25 @@ export type RootStackParamList = {
   Offline: undefined;
   NotFound: { title?: string; body?: string } | undefined;
   Post: { venueId?: string; dishId?: string } | undefined;
+  QuickBites:
+    | { collection?: "quickBites" | "trending" | "editorChoice" | "budget" | "lateNight" }
+    | undefined;
   DeveloperLauncher: undefined;
   Favourites: undefined;
   ReviewHistory: undefined;
   Settings: undefined;
   EditProfile: undefined;
+  SplashV2: { variant?: "A" | "B"; stay?: boolean } | undefined;
+  DesignGallery: undefined;
+  // V2 Prototypes
+  ReviewFeedV2: undefined;
+  PostComposerV2: { venueId?: string; dishId?: string } | undefined;
+  DiscoverV2: undefined;
+  SearchHomeV2: undefined;
+  StallDetailV2: { venueId?: string; id?: string };
+  BuildingDrillDownV2: { buildingId: string };
+  QuickReviewV2: { venueId?: string; dishId?: string } | undefined;
+  VenueDirectory: { venueId: string };
+  StoryViewer: { initialStoryId: string };
+  AddStory: undefined;
 };

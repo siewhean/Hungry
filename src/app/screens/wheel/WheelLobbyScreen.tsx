@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Copy, Trash2, Users, Settings2, Plus } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { AppText, Badge, Button, Card, Screen } from "@/components/ui";
+import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
@@ -234,31 +234,11 @@ export function WheelLobbyScreen({ navigation }: Props) {
               renderItem={renderEntry}
               contentContainerStyle={{ flexGrow: 1 }}
               ListEmptyComponent={
-                <View
-                  style={{
-                    flex: 1,
-                    padding: spacing[8],
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: spacing[4],
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 64,
-                      height: 64,
-                      borderRadius: 32,
-                      backgroundColor: palette.bgSoft,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Plus size={32} color={palette.textMuted} />
-                  </View>
-                  <AppText tone="secondary" style={{ textAlign: "center", fontSize: 16 }}>
-                    The wheel is empty!{"\n"}Add some spots to start the party.
-                  </AppText>
-                </View>
+                <EmptyState
+                  title="The wheel is empty"
+                  body="Add some spots to start the party."
+                  icon={<Plus size={36} color={palette.textMuted} />}
+                />
               }
             />
           </Card>

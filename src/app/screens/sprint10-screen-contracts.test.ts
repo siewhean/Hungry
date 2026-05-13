@@ -11,10 +11,12 @@ function read(relativePath: string): string {
 
 test("Sprint 10 contract: StallDetail claim CTA is staging-gated and wired", () => {
   const source = read("src/app/screens/detail/StallDetailScreen.tsx");
+  const claimHelper = read("src/features/merchantClaim/submitClaimFromStall.ts");
 
   assert.match(source, /FEATURE_FLAGS\.merchantClaimCtaEnabled/);
-  assert.match(source, /trackAnalyticsEvent\("claim_this_stall_tapped"/);
-  assert.match(source, /getHungryService\(\)\.supply\.submitMerchantClaimInterest\(/);
+  assert.match(source, /submitClaimFromStall\(/);
+  assert.match(claimHelper, /trackAnalyticsEvent\("claim_this_stall_tapped"/);
+  assert.match(claimHelper, /service\.supply\.submitMerchantClaimInterest\(/);
   assert.match(source, /status === "created"/);
   assert.match(source, /already submitted a claim/);
 });

@@ -59,7 +59,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
   }
 
   return (
-    <Screen title="Hungry Wheel" subtitle="Decide together, eat better.">
+    <Screen title="Hungry Wheel" subtitle="">
       <View style={{ gap: spacing[6] }}>
         {/* Intro Illustration/Icon Section */}
         <View style={{ alignItems: "center", paddingVertical: spacing[4], gap: spacing[2] }}>

@@ -1,6 +1,8 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
 import type { OnboardingStackParamList } from "@/app/navigation/navigationTypes";
+import { CuisineSelectionScreen } from "./CuisineSelectionScreen";
+import { FoodSelectionScreen } from "./FoodSelectionScreen";
 import { LocationPermissionScreen } from "./LocationPermissionScreen";
 import { ManualLocationPickerScreen } from "./ManualLocationPickerScreen";
 import { OnboardingIntro1Screen } from "./OnboardingIntro1Screen";
@@ -19,7 +21,10 @@ export function OnboardingStack() {
       <Stack.Screen name="OnboardingIntro1" component={OnboardingIntro1Screen} />
       <Stack.Screen name="OnboardingIntro2" component={OnboardingIntro2Screen} />
       <Stack.Screen name="OnboardingIntro3" component={OnboardingIntro3Screen} />
+      <Stack.Screen name="CuisineSelection" component={CuisineSelectionScreen} />
+      <Stack.Screen name="FoodSelection" component={FoodSelectionScreen} />
       <Stack.Screen name="TasteQuiz" component={TasteQuizScreen} />
+      <Stack.Screen name="DietaryPreferences" component={TasteQuizScreen} />
       <Stack.Screen name="TasteProfileLoading" component={TasteProfileLoadingScreen} />
       <Stack.Screen name="TasteProfileResult" component={TasteProfileResultScreen} />
       <Stack.Screen name="LocationPermission" component={LocationPermissionScreen} />

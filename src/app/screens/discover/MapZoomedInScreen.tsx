@@ -50,7 +50,7 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
     setSelectedFloor(building.floors[0]);
   }, [building, setSelectedBuilding, setSelectedFloor]);
 
-  const markers = useMemo<MapSurfaceMarker[]>(() => {
+  const markers = useMemo((): MapSurfaceMarker[] => {
     const buildingMarker = {
       id: building.id,
       label: building.name.replace(" Food Centre", ""),
@@ -60,15 +60,21 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
     };
 
     if (currentZoom > 17.0) {
-      const stallMarkers = getBuildingVenues(building.id).map((v) => ({
-        id: `stall-${v.id}`,
-        label: v.name,
-        coordinate: {
-          latitude: building.coordinate.latitude + (Math.random() - 0.5) * 0.0008,
-          longitude: building.coordinate.longitude + (Math.random() - 0.5) * 0.0008,
-        },
-        accent: palette.orange,
-      }));
+      const stallMarkers = getBuildingVenues(building.id).map((v, index) => {
+        // Keep marker placement deterministic to avoid visual jitter on rerenders.
+        // This is a temporary spread strategy until exact stall geometry is used.
+        const latitudeOffset = ((index % 7) - 3) * 0.00007;
+        const longitudeOffset = ((Math.floor(index / 7) % 7) - 3) * 0.00007;
+        return {
+          id: `stall-${v.id}`,
+          label: v.name,
+          coordinate: {
+            latitude: building.coordinate.latitude + latitudeOffset,
+            longitude: building.coordinate.longitude + longitudeOffset,
+          },
+          accent: palette.orange,
+        };
+      });
       return [buildingMarker, ...stallMarkers];
     }
 
@@ -192,7 +198,7 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
 
             <Button
               label="Explore Layout"
-              onPress={() => navigation.navigate("BuildingDrillDown", { buildingId: building.id })}
+              onPress={() => navigation.navigate("VenueDirectory", { venueId: building.id })}
             />
           </View>
         </BottomSheetScrollView>

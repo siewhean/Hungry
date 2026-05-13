@@ -14,7 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { Check, ChevronRight, Search } from "lucide-react-native";
 
-import { Button, AppText, Card, Input } from "@/components/ui";
+import { Button, AppText, Card, EmptyState, Input } from "@/components/ui";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -28,7 +28,7 @@ import {
   ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
 } from "./layoutConstants";
 
-type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteQuiz">;
+type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteQuiz" | "DietaryPreferences">;
 
 const INITIAL: TasteVector = NEUTRAL_TASTE_VECTOR;
 
@@ -169,13 +169,15 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
   const showToast = useUIStore((state) => state.showToast);
   const flowMode = route.params?.mode ?? "onboarding";
+  const isDietaryRoute = route.name === "DietaryPreferences";
+  const initialPhase = isDietaryRoute ? "dietary" : (route.params?.initialPhase ?? "taste");
   const [values, setValues] = useState<TasteVector>(INITIAL);
   const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(
     profile.dietaryPreferences,
   );
   const [dietaryQuery, setDietaryQuery] = useState("");
   const [step, setStep] = useState(0);
-  const [phase, setPhase] = useState<"taste" | "dietary">("taste");
+  const [phase, setPhase] = useState<"taste" | "dietary">(initialPhase);
   const [answeredKeys, setAnsweredKeys] = useState<Record<string, boolean>>({});
   const [snappedIndex, setSnappedIndex] = useState(1);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -419,9 +421,10 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                     );
                   })}
                   {!filteredDietaryOptions.length ? (
-                    <AppText tone="secondary" variant="bodySmall">
-                      No matching restrictions found.
-                    </AppText>
+                    <EmptyState
+                      title="No matching restrictions found"
+                      body="Try adjusting your dietary preferences."
+                    />
                   ) : null}
                 </ScrollView>
               </Card>
@@ -608,7 +611,13 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                 <Button
                   label="Back"
                   variant="secondary"
-                  onPress={() => setPhase("taste")}
+                  onPress={() => {
+                    if (isDietaryRoute) {
+                      navigation.goBack();
+                      return;
+                    }
+                    setPhase("taste");
+                  }}
                   style={{ width: BACK_BUTTON_WIDTH }}
                 />
                 <Button
@@ -637,7 +646,16 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                 />
                 <Button
                   label="Next"
-                  onPress={() => setPhase("dietary")}
+                  onPress={() => {
+                    if (flowMode === "profile") {
+                      setPhase("dietary");
+                      return;
+                    }
+                    navigation.navigate("DietaryPreferences", {
+                      mode: flowMode,
+                      initialPhase: "dietary",
+                    });
+                  }}
                   style={{ width: PRIMARY_BUTTON_WIDTH }}
                 />
               </View>

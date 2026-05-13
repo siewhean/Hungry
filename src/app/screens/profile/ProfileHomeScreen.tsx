@@ -1,45 +1,184 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Pressable, ScrollView, View, Share } from "react-native";
-import { Image } from "expo-image";
+import { Alert, Clipboard, Pressable, Share, View } from "react-native";
 import {
   ChevronRight,
   Settings,
-  Star,
   Utensils,
   Heart,
   Edit2,
+  Menu,
+  PencilLine,
+  Send,
+  Copy,
   Share2,
   BarChart3,
   LogOut,
+  Store,
+  Bookmark,
+  Image,
 } from "lucide-react-native";
 
-import { AppText, Card, Button } from "@/components/ui";
+import { AppText, Card, Button, EmptyState } from "@/components/ui";
+import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
+import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
+import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
+import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
+import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
-import { isDishDetail } from "./profileGuards";
+import { useStoryStore } from "@/store/useStoryStore";
+import { useSocialStore } from "@/store/useSocialStore";
+import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { ProfileScreenShell } from "./ProfileScreenShell";
+import { useMerchantStore } from "@/store/useMerchantStore";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { useActivityStore } from "@/store/useActivityStore";
 import type { ProfileStackParamList } from "./ProfileStack";
+import {
+  BottomSheetBackdrop,
+  BottomSheetFooter,
+  BottomSheetModal,
+  BottomSheetScrollView,
+  BottomSheetView,
+} from "@gorhom/bottom-sheet";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { StallPost } from "@/types/domain";
 
 type ProfileRouteName = "ProfileHome" | "ProfilePremium";
 type Props = NativeStackScreenProps<ProfileStackParamList, ProfileRouteName>;
 
 export function ProfileHomeScreen({ navigation }: Props) {
-  const { palette, spacing, radii, shadows, colorScheme } = useHungryTheme();
+  const { colorScheme, palette, spacing, radii, shadows } = useHungryTheme();
+  const headerActionSize = spacing[8] + spacing[2.5];
   const profile = useProfileStore((state) => state.profile);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const signOut = useSessionStore((state) => state.signOut);
-  const repository = getDataRepository();
+  const merchantAccount = useMerchantStore((state) => state.account);
+  const followedAuthors = useSocialStore((state) => state.followedAuthors);
+  const publishedPosts = usePublishedPostStore((state) => state.posts);
+  const socialInteractions = useSocialStore((state) => state.interactions);
+  const reviewEntries = useProfileStore((state) => state.reviewEntries);
+  const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
+  const { loadStories } = useStoryStore();
+  const insets = useSafeAreaInsets();
+  const shareSheetRef = useRef<BottomSheetModal>(null);
+  const shareSnapPoints = useMemo(() => ["45%"], []);
+  const [selectedShareChatIds, setSelectedShareChatIds] = useState<string[]>([]);
+  const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
+  const [isTasteShareSheetOpen, setIsTasteShareSheetOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [profilePosts, setProfilePosts] = useState<StallPost[]>([]);
+  const [activeShareTab, setActiveShareTab] = useState<"posts" | "reviews">("posts");
+
+  const loadChatConversations = useCallback(async () => {
+    try {
+      const conversations = await getHungryService().chat.listConversations();
+      setShareRecipients(conversations.map(toChatShareRecipient));
+    } catch {
+      setShareRecipients([]);
+    }
+  }, []);
+
   const rootNavigation = getRootNavigation(
     navigation as NativeStackNavigationProp<ProfileStackParamList, "ProfileHome">,
   );
-  const favourites = profile.favouriteDishIds
-    .map((dishId) => repository.getDishById(dishId))
-    .filter(isDishDetail);
+  const prefetchMerchantDashboard = useCallback(() => {
+    const outlet = merchantAccount?.outlets[0];
+    prefetchMerchantTab("Dashboard", outlet?.id, merchantAccount?.id);
+    preloadRoute(rootNavigation, "MerchantTabs");
+  }, [merchantAccount, rootNavigation]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      void loadStories();
+    }
+  }, [isAuthenticated, loadStories]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setProfilePosts([]);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadProfilePosts = async () => {
+      try {
+        const posts = await listSharedStallPosts();
+        if (!isMounted) return;
+        setProfilePosts(
+          posts.filter(
+            (post) =>
+              post.authorId === profile.id ||
+              post.authorName.toLowerCase() === profile.displayName.toLowerCase(),
+          ),
+        );
+      } catch (error) {
+        console.error("Failed to load profile posts:", error);
+        if (isMounted) {
+          setProfilePosts([]);
+        }
+      }
+    };
+
+    void loadProfilePosts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, profile.displayName, profile.id, publishedPosts]);
+
+  const sharedPosts = useMemo(() => {
+    const repository = getDataRepository();
+
+    const postItems = profilePosts.map((post) => ({
+      id: post.id,
+      title: repository.getDishById(post.dishIds[0])?.name ?? "Shared post",
+      subtitle: repository.getVenueById(post.venueId)?.name ?? post.authorLocation,
+      text: post.caption,
+      createdAt: post.createdAt,
+    }));
+
+    if (postItems.length) {
+      return postItems.sort((a, b) => {
+        if (a.createdAt === b.createdAt) return 0;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    }
+
+    return [];
+  }, [profilePosts]);
+
+  const sharedReviews = useMemo(() => {
+    const repository = getDataRepository();
+
+    const reviewItems = profile.reviewedDishIds
+      .map((dishId) => {
+        const entry = reviewEntries[dishId];
+        const dish = repository.getDishById(dishId);
+        return {
+          id: dishId,
+          title: dish?.name ?? "Review",
+          subtitle: dish ? `Review for ${dish.name}` : "Review",
+          text: entry?.text || "You reviewed this dish.",
+          createdAt: entry?.createdAt ?? new Date(0).toISOString(),
+        };
+      })
+      .filter((item) => Boolean(item.text));
+
+    if (!reviewItems.length) return [];
+    return reviewItems.sort((a, b) => {
+      if (a.createdAt === b.createdAt) return 0;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [profile.reviewedDishIds, reviewEntries]);
+
+  const activeItems = activeShareTab === "posts" ? sharedPosts : sharedReviews;
 
   const initials = profile.displayName
     .split(" ")
@@ -49,42 +188,214 @@ export function ProfileHomeScreen({ navigation }: Props) {
     .join("")
     .toUpperCase();
 
+  const socialCounts = useMemo(() => {
+    const followedCount = Object.values(followedAuthors).filter(Boolean).length;
+    const savedPostsCount = Object.values(socialInteractions).filter((item) => item.saved).length;
+
+    return {
+      followers: profile.stats.followersCount,
+      following: profile.stats.followingCount + followedCount,
+      saved: Math.max(0, profile.favouriteDishIds.length + savedPostsCount),
+    };
+  }, [
+    followedAuthors,
+    socialInteractions,
+    profile.favouriteDishIds.length,
+    profile.stats.followersCount,
+    profile.stats.followingCount,
+  ]);
+  const reviewSignalLabel =
+    profile.stats.dishesReviewed === 0
+      ? "No reviews yet"
+      : profile.stats.dishesReviewed === 1
+        ? "Updated based on your latest review"
+        : `Updated based on ${profile.stats.dishesReviewed} reviews`;
+
   const handleShareTaste = useCallback(async () => {
     if (!isAuthenticated) return;
+    setIsTasteShareSheetOpen(true);
+    await loadChatConversations();
+    shareSheetRef.current?.present();
+  }, [isAuthenticated, loadChatConversations]);
+
+  const tasteShareMessage = useMemo(() => {
     const topTastes = Object.entries(profile.tasteVector)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 3)
-      .map(
-        ([key, val]) =>
-          `${key.charAt(0).toUpperCase() + key.slice(1)} (${Math.round((val / 10) * 100)}%)`,
-      );
+      .map(([key, val]) => `${key} ${Math.round((val / 10) * 100)}%`);
 
-    const message = `Check out my Taste Fingerprint on Hungry! 🍜\n\nMy top traits:\n${topTastes.join("\n")}\n\nDiscover your own at hungry.sg`;
+    return `Check out my Taste Fingerprint on Hungry!\n\nTop taste traits: ${topTastes.join(", ")}`;
+  }, [profile.tasteVector]);
+
+  const copyTasteFingerprintLink = useCallback(() => {
+    Clipboard.setString(tasteShareMessage);
+  }, [tasteShareMessage]);
+
+  const shareTasteProfileOutsideApp = useCallback(async () => {
+    try {
+      await Share.share({ message: tasteShareMessage });
+    } catch (error) {
+      console.error("Error sharing taste fingerprint outside app:", error);
+    }
+  }, [tasteShareMessage]);
+
+  const sendTasteProfileToHungryUsers = useCallback(async () => {
+    if (selectedShareChatIds.length === 0) return;
 
     try {
-      await Share.share({ message });
-    } catch (error) {
-      console.error("Error sharing taste fingerprint:", error);
+      await Promise.all(
+        selectedShareChatIds.map((chatId) =>
+          sharePostToChat(chatId, {
+            postId: `taste-fingerprint-${profile.id}`,
+            title: "Taste Fingerprint",
+            subtitle: `${profile.displayName} · Taste profile`,
+            imageUrl: profile.avatarUrl ?? "",
+            authorName: profile.displayName,
+          }),
+        ),
+      );
+    } catch {
+      Alert.alert("Could not share taste profile", "Please try again.");
+      return;
     }
-  }, [profile.tasteVector, isAuthenticated]);
+
+    setSelectedShareChatIds([]);
+    shareSheetRef.current?.dismiss();
+  }, [profile.avatarUrl, profile.displayName, profile.id, selectedShareChatIds, sharePostToChat]);
+
+  const resetShareSheet = useCallback(() => {
+    setIsTasteShareSheetOpen(false);
+    setSelectedShareChatIds([]);
+  }, []);
+
+  const toggleShareChat = useCallback((chatId: string) => {
+    setSelectedShareChatIds((current) =>
+      current.includes(chatId)
+        ? current.filter((candidate) => candidate !== chatId)
+        : [...current, chatId],
+    );
+  }, []);
 
   return (
     <ProfileScreenShell
       title="Profile"
-      subtitle={
-        isAuthenticated
-          ? "Your established list-based profile."
-          : "Join Hungry to save dishes and find your taste."
+      subtitle={isAuthenticated ? undefined : "Join Hungry to save dishes and find your taste."}
+      showBack={false}
+      testID="profile-home-screen"
+      headerRight={
+        <View style={{ position: "relative", alignItems: "flex-end" }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={menuOpen ? "Close quick access" : "Open quick access"}
+            hitSlop={10}
+            onPress={() => setMenuOpen((current) => !current)}
+            style={{
+              alignItems: "center",
+              height: headerActionSize,
+              justifyContent: "center",
+              width: headerActionSize,
+            }}
+          >
+            <Menu color={palette.text} size={22} />
+          </Pressable>
+          {menuOpen && (
+            <View
+              style={{
+                position: "absolute",
+                top: spacing[8] + spacing[0.5],
+                right: 0,
+                gap: spacing[1],
+                ...shadows.floating,
+                ...(colorScheme === "dark"
+                  ? {
+                      shadowColor: palette.white,
+                      shadowOpacity: 0.24,
+                      shadowRadius: 14,
+                      shadowOffset: { width: 0, height: 10 },
+                      elevation: 18,
+                    }
+                  : {}),
+                paddingVertical: spacing[1],
+                minWidth: 230,
+                alignItems: "stretch",
+                zIndex: 20,
+              }}
+            >
+              {FEATURE_FLAGS.merchantCentreEnabled && merchantAccount !== null && (
+                <MenuRow
+                  label="Merchant Dashboard"
+                  icon={<Store size={20} color={palette.orange} />}
+                  onPressIn={prefetchMerchantDashboard}
+                  onPress={() => {
+                    setMenuOpen(false);
+                    rootNavigation.navigate("MerchantTabs" as any);
+                  }}
+                />
+              )}
+              {isAuthenticated && (
+                <MenuRow
+                  label="Liked Content"
+                  icon={<Heart size={20} color={palette.error} fill={palette.error} />}
+                  onPressIn={() => preloadRoute(navigation, "SocialGrid", { type: "liked" })}
+                  onPress={() => {
+                    setMenuOpen(false);
+                    navigation.navigate("SocialGrid", { type: "liked" });
+                  }}
+                />
+              )}
+              <MenuRow
+                label="Review History"
+                icon={<PencilLine size={20} color={palette.text} />}
+                onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
+                onPress={() => {
+                  setMenuOpen(false);
+                  navigation.navigate("ReviewHistory");
+                }}
+              />
+              <MenuRow
+                label="Settings"
+                icon={<Settings size={20} color={palette.text} />}
+                onPressIn={() => preloadRoute(navigation, "Settings")}
+                onPress={() => {
+                  setMenuOpen(false);
+                  navigation.navigate("Settings");
+                }}
+              />
+              {isAuthenticated && (
+                <MenuRow
+                  label="Sign Out"
+                  icon={<LogOut size={20} color={palette.error} />}
+                  onPress={() => {
+                    setMenuOpen(false);
+                    signOut();
+                  }}
+                />
+              )}
+            </View>
+          )}
+        </View>
       }
     >
-      <View style={{ gap: spacing[6], paddingBottom: spacing[8] }}>
+      <View style={{ gap: spacing[1], paddingBottom: spacing[8], position: "relative" }}>
+        {menuOpen && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close quick access menu"
+            onPress={() => setMenuOpen(false)}
+            style={{
+              position: "absolute",
+              inset: 0,
+              zIndex: 5,
+            }}
+          />
+        )}
         {/* Profile Header Block */}
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
             gap: spacing[4],
-            marginBottom: spacing[2],
+            marginBottom: spacing[0.5],
           }}
         >
           <View style={{ position: "relative" }}>
@@ -95,34 +406,29 @@ export function ProfileHomeScreen({ navigation }: Props) {
                   alignItems: "center",
                   backgroundColor: palette.orangeLight,
                   borderRadius: radii.pill,
-                  height: 80,
+                  height: spacing[20],
                   justifyContent: "center",
-                  width: 80,
+                  width: spacing[20],
                   borderWidth: 2,
                   borderColor: palette.surface,
                 },
               ]}
             >
-              <AppText
-                style={{
-                  color: palette.orange,
-                  fontSize: 24,
-                  fontWeight: "800",
-                }}
-              >
+              <AppText variant="h1" style={{ color: palette.orange }}>
                 {isAuthenticated ? initials : "U"}
               </AppText>
             </View>
             {isAuthenticated && (
               <Pressable
+                onPressIn={() => preloadRoute(navigation, "EditProfile")}
                 onPress={() => navigation.navigate("EditProfile")}
                 style={{
                   position: "absolute",
-                  bottom: -2,
-                  right: -2,
+                  bottom: -spacing[0.5],
+                  right: -spacing[0.5],
                   backgroundColor: palette.orange,
-                  width: 28,
-                  height: 28,
+                  width: spacing[6] + spacing[1],
+                  height: spacing[6] + spacing[1],
                   borderRadius: radii.pill,
                   alignItems: "center",
                   justifyContent: "center",
@@ -136,14 +442,23 @@ export function ProfileHomeScreen({ navigation }: Props) {
           </View>
 
           <View style={{ flex: 1, gap: spacing[1] }}>
-            <AppText style={{ fontSize: 24, fontWeight: "900", color: palette.text }}>
+            <AppText variant="h1" style={{ color: palette.text }}>
               {isAuthenticated ? profile.displayName : "Guest User"}
             </AppText>
-            <AppText variant="bodySmall" tone="secondary">
-              {isAuthenticated
-                ? `${profile.stats.dishesReviewed} reviews · ${profile.stats.stallsVisited} stalls visited`
-                : "Sign in to see your culinary journey"}
-            </AppText>
+            {isAuthenticated ? (
+              <View style={{ flexDirection: "row", gap: spacing[2] }}>
+                <AppText variant="body" tone="secondary">
+                  {socialCounts.followers} followers
+                </AppText>
+                <AppText variant="body" tone="secondary">
+                  {socialCounts.following} following
+                </AppText>
+              </View>
+            ) : (
+              <AppText variant="bodySmall" tone="secondary">
+                Sign in to see your culinary journey
+              </AppText>
+            )}
           </View>
         </View>
 
@@ -165,88 +480,49 @@ export function ProfileHomeScreen({ navigation }: Props) {
             </View>
             <Button
               label="Sign In / Create Account"
+              onPressIn={() => preloadRoute(rootNavigation, "AuthStack", { screen: "Login" })}
               onPress={() => navigation.navigate("AuthStack" as any, { screen: "Login" })}
             />
           </Card>
         ) : (
-          <>
-            <View style={{ flexDirection: "row", gap: spacing[3] }}>
+          <View style={{ gap: spacing[4] }}>
+            <View style={{ flexDirection: "row", gap: spacing[2], marginTop: spacing[2] }}>
+              <StatBlock
+                label="Followers"
+                value={socialCounts.followers}
+                icon={<Heart size={14} color={palette.orange} />}
+              />
+              <StatBlock
+                label="Following"
+                value={socialCounts.following}
+                icon={<Send size={14} color={palette.orange} />}
+              />
+            </View>
+            <View style={{ flexDirection: "row", gap: spacing[2] }}>
               <StatBlock
                 label="Reviews"
                 value={profile.stats.dishesReviewed}
-                icon={<Star size={14} color={palette.orange} />}
+                icon={<PencilLine size={14} color={palette.orange} />}
+                onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
+                onPress={() => navigation.navigate("ReviewHistory")}
               />
               <StatBlock
                 label="Stalls"
                 value={profile.stats.stallsVisited}
                 icon={<Utensils size={14} color={palette.orange} />}
+                onPressIn={() => preloadRoute(navigation, "VisitedStalls")}
+                onPress={() => navigation.navigate("VisitedStalls")}
               />
               <StatBlock
                 label="Saved"
-                value={profile.stats.favouritesCount}
-                icon={<Heart size={14} color={palette.orange} />}
+                value={socialCounts.saved}
+                icon={<Bookmark size={14} color={palette.orange} />}
+                onPressIn={() => preloadRoute(navigation, "SocialGrid", { type: "saved" })}
+                onPress={() => navigation.navigate("SocialGrid", { type: "saved" })}
               />
             </View>
-
-            {/* Favourites Preview (Legacy Carousel) */}
-            <View style={{ gap: spacing[4] }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  paddingHorizontal: spacing[1],
-                }}
-              >
-                <AppText variant="h2">Recently Saved</AppText>
-                <Pressable onPress={() => navigation.navigate("Favourites")}>
-                  <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                    SEE ALL
-                  </AppText>
-                </Pressable>
-              </View>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ gap: spacing[3] }}
-              >
-                {favourites.map((dish) => (
-                  <Pressable
-                    key={dish.id}
-                    onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
-                    style={[
-                      shadows.card,
-                      {
-                        width: 140,
-                        backgroundColor: palette.surface,
-                        borderRadius: radii.lg,
-                        overflow: "hidden",
-                        borderWidth: 1,
-                        borderColor: palette.border,
-                      },
-                    ]}
-                  >
-                    <Image
-                      source={{ uri: dish.imageUrl }}
-                      style={{ width: "100%", height: 100 }}
-                      contentFit="cover"
-                    />
-                    <View style={{ padding: spacing[2], gap: 2 }}>
-                      <AppText variant="bodySmallBold" numberOfLines={1}>
-                        {dish.name}
-                      </AppText>
-                      <AppText variant="micro" tone="secondary">
-                        {dish.venueName}
-                      </AppText>
-                    </View>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </View>
-
             {/* Taste Fingerprint Section */}
-            <View style={{ gap: spacing[4] }}>
+            <View style={{ gap: spacing[4], marginTop: spacing[4] }}>
               <View
                 style={{
                   flexDirection: "row",
@@ -260,7 +536,7 @@ export function ProfileHomeScreen({ navigation }: Props) {
                   onPress={handleShareTaste}
                   style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
                 >
-                  <Share2 size={16} color={palette.orange} />
+                  <Send size={16} color={palette.orange} />
                   <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                     SHARE
                   </AppText>
@@ -300,9 +576,9 @@ export function ProfileHomeScreen({ navigation }: Props) {
                     <BarChart3 size={20} color={palette.orange} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <AppText style={{ fontWeight: "700", fontSize: 16 }}>Detailed Analysis</AppText>
+                    <AppText variant="bodyBold">Detailed Analysis</AppText>
                     <AppText variant="micro" tone="secondary">
-                      Updated based on your last 5 reviews
+                      {reviewSignalLabel}
                     </AppText>
                   </View>
                 </View>
@@ -329,42 +605,155 @@ export function ProfileHomeScreen({ navigation }: Props) {
                 </View>
               </View>
             </View>
-          </>
+            <View style={{ gap: spacing[4], marginTop: spacing[5] }}>
+              <AppText variant="h2">Posts</AppText>
+              <View
+                style={{
+                  alignSelf: "stretch",
+                  flexDirection: "row",
+                  borderWidth: 1,
+                  borderRadius: radii.pill,
+                  borderColor: palette.border,
+                  backgroundColor: palette.surface,
+                  overflow: "hidden",
+                }}
+              >
+                <Pressable
+                  onPress={() => setActiveShareTab("posts")}
+                  style={{
+                    flex: 1,
+                    paddingVertical: spacing[2],
+                    alignItems: "center",
+                    backgroundColor: activeShareTab === "posts" ? palette.orange : "transparent",
+                  }}
+                >
+                  <AppText
+                    style={{
+                      fontWeight: activeShareTab === "posts" ? 700 : 500,
+                      color: activeShareTab === "posts" ? palette.white : palette.text,
+                    }}
+                  >
+                    Posts
+                  </AppText>
+                </Pressable>
+                <Pressable
+                  onPress={() => setActiveShareTab("reviews")}
+                  style={{
+                    flex: 1,
+                    paddingVertical: spacing[2],
+                    alignItems: "center",
+                    backgroundColor: activeShareTab === "reviews" ? palette.orange : "transparent",
+                  }}
+                >
+                  <AppText
+                    style={{
+                      fontWeight: activeShareTab === "reviews" ? 700 : 500,
+                      color: activeShareTab === "reviews" ? palette.white : palette.text,
+                    }}
+                  >
+                    Reviews
+                  </AppText>
+                </Pressable>
+              </View>
+              {activeItems.length ? (
+                <View style={{ gap: spacing[3] }}>
+                  {activeItems.map((item) => (
+                    <Card key={item.id} style={{ gap: spacing[3] }}>
+                      <View style={{ gap: spacing[1] }}>
+                        <AppText variant="bodyBold">{item.title}</AppText>
+                        <AppText variant="micro" tone="secondary">
+                          {item.subtitle}
+                        </AppText>
+                        <AppText>{item.text}</AppText>
+                      </View>
+                      <AppText variant="micro" tone="secondary">
+                        {activeShareTab === "posts" ? "Post" : "Review"} •{" "}
+                        {formatTimeAgo(item.createdAt)}
+                      </AppText>
+                    </Card>
+                  ))}
+                </View>
+              ) : (
+                <EmptyState
+                  title={`No ${activeShareTab === "posts" ? "posts" : "reviews"} yet`}
+                  body={
+                    activeShareTab === "posts"
+                      ? "Shared posts will appear here."
+                      : "Dish reviews you share will appear here."
+                  }
+                  icon={<Image size={36} color={palette.textSecondary} />}
+                />
+              )}
+            </View>
+          </View>
         )}
 
-        {/* Quick Access List */}
-        <View style={{ gap: spacing[3] }}>
-          <AppText variant="h2" style={{ paddingHorizontal: spacing[1] }}>
-            Quick Access
-          </AppText>
-          <View style={{ gap: spacing[2] }}>
-            <MenuRow
-              label="My Favourites"
-              icon={<Heart size={20} color={palette.text} />}
-              onPress={() => navigation.navigate("Favourites")}
-            />
-            <MenuRow
-              label="Review History"
-              icon={<Star size={20} color={palette.text} />}
-              onPress={() => navigation.navigate("ReviewHistory")}
-            />
-            <MenuRow
-              label="Settings"
-              icon={<Settings size={20} color={palette.text} />}
-              onPress={() => navigation.navigate("Settings")}
-            />
-          </View>
-
-          {isAuthenticated && (
-            <Button
-              label="Sign Out"
-              variant="secondary"
-              onPress={signOut}
-              style={{ marginTop: spacing[4] }}
-              leftIcon={<LogOut size={18} color={palette.error} />}
+        <BottomSheetModal
+          ref={shareSheetRef}
+          snapPoints={shareSnapPoints}
+          index={0}
+          enablePanDownToClose
+          onDismiss={resetShareSheet}
+          backdropComponent={(props) => (
+            <BottomSheetBackdrop
+              {...props}
+              appearsOnIndex={0}
+              disappearsOnIndex={-1}
+              opacity={0.4}
+              pressBehavior="close"
             />
           )}
-        </View>
+          backgroundStyle={{ backgroundColor: palette.surface }}
+          handleIndicatorStyle={{ backgroundColor: palette.border }}
+          footerComponent={(props) => (
+            <BottomSheetFooter {...props}>
+              <FloatingShareSendButton
+                selectedCount={selectedShareChatIds.length}
+                onPress={sendTasteProfileToHungryUsers}
+                bottomInset={insets.bottom}
+                accessibilityLabel="Send shared taste profile"
+                placement="inline"
+              />
+            </BottomSheetFooter>
+          )}
+        >
+          <BottomSheetView style={{ flex: 1 }}>
+            <BottomSheetScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{
+                gap: spacing[3],
+                padding: spacing[4],
+                paddingBottom: insets.bottom + spacing[12],
+              }}
+            >
+              <InAppShareCard
+                title="Share taste fingerprint"
+                quickActions={[
+                  {
+                    key: "copy",
+                    label: "Copy link",
+                    accessibilityLabel: "Copy taste fingerprint link",
+                    icon: ({ color, size }) => <Copy color={color} size={size} />,
+                    onPress: copyTasteFingerprintLink,
+                  },
+                  {
+                    key: "share",
+                    label: "Share",
+                    accessibilityLabel: "Share taste fingerprint to another app",
+                    icon: ({ color, size }) => <Share2 color={color} size={size} />,
+                    onPress: () => void shareTasteProfileOutsideApp(),
+                  },
+                ]}
+                recipients={shareRecipients}
+                selectedRecipientIds={selectedShareChatIds}
+                onToggleRecipient={toggleShareChat}
+                onSend={sendTasteProfileToHungryUsers}
+                lastRecipientId={shareRecipients[shareRecipients.length - 1]?.id}
+                recipientAccessibilityLabelPrefix="Share taste profile to"
+              />
+            </BottomSheetScrollView>
+          </BottomSheetView>
+        </BottomSheetModal>
       </View>
     </ProfileScreenShell>
   );
@@ -425,27 +814,24 @@ function StatBlock({
   label,
   value,
   icon,
+  onPressIn,
+  onPress,
 }: {
   label: string;
   value: number;
-  icon: React.ReactNode;
+  icon: ReactNode;
+  onPressIn?: () => void;
+  onPress?: () => void;
 }) {
   const { palette, spacing, radii, colorScheme } = useHungryTheme();
-  return (
-    <View
-      style={{
-        backgroundColor: colorScheme === "dark" ? palette.surfaceRaised : palette.bgSoft,
-        borderRadius: radii.lg,
-        paddingVertical: spacing[3],
-        paddingHorizontal: spacing[3],
-        alignItems: "center",
-        flex: 1,
-        gap: spacing[1],
-      }}
-    >
+
+  const row = (
+    <>
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
         {icon}
-        <AppText style={{ fontSize: 18, fontWeight: "900", color: palette.text }}>{value}</AppText>
+        <AppText variant="h3" style={{ color: palette.text }}>
+          {value}
+        </AppText>
       </View>
       <AppText
         variant="micro"
@@ -454,27 +840,64 @@ function StatBlock({
       >
         {label}
       </AppText>
-    </View>
+    </>
+  );
+
+  const baseStyle = {
+    backgroundColor: colorScheme === "dark" ? palette.surfaceRaised : palette.bgSoft,
+    borderRadius: radii.lg,
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[3],
+    alignItems: "center" as const,
+    flex: 1,
+    gap: spacing[1],
+  };
+
+  if (!onPress) {
+    return <View style={baseStyle}>{row}</View>;
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${label} ${value}`}
+      onPressIn={onPressIn}
+      onPress={onPress}
+      style={({ pressed }) => {
+        const pressedStyle =
+          pressed &&
+          (colorScheme === "dark"
+            ? { backgroundColor: palette.surface }
+            : { backgroundColor: palette.bgSoft, opacity: 0.92 });
+        return [baseStyle, pressedStyle];
+      }}
+    >
+      {row}
+    </Pressable>
   );
 }
 
 function MenuRow({
   label,
   icon,
+  onPressIn,
   onPress,
 }: {
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
+  onPressIn?: () => void;
   onPress: () => void;
 }) {
   const { palette, spacing, radii } = useHungryTheme();
   return (
     <Pressable
+      onPressIn={onPressIn}
       onPress={onPress}
       style={({ pressed }) => [
         {
           flexDirection: "row",
           alignItems: "center",
+          width: "100%",
           backgroundColor: pressed ? palette.bgSoft : palette.surface,
           borderRadius: radii.lg,
           padding: spacing[4],
@@ -485,7 +908,12 @@ function MenuRow({
       ]}
     >
       {icon}
-      <AppText style={{ flex: 1, fontWeight: "600", color: palette.text }}>{label}</AppText>
+      <AppText
+        numberOfLines={1}
+        style={{ flex: 1, minWidth: 0, fontWeight: "600", color: palette.text }}
+      >
+        {label}
+      </AppText>
       <ChevronRight color={palette.textMuted} size={18} />
     </Pressable>
   );

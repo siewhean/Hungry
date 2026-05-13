@@ -4,7 +4,7 @@ import { Camera } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
 import { useUIStore } from "@/store/useUIStore";
-import { AppText, Card } from "../ui";
+import { AppText, EmptyState } from "../ui";
 
 interface PhotoPickerProps {
   photos: string[];
@@ -111,19 +111,11 @@ export function PhotoPicker({
           </Pressable>
         ) : null}
         {photos.length === 0 && !canAddPhoto ? (
-          <Card
-            style={{
-              alignItems: "center",
-              backgroundColor: palette.bgMuted,
-              borderStyle: "dashed",
-              gap: 8,
-            }}
-          >
-            <Camera size={18} color={palette.textMuted} />
-            <AppText variant="bodySmall" tone="secondary">
-              No photos yet
-            </AppText>
-          </Card>
+          <EmptyState
+            title="No photos yet"
+            body="Add photos to your post when available."
+            icon={<Camera size={36} color={palette.textMuted} />}
+          />
         ) : null}
       </View>
     </View>

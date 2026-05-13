@@ -1,0 +1,179 @@
+import React, { useState } from "react";
+import { View, ScrollView, Pressable, StyleSheet, Dimensions } from "react-native";
+import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
+import { Camera, Plus, Wand2, Scissors } from "lucide-react-native";
+import { AppText, IconButton, Dialog } from "@/components/ui";
+import { useHungryTheme } from "@/theme";
+import { useComposerStore, MediaItem } from "../useComposerStore";
+import { semanticSpacing } from "@/theme/tokens";
+
+const { width } = Dimensions.get("window");
+
+export function MediaManager() {
+  const { palette, radii, shadows } = useHungryTheme();
+  const media = useComposerStore((state) => state.media);
+  const addMedia = useComposerStore((state) => state.addMedia);
+  const removeMedia = useComposerStore((state) => state.removeMedia);
+  const setEditingMediaId = useComposerStore((state) => state.setEditingMediaId);
+
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+  } | null>(null);
+
+  const handlePickMedia = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== "granted") {
+        setDialogConfig({
+          visible: true,
+          title: "Permission Required",
+          message: "Hungry needs access to your photo library to add media to your post.",
+        });
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsMultipleSelection: true,
+        quality: 1,
+        selectionLimit: 10,
+      });
+
+      if (!result.canceled && result.assets) {
+        const newMedia: MediaItem[] = result.assets.map((asset) => ({
+          id: asset.assetId || `media-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+          uri: asset.uri,
+          type: (asset.type === "video" ? "video" : "image") as "video" | "image",
+          width: asset.width,
+          height: asset.height,
+        }));
+        addMedia(newMedia);
+      }
+    } catch (error) {
+      console.error("Error picking media:", error);
+      setDialogConfig({
+        visible: true,
+        title: "Error",
+        message: "Failed to pick media. Please try again.",
+      });
+    }
+  };
+
+  return (
+    <View
+      style={[
+        styles.container,
+        { paddingVertical: semanticSpacing.componentGap, gap: semanticSpacing.componentGap },
+      ]}
+    >
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: semanticSpacing.screenEdge,
+          gap: semanticSpacing.componentGap,
+        }}
+      >
+        {media.map((item) => (
+          <Pressable
+            key={item.id}
+            onPress={() => setEditingMediaId(item.id)}
+            style={[styles.mediaWrapper, { borderRadius: radii.lg }]}
+          >
+            <Image source={{ uri: item.uri }} style={styles.media} contentFit="cover" />
+            <IconButton
+              variant="surface"
+              size={28}
+              accessibilityLabel="Remove media"
+              onPress={() => removeMedia(item.id)}
+              style={styles.removeBtn}
+              icon={
+                <Plus size={14} color={palette.text} style={{ transform: [{ rotate: "45deg" }] }} />
+              }
+            />
+            <View style={[styles.mediaActions, { gap: semanticSpacing.textStack + 2 }]}>
+              <IconButton
+                variant="surface"
+                size={28}
+                accessibilityLabel="Edit with AI"
+                icon={<Wand2 size={14} color={palette.orange} />}
+              />
+              <IconButton
+                variant="surface"
+                size={28}
+                accessibilityLabel="Trim video"
+                icon={<Scissors size={14} color={palette.text} />}
+              />
+            </View>
+          </Pressable>
+        ))}
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Add media from gallery"
+          onPress={handlePickMedia}
+          testID="post-composer-add-media"
+          style={[
+            styles.addMediaBtn,
+            {
+              backgroundColor: palette.surfaceRaised,
+              borderColor: palette.border,
+              borderRadius: radii.lg,
+            },
+          ]}
+        >
+          <Camera size={24} color={palette.textMuted} />
+          <AppText variant="micro" tone="muted" style={{ marginTop: semanticSpacing.textStack }}>
+            Add Media
+          </AppText>
+        </Pressable>
+      </ScrollView>
+
+      {dialogConfig && (
+        <Dialog
+          visible={dialogConfig.visible}
+          title={dialogConfig.title}
+          message={dialogConfig.message}
+          onClose={() => setDialogConfig(null)}
+          buttons={[{ text: "OK", style: "default", onPress: () => setDialogConfig(null) }]}
+        />
+      )}
+    </View>
+  );
+}
+const styles = StyleSheet.create({
+  container: {},
+  mediaWrapper: {
+    width: width * 0.55,
+    height: width * 0.55,
+    position: "relative",
+    overflow: "hidden",
+  },
+  media: {
+    width: "100%",
+    height: "100%",
+  },
+  removeBtn: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+  },
+  mediaActions: {
+    position: "absolute",
+    bottom: 6,
+    right: 6,
+    flexDirection: "row",
+  },
+  addMediaBtn: {
+    width: width * 0.25,
+    height: width * 0.55,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderStyle: "dashed",
+  },
+});

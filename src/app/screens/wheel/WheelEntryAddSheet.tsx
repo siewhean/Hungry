@@ -14,7 +14,7 @@ import { X, Search, Compass, Heart, Plus, ShieldAlert, Sparkles } from "lucide-r
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 
-import { AppText, Badge, Card, Input } from "@/components/ui";
+import { AppText, Badge, Card, EmptyState, Input } from "@/components/ui";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useWheelStore } from "@/store/useWheelStore";
@@ -438,9 +438,11 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 contentContainerStyle={{ paddingBottom: 40 }}
                 ListEmptyComponent={
                   query.trim() ? (
-                    <AppText tone="secondary" style={{ textAlign: "center", padding: spacing[8] }}>
-                      No stalls found for &quot;{query}&quot;
-                    </AppText>
+                    <EmptyState
+                      title="No stalls found"
+                      body={`No stalls found for "${query}".`}
+                      icon={<Search size={40} color={palette.textMuted} />}
+                    />
                   ) : (
                     <View
                       style={{
@@ -580,20 +582,15 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 )}
                 contentContainerStyle={{ paddingBottom: 40 }}
                 ListEmptyComponent={
-                  <View
-                    style={{
-                      padding: spacing[8],
-                      alignItems: "center",
-                      gap: spacing[3],
-                    }}
-                  >
-                    <Plus size={40} color={palette.border} />
-                    <AppText tone="secondary" style={{ textAlign: "center" }}>
-                      {selectedCategory
+                  <EmptyState
+                    title="No stalls found"
+                    body={
+                      selectedCategory
                         ? "No stalls in this category."
-                        : "Pick a category above to browse options."}
-                    </AppText>
-                  </View>
+                        : "Pick a category above to browse options."
+                    }
+                    icon={<Plus size={40} color={palette.textMuted} />}
+                  />
                 }
               />
             </>
@@ -608,18 +605,11 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               )}
               contentContainerStyle={{ paddingBottom: 40 }}
               ListEmptyComponent={
-                <View
-                  style={{
-                    padding: spacing[8],
-                    alignItems: "center",
-                    gap: spacing[3],
-                  }}
-                >
-                  <Heart size={40} color={palette.border} />
-                  <AppText tone="secondary" style={{ textAlign: "center" }}>
-                    No favourites yet. Start liking some dishes!
-                  </AppText>
-                </View>
+                <EmptyState
+                  title="No favourites yet"
+                  body="Start liking some dishes to save them for this wheel."
+                  icon={<Heart size={40} color={palette.textMuted} />}
+                />
               }
             />
           )}

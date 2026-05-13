@@ -1,0 +1,46 @@
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { biteToStallPost } from "@/lib/services/postTransforms";
+import type { DataRepository } from "@/lib/services/types";
+import type { StallPost } from "@/types/domain";
+import { usePublishedPostStore } from "@/store/usePublishedPostStore";
+
+export function mergeStallPosts(...postLists: StallPost[][]): StallPost[] {
+  const seen = new Set<string>();
+  return postLists.flat().filter((post) => {
+    if (seen.has(post.id)) return false;
+    seen.add(post.id);
+    return true;
+  });
+}
+
+export function listSharedStallPostsSync(repository: DataRepository = getDataRepository()) {
+  return mergeStallPosts(usePublishedPostStore.getState().posts, repository.listStallPosts());
+}
+
+export async function listSharedStallPosts(repository: DataRepository = getDataRepository()) {
+  const service = getHungryService();
+  let servicePosts: StallPost[] = [];
+  let bitePosts: StallPost[] = [];
+
+  try {
+    servicePosts = await service.content.listStallPosts();
+  } catch {
+    servicePosts = [];
+  }
+
+  try {
+    bitePosts = (await service.social.getBitesFeed()).map((bite) =>
+      biteToStallPost(bite, { authorAvatarUrl: bite.authorAvatar }),
+    );
+  } catch {
+    bitePosts = [];
+  }
+
+  const localPublishedPosts = usePublishedPostStore.getState().posts;
+  const localPublishedIds = new Set(localPublishedPosts.map((post) => post.id));
+  bitePosts
+    .filter((post) => !localPublishedIds.has(post.id))
+    .forEach((post) => usePublishedPostStore.getState().upsertPost(post));
+
+  return mergeStallPosts(localPublishedPosts, bitePosts, servicePosts, repository.listStallPosts());
+}

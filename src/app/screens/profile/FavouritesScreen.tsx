@@ -5,6 +5,7 @@ import { Heart, Star } from "lucide-react-native";
 
 import { AppText, Button, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
+import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
@@ -40,6 +41,10 @@ export function FavouritesScreen({ navigation }: Props) {
             return (
               <Pressable
                 key={dish.id}
+                onPressIn={() => {
+                  prefetchDishDetail(dish.id, repository);
+                  preloadRoute(rootNavigation, "DishDetail", { dishId: dish.id });
+                }}
                 onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
                 style={[
                   shadows.card,
@@ -123,7 +128,7 @@ export function FavouritesScreen({ navigation }: Props) {
           title="No favorites yet"
           body="Start exploring dishes to build your personalized list!"
           ctaLabel="Discover Dishes"
-          onPress={() => rootNavigation.navigate("Discover")}
+          onPress={() => rootNavigation.navigate("MainTabs", { screen: "Discover" })}
         />
       )}
     </ProfileScreenShell>

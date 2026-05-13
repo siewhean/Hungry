@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { View } from "react-native";
-import * as WebBrowser from "expo-web-browser";
 
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { openTrustedBlogUrl } from "@/lib/security/safeLinking";
 import { AppText, Button, Card, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
@@ -22,14 +22,11 @@ export function BlogPostWebViewScreen({ postId, onOpenVenue }: BlogPostWebViewSc
       return;
     }
 
-    void WebBrowser.openBrowserAsync(post.url);
+    void openTrustedBlogUrl(post.url);
   }, [post]);
 
   return (
-    <Screen
-      title="Article view"
-      subtitle="The original article opens in the system browser for this mock build."
-    >
+    <Screen title="Article view" subtitle="The original article opens in your system browser.">
       <Card>
         <View style={{ gap: spacing[2] }}>
           <AppText variant="h3">{post.title}</AppText>

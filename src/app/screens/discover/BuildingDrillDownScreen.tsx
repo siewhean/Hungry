@@ -1,13 +1,13 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ChevronRight, Minus, Plus, RotateCcw, Search } from "lucide-react-native";
+import { ChevronRight, MapPin, Minus, Plus, RotateCcw, Search } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { FloorPlanViewer } from "@/components/map/FloorPlanViewer";
-import { AppText, Button, Input } from "@/components/ui";
+import { AppText, Button, EmptyState, IconButton, Input } from "@/components/ui";
 import { getBuildingVenues } from "@/features/discovery/discovery";
 import { getDirectoryDescriptor } from "@/features/discovery/venueDescriptor";
 import { getFloorPlan } from "@/lib/geo/floorPlans";
@@ -253,26 +253,23 @@ function StatusBadge({ status }: { status: VenueStatus }) {
   );
 }
 
-function ZoomControlButton({ onPress, children }: { onPress: () => void; children: ReactNode }) {
-  const { palette, radii } = useHungryTheme();
-
+function ZoomControlButton({
+  onPress,
+  children,
+  accessibilityLabel,
+}: {
+  onPress: () => void;
+  children: ReactNode;
+  accessibilityLabel: string;
+}) {
   return (
-    <Pressable
-      accessibilityRole="button"
+    <IconButton
+      variant="surface"
+      size={44}
+      accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      style={{
-        alignItems: "center",
-        backgroundColor: palette.surface,
-        borderColor: palette.border,
-        borderRadius: radii.pill,
-        borderWidth: 1,
-        height: 44,
-        justifyContent: "center",
-        width: 44,
-      }}
-    >
-      {children}
-    </Pressable>
+      icon={children}
+    />
   );
 }
 
@@ -585,13 +582,22 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                     shadows.floating,
                   ]}
                 >
-                  <ZoomControlButton onPress={zoomOutDirectory}>
+                  <ZoomControlButton
+                    accessibilityLabel="Zoom out directory"
+                    onPress={zoomOutDirectory}
+                  >
                     <Minus color={palette.navy} size={15} />
                   </ZoomControlButton>
-                  <ZoomControlButton onPress={resetDirectoryZoom}>
+                  <ZoomControlButton
+                    accessibilityLabel="Reset directory zoom"
+                    onPress={resetDirectoryZoom}
+                  >
                     <RotateCcw color={palette.navy} size={14} />
                   </ZoomControlButton>
-                  <ZoomControlButton onPress={zoomInDirectory}>
+                  <ZoomControlButton
+                    accessibilityLabel="Zoom in directory"
+                    onPress={zoomInDirectory}
+                  >
                     <Plus color={palette.navy} size={15} />
                   </ZoomControlButton>
                   <AppText variant="micro" style={{ color: palette.textMuted }}>
@@ -674,29 +680,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                           }}
                         >
                           <StatusBadge status={status} />
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={`Open ${record.title} stall details`}
-                            hitSlop={10}
-                            onPress={() => {
-                              if (record.venue) {
-                                navigation.navigate("StallDetail", {
-                                  venueId: record.venue.id,
-                                });
-                              }
-                            }}
-                            style={{
-                              alignItems: "center",
-                              borderColor: palette.border,
-                              borderRadius: radii.pill,
-                              borderWidth: 1,
-                              height: 26,
-                              justifyContent: "center",
-                              width: 26,
-                            }}
-                          >
-                            <ChevronRight color={palette.textMuted} size={13} />
-                          </Pressable>
+                          <ChevronRight color={palette.textMuted} size={16} />
                         </View>
                       </View>
                       {record.venue?.closureNotice ? (
@@ -714,21 +698,11 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
               </View>
 
               {floorDirectory.length === 0 ? (
-                <View
-                  style={{
-                    backgroundColor: palette.surface,
-                    borderColor: palette.border,
-                    borderRadius: radii.lg,
-                    borderWidth: 1,
-                    paddingHorizontal: spacing[3],
-                    paddingVertical: spacing[4],
-                  }}
-                >
-                  <AppText variant="h3">No units match this filter</AppText>
-                  <AppText variant="bodySmall" tone="secondary">
-                    Clear the search or switch levels to inspect more units.
-                  </AppText>
-                </View>
+                <EmptyState
+                  title="No units match this filter"
+                  body="Clear the search or switch levels to inspect more units."
+                  icon={<MapPin size={36} color={palette.textMuted} />}
+                />
               ) : null}
             </View>
 

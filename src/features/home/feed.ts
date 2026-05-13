@@ -1,4 +1,6 @@
-import { getDataRepository, getSimilarityScore } from "@/lib/services/serviceProvider";
+import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
+import { getDataRepository } from "@/lib/services/serviceProvider";
+import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import type { DishDetail, StallPost, UserProfile, VenueSummary } from "@/types/domain";
 
 export interface HomeFeedItem extends StallPost {
@@ -11,10 +13,35 @@ export interface HomeFeedSection {
   items: HomeFeedItem[];
 }
 
-function buildHomeFeedItems(profile: UserProfile): HomeFeedItem[] {
+export interface HomeFeedBundle {
+  sections: HomeFeedSection[];
+  socialFeed: HomeFeedItem[];
+}
+
+function rankHomeFeedItems(items: HomeFeedItem[], profile: UserProfile): HomeFeedItem[] {
+  const candidateDishes = items.map((item) => item.dishes[0]).filter(Boolean) as DishDetail[];
+  const ranked = runRecommendationPipeline(candidateDishes, {
+    userVector: profile.tasteVector,
+    dietaryFlags: profile.dietaryPreferences,
+    neophiliaIndex: profile.tasteProfile?.neophiliaIndex ?? 5,
+    radiusMeters: Number.MAX_SAFE_INTEGER,
+  });
+  const ranks = new Map(ranked.map((result, index) => [result.dishId, index]));
+
+  return [...items].sort((left, right) => {
+    const leftRank = ranks.get(left.dishes[0]?.id ?? "") ?? Number.MAX_SAFE_INTEGER;
+    const rightRank = ranks.get(right.dishes[0]?.id ?? "") ?? Number.MAX_SAFE_INTEGER;
+    return leftRank - rightRank;
+  });
+}
+
+async function buildHomeFeedItems(profile: UserProfile): Promise<HomeFeedItem[]> {
   const repository = getDataRepository();
-  return repository
-    .listStallPosts()
+  const postsById = new Map<string, StallPost>();
+  for (const post of await listSharedStallPosts(repository)) {
+    postsById.set(post.id, post);
+  }
+  const items = [...postsById.values()]
     .map((post) => {
       const venue = repository.getVenueById(post.venueId);
       const dishes = post.dishIds
@@ -29,26 +56,66 @@ function buildHomeFeedItems(profile: UserProfile): HomeFeedItem[] {
         dishes,
       } satisfies HomeFeedItem;
     })
-    .filter((p): p is HomeFeedItem => !!p)
-    .sort((left, right) => {
-      const leftDish = left.dishes[0];
-      const rightDish = right.dishes[0];
-      const leftScore = leftDish
-        ? getSimilarityScore(leftDish.tasteVector, profile.tasteVector)
-        : 0;
-      const rightScore = rightDish
-        ? getSimilarityScore(rightDish.tasteVector, profile.tasteVector)
-        : 0;
-      return rightScore - leftScore;
-    });
+    .filter((p): p is HomeFeedItem => !!p);
+
+  return rankHomeFeedItems(items, profile);
 }
 
-export function getHomeSocialFeed(profile: UserProfile): HomeFeedItem[] {
-  return buildHomeFeedItems(profile);
+const RELATIVE_TIME_UNITS: Record<string, number> = {
+  m: 60_000,
+  min: 60_000,
+  minute: 60_000,
+  h: 3_600_000,
+  hr: 3_600_000,
+  hour: 3_600_000,
+  d: 86_400_000,
+  day: 86_400_000,
+  w: 604_800_000,
+  week: 604_800_000,
+};
+
+function getPostTime(post: StallPost, now = Date.now()): number {
+  const timestamp = new Date(post.createdAt).getTime();
+  if (Number.isFinite(timestamp)) {
+    return timestamp;
+  }
+
+  const normalized = post.createdAt.trim().toLowerCase();
+  if (normalized === "now") {
+    return now;
+  }
+  if (normalized === "yesterday") {
+    return now - RELATIVE_TIME_UNITS.day;
+  }
+
+  const relativeMatch = normalized.match(
+    /^(\d+)\s*(m|min|minute|h|hr|hour|d|day|w|week)s?(?:\s+ago)?$/,
+  );
+  if (relativeMatch) {
+    const amount = Number(relativeMatch[1]);
+    const unitMs = RELATIVE_TIME_UNITS[relativeMatch[2] ?? ""];
+    if (Number.isFinite(amount) && unitMs) {
+      return now - amount * unitMs;
+    }
+  }
+
+  return 0;
 }
 
-export function getHomeFeed(profile: UserProfile): HomeFeedSection[] {
-  const allPosts = buildHomeFeedItems(profile);
+export async function getHomeSocialFeed(profile: UserProfile): Promise<HomeFeedItem[]> {
+  return (await getHomeFeedBundle(profile)).socialFeed;
+}
+
+export async function getHomeFeed(profile: UserProfile): Promise<HomeFeedSection[]> {
+  return (await getHomeFeedBundle(profile)).sections;
+}
+
+export async function getHomeFeedBundle(profile: UserProfile): Promise<HomeFeedBundle> {
+  const allPosts = await buildHomeFeedItems(profile);
+  const now = Date.now();
+  const socialFeed = [...allPosts].sort(
+    (left, right) => getPostTime(right, now) - getPostTime(left, now),
+  );
 
   // 1. Fastest Near You (Shortest distance)
   const fastest = [...allPosts]
@@ -69,9 +136,12 @@ export function getHomeFeed(profile: UserProfile): HomeFeedSection[] {
     .sort((a, b) => (b.dishes[0]?.rating ?? 0) - (a.dishes[0]?.rating ?? 0))
     .slice(0, 5);
 
-  return [
-    { title: "Fastest Near You", items: fastest },
-    { title: "Comfort Food / Rich & Savory", items: comfort },
-    { title: "Top Rated by Community", items: topRated },
-  ];
+  return {
+    socialFeed,
+    sections: [
+      { title: "Fastest Near You", items: fastest },
+      { title: "Comfort Food / Rich & Savory", items: comfort },
+      { title: "Top Rated by Community", items: topRated },
+    ],
+  };
 }

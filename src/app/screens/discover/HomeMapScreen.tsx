@@ -16,7 +16,6 @@ import {
   Map as MapIcon,
   ChevronRight,
   Star,
-  Search,
   Filter,
   Utensils,
   Heart,
@@ -30,7 +29,13 @@ import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { MapSurface, type MapSurfaceMarker, BuildingLegend } from "@/components/map";
-import { AppText, Chip, Button, FeedErrorBoundary } from "@/components/ui";
+import {
+  AppText,
+  Chip,
+  Button,
+  FeedErrorBoundary,
+  ExpandableSearchLauncher,
+} from "@/components/ui";
 import {
   getBuildingById,
   getNearestBuildings,
@@ -40,6 +45,7 @@ import {
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
+import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
 
@@ -108,10 +114,18 @@ export function HomeMapScreen() {
   const insets = useSafeAreaInsets();
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
+  const searchQuery = useSearchStore((state) => state.filters.query);
+  const updateSearchQuery = useSearchStore((state) => state.updateQuery);
+  const rememberSearch = useSearchStore((state) => state.rememberSearch);
+  const searchBarWidth = useMemo(
+    () => Math.max(screenWidth - spacing[3] * 2 - 78, 240),
+    [screenWidth, spacing],
+  );
 
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
+  const highlightedStallVenueId = useDiscoveryStore((state) => state.highlightedStallVenueId);
   const mapFilters = useDiscoveryStore((state) => state.mapFilters);
   const toggleMapFilter = useDiscoveryStore((state) => state.toggleMapFilter);
 
@@ -141,7 +155,7 @@ export function HomeMapScreen() {
       .slice(0, 10);
   }, [repository, visibleBuildings]);
 
-  const [currentZoom, setCurrentZoom] = useState(15.5);
+  const [currentZoom, setCurrentZoom] = useState(highlightedStallVenueId ? 17.1 : 15.5);
   const [displayMode, setDisplayMode] = useState<"carousel" | "list">("carousel");
   const [showLegend, setShowLegend] = useState(false);
 
@@ -167,6 +181,14 @@ export function HomeMapScreen() {
     navigation.navigate("DishDetail", { dishId: dish.id });
   };
 
+  const submitSearch = useCallback(() => {
+    const trimmed = searchQuery.trim();
+    if (trimmed) {
+      rememberSearch(trimmed);
+    }
+    navigation.navigate("SearchHome");
+  }, [navigation, rememberSearch, searchQuery]);
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -189,6 +211,21 @@ export function HomeMapScreen() {
       },
     }),
   ).current;
+
+  const edgeBackPanResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onMoveShouldSetPanResponder: (_, gestureState) =>
+          gestureState.dx > 12 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5,
+        onPanResponderRelease: (_, gestureState) => {
+          if ((gestureState.dx > 64 || gestureState.vx > 0.35) && navigation.canGoBack()) {
+            navigation.goBack();
+          }
+        },
+      }),
+    [navigation],
+  );
 
   useEffect(() => {
     snapTo(CAROUSEL_HEIGHT);
@@ -214,13 +251,21 @@ export function HomeMapScreen() {
             latitude: activeBuildingRecord.coordinate.latitude + latitudeOffset,
             longitude: activeBuildingRecord.coordinate.longitude + longitudeOffset,
           },
-          accent: palette.orange,
+          accent: v.id === highlightedStallVenueId ? palette.error : palette.orange,
+          isTrending: v.id === highlightedStallVenueId,
         };
       });
       return [...bMarkers, ...stallMarkers];
     }
     return bMarkers;
-  }, [palette, repository, visibleBuildings, currentZoom, activeBuildingRecord]);
+  }, [
+    palette,
+    repository,
+    visibleBuildings,
+    currentZoom,
+    activeBuildingRecord,
+    highlightedStallVenueId,
+  ]);
 
   const cameraPadding = useMemo(
     () => ({
@@ -248,8 +293,23 @@ export function HomeMapScreen() {
             }
           }}
           onZoomChange={setCurrentZoom}
+          selectedMarkerId={
+            highlightedStallVenueId ? `stall-${highlightedStallVenueId}` : undefined
+          }
         />
       </FeedErrorBoundary>
+
+      <View
+        {...edgeBackPanResponder.panHandlers}
+        pointerEvents="box-only"
+        style={[
+          styles.edgeBackGestureZone,
+          {
+            width: Math.max(28, insets.left + 24),
+            zIndex: zIndex.overlay + 1,
+          },
+        ]}
+      />
 
       {/* Top Floating UI */}
       <SafeAreaView
@@ -276,33 +336,20 @@ export function HomeMapScreen() {
               alignItems: "center",
             }}
           >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Search dishes or stalls"
-              onPress={() => navigation.navigate("SearchHome")}
-              style={[
-                styles.searchBar,
-                {
-                  backgroundColor: palette.surface,
-                  borderRadius: radii.pill,
-                  flex: 1,
-                  ...shadows.floating,
-                },
-              ]}
-            >
-              <Search color={palette.textMuted} size={20} />
-              <AppText tone="secondary" style={{ flex: 1 }}>
-                Search dishes or stalls...
-              </AppText>
-              <View
-                style={{
-                  width: 1,
-                  height: 20,
-                  backgroundColor: palette.border,
-                }}
-              />
-              <Filter color={palette.orange} size={20} />
-            </Pressable>
+            <ExpandableSearchLauncher
+              query={searchQuery}
+              onQueryChange={updateSearchQuery}
+              onSubmit={submitSearch}
+              onClear={() => updateSearchQuery("")}
+              placeholder="Search dishes or stalls..."
+              expandedWidth={searchBarWidth}
+              iconAlignment="left"
+              barHeight={52}
+              backgroundColor={palette.surface}
+              borderColor={palette.border}
+              textColor={palette.text}
+              placeholderColor={palette.textSecondary}
+            />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={
@@ -580,17 +627,16 @@ export function HomeMapScreen() {
 }
 
 const styles = StyleSheet.create({
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    height: 52,
-    gap: 8,
-  },
   animatedCard: {
     position: "absolute",
     left: 0,
     right: 0,
+  },
+  edgeBackGestureZone: {
+    bottom: 0,
+    left: 0,
+    position: "absolute",
+    top: 0,
   },
   dragHandle: {
     width: "100%",

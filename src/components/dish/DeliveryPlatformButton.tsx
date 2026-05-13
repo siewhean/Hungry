@@ -1,8 +1,9 @@
-import { Linking, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { ExternalLink } from "lucide-react-native";
 
 import { BRAND_COLORS } from "@/constants/brandColors";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
 import type { DeliveryLink } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "../ui";
@@ -39,11 +40,7 @@ export function DeliveryPlatformButton({
       platform: link.platform,
     });
 
-    try {
-      await Linking.openURL(link.nativeUrl);
-    } catch {
-      await Linking.openURL(link.webUrl);
-    }
+    await openTrustedDeliveryUrl(link.platform, link.nativeUrl, link.webUrl);
   };
 
   return (

@@ -19,7 +19,7 @@ export function OnboardingIntro3Screen({ navigation }: Props) {
         "Location + taste together gives better dish suggestions instantly.",
       ]}
       navigation={navigation}
-      nextScreen="TasteQuiz"
+      nextScreen="CuisineSelection"
       backScreen="OnboardingIntro2"
     />
   );

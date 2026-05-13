@@ -1,13 +1,19 @@
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Pressable, View } from "react-native";
 import { Image } from "expo-image";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { MapPin, MessageCircle, Star, Utensils } from "lucide-react-native";
+import { MapPin, MessageCircle, MessageCircleMore, Star, Utensils } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Card, EmptyState, Screen } from "@/components/ui";
+import { prefetchPostDetail, preloadRoute } from "@/features/navigation/prefetch";
+import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useHungryTheme } from "@/theme";
+import type { StallPost } from "@/types/domain";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 type Props = NativeStackScreenProps<RootStackParamList, "UserProfile">;
 
@@ -15,11 +21,19 @@ export function UserProfileScreen({ navigation, route }: Props) {
   const { authorName, authorAvatarUrl, authorLocation } = route.params;
   const { palette, radii, shadows, spacing } = useHungryTheme();
   const repository = getDataRepository();
+  const publishedPosts = usePublishedPostStore((state) => state.posts);
+  const [posts, setPosts] = useState<StallPost[]>([]);
 
-  const posts = useMemo(
-    () => repository.listStallPosts().filter((post) => post.authorName === authorName),
-    [authorName, repository],
-  );
+  useEffect(() => {
+    let isMounted = true;
+    void listSharedStallPosts(repository).then((sharedPosts) => {
+      if (!isMounted) return;
+      setPosts(sharedPosts.filter((post) => post.authorName === authorName));
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [authorName, publishedPosts, repository]);
 
   const totalComments = useMemo(() => {
     return posts.reduce((count, post) => {
@@ -92,7 +106,7 @@ export function UserProfileScreen({ navigation, route }: Props) {
               value={posts.length}
             />
             <StatChip
-              icon={<MessageCircle color={palette.orange} size={14} />}
+              icon={<CommentIcon color={palette.orange} size={14} />}
               label="Comments"
               value={totalComments}
             />
@@ -111,9 +125,13 @@ export function UserProfileScreen({ navigation, route }: Props) {
                   key={post.id}
                   accessibilityRole="button"
                   accessibilityLabel={`Open post at ${post.authorLocation}`}
+                  onPressIn={() => {
+                    prefetchPostDetail(post, repository);
+                    preloadRoute(navigation, "ActivityPostDetail", { postId: post.id });
+                  }}
                   onPress={() =>
-                    navigation.navigate("DishDetail", {
-                      dishId: post.dishIds[0],
+                    navigation.navigate("ActivityPostDetail", {
+                      postId: post.id,
                     })
                   }
                 >

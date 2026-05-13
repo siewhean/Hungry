@@ -1,62 +1,129 @@
-import React from "react";
+import { memo } from "react";
 import { ScrollView, StyleSheet, View, Pressable } from "react-native";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import { Plus, Utensils } from "lucide-react-native";
+
 import { useHungryTheme } from "@/theme";
 import { AppText } from "../ui";
+import type { StoryItem } from "@/types/domain";
 
-interface StoryItem {
-  id: string;
-  name: string;
-  avatarUrl: string;
-  hasUnseen?: boolean;
+interface CircleStoryCarouselProps {
+  stories?: StoryItem[];
+  onStoryPress?: (story: StoryItem) => void;
+  onAddStoryPress?: () => void;
 }
 
-const MOCK_STORIES: StoryItem[] = [
-  { id: "s1", name: "Your Story", avatarUrl: "https://i.pravatar.cc/150?u=me", hasUnseen: false },
-  { id: "s2", name: "Wei Ming", avatarUrl: "https://i.pravatar.cc/150?u=wm", hasUnseen: true },
-  { id: "s3", name: "Sarah L.", avatarUrl: "https://i.pravatar.cc/150?u=sl", hasUnseen: true },
-  { id: "s4", name: "Uncle Tan", avatarUrl: "https://i.pravatar.cc/150?u=ut", hasUnseen: true },
-  { id: "s5", name: "Emma W.", avatarUrl: "https://i.pravatar.cc/150?u=ew", hasUnseen: true },
-  { id: "s6", name: "Ahmad J.", avatarUrl: "https://i.pravatar.cc/150?u=aj", hasUnseen: false },
-];
-
-export function CircleStoryCarousel() {
+export const CircleStoryCarousel = memo(function CircleStoryCarousel({
+  stories = [],
+  onStoryPress,
+  onAddStoryPress,
+}: CircleStoryCarouselProps) {
   const { palette, spacing, radii } = useHungryTheme();
 
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[4] }}
+      contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[3] }}
     >
-      {MOCK_STORIES.map((story) => (
-        <Pressable key={story.id} style={styles.item}>
-          <View
-            style={[
-              styles.ring,
-              {
-                borderColor: story.hasUnseen ? palette.orange : palette.border,
-                borderRadius: radii.pill,
-              },
-            ]}
-          >
-            <View
-              style={[styles.avatarWrap, { backgroundColor: palette.bg, borderRadius: radii.pill }]}
-            >
-              <Image
-                source={{ uri: story.avatarUrl }}
-                style={[styles.avatar, { borderRadius: radii.pill }]}
-              />
-            </View>
+      {stories.map((story) => (
+        <Pressable
+          key={story.id}
+          style={styles.item}
+          onPress={() => onStoryPress?.(story)}
+          accessibilityLabel={
+            story.isOwn ? "Add to your story" : `View ${story.displayName}'s story`
+          }
+        >
+          <View style={styles.ringOuter}>
+            {/* Ring: orange gradient = unseen (any story type), grey = already seen */}
+            {story.hasUnseen ? (
+              <LinearGradient
+                colors={[palette.orange, palette.amber]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.gradientRing, { borderRadius: radii.pill }]}
+              >
+                <View
+                  style={[
+                    styles.avatarInner,
+                    { backgroundColor: palette.bg, borderRadius: radii.pill },
+                  ]}
+                >
+                  <Image
+                    source={{ uri: story.avatarUrl }}
+                    style={[styles.avatar, { borderRadius: radii.pill }]}
+                  />
+                </View>
+              </LinearGradient>
+            ) : (
+              <View
+                style={[
+                  styles.solidRing,
+                  {
+                    borderColor: palette.textMuted,
+                    borderRadius: radii.pill,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.avatarInner,
+                    { backgroundColor: palette.bg, borderRadius: radii.pill },
+                  ]}
+                >
+                  <Image
+                    source={{ uri: story.avatarUrl }}
+                    style={[styles.avatar, { borderRadius: radii.pill }]}
+                  />
+                </View>
+              </View>
+            )}
+
+            {/* "Your story" + add icon */}
+            {story.isOwn && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Create a story"
+                style={[
+                  styles.addBadge,
+                  { backgroundColor: palette.orange, borderColor: palette.bg },
+                ]}
+                onPress={(event) => {
+                  event.stopPropagation();
+                  onAddStoryPress?.();
+                }}
+              >
+                <Plus color="#FFFFFF" size={12} strokeWidth={3} />
+              </Pressable>
+            )}
+
+            {/* Stall fork badge */}
+            {story.isStall && !story.isOwn && (
+              <View
+                style={[
+                  styles.forkBadge,
+                  { backgroundColor: palette.orange, borderColor: palette.bg },
+                ]}
+              >
+                <Utensils color="#FFFFFF" size={9} strokeWidth={2.5} />
+              </View>
+            )}
           </View>
-          <AppText variant="micro" numberOfLines={1} style={styles.label}>
-            {story.name}
+
+          <AppText
+            variant="micro"
+            numberOfLines={1}
+            style={[styles.label, { color: story.isOwn ? palette.textMuted : palette.text }]}
+          >
+            {story.displayName}
           </AppText>
         </Pressable>
       ))}
     </ScrollView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   item: {
@@ -64,16 +131,44 @@ const styles = StyleSheet.create({
     gap: 6,
     width: 72,
   },
-  ring: {
-    borderWidth: 2,
+  ringOuter: {
+    position: "relative",
+  },
+  gradientRing: {
+    padding: 3,
+  },
+  solidRing: {
+    borderWidth: 2.5,
     padding: 2,
   },
-  avatarWrap: {
+  avatarInner: {
     padding: 2,
   },
   avatar: {
-    width: 60,
-    height: 60,
+    width: 56,
+    height: 56,
+  },
+  addBadge: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  forkBadge: {
+    position: "absolute",
+    bottom: -1,
+    right: -1,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
   },
   label: {
     textAlign: "center",

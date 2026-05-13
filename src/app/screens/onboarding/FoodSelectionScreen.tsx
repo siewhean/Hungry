@@ -5,7 +5,7 @@ import { Image } from "expo-image";
 import { Check, ArrowLeft } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 
-import { AppText, Button, Screen } from "@/components/ui";
+import { AppText, Button, EmptyState, Screen } from "@/components/ui";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
@@ -205,9 +205,7 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
               );
             })
           ) : (
-            <View style={{ flex: 1, padding: spacing[8], alignItems: "center" }}>
-              <AppText tone="secondary">No {currentCuisineLabel} dishes found.</AppText>
-            </View>
+            <EmptyState title="No matches found" body={`No ${currentCuisineLabel} dishes found.`} />
           )}
         </Animated.View>
 
