@@ -8,8 +8,8 @@
 
 | Package | Version | Notes |
 |---------|---------|-------|
-| Expo SDK | 54 | Use `expo` CLI, not bare React Native CLI |
-| React Native | 0.81 | |
+| Expo SDK | 55 | Use `expo` CLI, not bare React Native CLI |
+| React Native | 0.83.6 | |
 | TypeScript | strict mode | `tsconfig.json` — no relaxations |
 | React Navigation | v7 | Native stack + bottom tabs |
 | Zustand | latest | Only state management library in use |
@@ -45,12 +45,12 @@ Configured in: `tsconfig.json` + `babel.config.js`
 | Command | What it does | When to run |
 |---------|-------------|-------------|
 | `npm install` | Install dependencies | After any package.json change |
-| `npm run typecheck` | `tsc --noEmit` | After every code change — primary gate |
+| `npm run typecheck` | `tsc --noEmit` | Broad/risky changes, commits, release gates, or TS contract/import/prop changes |
 | `npm run start` | Expo dev server | Manual testing |
-| `npm run ios` | Build + launch iOS simulator | Manual feature verification |
-| `npm run android` | Build + launch Android emulator | Manual feature verification |
+| `npm run ios` | Build + launch iOS simulator | Native/runtime/navigation-risk verification or explicit request |
+| `npm run android` | Build + launch Android emulator | Native/runtime/navigation-risk verification or explicit request |
 | `npx expo-doctor` | Dependency health check | After any dep install/upgrade |
-| `npm run test` | Jest test suite | After any component/logic change |
+| `npm run test` | Jest test suite | Focused tests for bounded changes; full suite for broad/risky changes |
 
 ---
 

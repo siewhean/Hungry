@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-05-01
+
+- Prompt: "Resolve all of the errors in the terminal"
+- Actions:
+  - Made the Supabase service provider lazily load Supabase modules via getters to avoid React Native module evaluation during Node-based tests.
+  - Re-ran `npm run typecheck` and `npx tsx --test src/lib/services/serviceProvider.sprint5.test.ts` to confirm the esbuild transform error is gone.
+- Prompt: "The story is still not working, the status bar is not progressing and clicking does not do anything"
+- Actions:
+  - Started story progress immediately (removed measurement gating) while retaining pixel/percentage fallback rendering.
+  - Ensured header overlay elements and progress tracks do not consume touches by adjusting `pointerEvents`.
+  - Made story "seen" updates idempotent to prevent maximum update depth loops from repeated store writes.
+  - Re-ran `npm run typecheck` to confirm no TypeScript regressions.
+- Prompt: "Stories that are view should be placed at the back of the story list. The transition between users did not happen when I tap on the screen"
+- Actions:
+  - Reordered story lists by `hasUnseen` so viewed stories move behind unseen ones after load and when marking seen.
+  - Switched story viewer navigation to use `activeStoryId` to keep the same story selected even after list reordering.
+  - Ensured swipe transitions are not overridden by index resets during story changes.
+  - Re-ran `npm run typecheck` to confirm no TypeScript regressions.
+- Prompt: "I want a rotating block transition"
+- Actions:
+  - Replaced user-change swipe transitions with a rotate-Y block animation and kept same-user taps instant.
+  - Reset the rotation on story changes to avoid stuck transforms.
+  - Re-ran `npm run typecheck` to confirm no TypeScript regressions.
+- Prompt: "My story should always be first, it should not move to the back"
+- Actions:
+  - Pinned the "Your story" item to the front of the story list while still ordering unseen items before seen ones.
+
 ## 2026-04-16
 
 - Prompt: "There is an error" (runtime: `Tried to register two views with the same name SkiaPictureView`)

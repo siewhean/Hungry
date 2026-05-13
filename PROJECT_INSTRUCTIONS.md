@@ -56,10 +56,16 @@
 
 ## UX Behavior
 
-- Add loading states for async actions.
-- Add progress indicators on buttons when appropriate.
+- Use loading feedback based on expected wait and known layout:
+  - If the wait is more than 300ms and the shape of the page/content is known, use skeletons that match the eventual structure and reserve the exact space of the real button, card, row, list, feed, or article.
+  - If the wait is less than 300ms and the duration is unknown, use a spinner.
+  - If the change or update completes in less than 300ms, show no loading UI.
+  - If the user is uploading something with a known percentage and the upload takes more than 3 seconds, use a progress bar.
+  - Use optimistic UI with rollback on failure only for interactions that are expected to succeed at least 99% of the time, such as likes, saves, and bookmarks.
+- Add loading states for async actions according to the above thresholds.
+- Add progress indicators on buttons only when they clarify an action in progress.
 - Make toggles, carousels, and interactions functional, not decorative.
-- Use skeleton screens for data-heavy sections when useful.
+- Use skeleton screens for data-heavy sections only when the wait threshold and known-shape rules apply; the skeleton must take up the same width, height, padding, and spacing as the final component it replaces.
 - Keep admin and protected routes properly gated and not accessible by URL alone.
 
 ## Copywriting

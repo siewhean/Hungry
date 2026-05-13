@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hungry Design Closeout"
+  short_description: "Check UI against the design."
+  default_prompt: "Use this skill to compare a Hungry screen or component against the approved design and close it only if the visual and interaction details are correct."

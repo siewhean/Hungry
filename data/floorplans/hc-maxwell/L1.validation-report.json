@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "floorplan-validation-report.v1",
+  "buildingId": "hc-maxwell",
+  "floor": "L1",
+  "inputCandidateCount": 26,
+  "validatedCount": 22,
+  "unresolvedCount": 4,
+  "hardFailOverlapPairs": 0,
+  "profile": "floorplan_pdf",
+  "thresholds": {
+    "autoAccept": 0.74,
+    "manualReview": 0.52
+  },
+  "unresolved": [
+    {
+      "id": "poly-006",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-026",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-028",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    },
+    {
+      "id": "poly-033",
+      "reasons": [
+        "area_too_small",
+        "low_confidence"
+      ],
+      "confidence": 0.4222
+    }
+  ]
+}

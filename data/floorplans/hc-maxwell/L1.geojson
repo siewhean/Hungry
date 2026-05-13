@@ -1,0 +1,144 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "schemaVersion": "floorplan-source.v1",
+    "buildingId": "hc-maxwell",
+    "floor": "L1",
+    "canvas": {
+      "width": 980,
+      "height": 640
+    },
+    "sourceType": "cv_extracted",
+    "sourceConfidence": 0.91,
+    "verified": false,
+    "updatedAt": "2026-04-29T00:00:00.000Z"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "building-outline",
+        "kind": "outline",
+        "label": "Maxwell Food Centre Envelope"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[44, 44], [328, 44], [364, 108], [612, 108], [648, 44], [934, 44], [934, 264], [866, 300], [866, 352], [934, 388], [934, 596], [648, 596], [612, 532], [364, 532], [328, 596], [44, 596], [44, 388], [114, 352], [114, 300], [44, 264], [44, 44]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "maxwell-corridor-main",
+        "kind": "corridor",
+        "statusDefault": "non_food",
+        "label": "Main Spine"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[132, 294], [844, 294], [858, 318], [844, 346], [132, 346], [118, 320], [132, 294]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "maxwell-01-10",
+        "kind": "tenant",
+        "unitNumber": "#01-10",
+        "venueId": "venue-tian-tian",
+        "statusDefault": "open",
+        "label": "Tian Tian Chicken Rice"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[346, 118], [428, 112], [432, 180], [350, 192], [346, 118]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "maxwell-01-12",
+        "kind": "tenant",
+        "unitNumber": "#01-12",
+        "venueId": "venue-pasta-express",
+        "statusDefault": "open",
+        "label": "Pasta Express"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[440, 110], [526, 106], [530, 184], [448, 192], [440, 110]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "maxwell-01-42",
+        "kind": "tenant",
+        "unitNumber": "#01-42",
+        "statusDefault": "open",
+        "label": "Rojak"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[274, 210], [356, 218], [352, 290], [276, 286], [274, 210]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "maxwell-01-70",
+        "kind": "tenant",
+        "unitNumber": "#01-70",
+        "statusDefault": "open",
+        "label": "Prawn Mee"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[84, 358], [168, 354], [170, 438], [90, 444], [84, 358]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "maxwell-02-21",
+        "kind": "tenant",
+        "unitNumber": "#02-21",
+        "venueId": "venue-maxwell-porridge",
+        "statusDefault": "open",
+        "label": "Night Owl Teochew Porridge"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[354, 448], [438, 436], [444, 510], [360, 524], [354, 448]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "maxwell-facility-washroom",
+        "kind": "facility",
+        "facilityType": "washroom",
+        "statusDefault": "non_food",
+        "label": "Washroom"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[74, 470], [166, 466], [164, 560], [78, 562], [74, 470]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "maxwell-facility-escalator",
+        "kind": "facility",
+        "facilityType": "escalator",
+        "statusDefault": "non_food",
+        "label": "Escalator"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[826, 468], [900, 488], [896, 568], [830, 556], [826, 468]]]
+      }
+    }
+  ]
+}

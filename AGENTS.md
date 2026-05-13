@@ -11,10 +11,12 @@
 | ---- | ------------------------------ | ------------------------- |
 | 1    | Read project state             | `README.md`               |
 | 2    | Read workflow rules            | `CLAUDE.md`               |
-| 3    | Read tech environment          | `tasks/environment.md`    |
-| 4    | Read current task list         | `tasks/todo.md`           |
-| 5    | Read past lessons              | `tasks/lessons.md`        |
-| 6    | Read relevant domain reference | `tasks/data-contracts.md` |
+| 3    | Read operating model           | `WORKFLOW.md`             |
+| 4    | Read tech environment          | `tasks/environment.md`    |
+| 5    | Read current active backlog    | `tasks/backlog.md`        |
+| 6    | Read current verification      | `tasks/verification.md`   |
+| 7    | Read past lessons              | `tasks/lessons.md`        |
+| 8    | Read relevant domain reference | `tasks/data-contracts.md` |
 
 ---
 
@@ -26,13 +28,19 @@
 | `CLAUDE.md`                     | Workflow rules, planning mode, subagent strategy           | Always                                       |
 | `AGENTS.md`                     | This file — master TOC                                     | Always                                       |
 | `PROJECT_INSTRUCTIONS.md`       | Design philosophy, visual rules, copy rules                | Before any UI work                           |
+| `WORKFLOW.md`                   | Operating model, agent roles, verification bundle          | Always                                       |
+| `ops/low-token-cheatsheet.md`   | Default low-token prompting and output rules for all LLMs  | Always                                       |
+| `.codex/skills/hungry-intent-router/SKILL.md` | Automatic request expansion and skill routing for Hungry work | For vague or multi-step requests |
+| `tasks/backlog.md`              | Canonical active task surface                              | Every session                                |
+| `tasks/verification.md`         | Latest verification evidence                               | Every verification or closeout               |
+| `tasks/session-log.md`          | Append-only execution history                              | End of each focused work block               |
 | `tasks/environment.md`          | Stack versions, paths, commands, constraints               | Before writing any code                      |
 | `tasks/design-system.md`        | Tokens, colors, typography, motion, component patterns     | Before any component work                    |
 | `tasks/screens.md`              | Screen inventory, navigation tree, param types             | Before any navigation or screen work         |
 | `tasks/data-contracts.md`       | Domain types, mock data, store interfaces                  | Before any data or state work                |
 | `tasks/test-harness.md`         | Feedback loops, validation gates, test patterns            | Before any feature or bug-fix work           |
 | `tasks/product-context.md`      | Full PRD summary — personas, features, UX specs, tone      | Before any product feature work              |
-| `tasks/todo.md`                 | Current task checklist                                     | Every session                                |
+| `tasks/todo.md`                 | Historical roadmap, audit trail, and sprint archive        | When roadmap or historical context is needed |
 | `tasks/lessons.md`              | Self-improvement log — rules derived from past corrections | Every session                                |
 | `Research/`                     | PRD, App Flow, Frontend Guidelines (`.docx`)               | When requirements are ambiguous — raw source |
 | `design/`                       | HTML prototypes for each major screen group                | Before UI implementation                     |
@@ -47,7 +55,7 @@
 | Key              | Value                                                                        |
 | ---------------- | ---------------------------------------------------------------------------- |
 | Product name     | Hungry                                                                       |
-| Platform         | iOS + Android (Expo SDK 54 / React Native 0.81)                              |
+| Platform         | iOS + Android (Expo SDK 55 / React Native 0.83.6)                            |
 | Phase            | Consumer mobile app, frontend-only, mock-first                               |
 | Out of scope     | Website, admin portal, backend API, push notifications                       |
 | Market           | Singapore — hawker centres, food courts, restaurants                         |
@@ -99,14 +107,22 @@ Source: `src/constants/featureFlags.ts`
 
 ---
 
-## 6. Validation Gates (run in order, must all pass)
+## 6. Verification Budget
 
-| Gate              | Command                           | Must pass before       |
+Choose the smallest verification set that matches the risk of the change.
+
+| Change size | Examples | Expected checks |
+| ----------- | -------- | --------------- |
+| Small iterative | Copy, spacing, styling, one-screen UI polish, docs, narrowly scoped follow-up fixes | No full QA/QC, no `npm run ios`, no full test suite, and no default `npm run typecheck`; run only a focused check if directly relevant, or state "not run — small iterative change" |
+| Medium bounded | 1-3 files with logic, props, store usage, navigation params, or a focused behavior change | Run the most relevant focused test or contract; add `npm run typecheck` only when TypeScript contracts/imports/props changed |
+| Broad/risky | Shared stores/services, navigation architecture, auth, Supabase, dependencies, native config, release gates, many files, or regression-prone flows | Run `npm run typecheck`, relevant tests, and simulator/manual smoke as applicable |
+
+| Gate              | Command                           | Required when          |
 | ----------------- | --------------------------------- | ---------------------- |
-| Type check        | `npm run typecheck`               | Every commit           |
-| Dependency health | `npx expo-doctor`                 | Every dep change       |
-| Component smoke   | `npm run test` (when tests exist) | Every component change |
-| Manual simulator  | `npm run ios`                     | Feature completion     |
+| Type check        | `npm run typecheck`               | Broad/risky changes, commits, release gates, or TS contract changes |
+| Dependency health | `npx expo-doctor`                 | Dependency or Expo/native config changes |
+| Component smoke   | `npm run test` / focused test     | Logic, store, component, or contract changes |
+| Manual simulator  | `npm run ios`                     | Native/runtime/navigation-risk changes, release smoke, or explicit user request |
 
 See `tasks/test-harness.md` for full feedback loop specification.
 
@@ -146,12 +162,16 @@ DO NOT:
   - Add placeholder testimonials or fake marketing copy
 
 ALWAYS:
-  - Keep TypeScript strict — run typecheck after every change
+  - Keep TypeScript strict; choose checks from the verification budget instead of running broad gates for every small iteration
   - Use the design token system (useHungryTheme)
   - Keep mock data in data.ts
   - Keep types in domain.ts
-  - Mark tasks in tasks/todo.md as you progress
-  - If a task is completed, immediately update that task's status/progress in tasks/todo.md in the same work session
+  - Mark tasks in `tasks/backlog.md` as you progress
+  - If a task is completed, immediately update its canonical row in `tasks/backlog.md` in the same work session
+  - Record verification in `tasks/verification.md` for task/release work; for small iterative changes, final-response evidence is enough unless a task row is updated
+  - Append narrative execution notes to `tasks/session-log.md`
+  - Default to low-token mode: bounded prompts, bounded reads, canonical docs first, delta-only output unless the user explicitly asks for broader narration
+  - Use `hungry-intent-router` as the first-pass skill when a Hungry request is vague, underspecified, or spans multiple workflows
   - Record lessons in tasks/lessons.md after any correction
 ```
 
@@ -177,10 +197,10 @@ See `tasks/test-harness.md` for patterns and examples.
 
 ```
 Before ending any session that changed code:
-  [ ] npm run typecheck — passes
-  [ ] tasks/todo.md — all done items marked [x]
-  [ ] tasks/todo.md — each completed task has updated progress/status notes
-  [ ] tasks/todo.md — review section added
+  [ ] Verification budget selected — focused check run or intentionally skipped for small iterative change
+  [ ] tasks/backlog.md — canonical rows updated
+  [ ] tasks/verification.md — evidence updated when task/release work was changed
+  [ ] tasks/session-log.md — entry appended
   [ ] tasks/lessons.md — any correction recorded
   [ ] README.md — status section updated if progress/decisions changed
 ```

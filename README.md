@@ -10,6 +10,11 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 |------|-------|
 | Start here (agents) | `AGENTS.md` |
 | Workflow rules | `CLAUDE.md` |
+| Operating model | `WORKFLOW.md` |
+| Low-token defaults | `ops/low-token-cheatsheet.md` |
+| Active backlog | `tasks/backlog.md` |
+| Verification evidence | `tasks/verification.md` |
+| Session history | `tasks/session-log.md` |
 | Tech stack + commands | `tasks/environment.md` |
 | Design tokens + components | `tasks/design-system.md` |
 | Screen inventory + navigation | `tasks/screens.md` |
@@ -17,7 +22,7 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 | Testing + feedback loops | `tasks/test-harness.md` |
 | Product requirements (summarised) | `tasks/product-context.md` |
 | Marketing launch kit | `marketing/` |
-| Current task list | `tasks/todo.md` |
+| Historical roadmap + audit trail | `tasks/todo.md` |
 | Past lessons | `tasks/lessons.md` |
 | Product requirements | `Research/01_Product_Requirements_Document_Hungry.docx` |
 | App flow spec | `Research/02_App_Flow_Document_Hungry.docx` |
@@ -32,7 +37,7 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 |-----|-------|
 | Product | Hungry — dish-first food discovery |
 | Market | Singapore (hawker centres, food courts, restaurants) |
-| Platform | iOS + Android (Expo SDK 54 / React Native 0.81) |
+| Platform | iOS + Android (Expo SDK 55 / React Native 0.83.6) |
 | Phase | Consumer app, frontend-only, mock data only |
 | Not in scope | Website, admin portal, backend API, business portal |
 | Core idea | Find the dish you want, then see which stall serves it — not the other way around |
@@ -44,7 +49,7 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 
 | Layer | Choice |
 |-------|--------|
-| Framework | Expo SDK 54 + React Native 0.81 |
+| Framework | Expo SDK 55 + React Native 0.83.6 |
 | Language | TypeScript (strict mode) |
 | Navigation | React Navigation v7 |
 | State | Zustand |
@@ -107,12 +112,14 @@ To override these locally, you can use `.env.development` or modify the constant
 | Typecheck | Passing |
 | Expo Doctor | Blocked locally (npm cache permissions) |
 | Agent harness docs | Done |
-| Unit tests | Basic coverage restored (`npm test`) |
+| Unit tests | Passing (`npm test`) |
+| Playwright E2E | Passing (`npm run test:e2e`) |
 
 ---
 
 ## Notes
 
+- Default LLM operating mode for this repo is low-token mode: use bounded task IDs or files, canonical docs first, and delta-only output unless a broad summary is explicitly requested.
 - Mock data lives exclusively in `src/lib/services/mock/data.ts`
 - Design tokens live exclusively in `src/theme/tokens.ts` — never hardcode values
 - The app runs fully without network or backend
@@ -129,10 +136,11 @@ To override these locally, you can use `.env.development` or modify the constant
 - Review compose now supports real library photo attachments via `expo-image-picker` (dev client/native build required).
 - The current runtime shell is auth-first. Signed-out users route through Splash into Auth before the main app shell.
 - In `__DEV__`, app now boots into the Developer Launcher to speed QA state setup (signed out / onboarding incomplete / onboarding complete presets).
+- Developer Launcher Merchant Mode now seeds the dev merchant state and bypasses the merchant sign-in gate before opening MerchantTabs.
 - Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
 - Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and polygon-based building directory layouts (including Wisma and JEM mall-style floor overlays with vertical level switching).
 - **Design Specifications** — Comprehensive visual, UX, and accessibility specs for all remaining backlog items are now available in `docs/audit/`. These serve as the authoritative implementation guide for Batch 1–8.
-- Current audit status: `npm run typecheck` passes, `npm test` passes, and `npx expo-doctor --verbose` passes (16/16) when run with a writable npm cache path.
+- Current audit status: `npm run typecheck` passes, `npm run lint` passes with 0 errors, `npm test -- --watch=false` passes, `npm run test:e2e` passes, `npm audit --audit-level=moderate` reports 0 vulnerabilities, and `npx expo-doctor` passes (17/17) when run with a writable npm cache path.
 
 
 ## Commands
@@ -151,17 +159,19 @@ To override these locally, you can use `.env.development` or modify the constant
 - Reads stays behind a feature flag even though the tab contract exists now.
 - The app is designed to demo end-to-end without backend availability.
 - The `data/` folder also contains the Singapore food-business workbook, a checked-in curated seed snapshot, and the refresh pipeline for rebuilding the database from public datasets plus supplementary hawker- and food-court-source discovery.
-- The `marketing/` workspace now contains repo-grounded launch materials for positioning, waitlist messaging, social content, video briefs, outreach, and brand rules.
+- The `marketing/` workspace now contains repo-grounded launch materials plus the Next.js marketing site in `marketing/web/` with the homepage, `for-merchants`, `about`, and `privacy` routes.
 
 ## Delivery Governance
 
-- Shared task requirements and cross-agent checklist live in `tasks/todo.md`.
-- Claude and Codex should both update `tasks/todo.md` frequently during execution (at minimum once per focused work block and before ending a session).
-- Planning-first execution is required: create/update a scoped mini-plan before non-trivial implementation work, then record verification before checking tasks complete.
+- Shared active task requirements live in `tasks/backlog.md`.
+- Verification evidence lives in `tasks/verification.md`.
+- Claude and Codex should both update the canonical task rows frequently during execution (at minimum once per focused work block and before ending a session).
+- Planning-first execution is required: create/update scoped backlog rows before non-trivial implementation work, then record verification before checking tasks complete.
+- `tasks/todo.md` remains the historical roadmap and audit trail, not the live status surface.
 
 ## Future Roadmap
 
-See `tasks/todo.md` for the full backlog. Key future features include:
+See `tasks/todo.md` for the historical/full roadmap and `tasks/backlog.md` for the currently active work. Key future features include:
 
 - **Digital Ordering & Payments** — In-app ordering + PayNow/card checkout for hawker centres, food courts, and restaurants. Includes a vendor analytics dashboard (top dishes, peak hours, revenue), real-time crowd/busyness indicators per stall, and queue wait-time estimates. Crowd monitoring is derived from active order volume — no hardware sensors required for the MVP signal.
 - **Interactive Indoor Maps** — SVG floor plans with polygon-level stall selection, open/closed colour coding, and pinch-to-zoom (see `design/figma-v2/building-layout.html` for mockups).

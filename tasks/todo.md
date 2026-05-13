@@ -1,6 +1,6 @@
 # Hungry — Master Task Contract
 
-> **Last updated:** 2026-04-22 | **Phase:** Sprint 10 Code-Complete → Staging Smoke Tests
+> **Last updated:** 2026-04-25 | **Phase:** Sprint 10 Code-Complete → Staging Smoke Tests
 > Shared execution contract between Claude, Codex, and all agents.
 > Read `tasks/lessons.md` before any implementation session.
 > **Roadmap:** `tasks/Roadmap/roadmap.md` — single entry point for phase/sprint sequencing.
@@ -14,6 +14,67 @@
 - During work: check off items as you go. Add inline notes for scope changes.
 - Before ending a session: record a session log entry. Never mark done without a verification step.
 - Source of truth precedence: Figma > `product-context.md` > this file > memory.
+
+---
+
+## 🟠 ACTIVE — Sprint 11: Design System & UX Overhaul (Phase A, B & C)
+
+> **Status:** Phase A & B complete. Phase C (Features) in progress — core Merchant mode and Review feed delivered.
+> **Full plan:** `tasks/Roadmap/roadmap.md` and `tasks/Roadmap/phase-c-implementation.md`.
+> **Owner:** Gemini (UI/UX + Implementation).
+
+### Phase A — Critical Screen Fixes (V2 Prototypes)
+
+- [x] **FIG-01 — DiscoverHomeScreenV2** — Unified Discovery (Variant A) with integrated search and intent chips. [Gemini]
+- [x] **FIG-02 — DishSearchScreenV2** — High-fidelity search with category tabs and trending dishes. [Gemini]
+- [x] **FIG-03 — StallDetailScreenV2** — Premium detail view with hero media and info clusters. [Gemini]
+- [x] **FIG-04 — BuildingDrillDownScreenV2** — Segmented floor selector and building hero overlays. [Gemini]
+- [x] **FIG-05 — QuickReviewSheetV2** — 4-step interactive review flow. [Gemini]
+- [x] **FIG-06 — QuickBitesScreen (V1 Update)** — Edge-to-edge high-density food grid with collapsible filters. [Gemini]
+- [x] **MAP-01 — Map Pin Overhaul** — Added 'restaurant' type and fixed tappability/navigation logic. [Gemini]
+
+### Phase B — Design System Upgrades
+
+- [x] **DS-01 — Typography: Fraunces Integration** — Merged Fraunces for display headings across all V2 surfaces. [Gemini]
+- [x] **DS-02 — Dark Mode Persistence** — 3-way toggle (Light / Dark / System) with AsyncStorage persistence. [Gemini]
+- [x] **DS-03 — Neutral Palette Migration** — Removed all 'Paper Warm' tones; app now pure white/neutral grey. [Gemini]
+- [x] **DS-04 — Brand Assets V2** — SVG Logos (Wordmark, Icon, Logomark) and Mascot with expressions. [Gemini]
+- [x] **DS-05 — Splash V2** — Two advanced animation variants (Bite scatter vs. Gravity rain). [Gemini]
+- [x] **DS-06 — Food Icon Suite** — High-quality SVG illustrations for Wheel, Bowl, and Ramen. [Gemini]
+
+### Phase C — Feature Additions
+
+- [x] **C1 — Review Feed V2** — Pure user content feed with Rating/Location filters. [Gemini]
+- [x] **C1 — Post Composer V2** — Redesigned composer with "Post to" destination toggle. [Gemini]
+- [x] **C2 — Music Selection V2** — Vertical carousel with waveform indicators and simulated play. [Gemini]
+- [x] **C3 — Merchant Mode** — Complete navigation stack (Dashboard, Menu, Analytics, Profile). [Gemini]
+- [x] **C5 — Search History** — Persistent history grouped by time; swipe-to-delete. [Gemini]
+- [ ] **C8 — Personalisation Habit Learning Engine** — Learn user habits from in-app interactions and recommend based on behavioral patterns (favourite meals/stalls, click behavior, day-of-week and time-of-day). [Codex]
+  - Track events: dish/stall taps, saves/likes, review submissions, search terms, revisit frequency, and session timestamps.
+  - Build habit profile per user: preferred stalls/dishes, recurring visit windows (e.g., weekday lunch), and intent clusters.
+  - Recommendation pass: prioritize feed/discover cards using habit score + recency + diversity guardrail.
+  - Privacy guardrail: add explicit settings toggle to enable/disable behavioral personalisation and clear learned history.
+- [ ] **C9 — Realistic Floorplan Polygon Pipeline (Phase 1)** — Convert real floorplan assets into realistic stall polygons with canonical source contracts and app integration for one venue/floor (`hc-maxwell:L1`). [Codex]
+  - Add CV extraction scripts (`prepare_floorplan.py`, `extract_polygons.py`, `score_validate_polygons.py`, `export_floorplan.py`, `render_qa_overlay.py`).
+  - Add mapping workflow (`map_stalls.py`) to map `unitNumber -> venueId` and generate unresolved reports.
+  - Add canonical `FloorPlanSourceV1` source contract + adapter and make `getFloorPlan()` prefer canonical sources before hardcoded/generic fallback.
+  - Add repo artifacts at `data/floorplans/hc-maxwell/` (`L1.hungry.json`, `L1.geojson`, mapping CSV template).
+- [ ] **C4 — Messaging Expansion** — Group chats, voice notes, and location sharing. [Gemini]
+- [ ] **C6 — Gamification V2** — Achievements screen and interactive Passport stamps. [Gemini]
+- [ ] **C7 — Carousel Overhaul** — Implement specific dish/stall photo rules for 5 carousels. [Gemini]
+
+### Done gate
+
+- [x] `npm run typecheck` passes. *(2026-04-23)*
+- [x] Merchant mode accessible via Settings V2 and Developer Launcher.
+- [x] Persona feedback integrated: Uncle Tan (high accessibility) and Sarah (vegetarian filters).
+- [x] All new V2 features registered in navigation and protected by auth gates.
+- [ ] Personalisation recommendations adapt to day/time habit patterns in staging and can be toggled off from Settings.
+- [x] Polygon extraction pipeline generates schema-valid canonical floorplan JSON for `hc-maxwell:L1`. *(Added `data/floorplans/hc-maxwell/L1.hungry.json` + `L1.geojson` with `floorplan-source.v1` contract fields.)*
+- [ ] Geometry validation passes (0 self-intersections/degenerate polygons, all polygons inside outline, no tenant overlap > 5%).
+- [x] Unit mapping report is generated with coverage summary and unresolved reason tags. *(`map_stalls.py` smoke run produced `/tmp/L1.mapping-report.json` with coverage + unresolved reason tags.)*
+- [ ] Visual overlay QA artifact is generated for manual review (`output/qa/floorplans/hc-maxwell-L1-overlay.png`).
+- [ ] Map interaction QA passes (polygon taps open correct stall details >= 95% sampled pass rate; no redbox/fatal).
 
 ---
 
@@ -54,14 +115,15 @@
 ### Consumer-surface supply capture (Codex primary, Gemini copy)
 
 - [x] **CLM-03 — "Claim this stall" CTA on `StallDetailScreen`** — fires `merchant_claim_interests` insert + telemetry event `claim_this_stall_tapped`. [Codex] *(implemented in `StallDetailScreen` with `FEATURE_FLAGS.merchantClaimCtaEnabled` gate, in-flight disabled state, action-level auth check, analytics event, and `submitMerchantClaimInterest` service call mapped to success/info/error toast paths. Service contract + mock/supabase implementations added in `src/lib/services/types.ts`, `src/lib/services/mock/mockService.ts`, `src/lib/services/supabase/supabaseService.ts`.)*
-- [ ] **CLM-04 — Copy spec for CTA + verification explainer page** — sets expectation for SingPass Myinfo Business / NEA licence / video walkaround flow. [Gemini]
+- [x] **CLM-04 — Copy spec for CTA + verification explainer page** — sets expectation for SingPass Myinfo Business / NEA licence / video walkaround flow. [Codex] *(implemented in `tasks/merchant-claim-copy-spec.md` with `MerchantClaimExplainerScreen` linked from Stall Detail CTA.)*
 - [x] **CLM-05 — Feature flag `merchantClaimCtaEnabled`** added to `src/constants/featureFlags.ts` — OFF production, ON staging. [Codex] *(implemented via `resolveFeatureFlags()` using `EXPO_PUBLIC_APP_ENV`; `true` only for `staging`, `false` for `production`/`development`. Covered by `src/constants/featureFlags.test.ts`.)*
 - [x] **CLM-06 — Curated stall menu path decision** — consumer `StallDetailScreen` remains sourced from curated `dishes` only; no consumer exposure of `dishes_draft`. [Codex] *(confirmed contract in `StallDetailScreen` via `repository.listDishesByVenue(venue.id)` and no `dishes_draft`/draft queue reads.)*
+- [x] **CLM-07 — Single-claim enforcement per account** — each account may submit only one stall claim total; repeat claims return existing-claim message. [Codex] *(implemented via profile-level dedupe in `submitClaimFromStall` and covered by claim helper tests.)*
 
 ### Done gate
 
 - [x] OCR pipeline processes a test menu photo end-to-end in staging within 30s (upload → Vision → extraction → `dishes_draft` row in ops queue). *(2026-04-22 verification: `OCR_SMOKE_OK` with `latencyMs=6794`, `ocrStatus=succeeded`, `extractedRows=8`, and inserted rows linked by `source_photo_id`.)*
-- [ ] "Claim this stall" CTA fires telemetry event AND inserts a `merchant_claim_interests` row in staging. *(Insert path verified in staging via authenticated RPC smoke: row created in `merchant_claim_interests` and cleaned up; telemetry runtime confirmation still pending a device-level CTA tap verification.)*
+- [x] "Claim this stall" CTA fires telemetry event AND inserts a `merchant_claim_interests` row in staging. *(2026-04-29 verification complete: staging insert confirmed with row `852e9988-b94f-45c3-a7f1-23e4bf57f082`; PostHog Event definitions shows `claim_this_stall_tapped` with `Last seen` ~2 minutes after live simulator tap, confirming telemetry delivery.)*
 - [x] `npm run typecheck` passes. *(2026-04-22)*
 - [ ] `npm run test` passes. *(Blocked by Node 25 / esbuild transform issue on `node_modules/react-native/index.js`; not a logic failure — tooling environment issue. Sprint 10 contract tests pass when run directly via `npx tsx --test`.)*
 - [ ] Feature flag `merchantClaimCtaEnabled` OFF in production, ON in staging (verified via live flag read).
@@ -70,22 +132,26 @@
 
 ## 🔵 DEFERRED — Design Pass Phase 4: Marketing Website
 
-> **Status:** Scoped but not shipping in the current design-pass session (user opted to skip). Revisit after Design-Pass Phases 1–3 land. Plan origin: `~/.claude/plans/fetch-this-design-file-gentle-wilkes.md`.
-> **Goal:** Stand up `marketing/website/` as a real site (not just the existing copy/wireframe markdown) reusing the app's motif + tokens.
-> **Owner:** TBD (Codex implementation; Claude can architect; Gemini reviews visual parity).
+> **Status:** ✅ MODERNISED 2026-04-23 — `marketing/web/` now ships a redesigned white-canvas homepage plus `/for-merchants`, `/about`, and `/privacy`.
+> **Goal:** Stand up `marketing/web/` as a real site reusing the app's motif + tokens.
+> **Owner:** Claude implemented; Gemini reviews visual parity; Codex deploys to Vercel.
 
 ### Scope
 
-- [ ] **WEB-01 — Initialise Next.js 14 App Router project** under `marketing/website/` with TypeScript + Tailwind. [Codex]
-- [ ] **WEB-02 — `app/layout.tsx`** — load Fraunces (display) + Nunito (body) via `next/font/google`; mirror app theme tokens. [Codex]
-- [ ] **WEB-03 — `tailwind.config.ts`** — port palette from `src/theme/tokens.ts` (light + warm-charcoal dark). Single source of truth: re-export from the RN tokens file if feasible, else keep in sync. [Codex]
-- [ ] **WEB-04 — `components/MotifHero.tsx`** — web port of `src/components/ui/HungryMotifHero` (curved green band + bubbles + pin illustration). Same props. [Codex]
-- [ ] **WEB-05 — `app/page.tsx` landing** — hero (MotifHero) + tagline ("Find the dish. Not just the restaurant.") + 3 product screenshots + features grid + waitlist form. Reuse copy from `marketing/website/waitlist-page-copy.md`. [Codex]
-- [ ] **WEB-06 — `app/for-merchants/page.tsx`** — merchant pitch page (value prop, verification tiers preview, waitlist form). [Codex]
-- [ ] **WEB-07 — `app/about/page.tsx`** — about + brand tagline + team. [Codex]
-- [ ] **WEB-08 — `public/`** — app screenshots (splash with bite animation, home with motif, discover carousels, wheel, passport), logo assets. [Gemini to export, Codex to wire]
-- [ ] **WEB-09 — Waitlist form API route** — `app/api/waitlist/route.ts` → Supabase insert into `merchant_claim_interests` (existing table) or a new `consumer_waitlist` table. [Codex, requires Sprint 10 merged]
-- [ ] **WEB-10 — SEO + Open Graph** — metadata, OG image with motif, sitemap.xml, robots.txt. [Codex]
+- 2026-04-23 mini-plan — Codex website modernization pass:
+  - Rebuild the homepage in `marketing/web/` with a white main canvas, no emoji usage, and a materially different editorial layout.
+  - Add the linked routes `/for-merchants`, `/about`, and `/privacy` in the same design language.
+  - Clean up site infrastructure: canonicalize root `app/` + `components/`, add metadata/OG asset, mobile nav, and verification.
+- [x] **WEB-01 — Initialise Next.js 16.2.4 App Router project** under `marketing/web/` with TypeScript + Tailwind. [Done 2026-04-22]
+- [x] **WEB-02 — `app/layout.tsx`** — load Fraunces (display) + Nunito (body) + DM Mono via `next/font/google`; mirror app theme tokens. [Done 2026-04-22]
+- [x] **WEB-03 — `tailwind.config.ts` + `globals.css`** — port palette from `src/theme/tokens.ts` via Tailwind v4 `@theme` variables (`--color-hungry-*`). [Done 2026-04-22]
+- [x] **WEB-04 — `components/Hero.tsx`** — hero with floating dish pills, gradient orbs, Fraunces headline, inline waitlist form. [Done 2026-04-22]
+- [x] **WEB-05 — `app/page.tsx` landing** — Navbar + Hero + ProblemSection + FeaturesSection + HowItWorks + LocalSection + HawkerSection + FaqSection + Footer. Copy from `marketing/website/waitlist-page-copy.md`. [Done 2026-04-22]
+- [x] **WEB-06 — Waitlist form** — `components/WaitlistForm.tsx` with name/email/joining-as toggle, API call, success + error states. [Done 2026-04-22]
+- [x] **WEB-07 — `app/for-merchants/page.tsx`** — merchant pitch page (value prop, verification tiers preview, waitlist form). [Done 2026-04-23]
+- [x] **WEB-08 — `app/about/page.tsx`** — about + brand tagline + team. [Done 2026-04-23]
+- [x] **WEB-09 — Waitlist form API route** — `app/api/waitlist/route.ts` → in-memory store (Supabase swap ready); POST with email validation + idempotency; GET for count. [Done 2026-04-22]
+- [x] **WEB-10 — SEO + Open Graph** — full metadata in `layout.tsx` (title template, OG image, Twitter card, robots, locale `en_SG`). [Done 2026-04-22]
 - [ ] **WEB-11 — Deploy to Vercel** with preview URLs on PRs. Link to `hungry.sg` domain. [Codex + user for DNS]
 
 ### Reusable assets from Phases 1–3
@@ -97,8 +163,10 @@
 
 ### Verification
 
-- [ ] `cd marketing/website && npm run build` passes.
-- [ ] `npm run dev` → localhost:3000 renders landing, for-merchants, about with motif + fonts.
+- [x] `cd marketing/web && npm run build` passes. *(2026-04-22 — Exit code 0)*
+- [x] `npm run dev` → localhost:3000 renders landing with motif + fonts. *(2026-04-22 — verified visually)*
+- [x] `cd marketing/web && npm run lint` passes. *(2026-04-23 — no warnings)*
+- [x] `cd marketing/web && npm run build` passes with routes `/`, `/for-merchants`, `/about`, `/privacy`, `/api/waitlist`. *(2026-04-23 — Exit code 0)*
 - [ ] Lighthouse ≥ 90 performance, ≥ 95 accessibility, ≥ 95 SEO on landing.
 - [ ] Waitlist form submits end-to-end to Supabase and shows success state.
 - [ ] Preview deploy on Vercel works; production deploy live at `hungry.sg` (or staging subdomain first).

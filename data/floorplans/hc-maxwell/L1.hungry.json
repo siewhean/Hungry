@@ -1,0 +1,265 @@
+{
+  "schemaVersion": "floorplan-source.v1",
+  "buildingId": "hc-maxwell",
+  "floor": "L1",
+  "canvas": {
+    "width": 980,
+    "height": 640
+  },
+  "buildingOutline": {
+    "polygon": [
+      [44, 44],
+      [328, 44],
+      [364, 108],
+      [612, 108],
+      [648, 44],
+      [934, 44],
+      [934, 264],
+      [866, 300],
+      [866, 352],
+      [934, 388],
+      [934, 596],
+      [648, 596],
+      [612, 532],
+      [364, 532],
+      [328, 596],
+      [44, 596],
+      [44, 388],
+      [114, 352],
+      [114, 300],
+      [44, 264]
+    ],
+    "label": "Maxwell Food Centre Envelope"
+  },
+  "stalls": [
+    {
+      "id": "maxwell-corridor-main",
+      "unitNumber": "",
+      "polygon": [[132, 294], [844, 294], [858, 318], [844, 346], [132, 346], [118, 320]],
+      "kind": "corridor",
+      "label": "Main Spine",
+      "statusDefault": "non_food"
+    },
+    {
+      "id": "maxwell-corridor-top-link",
+      "unitNumber": "",
+      "polygon": [[312, 156], [668, 156], [688, 184], [668, 214], [312, 214], [292, 184]],
+      "kind": "corridor",
+      "label": "North Link",
+      "statusDefault": "non_food"
+    },
+    {
+      "id": "maxwell-corridor-bottom-link",
+      "unitNumber": "",
+      "polygon": [[312, 424], [668, 424], [688, 452], [668, 484], [312, 484], [292, 452]],
+      "kind": "corridor",
+      "label": "South Link",
+      "statusDefault": "non_food"
+    },
+    {
+      "id": "maxwell-01-04",
+      "unitNumber": "#01-04",
+      "polygon": [[74, 78], [164, 68], [168, 146], [82, 154]],
+      "kind": "tenant",
+      "label": "Carrot Cake",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-06",
+      "unitNumber": "#01-06",
+      "polygon": [[172, 66], [254, 62], [260, 140], [176, 146]],
+      "kind": "tenant",
+      "label": "Fish Ball Noodles",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-08",
+      "unitNumber": "#01-08",
+      "polygon": [[264, 64], [338, 76], [332, 150], [270, 142]],
+      "kind": "tenant",
+      "label": "Nasi Lemak",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-10",
+      "unitNumber": "#01-10",
+      "polygon": [[346, 118], [428, 112], [432, 180], [350, 192]],
+      "kind": "tenant",
+      "label": "Tian Tian Chicken Rice",
+      "venueId": "venue-tian-tian",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-12",
+      "unitNumber": "#01-12",
+      "polygon": [[440, 110], [526, 106], [530, 184], [448, 192]],
+      "kind": "tenant",
+      "label": "Pasta Express",
+      "venueId": "venue-pasta-express",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-14",
+      "unitNumber": "#01-14",
+      "polygon": [[540, 108], [626, 114], [620, 194], [540, 188]],
+      "kind": "tenant",
+      "label": "Braised Duck Rice",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-16",
+      "unitNumber": "#01-16",
+      "polygon": [[638, 118], [720, 108], [724, 184], [642, 196]],
+      "kind": "tenant",
+      "label": "Ban Mian",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-18",
+      "unitNumber": "#01-18",
+      "polygon": [[730, 108], [822, 120], [816, 198], [736, 188]],
+      "kind": "tenant",
+      "label": "Satay",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-20",
+      "unitNumber": "#01-20",
+      "polygon": [[828, 126], [900, 152], [898, 228], [828, 214]],
+      "kind": "tenant",
+      "label": "Oyster Omelette",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-38",
+      "unitNumber": "#01-38",
+      "polygon": [[82, 210], [174, 206], [176, 276], [86, 282]],
+      "kind": "tenant",
+      "label": "Laksa",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-40",
+      "unitNumber": "#01-40",
+      "polygon": [[184, 206], [272, 204], [272, 278], [186, 284]],
+      "kind": "tenant",
+      "label": "Hokkien Mee",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-42",
+      "unitNumber": "#01-42",
+      "polygon": [[274, 210], [356, 218], [352, 290], [276, 286]],
+      "kind": "tenant",
+      "label": "Rojak",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-44",
+      "unitNumber": "#01-44",
+      "polygon": [[642, 214], [724, 206], [726, 288], [648, 296]],
+      "kind": "tenant",
+      "label": "Chicken Wings",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-46",
+      "unitNumber": "#01-46",
+      "polygon": [[730, 204], [820, 214], [818, 292], [734, 286]],
+      "kind": "tenant",
+      "label": "Kway Chap",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-48",
+      "unitNumber": "#01-48",
+      "polygon": [[824, 214], [894, 246], [892, 320], [824, 304]],
+      "kind": "tenant",
+      "label": "Mutton Soup",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-70",
+      "unitNumber": "#01-70",
+      "polygon": [[84, 358], [168, 354], [170, 438], [90, 444]],
+      "kind": "tenant",
+      "label": "Prawn Mee",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-72",
+      "unitNumber": "#01-72",
+      "polygon": [[176, 352], [262, 350], [266, 434], [180, 438]],
+      "kind": "tenant",
+      "label": "Kueh Pie Tee",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-74",
+      "unitNumber": "#01-74",
+      "polygon": [[270, 352], [348, 360], [344, 442], [274, 434]],
+      "kind": "tenant",
+      "label": "Desserts",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-02-21",
+      "unitNumber": "#02-21",
+      "polygon": [[354, 448], [438, 436], [444, 510], [360, 524]],
+      "kind": "tenant",
+      "label": "Night Owl Teochew Porridge",
+      "venueId": "venue-maxwell-porridge",
+      "statusDefault": "open"
+    },
+    {
+      "id": "maxwell-01-76",
+      "unitNumber": "#01-76",
+      "polygon": [[448, 434], [532, 428], [536, 506], [452, 514]],
+      "kind": "tenant",
+      "label": "Economic Rice",
+      "statusDefault": "closed"
+    },
+    {
+      "id": "maxwell-facility-washroom",
+      "unitNumber": "",
+      "polygon": [[74, 470], [166, 466], [164, 560], [78, 562]],
+      "kind": "facility",
+      "facilityType": "washroom",
+      "label": "Washroom",
+      "statusDefault": "non_food"
+    },
+    {
+      "id": "maxwell-facility-lift",
+      "unitNumber": "",
+      "polygon": [[258, 470], [322, 474], [320, 548], [256, 544]],
+      "kind": "facility",
+      "facilityType": "lift",
+      "label": "Lift Lobby",
+      "statusDefault": "non_food"
+    },
+    {
+      "id": "maxwell-facility-tray-return",
+      "unitNumber": "",
+      "polygon": [[662, 470], [744, 464], [748, 552], [666, 560]],
+      "kind": "facility",
+      "facilityType": "service",
+      "label": "Tray Return",
+      "statusDefault": "non_food"
+    },
+    {
+      "id": "maxwell-facility-escalator",
+      "unitNumber": "",
+      "polygon": [[826, 468], [900, 488], [896, 568], [830, 556]],
+      "kind": "facility",
+      "facilityType": "escalator",
+      "label": "Escalator",
+      "statusDefault": "non_food"
+    }
+  ],
+  "meta": {
+    "sourceType": "cv_extracted",
+    "sourceConfidence": 0.91,
+    "verified": false,
+    "updatedAt": "2026-04-29T00:00:00.000Z"
+  }
+}

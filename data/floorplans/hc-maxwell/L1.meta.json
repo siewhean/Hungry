@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "floorplan-prep.v1",
+  "buildingId": "hc-maxwell",
+  "floor": "L1",
+  "inputPath": "data/floorplans/hc-maxwell/L1.source.pdf",
+  "outputRectifiedPath": "data/floorplans/hc-maxwell/L1.rectified.png",
+  "outputPrepPath": "data/floorplans/hc-maxwell/L1.prep.png",
+  "canvas": {
+    "width": 1000,
+    "height": 700
+  },
+  "pdfPage": 3,
+  "controlPointsSource": null,
+  "sourceQuadrilateral": [
+    [
+      1303.0,
+      798.0
+    ],
+    [
+      1368.0,
+      802.0
+    ],
+    [
+      1314.0,
+      865.0
+    ],
+    [
+      1263.0,
+      854.0
+    ]
+  ],
+  "transformMatrix": [
+    [
+      -9.222274997225512,
+      -6.5873392837325175,
+      17273.32106980339
+    ],
+    [
+      0.3523959432675184,
+      -5.726434078097187,
+      4110.522480243979
+    ],
+    [
+      -0.0013058544485169711,
+      0.00019948283037533394,
+      1.0
+    ]
+  ]
+}
