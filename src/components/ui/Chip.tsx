@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, type StyleProp, View, type ViewStyle } from "react-native";
+import * as Haptics from "expo-haptics";
 
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
@@ -9,16 +10,20 @@ interface ChipProps {
   selected?: boolean;
   onPress?: () => void;
   leftIcon?: ReactNode;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function Chip({ label, selected = false, onPress, leftIcon }: ChipProps) {
-  const { palette, radii, spacing, colorScheme } = useHungryTheme();
+export function Chip({ label, selected = false, onPress, leftIcon, style }: ChipProps) {
+  const { colorScheme, componentSizes, opacity, palette, radii, spacing } = useHungryTheme();
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      onPress={onPress}
+      onPress={() => {
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onPress?.();
+      }}
       style={({ pressed }) => [
         styles.chip,
         {
@@ -29,12 +34,13 @@ export function Chip({ label, selected = false, onPress, leftIcon }: ChipProps) 
               : palette.surface,
           borderColor: selected ? palette.orange : palette.border,
           borderRadius: radii.pill,
-          minHeight: 44,
+          minHeight: componentSizes.touchTarget,
           paddingHorizontal: spacing[3],
           paddingVertical: spacing[2],
-          opacity: pressed ? 0.85 : 1,
+          opacity: pressed ? opacity.pressed : 1,
           justifyContent: "center",
         },
+        style,
       ]}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
@@ -42,8 +48,10 @@ export function Chip({ label, selected = false, onPress, leftIcon }: ChipProps) 
         <AppText
           style={{
             color: selected ? palette.orange : palette.textSecondary,
+            flexShrink: 1,
             fontWeight: selected ? "700" : "500",
           }}
+          numberOfLines={1}
         >
           {label}
         </AppText>

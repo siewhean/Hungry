@@ -3,24 +3,36 @@ import {
   buildings,
   dishes,
   guestProfile,
-  stallPosts,
+  mockCollectionItems,
+  mockCollections,
+  mockStallInteractions,
+  mockUserFoodCred,
+  mockUserMissionProgress,
   userProfile,
   venues,
 } from "./data";
+import { listMockStallPosts } from "./stallPostState";
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import type { DecideForMeOptions } from "@/lib/services/types";
 import type {
   BlogPost,
   BuildingSummary,
+  CollectionItem,
   DietaryFlag,
   DishDetail,
+  FoodCollection,
   SearchFilters,
+  StallInteraction,
   StallPost,
   TasteVector,
+  UserFoodCred,
+  UserMissionProgress,
   UserProfile,
   VenueSummary,
+  WeeklyMission,
 } from "@/types/domain";
+import { MOCK_ACTIVE_MISSIONS } from "@/constants/missionTemplates";
 
 const BUILDING_ID_ALIASES: Record<string, string[]> = {
   "building-maxwell": ["hc-maxwell"],
@@ -41,14 +53,6 @@ const BUILDING_ID_ALIASES: Record<string, string[]> = {
 
 function resolveBuildingIds(buildingId: string) {
   return new Set([buildingId, ...(BUILDING_ID_ALIASES[buildingId] ?? [])]);
-}
-
-function distanceScore(distanceMeters: number) {
-  return Math.max(0, 1 - distanceMeters / 800);
-}
-
-function ratingScore(rating: number) {
-  return rating / 5;
 }
 
 export const dataRepositoryMock = {
@@ -92,18 +96,16 @@ export const dataRepositoryMock = {
       );
     });
 
-    return results.sort((a, b) => {
-      const scoreA =
-        distanceScore(a.distanceMeters) +
-        ratingScore(a.rating) +
-        similarityScore(a.tasteVector, filters.tasteValues || tasteProfile);
-      const scoreB =
-        distanceScore(b.distanceMeters) +
-        ratingScore(b.rating) +
-        similarityScore(b.tasteVector, filters.tasteValues || tasteProfile);
-
-      return scoreB - scoreA;
+    const ranked = runRecommendationPipeline(results, {
+      userVector: filters.tasteValues || tasteProfile,
+      dietaryFlags: filters.dietaryFlags,
+      radiusMeters: filters.radius,
+      neophiliaIndex: 5,
     });
+
+    return ranked
+      .map((result) => results.find((dish) => dish.id === result.dishId))
+      .filter((dish): dish is DishDetail => Boolean(dish));
   },
   getDecideForMe(tasteProfile: TasteVector, options: DecideForMeOptions = {}) {
     const dietaryFlags: DietaryFlag[] = options.dietaryFlags ?? [];
@@ -137,7 +139,60 @@ export const dataRepositoryMock = {
     return blogPosts;
   },
   listStallPosts(): StallPost[] {
-    return stallPosts;
+    return listMockStallPosts();
+  },
+
+  // ─── Gamification Repositories ─────────────────────────────────────────────
+
+  /** Returns all featured + public official collections */
+  listCollections(): Promise<FoodCollection[]> {
+    return Promise.resolve(mockCollections.filter((c) => c.visibility === "public"));
+  },
+
+  /** Returns featured collections only */
+  listFeaturedCollections(): Promise<FoodCollection[]> {
+    return Promise.resolve(mockCollections.filter((c) => c.isFeatured));
+  },
+
+  /** Returns a single collection by ID */
+  getCollectionById(collectionId: string): Promise<FoodCollection | null> {
+    return Promise.resolve(mockCollections.find((c) => c.id === collectionId) ?? null);
+  },
+
+  /** Returns all stall items for a collection, ordered by displayOrder */
+  listCollectionItems(collectionId: string): Promise<CollectionItem[]> {
+    return Promise.resolve(
+      mockCollectionItems
+        .filter((item) => item.collectionId === collectionId)
+        .sort((a, b) => a.displayOrder - b.displayOrder),
+    );
+  },
+
+  /** Returns the stall interaction state for a user+stall pair */
+  getStallInteraction(userId: string, stallId: string): Promise<StallInteraction | null> {
+    const found = mockStallInteractions.find((i) => i.userId === userId && i.stallId === stallId);
+    return Promise.resolve(found ?? null);
+  },
+
+  /** Returns all stall interactions for a user */
+  listStallInteractions(userId: string): Promise<StallInteraction[]> {
+    return Promise.resolve(mockStallInteractions.filter((i) => i.userId === userId));
+  },
+
+  /** Returns the user's Food Cred summary */
+  getUserFoodCred(userId: string): Promise<UserFoodCred | null> {
+    if (mockUserFoodCred.userId === userId) return Promise.resolve(mockUserFoodCred);
+    return Promise.resolve(null);
+  },
+
+  /** Returns the currently active weekly missions */
+  listActiveMissions(): Promise<WeeklyMission[]> {
+    return Promise.resolve(MOCK_ACTIVE_MISSIONS);
+  },
+
+  /** Returns the user's progress on all active missions */
+  listUserMissionProgress(userId: string): Promise<UserMissionProgress[]> {
+    return Promise.resolve(mockUserMissionProgress.filter((p) => p.userId === userId));
   },
 };
 

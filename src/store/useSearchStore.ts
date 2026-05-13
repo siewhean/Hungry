@@ -4,7 +4,13 @@ import { persist } from "zustand/middleware";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
-import type { DietaryFlag, SearchCategory, SearchFilters, TasteVector } from "@/types/domain";
+import type {
+  DietaryFlag,
+  SearchCategory,
+  SearchFilters,
+  TasteVector,
+  SearchHistoryEntry,
+} from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
 
 const MAX_RECENT_SEARCHES = 5;
@@ -16,12 +22,16 @@ function normalizeSearchQuery(query: string) {
 interface SearchState {
   filters: SearchFilters;
   recentSearches: string[];
+  history: SearchHistoryEntry[];
   updateQuery: (query: string) => void;
   toggleCategory: (category: SearchCategory) => void;
   toggleDietary: (flag: DietaryFlag) => void;
   setTasteValues: (tasteValues: TasteVector) => void;
   resetToProfile: (tasteValues: TasteVector) => void;
   rememberSearch: (query: string) => void;
+  addHistoryEntry: (entry: Omit<SearchHistoryEntry, "id" | "timestamp">) => void;
+  removeHistoryEntry: (id: string) => void;
+  clearHistory: () => void;
   clearSearchState: () => void;
 }
 
@@ -36,6 +46,7 @@ export const useSearchStore = create<SearchState>()(
         radius: 1000,
       },
       recentSearches: [],
+      history: [],
       updateQuery: (query) =>
         set((state) => ({
           filters: {
@@ -119,6 +130,22 @@ export const useSearchStore = create<SearchState>()(
             ].slice(0, MAX_RECENT_SEARCHES),
           };
         }),
+      addHistoryEntry: (entry) =>
+        set((state) => {
+          const newEntry: SearchHistoryEntry = {
+            ...entry,
+            id: `sh-${Date.now()}`,
+            timestamp: new Date().toISOString(),
+          };
+          return {
+            history: [newEntry, ...state.history].slice(0, 100),
+          };
+        }),
+      removeHistoryEntry: (id) =>
+        set((state) => ({
+          history: state.history.filter((h) => h.id !== id),
+        })),
+      clearHistory: () => set({ history: [] }),
       clearSearchState: () =>
         set({
           filters: {
@@ -129,6 +156,7 @@ export const useSearchStore = create<SearchState>()(
             radius: 1000,
           },
           recentSearches: [],
+          history: [],
         }),
     }),
     {
@@ -137,6 +165,7 @@ export const useSearchStore = create<SearchState>()(
       partialize: (state) => ({
         filters: state.filters,
         recentSearches: state.recentSearches,
+        history: state.history,
       }),
     },
   ),

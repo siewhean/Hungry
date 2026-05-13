@@ -8,7 +8,9 @@ import { hungryPersistStorage } from "./persistStorage";
 
 interface MapFilters {
   nearMe: boolean;
+  trendingOnly: boolean;
   hawkerOnly: boolean;
+  mallOnly: boolean;
   topRated: boolean;
   openNow: boolean;
 }
@@ -43,7 +45,9 @@ interface DiscoveryState {
 
 const initialFilters: MapFilters = {
   nearMe: true,
+  trendingOnly: false,
   hawkerOnly: false,
+  mallOnly: false,
   topRated: false,
   openNow: false,
 };

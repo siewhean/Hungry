@@ -33,6 +33,9 @@ const FLUSH_INTERVAL_MS = 60_000;
 /** Maximum signals to batch before auto-flushing */
 const MAX_BATCH_SIZE = 20;
 
+/** Phase 3 keeps learning explicit-only; implicit signals are collected later. */
+const IMPLICIT_LEARNING_ENABLED = false;
+
 // ─── Signal Buffer ────────────────────────────────────────────────────────────
 
 let signalBuffer: ImplicitSignalInput[] = [];
@@ -49,6 +52,10 @@ async function flushSignals() {
 
   const batch = [...signalBuffer];
   signalBuffer = [];
+
+  if (!IMPLICIT_LEARNING_ENABLED) {
+    return;
+  }
 
   try {
     const service = getHungryService();

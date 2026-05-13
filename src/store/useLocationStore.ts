@@ -30,13 +30,6 @@ type ExpoLocationLike = {
 
 function loadExpoLocationModule(): ExpoLocationLike | null {
   try {
-    const modulesCore = require("expo-modules-core") as {
-      NativeModulesProxy?: Record<string, unknown>;
-    };
-    if (!modulesCore?.NativeModulesProxy?.ExpoLocation) {
-      return null;
-    }
-
     const locationModule = require("expo-location") as Partial<ExpoLocationLike>;
     if (
       typeof locationModule.requestForegroundPermissionsAsync !== "function" ||

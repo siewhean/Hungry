@@ -1,5 +1,5 @@
 import { useCallback, useMemo, forwardRef, type ReactNode } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
 import {
   BottomSheetModal,
   BottomSheetView,
@@ -16,16 +16,21 @@ interface BottomSheetProps extends Partial<BottomSheetModalProps> {
 
 export const BottomSheet = forwardRef<BottomSheetModal, BottomSheetProps>(
   ({ children, snapPoints: customSnapPoints, ...props }, ref) => {
-    const { palette, spacing, radii } = useHungryTheme();
+    const { opacity, palette, spacing } = useHungryTheme();
 
     const defaultSnapPoints = useMemo(() => ["50%", "90%"], []);
     const snapPoints = customSnapPoints || defaultSnapPoints;
 
     const renderBackdrop = useCallback(
       (props: any) => (
-        <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
+        <BottomSheetBackdrop
+          {...props}
+          disappearsOnIndex={-1}
+          appearsOnIndex={0}
+          opacity={opacity.backdrop}
+        />
       ),
-      [],
+      [opacity.backdrop],
     );
 
     return (

@@ -18,3 +18,19 @@ test("merchantClaimCtaEnabled defaults to false outside staging", () => {
   assert.equal(resolveFeatureFlags(undefined).merchantClaimCtaEnabled, false);
   assert.equal(resolveFeatureFlags("qa").merchantClaimCtaEnabled, false);
 });
+
+test("merchantCentreEnabled is true in staging", () => {
+  const flags = resolveFeatureFlags("staging");
+  assert.equal(flags.merchantCentreEnabled, true);
+});
+
+test("merchantCentreEnabled is false in production", () => {
+  const flags = resolveFeatureFlags("production");
+  assert.equal(flags.merchantCentreEnabled, false);
+});
+
+test("merchantCentreEnabled defaults to false outside staging", () => {
+  assert.equal(resolveFeatureFlags("development").merchantCentreEnabled, false);
+  assert.equal(resolveFeatureFlags(undefined).merchantCentreEnabled, false);
+  assert.equal(resolveFeatureFlags("qa").merchantCentreEnabled, false);
+});

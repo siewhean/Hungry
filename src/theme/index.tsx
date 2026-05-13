@@ -14,20 +14,39 @@ import {
   Nunito_700Bold,
 } from "@expo-google-fonts/nunito";
 import { useFonts as useMonoFonts, DMMono_400Regular } from "@expo-google-fonts/dm-mono";
+import {
+  useFonts as useFrauncesFonts,
+  Fraunces_700Bold,
+  Fraunces_900Black,
+} from "@expo-google-fonts/fraunces";
 
 import { useUIStore } from "@/store/useUIStore";
-import { colors, motion, radii, shadows, spacing, typography, zIndex } from "./tokens";
+import {
+  colors,
+  componentSizes,
+  motion,
+  opacity,
+  radii,
+  shadows,
+  spacing,
+  semanticSpacing,
+  typography,
+  zIndex,
+} from "./tokens";
 
 type HungryTheme = {
   colorScheme: "light" | "dark";
   theme: Theme;
   palette: (typeof colors)[keyof typeof colors];
   spacing: typeof spacing;
+  semanticSpacing: typeof semanticSpacing;
   radii: typeof radii;
   shadows: typeof shadows;
   typography: typeof typography;
   motion: typeof motion;
   zIndex: typeof zIndex;
+  componentSizes: typeof componentSizes;
+  opacity: typeof opacity;
   fontsLoaded: boolean;
 };
 
@@ -64,11 +83,9 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
   }, []);
 
   useEffect(() => {
-    if (themePreference === "automatic") {
+    if (themePreference === "system") {
       return;
     }
-
-    Appearance.setColorScheme(themePreference);
   }, [themePreference]);
 
   const resolvedSystemScheme: AppColorScheme =
@@ -78,7 +95,7 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
   const colorScheme = useMemo(() => {
     if (themePreference === "light") return "light";
     if (themePreference === "dark") return "dark";
-    // Fall back to light only if the OS doesn't report a scheme.
+    // system mode: fall back to light only if the OS doesn't report a scheme.
     return resolvedSystemScheme === "dark" ? "dark" : "light";
   }, [themePreference, resolvedSystemScheme]);
 
@@ -88,15 +105,15 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
     () => ({
       card: {
         ...shadows.card,
-        shadowColor: palette.navy,
+        shadowColor: palette.navy as any,
       },
       floating: {
         ...shadows.floating,
-        shadowColor: palette.navy,
+        shadowColor: palette.navy as any,
       },
       bottomSheet: {
         ...shadows.bottomSheet,
-        shadowColor: palette.navy,
+        shadowColor: palette.navy as any,
       },
     }),
     [palette],
@@ -110,6 +127,10 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
   });
   const [monoLoaded] = useMonoFonts({
     DMMono_400Regular,
+  });
+  const [frauncesLoaded] = useFrauncesFonts({
+    Fraunces_700Bold,
+    Fraunces_900Black,
   });
 
   const theme = useMemo<Theme>(() => {
@@ -135,14 +156,17 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
       theme,
       palette,
       spacing,
+      semanticSpacing,
       radii,
       shadows: themedShadows,
       typography,
       motion,
       zIndex,
-      fontsLoaded: nunitoLoaded && monoLoaded,
+      componentSizes,
+      opacity,
+      fontsLoaded: nunitoLoaded && monoLoaded && frauncesLoaded,
     }),
-    [colorScheme, theme, palette, themedShadows, nunitoLoaded, monoLoaded],
+    [colorScheme, theme, palette, themedShadows, nunitoLoaded, monoLoaded, frauncesLoaded],
   );
 
   return (

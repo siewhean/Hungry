@@ -1,16 +1,38 @@
 import { useEffect, useRef } from "react";
+import { InteractionManager } from "react-native";
 
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
-import { posthogSink } from "@/lib/analytics/posthogSink";
 import { getConfiguredDataSource, getSupabaseClient } from "@/lib/services/supabase/client";
-import { useProfileStore } from "@/store/useProfileStore";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
+import type { UserProfile } from "@/types/domain";
+
+function shouldEnablePostHogSink() {
+  return (
+    process.env.EXPO_PUBLIC_DISABLE_POSTHOG !== "1" &&
+    Boolean(process.env.EXPO_PUBLIC_POSTHOG_API_KEY?.trim())
+  );
+}
+
+function getProfileStoreState() {
+  const { useProfileStore } =
+    require("@/store/useProfileStore") as typeof import("@/store/useProfileStore");
+  return useProfileStore.getState();
+}
+
+function applyProfile(profile: UserProfile) {
+  getProfileStoreState().applyProfile(profile);
+}
+
+function syncProfile(isAuthenticated: boolean) {
+  getProfileStoreState().syncProfile(isAuthenticated);
+}
 
 export function useAppBootstrap() {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const syncProfile = useProfileStore((state) => state.syncProfile);
   const applyAuthStateFromSession = useSessionStore((state) => state.applyAuthStateFromSession);
+  const markAuthReady = useSessionStore((state) => state.markAuthReady);
   const setOffline = useUIStore((state) => state.setOffline);
   const previousAuth = useRef<boolean | undefined>(undefined);
   const hasTrackedLaunch = useRef(false);
@@ -21,8 +43,19 @@ export function useAppBootstrap() {
       return;
     }
 
-    setAnalyticsSink(posthogSink);
     hasConfiguredAnalyticsSink.current = true;
+
+    const task = InteractionManager.runAfterInteractions(() => {
+      if (!shouldEnablePostHogSink()) {
+        return;
+      }
+
+      const { posthogSink } =
+        require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
+      setAnalyticsSink(posthogSink);
+    });
+
+    return () => task.cancel();
   }, []);
 
   useEffect(() => {
@@ -30,9 +63,14 @@ export function useAppBootstrap() {
       return;
     }
     hasTrackedLaunch.current = true;
-    trackAnalyticsEvent("app_launched", {
-      is_authenticated: isAuthenticated,
+
+    const task = InteractionManager.runAfterInteractions(() => {
+      trackAnalyticsEvent("app_launched", {
+        is_authenticated: isAuthenticated,
+      });
     });
+
+    return () => task.cancel();
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -43,6 +81,7 @@ export function useAppBootstrap() {
 
   useEffect(() => {
     if (getConfiguredDataSource() !== "supabase") {
+      markAuthReady();
       return;
     }
 
@@ -54,14 +93,34 @@ export function useAppBootstrap() {
 
     let active = true;
 
-    void client.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      const user = data.session?.user;
-      applyAuthStateFromSession({
-        isAuthenticated: Boolean(user),
-        userId: user?.id ?? null,
+    void client.auth
+      .getSession()
+      .then(async ({ data }) => {
+        if (!active) return;
+        const user = data.session?.user;
+        applyAuthStateFromSession({
+          isAuthenticated: Boolean(user),
+          userId: user?.id ?? null,
+        });
+        if (user) {
+          try {
+            const profile = await getHungryService().profile.getProfile();
+            if (!active) return;
+            applyProfile(profile);
+          } catch {
+            // Keep the restored auth session even if profile hydration needs to retry later.
+          }
+        }
+      })
+      .catch(() => {
+        if (!active) return;
+        // Network failures during bootstrap should not crash the app.
+        // Fall back to signed-out state and let auth screens retry explicitly.
+        applyAuthStateFromSession({
+          isAuthenticated: false,
+          userId: null,
+        });
       });
-    });
 
     const { data: subscription } = client.auth.onAuthStateChange((_event, session) => {
       const user = session?.user;
@@ -69,13 +128,20 @@ export function useAppBootstrap() {
         isAuthenticated: Boolean(user),
         userId: user?.id ?? null,
       });
+      if (!user) return;
+      void getHungryService()
+        .profile.getProfile()
+        .then((profile) => {
+          if (active) applyProfile(profile);
+        })
+        .catch(() => undefined);
     });
 
     return () => {
       active = false;
       subscription.subscription.unsubscribe();
     };
-  }, [applyAuthStateFromSession]);
+  }, [applyAuthStateFromSession, markAuthReady]);
 
   useEffect(() => {
     // Keep persisted profile customisations on cold start.
@@ -91,5 +157,5 @@ export function useAppBootstrap() {
 
     syncProfile(isAuthenticated);
     previousAuth.current = isAuthenticated;
-  }, [isAuthenticated, syncProfile]);
+  }, [isAuthenticated]);
 }

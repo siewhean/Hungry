@@ -3,16 +3,18 @@ import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "re
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
-import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import { AppText } from "./AppText";
+import { AppHeader } from "./AppHeader";
 
 interface ScreenProps {
   title?: string;
   subtitle?: string;
   headerRight?: ReactNode;
+  showBack?: boolean;
   scroll?: boolean;
   style?: StyleProp<ViewStyle>;
+  contentContainerStyle?: StyleProp<ViewStyle>;
+  fullWidth?: boolean;
 }
 
 export function Screen({
@@ -20,14 +22,27 @@ export function Screen({
   title,
   subtitle,
   headerRight,
+  showBack = true,
   scroll = true,
   style,
+  contentContainerStyle,
+  fullWidth = false,
 }: PropsWithChildren<ScreenProps>) {
-  const { palette, spacing } = useHungryTheme();
+  const { palette, spacing, semanticSpacing } = useHungryTheme();
   const styles = createStyles(spacing);
   const insets = useSafeAreaInsets();
   const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
-  const scrollBackVisible = useUIStore((state) => state.scrollBackVisible);
+
+  const header =
+    title || headerRight ? (
+      <AppHeader
+        title={title}
+        subtitle={subtitle}
+        showBack={showBack}
+        right={headerRight}
+        horizontalPadding={fullWidth ? semanticSpacing.screenEdge : 0}
+      />
+    ) : null;
 
   return (
     <SafeAreaView
@@ -40,34 +55,24 @@ export function Screen({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.content,
+            !fullWidth && { alignItems: "center", paddingHorizontal: semanticSpacing.screenEdge },
             {
-              alignItems: "center",
-              paddingHorizontal: spacing[3],
               paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[12],
               paddingTop: spacing[3],
             },
+            contentContainerStyle,
           ]}
           onScroll={onScroll}
           scrollEventThrottle={scrollEventThrottle}
         >
-          <View style={[styles.inner, { gap: spacing[5] }]}>
-            {(title || headerRight) && (
-              <View
-                style={[
-                  styles.header,
-                  {
-                    paddingLeft: scrollBackVisible ? spacing[12] : 0,
-                    paddingTop: scrollBackVisible ? spacing[8] : 0,
-                  },
-                ]}
-              >
-                <View style={styles.headerCopy}>
-                  {title ? <AppText variant="h1">{title}</AppText> : null}
-                  {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}
-                </View>
-                {headerRight}
-              </View>
-            )}
+          <View
+            style={[
+              styles.inner,
+              fullWidth && { maxWidth: undefined },
+              !fullWidth && { gap: spacing[5] },
+            ]}
+          >
+            {header}
             {children}
           </View>
         </ScrollView>
@@ -75,32 +80,22 @@ export function Screen({
         <View
           style={[
             styles.flex,
-            {
+            !fullWidth && {
               alignItems: "center",
-              paddingHorizontal: spacing[3],
-              // paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[4],
+              paddingHorizontal: semanticSpacing.screenEdge,
               paddingTop: spacing[3],
             },
           ]}
         >
-          <View style={[styles.inner, { gap: spacing[5] }]}>
-            {(title || headerRight) && (
-              <View
-                style={[
-                  styles.header,
-                  {
-                    paddingLeft: scrollBackVisible ? spacing[12] : 0,
-                    paddingTop: scrollBackVisible ? spacing[8] : 0,
-                  },
-                ]}
-              >
-                <View style={styles.headerCopy}>
-                  {title ? <AppText variant="h1">{title}</AppText> : null}
-                  {subtitle ? <AppText tone="secondary">{subtitle}</AppText> : null}
-                </View>
-                {headerRight}
-              </View>
-            )}
+          <View
+            style={[
+              styles.inner,
+              styles.flex,
+              fullWidth && { maxWidth: undefined },
+              !fullWidth && { gap: spacing[5] },
+            ]}
+          >
+            {header}
             {children}
           </View>
         </View>
@@ -123,15 +118,5 @@ const createStyles = (spacing: any) =>
     inner: {
       maxWidth: 440,
       width: "100%",
-    },
-    header: {
-      alignItems: "flex-start",
-      flexDirection: "row",
-      justifyContent: "space-between",
-      gap: spacing[4],
-    },
-    headerCopy: {
-      flex: 1,
-      gap: spacing[1],
     },
   });

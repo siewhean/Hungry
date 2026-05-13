@@ -6,17 +6,40 @@
  */
 
 import type {
+  AIBusinessInsight,
   BlogPost,
   BuildingSummary,
+  CollectionItem,
+  CustomerInteraction,
   DishDetail,
   DietaryFlag,
+  FoodCollection,
   HawkerTasteTag,
+  InteractionType,
+  MerchantAccount,
+  MerchantAnalytics,
+  MerchantNotificationPreferences,
+  MerchantOutlet,
+  MerchantPromotion,
+  MerchantTeamMember,
+  MerchantRole,
+  OCRDishDraft,
+  PromotionStatus,
+  RecommendationSurface,
   SearchFilters,
+  StallInteraction,
   StallPost,
+  Story,
+  StoryContent,
   TasteProfile,
+  TasteInteractionEvent,
   TasteVector,
+  UserFoodCred,
+  UserMissionProgress,
   UserProfile,
+  VerificationEvidence,
   VenueSummary,
+  WeeklyMission,
 } from "@/types/domain";
 
 export interface DecideForMeOptions {
@@ -40,6 +63,17 @@ export interface DataRepository {
   getDecideForMe(tasteProfile: TasteVector, options?: DecideForMeOptions): DishDetail | undefined;
   listBlogPosts(): BlogPost[];
   listStallPosts(): StallPost[];
+
+  // ─── Gamification (optional — not all implementations required at launch) ────
+  listCollections?(): Promise<FoodCollection[]>;
+  listFeaturedCollections?(): Promise<FoodCollection[]>;
+  getCollectionById?(collectionId: string): Promise<FoodCollection | null>;
+  listCollectionItems?(collectionId: string): Promise<CollectionItem[]>;
+  getStallInteraction?(userId: string, stallId: string): Promise<StallInteraction | null>;
+  listStallInteractions?(userId: string): Promise<StallInteraction[]>;
+  getUserFoodCred?(userId: string): Promise<UserFoodCred | null>;
+  listActiveMissions?(): Promise<WeeklyMission[]>;
+  listUserMissionProgress?(userId: string): Promise<UserMissionProgress[]>;
 }
 
 // ─── Floor Plan Types ──────────────────────────────────────────────────────────
@@ -78,6 +112,52 @@ export interface FloorPlan {
   stalls: StallPolygon[];
 }
 
+// ─── Canonical Floor Plan Source Types ───────────────────────────────────────
+
+export type FloorPlanSourceType =
+  | "imported_svg"
+  | "imported_geojson"
+  | "cv_extracted"
+  | "fallback_demo";
+
+export interface FloorPlanSourceCanvas {
+  width: number;
+  height: number;
+}
+
+export interface FloorPlanSourceOutline {
+  polygon: [number, number][];
+  label?: string;
+}
+
+export interface FloorPlanSourceStall {
+  id: string;
+  unitNumber: string;
+  polygon: [number, number][];
+  kind: FloorPolygonKind;
+  facilityType?: FacilityType;
+  label?: string;
+  venueId?: string;
+  statusDefault: StallStatus;
+}
+
+export interface FloorPlanSourceMeta {
+  sourceType: FloorPlanSourceType;
+  sourceConfidence: number;
+  verified: boolean;
+  updatedAt: string;
+}
+
+export interface FloorPlanSourceV1 {
+  schemaVersion: "floorplan-source.v1";
+  buildingId: string;
+  floor: string;
+  canvas: FloorPlanSourceCanvas;
+  buildingOutline: FloorPlanSourceOutline;
+  stalls: FloorPlanSourceStall[];
+  meta: FloorPlanSourceMeta;
+}
+
 // ─── Bites (Social) Types ─────────────────────────────────────────────────────
 
 export interface TasteStamp {
@@ -102,7 +182,11 @@ export interface Bite {
   buildingId: string;
   buildingName: string;
   photoUrl: string;
+  mediaUrls?: string[];
+  mediaType?: "photo" | "video";
+  mediaTypes?: ("photo" | "video")[];
   caption: string;
+  tags?: string[];
   tasteStamp: TasteStamp;
   cravingCount: number;
   savedCount: number;
@@ -116,9 +200,14 @@ export interface BiteDraft {
   dishId: string;
   venueId: string;
   photoUrl: string;
+  mediaUrls?: string[];
+  mediaType?: "photo" | "video";
+  mediaTypes?: ("photo" | "video")[];
   caption: string;
+  tags?: string[];
   tasteStamp: TasteStamp;
   rating: number;
+  author?: Pick<UserProfile, "id" | "displayName" | "avatarUrl">;
 }
 
 // ─── AI / Recommendation Types ────────────────────────────────────────────────
@@ -168,11 +257,57 @@ export interface RankedRecommendation {
   isSerendipitous: boolean;
 }
 
+export interface RecommendationSlateRequest {
+  surface: RecommendationSurface;
+  tasteProfile: TasteVector;
+  dietaryFlags?: DietaryFlag[];
+  latitude?: number;
+  longitude?: number;
+  radiusMeters?: number;
+  excludeDishIds?: string[];
+  query?: string;
+  limit?: number;
+  neophiliaIndex?: number;
+}
+
+export interface RecommendationSlate {
+  surface: RecommendationSurface;
+  generatedAt: string;
+  items: RankedRecommendation[];
+}
+
 export interface ExplicitFeedbackInput {
-  dishId: string;
-  feedbackType: "rating" | "save" | "unsave" | "hawker_tag";
+  dishId?: string;
+  feedbackType:
+    | "rating"
+    | "review"
+    | "save"
+    | "unsave"
+    | "search_query"
+    | "dish_result_click"
+    | "dish_like"
+    | "food_button_click"
+    | "dismissed"
+    | "hawker_tag";
+  surface?: RecommendationSurface;
+  query?: string;
+  chipId?: string;
+  buttonId?: string;
   rating?: number;
   hawkerTags?: HawkerTasteTag[];
+  createdAt?: string;
+  applied?: boolean;
+  reason?: "missing_dish" | "missing_signal" | "capped";
+  userVectorBefore?: TasteVector;
+  userVectorAfter?: TasteVector;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RecordRecommendationFeedbackResult {
+  tasteVector: TasteVector;
+  event?: TasteInteractionEvent;
+  applied: boolean;
+  reason?: "missing_dish" | "missing_signal" | "capped";
 }
 
 export interface ImplicitSignalInput {
@@ -224,6 +359,25 @@ export interface SubmitMenuPhotoInput {
   reviewText?: string;
 }
 
+export interface AccountDeletionRequest {
+  userId?: string;
+  reason?: string;
+}
+
+export type ContentReportTargetType = "review" | "bite" | "reply" | "profile";
+
+export interface ContentReportRequest {
+  targetType: ContentReportTargetType;
+  targetId: string;
+  targetAuthorKey?: string;
+  reason: string;
+}
+
+export interface BlockUserRequest {
+  blockedUserKey: string;
+  reason?: string;
+}
+
 export interface MenuPhotoSubmissionResult {
   submissionId: string;
   storagePath: string;
@@ -259,6 +413,67 @@ export interface DraftDishRow {
   createdAt: string;
 }
 
+// ─── Chat ────────────────────────────────────────────────────────────────────
+
+export type ChatParticipantKind = "user" | "merchant";
+export type ChatConversationType = "user" | "merchant";
+
+export interface ChatParticipant {
+  kind: ChatParticipantKind;
+  userId?: string;
+  merchantAccountId?: string;
+  displayName: string;
+  avatarUrl?: string;
+  isCurrentUser?: boolean;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  body: string;
+  sender: ChatParticipant;
+  sentByCurrentUser: boolean;
+  clientNonce?: string;
+  deliveredAt?: string;
+  readAt?: string;
+  createdAt: string;
+}
+
+export interface ChatConversation {
+  id: string;
+  type: ChatConversationType;
+  title: string;
+  avatarUrl?: string;
+  isOnline?: boolean;
+  participants: ChatParticipant[];
+  lastMessage?: string;
+  lastMessageAt?: string;
+  unreadCount: number;
+  updatedAt: string;
+}
+
+export interface OpenChatConversationInput {
+  target: ChatParticipant;
+  type?: ChatConversationType;
+}
+
+export interface SendChatMessageInput {
+  conversationId: string;
+  body: string;
+  clientNonce?: string;
+  senderMerchantAccountId?: string;
+}
+
+export interface ChatSubscriptionHandlers {
+  onMessage?: (message: ChatMessage) => void;
+  onReadReceipt?: (messageId: string, readAt: string) => void;
+  onError?: (error: Error) => void;
+}
+
+export interface ChatSubscription {
+  unsubscribe(): void;
+}
+
 // ─── Building Detail ──────────────────────────────────────────────────────────
 
 export interface BuildingDetail extends BuildingSummary {
@@ -283,6 +498,7 @@ export interface HungryService {
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;
     signOut(): Promise<void>;
+    requestAccountDeletion(request?: AccountDeletionRequest): Promise<void>;
     forgotPassword(email: string): Promise<void>;
     resetPassword(token: string, password: string): Promise<void>;
     getCurrentSession(): Promise<Session | null>;
@@ -332,6 +548,33 @@ export interface HungryService {
     getBitesFeed(lat?: number, lng?: number): Promise<Bite[]>;
     postBite(draft: BiteDraft): Promise<Bite>;
     reactToBite(biteId: string, reaction: "craving" | "save"): Promise<void>;
+
+    // Stories
+    getStories(): Promise<Story[]>;
+    likeStory(storyId: string): Promise<void>;
+    saveStory(storyId: string): Promise<void>;
+    addStory(content: StoryContent): Promise<Story>;
+    getLikedStories(): Promise<Story[]>;
+    getSavedStories(): Promise<Story[]>;
+    getSavedBites(): Promise<Bite[]>;
+    getLikedBites(): Promise<Bite[]>;
+  };
+
+  chat: {
+    listConversations(): Promise<ChatConversation[]>;
+    openConversation(input: OpenChatConversationInput): Promise<ChatConversation>;
+    listMessages(conversationId: string): Promise<ChatMessage[]>;
+    sendMessage(input: SendChatMessageInput): Promise<ChatMessage>;
+    markConversationRead(conversationId: string): Promise<void>;
+    subscribeToConversation(
+      conversationId: string,
+      handlers: ChatSubscriptionHandlers,
+    ): ChatSubscription;
+  };
+
+  communitySafety: {
+    reportContent(request: ContentReportRequest): Promise<void>;
+    blockUser(request: BlockUserRequest): Promise<void>;
   };
 
   // Content
@@ -339,6 +582,13 @@ export interface HungryService {
     listArticles(): Promise<BlogPost[]>;
     listStallPosts(): Promise<StallPost[]>;
     getArticle(id: string): Promise<BlogPost | undefined>;
+  };
+
+  recommendations: {
+    getSlate(request: RecommendationSlateRequest): Promise<RecommendationSlate>;
+    recordExplicitFeedback(
+      feedback: ExplicitFeedbackInput,
+    ): Promise<RecordRecommendationFeedbackResult>;
   };
 
   // AI
@@ -364,6 +614,96 @@ export interface HungryService {
     // Extended — Community Calibration
     getTagSuggestions(dishId: string): Promise<HawkerTasteTag[]>;
     submitCommunityTags(dishId: string, tags: HawkerTasteTag[]): Promise<void>;
+  };
+
+  // Merchant Centre
+  merchant: {
+    // Account & Outlets
+    getMerchantAccount(): Promise<MerchantAccount | null>;
+    getOutlets(): Promise<MerchantOutlet[]>;
+    switchOutlet(outletId: string): Promise<MerchantOutlet>;
+
+    // Verification
+    getVerificationStatus(outletId: string): Promise<MerchantOutlet["verification"]>;
+    submitVerification(
+      outletId: string,
+      evidence: Omit<VerificationEvidence, "id" | "uploadedAt">,
+    ): Promise<void>;
+    resubmitVerification(
+      outletId: string,
+      evidence: Omit<VerificationEvidence, "id" | "uploadedAt">,
+    ): Promise<void>;
+
+    // Profile
+    updateBusinessProfile(
+      outletId: string,
+      updates: Partial<MerchantOutlet>,
+    ): Promise<MerchantOutlet>;
+
+    // Menu
+    getMenu(outletId: string): Promise<DishDetail[]>;
+    addDish(outletId: string, dish: Partial<DishDetail>): Promise<DishDetail>;
+    editDish(outletId: string, dishId: string, updates: Partial<DishDetail>): Promise<DishDetail>;
+    deleteDish(outletId: string, dishId: string): Promise<void>;
+    toggleSoldOut(outletId: string, dishId: string): Promise<boolean>;
+    toggleFeatured(outletId: string, dishId: string): Promise<boolean>;
+
+    // OCR Drafts
+    getOCRDrafts(outletId: string): Promise<OCRDishDraft[]>;
+    acceptOCRDraft(draftId: string): Promise<DishDetail>;
+    rejectOCRDraft(draftId: string): Promise<void>;
+
+    // Customer Inbox
+    getInbox(
+      outletId: string,
+      filters?: { type?: InteractionType; unrepliedOnly?: boolean },
+    ): Promise<CustomerInteraction[]>;
+    replyToInteraction(interactionId: string, text: string): Promise<void>;
+    reportInteraction(interactionId: string, reason: string): Promise<void>;
+
+    // Promotions
+    getPromotions(outletId: string, status?: PromotionStatus): Promise<MerchantPromotion[]>;
+    createPromotion(
+      outletId: string,
+      promo: Omit<MerchantPromotion, "id" | "outletId" | "createdAt" | "analytics">,
+    ): Promise<MerchantPromotion>;
+    updatePromotion(
+      promoId: string,
+      updates: Partial<MerchantPromotion>,
+    ): Promise<MerchantPromotion>;
+    getPromotionAnalytics(promoId: string): Promise<NonNullable<MerchantPromotion["analytics"]>>;
+
+    // Analytics
+    getAnalytics(outletId: string, dateRange: "today" | "7d" | "30d"): Promise<MerchantAnalytics>;
+
+    // AI Tools
+    generateDishDescription(dishName: string, ingredients?: string[]): Promise<string>;
+    suggestIngredients(dishName: string): Promise<string[]>;
+    suggestAllergens(ingredients: string[]): Promise<string[]>;
+    suggestTags(dishName: string, description?: string): Promise<string[]>;
+    generateAIReply(interactionId: string): Promise<string>;
+    getAIInsights(outletId: string): Promise<AIBusinessInsight[]>;
+    getWeeklySummary(outletId: string): Promise<AIBusinessInsight>;
+    getProfileSuggestions(outletId: string): Promise<AIBusinessInsight[]>;
+    getMenuCleanupSuggestions(outletId: string): Promise<AIBusinessInsight[]>;
+    getDemandInsights(outletId: string): Promise<AIBusinessInsight[]>;
+
+    // Team Management
+    getTeamMembers(merchantAccountId: string): Promise<MerchantTeamMember[]>;
+    addTeamMember(
+      merchantAccountId: string,
+      email: string,
+      role: MerchantRole,
+    ): Promise<MerchantTeamMember>;
+    removeTeamMember(memberId: string): Promise<void>;
+    updateTeamMemberRole(memberId: string, role: MerchantRole): Promise<void>;
+
+    // Notification Preferences
+    getNotificationPreferences(merchantAccountId: string): Promise<MerchantNotificationPreferences>;
+    updateNotificationPreferences(
+      merchantAccountId: string,
+      prefs: Partial<MerchantNotificationPreferences>,
+    ): Promise<void>;
   };
 
   // Supply priming (developer/ops-only)

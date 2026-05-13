@@ -1,5 +1,3 @@
-import * as SecureStore from "expo-secure-store";
-
 /**
  * Supabase-compatible async storage adapter backed by `expo-secure-store`
  * (Keychain on iOS, EncryptedSharedPreferences on Android).
@@ -22,14 +20,25 @@ import * as SecureStore from "expo-secure-store";
  *   - On first read of a legacy key that still lives in AsyncStorage (from a
  *     pre-upgrade install), the value is migrated into SecureStore and the
  *     AsyncStorage copy is deleted. This is a one-shot op per key.
- *   - If SecureStore itself throws (unsupported platform, Keychain unavailable),
- *     the adapter transparently falls back to AsyncStorage, then to an
- *     in-memory map — lockout is worse than reduced assurance.
+ *   - If SecureStore itself throws in production, tokens stay memory-only and
+ *     the user must re-authenticate on restart. Plain AsyncStorage fallback is
+ *     only allowed in dev/test via `__DEV__` or HUNGRY_ALLOW_INSECURE_AUTH_STORAGE.
  */
 
 const CHUNK_SIZE = 1800;
 const CHUNK_SUFFIX = ".c";
 const META_SUFFIX = ".cmeta";
+
+type SecureStoreLike = {
+  getItemAsync: (key: string) => Promise<string | null>;
+  setItemAsync: (
+    key: string,
+    value: string,
+    options?: { keychainAccessible?: unknown },
+  ) => Promise<void>;
+  deleteItemAsync: (key: string) => Promise<void>;
+  AFTER_FIRST_UNLOCK?: unknown;
+};
 
 type AsyncStorageLike = {
   getItem: (name: string) => Promise<string | null>;
@@ -37,9 +46,44 @@ type AsyncStorageLike = {
   removeItem: (name: string) => Promise<void>;
 };
 
+let cachedSecureStore: SecureStoreLike | null | undefined;
 let cachedAsyncStorage: AsyncStorageLike | null | undefined;
 
+function getSecureStore(): SecureStoreLike | null {
+  if (process.env.HUNGRY_DISABLE_SECURE_STORE === "1") {
+    cachedSecureStore = null;
+    return cachedSecureStore;
+  }
+
+  if (cachedSecureStore !== undefined) {
+    return cachedSecureStore;
+  }
+
+  try {
+    const moduleRef = require("expo-secure-store") as SecureStoreLike;
+    if (
+      moduleRef &&
+      typeof moduleRef.getItemAsync === "function" &&
+      typeof moduleRef.setItemAsync === "function" &&
+      typeof moduleRef.deleteItemAsync === "function"
+    ) {
+      cachedSecureStore = moduleRef;
+      return cachedSecureStore;
+    }
+  } catch {
+    // Native module is not available in this runtime.
+  }
+
+  cachedSecureStore = null;
+  return cachedSecureStore;
+}
+
 function getAsyncStorage(): AsyncStorageLike | null {
+  if (process.env.HUNGRY_DISABLE_ASYNC_STORAGE === "1") {
+    cachedAsyncStorage = null;
+    return cachedAsyncStorage;
+  }
+
   if (cachedAsyncStorage !== undefined) {
     return cachedAsyncStorage;
   }
@@ -67,6 +111,13 @@ function getAsyncStorage(): AsyncStorageLike | null {
 }
 
 const memoryStore = new Map<string, string>();
+
+function canUsePlaintextTokenFallback(): boolean {
+  return (
+    process.env.HUNGRY_ALLOW_INSECURE_AUTH_STORAGE === "1" ||
+    (typeof __DEV__ !== "undefined" && __DEV__)
+  );
+}
 
 function chunkKey(name: string, index: number): string {
   return `${name}${CHUNK_SUFFIX}${index}`;
@@ -98,17 +149,23 @@ function parseMeta(raw: string | null): ChunkMeta | null {
 }
 
 async function secureGet(name: string): Promise<string | null> {
+  const secureStore = getSecureStore();
+  if (!secureStore) return null;
+
   try {
-    return await SecureStore.getItemAsync(name);
+    return await secureStore.getItemAsync(name);
   } catch {
     return null;
   }
 }
 
 async function secureSet(name: string, value: string): Promise<boolean> {
+  const secureStore = getSecureStore();
+  if (!secureStore) return false;
+
   try {
-    await SecureStore.setItemAsync(name, value, {
-      keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+    await secureStore.setItemAsync(name, value, {
+      keychainAccessible: secureStore.AFTER_FIRST_UNLOCK,
     });
     return true;
   } catch {
@@ -117,8 +174,11 @@ async function secureSet(name: string, value: string): Promise<boolean> {
 }
 
 async function secureDelete(name: string): Promise<void> {
+  const secureStore = getSecureStore();
+  if (!secureStore) return;
+
   try {
-    await SecureStore.deleteItemAsync(name);
+    await secureStore.deleteItemAsync(name);
   } catch {
     // Ignore — callers still fall through to other stores.
   }
@@ -229,6 +289,8 @@ async function migrateLegacyValue(name: string): Promise<string | null> {
     } catch {
       // Keep legacy value readable even if cleanup fails — next launch will retry.
     }
+  } else if (!canUsePlaintextTokenFallback()) {
+    return null;
   }
   return legacy;
 }
@@ -245,7 +307,7 @@ export const supabaseAuthStorage = {
       return migrated;
     }
 
-    const asyncStorage = getAsyncStorage();
+    const asyncStorage = canUsePlaintextTokenFallback() ? getAsyncStorage() : null;
     if (asyncStorage) {
       try {
         const fromAsync = await asyncStorage.getItem(name);
@@ -275,9 +337,9 @@ export const supabaseAuthStorage = {
       return;
     }
 
-    // SecureStore failed — degrade to AsyncStorage then to in-memory so the
-    // user is not logged out on every launch.
-    const asyncStorage = getAsyncStorage();
+    // SecureStore failed. In production, keep tokens memory-only rather than
+    // persisting auth material to plaintext AsyncStorage.
+    const asyncStorage = canUsePlaintextTokenFallback() ? getAsyncStorage() : null;
     if (asyncStorage) {
       try {
         await asyncStorage.setItem(name, value);
@@ -312,4 +374,5 @@ export const __internal = {
   META_SUFFIX,
   chunkKey,
   metaKey,
+  canUsePlaintextTokenFallback,
 };

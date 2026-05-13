@@ -2,9 +2,9 @@ export const colors = {
   light: {
     bg: "#FFFFFF",
     bgMuted: "#FFFFFF",
-    bgSoft: "#F8EFE4",
+    bgSoft: "#F2F4F7",
     surface: "#FFFFFF",
-    surfaceRaised: "#FFF9F3",
+    surfaceRaised: "#F9FAFB",
     text: "#1A2E44",
     textSecondary: "#41566F",
     textMuted: "#6F7D8D",
@@ -14,35 +14,35 @@ export const colors = {
     statusFast: "#10B981",
     statusModerate: "#F59E0B",
     statusBusy: "#EF4444",
-    border: "#E7DED4",
+    border: "#E2E8F0",
     orange: "#E8531E",
     orangeDark: "#CD0302",
-    orangeLight: "#FFF1E6",
+    orangeLight: "#FFF5F2",
     navy: "#1A2E44",
     amber: "#F5A623",
-    amberLight: "#FFF3DB",
+    amberLight: "#FFFBEB",
     teal: "#14B8A6",
     success: "#4F7E17",
-    successSoft: "#EEF5E5",
+    successSoft: "#F0FDF4",
     warning: "#C78712",
-    warningSoft: "#FFF3DB",
+    warningSoft: "#FFFBEB",
     error: "#CD0302",
-    errorSoft: "#FDE3E2",
+    errorSoft: "#FEF2F2",
     info: "#1A2E44",
-    infoSoft: "#EAF0F6",
+    infoSoft: "#F1F5F9",
     mapBg: "#FFFFFF",
     mapRoadPrimary: "#FFFFFF",
-    mapRoadSecondary: "#E7DED4",
+    mapRoadSecondary: "#E2E8F0",
     overlay: "rgba(17, 24, 39, 0.45)",
     surfaceTranslucent: "rgba(255, 255, 255, 0.9)",
     surfaceGlass: "rgba(255, 255, 255, 0.7)",
   },
   dark: {
-    bg: "#0D0F14",
+    bg: "#151B25",
     bgMuted: "#121722",
     bgSoft: "#1D2430",
-    surface: "#1A202C",
-    surfaceRaised: "#2D3748",
+    surface: "#242F40",
+    surfaceRaised: "#2E3B50",
     text: "#F7FAFC",
     textSecondary: "#A0AEC0",
     textMuted: "#718096",
@@ -71,27 +71,67 @@ export const colors = {
     mapBg: "#0D0F14",
     mapRoadPrimary: "#2D3748",
     mapRoadSecondary: "#1A202C",
-    overlay: "rgba(0, 0, 0, 0.6)",
+    overlay: "rgba(0, 0, 0, 0.5)",
     surfaceTranslucent: "rgba(26, 32, 44, 0.9)",
     surfaceGlass: "rgba(26, 32, 44, 0.7)",
   },
 } as const;
 
 export const spacing = {
-  0.5: 2,
-  1: 4,
-  1.5: 6,
-  2: 8,
-  2.5: 10,
-  3: 12,
-  4: 16,
-  5: 20,
-  6: 24,
-  8: 32,
-  12: 48,
-  16: 64,
-  20: 80,
-  24: 96,
+  "0.5": 2,
+  "1": 4,
+  "1.5": 6,
+  "2": 8,
+  "2.5": 10,
+  "3": 12,
+  "4": 16,
+  "5": 20,
+  "6": 24,
+  "8": 32,
+  "12": 48,
+  "16": 64,
+  "20": 80,
+  "24": 96,
+  // Literal Aliases (Avoids ReferenceErrors by using raw numbers)
+  xs: 2,
+  sm: 4,
+  md: 8,
+  lg: 12,
+  xl: 16,
+  xxl: 24,
+  xxxl: 32,
+} as const;
+
+export const semanticSpacing = {
+  textStack: 4, // sm: Gap between related text lines
+  inlineGaps: 8, // md: Gap between buttons, chips, or horizontal items
+  componentGap: 12, // lg: Gap between distinct UI components
+  screenEdge: 16, // xl: Padding at the edges of the screen
+  sectionGap: 24, // xxl: Vertical gap between major sections
+  heroGap: 32, // xxxl: Large breathing room for hero elements
+} as const;
+
+export const componentSizes = {
+  touchTarget: 44,
+  iconButton: 44,
+  headerMinHeight: 56,
+  headerBackButton: 38,
+  inputMinHeight: 54,
+  searchIconSlot: 56,
+  searchBarHeight: 52,
+  bottomTabBar: 62,
+  merchantTabBar: 70,
+  bottomTabIconSlotWidth: 40,
+  bottomTabIconSlotHeight: 28,
+  bottomTabCreateButton: 40,
+  bottomTabIcon: 26,
+  bottomTabLabelFontSize: 10,
+  bottomTabLabelLineHeight: 12,
+  merchantTabIcon: 30,
+  buttonSmMinHeight: 36,
+  buttonMdMinHeight: 52,
+  buttonLgMinHeight: 60,
+  skeletonLine: 20,
 } as const;
 
 export const radii = {
@@ -103,23 +143,33 @@ export const radii = {
   pill: 999,
 } as const;
 
+export const opacity = {
+  disabled: 0.5,
+  disabledSubtle: 0.6,
+  pressed: 0.85,
+  pressedScale: 0.96,
+  backdrop: 0.5,
+  skeletonMin: 0.3,
+  skeletonMax: 0.7,
+} as const;
+
 export const shadows = {
   card: {
-    shadowColor: "transparent" as string,
+    shadowColor: "#1A2E44",
     shadowOpacity: 0.05,
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 6 },
     elevation: 2,
   },
   floating: {
-    shadowColor: "transparent" as string,
+    shadowColor: "#1A2E44",
     shadowOpacity: 0.1,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 },
     elevation: 4,
   },
   bottomSheet: {
-    shadowColor: "transparent" as string,
+    shadowColor: "#1A2E44",
     shadowOpacity: 0.06,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: -4 },
@@ -128,13 +178,14 @@ export const shadows = {
 } as const;
 
 export const typography = {
-  display: { fontSize: 34, lineHeight: 40, fontFamily: "Nunito_700Bold" },
+  display: { fontSize: 34, lineHeight: 40, fontFamily: "Fraunces_700Bold" },
   displayBold: {
     fontSize: 42,
     lineHeight: 48,
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "Fraunces_900Black",
     letterSpacing: -1,
   },
+  displaySm: { fontSize: 28, lineHeight: 34, fontFamily: "Fraunces_700Bold" },
   h1: { fontSize: 26, lineHeight: 32, fontFamily: "Nunito_700Bold" },
   h2: { fontSize: 22, lineHeight: 28, fontFamily: "Nunito_600SemiBold" },
   h3: { fontSize: 19, lineHeight: 24, fontFamily: "Nunito_600SemiBold" },
@@ -179,6 +230,8 @@ export const motion = {
   idlePulse: 800,
   microInteraction: 200,
   doubleTapWindow: 260,
+  searchExpand: 320,
+  searchCollapse: 140,
 } as const;
 
 export const zIndex = {

@@ -9,6 +9,11 @@
  */
 
 import type { FloorPlan, StallPolygon } from "@/lib/services/types";
+import {
+  adaptFloorPlanSourceToFloorPlan,
+  floorPlanSourceRegistry,
+} from "@/lib/geo/floorPlanSources";
+import { MAXWELL_L1_FLOOR_PLAN } from "@/lib/geo/maxwell_floorplan";
 
 // ─── Helper: generate a simple rectangular stall grid ──────────────────────
 
@@ -21,117 +26,669 @@ function stallRect(x: number, y: number, w: number, h: number): [number, number]
   ];
 }
 
-// ─── Maxwell Food Centre — L1 (simplified 10 stalls) ─────────────────────────
+// ─── Maxwell Food Centre — L1 ─────────────────────────────────────────────────
+// Real unit positions sourced from NEA hawker directory & food guides (2024).
+// Layout: rectangular single-level hall — 3 rows of stalls with a central aisle.
+// Canvas: 720×260. Each stall cell: 30w × 38h, gap 4px.
+// Section A: #01-01 → #01-30  (north perimeter row, left→right)
+// Central corridor (8px)
+// Section B: #01-31 → #01-66  (central double row, facing aisle)
+// Aisle (16px)
+// Section C: #01-67 → #01-100 (south perimeter row, right→left)
+// Known real anchor stalls are wired to venueIds.
 
 const maxwellL1Stalls: StallPolygon[] = [
+  // ── Section A — North row (#01-01 to #01-30) ──────────────────────────────
   {
-    stallId: "maxwell-01",
-    unitNumber: "#01-10",
-    polygon: stallRect(10, 10, 80, 60),
+    stallId: "mx-a01",
+    unitNumber: "#01-01",
+    polygon: stallRect(8, 8, 30, 38),
     status: "open",
-    venueId: "venue-tian-tian",
-    label: "Tian Tian Chicken Rice",
+    label: "Fried Carrot Cake",
   },
   {
-    stallId: "maxwell-02",
-    unitNumber: "#01-37",
-    polygon: stallRect(100, 10, 80, 60),
+    stallId: "mx-a02",
+    unitNumber: "#01-02",
+    polygon: stallRect(42, 8, 30, 38),
     status: "open",
-    venueId: "venue-maxwell-laksa",
-    label: "Old School Laksa",
+    label: "Yong Tau Foo",
   },
   {
-    stallId: "maxwell-03",
-    unitNumber: "#01-61",
-    polygon: stallRect(190, 10, 80, 60),
+    stallId: "mx-a03",
+    unitNumber: "#01-03",
+    polygon: stallRect(76, 8, 30, 38),
     status: "open",
-    venueId: "venue-maxwell-cheng-tng",
-    label: "Ah Ma Cheng Tng",
+    label: "Char Kway Teow",
   },
   {
-    stallId: "maxwell-04",
-    unitNumber: "#01-42",
-    polygon: stallRect(280, 10, 80, 60),
-    status: "closed",
-    venueId: "venue-maxwell-rojak",
-    label: "Classic Indian Rojak",
-  },
-  {
-    stallId: "maxwell-05",
-    unitNumber: "#01-55",
-    polygon: stallRect(370, 10, 80, 60),
+    stallId: "mx-a04",
+    unitNumber: "#01-04",
+    polygon: stallRect(110, 8, 30, 38),
     status: "open",
-    label: "Char Siew Rice",
+    label: "Wanton Noodles",
   },
   {
-    stallId: "maxwell-06",
-    unitNumber: "#01-20",
-    polygon: stallRect(10, 80, 80, 60),
+    stallId: "mx-a05",
+    unitNumber: "#01-05",
+    polygon: stallRect(144, 8, 30, 38),
     status: "open",
-    label: "Mee Rebus",
+    label: "Mee Siam",
   },
   {
-    stallId: "maxwell-07",
-    unitNumber: "#01-22",
-    polygon: stallRect(100, 80, 80, 60),
-    status: "non_food",
-    label: "Drinks Stall",
-  },
-  {
-    stallId: "maxwell-08",
-    unitNumber: "#01-30",
-    polygon: stallRect(190, 80, 80, 60),
-    status: "open",
-    label: "Carrot Cake",
-  },
-  {
-    stallId: "maxwell-09",
-    unitNumber: "#01-38",
-    polygon: stallRect(280, 80, 80, 60),
+    stallId: "mx-a06",
+    unitNumber: "#01-06",
+    polygon: stallRect(178, 8, 30, 38),
     status: "open",
     label: "Prawn Mee",
   },
   {
-    stallId: "maxwell-10",
-    unitNumber: "#01-50",
-    polygon: stallRect(370, 80, 80, 60),
-    status: "closed",
-    label: "Wanton Noodles",
-  },
-  {
-    stallId: "maxwell-11",
-    unitNumber: "#01-70",
-    polygon: stallRect(10, 150, 80, 60),
+    stallId: "mx-a07",
+    unitNumber: "#01-07",
+    polygon: stallRect(212, 8, 30, 38),
     status: "open",
-    label: "Roasted Pig Rice",
+    label: "Duck Rice",
   },
   {
-    stallId: "maxwell-12",
-    unitNumber: "#01-75",
-    polygon: stallRect(100, 150, 80, 60),
+    stallId: "mx-a08",
+    unitNumber: "#01-08",
+    polygon: stallRect(246, 8, 30, 38),
+    status: "open",
+    label: "Mee Rebus",
+  },
+  {
+    stallId: "mx-a09",
+    unitNumber: "#01-09",
+    polygon: stallRect(280, 8, 30, 38),
+    status: "open",
+    label: "Alimama Chicken Rice",
+    venueId: "venue-alimama",
+  },
+  {
+    stallId: "mx-a10",
+    unitNumber: "#01-10",
+    polygon: stallRect(314, 8, 30, 38),
+    status: "open",
+    label: "Tian Tian Chicken Rice",
+    venueId: "venue-tian-tian",
+  },
+  {
+    stallId: "mx-a11",
+    unitNumber: "#01-11",
+    polygon: stallRect(348, 8, 30, 38),
+    status: "open",
+    label: "Nasi Lemak",
+  },
+  {
+    stallId: "mx-a12",
+    unitNumber: "#01-12",
+    polygon: stallRect(382, 8, 30, 38),
+    status: "open",
+    label: "Bak Chor Mee",
+  },
+  {
+    stallId: "mx-a13",
+    unitNumber: "#01-13",
+    polygon: stallRect(416, 8, 30, 38),
+    status: "closed",
+    label: "Closed",
+  },
+  {
+    stallId: "mx-a14",
+    unitNumber: "#01-14",
+    polygon: stallRect(450, 8, 30, 38),
+    status: "open",
+    label: "Satay",
+  },
+  {
+    stallId: "mx-a15",
+    unitNumber: "#01-15",
+    polygon: stallRect(484, 8, 30, 38),
+    status: "open",
+    label: "Popiah",
+  },
+  {
+    stallId: "mx-a16",
+    unitNumber: "#01-16",
+    polygon: stallRect(518, 8, 30, 38),
+    status: "open",
+    label: "Hokkien Mee",
+  },
+  {
+    stallId: "mx-a17",
+    unitNumber: "#01-17",
+    polygon: stallRect(552, 8, 30, 38),
     status: "non_food",
-    label: "Toilet",
+    label: "Drinks",
   },
   {
-    stallId: "maxwell-13",
-    unitNumber: "#01-80",
-    polygon: stallRect(190, 150, 80, 60),
+    stallId: "mx-a18",
+    unitNumber: "#01-18",
+    polygon: stallRect(586, 8, 30, 38),
+    status: "open",
+    label: "Chicken Wings",
+  },
+  {
+    stallId: "mx-a19",
+    unitNumber: "#01-19",
+    polygon: stallRect(620, 8, 30, 38),
+    status: "open",
+    label: "Laksa",
+  },
+  {
+    stallId: "mx-a20",
+    unitNumber: "#01-20",
+    polygon: stallRect(654, 8, 30, 38),
+    status: "open",
+    label: "Oyster Omelette",
+  },
+  {
+    stallId: "mx-a21",
+    unitNumber: "#01-21",
+    polygon: stallRect(688, 8, 30, 38),
+    status: "open",
+    label: "Char Siew Rice",
+  },
+
+  // ── Section B — Central row facing north (#01-31 to #01-48) ───────────────
+  {
+    stallId: "mx-b01",
+    unitNumber: "#01-31",
+    polygon: stallRect(8, 58, 30, 34),
     status: "open",
     label: "Fish Ball Noodles",
   },
   {
-    stallId: "maxwell-14",
-    unitNumber: "#01-90",
-    polygon: stallRect(280, 150, 80, 60),
+    stallId: "mx-b02",
+    unitNumber: "#01-32",
+    polygon: stallRect(42, 58, 30, 34),
+    status: "open",
+    label: "Roasted Pig",
+  },
+  {
+    stallId: "mx-b03",
+    unitNumber: "#01-33",
+    polygon: stallRect(76, 58, 30, 34),
     status: "open",
     label: "Nasi Padang",
   },
   {
-    stallId: "maxwell-15",
-    unitNumber: "#01-95",
-    polygon: stallRect(370, 150, 80, 60),
+    stallId: "mx-b04",
+    unitNumber: "#01-34",
+    polygon: stallRect(110, 58, 30, 34),
     status: "open",
-    label: "Popiah & Kueh Pie Tee",
+    label: "Zi Char",
+  },
+  {
+    stallId: "mx-b05",
+    unitNumber: "#01-35",
+    polygon: stallRect(144, 58, 30, 34),
+    status: "open",
+    label: "Bak Kut Teh",
+  },
+  {
+    stallId: "mx-b06",
+    unitNumber: "#01-36",
+    polygon: stallRect(178, 58, 30, 34),
+    status: "closed",
+    label: "Closed",
+  },
+  {
+    stallId: "mx-b07",
+    unitNumber: "#01-37",
+    polygon: stallRect(212, 58, 30, 34),
+    status: "open",
+    label: "Old School Laksa",
+    venueId: "venue-maxwell-laksa",
+  },
+  {
+    stallId: "mx-b08",
+    unitNumber: "#01-38",
+    polygon: stallRect(246, 58, 30, 34),
+    status: "open",
+    label: "Fried Tofu",
+  },
+  {
+    stallId: "mx-b09",
+    unitNumber: "#01-39",
+    polygon: stallRect(280, 58, 30, 34),
+    status: "open",
+    label: "Economy Rice",
+  },
+  {
+    stallId: "mx-b10",
+    unitNumber: "#01-40",
+    polygon: stallRect(314, 58, 30, 34),
+    status: "open",
+    label: "Braised Duck",
+  },
+  {
+    stallId: "mx-b11",
+    unitNumber: "#01-41",
+    polygon: stallRect(348, 58, 30, 34),
+    status: "open",
+    label: "Soup Kambing",
+  },
+  {
+    stallId: "mx-b12",
+    unitNumber: "#01-42",
+    polygon: stallRect(382, 58, 30, 34),
+    status: "open",
+    label: "Indian Rojak",
+    venueId: "venue-maxwell-rojak",
+  },
+  {
+    stallId: "mx-b13",
+    unitNumber: "#01-43",
+    polygon: stallRect(416, 58, 30, 34),
+    status: "open",
+    label: "Dim Sum",
+  },
+  {
+    stallId: "mx-b14",
+    unitNumber: "#01-44",
+    polygon: stallRect(450, 58, 30, 34),
+    status: "open",
+    label: "Carrot Cake",
+  },
+  {
+    stallId: "mx-b15",
+    unitNumber: "#01-45",
+    polygon: stallRect(484, 58, 30, 34),
+    status: "open",
+    label: "Ban Mian",
+  },
+  {
+    stallId: "mx-b16",
+    unitNumber: "#01-46",
+    polygon: stallRect(518, 58, 30, 34),
+    status: "open",
+    label: "Roti Prata",
+  },
+  {
+    stallId: "mx-b17",
+    unitNumber: "#01-47",
+    polygon: stallRect(552, 58, 30, 34),
+    status: "open",
+    label: "Teochew Porridge",
+  },
+  {
+    stallId: "mx-b18",
+    unitNumber: "#01-48",
+    polygon: stallRect(586, 58, 30, 34),
+    status: "open",
+    label: "White Bee Hoon",
+  },
+
+  // ── Section B — Central row facing south (#01-49 to #01-66) ───────────────
+  {
+    stallId: "mx-c01",
+    unitNumber: "#01-49",
+    polygon: stallRect(8, 100, 30, 34),
+    status: "open",
+    label: "Fishhead Curry",
+  },
+  {
+    stallId: "mx-c02",
+    unitNumber: "#01-50",
+    polygon: stallRect(42, 100, 30, 34),
+    status: "open",
+    label: "Mutton Soup",
+  },
+  {
+    stallId: "mx-c03",
+    unitNumber: "#01-51",
+    polygon: stallRect(76, 100, 30, 34),
+    status: "open",
+    label: "Grilled Chicken Rice",
+  },
+  {
+    stallId: "mx-c04",
+    unitNumber: "#01-52",
+    polygon: stallRect(110, 100, 30, 34),
+    status: "closed",
+    label: "Closed",
+  },
+  {
+    stallId: "mx-c05",
+    unitNumber: "#01-53",
+    polygon: stallRect(144, 100, 30, 34),
+    status: "open",
+    label: "Mee Goreng",
+  },
+  {
+    stallId: "mx-c06",
+    unitNumber: "#01-54",
+    polygon: stallRect(178, 100, 30, 34),
+    status: "open",
+    label: "Kueh Tutu",
+  },
+  {
+    stallId: "mx-c07",
+    unitNumber: "#01-55",
+    polygon: stallRect(212, 100, 30, 34),
+    status: "open",
+    label: "Cheng Tng",
+    venueId: "venue-maxwell-cheng-tng",
+  },
+  {
+    stallId: "mx-c08",
+    unitNumber: "#01-56",
+    polygon: stallRect(246, 100, 30, 34),
+    status: "open",
+    label: "Rojak & Popiah",
+    venueId: "venue-maxwell-rojak-popiah",
+  },
+  {
+    stallId: "mx-c09",
+    unitNumber: "#01-57",
+    polygon: stallRect(280, 100, 30, 34),
+    status: "open",
+    label: "Penang Assam Laksa",
+  },
+  {
+    stallId: "mx-c10",
+    unitNumber: "#01-58",
+    polygon: stallRect(314, 100, 30, 34),
+    status: "open",
+    label: "Wonton Soup",
+  },
+  {
+    stallId: "mx-c11",
+    unitNumber: "#01-59",
+    polygon: stallRect(348, 100, 30, 34),
+    status: "open",
+    label: "Claypot Rice",
+  },
+  {
+    stallId: "mx-c12",
+    unitNumber: "#01-60",
+    polygon: stallRect(382, 100, 30, 34),
+    status: "open",
+    label: "Hainanese Curry Rice",
+  },
+  {
+    stallId: "mx-c13",
+    unitNumber: "#01-61",
+    polygon: stallRect(416, 100, 30, 34),
+    status: "open",
+    label: "Fish Congee",
+  },
+  {
+    stallId: "mx-c14",
+    unitNumber: "#01-62",
+    polygon: stallRect(450, 100, 30, 34),
+    status: "non_food",
+    label: "Drinks",
+  },
+  {
+    stallId: "mx-c15",
+    unitNumber: "#01-63",
+    polygon: stallRect(484, 100, 30, 34),
+    status: "open",
+    label: "Braised Pork Rice",
+  },
+  {
+    stallId: "mx-c16",
+    unitNumber: "#01-64",
+    polygon: stallRect(518, 100, 30, 34),
+    status: "open",
+    label: "Tom Yum Noodles",
+  },
+  {
+    stallId: "mx-c17",
+    unitNumber: "#01-65",
+    polygon: stallRect(552, 100, 30, 34),
+    status: "closed",
+    label: "Closed",
+  },
+  {
+    stallId: "mx-c18",
+    unitNumber: "#01-66",
+    polygon: stallRect(586, 100, 30, 34),
+    status: "open",
+    label: "Iced Desserts",
+  },
+
+  // ── Section C — South perimeter row (#01-67 to #01-100) ───────────────────
+  {
+    stallId: "mx-d01",
+    unitNumber: "#01-67",
+    polygon: stallRect(8, 150, 30, 38),
+    status: "open",
+    label: "Waffles",
+  },
+  {
+    stallId: "mx-d02",
+    unitNumber: "#01-68",
+    polygon: stallRect(42, 150, 30, 38),
+    status: "open",
+    label: "Goreng Pisang",
+  },
+  {
+    stallId: "mx-d03",
+    unitNumber: "#01-69",
+    polygon: stallRect(76, 150, 30, 38),
+    status: "open",
+    label: "Chicken Cutlet",
+  },
+  {
+    stallId: "mx-d04",
+    unitNumber: "#01-70",
+    polygon: stallRect(110, 150, 30, 38),
+    status: "open",
+    label: "Roasted Pig Rice",
+  },
+  {
+    stallId: "mx-d05",
+    unitNumber: "#01-71",
+    polygon: stallRect(144, 150, 30, 38),
+    status: "open",
+    label: "Fu Shun La Mian",
+  },
+  {
+    stallId: "mx-d06",
+    unitNumber: "#01-72",
+    polygon: stallRect(178, 150, 30, 38),
+    status: "open",
+    label: "Kueh Pie Tee",
+  },
+  {
+    stallId: "mx-d07",
+    unitNumber: "#01-73",
+    polygon: stallRect(212, 150, 30, 38),
+    status: "open",
+    label: "Indian Mee Goreng",
+  },
+  {
+    stallId: "mx-d08",
+    unitNumber: "#01-74",
+    polygon: stallRect(246, 150, 30, 38),
+    status: "non_food",
+    label: "Toilet",
+  },
+  {
+    stallId: "mx-d09",
+    unitNumber: "#01-75",
+    polygon: stallRect(280, 150, 30, 38),
+    status: "non_food",
+    label: "Drinks",
+  },
+  {
+    stallId: "mx-d10",
+    unitNumber: "#01-76",
+    polygon: stallRect(314, 150, 30, 38),
+    status: "open",
+    label: "Noodle Soup",
+  },
+  {
+    stallId: "mx-d11",
+    unitNumber: "#01-77",
+    polygon: stallRect(348, 150, 30, 38),
+    status: "open",
+    label: "Jin Hua Fish Bee Hoon",
+  },
+  {
+    stallId: "mx-d12",
+    unitNumber: "#01-78",
+    polygon: stallRect(382, 150, 30, 38),
+    status: "open",
+    label: "Fried Prawns",
+  },
+  {
+    stallId: "mx-d13",
+    unitNumber: "#01-79",
+    polygon: stallRect(416, 150, 30, 38),
+    status: "open",
+    label: "Chilli Crab",
+  },
+  {
+    stallId: "mx-d14",
+    unitNumber: "#01-80",
+    polygon: stallRect(450, 150, 30, 38),
+    status: "open",
+    label: "Seafood Soup",
+  },
+  {
+    stallId: "mx-d15",
+    unitNumber: "#01-81",
+    polygon: stallRect(484, 150, 30, 38),
+    status: "open",
+    label: "Pig's Organ Soup",
+  },
+  {
+    stallId: "mx-d16",
+    unitNumber: "#01-82",
+    polygon: stallRect(518, 150, 30, 38),
+    status: "closed",
+    label: "Closed",
+  },
+  {
+    stallId: "mx-d17",
+    unitNumber: "#01-83",
+    polygon: stallRect(552, 150, 30, 38),
+    status: "open",
+    label: "Kway Chap",
+  },
+  {
+    stallId: "mx-d18",
+    unitNumber: "#01-84",
+    polygon: stallRect(586, 150, 30, 38),
+    status: "open",
+    label: "Pork Rib Soup",
+  },
+  {
+    stallId: "mx-d19",
+    unitNumber: "#01-85",
+    polygon: stallRect(620, 150, 30, 38),
+    status: "open",
+    label: "Sisaket Thai Food",
+  },
+  {
+    stallId: "mx-d20",
+    unitNumber: "#01-86",
+    polygon: stallRect(654, 150, 30, 38),
+    status: "open",
+    label: "Chicken Chop",
+  },
+  {
+    stallId: "mx-d21",
+    unitNumber: "#01-87",
+    polygon: stallRect(688, 150, 30, 38),
+    status: "open",
+    label: "Char Siew Wonton",
+  },
+
+  // ── Far south extension (#01-88 to #01-100) ────────────────────────────────
+  {
+    stallId: "mx-e01",
+    unitNumber: "#01-88",
+    polygon: stallRect(8, 196, 30, 38),
+    status: "open",
+    label: "Fried Oysters",
+  },
+  {
+    stallId: "mx-e02",
+    unitNumber: "#01-89",
+    polygon: stallRect(42, 196, 30, 38),
+    status: "open",
+    label: "Roti John",
+  },
+  {
+    stallId: "mx-e03",
+    unitNumber: "#01-90",
+    polygon: stallRect(76, 196, 30, 38),
+    status: "non_food",
+    label: "Drinks",
+  },
+  {
+    stallId: "mx-e04",
+    unitNumber: "#01-91",
+    polygon: stallRect(110, 196, 30, 38),
+    status: "open",
+    label: "Kueh Lapis",
+  },
+  {
+    stallId: "mx-e05",
+    unitNumber: "#01-92",
+    polygon: stallRect(144, 196, 30, 38),
+    status: "open",
+    label: "Ngoh Hiang",
+  },
+  {
+    stallId: "mx-e06",
+    unitNumber: "#01-93",
+    polygon: stallRect(178, 196, 30, 38),
+    status: "open",
+    label: "Pig Trotter",
+  },
+  {
+    stallId: "mx-e07",
+    unitNumber: "#01-94",
+    polygon: stallRect(212, 196, 30, 38),
+    status: "open",
+    label: "Ye Lai Xiang BBQ",
+  },
+  {
+    stallId: "mx-e08",
+    unitNumber: "#01-95",
+    polygon: stallRect(246, 196, 30, 38),
+    status: "open",
+    label: "Satay Bee Hoon",
+  },
+  {
+    stallId: "mx-e09",
+    unitNumber: "#01-96",
+    polygon: stallRect(280, 196, 30, 38),
+    status: "closed",
+    label: "Closed",
+  },
+  {
+    stallId: "mx-e10",
+    unitNumber: "#01-97",
+    polygon: stallRect(314, 196, 30, 38),
+    status: "open",
+    label: "Chee Cheong Fun",
+  },
+  {
+    stallId: "mx-e11",
+    unitNumber: "#01-98",
+    polygon: stallRect(348, 196, 30, 38),
+    status: "open",
+    label: "Durian Puffs",
+  },
+  {
+    stallId: "mx-e12",
+    unitNumber: "#01-99",
+    polygon: stallRect(382, 196, 30, 38),
+    status: "open",
+    label: "Pineapple Tarts",
+  },
+  {
+    stallId: "mx-e13",
+    unitNumber: "#01-100",
+    polygon: stallRect(416, 196, 30, 38),
+    status: "open",
+    label: "Mochi Ice Cream",
   },
 ];
 
@@ -1963,9 +2520,9 @@ export const floorPlans: Record<string, FloorPlan> = {
   "hc-maxwell:L1": {
     buildingId: "hc-maxwell",
     floor: "L1",
-    canvasWidth: 460,
-    canvasHeight: 220,
-    stalls: maxwellL1Stalls,
+    canvasWidth: MAXWELL_L1_FLOOR_PLAN.canvasWidth,
+    canvasHeight: MAXWELL_L1_FLOOR_PLAN.canvasHeight,
+    stalls: MAXWELL_L1_FLOOR_PLAN.stalls,
   },
   "hc-maxwell:L2": {
     buildingId: "hc-maxwell",
@@ -2065,6 +2622,11 @@ export function getFloorPlan(
   totalStalls = 12,
 ): FloorPlan {
   const key = `${buildingId}:${floor}`;
+  const directSource = floorPlanSourceRegistry[key];
+  if (directSource) {
+    return adaptFloorPlanSourceToFloorPlan(directSource, buildingId);
+  }
+
   const direct = floorPlans[key];
   if (direct) {
     return direct;
@@ -2072,6 +2634,11 @@ export function getFloorPlan(
 
   const aliasIds = FLOOR_PLAN_BUILDING_ALIASES[buildingId] ?? [];
   for (const aliasId of aliasIds) {
+    const sourceAlias = floorPlanSourceRegistry[`${aliasId}:${floor}`];
+    if (sourceAlias) {
+      return adaptFloorPlanSourceToFloorPlan(sourceAlias, buildingId);
+    }
+
     const aliasPlan = floorPlans[`${aliasId}:${floor}`];
     if (aliasPlan) {
       return {

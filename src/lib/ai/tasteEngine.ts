@@ -9,7 +9,15 @@
  * Scale: 0–10
  */
 
-import type { TasteVector } from "@/types/domain";
+import type { TasteVector, DietaryFlag, DishSummary, HawkerTasteTag } from "@/types/domain";
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EXTENDED RECOMMENDATION PIPELINE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+import { filterSafeDishes } from "./dietaryGate";
+import { applyContextModifier, computeContextModifier, getCurrentContext } from "./contextEngine";
+import type { ContextState } from "./contextEngine";
 
 // ─── Vector math ──────────────────────────────────────────────────────────────
 
@@ -79,7 +87,7 @@ export interface ScoredDish {
  */
 export function rankDishes(
   user: TasteVector,
-  dishes: Array<{ id: string; tasteVector: TasteVector; name: string }>,
+  dishes: { id: string; tasteVector: TasteVector; name: string }[],
 ): ScoredDish[] {
   return dishes
     .map((dish) => {
@@ -99,7 +107,7 @@ export function rankDishes(
  * Explain why a dish matches (top 2 matching dimensions).
  */
 function buildExplanation(user: TasteVector, dish: TasteVector, name: string): string {
-  const dims: Array<{ key: keyof TasteVector; label: string }> = [
+  const dims: { key: keyof TasteVector; label: string }[] = [
     { key: "sweet", label: "sweetness" },
     { key: "spicy", label: "heat" },
     { key: "sour", label: "tang" },
@@ -150,6 +158,31 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
+export function averageTasteVectors(vectors: TasteVector[], fallback: TasteVector): TasteVector {
+  if (vectors.length === 0) return fallback;
+
+  const total = vectors.reduce(
+    (sum, vector) => ({
+      sweet: sum.sweet + vector.sweet,
+      spicy: sum.spicy + vector.spicy,
+      sour: sum.sour + vector.sour,
+      salty: sum.salty + vector.salty,
+      rich: sum.rich + vector.rich,
+      aromatic: sum.aromatic + vector.aromatic,
+    }),
+    { sweet: 0, spicy: 0, sour: 0, salty: 0, rich: 0, aromatic: 0 } satisfies TasteVector,
+  );
+
+  return {
+    sweet: clamp(total.sweet / vectors.length, 0, 10),
+    spicy: clamp(total.spicy / vectors.length, 0, 10),
+    sour: clamp(total.sour / vectors.length, 0, 10),
+    salty: clamp(total.salty / vectors.length, 0, 10),
+    rich: clamp(total.rich / vectors.length, 0, 10),
+    aromatic: clamp(total.aromatic / vectors.length, 0, 10),
+  };
+}
+
 // ─── Decide-for-me ────────────────────────────────────────────────────────────
 
 /**
@@ -158,7 +191,7 @@ function clamp(value: number, min: number, max: number): number {
  */
 export function decideForMe(
   user: TasteVector,
-  dishes: Array<{ id: string; tasteVector: TasteVector; name: string }>,
+  dishes: { id: string; tasteVector: TasteVector; name: string }[],
   minScore = 0.4,
 ): { dishId: string; matchPercent: number; explanation: string } | null {
   const ranked = rankDishes(user, dishes);
@@ -207,15 +240,6 @@ export const TASTE_COLORS: Record<keyof TasteVector, string> = {
   aromatic: "#10B981",
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// EXTENDED RECOMMENDATION PIPELINE
-// ═══════════════════════════════════════════════════════════════════════════════
-
-import type { DietaryFlag, DishSummary, HawkerTasteTag } from "@/types/domain";
-import { filterSafeDishes } from "./dietaryGate";
-import { applyContextModifier, computeContextModifier, getCurrentContext } from "./contextEngine";
-import type { ContextState } from "./contextEngine";
-
 // ─── Pipeline Types ───────────────────────────────────────────────────────────
 
 export interface PipelineContext {
@@ -248,6 +272,14 @@ export interface PipelineResult {
   isSerendipitous: boolean;
 }
 
+export const RECOMMENDATION_SCORE_WEIGHTS = {
+  taste: 0.5,
+  context: 0.15,
+  distance: 0.15,
+  rating: 0.1,
+  novelty: 0.1,
+} as const;
+
 // ─── Stage 1: Hard Filter (Dietary Gate) ──────────────────────────────────────
 
 /**
@@ -268,7 +300,7 @@ function stage2CandidateGeneration<T extends DishSummary>(
   dishes: T[],
   userVector: TasteVector,
   topN = 50,
-): Array<T & { _rawScore: number }> {
+): (T & { _rawScore: number })[] {
   return dishes
     .map((dish) => ({
       ...dish,
@@ -285,17 +317,17 @@ function stage2CandidateGeneration<T extends DishSummary>(
  * community rating, and implicit behavior signals.
  *
  * Weights:
- *   40% — Taste match (blended cosine + euclidean)
- *   20% — Contextual relevance (time-of-day modifier)
+ *   50% — Taste match (blended cosine + euclidean)
+ *   15% — Contextual relevance (time-of-day modifier)
  *   15% — Distance proximity (inverse normalized)
- *   15% — Community rating (normalized)
- *   10% — Reserved for implicit behavior signals (Phase 2)
+ *   10% — Community rating (normalized)
+ *   10% — Novelty/diversity readiness
  */
 function stage3PrecisionScoring<T extends DishSummary & { _rawScore: number }>(
   candidates: T[],
   contextVector: TasteVector,
   userVector: TasteVector,
-): Array<T & { _precisionScore: number }> {
+): (T & { _precisionScore: number })[] {
   // Find max distance for normalization
   const maxDist = Math.max(...candidates.map((d) => d.distanceMeters), 1);
 
@@ -304,14 +336,14 @@ function stage3PrecisionScoring<T extends DishSummary & { _rawScore: number }>(
     const contextScore = blendedMatchScore(contextVector, dish.tasteVector);
     const distanceScore = 1 - dish.distanceMeters / maxDist;
     const ratingScore = (dish.rating ?? 0) / 5;
-    const implicitScore = 0.5; // Neutral baseline — Phase 2 will populate
+    const noveltyScore = isWildCardScore(tasteScore) ? 1 : 0.5;
 
     const precisionScore =
-      0.4 * tasteScore +
-      0.2 * contextScore +
-      0.15 * distanceScore +
-      0.15 * ratingScore +
-      0.1 * implicitScore;
+      RECOMMENDATION_SCORE_WEIGHTS.taste * tasteScore +
+      RECOMMENDATION_SCORE_WEIGHTS.context * contextScore +
+      RECOMMENDATION_SCORE_WEIGHTS.distance * distanceScore +
+      RECOMMENDATION_SCORE_WEIGHTS.rating * ratingScore +
+      RECOMMENDATION_SCORE_WEIGHTS.novelty * noveltyScore;
 
     return { ...dish, _precisionScore: precisionScore };
   });
@@ -349,7 +381,7 @@ function stage4SerendipityReRanking<T extends DishSummary & { _precisionScore: n
   // Must have minimum flavor overlap (cosine ≥ 0.3 with user vector)
   const novelCandidates = allSafeDishes
     .filter((d) => !regularIds.has(d.id) && cosineSimilarity(userVector, d.tasteVector) >= 0.3)
-    .sort(() => Math.random() - 0.5) // shuffle for variety
+    .sort((left, right) => stableDishNoise(left.id) - stableDishNoise(right.id))
     .slice(0, serendipitySlots);
 
   // Build final results
@@ -373,14 +405,15 @@ function stage4SerendipityReRanking<T extends DishSummary & { _precisionScore: n
   return results;
 }
 
-const TASTE_KEYS: Array<keyof TasteVector> = [
-  "sweet",
-  "spicy",
-  "sour",
-  "salty",
-  "rich",
-  "aromatic",
-];
+function stableDishNoise(id: string): number {
+  let hash = 0;
+  for (let index = 0; index < id.length; index += 1) {
+    hash = (hash * 31 + id.charCodeAt(index)) % 9973;
+  }
+  return hash / 9973;
+}
+
+const TASTE_KEYS: (keyof TasteVector)[] = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"];
 
 function getDominantTasteDimension(vector: TasteVector): keyof TasteVector {
   let dominant: keyof TasteVector = TASTE_KEYS[0];
@@ -553,6 +586,11 @@ export type FeedbackType =
   | "rating_1_star"
   | "saved"
   | "unsaved"
+  | "search_query"
+  | "dish_result_click"
+  | "dish_like"
+  | "food_button_click"
+  | "dismissed"
   | "hawker_tag_positive"
   | "hawker_tag_negative";
 
@@ -584,6 +622,11 @@ const FEEDBACK_WEIGHTS: Record<FeedbackType, number> = {
   rating_1_star: -0.15,
   saved: 0.1,
   unsaved: -0.03,
+  search_query: 0.015,
+  dish_result_click: 0.055,
+  dish_like: 0.08,
+  food_button_click: 0.055,
+  dismissed: -0.08,
   hawker_tag_positive: 0.05,
   hawker_tag_negative: -0.05,
 };

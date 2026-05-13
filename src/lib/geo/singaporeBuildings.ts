@@ -27,6 +27,35 @@ export interface SingaporeBuilding extends Omit<BuildingDetail, "heroDishId"> {
   address: string;
 }
 
+type SingaporeAreaAnchor = {
+  name: string;
+  coordinate: { latitude: number; longitude: number };
+};
+
+const singaporeAreaAnchors: SingaporeAreaAnchor[] = [
+  { name: "Pioneer", coordinate: { latitude: 1.3376, longitude: 103.6974 } },
+  { name: "Jurong West", coordinate: { latitude: 1.3404, longitude: 103.7066 } },
+  { name: "Jurong East", coordinate: { latitude: 1.3331, longitude: 103.7437 } },
+  { name: "Tampines", coordinate: { latitude: 1.3526, longitude: 103.9448 } },
+  { name: "Bedok", coordinate: { latitude: 1.3236, longitude: 103.9273 } },
+  { name: "Woodlands", coordinate: { latitude: 1.436, longitude: 103.7864 } },
+  { name: "Yishun", coordinate: { latitude: 1.4294, longitude: 103.8355 } },
+  { name: "Ang Mo Kio", coordinate: { latitude: 1.3691, longitude: 103.8454 } },
+  { name: "Hougang", coordinate: { latitude: 1.3712, longitude: 103.8922 } },
+  { name: "Punggol", coordinate: { latitude: 1.3984, longitude: 103.9072 } },
+  { name: "Serangoon", coordinate: { latitude: 1.3508, longitude: 103.8723 } },
+  { name: "Toa Payoh", coordinate: { latitude: 1.3343, longitude: 103.8563 } },
+  { name: "Clementi", coordinate: { latitude: 1.3151, longitude: 103.7652 } },
+  { name: "Bukit Timah", coordinate: { latitude: 1.3294, longitude: 103.8021 } },
+  { name: "Queenstown", coordinate: { latitude: 1.2942, longitude: 103.7861 } },
+  { name: "Tiong Bahru", coordinate: { latitude: 1.2849, longitude: 103.8324 } },
+  { name: "Chinatown", coordinate: { latitude: 1.2836, longitude: 103.8436 } },
+  { name: "Orchard", coordinate: { latitude: 1.3048, longitude: 103.8318 } },
+  { name: "Marina Bay", coordinate: { latitude: 1.2834, longitude: 103.8607 } },
+  { name: "Geylang", coordinate: { latitude: 1.3182, longitude: 103.8871 } },
+  { name: "Pasir Ris", coordinate: { latitude: 1.373, longitude: 103.9493 } },
+];
+
 // ─── Full Singapore Dataset ───────────────────────────────────────────────────
 // 114 hawker centres (all NEA-managed) + ~80 major food courts/kopitiams
 
@@ -702,6 +731,26 @@ export function getNearestBuildings(
     .sort((a, b) => a.distanceKm - b.distanceKm)
     .slice(0, limit)
     .map(({ building }) => building);
+}
+
+/** Resolve a coordinate to a user-facing Singapore area label. */
+export function getNearestSingaporeArea(lat: number, lng: number): string {
+  const R = 6371;
+  const nearest = singaporeAreaAnchors
+    .map((area) => {
+      const dLat = ((area.coordinate.latitude - lat) * Math.PI) / 180;
+      const dLng = ((area.coordinate.longitude - lng) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos((lat * Math.PI) / 180) *
+          Math.cos((area.coordinate.latitude * Math.PI) / 180) *
+          Math.sin(dLng / 2) ** 2;
+      const distanceKm = 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return { area, distanceKm };
+    })
+    .sort((a, b) => a.distanceKm - b.distanceKm)[0];
+
+  return nearest?.area.name ?? "Singapore";
 }
 
 /** Get building by id */
