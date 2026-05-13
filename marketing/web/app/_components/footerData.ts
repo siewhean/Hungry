@@ -21,6 +21,9 @@ export const siteLayout = {
   navHeight: "h-20",
   navGap: "gap-10",
   footerPadding: "py-10",
+  footerBrandText: "text-xl",
+  footerTitleText: "text-xs",
+  footerBodyText: "text-xs leading-5",
 } as const;
 
 export const footerBrand = {

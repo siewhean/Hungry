@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
-import { InteractionManager } from "react-native";
 
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
+import { scheduleIdleTask } from "@/lib/scheduling/idle";
 import { getConfiguredDataSource, getSupabaseClient } from "@/lib/services/supabase/client";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -45,7 +45,7 @@ export function useAppBootstrap() {
 
     hasConfiguredAnalyticsSink.current = true;
 
-    const task = InteractionManager.runAfterInteractions(() => {
+    const task = scheduleIdleTask(() => {
       if (!shouldEnablePostHogSink()) {
         return;
       }
@@ -64,7 +64,7 @@ export function useAppBootstrap() {
     }
     hasTrackedLaunch.current = true;
 
-    const task = InteractionManager.runAfterInteractions(() => {
+    const task = scheduleIdleTask(() => {
       trackAnalyticsEvent("app_launched", {
         is_authenticated: isAuthenticated,
       });

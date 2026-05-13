@@ -5,7 +5,6 @@ import {
   Alert,
   Animated,
   Clipboard,
-  InteractionManager,
   Pressable,
   ScrollView,
   Share,
@@ -23,6 +22,7 @@ import {
   Bell,
   Heart,
   MessageCircle,
+  MessageCircleMore,
   PlayCircle,
   Copy,
   Share2,
@@ -38,6 +38,7 @@ import {
   BottomSheetFooter,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
+
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -76,6 +77,7 @@ import {
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getBuildingById, toSummary } from "@/lib/geo/singaporeBuildings";
+import { scheduleIdleTask } from "@/lib/scheduling/idle";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useActivityStore } from "@/store/useActivityStore";
@@ -109,6 +111,8 @@ function FeedSkeleton() {
     </View>
   );
 }
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -286,7 +290,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
-      const task = InteractionManager.runAfterInteractions(() => {
+      const task = scheduleIdleTask(() => {
         if (!cancelled) {
           void loadFeed();
         }
@@ -1170,7 +1174,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     onPress={() => openComments(item)}
                     style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
                   >
-                    <MessageCircle color={themeTints.text} size={24} />
+                    <CommentIcon color={themeTints.text} size={24} />
                     {interaction.commentCount > 0 && (
                       <AppText
                         variant="micro"
@@ -1438,7 +1442,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   borderRadius: radii.sm,
                 }}
               >
-                <MessageCircle color={themeTints.secondaryText} size={12} />
+                <CommentIcon color={themeTints.secondaryText} size={12} />
                 <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
                   {interaction.commentCount}
                 </AppText>
@@ -1889,7 +1893,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   <EmptyState
                     title="No comments yet"
                     body="Be the first to share your review!"
-                    icon={<MessageCircle size={42} color={palette.textMuted} />}
+                    icon={<CommentIcon size={42} color={palette.textMuted} />}
                   />
                 </View>
               )}

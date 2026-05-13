@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { InteractionManager, View, Pressable, StyleSheet } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import type { MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
 import type { NavigationProp } from "@react-navigation/native";
@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
 import { AppText } from "@/components/ui";
 import { preloadRoute } from "@/features/navigation/prefetch";
+import { scheduleIdleTask } from "@/lib/scheduling/idle";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
@@ -194,7 +195,7 @@ export function SwipeableTabNavigator() {
   const [tabPreloadEnabled, setTabPreloadEnabled] = useState(false);
 
   useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
+    const task = scheduleIdleTask(() => {
       setTabPreloadEnabled(true);
     });
 
@@ -212,7 +213,7 @@ export function SwipeableTabNavigator() {
         swipeEnabled: true,
         animationEnabled: false,
         lazy: true,
-        lazyPlaceholder: TabLazyPlaceholder,
+        lazyPlaceholder: () => <TabLazyPlaceholder />,
         lazyPreloadDistance: tabPreloadEnabled ? 1 : 0,
       }}
     >

@@ -11,6 +11,7 @@ import {
   isExternalFooterHref,
   mainNavLinks,
   siteBrand,
+  siteLayout,
   waitlistLink,
 } from "../_components/footerData";
 
@@ -236,16 +237,18 @@ function stitchNavHtml(activeHref?: string): string {
     .join("\n");
 
   return `<nav class="sticky top-0 z-50 border-b border-[#E7DED4] bg-white font-['Plus_Jakarta_Sans']">
-<div class="mx-auto grid h-20 max-w-7xl grid-cols-[auto_1fr_auto] items-center px-6">
-<a class="justify-self-start text-2xl md:text-3xl font-extrabold tracking-tight text-[#E8531E] hover:text-[#C94618] transition-colors" href="${siteBrand.href}" aria-label="Hungry home">${siteBrand.label}</a>
-<div class="hidden md:flex justify-self-center items-center gap-10 text-lg font-semibold">
+<div class="relative mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
+<a class="text-2xl md:text-3xl font-extrabold tracking-tight text-[#E8531E] hover:text-[#C94618] transition-colors" href="${siteBrand.href}" aria-label="Hungry home">${siteBrand.label}</a>
+<div class="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 md:flex items-center gap-10 text-lg font-semibold">
 ${links}
 <a class="md:hidden rounded-[18px] bg-[#E8531E] px-5 py-3 font-bold text-white" href="${waitlistLink.href}">${waitlistLink.label}</a>
 </div>
-<a class="hidden md:inline-flex justify-self-end rounded-[18px] bg-[#E8531E] px-8 py-4 text-lg font-bold text-white hover:bg-[#C94618] transition-colors" href="${waitlistLink.href}">${waitlistLink.label}</a>
-<button class="md:hidden justify-self-end text-[#E8531E]" type="button" aria-label="Open navigation">
+<div class="flex items-center justify-end">
+<a class="hidden md:inline-flex rounded-[18px] bg-[#E8531E] px-8 py-4 text-lg font-bold text-white hover:bg-[#C94618] transition-colors" href="${waitlistLink.href}">${waitlistLink.label}</a>
+<button class="md:hidden text-[#E8531E]" type="button" aria-label="Open navigation">
 <span class="material-symbols-outlined text-4xl">menu</span>
 </button>
+</div>
 </div>
 </nav>`;
 }
@@ -285,22 +288,22 @@ function stitchFooterHtml() {
             isExternalFooterHref(link.href) && link.href.startsWith("http")
               ? ' target="_blank" rel="noreferrer"'
               : "";
-          return `<a class="block text-sm leading-6 text-stone-500 hover:text-[#E8531E] transition-colors" href="${link.href}"${external}>${link.label}</a>`;
+          return `<a class="block ${siteLayout.footerBodyText} text-stone-500 hover:text-[#E8531E] transition-colors" href="${link.href}"${external}>${link.label}</a>`;
         })
         .join("\n");
 
       return `<div class="space-y-3">
-<h2 class="text-sm font-extrabold text-[#111827]">${section.title}</h2>
+<h2 class="${siteLayout.footerTitleText} font-extrabold text-[#111827]">${section.title}</h2>
 ${links}
 </div>`;
     })
     .join("\n");
 
-  return `<footer class="w-full border-t border-[#E7DED4] bg-white py-10 text-sm font-['Plus_Jakarta_Sans']">
+  return `<footer class="w-full border-t border-[#E7DED4] bg-white py-10 font-['Plus_Jakarta_Sans']">
 <div class="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 md:grid-cols-4">
 <div class="space-y-3">
-<a class="font-['Plus_Jakarta_Sans'] text-2xl font-extrabold tracking-tight text-[#E8531E]" href="${footerBrand.href}">${footerBrand.label}</a>
-<p class="max-w-xs text-sm leading-6 text-stone-500">${footerBrand.copy}</p>
+<a class="font-['Plus_Jakarta_Sans'] ${siteLayout.footerBrandText} font-extrabold tracking-tight text-[#E8531E]" href="${footerBrand.href}">${footerBrand.label}</a>
+<p class="max-w-xs ${siteLayout.footerBodyText} text-stone-500">${footerBrand.copy}</p>
 </div>
 ${sections}
 </div>

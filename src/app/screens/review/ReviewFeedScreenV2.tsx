@@ -14,7 +14,15 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Bookmark, Filter, Heart, MessageCircle, Send, Star } from "lucide-react-native";
+import {
+  Bookmark,
+  Filter,
+  Heart,
+  MessageCircle,
+  MessageCircleMore,
+  Send,
+  Star,
+} from "lucide-react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -35,6 +43,8 @@ import { listReviewFeedItems, type ReviewFeedItem } from "@/features/review/revi
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 type FilterMode = "Recent" | "Rating" | "Dish" | "Location" | "Vegetarian";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 const FILTER_CHIPS: FilterMode[] = ["Recent", "Rating", "Dish", "Location", "Vegetarian"];
 
@@ -299,7 +309,7 @@ function ReviewCardV2({
                 onPress={() => onCommentPress(item)}
                 style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
               >
-                <MessageCircle color={palette.text} size={22} />
+                <CommentIcon color={palette.text} size={22} />
                 {interaction.commentCount > 0 ? (
                   <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
                     {interaction.commentCount}

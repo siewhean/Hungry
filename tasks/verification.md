@@ -500,6 +500,15 @@ Use the smallest check that matches the change risk.
 | 2026-05-09 | app (PERF-BATCH-07 E2E Launcher Harness Follow-up) | `npm run lint` | Pass | ESLint completed with 0 errors and 333 warnings; warnings remain the existing repo-wide debt plus intentional lazy `require()` paths |
 | 2026-05-09 | app (PERF-BATCH-07 E2E Launcher Harness Follow-up) | `npm test -- --watch=false` | Pass | Full Node test suite passed with 208 tests total: 206 passing and 2 skipped |
 | 2026-05-09 | app (PERF-BATCH-07 E2E Launcher Harness Follow-up) | `git diff --check` | Pass | Current worktree diff has no whitespace errors after the Playwright helper/docs updates |
+| 2026-05-13 | marketing web (shared shell feedback) | `npm run build` from `marketing/web` | Pass | Production Next.js build passed after shared header/footer, Stitch shell, merchant hero, merchant card image, legal/footer, and login placeholder updates |
+| 2026-05-13 | marketing web (shared shell feedback) | Local production server + Playwright smoke on `http://localhost:3000` | Pass | `curl -I` returned 200 for `/for-merchants`, `/merchant/login`, and `/terms`; Playwright confirmed merchant hero bottom 853px in an 852px viewport, nav center 572/572 on `/for-merchants` and `/about`, home-based image present, footer copy/link fonts 12px, terms footer links show For Foodies/For Merchants/About/Merchant Portal, and login placeholders are `Email`/`Password` |
+| 2026-05-13 | main integration cleanup | `node --import tsx --test src/app/performance-prefetch-contracts.test.ts` | Pass | Focused navigation/performance contract passed 7/7 after wrapping the Material Top Tabs lazy placeholder and moving deferred work to `scheduleIdleTask()` |
+| 2026-05-13 | main integration cleanup | `npm run typecheck` | Pass | Strict TypeScript passed after terminal-error cleanup, source-contract updates, and Expo SDK patch updates |
+| 2026-05-13 | main integration cleanup | `npm run lint` | Pass | ESLint completed with no reported errors or warnings after integration lint config cleanup and source fixes |
+| 2026-05-13 | main integration cleanup | `npm test` | Pass | Full Node test suite passed: 221 tests total, 219 passing, 2 skipped |
+| 2026-05-13 | main integration cleanup | `npx expo-doctor` | Pass | Dependency health passed 17/17 after updating Expo SDK 55 patch companions and `eslint-config-expo` |
+| 2026-05-13 | main integration cleanup | `npm --prefix marketing/web run lint` and `npm --prefix marketing/web run build` | Pass | Marketing lint passed and elevated Turbopack production build completed for 20 routes |
+| 2026-05-13 | main integration cleanup | `git diff --check` and `rg -n "InteractionManager" src --glob '!src/**/*.test.ts' --glob '!src/**/*.test.tsx'` | Pass | No whitespace errors; no remaining app-code `InteractionManager` references |
 
 ## Outstanding Verification
 

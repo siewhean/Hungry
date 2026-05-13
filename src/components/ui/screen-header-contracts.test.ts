@@ -207,7 +207,10 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     /const \[activeDiscoverChipIds, setActiveDiscoverChipIds\] = useState<DiscoverChipId\[\]>\(\[\]\)/,
   );
   assert.match(discover, /const isDiscoverFiltering =/);
-  assert.match(discover, /const toggleDiscoverChip = useCallback\(\(chipId: DiscoverChipId\) =>/);
+  assert.match(
+    discover,
+    /const toggleDiscoverChip = useCallback\(\s*\(chipId: DiscoverChipId\) =>/,
+  );
   assert.match(discover, /const matchesDiscoverChipSelection = useCallback/);
   assert.match(discover, /const filterDiscoverBites = useCallback/);
   assert.match(discover, /activeDiscoverChipIds\.every\(\(chipId\) =>/);
@@ -326,8 +329,8 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(discover, /<FoodStyleButton[\s\S]*imageSource=\{item\.imageSource\}/);
   assert.match(discover, /overflow: "hidden"/);
-  assert.match(discover, /handleFoodStylePress\(item\.query\)/);
-  assert.match(discover, /updateSearchQuery\(query\)/);
+  assert.match(discover, /handleFoodStylePress\(item\)/);
+  assert.match(discover, /updateSearchQuery\(item\.query\)/);
   assert.match(discover, /navigation\.navigate\("SearchResults", \{/);
   assert.match(discover, /places in this area/);
   assert.match(

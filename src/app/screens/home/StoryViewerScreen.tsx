@@ -11,7 +11,7 @@ import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { X, Heart, MessageCircle, Bookmark } from "lucide-react-native";
+import { Bookmark, Heart, MessageCircle, MessageCircleMore, X } from "lucide-react-native";
 import { AppText, IconButton, Avatar } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useStoryStore } from "@/store/useStoryStore";
@@ -19,6 +19,8 @@ import { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 
 import { useUIStore } from "@/store/useUIStore";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 const STORY_DURATION = 5000;
 const SWIPE_THRESHOLD = 48;
@@ -453,7 +455,7 @@ export function StoryViewerScreen() {
           style={styles.inputSimulator}
           onPress={handleStoryMessage}
         >
-          <MessageCircle color={palette.white} size={18} />
+          <CommentIcon color={palette.white} size={18} />
           <AppText style={{ color: palette.white }}>
             {currentStory.isOwn ? "Add story" : "Send message"}
           </AppText>

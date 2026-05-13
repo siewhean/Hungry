@@ -1,21 +1,25 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import Image from "next/image";
 import { ArrowRight, MapPin, Fire, Star, Clock } from "@phosphor-icons/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
 
-gsap.registerPlugin(ScrollTrigger);
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger, useGSAP);
+}
 
 export default function Home() {
+  const mainRef = useRef<HTMLElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const heroTextRef = useRef<HTMLHeadingElement>(null);
   const bentoRef = useRef<HTMLDivElement>(null);
   const parallaxRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const ctx = gsap.context(() => {
+  useGSAP(
+    () => {
       // Hero fade up
       gsap.fromTo(
         heroTextRef.current,
@@ -61,13 +65,12 @@ export default function Home() {
         pin: ".pin-text",
         scrub: true,
       });
-    }, [heroRef, bentoRef, parallaxRef]);
-
-    return () => ctx.revert();
-  }, []);
+    },
+    { scope: mainRef },
+  );
 
   return (
-    <main className="overflow-x-hidden w-full max-w-full bg-hungry-heritage-white">
+    <main ref={mainRef} className="overflow-x-hidden w-full max-w-full bg-hungry-heritage-white">
       {/* Navigation */}
       <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between px-8 py-4 bg-white/80 backdrop-blur-md border border-hungry-border rounded-full shadow-lg w-[90%] max-w-5xl">
         <div className="font-display font-bold text-xl tracking-tight text-hungry-text">Hungry</div>
@@ -100,7 +103,7 @@ export default function Home() {
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-hungry-night-market/70 bg-gradient-radial-wash" />
+          <div className="absolute inset-0 bg-hungry-night-market/70 bg-[radial-gradient(circle_at_center,rgba(232,83,30,0.15)_0%,rgba(11,12,16,0.8)_100%)]" />
         </div>
 
         <div className="relative z-10 flex flex-col items-center w-full max-w-6xl">
@@ -180,8 +183,8 @@ export default function Home() {
           </div>
 
           {/* Card 4 */}
-          <div className="bento-item col-span-12 lg:col-span-8 group relative overflow-hidden rounded-[2rem] bg-hungry-surface border border-hungry-border p-0 flex items-center">
-            <div className="w-1/2 p-8 h-full flex flex-col justify-center">
+          <div className="bento-item col-span-12 lg:col-span-8 group relative overflow-hidden rounded-[2rem] bg-hungry-surface border border-hungry-border p-0 flex flex-col md:flex-row items-center">
+            <div className="w-full md:w-1/2 p-8 h-full flex flex-col justify-center">
               <Clock size={32} className="text-hungry-teal mb-4" />
               <h3 className="font-display font-bold text-3xl mb-2 text-hungry-text">
                 Real-Time Queues
@@ -190,7 +193,7 @@ export default function Home() {
                 Know exactly how long you&apos;ll wait before you even arrive at the hawker centre.
               </p>
             </div>
-            <div className="w-1/2 h-full relative overflow-hidden">
+            <div className="w-full md:w-1/2 h-full min-h-[320px] relative overflow-hidden">
               <Image
                 src="https://images.unsplash.com/photo-1541628951107-a9af5346a3e4?q=80&w=2578&auto=format&fit=crop"
                 alt="Hawker stall queue"
@@ -205,7 +208,7 @@ export default function Home() {
       {/* Desire: Parallax Heritage Section with Pinned Text */}
       <section
         ref={parallaxRef}
-        className="pin-section relative w-full h-[150vh] flex px-6 md:px-12 py-32 bg-hungry-bg"
+        className="pin-section relative w-full min-h-[150vh] flex px-6 md:px-12 py-32 bg-hungry-bg"
       >
         <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row gap-16 relative">
           <div className="pin-text w-full md:w-1/2 h-screen flex flex-col justify-center sticky top-0">

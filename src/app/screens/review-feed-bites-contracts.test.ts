@@ -53,7 +53,7 @@ test("Review feed cards do not render bottom bites sections", () => {
     assert.match(source, /interaction\.commentCount > 0/);
     assert.match(source, /interaction\.likeCount > 0/);
     assert.match(source, /interaction\.shareCount > 0/);
-    assert.match(source, /<Send[\s\S]*<Bookmark[\s\S]*<MessageCircle[\s\S]*<Heart/);
+    assert.match(source, /<Send[\s\S]*<Bookmark[\s\S]*<(?:MessageCircle|CommentIcon)[\s\S]*<Heart/);
     assert.match(source, /justifyContent: "space-between"[\s\S]*justifyContent: "flex-end"/);
   }
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Pressable, StyleSheet, ActivityIndicator, InteractionManager } from "react-native";
+import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText, Button, Screen } from "@/components/ui";
 import { resolveMerchantAccess, VERIFIED_ONLY_SCREENS } from "@/features/merchant/merchantGuards";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
+import { scheduleIdleTask } from "@/lib/scheduling/idle";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useHungryTheme } from "@/theme";
 import { getActiveOutlet, useMerchantStore } from "@/store/useMerchantStore";
@@ -343,7 +344,7 @@ export function MerchantTabs() {
 
     if (account) {
       setIsSyncingAccount(false);
-      deferredSync = InteractionManager.runAfterInteractions(() => {
+      deferredSync = scheduleIdleTask(() => {
         void syncMerchantAccount();
       });
     } else {

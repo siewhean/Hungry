@@ -9,7 +9,10 @@
 
 import { useEffect, useRef } from "react";
 import { Animated, Pressable, View, StyleSheet } from "react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type {
+  NativeStackNavigationProp,
+  NativeStackScreenProps,
+} from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { MapPin, Navigation, Trophy, RotateCcw, CheckCircle2 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,7 +23,6 @@ import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelResult">;
 
