@@ -1,0 +1,35 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: deny
+- tapOn:
+    text: "Hungry, http://.*:8081"
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- tapOn:
+    text: "Close"
+    optional: true
+- extendedWaitUntil:
+    visible: "Developer Launcher"
+    timeout: 60000
+- tapOn:
+    id: "dev-button-launch-v2-composer"
+- assertVisible:
+    id: "post-composer-screen"
+- assertVisible: "New post"
+- assertVisible:
+    id: "post-composer-add-media"
+- tapOn:
+    id: "post-composer-add-media"
+- tapOn:
+    text: "Don’t Allow"
+    optional: true
+- tapOn:
+    text: "Don't Allow"
+    optional: true
+- assertVisible: "Permission Required"
+- tapOn: "OK"

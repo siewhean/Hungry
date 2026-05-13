@@ -1,0 +1,46 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    text: "Hungry, http://.*:8081"
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
+- tapOn:
+    text: "Close"
+    optional: true
+- extendedWaitUntil:
+    visible: "Developer Launcher"
+    timeout: 60000
+- tapOn: "Open normal app flow"
+- tapOn:
+    text: "Close"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "home-activity-inbox-button"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 5000
+- tapOn:
+    id: "home-activity-inbox-button"
+- extendedWaitUntil:
+    visible:
+      id: "activity-tab-messages"
+    timeout: 30000
+- tapOn:
+    id: "activity-tab-messages"
+- tapOn:
+    id: "activity-chat-row-1"
+- assertVisible:
+    id: "chat-detail-screen"
+- assertVisible: "Text messages only for now."
+- assertNotVisible: "Add media"
+- tapOn:
+    id: "chat-message-input"
+- inputText: "Native smoke chat message"
+- tapOn:
+    id: "chat-send-message"
+- assertVisible: "Native smoke chat message"

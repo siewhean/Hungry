@@ -9,6 +9,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   security-audit:
     runs-on: ubuntu-latest
@@ -36,7 +39,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: TruffleHog
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@99dc7bd6c06427bcb32f32fe1641d7fb83583915
         if: github.event_name == 'pull_request'
         with:
           path: ./
@@ -45,7 +48,7 @@ jobs:
           extra_args: --only-verified
 
       - name: TruffleHog (push range)
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@99dc7bd6c06427bcb32f32fe1641d7fb83583915
         if: github.event_name == 'push' && github.event.before != github.sha
         with:
           path: ./

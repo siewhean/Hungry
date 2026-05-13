@@ -2,6 +2,7 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "skipLibCheck": true,
     "types": ["node"],
     "paths": {
       "@/*": [
@@ -9,6 +10,5 @@
       ]
     }
   },
-  "exclude": ["node_modules", "store-layout-editor", ".claude"]
+  "exclude": ["node_modules", "store-layout-editor", ".claude", "marketing"]
 }
-
