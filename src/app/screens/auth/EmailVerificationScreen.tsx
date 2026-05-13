@@ -42,7 +42,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
         await getHungryService().auth.resendVerificationEmail(email);
       } else {
         showToast({
-          message: "Running in mock mode. Verification emails are not sent in this mode.",
+          message: "Verification email resend is currently unavailable. Please try again shortly.",
           tone: "warning",
         });
         setResendSeconds(54);

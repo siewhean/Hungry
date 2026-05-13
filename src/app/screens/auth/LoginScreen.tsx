@@ -9,11 +9,13 @@ import { getMockLoginFailure } from "@/features/auth/mockAuth";
 import { validateEmail, validateRequired } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthScreenShell } from "./AuthScreenShell";
+import { navigationRef } from "@/app/navigation/RootNavigator";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
@@ -25,6 +27,7 @@ type FormValues = {
 export function LoginScreen({ navigation }: Props) {
   const { palette, spacing } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
+  const applyProfile = useProfileStore((state) => state.applyProfile);
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const showToast = useUIStore((state) => state.showToast);
 
@@ -39,7 +42,8 @@ export function LoginScreen({ navigation }: Props) {
   const handleLogin = handleSubmit(async (values) => {
     try {
       if (getConfiguredDataSource() === "supabase") {
-        await getHungryService().auth.signIn(values.email, values.password);
+        const session = await getHungryService().auth.signIn(values.email, values.password);
+        applyProfile(session.profile);
       } else {
         const failure = getMockLoginFailure(values.email, values.password);
         if (failure) {
@@ -66,15 +70,30 @@ export function LoginScreen({ navigation }: Props) {
   const handleProviderLogin = async (provider: "google" | "apple") => {
     try {
       if (getConfiguredDataSource() === "supabase") {
+        const service = getHungryService();
+        let session;
         if (provider === "google") {
-          await getHungryService().auth.signInWithGoogle();
+          session = await service.auth.signInWithGoogle();
         } else {
-          await getHungryService().auth.signInWithApple();
+          session = await service.auth.signInWithApple();
         }
+        applyProfile(session.profile);
       }
       completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
       showToast({ message: "Signed in successfully.", tone: "success" });
-    } catch {
+    } catch (err) {
+      const message = (err as { message?: string })?.message?.toLowerCase() ?? "";
+      if (message.includes("provider is not enabled")) {
+        showToast({
+          message: `${provider === "google" ? "Google" : "Apple"} sign-in is not enabled in Supabase Auth.`,
+          tone: "error",
+        });
+        return;
+      }
+      if (message.includes("cancelled")) {
+        showToast({ message: "Sign in was cancelled.", tone: "warning" });
+        return;
+      }
       showToast({ message: "Sign in failed. Please try again.", tone: "error" });
     }
   };

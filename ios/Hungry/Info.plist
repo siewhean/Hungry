@@ -31,11 +31,25 @@
           <string>app.hungry.mobile</string>
         </array>
       </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>exp+hungry-mobile</string>
+        </array>
+      </dict>
     </array>
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>DEV_CLIENT_TRY_TO_LAUNCH_LAST_BUNDLE</key>
     <true/>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+      <string>grab</string>
+      <string>foodpanda</string>
+      <string>deliveroo</string>
+    </array>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSRequiresIPhoneOS</key>
@@ -47,10 +61,36 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
+    <key>NSBonjourServices</key>
+    <array>
+      <string>_http._tcp</string>
+      <string>_https._tcp</string>
+      <string>_expo._tcp</string>
+    </array>
+    <key>NSCameraUsageDescription</key>
+    <string>Hungry uses your camera to take photos of your meals for reviews.</string>
+    <key>NSFaceIDUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Hungry uses your local network to connect to the development server on your Mac.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your location</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>Hungry uses your location to rank nearby dishes and map results.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Hungry uses your microphone to record audio for videos.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Hungry saves shared dish images to your photo library when you choose to download them.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Hungry accesses your photo library so you can attach photos to reviews and profile.</string>
     <key>RCTNewArchEnabled</key>
     <true/>
+    <key>UIBackgroundModes</key>
+    <array>
+      <string>audio</string>
+    </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

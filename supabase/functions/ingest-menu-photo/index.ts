@@ -11,16 +11,41 @@ interface ExtractionDish {
   extraction_confidence: number;
 }
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
+const BASE_CORS_HEADERS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-function toJson(status: number, body: JsonObject): Response {
+function getAllowedOrigins(): Set<string> {
+  const raw = Deno.env.get("INGEST_MENU_PHOTO_ALLOWED_ORIGINS") ?? "";
+  return new Set(
+    raw
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean),
+  );
+}
+
+function resolveAllowedOrigin(request: Request, allowedOrigins: Set<string>): string | null {
+  const origin = request.headers.get("origin") ?? "";
+  if (!origin) {
+    return "*";
+  }
+  return allowedOrigins.has(origin) ? origin : null;
+}
+
+function buildCorsHeaders(origin: string | null): HeadersInit {
+  return {
+    ...BASE_CORS_HEADERS,
+    "Access-Control-Allow-Origin": origin ?? "null",
+    Vary: "Origin",
+  };
+}
+
+function toJson(status: number, body: JsonObject, origin: string | null): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    headers: { ...buildCorsHeaders(origin), "Content-Type": "application/json" },
   });
 }
 
@@ -36,17 +61,6 @@ function toPriceCents(value: number | null): number | null {
 function clampConfidence(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.min(1, Math.max(0, value));
-}
-
-function bytesToBase64(bytes: Uint8Array): string {
-  // Avoid spreading large arrays into fromCharCode; it overflows the call stack.
-  const chunkSize = 0x8000;
-  let binary = "";
-  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
-    const chunk = bytes.subarray(offset, offset + chunkSize);
-    binary += String.fromCharCode(...chunk);
-  }
-  return btoa(binary);
 }
 
 function textToVector(text: string, price: number | null): number[] {
@@ -196,28 +210,51 @@ async function runLlmExtraction(apiKey: string, text: string): Promise<Extractio
 }
 
 Deno.serve(async (request) => {
+  const allowedOrigin = resolveAllowedOrigin(request, getAllowedOrigins());
   if (request.method === "OPTIONS") {
-    return new Response("ok", { headers: CORS_HEADERS });
+    if (!allowedOrigin) {
+      return toJson(403, { error: "forbidden_origin" }, null);
+    }
+    return new Response("ok", { headers: buildCorsHeaders(allowedOrigin) });
+  }
+  if (!allowedOrigin) {
+    return toJson(403, { error: "forbidden_origin" }, null);
   }
   if (request.method !== "POST") {
-    return toJson(405, { error: "method_not_allowed" });
+    return toJson(405, { error: "method_not_allowed" }, allowedOrigin);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
   const visionApiKey = Deno.env.get("GOOGLE_CLOUD_VISION_API_KEY") ?? "";
   const llmApiKey = Deno.env.get("GEMINI_API_KEY") ?? "";
-  if (!supabaseUrl || !serviceRoleKey) {
-    return toJson(500, { error: "missing_supabase_env" });
+  if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+    return toJson(500, { error: "missing_supabase_env" }, allowedOrigin);
   }
   if (!visionApiKey) {
-    return toJson(500, { error: "missing_vision_api_key" });
+    return toJson(500, { error: "missing_vision_api_key" }, allowedOrigin);
+  }
+
+  const authHeader = request.headers.get("authorization") ?? "";
+  if (!authHeader.toLowerCase().startsWith("bearer ")) {
+    return toJson(401, { error: "missing_authorization" }, allowedOrigin);
+  }
+
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data: userData, error: userError } = await userClient.auth.getUser();
+  const callerUserId = userData?.user?.id;
+  if (userError || !callerUserId) {
+    return toJson(401, { error: "invalid_authorization" }, allowedOrigin);
   }
 
   const body = (await request.json().catch(() => ({}))) as JsonObject;
   const submissionId = String(body.submissionId ?? "").trim();
   if (!submissionId) {
-    return toJson(400, { error: "submission_id_required" });
+    return toJson(400, { error: "submission_id_required" }, allowedOrigin);
   }
 
   const client = createClient(supabaseUrl, serviceRoleKey, {
@@ -226,11 +263,22 @@ Deno.serve(async (request) => {
 
   const { data: submission, error: submissionError } = await client
     .from("menu_photo_submissions")
-    .select("id, venue_id, building_id, storage_bucket, storage_path, ocr_attempts")
+    .select(
+      "id, venue_id, building_id, submitted_by, storage_bucket, storage_path, ocr_attempts, ocr_status",
+    )
     .eq("id", submissionId)
     .maybeSingle();
   if (submissionError || !submission) {
-    return toJson(404, { error: "submission_not_found" });
+    return toJson(404, { error: "submission_not_found" }, allowedOrigin);
+  }
+  if (String(submission.submitted_by) !== callerUserId) {
+    return toJson(403, { error: "forbidden_submission" }, allowedOrigin);
+  }
+  if (!["pending", "failed"].includes(String(submission.ocr_status ?? "pending"))) {
+    return toJson(409, { error: "submission_not_queued" }, allowedOrigin);
+  }
+  if (Number(submission.ocr_attempts ?? 0) >= 3) {
+    return toJson(429, { error: "ocr_retry_limit_exceeded" }, allowedOrigin);
   }
 
   await client
@@ -256,7 +304,7 @@ Deno.serve(async (request) => {
       throw new Error(`image_fetch_failed:${imageResponse.status}`);
     }
     const imageBytes = new Uint8Array(await imageResponse.arrayBuffer());
-    const imageBase64 = bytesToBase64(imageBytes);
+    const imageBase64 = btoa(String.fromCharCode(...imageBytes));
 
     const ocrText = await runVision(visionApiKey, imageBase64);
     const llmResult = await runLlmExtraction(llmApiKey, ocrText);
@@ -330,7 +378,7 @@ Deno.serve(async (request) => {
       })
       .eq("id", submissionId);
 
-    return toJson(200, { ok: true, submissionId, extracted: extracted.length });
+    return toJson(200, { ok: true, submissionId, extracted: extracted.length }, allowedOrigin);
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown_error";
     await client
@@ -342,6 +390,6 @@ Deno.serve(async (request) => {
       })
       .eq("id", submissionId);
 
-    return toJson(500, { error: "ocr_pipeline_failed", message });
+    return toJson(500, { error: "ocr_pipeline_failed", message }, allowedOrigin);
   }
 });

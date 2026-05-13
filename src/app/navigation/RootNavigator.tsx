@@ -30,6 +30,7 @@ export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 const AUTH_REQUIRED_ROUTES = new Set([
   "MainTabs",
+  "MerchantTabs",
   "SearchHome",
   "SearchHomeV2",
   "SearchResults",
@@ -196,6 +197,9 @@ const loadDesignGalleryScreen = () =>
   (
     require("@/app/screens/dev/DesignGalleryScreen") as typeof import("@/app/screens/dev/DesignGalleryScreen")
   ).DesignGalleryScreen;
+const loadMerchantTabs = () =>
+  (require("@/app/navigation/MerchantTabs") as typeof import("@/app/navigation/MerchantTabs"))
+    .MerchantTabs;
 const loadReviewFeedScreenV2 = () =>
   (
     require("@/app/screens/review/ReviewFeedScreenV2") as typeof import("@/app/screens/review/ReviewFeedScreenV2")
@@ -541,6 +545,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
           <RootStack.Screen getComponent={loadSplashScreenV2} name="SplashV2" />
           <RootStack.Screen getComponent={loadDesignGalleryScreen} name="DesignGallery" />
+          <RootStack.Screen getComponent={loadMerchantTabs} name="MerchantTabs" />
           <RootStack.Screen getComponent={loadReviewFeedScreenV2} name="ReviewFeedV2" />
           <RootStack.Screen
             getComponent={loadPostComposerScreenV2}
