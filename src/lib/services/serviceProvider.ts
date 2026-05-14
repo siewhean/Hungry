@@ -82,6 +82,10 @@ export function setMockServiceProvider(): void {
   activeProvider = createMockProvider();
 }
 
+export function setSupabaseServiceProvider(): void {
+  activeProvider = createSupabaseProvider();
+}
+
 export function resetServiceProvider(): void {
   activeProvider = null;
 }

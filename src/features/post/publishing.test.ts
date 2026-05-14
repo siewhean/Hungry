@@ -6,10 +6,11 @@ import { publishComposerPost } from "@/features/post/publishing";
 import { useComposerStore } from "@/features/post/useComposerStore";
 import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import { resetPublishedStallPostsForTest } from "@/lib/services/mock/stallPostState";
-import { getHungryService } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useProfileStore } from "@/store/useProfileStore";
-import { userProfile } from "@/lib/services/mock/data";
+import { useSessionStore } from "@/store/useSessionStore";
+import { guestProfile, userProfile } from "@/lib/services/mock/data";
 
 test("composer publish writes a shared post visible in feed and profile sources", async () => {
   resetPublishedStallPostsForTest();
@@ -76,6 +77,45 @@ test("composer publish writes a shared post visible in feed and profile sources"
   assert.equal(readerVisiblePost.authorName, "Author A");
 
   await service.auth.signOut();
+  useProfileStore.setState({ profile: userProfile });
+  useComposerStore.getState().reset();
+  usePublishedPostStore.getState().clearPostsForTest();
+  resetPublishedStallPostsForTest();
+});
+
+test("composer publish uses the authenticated profile when profile hydration is still guest", async () => {
+  resetPublishedStallPostsForTest();
+  usePublishedPostStore.getState().clearPostsForTest();
+  useComposerStore.getState().reset();
+  useSessionStore.setState({
+    isAuthenticated: true,
+    isAuthReady: true,
+    hasCompletedOnboarding: true,
+  });
+  useProfileStore.setState({ profile: guestProfile });
+  useComposerStore.setState({
+    media: [
+      {
+        id: "test-media-authenticated-fallback",
+        uri: "https://example.com/authenticated-fallback.jpg",
+        type: "image",
+      },
+    ],
+    postCaption: "Hydrated author fallback post.",
+  });
+
+  const published = await publishComposerPost({
+    publishMode: "post",
+    routeDishId: "dish-chicken-rice",
+    routeVenueId: "venue-tian-tian",
+  });
+
+  assert.ok(published);
+  assert.equal(published.authorId, getDataRepository().getProfile(true).id);
+  assert.equal(published.authorName, getDataRepository().getProfile(true).displayName);
+  assert.notEqual(published.authorId, guestProfile.id);
+
+  useSessionStore.getState().clearSession();
   useProfileStore.setState({ profile: userProfile });
   useComposerStore.getState().reset();
   usePublishedPostStore.getState().clearPostsForTest();

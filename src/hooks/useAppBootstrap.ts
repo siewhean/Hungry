@@ -1,6 +1,4 @@
 import { useEffect, useRef } from "react";
-import { InteractionManager } from "react-native";
-
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import { getConfiguredDataSource, getSupabaseClient } from "@/lib/services/supabase/client";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -29,6 +27,24 @@ function syncProfile(isAuthenticated: boolean) {
   getProfileStoreState().syncProfile(isAuthenticated);
 }
 
+type BrowserIdleHandle = number;
+
+function runAfterIdle(callback: () => void) {
+  const requestIdle = globalThis.requestIdleCallback ?? null;
+  if (typeof requestIdle === "function") {
+    const handle = requestIdle(callback) as BrowserIdleHandle;
+    const cancel = globalThis.cancelIdleCallback;
+    return () => {
+      if (typeof cancel === "function") {
+        cancel(handle);
+      }
+    };
+  }
+
+  const timeout = setTimeout(callback, 0);
+  return () => clearTimeout(timeout);
+}
+
 export function useAppBootstrap() {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const applyAuthStateFromSession = useSessionStore((state) => state.applyAuthStateFromSession);
@@ -45,7 +61,7 @@ export function useAppBootstrap() {
 
     hasConfiguredAnalyticsSink.current = true;
 
-    const task = InteractionManager.runAfterInteractions(() => {
+    const cancelTask = runAfterIdle(() => {
       if (!shouldEnablePostHogSink()) {
         return;
       }
@@ -55,7 +71,7 @@ export function useAppBootstrap() {
       setAnalyticsSink(posthogSink);
     });
 
-    return () => task.cancel();
+    return cancelTask;
   }, []);
 
   useEffect(() => {
@@ -64,13 +80,13 @@ export function useAppBootstrap() {
     }
     hasTrackedLaunch.current = true;
 
-    const task = InteractionManager.runAfterInteractions(() => {
+    const cancelTask = runAfterIdle(() => {
       trackAnalyticsEvent("app_launched", {
         is_authenticated: isAuthenticated,
       });
     });
 
-    return () => task.cancel();
+    return cancelTask;
   }, [isAuthenticated]);
 
   useEffect(() => {

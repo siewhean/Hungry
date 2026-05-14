@@ -6,6 +6,7 @@
  */
 
 import { View, Pressable, StyleSheet } from "react-native";
+import { useMemo } from "react";
 import { ChevronRight, Target } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
@@ -18,19 +19,26 @@ interface MissionBannerProps {
 
 export function MissionBanner({ onPress }: MissionBannerProps) {
   const { palette, radii, spacing } = useHungryTheme();
-  const activeMissions = useMissionStore((s) => s.getActiveMissions());
+  const missions = useMissionStore((s) => s.missions);
   const progressMap = useMissionStore((s) => s.progressMap);
-  const completedMissions = useMissionStore((s) => s.getCompletedMissions());
+  const activeMissions = useMemo(() => {
+    return missions.filter((mission) => !progressMap[mission.id]?.completedAt);
+  }, [missions, progressMap]);
+  const completedMissions = useMemo(() => {
+    return missions.filter((mission) => !!progressMap[mission.id]?.completedAt);
+  }, [missions, progressMap]);
+
+  const featured = useMemo(() => {
+    return activeMissions.slice().sort((a, b) => {
+      const pa = progressMap[a.id]?.currentCount ?? 0;
+      const pb = progressMap[b.id]?.currentCount ?? 0;
+      const ra = pa / a.requirementCount;
+      const rb = pb / b.requirementCount;
+      return rb - ra;
+    })[0];
+  }, [activeMissions, progressMap]);
 
   // Pick the most-in-progress active mission to feature
-  const featured = activeMissions.slice().sort((a, b) => {
-    const pa = progressMap[a.id]?.currentCount ?? 0;
-    const pb = progressMap[b.id]?.currentCount ?? 0;
-    const ra = pa / a.requirementCount;
-    const rb = pb / b.requirementCount;
-    return rb - ra;
-  })[0];
-
   const allDone = activeMissions.length === 0 && completedMissions.length > 0;
 
   if (!featured && !allDone) return null;

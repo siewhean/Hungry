@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { InteractionManager, View, Pressable, StyleSheet } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import type { MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
 import type { NavigationProp } from "@react-navigation/native";
@@ -11,7 +11,9 @@ import { AppText } from "@/components/ui";
 import { preloadRoute } from "@/features/navigation/prefetch";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
+import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 
 const Tab = createMaterialTopTabNavigator<MainTabParamList>();
 
@@ -35,11 +37,6 @@ function ProfileWrapper() {
   const { ProfileStack } =
     require("@/app/screens/profile/ProfileStack") as typeof import("@/app/screens/profile/ProfileStack");
   return <ProfileStack />;
-}
-
-function TabLazyPlaceholder() {
-  const { palette } = useHungryTheme();
-  return <View style={{ flex: 1, backgroundColor: palette.bg }} />;
 }
 
 function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
@@ -67,7 +64,8 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
-  const routeByName = new Map(state.routes.map((route: any) => [route.name, route]));
+  const routeByName = new Map(state.routes.map((route) => [route.name, route]));
+  const composerRoute = FEATURE_FLAGS.prototypeRoutesEnabled ? "PostComposerV2" : "Post";
   const tabItems = [
     { key: "Home", route: routeByName.get("Home"), icon: House, label: "Home" },
     { key: "Discover", route: routeByName.get("Discover"), icon: Compass, label: "Discover" },
@@ -88,46 +86,59 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         },
       ]}
     >
-      {tabItems.map((item: any) => {
+      {tabItems.map((item) => {
         const route = item.route;
         const isCreateAction = item.isCreateAction === true;
+        if (!isCreateAction && !route) {
+          return null;
+        }
+        const routeName = route?.name;
+        const routeKey = route?.key ?? "create-post-action";
         const routeIndex = route ? state.routes.indexOf(route) : -1;
         const isFocused = !isCreateAction && state.index === routeIndex;
 
         const onPress = () => {
           if (isCreateAction) {
             if (!isAuthenticated) {
-              setReturnRoute({ name: "PostComposerV2" });
+              setReturnRoute({ name: composerRoute });
               rootNavigation?.navigate("AuthStack", { screen: "Login" });
               return;
             }
 
-            rootNavigation?.navigate("PostComposerV2");
+            if (composerRoute === "PostComposerV2") {
+              rootNavigation?.navigate("PostComposerV2");
+            } else {
+              rootNavigation?.navigate("Post");
+            }
             resetTimer();
+            return;
+          }
+
+          if (!routeName) {
             return;
           }
 
           const event = navigation.emit({
             type: "tabPress",
-            target: route.key,
+            target: routeKey,
             canPreventDefault: true,
           });
 
           if (!isFocused && !event.defaultPrevented) {
             // Special handling for protected routes
-            if (route.name === "Profile" && !isAuthenticated) {
-              setReturnRoute(route.name);
+            if (routeName === "Profile" && !isAuthenticated) {
+              setReturnRoute(routeName);
               rootNavigation?.navigate("AuthStack", { screen: "Login" });
               return;
             }
-            navigation.navigate(route.name);
+            navigation.navigate(routeName);
           }
           resetTimer();
         };
 
         const onPressIn = () => {
           if (isCreateAction) {
-            preloadRoute(rootNavigation, "PostComposerV2");
+            preloadRoute(rootNavigation, composerRoute);
             return;
           }
           if (route?.name) {
@@ -143,7 +154,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 
         return (
           <Pressable
-            key={isCreateAction ? "create-post-action" : route.key}
+            key={routeKey}
             onPress={onPress}
             onPressIn={onPressIn}
             style={styles.tabItem}
@@ -194,12 +205,12 @@ export function SwipeableTabNavigator() {
   const [tabPreloadEnabled, setTabPreloadEnabled] = useState(false);
 
   useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
+    const cancelIdle = scheduleIdleWork(() => {
       setTabPreloadEnabled(true);
     });
 
     return () => {
-      task.cancel();
+      cancelIdle();
     };
   }, []);
 
@@ -212,7 +223,7 @@ export function SwipeableTabNavigator() {
         swipeEnabled: true,
         animationEnabled: false,
         lazy: true,
-        lazyPlaceholder: TabLazyPlaceholder,
+        lazyPlaceholder: () => null,
         lazyPreloadDistance: tabPreloadEnabled ? 1 : 0,
       }}
     >

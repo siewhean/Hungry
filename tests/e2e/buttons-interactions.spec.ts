@@ -21,8 +21,8 @@ test.describe("buttons and interactions", () => {
     await openDevSection(page, "Post Composer V2 Settings");
     await expect(page.getByRole("button", { name: "Launch V2 Composer" })).toBeVisible();
 
-    await clickDevButton(page, "User");
-    await expect(page.getByText("Your Story")).toBeVisible();
+    await clickDevButton(page, "Developer");
+    await expect(page.getByLabel("Add to your story")).toBeVisible();
   });
 
   test("composer draft controls produce a real draft state", async ({ page }) => {

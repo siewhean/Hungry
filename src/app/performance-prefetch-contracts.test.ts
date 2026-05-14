@@ -16,7 +16,9 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.doesNotMatch(rootNavigator, /import \{ MerchantTabs \}/);
   assert.doesNotMatch(rootNavigator, /import \{ DeveloperLauncherScreen \}/);
   assert.match(rootNavigator, /getComponent=\{loadHomeMapScreen\}/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.merchantCentreEnabled \? \(/);
   assert.match(rootNavigator, /getComponent=\{loadMerchantTabs\}/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/);
   assert.match(rootNavigator, /getComponent=\{loadPostComposerScreenV2\}/);
   assert.match(rootNavigator, /getComponent=\{loadDeveloperLauncherScreen\}/);
   assert.match(rootNavigator, /QuickReviewModalHost/);
@@ -26,8 +28,11 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.doesNotMatch(tabs, /import \{ ReviewFeedScreen \}/);
   assert.doesNotMatch(tabs, /import \{ ProfileStack \}/);
   assert.match(tabs, /lazy:\s*true/);
-  assert.match(tabs, /lazyPlaceholder:\s*TabLazyPlaceholder/);
-  assert.match(tabs, /InteractionManager\.runAfterInteractions/);
+  assert.match(tabs, /lazyPlaceholder:\s*\(\)\s*=>/);
+  assert.match(
+    tabs,
+    /scheduleIdleWork|InteractionManager\.runAfterInteractions|requestIdleCallback|setTimeout\(/,
+  );
   assert.match(tabs, /tabPreloadEnabled/);
   assert.match(tabs, /lazyPreloadDistance:\s*tabPreloadEnabled \? 1 : 0/);
 });
@@ -39,7 +44,7 @@ test("startup does not block indefinitely on fonts or analytics", () => {
   assert.match(appBody, /APP_SHELL_FONT_GRACE_MS = 900/);
   assert.match(appBody, /fontGraceReached/);
   assert.doesNotMatch(appBody, /Font load delayed/);
-  assert.match(bootstrap, /InteractionManager\.runAfterInteractions/);
+  assert.match(bootstrap, /runAfterIdle|requestIdleCallback|setTimeout/);
   assert.match(bootstrap, /EXPO_PUBLIC_POSTHOG_API_KEY/);
   assert.match(bootstrap, /require\("@\/lib\/analytics\/posthogSink"\)/);
   assert.doesNotMatch(bootstrap, /import \{ posthogSink \}/);
@@ -80,7 +85,7 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
   assert.doesNotMatch(homeScreen, /getHomeFeed\(profile\)/);
   assert.doesNotMatch(homeScreen, /getHomeSocialFeed\(profile\)/);
   assert.doesNotMatch(homeScreen, /useEffect\(\(\) => \{\s*void loadFeed\(\);/);
-  assert.match(homeScreen, /InteractionManager\.runAfterInteractions/);
+  assert.match(homeScreen, /setTimeout/);
   assert.match(homeScreen, /FEED_LOAD_DEDUPE_MS = 1500/);
   assert.match(homeScreen, /lastLoadedFeedKeyRef/);
   assert.match(homeScreen, /lastLoadedFeedAtRef/);
@@ -215,7 +220,7 @@ test("developer and merchant surfaces defer non-selected work", () => {
   assert.match(merchantTabs, /getComponent=\{loadDishEditorScreen\}/);
   assert.match(merchantTabs, /MERCHANT_ACCOUNT_SYNC_TTL_MS = 5 \* 60 \* 1000/);
   assert.match(merchantTabs, /hasFreshCachedAccount/);
-  assert.match(merchantTabs, /InteractionManager\.runAfterInteractions/);
+  assert.match(merchantTabs, /scheduleIdleWork/);
 
   assert.match(merchantStore, /accountSyncedAt: number \| null/);
   assert.match(merchantStore, /activeOutletStillExists/);

@@ -38,6 +38,7 @@ import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
 import type { DietaryFlag, DishDetail, SearchCategory, VenueSummary } from "@/types/domain";
@@ -311,6 +312,9 @@ export function DiscoverHomeScreen() {
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
   const grantLocation = useLocationStore((state) => state.grantLocation);
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isMerchantMode = useMerchantStore((state) => state.account !== null);
+  const isUserMode = !isDeveloperMode && !isMerchantMode;
 
   useEffect(() => {
     if (locationPermission !== "granted" && !manualLocation) {
@@ -846,18 +850,23 @@ export function DiscoverHomeScreen() {
                 {`${discoverAreaCount} places in this area`}
               </AppText>
             </View>
-            <View style={{ marginTop: -spacing[0.5] }}>
-              <IconButton
-                variant="ghost"
-                accessibilityLabel="Open map view"
-                size={spacing[8] + spacing[2.5]}
-                onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
-                onPress={() => navigation.navigate("DiscoverMap")}
-                icon={
-                  <MapPinned color={themeTints.isDark ? palette.white : palette.orange} size={20} />
-                }
-              />
-            </View>
+            {isUserMode ? null : (
+              <View style={{ marginTop: -spacing[0.5] }}>
+                <IconButton
+                  variant="ghost"
+                  accessibilityLabel="Open map view"
+                  size={spacing[8] + spacing[2.5]}
+                  onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
+                  onPress={() => navigation.navigate("DiscoverMap")}
+                  icon={
+                    <MapPinned
+                      color={themeTints.isDark ? palette.white : palette.orange}
+                      size={20}
+                    />
+                  }
+                />
+              </View>
+            )}
           </View>
         </View>
 
@@ -1185,7 +1194,7 @@ export function DiscoverHomeScreen() {
         {/* Proactive Selection */}
         <View style={{ gap: spacing[3] }}>
           {/* Daily Crave */}
-          {FEATURE_FLAGS.craveEnabled ? (
+          {!isUserMode && FEATURE_FLAGS.craveEnabled ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Open daily crave"
@@ -1778,16 +1787,18 @@ export function DiscoverHomeScreen() {
             <AppText variant="h2" style={{ color: themeTints.text }}>
               Stalls in {discoverLocationLabel}
             </AppText>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="View hawker centres on map"
-              onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
-              onPress={() => navigation.navigate("DiscoverMap")}
-            >
-              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                VIEW MAP
-              </AppText>
-            </Pressable>
+            {isUserMode ? null : (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="View hawker centres on map"
+                onPressIn={() => preloadRoute(navigation, "DiscoverMap")}
+                onPress={() => navigation.navigate("DiscoverMap")}
+              >
+                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                  VIEW MAP
+                </AppText>
+              </Pressable>
+            )}
           </View>
           <View style={{ gap: spacing[3] }}>
             {areaStallCards.length ? (
@@ -1795,21 +1806,30 @@ export function DiscoverHomeScreen() {
                 <Pressable
                   key={venue.id}
                   accessibilityRole="button"
-                  accessibilityLabel={`Open ${venue.name} in map zoomed view`}
+                  accessibilityLabel={`Open ${venue.name} ${
+                    isUserMode ? "details" : "in map zoomed view"
+                  }`}
                   onPressIn={() => {
                     prefetchStallDetail(venue.id, repository);
                     if (topDish?.id) {
                       prefetchDishDetail(topDish.id, repository);
                     }
-                    preloadRoute(navigation, "MapZoomedIn", {
+                    if (!isUserMode) {
+                      preloadRoute(navigation, "MapZoomedIn", {
+                        buildingId: venue.buildingId,
+                      });
+                    }
+                  }}
+                  onPress={() => {
+                    if (isUserMode) {
+                      navigation.navigate("StallDetail", { venueId: venue.id });
+                      return;
+                    }
+
+                    navigation.navigate("MapZoomedIn", {
                       buildingId: venue.buildingId,
                     });
                   }}
-                  onPress={() =>
-                    navigation.navigate("MapZoomedIn", {
-                      buildingId: venue.buildingId,
-                    })
-                  }
                   style={[
                     shadows.card,
                     {

@@ -515,6 +515,7 @@ export const guestProfile: UserProfile = {
   id: "guest",
   displayName: "Guest",
   email: "",
+  profileVisibility: "public",
   tasteVector: NEUTRAL_TASTE_VECTOR,
   tasteProfile: NEUTRAL_TASTE_PROFILE,
   dietaryPreferences: [],
@@ -537,6 +538,7 @@ export const userProfile: UserProfile = {
   id: "user-1",
   displayName: "Wei Ming",
   email: "weiming@example.sg",
+  profileVisibility: "public",
   tasteVector: {
     sweet: 4,
     spicy: 8,

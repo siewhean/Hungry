@@ -8,6 +8,17 @@ import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
 import { spacing, semanticSpacing } from "@/theme/tokens";
 
+const HASHTAG_SUGGESTIONS = [
+  "#singaporefood",
+  "#hawkergems",
+  "#delicious",
+  "#shiok",
+  "#foodreview",
+  "#supportlocal",
+  "#sgfoodies",
+  "#musttry",
+] as const;
+
 export function ReviewTab() {
   const { palette, radii } = useHungryTheme();
   const reviewCaption = useComposerStore((state) => state.reviewCaption);
@@ -17,8 +28,14 @@ export function ReviewTab() {
   const setRating = useComposerStore((state) => state.setRating);
   const useSameCaption = useComposerStore((state) => state.useSameCaption);
   const setUseSameCaption = useComposerStore((state) => state.setUseSameCaption);
+  const [suggestionOffset, setSuggestionOffset] = React.useState(0);
 
   const remaining = 500 - reviewCaption.length;
+  const visibleSuggestions = HASHTAG_SUGGESTIONS.slice(suggestionOffset, suggestionOffset + 4);
+  const hashtagSuggestions =
+    visibleSuggestions.length === 4
+      ? visibleSuggestions
+      : [...visibleSuggestions, ...HASHTAG_SUGGESTIONS.slice(0, 4 - visibleSuggestions.length)];
 
   const handleAddHashtag = (tag: string) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -28,11 +45,28 @@ export function ReviewTab() {
     }
   };
 
+  const handleRefreshHashtags = () => {
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setSuggestionOffset((current) => (current + 4) % HASHTAG_SUGGESTIONS.length);
+  };
+
   return (
-    <View style={[styles.container, { padding: semanticSpacing.screenEdge, gap: semanticSpacing.sectionGap }]}>
+    <View
+      style={[
+        styles.container,
+        { padding: semanticSpacing.screenEdge, gap: semanticSpacing.sectionGap },
+      ]}
+    >
       {/* Rating */}
       <View style={styles.section}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: semanticSpacing.inlineGaps, marginBottom: semanticSpacing.componentGap }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: semanticSpacing.inlineGaps,
+            marginBottom: semanticSpacing.componentGap,
+          }}
+        >
           <Star size={18} color={palette.amber} fill={palette.amber} />
           <AppText variant="bodyBold">Overall Rating</AppText>
         </View>
@@ -41,8 +75,17 @@ export function ReviewTab() {
 
       {/* Caption */}
       <View style={styles.section}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: semanticSpacing.inlineGaps }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: semanticSpacing.inlineGaps }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            marginBottom: semanticSpacing.inlineGaps,
+          }}
+        >
+          <View
+            style={{ flexDirection: "row", alignItems: "center", gap: semanticSpacing.inlineGaps }}
+          >
             <MessageSquare size={18} color={palette.text} />
             <AppText variant="bodyBold">Quick Review</AppText>
           </View>
@@ -68,7 +111,18 @@ export function ReviewTab() {
 
         {/* Sync Toggle - Moved below input */}
         {postCaption.length > 0 && (
-          <View style={[styles.syncBar, { backgroundColor: palette.orangeLight, borderRadius: radii.md, marginTop: semanticSpacing.componentGap, paddingHorizontal: semanticSpacing.screenEdge, paddingVertical: semanticSpacing.inlineGaps }]}>
+          <View
+            style={[
+              styles.syncBar,
+              {
+                backgroundColor: palette.orangeLight,
+                borderRadius: radii.md,
+                marginTop: semanticSpacing.componentGap,
+                paddingHorizontal: semanticSpacing.screenEdge,
+                paddingVertical: semanticSpacing.inlineGaps,
+              },
+            ]}
+          >
             <AppText variant="micro" style={{ color: palette.orange, fontWeight: "700", flex: 1 }}>
               USE SAME CAPTION AS POST
             </AppText>
@@ -85,17 +139,24 @@ export function ReviewTab() {
 
       {/* AI Suggestions */}
       <View style={styles.section}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: semanticSpacing.inlineGaps, marginBottom: semanticSpacing.componentGap }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: semanticSpacing.inlineGaps,
+            marginBottom: semanticSpacing.componentGap,
+          }}
+        >
           <Sparkles size={16} color={palette.orange} />
           <AppText variant="bodySmallBold">AI Hashtag Suggestions</AppText>
         </View>
         <View style={[styles.chipRow, { gap: semanticSpacing.inlineGaps }]}>
-          {["#singaporefood", "#hawkergems", "#delicious", "#shiok"].map((tag) => (
+          {hashtagSuggestions.map((tag) => (
             <Pressable key={tag} onPress={() => handleAddHashtag(tag)}>
               <Badge label={tag} tone="neutral" />
             </Pressable>
           ))}
-          <Pressable onPress={() => void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)}>
+          <Pressable onPress={handleRefreshHashtags}>
             <Badge label="Refresh" tone="orange" />
           </Pressable>
         </View>

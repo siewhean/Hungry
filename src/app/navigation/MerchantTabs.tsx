@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { View, Pressable, StyleSheet, ActivityIndicator, InteractionManager } from "react-native";
+import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
+import type { NavigationProp } from "@react-navigation/native";
 import { LayoutDashboard, UtensilsCrossed, BarChart3, Store } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -10,10 +11,11 @@ import { AppText, Button, Screen } from "@/components/ui";
 import { resolveMerchantAccess, VERIFIED_ONLY_SCREENS } from "@/features/merchant/merchantGuards";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
+import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useHungryTheme } from "@/theme";
 import { getActiveOutlet, useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore } from "@/store/useSessionStore";
-import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
+import type { MerchantTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 
 const Tab = createBottomTabNavigator<MerchantTabParamList>();
 const verifiedOnlyScreens = new Set<string>(VERIFIED_ONLY_SCREENS);
@@ -29,7 +31,8 @@ function MerchantAccessGate({
   children: React.ReactNode;
 }) {
   const { spacing } = useHungryTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<MerchantTabParamList>>();
+  const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>();
   const account = useMerchantStore((state) => state.account);
   const setAccount = useMerchantStore((state) => state.setAccount);
   const activeOutlet = useMerchantStore(getActiveOutlet);
@@ -62,7 +65,7 @@ function MerchantAccessGate({
           <View style={{ width: "100%", gap: spacing[2] }}>
             <Button
               label="Sign In"
-              onPress={() => (navigation as any).navigate("AuthStack", { screen: "Login" })}
+              onPress={() => rootNavigation?.navigate("AuthStack", { screen: "Login" })}
               fullWidth
             />
             {isMock && (
@@ -88,7 +91,7 @@ function MerchantAccessGate({
           </AppText>
           <Button
             label="Open verification"
-            onPress={() => navigation.navigate("VerificationCentre" as never)}
+            onPress={() => navigation.navigate("VerificationCentre")}
           />
         </View>
       </Screen>
@@ -290,7 +293,8 @@ function MerchantTabBar({ state, descriptors, navigation }: any) {
 
 export function MerchantTabs() {
   const { palette, spacing } = useHungryTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<MerchantTabParamList>>();
+  const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>();
   const account = useMerchantStore((state) => state.account);
   const accountSyncedAt = useMerchantStore((state) => state.accountSyncedAt);
   const developerMerchantMode = useMerchantStore((state) => state.developerMerchantMode);
@@ -306,7 +310,7 @@ export function MerchantTabs() {
 
   useEffect(() => {
     let isMounted = true;
-    let deferredSync: { cancel?: () => void } | undefined;
+    let deferredSync: (() => void) | undefined;
 
     const hasFreshCachedAccount =
       Boolean(account) &&
@@ -343,7 +347,7 @@ export function MerchantTabs() {
 
     if (account) {
       setIsSyncingAccount(false);
-      deferredSync = InteractionManager.runAfterInteractions(() => {
+      deferredSync = scheduleIdleWork(() => {
         void syncMerchantAccount();
       });
     } else {
@@ -352,7 +356,7 @@ export function MerchantTabs() {
 
     return () => {
       isMounted = false;
-      deferredSync?.cancel?.();
+      deferredSync?.();
     };
   }, [account, accountSyncedAt, activeOutlet, developerMerchantMode, setAccount, isAuthenticated]);
 
@@ -397,7 +401,7 @@ export function MerchantTabs() {
           <View style={{ width: "100%", gap: spacing[2] }}>
             <Button
               label="Sign In"
-              onPress={() => (navigation as any).navigate("AuthStack", { screen: "Login" })}
+              onPress={() => rootNavigation?.navigate("AuthStack", { screen: "Login" })}
               fullWidth
             />
             {isMock && (

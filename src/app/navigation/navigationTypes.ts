@@ -148,4 +148,9 @@ export type RootStackParamList = {
   VenueDirectory: { venueId: string };
   StoryViewer: { initialStoryId: string };
   AddStory: undefined;
+  // Gamification
+  PassportScreen: undefined;
+  MissionsScreen: undefined;
+  CollectionList: undefined;
+  CollectionDetail: { collectionId: string };
 };

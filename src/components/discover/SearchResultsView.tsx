@@ -16,7 +16,7 @@ import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
 
-type FilterTab = "All" | "Dishes" | "Stalls" | "Reads";
+type FilterTab = "All" | "Dishes";
 
 interface SearchResultsViewProps {
   query: string;
@@ -65,7 +65,7 @@ export function SearchResultsView({
     outputRange: [0.85, 1],
     extrapolate: "clamp",
   });
-  const TABS: FilterTab[] = ["All", "Dishes", "Stalls", "Reads"];
+  const TABS: FilterTab[] = ["All", "Dishes"];
   const renderResult = useCallback(
     ({ item: dish }: { item: DishDetail }) => (
       <Pressable

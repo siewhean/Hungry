@@ -34,3 +34,11 @@ test("merchantCentreEnabled defaults to false outside staging", () => {
   assert.equal(resolveFeatureFlags(undefined).merchantCentreEnabled, false);
   assert.equal(resolveFeatureFlags("qa").merchantCentreEnabled, false);
 });
+
+test("prototypeRoutesEnabled is available outside production only", () => {
+  assert.equal(resolveFeatureFlags("development").prototypeRoutesEnabled, true);
+  assert.equal(resolveFeatureFlags("staging").prototypeRoutesEnabled, true);
+  assert.equal(resolveFeatureFlags(undefined).prototypeRoutesEnabled, true);
+  assert.equal(resolveFeatureFlags("qa").prototypeRoutesEnabled, true);
+  assert.equal(resolveFeatureFlags("production").prototypeRoutesEnabled, false);
+});

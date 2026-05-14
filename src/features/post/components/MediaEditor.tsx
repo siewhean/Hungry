@@ -1,23 +1,13 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Dimensions, Pressable, ScrollView } from "react-native";
+import { View, StyleSheet, Pressable, ScrollView } from "react-native";
 import { Image } from "expo-image";
-import {
-  X,
-  Check,
-  Sun,
-  Contrast,
-  Droplet,
-  Crop,
-  RotateCcw,
-  Wand2,
-  Sparkles,
-} from "lucide-react-native";
+import { X, Check, Sun, Droplet, Wand2, Sparkles } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
-import { AppText, IconButton, Button, Badge, Dialog } from "@/components/ui";
+import { AppText, IconButton, Badge, Dialog } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
 
-const { width, height } = Dimensions.get("window");
+const DEFAULT_ADJUSTMENTS = { brightness: 1, contrast: 1, saturation: 1 };
 
 interface Props {
   mediaId: string | null;
@@ -32,17 +22,48 @@ export function MediaEditor({ mediaId, onClose }: Props) {
     message: string;
   } | null>(null);
   const media = useComposerStore((state) => state.media.find((item) => item.id === mediaId));
+  const updateMediaAdjustment = useComposerStore((state) => state.updateMediaAdjustment);
 
   if (!mediaId || !media) return null;
 
-  const handleAITool = (tool: string) => {
+  const adjustments = media.adjustments ?? DEFAULT_ADJUSTMENTS;
+  const clampAdjustment = (value: number) => Math.min(1.35, Math.max(0.7, value));
+  const applyMediaAdjustments = (
+    nextAdjustments: Partial<typeof DEFAULT_ADJUSTMENTS>,
+    title: string,
+  ) => {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    updateMediaAdjustment(media.id, nextAdjustments);
     setDialogConfig({
       visible: true,
-      title: "AI Feature",
-      message: `Applying ${tool} to your media...`,
+      title,
+      message: "The media adjustment has been saved to this draft.",
     });
   };
+
+  const handleAutoEnhance = () =>
+    applyMediaAdjustments(
+      { brightness: 1.08, contrast: 1.08, saturation: 1.12 },
+      "Auto-enhance applied",
+    );
+
+  const handleFoodFilter = () =>
+    applyMediaAdjustments(
+      { brightness: 1.05, contrast: 1.12, saturation: 1.18 },
+      "Food filter applied",
+    );
+
+  const handleLightAdjustment = () =>
+    applyMediaAdjustments(
+      { brightness: clampAdjustment(adjustments.brightness + 0.05) },
+      "Light updated",
+    );
+
+  const handleColourAdjustment = () =>
+    applyMediaAdjustments(
+      { saturation: clampAdjustment(adjustments.saturation + 0.05) },
+      "Colour updated",
+    );
 
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.bg, zIndex: 1100 }]}>
@@ -88,99 +109,42 @@ export function MediaEditor({ mediaId, onClose }: Props) {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ gap: 8 }}
           >
-            <Pressable onPress={() => handleAITool("Auto-Enhance")}>
+            <Pressable onPress={handleAutoEnhance}>
               <Badge label="Auto-Enhance" tone="orange" />
-            </Pressable>
-            <Pressable onPress={() => handleAITool("Smart Reframe")}>
-              <Badge label="Smart Reframe" tone="neutral" />
-            </Pressable>
-            <Pressable onPress={() => handleAITool("Food Detect")}>
-              <Badge label="Food Detect" tone="neutral" />
             </Pressable>
           </ScrollView>
         </View>
 
         <View style={styles.toolGroups}>
-          <Pressable
-            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
-            style={styles.toolItem}
-          >
-            <Crop size={24} color={palette.text} />
-            <AppText variant="micro">Crop</AppText>
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setDialogConfig({
-                visible: true,
-                title: "Filters",
-                message: "Trending, Cinema, Foodie, Vintage.",
-              });
-            }}
-            style={styles.toolItem}
-          >
+          <Pressable onPress={handleFoodFilter} style={styles.toolItem}>
             <Wand2 size={24} color={palette.orange} />
             <AppText variant="micro" style={{ color: palette.orange }}>
               Filters
             </AppText>
           </Pressable>
-          <Pressable
-            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
-            style={styles.toolItem}
-          >
+          <Pressable onPress={handleLightAdjustment} style={styles.toolItem}>
             <Sun size={24} color={palette.text} />
             <AppText variant="micro">Light</AppText>
+            <AppText variant="micro" tone="muted">
+              {Math.round(adjustments.brightness * 100)}%
+            </AppText>
           </Pressable>
-          <Pressable
-            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
-            style={styles.toolItem}
-          >
+          <Pressable onPress={handleColourAdjustment} style={styles.toolItem}>
             <Droplet size={24} color={palette.text} />
             <AppText variant="micro">Colour</AppText>
-          </Pressable>
-          <Pressable
-            onPress={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
-            style={styles.toolItem}
-          >
-            <RotateCcw size={24} color={palette.text} />
-            <AppText variant="micro">Rotate</AppText>
+            <AppText variant="micro" tone="muted">
+              {Math.round(adjustments.saturation * 100)}%
+            </AppText>
           </Pressable>
         </View>
 
-        {/* Adjust Slider Placeholder */}
-        <View style={{ height: 44, alignItems: "center", justifyContent: "center" }}>
-          <View
-            style={{
-              width: "80%",
-              height: 2,
-              backgroundColor: palette.border,
-              position: "relative",
-            }}
-          >
-            <View
-              style={{
-                position: "absolute",
-                left: "60%",
-                top: -8,
-                width: 18,
-                height: 18,
-                borderRadius: 9,
-                backgroundColor: palette.orange,
-                borderWidth: 3,
-                borderColor: palette.white,
-              }}
-            />
-          </View>
+        <View style={{ gap: 4 }}>
+          <AppText variant="micro" tone="muted">
+            Brightness {Math.round(adjustments.brightness * 100)}% · Contrast{" "}
+            {Math.round(adjustments.contrast * 100)}% · Saturation{" "}
+            {Math.round(adjustments.saturation * 100)}%
+          </AppText>
         </View>
-
-        <Button
-          label="Apply AI Auto-Crop"
-          variant="secondary"
-          size="sm"
-          fullWidth
-          onPress={() => handleAITool("Auto-Crop")}
-          style={{ marginTop: 0 }}
-        />
       </View>
 
       {dialogConfig && (

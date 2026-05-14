@@ -11,6 +11,7 @@ interface ScreenProps {
   subtitle?: string;
   headerRight?: ReactNode;
   showBack?: boolean;
+  headerGap?: number;
   scroll?: boolean;
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
@@ -23,6 +24,7 @@ export function Screen({
   subtitle,
   headerRight,
   showBack = true,
+  headerGap,
   scroll = true,
   style,
   contentContainerStyle,
@@ -30,6 +32,7 @@ export function Screen({
 }: PropsWithChildren<ScreenProps>) {
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const styles = createStyles(spacing);
+  const effectiveHeaderGap = headerGap ?? spacing[5];
   const insets = useSafeAreaInsets();
   const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
 
@@ -69,7 +72,7 @@ export function Screen({
             style={[
               styles.inner,
               fullWidth && { maxWidth: undefined },
-              !fullWidth && { gap: spacing[5] },
+              !fullWidth && { gap: effectiveHeaderGap },
             ]}
           >
             {header}
@@ -92,7 +95,7 @@ export function Screen({
               styles.inner,
               styles.flex,
               fullWidth && { maxWidth: undefined },
-              !fullWidth && { gap: spacing[5] },
+              !fullWidth && { gap: effectiveHeaderGap },
             ]}
           >
             {header}

@@ -18,7 +18,11 @@ test("bottom navigation puts create post in the center and review fourth", () =>
     tabs,
     /key: "Home"[\s\S]*key: "Discover"[\s\S]*key: "Create"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
   );
-  assert.match(tabs, /isCreateAction[\s\S]*navigate\("PostComposerV2"\)/);
+  assert.match(
+    tabs,
+    /const composerRoute = FEATURE_FLAGS\.prototypeRoutesEnabled \? "PostComposerV2" : "Post"/,
+  );
+  assert.match(tabs, /isCreateAction[\s\S]*navigate\("PostComposerV2"\)[\s\S]*navigate\("Post"\)/);
   assert.match(
     tabs,
     /height: componentSizes\.bottomTabBar \+ Math\.max\(insets\.bottom, spacing\[2\]\)/,
@@ -59,19 +63,26 @@ test("home bell opens a combined activity inbox with messages and updates", () =
   assert.match(home, /navigation\.navigate\("ActivityInbox", \{ initialTab: "updates" \}\)/);
   assert.match(home, /useActivityStore\(\(state\) => state\.getUnreadCount\(\)\)/);
   assert.match(home, /getHungryService\(\)[\s\S]*\.chat\.listConversations\(\)/);
-  assert.match(home, /recipients=\{shareRecipients\}/);
+  assert.match(home, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
+  assert.match(home, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
   assert.doesNotMatch(home, /ACTIVITY_MESSAGES/);
   assert.match(rootNavigator, /getComponent=\{loadActivityInboxScreen\} name="ActivityInbox"/);
   assert.match(
     rootNavigator,
     /getComponent=\{loadActivityPostDetailScreen\} name="ActivityPostDetail"/,
   );
+  assert.match(rootNavigator, /FEATURE_FLAGS\.directMessagesEnabled \? \(/);
   assert.match(rootNavigator, /getComponent=\{loadChatDetailScreen\} name="ChatDetail"/);
+  assert.match(rootNavigator, /getComponent=\{loadDirectMessagesScreen\} name="DirectMessages"/);
   assert.match(activity, /navigation\.navigate\("ActivityPostDetail"/);
   assert.match(activity, /postId: update\.postId/);
   assert.match(activity, /stylesInline\.kindBadge/);
   assert.match(activity, /type ActivityTab = "messages" \| "updates"/);
-  assert.match(activity, /const TABS: ActivityTab\[\] = \["messages", "updates"\]/);
+  assert.match(
+    activity,
+    /FEATURE_FLAGS\.directMessagesEnabled \? \["messages", "updates"\] : \["updates"\]/,
+  );
+  assert.match(activity, /route\.params\?\.initialTab === "messages"/);
   assert.match(activity, /getHungryService\(\)[\s\S]*\.chat[\s\S]*\.listConversations\(\)/);
   assert.match(activity, /type \{ ChatConversation \}/);
   assert.match(activity, /conversation\.unreadCount/);

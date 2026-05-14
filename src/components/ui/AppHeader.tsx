@@ -100,14 +100,15 @@ const createStyles = (
       alignItems: "center",
       flexDirection: "row",
       gap: spacing[3],
-      minHeight: componentSizes.headerMinHeight,
-      paddingBottom: spacing[2],
+      height: componentSizes.headerMinHeight,
+      paddingBottom: spacing[1],
       paddingTop: spacing[1],
     },
     copy: {
       flex: 1,
       gap: spacing[1],
-      justifyContent: "flex-start",
+      alignItems: "flex-start",
+      justifyContent: "center",
       minHeight: componentSizes.headerMinHeight,
     },
     title: {
@@ -119,7 +120,7 @@ const createStyles = (
     side: {
       alignItems: "center",
       justifyContent: "center",
-      minHeight: componentSizes.headerMinHeight,
+      height: componentSizes.headerMinHeight,
     },
     backButton: {
       alignItems: "center",

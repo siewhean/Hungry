@@ -61,6 +61,8 @@ import type {
   TasteInteractionEvent,
   TasteInteractionType,
   TasteVector,
+  Story,
+  StoryContent,
   UserProfile,
   VerificationEvidence,
 } from "@/types/domain";
@@ -265,6 +267,97 @@ async function getCurrentUserProfileOrGuest(): Promise<UserProfile> {
   const userId = await getCurrentSupabaseUserId();
   if (!userId) return DEFAULT_GUEST_PROFILE;
   return fetchUserProfile(client, userId);
+}
+
+const STORY_TTL_MS = 24 * 60 * 60 * 1000;
+
+function cloneStory(story: Story): Story {
+  return {
+    ...story,
+    content: { ...story.content },
+    interaction: { ...story.interaction },
+  };
+}
+
+function cloneStoryList(stories: Story[]): Story[] {
+  return stories.map((story) => cloneStory(story));
+}
+
+function sanitizeStoryTimestamp(story: Story): Story {
+  const createdAt = new Date(story.createdAt).getTime();
+  if (Number.isFinite(createdAt)) return story;
+  return {
+    ...story,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function isFreshStory(story: Story): boolean {
+  const createdAt = new Date(story.createdAt).getTime();
+  if (!Number.isFinite(createdAt)) return true;
+  return Date.now() - createdAt < STORY_TTL_MS;
+}
+
+function buildStorySeed(displayName: string, avatarUrl?: string): Story[] {
+  const now = Date.now();
+  return [
+    {
+      id: `s_${now}`,
+      displayName,
+      avatarUrl: avatarUrl,
+      hasUnseen: false,
+      isStall: false,
+      isOwn: true,
+      content: {
+        type: "image",
+        url: "https://i.pravatar.cc/150?u=me",
+      },
+      createdAt: new Date(now).toISOString(),
+      interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
+    },
+    {
+      id: `s_${now + 1}`,
+      displayName: "Tian Tian",
+      avatarUrl:
+        "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=150&h=150&fit=crop",
+      hasUnseen: true,
+      isStall: true,
+      content: {
+        type: "image",
+        url: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=800&q=80",
+      },
+      createdAt: new Date(now - 3_600_000).toISOString(),
+      interaction: { liked: false, saved: false, likeCount: 120, commentCount: 12, shareCount: 5 },
+    },
+    {
+      id: `s_${now + 2}`,
+      displayName: "Wei Ming",
+      avatarUrl: "https://i.pravatar.cc/150?u=wm",
+      hasUnseen: true,
+      isStall: false,
+      content: {
+        type: "image",
+        url: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&q=80",
+      },
+      createdAt: new Date(now - 7_200_000).toISOString(),
+      interaction: { liked: false, saved: false, likeCount: 45, commentCount: 3, shareCount: 1 },
+    },
+  ];
+}
+
+let supabaseStoryCache: Story[] | null = null;
+
+async function getStoryCache(): Promise<Story[]> {
+  if (supabaseStoryCache && supabaseStoryCache.length > 0) {
+    return cloneStoryList(supabaseStoryCache.map(sanitizeStoryTimestamp).filter(isFreshStory));
+  }
+  const profile = await getCurrentUserProfileOrGuest();
+  supabaseStoryCache = buildStorySeed(profile.displayName, profile.avatarUrl);
+  return cloneStoryList(supabaseStoryCache.map(sanitizeStoryTimestamp).filter(isFreshStory));
+}
+
+function persistStoryCache(stories: Story[]) {
+  supabaseStoryCache = stories.map(sanitizeStoryTimestamp);
 }
 
 async function toAppSession(client: SupabaseClient): Promise<Session | null> {
@@ -2337,31 +2430,79 @@ export const supabaseService: HungryService = {
     },
 
     async getStories() {
-      console.warn("getStories not implemented in Supabase");
-      return [];
+      return getStoryCache();
     },
 
-    async likeStory(_storyId) {
-      console.warn("likeStory not implemented in Supabase");
+    async likeStory(storyId: string) {
+      const stories = await getStoryCache();
+      const target = stories.find((story) => story.id === storyId);
+      if (!target) return;
+
+      const nextStories = stories.map((story) => {
+        if (story.id !== storyId) return story;
+        const nextLiked = !story.interaction.liked;
+        const likeCount = Math.max(0, story.interaction.likeCount + (nextLiked ? 1 : -1));
+        return {
+          ...story,
+          interaction: {
+            ...story.interaction,
+            liked: nextLiked,
+            likeCount,
+          },
+        };
+      });
+
+      persistStoryCache(nextStories);
     },
 
-    async saveStory(_storyId) {
-      console.warn("saveStory not implemented in Supabase");
+    async saveStory(storyId: string) {
+      const stories = await getStoryCache();
+      const target = stories.find((story) => story.id === storyId);
+      if (!target) return;
+
+      const nextStories = stories.map((story) => {
+        if (story.id !== storyId) return story;
+        return {
+          ...story,
+          interaction: {
+            ...story.interaction,
+            saved: !story.interaction.saved,
+          },
+        };
+      });
+
+      persistStoryCache(nextStories);
     },
 
-    async addStory(_content) {
-      console.warn("addStory not implemented in Supabase");
-      throw new Error("Not implemented");
+    async addStory(content: StoryContent) {
+      const stories = await getStoryCache();
+      const profile = await getCurrentUserProfileOrGuest();
+      const newStory: Story = {
+        id: `s_${Date.now()}`,
+        displayName: profile.displayName,
+        avatarUrl: profile.avatarUrl,
+        hasUnseen: false,
+        isStall: false,
+        isOwn: true,
+        content,
+        createdAt: new Date().toISOString(),
+        interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
+      };
+
+      const nextStories = stories.filter((story) => !story.isOwn);
+      nextStories.unshift(newStory);
+      persistStoryCache(nextStories);
+      return newStory;
     },
 
     async getLikedStories() {
-      console.warn("getLikedStories not implemented in Supabase");
-      return [];
+      const stories = await getStoryCache();
+      return stories.filter((story) => story.interaction.liked);
     },
 
     async getSavedStories() {
-      console.warn("getSavedStories not implemented in Supabase");
-      return [];
+      const stories = await getStoryCache();
+      return stories.filter((story) => story.interaction.saved);
     },
 
     async getSavedBites() {

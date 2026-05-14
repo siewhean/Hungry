@@ -1,16 +1,26 @@
 import { ScrollView, Pressable, StyleSheet, View } from "react-native";
 
 import { useHungryTheme } from "@/theme";
-import { AppText } from "../ui";
+import { AppText } from "@/components/ui";
 
-interface FloorSelectorProps {
+export interface FloorSelectorProps {
   floors: string[];
-  selectedFloor: string;
-  onSelectFloor: (floor: string) => void;
+  selectedFloor?: string;
+  onSelectFloor?: (floor: string) => void;
+  activeFloor?: string;
+  onFloorChange?: (floor: string) => void;
 }
 
-export function FloorSelector({ floors, selectedFloor, onSelectFloor }: FloorSelectorProps) {
+export function FloorSelector({
+  floors,
+  selectedFloor,
+  onSelectFloor,
+  activeFloor,
+  onFloorChange,
+}: FloorSelectorProps) {
   const { palette, radii, spacing } = useHungryTheme();
+  const currentFloor = activeFloor ?? selectedFloor ?? "";
+  const handleChange = onFloorChange ?? onSelectFloor;
 
   return (
     <ScrollView
@@ -19,7 +29,7 @@ export function FloorSelector({ floors, selectedFloor, onSelectFloor }: FloorSel
       contentContainerStyle={{ gap: spacing[2] }}
     >
       {floors.map((floor) => {
-        const selected = floor === selectedFloor;
+        const selected = floor === currentFloor;
 
         return (
           <Pressable
@@ -27,7 +37,7 @@ export function FloorSelector({ floors, selectedFloor, onSelectFloor }: FloorSel
             accessibilityRole="button"
             accessibilityLabel={`Select floor ${floor}`}
             accessibilityState={{ selected }}
-            onPress={() => onSelectFloor(floor)}
+            onPress={() => handleChange?.(floor)}
             style={({ pressed }) => [
               styles.tab,
               {

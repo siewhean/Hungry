@@ -165,7 +165,12 @@ export function BusinessProfileEditorScreen() {
         <TouchableOpacity
           onPress={handlePreviewAsCustomer}
           style={[
-            styles.previewButton, { paddingVertical: spacing[1], paddingHorizontal: spacing[3], borderRadius: radii.pill },
+            styles.previewButton,
+            {
+              paddingVertical: spacing[1],
+              paddingHorizontal: spacing[3],
+              borderRadius: radii.pill,
+            },
             { backgroundColor: palette.bgSoft, borderColor: palette.border },
           ]}
         >
@@ -179,7 +184,12 @@ export function BusinessProfileEditorScreen() {
         {activeOutlet.verification?.status === "verified" && (
           <View
             style={[
-              styles.verifiedBadge, { paddingVertical: spacing[2], paddingHorizontal: spacing[3], borderRadius: radii.md },
+              styles.verifiedBadge,
+              {
+                paddingVertical: spacing[2],
+                paddingHorizontal: spacing[3],
+                borderRadius: radii.md,
+              },
               { backgroundColor: palette.successSoft, borderColor: palette.success },
             ]}
           >
@@ -205,7 +215,12 @@ export function BusinessProfileEditorScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={[
-                    styles.input, { borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2] },
+                    styles.input,
+                    {
+                      borderRadius: radii.md,
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[2],
+                    },
                     {
                       backgroundColor: palette.surface,
                       borderColor: palette.border,
@@ -238,8 +253,14 @@ export function BusinessProfileEditorScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={[
-                    styles.input, { borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2] },
-                    styles.textArea, { height: 100 },
+                    styles.input,
+                    {
+                      borderRadius: radii.md,
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[2],
+                    },
+                    styles.textArea,
+                    { height: 100 },
                     {
                       backgroundColor: palette.surface,
                       borderColor: palette.border,
@@ -278,7 +299,12 @@ export function BusinessProfileEditorScreen() {
                     <TouchableOpacity
                       key={type}
                       style={[
-                        styles.pickerChip, { paddingVertical: spacing[1], paddingHorizontal: spacing[3], borderRadius: radii.pill },
+                        styles.pickerChip,
+                        {
+                          paddingVertical: spacing[1],
+                          paddingHorizontal: spacing[3],
+                          borderRadius: radii.pill,
+                        },
                         { backgroundColor: palette.bgSoft, borderColor: palette.border },
                         value === type && {
                           backgroundColor: palette.orangeLight,
@@ -308,7 +334,8 @@ export function BusinessProfileEditorScreen() {
           <View style={{ flexDirection: "row", gap: spacing[4] }}>
             <View style={{ flex: 1, gap: spacing[2] }}>
               <AppText variant="bodyBold">Profile Image</AppText>
-              <TouchableOpacity
+              <View
+                accessibilityLabel="Profile image upload unavailable"
                 style={{
                   height: 100,
                   backgroundColor: palette.bgSoft,
@@ -319,15 +346,17 @@ export function BusinessProfileEditorScreen() {
                   alignItems: "center",
                   justifyContent: "center",
                 }}
-                onPress={() => Alert.alert("Upload", "Photo upload coming soon")}
               >
                 <Camera size={24} color={palette.textMuted} />
-                <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>Add Photo</AppText>
-              </TouchableOpacity>
+                <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
+                  Image URL only
+                </AppText>
+              </View>
             </View>
             <View style={{ flex: 1, gap: spacing[2] }}>
               <AppText variant="bodyBold">Cover Image</AppText>
-              <TouchableOpacity
+              <View
+                accessibilityLabel="Cover image upload unavailable"
                 style={{
                   height: 100,
                   backgroundColor: palette.bgSoft,
@@ -338,11 +367,12 @@ export function BusinessProfileEditorScreen() {
                   alignItems: "center",
                   justifyContent: "center",
                 }}
-                onPress={() => Alert.alert("Upload", "Cover upload coming soon")}
               >
                 <ImageIcon size={24} color={palette.textMuted} />
-                <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>Add Cover</AppText>
-              </TouchableOpacity>
+                <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
+                  Image URL only
+                </AppText>
+              </View>
             </View>
           </View>
         </View>
@@ -362,7 +392,12 @@ export function BusinessProfileEditorScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={[
-                    styles.input, { borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2] },
+                    styles.input,
+                    {
+                      borderRadius: radii.md,
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[2],
+                    },
                     {
                       backgroundColor: palette.surface,
                       borderColor: palette.border,
@@ -389,7 +424,12 @@ export function BusinessProfileEditorScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={[
-                    styles.input, { borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2] },
+                    styles.input,
+                    {
+                      borderRadius: radii.md,
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[2],
+                    },
                     {
                       backgroundColor: palette.surface,
                       borderColor: palette.border,
@@ -416,7 +456,12 @@ export function BusinessProfileEditorScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={[
-                    styles.input, { borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2] },
+                    styles.input,
+                    {
+                      borderRadius: radii.md,
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[2],
+                    },
                     {
                       backgroundColor: palette.surface,
                       borderColor: palette.border,
@@ -450,7 +495,12 @@ export function BusinessProfileEditorScreen() {
                 render={({ field: { onChange, onBlur, value } }) => (
                   <TextInput
                     style={[
-                      styles.input, { borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2] },
+                      styles.input,
+                      {
+                        borderRadius: radii.md,
+                        paddingHorizontal: spacing[3],
+                        paddingVertical: spacing[2],
+                      },
                       {
                         backgroundColor: palette.surface,
                         borderColor: palette.border,
@@ -475,7 +525,12 @@ export function BusinessProfileEditorScreen() {
                 render={({ field: { onChange, onBlur, value } }) => (
                   <TextInput
                     style={[
-                      styles.input, { borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2] },
+                      styles.input,
+                      {
+                        borderRadius: radii.md,
+                        paddingHorizontal: spacing[3],
+                        paddingVertical: spacing[2],
+                      },
                       {
                         backgroundColor: palette.surface,
                         borderColor: palette.border,
@@ -502,7 +557,12 @@ export function BusinessProfileEditorScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={[
-                    styles.input, { borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2] },
+                    styles.input,
+                    {
+                      borderRadius: radii.md,
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[2],
+                    },
                     {
                       backgroundColor: palette.surface,
                       borderColor: palette.border,
@@ -528,7 +588,12 @@ export function BusinessProfileEditorScreen() {
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
                   style={[
-                    styles.input, { borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2] },
+                    styles.input,
+                    {
+                      borderRadius: radii.md,
+                      paddingHorizontal: spacing[3],
+                      paddingVertical: spacing[2],
+                    },
                     {
                       backgroundColor: palette.surface,
                       borderColor: palette.border,
@@ -545,11 +610,19 @@ export function BusinessProfileEditorScreen() {
             />
           </View>
 
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing[2] }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginTop: spacing[2],
+            }}
+          >
             <View style={{ flex: 1, paddingRight: spacing[4] }}>
               <AppText variant="bodyBold">Exact Location Privacy</AppText>
               <AppText variant="micro" tone="muted">
-                Turn off to hide your exact unit number and floor (useful for home-based businesses).
+                Turn off to hide your exact unit number and floor (useful for home-based
+                businesses).
               </AppText>
             </View>
             <Controller
@@ -588,7 +661,12 @@ export function BusinessProfileEditorScreen() {
                 <View>
                   <TextInput
                     style={[
-                      styles.input, { borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2] },
+                      styles.input,
+                      {
+                        borderRadius: radii.md,
+                        paddingHorizontal: spacing[3],
+                        paddingVertical: spacing[2],
+                      },
                       {
                         backgroundColor: palette.surface,
                         borderColor: errors.contactPhone ? palette.error : palette.border,
@@ -603,7 +681,10 @@ export function BusinessProfileEditorScreen() {
                     placeholderTextColor={palette.textMuted}
                   />
                   {errors.contactPhone && (
-                    <AppText variant="micro" style={{ color: palette.error, marginTop: spacing[1] }}>
+                    <AppText
+                      variant="micro"
+                      style={{ color: palette.error, marginTop: spacing[1] }}
+                    >
                       {errors.contactPhone.message}
                     </AppText>
                   )}
@@ -629,7 +710,12 @@ export function BusinessProfileEditorScreen() {
                 <View>
                   <TextInput
                     style={[
-                      styles.input, { borderRadius: radii.md, paddingHorizontal: spacing[3], paddingVertical: spacing[2] },
+                      styles.input,
+                      {
+                        borderRadius: radii.md,
+                        paddingHorizontal: spacing[3],
+                        paddingVertical: spacing[2],
+                      },
                       {
                         backgroundColor: palette.surface,
                         borderColor: errors.contactEmail ? palette.error : palette.border,
@@ -645,7 +731,10 @@ export function BusinessProfileEditorScreen() {
                     placeholderTextColor={palette.textMuted}
                   />
                   {errors.contactEmail && (
-                    <AppText variant="micro" style={{ color: palette.error, marginTop: spacing[1] }}>
+                    <AppText
+                      variant="micro"
+                      style={{ color: palette.error, marginTop: spacing[1] }}
+                    >
                       {errors.contactEmail.message}
                     </AppText>
                   )}

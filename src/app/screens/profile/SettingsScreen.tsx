@@ -3,7 +3,18 @@ import { useState } from "react";
 import { Alert, View, Linking } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { User, Bell, HandMetal, ShieldCheck, Moon, MapPin, Trash2 } from "lucide-react-native";
+import {
+  User,
+  Bell,
+  HandMetal,
+  ShieldCheck,
+  Moon,
+  MapPin,
+  Trash2,
+  Globe,
+  Lock,
+  Star,
+} from "lucide-react-native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -30,15 +41,24 @@ export function SettingsScreen() {
   const clearProfile = useProfileStore((state) => state.clearProfile);
   const clearSearchState = useSearchStore((state) => state.clearSearchState);
   const resetDraft = useReviewDraftStore((state) => state.resetDraft);
+  const setProfileVisibility = useProfileStore((state) => state.setProfileVisibility);
 
   const themePreference = useUIStore((state) => state.themePreference);
   const setThemePreference = useUIStore((state) => state.setThemePreference);
 
   const profile = useProfileStore((state) => state.profile);
   const setLeftHandedMode = useProfileStore((state) => state.setLeftHandedMode);
+  const isProfilePrivate = profile.profileVisibility === "private";
 
   const [dietaryEnabled, setDietaryEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  // Gamification privacy
+  const [showCredTier, setShowCredTier] = useState(true);
+  const [showPassport, setShowPassport] = useState(true);
+  const [showBadges, setShowBadges] = useState(true);
+  const [missionNotifications, setMissionNotifications] = useState(true);
+
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
   const normalizedThemePreference: ThemePreference =
     themePreference === "system" || themePreference === "light" || themePreference === "dark"
@@ -88,6 +108,23 @@ export function SettingsScreen() {
     setThemePreference(cycle[nextIndex] ?? "system");
   };
 
+  const showProfileVisibilityDialog = () => {
+    Alert.alert("Profile visibility", "Choose who can see your Hungry profile.", [
+      {
+        text: "Public",
+        onPress: () => setProfileVisibility("public"),
+      },
+      {
+        text: "Private",
+        onPress: () => setProfileVisibility("private"),
+      },
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+    ]);
+  };
+
   return (
     <ProfileScreenShell title="Settings" subtitle="Account and app preferences">
       <SettingsSection title="Account">
@@ -104,6 +141,23 @@ export function SettingsScreen() {
             rootNavigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" })
           }
           value={location || "Use GPS"}
+          isLast
+        />
+      </SettingsSection>
+
+      <SettingsSection title="Privacy">
+        <SettingsRow
+          label="Profile visibility"
+          icon={
+            isProfilePrivate ? (
+              <Lock size={20} color={palette.orange} />
+            ) : (
+              <Globe size={20} color={palette.orange} />
+            )
+          }
+          type="navigation"
+          value={isProfilePrivate ? "Private" : "Public"}
+          onPress={showProfileVisibilityDialog}
           isLast
         />
       </SettingsSection>
@@ -145,6 +199,38 @@ export function SettingsScreen() {
                 normalizedThemePreference.slice(1)
           }
           onPress={cycleTheme}
+          isLast
+        />
+      </SettingsSection>
+
+      <SettingsSection title="Gamification">
+        <SettingsRow
+          label="Show Food Cred tier on profile"
+          icon={<Star size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={showCredTier}
+          onToggle={setShowCredTier}
+        />
+        <SettingsRow
+          label="Show Passport progress"
+          icon={<Globe size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={showPassport}
+          onToggle={setShowPassport}
+        />
+        <SettingsRow
+          label="Show badges on profile"
+          icon={<ShieldCheck size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={showBadges}
+          onToggle={setShowBadges}
+        />
+        <SettingsRow
+          label="Mission notifications"
+          icon={<Bell size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={missionNotifications}
+          onToggle={setMissionNotifications}
           isLast
         />
       </SettingsSection>

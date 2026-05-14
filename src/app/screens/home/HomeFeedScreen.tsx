@@ -5,7 +5,6 @@ import {
   Alert,
   Animated,
   Clipboard,
-  InteractionManager,
   Pressable,
   ScrollView,
   Share,
@@ -23,6 +22,7 @@ import {
   Bell,
   Heart,
   MessageCircle,
+  MessageCircleMore,
   PlayCircle,
   Copy,
   Share2,
@@ -66,6 +66,7 @@ import {
 } from "@/components/social";
 import { getHomeFeedBundle, type HomeFeedItem, type HomeFeedSection } from "@/features/home/feed";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
+import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import {
   prefetchDishDetail,
   prefetchImages,
@@ -80,12 +81,16 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useStoryStore } from "@/store/useStoryStore";
 import { useSocialStore, type SocialComment, type SocialReply } from "@/store/useSocialStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useHungryTheme } from "@/theme";
 import type { StoryItem } from "@/types/domain";
+import { MissionBanner } from "@/components/gamification/MissionBanner";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 function FeedSkeleton() {
   const { spacing, semanticSpacing, radii, palette } = useHungryTheme();
@@ -176,12 +181,16 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const followedAuthors = useSocialStore((state) => state.followedAuthors);
   const toggleAuthorFollow = useSocialStore((state) => state.toggleAuthorFollow);
   const updateUnreadCount = useActivityStore((state) => state.getUnreadCount());
+  const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled;
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
-  const activityUnreadCount = updateUnreadCount + chatUnreadCount;
+  const activityUnreadCount = updateUnreadCount + (directMessagesEnabled ? chatUnreadCount : 0);
   const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
   const setSelectedBuilding = useDiscoveryStore((state) => state.setSelectedBuilding);
   const setSelectedFloor = useDiscoveryStore((state) => state.setSelectedFloor);
   const setHighlightedStallVenueId = useDiscoveryStore((state) => state.setHighlightedStallVenueId);
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isMerchantMode = useMerchantStore((state) => state.account !== null);
+  const canAccessMap = isDeveloperMode || isMerchantMode;
   const storyCarouselItems = useMemo<StoryItem[]>(() => {
     if (stories.some((story) => story.isOwn)) {
       return stories;
@@ -286,7 +295,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
-      const task = InteractionManager.runAfterInteractions(() => {
+      const cancelIdle = scheduleIdleWork(() => {
         if (!cancelled) {
           void loadFeed();
         }
@@ -294,7 +303,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
       return () => {
         cancelled = true;
-        task.cancel();
+        cancelIdle();
         activeFeedLoadIdRef.current += 1;
       };
     }, [loadFeed]),
@@ -341,6 +350,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   );
 
   const loadChatConversations = useCallback(async () => {
+    if (!FEATURE_FLAGS.directMessagesEnabled) {
+      setChatUnreadCount(0);
+      setShareRecipients([]);
+      return;
+    }
+
     try {
       const conversations = await getHungryService().chat.listConversations();
       setChatUnreadCount(
@@ -375,6 +390,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   }, []);
 
   const sendPostToHungryUsers = useCallback(async () => {
+    if (!FEATURE_FLAGS.directMessagesEnabled) return;
     if (!activeShareItem || selectedShareChatIds.length === 0) return;
 
     try {
@@ -421,10 +437,13 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   const openUserProfile = useCallback(
     (authorName: string, authorAvatarUrl?: string, authorLocation?: string) => {
+      const normalizedAuthorName = authorName.trim();
+      const normalizedAvatarUrl = authorAvatarUrl?.trim();
+      const normalizedLocation = authorLocation?.trim();
       navigation.navigate("UserProfile", {
-        authorName,
-        authorAvatarUrl,
-        authorLocation,
+        authorName: normalizedAuthorName,
+        authorAvatarUrl: normalizedAvatarUrl,
+        authorLocation: normalizedLocation,
       });
     },
     [navigation],
@@ -433,21 +452,22 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const prefetchUserProfileRoute = useCallback(
     (item: HomeFeedItem) => {
       preloadRoute(navigation, "UserProfile", {
-        authorName: item.authorName,
-        authorAvatarUrl: item.authorAvatarUrl,
-        authorLocation: item.authorLocation,
+        authorName: item.authorName.trim(),
+        authorAvatarUrl: item.authorAvatarUrl?.trim(),
+        authorLocation: item.authorLocation?.trim(),
       });
-      prefetchImages([item.authorAvatarUrl], 1);
+      prefetchImages([item.authorAvatarUrl?.trim()], 1);
     },
     [navigation],
   );
 
   const prefetchMapRoute = useCallback(
     (item: HomeFeedItem) => {
+      if (!canAccessMap) return;
       prefetchStallDetail(item.venueId);
       preloadRoute(navigation, "DiscoverMap");
     },
-    [navigation],
+    [canAccessMap, navigation],
   );
 
   const prefetchFeedCardRoute = useCallback(
@@ -467,6 +487,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   const openVenueOnMap = useCallback(
     (item: HomeFeedItem) => {
+      if (!canAccessMap) return;
       const mapBuildingId = MAP_BUILDING_ID_ALIASES[item.buildingId] ?? item.buildingId;
       const mapBuilding = getBuildingById(mapBuildingId);
       if (mapBuilding) {
@@ -476,7 +497,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       setHighlightedStallVenueId(item.venueId);
       navigation.navigate("DiscoverMap");
     },
-    [navigation, setHighlightedStallVenueId, setSelectedBuilding, setSelectedFloor],
+    [canAccessMap, navigation, setHighlightedStallVenueId, setSelectedBuilding, setSelectedFloor],
   );
 
   const handlePostLike = useCallback(
@@ -792,6 +813,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           onStoryPress={handleStoryPress}
           onAddStoryPress={handleAddStoryPress}
         />
+        <MissionBanner onPress={() => navigation.navigate("MissionsScreen")} />
       </View>
     ),
     [
@@ -885,17 +907,23 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     </AppText>
                   </Pressable>
                   <View style={{ alignItems: "center", flexDirection: "row" }}>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Show ${item.authorLocation} on map`}
-                      hitSlop={8}
-                      onPressIn={() => prefetchMapRoute(item)}
-                      onPress={() => openVenueOnMap(item)}
-                    >
+                    {canAccessMap ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Show ${item.authorLocation} on map`}
+                        hitSlop={8}
+                        onPressIn={() => prefetchMapRoute(item)}
+                        onPress={() => openVenueOnMap(item)}
+                      >
+                        <AppText variant="micro" tone="secondary">
+                          {item.authorLocation}
+                        </AppText>
+                      </Pressable>
+                    ) : (
                       <AppText variant="micro" tone="secondary">
                         {item.authorLocation}
                       </AppText>
-                    </Pressable>
+                    )}
                   </View>
                 </View>
               </View>
@@ -1060,17 +1088,23 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 <AppText variant="h3" style={{ color: palette.white }}>
                   {item.dishes[0]?.name ?? item.venue.name}
                 </AppText>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Show ${item.venue.name} on map`}
-                  hitSlop={8}
-                  onPressIn={() => prefetchMapRoute(item)}
-                  onPress={() => openVenueOnMap(item)}
-                >
+                {canAccessMap ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Show ${item.venue.name} on map`}
+                    hitSlop={8}
+                    onPressIn={() => prefetchMapRoute(item)}
+                    onPress={() => openVenueOnMap(item)}
+                  >
+                    <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)" }}>
+                      {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
+                    </AppText>
+                  </Pressable>
+                ) : (
                   <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)" }}>
                     {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
                   </AppText>
-                </Pressable>
+                )}
               </View>
             </View>
 
@@ -1170,7 +1204,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     onPress={() => openComments(item)}
                     style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
                   >
-                    <MessageCircle color={themeTints.text} size={24} />
+                    {CommentIcon ? <CommentIcon color={themeTints.text} size={24} /> : null}
                     {interaction.commentCount > 0 && (
                       <AppText
                         variant="micro"
@@ -1403,12 +1437,22 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
                 {" · "}
               </AppText>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Show ${item.authorLocation} on map`}
-                onPressIn={() => prefetchMapRoute(item)}
-                onPress={() => openVenueOnMap(item)}
-              >
+              {canAccessMap ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Show ${item.authorLocation} on map`}
+                  onPressIn={() => prefetchMapRoute(item)}
+                  onPress={() => openVenueOnMap(item)}
+                >
+                  <AppText
+                    variant="micro"
+                    style={{ color: themeTints.secondaryText }}
+                    numberOfLines={1}
+                  >
+                    {item.authorLocation}
+                  </AppText>
+                </Pressable>
+              ) : (
                 <AppText
                   variant="micro"
                   style={{ color: themeTints.secondaryText }}
@@ -1416,7 +1460,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 >
                   {item.authorLocation}
                 </AppText>
-              </Pressable>
+              )}
             </View>
 
             <View
@@ -1438,7 +1482,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   borderRadius: radii.sm,
                 }}
               >
-                <MessageCircle color={themeTints.secondaryText} size={12} />
+                {CommentIcon ? <CommentIcon color={themeTints.secondaryText} size={12} /> : null}
                 <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
                   {interaction.commentCount}
                 </AppText>
@@ -1889,7 +1933,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   <EmptyState
                     title="No comments yet"
                     body="Be the first to share your review!"
-                    icon={<MessageCircle size={42} color={palette.textMuted} />}
+                    icon={
+                      CommentIcon ? <CommentIcon size={42} color={palette.textMuted} /> : undefined
+                    }
                   />
                 </View>
               )}
@@ -1914,17 +1960,21 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           )}
           backgroundStyle={{ backgroundColor: palette.surface }}
           handleIndicatorStyle={{ backgroundColor: palette.border }}
-          footerComponent={(props) => (
-            <BottomSheetFooter {...props}>
-              <FloatingShareSendButton
-                selectedCount={selectedShareChatIds.length}
-                onPress={sendPostToHungryUsers}
-                bottomInset={insets.bottom}
-                accessibilityLabel="Send shared post"
-                placement="inline"
-              />
-            </BottomSheetFooter>
-          )}
+          footerComponent={
+            directMessagesEnabled
+              ? (props) => (
+                  <BottomSheetFooter {...props}>
+                    <FloatingShareSendButton
+                      selectedCount={selectedShareChatIds.length}
+                      onPress={sendPostToHungryUsers}
+                      bottomInset={insets.bottom}
+                      accessibilityLabel="Send shared post"
+                      placement="inline"
+                    />
+                  </BottomSheetFooter>
+                )
+              : undefined
+          }
         >
           <BottomSheetView style={{ flex: 1 }}>
             <BottomSheetScrollView
@@ -1936,7 +1986,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               }}
             >
               <InAppShareCard
-                title="Share in Hungry"
+                title={directMessagesEnabled ? "Share in Hungry" : "Share post"}
                 quickActions={[
                   {
                     key: "copy",
@@ -1953,11 +2003,15 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     onPress: () => void sharePostOutsideApp(),
                   },
                 ]}
-                recipients={shareRecipients}
+                recipients={directMessagesEnabled ? shareRecipients : []}
                 selectedRecipientIds={selectedShareChatIds}
                 onToggleRecipient={toggleShareChat}
                 onSend={sendPostToHungryUsers}
-                lastRecipientId={shareRecipients[shareRecipients.length - 1]?.id}
+                lastRecipientId={
+                  directMessagesEnabled
+                    ? shareRecipients[shareRecipients.length - 1]?.id
+                    : undefined
+                }
                 recipientAccessibilityLabelPrefix="Share post to"
               />
             </BottomSheetScrollView>

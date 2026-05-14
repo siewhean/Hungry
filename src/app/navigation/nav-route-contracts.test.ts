@@ -57,7 +57,14 @@ test("synthetic create tab targets root routes without registering a fake tab ro
   assert.doesNotMatch(tabs, /<Tab\.Screen name="Create"/);
   assert.doesNotMatch(types, /Create: undefined/);
   assert.match(tabs, /navigation\.getParent<NavigationProp<RootStackParamList>>\(\)/);
-  assert.match(tabs, /rootNavigation\?\.navigate\("PostComposerV2"\)/);
+  assert.match(
+    tabs,
+    /const composerRoute = FEATURE_FLAGS\.prototypeRoutesEnabled \? "PostComposerV2" : "Post"/,
+  );
+  assert.match(
+    tabs,
+    /rootNavigation\?\.navigate\("PostComposerV2"\)[\s\S]*rootNavigation\?\.navigate\("Post"\)/,
+  );
   assert.match(tabs, /rootNavigation\?\.navigate\("AuthStack", \{ screen: "Login" \}\)/);
   assert.doesNotMatch(tabs, /navigation\.getParent\(\)\?\.navigate\("PostComposerV2"\)/);
   assert.doesNotMatch(tabs, /navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/);

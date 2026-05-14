@@ -54,20 +54,17 @@ function getDominantTaste(dish: DishDetail) {
 function formatWaitTime(liveCrowd?: "low" | "medium" | "high") {
   if (liveCrowd === "high") return "25-40 min";
   if (liveCrowd === "medium") return "15-25 min";
-  return "< 15 min";
+  if (liveCrowd === "low") return "< 15 min";
+  return null;
 }
 
 function formatBasePrice(price: number) {
   return `S$${price.toFixed(2)}`;
 }
 
-function getSignatureDishes(
-  currentDish: DishDetail,
-  venueDishes: DishDetail[],
-  supplementalDishes: DishDetail[],
-) {
+function getSignatureDishes(currentDish: DishDetail, venueDishes: DishDetail[]) {
   const byId = new Map<string, DishDetail>();
-  [currentDish, ...venueDishes, ...supplementalDishes].forEach((dish) => {
+  [currentDish, ...venueDishes].forEach((dish) => {
     byId.set(dish.id, dish);
   });
   return Array.from(byId.values()).slice(0, 4);
@@ -105,10 +102,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     () => (dish ? repository.listDishesByVenue(dish.venueId) : []),
     [dish, repository],
   );
-  const popularDishes = useMemo(() => repository.listPopularNearby(), [repository]);
   const signatureDishes = useMemo(
-    () => (dish ? getSignatureDishes(dish, venueDishes, popularDishes) : []),
-    [dish, popularDishes, venueDishes],
+    () => (dish ? getSignatureDishes(dish, venueDishes) : []),
+    [dish, venueDishes],
   );
 
   if (!dish || !venue || !heroImage) {
@@ -129,6 +125,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
   const dominantTaste = getDominantTaste(dish);
   const isSaved = profile.favouriteDishIds.includes(dish.id);
+  const waitTime = formatWaitTime(venue.liveCrowd ?? dish.liveCrowd);
   const attributes: Attribute[] = [
     {
       label: "Taste Intensity",
@@ -145,11 +142,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       value: dish.tasteTags[2] ?? dominantTaste.label,
       helper: `${tasteMatch}% match`,
     },
-    {
-      label: "Wait Time",
-      value: formatWaitTime(venue.liveCrowd ?? dish.liveCrowd),
-      helper: venue.isOpen ? "Open now" : "Closed now",
-    },
+    ...(waitTime
+      ? [
+          {
+            label: "Wait Time",
+            value: waitTime,
+            helper: venue.isOpen ? "Open now" : "Closed now",
+          },
+        ]
+      : []),
   ];
   const heroHeight = Math.min(Math.max(width * 1.12, 420), 530);
   const cardWidth = (width - spacing[4] * 2 - spacing[3]) / 2;
@@ -311,9 +312,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   style={{ fontStyle: "italic", lineHeight: 26 }}
                 >
                   {dish.description ??
-                    `${dish.name} is a signature order from ${venue.name}, built around ${dish.tasteTags.join(
-                      ", ",
-                    )} notes.`}
+                    `${dish.name} is served by ${venue.name}${
+                      dish.tasteTags.length > 0 ? ` with ${dish.tasteTags.join(", ")} notes.` : "."
+                    }`}
                 </AppText>
               </View>
 
@@ -415,15 +416,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   }}
                 >
                   <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <AppText style={{ fontWeight: "800" }}>Mon-Fri</AppText>
+                    <AppText style={{ fontWeight: "800" }}>Listed hours</AppText>
                     <AppText tone="secondary">{venue.operatingHours}</AppText>
                   </View>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <AppText style={{ fontWeight: "800" }}>Sat-Sun</AppText>
-                    <AppText tone="secondary">
-                      {venue.closureNotice ? "Check before visiting" : venue.operatingHours}
-                    </AppText>
-                  </View>
+                  {venue.closureNotice ? (
+                    <AppText tone="secondary">{venue.closureNotice}</AppText>
+                  ) : null}
                 </View>
               </View>
 
@@ -554,8 +552,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         {review.text}
                       </AppText>
                     </View>
-                ))
-              ) : (
+                  ))
+                ) : (
                   <EmptyState
                     title="No reviews yet"
                     body="Be the first to add one."

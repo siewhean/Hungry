@@ -6,6 +6,9 @@ appId: ${APP_ID}
     text: "Hungry, http://.*:8081"
     optional: true
 - tapOn:
+    text: "Hungry"
+    optional: true
+- tapOn:
     text: "Continue"
     optional: true
 - tapOn:
@@ -14,6 +17,8 @@ appId: ${APP_ID}
 - extendedWaitUntil:
     visible: "Developer Launcher"
     timeout: 60000
+- tapOn:
+    id: "dev-button-developer"
 - tapOn: "Open normal app flow"
 - tapOn:
     text: "Close"
@@ -26,21 +31,18 @@ appId: ${APP_ID}
     timeout: 5000
 - tapOn:
     id: "home-activity-inbox-button"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    text: "Close"
+    optional: true
+- tapOn:
+    id: "home-activity-inbox-button"
+    optional: true
 - extendedWaitUntil:
     visible:
-      id: "activity-tab-messages"
+      id: "activity-tab-updates"
     timeout: 30000
-- tapOn:
+- assertNotVisible:
     id: "activity-tab-messages"
-- tapOn:
-    id: "activity-chat-row-1"
-- assertVisible:
-    id: "chat-detail-screen"
-- assertVisible: "Text messages only for now."
-- assertNotVisible: "Add media"
-- tapOn:
-    id: "chat-message-input"
-- inputText: "Native smoke chat message"
-- tapOn:
-    id: "chat-send-message"
-- assertVisible: "Native smoke chat message"
+- assertVisible: "Updates"

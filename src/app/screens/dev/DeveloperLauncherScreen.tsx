@@ -22,7 +22,7 @@ import {
   prefetchStallDetail,
   preloadRoute,
 } from "@/features/navigation/prefetch";
-import { resetServiceProvider, setMockServiceProvider } from "@/lib/services/serviceProvider";
+import { setMockServiceProvider, setSupabaseServiceProvider } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
@@ -477,7 +477,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
 
   const enterUserMode = () => {
     setDeveloperMerchantMode(false);
-    resetServiceProvider();
+    setSupabaseServiceProvider();
     setMerchantAccount(null);
     clearSession();
     completeAuth();

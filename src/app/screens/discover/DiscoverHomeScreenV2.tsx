@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
@@ -10,38 +9,23 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Image } from "expo-image";
-import * as Haptics from "expo-haptics";
-import {
-  ChevronRight,
-  Map,
-  Mic,
-  Search,
-  X,
-  Star,
-  Flame,
-  Home,
-  Compass,
-  Utensils,
-  MapPinned,
-} from "lucide-react-native";
+import { Map, Mic, Search, X, Flame, Utensils, MapPinned } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppHeader, AppText, Chip, Screen, Card, IconButton, Skeleton } from "@/components/ui";
+import { AppHeader, AppText, Chip, Screen, IconButton, Skeleton } from "@/components/ui";
 import { DecideForMeCard } from "@/components/discover/DecideForMeCard";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { getNearestBuildings, getNearestSingaporeArea } from "@/lib/geo/singaporeBuildings";
-import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
+import { getNearestSingaporeArea } from "@/lib/geo/singaporeBuildings";
 import { getDataRepository } from "@/lib/services/serviceProvider";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useLocationStore } from "@/store/useLocationStore";
-import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
+import { useCollectionStore } from "@/store/useCollectionStore";
 import { useHungryTheme } from "@/theme";
-import type { DishDetail, SearchCategory, VenueSummary } from "@/types/domain";
+import { CollectionCard } from "@/components/collections/CollectionCard";
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -59,14 +43,11 @@ export function DiscoverHomeScreenV2() {
   const { width: screenWidth } = useWindowDimensions();
   const { palette, radii, spacing, semanticSpacing, shadows, motion, colorScheme } =
     useHungryTheme();
-  const profile = useProfileStore((state) => state.profile);
   const locationPermission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
   const grantLocation = useLocationStore((state) => state.grantLocation);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
-  const isMerchantMode = useMerchantStore((state) => state.account !== null);
-  const canAccessMap = isDeveloperMode || isMerchantMode;
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -91,6 +72,12 @@ export function DiscoverHomeScreenV2() {
   const searchQuery = useSearchStore((state) => state.filters.query);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
+
+  const collections = useCollectionStore((s) => s.collections.slice(0, 6));
+  const loadCollections = useCollectionStore((s) => s.loadCollections);
+  useEffect(() => {
+    void loadCollections();
+  }, [loadCollections]);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const searchInputRef = useRef<TextInput | null>(null);
   const searchRevealProgress = useRef(new Animated.Value(0)).current;
@@ -170,13 +157,8 @@ export function DiscoverHomeScreenV2() {
     extrapolate: "clamp",
   });
 
-  const nearbyBuildings = useMemo(
-    () => getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 3, 14),
-    [currentLocation.latitude, currentLocation.longitude],
-  );
   const discoverLocationLabel =
     manualLocation ?? getNearestSingaporeArea(currentLocation.latitude, currentLocation.longitude);
-  const discoverNearbyCount = nearbyBuildings.length || repository.listBuildings().length;
 
   const themeTints = useMemo(() => {
     const isDark = colorScheme === "dark";
@@ -198,11 +180,7 @@ export function DiscoverHomeScreenV2() {
     });
 
     if (chip.id === "near_me") {
-      if (canAccessMap) {
-        navigation.navigate("DiscoverMap");
-      } else {
-        navigation.navigate("SearchResults", { browseMode: "stalls" });
-      }
+      navigation.navigate("DiscoverMap");
       return;
     }
 
@@ -238,6 +216,7 @@ export function DiscoverHomeScreenV2() {
       const topDish = repository.getDishById(venue.topDishId);
       return { venue, topDish };
     });
+  const discoverNearbyCount = nearbyStalls.length;
 
   if (isLoading) {
     return (
@@ -275,14 +254,12 @@ export function DiscoverHomeScreenV2() {
         subtitle={`${discoverLocationLabel} · ${discoverNearbyCount} stalls nearby`}
         horizontalPadding={semanticSpacing.screenEdge}
         right={
-          canAccessMap ? (
-            <IconButton
-              variant="surface"
-              accessibilityLabel="Open map"
-              onPress={() => navigation.navigate("DiscoverMap")}
-              icon={<Map color={palette.orange} size={20} />}
-            />
-          ) : undefined
+          <IconButton
+            variant="surface"
+            accessibilityLabel="Open map"
+            onPress={() => navigation.navigate("DiscoverMap")}
+            icon={<Map color={palette.orange} size={20} />}
+          />
         }
       />
 
@@ -563,15 +540,15 @@ export function DiscoverHomeScreenV2() {
             <AppText variant="h2" style={{ fontWeight: "800" }}>
               Stalls near you
             </AppText>
-            {canAccessMap ? (
-              <Pressable onPress={() => navigation.navigate("DiscoverMap")}>
-                <AppText variant="bodySmallBold" tone="accent">
-                  Map view
-                </AppText>
-              </Pressable>
-            ) : null}
+            <Pressable onPress={() => navigation.navigate("DiscoverMap")}>
+              <AppText variant="bodySmallBold" tone="accent">
+                Map view
+              </AppText>
+            </Pressable>
             {isDeveloperMode ? null : (
-              <Pressable onPress={() => navigation.navigate("SearchResults", { browseMode: "stalls" })}>
+              <Pressable
+                onPress={() => navigation.navigate("SearchResults", { browseMode: "stalls" })}
+              >
                 <AppText variant="bodySmallBold" tone="accent">
                   View all
                 </AppText>
@@ -580,8 +557,9 @@ export function DiscoverHomeScreenV2() {
           </View>
 
           <View style={{ paddingHorizontal: spacing[4] }}>
-            {nearbyStalls.map(({ venue, topDish }, index) => {
-              const isStallAccount = index % 2 === 0; // Simulate stall account for visual variety
+            {nearbyStalls.map(({ venue, topDish }) => {
+              const isVerified = venue.verificationStatus === "verified";
+              const statusLabel = venue.isOpen ? "Open" : (venue.closureNotice ?? "Closed");
               return (
                 <Pressable
                   key={venue.id}
@@ -599,8 +577,8 @@ export function DiscoverHomeScreenV2() {
                       width: 56,
                       height: 56,
                       borderRadius: radii.md,
-                      borderWidth: isStallAccount ? 2.5 : 1,
-                      borderColor: isStallAccount ? palette.orange : palette.border,
+                      borderWidth: isVerified ? 2.5 : 1,
+                      borderColor: isVerified ? palette.orange : palette.border,
                       padding: 2,
                       backgroundColor: palette.bgSoft,
                     }}
@@ -614,11 +592,11 @@ export function DiscoverHomeScreenV2() {
                   <View style={{ flex: 1, marginLeft: spacing[3] }}>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
                       <AppText variant="bodyBold">{venue.name}</AppText>
-                      {isStallAccount && (
+                      {isVerified ? (
                         <AppText style={{ color: palette.orange, fontSize: 10, marginLeft: 4 }}>
-                          ✦
+                          Verified
                         </AppText>
-                      )}
+                      ) : null}
                     </View>
                     <View
                       style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}
@@ -628,37 +606,93 @@ export function DiscoverHomeScreenV2() {
                           width: 6,
                           height: 6,
                           borderRadius: 3,
-                          backgroundColor: palette.success,
+                          backgroundColor: venue.isOpen ? palette.success : palette.textMuted,
                         }}
                       />
                       <AppText variant="micro" tone="secondary">
-                        Open · {venue.buildingId.replace("hc-", "").replace("-", " ")} ·{" "}
+                        {statusLabel} · {venue.buildingId.replace("hc-", "").replace("-", " ")} ·{" "}
                         {venue.unitNumber}
                       </AppText>
                     </View>
                   </View>
-                  <View
-                    style={{
-                      backgroundColor: palette.successSoft,
-                      paddingHorizontal: 8,
-                      paddingVertical: 2,
-                      borderRadius: 4,
-                      borderWidth: 1,
-                      borderColor: palette.success,
-                    }}
-                  >
-                    <AppText
-                      variant="micro"
-                      style={{ color: palette.success, fontWeight: "900", fontSize: 10 }}
+                  {isVerified ? (
+                    <View
+                      style={{
+                        backgroundColor: palette.successSoft,
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                        borderRadius: 4,
+                        borderWidth: 1,
+                        borderColor: palette.success,
+                      }}
                     >
-                      A
-                    </AppText>
-                  </View>
+                      <AppText
+                        variant="micro"
+                        style={{ color: palette.success, fontWeight: "900", fontSize: 10 }}
+                      >
+                        Verified
+                      </AppText>
+                    </View>
+                  ) : null}
                 </Pressable>
               );
             })}
           </View>
         </View>
+
+        {/* Collections */}
+        {collections.length > 0 && (
+          <View style={{ marginTop: spacing[6] }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+                paddingHorizontal: spacing[4],
+                marginBottom: spacing[2],
+              }}
+            >
+              <AppText variant="h2" style={{ fontWeight: "800" }}>
+                Collections
+              </AppText>
+              <Pressable onPress={() => navigation.navigate("CollectionList")}>
+                <AppText variant="bodySmallBold" tone="accent">
+                  See all
+                </AppText>
+              </Pressable>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[3] }}
+            >
+              {collections.map((collection) => (
+                <Pressable
+                  key={collection.id}
+                  onPress={() =>
+                    navigation.navigate("CollectionDetail", { collectionId: collection.id })
+                  }
+                  style={{
+                    width: 220,
+                    backgroundColor: palette.surface,
+                    borderRadius: radii.xl,
+                    borderWidth: 1,
+                    borderColor: palette.border,
+                    overflow: "hidden",
+                    ...shadows.card,
+                  }}
+                >
+                  <CollectionCard
+                    collection={collection}
+                    onPress={() =>
+                      navigation.navigate("CollectionDetail", { collectionId: collection.id })
+                    }
+                  />
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        )}
       </ScrollView>
     </Screen>
   );

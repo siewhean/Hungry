@@ -29,4 +29,27 @@ test.describe("hardcoded data regression guard", () => {
 
     expect(directMockImports).toEqual([]);
   });
+
+  test("V2 production-facing screens avoid fabricated trust claims", () => {
+    const files = [
+      "src/app/screens/detail/StallDetailScreenV2.tsx",
+      "src/app/screens/detail/DishDetailScreenV2.tsx",
+      "src/app/screens/discover/DiscoverHomeScreenV2.tsx",
+      "src/app/screens/search/DishSearchScreenV2.tsx",
+    ];
+    const source = files.map((file) => readFileSync(join(ROOT, file), "utf8")).join("\n");
+
+    for (const forbidden of [
+      "80m",
+      "Open until 2:00 pm",
+      "312 reviews",
+      "180 reviews",
+      "Taste profile (from 312 reviews)",
+      "sarah.eats",
+      "NEA",
+      "index % 2",
+    ]) {
+      expect(source).not.toContain(forbidden);
+    }
+  });
 });

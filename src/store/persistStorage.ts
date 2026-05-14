@@ -52,8 +52,32 @@ const memoryStorage: StateStorage = {
   },
 };
 
+function getBrowserStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const browserStorage: StateStorage = {
+  getItem: async (name) => getBrowserStorage()?.getItem(name) ?? null,
+  setItem: async (name, value) => {
+    getBrowserStorage()?.setItem(name, value);
+  },
+  removeItem: async (name) => {
+    getBrowserStorage()?.removeItem(name);
+  },
+};
+
 const safeAsyncStorage: StateStorage = {
   getItem: async (name) => {
+    const browserValue = await browserStorage.getItem(name);
+    if (browserValue !== null) {
+      return browserValue;
+    }
+
     const asyncStorage = getAsyncStorage();
     if (!asyncStorage) {
       return memoryStorage.getItem(name);
@@ -66,6 +90,11 @@ const safeAsyncStorage: StateStorage = {
     }
   },
   setItem: async (name, value) => {
+    if (getBrowserStorage()) {
+      await browserStorage.setItem(name, value);
+      return;
+    }
+
     const asyncStorage = getAsyncStorage();
     if (!asyncStorage) {
       await memoryStorage.setItem(name, value);
@@ -79,6 +108,11 @@ const safeAsyncStorage: StateStorage = {
     }
   },
   removeItem: async (name) => {
+    if (getBrowserStorage()) {
+      await browserStorage.removeItem(name);
+      return;
+    }
+
     const asyncStorage = getAsyncStorage();
     if (!asyncStorage) {
       await memoryStorage.removeItem(name);

@@ -24,6 +24,7 @@ const DEFAULT_AUTH_PROFILE: UserProfile = {
   id: "supabase-user",
   displayName: "Hungry User",
   email: "",
+  profileVisibility: "public",
   tasteVector: { sweet: 5, spicy: 5, sour: 5, salty: 5, rich: 5, aromatic: 5 },
   dietaryPreferences: [],
   favouriteDishIds: [],

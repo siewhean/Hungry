@@ -4,7 +4,16 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { ChevronLeft, CircleHelp, Heart, MapPin, MessageCircle, MessageCircleMore, Send, Star } from "lucide-react-native";
+import {
+  ChevronLeft,
+  CircleHelp,
+  Heart,
+  MapPin,
+  MessageCircle,
+  MessageCircleMore,
+  Send,
+  Star,
+} from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated from "react-native-reanimated";
 
@@ -38,12 +47,13 @@ import { useCartStore } from "@/store/useCartStore";
 import { useOrderStore } from "@/store/useOrderStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
-
-const CommentIcon = MessageCircle ?? MessageCircleMore;
+import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 function StallDetailSkeleton() {
   const { spacing, radii, palette } = useHungryTheme();
@@ -99,6 +109,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
   const addItemToCart = useCartStore((state) => state.addItem);
   const setActiveOrder = useOrderStore((state) => state.setActiveOrder);
@@ -140,6 +151,20 @@ export function StallDetailScreen({ navigation, route }: Props) {
     setIsClaimPending(hasPendingClaimForProfile(profile.id));
   }, [profile.id]);
 
+  const requireAuthForProtectedAction = (message: string) => {
+    if (isAuthenticated) {
+      return true;
+    }
+
+    setReturnRoute({
+      name: "StallDetail",
+      params: { venueId: venue?.id ?? venueId },
+    });
+    showToast({ message, tone: "warning" });
+    navigation.navigate("AuthStack", { screen: "Login" });
+    return false;
+  };
+
   if (isLoading) {
     return <StallDetailSkeleton />;
   }
@@ -172,6 +197,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const communityReviews = deriveStallCommunityReviews(dishes);
 
   const submitReviewReply = (reviewId: string) => {
+    if (!requireAuthForProtectedAction("Sign in to reply to this review.")) {
+      return;
+    }
+
     const draft = (replyDraftByReviewId[reviewId] ?? "").trim();
     if (!draft.length) {
       return;
@@ -207,6 +236,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
   };
 
   const handleOrderDelivery = () => {
+    if (!requireAuthForProtectedAction("Sign in to order from this stall.")) {
+      return;
+    }
+
     const deliveryLink = venue.deliveryLinks[0];
     if (deliveryLink) {
       void openTrustedDeliveryUrl(
@@ -235,6 +268,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
   const handleClaimThisStall = async () => {
     if (isSubmittingClaim) return;
+    if (!requireAuthForProtectedAction("Sign in before claiming this stall.")) {
+      return;
+    }
 
     setIsSubmittingClaim(true);
     try {
@@ -318,6 +354,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     : "Save to favourites"
                 }
                 onPress={() => {
+                  if (!requireAuthForProtectedAction("Sign in to save this stall.")) {
+                    return;
+                  }
                   if (leadDish) {
                     toggleFavourite(leadDish);
                   }
@@ -448,6 +487,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   {venue.unitNumber} · {distanceLabel}
                 </AppText>
               </View>
+
+              {/* Save / Tried / Add-to-List */}
+              {isAuthenticated && venue && (
+                <StallInteractionBar stallId={venue.id} userId={profile.id} />
+              )}
 
               {/* Attributes */}
               <View style={{ flexDirection: "row", gap: spacing[3] }}>
@@ -653,13 +697,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         </View>
                       ) : null}
                     </View>
-                ))
-              ) : (
-                <EmptyState
-                  title="No community reviews yet"
-                  body="Write your first review for this stall."
-                  icon={<CommentIcon size={36} color={palette.textMuted} />}
-                />
+                  ))
+                ) : (
+                  <EmptyState
+                    title="No community reviews yet"
+                    body="Write your first review for this stall."
+                    icon={<CommentIcon size={36} color={palette.textMuted} />}
+                  />
                 )}
               </View>
 
