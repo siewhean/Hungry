@@ -15,6 +15,14 @@ Use the smallest check that matches the change risk.
 
 | date | scope | command | result | notes |
 |---|---|---|---|---|
+| 2026-05-15 | db read path (DB-P0-03) | `supabase db push --yes -p "$SUPABASE_DB_PASSWORD"` | Pass | Remote applied `0030_home_social_feed_reads.sql`; first attempt exposed remote schema drift on `d.rating`, and the migration was corrected to use `d.rating_avg` before successful apply |
+| 2026-05-15 | db read path (DB-P0-03) | `supabase db push --dry-run` | Pass | With `SUPABASE_ACCESS_TOKEN` and DB password from repo `.env.local`, linked remote reports `Remote database is up to date` after `0030` |
+| 2026-05-15 | db read path (DB-P0-03) | `supabase db query --linked -f supabase/smoke/home_social_feed_reads.sql -o table` | Pass | Linked smoke returned sample count rows plus `home_social_feed_reads_smoke_passed`, with no failing check rows |
+| 2026-05-15 | db read path (DB-P0-03) | `node --import tsx --test src/lib/services/supabase/home-social-feed.test.ts` | Pass | 5/5 source-contract tests pass for RPC shape, cursor pagination, invoker/visibility guard, app execute grants, deferred-scope guards, service RPC-first wiring, and smoke SQL coverage |
+| 2026-05-15 | db read path (DB-P0-03) | `npm run typecheck` | Pass | Strict TypeScript gate passed after RPC-first Home social feed service mapping |
+| 2026-05-15 | db read path (DB-P0-03) | `npm test` | Pass | 259 total tests: 257 pass, 2 skipped |
+| 2026-05-15 | db read path (DB-P0-03) | `git diff --check` | Pass | Touched migration, smoke SQL, tests, service files, and task docs have no whitespace errors |
+| 2026-05-15 | db read path (DB-P0-03) | `gitleaks protect --staged --redact` | Pass | Staged DB-P0-03 changes scanned; no leaks found |
 | 2026-05-15 | remote Supabase apply (DB-P0-01/DB-P0-02) | `supabase db push --yes -p "$SUPABASE_DB_PASSWORD"` | Pass | Used the provided env credentials; remote applied pending migrations `0023` through `0029`, including data import provenance foundation and server-side discovery read RPCs |
 | 2026-05-15 | remote Supabase apply (DB-P0-01/DB-P0-02) | `supabase db push --dry-run` | Pass | With `SUPABASE_ACCESS_TOKEN` from repo `.env.local`, linked remote reports `Remote database is up to date` |
 | 2026-05-15 | db foundation (DB-P0-01) | `supabase db query --linked -f supabase/smoke/database_foundation.sql -o table` | Pass | Linked smoke returned only `database_foundation_smoke_passed` |

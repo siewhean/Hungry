@@ -151,6 +151,12 @@ function asRecord(value: unknown): Row {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Row) : {};
 }
 
+function asRowArray(value: unknown): Row[] {
+  return Array.isArray(value)
+    ? value.map((item) => asRecord(item)).filter((item) => Object.keys(item).length > 0)
+    : [];
+}
+
 function isLocalUri(value: string): boolean {
   return value.startsWith("file://") || value.startsWith("content://") || value.startsWith("/");
 }
@@ -602,7 +608,7 @@ async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Prom
     dishIds.length > 0
       ? client
           .from("dishes")
-          .select("id,name,price,rating_avg,rating,image_url,venue_id,building_id")
+          .select("id,name,price,rating_avg,image_url,venue_id,building_id")
           .in("id", dishIds)
           .then(({ data: rows, error: rowsError }) =>
             rowsError || !Array.isArray(rows) ? [] : (rows as Row[]),
@@ -696,9 +702,78 @@ async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Prom
         tasteStamp: tasteStampFromPostMeta(meta),
         cravingCount: asNumber(row.like_count) ?? 0,
         savedCount: asNumber(row.save_count) ?? 0,
-        rating:
-          asNumber(meta.rating) ?? asNumber(dishRow?.rating_avg) ?? asNumber(dishRow?.rating) ?? 0,
+        rating: asNumber(meta.rating) ?? asNumber(dishRow?.rating_avg) ?? 0,
         price: asNumber(dishRow?.price) ?? asNumber(dishMeta.price) ?? 0,
+        expiresAt:
+          asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+        createdAt:
+          asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+      } satisfies Bite;
+    }),
+  );
+}
+
+async function fetchHomeSocialFeedBitesViaRpc(
+  client: SupabaseClient,
+  limit = 40,
+): Promise<Bite[] | undefined> {
+  const { data, error } = await client.rpc("get_home_social_feed", {
+    p_limit: limit,
+    p_cursor_published_at: null,
+    p_cursor_id: null,
+  });
+  if (error) {
+    console.warn("Failed to fetch Home social feed RPC", error.message);
+    return undefined;
+  }
+  if (!Array.isArray(data)) return undefined;
+
+  const rows = data as Row[];
+  return Promise.all(
+    rows.map(async (row) => {
+      const meta = asRecord(row.generated_content);
+      const authorMeta = asRecord(meta.author);
+      const dishMeta = asRecord(meta.dish);
+      const venueMeta = asRecord(meta.venue);
+      const mediaRows = asRowArray(row.media);
+      const mediaUrls = (
+        await Promise.all(mediaRows.map((mediaRow) => resolvePostMediaDisplayUrl(client, mediaRow)))
+      ).filter((url): url is string => url.length > 0);
+      const fallbackImage =
+        asString(row.dish_image_url) ??
+        asString(dishMeta.imageUrl) ??
+        asString(row.public_url) ??
+        "";
+      const photoUrl = mediaUrls[0] ?? fallbackImage;
+      const mediaType = resolvePostBiteMediaType(mediaRows, meta);
+
+      return {
+        id: asString(row.id) ?? `post-${Date.now()}`,
+        authorId: asString(row.author_id) ?? "unknown-author",
+        authorName:
+          asString(authorMeta.displayName) ?? asString(row.author_display_name) ?? "Hungry User",
+        authorAvatar: asString(authorMeta.avatarUrl) ?? asString(row.author_avatar_url),
+        dishId: asString(row.dish_id) ?? asString(dishMeta.id) ?? "",
+        dishName: asString(row.dish_name) ?? asString(dishMeta.name) ?? "Unknown dish",
+        venueId: asString(row.venue_id) ?? asString(venueMeta.id) ?? "",
+        venueName: asString(row.venue_name) ?? asString(venueMeta.name) ?? "Unknown venue",
+        unitNumber: asString(row.venue_unit_number) ?? asString(venueMeta.unitNumber) ?? "",
+        buildingId:
+          asString(row.building_id) ??
+          asString(row.venue_building_id) ??
+          asString(venueMeta.buildingId) ??
+          "",
+        buildingName: asString(row.building_name) ?? asString(venueMeta.buildingName) ?? "",
+        photoUrl,
+        mediaUrls: mediaUrls.length > 0 ? mediaUrls : photoUrl ? [photoUrl] : [],
+        mediaType,
+        caption: asString(row.caption) ?? "",
+        tags: asStringArray(meta.tags),
+        tasteStamp: tasteStampFromPostMeta(meta),
+        cravingCount: asNumber(row.like_count) ?? 0,
+        savedCount: asNumber(row.save_count) ?? 0,
+        rating: asNumber(meta.rating) ?? asNumber(row.dish_rating) ?? 0,
+        price: asNumber(row.dish_price) ?? asNumber(dishMeta.price) ?? 0,
         expiresAt:
           asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
         createdAt:
@@ -2282,6 +2357,8 @@ export const supabaseService: HungryService = {
   social: {
     async getBitesFeed() {
       const client = requireSupabaseClient();
+      const rpcBites = await fetchHomeSocialFeedBitesViaRpc(client);
+      if (rpcBites) return rpcBites;
       return fetchPublishedPostBites(client);
     },
 
@@ -2420,12 +2497,12 @@ export const supabaseService: HungryService = {
       const table = reaction === "craving" ? "post_likes" : "post_saves";
       const existing = await client
         .from(table)
-        .select("id")
+        .select("post_id")
         .eq("post_id", biteId)
         .eq("user_id", userId)
         .maybeSingle();
       if (existing.error) throw existing.error;
-      if ((existing.data as Row | null)?.id) {
+      if ((existing.data as Row | null)?.post_id) {
         const { error } = await client
           .from(table)
           .delete()
