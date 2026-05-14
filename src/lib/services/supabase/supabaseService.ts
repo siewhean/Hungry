@@ -12,9 +12,12 @@ import {
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import {
   getDishByIdViaRpc,
+  getBuildingDetailViaRpc,
   getVenueByIdViaRpc,
+  listBuildingsViaRpc,
   listDishesByVenueViaRpc,
   listPopularNearbyViaRpc,
+  listVenuesByBuildingViaRpc,
   refreshSupabaseRepositoryCache,
   searchDishesViaRpc,
   supabaseRepository,
@@ -2063,11 +2066,15 @@ export const supabaseService: HungryService = {
   },
 
   discovery: {
-    async listBuildings() {
-      return supabaseRepository.listBuildings();
+    async listBuildings(lat, lng, radiusMeters) {
+      return (
+        (await listBuildingsViaRpc(lat, lng, radiusMeters)) ?? supabaseRepository.listBuildings()
+      );
     },
 
     async getBuildingDetail(id) {
+      const rpcDetail = await getBuildingDetailViaRpc(id);
+      if (rpcDetail) return rpcDetail;
       const building = supabaseRepository.listBuildings().find((item) => item.id === id);
       if (!building) return undefined;
       const venues = supabaseRepository.listVenuesByBuilding(id);
@@ -2104,7 +2111,10 @@ export const supabaseService: HungryService = {
     },
 
     async listVenuesByBuilding(buildingId) {
-      return supabaseRepository.listVenuesByBuilding(buildingId);
+      return (
+        (await listVenuesByBuildingViaRpc(buildingId)) ??
+        supabaseRepository.listVenuesByBuilding(buildingId)
+      );
     },
 
     async getDish(id) {

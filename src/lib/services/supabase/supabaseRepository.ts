@@ -1,6 +1,6 @@
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
-import type { DataRepository, SearchResult } from "@/lib/services/types";
+import type { BuildingDetail, DataRepository, SearchResult } from "@/lib/services/types";
 import type {
   BlogPost,
   BuildingSummary,
@@ -249,6 +249,21 @@ function mapRpcVenue(row: Row): VenueSummary {
       webUrl: toString(delivery.webUrl, toString(delivery.web_url)),
       affiliateEligible: toBool(delivery.affiliateEligible ?? delivery.affiliate_eligible),
     })),
+  };
+}
+
+function mapBuildingDetail(row: Row): BuildingDetail {
+  const building = mapBuilding(row);
+  return {
+    ...building,
+    address: toString(row.address),
+    postalCode: toString(row.postal_code),
+    operatingHours: toString(row.operating_hours),
+    description: toString(row.description) || undefined,
+    famousDishes: toStringArray(row.famous_dishes),
+    totalStalls: toNumber(row.total_stalls, building.venueCount),
+    openStalls: toNumber(row.open_stalls),
+    avgRating: toNumber(row.avg_rating),
   };
 }
 
@@ -574,6 +589,75 @@ export async function getDishByIdViaRpc(dishId: string): Promise<DishDetail | un
 export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary | undefined> {
   const rows = await rpcRows("get_venue_detail", { p_venue_id: venueId });
   return rows?.[0] ? mapRpcVenue(rows[0]) : undefined;
+}
+
+export async function listBuildingsViaRpc(
+  lat?: number,
+  lng?: number,
+  radiusMeters?: number,
+): Promise<BuildingSummary[] | undefined> {
+  const hasLocation = typeof lat === "number" && typeof lng === "number";
+  const pageLimit = 100;
+  const maxPages = 5;
+  const rows: Row[] = [];
+  let cursorDistance: number | null = null;
+  let cursorId: string | null = null;
+
+  for (let page = 0; page < maxPages; page += 1) {
+    const pageRows = await rpcRows("list_buildings", {
+      p_lat: hasLocation ? lat : null,
+      p_lng: hasLocation ? lng : null,
+      p_radius_meters: hasLocation ? (radiusMeters ?? null) : null,
+      p_limit: pageLimit,
+      p_cursor_distance_meters: cursorDistance,
+      p_cursor_id: cursorId,
+    });
+    if (!pageRows) return undefined;
+    rows.push(...pageRows);
+    if (pageRows.length < pageLimit) break;
+    const last = pageRows[pageRows.length - 1];
+    cursorDistance = toNumber(last.cursor_distance_meters);
+    cursorId = toString(last.cursor_id);
+    if (!cursorId) break;
+  }
+
+  return rows.map(mapBuilding);
+}
+
+export async function getBuildingDetailViaRpc(
+  buildingId: string,
+): Promise<BuildingDetail | undefined> {
+  const rows = await rpcRows("get_building_detail", { p_building_id: buildingId });
+  return rows?.[0] ? mapBuildingDetail(rows[0]) : undefined;
+}
+
+export async function listVenuesByBuildingViaRpc(
+  buildingId: string,
+): Promise<VenueSummary[] | undefined> {
+  const pageLimit = 100;
+  const maxPages = 5;
+  const rows: Row[] = [];
+  let cursorFloorSort: number | null = null;
+  let cursorId: string | null = null;
+
+  for (let page = 0; page < maxPages; page += 1) {
+    const pageRows = await rpcRows("list_venues_by_building", {
+      p_building_id: buildingId,
+      p_open_now: null,
+      p_limit: pageLimit,
+      p_cursor_floor_sort: cursorFloorSort,
+      p_cursor_id: cursorId,
+    });
+    if (!pageRows) return undefined;
+    rows.push(...pageRows);
+    if (pageRows.length < pageLimit) break;
+    const last = pageRows[pageRows.length - 1];
+    cursorFloorSort = toNumber(last.cursor_floor_sort);
+    cursorId = toString(last.cursor_id);
+    if (!cursorId) break;
+  }
+
+  return rows.map(mapRpcVenue);
 }
 
 export async function listDishesByVenueViaRpc(venueId: string): Promise<DishDetail[] | undefined> {
