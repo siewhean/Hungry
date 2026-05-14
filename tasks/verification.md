@@ -15,6 +15,11 @@ Use the smallest check that matches the change risk.
 
 | date | scope | command | result | notes |
 |---|---|---|---|---|
+| 2026-05-15 | remote Supabase apply (DB-P0-01/DB-P0-02) | `supabase db push --yes -p "$SUPABASE_DB_PASSWORD"` | Pass | Used the provided env credentials; remote applied pending migrations `0023` through `0029`, including data import provenance foundation and server-side discovery read RPCs |
+| 2026-05-15 | remote Supabase apply (DB-P0-01/DB-P0-02) | `supabase db push --dry-run` | Pass | With `SUPABASE_ACCESS_TOKEN` from repo `.env.local`, linked remote reports `Remote database is up to date` |
+| 2026-05-15 | db foundation (DB-P0-01) | `supabase db query --linked -f supabase/smoke/database_foundation.sql -o table` | Pass | Linked smoke returned only `database_foundation_smoke_passed` |
+| 2026-05-15 | db read path (DB-P0-02) | `supabase db query --linked -f supabase/smoke/server_side_discovery_reads.sql -o table` | Pass | Linked smoke returned only `server_side_discovery_reads_smoke_passed` |
+| 2026-05-15 | extra linked smoke | `supabase db query --linked -f supabase/smoke/integration_readiness.sql` / `taste_recommendations.sql` | Blocked | Extra parallel smoke attempts hit Supabase pooler `ECIRCUITBREAKER` temporary auth-failure throttling; do not rerun in parallel |
 | 2026-05-15 | db read path (DB-P0-02) | `node --import tsx --test src/lib/services/supabase/server-side-discovery.test.ts` | Pass | 5/5 source-contract tests pass for RPC definitions, invoker security, app execute grants, cursor pagination, additive indexes, deferred-scope guards, service RPC-first wiring, and smoke SQL coverage |
 | 2026-05-15 | db read path (DB-P0-02) | `npm run typecheck` | Pass | Strict TypeScript gate passed after wiring Supabase discovery methods to RPC-first helpers |
 | 2026-05-15 | db read path (DB-P0-02) | `npm test` | Pass | 254 total tests: 252 pass, 2 skipped |
