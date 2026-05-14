@@ -51,6 +51,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "DishDetail",
   "DishDetailV2",
   "SearchHome",
+  "SearchHomeV2",
   "SearchResults",
   "BrowseDishes",
   "BrowseStalls",

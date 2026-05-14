@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "floorplan-validation-report.v1",
+  "buildingId": "hc-maxwell",
+  "floor": "L1",
+  "inputCandidateCount": 20,
+  "validatedCount": 2,
+  "unresolvedCount": 18,
+  "hardFailOverlapPairs": 0,
+  "unresolved": [
+    {
+      "id": "poly-004",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.47334000000000004
+    },
+    {
+      "id": "poly-005",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.49732000000000004
+    },
+    {
+      "id": "poly-006",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.46134000000000003
+    },
+    {
+      "id": "poly-007",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.48758
+    },
+    {
+      "id": "poly-008",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.47398
+    },
+    {
+      "id": "poly-009",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.48050000000000004
+    },
+    {
+      "id": "poly-010",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.46708
+    },
+    {
+      "id": "poly-011",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.4761
+    },
+    {
+      "id": "poly-012",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.47340000000000004
+    },
+    {
+      "id": "poly-013",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.46972
+    },
+    {
+      "id": "poly-017",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.46384000000000003
+    },
+    {
+      "id": "poly-020",
+      "reasons": [
+        "self_intersection",
+        "low_confidence"
+      ],
+      "confidence": 0.5535
+    },
+    {
+      "id": "poly-023",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.45768
+    },
+    {
+      "id": "poly-024",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.46112
+    },
+    {
+      "id": "poly-025",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.48578
+    },
+    {
+      "id": "poly-026",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.4509
+    },
+    {
+      "id": "poly-027",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.47638
+    },
+    {
+      "id": "poly-029",
+      "reasons": [
+        "low_confidence"
+      ],
+      "confidence": 0.46402000000000004
+    }
+  ]
+}

@@ -61,7 +61,7 @@ function pushIssue(issues: FixtureValidationIssue[], code: string, message: stri
 function validateUniqueIds(
   issues: FixtureValidationIssue[],
   label: string,
-  entities: Array<{ id: string }>,
+  entities: { id: string }[],
 ): void {
   const seen = new Set<string>();
   for (const entity of entities) {

@@ -97,7 +97,7 @@
     "@typescript/native-preview": "^7.0.0-dev.20260416.2",
     "babel-preset-expo": "~55.0.17",
     "eslint": "^9.0.0",
-    "eslint-config-expo": "~55.0.0",
+    "eslint-config-expo": "~55.0.1",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10",
     "patch-package": "^8.0.1",

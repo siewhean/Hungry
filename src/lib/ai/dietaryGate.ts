@@ -151,7 +151,7 @@ export function getViolatedRestrictions(
  * Get all available dietary flags with their bit positions.
  * Useful for debug views and data validation.
  */
-export function getAllFlagBits(): Array<{ flag: DietaryFlag; bit: number }> {
+export function getAllFlagBits(): { flag: DietaryFlag; bit: number }[] {
   return Object.entries(FLAG_BIT_MAP).map(([flag, bit]) => ({
     flag: flag as DietaryFlag,
     bit,

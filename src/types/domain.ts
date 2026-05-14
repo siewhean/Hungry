@@ -234,6 +234,7 @@ export interface UserProfile {
   dietaryPreferences: DietaryFlag[];
   favouriteDishIds: string[];
   reviewedDishIds: string[];
+  profileVisibility?: "public" | "private";
   stats: {
     dishesReviewed: number;
     stallsVisited: number;

@@ -25,6 +25,8 @@ import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
 
+const CommentIcon = MessageCircle ?? MessageCircleMore;
+
 interface BiteCardProps {
   bite: Bite;
   onPress?: () => void;
