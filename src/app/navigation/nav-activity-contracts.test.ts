@@ -52,7 +52,7 @@ test("bottom navigation puts create post in the center and review fourth", () =>
   assert.doesNotMatch(types, /Create: undefined/);
 });
 
-test("home bell opens a combined activity inbox with messages and updates", () => {
+test("home bell opens activity inbox and gates messages by feature flag", () => {
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
   const activity = read("src/app/screens/home/ActivityInboxScreen.tsx");
@@ -80,7 +80,7 @@ test("home bell opens a combined activity inbox with messages and updates", () =
   assert.match(activity, /type ActivityTab = "messages" \| "updates"/);
   assert.match(
     activity,
-    /FEATURE_FLAGS\.directMessagesEnabled \? \["messages", "updates"\] : \["updates"\]/,
+    /FEATURE_FLAGS\.directMessagesEnabled\s+\? \["messages", "updates"\]\s+: \["updates"\]/,
   );
   assert.match(activity, /route\.params\?\.initialTab === "messages"/);
   assert.match(activity, /getHungryService\(\)[\s\S]*\.chat[\s\S]*\.listConversations\(\)/);

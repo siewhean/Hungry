@@ -18,7 +18,7 @@ test("activity inbox hides message surfaces when direct messages are disabled", 
 
   assert.match(
     activity,
-    /FEATURE_FLAGS\.directMessagesEnabled \? \["messages", "updates"\] : \["updates"\]/,
+    /FEATURE_FLAGS\.directMessagesEnabled\s+\?\s+\["messages", "updates"\]\s+:\s+\["updates"\]/,
   );
   assert.match(activity, /route\.params\?\.initialTab === "messages"/);
   assert.match(activity, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);

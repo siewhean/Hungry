@@ -115,7 +115,7 @@ To override these locally, you can use `.env.development` or modify the constant
 | Expo Doctor | Passing with writable npm cache path |
 | Agent harness docs | Done |
 | Unit tests | Passing (`npm test`) |
-| Playwright E2E | Locally blocked by Expo Web non-interactive port prompt in this checkout; prior green runs are recorded in `tasks/verification.md` |
+| Playwright E2E | Passing when run with localhost access; Codex sandbox TCP bind needs elevated/local shell |
 
 ---
 
@@ -145,7 +145,7 @@ To override these locally, you can use `.env.development` or modify the constant
 - Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
 - Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and polygon-based building directory layouts (including Wisma and JEM mall-style floor overlays with vertical level switching).
 - **Design Specifications** — Comprehensive visual, UX, and accessibility specs for all remaining backlog items are now available in `docs/audit/`. These serve as the authoritative implementation guide for Batch 1–8.
-- Current audit status: `npm run typecheck` passes, `npm run lint` passes with 0 errors, `npm test -- --watch=false` passes, and `npx expo-doctor` passes (17/17) when run with a writable npm cache path. Local `npm run test:e2e` is currently blocked before app load by Expo Web's non-interactive port prompt; see `tasks/verification.md`.
+- Current audit status: `npm run typecheck` passes, `npm run lint` passes with 0 errors, `npm test -- --watch=false` passes, `npm run test:e2e -- --reporter=line` passes when run with localhost access, `npm run smoke:native:ios:prepared` passes on the prepared iOS simulator path, and `npx expo-doctor` passes (17/17) when run with a writable npm cache path; see `tasks/verification.md`.
 
 
 ## Commands

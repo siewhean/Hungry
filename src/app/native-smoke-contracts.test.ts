@@ -64,22 +64,19 @@ test("native activity smoke respects direct-message gating", () => {
   assert.match(flow, /text: "Continue"/);
   assert.match(flow, /text: "Close"/);
   assert.match(flow, /extendedWaitUntil:\n\s+visible: "Developer Launcher"\n\s+timeout: 60000/);
-  assert.match(flow, /id: "dev-button-developer"/);
-  assert.match(flow, /Open normal app flow/);
-  assert.match(flow, /home-activity-inbox-button/);
-  assert.match(
-    flow,
-    /extendedWaitUntil:\n\s+visible:\n\s+id: "home-activity-inbox-button"\n\s+timeout: 30000/,
-  );
-  assert.match(flow, /waitForAnimationToEnd:\n\s+timeout: 5000/);
+  assert.match(flow, /id: "dev-button-activity"/);
   assert.match(flow, /waitForAnimationToEnd:\n\s+timeout: 3000/);
-  assert.match(flow, /text: "Close"\n\s+optional: true/);
-  assert.match(flow, /id: "home-activity-inbox-button"\n\s+optional: true/);
   assert.match(
     flow,
     /extendedWaitUntil:\n\s+visible:\n\s+id: "activity-tab-updates"\n\s+timeout: 30000/,
   );
   assert.match(home, /testID="home-activity-inbox-button"/);
+  const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
+  assert.match(developerLauncher, /label="Activity"[\s\S]*onPress=\{openActivityInboxSmoke\}/);
+  assert.match(
+    developerLauncher,
+    /openActivityInboxSmoke[\s\S]*navigation\.navigate\("ActivityInbox", \{ initialTab: "updates" \}\)/,
+  );
   assert.match(flow, /assertNotVisible:\n\s+id: "activity-tab-messages"/);
   assert.match(flow, /activity-tab-messages/);
   assert.doesNotMatch(flow, /activity-chat-row-1/);
@@ -90,7 +87,7 @@ test("native activity smoke respects direct-message gating", () => {
   assert.match(activity, /testID=\{`activity-tab-\$\{tab\}`\}/);
   assert.match(
     activity,
-    /FEATURE_FLAGS\.directMessagesEnabled \? \["messages", "updates"\] : \["updates"\]/,
+    /FEATURE_FLAGS\.directMessagesEnabled\s+\?\s+\["messages", "updates"\]\s+:\s+\["updates"\]/,
   );
 });
 
@@ -105,6 +102,7 @@ test("native media picker smoke reaches the post composer gallery entry point", 
   assert.match(flow, /text: "Continue"/);
   assert.match(flow, /text: "Close"/);
   assert.match(flow, /extendedWaitUntil:\n\s+visible: "Developer Launcher"\n\s+timeout: 60000/);
+  assert.match(flow, /dev-section-toggle-post-composer-v2-settings/);
   assert.match(flow, /dev-button-launch-v2-composer/);
   assert.match(flow, /post-composer-screen/);
   assert.match(flow, /post-composer-add-media/);

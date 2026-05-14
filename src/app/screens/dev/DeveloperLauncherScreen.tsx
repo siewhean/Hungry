@@ -488,6 +488,18 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     navigation.navigate("MainTabs", { screen: "Home" });
   };
 
+  const openActivityInboxSmoke = () => {
+    setMockServiceProvider();
+    setDeveloperMerchantMode(true);
+    setMerchantAccount(null);
+    clearSession();
+    completeAuth();
+    completeOnboarding(false);
+    setReturnRoute(undefined);
+    hideReviewSuccess();
+    navigation.navigate("ActivityInbox", { initialTab: "updates" });
+  };
+
   const openBuilding = (buildingId: string) => {
     const building = getSingaporeBuildings().find((b) => b.id === buildingId);
     if (!building) return;
@@ -583,6 +595,11 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           variant="ghost"
           onPress={() => navigation.replace("Splash")}
           style={{ minHeight: 40 }}
+        />
+        <DevButton
+          label="Activity"
+          onPressIn={() => preloadRoute(navigation, "ActivityInbox", { initialTab: "updates" })}
+          onPress={openActivityInboxSmoke}
         />
 
         <CollapsibleSection

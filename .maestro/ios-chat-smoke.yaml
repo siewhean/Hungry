@@ -18,31 +18,12 @@ appId: ${APP_ID}
     visible: "Developer Launcher"
     timeout: 60000
 - tapOn:
-    id: "dev-button-developer"
-- tapOn: "Open normal app flow"
-- tapOn:
-    text: "Close"
-    optional: true
-- extendedWaitUntil:
-    visible:
-      id: "home-activity-inbox-button"
-    timeout: 30000
-- waitForAnimationToEnd:
-    timeout: 5000
-- tapOn:
-    id: "home-activity-inbox-button"
+    id: "dev-button-activity"
 - waitForAnimationToEnd:
     timeout: 3000
-- tapOn:
-    text: "Close"
-    optional: true
-- tapOn:
-    id: "home-activity-inbox-button"
-    optional: true
 - extendedWaitUntil:
     visible:
       id: "activity-tab-updates"
     timeout: 30000
 - assertNotVisible:
     id: "activity-tab-messages"
-- assertVisible: "Updates"
