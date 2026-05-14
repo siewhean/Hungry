@@ -2,9 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, TextInput, View, useWindowDimensions } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
-import { Bookmark, Heart, MessageCircle, MessageCircleMore, PlayCircle, Send } from "lucide-react-native";
-
-const CommentIcon = MessageCircle ?? MessageCircleMore;
+import {
+  Bookmark,
+  Heart,
+  MessageCircle,
+  MessageCircleMore,
+  PlayCircle,
+  Send,
+} from "lucide-react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -20,6 +25,8 @@ import { useActivityStore } from "@/store/useActivityStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useSocialStore, type SocialComment } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 type Props = NativeStackScreenProps<RootStackParamList, "ActivityPostDetail">;
 

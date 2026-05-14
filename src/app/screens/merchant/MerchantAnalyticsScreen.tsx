@@ -45,10 +45,10 @@ export function MerchantAnalyticsScreen() {
             <Skeleton height={32} width={80} borderRadius={radii.pill} />
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
-             <Skeleton height={100} width="47%" borderRadius={radii.lg} />
-             <Skeleton height={100} width="47%" borderRadius={radii.lg} />
-             <Skeleton height={100} width="47%" borderRadius={radii.lg} />
-             <Skeleton height={100} width="47%" borderRadius={radii.lg} />
+            <Skeleton height={100} width="47%" borderRadius={radii.lg} />
+            <Skeleton height={100} width="47%" borderRadius={radii.lg} />
+            <Skeleton height={100} width="47%" borderRadius={radii.lg} />
+            <Skeleton height={100} width="47%" borderRadius={radii.lg} />
           </View>
           <Skeleton height={200} borderRadius={radii.lg} />
         </View>
@@ -156,21 +156,45 @@ export function MerchantAnalyticsScreen() {
           </View>
 
           {/* Top Dishes */}
-          <View style={[styles.chartCard, { backgroundColor: palette.surface, borderColor: palette.border, borderRadius: radii.xl, padding: spacing[5] }]}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: spacing[4] }}>
+          <View
+            style={[
+              styles.chartCard,
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderRadius: radii.xl,
+                padding: spacing[5],
+              },
+            ]}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: spacing[4],
+              }}
+            >
               <Flame size={20} color={palette.orange} />
               <AppText variant="bodyBold">Top Performing Dishes</AppText>
             </View>
             <View style={{ gap: spacing[3] }}>
               {analytics.topDishes.map((dish, idx) => (
-                <View key={dish.dishId} style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-                  <AppText variant="bodyBold" style={{ width: 20, color: palette.textMuted }}>{idx + 1}</AppText>
+                <View
+                  key={dish.dishId}
+                  style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}
+                >
+                  <AppText variant="bodyBold" style={{ width: 20, color: palette.textMuted }}>
+                    {idx + 1}
+                  </AppText>
                   <View style={{ flex: 1 }}>
                     <AppText variant="bodyBold">{dish.name}</AppText>
                   </View>
                   <View style={{ alignItems: "flex-end" }}>
                     <AppText variant="bodySmallBold">{dish.views} views</AppText>
-                    <AppText variant="micro" tone="muted">{dish.saves} saves</AppText>
+                    <AppText variant="micro" tone="muted">
+                      {dish.saves} saves
+                    </AppText>
                   </View>
                 </View>
               ))}
@@ -178,8 +202,25 @@ export function MerchantAnalyticsScreen() {
           </View>
 
           {/* Customer Taste Tags */}
-          <View style={[styles.chartCard, { backgroundColor: palette.surface, borderColor: palette.border, borderRadius: radii.xl, padding: spacing[5] }]}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: spacing[4] }}>
+          <View
+            style={[
+              styles.chartCard,
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderRadius: radii.xl,
+                padding: spacing[5],
+              },
+            ]}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: spacing[4],
+              }}
+            >
               <Star size={20} color={palette.amber} />
               <AppText variant="bodyBold">Customer Taste Profile</AppText>
             </View>
@@ -198,8 +239,17 @@ export function MerchantAnalyticsScreen() {
                   }}
                 >
                   <AppText variant="bodySmallBold">{tagObj.tag}</AppText>
-                  <View style={{ backgroundColor: palette.surface, paddingHorizontal: 6, paddingVertical: 2, borderRadius: radii.pill }}>
-                    <AppText variant="micro" tone="muted">{tagObj.count}</AppText>
+                  <View
+                    style={{
+                      backgroundColor: palette.surface,
+                      paddingHorizontal: 6,
+                      paddingVertical: 2,
+                      borderRadius: radii.pill,
+                    }}
+                  >
+                    <AppText variant="micro" tone="muted">
+                      {tagObj.count}
+                    </AppText>
                   </View>
                 </View>
               ))}
@@ -207,8 +257,25 @@ export function MerchantAnalyticsScreen() {
           </View>
 
           {/* Peak Discovery Hours */}
-          <View style={[styles.chartCard, { backgroundColor: palette.surface, borderColor: palette.border, borderRadius: radii.xl, padding: spacing[5] }]}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: spacing[4] }}>
+          <View
+            style={[
+              styles.chartCard,
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderRadius: radii.xl,
+                padding: spacing[5],
+              },
+            ]}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: spacing[4],
+              }}
+            >
               <Clock size={20} color={palette.info} />
               <AppText variant="bodyBold">Peak Discovery Hours</AppText>
             </View>

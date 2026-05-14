@@ -1,9 +1,38 @@
+diff --git a/node_modules/react-native-tab-view/lib/module/SceneView.js b/node_modules/react-native-tab-view/lib/module/SceneView.js
+index 4880e9b..e037192 100644
+--- a/node_modules/react-native-tab-view/lib/module/SceneView.js
++++ b/node_modules/react-native-tab-view/lib/module/SceneView.js
+@@ -14,11 +14,12 @@ export function SceneView({
+   style
+ }) {
+   const [isLoading, setIsLoading] = React.useState(Math.abs(navigationState.index - index) > lazyPreloadDistance);
+-  if (isLoading && Math.abs(navigationState.index - index) <= lazyPreloadDistance) {
+-    // Always render the route when it becomes focused
+-    setIsLoading(false);
+-  }
+   React.useEffect(() => {
++    if (isLoading && Math.abs(navigationState.index - index) <= lazyPreloadDistance) {
++      // Always render the route when it becomes focused
++      setIsLoading(false);
++    }
++
+     const handleEnter = value => {
+       // If we're entering the current route, we need to load it
+       if (value === index) {
+@@ -44,7 +45,7 @@ export function SceneView({
+       unsubscribe?.();
+       clearTimeout(timer);
+     };
+-  }, [addEnterListener, index, isLoading, lazy]);
++  }, [addEnterListener, index, isLoading, lazy, navigationState.index, lazyPreloadDistance]);
+   const focused = navigationState.index === index;
+   return /*#__PURE__*/_jsx(View, {
+     "aria-hidden": !focused,
 diff --git a/node_modules/react-native-tab-view/src/SceneView.tsx b/node_modules/react-native-tab-view/src/SceneView.tsx
-index 8f9d5de..5f7e8f3 100644
+index f03cc96..114521a 100644
 --- a/node_modules/react-native-tab-view/src/SceneView.tsx
 +++ b/node_modules/react-native-tab-view/src/SceneView.tsx
-@@ -24,11 +24,10 @@ export function SceneView<T extends Route>({
-   const [isLoading, setIsLoading] = React.useState(
+@@ -32,15 +32,15 @@ export function SceneView<T extends Route>({
      Math.abs(navigationState.index - index) > lazyPreloadDistance
    );
  
@@ -27,37 +56,9 @@ index 8f9d5de..5f7e8f3 100644
      const handleEnter = (value: number) => {
        // If we're entering the current route, we need to load it
        if (value === index) {
-         setIsLoading((prevState) => {
-@@ -58,7 +62,7 @@ export function SceneView<T extends Route>({
-     return () => {
+@@ -69,4 +69,4 @@ export function SceneView<T extends Route>({
        unsubscribe?.();
        clearTimeout(timer);
      };
 -  }, [addEnterListener, index, isLoading, lazy]);
 +  }, [addEnterListener, index, isLoading, lazy, navigationState.index, lazyPreloadDistance]);
-diff --git a/node_modules/react-native-tab-view/lib/module/SceneView.js b/node_modules/react-native-tab-view/lib/module/SceneView.js
-index ff1a8f2..a2b5f31 100644
---- a/node_modules/react-native-tab-view/lib/module/SceneView.js
-+++ b/node_modules/react-native-tab-view/lib/module/SceneView.js
-@@ -6,9 +6,9 @@ export function SceneView({
-   const [isLoading, setIsLoading] = React.useState(Math.abs(navigationState.index - index) > lazyPreloadDistance);
--  if (isLoading && Math.abs(navigationState.index - index) <= lazyPreloadDistance) {
--    // Always render the route when it becomes focused
--    setIsLoading(false);
--  }
-   React.useEffect(() => {
-+    if (isLoading && Math.abs(navigationState.index - index) <= lazyPreloadDistance) {
-+      // Always render the route when it becomes focused
-+      setIsLoading(false);
-+    }
-+
-     const handleEnter = value => {
-       // If we're entering the current route, we need to load it
-       if (value === index) {
-@@ -29,7 +32,7 @@ export function SceneView({
-       unsubscribe?.();
-       clearTimeout(timer);
-     };
--  }, [addEnterListener, index, isLoading, lazy]);
-+  }, [addEnterListener, index, isLoading, lazy, navigationState.index, lazyPreloadDistance]);
-*** End Patch

@@ -205,10 +205,7 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
               );
             })
           ) : (
-            <EmptyState
-              title="No matches found"
-              body={`No ${currentCuisineLabel} dishes found.`}
-            />
+            <EmptyState title="No matches found" body={`No ${currentCuisineLabel} dishes found.`} />
           )}
         </Animated.View>
 

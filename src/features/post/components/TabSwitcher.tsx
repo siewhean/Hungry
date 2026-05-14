@@ -12,13 +12,23 @@ export function TabSwitcher() {
   const setActiveTab = useComposerStore((state) => state.setActiveTab);
 
   return (
-    <View style={[styles.container, { 
-      backgroundColor: palette.bg, 
-      borderBottomColor: palette.border,
-      paddingHorizontal: semanticSpacing.screenEdge,
-      paddingVertical: semanticSpacing.inlineGaps
-    }]}>
-      <View style={[styles.inner, { backgroundColor: palette.bgSoft, borderRadius: radii.pill, padding: 4 }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: palette.bg,
+          borderBottomColor: palette.border,
+          paddingHorizontal: semanticSpacing.screenEdge,
+          paddingVertical: semanticSpacing.inlineGaps,
+        },
+      ]}
+    >
+      <View
+        style={[
+          styles.inner,
+          { backgroundColor: palette.bgSoft, borderRadius: radii.pill, padding: 4 },
+        ]}
+      >
         <View
           style={[
             styles.indicatorContainer,
@@ -31,8 +41,8 @@ export function TabSwitcher() {
             },
           ]}
         />
-        <Pressable 
-          style={styles.tab} 
+        <Pressable
+          style={styles.tab}
           onPress={() => {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setActiveTab("post");
@@ -40,13 +50,16 @@ export function TabSwitcher() {
         >
           <AppText
             variant="bodyBold"
-            style={{ color: activeTab === "post" ? palette.orange : palette.textMuted, fontSize: 13 }}
+            style={{
+              color: activeTab === "post" ? palette.orange : palette.textMuted,
+              fontSize: 13,
+            }}
           >
             POST
           </AppText>
         </Pressable>
-        <Pressable 
-          style={styles.tab} 
+        <Pressable
+          style={styles.tab}
           onPress={() => {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             setActiveTab("review");
@@ -54,7 +67,10 @@ export function TabSwitcher() {
         >
           <AppText
             variant="bodyBold"
-            style={{ color: activeTab === "review" ? palette.orange : palette.textMuted, fontSize: 13 }}
+            style={{
+              color: activeTab === "review" ? palette.orange : palette.textMuted,
+              fontSize: 13,
+            }}
           >
             REVIEW
           </AppText>

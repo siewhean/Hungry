@@ -256,7 +256,9 @@ export function MerchantSettingsScreen() {
             </AppText>
           </View>
 
-          <View style={[styles.settingRow, { borderBottomColor: palette.border, padding: spacing[4] }]}>
+          <View
+            style={[styles.settingRow, { borderBottomColor: palette.border, padding: spacing[4] }]}
+          >
             <View style={{ flex: 1, paddingRight: spacing[3] }}>
               <AppText variant="bodyBold">New Reviews</AppText>
               <AppText variant="bodySmall" tone="muted">
@@ -270,7 +272,9 @@ export function MerchantSettingsScreen() {
             />
           </View>
 
-          <View style={[styles.settingRow, { borderBottomColor: palette.border, padding: spacing[4] }]}>
+          <View
+            style={[styles.settingRow, { borderBottomColor: palette.border, padding: spacing[4] }]}
+          >
             <View style={{ flex: 1, paddingRight: spacing[3] }}>
               <AppText variant="bodyBold">Low Rating Alerts</AppText>
               <AppText variant="bodySmall" tone="muted">
@@ -284,7 +288,9 @@ export function MerchantSettingsScreen() {
             />
           </View>
 
-          <View style={[styles.settingRow, { borderBottomColor: palette.border, padding: spacing[4] }]}>
+          <View
+            style={[styles.settingRow, { borderBottomColor: palette.border, padding: spacing[4] }]}
+          >
             <View style={{ flex: 1, paddingRight: spacing[3] }}>
               <AppText variant="bodyBold">Weekly Digest</AppText>
               <AppText variant="bodySmall" tone="muted">

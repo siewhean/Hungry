@@ -64,7 +64,17 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
 
   return (
     <Screen scroll={false} fullWidth>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing[2], paddingVertical: spacing[3], borderBottomWidth: 1, borderBottomColor: palette.border }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: spacing[2],
+          paddingVertical: spacing[3],
+          borderBottomWidth: 1,
+          borderBottomColor: palette.border,
+        }}
+      >
         <IconButton
           icon={<ArrowLeft size={20} color={palette.text} />}
           onPress={() => navigation.goBack()}
@@ -95,7 +105,10 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         <AppText variant="h3" style={{ color: palette.text, marginBottom: spacing[2] }}>
           Location Privacy
         </AppText>
-        <AppText variant="bodySmall" style={{ color: palette.textSecondary, marginBottom: spacing[4] }}>
+        <AppText
+          variant="bodySmall"
+          style={{ color: palette.textSecondary, marginBottom: spacing[4] }}
+        >
           How should your location appear on the map?
         </AppText>
 
@@ -126,7 +139,19 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         >
           Menu & Food Photos
         </AppText>
-        <Card style={[{ alignItems: "center", justifyContent: "center", padding: spacing[8], borderWidth: 1, borderStyle: "dashed", marginTop: spacing[2] }, { borderColor: palette.border }]}>
+        <Card
+          style={[
+            {
+              alignItems: "center",
+              justifyContent: "center",
+              padding: spacing[8],
+              borderWidth: 1,
+              borderStyle: "dashed",
+              marginTop: spacing[2],
+            },
+            { borderColor: palette.border },
+          ]}
+        >
           <Camera size={32} color={palette.textSecondary} />
           <AppText style={{ color: palette.orange, marginTop: spacing[2], fontWeight: "bold" }}>
             Tap to Upload
@@ -150,12 +175,20 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
           Food Safety & Guidelines
         </AppText>
 
-        <AppText variant="bodySmall" style={{ color: palette.textSecondary, marginBottom: spacing[2] }}>
+        <AppText
+          variant="bodySmall"
+          style={{ color: palette.textSecondary, marginBottom: spacing[2] }}
+        >
           Hungry requires all home-based food businesses to comply with the Singapore Food Agency
           (SFA) guidelines for Home-Based Food Businesses.
         </AppText>
 
-        <View style={[{ flexDirection: "row", alignItems: "flex-start", marginBottom: spacing[8] }, { marginTop: spacing[6] }]}>
+        <View
+          style={[
+            { flexDirection: "row", alignItems: "flex-start", marginBottom: spacing[8] },
+            { marginTop: spacing[6] },
+          ]}
+        >
           <IconButton
             icon={
               safetyChecked ? (
@@ -177,7 +210,10 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
       </ScrollView>
 
       <View
-        style={[{ padding: spacing[4], borderTopWidth: 1, paddingBottom: 32 }, { borderTopColor: palette.border, backgroundColor: palette.bg }]}
+        style={[
+          { padding: spacing[4], borderTopWidth: 1, paddingBottom: 32 },
+          { borderTopColor: palette.border, backgroundColor: palette.bg },
+        ]}
       >
         <Button
           label="Submit Verification"

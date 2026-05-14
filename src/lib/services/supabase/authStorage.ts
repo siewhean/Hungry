@@ -31,7 +31,11 @@ const META_SUFFIX = ".cmeta";
 
 type SecureStoreLike = {
   getItemAsync: (key: string) => Promise<string | null>;
-  setItemAsync: (key: string, value: string, options?: { keychainAccessible?: unknown }) => Promise<void>;
+  setItemAsync: (
+    key: string,
+    value: string,
+    options?: { keychainAccessible?: unknown },
+  ) => Promise<void>;
   deleteItemAsync: (key: string) => Promise<void>;
   AFTER_FIRST_UNLOCK?: unknown;
 };

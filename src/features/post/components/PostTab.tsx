@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 import { View, StyleSheet, ScrollView, Pressable, Switch } from "react-native";
-import { 
-  Music, 
-  Sparkles, 
-  Calendar, 
-  Eye, 
-  Megaphone, 
-  Tag, 
+import {
+  Music,
+  Sparkles,
+  Calendar,
+  Eye,
+  Megaphone,
+  Tag,
   BarChart3,
   TrendingUp,
   Clock,
   ChevronRight,
-  X
+  X,
 } from "lucide-react-native";
 import { AppText, Input, Card, Badge, IconButton, Button, Dialog } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -33,13 +33,24 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
   const setShowPreview = useComposerStore((state) => state.setShowPreview);
   const isBusinessMode = useComposerStore((state) => state.isBusinessMode);
 
-  const [dialogConfig, setDialogConfig] = useState<{ visible: boolean; title: string; message: string } | null>(null);
+  const [dialogConfig, setDialogConfig] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+  } | null>(null);
 
   return (
-    <View style={[styles.container, { padding: semanticSpacing.screenEdge, gap: semanticSpacing.componentGap }]}>
+    <View
+      style={[
+        styles.container,
+        { padding: semanticSpacing.screenEdge, gap: semanticSpacing.componentGap },
+      ]}
+    >
       {/* Caption Section */}
       <View style={styles.section}>
-        <AppText variant="bodyBold" style={{ marginBottom: semanticSpacing.inlineGaps }}>Caption</AppText>
+        <AppText variant="bodyBold" style={{ marginBottom: semanticSpacing.inlineGaps }}>
+          Caption
+        </AppText>
         <Input
           multiline
           numberOfLines={6}
@@ -57,7 +68,18 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
 
         {/* Sync Toggle */}
         {reviewCaption.length > 0 && (
-          <View style={[styles.syncBar, { backgroundColor: palette.orangeLight, borderRadius: radii.md, marginTop: semanticSpacing.componentGap, paddingHorizontal: semanticSpacing.screenEdge, paddingVertical: semanticSpacing.inlineGaps }]}>
+          <View
+            style={[
+              styles.syncBar,
+              {
+                backgroundColor: palette.orangeLight,
+                borderRadius: radii.md,
+                marginTop: semanticSpacing.componentGap,
+                paddingHorizontal: semanticSpacing.screenEdge,
+                paddingVertical: semanticSpacing.inlineGaps,
+              },
+            ]}
+          >
             <AppText variant="micro" style={{ color: palette.orange, fontWeight: "700", flex: 1 }}>
               USE SAME CAPTION AS REVIEW
             </AppText>
@@ -77,11 +99,11 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
         onPress={onOpenMusic}
         style={({ pressed }) => [
           styles.interactiveRow,
-          { 
-            backgroundColor: pressed ? palette.surfaceRaised : palette.surface, 
+          {
+            backgroundColor: pressed ? palette.surfaceRaised : palette.surface,
             borderRadius: radii.lg,
             paddingHorizontal: spacing.xl,
-            paddingVertical: spacing.lg
+            paddingVertical: spacing.lg,
           },
         ]}
       >
@@ -100,8 +122,8 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: spacing["2"] }}>
           {musicId && (
-            <IconButton 
-              icon={<X size={14} color={palette.textMuted} />} 
+            <IconButton
+              icon={<X size={14} color={palette.textMuted} />}
               accessibilityLabel="Remove music"
               onPress={() => useComposerStore.getState().setMusic(null)}
               style={{ width: 24, height: 24, padding: 0 }}
@@ -114,25 +136,35 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
       {/* Business Features */}
       {isBusinessMode && (
         <View style={styles.section}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: semanticSpacing.inlineGaps, marginBottom: semanticSpacing.componentGap }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: semanticSpacing.inlineGaps,
+              marginBottom: semanticSpacing.componentGap,
+            }}
+          >
             <Megaphone size={18} color={palette.navy} />
             <AppText variant="bodyBold">Business & Promotions</AppText>
           </View>
-          
+
           <View style={{ gap: semanticSpacing.inlineGaps }}>
             <Pressable
               onPress={() => setIsSponsored(!isSponsored)}
               style={[
                 styles.toggleRow,
-                { 
-                  backgroundColor: isSponsored ? palette.orangeLight : palette.bgSoft, 
+                {
+                  backgroundColor: isSponsored ? palette.orangeLight : palette.bgSoft,
                   borderRadius: radii.md,
                   paddingHorizontal: semanticSpacing.componentGap,
-                  paddingVertical: semanticSpacing.inlineGaps
+                  paddingVertical: semanticSpacing.inlineGaps,
                 },
               ]}
             >
-              <AppText variant="bodySmallBold" style={{ color: isSponsored ? palette.orange : palette.text }}>
+              <AppText
+                variant="bodySmallBold"
+                style={{ color: isSponsored ? palette.orange : palette.text }}
+              >
                 Sponsored Label
               </AppText>
               <Badge label={isSponsored ? "ON" : "OFF"} tone={isSponsored ? "orange" : "neutral"} />
@@ -148,17 +180,25 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
               }}
               style={[
                 styles.toggleRow,
-                { 
-                  backgroundColor: palette.bgSoft, 
+                {
+                  backgroundColor: palette.bgSoft,
                   borderRadius: radii.md,
                   paddingHorizontal: semanticSpacing.componentGap,
-                  paddingVertical: semanticSpacing.inlineGaps
+                  paddingVertical: semanticSpacing.inlineGaps,
                 },
               ]}
             >
               <AppText variant="bodySmallBold">Add CTA Button</AppText>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: semanticSpacing.textStack }}>
-                <AppText variant="micro" tone="muted">None</AppText>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: semanticSpacing.textStack,
+                }}
+              >
+                <AppText variant="micro" tone="muted">
+                  None
+                </AppText>
                 <ChevronRight size={14} color={palette.textMuted} />
               </View>
             </Pressable>

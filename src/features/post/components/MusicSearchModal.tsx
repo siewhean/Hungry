@@ -223,7 +223,7 @@ export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
             styles.listContent,
             { paddingBottom: spacing[12], paddingVertical: spacing[2] },
           ]}
-        style={{ flex: 1, paddingHorizontal: semanticSpacing.screenEdge }}
+          style={{ flex: 1, paddingHorizontal: semanticSpacing.screenEdge }}
           ListEmptyComponent={
             <EmptyState
               title="No tracks found"

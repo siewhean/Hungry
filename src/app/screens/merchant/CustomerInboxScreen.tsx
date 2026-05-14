@@ -18,7 +18,16 @@ import {
   X,
 } from "lucide-react-native";
 
-import { AppText, Button, IconButton, Chip, Screen, Avatar, Skeleton, EmptyState } from "@/components/ui";
+import {
+  AppText,
+  Button,
+  IconButton,
+  Chip,
+  Screen,
+  Avatar,
+  Skeleton,
+  EmptyState,
+} from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -275,7 +284,12 @@ function InteractionCard({
     <View
       style={[
         styles.interactionCard,
-        { backgroundColor: palette.surface, borderColor: palette.border, borderRadius: radii.lg, padding: spacing[4] },
+        {
+          backgroundColor: palette.surface,
+          borderColor: palette.border,
+          borderRadius: radii.lg,
+          padding: spacing[4],
+        },
       ]}
     >
       <View
@@ -323,7 +337,12 @@ function InteractionCard({
         <View
           style={[
             styles.replyBox,
-            { backgroundColor: palette.bgSoft, borderRadius: radii.md, padding: spacing[3], marginTop: spacing[2] },
+            {
+              backgroundColor: palette.bgSoft,
+              borderRadius: radii.md,
+              padding: spacing[3],
+              marginTop: spacing[2],
+            },
           ]}
         >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
@@ -502,15 +521,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  summaryCard: {
-  },
+  summaryCard: {},
   interactionCard: {
     borderWidth: 1,
   },
-  replyBox: {
-  },
-  composer: {
-  },
+  replyBox: {},
+  composer: {},
   input: {
     height: 120,
     borderWidth: 1,

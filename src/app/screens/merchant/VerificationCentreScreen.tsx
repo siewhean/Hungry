@@ -204,7 +204,13 @@ function MethodCard({
       onPress={onPress}
       disabled={isLoading}
       style={[
-        { flexDirection: "row", alignItems: "center", padding: spacing[4], borderWidth: 1, gap: spacing[4] },
+        {
+          flexDirection: "row",
+          alignItems: "center",
+          padding: spacing[4],
+          borderWidth: 1,
+          gap: spacing[4],
+        },
         {
           backgroundColor: palette.surface,
           borderColor: palette.border,
@@ -213,7 +219,10 @@ function MethodCard({
       ]}
     >
       <View
-        style={[{ width: 48, height: 48, alignItems: "center", justifyContent: "center" }, { backgroundColor: palette.bgSoft, borderRadius: radii.md }]}
+        style={[
+          { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
+          { backgroundColor: palette.bgSoft, borderRadius: radii.md },
+        ]}
       >
         {icon}
       </View>

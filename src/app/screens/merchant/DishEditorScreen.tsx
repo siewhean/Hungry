@@ -235,7 +235,10 @@ export function DishEditorScreen() {
             Dish Picture
           </AppText>
           {imageUrl.trim() ? (
-            <Image source={{ uri: imageUrl.trim() }} style={[styles.imagePreview, { borderRadius: radii.md, marginBottom: spacing[3] }]} />
+            <Image
+              source={{ uri: imageUrl.trim() }}
+              style={[styles.imagePreview, { borderRadius: radii.md, marginBottom: spacing[3] }]}
+            />
           ) : null}
           <TextInput
             style={[

@@ -199,7 +199,7 @@ export function VenueDirectoryScreen({ route, navigation }: Props) {
                     </AppText>
                   </View>
                   <ChevronRight size={16} color={palette.border} />
-            </Pressable>
+                </Pressable>
               ))
             ) : (
               <EmptyState

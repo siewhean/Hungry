@@ -55,8 +55,14 @@ export function PostComposerScreen({ navigation, route }: Props) {
 
   if (!dish) {
     return (
-      <Screen title="Create post" subtitle="Share a quick dish update without turning the app into a creator platform.">
-        <EmptyState title="No dish available" body="Try opening the composer from a dish or stall and try again." />
+      <Screen
+        title="Create post"
+        subtitle="Share a quick dish update without turning the app into a creator platform."
+      >
+        <EmptyState
+          title="No dish available"
+          body="Try opening the composer from a dish or stall and try again."
+        />
       </Screen>
     );
   }

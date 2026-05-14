@@ -521,6 +521,13 @@ Use the smallest check that matches the change risk.
 | 2026-05-14 | app (FDO-READY-01 Runtime Harness Follow-up) | `npm test -- --watch=false` | Pass | Full Node/source-contract suite passed with 243 tests total: 241 passing and 2 skipped after updating stale direct-message-disabled Activity tab assertions |
 | 2026-05-14 | app (FDO-READY-01 Runtime Harness Follow-up) | `npm run test:e2e -- --reporter=line` | Pass | Full Playwright web/mobile-browser suite passed 21/21 when run with localhost access. Sandboxed local TCP bind still fails with `EPERM`, so this gate needs elevated/local shell access in Codex. |
 | 2026-05-14 | app (FDO-READY-01 Runtime Harness Follow-up) | `npm run smoke:native:ios:prepared` | Pass | Prepared Maestro smoke passed on the iPhone 17 Pro iOS 26.1 simulator after routing the Activity smoke through a Developer Launcher shortcut and expanding the Post Composer V2 Settings section before the media-picker flow |
+| 2026-05-15 | app (PR-29 GitHub checks fix) | `npm ci` | Pass | Clean install now applies both patch-package patches, including regenerated `react-native-tab-view@4.3.0`, and reports 0 vulnerabilities |
+| 2026-05-15 | app (PR-29 GitHub checks fix) | `npm run typecheck` | Pass | Strict TypeScript gate passed after dependency patch updates and CI formatting cleanup |
+| 2026-05-15 | app (PR-29 GitHub checks fix) | `npm run lint` | Pass | ESLint completed with 0 errors and 33 warnings; warnings are existing import-order/unused-disable debt |
+| 2026-05-15 | app (PR-29 GitHub checks fix) | `npm run format:check` | Pass | Prettier check passed after formatting the merged source files that CI flagged |
+| 2026-05-15 | app (PR-29 GitHub checks fix) | `npm run test` | Pass | Full Node/source-contract suite passed with 243 tests total: 241 passing and 2 skipped |
+| 2026-05-15 | app (PR-29 GitHub checks fix) | `npm audit --audit-level=moderate` | Pass | npm audit found 0 vulnerabilities |
+| 2026-05-15 | app (PR-29 GitHub checks fix) | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor` | Pass | Expo Doctor passed 17/17 after upgrading the required Expo SDK 55 patch versions |
 
 ## Outstanding Verification
 

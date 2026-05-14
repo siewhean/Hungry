@@ -104,8 +104,15 @@ export function PromotionListScreen() {
 
         <View style={{ gap: spacing[4], paddingBottom: 100 }}>
           {filteredPromotions.length === 0 && !isLoading ? (
-            <View style={[styles.emptyContainer, { paddingTop: spacing[8], paddingHorizontal: spacing[8] }]}>
-              <View style={[styles.emptyIcon, { backgroundColor: palette.bgSoft, borderRadius: 40 }]}>
+            <View
+              style={[
+                styles.emptyContainer,
+                { paddingTop: spacing[8], paddingHorizontal: spacing[8] },
+              ]}
+            >
+              <View
+                style={[styles.emptyIcon, { backgroundColor: palette.bgSoft, borderRadius: 40 }]}
+              >
                 <Target size={40} color={palette.textMuted} />
               </View>
               <AppText variant="bodyBold" style={{ marginTop: spacing[4] }}>
@@ -196,7 +203,11 @@ export function PromotionListScreen() {
                   <View
                     style={[
                       styles.analyticsBox,
-                      { backgroundColor: palette.bgSoft, borderRadius: radii.md, padding: spacing[3] },
+                      {
+                        backgroundColor: palette.bgSoft,
+                        borderRadius: radii.md,
+                        padding: spacing[3],
+                      },
                     ]}
                   >
                     <View
@@ -263,8 +274,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  analyticsBox: {
-  },
+  analyticsBox: {},
   statItem: {
     alignItems: "center",
     flex: 1,

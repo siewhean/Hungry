@@ -145,7 +145,12 @@ export function AIAssistantScreen() {
           </AppText>
 
           {insights.length === 0 && !isLoading ? (
-            <View style={[styles.emptyContainer, { borderColor: palette.border, borderRadius: radii.xl, padding: spacing[8] }]}>
+            <View
+              style={[
+                styles.emptyContainer,
+                { borderColor: palette.border, borderRadius: radii.xl, padding: spacing[8] },
+              ]}
+            >
               <CheckCircle2 size={48} color={palette.success} />
               <AppText variant="bodyBold" style={{ marginTop: spacing[3] }}>
                 You&apos;re all set!
@@ -224,7 +229,13 @@ export function AIAssistantScreen() {
                       onPress={() => handleInsightAction(insight.actionTarget)}
                       style={[
                         styles.actionButton,
-                        { borderColor: palette.border, marginLeft: 48, borderRadius: radii.pill, paddingVertical: spacing[2], paddingHorizontal: spacing[3] },
+                        {
+                          borderColor: palette.border,
+                          marginLeft: 48,
+                          borderRadius: radii.pill,
+                          paddingVertical: spacing[2],
+                          paddingHorizontal: spacing[3],
+                        },
                       ]}
                     >
                       <AppText variant="bodySmallBold">{insight.actionLabel}</AppText>

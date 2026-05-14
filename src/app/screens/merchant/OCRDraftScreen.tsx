@@ -184,7 +184,10 @@ export function OCRDraftScreen() {
               </View>
 
               {draft.sourcePhotoUrl ? (
-                <Image source={{ uri: draft.sourcePhotoUrl }} style={[styles.sourceImage, { borderRadius: radii.md, marginBottom: spacing[3] }]} />
+                <Image
+                  source={{ uri: draft.sourcePhotoUrl }}
+                  style={[styles.sourceImage, { borderRadius: radii.md, marginBottom: spacing[3] }]}
+                />
               ) : null}
 
               {draft.suggestedDescription && (

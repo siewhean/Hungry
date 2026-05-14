@@ -1,13 +1,13 @@
 import { Pressable, ScrollView, View } from "react-native";
 import { MessageCircle, MessageCircleMore } from "lucide-react-native";
 
-const CommentIcon = MessageCircle ?? MessageCircleMore;
-
 import { BiteCard } from "@/components/social/BiteCard";
 import { AppText, EmptyState, Skeleton } from "@/components/ui";
 import type { Bite } from "@/lib/services/types";
 import { useSocialStore, type InteractionState } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 export type ReviewBitesLoadingState = "ready" | "pending" | "skeleton";
 
@@ -138,20 +138,20 @@ export function ReviewBitesStrip({
             );
           })}
         </ScrollView>
-  ) : (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Open ${dishName} to add the first bite`}
-      onPress={onPressDish}
-      style={{ borderRadius: radii.md, backgroundColor: palette.bgSoft }}
-    >
-      <EmptyState
-        title="No bites yet"
-        body={`No bites yet for ${dishName}. Tap through to start one.`}
-        icon={<CommentIcon size={36} color={palette.textMuted} />}
-      />
-    </Pressable>
-  )}
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${dishName} to add the first bite`}
+          onPress={onPressDish}
+          style={{ borderRadius: radii.md, backgroundColor: palette.bgSoft }}
+        >
+          <EmptyState
+            title="No bites yet"
+            body={`No bites yet for ${dishName}. Tap through to start one.`}
+            icon={<CommentIcon size={36} color={palette.textMuted} />}
+          />
+        </Pressable>
+      )}
     </View>
   );
 }

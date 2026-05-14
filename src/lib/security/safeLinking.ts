@@ -46,7 +46,11 @@ export async function openTrustedBlogUrl(url: string): Promise<void> {
   }
 }
 
-export async function openTrustedDeliveryUrl(platform: string, nativeUrl: string, webUrl: string): Promise<void> {
+export async function openTrustedDeliveryUrl(
+  platform: string,
+  nativeUrl: string,
+  webUrl: string,
+): Promise<void> {
   const normalizedPlatform = platform.toLowerCase();
   const allowedNativeSchemes = ALLOWED_DELIVERY_SCHEMES[normalizedPlatform] ?? new Set<string>();
   const allowedWebHosts = ALLOWED_DELIVERY_HOSTS[normalizedPlatform] ?? new Set<string>();
