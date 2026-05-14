@@ -15,6 +15,14 @@ Use the smallest check that matches the change risk.
 
 | date | scope | command | result | notes |
 |---|---|---|---|---|
+| 2026-05-15 | db read path (DB-P0-02) | `node --import tsx --test src/lib/services/supabase/server-side-discovery.test.ts` | Pass | 5/5 source-contract tests pass for RPC definitions, invoker security, app execute grants, cursor pagination, additive indexes, deferred-scope guards, service RPC-first wiring, and smoke SQL coverage |
+| 2026-05-15 | db read path (DB-P0-02) | `npm run typecheck` | Pass | Strict TypeScript gate passed after wiring Supabase discovery methods to RPC-first helpers |
+| 2026-05-15 | db read path (DB-P0-02) | `npm test` | Pass | 254 total tests: 252 pass, 2 skipped |
+| 2026-05-15 | db read path (DB-P0-02) | `git diff --check` | Pass | Touched migration, smoke SQL, tests, service files, and task docs have no whitespace errors |
+| 2026-05-15 | db read path (DB-P0-02) | `gitleaks protect --staged --redact` | Pass | Staged changes scanned; no leaks found |
+| 2026-05-15 | db read path (DB-P0-02) | `supabase db push --dry-run` | Blocked | Linked CLI still fails with `Access token not provided`; no `SUPABASE_ACCESS_TOKEN` is available in this shell |
+| 2026-05-15 | db read path (DB-P0-02) | `supabase db query --linked -f supabase/smoke/server_side_discovery_reads.sql` | Blocked | Linked smoke could not run because no Supabase access token is available |
+| 2026-05-15 | db read path (DB-P0-02) | `supabase db reset --local` | Blocked | Escalated retry reached Docker, but Docker daemon is not running: `Cannot connect to the Docker daemon` |
 | 2026-05-15 | db foundation (DB-P0-01) | `node --import tsx --test src/lib/services/supabase/database-foundation.test.ts` | Pass | 6/6 source-contract tests pass for additive-only migration, canonical text ID references, RLS coverage, service-role-only policies, required indexes, deferred-scope guards, and smoke SQL coverage |
 | 2026-05-15 | db foundation (DB-P0-01) | `npm run typecheck` | Pass | Strict TypeScript gate passed after adding the database foundation source contract |
 | 2026-05-15 | db foundation (DB-P0-01) | `npm test` | Pass | 249 total tests: 247 pass, 2 skipped |

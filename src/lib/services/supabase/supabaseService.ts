@@ -11,7 +11,12 @@ import {
 } from "@/lib/ai/tasteEngine";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import {
+  getDishByIdViaRpc,
+  getVenueByIdViaRpc,
+  listDishesByVenueViaRpc,
+  listPopularNearbyViaRpc,
   refreshSupabaseRepositoryCache,
+  searchDishesViaRpc,
   supabaseRepository,
 } from "@/lib/services/supabase/supabaseRepository";
 import { getSupabaseClient } from "@/lib/services/supabase/client";
@@ -2020,7 +2025,7 @@ export const supabaseService: HungryService = {
     },
 
     async getVenue(id) {
-      return supabaseRepository.getVenueById(id);
+      return (await getVenueByIdViaRpc(id)) ?? supabaseRepository.getVenueById(id);
     },
 
     async listVenuesByBuilding(buildingId) {
@@ -2028,18 +2033,22 @@ export const supabaseService: HungryService = {
     },
 
     async getDish(id) {
-      return supabaseRepository.getDishById(id);
+      return (await getDishByIdViaRpc(id)) ?? supabaseRepository.getDishById(id);
     },
 
     async listDishesByVenue(venueId) {
-      return supabaseRepository.listDishesByVenue(venueId);
+      return (
+        (await listDishesByVenueViaRpc(venueId)) ?? supabaseRepository.listDishesByVenue(venueId)
+      );
     },
 
-    async listPopularNearby() {
-      return supabaseRepository.listPopularNearby();
+    async listPopularNearby(lat, lng) {
+      return (await listPopularNearbyViaRpc(lat, lng)) ?? supabaseRepository.listPopularNearby();
     },
 
     async searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]> {
+      const rpcResults = await searchDishesViaRpc(filters, tasteProfile);
+      if (rpcResults) return rpcResults;
       const results = supabaseRepository.searchDishes(filters, tasteProfile);
       return results.map((dish) => ({
         dish,
