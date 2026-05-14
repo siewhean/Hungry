@@ -27,6 +27,8 @@
     "smoke:native:ios:media:prepared": "node scripts/prepare-maestro-smoke.mjs ios-media",
     "seed:generate": "tsx scripts/seed/generateSeedSQL.ts",
     "data:enrich": "python3 scripts/enrich_food_business_workbook.py",
+    "data:sheet:import": "python3 scripts/import_to_sheet.py",
+    "data:quota:pin:both": "python3 scripts/pin_places_quota_dual_accounts.py",
     "lint": "eslint src/ --ext .ts,.tsx",
     "lint:fix": "eslint src/ --ext .ts,.tsx --fix",
     "format": "prettier --write src/",

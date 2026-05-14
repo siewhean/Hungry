@@ -1,0 +1,183 @@
+.section {
+  background:
+    radial-gradient(circle at 85% 25%, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent 30%),
+    linear-gradient(180deg, var(--color-bg-warm) 0%, var(--color-white) 100%);
+  border-top: 1px solid var(--color-border);
+  overflow: clip;
+  padding: var(--space-32) 0;
+}
+
+.grid {
+  align-items: center;
+  display: grid;
+  gap: var(--space-14);
+}
+
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+  }
+}
+
+.copy {
+  max-width: 680px;
+}
+
+.eyebrow {
+  color: var(--color-primary);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-4);
+  text-transform: uppercase;
+}
+
+.copy h2 {
+  color: var(--color-text-primary);
+  font-size: clamp(2.5rem, 5vw, 5.25rem);
+  line-height: 0.98;
+  margin-bottom: var(--space-5);
+}
+
+.copy p {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-lg);
+  line-height: 1.6;
+}
+
+.steps {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-9) 0;
+}
+
+.stepButton {
+  align-items: center;
+  background-color: color-mix(in srgb, var(--color-white) 90%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: auto 1fr;
+  padding: var(--space-4) var(--space-5);
+  text-align: left;
+  transition:
+    background-color var(--duration-medium) var(--ease-out),
+    border-color var(--duration-medium) var(--ease-out),
+    color var(--duration-medium) var(--ease-out),
+    transform var(--duration-medium) var(--ease-out);
+}
+
+.stepButton:hover,
+.stepButton.active {
+  background-color: var(--color-white);
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border));
+  color: var(--color-text-primary);
+  transform: translateX(var(--space-2));
+}
+
+.stepButton span {
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.stepButton strong {
+  font-size: var(--font-size-lg);
+}
+
+.cta {
+  align-items: center;
+  background-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  color: var(--color-white);
+  display: inline-flex;
+  font-weight: 900;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  text-decoration: none;
+  transition:
+    background-color var(--duration-medium) var(--ease-out),
+    transform var(--duration-medium) var(--ease-out);
+}
+
+.cta:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-2px);
+}
+
+.visual {
+  min-height: 620px;
+  position: relative;
+}
+
+.visualBackdrop {
+  background:
+    linear-gradient(135deg, var(--color-ink-deep), color-mix(in srgb, var(--color-primary) 30%, var(--color-plum-shadow)));
+  border-radius: var(--radius-3xl);
+  inset: 10% 0 8% 18%;
+  position: absolute;
+  transform: rotate(-3deg);
+}
+
+.screenWrap {
+  display: grid;
+  gap: var(--space-5);
+  inset: var(--space-10) var(--space-6);
+  position: absolute;
+}
+
+.caption {
+  align-items: center;
+  background-color: color-mix(in srgb, var(--color-white) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text-primary);
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+}
+
+.caption svg {
+  color: var(--color-primary);
+  flex: 0 0 auto;
+}
+
+.caption p {
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+@media (max-width: 720px) {
+  .visual {
+    min-height: 500px;
+  }
+
+  .visualBackdrop {
+    inset: 8% 4% 6%;
+  }
+
+  .screenWrap {
+    inset: var(--space-8) var(--space-4);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stepButton,
+  .cta {
+    transition: none;
+  }
+
+  .stepButton:hover,
+  .stepButton.active,
+  .cta:hover {
+    transform: none;
+  }
+}

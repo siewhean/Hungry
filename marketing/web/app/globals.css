@@ -7,20 +7,16 @@
   --font-mono: var(--font-mono), monospace;
 
   /* Hungry brand colors */
-  --color-hungry-orange: #E8531E;
-  --color-hungry-orange-dark: #C43E10;
-  --color-hungry-orange-light: #FFF1E6;
-  --color-hungry-amber: #F5A623;
-  --color-hungry-amber-light: #FFF3DB;
-  --color-hungry-navy: #1A2E44;
-  --color-hungry-bg: #FFFFFF;
-  --color-hungry-bg-soft: #FFF7EE;
+  --color-hungry-bg: #FFF7EE;
   --color-hungry-surface: #FFFFFF;
-  --color-hungry-text: #111827;
-  --color-hungry-text-secondary: #374151;
-  --color-hungry-text-muted: #6B7280;
+  --color-hungry-bg-soft: #F8EFE4;
+  --color-hungry-text: #1A2E44;
+  --color-hungry-text-secondary: #41566F;
   --color-hungry-border: #E7DED4;
+  --color-hungry-orange: #E8531E;
   --color-hungry-red: #CD0302;
+  --color-hungry-amber: #F5A623;
+  --color-hungry-teal: #14B8A6;
   --color-hungry-green: #4F7E17;
 
   /* Border radius */

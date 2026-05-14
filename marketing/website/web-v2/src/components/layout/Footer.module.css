@@ -1,0 +1,106 @@
+.footerWrapper {
+  background:
+    radial-gradient(circle at 10% 20%, color-mix(in srgb, var(--color-primary) 16%, transparent), transparent 34%),
+    linear-gradient(140deg, var(--color-text-primary), var(--color-ink-deep) 58%, var(--color-plum-shadow));
+  color: var(--color-white);
+  padding: var(--space-16) 0 var(--space-8);
+  margin-top: auto;
+}
+
+.footer {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-10);
+}
+
+@media (min-width: 768px) {
+  .footer {
+    grid-template-columns: minmax(16rem, 0.9fr) 2fr;
+    align-items: start;
+  }
+}
+
+.brandInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.logo {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: clamp(1.75rem, 3vw, 2.4rem);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+}
+
+.logoText {
+  letter-spacing: 0;
+  color: var(--color-primary);
+}
+
+.tagline {
+  color: color-mix(in srgb, var(--color-white) 74%, transparent);
+  max-width: 19rem;
+  font-size: var(--font-size-sm);
+  line-height: 1.7;
+}
+
+.links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-8);
+}
+
+.linkGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.linkGroupTitle {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.05em;
+  color: color-mix(in srgb, var(--color-white) 92%, transparent);
+}
+
+.link {
+  color: color-mix(in srgb, var(--color-white) 70%, transparent);
+  font-size: var(--font-size-sm);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.link:hover {
+  color: var(--color-primary);
+  transform: translateX(3px);
+}
+
+.bottomBar {
+  margin-top: var(--space-12);
+  padding-top: var(--space-6);
+  border-top: 1px solid color-mix(in srgb, var(--color-white) 14%, transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: color-mix(in srgb, var(--color-white) 62%, transparent);
+}
+
+@media (min-width: 768px) {
+  .bottomBar {
+    flex-direction: row;
+  }
+}
+
+@media (max-width: 680px) {
+  .links {
+    grid-template-columns: 1fr;
+  }
+}
