@@ -8,8 +8,6 @@
 import { Pressable, View, StyleSheet } from "react-native";
 import { Image } from "expo-image";
 import { Bookmark, Heart, MessageCircle, MessageCircleMore } from "lucide-react-native";
-
-const CommentIcon = MessageCircle ?? MessageCircleMore;
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   runOnJS,
