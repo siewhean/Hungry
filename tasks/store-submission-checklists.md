@@ -5,7 +5,7 @@
 
 ## APPLE-02 — App Store Metadata + Review Notes Checklist
 
-Owner: User
+Owner: User  
 Status: Open (external App Store Connect actions required)
 
 - [ ] App name, subtitle, keywords, and description match shipped app behavior and wording.
@@ -28,7 +28,7 @@ Evidence target:
 
 ## PRIV-01 — Privacy Policy Linkage Requirements (Apple + Google)
 
-Owner: User
+Owner: User  
 Status: Open (external store listing and public URL actions required)
 
 - [ ] A public privacy policy URL exists, is reachable without auth, and is stable.
@@ -43,7 +43,7 @@ Evidence target:
 
 ## PLAY-01 — Play Data Safety + Account Deletion URL Checklist
 
-Owner: User
+Owner: User  
 Status: Open (external Play Console actions required)
 
 - [ ] Play Console Data Safety form matches actual app data collection/use/sharing.

@@ -334,7 +334,8 @@ export function BusinessProfileEditorScreen() {
           <View style={{ flexDirection: "row", gap: spacing[4] }}>
             <View style={{ flex: 1, gap: spacing[2] }}>
               <AppText variant="bodyBold">Profile Image</AppText>
-              <TouchableOpacity
+              <View
+                accessibilityLabel="Profile image upload unavailable"
                 style={{
                   height: 100,
                   backgroundColor: palette.bgSoft,
@@ -345,17 +346,17 @@ export function BusinessProfileEditorScreen() {
                   alignItems: "center",
                   justifyContent: "center",
                 }}
-                onPress={() => Alert.alert("Upload", "Photo upload coming soon")}
               >
                 <Camera size={24} color={palette.textMuted} />
                 <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
-                  Add Photo
+                  Image URL only
                 </AppText>
-              </TouchableOpacity>
+              </View>
             </View>
             <View style={{ flex: 1, gap: spacing[2] }}>
               <AppText variant="bodyBold">Cover Image</AppText>
-              <TouchableOpacity
+              <View
+                accessibilityLabel="Cover image upload unavailable"
                 style={{
                   height: 100,
                   backgroundColor: palette.bgSoft,
@@ -366,13 +367,12 @@ export function BusinessProfileEditorScreen() {
                   alignItems: "center",
                   justifyContent: "center",
                 }}
-                onPress={() => Alert.alert("Upload", "Cover upload coming soon")}
               >
                 <ImageIcon size={24} color={palette.textMuted} />
                 <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
-                  Add Cover
+                  Image URL only
                 </AppText>
-              </TouchableOpacity>
+              </View>
             </View>
           </View>
         </View>

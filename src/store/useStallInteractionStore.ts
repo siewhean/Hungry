@@ -12,8 +12,9 @@
 
 import { create } from "zustand";
 import { getDataRepository } from "@/lib/services/serviceProvider";
-import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useFoodCredStore } from "./useFoodCredStore";
+import { trackStallSaved, trackStallMarkedTried } from "@/lib/analytics/gamificationEvents";
+import { withinCredCutoff } from "@/constants/gamificationLimits";
 import type { StallInteraction } from "@/types/domain";
 
 // ─── State Interface ──────────────────────────────────────────────────────────
@@ -92,14 +93,18 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
     }));
 
     if (!wasSaved) {
-      // Award cred only when saving (not unsaving)
-      await useFoodCredStore.getState().awardPoints("stall_saved", stallId);
+      // Rate-limit: count today's saves
+      const todaySaveCount = Object.values(get().interactions).filter(
+        (i) => i.isSaved && i.savedAt && isToday(i.savedAt),
+      ).length;
+      if (withinCredCutoff("stall_saved", todaySaveCount)) {
+        await useFoodCredStore.getState().awardPoints("stall_saved", stallId);
+      }
     }
 
-    trackAnalyticsEvent(wasSaved ? "stall_unsaved" : "stall_saved", {
-      stall_id: stallId,
-      source_screen: "stall_detail",
-    });
+    if (!wasSaved) {
+      trackStallSaved({ stallId, sourceScreen: "StallDetail" });
+    }
 
     // TODO (production): supabase.from('user_stall_interactions').upsert({ user_id: userId, stall_id: stallId, is_saved: !wasSaved })
   },
@@ -124,12 +129,15 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
       interactions: { ...state.interactions, [stallId]: updated },
     }));
 
-    await useFoodCredStore.getState().awardPoints("stall_marked_tried", stallId);
+    // Rate-limit: count today's tried marks
+    const todayTriedCount = Object.values(get().interactions).filter(
+      (i) => i.isTried && i.triedAt && isToday(i.triedAt),
+    ).length;
+    if (withinCredCutoff("stall_marked_tried", todayTriedCount)) {
+      await useFoodCredStore.getState().awardPoints("stall_marked_tried", stallId);
+    }
 
-    trackAnalyticsEvent("stall_marked_tried", {
-      stall_id: stallId,
-      source_screen: "stall_detail",
-    });
+    trackStallMarkedTried({ stallId, sourceScreen: "StallDetail" });
 
     // TODO (production): supabase.from('user_stall_interactions').upsert({ ..., is_tried: true, tried_at: now })
   },
@@ -160,3 +168,16 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
 
   _reset: () => set({ interactions: {}, isLoaded: false }),
 }));
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Returns true when an ISO timestamp falls within today (Singapore UTC+8). */
+function isToday(isoString: string): boolean {
+  const d = new Date(isoString);
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+}

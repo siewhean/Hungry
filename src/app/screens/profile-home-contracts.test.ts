@@ -18,7 +18,8 @@ test("profile home contract: quick access lives behind the header menu", () => {
     source,
     /accessibilityLabel=\{menuOpen \? "Close quick access" : "Open quick access"\}/,
   );
-  assert.match(source, /recipients=\{shareRecipients\}/);
+  assert.match(source, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
+  assert.match(source, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
   assert.match(source, /toChatShareRecipient/);
   assert.doesNotMatch(source, /ACTIVITY_MESSAGES/);
   assert.doesNotMatch(source, /Your established list-based profile/);

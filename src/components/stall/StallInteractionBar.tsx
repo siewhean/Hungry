@@ -42,22 +42,28 @@ export function StallInteractionBar({
   async function handleSave() {
     if (savingInProgress) return;
     setSavingInProgress(true);
-    Haptics.selectionAsync();
-    await toggleSaved(userId, stallId);
-    if (!isSaved) {
-      // Just saved (not unsaved) — count toward missions
-      await incrementProgress(userId, "save_stalls");
+    try {
+      Haptics.selectionAsync();
+      await toggleSaved(userId, stallId);
+      if (!isSaved) {
+        // Just saved (not unsaved) — count toward missions
+        await incrementProgress(userId, "save_stalls");
+      }
+    } finally {
+      setSavingInProgress(false);
     }
-    setSavingInProgress(false);
   }
 
   async function handleTried() {
     if (isTried || tryingInProgress) return;
     setTryingInProgress(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await markTried(userId, stallId);
-    await incrementProgress(userId, "mark_tried");
-    setTryingInProgress(false);
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      await markTried(userId, stallId);
+      await incrementProgress(userId, "mark_tried");
+    } finally {
+      setTryingInProgress(false);
+    }
   }
 
   const actions: {
@@ -86,13 +92,17 @@ export function StallInteractionBar({
       loading: tryingInProgress,
       disabled: isTried,
     },
-    {
-      id: "collection",
-      label: "Add to List",
-      icon: ListPlus,
-      active: false,
-      onPress: onAddToCollection ?? (() => {}),
-    },
+    ...(onAddToCollection
+      ? [
+          {
+            id: "collection",
+            label: "Add to List",
+            icon: ListPlus,
+            active: false,
+            onPress: onAddToCollection,
+          },
+        ]
+      : []),
   ];
 
   return (

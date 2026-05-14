@@ -18,6 +18,7 @@ module.exports = defineConfig([
       "coverage/**",
       "store-layout-editor/**",
       "figma-plugin/**",
+      "marketing/website/web-v2/**",
       "ios/**",
       "android/**",
     ],

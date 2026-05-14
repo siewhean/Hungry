@@ -261,7 +261,6 @@ def run_passes(payload: dict[str, Any]) -> dict[str, Any]:
 
     dedupe_keys_seen: dict[str, dict[str, Any]] = {}
     updates: list[dict[str, Any]] = []
-    geo_diff_flagged_rows: list[dict[str, Any]] = []
     counters = UsageCounters()
     low_confidence_samples: list[dict[str, Any]] = []
     max_low_confidence_samples = int(payload.get("max_low_confidence_samples", 20))
@@ -462,13 +461,12 @@ def run_passes(payload: dict[str, Any]) -> dict[str, Any]:
                     add_update(index, "AL", prior["display_name"])
                 if prior.get("formatted_address"):
                     add_update(index, "AM", prior["formatted_address"])
-                if prior.get("geo_override"):
-                    if prior.get("g_lat") is not None:
-                        add_update(index, "AN", prior["g_lat"])
-                    if prior.get("g_lng") is not None:
-                        add_update(index, "AO", prior["g_lng"])
-                    if prior.get("primary_type"):
-                        add_update(index, "AP", prior["primary_type"])
+                if prior.get("g_lat") is not None:
+                    add_update(index, "AN", prior["g_lat"])
+                if prior.get("g_lng") is not None:
+                    add_update(index, "AO", prior["g_lng"])
+                if prior.get("primary_type"):
+                    add_update(index, "AP", prior["primary_type"])
                 if prior.get("maps_uri"):
                     add_update(index, "AQ", prior["maps_uri"])
                 enriched += 1
@@ -655,35 +653,15 @@ def run_passes(payload: dict[str, Any]) -> dict[str, Any]:
         g_lng = location.get("longitude")
         primary_type = clean_text(best.get("primaryType"))
         maps_uri = clean_text(best.get("googleMapsUri"))
-        geo_override = False
-        geo_distance_m = None
-        if lat_f is not None and lng_f is not None and g_lat is not None and g_lng is not None:
-            try:
-                geo_distance_m = haversine_m(lat_f, lng_f, float(g_lat), float(g_lng))
-                geo_override = geo_distance_m >= 120.0
-            except Exception:
-                geo_distance_m = None
-                geo_override = False
 
         add_update(index, "AK", chosen_place_id)
         add_update(index, "AL", display_name)
         add_update(index, "AM", formatted_address)
-        if geo_override:
-            if g_lat is not None:
-                add_update(index, "AN", g_lat)
-            if g_lng is not None:
-                add_update(index, "AO", g_lng)
-            add_update(index, "AP", primary_type)
-            geo_diff_flagged_rows.append(
-                {
-                    "row": start_row + index,
-                    "distanceM": round(float(geo_distance_m or 0.0), 2),
-                    "existingLatitude": lat_f,
-                    "existingLongitude": lng_f,
-                    "googleLatitude": g_lat,
-                    "googleLongitude": g_lng,
-                }
-            )
+        if g_lat is not None:
+            add_update(index, "AN", g_lat)
+        if g_lng is not None:
+            add_update(index, "AO", g_lng)
+        add_update(index, "AP", primary_type)
         add_update(index, "AQ", maps_uri)
         enriched += 1
 
@@ -703,7 +681,6 @@ def run_passes(payload: dict[str, Any]) -> dict[str, Any]:
                 "g_lng": g_lng,
                 "primary_type": primary_type,
                 "maps_uri": maps_uri,
-                "geo_override": geo_override,
             }
 
     spend = estimate_usd_spend(counters)
@@ -727,7 +704,6 @@ def run_passes(payload: dict[str, Any]) -> dict[str, Any]:
         },
         "estimated_spend_usd": spend,
         "low_confidence_samples": low_confidence_samples,
-        "geo_diff_flagged_rows": geo_diff_flagged_rows,
     }
 
 

@@ -28,6 +28,7 @@ export function ProfileScreenShell({
       subtitle={subtitle}
       headerRight={headerRight}
       showBack={showBack}
+      headerGap={spacing[3]}
       contentContainerStyle={{ paddingTop: 0 }}
       scroll
     >

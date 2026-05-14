@@ -234,15 +234,47 @@ Rules:
 <claude-mem-context>
 # Memory Context
 
-# [Hungry] recent context, 2026-04-22 9:50pm GMT+8
+# [Hungry] recent context, 2026-05-06 6:27pm GMT+8
 
-Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision
+Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 21 obs (6,407t read) | 213,856t work | 97% savings
+Stats: 50 obs (18,343t read) | 335,260t work | 95% savings
 
+### Apr 8, 2026
+48 8:53p 🔵 Wisma Atria F&B stores include floor location data; Paragon uses microsite CPT
+49 8:56p 🔵 Link REIT mall item IDs not exposed in HTML source code
+50 8:58p 🔵 Link REIT malls expose JSON API with store metadata; other malls lack JSON APIs
+51 9:02p 🟣 Created normalized Wisma Atria F&B dataset with 32 stores
+52 9:03p 🔵 Alternative data access methods found for non-WordPress malls
+53 " 🔵 Suntec GraphQL is false positive; store APIs require parameters; sitemaps are viable
+54 9:04p 🔵 Store directory pages do not call /api/stores endpoints during page load
+55 9:05p 🔵 Mall store directories use server-side rendering, not client-side JSON APIs
+56 " 🔵 Store detail pages contain unit numbers, opening hours, and floor levels in HTML text
+57 9:06p 🟣 Implemented async sitemap scraper for 313 Somerset, Parkway Parade, and VivoCity
+58 9:07p 🟣 Successfully scraped 309 F&B stores from 313 Somerset, Parkway Parade, and VivoCity
+59 9:10p 🟣 Link REIT mall scraper for AMK Hub and Jurong Point
+60 " 🔵 F&B dataset spans 17 malls with 936 tenants
+61 9:11p 🔵 VivoCity scraper name extraction bug causes 156 missing records
+62 " 🔵 VivoCity store name extraction fix using title and og:title tags
+63 9:15p 🔴 Fixed VivoCity parser and rebuilt unified F&B dataset
+64 9:23p 🔵 Link REIT mall data availability mapped via pagination and HTML scraping
+### Apr 9, 2026
+68 1:19a 🔵 Domain Model and Data Contracts for Food-Tech Marketplace
+69 10:53a 🔵 security_reminder_hook.py fails due to unquoted $CLAUDE_PLUGIN_ROOT variable with spaces in path
+70 " 🔵 V2 database architecture designed for Hungry food-discovery app (PostgreSQL + PostGIS + pgvector stack)
+71 " 🔴 Fixed security_reminder_hook.py command invocation by quoting $CLAUDE_PLUGIN_ROOT variable
+72 10:55a 🔵 Vercel CLI upgrade failed due to missing pnpm global bin directory configuration
+73 " ✅ Upgraded Vercel CLI to latest version using npm after pnpm global bin configuration issue
 ### Apr 17, 2026
+127 2:01p 🔵 PR #19 merged to main, sprint-8-folding-cleanup branch behind
+128 2:03p ✅ Sprint 8 documentation consolidation and lint tooling added
+129 2:06p ✅ Sprint 7 completed with navigation refactor and mock service layer
+130 " ✅ Sprint planning audit branch created from main
+131 2:07p 🔵 Sprint 6 error boundary coverage completed, README documentation incomplete
+132 " 🔵 Sprint 8 implementation mostly complete but offline connectivity listener missing
+133 2:08p 🔵 Sprint 5/6/8 comprehensive audit completed against merged codebase
 136 2:59p 🔵 Dual radar chart implementations found in codebase
 ### Apr 18, 2026
 137 2:01p 🔴 Removed undefined bindReactNativeFactory call from iOS AppDelegate
@@ -254,18 +286,18 @@ Stats: 21 obs (6,407t read) | 213,856t work | 97% savings
 150 4:45p 🔵 Git index lock creation blocked by file system permissions
 151 4:46p 🔵 Git index lock creation blocked by file system permissions
 152 4:47p 🔵 iOS Simulator unavailable due to incorrect xcode-select path
-153 4:52p 🔵 iOS Simulator unavailable due to incorrect xcode-select path
-154 " 🔴 Disabled C++ advanced features in fmt library to fix iOS build
+154 4:52p 🔴 Disabled C++ advanced features in fmt library to fix iOS build
 157 4:55p ✅ CocoaPods installation completed with New Architecture and fmt workaround
 160 4:59p ✅ Suppressed invalid constexpr warnings in iOS C++ build
-161 5:01p ✅ Suppressed invalid constexpr warnings in iOS C++ build
-162 " ✅ Extended C++17 standard to RCT-Folly pod target
+162 5:01p ✅ Extended C++17 standard to RCT-Folly pod target
 164 5:02p 🔵 Root cause traced to fmt::basic_format_string consteval errors in RCT-Folly
 167 5:11p 🔵 iOS build fails due to ambiguous Expo module import access level
 168 5:12p 🔴 Fixed ambiguous Expo import by removing internal access modifier
 170 5:20p 🔴 Fixed app crash by binding ReactNativeFactory to ExpoAppDelegate
+### Apr 19, 2026
+171 4:25p 🔵 expo-secure-store package missing from node_modules
 ### Apr 22, 2026
 172 4:25a 🔵 Sprint 5 QA/QC verification run reveals test tooling failure and mock imports in Supabase repository
 
-Access 214k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 335k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

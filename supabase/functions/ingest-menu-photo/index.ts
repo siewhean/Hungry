@@ -18,12 +18,7 @@ const BASE_CORS_HEADERS = {
 
 function getAllowedOrigins(): Set<string> {
   const raw = Deno.env.get("INGEST_MENU_PHOTO_ALLOWED_ORIGINS") ?? "";
-  return new Set(
-    raw
-      .split(",")
-      .map((origin) => origin.trim())
-      .filter(Boolean),
-  );
+  return new Set(raw.split(",").map((origin) => origin.trim()).filter(Boolean));
 }
 
 function resolveAllowedOrigin(request: Request, allowedOrigins: Set<string>): string | null {
@@ -263,9 +258,7 @@ Deno.serve(async (request) => {
 
   const { data: submission, error: submissionError } = await client
     .from("menu_photo_submissions")
-    .select(
-      "id, venue_id, building_id, submitted_by, storage_bucket, storage_path, ocr_attempts, ocr_status",
-    )
+    .select("id, venue_id, building_id, submitted_by, storage_bucket, storage_path, ocr_attempts, ocr_status")
     .eq("id", submissionId)
     .maybeSingle();
   if (submissionError || !submission) {

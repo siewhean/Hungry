@@ -10,7 +10,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Ported from src/theme/tokens.ts — single source of truth + Vibrant Heritage Colors
+        // Ported from src/theme/tokens.ts — single source of truth
         hungry: {
           orange: "#E8531E",
           "orange-dark": "#CD0302",
@@ -26,11 +26,6 @@ const config: Config = {
           "text-secondary": "#41566F",
           "text-muted": "#6F7D8D",
           border: "#E7DED4",
-          // Vibrant Heritage Extensions
-          "chili-red": "#D32F2F",
-          ochre: "#D4AF37",
-          "heritage-white": "#FDFBF7",
-          "night-market": "#0B0C10",
         },
         "hungry-dark": {
           bg: "#0D0F14",
@@ -44,8 +39,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ["var(--font-display)", "sans-serif"],
-        body: ["var(--font-body)", "sans-serif"],
+        display: ["Fraunces", "Georgia", "serif"],
+        body: ["Nunito", "system-ui", "sans-serif"],
         mono: ["DM Mono", "monospace"],
       },
       borderRadius: {
@@ -57,8 +52,6 @@ const config: Config = {
         "gradient-orange": "linear-gradient(135deg, #E8531E 0%, #F5A623 100%)",
         "gradient-orange-soft": "linear-gradient(135deg, #FFF1E6 0%, #FFF3DB 100%)",
         "gradient-dark": "linear-gradient(135deg, #0D0F14 0%, #1A2E44 100%)",
-        "gradient-radial-wash":
-          "radial-gradient(circle at center, rgba(232, 83, 30, 0.15) 0%, rgba(11, 12, 16, 0.8) 100%)",
       },
       animation: {
         "fade-up": "fadeUp 0.6s ease-out forwards",

@@ -4,6 +4,7 @@ import { getDataRepository, getHungryService } from "@/lib/services/serviceProvi
 import type { DataRepository } from "@/lib/services/types";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import type { DishDetail, StallPost, VenueSummary } from "@/types/domain";
 import { useComposerStore, type MediaItem } from "./useComposerStore";
@@ -91,7 +92,12 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
   const repository = getDataRepository();
   const service = getHungryService();
   const state = useComposerStore.getState();
-  const profile = useProfileStore.getState().profile;
+  const storedProfile = useProfileStore.getState().profile;
+  const guestProfile = repository.getProfile(false);
+  const profile =
+    useSessionStore.getState().isAuthenticated && storedProfile.id === guestProfile.id
+      ? repository.getProfile(true)
+      : storedProfile;
   const { dish, venue } = resolvePublishTarget(repository, options);
   const media = resolveMedia(state.media, dish.imageUrl);
   const caption = state.postCaption.trim() || state.reviewCaption.trim() || dish.name;

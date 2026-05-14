@@ -44,8 +44,6 @@ const FILTER_OPTIONS: { id: FilterMode; label: string }[] = [
   { id: "location", label: "By Location" },
 ];
 
-const CommentIcon = MessageCircle ?? MessageCircleMore;
-
 // ─── StarRow ─────────────────────────────────────────────────────────────────
 
 function StarRow({ rating, size = 12 }: { rating: number; size?: number }) {
@@ -84,6 +82,7 @@ function ReviewCard({
   onLikePress: (reviewId: string) => void;
 }) {
   const { palette, radii, spacing, shadows, typography } = useHungryTheme();
+  const CommentIcon = MessageCircle ?? MessageCircleMore;
   const { width } = useWindowDimensions();
   const hasPhoto = item.review.photos.length > 0;
   const reviewDate = new Date(item.review.createdAt).toLocaleDateString("en-SG", {

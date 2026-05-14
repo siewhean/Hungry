@@ -55,12 +55,12 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
     source,
     /accessibilityLabel=\{`Share \$\{item\.dishes\[0\]\?\.name \?\? item\.venue\.name\} in Hungry`\}/,
   );
-  assert.match(source, /Share in Hungry/);
+  assert.match(source, /directMessagesEnabled \? "Share in Hungry" : "Share post"/);
   assert.match(source, /FloatingShareSendButton/);
   assert.match(source, /selectedCount=\{selectedShareChatIds\.length\}/);
   assert.match(source, /accessibilityLabel="Send shared post"/);
   assert.doesNotMatch(source, /showSendAction/);
-  assert.match(source, /recipients=\{shareRecipients\}/);
+  assert.match(source, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
   assert.match(source, /toChatShareRecipient/);
   assert.doesNotMatch(source, /ACTIVITY_MESSAGES/);
   assert.match(source, /recipientAccessibilityLabelPrefix="Share post to"/);
@@ -290,10 +290,6 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
     source,
     /type Props = NativeStackScreenProps<RootStackParamList, "DishDetail" \| "DishDetailV2">/,
   );
-  assert.match(
-    source,
-    /const popularDishes = useMemo\(\(\) => repository\.listPopularNearby\(\), \[repository\]\)/,
-  );
   assert.match(source, /buildDishGallery\(dish\)/);
   assert.match(source, /function formatBasePrice\(price: number\)/);
   assert.match(source, /formatBasePrice\(dish\.price\)/);
@@ -309,7 +305,9 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /Opening Hours/);
   assert.match(source, /Signature Dishes/);
   assert.match(source, /From the Community/);
-  assert.match(source, /\.\.\.supplementalDishes/);
+  assert.match(source, /const venueDishes = useMemo/);
+  assert.match(source, /getSignatureDishes\(dish, venueDishes\)/);
+  assert.doesNotMatch(source, /supplementalDishes/);
   assert.match(source, /const signatureGridItemWidth = width \/ 2/);
   assert.match(source, /const signatureGridItemHeight = signatureGridItemWidth \* 1\.5/);
   assert.match(source, /marginHorizontal: -spacing\[4\]/);

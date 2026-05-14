@@ -1,0 +1,122 @@
+.section {
+  background: var(--color-bg-warm);
+  padding: var(--space-32) 0;
+}
+
+.card {
+  align-items: center;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-ink-deep) 96%, var(--color-primary)), var(--color-plum-shadow));
+  border-radius: var(--radius-3xl);
+  box-shadow: var(--shadow-xl);
+  color: var(--color-white);
+  display: grid;
+  gap: var(--space-10);
+  overflow: hidden;
+  padding: clamp(var(--space-9), 6vw, var(--space-18));
+  position: relative;
+}
+
+.card::after {
+  background:
+    radial-gradient(circle at 80% 30%, color-mix(in srgb, var(--color-primary) 32%, transparent), transparent 24%),
+    radial-gradient(circle at 18% 75%, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent 20%);
+  content: '';
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+@media (min-width: 900px) {
+  .card {
+    grid-template-columns: 1fr auto;
+  }
+}
+
+.copy,
+.actions {
+  position: relative;
+  z-index: 1;
+}
+
+.eyebrow {
+  color: color-mix(in srgb, var(--color-white) 72%, var(--color-primary));
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-4);
+  text-transform: uppercase;
+}
+
+.copy h2 {
+  font-size: clamp(2.6rem, 5.5vw, 5.5rem);
+  line-height: 0.98;
+  margin-bottom: var(--space-5);
+  max-width: 860px;
+}
+
+.copy p {
+  color: color-mix(in srgb, var(--color-white) 78%, transparent);
+  font-size: clamp(var(--font-size-md), 1.7vw, var(--font-size-xl));
+  line-height: 1.55;
+  max-width: 720px;
+}
+
+.actions {
+  display: grid;
+  gap: var(--space-4);
+  min-width: min(100%, 320px);
+}
+
+.primary,
+.secondary {
+  align-items: center;
+  border-radius: var(--radius-full);
+  display: flex;
+  font-weight: 900;
+  gap: var(--space-3);
+  justify-content: center;
+  min-height: 58px;
+  padding: var(--space-4) var(--space-6);
+  text-decoration: none;
+  transition:
+    background-color var(--duration-medium) var(--ease-out),
+    border-color var(--duration-medium) var(--ease-out),
+    color var(--duration-medium) var(--ease-out),
+    transform var(--duration-medium) var(--ease-out);
+}
+
+.primary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.primary:hover {
+  background-color: var(--color-primary-dark);
+  transform: translateY(-2px);
+}
+
+.secondary {
+  background-color: color-mix(in srgb, var(--color-white) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-white) 24%, transparent);
+  color: var(--color-white);
+}
+
+.secondary:hover {
+  background-color: color-mix(in srgb, var(--color-white) 15%, transparent);
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary,
+  .secondary {
+    transition: none;
+  }
+
+  .primary:hover,
+  .secondary:hover {
+    transform: none;
+  }
+}

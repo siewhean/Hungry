@@ -53,51 +53,42 @@ test("native Maestro smoke scripts are skip-safe and target the Hungry app id", 
   assert.match(preparedRunner, /MAESTRO_CLI_NO_ANALYTICS/);
 });
 
-test("native chat smoke is text-only and uses stable selectors", () => {
+test("native activity smoke respects direct-message gating", () => {
   const flow = read(".maestro/ios-chat-smoke.yaml");
-  const chat = read("src/app/screens/home/ChatDetailScreen.tsx");
   const activity = read("src/app/screens/home/ActivityInboxScreen.tsx");
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  const activityContracts = read("src/app/navigation/nav-activity-contracts.test.ts");
 
   assert.match(flow, /appId: \$\{APP_ID\}/);
   assert.match(flow, /text: "Hungry, http:\/\/\.\*:8081"/);
+  assert.match(flow, /text: "Hungry"\n\s+optional: true/);
   assert.match(flow, /text: "Continue"/);
   assert.match(flow, /text: "Close"/);
   assert.match(flow, /extendedWaitUntil:\n\s+visible: "Developer Launcher"\n\s+timeout: 60000/);
-  assert.match(flow, /Open normal app flow/);
-  assert.match(flow, /home-activity-inbox-button/);
+  assert.match(flow, /id: "dev-button-activity"/);
+  assert.match(flow, /waitForAnimationToEnd:\n\s+timeout: 3000/);
   assert.match(
     flow,
-    /extendedWaitUntil:\n\s+visible:\n\s+id: "home-activity-inbox-button"\n\s+timeout: 30000/,
-  );
-  assert.match(flow, /waitForAnimationToEnd:\n\s+timeout: 5000/);
-  assert.match(
-    flow,
-    /extendedWaitUntil:\n\s+visible:\n\s+id: "activity-tab-messages"\n\s+timeout: 30000/,
+    /extendedWaitUntil:\n\s+visible:\n\s+id: "activity-tab-updates"\n\s+timeout: 30000/,
   );
   assert.match(home, /testID="home-activity-inbox-button"/);
+  const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
+  assert.match(developerLauncher, /label="Activity"[\s\S]*onPress=\{openActivityInboxSmoke\}/);
+  assert.match(
+    developerLauncher,
+    /openActivityInboxSmoke[\s\S]*navigation\.navigate\("ActivityInbox", \{ initialTab: "updates" \}\)/,
+  );
+  assert.match(flow, /assertNotVisible:\n\s+id: "activity-tab-messages"/);
   assert.match(flow, /activity-tab-messages/);
-  assert.match(flow, /activity-chat-row-1/);
-  assert.match(flow, /chat-detail-screen/);
-  assert.match(flow, /Text messages only for now\./);
-  assert.match(flow, /assertNotVisible: "Add media"/);
-  assert.match(flow, /chat-message-input/);
-  assert.match(flow, /chat-send-message/);
+  assert.doesNotMatch(flow, /activity-chat-row-1/);
+  assert.doesNotMatch(flow, /chat-detail-screen/);
+  assert.doesNotMatch(flow, /chat-message-input/);
+  assert.doesNotMatch(flow, /chat-send-message/);
 
   assert.match(activity, /testID=\{`activity-tab-\$\{tab\}`\}/);
-  assert.match(activity, /testID=\{`activity-chat-row-\$\{chatId\}`\}/);
-  assert.match(chat, /testID="chat-detail-screen"/);
-  assert.match(chat, /testID="chat-text-only-copy"/);
-  assert.match(chat, /testID="chat-message-list"/);
-  assert.match(chat, /chat-message-sent/);
-  assert.match(chat, /chat-message-received/);
-  assert.match(chat, /accessibilityLabel="Message input"/);
-  assert.match(chat, /testID="chat-message-input"/);
-  assert.match(chat, /testID="chat-send-message"/);
-  assert.match(activityContracts, /assert\.doesNotMatch\(chat, \/ImagePicker\/\)/);
-  assert.doesNotMatch(chat, /ImagePicker/);
-  assert.doesNotMatch(chat, /Paperclip/);
+  assert.match(
+    activity,
+    /FEATURE_FLAGS\.directMessagesEnabled\s+\?\s+\["messages", "updates"\]\s+:\s+\["updates"\]/,
+  );
 });
 
 test("native media picker smoke reaches the post composer gallery entry point", () => {
@@ -111,6 +102,7 @@ test("native media picker smoke reaches the post composer gallery entry point", 
   assert.match(flow, /text: "Continue"/);
   assert.match(flow, /text: "Close"/);
   assert.match(flow, /extendedWaitUntil:\n\s+visible: "Developer Launcher"\n\s+timeout: 60000/);
+  assert.match(flow, /dev-section-toggle-post-composer-v2-settings/);
   assert.match(flow, /dev-button-launch-v2-composer/);
   assert.match(flow, /post-composer-screen/);
   assert.match(flow, /post-composer-add-media/);

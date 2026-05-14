@@ -21,3 +21,4 @@ Latest full run (2026-04-29):
 
 - This closes the test-runner trust issue for current CI/local harness semantics.
 - If native-runtime E2E tests are added later, they should be tracked separately from this Node test harness.
+

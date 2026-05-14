@@ -44,7 +44,7 @@ test("Screen header contract: shared app headers use one fixed title treatment",
   assert.match(source, /\.\.\.typography\.bodySmall/);
   assert.match(source, /titleStyle\?: TextStyle/);
   assert.match(source, /style=\{titleStyle \? \[styles\.title, titleStyle\] : styles\.title\}/);
-  assert.match(source, /copy: \{[\s\S]*justifyContent: "flex-start"/);
+  assert.match(source, /copy: \{[\s\S]*justifyContent: "center"/);
   assert.doesNotMatch(source, /fontSize: 24/);
   assert.doesNotMatch(source, /lineHeight: 30/);
   assert.doesNotMatch(source, /fontWeight: "900"/);
@@ -331,6 +331,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /overflow: "hidden"/);
   assert.match(discover, /handleFoodStylePress\(item\)/);
   assert.match(discover, /updateSearchQuery\(item\.query\)/);
+  assert.match(discover, /rememberSearch\(item\.query\)/);
   assert.match(discover, /navigation\.navigate\("SearchResults", \{/);
   assert.match(discover, /places in this area/);
   assert.match(

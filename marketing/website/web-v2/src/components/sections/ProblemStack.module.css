@@ -1,0 +1,154 @@
+.section {
+  padding: var(--space-32) 0;
+  background:
+    linear-gradient(180deg, var(--color-white) 0%, var(--color-bg-warm) 100%);
+  border-top: 1px solid var(--color-border);
+  overflow: clip;
+  position: relative;
+}
+
+.section::before {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 62%);
+  content: '';
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.container {
+  display: grid;
+  gap: var(--space-12);
+  position: relative;
+  z-index: 1;
+}
+
+@media (min-width: 1024px) {
+  .container {
+    align-items: start;
+    grid-template-columns: 0.82fr 1.18fr;
+  }
+}
+
+.copy {
+  position: sticky;
+  top: calc(var(--header-height) + var(--announcement-height) + var(--space-10));
+}
+
+.eyebrow {
+  color: var(--color-primary);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-4);
+  text-transform: uppercase;
+}
+
+.copy h2 {
+  color: var(--color-text-primary);
+  font-size: clamp(2.5rem, 5.5vw, 5.5rem);
+  line-height: 0.98;
+  margin-bottom: var(--space-6);
+  max-width: 780px;
+}
+
+.copy p {
+  color: var(--color-text-secondary);
+  font-size: clamp(var(--font-size-md), 1.7vw, var(--font-size-xl));
+  line-height: 1.55;
+  max-width: 620px;
+}
+
+.stack {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.problemCard,
+.solutionCard {
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  position: relative;
+}
+
+.problemCard {
+  align-items: flex-start;
+  background-color: color-mix(in srgb, var(--color-white) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  color: var(--color-text-primary);
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: auto auto 1fr;
+  min-height: 156px;
+  padding: var(--space-7);
+}
+
+.problemCard:nth-child(even) {
+  transform: translateX(var(--space-8));
+}
+
+.problemCard svg {
+  color: var(--color-primary);
+  margin-top: 0.15rem;
+}
+
+.cardIndex {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.problemCard p {
+  font-size: clamp(var(--font-size-lg), 2vw, 1.65rem);
+  font-weight: 800;
+  line-height: 1.18;
+  max-width: 560px;
+}
+
+.solutionCard {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-ink-deep) 96%, var(--color-primary)), var(--color-plum-shadow));
+  color: var(--color-white);
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+  padding: var(--space-9);
+}
+
+.solutionIcon {
+  align-items: center;
+  background-color: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-white) 20%, transparent);
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+
+.solutionCard h3 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1;
+  max-width: 700px;
+}
+
+.solutionCard p {
+  color: color-mix(in srgb, var(--color-white) 78%, transparent);
+  font-size: var(--font-size-lg);
+  line-height: 1.55;
+  max-width: 620px;
+}
+
+@media (max-width: 900px) {
+  .copy {
+    position: static;
+  }
+
+  .problemCard:nth-child(even) {
+    transform: none;
+  }
+}

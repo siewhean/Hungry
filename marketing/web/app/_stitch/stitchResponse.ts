@@ -4,17 +4,6 @@ import path from "node:path";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-import {
-  footerBrand,
-  footerSections,
-  isActiveSiteHref,
-  isExternalFooterHref,
-  mainNavLinks,
-  siteBrand,
-  siteLayout,
-  waitlistLink,
-} from "../_components/footerData";
-
 type StitchOptions = {
   waitlistForm?: boolean;
 };
@@ -27,7 +16,7 @@ const DIRECT_LINKS: [RegExp, string][] = [
   [/href="#">About/g, 'href="/about">About'],
   [/href="#">Merchant Portal/g, 'href="/merchant/login">Merchant Portal'],
   [/href="#">Privacy Policy/g, 'href="/privacy">Privacy Policy'],
-  [/href="#">Terms of Service/g, 'href="/terms">Terms of Service'],
+  [/href="#">Terms of Service/g, 'href="/privacy">Terms of Service'],
 ];
 
 const VISUAL_MENU_IMAGE =
@@ -38,8 +27,6 @@ const MERCHANT_HERO_IMAGE =
 
 const MERCHANT_LOGIN_IMAGE =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuBoFAO4jtL7MU9Rk0PCbpALmY1T0J0XaJpIo-0gXVBpeenjB8CVn6ksKKn8bGaV1NKv2S5MZirflmce7f2lR5HAQ1FKJ3lBQgklIDXjRlSHxst0wvMuRKIHQaKq3AtfRBRcrWiLLRpWoOBX8Vyx94wDVozyyLY0rvoWYoD6_BnKPxpdbjFswIq_ZbDXL8d7TtQprcY6EDBnYyr_Xq5pLEE4jJ49WbFS-VQK0hmLJC5RHaONKdYJf94HN1nXi8LWo1Cu109FDPAeoxs";
-
-const HOME_BASED_IMAGE = MERCHANT_LOGIN_IMAGE;
 
 function makeWaitlistFormSubmittable(html: string, request: NextRequest): string {
   const params = new URL(request.url).searchParams;
@@ -216,108 +203,16 @@ function rewriteLinks(html: string): string {
   }, html);
 }
 
-function activeHrefForStitchFile(fileName: string): string | undefined {
-  if (fileName.startsWith("01-merchant-login-")) return "/merchant/login";
-  if (fileName.startsWith("03-about-")) return "/about";
-  if (fileName.startsWith("04-for-merchants-")) return "/for-merchants";
-  if (fileName.startsWith("05-for-foodies-")) return "/for-foodies";
-  return undefined;
-}
-
-function stitchNavHtml(activeHref?: string): string {
-  const links = mainNavLinks
-    .map((link) => {
-      const active = isActiveSiteHref(activeHref, link.href);
-      const stateClass = active
-        ? "border-[#E8531E] text-[#E8531E]"
-        : "border-transparent text-stone-600 hover:text-[#E8531E]";
-
-      return `<a class="border-b-2 pb-2 transition-colors ${stateClass}" href="${link.href}">${link.label}</a>`;
-    })
-    .join("\n");
-
-  return `<nav class="sticky top-0 z-50 border-b border-[#E7DED4] bg-white font-['Plus_Jakarta_Sans']">
-<div class="relative mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-<a class="text-2xl md:text-3xl font-extrabold tracking-tight text-[#E8531E] hover:text-[#C94618] transition-colors" href="${siteBrand.href}" aria-label="Hungry home">${siteBrand.label}</a>
-<div class="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 md:flex items-center gap-10 text-lg font-semibold">
-${links}
-<a class="md:hidden rounded-[18px] bg-[#E8531E] px-5 py-3 font-bold text-white" href="${waitlistLink.href}">${waitlistLink.label}</a>
-</div>
-<div class="flex items-center justify-end">
-<a class="hidden md:inline-flex rounded-[18px] bg-[#E8531E] px-8 py-4 text-lg font-bold text-white hover:bg-[#C94618] transition-colors" href="${waitlistLink.href}">${waitlistLink.label}</a>
-<button class="md:hidden text-[#E8531E]" type="button" aria-label="Open navigation">
-<span class="material-symbols-outlined text-4xl">menu</span>
-</button>
-</div>
-</div>
-</nav>`;
-}
-
-function standardizeNavigation(html: string, activeHref?: string): string {
-  const nav = stitchNavHtml(activeHref);
-
-  if (/<nav\b/i.test(html)) {
-    return html.replace(/<nav\b[\s\S]*?<\/nav>/i, nav);
-  }
-
-  if (/<header\b/i.test(html)) {
-    return html.replace(/<header\b[\s\S]*?<\/header>/i, nav);
-  }
-
-  return html;
-}
-
-function standardizeCommonHtml(html: string): string {
+function standardizeNavigation(html: string): string {
   return html
-    .replaceAll("© 2024 Hungry Singapore.", "© 2026 Hungry Singapore.")
-    .replaceAll('href="/privacy">Terms of Service', 'href="/terms">Terms of Service')
-    .replaceAll('href="#">Terms of Service', 'href="/terms">Terms of Service')
-    .replaceAll('href="#">Privacy Policy', 'href="/privacy">Privacy Policy')
-    .replaceAll('href="#">Hawker Centres', 'href="/for-foodies#hawker-centres">Hawker Centres')
-    .replaceAll('href="#">Nearby Makan', 'href="/for-foodies#nearby-makan">Nearby Makan')
-    .replaceAll('href="#">Merchant Support', 'href="/for-merchants">Merchant Support')
-    .replaceAll('href="#">Contact Us', 'href="mailto:hello@hungry.sg">Contact Us');
-}
-
-function stitchFooterHtml() {
-  const sections = footerSections
-    .map((section) => {
-      const links = section.links
-        .map((link) => {
-          const external =
-            isExternalFooterHref(link.href) && link.href.startsWith("http")
-              ? ' target="_blank" rel="noreferrer"'
-              : "";
-          return `<a class="block ${siteLayout.footerBodyText} text-stone-500 hover:text-[#E8531E] transition-colors" href="${link.href}"${external}>${link.label}</a>`;
-        })
-        .join("\n");
-
-      return `<div class="space-y-3">
-<h2 class="${siteLayout.footerTitleText} font-extrabold text-[#111827]">${section.title}</h2>
-${links}
-</div>`;
-    })
-    .join("\n");
-
-  return `<footer class="w-full border-t border-[#E7DED4] bg-white py-10 font-['Plus_Jakarta_Sans']">
-<div class="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 md:grid-cols-4">
-<div class="space-y-3">
-<a class="font-['Plus_Jakarta_Sans'] ${siteLayout.footerBrandText} font-extrabold tracking-tight text-[#E8531E]" href="${footerBrand.href}">${footerBrand.label}</a>
-<p class="max-w-xs ${siteLayout.footerBodyText} text-stone-500">${footerBrand.copy}</p>
-</div>
-${sections}
-</div>
-</footer>`;
-}
-
-function standardizeFooter(html: string): string {
-  const footer = stitchFooterHtml();
-
-  if (/<footer\b/i.test(html)) {
-    return html.replace(/<footer\b[\s\S]*?<\/footer>/i, footer);
-  }
-
-  return html;
+    .replace(
+      /<div class="text-2xl font-extrabold tracking-tight text-\[#E8531E\] dark:text-\[#FF6B35\]">Hungry<\/div>/g,
+      '<a class="text-2xl font-extrabold tracking-tight text-[#E8531E] dark:text-[#FF6B35]" href="/for-foodies" aria-label="Hungry home">Hungry</a>',
+    )
+    .replace(
+      /<a class="text-2xl font-extrabold tracking-tight text-\[#E8531E\] dark:text-\[#FF6B35\]" href="#">\s*Hungry\s*<\/a>/g,
+      '<a class="text-2xl font-extrabold tracking-tight text-[#E8531E] dark:text-[#FF6B35]" href="/for-foodies" aria-label="Hungry home">Hungry</a>',
+    );
 }
 
 function injectNavigationScript(html: string): string {
@@ -495,7 +390,7 @@ function enhanceForMerchantsPage(html: string): string {
     .replace(
       /<!-- Hero Section -->[\s\S]*?<\/section>/,
       `<!-- Hero Section -->
-<section class="relative w-full h-[calc(100svh-80px)] min-h-[620px] flex items-center justify-center overflow-hidden">
+<section class="relative w-full h-[calc(100svh-80px)] min-h-[560px] max-h-[760px] flex items-center justify-center overflow-hidden">
 <div class="absolute inset-0 z-0">
 <img alt="Singapore food business owner at a hawker stall" class="w-full h-full object-cover object-center" data-alt="A warm, realistic Singapore food business owner serving customers from a hawker stall with menu boards and inviting stall lighting." src="${MERCHANT_HERO_IMAGE}"/>
 <div class="absolute inset-0 bg-gradient-to-b from-deep-navy/55 via-deep-navy/65 to-deep-navy/85"></div>
@@ -508,21 +403,6 @@ function enhanceForMerchantsPage(html: string): string {
 </div>
 </div>
 </section>`,
-    )
-    .replace(
-      /<!-- Small Card: Home Chefs -->[\s\S]*?<p class="font-micro text-micro text-text-muted mt-xs">Specialty Creators<\/p>\s*<\/div>/,
-      `<!-- Small Card: Home Chefs -->
-<div class="col-span-1 md:col-span-1 row-span-1 relative overflow-hidden rounded-2xl border border-line-border min-h-[260px] group">
-<img alt="Home-based specialty food business preparing fresh bakes" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="A realistic home-based food business counter with fresh baked goods and warm kitchen light." src="${HOME_BASED_IMAGE}"/>
-<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/35 to-black/10"></div>
-<div class="relative z-10 flex h-full min-h-[260px] flex-col justify-end p-lg text-surface-white">
-<div class="w-10 h-10 rounded-full bg-surface-white/90 flex items-center justify-center text-hungry-orange mb-sm">
-<span class="material-symbols-outlined filled">skillet</span>
-</div>
-<h3 class="font-h3 text-h3 text-surface-white">Home-Based</h3>
-<p class="font-micro text-micro text-surface-container-high mt-xs">Specialty Creators</p>
-</div>
-</div>`,
     )
     .replace("© 2024 Hungry Singapore.", "© 2026 Hungry Singapore.")
     .replace(
@@ -557,7 +437,7 @@ export async function stitchResponse(
     html = enhanceForMerchantsPage(html);
   }
 
-  return renderStitchHtml(html, request, options, activeHrefForStitchFile(fileName));
+  return renderStitchHtml(html, request, options);
 }
 
 export async function stitchForFoodiesWithVisualHeroResponse(request: NextRequest) {
@@ -587,21 +467,14 @@ export async function stitchForFoodiesWithVisualHeroResponse(request: NextReques
     forFoodiesHtml.replace(/<!-- Hero Section -->[\s\S]*?<\/section>/, replacementHero),
   );
 
-  return renderStitchHtml(html, request, {}, "/for-foodies");
+  return renderStitchHtml(html, request);
 }
 
-function renderStitchHtml(
-  sourceHtml: string,
-  request: NextRequest,
-  options: StitchOptions = {},
-  activeHref?: string,
-) {
+function renderStitchHtml(sourceHtml: string, request: NextRequest, options: StitchOptions = {}) {
   let html = sourceHtml;
 
   html = rewriteLinks(html);
-  html = standardizeNavigation(html, activeHref);
-  html = standardizeCommonHtml(html);
-  html = standardizeFooter(html);
+  html = standardizeNavigation(html);
 
   if (options.waitlistForm) {
     html = makeWaitlistFormSubmittable(html, request);

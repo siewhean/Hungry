@@ -88,6 +88,30 @@ const memoryStorage: StateStorage = {
   },
 };
 
+function getBrowserStorage(): Storage | null {
+  if (typeof window === "undefined") return null;
+  const isLocalWebRuntime =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    process.env.NODE_ENV === "test";
+  if (!isLocalWebRuntime) return null;
+  try {
+    return window.localStorage ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const browserStorage: StateStorage = {
+  getItem: async (name) => getBrowserStorage()?.getItem(name) ?? null,
+  setItem: async (name, value) => {
+    getBrowserStorage()?.setItem(name, value);
+  },
+  removeItem: async (name) => {
+    getBrowserStorage()?.removeItem(name);
+  },
+};
+
 const secureStateStorage: StateStorage = {
   getItem: async (name) => {
     const secureStore = getSecureStore();
@@ -98,6 +122,11 @@ const secureStateStorage: StateStorage = {
       }
     } catch {
       // Fall through to legacy and in-memory fallbacks.
+    }
+
+    const browserValue = await browserStorage.getItem(name);
+    if (browserValue !== null) {
+      return browserValue;
     }
 
     const asyncStorage = getAsyncStorage();
@@ -133,6 +162,11 @@ const secureStateStorage: StateStorage = {
       // Fall through to legacy and in-memory writes.
     }
 
+    if (getBrowserStorage()) {
+      await browserStorage.setItem(name, value);
+      return;
+    }
+
     const asyncStorage = getAsyncStorage();
     if (asyncStorage) {
       try {
@@ -153,6 +187,11 @@ const secureStateStorage: StateStorage = {
       }
     } catch {
       // Continue cleanup across fallback stores.
+    }
+
+    if (getBrowserStorage()) {
+      await browserStorage.removeItem(name);
+      return;
     }
 
     const asyncStorage = getAsyncStorage();

@@ -11,7 +11,7 @@ import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Bookmark, Heart, MessageCircle, MessageCircleMore, X } from "lucide-react-native";
+import { X, Heart, MessageCircle, MessageCircleMore, Bookmark } from "lucide-react-native";
 import { AppText, IconButton, Avatar } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useStoryStore } from "@/store/useStoryStore";

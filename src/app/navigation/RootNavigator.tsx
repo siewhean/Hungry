@@ -1,5 +1,5 @@
 import * as Linking from "expo-linking";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, type ComponentType } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import {
   NavigationContainer,
@@ -17,44 +17,133 @@ import { SplashScreen } from "@/app/screens/SplashScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
 import { FloatingToast } from "@/components/ui";
+import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
+
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import type { RootStackParamList } from "./navigationTypes";
+import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
 import { createRootLinking } from "./linking";
+import * as CredEarnedToastModule from "@/components/gamification/CredEarnedToast";
+
+const CredEarnedToastComponent =
+  (CredEarnedToastModule as { CredEarnedToast?: ComponentType }).CredEarnedToast ??
+  (CredEarnedToastModule as { default?: ComponentType }).default;
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
-const AUTH_REQUIRED_ROUTES = new Set([
+type RootRouteName = keyof RootStackParamList;
+type MainTabRouteName = keyof MainTabParamList;
+
+const MAIN_TAB_ROUTES = new Set<MainTabRouteName>(["Home", "Discover", "Review", "Profile"]);
+
+const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
+  "Splash",
+  "AuthStack",
+  "OnboardingStack",
   "MainTabs",
   "MerchantTabs",
+  "StallDetail",
+  "MerchantClaimExplainer",
+  "DishDetail",
+  "DishDetailV2",
   "SearchHome",
   "SearchHomeV2",
   "SearchResults",
   "BrowseDishes",
   "BrowseStalls",
+  "TasteFilter",
+  "DiscoverMap",
+  "DecideForMeResult",
   "MapZoomedIn",
+  "Post",
+  "BlogPost",
+  "ReviewStack",
+  "WheelStack",
+  "ActivityInbox",
+  "ActivityPostDetail",
+  "ChatDetail",
+  "DirectMessages",
+  "Crave",
+  "MusicSelection",
+  "BuildingDrillDown",
+  "QuickBites",
+  "DeveloperLauncher",
+  "Favourites",
+  "ReviewHistory",
+  "Settings",
+  "EditProfile",
+  "SplashV2",
+  "DesignGallery",
+  "ReviewFeedV2",
+  "PostComposerV2",
+  "DiscoverV2",
+  "SearchHomeV2",
+  "StallDetailV2",
+  "BuildingDrillDownV2",
+  "QuickReviewV2",
+  "VenueDirectory",
+  "StoryViewer",
+  "AddStory",
+  "PassportScreen",
+  "MissionsScreen",
+  "CollectionList",
+  "CollectionDetail",
+  "Offline",
+  "NotFound",
+  "UserProfile",
+]);
+
+const PROTECTED_MAIN_TAB_ROUTES = new Set<MainTabRouteName>(["Profile"]);
+
+const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
+  "MerchantTabs",
   "Post",
   "PostComposerV2",
   "ActivityInbox",
   "ActivityPostDetail",
+  "ChatDetail",
+  "DirectMessages",
   "EditProfile",
-  "BuildingDrillDown",
-  "DecideForMeResult",
-  "TasteFilter",
   "Favourites",
   "ReviewHistory",
   "Settings",
-  "DishDetail",
-  "DishDetailV2",
-  "StallDetail",
-  "StallDetailV2",
-  "BlogPost",
   "ReviewStack",
+  "QuickReviewV2",
+  "AddStory",
+  "MusicSelection",
+  "MerchantClaimExplainer",
+  "PassportScreen",
+  "MissionsScreen",
 ]);
+
+function isMainTabRouteName(value: string): value is MainTabRouteName {
+  return MAIN_TAB_ROUTES.has(value as MainTabRouteName);
+}
+
+function isRootRouteName(value: string): value is RootRouteName {
+  return ROOT_ROUTE_NAMES.has(value as RootRouteName);
+}
+
+function getMainTabScreen(params: unknown): MainTabRouteName {
+  if (params && typeof params === "object" && "screen" in params) {
+    const screen = (params as { screen?: unknown }).screen;
+    if (typeof screen === "string" && isMainTabRouteName(screen)) {
+      return screen;
+    }
+  }
+  return "Home";
+}
+
+function isAuthRequiredRoute(route: { name: string; params?: unknown }): boolean {
+  if (route.name === "MainTabs") {
+    return PROTECTED_MAIN_TAB_ROUTES.has(getMainTabScreen(route.params));
+  }
+  return PROTECTED_ROOT_ROUTES.has(route.name as RootRouteName);
+}
 
 const loadDishSearchScreen = () =>
   (
@@ -104,10 +193,6 @@ const loadSettingsScreen = () =>
   (
     require("@/app/screens/profile/SettingsScreen") as typeof import("@/app/screens/profile/SettingsScreen")
   ).SettingsScreen;
-const loadUserProfileScreen = () =>
-  (
-    require("@/app/screens/profile/UserProfileScreen") as typeof import("@/app/screens/profile/UserProfileScreen")
-  ).UserProfileScreen;
 const loadDishDetailScreenV2 = () =>
   (
     require("@/app/screens/detail/DishDetailScreenV2") as typeof import("@/app/screens/detail/DishDetailScreenV2")
@@ -224,6 +309,23 @@ const loadDeveloperLauncherScreen = () =>
   (
     require("@/app/screens/dev/DeveloperLauncherScreen") as typeof import("@/app/screens/dev/DeveloperLauncherScreen")
   ).DeveloperLauncherScreen;
+// Gamification screens
+const loadPassportScreen = () =>
+  (
+    require("@/app/screens/profile/PassportScreen") as typeof import("@/app/screens/profile/PassportScreen")
+  ).PassportScreen;
+const loadMissionsScreen = () =>
+  (
+    require("@/app/screens/profile/MissionsScreen") as typeof import("@/app/screens/profile/MissionsScreen")
+  ).MissionsScreen;
+const loadCollectionListScreen = () =>
+  (
+    require("@/app/screens/discover/CollectionListScreen") as typeof import("@/app/screens/discover/CollectionListScreen")
+  ).CollectionListScreen;
+const loadCollectionDetailScreen = () =>
+  (
+    require("@/app/screens/discover/CollectionDetailScreen") as typeof import("@/app/screens/discover/CollectionDetailScreen")
+  ).CollectionDetailScreen;
 
 function BlogPostRouteScreen({
   navigation,
@@ -335,23 +437,31 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     if (typeof returnRoute === "string") {
-      // If it's a known top-level tab name, navigate to MainTabs
-      const tabNames = ["Home", "Discover", "Review", "Profile"];
-      if (tabNames.includes(returnRoute)) {
+      if (isMainTabRouteName(returnRoute)) {
         navigationRef.resetRoot({
           index: 0,
           routes: [{ name: "MainTabs", params: { screen: returnRoute } }],
         });
+      } else if (isRootRouteName(returnRoute)) {
+        navigationRef.resetRoot({
+          index: 0,
+          routes: [{ name: returnRoute }],
+        });
       } else {
         navigationRef.resetRoot({
           index: 0,
-          routes: [{ name: returnRoute as any }],
+          routes: [{ name: "MainTabs", params: { screen: "Home" } }],
         });
       }
+    } else if (isRootRouteName(returnRoute.name)) {
+      navigationRef.resetRoot({
+        index: 0,
+        routes: [{ name: returnRoute.name, params: returnRoute.params }],
+      });
     } else {
       navigationRef.resetRoot({
         index: 0,
-        routes: [{ name: returnRoute.name as any, params: returnRoute.params }],
+        routes: [{ name: "MainTabs", params: { screen: "Home" } }],
       });
     }
   }, [setReturnRoute]);
@@ -402,17 +512,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     const rootState = navigationRef.getRootState();
-    const currentTopRoute = rootState.routes[rootState.index]?.name;
+    const activeRoute = rootState.routes[rootState.index];
 
-    if (!isAuthenticated && currentTopRoute && AUTH_REQUIRED_ROUTES.has(currentTopRoute)) {
-      const activeRoute = rootState.routes[rootState.index];
+    if (!isAuthenticated && activeRoute && isAuthRequiredRoute(activeRoute)) {
       const mainTabScreen =
-        activeRoute.name === "MainTabs" &&
-        typeof activeRoute.params === "object" &&
-        activeRoute.params &&
-        "screen" in activeRoute.params
-          ? String(activeRoute.params.screen)
-          : "Home";
+        activeRoute.name === "MainTabs" ? getMainTabScreen(activeRoute.params) : "Home";
 
       setReturnRoute(
         activeRoute.name === "MainTabs"
@@ -508,7 +612,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadFavouritesScreen} name="Favourites" />
           <RootStack.Screen getComponent={loadReviewHistoryScreen} name="ReviewHistory" />
           <RootStack.Screen getComponent={loadSettingsScreen} name="Settings" />
-          <RootStack.Screen getComponent={loadUserProfileScreen} name="UserProfile" />
+          <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
           <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
           <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
           <RootStack.Screen
@@ -520,9 +624,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
           <RootStack.Screen getComponent={loadActivityInboxScreen} name="ActivityInbox" />
           <RootStack.Screen getComponent={loadActivityPostDetailScreen} name="ActivityPostDetail" />
-          <RootStack.Screen getComponent={loadChatDetailScreen} name="ChatDetail" />
           {FEATURE_FLAGS.directMessagesEnabled ? (
-            <RootStack.Screen getComponent={loadDirectMessagesScreen} name="DirectMessages" />
+            <>
+              <RootStack.Screen getComponent={loadChatDetailScreen} name="ChatDetail" />
+              <RootStack.Screen getComponent={loadDirectMessagesScreen} name="DirectMessages" />
+            </>
           ) : null}
           {FEATURE_FLAGS.craveEnabled ? (
             <RootStack.Screen getComponent={loadCraveScreen} name="Crave" />
@@ -532,27 +638,32 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadBuildingDrillDownScreen} name="BuildingDrillDown" />
           <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
           <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />
-          {/* V2 Prototypes */}
-          <RootStack.Screen getComponent={loadDiscoverHomeScreenV2} name="DiscoverV2" />
-          <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetailV2" />
-          <RootStack.Screen getComponent={loadDishSearchScreenV2} name="SearchHomeV2" />
-          <RootStack.Screen getComponent={loadStallDetailScreenV2} name="StallDetailV2" />
-          <RootStack.Screen
-            getComponent={loadBuildingDrillDownScreenV2}
-            name="BuildingDrillDownV2"
-          />
-          <RootStack.Screen getComponent={loadQuickReviewSheetV2} name="QuickReviewV2" />
           <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
-          <RootStack.Screen getComponent={loadSplashScreenV2} name="SplashV2" />
-          <RootStack.Screen getComponent={loadDesignGalleryScreen} name="DesignGallery" />
-          <RootStack.Screen getComponent={loadMerchantTabs} name="MerchantTabs" />
-          <RootStack.Screen getComponent={loadReviewFeedScreenV2} name="ReviewFeedV2" />
-          <RootStack.Screen
-            getComponent={loadPostComposerScreenV2}
-            name="PostComposerV2"
-            options={{ gestureEnabled: false }}
-          />
-          <RootStack.Screen getComponent={loadVenueDirectoryScreen} name="VenueDirectory" />
+          {FEATURE_FLAGS.prototypeRoutesEnabled ? (
+            <>
+              <RootStack.Screen getComponent={loadDiscoverHomeScreenV2} name="DiscoverV2" />
+              <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetailV2" />
+              <RootStack.Screen getComponent={loadDishSearchScreenV2} name="SearchHomeV2" />
+              <RootStack.Screen getComponent={loadStallDetailScreenV2} name="StallDetailV2" />
+              <RootStack.Screen
+                getComponent={loadBuildingDrillDownScreenV2}
+                name="BuildingDrillDownV2"
+              />
+              <RootStack.Screen getComponent={loadQuickReviewSheetV2} name="QuickReviewV2" />
+              <RootStack.Screen getComponent={loadSplashScreenV2} name="SplashV2" />
+              <RootStack.Screen getComponent={loadDesignGalleryScreen} name="DesignGallery" />
+              <RootStack.Screen getComponent={loadReviewFeedScreenV2} name="ReviewFeedV2" />
+              <RootStack.Screen
+                getComponent={loadPostComposerScreenV2}
+                name="PostComposerV2"
+                options={{ gestureEnabled: false }}
+              />
+              <RootStack.Screen getComponent={loadVenueDirectoryScreen} name="VenueDirectory" />
+            </>
+          ) : null}
+          {FEATURE_FLAGS.merchantCentreEnabled ? (
+            <RootStack.Screen getComponent={loadMerchantTabs} name="MerchantTabs" />
+          ) : null}
           <RootStack.Screen
             getComponent={loadStoryViewerScreen}
             name="StoryViewer"
@@ -563,12 +674,18 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             name="AddStory"
             options={{ presentation: "modal" }}
           />
+          {/* Gamification */}
+          <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
+          <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
+          <RootStack.Screen getComponent={loadCollectionListScreen} name="CollectionList" />
+          <RootStack.Screen getComponent={loadCollectionDetailScreen} name="CollectionDetail" />
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />
       <QuickReviewModalHost />
       <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
       <FloatingToast />
+      {CredEarnedToastComponent ? <CredEarnedToastComponent /> : null}
     </>
   );
 }

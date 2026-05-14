@@ -5,6 +5,7 @@ import {
   getServiceProvider,
   resetServiceProvider,
   setMockServiceProvider,
+  setSupabaseServiceProvider,
 } from "@/lib/services/serviceProvider";
 
 const shouldSkipSupabaseRuntime =
@@ -62,5 +63,15 @@ test("service provider can be forced into mock mode for developer shortcuts", ()
 
   process.env.HUNGRY_DATA_SOURCE = previousDataSource;
   process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = previousPublicDataSource;
+  resetServiceProvider();
+});
+
+test("service provider can be forced into supabase mode for user mode", () => {
+  setMockServiceProvider();
+  assert.equal(getServiceProvider().mode, "mock");
+
+  setSupabaseServiceProvider();
+  assert.equal(getServiceProvider().mode, "supabase");
+
   resetServiceProvider();
 });

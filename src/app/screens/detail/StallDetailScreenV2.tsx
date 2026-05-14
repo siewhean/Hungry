@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { Animated, Dimensions, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -11,7 +11,8 @@ import type {
 } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Button, Card, Screen } from "@/components/ui";
+import { AppText, Button, Card, EmptyState, Screen } from "@/components/ui";
+import { TASTE_DIMENSIONS } from "@/constants/taste";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
 import { useCartStore } from "@/store/useCartStore";
@@ -21,25 +22,40 @@ import { useSocialStore } from "@/store/useSocialStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
-import type { DeliveryLink } from "@/types/domain";
+import type { DeliveryLink, VenueSummary } from "@/types/domain";
 
 type Props = NativeStackScreenProps<RootStackParamList, "StallDetailV2">;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const HERO_HEIGHT = 240;
+
+function formatDistance(distanceMeters?: number): string | null {
+  if (typeof distanceMeters !== "number" || !Number.isFinite(distanceMeters)) {
+    return null;
+  }
+  if (distanceMeters >= 1000) {
+    return `${(distanceMeters / 1000).toFixed(1)}km away`;
+  }
+  return `${Math.round(distanceMeters)}m away`;
+}
+
+function formatVenueStatus(venue: VenueSummary) {
+  if (!venue.isOpen) {
+    return venue.closureNotice ?? "Closed now";
+  }
+  return venue.operatingHours;
+}
 
 export function StallDetailScreenV2({ route }: Props) {
   const navigation = useNavigation<RootNavigation>();
   const repository = getDataRepository();
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { palette, spacing, radii } = useHungryTheme();
 
   const venueId = route.params?.venueId ?? route.params?.id ?? "";
   const venue = useMemo(() => repository.getVenueById(venueId), [venueId, repository]);
   const dishes = useMemo(() => repository.listDishesByVenue(venueId), [venueId, repository]);
   const leadDish = dishes[0];
 
-  const scrollY = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
@@ -81,10 +97,42 @@ export function StallDetailScreenV2({ route }: Props) {
     });
   };
 
-  if (!venue) return null;
+  if (!venue) {
+    return (
+      <Screen>
+        <EmptyState
+          title="Stall not found"
+          body="This stall could not be found. It may have moved or been removed."
+          ctaLabel="Go back"
+          onPress={() => navigation.goBack()}
+        />
+      </Screen>
+    );
+  }
 
   const isSaved = leadDish ? profile.favouriteDishIds.includes(leadDish.id) : false;
   const deliveryLinks = venue.deliveryLinks ?? [];
+  const distanceLabel = formatDistance(leadDish?.distanceMeters);
+  const statusLabel = formatVenueStatus(venue);
+  const totalReviewCount = dishes.reduce((sum, dish) => sum + dish.reviewCount, 0);
+  const displayRating =
+    dishes.length > 0
+      ? dishes.reduce((sum, dish) => sum + dish.rating, 0) / dishes.length
+      : undefined;
+  const reviewItems = dishes.flatMap((dish) =>
+    dish.reviews.map((review) => ({
+      ...review,
+      dishName: dish.name,
+    })),
+  );
+  const tasteRows = leadDish
+    ? TASTE_DIMENSIONS.map((dimension) => ({
+        label: dimension.label,
+        value: Math.max(0, Math.min(10, leadDish.tasteVector[dimension.key])),
+      }))
+        .sort((left, right) => right.value - left.value)
+        .slice(0, 3)
+    : [];
 
   const formatDeliveryPlatform = (platform: DeliveryLink["platform"]) =>
     platform === "grabfood" ? "GrabFood" : "Foodpanda";
@@ -97,7 +145,7 @@ export function StallDetailScreenV2({ route }: Props) {
 
     toggleFavourite(leadDish);
     showToast({
-      message: isSaved ? "Removed from favourites." : "Saved to favourites.",
+      message: isSaved ? "Removed from favourites." : "Saved top dish to favourites.",
       tone: "success",
     });
   };
@@ -142,7 +190,7 @@ export function StallDetailScreenV2({ route }: Props) {
           style={{ width: "100%", height: "100%" }}
           contentFit="cover"
         />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.25)" }]} />
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.overlay }]} />
 
         {/* Top Actions */}
         <View
@@ -162,7 +210,7 @@ export function StallDetailScreenV2({ route }: Props) {
               width: 36,
               height: 36,
               borderRadius: 18,
-              backgroundColor: "rgba(255,255,255,0.9)",
+              backgroundColor: palette.surface,
               alignItems: "center",
               justifyContent: "center",
             }}
@@ -172,13 +220,13 @@ export function StallDetailScreenV2({ route }: Props) {
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={isSaved ? "Remove stall from favourites" : "Save stall"}
+              accessibilityLabel={isSaved ? "Remove top dish from favourites" : "Save top dish"}
               onPress={handleSaveStall}
               style={{
                 width: 36,
                 height: 36,
                 borderRadius: 18,
-                backgroundColor: "rgba(255,255,255,0.9)",
+                backgroundColor: palette.surface,
                 alignItems: "center",
                 justifyContent: "center",
               }}
@@ -196,7 +244,7 @@ export function StallDetailScreenV2({ route }: Props) {
                 width: 36,
                 height: 36,
                 borderRadius: 18,
-                backgroundColor: "rgba(255,255,255,0.9)",
+                backgroundColor: palette.surface,
                 alignItems: "center",
                 justifyContent: "center",
               }}
@@ -232,44 +280,52 @@ export function StallDetailScreenV2({ route }: Props) {
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
               <MapPin size={14} color={palette.textMuted} />
               <AppText variant="bodySmall" tone="secondary">
-                {venue.unitNumber} · {venue.buildingId.replace("hc-", "").replace("-", " ")} · 80m
-                away
+                {[
+                  venue.unitNumber,
+                  venue.buildingId.replace("hc-", "").replace("-", " "),
+                  distanceLabel,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
               </AppText>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
               <AppText variant="bodySmallBold" style={{ color: palette.success }}>
-                Open until 2:00 pm
+                {statusLabel}
               </AppText>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                <Star size={12} color={palette.amber} fill={palette.amber} />
-                <AppText variant="bodySmallBold">4.7</AppText>
-                <AppText variant="bodySmall" tone="muted">
-                  (312)
-                </AppText>
-              </View>
+              {displayRating !== undefined && totalReviewCount > 0 ? (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
+                  <Star size={12} color={palette.amber} fill={palette.amber} />
+                  <AppText variant="bodySmallBold">{displayRating.toFixed(1)}</AppText>
+                  <AppText variant="bodySmall" tone="muted">
+                    ({totalReviewCount})
+                  </AppText>
+                </View>
+              ) : null}
             </View>
           </View>
 
-          {/* Shield Grade */}
-          <View style={{ alignItems: "center" }}>
-            <View
-              style={{
-                width: 36,
-                height: 40,
-                backgroundColor: palette.successSoft,
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: 4,
-              }}
-            >
-              <AppText style={{ color: palette.success, fontWeight: "900", fontSize: 16 }}>
-                A
+          {venue.verificationStatus === "verified" ? (
+            <View style={{ alignItems: "center" }}>
+              <View
+                style={{
+                  width: 36,
+                  height: 40,
+                  backgroundColor: palette.successSoft,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 4,
+                }}
+              >
+                <AppText style={{ color: palette.success, fontWeight: "900", fontSize: 16 }}>
+                  V
+                </AppText>
+              </View>
+              <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
+                Verified
               </AppText>
             </View>
-            <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
-              NEA
-            </AppText>
-          </View>
+          ) : null}
         </View>
 
         <View
@@ -290,9 +346,6 @@ export function StallDetailScreenV2({ route }: Props) {
             <AppText variant="h3" style={{ fontWeight: "800" }}>
               Their dishes
             </AppText>
-            <AppText variant="bodySmallBold" tone="accent">
-              See menu
-            </AppText>
           </View>
           <ScrollView
             horizontal
@@ -311,7 +364,9 @@ export function StallDetailScreenV2({ route }: Props) {
                     {dish.name}
                   </AppText>
                   <AppText variant="micro" tone="secondary">
-                    4.8 · 180 reviews
+                    {dish.reviewCount > 0
+                      ? `${dish.rating.toFixed(1)} · ${dish.reviewCount} reviews`
+                      : "No reviews yet"}
                   </AppText>
                   <AppText variant="bodySmallBold" tone="accent" style={{ marginTop: 2 }}>
                     S${dish.price.toFixed(2)}
@@ -358,55 +413,56 @@ export function StallDetailScreenV2({ route }: Props) {
           </View>
         ) : null}
 
-        {/* Taste Profile */}
-        <View
-          style={{
-            margin: spacing[4],
-            padding: spacing[4],
-            backgroundColor: palette.bgSoft,
-            borderRadius: radii.lg,
-          }}
-        >
-          <AppText variant="bodySmallBold" style={{ marginBottom: spacing[3] }}>
-            Taste profile (from 312 reviews)
-          </AppText>
-          <View style={{ gap: spacing[2] }}>
-            {[
-              { label: "Savoury", value: "88%", color: palette.orange },
-              { label: "Spicy", value: "62%", color: palette.amber },
-              { label: "Umami", value: "74%", color: palette.teal },
-            ].map((item) => (
-              <View
-                key={item.label}
-                style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}
-              >
-                <AppText variant="micro" tone="secondary" style={{ width: 60, textAlign: "right" }}>
-                  {item.label}
-                </AppText>
+        {tasteRows.length > 0 ? (
+          <View
+            style={{
+              margin: spacing[4],
+              padding: spacing[4],
+              backgroundColor: palette.bgSoft,
+              borderRadius: radii.lg,
+            }}
+          >
+            <AppText variant="bodySmallBold" style={{ marginBottom: spacing[3] }}>
+              Taste profile{totalReviewCount > 0 ? ` (${totalReviewCount} reviews)` : ""}
+            </AppText>
+            <View style={{ gap: spacing[2] }}>
+              {tasteRows.map((item) => (
                 <View
-                  style={{
-                    flex: 1,
-                    height: 6,
-                    backgroundColor: palette.border,
-                    borderRadius: 3,
-                    overflow: "hidden",
-                  }}
+                  key={item.label}
+                  style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}
                 >
+                  <AppText
+                    variant="micro"
+                    tone="secondary"
+                    style={{ width: 60, textAlign: "right" }}
+                  >
+                    {item.label}
+                  </AppText>
                   <View
                     style={{
-                      width: item.value as any,
-                      height: "100%",
-                      backgroundColor: item.color,
+                      flex: 1,
+                      height: 6,
+                      backgroundColor: palette.border,
+                      borderRadius: 3,
+                      overflow: "hidden",
                     }}
-                  />
+                  >
+                    <View
+                      style={{
+                        width: `${Math.round(item.value * 10)}%`,
+                        height: "100%",
+                        backgroundColor: palette.orange,
+                      }}
+                    />
+                  </View>
+                  <AppText variant="micro" tone="secondary" style={{ width: 30 }}>
+                    {Math.round(item.value * 10)}%
+                  </AppText>
                 </View>
-                <AppText variant="micro" tone="secondary" style={{ width: 30 }}>
-                  {item.value}
-                </AppText>
-              </View>
-            ))}
+              ))}
+            </View>
           </View>
-        </View>
+        ) : null}
 
         {/* Reviews */}
         <View style={{ paddingHorizontal: spacing[4] }}>
@@ -421,46 +477,57 @@ export function StallDetailScreenV2({ route }: Props) {
             <AppText variant="h3" style={{ fontWeight: "800" }}>
               Recent reviews
             </AppText>
-            <AppText variant="bodySmallBold" tone="accent">
-              See all 312
-            </AppText>
           </View>
-          <Card style={{ backgroundColor: palette.bgSoft, borderWidth: 0 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: spacing[2],
-                marginBottom: spacing[1],
-              }}
-            >
-              <View
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 14,
-                  backgroundColor: palette.infoSoft,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <AppText style={{ fontSize: 14 }}>👩</AppText>
-              </View>
-              <AppText variant="bodySmallBold">sarah.eats</AppText>
-              <View style={{ flexDirection: "row", gap: 1 }}>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Star key={i} size={10} color={palette.amber} fill={palette.amber} />
-                ))}
-              </View>
-            </View>
-            <AppText variant="bodySmall" style={{ lineHeight: 20 }}>
-              The wantons are silky and the chilli is not too sweet. Exactly how I like it. Came
-              back 3 times this week 😅
-            </AppText>
-            <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
-              2 days ago · Wanton Noodles
-            </AppText>
-          </Card>
+          {reviewItems.length > 0 ? (
+            reviewItems.slice(0, 2).map((review) => (
+              <Card key={review.id} style={{ backgroundColor: palette.bgSoft, borderWidth: 0 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: spacing[2],
+                    marginBottom: spacing[1],
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 14,
+                      backgroundColor: palette.infoSoft,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <AppText style={{ fontSize: 14 }}>{review.authorName.slice(0, 1)}</AppText>
+                  </View>
+                  <AppText variant="bodySmallBold">{review.authorName}</AppText>
+                  <View style={{ flexDirection: "row", gap: 1 }}>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star
+                        key={i}
+                        size={10}
+                        color={palette.amber}
+                        fill={i <= review.rating ? palette.amber : "transparent"}
+                      />
+                    ))}
+                  </View>
+                </View>
+                <AppText variant="bodySmall" style={{ lineHeight: 20 }}>
+                  {review.text}
+                </AppText>
+                <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
+                  {new Date(review.createdAt).toLocaleDateString()} · {review.dishName}
+                </AppText>
+              </Card>
+            ))
+          ) : (
+            <Card style={{ backgroundColor: palette.bgSoft, borderWidth: 0 }}>
+              <AppText variant="bodySmall" tone="secondary">
+                Reviews from diners will appear here once available.
+              </AppText>
+            </Card>
+          )}
         </View>
       </ScrollView>
 
@@ -477,7 +544,7 @@ export function StallDetailScreenV2({ route }: Props) {
           borderTopColor: palette.border,
           flexDirection: "row",
           gap: spacing[3],
-          paddingBottom: 34, // Safe area
+          paddingBottom: Math.max(insets.bottom, spacing[4]),
         }}
       >
         <Button

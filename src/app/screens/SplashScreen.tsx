@@ -100,15 +100,7 @@ export function SplashScreen({ navigation }: Props) {
         return;
       }
 
-      if (!isAuthenticated) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-        });
-        return;
-      }
-
-      if (!hasCompletedOnboarding) {
+      if (isAuthenticated && !hasCompletedOnboarding) {
         navigation.reset({
           index: 0,
           routes: [{ name: "OnboardingStack", params: { screen: "OnboardingIntro1" } }],

@@ -22,7 +22,7 @@ import {
   prefetchStallDetail,
   preloadRoute,
 } from "@/features/navigation/prefetch";
-import { resetServiceProvider, setMockServiceProvider } from "@/lib/services/serviceProvider";
+import { setMockServiceProvider, setSupabaseServiceProvider } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
@@ -477,7 +477,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
 
   const enterUserMode = () => {
     setDeveloperMerchantMode(false);
-    resetServiceProvider();
+    setSupabaseServiceProvider();
     setMerchantAccount(null);
     clearSession();
     completeAuth();
@@ -486,6 +486,18 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     hideReviewSuccess();
     showToast({ message: "Mode → User", tone: "info" });
     navigation.navigate("MainTabs", { screen: "Home" });
+  };
+
+  const openActivityInboxSmoke = () => {
+    setMockServiceProvider();
+    setDeveloperMerchantMode(true);
+    setMerchantAccount(null);
+    clearSession();
+    completeAuth();
+    completeOnboarding(false);
+    setReturnRoute(undefined);
+    hideReviewSuccess();
+    navigation.navigate("ActivityInbox", { initialTab: "updates" });
   };
 
   const openBuilding = (buildingId: string) => {
@@ -583,6 +595,11 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           variant="ghost"
           onPress={() => navigation.replace("Splash")}
           style={{ minHeight: 40 }}
+        />
+        <DevButton
+          label="Activity"
+          onPressIn={() => preloadRoute(navigation, "ActivityInbox", { initialTab: "updates" })}
+          onPress={openActivityInboxSmoke}
         />
 
         <CollapsibleSection

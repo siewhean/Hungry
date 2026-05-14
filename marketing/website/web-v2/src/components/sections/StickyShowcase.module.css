@@ -1,0 +1,37 @@
+.section {
+  background:
+    radial-gradient(circle at 90% 5%, color-mix(in srgb, var(--color-primary) 13%, transparent), transparent 28%),
+    var(--color-white);
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-32) 0 var(--space-20);
+}
+
+.header {
+  margin: 0 auto var(--space-14);
+  max-width: 820px;
+  text-align: center;
+}
+
+.eyebrow {
+  color: var(--color-primary);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-4);
+  text-transform: uppercase;
+}
+
+.header h2 {
+  color: var(--color-text-primary);
+  font-size: clamp(2.5rem, 5.5vw, 5rem);
+  line-height: 0.98;
+  margin-bottom: var(--space-5);
+}
+
+.header p {
+  color: var(--color-text-secondary);
+  font-size: clamp(var(--font-size-md), 1.8vw, var(--font-size-xl));
+  line-height: 1.55;
+}

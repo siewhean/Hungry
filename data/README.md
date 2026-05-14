@@ -28,3 +28,16 @@ npm run data:enrich
 - [NEA Dates of Hawker Centres Closure](https://data.gov.sg/datasets/d_bda4baa634dd1cc7a6c7cad5f19e2d68/view)
 - [WhyQ Corporate Catering stall catalogue](https://www.whyq.sg/corporate-catering)
 - [Food Republic outlet pages](https://foodrepublic.com.sg/food-republic-outlets/)
+
+## Dual-account quota pin automation
+
+Keep Places `SearchTextRequest per minute` pinned until both primary and backup keys reach ceiling behavior:
+
+```bash
+npm run data:quota:pin:both -- --duration-s 75 --concurrency 20 --target-per-minute 600 --max-cycles 20
+```
+
+Behavior:
+- reads `GOOGLE_MAPS_ENRICHMENT_API_KEY` and `GOOGLE_MAPS_ENRICHMENT_API_KEY_BACKUP` from `.env.local`
+- runs repeated saturation windows for each key
+- exits only when both accounts hit ceiling behavior (`429` observed or sustained near-full successful volume)

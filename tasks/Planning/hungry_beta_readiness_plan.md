@@ -1,7 +1,7 @@
 # Hungry Beta Readiness Plan
 
-> Project: Hungry
-> Purpose: Prepare Hungry for a controlled beta release with real users, real data, and reliable feedback loops.
+> Project: Hungry  
+> Purpose: Prepare Hungry for a controlled beta release with real users, real data, and reliable feedback loops.  
 > Recommended scope: Private/TestFlight beta first, then limited public beta.
 
 ---

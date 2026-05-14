@@ -53,7 +53,7 @@ test("Review feed cards do not render bottom bites sections", () => {
     assert.match(source, /interaction\.commentCount > 0/);
     assert.match(source, /interaction\.likeCount > 0/);
     assert.match(source, /interaction\.shareCount > 0/);
-    assert.match(source, /<Send[\s\S]*<Bookmark[\s\S]*<(?:MessageCircle|CommentIcon)[\s\S]*<Heart/);
+    assert.match(source, /<Send[\s\S]*<Bookmark[\s\S]*<CommentIcon[\s\S]*<Heart/);
     assert.match(source, /justifyContent: "space-between"[\s\S]*justifyContent: "flex-end"/);
   }
 
@@ -68,7 +68,8 @@ test("Review feed cards do not render bottom bites sections", () => {
     /placeholder=\{activeReplyCommentId \? "Write a reply\.\.\." : "Add a comment\.\.\."\}/,
   );
 
-  assert.match(reviewShareSheet, /recipients=\{shareRecipients\}/);
+  assert.match(reviewShareSheet, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
+  assert.match(reviewShareSheet, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
   assert.match(reviewShareSheet, /toChatShareRecipient/);
   assert.doesNotMatch(reviewShareSheet, /ACTIVITY_MESSAGES/);
   assert.match(reviewShareSheet, /selectedChatIds/);

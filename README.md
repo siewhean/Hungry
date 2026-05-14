@@ -84,6 +84,8 @@ The application uses feature flags to toggle functionality for development and r
 |------|-------------|---------|
 | `HUNGRY_DATA_SOURCE` | Toggle between `mock` and `supabase` data layers. | `mock` |
 | `FEATURE_FLAGS.directMessagesEnabled` | Enable the Direct Messages tab and chat functionality. | `false` |
+| `FEATURE_FLAGS.prototypeRoutesEnabled` | Register V2/prototype routes outside production release builds. | `true` in development/staging, `false` in production |
+| `FEATURE_FLAGS.merchantCentreEnabled` | Register merchant centre routes for production-like builds. | `false` |
 | `FEATURE_FLAGS.commentsEnabled` | Enable the community comments section on dish posts. | `true` |
 | `FEATURE_FLAGS.craveEnabled` | Enable the "Daily Crave" swiping discovery mode. | `true` |
 | `FEATURE_FLAGS.readsEnabled` | Enable the "Reads" (blog) tab. | `true` |
@@ -110,10 +112,10 @@ To override these locally, you can use `.env.development` or modify the constant
 | Offline + NotFound states | Done |
 | Marketing launch kit | Done |
 | Typecheck | Passing |
-| Expo Doctor | Blocked locally (npm cache permissions) |
+| Expo Doctor | Passing with writable npm cache path |
 | Agent harness docs | Done |
 | Unit tests | Passing (`npm test`) |
-| Playwright E2E | Passing (`npm run test:e2e`) |
+| Playwright E2E | Passing when run with localhost access; Codex sandbox TCP bind needs elevated/local shell |
 
 ---
 
@@ -123,8 +125,11 @@ To override these locally, you can use `.env.development` or modify the constant
 - Mock data lives exclusively in `src/lib/services/mock/data.ts`
 - Design tokens live exclusively in `src/theme/tokens.ts` — never hardcode values
 - The app runs fully without network or backend
-- Signed-out users now enter through auth before the main shell; guest browsing is no longer part of the current runtime flow
-- The old browse-as-guest soft gate has been removed from runtime navigation; protected actions now route directly into auth
+- Signed-out users can browse Home, Discover, Search, dish/stall details, Reads, and basic discovery/map surfaces
+- Protected actions route to auth and keep a return route: create post, review, save/favourite, messages/chat, profile-private pages, merchant tools, claim/order/cart
+- V2/prototype routes are registered only when `FEATURE_FLAGS.prototypeRoutesEnabled` is true; production builds keep unfinished prototype/design routes off the root navigator
+- `MerchantTabs` is registered only when `FEATURE_FLAGS.merchantCentreEnabled` is true
+- Direct messages and chat entry points are hidden or disabled when `FEATURE_FLAGS.directMessagesEnabled` is false
 - `Reads` tab is behind `FEATURE_FLAGS.readsEnabled` (default `true`)
 - Map mock mode: set `FEATURE_FLAGS.mockMapboxEnabled = true` for test environments
 - Real map runtime: set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` locally to enable the live Mapbox surface; without it, the map falls back to a static coordinate preview so the repo screens stay inspectable.
@@ -134,13 +139,13 @@ To override these locally, you can use `.env.development` or modify the constant
 - Root Expo scaffold, typed domain layer, Zustand stores, and mock repositories are in place
 - Discover, Search, Details, Auth, Onboarding, Profile, Review, Reads, and recovery flows are implemented in the mobile app shell
 - Review compose now supports real library photo attachments via `expo-image-picker` (dev client/native build required).
-- The current runtime shell is auth-first. Signed-out users route through Splash into Auth before the main app shell.
+- The current runtime shell is browse-first for public discovery surfaces. Signed-out users route through Splash into `MainTabs` and are redirected to auth only for protected actions.
 - In `__DEV__`, app now boots into the Developer Launcher to speed QA state setup (signed out / onboarding incomplete / onboarding complete presets).
 - Developer Launcher Merchant Mode now seeds the dev merchant state and bypasses the merchant sign-in gate before opening MerchantTabs.
 - Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
 - Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and polygon-based building directory layouts (including Wisma and JEM mall-style floor overlays with vertical level switching).
 - **Design Specifications** — Comprehensive visual, UX, and accessibility specs for all remaining backlog items are now available in `docs/audit/`. These serve as the authoritative implementation guide for Batch 1–8.
-- Current audit status: `npm run typecheck` passes, `npm run lint` passes with 0 errors, `npm test -- --watch=false` passes, `npm run test:e2e` passes, `npm audit --audit-level=moderate` reports 0 vulnerabilities, and `npx expo-doctor` passes (17/17) when run with a writable npm cache path.
+- Current audit status: `npm run typecheck` passes, `npm run lint` passes with 0 errors, `npm test -- --watch=false` passes, `npm run test:e2e -- --reporter=line` passes when run with localhost access, `npm run smoke:native:ios:prepared` passes on the prepared iOS simulator path, and `npx expo-doctor` passes (17/17) when run with a writable npm cache path; see `tasks/verification.md`.
 
 
 ## Commands

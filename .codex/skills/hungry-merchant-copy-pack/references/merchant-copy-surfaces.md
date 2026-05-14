@@ -22,3 +22,4 @@ Primary surfaces:
 - vague “AI platform” language
 - generic SaaS filler
 - US-centric merchant verification assumptions
+

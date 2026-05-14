@@ -796,3 +796,4 @@ These can be added later:
 - Promotions layer
 - AI-assisted floor-plan tracing
 - Batch import from mall/hawker directory sources
+

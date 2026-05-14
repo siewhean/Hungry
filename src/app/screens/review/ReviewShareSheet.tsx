@@ -10,6 +10,7 @@ import {
 import { Copy, Share2 } from "lucide-react-native";
 
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useActivityStore } from "@/store/useActivityStore";
@@ -47,9 +48,15 @@ export function ReviewShareSheet({
   const showToast = useUIStore((state) => state.showToast);
   const [selectedChatIds, setSelectedChatIds] = useState<string[]>([]);
   const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
+  const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled;
   const snapPoints = useMemo(() => ["62%"], []);
 
   const loadChatConversations = useCallback(async () => {
+    if (!FEATURE_FLAGS.directMessagesEnabled) {
+      setShareRecipients([]);
+      return;
+    }
+
     try {
       const conversations = await getHungryService().chat.listConversations();
       setShareRecipients(conversations.map(toChatShareRecipient));
@@ -78,6 +85,7 @@ export function ReviewShareSheet({
   }, [onDismiss]);
 
   const sendToHungryUsers = useCallback(async () => {
+    if (!FEATURE_FLAGS.directMessagesEnabled) return;
     if (!activeReview || selectedChatIds.length === 0) return;
 
     try {
@@ -141,17 +149,21 @@ export function ReviewShareSheet({
         )}
         backgroundStyle={{ backgroundColor: palette.surface }}
         handleIndicatorStyle={{ backgroundColor: palette.border }}
-        footerComponent={(props) => (
-          <BottomSheetFooter {...props}>
-            <FloatingShareSendButton
-              selectedCount={selectedChatIds.length}
-              onPress={sendToHungryUsers}
-              bottomInset={bottomInset}
-              accessibilityLabel="Send shared review"
-              placement="inline"
-            />
-          </BottomSheetFooter>
-        )}
+        footerComponent={
+          directMessagesEnabled
+            ? (props) => (
+                <BottomSheetFooter {...props}>
+                  <FloatingShareSendButton
+                    selectedCount={selectedChatIds.length}
+                    onPress={sendToHungryUsers}
+                    bottomInset={bottomInset}
+                    accessibilityLabel="Send shared review"
+                    placement="inline"
+                  />
+                </BottomSheetFooter>
+              )
+            : undefined
+        }
       >
         <BottomSheetView style={{ flex: 1 }}>
           <BottomSheetScrollView
@@ -163,7 +175,7 @@ export function ReviewShareSheet({
             }}
           >
             <InAppShareCard
-              title="Share review"
+              title={directMessagesEnabled ? "Share review" : "Share review link"}
               quickActions={[
                 {
                   key: "copy",
@@ -180,7 +192,7 @@ export function ReviewShareSheet({
                   onPress: () => void shareOutsideHungry(),
                 },
               ]}
-              recipients={shareRecipients}
+              recipients={directMessagesEnabled ? shareRecipients : []}
               selectedRecipientIds={selectedChatIds}
               onToggleRecipient={toggleChat}
               onSend={sendToHungryUsers}

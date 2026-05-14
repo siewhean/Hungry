@@ -220,18 +220,20 @@ export interface TasteInteractionEvent {
   reason?: "missing_dish" | "missing_signal" | "capped";
 }
 
+export type ProfileVisibility = "public" | "private";
+
 export interface UserProfile {
   id: string;
   displayName: string;
   email: string;
   avatarUrl?: string;
   tasteVector: TasteVector;
+  profileVisibility: ProfileVisibility;
   /** Extended psychometric taste profile (populated after scenario quiz) */
   tasteProfile?: TasteProfile;
   dietaryPreferences: DietaryFlag[];
   favouriteDishIds: string[];
   reviewedDishIds: string[];
-  profileVisibility?: "public" | "private";
   stats: {
     dishesReviewed: number;
     stallsVisited: number;

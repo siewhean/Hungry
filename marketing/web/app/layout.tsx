@@ -1,25 +1,54 @@
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 import localFont from "next/font/local";
 import "./globals.css";
 
 const nunito = localFont({
   src: [
-    { path: "./fonts/Nunito_400Regular.ttf", weight: "400", style: "normal" },
-    { path: "./fonts/Nunito_500Medium.ttf", weight: "500", style: "normal" },
-    { path: "./fonts/Nunito_600SemiBold.ttf", weight: "600", style: "normal" },
-    { path: "./fonts/Nunito_700Bold.ttf", weight: "700", style: "normal" },
-    { path: "./fonts/Nunito_800ExtraBold.ttf", weight: "800", style: "normal" },
+    {
+      path: "./fonts/Nunito_400Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/Nunito_500Medium.ttf",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "./fonts/Nunito_600SemiBold.ttf",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "./fonts/Nunito_700Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "./fonts/Nunito_800ExtraBold.ttf",
+      weight: "800",
+      style: "normal",
+    },
   ],
-  variable: "--font-nunito",
+  variable: "--font-body",
   display: "swap",
 });
 
 const dmMono = localFont({
   src: [
-    { path: "./fonts/DMMono_400Regular.ttf", weight: "400", style: "normal" },
-    { path: "./fonts/DMMono_500Medium.ttf", weight: "500", style: "normal" },
+    {
+      path: "./fonts/DMMono_400Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/DMMono_500Medium.ttf",
+      weight: "500",
+      style: "normal",
+    },
   ],
-  variable: "--font-dm-mono",
+  variable: "--font-mono",
   display: "swap",
 });
 
@@ -77,10 +106,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-SG" className={`${nunito.variable} ${dmMono.variable}`}>
-      <body className="font-body bg-hungry-bg text-hungry-text antialiased overflow-x-hidden w-full max-w-full">
-        {children}
-      </body>
+    <html
+      lang="en-SG"
+      className={`${nunito.variable} ${dmMono.variable}`}
+      style={{ "--font-display": "var(--font-body)" } as CSSProperties}
+    >
+      <body className="font-body bg-hungry-bg text-hungry-text antialiased">{children}</body>
     </html>
   );
 }

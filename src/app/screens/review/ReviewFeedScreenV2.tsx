@@ -44,8 +44,6 @@ type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 type FilterMode = "Recent" | "Rating" | "Dish" | "Location" | "Vegetarian";
 
-const CommentIcon = MessageCircle ?? MessageCircleMore;
-
 const FILTER_CHIPS: FilterMode[] = ["Recent", "Rating", "Dish", "Location", "Vegetarian"];
 
 // ─── ReviewCardV2 ─────────────────────────────────────────────────────────────
@@ -68,6 +66,7 @@ function ReviewCardV2({
   onLikePress: (reviewId: string) => void;
 }) {
   const { palette, radii, spacing, shadows, typography } = useHungryTheme();
+  const CommentIcon = MessageCircle ?? MessageCircleMore;
   const { width } = useWindowDimensions();
   const hasPhoto = item.review.photos.length > 0;
   const reviewDate = new Date(item.review.createdAt).toLocaleDateString("en-SG", {

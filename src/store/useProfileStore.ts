@@ -18,6 +18,7 @@ import type {
   DietaryFlag,
   DishDetail,
   RecommendationSurface,
+  ProfileVisibility,
   TasteProfile,
   TasteInteractionEvent,
   TasteInteractionType,
@@ -40,6 +41,7 @@ interface ProfileState {
   syncProfile: (isAuthenticated: boolean) => void;
   toggleFavourite: (dish: DishDetail) => void;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email" | "avatarUrl">>) => void;
+  setProfileVisibility: (profileVisibility: ProfileVisibility) => void;
   setTasteVector: (tasteVector: TasteVector) => void;
   setTasteProfile: (tasteProfile: TasteProfile) => void;
   setDietaryPreferences: (dietaryPreferences: DietaryFlag[]) => void;
@@ -346,6 +348,24 @@ export const useProfileStore = create<ProfileState>()(
             ...next,
           },
         })),
+      setProfileVisibility: (profileVisibility) => {
+        const currentVisibility = get().profile.profileVisibility;
+        if (currentVisibility === profileVisibility) return;
+        set((state) => ({
+          profile: {
+            ...state.profile,
+            profileVisibility,
+          },
+        }));
+        if (getServiceProvider().mode === "mock") {
+          return;
+        }
+        void getHungryService()
+          .profile.updateProfile({ profileVisibility })
+          .catch((error) => {
+            console.error("Failed to update profile visibility", error);
+          });
+      },
       setTasteVector: (tasteVector) =>
         set((state) => {
           trackAnalyticsEvent("taste_quiz_completed", {

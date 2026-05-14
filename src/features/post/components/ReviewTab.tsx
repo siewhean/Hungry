@@ -8,6 +8,17 @@ import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
 import { spacing, semanticSpacing } from "@/theme/tokens";
 
+const HASHTAG_SUGGESTIONS = [
+  "#singaporefood",
+  "#hawkergems",
+  "#delicious",
+  "#shiok",
+  "#foodreview",
+  "#supportlocal",
+  "#sgfoodies",
+  "#musttry",
+] as const;
+
 export function ReviewTab() {
   const { palette, radii } = useHungryTheme();
   const reviewCaption = useComposerStore((state) => state.reviewCaption);
@@ -17,8 +28,14 @@ export function ReviewTab() {
   const setRating = useComposerStore((state) => state.setRating);
   const useSameCaption = useComposerStore((state) => state.useSameCaption);
   const setUseSameCaption = useComposerStore((state) => state.setUseSameCaption);
+  const [suggestionOffset, setSuggestionOffset] = React.useState(0);
 
   const remaining = 500 - reviewCaption.length;
+  const visibleSuggestions = HASHTAG_SUGGESTIONS.slice(suggestionOffset, suggestionOffset + 4);
+  const hashtagSuggestions =
+    visibleSuggestions.length === 4
+      ? visibleSuggestions
+      : [...visibleSuggestions, ...HASHTAG_SUGGESTIONS.slice(0, 4 - visibleSuggestions.length)];
 
   const handleAddHashtag = (tag: string) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -26,6 +43,11 @@ export function ReviewTab() {
     if (newCaption.length <= 500) {
       setCaption(newCaption);
     }
+  };
+
+  const handleRefreshHashtags = () => {
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setSuggestionOffset((current) => (current + 4) % HASHTAG_SUGGESTIONS.length);
   };
 
   return (
@@ -129,14 +151,12 @@ export function ReviewTab() {
           <AppText variant="bodySmallBold">AI Hashtag Suggestions</AppText>
         </View>
         <View style={[styles.chipRow, { gap: semanticSpacing.inlineGaps }]}>
-          {["#singaporefood", "#hawkergems", "#delicious", "#shiok"].map((tag) => (
+          {hashtagSuggestions.map((tag) => (
             <Pressable key={tag} onPress={() => handleAddHashtag(tag)}>
               <Badge label={tag} tone="neutral" />
             </Pressable>
           ))}
-          <Pressable
-            onPress={() => void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)}
-          >
+          <Pressable onPress={handleRefreshHashtags}>
             <Badge label="Refresh" tone="orange" />
           </Pressable>
         </View>

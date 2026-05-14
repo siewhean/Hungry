@@ -21,3 +21,4 @@ Synchronize code, canonical task status, and verification evidence without re-su
 ## Good prompt
 
 “Verify `SEC-02`, `OCR-DG-01`, and `WEB-11` against current code and docs. Patch only the canonical rows and verification evidence.”
+

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { QrCode, Smartphone, CreditCard, Clock } from "lucide-react-native";
 
 import { AppText, Button, Screen } from "@/components/ui";
@@ -33,12 +33,10 @@ export function OrdersComingSoonScreen() {
               Skip the queue. Let customers order and pay directly from their phones.
             </AppText>
           </View>
-          <Button
-            label="Join the Pilot Program"
-            variant="primary"
-            fullWidth
-            onPress={() => Alert.alert("Pilot", "Registration coming soon")}
-          />
+          <Button label="Pilot Program Unavailable" variant="primary" fullWidth disabled />
+          <AppText variant="micro" tone="muted" style={{ textAlign: "center" }}>
+            Ordering is not enabled for this build.
+          </AppText>
         </View>
 
         {/* How it works */}
@@ -262,9 +260,12 @@ export function OrdersComingSoonScreen() {
             <Button
               label="Download PDF Mockup"
               variant="secondary"
+              disabled
               style={{ marginTop: spacing[4], width: "100%" }}
-              onPress={() => Alert.alert("Download", "PDF mockup generation coming soon")}
             />
+            <AppText variant="micro" tone="muted" style={{ marginTop: spacing[2] }}>
+              PDF export will be enabled after ordering setup is active.
+            </AppText>
           </View>
         </View>
 

@@ -8,7 +8,7 @@
  *   lg — full cred panel (level name + points + progress bar)
  */
 
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useEffect } from "react";
 
@@ -19,9 +19,10 @@ import { useFoodCredStore, FOOD_CRED_LEVELS } from "@/store/useFoodCredStore";
 interface FoodCredBadgeProps {
   size?: "sm" | "md" | "lg";
   showPoints?: boolean;
+  style?: ViewStyle;
 }
 
-export function FoodCredBadge({ size = "md", showPoints = false }: FoodCredBadgeProps) {
+export function FoodCredBadge({ size = "md", showPoints = false, style }: FoodCredBadgeProps) {
   const { palette, radii, spacing, typography } = useHungryTheme();
   const totalPoints = useFoodCredStore((s) => s.totalPoints);
   const currentLevel = useFoodCredStore((s) => s.currentLevel());
@@ -49,6 +50,7 @@ export function FoodCredBadge({ size = "md", showPoints = false }: FoodCredBadge
             paddingHorizontal: spacing[2],
             paddingVertical: spacing[1],
           },
+          style,
         ]}
       >
         <AppText
@@ -66,7 +68,7 @@ export function FoodCredBadge({ size = "md", showPoints = false }: FoodCredBadge
 
   if (size === "md") {
     return (
-      <View style={styles.row}>
+      <View style={[styles.row, style]}>
         <View
           style={[
             styles.badgePill,

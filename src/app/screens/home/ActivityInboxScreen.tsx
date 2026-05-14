@@ -13,6 +13,7 @@ import {
   getActivityReadKey,
   type ActivityUpdate,
 } from "@/features/home/activity";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { ChatConversation } from "@/lib/services/types";
@@ -22,8 +23,6 @@ import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ActivityInbox">;
 type ActivityTab = "messages" | "updates";
-
-const TABS: ActivityTab[] = ["messages", "updates"];
 
 function formatActivityChatTime(value: string): string {
   const timestamp = new Date(value).getTime();
@@ -37,7 +36,13 @@ function formatActivityChatTime(value: string): string {
 }
 
 export function ActivityInboxScreen({ navigation, route }: Props) {
-  const initialTab = route.params?.initialTab ?? "updates";
+  const tabs: ActivityTab[] = FEATURE_FLAGS.directMessagesEnabled
+    ? ["messages", "updates"]
+    : ["updates"];
+  const initialTab =
+    FEATURE_FLAGS.directMessagesEnabled && route.params?.initialTab === "messages"
+      ? "messages"
+      : "updates";
   const [activeTab, setActiveTab] = useState<ActivityTab>(initialTab);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [isMessagesLoading, setIsMessagesLoading] = useState(true);
@@ -46,11 +51,15 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
   const activityUpdates = useActivityStore((state) => state.activityUpdates);
   const repository = getDataRepository();
   const publishedPosts = usePublishedPostStore((state) => state.posts);
-  const posts = useMemo(() => listSharedStallPostsSync(repository), [publishedPosts, repository]);
+  const posts = useMemo(() => {
+    void publishedPosts;
+    return listSharedStallPostsSync(repository);
+  }, [publishedPosts, repository]);
+  const postById = useMemo(() => new Map(posts.map((post) => [post.id, post])), [posts]);
   const { palette, spacing, semanticSpacing, radii } = useHungryTheme();
   const allUpdates = useMemo(() => {
     return [...ACTIVITY_UPDATES, ...activityUpdates].map((update) => {
-      const post = posts.find((candidate) => candidate.id === update.postId);
+      const post = postById.get(update.postId);
       const postName = post?.authorName ?? post?.caption ?? "Post";
       const venueName = post ? `${post.authorLocation}` : "";
       return {
@@ -58,7 +67,7 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
         target: update.target || (venueName ? `${postName} · ${venueName}` : postName),
       };
     });
-  }, [posts, activityUpdates]);
+  }, [postById, activityUpdates]);
 
   const styles = useMemo(
     () => createStyles({ spacing, semanticSpacing, radii }),
@@ -66,6 +75,13 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
   );
 
   const loadConversations = useCallback(async () => {
+    if (!FEATURE_FLAGS.directMessagesEnabled) {
+      setConversations([]);
+      setMessagesError(null);
+      setIsMessagesLoading(false);
+      return;
+    }
+
     setIsMessagesLoading(true);
     setMessagesError(null);
     return getHungryService()
@@ -110,7 +126,7 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
         />
 
         <View style={[styles.segmentedControl, { backgroundColor: palette.bgSoft }]}>
-          {TABS.map((tab) => {
+          {tabs.map((tab) => {
             const isActive = activeTab === tab;
             const unreadCount =
               tab === "messages"
@@ -266,6 +282,7 @@ function MessagesTab({
                       backgroundColor={palette.orange}
                       borderColor={palette.bg}
                       count={unreadCount}
+                      textColor={palette.white}
                     />
                   ) : null}
                 </View>
@@ -416,11 +433,13 @@ function UnreadCountBadge({
   backgroundColor,
   borderColor,
   count,
+  textColor,
 }: {
   accessibilityLabel: string;
   backgroundColor: string;
   borderColor: string;
   count: number;
+  textColor: string;
 }) {
   return (
     <View
@@ -433,7 +452,7 @@ function UnreadCountBadge({
         },
       ]}
     >
-      <AppText variant="micro" style={stylesInline.unreadCountText}>
+      <AppText variant="micro" style={[stylesInline.unreadCountText, { color: textColor }]}>
         {count > 99 ? "99+" : count}
       </AppText>
     </View>
@@ -497,7 +516,6 @@ const stylesInline = StyleSheet.create({
     top: -4,
   },
   unreadCountText: {
-    color: "#FFFFFF",
     fontWeight: "900",
     lineHeight: 13,
   },

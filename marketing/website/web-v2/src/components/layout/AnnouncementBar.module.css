@@ -1,0 +1,27 @@
+.announcementBar {
+  background-color: var(--color-text-primary);
+  color: var(--color-bg);
+  text-align: center;
+  min-height: var(--announcement-height);
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0;
+  z-index: 50;
+  position: relative;
+}
+
+.announcementText {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.highlight {
+  color: var(--color-accent);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}

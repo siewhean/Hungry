@@ -22,13 +22,19 @@ import { useHungryTheme } from "@/theme";
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
-const SEARCH_TABS = ["All", "Dishes", "Stalls", "Reads"] as const;
+const SEARCH_TABS = ["All", "Dishes", "Stalls"] as const;
 const TASTE_CHIPS = [
   { id: "spicy", label: "Spicy", tokens: ["spicy", "mala", "hiam", "heat"] },
   { id: "coconut", label: "Coconut", tokens: ["coconut", "lemak", "laksa"] },
   { id: "seafood", label: "Seafood", tokens: ["seafood", "fish", "prawn", "satay"] },
   { id: "herb", label: "Herb", tokens: ["herb", "aromatic", "ginger", "fresh"] },
 ] as const;
+
+function formatDistance(distanceMeters: number) {
+  return distanceMeters >= 1000
+    ? `${(distanceMeters / 1000).toFixed(1)}km`
+    : `${Math.round(distanceMeters)}m`;
+}
 
 export function DishSearchScreenV2() {
   const navigation = useNavigation<RootNavigation>();
@@ -43,10 +49,6 @@ export function DishSearchScreenV2() {
     [filters.query, profile],
   );
   const collections = useMemo(() => {
-    if (activeTab === "Reads") {
-      return [];
-    }
-
     const filteredByTaste = activeTasteFilters.length
       ? baseCollections.filter((item) => {
           const haystack = item.topDishes
@@ -63,7 +65,7 @@ export function DishSearchScreenV2() {
       : baseCollections;
 
     return filteredByTaste.slice(0, 5);
-  }, [activeTab, activeTasteFilters, baseCollections]);
+  }, [activeTasteFilters, baseCollections]);
 
   const { width: screenWidth } = useWindowDimensions();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -325,7 +327,11 @@ export function DishSearchScreenV2() {
             }}
           >
             <AppText variant="h2" style={{ fontSize: 16, fontWeight: "800" }}>
-              {filters.query ? `Dishes matching "${filters.query}"` : "Trending dishes"}
+              {filters.query
+                ? `${activeTab === "Stalls" ? "Stalls" : "Dishes"} matching "${filters.query}"`
+                : activeTab === "Stalls"
+                  ? "Trending stalls"
+                  : "Trending dishes"}
             </AppText>
             <AppText variant="micro" tone="secondary" style={{ fontWeight: "600" }}>
               {collections.length} results
@@ -337,8 +343,8 @@ export function DishSearchScreenV2() {
             {collections.length === 0 ? (
               <EmptyState
                 icon={<ChefHat size={34} color={palette.orange} style={{ opacity: 0.9 }} />}
-                title="No food available right now"
-                body="There are no dishes in the database at the moment. Try again later or adjust your search."
+                title="No matches"
+                body="Try a different dish, stall, or taste filter."
               />
             ) : null}
             {collections.map((item) => {
@@ -380,7 +386,7 @@ export function DishSearchScreenV2() {
                     <AppText variant="bodyBold">{dish.name}</AppText>
                     <View style={{ gap: 2, marginTop: 2 }}>
                       <AppText variant="micro" tone="secondary">
-                        {item.venue.name} · 80m
+                        {item.venue.name} · {formatDistance(dish.distanceMeters)}
                       </AppText>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
@@ -390,7 +396,9 @@ export function DishSearchScreenV2() {
                           </AppText>
                         </View>
                         <AppText variant="micro" tone="secondary">
-                          · 312 reviews
+                          {dish.reviewCount > 0
+                            ? `· ${dish.reviewCount} reviews`
+                            : "No reviews yet"}
                         </AppText>
                         <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                           S${dish.price.toFixed(2)}
@@ -398,21 +406,23 @@ export function DishSearchScreenV2() {
                       </View>
                     </View>
                   </View>
-                  <View
-                    style={{
-                      backgroundColor: palette.successSoft,
-                      paddingHorizontal: 8,
-                      paddingVertical: 2,
-                      borderRadius: 4,
-                    }}
-                  >
-                    <AppText
-                      variant="micro"
-                      style={{ color: palette.success, fontWeight: "800", fontSize: 10 }}
+                  {item.venue.verificationStatus === "verified" ? (
+                    <View
+                      style={{
+                        backgroundColor: palette.successSoft,
+                        paddingHorizontal: 8,
+                        paddingVertical: 2,
+                        borderRadius: 4,
+                      }}
                     >
-                      A
-                    </AppText>
-                  </View>
+                      <AppText
+                        variant="micro"
+                        style={{ color: palette.success, fontWeight: "800", fontSize: 10 }}
+                      >
+                        Verified
+                      </AppText>
+                    </View>
+                  ) : null}
                 </Pressable>
               );
             })}

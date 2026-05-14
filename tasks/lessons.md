@@ -53,5 +53,3 @@
 - For bottom-sheet controls that must remain visible while the list scrolls, verify with a simulator screenshot; absolute children inside scroll content can sit below the visible viewport instead of behaving like a floating overlay.
 - For Expo Web E2E, set both private and `EXPO_PUBLIC_` mock data-source flags in the Playwright web server; bundled web code cannot read private env vars, and tests should prove the rendered read path rather than only the composer success state.
 - Contract tests should not depend on Prettier-only formatting details such as trailing commas in collapsed arrays; assert the behavioral source dependency instead.
-- Marketing website navigation and footer changes should go through shared shell data/components first, then be verified from the served pages; per-page nav/footer edits drift quickly across Stitch-rendered routes, legal pages, and merchant portal pages.
-- React Navigation lazy placeholders are render callbacks, not component registrations; never pass a hook-using component directly as `lazyPlaceholder`. Wrap it as `() => <Placeholder />` or keep the callback hook-free so `SceneView` hook order stays stable.

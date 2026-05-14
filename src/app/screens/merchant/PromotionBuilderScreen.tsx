@@ -58,13 +58,13 @@ export function PromotionBuilderScreen() {
     void loadPromotion();
   }, [promotionId, activeOutlet]);
 
-  const toggleAudience = (audience: PromotionTargetAudience) => {
+  const setAudienceSelected = (audience: PromotionTargetAudience, selected: boolean) => {
     setTargetAudiences((prev) => {
       const next = new Set(prev);
-      if (next.has(audience)) {
-        next.delete(audience);
-      } else {
+      if (selected) {
         next.add(audience);
+      } else {
+        next.delete(audience);
       }
       return next;
     });
@@ -131,7 +131,10 @@ export function PromotionBuilderScreen() {
     const isSelected = targetAudiences.has(id);
     return (
       <Pressable
-        onPress={() => toggleAudience(id)}
+        accessibilityRole="button"
+        accessibilityLabel={`${isSelected ? "Remove" : "Add"} audience ${label}`}
+        accessibilityState={{ selected: isSelected }}
+        onPress={() => setAudienceSelected(id, !isSelected)}
         style={[
           styles.audienceCard,
           {
@@ -152,7 +155,7 @@ export function PromotionBuilderScreen() {
         </View>
         <Switch
           value={isSelected}
-          onValueChange={() => toggleAudience(id)}
+          onValueChange={(value) => setAudienceSelected(id, value)}
           trackColor={{ true: palette.orange, false: palette.border }}
         />
       </Pressable>

@@ -49,3 +49,4 @@ Accepted inputs:
 - UEN + registered business details.
 - NEA/SFA licence details for stall operators.
 - Contact name + contact email/phone for follow-up.
+
