@@ -15,6 +15,16 @@ Use the smallest check that matches the change risk.
 
 | date | scope | command | result | notes |
 |---|---|---|---|---|
+| 2026-05-15 | db foundation (DB-P0-01) | `node --import tsx --test src/lib/services/supabase/database-foundation.test.ts` | Pass | 6/6 source-contract tests pass for additive-only migration, canonical text ID references, RLS coverage, service-role-only policies, required indexes, deferred-scope guards, and smoke SQL coverage |
+| 2026-05-15 | db foundation (DB-P0-01) | `npm run typecheck` | Pass | Strict TypeScript gate passed after adding the database foundation source contract |
+| 2026-05-15 | db foundation (DB-P0-01) | `npm test` | Pass | 249 total tests: 247 pass, 2 skipped |
+| 2026-05-15 | db foundation (DB-P0-01) | `git diff --check` | Pass | Touched migration, smoke SQL, test, and task docs have no whitespace errors |
+| 2026-05-15 | db foundation (DB-P0-01) | `gitleaks protect --staged --redact` | Pass | Scanned about 43.83 KB of staged changes; no leaks found |
+| 2026-05-15 | db foundation (DB-P0-01) | QA/QC agent review | Pass | No blocking or non-blocking findings. Agent confirmed additive-only scope, canonical text FK compatibility, RLS/service-role policy coverage, no `anon`/`authenticated` raw-data access, smoke/test coverage, and accurate blocker documentation |
+| 2026-05-15 | db foundation (DB-P0-01) | `supabase db push --dry-run` | Blocked | CLI found the linked project after copying ignored `.temp` metadata from the untouched checkout, then failed with `Access token not provided`; no `SUPABASE_ACCESS_TOKEN` is available in this shell |
+| 2026-05-15 | db foundation (DB-P0-01) | `supabase db reset --local --include-seed` | Blocked | Installed Supabase CLI does not support `--include-seed`; help shows local reset seeds by default unless `--no-seed` is passed |
+| 2026-05-15 | db foundation (DB-P0-01) | `supabase db reset --local` | Blocked | Escalated retry reached Docker, but Docker daemon is not running: `Cannot connect to the Docker daemon` |
+| 2026-05-15 | db foundation (DB-P0-01) | `supabase db query --linked -f supabase/smoke/database_foundation.sql` | Blocked | Linked smoke could not run because no Supabase access token is available |
 | 2026-05-08 | db security (SEC-07) | `supabase db query --linked --file supabase/migrations/0027_spatial_ref_sys_rls.sql` | Blocked | Remote apply failed with `ERROR: 42501: must be owner of table spatial_ref_sys`; normal migration removed and replaced with privileged admin SQL at `supabase/manual/spatial_ref_sys_rls_admin.sql` |
 | 2026-05-08 | db security (SEC-07) | `supabase db query --linked "select ... from pg_class/pg_tables/pg_extension"` | Pass | Confirmed linked project `public.spatial_ref_sys` and PostGIS extension are owned by `supabase_admin`; project `postgres` cannot assume `supabase_admin` |
 | 2026-05-08 | db security (SEC-07) | `supabase db advisors --linked --type security --level error` | Blocked | Advisor still reports only the `RLS Disabled in Public` error for `public.spatial_ref_sys` |
