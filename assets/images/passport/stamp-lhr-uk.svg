@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" width="320" height="220">
+  <defs>
+    <filter id="distressed-purple" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="4" result="noise" />
+      <feColorMatrix in="noise" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 15 -6.5" result="highContrastNoise" />
+      <feTurbulence type="turbulence" baseFrequency="0.03" numOctaves="2" result="edgeNoise" />
+      <feDisplacementMap in="SourceGraphic" in2="edgeNoise" scale="2.5" xChannelSelector="R" yChannelSelector="G" result="roughenedEdges" />
+      <feComposite in="roughenedEdges" in2="highContrastNoise" operator="out" result="distressed" />
+      <feGaussianBlur in="distressed" stdDeviation="0.4" result="bleed" />
+      <feComponentTransfer in="bleed">
+        <feFuncA type="discrete" tableValues="0 1" />
+      </feComponentTransfer>
+    </filter>
+  </defs>
+
+  <g filter="url(#distressed-purple)" fill="#4a148c" stroke="#4a148c">
+    <!-- Rounded Rectangle Border -->
+    <rect x="15" y="15" width="290" height="190" rx="20" fill="none" stroke-width="6" />
+    <rect x="25" y="25" width="270" height="170" rx="12" fill="none" stroke-width="2" />
+    
+    <!-- Top Text -->
+    <text x="160" y="65" font-family="'Times New Roman', Times, serif" font-size="24" font-weight="bold" text-anchor="middle" stroke="none">UNITED KINGDOM</text>
+    
+    <line x1="40" y1="80" x2="280" y2="80" stroke-width="2" />
+    
+    <text x="160" y="115" font-family="Arial, sans-serif" font-size="32" font-weight="bold" text-anchor="middle" letter-spacing="2" stroke="none">HEATHROW</text>
+    
+    <!-- Entry / Exit Indicator -->
+    <circle cx="60" cy="160" r="18" fill="none" stroke-width="3" />
+    <path d="M50 160 L60 150 L70 160 M60 150 L60 170" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    
+    <!-- Date -->
+    <text x="180" y="170" font-family="'Courier New', Courier, monospace" font-size="28" font-weight="bold" text-anchor="middle" stroke="none">16 MAY 2026</text>
+  </g>
+</svg>

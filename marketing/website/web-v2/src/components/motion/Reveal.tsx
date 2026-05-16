@@ -26,9 +26,14 @@ export function Reveal({
   return (
     <Component
       className={className}
-      initial={{ opacity: 0, y: shouldReduceMotion ? 0 : distance }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once, margin: "-12% 0px -12% 0px" }}
+      initial={{
+        opacity: 0,
+        y: shouldReduceMotion ? 0 : distance,
+        scale: shouldReduceMotion ? 1 : 0.985,
+        filter: shouldReduceMotion ? "none" : "blur(8px)",
+      }}
+      whileInView={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+      viewport={{ once, margin: "-12% 0px -12% 0px", amount: 0.22 }}
       transition={{
         duration: shouldReduceMotion ? 0.15 : 0.72,
         delay: shouldReduceMotion ? 0 : delay,

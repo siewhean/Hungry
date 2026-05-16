@@ -41,7 +41,10 @@ export const topDownFoodImages = [
   { src: "/images/food/mee-rebus-topdown.png", alt: "Top-down bowl of mee rebus" },
   { src: "/images/food/roti-prata-topdown.png", alt: "Top-down plate of roti prata with curry" },
   { src: "/images/food/satay-topdown.png", alt: "Top-down plate of satay" },
-  { src: "/images/food/carrot-cake-topdown.png", alt: "Top-down plate of Singapore fried carrot cake" },
+  {
+    src: "/images/food/carrot-cake-topdown.png",
+    alt: "Top-down plate of Singapore fried carrot cake",
+  },
   { src: "/images/food/oyster-omelette-topdown.png", alt: "Top-down plate of oyster omelette" },
   { src: "/images/food/nasi-biryani-topdown.png", alt: "Top-down plate of nasi biryani" },
   { src: "/images/food/yong-tau-foo-topdown.png", alt: "Top-down bowl of yong tau foo" },
