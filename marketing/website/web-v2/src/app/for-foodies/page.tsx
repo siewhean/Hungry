@@ -1,4 +1,4 @@
-import { EmailForm } from "@/components/ui/EmailForm";
+import { EmailForm } from "../../components/ui/EmailForm";
 
 export const metadata = {
   title: "Hungry for Foodies | Join the Waitlist",
@@ -65,7 +65,7 @@ export default function ForFoodies() {
           <p style={{ color: "var(--color-text-secondary)", marginBottom: "var(--space-6)" }}>
             Be the first to know when Hungry drops.
           </p>
-          <EmailForm buttonText="Get Early Access" />
+          <EmailForm buttonText="Join Waitlist" />
         </div>
       </div>
     </main>

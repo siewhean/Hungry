@@ -124,15 +124,15 @@ export async function createEmailAccountFromScratch(page: Page, prefix: string) 
 export async function openComposerFromLauncher(page: Page) {
   await startOnboardedMockSession(page);
   await clickDevButton(page, "Launch V2 Composer");
-  await expect(page.getByText("New post")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Publish Both" })).toBeVisible();
+  await expect(page.getByText("New post", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Publish Both" }).first()).toBeVisible();
 }
 
 export async function publishPostFromComposer(page: Page, caption: string) {
   await openComposerFromLauncher(page);
-  await page.getByPlaceholder(CAPTION_PLACEHOLDER).fill(caption);
-  await page.getByRole("button", { name: "Publish Both" }).click();
-  await expect(page.getByText("Shared!", { exact: true })).toBeVisible();
+  await page.getByPlaceholder(CAPTION_PLACEHOLDER).first().fill(caption);
+  await page.getByRole("button", { name: "Publish Both" }).first().click();
+  await expect(page.getByText("Shared!", { exact: true }).first()).toBeVisible();
 }
 
 export async function expectPostCaptionVisible(page: Page, caption: string, testId?: string) {

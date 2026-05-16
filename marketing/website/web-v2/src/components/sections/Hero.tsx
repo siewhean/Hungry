@@ -6,8 +6,7 @@ import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { homepage } from "@/content/site";
-import { AppScreenshotFrame } from "@/components/home/AppScreenshotFrame";
+import { homepage } from "../../content/site";
 import styles from "./Hero.module.css";
 
 export default function Hero() {
@@ -135,21 +134,6 @@ export default function Hero() {
                 />
               </motion.div>
             ))}
-          </div>
-
-          <div className={`${styles.deviceCluster} ${styles.visualLayer}`}>
-            <AppScreenshotFrame
-              src={homepage.hero.appScreens[0].src}
-              alt={homepage.hero.appScreens[0].alt}
-              label="Foodie view"
-            />
-            <AppScreenshotFrame
-              src={homepage.hero.appScreens[1].src}
-              alt={homepage.hero.appScreens[1].alt}
-              label="App preview"
-              orientation="landscape"
-              className={styles.secondaryScreen}
-            />
           </div>
 
           <div className={styles.chipLayer}>

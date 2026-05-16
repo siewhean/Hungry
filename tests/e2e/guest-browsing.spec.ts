@@ -28,7 +28,7 @@ test.describe("guest browsing", () => {
     });
 
     await page.getByRole("button", { name: "Search dishes, stalls, or hawker centres" }).click();
-    await expect(page.getByPlaceholder("Laksa, satay, Tian Tian...")).toBeVisible({
+    await expect(page.getByPlaceholder("Laksa, satay, Tian Tian...").first()).toBeVisible({
       timeout: CONTENT_TIMEOUT_MS,
     });
 

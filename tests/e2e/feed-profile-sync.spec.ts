@@ -61,7 +61,7 @@ test.describe("feed/profile sync", () => {
     const caption = uniqueCaption(testInfo);
 
     await publishPostFromComposer(page, caption);
-    await page.getByRole("button", { name: "View Post" }).click();
+    await page.getByRole("button", { name: "View Post" }).first().click();
     await expectPostCaptionVisible(page, caption, "home-social-feed");
     const publishedPostId = await getPublishedPostIdByCaption(page, caption);
     expect(publishedPostId).toBeTruthy();

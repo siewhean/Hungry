@@ -27,6 +27,45 @@ export type ImageAsset = {
   alt: string;
 };
 
+export const topDownFoodImages = [
+  { src: "/images/food/laksa-topdown.png", alt: "Top-down bowl of Singapore laksa" },
+  { src: "/images/food/chicken-rice-topdown.png", alt: "Top-down plate of chicken rice" },
+  { src: "/images/food/char-kway-teow-topdown.png", alt: "Top-down plate of char kway teow" },
+  { src: "/images/food/bak-chor-mee-topdown.png", alt: "Top-down bowl of bak chor mee" },
+  { src: "/images/food/nasi-lemak-topdown.png", alt: "Top-down plate of nasi lemak" },
+  { src: "/images/food/hokkien-mee-topdown.png", alt: "Top-down plate of hokkien mee" },
+  { src: "/images/food/wanton-mee-topdown.png", alt: "Top-down bowl of wanton mee" },
+  { src: "/images/food/prawn-mee-topdown.png", alt: "Top-down bowl of prawn mee" },
+  { src: "/images/food/fishball-noodles-topdown.png", alt: "Top-down bowl of fishball noodles" },
+  { src: "/images/food/mee-siam-topdown.png", alt: "Top-down bowl of mee siam" },
+  { src: "/images/food/mee-rebus-topdown.png", alt: "Top-down bowl of mee rebus" },
+  { src: "/images/food/roti-prata-topdown.png", alt: "Top-down plate of roti prata with curry" },
+  { src: "/images/food/satay-topdown.png", alt: "Top-down plate of satay" },
+  { src: "/images/food/carrot-cake-topdown.png", alt: "Top-down plate of Singapore fried carrot cake" },
+  { src: "/images/food/oyster-omelette-topdown.png", alt: "Top-down plate of oyster omelette" },
+  { src: "/images/food/nasi-biryani-topdown.png", alt: "Top-down plate of nasi biryani" },
+  { src: "/images/food/yong-tau-foo-topdown.png", alt: "Top-down bowl of yong tau foo" },
+  { src: "/images/food/fish-soup-topdown.png", alt: "Top-down bowl of sliced fish soup" },
+  { src: "/images/food/chili-crab-topdown.png", alt: "Top-down plate of chili crab" },
+  { src: "/images/food/popiah-topdown.png", alt: "Top-down plate of popiah" },
+  { src: "/images/food/duck-rice-topdown.png", alt: "Top-down plate of roast duck rice" },
+  { src: "/images/food/ice-kacang-topdown.png", alt: "Top-down bowl of ice kacang" },
+  { src: "/images/food/dim-sum-topdown.png", alt: "Top-down plate of Chinese dim sum" },
+  { src: "/images/food/mapo-tofu-topdown.png", alt: "Top-down bowl of mapo tofu" },
+  { src: "/images/food/beef-chow-fun-topdown.png", alt: "Top-down plate of beef chow fun" },
+  { src: "/images/food/peking-duck-topdown.png", alt: "Top-down plate of Peking duck" },
+  { src: "/images/food/bibimbap-topdown.png", alt: "Top-down bowl of Korean bibimbap" },
+  { src: "/images/food/kimchi-jjigae-topdown.png", alt: "Top-down bowl of kimchi jjigae" },
+  { src: "/images/food/korean-bbq-topdown.png", alt: "Top-down plate of Korean BBQ" },
+  { src: "/images/food/tteokbokki-topdown.png", alt: "Top-down bowl of tteokbokki" },
+  { src: "/images/food/sushi-set-topdown.png", alt: "Top-down plate of Japanese sushi" },
+  { src: "/images/food/ramen-topdown.png", alt: "Top-down bowl of Japanese ramen" },
+  { src: "/images/food/katsu-curry-topdown.png", alt: "Top-down plate of Japanese katsu curry" },
+  { src: "/images/food/oyakodon-topdown.png", alt: "Top-down bowl of oyakodon" },
+  { src: "/images/food/tacos-topdown.png", alt: "Top-down plate of Mexican tacos" },
+  { src: "/images/food/burrito-bowl-topdown.png", alt: "Top-down bowl of Mexican burrito bowl" },
+] as const satisfies readonly ImageAsset[];
+
 export type StoryScreen = ImageAsset & {
   eyebrow: string;
   title: string;
@@ -63,20 +102,7 @@ export const homepage = {
       { label: "Ranked by foodies", tone: "amber" },
       { label: "Claimed by merchant", tone: "navy" },
     ],
-    foodCards: [
-      {
-        src: "/images/food/laksa-topdown.png",
-        alt: "Laksa dish used as a Hungry food discovery card",
-      },
-      {
-        src: "/images/food/chicken-rice-topdown.png",
-        alt: "Chicken rice dish used as a Hungry food discovery card",
-      },
-      {
-        src: "/images/food/char-kway-teow-topdown.png",
-        alt: "Char kway teow dish used as a Hungry food discovery card",
-      },
-    ],
+    foodCards: [topDownFoodImages[0], topDownFoodImages[1], topDownFoodImages[2]],
   },
   audiences: [
     {
@@ -85,8 +111,8 @@ export const homepage = {
       description:
         "Search by dish, compare actual food photos, and see whether a stall is worth the trip before hunger becomes indecision.",
       image: {
-        src: "/images/food/dishes-wide.png",
-        alt: "Dish-led Hungry food discovery preview",
+        src: "/images/people/restaurant-diner.jpg",
+        alt: "Diners eating inside a busy local restaurant",
       },
       cta: { label: "Join Waitlist", href: "/for-foodies" },
     },
@@ -96,8 +122,8 @@ export const homepage = {
       description:
         "Give diners a clear view of your menu, hours, signature dishes, and business details when they are already nearby and hungry.",
       image: {
-        src: "/images/screens/merchant-dashboard.png",
-        alt: "Hungry merchant dashboard proof screen",
+        src: "/images/people/hawker-cooking.jpg",
+        alt: "Hawker stall cook preparing food behind the counter",
       },
       cta: { label: "Register Interest", href: "/for-merchants" },
     },

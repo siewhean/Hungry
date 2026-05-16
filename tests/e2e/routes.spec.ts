@@ -31,7 +31,7 @@ test.describe("routes", () => {
       await startOnboardedMockSession(page);
       await clickDevButton(page, route.label, "Core app flow");
       if ("expectedPlaceholder" in route) {
-        await expect(page.getByPlaceholder(route.expectedPlaceholder)).toBeVisible({
+        await expect(page.getByPlaceholder(route.expectedPlaceholder).first()).toBeVisible({
           timeout: ROUTE_CONTENT_TIMEOUT_MS,
         });
       } else {

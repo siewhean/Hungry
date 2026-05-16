@@ -27,10 +27,10 @@ test.describe("buttons and interactions", () => {
 
   test("composer draft controls produce a real draft state", async ({ page }) => {
     await openComposerFromLauncher(page);
-    await page.getByRole("button", { name: "Save Draft" }).click();
-    await expect(page.getByText("Draft Saved")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Keep Editing" })).toBeVisible();
-    await page.getByRole("button", { name: "Keep Editing" }).click();
+    await page.getByRole("button", { name: "Save Draft" }).first().click();
+    await expect(page.getByText("Draft Saved", { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Keep Editing" }).first()).toBeVisible();
+    await page.getByRole("button", { name: "Keep Editing" }).first().click();
     await expect(page.getByText("Draft Saved")).toHaveCount(0);
   });
 });

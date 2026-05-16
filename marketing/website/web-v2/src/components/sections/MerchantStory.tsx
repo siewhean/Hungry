@@ -4,9 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, BadgeCheck } from "lucide-react";
-import { homepage } from "@/content/site";
-import { Reveal } from "@/components/motion/Reveal";
-import { AppScreenshotFrame } from "@/components/home/AppScreenshotFrame";
+import { homepage } from "../../content/site";
+import { Reveal } from "../../components/motion/Reveal";
+import { AppScreenshotFrame } from "../../components/home/AppScreenshotFrame";
 import styles from "./MerchantStory.module.css";
 
 export default function MerchantStory() {
@@ -48,7 +48,6 @@ export default function MerchantStory() {
         </Reveal>
 
         <Reveal className={styles.visual} delay={0.12}>
-          <div className={styles.visualBackdrop} />
           <AnimatePresence mode="wait">
             <motion.div
               animate={{ opacity: 1, scale: 1, y: 0 }}

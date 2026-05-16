@@ -50,7 +50,7 @@ export default defineConfig({
   ],
   webServer: shouldStartWebServer
     ? {
-        command: `node ./scripts/run-expo.cjs start --web --localhost --port ${port} --clear`,
+        command: `node ./scripts/run-expo.cjs start --web --localhost --port=${port} --clear`,
         url: baseURL,
         timeout: 120_000,
         reuseExistingServer: !process.env.CI,
