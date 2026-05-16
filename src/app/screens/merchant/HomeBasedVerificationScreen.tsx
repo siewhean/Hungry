@@ -13,12 +13,13 @@ import type { LocationPrivacy } from "@/types/domain";
 type Props = NativeStackScreenProps<MerchantTabParamList, "HomeBasedVerification">;
 
 export function HomeBasedVerificationScreen({ navigation }: Props) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const setAccount = useMerchantStore((state) => state.setAccount);
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [displayName, setDisplayName] = useState(activeOutlet?.name || "");
   const [privacy, setPrivacy] = useState<LocationPrivacy>("approximate");
+  const [photosAttached, setPhotosAttached] = useState(false);
   const [safetyChecked, setSafetyChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,6 +29,8 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         <EmptyState
           title="No outlet selected"
           body="Choose an outlet to begin home-based verification."
+          errorMessage="No active outlet was found for home-based verification."
+          sendErrorContext="Home-based verification"
           icon={<Home color={palette.textMuted} size={36} />}
         />
       </Screen>
@@ -35,7 +38,7 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
   }
 
   const handleSubmit = async () => {
-    if (!displayName.trim() || !safetyChecked) return;
+    if (!displayName.trim() || !photosAttached || !safetyChecked) return;
 
     setIsSubmitting(true);
     try {
@@ -139,34 +142,58 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         >
           Menu & Food Photos
         </AppText>
-        <Card
-          style={[
-            {
-              alignItems: "center",
-              justifyContent: "center",
-              padding: spacing[8],
-              borderWidth: 1,
-              borderStyle: "dashed",
-              marginTop: spacing[2],
-            },
-            { borderColor: palette.border },
-          ]}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            photosAttached
+              ? "Home-based verification photos attached"
+              : "Attach mock menu and food photos"
+          }
+          accessibilityState={{ selected: photosAttached }}
+          onPress={() => setPhotosAttached(true)}
         >
-          <Camera size={32} color={palette.textSecondary} />
-          <AppText style={{ color: palette.orange, marginTop: spacing[2], fontWeight: "bold" }}>
-            Tap to Upload
-          </AppText>
-          <AppText
-            variant="micro"
-            style={{
-              color: palette.textSecondary,
-              marginTop: 4,
-              textAlign: "center",
-            }}
+          <Card
+            style={[
+              {
+                alignItems: "center",
+                justifyContent: "center",
+                padding: spacing[8],
+                borderWidth: 1,
+                borderStyle: "dashed",
+                marginTop: spacing[2],
+              },
+              {
+                borderColor: photosAttached ? palette.success : palette.border,
+                backgroundColor: photosAttached ? palette.successSoft : palette.surface,
+              },
+            ]}
           >
-            Provide at least 2 photos of your food and 1 photo of your menu/price list.
-          </AppText>
-        </Card>
+            {photosAttached ? (
+              <CheckCircle2 size={32} color={palette.success} />
+            ) : (
+              <Camera size={32} color={palette.textSecondary} />
+            )}
+            <AppText
+              style={{
+                color: photosAttached ? palette.success : palette.orange,
+                marginTop: spacing[2],
+                fontWeight: "bold",
+              }}
+            >
+              {photosAttached ? "Mock photos attached" : "Attach mock photos"}
+            </AppText>
+            <AppText
+              variant="micro"
+              style={{
+                color: palette.textSecondary,
+                marginTop: 4,
+                textAlign: "center",
+              }}
+            >
+              Provide at least 2 photos of your food and 1 photo of your menu/price list.
+            </AppText>
+          </Card>
+        </Pressable>
 
         <AppText
           variant="h3"
@@ -219,7 +246,7 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
           label="Submit Verification"
           onPress={handleSubmit}
           loading={isSubmitting}
-          disabled={!displayName.trim() || !safetyChecked || isSubmitting}
+          disabled={!displayName.trim() || !photosAttached || !safetyChecked || isSubmitting}
           style={{ width: "100%" }}
         />
       </View>
@@ -239,7 +266,7 @@ function PrivacyOption({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
 
   return (
     <Pressable onPress={onSelect}>
@@ -249,7 +276,7 @@ function PrivacyOption({
           {
             borderColor: selected ? palette.orange : palette.border,
             backgroundColor: selected ? palette.orangeLight : palette.surface,
-            borderRadius: radii.md,
+            borderRadius: componentRadii.card,
           },
         ]}
       >

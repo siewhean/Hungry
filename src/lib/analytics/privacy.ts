@@ -5,11 +5,14 @@ const SENSITIVE_KEY_PATTERN =
 const URL_QUERY_PATTERN = /([?&])[^=\s]+=[^#\s]+/g;
 const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 const PHONE_PATTERN = /(?:\+?\d[\d\s().-]{7,}\d)/g;
+const TOKEN_ASSIGNMENT_PATTERN =
+  /\b(access_token|refresh_token|token|secret|password|authorization|auth|key)\s*[:=]\s*[^&\s,;]+/gi;
 
 function sanitizeString(value: string): string {
   return value
     .replace(EMAIL_PATTERN, "[redacted-email]")
     .replace(PHONE_PATTERN, "[redacted-phone]")
+    .replace(TOKEN_ASSIGNMENT_PATTERN, "$1=[redacted]")
     .replace(URL_QUERY_PATTERN, "$1[redacted]=[redacted]");
 }
 
@@ -60,16 +63,42 @@ export function sanitizeAnalyticsProperties(
   );
 }
 
-export function sanitizeSentryEvent<
-  T extends {
-    user?: Record<string, unknown>;
-    extra?: Record<string, unknown>;
-    tags?: Record<string, unknown>;
-  },
->(event: T): T {
-  const sanitizedUser = event.user ? sanitizeAnalyticsProperties(event.user) : undefined;
-  const sanitizedExtra = event.extra ? sanitizeAnalyticsProperties(event.extra) : undefined;
-  const sanitizedTags = event.tags ? sanitizeAnalyticsProperties(event.tags) : undefined;
+function sanitizeTelemetryObject(value: Record<string, unknown>): Record<string, JsonValue> {
+  return sanitizeAnalyticsProperties(value);
+}
+
+export function sanitizeSentryEvent<T extends object>(event: T): T {
+  const source = event as Record<string, unknown>;
+  const user = source.user as Record<string, unknown> | undefined;
+  const extra = source.extra as Record<string, unknown> | undefined;
+  const tags = source.tags as Record<string, unknown> | undefined;
+  const contexts = source.contexts as Record<string, unknown> | undefined;
+  const request = source.request as Record<string, unknown> | undefined;
+  const exception = source.exception as { values?: Record<string, unknown>[] } | undefined;
+  const breadcrumbs = source.breadcrumbs as Record<string, unknown>[] | undefined;
+  const sanitizedUser = user ? sanitizeAnalyticsProperties(user) : undefined;
+  const sanitizedExtra = extra ? sanitizeAnalyticsProperties(extra) : undefined;
+  const sanitizedTags = tags ? sanitizeAnalyticsProperties(tags) : undefined;
+  const sanitizedContexts = contexts ? sanitizeTelemetryObject(contexts) : undefined;
+  const sanitizedRequest = request ? sanitizeTelemetryObject(request) : undefined;
+  const sanitizedException = exception?.values
+    ? {
+        ...exception,
+        values: exception.values.map((entry) => ({
+          ...sanitizeTelemetryObject(entry),
+          ...(typeof entry.value === "string" ? { value: sanitizeString(entry.value) } : {}),
+        })),
+      }
+    : exception;
+  const sanitizedBreadcrumbs = breadcrumbs?.map((breadcrumb) => ({
+    ...sanitizeTelemetryObject(breadcrumb),
+    ...(typeof breadcrumb.message === "string"
+      ? { message: sanitizeString(breadcrumb.message) }
+      : {}),
+    ...(breadcrumb.data && typeof breadcrumb.data === "object"
+      ? { data: sanitizeTelemetryObject(breadcrumb.data as Record<string, unknown>) }
+      : {}),
+  }));
 
   if (sanitizedUser) {
     const userWithoutEmail = { ...sanitizedUser };
@@ -80,12 +109,33 @@ export function sanitizeSentryEvent<
       user: userWithoutEmail,
       ...(sanitizedExtra ? { extra: sanitizedExtra } : {}),
       ...(sanitizedTags ? { tags: sanitizedTags } : {}),
-    };
+      ...(sanitizedContexts ? { contexts: sanitizedContexts } : {}),
+      ...(sanitizedRequest ? { request: sanitizedRequest } : {}),
+      ...(sanitizedException ? { exception: sanitizedException } : {}),
+      ...(sanitizedBreadcrumbs ? { breadcrumbs: sanitizedBreadcrumbs } : {}),
+    } as T;
   }
 
   return {
     ...event,
     ...(sanitizedExtra ? { extra: sanitizedExtra } : {}),
     ...(sanitizedTags ? { tags: sanitizedTags } : {}),
-  };
+    ...(sanitizedContexts ? { contexts: sanitizedContexts } : {}),
+    ...(sanitizedRequest ? { request: sanitizedRequest } : {}),
+    ...(sanitizedException ? { exception: sanitizedException } : {}),
+    ...(sanitizedBreadcrumbs ? { breadcrumbs: sanitizedBreadcrumbs } : {}),
+  } as T;
+}
+
+export function sanitizeSentryBreadcrumb<T extends object>(breadcrumb: T): T {
+  const source = breadcrumb as Record<string, unknown>;
+  const sanitized = sanitizeTelemetryObject(source);
+  return {
+    ...breadcrumb,
+    ...sanitized,
+    ...(typeof source.message === "string" ? { message: sanitizeString(source.message) } : {}),
+    ...(source.data && typeof source.data === "object"
+      ? { data: sanitizeTelemetryObject(source.data as Record<string, unknown>) }
+      : {}),
+  } as T;
 }

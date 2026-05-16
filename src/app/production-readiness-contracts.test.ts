@@ -29,8 +29,8 @@ test("high-risk visible actions are not wired as no-ops or coming-soon alerts", 
   assert.match(reviewTab, /onPress=\{handleRefreshHashtags\}/);
 
   assert.doesNotMatch(businessProfileEditor, /Photo upload coming soon|Cover upload coming soon/);
-  assert.match(businessProfileEditor, /Profile image upload unavailable/);
-  assert.match(businessProfileEditor, /Cover image upload unavailable/);
+  assert.match(businessProfileEditor, /BusinessImageField/);
+  assert.match(businessProfileEditor, /launchImageLibraryAsync/);
 
   assert.doesNotMatch(
     ordersComingSoon,
@@ -81,11 +81,15 @@ test("stall interaction loading flags clear after async failures", () => {
   assert.match(stallInteractionBar, /finally \{[\s\S]*setTryingInProgress\(false\)/);
 });
 
-test("passport card is not visible for profile surfaces", () => {
+test("passport card is visible for authenticated profile surfaces", () => {
   const profileHome = read("src/app/screens/profile/ProfileHomeScreen.tsx");
 
-  assert.doesNotMatch(profileHome, /isUserMode \? \(\s*<PassportCard/);
-  assert.doesNotMatch(profileHome, /<PassportCard/);
+  assert.match(profileHome, /import \{ PassportCard \}/);
+  assert.match(
+    profileHome,
+    /<PassportCard[\s\S]*onPressIn=\{\(\) => preloadRoute\(rootNavigation, "PassportScreen"\)\}/,
+  );
+  assert.match(profileHome, /onPress=\{\(\) => rootNavigation\.navigate\("PassportScreen"\)\}/);
 });
 
 test("merchant audience switches set explicit values instead of double toggling", () => {
@@ -111,13 +115,10 @@ test("stall detail protected actions route signed-out users to auth with return 
   );
   assert.match(stallDetail, /navigation\.navigate\("AuthStack", \{ screen: "Login" \}\)/);
   assert.match(stallDetail, /Sign in to reply to this review\./);
-  assert.match(stallDetail, /Sign in to order from this stall\./);
   assert.match(stallDetail, /Sign in before claiming this stall\./);
   assert.match(stallDetail, /Sign in to save this stall\./);
-  assert.match(
-    stallDetail,
-    /if \(!requireAuthForProtectedAction\("Sign in to order from this stall\."\)\)/,
-  );
+  assert.doesNotMatch(stallDetail, /Sign in to order from this stall\./);
+  assert.doesNotMatch(stallDetail, /StickyBottomBar/);
   assert.match(
     stallDetail,
     /if \(!requireAuthForProtectedAction\("Sign in before claiming this stall\."\)\)/,

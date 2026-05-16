@@ -166,6 +166,19 @@ test("Merchant screen contract: extended merchant sections stay hidden from the 
   }
 });
 
+test("Merchant screen contract: merchant navigation buttons are accessible and hidden sections are reachable", () => {
+  const tabs = read("src/app/navigation/MerchantTabs.tsx");
+  const dashboard = read("src/app/screens/merchant/MerchantDashboardScreen.tsx");
+
+  assert.match(tabs, /accessibilityLabel=\{`Merchant \$\{tabConfig\.label\}`\}/);
+  assert.match(tabs, /tabConfig\.label/);
+
+  for (const route of ["PromotionList", "AIAssistant", "MerchantSettings", "OrdersComingSoon"]) {
+    assert.match(dashboard, new RegExp(`prefetchMerchantRoute\\("${route}"\\)`));
+    assert.match(dashboard, new RegExp(`navigation\\.navigate\\("${route}"\\)`));
+  }
+});
+
 test("Merchant screen contract: merchant route params match editable sub-screen needs", () => {
   const navigationTypes = read("src/app/navigation/navigationTypes.ts");
 
@@ -205,6 +218,38 @@ test("Merchant screen contract: menu management screens are wired to merchant se
   assert.match(ocrDrafts, /Edit before adding/);
 });
 
+test("Merchant screen contract: profile, menu, and analytics use production-ready controls", () => {
+  const profile = read("src/app/screens/merchant/BusinessProfileEditorScreen.tsx");
+  const menu = read("src/app/screens/merchant/MerchantMenuScreen.tsx");
+  const analytics = read("src/app/screens/merchant/MerchantAnalyticsScreen.tsx");
+  const dashboard = read("src/app/screens/merchant/MerchantDashboardScreen.tsx");
+
+  assert.match(profile, /BusinessTypeDropdown/);
+  assert.match(profile, /launchImageLibraryAsync/);
+  assert.match(profile, /BusinessImageField/);
+  assert.doesNotMatch(profile, /Profile image upload unavailable/);
+  assert.match(menu, /title="Menu"/);
+  assert.match(menu, /<FAB>/);
+  assert.match(menu, /Add Menu Item Manually/);
+  assert.match(menu, /Search menu/);
+  assert.match(analytics, /showsVerticalScrollIndicator=\{false\}/);
+  assert.match(analytics, /See More/);
+  assert.match(dashboard, /getMerchantProfileGaps/);
+  assert.match(dashboard, /getUnrepliedReviews/);
+  assert.doesNotMatch(dashboard, /Hello,/);
+  assert.doesNotMatch(dashboard, /STALL IS LIVE & DISCOVERABLE/);
+});
+
+test("Merchant screen contract: dish details record merchant dish views once per screen", () => {
+  const detail = read("src/app/screens/detail/DishDetailScreen.tsx");
+  const detailV2 = read("src/app/screens/detail/DishDetailScreenV2.tsx");
+
+  assert.match(detail, /recordDishView/);
+  assert.match(detail, /lastTrackedDishId/);
+  assert.match(detailV2, /recordDishView/);
+  assert.match(detailV2, /lastRecordedDishViewId/);
+});
+
 test("Merchant screen contract: inbox, promotions, assistant, and settings screens use merchant services", () => {
   const inbox = read("src/app/screens/merchant/CustomerInboxScreen.tsx");
   const promotionList = read("src/app/screens/merchant/PromotionListScreen.tsx");
@@ -223,11 +268,18 @@ test("Merchant screen contract: inbox, promotions, assistant, and settings scree
   assert.match(promotionBuilder, /merchant\.getPromotions\(/);
   assert.match(promotionBuilder, /merchant\.createPromotion\(/);
   assert.match(promotionBuilder, /merchant\.updatePromotion\(/);
+  assert.match(promotionBuilder, /promotionItemType/);
+  assert.match(promotionBuilder, /originalPrice/);
+  assert.match(promotionBuilder, /isAvailable/);
 
   assert.match(assistant, /merchant\.getAIInsights\(/);
   assert.match(assistant, /merchant\.getWeeklySummary\(/);
 
   assert.match(settings, /merchant\.getTeamMembers\(/);
+  assert.match(settings, /merchant\.getMerchantNotifications\(/);
+  assert.match(settings, /merchant\.getWeeklySummaryStats\(/);
+  assert.match(settings, /merchant\.sendWeeklySummaryNotifications\(/);
+  assert.match(settings, /merchant\.syncLowRatingNotifications\(/);
   assert.match(settings, /merchant\.getNotificationPreferences\(/);
   assert.match(settings, /merchant\.updateNotificationPreferences\(/);
   assert.match(settings, /merchant\.removeTeamMember\(/);

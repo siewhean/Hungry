@@ -18,7 +18,7 @@ type Props = NativeStackScreenProps<ProfileStackParamList, "Favourites">;
 export function FavouritesScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, shadows } = useHungryTheme();
   const repository = getDataRepository();
   const dishes = profile.favouriteDishIds
     .map((dishId) => repository.getDishById(dishId))
@@ -51,7 +51,7 @@ export function FavouritesScreen({ navigation }: Props) {
                   {
                     width: "47%",
                     backgroundColor: palette.surface,
-                    borderRadius: radii.lg,
+                    borderRadius: componentRadii.card,
                     overflow: "hidden",
                     borderWidth: 1,
                     borderColor: palette.border,
@@ -72,7 +72,7 @@ export function FavouritesScreen({ navigation }: Props) {
                       right: spacing[2],
                       width: 32,
                       height: 32,
-                      borderRadius: radii.pill,
+                      borderRadius: componentRadii.iconButton,
                       backgroundColor: "rgba(255,255,255,0.9)",
                       alignItems: "center",
                       justifyContent: "center",

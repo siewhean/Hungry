@@ -8,16 +8,19 @@ import { runOnJS } from "react-native-reanimated";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "../ui";
 
+const EDGE_FAST_FORWARD_FRACTION = 0.2;
+
 type ZoomableVideoProps = {
   uri: string;
   style?: StyleProp<ViewStyle>;
 };
 
 export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
-  const { palette } = useHungryTheme();
+  const { componentRadii, palette } = useHungryTheme();
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const [isFastForwarding, setIsFastForwarding] = useState(false);
+  const [videoWidth, setVideoWidth] = useState(0);
   const player = useVideoPlayer(uri, (videoPlayer) => {
     videoPlayer.loop = true;
     videoPlayer.muted = true;
@@ -45,7 +48,15 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
     setIsMuted((current) => !current);
   };
 
-  const startFastForward = () => {
+  const startFastForward = (touchX: number) => {
+    const leftEdge = videoWidth * EDGE_FAST_FORWARD_FRACTION;
+    const rightEdge = videoWidth * (1 - EDGE_FAST_FORWARD_FRACTION);
+    const isEdgeHold = videoWidth > 0 && (touchX <= leftEdge || touchX >= rightEdge);
+
+    if (!isEdgeHold) {
+      return;
+    }
+
     player.playbackRate = 2.0;
     setIsFastForwarding(true);
   };
@@ -57,8 +68,8 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
 
   const videoLongPress = Gesture.LongPress()
     .minDuration(300)
-    .onStart(() => {
-      runOnJS(startFastForward)();
+    .onStart((event) => {
+      runOnJS(startFastForward)(event.x);
     })
     .onEnd(() => {
       runOnJS(stopFastForward)();
@@ -76,7 +87,12 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
   const videoGestures = Gesture.Exclusive(videoLongPress, videoTap);
 
   return (
-    <View style={[styles.container, style]}>
+    <View
+      onLayout={(event) => {
+        setVideoWidth(event.nativeEvent.layout.width);
+      }}
+      style={[styles.container, style]}
+    >
       <GestureDetector gesture={videoGestures}>
         <View style={StyleSheet.absoluteFill}>
           <VideoView
@@ -95,14 +111,20 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
       ) : null}
 
       {isFastForwarding ? (
-        <View pointerEvents="none" style={styles.fastForwardIndicator}>
+        <View
+          pointerEvents="none"
+          style={[styles.fastForwardIndicator, { borderRadius: componentRadii.button }]}
+        >
           <AppText variant="h3" style={{ color: palette.white, fontWeight: "900" }}>
             2x Speed
           </AppText>
         </View>
       ) : null}
 
-      <Pressable onPress={handleToggleMute} style={styles.muteButton}>
+      <Pressable
+        onPress={handleToggleMute}
+        style={[styles.muteButton, { borderRadius: componentRadii.iconButton }]}
+      >
         {isMuted ? (
           <VolumeX color={palette.white} size={20} />
         ) : (
@@ -130,7 +152,6 @@ const styles = StyleSheet.create({
   fastForwardIndicator: {
     alignSelf: "center",
     backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
     position: "absolute",
@@ -140,7 +161,6 @@ const styles = StyleSheet.create({
   muteButton: {
     alignItems: "center",
     backgroundColor: "rgba(0,0,0,0.4)",
-    borderRadius: 18,
     bottom: 12,
     height: 36,
     justifyContent: "center",

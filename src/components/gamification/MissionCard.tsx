@@ -16,7 +16,7 @@ interface MissionCardProps {
 }
 
 export function MissionCard({ mission, progress }: MissionCardProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
 
   const current = progress?.currentCount ?? 0;
   const total = mission.requirementCount;
@@ -30,7 +30,7 @@ export function MissionCard({ mission, progress }: MissionCardProps) {
         {
           backgroundColor: isComplete ? palette.successSoft : palette.surface,
           borderColor: isComplete ? palette.success : palette.border,
-          borderRadius: radii.xl,
+          borderRadius: componentRadii.card,
           borderWidth: 1,
           padding: spacing[4],
           gap: spacing[2],

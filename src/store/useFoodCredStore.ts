@@ -44,6 +44,15 @@ interface FoodCredState {
    * Production: replace with RPC call to award_food_cred.
    */
   awardPoints: (action: FoodCredAction, relatedEntityId?: string) => Promise<number>;
+  /**
+   * Adjust Food Cred by an explicit signed delta.
+   * Used for reversals such as unmarking a tried action.
+   */
+  adjustPoints: (
+    delta: number,
+    relatedEntityId?: string,
+    action?: FoodCredAction,
+  ) => Promise<number>;
   /** Reset — dev/test only */
   _reset: () => void;
 }
@@ -113,6 +122,41 @@ export const useFoodCredStore = create<FoodCredState>()((set, get) => ({
     }
 
     // TODO (production): call supabase.rpc('award_food_cred', { p_source_action: action, p_points: earned })
+
+    return newTotal;
+  },
+
+  adjustPoints: async (delta, relatedEntityId, action) => {
+    if (delta === 0) return get().totalPoints;
+
+    const prevTotal = get().totalPoints;
+    const newTotal = Math.max(0, prevTotal + delta);
+    const newLevel = resolveFoodCredLevel(newTotal);
+    const prevLevel = resolveFoodCredLevel(prevTotal);
+
+    set({
+      totalPoints: newTotal,
+      levelIndex: newLevel.index,
+      lastEarnedPoints: Math.max(0, delta),
+    });
+
+    trackAnalyticsEvent("food_cred_adjusted", {
+      action: action ?? "stall_marked_tried",
+      delta,
+      source_action: action,
+      new_total: newTotal,
+      new_level: newLevel.name,
+      related_entity_id: relatedEntityId,
+      previous_level: prevLevel.name,
+    });
+
+    if (newLevel.index !== prevLevel.index) {
+      trackAnalyticsEvent("food_cred_level_changed", {
+        old_level: prevLevel.name,
+        new_level: newLevel.name,
+        total_points: newTotal,
+      });
+    }
 
     return newTotal;
   },

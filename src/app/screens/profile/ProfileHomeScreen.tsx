@@ -23,10 +23,10 @@ import { AppText, Card, Button, EmptyState } from "@/components/ui";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
 import { FoodCredBadge } from "@/components/gamification/FoodCredBadge";
 import { MissionBanner } from "@/components/gamification/MissionBanner";
+import { PassportCard } from "@/components/gamification/PassportCard";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
 import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
-import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -40,6 +40,8 @@ import { useMerchantStore } from "@/store/useMerchantStore";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useFoodCredStore } from "@/store/useFoodCredStore";
+import { usePassportStore } from "@/store/usePassportStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useMissionStore } from "@/store/useMissionStore";
 import {
   BottomSheetBackdrop,
@@ -56,6 +58,7 @@ type ProfileRouteParams = {
   params?: {
     authorName?: string;
     authorAvatarUrl?: string;
+    reviewSignalLabel?: string;
   };
 };
 
@@ -65,6 +68,7 @@ type ProfileHomeProps = {
   mode?: "self" | "other";
   authorName?: string;
   authorAvatarUrl?: string;
+  reviewSignalLabel?: string;
 };
 
 export function ProfileHomeScreen({
@@ -73,12 +77,15 @@ export function ProfileHomeScreen({
   mode = "self",
   authorName,
   authorAvatarUrl,
+  reviewSignalLabel,
 }: ProfileHomeProps) {
+  const resolvedReviewSignalLabel =
+    reviewSignalLabel ?? route?.params?.reviewSignalLabel ?? "Reviews";
   const viewerAuthorName = mode === "other" ? (authorName ?? route?.params?.authorName) : undefined;
   const viewerAuthorAvatarUrl =
     mode === "other" ? (authorAvatarUrl ?? route?.params?.authorAvatarUrl) : undefined;
 
-  const { colorScheme, palette, spacing, radii, shadows } = useHungryTheme();
+  const { colorScheme, componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const headerActionSize = spacing[8] + spacing[2.5];
   const profile = useProfileStore((state) => state.profile);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -92,9 +99,20 @@ export function ProfileHomeScreen({
   const { loadStories } = useStoryStore();
   const loadCredProfile = useFoodCredStore((s) => s.loadCredProfile);
   const loadMissions = useMissionStore((s) => s.loadMissions);
+  const loadStallInteractions = useStallInteractionStore((s) => s.loadInteractions);
+  const stallInteractions = useStallInteractionStore((state) => state.interactions);
+  const computePassportProgress = usePassportStore((s) => s.computeProgress);
   const insets = useSafeAreaInsets();
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const shareSnapPoints = useMemo(() => ["45%"], []);
+  const triedStallIds = useMemo(
+    () =>
+      Object.values(stallInteractions)
+        .filter((interaction) => interaction.isTried)
+        .map((interaction) => interaction.stallId),
+    [stallInteractions],
+  );
+
   const [selectedShareChatIds, setSelectedShareChatIds] = useState<string[]>([]);
   const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
   const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled;
@@ -102,6 +120,17 @@ export function ProfileHomeScreen({
   const [menuOpen, setMenuOpen] = useState(false);
   const [profilePosts, setProfilePosts] = useState<StallPost[]>([]);
   const [activeShareTab, setActiveShareTab] = useState<"posts" | "reviews">("posts");
+  const avatarSize = spacing[20];
+  const avatarInitials = useMemo(() => {
+    const rawName = isAuthenticated ? profile.displayName : "Guest User";
+    return rawName
+      .split(" ")
+      .map((part) => part.trim().charAt(0))
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+  }, [isAuthenticated, profile.displayName]);
 
   const loadChatConversations = useCallback(async () => {
     if (!FEATURE_FLAGS.directMessagesEnabled) {
@@ -129,8 +158,20 @@ export function ProfileHomeScreen({
       void loadStories();
       void loadCredProfile(profile.id);
       void loadMissions(profile.id);
+      void loadStallInteractions(profile.id).then(() => {
+        computePassportProgress(triedStallIds);
+      });
     }
-  }, [isAuthenticated, loadStories, loadCredProfile, loadMissions, profile.id]);
+  }, [
+    computePassportProgress,
+    isAuthenticated,
+    loadCredProfile,
+    loadMissions,
+    loadStallInteractions,
+    loadStories,
+    triedStallIds,
+    profile.id,
+  ]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -197,37 +238,38 @@ export function ProfileHomeScreen({
     });
   }, [profile.reviewedDishIds, reviewEntries]);
 
-  const initials = profile.displayName
-    .split(" ")
-    .map((part) => part.trim().charAt(0))
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
   const socialCounts = useMemo(() => {
     const followedCount = Object.values(followedAuthors).filter(Boolean).length;
-    const savedPostsCount = Object.values(socialInteractions).filter((item) => item.saved).length;
+    const repository = getDataRepository();
+    const savedPosts = repository
+      .listStallPosts()
+      .filter((post) => socialInteractions[post.id]?.saved);
+    const savedPostKeys = new Set<string>(savedPosts.map((post) => post.id));
+    const savedDishKeys = new Set<string>();
+
+    savedPosts.forEach((post) => {
+      const primaryDishId = post.dishIds?.[0];
+      if (primaryDishId) {
+        savedDishKeys.add(primaryDishId);
+      }
+    });
+
+    const filteredFavouriteCount = new Set(
+      profile.favouriteDishIds.filter((dishId) => !savedDishKeys.has(dishId)),
+    ).size;
 
     return {
       followers: profile.stats.followersCount,
       following: profile.stats.followingCount + followedCount,
-      saved: Math.max(0, profile.favouriteDishIds.length + savedPostsCount),
+      saved: savedPostKeys.size + filteredFavouriteCount,
     };
   }, [
     followedAuthors,
     socialInteractions,
-    profile.favouriteDishIds.length,
+    profile.favouriteDishIds,
     profile.stats.followersCount,
     profile.stats.followingCount,
   ]);
-  const reviewSignalLabel =
-    profile.stats.dishesReviewed === 0
-      ? "No reviews yet"
-      : profile.stats.dishesReviewed === 1
-        ? "Updated based on your latest review"
-        : `Updated based on ${profile.stats.dishesReviewed} reviews`;
-
   const handleShareTaste = useCallback(async () => {
     if (!isAuthenticated) return;
     setIsTasteShareSheetOpen(true);
@@ -310,7 +352,6 @@ export function ProfileHomeScreen({
   return (
     <ProfileScreenShell
       title="Profile"
-      subtitle={isAuthenticated ? undefined : "Join Hungry to save dishes and find your taste."}
       showBack={false}
       testID="profile-home-screen"
       headerRight={
@@ -446,9 +487,41 @@ export function ProfileHomeScreen({
                 },
               ]}
             >
-              <AppText variant="h1" style={{ color: palette.orange }}>
-                {isAuthenticated ? initials : "U"}
-              </AppText>
+              {isAuthenticated ? (
+                <View
+                  style={{
+                    width: avatarSize,
+                    height: avatarSize,
+                    borderRadius: radii.pill,
+                    backgroundColor: palette.bgSoft,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                  }}
+                >
+                  {profile.avatarUrl ? (
+                    <Image
+                      source={{ uri: profile.avatarUrl }}
+                      style={{ width: avatarSize, height: avatarSize, borderRadius: radii.pill }}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <AppText
+                      style={{
+                        color: palette.orange,
+                        fontSize: avatarSize * 0.4,
+                        fontWeight: "700",
+                      }}
+                    >
+                      {avatarInitials}
+                    </AppText>
+                  )}
+                </View>
+              ) : (
+                <AppText variant="h1" style={{ color: palette.orange }}>
+                  U
+                </AppText>
+              )}
             </View>
             {isAuthenticated && (
               <Pressable
@@ -486,11 +559,7 @@ export function ProfileHomeScreen({
                   {socialCounts.following} following
                 </AppText>
               </View>
-            ) : (
-              <AppText variant="bodySmall" tone="secondary">
-                Sign in to see your culinary journey
-              </AppText>
-            )}
+            ) : null}
           </View>
 
           {isAuthenticated && <FoodCredBadge size="md" style={{ alignSelf: "flex-start" }} />}
@@ -503,14 +572,11 @@ export function ProfileHomeScreen({
               padding: spacing[5],
               backgroundColor: palette.bgSoft,
               borderColor: palette.orange,
+              marginTop: spacing[5],
             }}
           >
             <View style={{ gap: spacing[2] }}>
               <AppText variant="h2">Unlock your taste profile</AppText>
-              <AppText tone="secondary">
-                Save your favorite dishes, review hawker stalls, and build your personalized taste
-                fingerprint.
-              </AppText>
             </View>
             <Button
               label="Sign In / Create Account"
@@ -560,6 +626,10 @@ export function ProfileHomeScreen({
               />
             </View>
             {/* Gamification */}
+            <PassportCard
+              onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
+              onPress={() => rootNavigation.navigate("PassportScreen")}
+            />
             <MissionBanner onPress={() => navigation.navigate("MissionsScreen" as any)} />
             {/* Taste Fingerprint Section */}
             <View style={{ gap: spacing[4], marginTop: spacing[4] }}>
@@ -588,7 +658,7 @@ export function ProfileHomeScreen({
                   shadows.card,
                   {
                     backgroundColor: palette.surface,
-                    borderRadius: radii.xl,
+                    borderRadius: componentRadii.card,
                     padding: spacing[5],
                     borderWidth: 1,
                     borderColor: palette.border,
@@ -614,12 +684,6 @@ export function ProfileHomeScreen({
                     }}
                   >
                     <BarChart3 size={20} color={palette.orange} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <AppText variant="bodyBold">Detailed Analysis</AppText>
-                    <AppText variant="micro" tone="secondary">
-                      {reviewSignalLabel}
-                    </AppText>
                   </View>
                 </View>
 
@@ -691,7 +755,7 @@ export function ProfileHomeScreen({
                       color: activeShareTab === "reviews" ? palette.white : palette.text,
                     }}
                   >
-                    Reviews
+                    {resolvedReviewSignalLabel}
                   </AppText>
                 </Pressable>
               </View>
@@ -737,7 +801,7 @@ export function ProfileHomeScreen({
                 ) : (
                   <EmptyState
                     title="No posts yet"
-                    body="Shared posts will appear here."
+                    body="Published posts will appear here."
                     icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
                   />
                 )
@@ -747,21 +811,14 @@ export function ProfileHomeScreen({
                     <Card key={item.id} style={{ gap: spacing[3] }}>
                       <View style={{ gap: spacing[1] }}>
                         <AppText variant="bodyBold">{item.title}</AppText>
-                        <AppText variant="micro" tone="secondary">
-                          {item.subtitle}
-                        </AppText>
-                        <AppText>{item.text}</AppText>
                       </View>
-                      <AppText variant="micro" tone="secondary">
-                        Review • {formatTimeAgo(item.createdAt)}
-                      </AppText>
                     </Card>
                   ))}
                 </View>
               ) : (
                 <EmptyState
                   title="No reviews yet"
-                  body={"Dish reviews you share will appear here."}
+                  body="Reviews will appear here after they are published."
                   icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
                 />
               )}
@@ -914,7 +971,7 @@ function StatBlock({
   onPressIn?: () => void;
   onPress?: () => void;
 }) {
-  const { palette, spacing, radii, colorScheme } = useHungryTheme();
+  const { colorScheme, componentRadii, palette, spacing } = useHungryTheme();
 
   const row = (
     <>
@@ -936,7 +993,7 @@ function StatBlock({
 
   const baseStyle = {
     backgroundColor: colorScheme === "dark" ? palette.surfaceRaised : palette.bgSoft,
-    borderRadius: radii.lg,
+    borderRadius: componentRadii.card,
     paddingVertical: spacing[3],
     paddingHorizontal: spacing[3],
     alignItems: "center" as const,
@@ -979,7 +1036,7 @@ function MenuRow({
   onPressIn?: () => void;
   onPress: () => void;
 }) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   return (
     <Pressable
       onPressIn={onPressIn}
@@ -990,7 +1047,7 @@ function MenuRow({
           alignItems: "center",
           width: "100%",
           backgroundColor: pressed ? palette.bgSoft : palette.surface,
-          borderRadius: radii.lg,
+          borderRadius: componentRadii.button,
           padding: spacing[4],
           gap: spacing[3],
           borderWidth: 1,

@@ -12,7 +12,7 @@ interface ReviewSuccessModalProps {
 }
 
 export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const payload = useUIStore((state) => state.reviewSuccess);
   const hideReviewSuccess = useUIStore((state) => state.hideReviewSuccess);
 
@@ -66,7 +66,7 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
               style={{
                 width: 44,
                 height: 44,
-                borderRadius: radii.pill,
+                borderRadius: componentRadii.iconButton,
                 alignItems: "center",
                 justifyContent: "center",
                 backgroundColor: palette.bgMuted,

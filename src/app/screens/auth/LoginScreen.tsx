@@ -14,8 +14,9 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
+import { AuthProviderButton } from "./AuthProviderButton";
 import { AuthScreenShell } from "./AuthScreenShell";
-import { navigationRef } from "@/app/navigation/RootNavigator";
+import { AUTH_COPY, getAuthProviderUnavailableMessage, type AuthProvider } from "./authCopy";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
@@ -25,7 +26,7 @@ type FormValues = {
 };
 
 export function LoginScreen({ navigation }: Props) {
-  const { palette, spacing } = useHungryTheme();
+  const { colorScheme, palette, spacing } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
   const applyProfile = useProfileStore((state) => state.applyProfile);
   const completeAuth = useSessionStore((state) => state.completeAuth);
@@ -52,22 +53,22 @@ export function LoginScreen({ navigation }: Props) {
         }
       }
       completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
-      showToast({ message: "Welcome back.", tone: "success" });
+      showToast({ message: AUTH_COPY.login.successToast, tone: "success" });
     } catch (err) {
       const code =
         (err as { error_code?: string; code?: string })?.error_code ??
         (err as { error_code?: string; code?: string })?.code;
       if (code === "email_not_confirmed") {
-        showToast({ message: "Please verify your email before signing in.", tone: "error" });
+        showToast({ message: AUTH_COPY.login.emailNotConfirmedToast, tone: "error" });
       } else if (code === "invalid_credentials") {
-        showToast({ message: "Incorrect email or password.", tone: "error" });
+        showToast({ message: AUTH_COPY.login.invalidCredentialsToast, tone: "error" });
       } else {
-        showToast({ message: "Sign in failed. Please try again.", tone: "error" });
+        showToast({ message: AUTH_COPY.login.genericErrorToast, tone: "error" });
       }
     }
   });
 
-  const handleProviderLogin = async (provider: "google" | "apple") => {
+  const handleProviderLogin = async (provider: AuthProvider) => {
     try {
       if (getConfiguredDataSource() === "supabase") {
         const service = getHungryService();
@@ -80,32 +81,32 @@ export function LoginScreen({ navigation }: Props) {
         applyProfile(session.profile);
       }
       completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
-      showToast({ message: "Signed in successfully.", tone: "success" });
+      showToast({ message: AUTH_COPY.login.providerSuccessToast, tone: "success" });
     } catch (err) {
       const message = (err as { message?: string })?.message?.toLowerCase() ?? "";
       if (message.includes("provider is not enabled")) {
         showToast({
-          message: `${provider === "google" ? "Google" : "Apple"} sign-in is not enabled in Supabase Auth.`,
+          message: getAuthProviderUnavailableMessage(provider),
           tone: "error",
         });
         return;
       }
       if (message.includes("cancelled")) {
-        showToast({ message: "Sign in was cancelled.", tone: "warning" });
+        showToast({ message: AUTH_COPY.login.providerCancelledToast, tone: "warning" });
         return;
       }
-      showToast({ message: "Sign in failed. Please try again.", tone: "error" });
+      showToast({ message: AUTH_COPY.login.genericErrorToast, tone: "error" });
     }
   };
 
   return (
-    <FeedErrorBoundary
-      title="Sign in unavailable"
-      body="Couldn't load sign in right now. Please retry."
-    >
+    <FeedErrorBoundary title={AUTH_COPY.login.errorTitle} body={AUTH_COPY.login.errorBody}>
       <AuthScreenShell
-        title="Welcome back"
-        subtitle="Your digital maître d' awaits."
+        title={AUTH_COPY.login.title}
+        scroll={false}
+        compact
+        contentOffsetTop={spacing[16]}
+        wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
           <View
             style={{
@@ -115,10 +116,10 @@ export function LoginScreen({ navigation }: Props) {
               marginTop: spacing[2],
             }}
           >
-            <AppText tone="secondary">New to Hungry? </AppText>
+            <AppText tone="secondary">{AUTH_COPY.login.footerPrompt}</AppText>
             <Pressable onPress={() => navigation.navigate("SignUp")}>
               <AppText variant="bodyBold" tone="accent">
-                Create account
+                {AUTH_COPY.login.footerAction}
               </AppText>
             </Pressable>
           </View>
@@ -134,7 +135,7 @@ export function LoginScreen({ navigation }: Props) {
                 <Input
                   autoCapitalize="none"
                   keyboardType="email-address"
-                  placeholder="Email Address"
+                  placeholder={AUTH_COPY.login.emailPlaceholder}
                   value={value}
                   onChangeText={onChange}
                   leftIcon={<Mail color={palette.textMuted} size={18} />}
@@ -147,11 +148,14 @@ export function LoginScreen({ navigation }: Props) {
             <Controller
               control={control}
               name="password"
-              rules={{ validate: (value) => validateRequired(value, "Password") }}
+              rules={{
+                validate: (value) =>
+                  validateRequired(value, AUTH_COPY.login.passwordValidationLabel),
+              }}
               render={({ field: { onChange, value } }) => (
                 <View style={{ gap: spacing[1] }}>
                   <Input
-                    placeholder="Password"
+                    placeholder={AUTH_COPY.login.passwordPlaceholder}
                     secureTextEntry={!showPassword}
                     value={value}
                     onChangeText={onChange}
@@ -171,7 +175,7 @@ export function LoginScreen({ navigation }: Props) {
                   <View style={{ alignItems: "flex-end" }}>
                     <Pressable onPress={() => navigation.navigate("ForgotPassword")}>
                       <AppText variant="micro" tone="accent">
-                        Forget Password?
+                        {AUTH_COPY.login.forgotPasswordLink}
                       </AppText>
                     </Pressable>
                   </View>
@@ -181,7 +185,7 @@ export function LoginScreen({ navigation }: Props) {
           </View>
 
           <Button
-            label="Sign In"
+            label={AUTH_COPY.login.primaryButton}
             onPress={handleLogin}
             rightIcon={<ArrowRight size={18} color={palette.white} />}
           />
@@ -196,22 +200,22 @@ export function LoginScreen({ navigation }: Props) {
           >
             <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
             <AppText variant="micro" tone="muted">
-              OR CONTINUE WITH
+              {AUTH_COPY.login.divider}
             </AppText>
             <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
           </View>
 
           <View style={{ gap: spacing[3] }}>
-            <Button
-              label="Sign in with Google"
-              variant="secondary"
+            <AuthProviderButton
+              intent="signIn"
+              provider="google"
               onPress={() => {
                 void handleProviderLogin("google");
               }}
             />
-            <Button
-              label="Sign in with Apple"
-              variant="secondary"
+            <AuthProviderButton
+              intent="signIn"
+              provider="apple"
               onPress={() => {
                 void handleProviderLogin("apple");
               }}

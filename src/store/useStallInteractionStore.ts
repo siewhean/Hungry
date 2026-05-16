@@ -32,7 +32,17 @@ interface StallInteractionState {
   // Actions
   loadInteractions: (userId: string) => Promise<void>;
   toggleSaved: (userId: string, stallId: string) => Promise<void>;
-  markTried: (userId: string, stallId: string) => Promise<void>;
+  /**
+   * Toggle `isTried` for a stall.
+   * Returns the post-toggle state and how many Food Cred points were awarded.
+   */
+  markTried: (
+    userId: string,
+    stallId: string,
+  ) => Promise<{
+    isTried: boolean;
+    pointsAwarded: number;
+  }>;
   markReviewed: (userId: string, stallId: string) => Promise<void>;
   /** Reset — dev/test only */
   _reset: () => void;
@@ -111,17 +121,17 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
 
   markTried: async (userId, stallId) => {
     const existing = get().interactions[stallId];
-    if (existing?.isTried) return; // idempotent — don't re-award cred
+    const shouldUnmark = existing?.isTried ?? false;
     const now = new Date().toISOString();
 
     const updated: StallInteraction = {
       userId,
       stallId,
       isSaved: existing?.isSaved ?? false,
-      isTried: true,
+      isTried: !shouldUnmark,
       isReviewed: existing?.isReviewed ?? false,
       savedAt: existing?.savedAt,
-      triedAt: now,
+      triedAt: shouldUnmark ? undefined : now,
       reviewedAt: existing?.reviewedAt,
     };
 
@@ -129,15 +139,24 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
       interactions: { ...state.interactions, [stallId]: updated },
     }));
 
-    // Rate-limit: count today's tried marks
-    const todayTriedCount = Object.values(get().interactions).filter(
-      (i) => i.isTried && i.triedAt && isToday(i.triedAt),
-    ).length;
-    if (withinCredCutoff("stall_marked_tried", todayTriedCount)) {
-      await useFoodCredStore.getState().awardPoints("stall_marked_tried", stallId);
+    let pointsAwarded = 0;
+    if (!shouldUnmark) {
+      // Rate-limit: count today's tried marks
+      const todayTriedCount = Object.values(get().interactions).filter(
+        (i) => i.isTried && i.triedAt && isToday(i.triedAt),
+      ).length;
+      if (withinCredCutoff("stall_marked_tried", todayTriedCount)) {
+        await useFoodCredStore.getState().awardPoints("stall_marked_tried", stallId);
+        pointsAwarded = 5;
+      }
+
+      trackStallMarkedTried({ stallId, sourceScreen: "StallDetail" });
     }
 
-    trackStallMarkedTried({ stallId, sourceScreen: "StallDetail" });
+    return {
+      isTried: !shouldUnmark,
+      pointsAwarded,
+    };
 
     // TODO (production): supabase.from('user_stall_interactions').upsert({ ..., is_tried: true, tried_at: now })
   },

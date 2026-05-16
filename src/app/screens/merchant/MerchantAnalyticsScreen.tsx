@@ -1,39 +1,96 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { View, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
-import { BarChart3, TrendingUp, PieChart, Star, Users, Clock, Flame } from "lucide-react-native";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
+import { Alert, Pressable, View, StyleSheet, ScrollView } from "react-native";
+import { BarChart3, TrendingUp, PieChart, Star, Users, Clock, Flame, X } from "lucide-react-native";
 
-import { AppText, Screen, Card, Chip, Skeleton } from "@/components/ui";
+import { AppText, Screen, Card, Chip, Skeleton, EmptyState } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { MerchantAnalytics } from "@/types/domain";
 
-const DEMOGRAPHICS = { returning: 65, new: 35 };
+function formatDelta(current: number, previous: number, options: { decimals?: number } = {}) {
+  if (previous <= 0) {
+    return current > 0 ? "New" : "0%";
+  }
+
+  const change = ((current - previous) / previous) * 100;
+  const value = Math.abs(change).toFixed(options.decimals ?? 0);
+  if (change > 0) return `+${value}%`;
+  if (change < 0) return `-${value}%`;
+  return "0%";
+}
+
+function formatSaveRate(saves: number, profileVisits: number) {
+  if (profileVisits <= 0) return "0% save rate";
+  return `${((saves / profileVisits) * 100).toFixed(1)}% save rate`;
+}
 
 export function MerchantAnalyticsScreen() {
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [range, setRange] = useState<"today" | "7d" | "30d">("7d");
+  const [error, setError] = useState<string | null>(null);
+
+  const loadAnalytics = useCallback(async () => {
+    setError(null);
+    setIsLoading(true);
+
+    if (!activeOutlet) {
+      setAnalytics(null);
+      setError("No active outlet selected for analytics.");
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const data = await getHungryService().merchant.getAnalytics(activeOutlet.id, range);
+      setAnalytics(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load analytics.");
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeOutlet, range]);
 
   useEffect(() => {
-    async function loadAnalytics() {
-      if (activeOutlet) {
-        setIsLoading(true);
-        try {
-          const data = await getHungryService().merchant.getAnalytics(activeOutlet.id, range);
-          setAnalytics(data);
-        } catch (e) {
-          console.error(e);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    }
     void loadAnalytics();
-  }, [activeOutlet, range]);
+  }, [loadAnalytics]);
+
+  const discoveryMix = useMemo(() => {
+    if (!analytics) return [];
+
+    const items = [
+      { label: "Profiles", value: analytics.profileVisits, color: palette.orange },
+      { label: "Menus", value: analytics.menuViews, color: palette.info },
+      { label: "Dishes", value: analytics.dishViews, color: palette.amber },
+      { label: "Directions", value: analytics.directionTaps, color: palette.success },
+    ];
+    const total = items.reduce((sum, item) => sum + item.value, 0);
+
+    return items.map((item) => ({
+      ...item,
+      percentage: total > 0 ? Math.round((item.value / total) * 100) : 0,
+    }));
+  }, [analytics, palette.amber, palette.info, palette.orange, palette.success]);
+
+  if (error) {
+    return (
+      <Screen title="Analytics">
+        <EmptyState
+          title="Failed to load analytics"
+          body="Your analytics data is unavailable at the moment."
+          icon={<X size={40} color={palette.error} />}
+          errorMessage={error}
+          sendErrorContext="Merchant analytics"
+          ctaLabel="Retry"
+          onPress={loadAnalytics}
+        />
+      </Screen>
+    );
+  }
 
   if (isLoading || !analytics) {
     return (
@@ -45,20 +102,27 @@ export function MerchantAnalyticsScreen() {
             <Skeleton height={32} width={80} borderRadius={radii.pill} />
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
-            <Skeleton height={100} width="47%" borderRadius={radii.lg} />
-            <Skeleton height={100} width="47%" borderRadius={radii.lg} />
-            <Skeleton height={100} width="47%" borderRadius={radii.lg} />
-            <Skeleton height={100} width="47%" borderRadius={radii.lg} />
+            <Skeleton height={100} width="47%" borderRadius={componentRadii.card} />
+            <Skeleton height={100} width="47%" borderRadius={componentRadii.card} />
+            <Skeleton height={100} width="47%" borderRadius={componentRadii.card} />
+            <Skeleton height={100} width="47%" borderRadius={componentRadii.card} />
           </View>
-          <Skeleton height={200} borderRadius={radii.lg} />
+          <Skeleton height={200} borderRadius={componentRadii.card} />
         </View>
       </Screen>
     );
   }
 
+  const openDetail = (title: string, body: string) => {
+    Alert.alert(title, body);
+  };
+
   return (
     <Screen title="Performance" scroll={false}>
-      <ScrollView contentContainerStyle={{ padding: spacing[4], gap: spacing[6] }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ padding: spacing[4], gap: spacing[6] }}
+      >
         {/* Range Selector */}
         <View style={{ flexDirection: "row", gap: spacing[2], paddingHorizontal: spacing[1] }}>
           <Chip label="Today" selected={range === "today"} onPress={() => setRange("today")} />
@@ -72,37 +136,68 @@ export function MerchantAnalyticsScreen() {
             <MetricCard
               label="Visits"
               value={analytics.profileVisits.toString()}
-              trend="+12%"
+              trend={formatDelta(
+                analytics.profileVisits,
+                analytics.previousPeriodComparison.profileVisits,
+              )}
               icon={<Users size={16} color={palette.orange} />}
+              onSeeMore={() =>
+                openDetail(
+                  "Detailed views",
+                  `${analytics.profileVisits} profile visits, ${analytics.menuViews} menu views, and ${analytics.dishViews} dish views for this range.`,
+                )
+              }
             />
             <MetricCard
               label="Menu Views"
               value={analytics.menuViews.toString()}
-              trend="+8%"
+              trend={formatDelta(analytics.menuViews, analytics.previousPeriodComparison.menuViews)}
               icon={<BarChart3 size={16} color={palette.info} />}
+              onSeeMore={() =>
+                openDetail(
+                  "Menu analytics",
+                  `${analytics.menuViews} menu views. Top dish: ${analytics.topDishes[0]?.name ?? "No dish data yet"}.`,
+                )
+              }
             />
             <MetricCard
               label="Avg Rating"
               value={analytics.averageRating.toFixed(1)}
-              trend="Stable"
+              trend={formatDelta(
+                analytics.averageRating,
+                analytics.previousPeriodComparison.averageRating,
+                { decimals: 1 },
+              )}
               icon={<Star size={16} color={palette.amber} />}
+              onSeeMore={() =>
+                openDetail(
+                  "Rating trend",
+                  `${analytics.averageRating.toFixed(1)} average rating from ${analytics.reviewCount} reviews.`,
+                )
+              }
             />
             <MetricCard
               label="Saves"
               value={analytics.saves.toString()}
-              trend="+24%"
+              trend={formatSaveRate(analytics.saves, analytics.profileVisits)}
               icon={<TrendingUp size={16} color={palette.success} />}
+              onSeeMore={() =>
+                openDetail(
+                  "Save performance",
+                  `${analytics.saves} saves and ${analytics.shares} shares for this range.`,
+                )
+              }
             />
           </View>
 
-          {/* Demographics Card */}
+          {/* Discovery Mix */}
           <View
             style={[
               styles.chartCard,
               {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
-                borderRadius: radii.xl,
+                borderRadius: componentRadii.card,
                 padding: spacing[5],
               },
             ]}
@@ -111,12 +206,27 @@ export function MerchantAnalyticsScreen() {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
+                justifyContent: "space-between",
                 gap: 8,
                 marginBottom: spacing[4],
               }}
             >
-              <PieChart size={20} color={palette.amber} />
-              <AppText variant="bodyBold">Customer Demographics</AppText>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <PieChart size={20} color={palette.amber} />
+                <AppText variant="bodyBold">Discovery Mix</AppText>
+              </View>
+              <Pressable
+                onPress={() =>
+                  openDetail(
+                    "Discovery mix",
+                    discoveryMix.map((item) => `${item.label}: ${item.percentage}%`).join("\n"),
+                  )
+                }
+              >
+                <AppText variant="micro" style={{ color: palette.orange, fontWeight: "800" }}>
+                  See More
+                </AppText>
+              </Pressable>
             </View>
 
             <View style={{ gap: spacing[2] }}>
@@ -128,29 +238,30 @@ export function MerchantAnalyticsScreen() {
                   overflow: "hidden",
                 }}
               >
-                <View style={{ flex: DEMOGRAPHICS.returning, backgroundColor: palette.amber }} />
-                <View style={{ flex: DEMOGRAPHICS.new, backgroundColor: palette.amber + "40" }} />
-              </View>
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                {discoveryMix.map((item) => (
                   <View
-                    style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: palette.amber }}
-                  />
-                  <AppText variant="bodySmallBold">{DEMOGRAPHICS.returning}% Returning</AppText>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                  <View
+                    key={item.label}
                     style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: palette.amber + "40",
+                      flex: Math.max(item.percentage, 1),
+                      backgroundColor: item.color,
                     }}
                   />
-                  <AppText variant="bodySmallBold" tone="muted">
-                    {DEMOGRAPHICS.new}% New
-                  </AppText>
-                </View>
+                ))}
+              </View>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                {discoveryMix.map((item) => (
+                  <View
+                    key={item.label}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+                  >
+                    <View
+                      style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: item.color }}
+                    />
+                    <AppText variant="micro" tone="muted">
+                      {item.percentage}% {item.label}
+                    </AppText>
+                  </View>
+                ))}
               </View>
             </View>
           </View>
@@ -162,7 +273,7 @@ export function MerchantAnalyticsScreen() {
               {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
-                borderRadius: radii.xl,
+                borderRadius: componentRadii.card,
                 padding: spacing[5],
               },
             ]}
@@ -171,12 +282,31 @@ export function MerchantAnalyticsScreen() {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
+                justifyContent: "space-between",
                 gap: 8,
                 marginBottom: spacing[4],
               }}
             >
-              <Flame size={20} color={palette.orange} />
-              <AppText variant="bodyBold">Top Performing Dishes</AppText>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Flame size={20} color={palette.orange} />
+                <AppText variant="bodyBold">Top Performing Dishes</AppText>
+              </View>
+              <Pressable
+                onPress={() =>
+                  openDetail(
+                    "Dish performance",
+                    analytics.topDishes.length
+                      ? analytics.topDishes
+                          .map((dish, index) => `${index + 1}. ${dish.name}: ${dish.views} views`)
+                          .join("\n")
+                      : "No dish-level view data yet.",
+                  )
+                }
+              >
+                <AppText variant="micro" style={{ color: palette.orange, fontWeight: "800" }}>
+                  See More
+                </AppText>
+              </Pressable>
             </View>
             <View style={{ gap: spacing[3] }}>
               {analytics.topDishes.map((dish, idx) => (
@@ -208,7 +338,7 @@ export function MerchantAnalyticsScreen() {
               {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
-                borderRadius: radii.xl,
+                borderRadius: componentRadii.card,
                 padding: spacing[5],
               },
             ]}
@@ -217,12 +347,31 @@ export function MerchantAnalyticsScreen() {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
+                justifyContent: "space-between",
                 gap: 8,
                 marginBottom: spacing[4],
               }}
             >
-              <Star size={20} color={palette.amber} />
-              <AppText variant="bodyBold">Customer Taste Profile</AppText>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Star size={20} color={palette.amber} />
+                <AppText variant="bodyBold">Customer Taste Profile</AppText>
+              </View>
+              <Pressable
+                onPress={() =>
+                  openDetail(
+                    "Customer taste profile",
+                    analytics.customerTasteTags.length
+                      ? analytics.customerTasteTags
+                          .map((tag) => `${tag.tag}: ${tag.count}`)
+                          .join("\n")
+                      : "No customer taste-tag data yet.",
+                  )
+                }
+              >
+                <AppText variant="micro" style={{ color: palette.orange, fontWeight: "800" }}>
+                  See More
+                </AppText>
+              </Pressable>
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
               {analytics.customerTasteTags.map((tagObj) => (
@@ -263,7 +412,7 @@ export function MerchantAnalyticsScreen() {
               {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
-                borderRadius: radii.xl,
+                borderRadius: componentRadii.card,
                 padding: spacing[5],
               },
             ]}
@@ -272,12 +421,29 @@ export function MerchantAnalyticsScreen() {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
+                justifyContent: "space-between",
                 gap: 8,
                 marginBottom: spacing[4],
               }}
             >
-              <Clock size={20} color={palette.info} />
-              <AppText variant="bodyBold">Peak Discovery Hours</AppText>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Clock size={20} color={palette.info} />
+                <AppText variant="bodyBold">Peak Discovery Hours</AppText>
+              </View>
+              <Pressable
+                onPress={() =>
+                  openDetail(
+                    "Peak discovery hours",
+                    analytics.peakDiscoveryHours.length
+                      ? analytics.peakDiscoveryHours.join(", ")
+                      : "No peak-hour data yet.",
+                  )
+                }
+              >
+                <AppText variant="micro" style={{ color: palette.orange, fontWeight: "800" }}>
+                  See More
+                </AppText>
+              </Pressable>
             </View>
             <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[4] }}>
               When customers are viewing your stall
@@ -290,7 +456,7 @@ export function MerchantAnalyticsScreen() {
                     backgroundColor: palette.info + "20",
                     paddingHorizontal: spacing[3],
                     paddingVertical: spacing[2],
-                    borderRadius: radii.md,
+                    borderRadius: componentRadii.button,
                   }}
                 >
                   <AppText variant="bodySmallBold" style={{ color: palette.info }}>
@@ -311,13 +477,15 @@ function MetricCard({
   value,
   trend,
   icon,
+  onSeeMore,
 }: {
   label: string;
   value: string;
   trend: string;
   icon: React.ReactNode;
+  onSeeMore: () => void;
 }) {
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   return (
     <View
       style={[
@@ -325,25 +493,42 @@ function MetricCard({
         {
           backgroundColor: palette.surface,
           borderColor: palette.border,
-          borderRadius: radii.lg,
+          borderRadius: componentRadii.card,
           padding: spacing[4],
           ...shadows.card,
         },
       ]}
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <View style={{ backgroundColor: palette.bgSoft, padding: 6, borderRadius: radii.md }}>
-          {icon}
-        </View>
-        <AppText
-          variant="micro"
+        <View
           style={{
-            color: trend.startsWith("+") ? palette.success : palette.textMuted,
-            fontWeight: "700",
+            backgroundColor: palette.bgSoft,
+            padding: 6,
+            borderRadius: componentRadii.iconButton,
           }}
         >
-          {trend}
-        </AppText>
+          {icon}
+        </View>
+        <View style={{ alignItems: "flex-end", gap: spacing[1] }}>
+          <AppText
+            variant="micro"
+            style={{
+              color: trend.startsWith("+")
+                ? palette.success
+                : trend.startsWith("-")
+                  ? palette.error
+                  : palette.textMuted,
+              fontWeight: "700",
+            }}
+          >
+            {trend}
+          </AppText>
+          <Pressable onPress={onSeeMore}>
+            <AppText variant="micro" style={{ color: palette.orange, fontWeight: "800" }}>
+              See More
+            </AppText>
+          </Pressable>
+        </View>
       </View>
       <View style={{ marginTop: spacing[3] }}>
         <AppText variant="h2" style={{ fontWeight: "900" }}>

@@ -1,7 +1,7 @@
 /**
  * MissionsScreen — full list of active weekly missions with user progress.
  *
- * Navigated to from MissionBanner (HomeScreen) or profile link.
+ * Navigated to from Profile's MissionBanner or profile links.
  */
 
 import { useEffect, useMemo } from "react";

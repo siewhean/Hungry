@@ -1,19 +1,28 @@
-import React, { useState, useEffect } from "react";
-import { View, ScrollView, TextInput, StyleSheet, Alert, Switch, Pressable } from "react-native";
-import { Calendar } from "lucide-react-native";
+import React, { useCallback, useState, useEffect } from "react";
+import { View, TextInput, StyleSheet, Alert, Switch, Pressable } from "react-native";
+import { Calendar, X } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
-import { AppText, Button, Screen } from "@/components/ui";
+import { AppText, Button, Screen, EmptyState } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
-import type { MerchantPromotion, PromotionTargetAudience, PromotionStatus } from "@/types/domain";
+import type {
+  DishDetail,
+  MerchantPromotion,
+  PromotionTargetAudience,
+  PromotionStatus,
+} from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
+import {
+  getPromotionPricing,
+  resolvePromotionRuntimeStatus,
+} from "@/features/merchant/merchantReadiness";
 
 type RouteProps = RouteProp<MerchantTabParamList, "PromotionBuilder">;
 
 export function PromotionBuilderScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const promotionId = route.params?.promotionId;
@@ -24,39 +33,68 @@ export function PromotionBuilderScreen() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [targetDishId, setTargetDishId] = useState<string | undefined>(undefined);
+  const [menu, setMenu] = useState<DishDetail[]>([]);
+  const [promotionItemType, setPromotionItemType] =
+    useState<MerchantPromotion["promotionItemType"]>("new_item");
+  const [originalPrice, setOriginalPrice] = useState("");
+  const [promotionalPrice, setPromotionalPrice] = useState("");
+  const [discountPercentage, setDiscountPercentage] = useState("");
+  const [isAvailable, setIsAvailable] = useState(true);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [endDate, setEndDate] = useState(
     new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0],
   );
   const [status, setStatus] = useState<PromotionStatus>("draft");
+  const [error, setError] = useState<string | null>(null);
   const [targetAudiences, setTargetAudiences] = useState<Set<PromotionTargetAudience>>(
     new Set(["nearby_users"]),
   );
   const [dateErrors, setDateErrors] = useState({ start: false, end: false });
 
-  useEffect(() => {
-    async function loadPromotion() {
-      if (promotionId && activeOutlet) {
-        try {
-          const promos = await getHungryService().merchant.getPromotions(activeOutlet.id);
-          const promo = promos.find((p) => p.id === promotionId);
-          if (promo) {
-            setTitle(promo.title);
-            setDescription(promo.description);
-            setTargetDishId(promo.targetDishId);
-            setStartDate(promo.startDate.split("T")[0]);
-            setEndDate(promo.endDate.split("T")[0]);
-            setStatus(promo.status);
-            setTargetAudiences(new Set(promo.targetAudience));
-          }
-        } catch (e) {
-          Alert.alert("Error", "Failed to load promotion details.");
-        }
+  const loadPromotion = useCallback(async () => {
+    setError(null);
+    setIsLoading(true);
+
+    if (!activeOutlet) {
+      setError("No active outlet selected for this promotion.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const [promos, menuItems] = await Promise.all([
+        getHungryService().merchant.getPromotions(activeOutlet.id),
+        getHungryService().merchant.getMenu(activeOutlet.id),
+      ]);
+      setMenu(menuItems);
+      if (!promotionId) return;
+      const promo = promos.find((p) => p.id === promotionId);
+      if (promo) {
+        setTitle(promo.title);
+        setDescription(promo.description);
+        setTargetDishId(promo.targetDishId);
+        setStartDate(promo.startDate.split("T")[0]);
+        setEndDate(promo.endDate.split("T")[0]);
+        setStatus(promo.status);
+        setTargetAudiences(new Set(promo.targetAudience));
+        setPromotionItemType(promo.promotionItemType ?? "new_item");
+        setOriginalPrice(promo.originalPrice?.toString() ?? "");
+        setPromotionalPrice(
+          promo.promotionalPrice?.toString() ?? promo.finalPrice?.toString() ?? "",
+        );
+        setDiscountPercentage(promo.discountPercentage?.toString() ?? "");
+        setIsAvailable(promo.isAvailable ?? true);
       }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load promotion details.");
+    } finally {
       setIsLoading(false);
     }
-    void loadPromotion();
   }, [promotionId, activeOutlet]);
+
+  useEffect(() => {
+    void loadPromotion();
+  }, [loadPromotion]);
 
   const setAudienceSelected = (audience: PromotionTargetAudience, selected: boolean) => {
     setTargetAudiences((prev) => {
@@ -90,10 +128,26 @@ export function PromotionBuilderScreen() {
 
     setIsSaving(true);
     try {
-      const newStatus = publish ? "active" : "draft";
+      const parsedOriginalPrice = originalPrice ? Number(originalPrice) : undefined;
+      const parsedPromotionalPrice = promotionalPrice ? Number(promotionalPrice) : undefined;
+      const parsedDiscount = discountPercentage ? Number(discountPercentage) : undefined;
+      if (
+        [parsedOriginalPrice, parsedPromotionalPrice, parsedDiscount].some(
+          (value) => value !== undefined && !Number.isFinite(value),
+        )
+      ) {
+        Alert.alert("Invalid price", "Enter valid numbers for price and discount fields.");
+        return;
+      }
+      const newStatus = publish
+        ? resolvePromotionRuntimeStatus({
+            startDate: `${startDate}T00:00:00Z`,
+            endDate: `${endDate}T23:59:59Z`,
+            status: "active",
+          })
+        : "draft";
 
-      const promoData: Omit<MerchantPromotion, "id" | "createdAt" | "analytics"> = {
-        outletId: activeOutlet.id,
+      const promoData: Omit<MerchantPromotion, "id" | "outletId" | "createdAt" | "analytics"> = {
         title,
         description,
         targetDishId,
@@ -101,12 +155,18 @@ export function PromotionBuilderScreen() {
         endDate: `${endDate}T23:59:59Z`,
         status: newStatus,
         targetAudience: Array.from(targetAudiences),
+        promotionItemType,
+        originalPrice: parsedOriginalPrice,
+        promotionalPrice: parsedPromotionalPrice,
+        finalPrice: parsedPromotionalPrice ?? parsedOriginalPrice,
+        discountPercentage: parsedDiscount,
+        isAvailable,
       };
 
       if (promotionId) {
         await getHungryService().merchant.updatePromotion(promotionId, promoData);
       } else {
-        await getHungryService().merchant.createPromotion(activeOutlet.id, promoData as any);
+        await getHungryService().merchant.createPromotion(activeOutlet.id, promoData);
       }
 
       Alert.alert("Success", `Promotion ${publish ? "published" : "saved as draft"}!`);
@@ -127,6 +187,22 @@ export function PromotionBuilderScreen() {
     );
   }
 
+  if (error) {
+    return (
+      <Screen title="Error">
+        <EmptyState
+          title="Failed to load promotion"
+          body="The promotion could not be loaded right now."
+          icon={<X size={40} color={palette.error} />}
+          errorMessage={error}
+          sendErrorContext="Promotion builder"
+          ctaLabel="Retry"
+          onPress={loadPromotion}
+        />
+      </Screen>
+    );
+  }
+
   const renderAudienceToggle = (id: PromotionTargetAudience, label: string, desc: string) => {
     const isSelected = targetAudiences.has(id);
     return (
@@ -138,15 +214,15 @@ export function PromotionBuilderScreen() {
         style={[
           styles.audienceCard,
           {
-            backgroundColor: isSelected ? palette.orangeLight : palette.surface,
-            borderColor: isSelected ? palette.orange : palette.border,
-            borderRadius: radii.md,
+            backgroundColor: palette.surface,
+            borderColor: isSelected ? palette.success : palette.border,
+            borderRadius: componentRadii.card,
             padding: spacing[4],
           },
         ]}
       >
         <View style={{ flex: 1, paddingRight: spacing[3] }}>
-          <AppText variant="bodyBold" style={{ color: isSelected ? palette.orange : palette.text }}>
+          <AppText variant="bodyBold" style={{ color: palette.text }}>
             {label}
           </AppText>
           <AppText variant="micro" tone="muted" style={{ marginTop: 2 }}>
@@ -156,11 +232,32 @@ export function PromotionBuilderScreen() {
         <Switch
           value={isSelected}
           onValueChange={(value) => setAudienceSelected(id, value)}
-          trackColor={{ true: palette.orange, false: palette.border }}
+          trackColor={{ true: palette.success, false: palette.border }}
         />
       </Pressable>
     );
   };
+
+  const selectedDish = menu.find((dish) => dish.id === targetDishId);
+  const previewPromotion: MerchantPromotion = {
+    id: promotionId ?? "preview",
+    outletId: activeOutlet?.id ?? "",
+    title,
+    description,
+    targetDishId,
+    startDate: `${startDate}T00:00:00Z`,
+    endDate: `${endDate}T23:59:59Z`,
+    targetAudience: Array.from(targetAudiences),
+    status,
+    createdAt: new Date().toISOString(),
+    promotionItemType,
+    originalPrice: originalPrice ? Number(originalPrice) : selectedDish?.price,
+    promotionalPrice: promotionalPrice ? Number(promotionalPrice) : undefined,
+    finalPrice: promotionalPrice ? Number(promotionalPrice) : selectedDish?.price,
+    discountPercentage: discountPercentage ? Number(discountPercentage) : undefined,
+    isAvailable,
+  };
+  const pricePreview = getPromotionPricing(previewPromotion);
 
   return (
     <Screen title={promotionId ? "Edit Promotion" : "New Promotion"}>
@@ -180,7 +277,7 @@ export function PromotionBuilderScreen() {
               {
                 backgroundColor: palette.surface,
                 borderColor: palette.orange,
-                borderRadius: radii.lg,
+                borderRadius: componentRadii.card,
                 padding: spacing[4],
               },
             ]}
@@ -198,7 +295,7 @@ export function PromotionBuilderScreen() {
                   backgroundColor: palette.orange,
                   paddingHorizontal: 8,
                   paddingVertical: 4,
-                  borderRadius: radii.sm,
+                  borderRadius: componentRadii.button,
                 }}
               >
                 <AppText variant="bodySmallBold" style={{ color: palette.white }}>
@@ -219,6 +316,9 @@ export function PromotionBuilderScreen() {
             >
               Valid {startDate} to {endDate}
             </AppText>
+            <AppText variant="bodySmallBold" style={{ marginTop: spacing[2], color: palette.text }}>
+              {pricePreview.label}
+            </AppText>
           </View>
         </View>
 
@@ -233,7 +333,7 @@ export function PromotionBuilderScreen() {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
                 color: palette.text,
-                borderRadius: radii.md,
+                borderRadius: componentRadii.card,
                 padding: spacing[3],
               },
             ]}
@@ -257,7 +357,7 @@ export function PromotionBuilderScreen() {
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
                 color: palette.text,
-                borderRadius: radii.md,
+                borderRadius: componentRadii.card,
                 padding: spacing[3],
               },
             ]}
@@ -267,6 +367,145 @@ export function PromotionBuilderScreen() {
             placeholder="e.g. Show this post to get 20% off your total bill when you order any noodle dish between 2pm-5pm."
             placeholderTextColor={palette.textMuted}
           />
+        </View>
+
+        <View style={{ gap: spacing[3] }}>
+          <AppText variant="bodyBold">Promotion Item</AppText>
+          <View style={{ flexDirection: "row", gap: spacing[2] }}>
+            {(["new_item", "existing_menu_item"] as const).map((type) => (
+              <Pressable
+                key={type}
+                onPress={() => setPromotionItemType(type)}
+                style={[
+                  styles.typeOption,
+                  {
+                    backgroundColor: promotionItemType === type ? palette.bgSoft : palette.surface,
+                    borderColor: promotionItemType === type ? palette.success : palette.border,
+                    borderRadius: componentRadii.card,
+                    padding: spacing[3],
+                  },
+                ]}
+              >
+                <AppText variant="bodySmallBold">
+                  {type === "new_item" ? "New item" : "Existing menu item"}
+                </AppText>
+              </Pressable>
+            ))}
+          </View>
+
+          {promotionItemType === "existing_menu_item" ? (
+            <View style={{ gap: spacing[2] }}>
+              <AppText variant="bodySmall" tone="muted">
+                Select the dish this promotion applies to.
+              </AppText>
+              {menu.map((dish) => (
+                <Pressable
+                  key={dish.id}
+                  onPress={() => {
+                    setTargetDishId(dish.id);
+                    setOriginalPrice(dish.price.toString());
+                  }}
+                  style={[
+                    styles.menuItemOption,
+                    {
+                      backgroundColor: targetDishId === dish.id ? palette.bgSoft : palette.surface,
+                      borderColor: targetDishId === dish.id ? palette.success : palette.border,
+                      borderRadius: componentRadii.card,
+                      padding: spacing[3],
+                    },
+                  ]}
+                >
+                  <View style={{ flex: 1 }}>
+                    <AppText variant="bodySmallBold">{dish.name}</AppText>
+                    <AppText variant="micro" tone="muted">
+                      {dish.description || dish.tasteTags.slice(0, 3).join(", ")}
+                    </AppText>
+                  </View>
+                  <AppText variant="bodySmallBold">{dish.priceRange}</AppText>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+
+          <View style={{ flexDirection: "row", gap: spacing[3] }}>
+            <View style={{ flex: 1 }}>
+              <AppText variant="bodySmallBold" style={{ marginBottom: spacing[1] }}>
+                Original Price
+              </AppText>
+              <TextInput
+                keyboardType="decimal-pad"
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    borderRadius: componentRadii.card,
+                    color: palette.text,
+                    padding: spacing[3],
+                  },
+                ]}
+                value={originalPrice}
+                onChangeText={setOriginalPrice}
+                placeholder="6.50"
+                placeholderTextColor={palette.textMuted}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <AppText variant="bodySmallBold" style={{ marginBottom: spacing[1] }}>
+                Final Price
+              </AppText>
+              <TextInput
+                keyboardType="decimal-pad"
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    borderRadius: componentRadii.card,
+                    color: palette.text,
+                    padding: spacing[3],
+                  },
+                ]}
+                value={promotionalPrice}
+                onChangeText={setPromotionalPrice}
+                placeholder="5.50"
+                placeholderTextColor={palette.textMuted}
+              />
+            </View>
+          </View>
+
+          <View style={{ flexDirection: "row", gap: spacing[3] }}>
+            <View style={{ flex: 1 }}>
+              <AppText variant="bodySmallBold" style={{ marginBottom: spacing[1] }}>
+                Discount %
+              </AppText>
+              <TextInput
+                keyboardType="decimal-pad"
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    borderRadius: componentRadii.card,
+                    color: palette.text,
+                    padding: spacing[3],
+                  },
+                ]}
+                value={discountPercentage}
+                onChangeText={setDiscountPercentage}
+                placeholder="15"
+                placeholderTextColor={palette.textMuted}
+              />
+            </View>
+            <View style={[styles.availabilityRow, { paddingTop: spacing[4] }]}>
+              <AppText variant="bodySmallBold">Available</AppText>
+              <Switch
+                value={isAvailable}
+                onValueChange={setIsAvailable}
+                trackColor={{ true: palette.success, false: palette.border }}
+              />
+            </View>
+          </View>
         </View>
 
         <View style={{ flexDirection: "row", gap: spacing[3] }}>
@@ -280,7 +519,7 @@ export function PromotionBuilderScreen() {
                 {
                   backgroundColor: palette.surface,
                   borderColor: dateErrors.start ? palette.error : palette.border,
-                  borderRadius: radii.md,
+                  borderRadius: componentRadii.card,
                   paddingHorizontal: spacing[3],
                   paddingVertical: spacing[2],
                 },
@@ -313,7 +552,7 @@ export function PromotionBuilderScreen() {
                 {
                   backgroundColor: palette.surface,
                   borderColor: dateErrors.end ? palette.error : palette.border,
-                  borderRadius: radii.md,
+                  borderRadius: componentRadii.card,
                   paddingHorizontal: spacing[3],
                   paddingVertical: spacing[2],
                 },
@@ -407,5 +646,21 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     borderWidth: 1,
+  },
+  typeOption: {
+    borderWidth: 1,
+    flex: 1,
+  },
+  menuItemOption: {
+    alignItems: "center",
+    borderWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  availabilityRow: {
+    alignItems: "center",
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
 });

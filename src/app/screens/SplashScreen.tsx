@@ -3,19 +3,19 @@
  *
  * Sequence:
  *  0ms  – screen appears (dark bg)
- *  200ms – "H" bites in from above (scale + opacity)
- *  450ms – "ungry" types in from the right
+ *  200ms – logo scales in
  *  700ms – tagline fades in
  *  1000ms – orange dot pulses
  *  1800ms – navigate to onboarding or main tabs
  */
 
 import { useEffect, useRef } from "react";
-import { View, Animated, Easing, StyleSheet } from "react-native";
+import { View, Animated, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Constants from "expo-constants";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { HUNGRY_LOGO_ICON } from "@/constants/brandAssets";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui";
@@ -33,8 +33,6 @@ export function SplashScreen({ navigation }: Props) {
   // ── Animated values ───────────────────────────────────────────────────────
   const logoScale = useRef(new Animated.Value(0.4)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
-  const suffixTranslateX = useRef(new Animated.Value(24)).current;
-  const suffixOpacity = useRef(new Animated.Value(0)).current;
   const taglineOpacity = useRef(new Animated.Value(0)).current;
   const dotScale = useRef(new Animated.Value(0.6)).current;
   const dotOpacity = useRef(new Animated.Value(0)).current;
@@ -42,7 +40,7 @@ export function SplashScreen({ navigation }: Props) {
   useEffect(() => {
     // Staggered entrance animation
     Animated.sequence([
-      // H bite down
+      // Logo scales in.
       Animated.parallel([
         Animated.spring(logoScale, {
           toValue: 1,
@@ -58,27 +56,11 @@ export function SplashScreen({ navigation }: Props) {
         }),
       ]),
 
-      // "ungry" slides in
-      Animated.parallel([
-        Animated.timing(suffixTranslateX, {
-          toValue: 0,
-          duration: motion.splashMedium,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(suffixOpacity, {
-          toValue: 1,
-          duration: motion.splashFast,
-          useNativeDriver: true,
-        }),
-      ]),
-
       // Tagline + dot fade in together
       Animated.parallel([
         Animated.timing(taglineOpacity, {
           toValue: 1,
           duration: motion.splashReveal,
-          easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.spring(dotScale, {
@@ -126,7 +108,6 @@ export function SplashScreen({ navigation }: Props) {
     isAuthenticated,
     motion.splashDot,
     motion.splashFast,
-    motion.splashMedium,
     motion.splashReveal,
     motion.splashTotal,
     navigation,
@@ -135,35 +116,12 @@ export function SplashScreen({ navigation }: Props) {
   return (
     <View style={styles.root}>
       {/* Brand lockup */}
-      <View style={[styles.lockup, { gap: 0 }]}>
-        {/* "H" — the "bite" letter */}
-        <Animated.View
-          style={{
-            opacity: logoOpacity,
-            transform: [{ scale: logoScale }],
-          }}
-        >
-          <View
-            style={[styles.hContainer, { backgroundColor: palette.orange, borderRadius: radii.xl }]}
-          >
-            <AppText style={styles.hLetter}>H</AppText>
-            {/* Bite notch */}
-            <View
-              style={[styles.biteNotch, { backgroundColor: palette.bg, borderRadius: radii.md }]}
-            />
-          </View>
-        </Animated.View>
-
-        {/* "ungry" */}
-        <Animated.View
-          style={{
-            opacity: suffixOpacity,
-            transform: [{ translateX: suffixTranslateX }],
-            justifyContent: "center",
-          }}
-        >
-          <AppText style={styles.brandSuffix}>ungry</AppText>
-        </Animated.View>
+      <View style={styles.lockup}>
+        <Animated.Image
+          source={HUNGRY_LOGO_ICON}
+          resizeMode="contain"
+          style={[styles.logoImage, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}
+        />
 
         {/* Pulsing orange dot */}
         <Animated.View
@@ -223,31 +181,11 @@ const createStyles = ({
       gap: spacing[4],
     },
     lockup: {
-      flexDirection: "row",
       alignItems: "center",
     },
-    hContainer: {
-      width: 72,
-      height: 72,
-      alignItems: "center",
-      justifyContent: "center",
-      overflow: "hidden",
-      position: "relative",
-    },
-    hLetter: {
-      ...typography.displayBold,
-      color: "#FFFFFF",
-    },
-    biteNotch: {
-      position: "absolute",
-      top: -6,
-      right: -6,
-      width: 24,
-      height: 24,
-    },
-    brandSuffix: {
-      ...typography.displayBold,
-      color: palette.text,
+    logoImage: {
+      width: 116,
+      height: 116,
     },
     dot: {
       width: 10,

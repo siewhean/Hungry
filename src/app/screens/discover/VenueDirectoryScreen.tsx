@@ -18,7 +18,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "VenueDirectory">;
 export function VenueDirectoryScreen({ route, navigation }: Props) {
   const { venueId: routeParamId } = route.params;
   const insets = useSafeAreaInsets();
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const repository = getDataRepository();
   const showToast = useUIStore((state) => state.showToast);
 
@@ -142,7 +142,11 @@ export function VenueDirectoryScreen({ route, navigation }: Props) {
           <View
             style={[
               styles.infoCard,
-              { backgroundColor: palette.surface, borderRadius: radii.lg, ...shadows.card },
+              {
+                backgroundColor: palette.surface,
+                borderRadius: componentRadii.card,
+                ...shadows.card,
+              },
             ]}
           >
             <View style={{ flexDirection: "row", gap: spacing[2], alignItems: "center" }}>

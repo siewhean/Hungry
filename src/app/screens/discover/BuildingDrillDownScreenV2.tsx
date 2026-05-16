@@ -21,7 +21,7 @@ const HERO_HEIGHT = 180;
 export function BuildingDrillDownScreenV2({ route, navigation }: Props) {
   const { width: windowWidth } = useWindowDimensions();
   const repository = getDataRepository();
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
 
   const buildingId = route.params?.buildingId ?? "hc-maxwell";
   const building = useMemo(() => getBuildingById(buildingId)!, [buildingId]);
@@ -68,7 +68,7 @@ export function BuildingDrillDownScreenV2({ route, navigation }: Props) {
             left: spacing[4],
             width: 36,
             height: 36,
-            borderRadius: 18,
+            borderRadius: componentRadii.search,
             backgroundColor: "rgba(255,255,255,0.9)",
             alignItems: "center",
             justifyContent: "center",
@@ -219,7 +219,7 @@ export function BuildingDrillDownScreenV2({ route, navigation }: Props) {
             margin: spacing[4],
             padding: spacing[4],
             backgroundColor: palette.bgSoft,
-            borderRadius: radii.lg,
+            borderRadius: componentRadii.card,
             borderWidth: 1,
             borderColor: palette.border,
           }}

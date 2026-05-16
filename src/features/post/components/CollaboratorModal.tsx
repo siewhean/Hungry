@@ -14,7 +14,7 @@ interface CollaboratorModalProps {
 }
 
 export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
-  const { palette, radii, semanticSpacing, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, semanticSpacing, spacing } = useHungryTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const users = useMemo(() => listComposerCollaboratorOptions(), []);
 
@@ -89,7 +89,7 @@ export function CollaboratorModal({ innerRef }: CollaboratorModalProps) {
                       : pressed
                         ? palette.surfaceRaised
                         : "transparent",
-                    borderRadius: radii.md,
+                    borderRadius: componentRadii.card,
                     gap: spacing[3],
                     marginVertical: spacing[0.5],
                     padding: spacing[3],

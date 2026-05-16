@@ -1,5 +1,5 @@
 import type { TasteVector } from "@/types/domain";
-import { getConfiguredDataSource } from "@/lib/services/supabase/client";
+import { getConfiguredDataSource, setConfiguredDataSource } from "@/lib/services/supabase/client";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import type { DataRepository, HungryService } from "@/lib/services/types";
 
@@ -75,18 +75,22 @@ export function getServiceProvider(): ServiceProvider {
 }
 
 export function setServiceProvider(provider: ServiceProvider): void {
+  setConfiguredDataSource();
   activeProvider = provider;
 }
 
 export function setMockServiceProvider(): void {
+  setConfiguredDataSource("mock");
   activeProvider = createMockProvider();
 }
 
 export function setSupabaseServiceProvider(): void {
+  setConfiguredDataSource("supabase");
   activeProvider = createSupabaseProvider();
 }
 
 export function resetServiceProvider(): void {
+  setConfiguredDataSource();
   activeProvider = null;
 }
 

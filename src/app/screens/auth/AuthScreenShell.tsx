@@ -6,8 +6,12 @@ import { useHungryTheme } from "@/theme";
 
 interface AuthScreenShellProps {
   title: string;
-  subtitle: string;
+  subtitle?: string;
   footer?: ReactNode;
+  wordmarkColor?: string;
+  compact?: boolean;
+  scroll?: boolean;
+  contentOffsetTop?: number;
 }
 
 export function AuthScreenShell({
@@ -15,28 +19,37 @@ export function AuthScreenShell({
   title,
   subtitle,
   footer,
+  wordmarkColor,
+  compact = false,
+  scroll = true,
+  contentOffsetTop = 0,
 }: PropsWithChildren<AuthScreenShellProps>) {
   const { palette, spacing } = useHungryTheme();
+  const gap = compact ? spacing[3] : spacing[6];
+  const titleGap = compact ? spacing[4] : spacing[8];
+  const innerGap = compact ? spacing[3] : spacing[4];
+  const footerTopGap = compact ? spacing[2] : spacing[3];
+  const logoSize = compact ? 104 : 140;
+  const effectiveWordmarkColor = wordmarkColor ?? palette.navy;
 
   return (
-    <Screen scroll>
-      <View style={{ gap: spacing[6], paddingVertical: spacing[4], marginTop: spacing[4] }}>
-        <View style={{ alignItems: "center", gap: spacing[8], marginBottom: spacing[4] }}>
-          <HungryLogo size={140} showWordmark wordmarkColor={palette.navy} />
+    <Screen scroll={scroll}>
+      <View style={{ gap, paddingVertical: spacing[3], marginTop: spacing[3] + contentOffsetTop }}>
+        <View style={{ alignItems: "center", gap: titleGap, marginBottom: innerGap }}>
+          <HungryLogo size={logoSize} showWordmark wordmarkColor={effectiveWordmarkColor} />
           <View style={{ alignItems: "center", gap: spacing[1] }}>
             <AppText variant="h1" style={{ textAlign: "center", fontSize: 24 }}>
               {title}
             </AppText>
-            <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
-              {subtitle}
-            </AppText>
+            {subtitle ? (
+              <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
+                {subtitle}
+              </AppText>
+            ) : null}
           </View>
         </View>
-        <View style={{ gap: spacing[4] }}>{children}</View>
-        {footer ? <View style={{ gap: spacing[3] }}>{footer}</View> : null}
-        <AppText variant="bodySmall" tone="muted" style={{ textAlign: "center", opacity: 0.6 }}>
-          Hungry keeps this flow simple so you can get into dish discovery quickly.
-        </AppText>
+        <View style={{ gap: innerGap }}>{children}</View>
+        {footer ? <View style={{ gap: footerTopGap }}>{footer}</View> : null}
       </View>
     </Screen>
   );

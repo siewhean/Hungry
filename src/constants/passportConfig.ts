@@ -9,7 +9,51 @@
  * Phase 3: expand with Singapore Classics, Dietary, Budget categories.
  */
 
-import type { PassportCategory } from "@/types/domain";
+import type {
+  EarnedPassportStamp,
+  PassportBadgeDefinition,
+  PassportCategory,
+  PassportCelebrateMarker,
+  PassportInkTone,
+  PassportNextStamp,
+  PassportStampAssetKey,
+  PassportStampDefinition,
+  PassportStampShape,
+  UserPassportProgress,
+} from "@/types/domain";
+
+const STAMP_TONES: PassportInkTone[] = ["orange", "amber", "teal", "navy"];
+const STAMP_SHAPES: PassportStampShape[] = ["rounded", "oval", "slanted"];
+
+const STAMP_LEVELS: Pick<
+  PassportStampDefinition,
+  "index" | "title" | "subtitle" | "description"
+>[] = [
+  {
+    index: 0,
+    title: "First stamp",
+    subtitle: "Entry mark",
+    description: "Started this food trail.",
+  },
+  {
+    index: 1,
+    title: "Return visit",
+    subtitle: "Second checkpoint",
+    description: "Built real momentum here.",
+  },
+  {
+    index: 2,
+    title: "Trail regular",
+    subtitle: "Regular mark",
+    description: "Unlocked the regular explorer mark.",
+  },
+  {
+    index: 3,
+    title: "Passport veteran",
+    subtitle: "Completion mark",
+    description: "Completed the full trail set.",
+  },
+];
 
 // ─── Cuisine Categories ───────────────────────────────────────────────────────
 
@@ -116,6 +160,83 @@ export const ALL_PASSPORT_CATEGORIES: PassportCategory[] = [
   ...PASSPORT_NEIGHBOURHOOD_CATEGORIES,
 ];
 
+export const PASSPORT_STAMP_DEFINITIONS: PassportStampDefinition[] =
+  ALL_PASSPORT_CATEGORIES.flatMap((category, categoryIndex) =>
+    category.stampThresholds.map((threshold, index) => {
+      const level = STAMP_LEVELS[index] ?? {
+        index,
+        title: `Stamp ${index + 1}`,
+        subtitle: "Trail mark",
+        description: `Tried ${threshold} matching stalls.`,
+      };
+      return {
+        id: getPassportStampId(category.id, threshold),
+        categoryId: category.id,
+        threshold,
+        index,
+        title: `${category.name}: ${level.title}`,
+        subtitle: level.subtitle,
+        description: level.description,
+        assetKey: resolveStampAssetKey(category),
+        inkTone: STAMP_TONES[(categoryIndex + index) % STAMP_TONES.length],
+        stampShape: STAMP_SHAPES[(categoryIndex + index) % STAMP_SHAPES.length],
+      };
+    }),
+  );
+
+export const PASSPORT_BADGE_DEFINITIONS: PassportBadgeDefinition[] = [
+  {
+    id: "badge-hawker-explorer",
+    title: "Hawker Explorer",
+    description: "First stamp on the hawker trail.",
+    categoryType: "cuisine",
+    assetKey: "badge-hawker-explorer",
+    unlockCategoryId: "cuisine-hawker",
+    unlockThreshold: 1,
+  },
+  {
+    id: "badge-classics-trail",
+    title: "Classics Trail",
+    description: "Progress across Singapore's classic food map.",
+    categoryType: "classic",
+    assetKey: "badge-classics-trail",
+    unlockCategoryId: "hood-chinatown",
+    unlockThreshold: 1,
+  },
+  {
+    id: "badge-night-makan",
+    title: "Night Makan",
+    description: "Late-night discovery credentials for supper routes.",
+    categoryType: "neighbourhood",
+    assetKey: "badge-night-makan",
+    unlockCategoryId: "hood-bugis",
+    unlockThreshold: 1,
+  },
+  {
+    id: "badge-contributor",
+    title: "Contributor",
+    description: "Recognition for useful food discovery contributions.",
+    categoryType: "contributor",
+    assetKey: "badge-contributor",
+    unlockThreshold: 1,
+  },
+];
+
+const PASSPORT_STAMPS_BY_ID = PASSPORT_STAMP_DEFINITIONS.reduce<
+  Record<string, PassportStampDefinition>
+>((map, stamp) => {
+  map[stamp.id] = stamp;
+  return map;
+}, {});
+
+const PASSPORT_CATEGORIES_BY_ID = ALL_PASSPORT_CATEGORIES.reduce<Record<string, PassportCategory>>(
+  (map, category) => {
+    map[category.id] = category;
+    return map;
+  },
+  {},
+);
+
 /**
  * Computes passport progress for a single category given a list
  * of stall interaction records filtered to matching stalls.
@@ -126,7 +247,7 @@ export const ALL_PASSPORT_CATEGORIES: PassportCategory[] = [
 export function computePassportProgress(
   category: PassportCategory,
   triedMatchingStallCount: number,
-) {
+): UserPassportProgress {
   const earned = category.stampThresholds.filter((t) => triedMatchingStallCount >= t);
   const nextIdx = earned.length; // index into stampThresholds for next stamp
   return {
@@ -134,5 +255,97 @@ export function computePassportProgress(
     triedCount: triedMatchingStallCount,
     nextStampIndex: nextIdx,
     earnedStampThresholds: earned,
+  };
+}
+
+export function getPassportStampId(categoryId: string, threshold: number): string {
+  return `${categoryId}-${threshold}`;
+}
+
+function resolveStampAssetKey(category: PassportCategory): PassportStampAssetKey {
+  if (category.id === "hood-chinatown") return "stamp-hood-chinatown";
+  if (category.matchTag.toLowerCase().includes("halal")) return "stamp-dietary-halal";
+  if (category.matchTag.toLowerCase().includes("laksa")) return "stamp-classic-laksa";
+  return "stamp-cuisine-hawker";
+}
+
+export function getPassportStampDefinition(
+  categoryId: string,
+  threshold: number,
+): PassportStampDefinition | null {
+  return PASSPORT_STAMPS_BY_ID[getPassportStampId(categoryId, threshold)] ?? null;
+}
+
+export function getEarnedPassportStamps(
+  progressMap: Record<string, UserPassportProgress>,
+): EarnedPassportStamp[] {
+  return Object.values(progressMap)
+    .flatMap((progress) =>
+      progress.earnedStampThresholds.flatMap((threshold) => {
+        const stamp = getPassportStampDefinition(progress.categoryId, threshold);
+        return stamp ? [{ ...stamp, triedCount: progress.triedCount }] : [];
+      }),
+    )
+    .sort((a, b) => b.threshold - a.threshold || a.categoryId.localeCompare(b.categoryId));
+}
+
+export function isPassportBadgeEarned(
+  badge: PassportBadgeDefinition,
+  earnedStamps: Pick<EarnedPassportStamp, "id">[],
+): boolean {
+  if (!badge.unlockCategoryId) return false;
+  const unlockCategoryId = badge.unlockCategoryId;
+
+  return earnedStamps.some(
+    (stamp) => stamp.id === getPassportStampId(unlockCategoryId, badge.unlockThreshold),
+  );
+}
+
+export function getNextPassportStamp(
+  progressMap: Record<string, UserPassportProgress>,
+): PassportNextStamp | null {
+  return ALL_PASSPORT_CATEGORIES.reduce<PassportNextStamp | null>((best, category) => {
+    const progress = progressMap[category.id];
+    const threshold = category.stampThresholds[progress?.nextStampIndex ?? 0];
+    if (!progress || threshold === undefined) return best;
+
+    const stamp = getPassportStampDefinition(category.id, threshold);
+    if (!stamp) return best;
+
+    const next: PassportNextStamp = {
+      category,
+      stamp,
+      triedCount: progress.triedCount,
+      remainingCount: Math.max(threshold - progress.triedCount, 0),
+      progressFraction: Math.min(progress.triedCount / threshold, 1),
+    };
+
+    if (!best) return next;
+    if (next.progressFraction !== best.progressFraction) {
+      return next.progressFraction > best.progressFraction ? next : best;
+    }
+    return next.remainingCount < best.remainingCount ? next : best;
+  }, null);
+}
+
+export function getNewlyEarnedUncelebratedStamp(
+  progressMap: Record<string, UserPassportProgress>,
+  celebratedStampIds: Record<string, boolean>,
+): EarnedPassportStamp | null {
+  return (
+    getEarnedPassportStamps(progressMap).find((stamp) => !celebratedStampIds[stamp.id]) ?? null
+  );
+}
+
+export function createPassportCelebrateMarker(
+  stamp: EarnedPassportStamp | null,
+): PassportCelebrateMarker | null {
+  if (!stamp) return null;
+  const category = PASSPORT_CATEGORIES_BY_ID[stamp.categoryId];
+  return {
+    stampId: stamp.id,
+    categoryId: stamp.categoryId,
+    title: category ? category.name : stamp.title,
+    shouldCelebrate: true,
   };
 }

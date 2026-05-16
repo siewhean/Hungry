@@ -7,8 +7,6 @@ import {
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import { MessageCircle, MessageCircleMore, X } from "lucide-react-native";
-
-const CommentIcon = MessageCircle ?? MessageCircleMore;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Avatar, EmptyState, Input } from "@/components/ui";
@@ -16,6 +14,8 @@ import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore, type SocialComment, type SocialReply } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 export interface ActiveReviewCommentTarget {
   id: string;
@@ -39,7 +39,7 @@ export function ReviewCommentsSheet({
   innerRef,
   onDismiss,
 }: ReviewCommentsSheetProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
@@ -116,6 +116,7 @@ export function ReviewCommentsSheet({
       enableDynamicSizing={false}
       index={0}
       enablePanDownToClose
+      keyboardBehavior="extend"
       onDismiss={handleDismiss}
       backdropComponent={(props) => (
         <BottomSheetBackdrop
@@ -146,7 +147,7 @@ export function ReviewCommentsSheet({
                 style={{
                   alignItems: "center",
                   backgroundColor: palette.bgSoft,
-                  borderRadius: radii.md,
+                  borderRadius: componentRadii.card,
                   flexDirection: "row",
                   justifyContent: "space-between",
                   paddingHorizontal: spacing[3],

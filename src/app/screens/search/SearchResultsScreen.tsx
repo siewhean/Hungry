@@ -18,9 +18,10 @@ import { FlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Avatar, Chip, EmptyState, Screen } from "@/components/ui";
+import { AppText, Avatar, Chip, EmptyState, Screen, Skeleton } from "@/components/ui";
 import { SearchResultsView } from "@/components/discover/SearchResultsView";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
+import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import {
   getSearchResults,
   sortSearchResults,
@@ -33,12 +34,19 @@ import {
   prefetchStallDetail,
   preloadRoute,
 } from "@/features/navigation/prefetch";
+import {
+  getBrowseIndex,
+  getCachedBrowseIndex,
+  searchBrowseDishes,
+  type BrowseIndex,
+} from "@/features/search/browseIndex";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail, VenueSummary } from "@/types/domain";
+import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type SearchResultsRoute = RouteProp<RootStackParamList, "SearchResults">;
@@ -56,6 +64,29 @@ type BrowseFeedItem = {
 };
 
 const BROWSE_FILTERS = ["All", "Local", "Halal", "Japanese", "Western", "Noodles", "Rice", "Spicy"];
+const BROWSE_GRID_HYDRATION_TIMEOUT_MS = 350;
+const BROWSE_GRID_HYDRATION_FALLBACK_DELAY_MS = 80;
+
+function BrowseGridLoadingState({ itemWidth }: { itemWidth: number }) {
+  const { spacing } = useHungryTheme();
+
+  return (
+    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+      {Array.from({ length: 8 }).map((_, index) => (
+        <View
+          key={`browse-grid-skeleton-${index}`}
+          style={{
+            height: itemWidth * 1.35,
+            padding: spacing[1],
+            width: itemWidth,
+          }}
+        >
+          <Skeleton width="100%" height="100%" borderRadius={0} />
+        </View>
+      ))}
+    </View>
+  );
+}
 
 function BrowseGridScreen({
   mode,
@@ -65,7 +96,7 @@ function BrowseGridScreen({
   initialSearchQuery?: string;
 }) {
   const navigation = useNavigation<RootNavigation>();
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -74,91 +105,170 @@ function BrowseGridScreen({
   const [selectedFilter, setSelectedFilter] = useState("All");
   const searchInputRef = useRef<TextInput | null>(null);
   const normalizedQuery = searchQuery.trim().toLowerCase();
+  const shouldUseQueryScopedFeed = normalizedQuery.length > 0;
   const lastRecordedBrowseQueryRef = useRef("");
   const currentLocation = useLocationStore((state) => state.currentLocation);
+  const profile = useProfileStore((state) => state.profile);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const repository = getDataRepository();
-  const getBrowseDishesByVenue = useCallback(
-    (venueId: string) => {
-      return repository.listDishesByVenue(venueId);
-    },
-    [repository],
+  const [browseIndex, setBrowseIndex] = useState<BrowseIndex | null>(() =>
+    getCachedBrowseIndex(repository),
   );
-  const getBrowseDishById = useCallback(
-    (dishId: string) => repository.getDishById(dishId),
-    [repository],
-  );
-  const areaBuildings = useMemo(
-    () => getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 3, 14),
-    [currentLocation.latitude, currentLocation.longitude],
-  );
-  const allVenues = useMemo(() => {
-    return repository
-      .listBuildings()
-      .flatMap((building) => repository.listVenuesByBuilding(building.id));
+  const isBrowseDataReady = Boolean(browseIndex);
+
+  useEffect(() => {
+    const cachedIndex = getCachedBrowseIndex(repository);
+    if (cachedIndex) {
+      setBrowseIndex(cachedIndex);
+      return undefined;
+    }
+
+    setBrowseIndex(null);
+    const cancelHydration = scheduleIdleWork(
+      () => {
+        setBrowseIndex(getBrowseIndex(repository));
+      },
+      {
+        timeout: BROWSE_GRID_HYDRATION_TIMEOUT_MS,
+        fallbackDelayMs: BROWSE_GRID_HYDRATION_FALLBACK_DELAY_MS,
+      },
+    );
+
+    return () => {
+      cancelHydration();
+    };
   }, [repository]);
+  const areaBuildings = useMemo(
+    () =>
+      browseIndex && !shouldUseQueryScopedFeed
+        ? getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 3, 14)
+        : [],
+    [browseIndex, currentLocation.latitude, currentLocation.longitude, shouldUseQueryScopedFeed],
+  );
+  const allVenues = useMemo(
+    () => (browseIndex && !shouldUseQueryScopedFeed ? browseIndex.allVenues : []),
+    [browseIndex, shouldUseQueryScopedFeed],
+  );
   const areaVenues = useMemo(() => {
-    const scopedVenues = areaBuildings.flatMap((building) =>
-      repository.listVenuesByBuilding(building.id),
+    if (!browseIndex || shouldUseQueryScopedFeed) {
+      return [];
+    }
+
+    const scopedVenues = areaBuildings.flatMap(
+      (building) => browseIndex.venuesByBuildingId.get(building.id) ?? [],
     );
     const uniqueVenues = new Map(scopedVenues.map((venue) => [venue.id, venue]));
     return uniqueVenues.size ? Array.from(uniqueVenues.values()) : allVenues;
-  }, [allVenues, areaBuildings, repository]);
+  }, [allVenues, areaBuildings, browseIndex, shouldUseQueryScopedFeed]);
+  const queryMatchedDishes = useMemo(() => {
+    if (!browseIndex || !shouldUseQueryScopedFeed) {
+      return [];
+    }
+
+    return searchBrowseDishes(browseIndex, {
+      dietaryFlags: profile.dietaryPreferences,
+      query: searchQuery,
+      radiusMeters: 100000,
+    });
+  }, [browseIndex, profile.dietaryPreferences, searchQuery, shouldUseQueryScopedFeed]);
   const allDishes = useMemo(
-    () => allVenues.flatMap((venue) => getBrowseDishesByVenue(venue.id)),
-    [allVenues, getBrowseDishesByVenue],
+    () => (browseIndex && !shouldUseQueryScopedFeed ? browseIndex.allDishes : []),
+    [browseIndex, shouldUseQueryScopedFeed],
   );
   const browseDishes = useMemo(() => {
+    if (!browseIndex || shouldUseQueryScopedFeed) {
+      return [];
+    }
+
     const scopedDishes = areaVenues
-      .flatMap((venue) => getBrowseDishesByVenue(venue.id))
+      .flatMap((venue) => browseIndex.sortedDishesByVenueId.get(venue.id) ?? [])
       .sort((left, right) => right.rating - left.rating);
     return scopedDishes.length
       ? scopedDishes
       : [...allDishes].sort((left, right) => right.rating - left.rating);
-  }, [allDishes, areaVenues, getBrowseDishesByVenue]);
-  const browseVenues = useMemo(
-    () =>
-      (areaVenues.length ? areaVenues : allVenues).map((venue) => {
-        const dishes = getBrowseDishesByVenue(venue.id).sort(
-          (left, right) => right.rating - left.rating,
-        );
-        const topDish = dishes[0] ?? getBrowseDishById(venue.topDishId);
+  }, [allDishes, areaVenues, browseIndex, shouldUseQueryScopedFeed]);
+  const browseVenues = useMemo(() => {
+    if (!browseIndex || shouldUseQueryScopedFeed) {
+      return [];
+    }
 
-        return {
-          venue,
-          dishes,
-          topDish,
-          minDistanceMeters: topDish?.distanceMeters ?? 0,
-        };
-      }),
-    [allVenues, areaVenues, getBrowseDishById, getBrowseDishesByVenue],
-  );
+    return (areaVenues.length ? areaVenues : allVenues).map((venue) => {
+      const dishes = browseIndex.sortedDishesByVenueId.get(venue.id) ?? [];
+      const topDish = dishes[0] ?? browseIndex.dishById.get(venue.topDishId);
+
+      return {
+        venue,
+        dishes,
+        topDish,
+        minDistanceMeters: topDish?.distanceMeters ?? 0,
+      };
+    });
+  }, [allVenues, areaVenues, browseIndex, shouldUseQueryScopedFeed]);
 
   const isDishGrid = mode === "dishes";
-  const stallPosts = useMemo(() => repository.listStallPosts(), [repository]);
   const browsePostIndexes = useMemo(() => {
-    const postByDishId = new Map<string, (typeof stallPosts)[number]>();
-    const postByVenueId = new Map<string, (typeof stallPosts)[number]>();
-
-    stallPosts.forEach((post) => {
-      if (!postByVenueId.has(post.venueId)) {
-        postByVenueId.set(post.venueId, post);
-      }
-      post.dishIds.forEach((dishId) => {
-        if (!postByDishId.has(dishId)) {
-          postByDishId.set(dishId, post);
-        }
-      });
-    });
+    const emptyPostByDishId = new Map<string, BrowseIndex["stallPosts"][number]>();
+    const emptyPostByVenueId = new Map<string, BrowseIndex["stallPosts"][number]>();
 
     return {
-      fallbackPost: stallPosts[0],
-      postByDishId,
-      postByVenueId,
+      fallbackPost: browseIndex?.stallPosts[0],
+      postByDishId: browseIndex?.postByDishId ?? emptyPostByDishId,
+      postByVenueId: browseIndex?.postByVenueId ?? emptyPostByVenueId,
     };
-  }, [stallPosts]);
+  }, [browseIndex]);
   const feedItems = useMemo<BrowseFeedItem[]>(() => {
+    if (!isBrowseDataReady) {
+      return [];
+    }
+
     const { fallbackPost, postByDishId, postByVenueId } = browsePostIndexes;
+
+    if (shouldUseQueryScopedFeed) {
+      if (isDishGrid) {
+        return queryMatchedDishes.map((dish) => {
+          const post = postByDishId.get(dish.id) ?? postByVenueId.get(dish.venueId) ?? fallbackPost;
+
+          return {
+            id: `dish-${dish.id}`,
+            title: dish.name,
+            venueName: dish.venueName,
+            imageUrl: dish.imageUrl,
+            authorName: post?.authorName ?? dish.venueName,
+            authorAvatarUrl: post?.authorAvatarUrl ?? dish.imageUrl,
+            distanceMeters: dish.distanceMeters,
+            likeCount: dish.reviewCount,
+            dish,
+          };
+        });
+      }
+
+      const topDishByVenue = new Map<string, DishDetail>();
+      queryMatchedDishes.forEach((dish) => {
+        const currentDish = topDishByVenue.get(dish.venueId);
+        if (!currentDish || dish.rating > currentDish.rating) {
+          topDishByVenue.set(dish.venueId, dish);
+        }
+      });
+
+      return Array.from(topDishByVenue.values()).map((topDish) => {
+        const venue = browseIndex?.venueById.get(topDish.venueId);
+        const post =
+          postByVenueId.get(topDish.venueId) ?? postByDishId.get(topDish.id) ?? fallbackPost;
+
+        return {
+          id: `stall-${topDish.venueId}`,
+          title: topDish.name,
+          venueName: venue?.name ?? topDish.venueName,
+          imageUrl: topDish.imageUrl,
+          authorName: post?.authorName ?? venue?.name ?? topDish.venueName,
+          authorAvatarUrl: post?.authorAvatarUrl ?? topDish.imageUrl,
+          distanceMeters: topDish.distanceMeters,
+          likeCount: topDish.reviewCount,
+          dish: topDish,
+          venue,
+        };
+      });
+    }
 
     if (isDishGrid) {
       return browseDishes.map((dish) => {
@@ -211,8 +321,22 @@ function BrowseGridScreen({
       });
 
     return buildStallItems(browseVenues);
-  }, [browseDishes, browsePostIndexes, browseVenues, isDishGrid, normalizedQuery]);
+  }, [
+    browseDishes,
+    browsePostIndexes,
+    browseVenues,
+    browseIndex,
+    isBrowseDataReady,
+    isDishGrid,
+    normalizedQuery,
+    queryMatchedDishes,
+    shouldUseQueryScopedFeed,
+  ]);
   const filteredFeedItems = useMemo(() => {
+    if (!isBrowseDataReady) {
+      return [];
+    }
+
     const query = searchQuery.trim().toLowerCase();
     const filter = selectedFilter.toLowerCase();
     const filtered = feedItems.filter((item) => {
@@ -237,17 +361,40 @@ function BrowseGridScreen({
     });
 
     return filtered.length || query ? filtered : feedItems;
-  }, [feedItems, searchQuery, selectedFilter]);
+  }, [feedItems, isBrowseDataReady, searchQuery, selectedFilter]);
   useEffect(() => {
+    if (!isBrowseDataReady) {
+      return;
+    }
+
+    const leadingItems = filteredFeedItems.slice(0, 3);
     prefetchImages(
-      filteredFeedItems.map((item) => item.imageUrl),
+      leadingItems.map((item) => item.imageUrl),
       8,
     );
-  }, [filteredFeedItems]);
+    leadingItems.forEach((item) => {
+      prefetchDishDetail(item.dish.id, repository);
+      if (item.venue?.id) {
+        prefetchStallDetail(item.venue.id, repository);
+      }
+    });
+    const firstItem = leadingItems[0];
+    if (firstItem) {
+      preloadRoute(navigation, "DishDetail", { dishId: firstItem.dish.id });
+    }
+  }, [filteredFeedItems, isBrowseDataReady, navigation, repository]);
   const numColumns = 2;
   const itemWidth = screenWidth / numColumns;
   const browseTitle = isDishGrid ? "Dishes" : "Stalls & Restaurants";
   const searchPlaceholder = isDishGrid ? "Find dishes..." : "Find stalls...";
+  const movingSearchPlaceholder = useMovingSearchPlaceholder({
+    phrases: [searchPlaceholder],
+    totalCycleMs: 2400,
+    tickMs: 2,
+    revealStepMs: 2,
+    deleteStepMs: 2,
+    pauseMs: 280,
+  });
   const searchBarWidth = Math.max(screenWidth - spacing[4] * 2, 240);
   const searchIconSize = 56;
   const fallbackLauncherLeft = screenWidth - spacing[4] - searchIconSize;
@@ -272,6 +419,12 @@ function BrowseGridScreen({
     outputRange: [0.85, 1],
     extrapolate: "clamp",
   });
+  const handleBackControlLayout = useCallback((nextLimit: number) => {
+    setBackControlLimit((current) => (Math.abs(current - nextLimit) < 1 ? current : nextLimit));
+  }, []);
+  const handleSearchLauncherLayout = useCallback((nextLeft: number) => {
+    setSearchLauncherLeft((current) => (Math.abs(current - nextLeft) < 1 ? current : nextLeft));
+  }, []);
   const revealSearch = () => {
     if (isSearchExpanded) {
       return;
@@ -339,14 +492,19 @@ function BrowseGridScreen({
           preloadRoute(navigation, "DishDetail", { dishId: item.dish.id });
         }}
         onPress={() => {
-          recordTasteInteraction({
-            type: "dish_result_click",
-            surface: "search",
-            dish: item.dish,
-            query: searchQuery,
-            buttonId: `${mode}_browse_card`,
-          });
           navigation.navigate("DishDetail", { dishId: item.dish.id });
+          scheduleIdleWork(
+            () => {
+              recordTasteInteraction({
+                type: "dish_result_click",
+                surface: "search",
+                dish: item.dish,
+                query: searchQuery,
+                buttonId: `${mode}_browse_card`,
+              });
+            },
+            { timeout: 500, fallbackDelayMs: 80 },
+          );
         }}
         style={{
           backgroundColor: palette.surface,
@@ -358,7 +516,13 @@ function BrowseGridScreen({
           width: itemWidth,
         }}
       >
-        <Image source={{ uri: item.imageUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+        <Image
+          source={{ uri: item.imageUrl }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          transition={120}
+        />
         <LinearGradient
           colors={["transparent", "rgba(0,0,0,0.15)", "rgba(0,0,0,0.82)"]}
           style={StyleSheet.absoluteFill}
@@ -442,7 +606,7 @@ function BrowseGridScreen({
               onPress={() => navigation.goBack()}
               onLayout={(event) => {
                 const { x, width } = event.nativeEvent.layout;
-                setBackControlLimit(x + width);
+                handleBackControlLayout(x + width);
               }}
               style={browseStyles.backButton}
             >
@@ -458,7 +622,7 @@ function BrowseGridScreen({
             <View
               style={[browseStyles.inlineSearchLauncher, { width: searchIconSize }]}
               onLayout={(event) => {
-                setSearchLauncherLeft(event.nativeEvent.layout.x);
+                handleSearchLauncherLayout(event.nativeEvent.layout.x);
               }}
             >
               <Pressable
@@ -471,6 +635,7 @@ function BrowseGridScreen({
                   height: 56,
                   alignItems: "center",
                   justifyContent: "center",
+                  borderRadius: componentRadii.iconButton,
                 }}
               >
                 <Search color={palette.textMuted} size={20} />
@@ -484,7 +649,7 @@ function BrowseGridScreen({
                     right: 0,
                     top: 0,
                     height: 56,
-                    borderRadius: radii.pill,
+                    borderRadius: componentRadii.search,
                     overflow: "hidden",
                     width: searchEntryAnimWidth,
                     backgroundColor: palette.surface,
@@ -509,7 +674,7 @@ function BrowseGridScreen({
                       onBlur={hideSearch}
                       onChangeText={setSearchQuery}
                       onSubmitEditing={recordBrowseSearchQuery}
-                      placeholder={searchPlaceholder}
+                      placeholder={movingSearchPlaceholder}
                       placeholderTextColor={palette.textMuted}
                       returnKeyType="search"
                       style={[
@@ -563,7 +728,11 @@ function BrowseGridScreen({
           contentContainerStyle={{ paddingBottom: spacing[12] }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <EmptyState title="No matches found" body="Try another search or filter." />
+            isBrowseDataReady ? (
+              <EmptyState title="No matches found" body="Try another search or filter." />
+            ) : (
+              <BrowseGridLoadingState itemWidth={itemWidth} />
+            )
           }
         />
       </View>
@@ -638,10 +807,15 @@ export function SearchResultsScreen() {
   );
 
   useEffect(() => {
+    const leadingResults = results.slice(0, 6);
     prefetchImages(
-      results.map((dish) => dish.imageUrl),
+      leadingResults.map((dish) => dish.imageUrl),
       8,
     );
+    leadingResults.slice(0, 3).forEach((dish) => {
+      prefetchDishDetail(dish.id);
+      prefetchStallDetail(dish.venueId);
+    });
   }, [results]);
 
   const recordCommittedSearchQuery = useCallback(
@@ -678,15 +852,20 @@ export function SearchResultsScreen() {
           preloadRoute(navigation, "DishDetail", { dishId: dish.id });
         }}
         onResultPress={(dish) => {
-          recordTasteInteraction({
-            type: "dish_result_click",
-            surface: "search",
-            dish,
-            query: filters.query,
-            buttonId: "search_result",
-          });
-          rememberSearch(filters.query);
           navigation.navigate("DishDetail", { dishId: dish.id });
+          scheduleIdleWork(
+            () => {
+              recordTasteInteraction({
+                type: "dish_result_click",
+                surface: "search",
+                dish,
+                query: filters.query,
+                buttonId: "search_result",
+              });
+              rememberSearch(filters.query);
+            },
+            { timeout: 500, fallbackDelayMs: 80 },
+          );
         }}
       />
     </Screen>

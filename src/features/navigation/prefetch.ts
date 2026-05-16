@@ -1,6 +1,8 @@
 import { Image as ExpoImage } from "expo-image";
 
+import { getBrowseIndex, searchBrowseDishes } from "@/features/search/browseIndex";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import type { DataRepository } from "@/lib/services/types";
 import type { StallPost } from "@/types/domain";
 
@@ -23,6 +25,31 @@ const imagePrefetches = new Map<string, Promise<boolean>>();
 const merchantPrefetches = new Set<string>();
 const prefetchedDishDetails = new Set<string>();
 const prefetchedStallDetails = new Set<string>();
+const scheduledDishDetails = new Set<string>();
+const scheduledStallDetails = new Set<string>();
+const scheduledRoutePreloads = new Set<string>();
+const scheduledBrowseResultPrefetches = new Set<string>();
+const PREFETCH_IDLE_TIMEOUT_MS = 700;
+const PREFETCH_FALLBACK_DELAY_MS = 160;
+
+function schedulePrefetchWork(callback: () => void) {
+  return scheduleIdleWork(callback, {
+    timeout: PREFETCH_IDLE_TIMEOUT_MS,
+    fallbackDelayMs: PREFETCH_FALLBACK_DELAY_MS,
+  });
+}
+
+function getRoutePreloadKey(routeName: string, params?: object) {
+  if (!params) {
+    return routeName;
+  }
+
+  try {
+    return `${routeName}:${JSON.stringify(params)}`;
+  } catch {
+    return routeName;
+  }
+}
 
 export function prefetchImage(uri?: string | null) {
   if (!uri || prefetchedImages.has(uri)) {
@@ -57,53 +84,59 @@ export function prefetchImages(uris: (string | null | undefined)[], limit = 6) {
     .forEach((uri) => prefetchImage(uri));
 }
 
-export function prefetchDishDetail(
-  dishId?: string | null,
-  repository: DataRepository = getDataRepository(),
-) {
-  if (!dishId || prefetchedDishDetails.has(dishId)) {
+export function prefetchDishDetail(dishId?: string | null, repository?: DataRepository) {
+  if (!dishId || prefetchedDishDetails.has(dishId) || scheduledDishDetails.has(dishId)) {
     return;
   }
 
-  try {
-    const dish = repository.getDishById(dishId);
-    if (!dish) {
-      return;
-    }
+  scheduledDishDetails.add(dishId);
+  schedulePrefetchWork(() => {
+    try {
+      const dataRepository = repository ?? getDataRepository();
+      const dish = dataRepository.getDishById(dishId);
+      if (!dish) {
+        return;
+      }
 
-    prefetchedDishDetails.add(dishId);
-    prefetchImages([dish.imageUrl, ...dish.gallery], 5);
-    const venue = repository.getVenueById(dish.venueId);
-    if (venue?.topDishId && venue.topDishId !== dishId) {
-      prefetchImage(repository.getDishById(venue.topDishId)?.imageUrl);
+      prefetchedDishDetails.add(dishId);
+      prefetchImages([dish.imageUrl, ...dish.gallery], 5);
+      const venue = dataRepository.getVenueById(dish.venueId);
+      if (venue?.topDishId && venue.topDishId !== dishId) {
+        prefetchImage(dataRepository.getDishById(venue.topDishId)?.imageUrl);
+      }
+    } catch {
+      prefetchedDishDetails.delete(dishId);
+    } finally {
+      scheduledDishDetails.delete(dishId);
     }
-  } catch {
-    prefetchedDishDetails.delete(dishId);
-  }
+  });
 }
 
-export function prefetchStallDetail(
-  venueId?: string | null,
-  repository: DataRepository = getDataRepository(),
-) {
-  if (!venueId || prefetchedStallDetails.has(venueId)) {
+export function prefetchStallDetail(venueId?: string | null, repository?: DataRepository) {
+  if (!venueId || prefetchedStallDetails.has(venueId) || scheduledStallDetails.has(venueId)) {
     return;
   }
 
-  try {
-    prefetchedStallDetails.add(venueId);
-    const venue = repository.getVenueById(venueId);
-    const dishes = repository.listDishesByVenue(venueId);
-    prefetchImages(
-      dishes.map((dish) => dish.imageUrl),
-      6,
-    );
-    if (venue?.topDishId) {
-      prefetchDishDetail(venue.topDishId, repository);
+  scheduledStallDetails.add(venueId);
+  schedulePrefetchWork(() => {
+    try {
+      const dataRepository = repository ?? getDataRepository();
+      prefetchedStallDetails.add(venueId);
+      const venue = dataRepository.getVenueById(venueId);
+      const dishes = dataRepository.listDishesByVenue(venueId);
+      prefetchImages(
+        dishes.map((dish) => dish.imageUrl),
+        6,
+      );
+      if (venue?.topDishId) {
+        prefetchDishDetail(venue.topDishId, dataRepository);
+      }
+    } catch {
+      prefetchedStallDetails.delete(venueId);
+    } finally {
+      scheduledStallDetails.delete(venueId);
     }
-  } catch {
-    prefetchedStallDetails.delete(venueId);
-  }
+  });
 }
 
 export function prefetchPostDetail(
@@ -111,29 +144,89 @@ export function prefetchPostDetail(
     StallPost,
     "authorAvatarUrl" | "dishIds" | "mediaUrl" | "mediaUrls" | "venueId"
   > | null,
-  repository: DataRepository = getDataRepository(),
+  repository?: DataRepository,
 ) {
   if (!post) {
     return;
   }
 
-  prefetchImages([post.authorAvatarUrl, post.mediaUrl, ...(post.mediaUrls ?? [])], 7);
-  post.dishIds.slice(0, 3).forEach((dishId) => prefetchDishDetail(dishId, repository));
-  prefetchStallDetail(post.venueId, repository);
+  schedulePrefetchWork(() => {
+    const dataRepository = repository ?? getDataRepository();
+    prefetchImages([post.authorAvatarUrl, post.mediaUrl, ...(post.mediaUrls ?? [])], 7);
+    post.dishIds.slice(0, 3).forEach((dishId) => prefetchDishDetail(dishId, dataRepository));
+    prefetchStallDetail(post.venueId, dataRepository);
+  });
 }
 
 export function preloadRoute(navigation: unknown, routeName: string, params?: object) {
-  try {
-    const preload =
-      typeof navigation === "object" && navigation && "preload" in navigation
-        ? (navigation.preload as unknown)
-        : undefined;
-    if (typeof preload === "function") {
-      (preload as (routeName: string, params?: object) => void)(routeName, params);
-    }
-  } catch {
-    // Prefetching must never block or alter navigation.
+  const preloadKey = getRoutePreloadKey(routeName, params);
+  if (scheduledRoutePreloads.has(preloadKey)) {
+    return;
   }
+
+  scheduledRoutePreloads.add(preloadKey);
+  schedulePrefetchWork(() => {
+    try {
+      const preload =
+        typeof navigation === "object" && navigation && "preload" in navigation
+          ? (navigation.preload as unknown)
+          : undefined;
+      if (typeof preload === "function") {
+        (preload as (routeName: string, params?: object) => void)(routeName, params);
+      }
+    } catch {
+      // Prefetching must never block or alter navigation.
+    } finally {
+      scheduledRoutePreloads.delete(preloadKey);
+    }
+  });
+}
+
+export function prefetchBrowseResults(
+  query: string,
+  navigation?: unknown,
+  options?: { browseMode?: "dishes" | "stalls"; limit?: number },
+) {
+  const normalizedQuery = query.trim();
+  const browseMode = options?.browseMode ?? "stalls";
+  const limit = options?.limit ?? 8;
+  const key = `${browseMode}:${normalizedQuery.toLowerCase()}:${limit}`;
+
+  if (scheduledBrowseResultPrefetches.has(key)) {
+    return;
+  }
+
+  scheduledBrowseResultPrefetches.add(key);
+  schedulePrefetchWork(() => {
+    try {
+      const repository = getDataRepository();
+      const browseIndex = getBrowseIndex(repository);
+      const dishes = searchBrowseDishes(browseIndex, {
+        query: normalizedQuery,
+        radiusMeters: 100000,
+      }).slice(0, limit);
+
+      prefetchImages(
+        dishes.map((dish) => dish.imageUrl),
+        limit,
+      );
+      dishes.slice(0, 3).forEach((dish) => {
+        prefetchDishDetail(dish.id, repository);
+        prefetchStallDetail(dish.venueId, repository);
+      });
+
+      if (navigation && normalizedQuery) {
+        preloadRoute(navigation, "SearchResults", {
+          browseMode,
+          initialQuery: normalizedQuery,
+        });
+      }
+    } catch {
+      // Prefetching must never block or alter navigation.
+    } finally {
+      scheduledBrowseResultPrefetches.delete(key);
+    }
+  });
 }
 
 export function prefetchMerchantTab(
@@ -147,57 +240,62 @@ export function prefetchMerchantTab(
   }
   merchantPrefetches.add(key);
 
-  void (async () => {
-    try {
-      const merchant = getHungryService().merchant;
-      if (routeName === "Dashboard" && outletId) {
-        await merchant.getAnalytics(outletId, "7d");
-        return;
+  schedulePrefetchWork(() => {
+    void (async () => {
+      try {
+        const merchant = getHungryService().merchant;
+        if (routeName === "Dashboard" && outletId) {
+          await merchant.getAnalytics(outletId, "7d");
+          return;
+        }
+        if (routeName === "Menu" && outletId) {
+          const dishes = await merchant.getMenu(outletId);
+          prefetchImages(
+            dishes.map((dish) => dish.imageUrl),
+            8,
+          );
+          return;
+        }
+        if (routeName === "Analytics" && outletId) {
+          await merchant.getAnalytics(outletId, "7d");
+          return;
+        }
+        if (routeName === "CustomerInbox" && outletId) {
+          await merchant.getInbox(outletId);
+          return;
+        }
+        if (routeName === "PromotionList" && outletId) {
+          await merchant.getPromotions(outletId);
+          return;
+        }
+        if (routeName === "AIAssistant" && outletId) {
+          await Promise.all([
+            merchant.getAIInsights(outletId),
+            merchant.getWeeklySummary(outletId),
+          ]);
+          return;
+        }
+        if (routeName === "OCRDrafts" && outletId) {
+          await merchant.getOCRDrafts(outletId);
+          return;
+        }
+        if (routeName === "MerchantSettings" && accountId) {
+          await Promise.all([
+            merchant.getNotificationPreferences(accountId),
+            merchant.getTeamMembers(accountId),
+          ]);
+          return;
+        }
+        if (
+          routeName === "Profile" ||
+          routeName === "BusinessProfileEditor" ||
+          routeName === "VerificationCentre"
+        ) {
+          await merchant.getMerchantAccount();
+        }
+      } catch {
+        merchantPrefetches.delete(key);
       }
-      if (routeName === "Menu" && outletId) {
-        const dishes = await merchant.getMenu(outletId);
-        prefetchImages(
-          dishes.map((dish) => dish.imageUrl),
-          8,
-        );
-        return;
-      }
-      if (routeName === "Analytics" && outletId) {
-        await merchant.getAnalytics(outletId, "7d");
-        return;
-      }
-      if (routeName === "CustomerInbox" && outletId) {
-        await merchant.getInbox(outletId);
-        return;
-      }
-      if (routeName === "PromotionList" && outletId) {
-        await merchant.getPromotions(outletId);
-        return;
-      }
-      if (routeName === "AIAssistant" && outletId) {
-        await Promise.all([merchant.getAIInsights(outletId), merchant.getWeeklySummary(outletId)]);
-        return;
-      }
-      if (routeName === "OCRDrafts" && outletId) {
-        await merchant.getOCRDrafts(outletId);
-        return;
-      }
-      if (routeName === "MerchantSettings" && accountId) {
-        await Promise.all([
-          merchant.getNotificationPreferences(accountId),
-          merchant.getTeamMembers(accountId),
-        ]);
-        return;
-      }
-      if (
-        routeName === "Profile" ||
-        routeName === "BusinessProfileEditor" ||
-        routeName === "VerificationCentre"
-      ) {
-        await merchant.getMerchantAccount();
-      }
-    } catch {
-      merchantPrefetches.delete(key);
-    }
-  })();
+    })();
+  });
 }

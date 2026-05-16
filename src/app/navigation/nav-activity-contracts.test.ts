@@ -61,7 +61,8 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
 
   assert.match(home, /<Bell color=\{palette\.text\} size=\{22\}/);
   assert.match(home, /navigation\.navigate\("ActivityInbox", \{ initialTab: "updates" \}\)/);
-  assert.match(home, /useActivityStore\(\(state\) => state\.getUnreadCount\(\)\)/);
+  assert.match(home, /import \{ getActivityUnreadCount \} from "@\/features\/home\/activity"/);
+  assert.match(home, /getActivityUnreadCount\(readActivityIds, activityUpdates\)/);
   assert.match(home, /getHungryService\(\)[\s\S]*\.chat\.listConversations\(\)/);
   assert.match(home, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
   assert.match(home, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);

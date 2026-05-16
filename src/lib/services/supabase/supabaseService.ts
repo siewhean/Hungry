@@ -50,10 +50,13 @@ import type {
   InteractionType,
   MerchantAccount,
   MerchantAnalytics,
+  MerchantNotification,
   MerchantNotificationPreferences,
   MerchantOutlet,
   MerchantPromotion,
   MerchantRole,
+  MerchantTeamMember,
+  MerchantWeeklySummary,
   OCRDishDraft,
   PromotionStatus,
   SearchFilters,
@@ -148,6 +151,12 @@ function asRecord(value: unknown): Row {
 
 function isLocalUri(value: string): boolean {
   return value.startsWith("file://") || value.startsWith("content://") || value.startsWith("/");
+}
+
+function assertLocalUserMediaUri(value: string, label: string): void {
+  if (!isLocalUri(value)) {
+    throw new Error(`${label} must be uploaded from a local device file.`);
+  }
 }
 
 function sanitizeStorageSegment(value: string): string {
@@ -391,8 +400,7 @@ async function uploadReviewPhotos(
     const uri = photos[index];
     if (!uri) continue;
     if (!isLocalUri(uri)) {
-      uploaded.push(uri);
-      continue;
+      throw new Error("Review photos must be uploaded from local device files.");
     }
     const extension = uri.split(".").pop()?.toLowerCase() || "jpg";
     const path = `${userId}/${reviewId}/photo-${index}.${extension}`;
@@ -412,8 +420,11 @@ async function uploadAvatarIfNeeded(
   userId: string,
   avatarUri?: string,
 ): Promise<string | undefined> {
-  if (!avatarUri || !isLocalUri(avatarUri)) {
-    return avatarUri;
+  if (!avatarUri) {
+    return undefined;
+  }
+  if (!isLocalUri(avatarUri)) {
+    throw new Error("Profile avatar must be uploaded from a local device file.");
   }
   const extension = avatarUri.split(".").pop()?.toLowerCase() || "jpg";
   const uploaded = await uploadImageFromUri({
@@ -506,16 +517,7 @@ async function buildPostMediaRows(
       continue;
     }
 
-    rows.push({
-      post_id: postId,
-      media_type: mediaKind,
-      storage_bucket: "external",
-      storage_path: uri,
-      public_url: uri,
-      mime_type: mediaKind === "video" ? "video/external" : "image/external",
-      sort_order: index,
-    });
-    displayUrls.push(uri);
+    throw new Error("Post media must be uploaded from local device files.");
   }
 
   return {
@@ -1064,16 +1066,33 @@ function normalizeMenuEntry(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function getOpsDraftApiKey(): string {
-  return (
-    process.env.EXPO_PUBLIC_OPS_DISHES_DRAFT_API_KEY?.trim() ??
-    process.env.OPS_DISHES_DRAFT_API_KEY?.trim() ??
-    ""
-  );
-}
-
 function getAuthEmailRedirectTo(): string {
   return process.env.EXPO_PUBLIC_AUTH_REDIRECT_URL?.trim() || "hungry://auth/callback";
+}
+
+function callbackBaseMatches(url: string, expectedRedirectTo: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const expected = new URL(expectedRedirectTo);
+    return (
+      parsed.protocol === expected.protocol &&
+      parsed.hostname === expected.hostname &&
+      parsed.pathname === expected.pathname
+    );
+  } catch {
+    return false;
+  }
+}
+
+function getOAuthStateFromUrl(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    const query = new URLSearchParams(parsed.search.startsWith("?") ? parsed.search.slice(1) : "");
+    const hash = new URLSearchParams(parsed.hash.startsWith("#") ? parsed.hash.slice(1) : "");
+    return hash.get("state") ?? query.get("state") ?? undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function getAuthTokensFromCallback(url: string): {
@@ -1110,6 +1129,14 @@ const DEFAULT_MERCHANT_NOTIFICATION_PREFERENCES: MerchantNotificationPreferences
 function asMerchantRole(value: unknown): MerchantRole {
   const role = asString(value);
   return role === "manager" || role === "staff" ? role : "owner";
+}
+
+function asMerchantInviteStatus(value: unknown): MerchantTeamMember["inviteStatus"] {
+  const status = asString(value);
+  if (status === "accepted" || status === "active") return "accepted";
+  if (status === "declined") return "declined";
+  if (status === "removed") return "removed";
+  return "pending";
 }
 
 function normalizeAvailabilityFlag(flag: string): string {
@@ -1185,7 +1212,12 @@ async function toMerchantOutlet(client: SupabaseClient, row: Row): Promise<Merch
     description: asString(row.description) ?? "",
     cuisineCategories: [],
     operatingHours: asString(row.operating_hours) ?? venue?.operatingHours ?? "",
+    temporaryClosure: asString(row.temporary_closure),
+    profilePhotoUrl: asString(row.profile_photo_url),
+    coverPhotoUrl: asString(row.cover_photo_url),
     galleryUrls: [],
+    contactPhone: asString(row.contact_phone),
+    contactEmail: asString(row.contact_email),
     socialLinks: [],
     deliveryLinks: venue?.deliveryLinks ?? [],
     dietaryLabels: [],
@@ -1465,10 +1497,7 @@ async function resolveMerchantDishGalleryUrls(
 
   for (let index = 0; index < requestedUrls.length; index += 1) {
     const url = requestedUrls[index];
-    if (!isLocalUri(url)) {
-      uploadedUrls.push(url);
-      continue;
-    }
+    assertLocalUserMediaUri(url, "Merchant dish image");
     if (!userId) throw new Error("You must be signed in to upload merchant dish images.");
     const extension = extensionFromUri(url);
     const uploaded = await uploadImageFromUri({
@@ -1596,8 +1625,67 @@ function mapPromotion(row: Row): MerchantPromotion {
     endDate: asString(row.end_date) ?? new Date().toISOString(),
     targetAudience: asStringArray(row.target_audience) as MerchantPromotion["targetAudience"],
     status,
+    promotionItemType:
+      asString(row.promotion_item_type) === "existing_menu_item"
+        ? "existing_menu_item"
+        : "new_item",
+    originalPrice: asNumber(row.original_price),
+    promotionalPrice: asNumber(row.promotional_price),
+    finalPrice: asNumber(row.final_price),
+    discountPercentage: asNumber(row.discount_percentage),
+    isAvailable: asBoolean(row.is_available) ?? status === "active",
     createdAt: asString(row.created_at) ?? new Date().toISOString(),
     analytics,
+  };
+}
+
+function mapMerchantNotification(row: Row): MerchantNotification {
+  return {
+    id: asString(row.id) ?? "",
+    merchantAccountId: asString(row.merchant_account_id) ?? "",
+    outletId: asString(row.outlet_id),
+    recipientUserId: asString(row.recipient_user_id),
+    recipientEmail: asString(row.recipient_email),
+    kind: (asString(row.kind) as MerchantNotification["kind"]) ?? "ai_insight",
+    title: asString(row.title) ?? "",
+    body: asString(row.body) ?? "",
+    status: (asString(row.status) as MerchantNotification["status"]) ?? "unread",
+    dedupeKey: asString(row.dedupe_key) ?? "",
+    deepLink: asString(row.deep_link),
+    metadata:
+      row.metadata && typeof row.metadata === "object"
+        ? (asRecord(row.metadata) as Record<string, string | number | boolean | null>)
+        : undefined,
+    createdAt: asString(row.created_at) ?? new Date().toISOString(),
+  };
+}
+
+function buildWeeklySummaryFromAnalytics(
+  outletId: string,
+  analytics: MerchantAnalytics,
+  reviews: CustomerInteraction[],
+  promotions: MerchantPromotion[],
+): MerchantWeeklySummary {
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - 6);
+  return {
+    id: `weekly-${outletId}-${weekStart.toISOString().slice(0, 10)}`,
+    outletId,
+    weekStart: weekStart.toISOString(),
+    weekEnd: now.toISOString(),
+    totalViews: analytics.profileVisits + analytics.menuViews + analytics.dishViews,
+    dishViews: analytics.dishViews,
+    topDishes: analytics.topDishes,
+    newReviews: reviews.length,
+    averageRating: analytics.averageRating,
+    ratingChange: analytics.averageRating - analytics.previousPeriodComparison.averageRating,
+    unrepliedReviews: reviews.filter((review) => !review.reply).length,
+    promotionViews: promotions.reduce(
+      (sum, promotion) => sum + (promotion.analytics?.impressions ?? 0),
+      0,
+    ),
+    createdAt: now.toISOString(),
   };
 }
 
@@ -1616,20 +1704,24 @@ async function signInWithOAuthProvider(provider: "google" | "apple"): Promise<Se
     throw new Error("OAuth provider URL was not generated.");
   }
 
+  const expectedState = getOAuthStateFromUrl(data.url);
   WebBrowser.maybeCompleteAuthSession();
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
   if (result.type !== "success" || !result.url) {
     throw new Error("OAuth sign-in was cancelled.");
   }
+  if (!callbackBaseMatches(result.url, redirectTo)) {
+    throw new Error("OAuth callback URL was not trusted.");
+  }
+  if (expectedState && getOAuthStateFromUrl(result.url) !== expectedState) {
+    throw new Error("OAuth callback state did not match the sign-in request.");
+  }
 
   const { accessToken, refreshToken, code } = getAuthTokensFromCallback(result.url);
-  if (accessToken && refreshToken) {
-    const { error: sessionError } = await client.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-    if (sessionError) throw sessionError;
-  } else if (code) {
+  if (accessToken || refreshToken) {
+    throw new Error("OAuth callback token fragments are not accepted.");
+  }
+  if (code) {
     const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
     if (exchangeError) throw exchangeError;
   } else {
@@ -1701,8 +1793,8 @@ async function hydrateChatParticipants(
   const profileRows = new Map<string, Row>();
   if (userIds.length > 0) {
     const { data } = await client
-      .from("user_profiles")
-      .select("id,display_name,email,avatar_url")
+      .from("public_profiles")
+      .select("id,display_name,avatar_url")
       .in("id", userIds);
     (Array.isArray(data) ? (data as Row[]) : []).forEach((row) => {
       const id = asString(row.id);
@@ -1714,7 +1806,7 @@ async function hydrateChatParticipants(
   if (merchantIds.length > 0) {
     const { data } = await client
       .from("merchant_accounts")
-      .select("id,display_name,email")
+      .select("id,display_name")
       .in("id", merchantIds);
     (Array.isArray(data) ? (data as Row[]) : []).forEach((row) => {
       const id = asString(row.id);
@@ -1732,11 +1824,7 @@ async function hydrateChatParticipants(
     const participant: ChatParticipant = {
       ...fallback,
       displayName:
-        asString(profile?.display_name) ??
-        asString(profile?.email) ??
-        asString(merchant?.display_name) ??
-        asString(merchant?.email) ??
-        fallback.displayName,
+        asString(profile?.display_name) ?? asString(merchant?.display_name) ?? fallback.displayName,
       avatarUrl: asString(profile?.avatar_url) ?? fallback.avatarUrl,
     };
     participants.set(participantKey(participant), participant);
@@ -2029,6 +2117,45 @@ export const supabaseService: HungryService = {
 
     async getDish(id) {
       return supabaseRepository.getDishById(id);
+    },
+
+    async recordDishView(dishId, context) {
+      const client = getSupabaseClient();
+      if (!client) return;
+      const { data: dishRow, error: dishError } = await client
+        .from("dishes")
+        .select("id, venue_id")
+        .eq("id", dishId)
+        .maybeSingle();
+      if (dishError) throw dishError;
+      const venueId = asString((dishRow as Row | null)?.venue_id);
+      if (!venueId) return;
+      const { data: outletRow, error: outletError } = await client
+        .from("merchant_outlets")
+        .select("id, merchant_account_id")
+        .eq("venue_id", venueId)
+        .maybeSingle();
+      if (outletError) throw outletError;
+      const outletId = asString((outletRow as Row | null)?.id);
+      const merchantAccountId = asString((outletRow as Row | null)?.merchant_account_id);
+      if (!outletId || !merchantAccountId) return;
+      const userId = context?.userId ?? (await getCurrentSupabaseUserId()) ?? undefined;
+      const sessionId = context?.sessionId ?? userId ?? "anonymous";
+      const dedupeWindow = new Date().toISOString().slice(0, 13);
+      const { error } = await client.from("merchant_dish_view_events").upsert(
+        {
+          outlet_id: outletId,
+          merchant_account_id: merchantAccountId,
+          venue_id: venueId,
+          dish_id: dishId,
+          user_id: userId ?? null,
+          session_id: sessionId,
+          dedupe_key: `${dishId}:${sessionId}:${dedupeWindow}`,
+          viewed_at: new Date().toISOString(),
+        },
+        { onConflict: "dedupe_key", ignoreDuplicates: true },
+      );
+      if (error) throw error;
     },
 
     async listDishesByVenue(venueId) {
@@ -2411,12 +2538,12 @@ export const supabaseService: HungryService = {
       const table = reaction === "craving" ? "post_likes" : "post_saves";
       const existing = await client
         .from(table)
-        .select("id")
+        .select("post_id")
         .eq("post_id", biteId)
         .eq("user_id", userId)
         .maybeSingle();
       if (existing.error) throw existing.error;
-      if ((existing.data as Row | null)?.id) {
+      if ((existing.data as Row | null)?.post_id) {
         const { error } = await client
           .from(table)
           .delete()
@@ -2932,9 +3059,7 @@ export const supabaseService: HungryService = {
 
     async listDraftDishesQueue(venueId) {
       const client = requireSupabaseClient();
-      const opsApiKey = getOpsDraftApiKey();
       const { data, error } = await client.functions.invoke("ops-dishes-draft", {
-        headers: opsApiKey ? { "x-ops-api-key": opsApiKey } : undefined,
         body: {
           action: "list",
           venueId: venueId ?? null,
@@ -2977,9 +3102,7 @@ export const supabaseService: HungryService = {
 
     async reviewDraftDish(draftDishId, decision, notes) {
       const client = requireSupabaseClient();
-      const opsApiKey = getOpsDraftApiKey();
       const { error } = await client.functions.invoke("ops-dishes-draft", {
-        headers: opsApiKey ? { "x-ops-api-key": opsApiKey } : undefined,
         body: {
           action: "review",
           draftDishId,
@@ -3033,10 +3156,22 @@ export const supabaseService: HungryService = {
       if (error) throw error;
 
       const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to upload verification evidence.");
+      assertLocalUserMediaUri(evidence.fileUrl, "Merchant verification evidence");
+      const evidenceExtension = extensionFromUri(evidence.fileUrl);
+      const evidencePath = `${userId}/${resolvedOutletId}/${(data as Row).id}-${Date.now()}.${evidenceExtension}`;
+      const uploadedEvidence = await uploadPostMediaFromUri({
+        client,
+        bucket: "merchant-verification-evidence",
+        path: evidencePath,
+        uri: evidence.fileUrl,
+      });
       const { error: evidenceError } = await client.from("merchant_verification_evidence").insert({
         verification_id: (data as Row).id,
         method: evidence.method,
-        file_url: evidence.fileUrl,
+        file_url: `supabase://merchant-verification-evidence/${uploadedEvidence.path}`,
+        storage_bucket: "merchant-verification-evidence",
+        storage_path: uploadedEvidence.path,
         uploaded_by: userId,
         review_note: evidence.reviewNote ?? null,
       });
@@ -3064,6 +3199,41 @@ export const supabaseService: HungryService = {
       if (normalized.description !== undefined) payload.description = normalized.description;
       if (normalized.operatingHours !== undefined) {
         payload.operating_hours = normalized.operatingHours;
+      }
+      if (normalized.temporaryClosure !== undefined) {
+        payload.temporary_closure = normalized.temporaryClosure || null;
+      }
+      if (normalized.contactPhone !== undefined) payload.contact_phone = normalized.contactPhone;
+      if (normalized.contactEmail !== undefined) payload.contact_email = normalized.contactEmail;
+      if (normalized.profilePhotoUrl !== undefined) {
+        payload.profile_photo_url = normalized.profilePhotoUrl || null;
+        if (normalized.profilePhotoUrl && isLocalUri(normalized.profilePhotoUrl)) {
+          const userId = await getCurrentSupabaseUserId();
+          if (!userId) throw new Error("You must be signed in to upload business photos.");
+          const extension = extensionFromUri(normalized.profilePhotoUrl);
+          const upload = await uploadImageFromUri({
+            client,
+            bucket: "merchant-stall-images",
+            path: `${userId}/${resolvedOutletId}/profile-${Date.now()}.${extension}`,
+            uri: normalized.profilePhotoUrl,
+          });
+          payload.profile_photo_url = upload.publicUrl;
+        }
+      }
+      if (normalized.coverPhotoUrl !== undefined) {
+        payload.cover_photo_url = normalized.coverPhotoUrl || null;
+        if (normalized.coverPhotoUrl && isLocalUri(normalized.coverPhotoUrl)) {
+          const userId = await getCurrentSupabaseUserId();
+          if (!userId) throw new Error("You must be signed in to upload business photos.");
+          const extension = extensionFromUri(normalized.coverPhotoUrl);
+          const upload = await uploadImageFromUri({
+            client,
+            bucket: "merchant-stall-images",
+            path: `${userId}/${resolvedOutletId}/cover-${Date.now()}.${extension}`,
+            uri: normalized.coverPhotoUrl,
+          });
+          payload.cover_photo_url = upload.publicUrl;
+        }
       }
       if (normalized.isLive !== undefined) payload.is_live = normalized.isLive;
 
@@ -3408,6 +3578,12 @@ export const supabaseService: HungryService = {
           end_date: promo.endDate,
           target_audience: promo.targetAudience,
           status: promo.status,
+          promotion_item_type: promo.promotionItemType ?? "new_item",
+          original_price: promo.originalPrice ?? null,
+          promotional_price: promo.promotionalPrice ?? null,
+          final_price: promo.finalPrice ?? promo.promotionalPrice ?? null,
+          discount_percentage: promo.discountPercentage ?? null,
+          is_available: promo.isAvailable ?? promo.status === "active",
           impressions: analytics.impressions,
           clicks: analytics.clicks,
           saves: analytics.saves,
@@ -3429,6 +3605,15 @@ export const supabaseService: HungryService = {
       if (updates.endDate !== undefined) payload.end_date = updates.endDate;
       if (updates.targetAudience !== undefined) payload.target_audience = updates.targetAudience;
       if (updates.status !== undefined) payload.status = updates.status;
+      if (updates.promotionItemType !== undefined)
+        payload.promotion_item_type = updates.promotionItemType;
+      if (updates.originalPrice !== undefined) payload.original_price = updates.originalPrice;
+      if (updates.promotionalPrice !== undefined)
+        payload.promotional_price = updates.promotionalPrice;
+      if (updates.finalPrice !== undefined) payload.final_price = updates.finalPrice;
+      if (updates.discountPercentage !== undefined)
+        payload.discount_percentage = updates.discountPercentage;
+      if (updates.isAvailable !== undefined) payload.is_available = updates.isAvailable;
       if (updates.analytics) {
         payload.impressions = updates.analytics.impressions;
         payload.clicks = updates.analytics.clicks;
@@ -3457,17 +3642,31 @@ export const supabaseService: HungryService = {
     },
 
     async getAnalytics(outletId, dateRange) {
+      const client = requireSupabaseClient();
       const menu = await this.getMenu(outletId);
       const inbox = await this.getInbox(outletId);
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const { data: viewRows } = await client
+        .from("merchant_dish_view_events")
+        .select("dish_id")
+        .eq("outlet_id", resolvedOutletId);
+      const viewCounts = new Map<string, number>();
+      (Array.isArray(viewRows) ? (viewRows as Row[]) : []).forEach((row) => {
+        const dishId = asString(row.dish_id);
+        if (!dishId) return;
+        viewCounts.set(dishId, (viewCounts.get(dishId) ?? 0) + 1);
+      });
+      const dishViewTotal = Array.from(viewCounts.values()).reduce((sum, count) => sum + count, 0);
       const reviewRatings = inbox
         .map((interaction) => interaction.rating)
         .filter((rating): rating is number => typeof rating === "number");
       return {
         outletId,
         dateRange,
-        profileVisits: 0,
-        menuViews: 0,
-        dishViews: 0,
+        profileVisits: Math.floor(dishViewTotal / 2),
+        menuViews: dishViewTotal,
+        dishViews: dishViewTotal,
         directionTaps: 0,
         saves: 0,
         shares: 0,
@@ -3479,12 +3678,15 @@ export const supabaseService: HungryService = {
           reviewRatings.length === 0
             ? 0
             : reviewRatings.reduce((sum, rating) => sum + rating, 0) / reviewRatings.length,
-        topDishes: menu.slice(0, 3).map((dish) => ({
-          dishId: dish.id,
-          name: dish.name,
-          views: 0,
-          saves: 0,
-        })),
+        topDishes: menu
+          .map((dish) => ({
+            dishId: dish.id,
+            name: dish.name,
+            views: viewCounts.get(dish.id) ?? 0,
+            saves: 0,
+          }))
+          .sort((left, right) => right.views - left.views)
+          .slice(0, 5),
         mostSearchedKeywords: menu.slice(0, 4).map((dish) => dish.name.toLowerCase()),
         peakDiscoveryHours: [],
         customerTasteTags: [],
@@ -3495,6 +3697,123 @@ export const supabaseService: HungryService = {
           averageRating: 0,
         },
       } satisfies MerchantAnalytics;
+    },
+
+    async getWeeklySummaryStats(outletId) {
+      const analytics = await this.getAnalytics(outletId, "7d");
+      const reviews = await this.getInbox(outletId, { type: "review" });
+      const promotions = await this.getPromotions(outletId);
+      return buildWeeklySummaryFromAnalytics(outletId, analytics, reviews, promotions);
+    },
+
+    async getMerchantNotifications(merchantAccountId) {
+      const { data, error } = await requireSupabaseClient()
+        .from("merchant_notifications")
+        .select("*")
+        .eq("merchant_account_id", merchantAccountId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (Array.isArray(data) ? (data as Row[]) : []).map(mapMerchantNotification);
+    },
+
+    async syncLowRatingNotifications(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const merchantAccountId = asString(outlet.merchant_account_id) ?? "";
+      const outletName = asString(outlet.name) ?? "Your stall";
+      const reviews = await this.getInbox(outletId, { type: "review" });
+      const lowReviews = reviews.filter(
+        (review) => typeof review.rating === "number" && review.rating <= 2,
+      );
+      if (lowReviews.length === 0) return [];
+      const rows = lowReviews.map((review) => ({
+        merchant_account_id: merchantAccountId,
+        outlet_id: resolvedOutletId,
+        kind: "low_rating",
+        title: `${outletName} received a low rating`,
+        body: `${review.rating?.toFixed(1)} stars: ${review.text.slice(0, 120)}`,
+        status: "unread",
+        dedupe_key: `low-rating:${review.sourceId ?? review.id}`,
+        deep_link: "MerchantTabs/CustomerInbox",
+        metadata: {
+          reviewId: review.sourceId ?? review.id,
+          rating: review.rating,
+          snippet: review.text,
+        },
+        created_at: review.createdAt,
+      }));
+      const { error } = await client
+        .from("merchant_notifications")
+        .upsert(rows, { onConflict: "dedupe_key", ignoreDuplicates: true });
+      if (error) throw error;
+      const keys = rows.map((row) => row.dedupe_key);
+      const { data, error: readError } = await client
+        .from("merchant_notifications")
+        .select("*")
+        .in("dedupe_key", keys)
+        .order("created_at", { ascending: false });
+      if (readError) throw readError;
+      return (Array.isArray(data) ? (data as Row[]) : []).map(mapMerchantNotification);
+    },
+
+    async sendWeeklySummaryNotifications(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const merchantAccountId = asString(outlet.merchant_account_id) ?? "";
+      const outletName = asString(outlet.name) ?? "Your stall";
+      const summary = await this.getWeeklySummaryStats(outletId);
+      const members = await this.getTeamMembers(merchantAccountId);
+      const rows = members
+        .filter((member) => member.inviteStatus !== "removed")
+        .map((member) => ({
+          merchant_account_id: merchantAccountId,
+          outlet_id: resolvedOutletId,
+          recipient_user_id: member.userId || null,
+          recipient_email: member.email,
+          kind: "weekly_summary",
+          title: `${outletName} weekly summary is ready`,
+          body: `${summary.totalViews.toLocaleString()} views, ${summary.newReviews} new reviews, ${summary.unrepliedReviews} unreplied reviews.`,
+          status: "unread",
+          dedupe_key: `weekly-summary:${summary.id}:${member.id}`,
+          deep_link: "MerchantTabs/MerchantAnalytics",
+          metadata: { summaryId: summary.id },
+        }));
+      if (rows.length === 0) return [];
+      const { error } = await client
+        .from("merchant_notifications")
+        .upsert(rows, { onConflict: "dedupe_key", ignoreDuplicates: true });
+      if (error) throw error;
+      const emailRows = rows
+        .filter((row) => row.recipient_email)
+        .map((row) => ({
+          merchant_account_id: merchantAccountId,
+          outlet_id: resolvedOutletId,
+          recipient_email: row.recipient_email,
+          template: "weekly_summary",
+          subject: row.title,
+          body: row.body,
+          status: "queued",
+          dedupe_key: `email:${row.dedupe_key}`,
+          metadata: row.metadata,
+        }));
+      if (emailRows.length > 0) {
+        const { error: emailError } = await client
+          .from("merchant_email_outbox")
+          .upsert(emailRows, { onConflict: "dedupe_key", ignoreDuplicates: true });
+        if (emailError) throw emailError;
+      }
+      const { data, error: readError } = await client
+        .from("merchant_notifications")
+        .select("*")
+        .in(
+          "dedupe_key",
+          rows.map((row) => row.dedupe_key),
+        )
+        .order("created_at", { ascending: false });
+      if (readError) throw readError;
+      return (Array.isArray(data) ? (data as Row[]) : []).map(mapMerchantNotification);
     },
 
     async generateDishDescription(dishName, ingredients) {
@@ -3589,13 +3908,21 @@ export const supabaseService: HungryService = {
         email: asString(row.email) ?? "",
         role: asMerchantRole(row.role),
         addedAt: asString(row.created_at) ?? new Date().toISOString(),
+        inviteStatus: asMerchantInviteStatus(row.invite_status),
+        invitedAt: asString(row.invited_at),
+        acceptedAt: asString(row.accepted_at),
+        removedAt: asString(row.removed_at),
       }));
     },
 
-    async addTeamMember(merchantAccountId, email, role) {
+    async addTeamMember(merchantAccountId, email, role, displayName) {
       const normalizedEmail = email.trim().toLowerCase();
+      const trimmedName = displayName?.trim() ?? "";
       if (!normalizedEmail || !normalizedEmail.includes("@")) {
         throw new Error("Valid team member email is required");
+      }
+      if (!trimmedName) {
+        throw new Error("Team member name is required");
       }
       const { data, error } = await requireSupabaseClient()
         .from("merchant_roles")
@@ -3603,20 +3930,68 @@ export const supabaseService: HungryService = {
           merchant_account_id: merchantAccountId,
           user_id: null,
           email: normalizedEmail,
-          display_name: normalizedEmail.split("@")[0],
+          display_name: trimmedName,
           role,
+          invite_status: "pending",
+          invited_at: new Date().toISOString(),
         })
         .select("*")
         .single();
       if (error) throw error;
+      const row = data as Row;
+      const { error: notificationError } = await requireSupabaseClient()
+        .from("merchant_notifications")
+        .upsert(
+          {
+            merchant_account_id: merchantAccountId,
+            recipient_email: normalizedEmail,
+            kind: "team_invite",
+            title: "You have been invited to manage a Hungry stall",
+            body: `${trimmedName}, open Hungry to accept your merchant team invite.`,
+            status: "sent",
+            dedupe_key: `team-invite:${merchantAccountId}:${normalizedEmail}`,
+            deep_link: "MerchantTabs/MerchantSettings",
+            metadata: {
+              memberId: asString(row.id),
+              role,
+              delivery: "email",
+            },
+          },
+          { onConflict: "dedupe_key", ignoreDuplicates: true },
+        );
+      if (notificationError) throw notificationError;
+      const { error: emailError } = await requireSupabaseClient()
+        .from("merchant_email_outbox")
+        .upsert(
+          {
+            merchant_account_id: merchantAccountId,
+            recipient_email: normalizedEmail,
+            template: "team_invite",
+            subject: "You have been invited to manage a Hungry stall",
+            body: `${trimmedName}, install or open Hungry to accept your merchant team invite.`,
+            status: "queued",
+            dedupe_key: `email:team-invite:${merchantAccountId}:${normalizedEmail}`,
+            metadata: {
+              memberId: asString(row.id),
+              role,
+              delivery: "email",
+            },
+          },
+          { onConflict: "dedupe_key", ignoreDuplicates: true },
+        );
+      if (emailError) throw emailError;
       return {
-        id: asString((data as Row).id) ?? "",
+        id: asString(row.id) ?? "",
         merchantAccountId,
-        userId: asString((data as Row).user_id) ?? "",
-        displayName: asString((data as Row).display_name) ?? normalizedEmail,
-        email: asString((data as Row).email) ?? normalizedEmail,
+        userId: asString(row.user_id) ?? "",
+        displayName: asString(row.display_name) ?? trimmedName,
+        email: asString(row.email) ?? normalizedEmail,
         role,
-        addedAt: asString((data as Row).created_at) ?? new Date().toISOString(),
+        inviteStatus: asMerchantInviteStatus(row.invite_status),
+        invitedAt: asString(row.invited_at),
+        acceptedAt: asString(row.accepted_at),
+        removedAt: asString(row.removed_at),
+        addedAt: asString(row.created_at) ?? new Date().toISOString(),
       };
     },
 

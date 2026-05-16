@@ -17,7 +17,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, "ResetPassword">;
 type FormValues = { password: string; confirmPassword: string };
 
 export function ResetPasswordScreen({ navigation }: Props) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const showToast = useUIStore((state) => state.showToast);
@@ -61,7 +61,7 @@ export function ResetPasswordScreen({ navigation }: Props) {
               justifyContent: "center",
             }}
           >
-            <ArrowLeft color={palette.textSecondary} size={12} />
+            <ArrowLeft color={palette.text} size={12} />
             <AppText tone="secondary" style={{ fontWeight: "600" }}>
               Back to Sign In
             </AppText>
@@ -146,7 +146,7 @@ export function ResetPasswordScreen({ navigation }: Props) {
           <View
             style={{
               backgroundColor: palette.surfaceRaised,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.card,
               gap: spacing[2],
               padding: spacing[4],
             }}

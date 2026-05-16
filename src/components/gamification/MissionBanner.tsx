@@ -18,7 +18,7 @@ interface MissionBannerProps {
 }
 
 export function MissionBanner({ onPress }: MissionBannerProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const missions = useMissionStore((s) => s.missions);
   const progressMap = useMissionStore((s) => s.progressMap);
   const activeMissions = useMemo(() => {
@@ -54,7 +54,7 @@ export function MissionBanner({ onPress }: MissionBannerProps) {
           {
             backgroundColor: pressed ? palette.successSoft : palette.successSoft,
             borderColor: palette.success,
-            borderRadius: radii.xl,
+            borderRadius: componentRadii.card,
             borderWidth: 1,
             paddingHorizontal: spacing[4],
             paddingVertical: spacing[3],
@@ -89,7 +89,7 @@ export function MissionBanner({ onPress }: MissionBannerProps) {
         {
           backgroundColor: pressed ? palette.bgSoft : palette.surface,
           borderColor: palette.border,
-          borderRadius: radii.xl,
+          borderRadius: componentRadii.card,
           borderWidth: 1,
           paddingHorizontal: spacing[4],
           paddingVertical: spacing[3],

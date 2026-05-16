@@ -26,6 +26,7 @@ const ALLOWED_POST_MEDIA_MIME_TYPES = new Set([
 const MAX_MENU_PHOTO_BYTES = 10 * 1024 * 1024;
 const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
 const MAX_POST_MEDIA_BYTES = 50 * 1024 * 1024;
+const MAGIC_BYTE_SAMPLE_BYTES = 16;
 
 function guessContentType(uri: string): string {
   const normalized = uri.toLowerCase();
@@ -66,7 +67,7 @@ async function uploadViaSignedUrl(
       .from(bucket)
       .uploadToSignedUrl(path, signed.token, blob, {
         contentType,
-        upsert: true,
+        upsert: false,
       });
     return !uploadError;
   } catch {
@@ -74,22 +75,65 @@ async function uploadViaSignedUrl(
   }
 }
 
-function assertValidImageBlob(blob: Blob, contentType: string): void {
+function startsWith(bytes: Uint8Array, signature: number[]): boolean {
+  return signature.every((byte, index) => bytes[index] === byte);
+}
+
+function bytesToAscii(bytes: Uint8Array, start: number, end: number): string {
+  return String.fromCharCode(...bytes.slice(start, end));
+}
+
+function matchesContentTypeMagic(bytes: Uint8Array, contentType: string): boolean {
+  if (contentType === "image/jpeg") {
+    return startsWith(bytes, [0xff, 0xd8, 0xff]);
+  }
+  if (contentType === "image/png") {
+    return startsWith(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  }
+  if (contentType === "image/webp") {
+    return bytesToAscii(bytes, 0, 4) === "RIFF" && bytesToAscii(bytes, 8, 12) === "WEBP";
+  }
+  if (contentType === "image/heic") {
+    const brand = bytesToAscii(bytes, 8, 12);
+    return (
+      bytesToAscii(bytes, 4, 8) === "ftyp" &&
+      ["heic", "heif", "heix", "hevc", "mif1"].includes(brand)
+    );
+  }
+  if (contentType === "video/mp4" || contentType === "video/quicktime") {
+    return bytesToAscii(bytes, 4, 8) === "ftyp";
+  }
+  if (contentType === "video/webm") {
+    return startsWith(bytes, [0x1a, 0x45, 0xdf, 0xa3]);
+  }
+  return false;
+}
+
+async function assertValidMagicBytes(blob: Blob, contentType: string): Promise<void> {
+  const sample = new Uint8Array(await blob.slice(0, MAGIC_BYTE_SAMPLE_BYTES).arrayBuffer());
+  if (!matchesContentTypeMagic(sample, contentType)) {
+    throw new Error("Media upload content does not match its declared type.");
+  }
+}
+
+async function assertValidImageBlob(blob: Blob, contentType: string): Promise<void> {
   if (typeof blob.size === "number" && blob.size > MAX_IMAGE_UPLOAD_BYTES) {
     throw new Error("Image upload exceeds 10MB limit.");
   }
   if (!ALLOWED_IMAGE_UPLOAD_MIME_TYPES.has(contentType)) {
     throw new Error("Image upload must be image/jpeg, image/png, image/heic, or image/webp.");
   }
+  await assertValidMagicBytes(blob, contentType);
 }
 
-function assertValidPostMediaBlob(blob: Blob, contentType: string): void {
+async function assertValidPostMediaBlob(blob: Blob, contentType: string): Promise<void> {
   if (typeof blob.size === "number" && blob.size > MAX_POST_MEDIA_BYTES) {
     throw new Error("Post media upload exceeds 50MB limit.");
   }
   if (!ALLOWED_POST_MEDIA_MIME_TYPES.has(contentType)) {
     throw new Error("Post media must be an image or supported video file.");
   }
+  await assertValidMagicBytes(blob, contentType);
 }
 
 export async function uploadImageFromUri(params: {
@@ -101,7 +145,7 @@ export async function uploadImageFromUri(params: {
   const { client, bucket, path, uri } = params;
   const blob = await fetchBlobFromUri(uri);
   const contentType = blob.type || guessContentType(uri);
-  assertValidImageBlob(blob, contentType);
+  await assertValidImageBlob(blob, contentType);
 
   const signedSucceeded = await uploadViaSignedUrl(client, bucket, path, blob, contentType);
   if (!signedSucceeded) {
@@ -124,7 +168,7 @@ export async function uploadPostMediaFromUri(params: {
   const { client, bucket, path, uri } = params;
   const blob = await fetchBlobFromUri(uri);
   const contentType = blob.type || guessContentType(uri);
-  assertValidPostMediaBlob(blob, contentType);
+  await assertValidPostMediaBlob(blob, contentType);
 
   const signedSucceeded = await uploadViaSignedUrl(client, bucket, path, blob, contentType);
   if (!signedSucceeded) {

@@ -123,6 +123,7 @@ export type RootStackParamList = {
     authorName: string;
     authorAvatarUrl?: string;
     authorLocation?: string;
+    reviewSignalLabel?: string;
   };
   Offline: undefined;
   NotFound: { title?: string; body?: string } | undefined;

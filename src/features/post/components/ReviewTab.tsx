@@ -20,7 +20,7 @@ const HASHTAG_SUGGESTIONS = [
 ] as const;
 
 export function ReviewTab() {
-  const { palette, radii } = useHungryTheme();
+  const { componentRadii, palette } = useHungryTheme();
   const reviewCaption = useComposerStore((state) => state.reviewCaption);
   const postCaption = useComposerStore((state) => state.postCaption);
   const setCaption = useComposerStore((state) => state.setCaption);
@@ -103,7 +103,7 @@ export function ReviewTab() {
           editable={!useSameCaption}
           style={{
             backgroundColor: palette.surface,
-            borderRadius: radii.lg,
+            borderRadius: componentRadii.input,
             opacity: useSameCaption ? 0.6 : 1,
             minHeight: 120,
           }}
@@ -116,7 +116,7 @@ export function ReviewTab() {
               styles.syncBar,
               {
                 backgroundColor: palette.orangeLight,
-                borderRadius: radii.md,
+                borderRadius: componentRadii.card,
                 marginTop: semanticSpacing.componentGap,
                 paddingHorizontal: semanticSpacing.screenEdge,
                 paddingVertical: semanticSpacing.inlineGaps,

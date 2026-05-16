@@ -20,7 +20,7 @@ interface ReviewBitesStripProps {
 }
 
 function ReviewBitesStripSkeleton() {
-  const { radii, spacing } = useHungryTheme();
+  const { componentRadii, radii, spacing } = useHungryTheme();
 
   return (
     <ScrollView
@@ -33,7 +33,7 @@ function ReviewBitesStripSkeleton() {
           key={`review-bites-loading-${slot}`}
           style={{
             width: 210,
-            borderRadius: radii.md,
+            borderRadius: componentRadii.card,
             overflow: "hidden",
           }}
         >
@@ -62,7 +62,7 @@ export function ReviewBitesStrip({
   onCommentPress,
   onPressDish,
 }: ReviewBitesStripProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const interactions = useSocialStore((state) => state.interactions);
   const toggleLike = useSocialStore((state) => state.toggleLike);
   const toggleSave = useSocialStore((state) => state.toggleSave);
@@ -143,7 +143,7 @@ export function ReviewBitesStrip({
           accessibilityRole="button"
           accessibilityLabel={`Open ${dishName} to add the first bite`}
           onPress={onPressDish}
-          style={{ borderRadius: radii.md, backgroundColor: palette.bgSoft }}
+          style={{ borderRadius: componentRadii.card, backgroundColor: palette.bgSoft }}
         >
           <EmptyState
             title="No bites yet"

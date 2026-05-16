@@ -48,7 +48,7 @@ const FEATURE_ROWS = [
 ] as const;
 
 export function LocationPermissionScreen({ navigation }: Props) {
-  const { palette, radii, shadows, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
   const grantLocation = useLocationStore((state) => state.grantLocation);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
@@ -93,7 +93,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
             width: 40,
           }}
         >
-          <ArrowLeft color={palette.orange} size={22} />
+          <ArrowLeft color={palette.text} size={22} />
         </Pressable>
         <AppText variant="h2" style={{ color: palette.orange, fontWeight: "700" }}>
           Hungry
@@ -115,7 +115,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
               shadows.floating,
               {
                 backgroundColor: palette.navy,
-                borderRadius: radii.lg,
+                borderRadius: componentRadii.card,
                 height: 152,
                 maxWidth: 188,
                 overflow: "hidden",
@@ -203,14 +203,14 @@ function FeatureCard({
   title: string;
   description: string;
 }) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
 
   return (
     <Card
       style={{
         backgroundColor: palette.surface,
         borderColor: "transparent",
-        borderRadius: radii.lg,
+        borderRadius: componentRadii.card,
         flexDirection: "row",
         gap: spacing[3],
         minHeight: 78,

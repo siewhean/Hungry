@@ -19,7 +19,7 @@ import { useComposerStore } from "../useComposerStore";
 import { spacing, semanticSpacing } from "@/theme/tokens";
 
 export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
-  const { palette, radii, shadows, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
   const postCaption = useComposerStore((state) => state.postCaption);
   const reviewCaption = useComposerStore((state) => state.reviewCaption);
   const setCaption = useComposerStore((state) => state.setCaption);
@@ -60,7 +60,7 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
           editable={!useSameCaption}
           style={{
             backgroundColor: palette.surface,
-            borderRadius: radii.lg,
+            borderRadius: componentRadii.input,
             opacity: useSameCaption ? 0.6 : 1,
             minHeight: 120,
           }}
@@ -73,7 +73,7 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
               styles.syncBar,
               {
                 backgroundColor: palette.orangeLight,
-                borderRadius: radii.md,
+                borderRadius: componentRadii.card,
                 marginTop: semanticSpacing.componentGap,
                 paddingHorizontal: semanticSpacing.screenEdge,
                 paddingVertical: semanticSpacing.inlineGaps,
@@ -101,7 +101,7 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
           styles.interactiveRow,
           {
             backgroundColor: pressed ? palette.surfaceRaised : palette.surface,
-            borderRadius: radii.lg,
+            borderRadius: componentRadii.button,
             paddingHorizontal: spacing.xl,
             paddingVertical: spacing.lg,
           },
@@ -155,7 +155,7 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
                 styles.toggleRow,
                 {
                   backgroundColor: isSponsored ? palette.orangeLight : palette.bgSoft,
-                  borderRadius: radii.md,
+                  borderRadius: componentRadii.card,
                   paddingHorizontal: semanticSpacing.componentGap,
                   paddingVertical: semanticSpacing.inlineGaps,
                 },
@@ -182,7 +182,7 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
                 styles.toggleRow,
                 {
                   backgroundColor: palette.bgSoft,
-                  borderRadius: radii.md,
+                  borderRadius: componentRadii.card,
                   paddingHorizontal: semanticSpacing.componentGap,
                   paddingVertical: semanticSpacing.inlineGaps,
                 },

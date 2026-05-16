@@ -12,7 +12,7 @@ import type { WheelStackParamList } from "./WheelStack";
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelHome">;
 
 export function WheelHomeScreen({ navigation, route }: Props) {
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const createParty = useWheelStore((s) => s.createParty);
   const joinParty = useWheelStore((s) => s.joinParty);
 
@@ -91,7 +91,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{
-              borderRadius: radii.xl,
+              borderRadius: componentRadii.button,
               padding: spacing[5],
               ...shadows.floating,
             }}

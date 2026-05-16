@@ -4,12 +4,13 @@ import { X, Heart, MapPin } from "lucide-react-native";
 import { Image } from "expo-image";
 import { AppText, IconButton, HungryLogo, Badge } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { componentRadii } from "@/theme/tokens";
 import { useComposerStore } from "../useComposerStore";
 
 const { width: screenWidth } = Dimensions.get("window");
 
 export function LivePreviewSheet() {
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const showPreview = useComposerStore((state) => state.showPreview);
   const setShowPreview = useComposerStore((state) => state.setShowPreview);
   const previewPlatform = useComposerStore((state) => state.previewPlatform);
@@ -33,8 +34,8 @@ export function LivePreviewSheet() {
           flex: 1,
           marginTop: 60,
           backgroundColor: palette.bg,
-          borderTopLeftRadius: radii.xl,
-          borderTopRightRadius: radii.xl,
+          borderTopLeftRadius: componentRadii.card,
+          borderTopRightRadius: componentRadii.card,
         }}
       >
         {/* Header */}
@@ -107,7 +108,7 @@ export function LivePreviewSheet() {
                   style={{
                     width: 36,
                     height: 36,
-                    borderRadius: 18,
+                    borderRadius: componentRadii.iconButton,
                     backgroundColor: palette.orange,
                     alignItems: "center",
                     justifyContent: "center",
@@ -166,7 +167,7 @@ export function LivePreviewSheet() {
                       backgroundColor: "rgba(0,0,0,0.5)",
                       paddingHorizontal: 8,
                       paddingVertical: 4,
-                      borderRadius: 12,
+                      borderRadius: componentRadii.button,
                     }}
                   >
                     <AppText variant="micro" style={{ color: palette.white }}>
@@ -247,7 +248,7 @@ export function LivePreviewSheet() {
                       backgroundColor: "rgba(0,0,0,0.7)",
                       paddingHorizontal: 8,
                       paddingVertical: 4,
-                      borderRadius: 12,
+                      borderRadius: componentRadii.button,
                     }}
                   >
                     <AppText variant="micro" style={{ color: palette.white, fontSize: 10 }}>
@@ -304,13 +305,13 @@ const styles = StyleSheet.create({
   },
   hungryPreview: {
     width: "100%",
-    borderRadius: 16,
+    borderRadius: componentRadii.card,
     borderWidth: 1,
     overflow: "hidden",
   },
   instaPreview: {
     width: "100%",
-    borderRadius: 8,
+    borderRadius: componentRadii.card,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "#efefee",

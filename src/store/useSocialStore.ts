@@ -8,6 +8,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 export interface InteractionState {
   liked: boolean;
   saved: boolean;
+  savedAt?: string;
   likeCount: number;
   saveCount: number;
   shareCount: number;
@@ -41,14 +42,20 @@ async function triggerLightImpact() {
   }
 }
 
+const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuidPostId(postId: string) {
+  return UUID_V4_PATTERN.test(postId);
+}
+
 interface SocialState {
   interactions: Record<string, InteractionState>;
   followedAuthors: Record<string, boolean>;
   commentsByPostId: Record<string, SocialComment[]>;
   repliesByCommentId: Record<string, SocialReply[]>;
 
-  toggleLike: (postId: string) => Promise<void>;
-  toggleSave: (postId: string) => Promise<void>;
+  toggleLike: (postId: string) => void;
+  toggleSave: (postId: string) => void;
   toggleAuthorFollow: (authorName: string) => void;
   incrementShare: (postId: string) => void;
   addComment: (postId: string, comment: SocialComment) => void;
@@ -89,6 +96,7 @@ export const useSocialStore = create<SocialState>()(
             next[item.id] = {
               liked: false,
               saved: false,
+              savedAt: item.interaction?.savedAt,
               likeCount: seededLikes,
               saveCount: item.savedCount ?? 0,
               shareCount: 0,
@@ -113,7 +121,7 @@ export const useSocialStore = create<SocialState>()(
         }));
       },
 
-      toggleLike: async (postId) => {
+      toggleLike: (postId) => {
         void triggerLightImpact();
         const { interactions } = get();
         const { addActivityUpdate } = useActivityStore.getState();
@@ -128,7 +136,7 @@ export const useSocialStore = create<SocialState>()(
         };
 
         const isLiked = !current.liked;
-        const newState = {
+        const nextState = {
           ...current,
           liked: isLiked,
           likeCount: isLiked ? current.likeCount + 1 : Math.max(0, current.likeCount - 1),
@@ -148,23 +156,35 @@ export const useSocialStore = create<SocialState>()(
         set((prev) => ({
           interactions: {
             ...prev.interactions,
-            [postId]: newState,
+            [postId]: nextState,
           },
         }));
 
-        try {
-          await getHungryService().social.reactToBite(postId, "craving");
-        } catch (e) {
-          console.warn("Failed to sync liked post reaction; kept local state.", e);
+        if (isUuidPostId(postId)) {
+          void (async () => {
+            try {
+              await getHungryService().social.reactToBite(postId, "craving");
+            } catch (e) {
+              set((prev) => ({
+                interactions: {
+                  ...prev.interactions,
+                  [postId]: current,
+                },
+              }));
+              console.warn("Failed to sync liked post reaction; reverting optimistic state.", e);
+            }
+          })();
         }
       },
 
-      toggleSave: async (postId) => {
+      toggleSave: (postId) => {
         void triggerLightImpact();
         const { interactions } = get();
+        const now = new Date().toISOString();
         const current = interactions[postId] ?? {
           liked: false,
           saved: false,
+          savedAt: undefined,
           likeCount: 0,
           saveCount: 0,
           shareCount: 0,
@@ -172,23 +192,34 @@ export const useSocialStore = create<SocialState>()(
         };
 
         const isSaved = !current.saved;
-        const newState = {
+        const nextState = {
           ...current,
           saved: isSaved,
+          savedAt: isSaved ? now : undefined,
           saveCount: isSaved ? current.saveCount + 1 : Math.max(0, current.saveCount - 1),
         };
 
         set((prev) => ({
           interactions: {
             ...prev.interactions,
-            [postId]: newState,
+            [postId]: nextState,
           },
         }));
 
-        try {
-          await getHungryService().social.reactToBite(postId, "save");
-        } catch (e) {
-          console.warn("Failed to sync saved post reaction; kept local state.", e);
+        if (isUuidPostId(postId)) {
+          void (async () => {
+            try {
+              await getHungryService().social.reactToBite(postId, "save");
+            } catch (e) {
+              set((prev) => ({
+                interactions: {
+                  ...prev.interactions,
+                  [postId]: current,
+                },
+              }));
+              console.warn("Failed to sync saved post reaction; reverting optimistic state.", e);
+            }
+          })();
         }
       },
 

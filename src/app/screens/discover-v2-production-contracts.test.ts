@@ -21,3 +21,14 @@ test("discover V2 uses real venue status and keeps consumer map access public", 
   assert.match(discover, /nearbyStalls\.length/);
   assert.doesNotMatch(discover, /grade: "A"/);
 });
+
+test("discover V2 keeps Zustand selectors referentially stable", () => {
+  const discover = read("src/app/screens/discover/DiscoverHomeScreenV2.tsx");
+
+  assert.doesNotMatch(
+    discover,
+    /use[A-Za-z0-9]+Store\(\([^)]*\) => [^;]*(?:\.slice|\.map|\.filter)\(/,
+  );
+  assert.doesNotMatch(discover, /use[A-Za-z0-9]+Store\(\([^)]*\) => [^;]*\?\? \[\]/);
+  assert.match(discover, /const collections = useMemo\(\(\) => allCollections\.slice\(0, 6\)/);
+});

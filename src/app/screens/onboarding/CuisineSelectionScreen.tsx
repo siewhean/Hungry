@@ -22,7 +22,7 @@ const CUISINES = [
 ];
 
 export function CuisineSelectionScreen({ navigation }: Props) {
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const [selected, setSelected] = useState<string[]>([]);
 
   const toggle = (id: string) => {
@@ -50,7 +50,7 @@ export function CuisineSelectionScreen({ navigation }: Props) {
                   {
                     width: "31%",
                     aspectRatio: 1,
-                    borderRadius: radii.lg,
+                    borderRadius: componentRadii.card,
                     backgroundColor: isSelected ? palette.orangeLight : palette.surface,
                     borderColor: isSelected ? palette.orange : palette.border,
                     borderWidth: 2,

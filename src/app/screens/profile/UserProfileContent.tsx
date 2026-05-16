@@ -11,7 +11,6 @@ import {
 } from "lucide-react-native";
 
 import { AppText, Avatar, Card, EmptyState } from "@/components/ui";
-import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import { getDataRepository } from "@/lib/services/serviceProvider";
@@ -49,7 +48,7 @@ export function UserProfileContent({
   authorAvatarUrl,
 }: UserProfileContentProps) {
   const normalizedAuthorName = normalizePersonName(authorName);
-  const { palette, radii, shadows, spacing, colorScheme } = useHungryTheme();
+  const { colorScheme, componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
   const repository = getDataRepository();
   const rootNavigation = getRootNavigation(navigation);
   const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
@@ -268,7 +267,7 @@ export function UserProfileContent({
               alignSelf: "stretch",
               flexDirection: "row",
               borderWidth: 1,
-              borderRadius: radii.pill,
+              borderRadius: componentRadii.button,
               borderColor: palette.border,
               backgroundColor: palette.surface,
               overflow: "hidden",
@@ -354,17 +353,7 @@ export function UserProfileContent({
                           colorScheme === "dark" ? palette.surfaceRaised : palette.surface,
                       }}
                     >
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                        <MessageCircleMore color={palette.orange} size={14} />
-                        <AppText variant="micro" style={{ textTransform: "capitalize" }}>
-                          {item.kind}
-                        </AppText>
-                      </View>
                       <AppText>{item.text}</AppText>
-                      <AppText variant="micro" tone="secondary">
-                        {item.postId ? "Posted in this thread • " : ""}
-                        {formatTimeAgo(item.createdAt)}
-                      </AppText>
                     </Card>
                   );
 
@@ -388,11 +377,7 @@ export function UserProfileContent({
           ) : (
             <EmptyState
               title={`No ${activeTitle.toLowerCase()}s yet`}
-              body={
-                activeTab === "posts"
-                  ? "This user has not shared any posts yet."
-                  : "This user has no visible reviews yet."
-              }
+              body="Shared profile activity will appear here."
               icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
             />
           )}
@@ -415,14 +400,14 @@ function StatBlock({
   onPress?: () => void;
   onPressIn?: () => void;
 }) {
-  const { palette, radii, spacing, colorScheme } = useHungryTheme();
+  const { colorScheme, componentRadii, palette, spacing } = useHungryTheme();
   return (
     <Pressable
       onPress={onPress}
       onPressIn={onPressIn}
       style={{
         backgroundColor: colorScheme === "dark" ? palette.surfaceRaised : palette.bgSoft,
-        borderRadius: radii.lg,
+        borderRadius: componentRadii.card,
         paddingVertical: spacing[3],
         paddingHorizontal: spacing[3],
         alignItems: "center",

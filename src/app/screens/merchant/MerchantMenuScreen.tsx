@@ -1,12 +1,21 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Image, View, TextInput, StyleSheet, Alert, Pressable } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Image, View, StyleSheet, Alert, Pressable, ScrollView } from "react-native";
 import { Plus, Search, MoreVertical, Camera, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { AppText, Button, IconButton, EmptyState, Chip, Screen, Skeleton } from "@/components/ui";
+import {
+  AppText,
+  Button,
+  IconButton,
+  EmptyState,
+  Chip,
+  FAB,
+  Input,
+  Screen,
+  Skeleton,
+} from "@/components/ui";
 import {
   prefetchDishDetail,
   prefetchImages,
@@ -36,29 +45,29 @@ function formatDietaryFlag(flag: string): string {
 }
 
 export function MerchantMenuScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const rootNavigation = getRootNavigation(navigation as any);
   const repository = getDataRepository();
   const activeOutlet = useMerchantStore(getActiveOutlet);
-  const insets = useSafeAreaInsets();
 
   const [menu, setMenu] = useState<DishDetail[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "available" | "sold_out">("all");
-  const [error, setError] = useState(false);
+  const [showCreateOptions, setShowCreateOptions] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadMenu = useCallback(async () => {
     if (!activeOutlet) return;
     setIsLoading(true);
-    setError(false);
+    setError(null);
     try {
       const data = await getHungryService().merchant.getMenu(activeOutlet.id);
       setMenu(data);
     } catch (e) {
       console.error(e);
-      setError(true);
+      setError(e instanceof Error ? e.message : "Unable to load dishes.");
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +84,20 @@ export function MerchantMenuScreen() {
     let result = menu;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter((d) => d.name.toLowerCase().includes(q));
+      result = result.filter((dish) =>
+        [
+          dish.name,
+          dish.description,
+          dish.venueName,
+          dish.priceRange,
+          ...dish.tasteTags,
+          ...dish.dietaryFlags,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(q),
+      );
     }
     if (filter === "available") {
       result = result.filter((d) => !hasAvailabilityFlag(d.availabilityFlags, "sold_out"));
@@ -120,9 +142,7 @@ export function MerchantMenuScreen() {
     if (previewVenueId) {
       prefetchStallDetail(previewVenueId, repository);
       preloadRoute(rootNavigation, "StallDetail", { venueId: previewVenueId });
-      return;
     }
-    preloadRoute(rootNavigation, "DiscoverMap");
   }, [previewVenueId, repository, rootNavigation]);
 
   const handleToggleSoldOut = async (dish: DishDetail) => {
@@ -195,192 +215,230 @@ export function MerchantMenuScreen() {
     if (previewVenueId) {
       rootNavigation.navigate("StallDetail", { venueId: previewVenueId });
     } else {
-      rootNavigation.navigate("DiscoverMap");
+      Alert.alert("Preview unavailable", "No customer-visible stall is linked to this menu yet.");
     }
   };
 
   return (
     <Screen
-      title="Your Menu"
+      title="Menu"
+      scroll={false}
       headerRight={
-        <View style={{ flexDirection: "row", gap: spacing[2], alignItems: "center" }}>
-          <IconButton
-            accessibilityLabel="Scan menu (OCR)"
-            icon={<Camera size={24} color={palette.textSecondary} />}
-            onPressIn={() => preloadRoute(navigation, "OCRDrafts")}
-            onPress={() => navigation.navigate("OCRDrafts")}
-          />
-          <Button
-            label="Add Dish"
-            variant="primary"
-            size="sm"
-            fullWidth={false}
-            leftIcon={<Plus size={16} color={palette.white} />}
-            onPressIn={() => prefetchDishEditorRoute()}
-            onPress={() => navigation.navigate("DishEditor")}
-          />
-        </View>
-      }
-    >
-      <View style={{ gap: spacing[4], width: "100%" }}>
-        <View style={{ paddingHorizontal: spacing[1] }}>
-          <View
-            style={[
-              styles.searchBar,
-              {
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                paddingHorizontal: spacing[3],
-                paddingVertical: spacing[2],
-                borderRadius: radii.md,
-                gap: spacing[2],
-              },
-            ]}
-          >
-            <Search size={20} color={palette.textMuted} />
-            <TextInput
-              style={[styles.searchInput, { color: palette.text }]}
-              placeholder="Search menu..."
-              placeholderTextColor={palette.textMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-
-          <View style={{ flexDirection: "row", marginTop: spacing[3], gap: spacing[2] }}>
-            <Chip label="All" selected={filter === "all"} onPress={() => setFilter("all")} />
-            <Chip
-              label="Available"
-              selected={filter === "available"}
-              onPress={() => setFilter("available")}
-            />
-            <Chip
-              label="Sold Out"
-              selected={filter === "sold_out"}
-              onPress={() => setFilter("sold_out")}
-            />
-          </View>
-        </View>
-
-        <View style={{ gap: spacing[3] }}>
-          {isLoading && filteredMenu.length === 0 ? (
-            <View style={{ gap: spacing[3] }}>
-              <Skeleton height={110} borderRadius={radii.lg} />
-              <Skeleton height={110} borderRadius={radii.lg} />
-              <Skeleton height={110} borderRadius={radii.lg} />
-            </View>
-          ) : error ? (
-            <EmptyState
-              title="Failed to load menu"
-              body="There was a problem loading your dishes."
-              icon={<X size={48} color={palette.error} />}
-              ctaLabel="Retry"
-              onPress={loadMenu}
-            />
-          ) : filteredMenu.length === 0 && !isLoading ? (
-            <EmptyState
-              title="No dishes found"
-              body="Try adding a new dish or importing from a photo using OCR Drafts."
-              icon={<Search size={36} color={palette.textMuted} />}
-            />
-          ) : (
-            filteredMenu.map((dish) => {
-              const isSoldOut = hasAvailabilityFlag(dish.availabilityFlags, "sold_out");
-              const imageUrl = dish.imageUrl || dish.gallery?.[0];
-              return (
-                <Pressable
-                  key={dish.id}
-                  onPressIn={() => prefetchDishEditorRoute(dish)}
-                  onLongPress={() => showDishOptions(dish)}
-                  onPress={() => navigation.navigate("DishEditor", { dishId: dish.id })}
-                  style={[
-                    styles.dishCard,
-                    {
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      borderRadius: radii.lg,
-                      padding: spacing[4],
-                      gap: spacing[3],
-                    },
-                  ]}
-                >
-                  {imageUrl ? (
-                    <Image
-                      source={{ uri: imageUrl }}
-                      style={[styles.dishImage, { borderRadius: radii.md }]}
-                    />
-                  ) : (
-                    <View
-                      style={[
-                        styles.dishImagePlaceholder,
-                        { backgroundColor: palette.surfaceRaised, borderRadius: radii.md },
-                      ]}
-                    >
-                      <Camera size={22} color={palette.textMuted} />
-                    </View>
-                  )}
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                      <AppText
-                        variant="bodyBold"
-                        style={
-                          isSoldOut
-                            ? { textDecorationLine: "line-through", color: palette.textMuted }
-                            : undefined
-                        }
-                      >
-                        {dish.name}
-                      </AppText>
-                      {isSoldOut && (
-                        <View
-                          style={{ backgroundColor: palette.errorSoft, borderRadius: radii.pill }}
-                        >
-                          <Chip label="Sold Out" selected={false} />
-                        </View>
-                      )}
-                    </View>
-                    <AppText variant="body" tone="muted" style={{ marginTop: 4 }}>
-                      {dish.priceRange} • {dish.tasteTags.slice(0, 3).join(", ")}
-                    </AppText>
-                    {dish.dietaryFlags.length > 0 && (
-                      <View style={[styles.flagRow, { gap: spacing[2], marginTop: spacing[2] }]}>
-                        {dish.dietaryFlags.slice(0, 3).map((flag) => (
-                          <Chip key={flag} label={formatDietaryFlag(flag)} selected={false} />
-                        ))}
-                      </View>
-                    )}
-                  </View>
-                  <IconButton
-                    accessibilityLabel="Dish options"
-                    icon={<MoreVertical size={20} color={palette.textSecondary} />}
-                    onPress={() => showDishOptions(dish)}
-                  />
-                </Pressable>
-              );
-            })
-          )}
-        </View>
-      </View>
-
-      <View
-        style={[
-          styles.footer,
-          {
-            backgroundColor: palette.surface,
-            borderTopColor: palette.border,
-            padding: spacing[4],
-            paddingBottom: Math.max(insets.bottom, spacing[4]),
-            marginTop: spacing[8],
-          },
-        ]}
-      >
         <Button
-          label="Preview menu as customer"
+          label="Preview"
           variant="secondary"
-          fullWidth
+          size="sm"
+          fullWidth={false}
           onPressIn={prefetchPreviewMenuAsCustomer}
           onPress={handlePreviewMenuAsCustomer}
         />
+      }
+    >
+      <View style={{ flex: 1, width: "100%" }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ gap: spacing[4], paddingBottom: spacing[20] }}
+        >
+          <View style={{ paddingHorizontal: spacing[1] }}>
+            <View
+              style={[
+                styles.searchBar,
+                {
+                  backgroundColor: palette.surface,
+                  borderColor: palette.border,
+                  paddingHorizontal: spacing[3],
+                  paddingVertical: spacing[2],
+                  borderRadius: componentRadii.card,
+                  gap: spacing[2],
+                },
+              ]}
+            >
+              <Input
+                placeholder="Search menu..."
+                style={{ flex: 1 }}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                leftIcon={<Search size={20} color={palette.textMuted} />}
+              />
+            </View>
+
+            <View style={{ flexDirection: "row", marginTop: spacing[3], gap: spacing[2] }}>
+              <Chip label="All" selected={filter === "all"} onPress={() => setFilter("all")} />
+              <Chip
+                label="Available"
+                selected={filter === "available"}
+                onPress={() => setFilter("available")}
+              />
+              <Chip
+                label="Sold Out"
+                selected={filter === "sold_out"}
+                onPress={() => setFilter("sold_out")}
+              />
+            </View>
+          </View>
+
+          <View style={{ gap: spacing[3] }}>
+            {isLoading && filteredMenu.length === 0 ? (
+              <View style={{ gap: spacing[3] }}>
+                <Skeleton height={110} borderRadius={radii.lg} />
+                <Skeleton height={110} borderRadius={radii.lg} />
+                <Skeleton height={110} borderRadius={radii.lg} />
+              </View>
+            ) : error ? (
+              <EmptyState
+                title="Failed to load menu"
+                body="There was a problem loading your dishes."
+                icon={<X size={48} color={palette.error} />}
+                errorMessage={error}
+                sendErrorContext="Merchant menu"
+                ctaLabel="Retry"
+                onPress={loadMenu}
+              />
+            ) : filteredMenu.length === 0 && !isLoading ? (
+              <EmptyState
+                title="No dishes found"
+                body="Try adding a new dish or importing from a photo using OCR Drafts."
+                icon={<Search size={36} color={palette.textMuted} />}
+              />
+            ) : (
+              filteredMenu.map((dish) => {
+                const isSoldOut = hasAvailabilityFlag(dish.availabilityFlags, "sold_out");
+                const imageUrl = dish.imageUrl || dish.gallery?.[0];
+                return (
+                  <Pressable
+                    key={dish.id}
+                    onPressIn={() => prefetchDishEditorRoute(dish)}
+                    onLongPress={() => showDishOptions(dish)}
+                    onPress={() => navigation.navigate("DishEditor", { dishId: dish.id })}
+                    style={[
+                      styles.dishCard,
+                      {
+                        backgroundColor: palette.surface,
+                        borderColor: palette.border,
+                        borderRadius: componentRadii.card,
+                        padding: spacing[4],
+                        gap: spacing[3],
+                      },
+                    ]}
+                  >
+                    {imageUrl ? (
+                      <Image
+                        source={{ uri: imageUrl }}
+                        style={[styles.dishImage, { borderRadius: componentRadii.card }]}
+                      />
+                    ) : (
+                      <View
+                        style={[
+                          styles.dishImagePlaceholder,
+                          {
+                            backgroundColor: palette.surfaceRaised,
+                            borderRadius: componentRadii.card,
+                          },
+                        ]}
+                      >
+                        <Camera size={22} color={palette.textMuted} />
+                      </View>
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                        <AppText
+                          variant="bodyBold"
+                          style={
+                            isSoldOut
+                              ? { textDecorationLine: "line-through", color: palette.textMuted }
+                              : undefined
+                          }
+                        >
+                          {dish.name}
+                        </AppText>
+                        {isSoldOut && (
+                          <View
+                            style={{ backgroundColor: palette.errorSoft, borderRadius: radii.pill }}
+                          >
+                            <Chip label="Sold Out" selected={false} />
+                          </View>
+                        )}
+                      </View>
+                      <AppText variant="body" tone="muted" style={{ marginTop: 4 }}>
+                        {dish.priceRange} • {dish.tasteTags.slice(0, 3).join(", ")}
+                      </AppText>
+                      {dish.dietaryFlags.length > 0 && (
+                        <View style={[styles.flagRow, { gap: spacing[2], marginTop: spacing[2] }]}>
+                          {dish.dietaryFlags.slice(0, 3).map((flag) => (
+                            <Chip key={flag} label={formatDietaryFlag(flag)} selected={false} />
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                    <IconButton
+                      accessibilityLabel="Dish options"
+                      icon={<MoreVertical size={20} color={palette.textSecondary} />}
+                      onPress={() => showDishOptions(dish)}
+                    />
+                  </Pressable>
+                );
+              })
+            )}
+          </View>
+        </ScrollView>
+
+        <FAB>
+          {showCreateOptions ? (
+            <View
+              style={{
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderRadius: componentRadii.card,
+                borderWidth: 1,
+                gap: spacing[2],
+                padding: spacing[3],
+                minWidth: 220,
+              }}
+            >
+              <Button
+                label="Use Camera"
+                variant="secondary"
+                fullWidth
+                leftIcon={<Camera size={16} color={palette.text} />}
+                onPressIn={() => preloadRoute(navigation, "OCRDrafts")}
+                onPress={() => {
+                  setShowCreateOptions(false);
+                  navigation.navigate("OCRDrafts");
+                }}
+              />
+              <Button
+                label="Add Menu Item Manually"
+                variant="secondary"
+                fullWidth
+                leftIcon={<Plus size={16} color={palette.text} />}
+                onPressIn={() => prefetchDishEditorRoute()}
+                onPress={() => {
+                  setShowCreateOptions(false);
+                  navigation.navigate("DishEditor");
+                }}
+              />
+            </View>
+          ) : null}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Add menu item"
+            onPress={() => setShowCreateOptions((current) => !current)}
+            style={{
+              alignItems: "center",
+              backgroundColor: palette.orange,
+              borderRadius: radii.pill,
+              height: 56,
+              justifyContent: "center",
+              width: 56,
+            }}
+          >
+            {showCreateOptions ? (
+              <X size={26} color={palette.white} />
+            ) : (
+              <Plus size={28} color={palette.white} />
+            )}
+          </Pressable>
+        </FAB>
       </View>
     </Screen>
   );
@@ -391,10 +449,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
   },
   dishCard: {
     flexDirection: "row",
@@ -414,12 +468,5 @@ const styles = StyleSheet.create({
   flagRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-  },
-  footer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderTopWidth: 1,
   },
 });

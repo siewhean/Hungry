@@ -28,6 +28,7 @@ import { useLocationStore } from "@/store/useLocationStore";
 import { getHomeBitesFeed } from "@/features/home/bites";
 import type { Bite } from "@/lib/services/types";
 import { useSearchStore } from "@/store/useSearchStore";
+import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import {
   DISCOVER_CUISINE_FILTERS,
   getDiscoverBiteCollection,
@@ -83,7 +84,7 @@ export const COLLECTION_COPY: Record<
 export function QuickBitesScreen() {
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute<QuickBitesRoute>();
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const collection: DiscoverCollection = route.params?.collection ?? "quickBites";
@@ -102,10 +103,15 @@ export function QuickBitesScreen() {
 
   const submitSearch = useCallback(() => {
     const trimmed = searchQuery.trim();
-    if (trimmed) {
-      rememberSearch(trimmed);
-    }
     navigation.navigate("SearchHome");
+    if (trimmed) {
+      scheduleIdleWork(
+        () => {
+          rememberSearch(trimmed);
+        },
+        { timeout: 500, fallbackDelayMs: 80 },
+      );
+    }
   }, [navigation, rememberSearch, searchQuery]);
 
   const prefetchBiteRoute = useCallback(
@@ -281,7 +287,7 @@ export function QuickBitesScreen() {
                   {
                     backgroundColor: palette.surface,
                     borderColor: palette.border,
-                    borderRadius: radii.lg,
+                    borderRadius: componentRadii.card,
                   },
                 ]}
               >
@@ -314,7 +320,7 @@ export function QuickBitesScreen() {
       palette.orange,
       palette.surface,
       prefetchBiteRoute,
-      radii.lg,
+      componentRadii.card,
       spacing,
     ],
   );

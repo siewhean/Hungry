@@ -19,6 +19,7 @@ interface SessionState {
   isAuthenticated: boolean;
   hasCompletedOnboarding: boolean;
   hasSkippedTasteQuiz: boolean;
+  authenticatedUserId?: string | null;
   returnRoute?: string | PendingRoute;
   sessionExpired: boolean;
   completeAuth: (options?: {
@@ -50,6 +51,7 @@ const initialState = {
   isAuthenticated: false,
   hasCompletedOnboarding: false,
   hasSkippedTasteQuiz: false,
+  authenticatedUserId: null,
   returnRoute: undefined,
   sessionExpired: false,
 } as const;
@@ -59,8 +61,18 @@ function getProfileStoreState() {
   return useProfileStore.getState();
 }
 
+function getMerchantStoreState() {
+  const { useMerchantStore } = require("./useMerchantStore") as typeof import("./useMerchantStore");
+  return useMerchantStore.getState();
+}
+
 function getSafeProfileId(): string {
   return getProfileStoreState().profile?.id ?? "guest-user";
+}
+
+function clearAccountScopedStores(): void {
+  getMerchantStoreState().clearMerchant();
+  useLocationStore.getState().resetLocationState();
 }
 
 function shouldEnablePostHogIdentity() {
@@ -90,30 +102,41 @@ function resetPostHogUser(): void {
   reset();
 }
 
+function buildPostHogIdentityProperties() {
+  const profile = getProfileStoreState().profile;
+  const location = useLocationStore.getState();
+  return {
+    has_taste_profile: Boolean(profile?.tasteVector),
+    dietary_preference_count: profile?.dietaryPreferences?.length ?? 0,
+    location_source: location.manualLocation ? "manual" : location.permission,
+    latitude: location.currentLocation.latitude,
+    longitude: location.currentLocation.longitude,
+  };
+}
+
 export const useSessionStore = create<SessionState>()(
   persist(
     (set) => ({
       ...initialState,
       completeAuth: (options) => {
+        const profile = getProfileStoreState().profile;
+        const nextUserId = profile?.id ?? null;
+        const previousUserId = useSessionStore.getState().authenticatedUserId;
+        if (previousUserId && nextUserId && previousUserId !== nextUserId) {
+          clearAccountScopedStores();
+        }
         set((state) => ({
           isAuthReady: true,
           isAuthenticated: true,
+          authenticatedUserId: nextUserId,
           hasCompletedOnboarding: options?.completedOnboarding ?? state.hasCompletedOnboarding,
           hasSkippedTasteQuiz: options?.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
           sessionExpired: false,
         }));
         getProfileStoreState().syncProfile(true);
-        const profile = getProfileStoreState().profile;
-        const profileId = profile?.id ?? "guest-user";
-        const location = useLocationStore.getState();
-        const area =
-          location.manualLocation ??
-          `${location.currentLocation.latitude.toFixed(3)},${location.currentLocation.longitude.toFixed(3)}`;
-        identifyPostHogUser(profileId, {
-          tasteVector: profile?.tasteVector,
-          dietaryPreferences: profile?.dietaryPreferences,
-          area,
-        });
+        const syncedProfile = getProfileStoreState().profile;
+        const profileId = syncedProfile?.id ?? "guest-user";
+        identifyPostHogUser(profileId, buildPostHogIdentityProperties());
         if (options?.trackSignInEvent ?? true) {
           trackAnalyticsEvent(
             "sign_in_completed",
@@ -138,6 +161,7 @@ export const useSessionStore = create<SessionState>()(
       expireSession: () => {
         const profileId = getSafeProfileId();
         set({ sessionExpired: true, isAuthenticated: false });
+        clearAccountScopedStores();
         resetPostHogUser();
         trackAnalyticsEvent("sign_out", { reason: "session_expired" }, { userId: profileId });
       },
@@ -152,6 +176,7 @@ export const useSessionStore = create<SessionState>()(
             .catch(() => undefined);
         }
         set({ ...initialState, isAuthReady: true });
+        clearAccountScopedStores();
         getProfileStoreState().clearProfile();
         getProfileStoreState().syncProfile(false);
         resetPostHogUser();
@@ -160,6 +185,7 @@ export const useSessionStore = create<SessionState>()(
       clearSession: () => {
         const profileId = getSafeProfileId();
         set({ ...initialState, isAuthReady: true });
+        clearAccountScopedStores();
         getProfileStoreState().clearProfile();
         getProfileStoreState().syncProfile(false);
         resetPostHogUser();
@@ -171,9 +197,15 @@ export const useSessionStore = create<SessionState>()(
         const currentlyAuthenticated = useSessionStore.getState().isAuthenticated;
 
         if (session.isAuthenticated) {
+          const previousUserId = useSessionStore.getState().authenticatedUserId;
+          const nextUserId = session.userId ?? null;
+          if (previousUserId && nextUserId && previousUserId !== nextUserId) {
+            clearAccountScopedStores();
+          }
           set((state) => ({
             isAuthenticated: true,
             isAuthReady: true,
+            authenticatedUserId: nextUserId,
             hasCompletedOnboarding: session.completedOnboarding ?? state.hasCompletedOnboarding,
             hasSkippedTasteQuiz: session.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
             sessionExpired: false,
@@ -182,15 +214,7 @@ export const useSessionStore = create<SessionState>()(
 
           const profile = getProfileStoreState().profile;
           const profileId = session.userId ?? profile?.id ?? "guest-user";
-          const location = useLocationStore.getState();
-          const area =
-            location.manualLocation ??
-            `${location.currentLocation.latitude.toFixed(3)},${location.currentLocation.longitude.toFixed(3)}`;
-          identifyPostHogUser(profileId, {
-            tasteVector: profile?.tasteVector,
-            dietaryPreferences: profile?.dietaryPreferences,
-            area,
-          });
+          identifyPostHogUser(profileId, buildPostHogIdentityProperties());
 
           if (!currentlyAuthenticated) {
             trackAnalyticsEvent(
@@ -215,8 +239,10 @@ export const useSessionStore = create<SessionState>()(
         set({
           isAuthenticated: false,
           isAuthReady: true,
+          authenticatedUserId: null,
           sessionExpired: false,
         });
+        clearAccountScopedStores();
         getProfileStoreState().syncProfile(false);
         resetPostHogUser();
         trackAnalyticsEvent(
@@ -231,6 +257,7 @@ export const useSessionStore = create<SessionState>()(
       storage: hungrySecurePersistStorage,
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
+        authenticatedUserId: state.authenticatedUserId,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         hasSkippedTasteQuiz: state.hasSkippedTasteQuiz,
       }),

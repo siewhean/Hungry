@@ -29,9 +29,17 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { ReviewCommentsSheet, type ActiveReviewCommentTarget } from "@/components/social";
-import { AppHeader, AppText, Chip, EmptyState, ExpandableSearchLauncher } from "@/components/ui";
+import {
+  AppHeader,
+  AppText,
+  Chip,
+  EmptyState,
+  ExpandableSearchLauncher,
+  Skeleton,
+} from "@/components/ui";
 import { promptBlockReviewAuthor, promptReportReview } from "@/lib/security/communitySafety";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { useSocialStore, type InteractionState, type SocialComment } from "@/store/useSocialStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
@@ -47,6 +55,49 @@ type FilterMode = "Recent" | "Rating" | "Dish" | "Location" | "Vegetarian";
 const FILTER_CHIPS: FilterMode[] = ["Recent", "Rating", "Dish", "Location", "Vegetarian"];
 
 // ─── ReviewCardV2 ─────────────────────────────────────────────────────────────
+
+function ReviewFeedSkeleton() {
+  const { componentRadii, radii, spacing } = useHungryTheme();
+
+  return (
+    <View style={{ gap: spacing[4], paddingHorizontal: spacing[4], paddingTop: spacing[4] }}>
+      {[0, 1, 2].map((item) => (
+        <View key={item} style={{ gap: spacing[3] }}>
+          <Skeleton width="100%" height={180} borderRadius={componentRadii.card} />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+            <Skeleton width={36} height={36} borderRadius={radii.pill} />
+            <View style={{ flex: 1, gap: spacing[1] }}>
+              <Skeleton width="42%" height={16} borderRadius={radii.sm} />
+              <Skeleton width="32%" height={12} borderRadius={radii.sm} />
+            </View>
+          </View>
+          <Skeleton width="90%" height={16} borderRadius={radii.sm} />
+          <Skeleton width="62%" height={16} borderRadius={radii.sm} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function ReviewSearchQuerySummary({ query }: { query: string }) {
+  const trimmedQuery = query.trim();
+  const { spacing } = useHungryTheme();
+
+  if (!trimmedQuery) {
+    return null;
+  }
+
+  return (
+    <View style={{ gap: spacing[0.5], paddingHorizontal: spacing[1] }}>
+      <AppText variant="micro" tone="secondary">
+        Showing results for
+      </AppText>
+      <AppText variant="bodySmallBold" style={{ flexShrink: 1 }}>
+        {trimmedQuery}
+      </AppText>
+    </View>
+  );
+}
 
 function ReviewCardV2({
   item,
@@ -65,7 +116,7 @@ function ReviewCardV2({
   onSharePress: (item: ReviewFeedItem) => void;
   onLikePress: (reviewId: string) => void;
 }) {
-  const { palette, radii, spacing, shadows, typography } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows, typography } = useHungryTheme();
   const CommentIcon = MessageCircle ?? MessageCircleMore;
   const { width } = useWindowDimensions();
   const hasPhoto = item.review.photos.length > 0;
@@ -79,7 +130,7 @@ function ReviewCardV2({
       style={[
         {
           backgroundColor: palette.surface,
-          borderRadius: radii.xl,
+          borderRadius: componentRadii.card,
           marginHorizontal: spacing[4],
           marginBottom: spacing[4],
           overflow: "hidden",
@@ -132,7 +183,7 @@ function ReviewCardV2({
               style={{
                 width: 40,
                 height: 40,
-                borderRadius: 20,
+                borderRadius: componentRadii.iconButton,
                 backgroundColor: palette.orangeLight,
                 alignItems: "center",
                 justifyContent: "center",
@@ -157,7 +208,7 @@ function ReviewCardV2({
               backgroundColor: palette.amberLight,
               paddingHorizontal: 8,
               paddingVertical: 4,
-              borderRadius: 12,
+              borderRadius: componentRadii.card,
             }}
           >
             <Star size={12} color={palette.amber} fill={palette.amber} />
@@ -173,7 +224,7 @@ function ReviewCardV2({
           style={{
             backgroundColor: palette.bgSoft,
             padding: spacing[3],
-            borderRadius: radii.lg,
+            borderRadius: componentRadii.card,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
@@ -357,8 +408,9 @@ export function ReviewFeedScreenV2() {
   const incrementShare = useSocialStore((state) => state.incrementShare);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterMode>("Recent");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [activeCommentReview, setActiveCommentReview] = useState<ActiveReviewCommentTarget | null>(
     null,
   );
@@ -369,6 +421,13 @@ export function ReviewFeedScreenV2() {
   const stallPosts = useMemo(() => repository.listStallPosts(), [repository]);
   const searchBarWidth = screenWidth - spacing[8];
   const headerActionSize = spacing[8] + spacing[2.5];
+  const showInitialSkeleton = useDelayedLoadingSkeleton(isInitialLoading, 0);
+  const reviewHeaderTitle = "Reviews";
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setIsInitialLoading(false), 0);
+    return () => clearTimeout(timeout);
+  }, []);
 
   // Get review feed data from the active repository.
   const allReviews = useMemo<ReviewFeedItem[]>(() => {
@@ -544,14 +603,15 @@ export function ReviewFeedScreenV2() {
         style={{ paddingHorizontal: semanticSpacing.screenEdge, paddingTop: 0, gap: spacing[4] }}
       >
         <AppHeader
-          title="Reviews"
+          title={reviewHeaderTitle}
           right={
             <ExpandableSearchLauncher
+              accessibilityLabel="Search reviews"
               query={searchQuery}
               onQueryChange={setSearchQuery}
               onSubmit={() => undefined}
               onClear={() => setSearchQuery("")}
-              placeholder="Search dish or location..."
+              placeholder="Search Reviews"
               expandedWidth={searchBarWidth}
               iconAlignment="right"
               iconSize={headerActionSize}
@@ -560,6 +620,8 @@ export function ReviewFeedScreenV2() {
               backgroundColor={palette.bgSoft}
               textColor={palette.text}
               placeholderColor={palette.textSecondary}
+              enableMovingPlaceholder={false}
+              showExpandedBacking={false}
             />
           }
         />
@@ -585,19 +647,28 @@ export function ReviewFeedScreenV2() {
             ))}
           </ScrollView>
         </View>
+
+        <ReviewSearchQuerySummary query={searchQuery} />
       </View>
 
       {/* Feed List */}
-      <FlatList
-        data={filteredData}
-        keyExtractor={(item) => item.review.id}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingTop: spacing[4], paddingBottom: spacing[24] }}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <EmptyState title="No reviews found" body="Try adjusting your filters or search query." />
-        }
-      />
+      {showInitialSkeleton ? (
+        <ReviewFeedSkeleton />
+      ) : (
+        <FlatList
+          data={filteredData}
+          keyExtractor={(item) => item.review.id}
+          renderItem={renderItem}
+          contentContainerStyle={{ paddingTop: spacing[4], paddingBottom: spacing[24] }}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <EmptyState
+              title="No reviews found"
+              body="Try adjusting your filters or search query."
+            />
+          }
+        />
+      )}
       <ReviewCommentsSheet
         activeReview={activeCommentReview}
         inputRef={commentInputRef}

@@ -37,14 +37,16 @@ Out of scope: any separate marketing website, unrelated Anthropic products menti
 - Merchant Centre tables use owner/manager/member RLS policies. Merchant writes to linked venues, dishes, review replies, promotions, notification preferences, and interaction reports are restricted to merchant accounts connected to the target outlet or venue.
 - Merchant venue and dish writes are additionally guarded by database triggers so merchants cannot mutate trust, aggregate, live-status, or system-managed catalog fields.
 - Merchant review replies are protected by a database trigger: merchants can only change `merchant_reply_text` and `merchant_replied_at`, while review authors cannot change identity fields or merchant reply fields.
-- Storage bucket policies gate mobile writes by authenticated user UUID prefix. Mobile media buckets are provisioned in migrations, and app uploads require signed upload URLs.
-- Edge Functions use explicit CORS handling. `guest-sessions` is API-key protected with per-device rate limiting and SHA-256 token hashing. `ingest-menu-photo` requires a valid Supabase JWT and verifies submission ownership before service-role OCR work.
+- Merchant verification decisions are admin-only database fields. Merchant evidence is uploaded to a private `merchant-verification-evidence` bucket and guarded so metadata must point to caller-owned storage paths.
+- Storage bucket policies gate mobile writes by authenticated user UUID prefix. Mobile media buckets are provisioned in migrations, app uploads require signed upload URLs, overwrite uploads are disabled, and client uploads validate MIME, size, and magic bytes.
+- Edge Functions use explicit CORS handling. `guest-sessions` is API-key protected with per-device rate limiting and SHA-256 token hashing. `ingest-menu-photo` requires a valid Supabase JWT, verifies submission ownership, rate-limits OCR starts, and uses an idempotent queued-state claim before service-role OCR work.
+- `ops-dishes-draft` requires a Supabase JWT, checks `app_ops_admins`, enforces an origin allowlist, rate-limits operator actions, and writes audit events before using service-role operations.
 - Account deletion requests, UGC content reports, and user blocks are written to RLS-protected Supabase tables for store-policy compliance and moderation follow-up.
 
 ### Privacy
 - `ios/Hungry/PrivacyInfo.xcprivacy` enumerates every collected data type with linkage and non-tracking declarations.
 - Google Play Data Safety mirrors the iOS declaration.
-- Sentry and PostHog events pass through shared scrubbers that strip email, phone numbers, token-like values, query strings, and reduce retained coordinates to three decimal places. PostHog identification uses the Supabase user UUID.
+- Sentry and PostHog events pass through shared scrubbers that strip email, phone numbers, token-like values, query strings, and reduce retained coordinates to three decimal places. Sentry events and breadcrumbs are scrubbed. PostHog identification uses the Supabase user UUID plus coarse traits only.
 - Location permission is preceded by an in-app disclosure and can be skipped in favor of manual area selection.
 
 ### Authentication
@@ -56,6 +58,7 @@ Out of scope: any separate marketing website, unrelated Anthropic products menti
 
 - Tracked `.env.*` template files must contain only public placeholders or blank secret keys. Real server-only secrets (`SUPABASE_SERVICE_ROLE_KEY`, `MAPBOX_SECRET_TOKEN`, `SENTRY_AUTH_TOKEN`, `EXPO_TOKEN`, `SUPABASE_DB_PASSWORD`) live only in EAS Secrets and untracked local `.env.local`.
 - A `gitleaks` pre-commit hook and CI security workflow gate pushes that would introduce a leak.
+- Mobile CI uses least-privilege workflow permissions, SHA-pinned GitHub Actions, root `npm audit --audit-level=moderate`, gitleaks, trufflehog, and release secrets scoped only to EAS steps.
 - 2026-04-29 incident note: `.env.local` had been tracked with live values. It has been removed from current git tracking, and all exposed credentials must be rotated outside the repo. Full-history `gitleaks detect --redact --source .` still reports historical redacted findings until history is rewritten or accepted.
 - Rotate credentials immediately if a leak is suspected: service role key, Mapbox secret, Sentry auth token, Expo token, and Apple ASC API key are all rotated under a documented schedule.
 - Public tokens (Supabase anon key, Mapbox public token, PostHog public key, Sentry DSN) are restricted per-platform: Mapbox by bundle identifier and URL, Supabase anon by RLS coverage.

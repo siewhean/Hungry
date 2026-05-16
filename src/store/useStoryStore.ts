@@ -119,16 +119,19 @@ export const useStoryStore = create<StoryState>()(
 
       saveStory: async (storyId: string) => {
         const { stories } = get();
+        const now = new Date().toISOString();
 
         // Optimistic update
         const previousStories = [...stories];
         const newStories = stories.map((s) => {
           if (s.id === storyId) {
+            const nextSaved = !s.interaction.saved;
             return {
               ...s,
               interaction: {
                 ...s.interaction,
-                saved: !s.interaction.saved,
+                saved: nextSaved,
+                savedAt: nextSaved ? now : undefined,
               },
             };
           }

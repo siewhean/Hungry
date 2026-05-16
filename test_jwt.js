@@ -1,10 +1,12 @@
 const jwt = require("jsonwebtoken");
-const fs = require("fs");
-const content = fs.readFileSync(".env.local", "utf-8");
-let key = "";
-content.split("\n").forEach((line) => {
-  if (line.startsWith("SUPABASE_SERVICE_ROLE_KEY=")) {
-    key = line.split("=")[1].replace(/^["'](.*)["']$/, '$1').trim();
-  }
-});
+
+if (process.env.HUNGRY_ALLOW_SERVICE_ROLE_SMOKE !== "1") {
+  throw new Error("Refusing service-role smoke without HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1.");
+}
+
+const key = process.env.HUNGRY_SMOKE_SUPABASE_SERVICE_ROLE_KEY;
+if (!key) {
+  throw new Error("Set HUNGRY_SMOKE_SUPABASE_SERVICE_ROLE_KEY.");
+}
+
 console.log(jwt.decode(key));

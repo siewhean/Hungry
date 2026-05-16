@@ -8,9 +8,11 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
+import { useFoodCredStore } from "@/store/useFoodCredStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useSocialStore } from "@/store/useSocialStore";
@@ -47,9 +49,14 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const dish = repository.getDishById(deepLinkedDishId);
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
+  const addReviewedDish = useProfileStore((state) => state.addReviewedDish);
+  const removeReviewedDish = useProfileStore((state) => state.removeReviewedDish);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const stallInteractions = useStallInteractionStore((state) => state.interactions);
+  const stallInteraction = dish?.venueId ? stallInteractions[dish.venueId] : undefined;
+  const markTried = useStallInteractionStore((state) => state.markTried);
   const showToast = useUIStore((state) => state.showToast);
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -62,6 +69,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
     Record<string, ReviewReply[]>
   >({});
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+  const [isTryingFood, setIsTryingFood] = useState(false);
 
   const venue = useMemo(
     () => (dish ? repository.getVenueById(dish.venueId) : undefined),
@@ -109,6 +117,9 @@ export function DishDetailScreen({ navigation, route }: Props) {
       },
       isAuthenticated ? { userId: profile.id } : undefined,
     );
+    void getHungryService().discovery.recordDishView(dish.id, {
+      userId: isAuthenticated ? profile.id : undefined,
+    });
   }, [dish, isAuthenticated, profile.id]);
 
   const openShareSheet = () => {
@@ -135,6 +146,8 @@ export function DishDetailScreen({ navigation, route }: Props) {
           <EmptyState
             title="Dish not found"
             body="This dish is no longer available in the current data source."
+            errorMessage={`Missing dish data for ID: ${deepLinkedDishId || "unknown"}`}
+            sendErrorContext="Dish detail"
           />
         </SafeAreaView>
       </FeedErrorBoundary>
@@ -143,6 +156,53 @@ export function DishDetailScreen({ navigation, route }: Props) {
 
   const deliveryAvailable = venue.deliveryLinks.length > 0;
   const isSaved = profile.favouriteDishIds.includes(dish.id);
+  const isDishTried = profile.reviewedDishIds.includes(dish.id);
+  const isVenueVisited = stallInteraction?.isTried ?? false;
+
+  const handleTryFood = async () => {
+    if (isTryingFood) return;
+
+    if (!isAuthenticated) {
+      setReturnRoute({
+        name: "DishDetail",
+        params: { dishId: dish.id },
+      });
+      navigation.navigate("AuthStack", { screen: "Login" });
+      return;
+    }
+
+    setIsTryingFood(true);
+    try {
+      const markResult = await markTried(profile.id, dish.venueId);
+
+      if (markResult.isTried) {
+        addReviewedDish(dish.id);
+        showToast({
+          message:
+            markResult.pointsAwarded > 0
+              ? "+5 Food Cred"
+              : isVenueVisited
+                ? "Marked as tried again."
+                : "Marked this stall as visited.",
+          tone: "success",
+          duration: 3000,
+        });
+      } else {
+        removeReviewedDish(dish.id);
+        await useFoodCredStore
+          .getState()
+          .adjustPoints(-markResult.pointsAwarded, dish.venueId, "stall_marked_tried");
+
+        showToast({
+          message: markResult.pointsAwarded > 0 ? "-5 Food Cred" : "Food try check removed.",
+          tone: "success",
+          duration: 3000,
+        });
+      }
+    } finally {
+      setIsTryingFood(false);
+    }
+  };
 
   const submitReviewReply = (reviewId: string) => {
     const draft = (replyDraftByReviewId[reviewId] ?? "").trim();
@@ -196,7 +256,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
                   style={[
                     {
                       backgroundColor: palette.amber,
-                      borderRadius: radii.pill,
+                      borderRadius: componentRadii.button,
                       paddingHorizontal: 10,
                       paddingVertical: 6,
                       flexDirection: "row",
@@ -266,9 +326,17 @@ export function DishDetailScreen({ navigation, route }: Props) {
                     <Send size={16} color={palette.text} />
                   </Pressable>
                 </View>
-                <AppText variant="bodyLarge" tone="secondary">
-                  {venue.name} · {venue.unitNumber}
-                </AppText>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${venue.name} stall details`}
+                  onPress={() => navigation.navigate("StallDetail", { venueId: dish.venueId })}
+                  hitSlop={8}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+                >
+                  <AppText variant="bodyLarge" tone="secondary">
+                    {venue.name} · {venue.unitNumber}
+                  </AppText>
+                </Pressable>
                 <AppText variant="price" style={{ fontSize: 20, color: palette.orange }}>
                   {dish.priceRange}
                 </AppText>
@@ -523,6 +591,13 @@ export function DishDetailScreen({ navigation, route }: Props) {
                   tone: "success",
                 });
               }}
+            />
+            <Button
+              style={{ flex: 1 }}
+              label="Tried"
+              variant="secondary"
+              onPress={handleTryFood}
+              disabled={isTryingFood}
             />
             <Button
               style={{ flex: 1 }}

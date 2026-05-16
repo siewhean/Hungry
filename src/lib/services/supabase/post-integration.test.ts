@@ -39,6 +39,9 @@ test("Supabase social publish writes posts and post_media instead of legacy bite
   assert.match(buildPostMediaRows, /uploadPostMediaFromUri/);
   assert.match(buildPostMediaRows, /bucket: "post-media"/);
   assert.match(buildPostMediaRows, /mediaTypes\?\.\[index\]/);
+  assert.match(buildPostMediaRows, /Post media must be uploaded from local device files/);
+  assert.doesNotMatch(buildPostMediaRows, /storage_bucket: "external"/);
+  assert.doesNotMatch(buildPostMediaRows, /image\/external|video\/external/);
   assert.match(postBite, /from\("post_media"\)\.insert/);
   assert.match(postBite, /from\("posts"\)[\s\S]*\.update/);
   assert.match(postBite, /status: "published"/);

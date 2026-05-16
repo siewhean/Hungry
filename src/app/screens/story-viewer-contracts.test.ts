@@ -66,7 +66,7 @@ test("Story viewer contract: swipe-out fades before closing", () => {
     source,
     /<Animated\.View style=\{\[styles\.container, \{ backgroundColor: "#000", opacity: closeOpacity \}\]\}/,
   );
-  assert.match(source, /onPress=\{closeWithFade\}/);
+  assert.match(source, /gestureState\.dy > SWIPE_THRESHOLD[\s\S]*closeWithFade\(\)/);
 });
 
 test("Story viewer contract: unseen and replayed stories play through a stable in-viewer queue", () => {

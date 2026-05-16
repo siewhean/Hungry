@@ -529,6 +529,28 @@ Use the smallest check that matches the change risk.
 | 2026-05-15 | app (PR-29 GitHub checks fix) | `npm audit --audit-level=moderate` | Pass | npm audit found 0 vulnerabilities |
 | 2026-05-15 | app (PR-29 GitHub checks fix) | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor` | Pass | Expo Doctor passed 17/17 after upgrading the required Expo SDK 55 patch versions |
 
+| 2026-05-15 | app (SEC-08 App Security Review) | `TMPDIR=/private/tmp HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/lib/security/security-hardening.test.ts src/lib/security/ci-supply-chain.test.ts src/lib/services/supabase/post-integration.test.ts` | Pass | Focused security/source-contract suite passed 23/23, covering analytics/Sentry scrubbing, media magic-byte rejection, ops RPC grants, merchant verification evidence guards, OAuth callback validation, CI pinning/secrets scope, and post-media external URL rejection |
+| 2026-05-15 | app (SEC-08 App Security Review) | `npm run typecheck` | Pass | Strict TypeScript gate passed after security hardening changes |
+| 2026-05-15 | app (SEC-08 App Security Review) | `npm run lint` | Pass | ESLint completed with 0 errors and 14 pre-existing warnings in unrelated files |
+| 2026-05-15 | app (SEC-08 App Security Review) | `npm audit --audit-level=moderate` | Pass | npm audit found 0 vulnerabilities after removing vulnerable direct CLI dependency paths and exact-pinning EAS CLI usage |
+| 2026-05-15 | app (SEC-08 App Security Review) | `gitleaks protect --staged --redact` | Pass | Staged secret scan found no leaks |
+| 2026-05-15 | app (SEC-08 App Security Review) | `git diff --check` | Pass | Security diff had no whitespace errors |
+| 2026-05-16 | app/Supabase (SEC-08 Live Security Deployment) | `supabase migration list` | Pass | Linked Supabase migration history is aligned with local through `0038` after restoring local copies of remote-applied `0028`-`0037` |
+| 2026-05-16 | app/Supabase (SEC-08 Live Security Deployment) | `supabase db push --dry-run` | Pass | Non-destructive dry-run reported only `0038_app_security_hardening.sql` pending |
+| 2026-05-16 | app/Supabase (SEC-08 Live Security Deployment) | `supabase db push` | Pass | Applied `0038_app_security_hardening.sql` to linked Supabase project `vlqfgmrsprbrgzteixsj` |
+| 2026-05-16 | app/Supabase (SEC-08 Live Security Deployment) | `supabase functions deploy ops-dishes-draft` | Pass | Hardened ops draft review Edge Function deployed to linked Supabase project |
+| 2026-05-16 | app/Supabase (SEC-08 Live Security Deployment) | `supabase functions deploy ingest-menu-photo` | Pass | Hardened menu-photo OCR Edge Function deployed to linked Supabase project |
+| 2026-05-16 | app/Supabase (SEC-08 Live Security Deployment) | `supabase secrets set OPS_DISHES_DRAFT_ALLOWED_ORIGINS=https://hungry.sg INGEST_MENU_PHOTO_ALLOWED_ORIGINS=https://hungry.sg` | Pass | Allowed-origin function secrets configured without exposing secret values |
+| 2026-05-16 | app/Supabase (SEC-08 Live Security Deployment) | `supabase secrets list` | Pass | Secret names now include `OPS_DISHES_DRAFT_ALLOWED_ORIGINS` and `INGEST_MENU_PHOTO_ALLOWED_ORIGINS` |
+| 2026-05-16 | app/Supabase (SEC-08 Live Security Deployment) | `supabase db query --linked "select count(*)::int as app_ops_admin_count from public.app_ops_admins where enabled = true;"` | Blocked follow-up | Query succeeded and showed `app_ops_admin_count = 0`; user must provide a specific Supabase auth user UUID to seed ops access |
+| 2026-05-16 | app/Supabase (SEC-08 Live Security Deployment) | `supabase db query --linked "select id, name, public from storage.buckets where id = 'merchant-verification-evidence';"` | Pass | Live bucket `merchant-verification-evidence` exists and is private |
+| 2026-05-16 | app (SEC-08 closeout) | `npm run typecheck` | Pass | Strict TypeScript gate passed after the security deployment docs and local contract cleanup |
+| 2026-05-16 | app (SEC-08 closeout) | `TMPDIR=/private/tmp HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/lib/security/security-hardening.test.ts src/lib/security/ci-supply-chain.test.ts src/lib/services/supabase/post-integration.test.ts` | Pass | Focused security tests passed 23/23 after staging the final security scope |
+| 2026-05-16 | app (SEC-08 closeout) | `TMPDIR=/private/tmp npm test -- --watch=false` | Pass | Full local Node/source-contract suite passed with 279 tests total: 277 passing and 2 skipped in the current checkout |
+| 2026-05-16 | app (SEC-08 closeout) | `npm audit --audit-level=moderate` | Pass | npm audit found 0 vulnerabilities |
+| 2026-05-16 | app (SEC-08 closeout) | `gitleaks protect --staged --redact` | Pass | Final staged secret scan found no leaks |
+| 2026-05-16 | app (SEC-08 closeout) | `git diff --cached --check && git diff --check` | Pass | Staged and mixed checkout diffs have no whitespace errors |
+
 ## Outstanding Verification
 
 | id | scope | required proof | owner |
@@ -538,3 +560,4 @@ Use the smallest check that matches the change risk.
 | ACCDEL-01 | Privacy/Legal | External public account deletion web endpoint + in-app/store policy link evidence | User |
 | SEC-01 | Security | Supabase leaked-password protection enabled in dashboard | User; blocked until paid Supabase plan is available |
 | SEC-06 | Merchant Security | Manual signed-in merchant runtime smoke on simulator/device for verified and unverified merchant accounts | Codex + User |
+| SEC-08 | App Security | Seed `app_ops_admins` with an explicit Supabase auth user UUID, then run live normal-user/merchant/operator RLS, storage, and Edge Function smoke tests | Codex + User |

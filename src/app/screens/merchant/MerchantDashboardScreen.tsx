@@ -14,12 +14,16 @@ import {
   ClipboardList,
   Utensils,
   MessageSquare,
+  Megaphone,
+  Sparkles,
+  Settings,
+  QrCode,
   ChevronRight,
+  X,
 } from "lucide-react-native";
 
-import { AppText, Skeleton } from "@/components/ui";
+import { AppText, Skeleton, EmptyState } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
-import { useProfileStore } from "@/store/useProfileStore";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { OutletSwitcher } from "@/components/merchant/OutletSwitcher";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
@@ -27,7 +31,14 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { getHungryService } from "@/lib/services/serviceProvider";
-import type { MerchantAnalytics } from "@/types/domain";
+import type { CustomerInteraction, DishDetail, MerchantAnalytics } from "@/types/domain";
+import {
+  buildMerchantDashboardMetrics,
+  getMerchantOutletStatus,
+  getMerchantOutletStatusLabel,
+  getMerchantProfileGaps,
+  getUnrepliedReviews,
+} from "@/features/merchant/merchantReadiness";
 
 // ─── Segmented Control ────────────────────────────────────────────────────────
 
@@ -93,14 +104,14 @@ function MetricCard({
   icon: React.ReactNode;
   color: string;
 }) {
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, shadows } = useHungryTheme();
   return (
     <View
       style={{
         borderColor: palette.border,
         borderWidth: 1,
         backgroundColor: palette.surface,
-        borderRadius: radii.xl,
+        borderRadius: componentRadii.card,
         padding: spacing[4],
         ...shadows.card,
       }}
@@ -112,7 +123,7 @@ function MetricCard({
           style={{
             width: 48,
             height: 48,
-            borderRadius: radii.md,
+            borderRadius: componentRadii.iconButton,
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: color + "15",
@@ -164,7 +175,7 @@ function ActionCard({
   onPressIn?: () => void;
   isUrgent?: boolean;
 }) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   return (
     <Pressable
       onPressIn={onPressIn}
@@ -172,7 +183,7 @@ function ActionCard({
       style={({ pressed }) => [
         {
           backgroundColor: isUrgent ? palette.amber + "10" : palette.surface,
-          borderRadius: radii.xl,
+          borderRadius: componentRadii.button,
           padding: spacing[4],
           borderWidth: 1,
           borderColor: isUrgent ? palette.amber : palette.border,
@@ -186,7 +197,7 @@ function ActionCard({
         style={{
           width: 40,
           height: 40,
-          borderRadius: 20,
+          borderRadius: componentRadii.iconButton,
           backgroundColor: isUrgent ? palette.amber + "20" : palette.bgSoft,
           alignItems: "center",
           justifyContent: "center",
@@ -218,13 +229,16 @@ function ActionCard({
 // ─── MerchantDashboardScreen ──────────────────────────────────────────────────
 
 export function MerchantDashboardScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
-  const profile = useProfileStore((state) => state.profile);
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const navigation = useNavigation<NativeStackNavigationProp<MerchantTabParamList>>();
 
   const [dateRange, setDateRange] = useState<"Today" | "7 Days" | "30 Days">("Today");
   const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
+  const [menu, setMenu] = useState<DishDetail[]>([]);
+  const [interactions, setInteractions] = useState<CustomerInteraction[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const prefetchMerchantRoute = useCallback(
     (routeName: keyof MerchantTabParamList) => {
       prefetchMerchantTab(routeName, activeOutlet?.id, activeOutlet?.merchantAccountId);
@@ -233,19 +247,77 @@ export function MerchantDashboardScreen() {
     [activeOutlet?.id, activeOutlet?.merchantAccountId, navigation],
   );
 
+  const mappedRange = dateRange === "Today" ? "today" : dateRange === "7 Days" ? "7d" : "30d";
+
+  const loadDashboard = useCallback(async () => {
+    setError(null);
+    setIsLoading(true);
+    if (!activeOutlet) {
+      setError("No active outlet selected.");
+      setAnalytics(null);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const service = getHungryService();
+      const [data, menuItems, inboxItems] = await Promise.all([
+        service.merchant.getAnalytics(activeOutlet.id, mappedRange),
+        service.merchant.getMenu(activeOutlet.id),
+        service.merchant.getInbox(activeOutlet.id),
+      ]);
+      setMenu(menuItems);
+      setInteractions(inboxItems);
+      setAnalytics(buildMerchantDashboardMetrics(data, inboxItems));
+      void service.merchant
+        .syncLowRatingNotifications(activeOutlet.id)
+        .catch((notificationError) => {
+          console.error("Failed to sync low-rating notifications:", notificationError);
+        });
+    } catch (err) {
+      console.error("Failed to fetch analytics:", err);
+      setError(err instanceof Error ? err.message : "Failed to load dashboard analytics.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeOutlet, mappedRange]);
+
   useEffect(() => {
-    if (!activeOutlet) return;
-    const fetchAnalytics = async () => {
-      const mappedRange = dateRange === "Today" ? "today" : dateRange === "7 Days" ? "7d" : "30d";
-      try {
-        const data = await getHungryService().merchant.getAnalytics(activeOutlet.id, mappedRange);
-        setAnalytics(data);
-      } catch (err) {
-        console.error("Failed to fetch analytics:", err);
-      }
-    };
-    fetchAnalytics();
-  }, [activeOutlet, dateRange]);
+    void loadDashboard();
+  }, [loadDashboard]);
+
+  if (error) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
+        <EmptyState
+          title="Unable to load dashboard"
+          body="Merchant dashboard data could not be loaded."
+          icon={<X size={40} color={palette.error} />}
+          errorMessage={error}
+          sendErrorContext="Merchant dashboard"
+          ctaLabel="Retry"
+          onPress={loadDashboard}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  if (isLoading && !analytics) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
+        <Skeleton
+          height={180}
+          width="100%"
+          style={{ margin: 16, borderRadius: componentRadii.card }}
+        />
+        <Skeleton
+          height={180}
+          width="100%"
+          style={{ margin: 16, borderRadius: componentRadii.card }}
+        />
+      </SafeAreaView>
+    );
+  }
 
   const views = analytics ? (
     (analytics.profileVisits + analytics.menuViews).toLocaleString()
@@ -274,6 +346,28 @@ export function MerchantDashboardScreen() {
   ) : (
     <Skeleton height={12} width={80} borderRadius={radii.sm} />
   );
+  const outletName = activeOutlet?.name?.trim() || "Your Stall";
+  const outletStatus = getMerchantOutletStatus(activeOutlet);
+  const outletStatusLabel = getMerchantOutletStatusLabel(outletStatus);
+  const statusColor =
+    outletStatus === "open"
+      ? palette.success
+      : outletStatus === "closed"
+        ? palette.amber
+        : palette.textMuted;
+  const statusBg =
+    outletStatus === "open"
+      ? palette.successSoft
+      : outletStatus === "closed"
+        ? palette.amber + "20"
+        : palette.bgSoft;
+  const profileGaps = activeOutlet ? getMerchantProfileGaps(activeOutlet, menu) : [];
+  const unrepliedReviews = getUnrepliedReviews(interactions);
+  const hasActionCards =
+    activeOutlet?.verification.status !== "verified" ||
+    profileGaps.length > 0 ||
+    unrepliedReviews.length > 0;
+  const latestFeedback = interactions[0];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
@@ -288,46 +382,29 @@ export function MerchantDashboardScreen() {
         >
           <View style={{ flex: 1, alignItems: "flex-start", gap: spacing[2] }}>
             <AppText variant="h1" style={{ fontWeight: "900" }}>
-              Hello, {profile.displayName.split(" ")[0]}!
+              {outletName}
             </AppText>
             <OutletSwitcher />
           </View>
-          <View
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              backgroundColor: palette.orange,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Utensils color={palette.white} size={24} />
-          </View>
         </View>
 
-        {/* Status Badge */}
-        {activeOutlet?.verification.status === "verified" ? (
-          <View
-            style={[
-              {
-                backgroundColor: palette.successSoft,
-                padding: spacing[3],
-                borderRadius: radii.lg,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: spacing[2],
-              },
-            ]}
-          >
-            <View
-              style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: palette.success }}
-            />
-            <AppText variant="bodySmallBold" style={{ color: palette.success, flex: 1 }}>
-              STALL IS LIVE & DISCOVERABLE
-            </AppText>
-          </View>
-        ) : null}
+        <View
+          style={{
+            alignSelf: "flex-start",
+            backgroundColor: statusBg,
+            paddingHorizontal: spacing[3],
+            paddingVertical: spacing[1.5],
+            borderRadius: radii.pill,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing[1.5],
+          }}
+        >
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: statusColor }} />
+          <AppText variant="bodySmallBold" style={{ color: statusColor }}>
+            {outletStatusLabel}
+          </AppText>
+        </View>
 
         {/* Date Range Selector */}
         <DateRangeSelector selected={dateRange} onSelect={setDateRange} />
@@ -360,7 +437,7 @@ export function MerchantDashboardScreen() {
             Actionable Insights
           </AppText>
 
-          {activeOutlet?.verification.status !== "verified" && (
+          {activeOutlet?.verification.status !== "verified" ? (
             <ActionCard
               title="Verification Required"
               description="Verify your stall to make it discoverable to customers on the map."
@@ -370,25 +447,46 @@ export function MerchantDashboardScreen() {
               onPress={() => navigation.navigate("VerificationCentre")}
               isUrgent={true}
             />
-          )}
+          ) : null}
 
-          <ActionCard
-            title="Incomplete Profile"
-            description="Add your opening hours to help customers know when to visit."
-            icon={<Utensils size={20} color={palette.orange} />}
-            actionText="Edit Profile"
-            onPressIn={() => prefetchMerchantRoute("BusinessProfileEditor")}
-            onPress={() => navigation.navigate("BusinessProfileEditor")}
-          />
+          {profileGaps.length > 0 ? (
+            <ActionCard
+              title="Incomplete Profile"
+              description={`Missing: ${profileGaps.map((gap) => gap.label).join(", ")}`}
+              icon={<Utensils size={20} color={palette.orange} />}
+              actionText="Edit Profile"
+              onPressIn={() => prefetchMerchantRoute("BusinessProfileEditor")}
+              onPress={() => navigation.navigate("BusinessProfileEditor")}
+            />
+          ) : null}
 
-          <ActionCard
-            title="Unreplied Reviews"
-            description="You have 2 new reviews waiting for your response."
-            icon={<MessageSquare size={20} color={palette.textSecondary} />}
-            actionText="Read Reviews"
-            onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
-            onPress={() => navigation.navigate("CustomerInbox")}
-          />
+          {unrepliedReviews.length > 0 ? (
+            <ActionCard
+              title="Unreplied Reviews"
+              description={`${unrepliedReviews.length} review${unrepliedReviews.length === 1 ? "" : "s"} waiting for your response.`}
+              icon={<MessageSquare size={20} color={palette.textSecondary} />}
+              actionText="Read Reviews"
+              onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
+              onPress={() => navigation.navigate("CustomerInbox")}
+            />
+          ) : null}
+
+          {!hasActionCards ? (
+            <View
+              style={{
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderRadius: componentRadii.card,
+                borderWidth: 1,
+                padding: spacing[4],
+              }}
+            >
+              <AppText variant="bodyBold">All caught up</AppText>
+              <AppText variant="bodySmall" tone="muted" style={{ marginTop: spacing[1] }}>
+                Your profile is complete and every review has a reply.
+              </AppText>
+            </View>
+          ) : null}
         </View>
 
         {/* Quick Actions (Big Buttons for Uncle Tan) */}
@@ -406,14 +504,14 @@ export function MerchantDashboardScreen() {
               padding: spacing[4],
               gap: spacing[3],
               backgroundColor: palette.orange,
-              borderRadius: radii.xl,
+              borderRadius: componentRadii.button,
             }}
           >
             <View
               style={{
                 width: 56,
                 height: 56,
-                borderRadius: radii.lg,
+                borderRadius: componentRadii.iconButton,
                 backgroundColor: palette.orangeLight + "40",
                 alignItems: "center",
                 justifyContent: "center",
@@ -441,7 +539,7 @@ export function MerchantDashboardScreen() {
               padding: spacing[4],
               gap: spacing[3],
               backgroundColor: palette.surface,
-              borderRadius: radii.xl,
+              borderRadius: componentRadii.button,
               borderWidth: 2,
               borderColor: palette.orange,
             }}
@@ -450,7 +548,7 @@ export function MerchantDashboardScreen() {
               style={{
                 width: 56,
                 height: 56,
-                borderRadius: radii.lg,
+                borderRadius: componentRadii.iconButton,
                 backgroundColor: palette.orangeLight,
                 alignItems: "center",
                 justifyContent: "center",
@@ -470,53 +568,114 @@ export function MerchantDashboardScreen() {
           </Pressable>
         </View>
 
+        {/* Business Tools */}
+        <View style={{ gap: spacing[3] }}>
+          <AppText variant="h3" style={{ fontWeight: "800" }}>
+            Business Tools
+          </AppText>
+
+          <ActionCard
+            title="Promotions"
+            description="Create and manage offers for nearby customers."
+            icon={<Megaphone size={20} color={palette.orange} />}
+            actionText="Open Promotions"
+            onPressIn={() => prefetchMerchantRoute("PromotionList")}
+            onPress={() => navigation.navigate("PromotionList")}
+          />
+
+          <ActionCard
+            title="AI Assistant"
+            description="Review menu, photo, demand, and promotion suggestions."
+            icon={<Sparkles size={20} color={palette.orange} />}
+            actionText="View Insights"
+            onPressIn={() => prefetchMerchantRoute("AIAssistant")}
+            onPress={() => navigation.navigate("AIAssistant")}
+          />
+
+          <ActionCard
+            title="Merchant Settings"
+            description="Manage staff access, alerts, verification, and account actions."
+            icon={<Settings size={20} color={palette.textSecondary} />}
+            actionText="Open Settings"
+            onPressIn={() => prefetchMerchantRoute("MerchantSettings")}
+            onPress={() => navigation.navigate("MerchantSettings")}
+          />
+
+          <ActionCard
+            title="In-App Ordering"
+            description="Preview the QR ordering setup before the pilot opens."
+            icon={<QrCode size={20} color={palette.textSecondary} />}
+            actionText="Preview Ordering"
+            onPressIn={() => prefetchMerchantRoute("OrdersComingSoon")}
+            onPress={() => navigation.navigate("OrdersComingSoon")}
+          />
+        </View>
+
         {/* Recent Activity */}
         <View style={{ gap: spacing[3] }}>
           <AppText variant="h3" style={{ fontWeight: "800" }}>
             Recent Feedback
           </AppText>
-          <Pressable
-            onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
-            onPress={() => navigation.navigate("CustomerInbox")}
-            style={({ pressed }) => [
-              {
-                backgroundColor: palette.surface,
-                borderRadius: radii.xl,
-                padding: spacing[4],
-                gap: spacing[4],
-                borderWidth: 1,
-                borderColor: palette.border,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-          >
-            <View style={{ flexDirection: "row", gap: spacing[3] }}>
-              <View
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
-                  backgroundColor: palette.bgSoft,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <AppText style={{ fontWeight: "800" }}>S</AppText>
-              </View>
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <AppText variant="bodyBold">Sarah L.</AppText>
-                  <AppText variant="micro" tone="muted">
-                    2h ago
+          {latestFeedback ? (
+            <Pressable
+              onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
+              onPress={() => navigation.navigate("CustomerInbox")}
+              style={({ pressed }) => [
+                {
+                  backgroundColor: palette.surface,
+                  borderRadius: componentRadii.button,
+                  padding: spacing[4],
+                  gap: spacing[4],
+                  borderWidth: 1,
+                  borderColor: palette.border,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <View style={{ flexDirection: "row", gap: spacing[3] }}>
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: componentRadii.iconButton,
+                    backgroundColor: palette.bgSoft,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <AppText style={{ fontWeight: "800" }}>
+                    {latestFeedback.authorName.slice(0, 1).toUpperCase()}
                   </AppText>
                 </View>
-                <AppText variant="bodySmall" numberOfLines={2}>
-                  &quot;The wonton skin is so thin and the char siu is perfectly caramelised. My
-                  favorite in Maxwell!&quot;
-                </AppText>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                    <AppText variant="bodyBold">{latestFeedback.authorName}</AppText>
+                    <AppText variant="micro" tone="muted">
+                      {new Date(latestFeedback.createdAt).toLocaleDateString()}
+                    </AppText>
+                  </View>
+                  <AppText variant="bodySmall" numberOfLines={2}>
+                    {latestFeedback.text}
+                  </AppText>
+                </View>
               </View>
+            </Pressable>
+          ) : (
+            <View
+              style={{
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderRadius: componentRadii.card,
+                borderWidth: 1,
+                padding: spacing[4],
+              }}
+            >
+              <AppText variant="bodyBold">No customer feedback yet</AppText>
+              <AppText variant="bodySmall" tone="muted" style={{ marginTop: spacing[1] }}>
+                Reviews and questions will appear here once diners interact with your stall.
+              </AppText>
             </View>
-          </Pressable>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

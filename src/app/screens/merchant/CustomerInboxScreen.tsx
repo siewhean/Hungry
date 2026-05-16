@@ -34,19 +34,23 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import type { CustomerInteraction, InteractionType } from "@/types/domain";
 
 export function CustomerInboxScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [interactions, setInteractions] = useState<CustomerInteraction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<InteractionType | "all" | "unreplied">("all");
   const [replyingTo, setReplyingTo] = useState<CustomerInteraction | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchInteractions = useCallback(async () => {
-    if (!activeOutlet) return;
+    if (!activeOutlet) {
+      setInteractions([]);
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
-    setError(false);
+    setError(null);
     try {
       const data = await getHungryService().merchant.getInbox(activeOutlet.id, {
         type: filter === "all" || filter === "unreplied" ? undefined : filter,
@@ -55,7 +59,7 @@ export function CustomerInboxScreen() {
       setInteractions(data);
     } catch (e) {
       console.error("Failed to fetch interactions", e);
-      setError(true);
+      setError(e instanceof Error ? e.message : "Unable to load customer interactions.");
     } finally {
       setIsLoading(false);
     }
@@ -142,6 +146,8 @@ export function CustomerInboxScreen() {
               title="Failed to load inbox"
               body="There was a problem loading your customer interactions."
               icon={<X size={48} color={palette.error} />}
+              errorMessage={error}
+              sendErrorContext="Customer inbox"
               ctaLabel="Retry"
               onPress={fetchInteractions}
             />
@@ -185,7 +191,7 @@ export function CustomerInboxScreen() {
 }
 
 function SentimentSummary({ interactions }: { interactions: CustomerInteraction[] }) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
 
   const stats = useMemo(() => {
     if (interactions.length === 0) return null;
@@ -208,7 +214,7 @@ function SentimentSummary({ interactions }: { interactions: CustomerInteraction[
         styles.summaryCard,
         {
           backgroundColor: palette.surface,
-          borderRadius: radii.xl,
+          borderRadius: componentRadii.card,
           padding: spacing[4],
           borderColor: palette.border,
           borderWidth: 1,
@@ -267,7 +273,7 @@ function InteractionCard({
   onViewOriginal: (item: CustomerInteraction) => void;
   onReport: (item: CustomerInteraction) => void;
 }) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
 
   const typeLabel = interaction.type.charAt(0).toUpperCase() + interaction.type.slice(1);
   const showMoreActions = () => {
@@ -287,7 +293,7 @@ function InteractionCard({
         {
           backgroundColor: palette.surface,
           borderColor: palette.border,
-          borderRadius: radii.lg,
+          borderRadius: componentRadii.card,
           padding: spacing[4],
         },
       ]}
@@ -339,7 +345,7 @@ function InteractionCard({
             styles.replyBox,
             {
               backgroundColor: palette.bgSoft,
-              borderRadius: radii.md,
+              borderRadius: componentRadii.card,
               padding: spacing[3],
               marginTop: spacing[2],
             },
@@ -391,7 +397,7 @@ function ReplyComposer({
   onClose: () => void;
   onSent: () => void;
 }) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const [text, setText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [suggestion, setSuggestion] = useState<string | null>(null);
@@ -432,8 +438,8 @@ function ReplyComposer({
           styles.composer,
           {
             backgroundColor: palette.surface,
-            borderTopLeftRadius: radii.xl,
-            borderTopRightRadius: radii.xl,
+            borderTopLeftRadius: componentRadii.card,
+            borderTopRightRadius: componentRadii.card,
             padding: spacing[5],
             paddingBottom: 40,
           },
@@ -465,7 +471,7 @@ function ReplyComposer({
               {
                 backgroundColor: palette.orangeLight,
                 borderColor: palette.orange,
-                borderRadius: radii.md,
+                borderRadius: componentRadii.card,
                 padding: spacing[3],
                 marginBottom: spacing[4],
               },
@@ -488,7 +494,7 @@ function ReplyComposer({
             styles.input,
             {
               backgroundColor: palette.bgSoft,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.input,
               color: palette.text,
               borderColor: palette.border,
               padding: spacing[4],

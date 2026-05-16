@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
 import { setAnalyticsSink, trackAnalyticsEvent } from "@/lib/analytics";
 import { getConfiguredDataSource, getSupabaseClient } from "@/lib/services/supabase/client";
-import { getHungryService } from "@/lib/services/serviceProvider";
+import { getHungryService, setSupabaseServiceProvider } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import type { UserProfile } from "@/types/domain";
 
 function shouldEnablePostHogSink() {
@@ -50,6 +51,9 @@ export function useAppBootstrap() {
   const applyAuthStateFromSession = useSessionStore((state) => state.applyAuthStateFromSession);
   const markAuthReady = useSessionStore((state) => state.markAuthReady);
   const setOffline = useUIStore((state) => state.setOffline);
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isUserMode = !isDeveloperMode && !isMerchantMode;
   const previousAuth = useRef<boolean | undefined>(undefined);
   const hasTrackedLaunch = useRef(false);
   const hasConfiguredAnalyticsSink = useRef(false);
@@ -94,6 +98,13 @@ export function useAppBootstrap() {
     // This avoids hard runtime dependency on optional NetInfo wiring.
     setOffline(false);
   }, [setOffline]);
+
+  useEffect(() => {
+    if (!isUserMode) {
+      return;
+    }
+    setSupabaseServiceProvider();
+  }, [isUserMode]);
 
   useEffect(() => {
     if (getConfiguredDataSource() !== "supabase") {

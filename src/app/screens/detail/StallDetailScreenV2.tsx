@@ -49,7 +49,7 @@ function formatVenueStatus(venue: VenueSummary) {
 export function StallDetailScreenV2({ route }: Props) {
   const navigation = useNavigation<RootNavigation>();
   const repository = getDataRepository();
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
 
   const venueId = route.params?.venueId ?? route.params?.id ?? "";
   const venue = useMemo(() => repository.getVenueById(venueId), [venueId, repository]);
@@ -103,6 +103,8 @@ export function StallDetailScreenV2({ route }: Props) {
         <EmptyState
           title="Stall not found"
           body="This stall could not be found. It may have moved or been removed."
+          errorMessage={`Missing stall data for ID: ${route.params?.venueId || "unknown"}`}
+          sendErrorContext="Stall detail"
           ctaLabel="Go back"
           onPress={() => navigation.goBack()}
         />
@@ -209,7 +211,7 @@ export function StallDetailScreenV2({ route }: Props) {
             style={{
               width: 36,
               height: 36,
-              borderRadius: 18,
+              borderRadius: componentRadii.iconButton,
               backgroundColor: palette.surface,
               alignItems: "center",
               justifyContent: "center",
@@ -225,7 +227,7 @@ export function StallDetailScreenV2({ route }: Props) {
               style={{
                 width: 36,
                 height: 36,
-                borderRadius: 18,
+                borderRadius: componentRadii.iconButton,
                 backgroundColor: palette.surface,
                 alignItems: "center",
                 justifyContent: "center",
@@ -243,7 +245,7 @@ export function StallDetailScreenV2({ route }: Props) {
               style={{
                 width: 36,
                 height: 36,
-                borderRadius: 18,
+                borderRadius: componentRadii.iconButton,
                 backgroundColor: palette.surface,
                 alignItems: "center",
                 justifyContent: "center",
@@ -419,7 +421,7 @@ export function StallDetailScreenV2({ route }: Props) {
               margin: spacing[4],
               padding: spacing[4],
               backgroundColor: palette.bgSoft,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.card,
             }}
           >
             <AppText variant="bodySmallBold" style={{ marginBottom: spacing[3] }}>
@@ -493,7 +495,7 @@ export function StallDetailScreenV2({ route }: Props) {
                     style={{
                       width: 28,
                       height: 28,
-                      borderRadius: 14,
+                      borderRadius: componentRadii.iconButton,
                       backgroundColor: palette.infoSoft,
                       alignItems: "center",
                       justifyContent: "center",

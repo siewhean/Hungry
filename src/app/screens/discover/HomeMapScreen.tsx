@@ -112,7 +112,7 @@ export function HomeMapScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const repository = getDataRepository();
   const insets = useSafeAreaInsets();
-  const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
+  const { componentRadii, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const searchQuery = useSearchStore((state) => state.filters.query);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
@@ -577,7 +577,7 @@ export function HomeMapScreen() {
                   style={[
                     {
                       backgroundColor: palette.surface,
-                      borderRadius: radii.xl,
+                      borderRadius: componentRadii.card,
                       overflow: "hidden",
                       width: 320,
                     },

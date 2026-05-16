@@ -277,7 +277,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const repository = getDataRepository();
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const selectedFloor = useDiscoveryStore((state) => state.selectedFloor);
   const highlightedStallVenueId = useDiscoveryStore((state) => state.highlightedStallVenueId);
@@ -539,7 +539,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
               style={{
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
-                borderRadius: radii.xl,
+                borderRadius: componentRadii.card,
                 borderWidth: 1,
                 overflow: "hidden",
               }}
@@ -574,7 +574,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                     {
                       backgroundColor: palette.surfaceTranslucent,
                       borderColor: palette.border,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       padding: spacing[1],
                       left: spacing[3],
                       bottom: spacing[3],
@@ -611,7 +611,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                     {
                       backgroundColor: palette.surfaceTranslucent,
                       borderColor: palette.border,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       padding: spacing[1],
                       right: spacing[3],
                       bottom: spacing[3],
@@ -711,7 +711,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                 style={{
                   backgroundColor: palette.surface,
                   borderColor: palette.border,
-                  borderRadius: radii.xl,
+                  borderRadius: componentRadii.card,
                   borderWidth: 1,
                   gap: spacing[3],
                   paddingHorizontal: spacing[3],
@@ -750,7 +750,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                       style={{
                         backgroundColor: palette.bgSoft,
                         borderColor: palette.border,
-                        borderRadius: radii.lg,
+                        borderRadius: componentRadii.card,
                         borderWidth: 1,
                         gap: spacing[1],
                         minWidth: 164,
@@ -838,7 +838,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                     style={{
                       backgroundColor: palette.bgSoft,
                       borderColor: palette.border,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       borderWidth: 1,
                       padding: spacing[4],
                       flexDirection: "row",

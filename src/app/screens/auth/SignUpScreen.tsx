@@ -15,13 +15,20 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
+import { AuthProviderButton } from "./AuthProviderButton";
 import { AuthScreenShell } from "./AuthScreenShell";
+import {
+  AUTH_COPY,
+  getAuthProviderUnavailableMessage,
+  getSignUpProviderSuccessMessage,
+  type AuthProvider,
+} from "./authCopy";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "SignUp">;
 type FormValues = { displayName: string; email: string; password: string };
 
 export function SignUpScreen({ navigation }: Props) {
-  const { palette, spacing } = useHungryTheme();
+  const { colorScheme, palette, spacing } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
   const applyProfile = useProfileStore((state) => state.applyProfile);
   const showToast = useUIStore((state) => state.showToast);
@@ -45,7 +52,7 @@ export function SignUpScreen({ navigation }: Props) {
         );
         // session === null means email confirmation is required.
         if (!session) {
-          showToast({ message: "Account created. Please verify your email.", tone: "success" });
+          showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
           navigation.navigate("EmailVerification", { email: values.email });
           return;
         }
@@ -56,7 +63,7 @@ export function SignUpScreen({ navigation }: Props) {
           completedOnboarding: false,
           trackSignInEvent: false,
         });
-        showToast({ message: "Account created. Continue onboarding.", tone: "success" });
+        showToast({ message: AUTH_COPY.signUp.continueOnboardingToast, tone: "success" });
         return;
       } else {
         const failure = getMockSignUpFailure(values.email);
@@ -65,12 +72,11 @@ export function SignUpScreen({ navigation }: Props) {
           return;
         }
         showToast({
-          message:
-            "Verification email is currently unavailable. You can continue and verify later.",
+          message: AUTH_COPY.signUp.verificationUnavailableToast,
           tone: "warning",
         });
       }
-      showToast({ message: "Account created. Please verify your email.", tone: "success" });
+      showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
       navigation.navigate("EmailVerification", { email: values.email });
     } catch (err) {
       const code =
@@ -78,18 +84,18 @@ export function SignUpScreen({ navigation }: Props) {
         (err as { error_code?: string; code?: string })?.code;
       if (code === "over_email_send_rate_limit") {
         showToast({
-          message: "Too many attempts. Please wait a moment and try again.",
+          message: AUTH_COPY.signUp.tooManyAttemptsToast,
           tone: "error",
         });
       } else if (code === "email_address_invalid") {
-        showToast({ message: "Please use a valid email address.", tone: "error" });
+        showToast({ message: AUTH_COPY.signUp.invalidEmailToast, tone: "error" });
       } else {
-        showToast({ message: "Could not continue sign-up. Please try again.", tone: "error" });
+        showToast({ message: AUTH_COPY.signUp.genericErrorToast, tone: "error" });
       }
     }
   });
 
-  const handleProviderContinue = async (provider: "google" | "apple") => {
+  const handleProviderContinue = async (provider: AuthProvider) => {
     try {
       if (getConfiguredDataSource() === "supabase") {
         const service = getHungryService();
@@ -102,7 +108,7 @@ export function SignUpScreen({ navigation }: Props) {
         applyProfile(session.profile);
       }
       showToast({
-        message: `Continue with ${provider === "google" ? "Google" : "Apple"} successful. Continue onboarding.`,
+        message: getSignUpProviderSuccessMessage(provider),
         tone: "success",
       });
       completeAuth({
@@ -120,27 +126,27 @@ export function SignUpScreen({ navigation }: Props) {
       const message = (err as { message?: string })?.message?.toLowerCase() ?? "";
       if (message.includes("provider is not enabled")) {
         showToast({
-          message: `${provider === "google" ? "Google" : "Apple"} sign-in is not enabled in Supabase Auth.`,
+          message: getAuthProviderUnavailableMessage(provider),
           tone: "error",
         });
         return;
       }
       if (message.includes("cancelled")) {
-        showToast({ message: "Sign-up was cancelled.", tone: "warning" });
+        showToast({ message: AUTH_COPY.signUp.providerCancelledToast, tone: "warning" });
         return;
       }
-      showToast({ message: "Could not continue sign-up. Please try again.", tone: "error" });
+      showToast({ message: AUTH_COPY.signUp.genericErrorToast, tone: "error" });
     }
   };
 
   return (
-    <FeedErrorBoundary
-      title="Sign-up unavailable"
-      body="Couldn't load account creation right now. Please retry."
-    >
+    <FeedErrorBoundary title={AUTH_COPY.signUp.errorTitle} body={AUTH_COPY.signUp.errorBody}>
       <AuthScreenShell
-        title="Create account"
-        subtitle="Join our community of food lovers."
+        title={AUTH_COPY.signUp.title}
+        subtitle={AUTH_COPY.signUp.subtitle}
+        compact
+        scroll={false}
+        wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
           <View style={{ alignItems: "center", gap: spacing[4] }}>
             <View
@@ -152,31 +158,39 @@ export function SignUpScreen({ navigation }: Props) {
               }}
             >
               <AppText variant="micro" tone="secondary" style={{ textAlign: "center" }}>
-                By creating an account, you agree to Hungry&apos;s{" "}
+                {AUTH_COPY.signUp.termsPrefix}
                 <AppText
                   variant="micro"
                   tone="accent"
                   onPress={() => void openTrustedExternalUrl("https://hungry.sg/terms")}
                 >
-                  Terms of Service
-                </AppText>{" "}
-                and{" "}
+                  {AUTH_COPY.signUp.termsLabel}
+                </AppText>
+                {AUTH_COPY.signUp.privacyJoiner}
                 <AppText
                   variant="micro"
                   tone="accent"
                   onPress={() => void openTrustedExternalUrl("https://hungry.sg/privacy")}
                 >
-                  Privacy Policy
+                  {AUTH_COPY.signUp.privacyLabel}
                 </AppText>
-                .
+                {AUTH_COPY.signUp.termsSuffix}
               </AppText>
             </View>
 
             <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "center" }}>
-              <AppText tone="secondary">Already have an account? </AppText>
-              <Pressable onPress={() => navigation.navigate("Login")}>
+              <AppText tone="secondary">{AUTH_COPY.signUp.footerPrompt}</AppText>
+              <Pressable
+                onPress={() => {
+                  if (navigation.canGoBack()) {
+                    navigation.goBack();
+                  } else {
+                    navigation.navigate("Login");
+                  }
+                }}
+              >
                 <AppText variant="bodyBold" tone="accent">
-                  Log in
+                  {AUTH_COPY.signUp.footerAction}
                 </AppText>
               </Pressable>
             </View>
@@ -185,16 +199,16 @@ export function SignUpScreen({ navigation }: Props) {
       >
         <View style={{ gap: spacing[4] }}>
           <View style={{ gap: spacing[3] }}>
-            <Button
-              label="Continue with Google"
-              variant="secondary"
+            <AuthProviderButton
+              intent="continue"
+              provider="google"
               onPress={() => {
                 void handleProviderContinue("google");
               }}
             />
-            <Button
-              label="Continue with Apple"
-              variant="secondary"
+            <AuthProviderButton
+              intent="continue"
+              provider="apple"
               onPress={() => {
                 void handleProviderContinue("apple");
               }}
@@ -204,7 +218,7 @@ export function SignUpScreen({ navigation }: Props) {
           <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
             <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
             <AppText variant="micro" tone="muted">
-              OR REGISTER WITH EMAIL
+              {AUTH_COPY.signUp.divider}
             </AppText>
             <View style={{ backgroundColor: palette.border, flex: 1, height: 1 }} />
           </View>
@@ -213,11 +227,14 @@ export function SignUpScreen({ navigation }: Props) {
             <Controller
               control={control}
               name="displayName"
-              rules={{ validate: (value) => validateRequired(value, "Display name") }}
+              rules={{
+                validate: (value) =>
+                  validateRequired(value, AUTH_COPY.signUp.displayNameValidationLabel),
+              }}
               render={({ field: { onChange, value } }) => (
                 <View style={{ gap: spacing[1] }}>
                   <Input
-                    placeholder="Full Name"
+                    placeholder={AUTH_COPY.signUp.displayNamePlaceholder}
                     value={value}
                     onChangeText={onChange}
                     leftIcon={<User color={palette.textMuted} size={18} />}
@@ -237,7 +254,7 @@ export function SignUpScreen({ navigation }: Props) {
               render={({ field: { onChange, value } }) => (
                 <View style={{ gap: spacing[1] }}>
                   <Input
-                    placeholder="Email Address"
+                    placeholder={AUTH_COPY.signUp.emailPlaceholder}
                     value={value}
                     onChangeText={onChange}
                     autoCapitalize="none"
@@ -259,7 +276,7 @@ export function SignUpScreen({ navigation }: Props) {
               render={({ field: { onChange, value } }) => (
                 <View style={{ gap: spacing[1] }}>
                   <Input
-                    placeholder="Create Password"
+                    placeholder={AUTH_COPY.signUp.passwordPlaceholder}
                     value={value}
                     onChangeText={onChange}
                     secureTextEntry={!showPassword}
@@ -284,7 +301,7 @@ export function SignUpScreen({ navigation }: Props) {
             />
           </View>
 
-          <Button label="Create Account" onPress={handleSignUp} />
+          <Button label={AUTH_COPY.signUp.primaryButton} onPress={handleSignUp} />
         </View>
       </AuthScreenShell>
     </FeedErrorBoundary>

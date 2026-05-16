@@ -5,6 +5,7 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-g
 import { useSharedValue, useDerivedValue } from "react-native-reanimated";
 
 import { useHungryTheme } from "@/theme";
+import { componentRadii } from "@/theme/tokens";
 import { MOCK_MAP_VIEWBOX, MOCK_POLYGONS, MockStallPolygon } from "@/data/mocks/v2_map_data";
 import { computeStallStatus } from "@/utils/stallStatus";
 import { getDataRepository } from "@/lib/services/serviceProvider";
@@ -217,7 +218,7 @@ export function SkiaFloorplanViewer({ buildingId, floor, onStallPress }: SkiaFlo
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#F9FAFB",
-    borderRadius: 16,
+    borderRadius: componentRadii.card,
     overflow: "hidden",
     alignSelf: "center",
   },

@@ -11,12 +11,13 @@ import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthScreenShell } from "./AuthScreenShell";
+import { AUTH_COPY } from "./authCopy";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "ForgotPassword">;
 type FormValues = { email: string };
 
 export function ForgotPasswordScreen({ navigation }: Props) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { colorScheme, palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
   const {
     control,
@@ -29,24 +30,33 @@ export function ForgotPasswordScreen({ navigation }: Props) {
       if (getConfiguredDataSource() === "supabase") {
         await getHungryService().auth.forgotPassword(email);
       }
-      showToast({ message: "If the email exists, a reset link was sent.", tone: "info" });
+      showToast({ message: AUTH_COPY.forgotPassword.sentToast, tone: "info" });
       navigation.navigate("ResetPassword");
     } catch {
-      showToast({ message: "Could not send reset link. Please try again.", tone: "error" });
+      showToast({ message: AUTH_COPY.forgotPassword.genericErrorToast, tone: "error" });
     }
   });
 
   return (
     <FeedErrorBoundary
-      title="Password recovery unavailable"
-      body="Couldn't load password recovery right now. Please retry."
+      title={AUTH_COPY.forgotPassword.errorTitle}
+      body={AUTH_COPY.forgotPassword.errorBody}
     >
       <AuthScreenShell
-        title="Forgot password"
-        subtitle="Enter your email address and we'll send reset instructions."
+        title={AUTH_COPY.forgotPassword.title}
+        subtitle={AUTH_COPY.forgotPassword.subtitle}
+        compact
+        contentOffsetTop={spacing[16]}
+        wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
           <Pressable
-            onPress={() => navigation.navigate("Login")}
+            onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate("Login");
+              }
+            }}
             style={{
               alignItems: "center",
               flexDirection: "row",
@@ -54,15 +64,15 @@ export function ForgotPasswordScreen({ navigation }: Props) {
               justifyContent: "center",
             }}
           >
-            <ArrowLeft color={palette.orange} size={14} />
+            <ArrowLeft color={palette.text} size={14} />
             <AppText tone="accent" style={{ fontWeight: "700" }}>
-              Back to login
+              {AUTH_COPY.forgotPassword.backToLogin}
             </AppText>
           </Pressable>
         }
       >
         <View style={{ gap: spacing[4] }}>
-          <View style={{ alignItems: "center", gap: spacing[3] }}>
+          <View style={{ alignItems: "center" }}>
             <View
               style={{
                 alignItems: "center",
@@ -75,13 +85,6 @@ export function ForgotPasswordScreen({ navigation }: Props) {
             >
               <LockKeyhole color={palette.orange} size={30} />
             </View>
-            <AppText variant="display" style={{ textAlign: "center" }}>
-              Forgot password
-            </AppText>
-            <AppText tone="secondary" style={{ textAlign: "center" }}>
-              Enter your email address and we&apos;ll send you a link to reset your password and get
-              you back to your table.
-            </AppText>
           </View>
 
           <Controller
@@ -90,10 +93,9 @@ export function ForgotPasswordScreen({ navigation }: Props) {
             rules={{ validate: validateEmail }}
             render={({ field: { onChange, value } }) => (
               <Input
-                label="EMAIL ADDRESS"
                 keyboardType="email-address"
                 autoCapitalize="none"
-                placeholder="chef@restaurant.com"
+                placeholder={AUTH_COPY.forgotPassword.emailPlaceholder}
                 value={value}
                 onChangeText={onChange}
                 leftIcon={<Mail color={palette.textMuted} size={16} />}
@@ -102,20 +104,7 @@ export function ForgotPasswordScreen({ navigation }: Props) {
               />
             )}
           />
-          <Button label="Send reset link" onPress={handleSend} style={{ minHeight: 56 }} />
-          <View
-            style={{
-              backgroundColor: palette.infoSoft,
-              borderRadius: 16,
-              flexDirection: "row",
-              gap: spacing[2],
-              padding: spacing[3],
-            }}
-          >
-            <AppText variant="micro" tone="secondary" style={{ flex: 1 }}>
-              We keep this flow secure and simple so you can return to dish discovery quickly.
-            </AppText>
-          </View>
+          <Button label={AUTH_COPY.forgotPassword.primaryButton} onPress={handleSend} />
         </View>
       </AuthScreenShell>
     </FeedErrorBoundary>

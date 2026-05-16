@@ -118,3 +118,28 @@ test("Supabase merchant catalog metadata RLS covers images and dietary links", (
   assert.match(smoke, /dish_taste_vectors_%_merchant/);
   assert.match(smoke, /dish_dietary_flags_%_merchant/);
 });
+
+test("Supabase merchant portal readiness covers views, notifications, and promo pricing", () => {
+  const migration = read("supabase/migrations/0039_merchant_portal_readiness.sql");
+  const service = read("src/lib/services/supabase/supabaseService.ts");
+
+  assert.match(migration, /merchant_dish_view_events/);
+  assert.match(migration, /dedupe_key text not null unique/);
+  assert.match(migration, /merchant_notifications/);
+  assert.match(migration, /merchant_email_outbox/);
+  assert.match(migration, /promotion_item_type/);
+  assert.match(migration, /original_price numeric/);
+  assert.match(migration, /profile_photo_url text/);
+  assert.match(migration, /merchant_notifications_owner_manager_write/);
+  assert.match(migration, /merchant_email_outbox_owner_manager_insert/);
+  assert.match(service, /recordDishView/);
+  assert.match(service, /from\("merchant_dish_view_events"\)/);
+  assert.match(service, /getWeeklySummaryStats/);
+  assert.match(service, /getMerchantNotifications/);
+  assert.match(service, /syncLowRatingNotifications/);
+  assert.match(service, /sendWeeklySummaryNotifications/);
+  assert.match(service, /from\("merchant_email_outbox"\)/);
+  assert.match(service, /template: "team_invite"/);
+  assert.match(service, /template: "weekly_summary"/);
+  assert.match(service, /bucket: "merchant-stall-images"/);
+});

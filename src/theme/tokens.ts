@@ -143,6 +143,18 @@ export const radii = {
   pill: 999,
 } as const;
 
+export const componentRadii = {
+  card: radii.lg,
+  button: radii.lg,
+  input: radii.lg,
+  search: radii.lg,
+  iconButton: radii.lg,
+} as const;
+
+export const componentCornerCurve = {
+  borderCurve: "continuous",
+} as const;
+
 export const opacity = {
   disabled: 0.5,
   disabledSubtle: 0.6,
@@ -177,7 +189,16 @@ export const shadows = {
   },
 } as const;
 
-export const typography = {
+const typographyLevelUp = 2;
+
+const scaleTypographyLevel = (value: number) => value + typographyLevelUp;
+const scaleTypography = <T extends { fontSize: number; lineHeight: number }>(variant: T) => ({
+  ...variant,
+  fontSize: scaleTypographyLevel(variant.fontSize),
+  lineHeight: variant.lineHeight + typographyLevelUp,
+});
+
+const baseTypography = {
   display: { fontSize: 34, lineHeight: 40, fontFamily: "Fraunces_700Bold" },
   displayBold: {
     fontSize: 42,
@@ -202,6 +223,23 @@ export const typography = {
   },
   price: { fontSize: 16, lineHeight: 24, fontFamily: "DMMono_400Regular" },
   code: { fontSize: 14, lineHeight: 22, fontFamily: "DMMono_400Regular" },
+} as const;
+
+export const typography = {
+  display: scaleTypography(baseTypography.display),
+  displayBold: scaleTypography(baseTypography.displayBold),
+  displaySm: scaleTypography(baseTypography.displaySm),
+  h1: scaleTypography(baseTypography.h1),
+  h2: scaleTypography(baseTypography.h2),
+  h3: scaleTypography(baseTypography.h3),
+  bodyLarge: scaleTypography(baseTypography.bodyLarge),
+  body: scaleTypography(baseTypography.body),
+  bodyBold: scaleTypography(baseTypography.bodyBold),
+  bodySmall: scaleTypography(baseTypography.bodySmall),
+  bodySmallBold: scaleTypography(baseTypography.bodySmallBold),
+  micro: scaleTypography(baseTypography.micro),
+  price: scaleTypography(baseTypography.price),
+  code: scaleTypography(baseTypography.code),
 } as const;
 
 export const motion = {

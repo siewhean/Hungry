@@ -21,7 +21,7 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 type Props = NativeStackScreenProps<MerchantTabParamList, "VerificationCentre">;
 
 export function VerificationCentreScreen({ navigation }: Props) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const setAccount = useMerchantStore((state) => state.setAccount);
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
@@ -33,6 +33,8 @@ export function VerificationCentreScreen({ navigation }: Props) {
         <EmptyState
           title="No outlet selected"
           body="Choose an outlet to continue with verification."
+          errorMessage="No active outlet is currently selected for verification actions."
+          sendErrorContext="Verification centre"
           icon={<Home size={36} color={palette.textMuted} />}
         />
       </Screen>
@@ -67,7 +69,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
           <View
             style={[
               { padding: spacing[6], alignItems: "center", justifyContent: "center" },
-              { backgroundColor: palette.successSoft, borderRadius: radii.lg },
+              { backgroundColor: palette.successSoft, borderRadius: componentRadii.card },
             ]}
           >
             <ShieldCheck size={32} color={palette.success} />
@@ -85,7 +87,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
           <View
             style={[
               { padding: spacing[6], alignItems: "center", justifyContent: "center" },
-              { backgroundColor: palette.orangeLight, borderRadius: radii.lg },
+              { backgroundColor: palette.orangeLight, borderRadius: componentRadii.card },
             ]}
           >
             <Clock size={32} color={palette.orange} />
@@ -102,7 +104,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
           <View
             style={[
               { padding: spacing[6], alignItems: "center", justifyContent: "center" },
-              { backgroundColor: palette.errorSoft, borderRadius: radii.lg },
+              { backgroundColor: palette.errorSoft, borderRadius: componentRadii.card },
             ]}
           >
             <AlertCircle size={32} color={palette.error} />
@@ -119,7 +121,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
           <View
             style={[
               { padding: spacing[6], alignItems: "center", justifyContent: "center" },
-              { backgroundColor: palette.bgSoft, borderRadius: radii.lg },
+              { backgroundColor: palette.bgSoft, borderRadius: componentRadii.card },
             ]}
           >
             <ShieldAlert size={32} color={palette.orange} />
@@ -198,7 +200,7 @@ function MethodCard({
   onPress: () => void;
   isLoading: boolean;
 }) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -214,14 +216,14 @@ function MethodCard({
         {
           backgroundColor: palette.surface,
           borderColor: palette.border,
-          borderRadius: radii.lg,
+          borderRadius: componentRadii.card,
         },
       ]}
     >
       <View
         style={[
           { width: 48, height: 48, alignItems: "center", justifyContent: "center" },
-          { backgroundColor: palette.bgSoft, borderRadius: radii.md },
+          { backgroundColor: palette.bgSoft, borderRadius: componentRadii.iconButton },
         ]}
       >
         {icon}

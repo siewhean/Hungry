@@ -58,7 +58,7 @@ export function BiteCard({
   onToggleSave,
   onCommentPress,
 }: BiteCardProps) {
-  const { palette, radii, spacing, motion } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, motion } = useHungryTheme();
   const imageHeight = Math.round(width * 0.76);
 
   const heartScale = useSharedValue(0);
@@ -96,7 +96,7 @@ export function BiteCard({
           width,
           borderWidth: 1,
           borderColor: palette.border,
-          borderRadius: radii.md,
+          borderRadius: componentRadii.card,
           backgroundColor: palette.surfaceRaised,
           overflow: "hidden",
         }}
@@ -200,7 +200,7 @@ export function BiteCard({
     <View
       style={{
         width,
-        borderRadius: radii.lg,
+        borderRadius: componentRadii.card,
         overflow: "hidden",
         backgroundColor: palette.surface,
         borderWidth: 1,

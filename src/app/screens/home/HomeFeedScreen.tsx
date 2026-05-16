@@ -6,6 +6,7 @@ import {
   Animated,
   Clipboard,
   Pressable,
+  RefreshControl,
   ScrollView,
   Share,
   StyleSheet,
@@ -38,12 +39,18 @@ import {
   BottomSheetFooter,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+  type CompositeNavigationProp,
+} from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { MaterialTopTabNavigationProp } from "@react-navigation/material-top-tabs";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { FlashList } from "@shopify/flash-list";
+import { FlashList, type FlashListRef } from "@shopify/flash-list";
 
-import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   AppHeader,
   AppText,
@@ -67,6 +74,7 @@ import {
 import { getHomeFeedBundle, type HomeFeedItem, type HomeFeedSection } from "@/features/home/feed";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
+import { getActivityUnreadCount } from "@/features/home/activity";
 import {
   prefetchDishDetail,
   prefetchImages,
@@ -78,6 +86,7 @@ import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getBuildingById, toSummary } from "@/lib/geo/singaporeBuildings";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { HUNGRY_LOGO_TEXT } from "@/constants/brandAssets";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
@@ -88,7 +97,21 @@ import { useSocialStore, type SocialComment, type SocialReply } from "@/store/us
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useHungryTheme } from "@/theme";
 import type { StoryItem } from "@/types/domain";
-import { MissionBanner } from "@/components/gamification/MissionBanner";
+
+type HapticsModule = typeof import("expo-haptics");
+
+let hapticsModule: HapticsModule | null | undefined;
+
+async function triggerDoubleTapHaptic() {
+  try {
+    if (hapticsModule === undefined) {
+      hapticsModule = await import("expo-haptics");
+    }
+    await hapticsModule?.impactAsync(hapticsModule.ImpactFeedbackStyle.Light);
+  } catch {
+    hapticsModule = null;
+  }
+}
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -115,7 +138,10 @@ function FeedSkeleton() {
   );
 }
 
-type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
+type RootNavigation = CompositeNavigationProp<
+  MaterialTopTabNavigationProp<MainTabParamList, "Home">,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 type HomeFeedMode = "social" | "review";
 
@@ -157,9 +183,10 @@ function formatCollapsedCaption(caption: string) {
 
 export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const navigation = useNavigation<RootNavigation>();
+  const route = useRoute();
   const { width: screenWidth } = useWindowDimensions();
   const theme = useHungryTheme();
-  const { palette, spacing, semanticSpacing, radii, shadows, colorScheme } = theme;
+  const { componentRadii, palette, spacing, semanticSpacing, radii, shadows, colorScheme } = theme;
   const styles = useMemo(() => createStyles(theme), [theme]);
   const headerActionSize = spacing[8] + spacing[2.5];
   const insets = useSafeAreaInsets();
@@ -180,7 +207,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const addPostReply = useSocialStore((state) => state.addReply);
   const followedAuthors = useSocialStore((state) => state.followedAuthors);
   const toggleAuthorFollow = useSocialStore((state) => state.toggleAuthorFollow);
-  const updateUnreadCount = useActivityStore((state) => state.getUnreadCount());
+  const readActivityIds = useActivityStore((state) => state.readActivityIds);
+  const activityUpdates = useActivityStore((state) => state.activityUpdates);
+  const updateUnreadCount = useMemo(
+    () => getActivityUnreadCount(readActivityIds, activityUpdates),
+    [readActivityIds, activityUpdates],
+  );
   const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled;
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const activityUnreadCount = updateUnreadCount + (directMessagesEnabled ? chatUnreadCount : 0);
@@ -210,6 +242,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   }, [profile.avatarUrl, stories]);
 
   const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
+  const [feedError, setFeedError] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [sections, setSections] = useState<HomeFeedSection[]>([]);
   const [socialFeed, setSocialFeed] = useState<HomeFeedItem[]>([]);
   const [activeCommentItem, setActiveCommentItem] = useState<HomeFeedItem | null>(null);
@@ -240,6 +274,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const activeFeedLoadIdRef = useRef(0);
   const lastLoadedFeedAtRef = useRef(0);
   const lastLoadedFeedKeyRef = useRef<string | null>(null);
+  const socialFeedListRef = useRef<FlashListRef<HomeFeedItem> | null>(null);
+  const reviewFeedScrollRef = useRef<ScrollView | null>(null);
   const profileFeedKey = useMemo(() => {
     const tasteSignature = Object.entries(profile.tasteVector)
       .sort(([left], [right]) => left.localeCompare(right))
@@ -254,7 +290,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   }, [profile.dietaryPreferences, profile.id, profile.tasteVector, publishedPostsVersion]);
 
   const loadFeed = useCallback(
-    async (options?: { force?: boolean }) => {
+    async (options?: {
+      force?: boolean;
+      preserveReadyOnError?: boolean;
+      showLoading?: boolean;
+    }) => {
       const requestKey = profileFeedKey;
       const now = Date.now();
       if (
@@ -267,7 +307,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
       const loadId = activeFeedLoadIdRef.current + 1;
       activeFeedLoadIdRef.current = loadId;
-      setFeedState((current) => (current === "ready" && !options?.force ? current : "loading"));
+      if (options?.showLoading !== false) {
+        setFeedState((current) => (current === "ready" && !options?.force ? current : "loading"));
+      }
       try {
         const bundle = await getHomeFeedBundle(profile);
         if (activeFeedLoadIdRef.current !== loadId) {
@@ -281,16 +323,29 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         ]);
         lastLoadedFeedKeyRef.current = requestKey;
         lastLoadedFeedAtRef.current = Date.now();
+        setFeedError("");
         setFeedState("ready");
-      } catch {
+      } catch (error) {
+        setFeedError(error instanceof Error ? error.message : "Unable to load home feed.");
         if (activeFeedLoadIdRef.current !== loadId) {
           return;
         }
-        setFeedState("error");
+        setFeedState((current) =>
+          options?.preserveReadyOnError && current === "ready" ? current : "error",
+        );
       }
     },
     [initializeInteractions, profile, profileFeedKey],
   );
+
+  const refreshHomeFeed = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await loadFeed({ force: true, preserveReadyOnError: true, showLoading: false });
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadFeed]);
 
   useFocusEffect(
     useCallback(() => {
@@ -308,6 +363,30 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       };
     }, [loadFeed]),
   );
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("tabPress", (event) => {
+      if (event.target !== route.key) {
+        return;
+      }
+
+      if (mode === "social") {
+        socialFeedListRef.current?.scrollToOffset({
+          offset: 0,
+          animated: true,
+        });
+        return;
+      }
+
+      reviewFeedScrollRef.current?.scrollTo({
+        x: 0,
+        y: 0,
+        animated: true,
+      });
+    });
+
+    return unsubscribe;
+  }, [mode, navigation, route.key]);
 
   useEffect(() => {
     const leadingItems = [
@@ -614,13 +693,18 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         navigation.navigate("StallDetail", { venueId: item.venueId });
         return;
       }
-      recordTasteInteraction({
-        type: "dish_result_click",
-        surface: "home",
-        dish: primaryDish,
-        buttonId: "feed_card",
-      });
       navigation.navigate("DishDetail", { dishId: primaryDish.id });
+      scheduleIdleWork(
+        () => {
+          recordTasteInteraction({
+            type: "dish_result_click",
+            surface: "home",
+            dish: primaryDish,
+            buttonId: "feed_card",
+          });
+        },
+        { timeout: 500, fallbackDelayMs: 80 },
+      );
     },
     [navigation, recordTasteInteraction],
   );
@@ -669,9 +753,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           clearTimeout(singleTapTimerRef.current);
           singleTapTimerRef.current = null;
         }
-
         if (!interactions[item.id]?.liked) {
           handlePostLike(item);
+        } else {
+          void triggerDoubleTapHaptic();
         }
         runDoubleTapHeartAnimation(item.id, tapOrigin);
         return;
@@ -798,31 +883,43 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     ],
   );
 
+  const homeFeedLogo = useMemo(
+    () => (
+      <Image
+        source={HUNGRY_LOGO_TEXT}
+        style={{
+          width: 132,
+          height: 32,
+          marginLeft: -(semanticSpacing.screenEdge + 4),
+        }}
+        contentFit="contain"
+      />
+    ),
+    [semanticSpacing.screenEdge],
+  );
+
   const renderHeader = useCallback(
     () => (
       <View style={{ paddingBottom: 0, gap: 0 }}>
         <AppHeader
-          title="Hungry"
+          titleNode={homeFeedLogo}
           showBack={false}
           right={renderActivityButton()}
           horizontalPadding={semanticSpacing.screenEdge}
-          titleStyle={{ color: palette.orange }}
         />
         <CircleStoryCarousel
           stories={storyCarouselItems}
           onStoryPress={handleStoryPress}
           onAddStoryPress={handleAddStoryPress}
         />
-        <MissionBanner onPress={() => navigation.navigate("MissionsScreen")} />
       </View>
     ),
     [
       handleAddStoryPress,
       handleStoryPress,
-      palette.orange,
+      homeFeedLogo,
       renderActivityButton,
       semanticSpacing.screenEdge,
-      spacing,
       storyCarouselItems,
     ],
   );
@@ -1313,7 +1410,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             shadows.card,
             {
               backgroundColor: themeTints.cardBg,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.card,
               width: 300,
               overflow: "hidden",
               borderWidth: themeTints.isDark ? 0 : 1,
@@ -1345,7 +1442,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               style={{
                 width: 36,
                 height: 36,
-                borderRadius: radii.pill,
+                borderRadius: componentRadii.iconButton,
                 backgroundColor: themeTints.actionOverlayBg,
                 alignItems: "center",
                 justifyContent: "center",
@@ -1365,7 +1462,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               style={{
                 width: 36,
                 height: 36,
-                borderRadius: radii.pill,
+                borderRadius: componentRadii.iconButton,
                 backgroundColor: themeTints.actionOverlayBg,
                 alignItems: "center",
                 justifyContent: "center",
@@ -1586,6 +1683,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             state="error"
             title="Something went wrong"
             body="We couldn't load your feed right now. Please check your connection and try again."
+            errorMessage={feedError}
+            errorContext="Home feed"
             ctaLabel="Retry"
             onPress={() => {
               void loadFeed({ force: true });
@@ -1611,6 +1710,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         {mode === "social" ? (
           <View testID="home-social-feed" style={{ flex: 1 }}>
             <FlashList
+              ref={socialFeedListRef}
               data={socialFeed}
               keyExtractor={keyExtractor}
               ListHeaderComponent={listHeader}
@@ -1628,25 +1728,41 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 paddingBottom: spacing[16] + insets.bottom + spacing[6],
               }}
               onScroll={onScroll}
+              refreshControl={
+                <RefreshControl
+                  colors={[palette.orange]}
+                  onRefresh={refreshHomeFeed}
+                  refreshing={isRefreshing}
+                  tintColor={palette.orange}
+                />
+              }
               scrollEventThrottle={scrollEventThrottle}
               showsVerticalScrollIndicator={false}
             />
           </View>
         ) : (
           <Animated.ScrollView
+            ref={reviewFeedScrollRef}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
               paddingBottom: insets.bottom + spacing[24],
             }}
             onScroll={onScroll}
+            refreshControl={
+              <RefreshControl
+                colors={[palette.orange]}
+                onRefresh={refreshHomeFeed}
+                refreshing={isRefreshing}
+                tintColor={palette.orange}
+              />
+            }
             scrollEventThrottle={16}
           >
             <AppHeader
-              title="Hungry"
+              titleNode={homeFeedLogo}
               showBack={false}
               right={renderActivityButton()}
               horizontalPadding={semanticSpacing.screenEdge}
-              titleStyle={{ color: palette.orange }}
             />
             <View style={{ paddingTop: 0 }}>
               {sections.map((section) => (
@@ -1805,7 +1921,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   style={{
                     backgroundColor: palette.bgSoft,
                     borderColor: palette.border,
-                    borderRadius: radii.lg,
+                    borderRadius: componentRadii.card,
                     borderWidth: 1,
                     gap: spacing[2],
                     marginBottom: spacing[5],
@@ -2180,7 +2296,7 @@ const createStyles = ({ palette, spacing, radii }: ReturnType<typeof useHungryTh
     playButtonBackdrop: {
       width: 68,
       height: 68,
-      borderRadius: 34,
+      borderRadius: radii.pill,
       backgroundColor: "rgba(0,0,0,0.35)",
       alignItems: "center",
       justifyContent: "center",

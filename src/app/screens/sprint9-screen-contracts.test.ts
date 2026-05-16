@@ -11,12 +11,50 @@ function read(relativePath: string): string {
 
 test("Sprint 9 screen contract: Login screen uses service auth + error boundary", () => {
   const source = read("src/app/screens/auth/LoginScreen.tsx");
+  const signUpSource = read("src/app/screens/auth/SignUpScreen.tsx");
+  const forgotPasswordSource = read("src/app/screens/auth/ForgotPasswordScreen.tsx");
+  const authCopySource = read("src/app/screens/auth/authCopy.ts");
+  const providerButtonSource = read("src/app/screens/auth/AuthProviderButton.tsx");
+  const providerLogoSource = read("src/components/icons/brand/AuthProviderLogos.tsx");
 
   assert.match(source, /getHungryService\(\)\.auth\.signIn\(/);
   assert.match(source, /const service = getHungryService\(\)/);
   assert.match(source, /service\.auth\.signInWithGoogle\(/);
   assert.match(source, /service\.auth\.signInWithApple\(/);
+  assert.match(source, /AUTH_COPY\.login/);
+  assert.match(source, /<AuthProviderButton[\s\S]*intent="signIn"[\s\S]*provider="google"/);
+  assert.match(source, /<AuthProviderButton[\s\S]*intent="signIn"[\s\S]*provider="apple"/);
+  assert.match(signUpSource, /AUTH_COPY\.signUp/);
+  assert.match(signUpSource, /<AuthProviderButton[\s\S]*intent="continue"[\s\S]*provider="google"/);
+  assert.match(signUpSource, /<AuthProviderButton[\s\S]*intent="continue"[\s\S]*provider="apple"/);
+  assert.match(forgotPasswordSource, /AUTH_COPY\.forgotPassword/);
   assert.match(source, /<FeedErrorBoundary/);
+  assert.match(authCopySource, /login: \{/);
+  assert.match(authCopySource, /signUp: \{/);
+  assert.match(authCopySource, /forgotPassword: \{/);
+  assert.match(authCopySource, /getAuthProviderButtonLabel/);
+  assert.match(authCopySource, /getAuthProviderUnavailableMessage/);
+  assert.match(authCopySource, /getSignUpProviderSuccessMessage/);
+  assert.doesNotMatch(source, /"Welcome back\."/);
+  assert.doesNotMatch(signUpSource, /"Account created\. Please verify your email\."/);
+  assert.doesNotMatch(forgotPasswordSource, /"If the email exists, a reset link was sent\."/);
+  assert.match(providerButtonSource, /import \{ AppleLogo, GoogleLogo \}/);
+  assert.match(providerButtonSource, /position: "absolute"/);
+  assert.match(providerButtonSource, /textAlign: "center"/);
+  assert.match(providerButtonSource, /getAuthProviderButtonLabel\(provider, intent\)/);
+  assert.match(providerLogoSource, /export const AUTH_PROVIDER_LOGO_SIZE = 20/);
+  assert.match(providerLogoSource, /export const AUTH_PROVIDER_APPLE_LOGO_SIZE = 26/);
+  assert.match(providerLogoSource, /export function GoogleLogo/);
+  assert.match(providerLogoSource, /size = AUTH_PROVIDER_LOGO_SIZE/);
+  assert.match(providerLogoSource, /viewBox="1 1 21\.56 22"/);
+  assert.match(providerLogoSource, /fill="#4285F4"/);
+  assert.match(providerLogoSource, /fill="#34A853"/);
+  assert.match(providerLogoSource, /fill="#FBBC05"/);
+  assert.match(providerLogoSource, /fill="#EA4335"/);
+  assert.match(providerLogoSource, /export function AppleLogo/);
+  assert.match(providerLogoSource, /size = AUTH_PROVIDER_APPLE_LOGO_SIZE/);
+  assert.match(providerLogoSource, /viewBox="2\.94 2 17\.15 20"/);
+  assert.match(providerLogoSource, /fill="#000000"/);
 });
 
 test("Sprint 9 screen contract: Review screen submits via service and triggers success UI", () => {
@@ -38,6 +76,8 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(feedSource, /repository\.getVenueById\(post\.venueId\)/);
   assert.match(feedSource, /repository\.getDishById\(dishId\)/);
   assert.match(source, /useSocialStore/);
+  assert.doesNotMatch(source, /MissionBanner/);
+  assert.doesNotMatch(source, /navigation\.navigate\("MissionsScreen"\)/);
   assert.match(source, /togglePostLike/);
   assert.match(source, /togglePostSave/);
   assert.match(source, /addPostComment/);
@@ -223,6 +263,39 @@ test("Sprint 9 screen contract: Home feed double tap likes with heart animation"
   );
 });
 
+test("Sprint 9 screen contract: Home feed supports pull-to-refresh without hiding ready content", () => {
+  const source = read("src/app/screens/home/HomeFeedScreen.tsx");
+
+  assert.match(source, /RefreshControl/);
+  assert.match(source, /const \[isRefreshing, setIsRefreshing\] = useState\(false\)/);
+  assert.match(source, /const refreshHomeFeed = useCallback\(async \(\) =>/);
+  assert.match(source, /setIsRefreshing\(true\)/);
+  assert.match(
+    source,
+    /await loadFeed\(\{ force: true, preserveReadyOnError: true, showLoading: false \}\)/,
+  );
+  assert.match(source, /refreshing=\{isRefreshing\}/);
+  assert.match(source, /onRefresh=\{refreshHomeFeed\}/);
+});
+
+test("Sprint 9 screen contract: feed videos pause on tap and fast-forward only from edge holds", () => {
+  const source = read("src/components/social/ZoomableVideo.tsx");
+
+  assert.match(source, /const EDGE_FAST_FORWARD_FRACTION = 0\.2/);
+  assert.match(source, /const \[videoWidth, setVideoWidth\] = useState\(0\)/);
+  assert.match(source, /const startFastForward = \(touchX: number\) =>/);
+  assert.match(source, /touchX <= leftEdge \|\| touchX >= rightEdge/);
+  assert.match(source, /if \(!isEdgeHold\) \{\s*return;\s*\}/);
+  assert.match(source, /player\.playbackRate = 2\.0/);
+  assert.match(source, /player\.playbackRate = 1\.0/);
+  assert.match(source, /Gesture\.LongPress\(\)[\s\S]*runOnJS\(startFastForward\)\(event\.x\)/);
+  assert.match(source, /Gesture\.Tap\(\)\.onEnd[\s\S]*runOnJS\(handleTogglePlay\)\(\)/);
+  assert.match(
+    source,
+    /onLayout=\{\(event\) => \{\s*setVideoWidth\(event\.nativeEvent\.layout\.width\);/,
+  );
+});
+
 test("Sprint 9 screen contract: Home feed header follows app header scale", () => {
   const source = read("src/app/screens/home/HomeFeedScreen.tsx");
 
@@ -294,10 +367,9 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /function formatBasePrice\(price: number\)/);
   assert.match(source, /formatBasePrice\(dish\.price\)/);
   assert.match(source, /fontSize: 28, lineHeight: 34/);
-  assert.match(
-    source,
-    /colors=\{\["rgba\(255,255,255,0\)", "rgba\(255,255,255,0\.72\)", palette\.bg\]\}/,
-  );
+  assert.match(source, /const heroGradientColors: readonly \[ColorValue, ColorValue, ColorValue\]/);
+  assert.match(source, /"rgba\(255,255,255,0\)", "rgba\(255,255,255,0\.72\)", palette\.bg/);
+  assert.match(source, /colors=\{heroGradientColors\}/);
   assert.match(source, /locations=\{\[0, 0\.58, 1\]\}/);
   assert.doesNotMatch(source, /Epicurean Discovery/);
   assert.doesNotMatch(source, /borderBottomWidth: 1,[\s\S]*Epicurean Discovery/);

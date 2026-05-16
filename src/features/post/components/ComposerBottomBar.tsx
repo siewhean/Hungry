@@ -14,7 +14,7 @@ interface ComposerBottomBarProps {
 }
 
 export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomBarProps) {
-  const { palette, spacing, semanticSpacing, shadows, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, semanticSpacing, shadows, radii } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const [showOptions, setShowOptions] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -26,17 +26,24 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
 
   const publishingState = useComposerStore((state) => state.publishingState);
   const setPublishingState = useComposerStore((state) => state.setPublishingState);
+  const setPublishingError = useComposerStore((state) => state.setPublishingError);
   const scheduledTime = useComposerStore((state) => state.scheduledTime);
   const setScheduledTime = useComposerStore((state) => state.setScheduledTime);
   const reset = useComposerStore((state) => state.reset);
 
   const handlePublish = async () => {
+    setPublishingError(null);
     setPublishingState("posting");
     try {
       await publishComposerPost({ publishMode, routeDishId, routeVenueId });
       setPublishingState("success");
     } catch (error) {
       console.error("Failed to publish post", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred while publishing your post. Please try again.";
+      setPublishingError(errorMessage);
       setPublishingState("error");
     }
   };
@@ -223,8 +230,8 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
                 backgroundColor: palette.orange,
                 width: 40,
                 height: 40,
-                borderTopRightRadius: radii.pill,
-                borderBottomRightRadius: radii.pill,
+                borderTopRightRadius: componentRadii.button,
+                borderBottomRightRadius: componentRadii.button,
                 alignItems: "center",
                 justifyContent: "center",
                 borderLeftWidth: 1,
@@ -301,7 +308,7 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
                       style={{
                         width: 32,
                         height: 32,
-                        borderRadius: 16,
+                        borderRadius: componentRadii.iconButton,
                         alignItems: "center",
                         justifyContent: "center",
                         backgroundColor: isSelected ? palette.orange : palette.bgSoft,
@@ -331,7 +338,7 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
                     width: 56,
                     alignItems: "center",
                     paddingVertical: 8,
-                    borderRadius: radii.md,
+                    borderRadius: componentRadii.card,
                     backgroundColor: draftHour === hour ? palette.orangeLight : palette.bgSoft,
                     borderWidth: 1,
                     borderColor: draftHour === hour ? palette.orange : palette.border,
@@ -354,7 +361,7 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
                   style={{
                     paddingHorizontal: 12,
                     paddingVertical: 8,
-                    borderRadius: radii.md,
+                    borderRadius: componentRadii.card,
                     backgroundColor: draftMinute === minute ? palette.orangeLight : palette.bgSoft,
                     borderWidth: 1,
                     borderColor: draftMinute === minute ? palette.orange : palette.border,

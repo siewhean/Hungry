@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import type { ColorValue } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
@@ -8,6 +9,7 @@ import {
   ArrowLeft,
   Bookmark,
   Clock3,
+  CheckCircle,
   MapPin,
   MessageCircleMore,
   MessageCircle,
@@ -19,8 +21,10 @@ import {
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
+import { useFoodCredStore } from "@/store/useFoodCredStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useSocialStore } from "@/store/useSocialStore";
@@ -32,6 +36,105 @@ import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/R
 import type { DishDetail } from "@/types/domain";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
+
+type ListedHoursRow = {
+  days: string;
+  hours: string;
+};
+
+const DAY_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+type DayName = (typeof DAY_ORDER)[number];
+
+function normalizeDay(day: string): DayName {
+  const normalized = day.trim().toLowerCase();
+  switch (normalized) {
+    case "mon":
+    case "monday":
+      return "Mon";
+    case "tue":
+    case "tues":
+    case "tuesday":
+      return "Tue";
+    case "wed":
+    case "wednesday":
+      return "Wed";
+    case "thu":
+    case "thursday":
+      return "Thu";
+    case "fri":
+    case "friday":
+      return "Fri";
+    case "sat":
+    case "saturday":
+      return "Sat";
+    case "sun":
+    case "sunday":
+      return "Sun";
+    default:
+      return "Mon";
+  }
+}
+
+function expandDayRange(start: DayName, end: DayName): DayName[] {
+  const startIndex = DAY_ORDER.indexOf(start);
+  const endIndex = DAY_ORDER.indexOf(end);
+  if (startIndex === -1 || endIndex === -1) return [start];
+
+  if (startIndex <= endIndex) {
+    return DAY_ORDER.slice(startIndex, endIndex + 1);
+  }
+
+  return [...DAY_ORDER.slice(startIndex), ...DAY_ORDER.slice(0, endIndex + 1)];
+}
+
+function parseListedHours(raw: string): ListedHoursRow[] {
+  const cleaned = raw.trim().replace(/\u2013|\u2014/g, "-");
+  if (!cleaned) return [];
+
+  const normalized = cleaned.replace(/\s{2,}/g, " ");
+  const segments = normalized
+    .split(/;|,/)
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  const rows: ListedHoursRow[] = [];
+  const fallback = () => rows.push({ days: "All days", hours: normalized });
+
+  const dayRangeRegex =
+    /^(?<startDay>Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s*-\s*(?<endDay>Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(?<hours>.+)$/i;
+  const daySingleRegex = /^(?<day>Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(?<hours>.+)$/i;
+
+  for (const segment of segments) {
+    const rangeMatch = segment.match(dayRangeRegex);
+    if (rangeMatch?.groups) {
+      const days = expandDayRange(
+        normalizeDay(rangeMatch.groups.startDay),
+        normalizeDay(rangeMatch.groups.endDay),
+      );
+      days.forEach((day) => rows.push({ days: day, hours: rangeMatch.groups!.hours }));
+      continue;
+    }
+
+    const singleMatch = segment.match(daySingleRegex);
+    if (singleMatch?.groups) {
+      rows.push({ days: normalizeDay(singleMatch.groups.day), hours: singleMatch.groups.hours });
+      continue;
+    }
+
+    const lowerSegment = segment.toLowerCase();
+    if (lowerSegment.startsWith("open") || lowerSegment.startsWith("closed")) {
+      rows.push({ days: "All days", hours: segment });
+      continue;
+    }
+
+    if (rows.length === 0) {
+      fallback();
+      return rows;
+    }
+  }
+
+  return rows.length ? rows : [{ days: "All days", hours: normalized }];
+}
 
 type Props = NativeStackScreenProps<RootStackParamList, "DishDetail" | "DishDetailV2">;
 
@@ -74,18 +177,25 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const repository = getDataRepository();
   const dishId = route.params?.dishId ?? route.params?.id ?? "";
   const dish = repository.getDishById(dishId);
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { colorScheme, componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
+  const addReviewedDish = useProfileStore((state) => state.addReviewedDish);
+  const removeReviewedDish = useProfileStore((state) => state.removeReviewedDish);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
+  const stallInteractions = useStallInteractionStore((state) => state.interactions);
+  const stallInteraction = dish?.venueId ? stallInteractions[dish.venueId] : undefined;
+  const markTried = useStallInteractionStore((state) => state.markTried);
   const incrementShare = useSocialStore((state) => state.incrementShare);
   const [tasteProfileOpen, setTasteProfileOpen] = useState(false);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
+  const lastRecordedDishViewId = useRef<string | null>(null);
+  const [isTryingFood, setIsTryingFood] = useState(false);
 
   const venue = useMemo(
     () => (dish ? repository.getVenueById(dish.venueId) : undefined),
@@ -106,6 +216,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     () => (dish ? getSignatureDishes(dish, venueDishes) : []),
     [dish, venueDishes],
   );
+  const listedHours = useMemo(() => (venue ? parseListedHours(venue.operatingHours) : []), [venue]);
+
+  useEffect(() => {
+    if (!dish || lastRecordedDishViewId.current === dish.id) return;
+    lastRecordedDishViewId.current = dish.id;
+    void getHungryService().discovery.recordDishView(dish.id, {
+      userId: isAuthenticated ? profile.id : undefined,
+    });
+  }, [dish, isAuthenticated, profile.id]);
 
   if (!dish || !venue || !heroImage) {
     return (
@@ -117,6 +236,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           <EmptyState
             title="Dish not found"
             body="This dish is no longer available in the current dataset."
+            errorMessage={`Missing dish data for ID: ${dishId || "unknown"}`}
+            sendErrorContext="Dish detail"
           />
         </SafeAreaView>
       </FeedErrorBoundary>
@@ -158,6 +279,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const signatureGridItemHeight = signatureGridItemWidth * 1.5;
   const reviewIconSize = 22;
   const canonicalDishUrl = `https://hungry.sg/dish/${dish.id}`;
+  const heroGradientColors: readonly [ColorValue, ColorValue, ColorValue] =
+    colorScheme === "dark"
+      ? [`${palette.bg}00`, `${palette.bg}B3`, palette.bg]
+      : ["rgba(255,255,255,0)", "rgba(255,255,255,0.72)", palette.bg];
+  const headerButtonBackground =
+    colorScheme === "dark" ? palette.surface : "rgba(255, 255, 255, 0.88)";
+  const headerButtonBorder = colorScheme === "dark" ? palette.border : "rgba(226, 232, 240, 0.78)";
   const shareReviewTarget = {
     reviewId: `dish-${dish.id}`,
     postId: dish.id,
@@ -212,6 +340,63 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     });
   };
 
+  const isDishTried = profile.reviewedDishIds.includes(dish.id);
+  const isVenueVisited = stallInteraction?.isTried ?? false;
+
+  const handleTryFood = async () => {
+    if (isTryingFood) return;
+
+    if (!isAuthenticated) {
+      setReturnRoute({
+        name: "DishDetailV2",
+        params: { dishId: dish.id },
+      });
+      navigation.navigate("AuthStack", { screen: "Login" });
+      return;
+    }
+
+    setIsTryingFood(true);
+    try {
+      const didMark = await markTried(profile.id, dish.venueId);
+
+      if (didMark.isTried) {
+        addReviewedDish(dish.id);
+        showToast({
+          message:
+            didMark.pointsAwarded > 0
+              ? "+5 Food Cred"
+              : isVenueVisited
+                ? "Marked as tried again."
+                : "Marked this stall as visited.",
+          tone: "success",
+          backgroundColor: palette.surfaceTranslucent,
+          borderColor: palette.orange,
+          textColor: palette.text,
+          iconColor: palette.text,
+          borderWidth: 1,
+          duration: 3000,
+        });
+      } else {
+        removeReviewedDish(dish.id);
+        await useFoodCredStore
+          .getState()
+          .adjustPoints(-didMark.pointsAwarded, dish.venueId, "stall_marked_tried");
+        showToast({
+          message: didMark.pointsAwarded > 0 ? "-5 Food Cred" : "Food try check removed.",
+          tone: "success",
+          backgroundColor: palette.surfaceTranslucent,
+          borderColor: palette.orange,
+          textColor: palette.text,
+          iconColor: palette.text,
+          borderWidth: 1,
+          duration: 3000,
+        });
+      }
+    } finally {
+      setIsTryingFood(false);
+    }
+  };
+
   return (
     <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish - try again.">
       <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["left", "right"]}>
@@ -223,7 +408,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             <View style={{ height: heroHeight }}>
               <Image source={{ uri: heroImage }} contentFit="cover" style={{ flex: 1 }} />
               <LinearGradient
-                colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.72)", palette.bg]}
+                colors={heroGradientColors}
                 locations={[0, 0.58, 1]}
                 style={{ bottom: 0, height: 260, left: 0, position: "absolute", right: 0 }}
               />
@@ -237,28 +422,36 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               }}
             >
               <View style={{ gap: spacing[4] }}>
-                <View
-                  style={[
-                    {
-                      alignItems: "center",
-                      alignSelf: "flex-start",
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      borderRadius: radii.pill,
-                      borderWidth: 1,
-                      flexDirection: "row",
-                      gap: spacing[1],
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[1.5],
-                    },
-                    shadows.card,
-                  ]}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${venue.name} stall details`}
+                  onPress={() => navigation.navigate("StallDetail", { venueId: dish.venueId })}
+                  hitSlop={8}
+                  style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
                 >
-                  <MapPin color={palette.orange} size={16} />
-                  <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
-                    {venue.name} - {venue.unitNumber}
-                  </AppText>
-                </View>
+                  <View
+                    style={[
+                      {
+                        alignItems: "center",
+                        alignSelf: "flex-start",
+                        backgroundColor: palette.surface,
+                        borderColor: palette.border,
+                        borderRadius: radii.pill,
+                        borderWidth: 1,
+                        flexDirection: "row",
+                        gap: spacing[1],
+                        paddingHorizontal: spacing[3],
+                        paddingVertical: spacing[1.5],
+                      },
+                      shadows.card,
+                    ]}
+                  >
+                    <MapPin color={palette.orange} size={16} />
+                    <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
+                      {venue.name} - {venue.unitNumber}
+                    </AppText>
+                  </View>
+                </Pressable>
 
                 <View
                   style={{
@@ -325,7 +518,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     style={{
                       backgroundColor: palette.surface,
                       borderColor: palette.border,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       borderWidth: 1,
                       gap: spacing[1],
                       padding: spacing[3],
@@ -355,7 +548,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     style={{
                       backgroundColor: palette.surface,
                       borderColor: palette.border,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       borderWidth: 1,
                       gap: spacing[3],
                       padding: spacing[4],
@@ -409,16 +602,36 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   style={{
                     backgroundColor: palette.surface,
                     borderColor: palette.border,
-                    borderRadius: radii.lg,
+                    borderRadius: componentRadii.card,
                     borderWidth: 1,
                     gap: spacing[3],
                     padding: spacing[4],
                   }}
                 >
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <AppText style={{ fontWeight: "800" }}>Listed hours</AppText>
-                    <AppText tone="secondary">{venue.operatingHours}</AppText>
-                  </View>
+                  <AppText style={{ fontWeight: "800" }}>Listed hours</AppText>
+                  {listedHours.length ? (
+                    <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
+                      {listedHours.map((row) => (
+                        <View
+                          key={`${row.days}-${row.hours}`}
+                          style={{
+                            flexDirection: "row",
+                            gap: spacing[2],
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <AppText tone="secondary" style={{ width: 104 }}>
+                            {row.days}
+                          </AppText>
+                          <AppText tone="secondary" style={{ flex: 1, textAlign: "right" }}>
+                            {row.hours}
+                          </AppText>
+                        </View>
+                      ))}
+                    </View>
+                  ) : (
+                    <AppText tone="secondary">No listed hours available.</AppText>
+                  )}
                   {venue.closureNotice ? (
                     <AppText tone="secondary">{venue.closureNotice}</AppText>
                   ) : null}
@@ -527,7 +740,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       style={{
                         backgroundColor: palette.surface,
                         borderColor: palette.border,
-                        borderRadius: radii.lg,
+                        borderRadius: componentRadii.card,
                         borderWidth: 1,
                         gap: spacing[2],
                         padding: spacing[4],
@@ -601,6 +814,37 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             </Pressable>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Mark this food as tried"
+              onPress={handleTryFood}
+              disabled={isTryingFood}
+              style={({ pressed }) => {
+                const backgroundColor = isDishTried
+                  ? palette.surface
+                  : pressed
+                    ? palette.bg
+                    : palette.bgSoft;
+                const normalizedBackgroundColor = backgroundColor.toLowerCase();
+                const isWhiteOrBlackBackground =
+                  !isDishTried &&
+                  (normalizedBackgroundColor === "#ffffff" ||
+                    normalizedBackgroundColor === "#000000");
+                return {
+                  alignItems: "center",
+                  backgroundColor,
+                  borderColor: isWhiteOrBlackBackground ? palette.orange : "transparent",
+                  borderWidth: isWhiteOrBlackBackground ? 1 : 0,
+                  paddingHorizontal: spacing[1],
+                  borderRadius: componentRadii.iconButton,
+                  height: 42,
+                  justifyContent: "center",
+                  width: undefined,
+                };
+              }}
+            >
+              <CheckCircle color={palette.text} fill="none" size={reviewIconSize} />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
               accessibilityLabel="Write a review"
               onPress={handleReview}
               style={{
@@ -633,9 +877,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               onPress={() => navigation.goBack()}
               style={{
                 alignItems: "center",
-                backgroundColor: "rgba(255, 255, 255, 0.88)",
-                borderColor: "rgba(226, 232, 240, 0.78)",
-                borderRadius: radii.pill,
+                backgroundColor: headerButtonBackground,
+                borderColor: headerButtonBorder,
+                borderRadius: componentRadii.iconButton,
                 borderWidth: 1,
                 height: 40,
                 justifyContent: "center",
@@ -650,9 +894,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               onPress={openShareSheet}
               style={{
                 alignItems: "center",
-                backgroundColor: "rgba(255, 255, 255, 0.88)",
-                borderColor: "rgba(226, 232, 240, 0.78)",
-                borderRadius: radii.pill,
+                backgroundColor: headerButtonBackground,
+                borderColor: headerButtonBorder,
+                borderRadius: componentRadii.iconButton,
                 borderWidth: 1,
                 height: 40,
                 justifyContent: "center",

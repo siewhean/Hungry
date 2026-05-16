@@ -29,7 +29,7 @@ export function PhotoPicker({
   onRemovePhoto,
   onPhotoError,
 }: PhotoPickerProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
   const canAddPhoto = Boolean(onAddPhoto) && photos.length < maxPhotos;
   const handleAddPhoto = async () => {
@@ -80,7 +80,7 @@ export function PhotoPicker({
           <Pressable key={uri} onPress={() => onRemovePhoto?.(uri)} style={styles.photoWrap}>
             <Image
               source={{ uri }}
-              style={[styles.photo, { borderRadius: radii.sm }]}
+              style={[styles.photo, { borderRadius: componentRadii.card }]}
               contentFit="cover"
             />
           </Pressable>
@@ -96,7 +96,7 @@ export function PhotoPicker({
                 alignItems: "center",
                 backgroundColor: palette.bgMuted,
                 borderColor: palette.border,
-                borderRadius: radii.sm,
+                borderRadius: componentRadii.card,
                 borderStyle: "dashed",
                 borderWidth: 1,
                 justifyContent: "center",

@@ -118,3 +118,29 @@ test("native media picker smoke reaches the post composer gallery entry point", 
   assert.match(mediaManager, /accessibilityLabel="Add media from gallery"/);
   assert.match(mediaManager, /testID="post-composer-add-media"/);
 });
+
+test("native source-smoke coverage includes gestures, bottom sheets, media, and keyboard-sensitive entry points", () => {
+  const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
+  const homeMap = read("src/app/screens/discover/HomeMapScreen.tsx");
+  const homeFeed = read("src/app/screens/home/HomeFeedScreen.tsx");
+  const reviewComments = read("src/components/social/ReviewCommentsSheet.tsx");
+  const mediaFlow = read(".maestro/ios-media-picker-permission.yaml");
+  const chatFlow = read(".maestro/ios-chat-smoke.yaml");
+
+  assert.match(
+    rootNavigator,
+    /getComponent=\{loadHomeMapScreen\}[\s\S]*name="DiscoverMap"[\s\S]*gestureEnabled: true/,
+  );
+  assert.match(homeMap, /edgeBackPanResponder/);
+  assert.match(homeMap, /gestureState\.dx > 64 \|\| gestureState\.vx > 0\.35/);
+  assert.match(homeFeed, /<BottomSheetModal/);
+  assert.match(homeFeed, /<BottomSheetFooter/);
+  assert.match(homeFeed, /<Input/);
+  assert.match(reviewComments, /<BottomSheetModal/);
+  assert.match(reviewComments, /<BottomSheetFooter/);
+  assert.match(reviewComments, /<Input/);
+  assert.match(reviewComments, /keyboardBehavior="extend"/);
+  assert.match(mediaFlow, /post-composer-add-media/);
+  assert.match(mediaFlow, /Permission Required/);
+  assert.match(chatFlow, /id: "activity-tab-updates"/);
+});

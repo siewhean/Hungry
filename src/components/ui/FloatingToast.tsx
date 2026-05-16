@@ -11,7 +11,8 @@ import { AppText } from "./AppText";
 export function FloatingToast() {
   const toast = useUIStore((state) => state.toast);
   const clearToast = useUIStore((state) => state.clearToast);
-  const { motion, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
+  const { componentCornerCurve, componentRadii, motion, palette, shadows, spacing, zIndex } =
+    useHungryTheme();
   const tone = toast?.tone ?? "info";
 
   useEffect(() => {
@@ -27,7 +28,8 @@ export function FloatingToast() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
-    const timer = setTimeout(() => clearToast(), motion.toastAutoDismiss);
+    const autoDismissMs = toast.duration ?? motion.toastAutoDismiss;
+    const timer = setTimeout(() => clearToast(), autoDismissMs);
     return () => clearTimeout(timer);
   }, [toast, clearToast, motion.toastAutoDismiss, tone]);
 
@@ -35,22 +37,40 @@ export function FloatingToast() {
 
   const toneConfig = {
     success: {
-      bg: palette.orange,
+      bg: palette.surface,
+      border: palette.orange,
       icon: CircleCheck,
-      color: palette.textOnPrimary,
+      color: palette.success,
     },
     warning: {
-      bg: palette.amber,
+      bg: palette.surface,
+      border: palette.orange,
       icon: TriangleAlert,
-      color: palette.textOnPrimary,
+      color: palette.warning,
     },
     error: {
-      bg: palette.error,
+      bg: palette.surface,
+      border: palette.orange,
       icon: CircleAlert,
-      color: palette.textOnPrimary,
+      color: palette.error,
     },
-    info: { bg: palette.navy, icon: Info, color: palette.textOnPrimary },
-  }[tone] || { bg: palette.navy, icon: Info, color: palette.textOnPrimary };
+    info: {
+      bg: palette.surface,
+      border: palette.orange,
+      icon: Info,
+      color: palette.info,
+    },
+  }[tone] || {
+    bg: palette.surface,
+    border: palette.orange,
+    icon: Info,
+    color: palette.text,
+  };
+  const toastBackgroundColor = toast.backgroundColor ?? toneConfig.bg;
+  const toastBorderColor = toast.borderColor ?? toneConfig.border;
+  const toastTextColor = toast.textColor ?? toneConfig.color;
+  const toastIconColor = toast.iconColor ?? toneConfig.color;
+  const toastBorderWidth = toast.borderWidth ?? 1;
 
   const Icon = toneConfig.icon;
 
@@ -67,8 +87,12 @@ export function FloatingToast() {
           style={[
             shadows.floating,
             {
-              backgroundColor: toneConfig.bg,
-              borderRadius: radii.md,
+              backgroundColor: toastBackgroundColor,
+              borderColor: toastBorderColor,
+              borderWidth: toastBorderWidth,
+              opacity: 1,
+              borderRadius: componentRadii.card,
+              borderCurve: componentCornerCurve.borderCurve,
               paddingHorizontal: spacing[3],
               paddingVertical: spacing[3],
               flexDirection: "row",
@@ -77,8 +101,8 @@ export function FloatingToast() {
             },
           ]}
         >
-          <Icon size={20} color={toneConfig.color} />
-          <AppText style={{ color: toneConfig.color, fontWeight: "700", flex: 1 }}>
+          <Icon size={20} color={toastIconColor} />
+          <AppText style={{ color: toastTextColor, fontWeight: "700", flex: 1 }}>
             {toast.message}
           </AppText>
         </Pressable>

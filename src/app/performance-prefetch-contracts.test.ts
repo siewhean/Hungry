@@ -27,14 +27,24 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.doesNotMatch(tabs, /import \{ DiscoverHomeScreen \}/);
   assert.doesNotMatch(tabs, /import \{ ReviewFeedScreen \}/);
   assert.doesNotMatch(tabs, /import \{ ProfileStack \}/);
-  assert.match(tabs, /lazy:\s*true/);
-  assert.match(tabs, /lazyPlaceholder:\s*\(\)\s*=>/);
+  assert.match(tabs, /lazy:\s*!tabPreloadEnabled/);
+  assert.match(tabs, /lazyPlaceholder:\s*\(\)\s*=>\s*<TabScreenLoadingPlaceholder \/>/);
   assert.match(
     tabs,
     /scheduleIdleWork|InteractionManager\.runAfterInteractions|requestIdleCallback|setTimeout\(/,
   );
+  assert.match(tabs, /function createDeferredTabScreen/);
+  assert.match(tabs, /function scheduleMainTabScreensWarmup/);
+  assert.match(tabs, /function TabScreenLoadingPlaceholder/);
+  assert.match(tabs, /function warmMainTabRoute/);
+  assert.match(tabs, /onPressIn=\{onPressIn\}/);
+  assert.doesNotMatch(tabs, /ActivityIndicator/);
+  assert.doesNotMatch(tabs, /preloadRoute\(navigation, route\.name\)/);
   assert.match(tabs, /tabPreloadEnabled/);
-  assert.match(tabs, /lazyPreloadDistance:\s*tabPreloadEnabled \? 1 : 0/);
+  assert.match(tabs, /const MAIN_TAB_PRELOAD_DISTANCE = 3/);
+  assert.match(tabs, /const MAIN_TAB_WARMUP_TIMEOUT_MS = 350/);
+  assert.match(tabs, /fallbackDelayMs: MAIN_TAB_WARMUP_FALLBACK_DELAY_MS/);
+  assert.match(tabs, /lazyPreloadDistance:\s*tabPreloadEnabled \? MAIN_TAB_PRELOAD_DISTANCE : 0/);
 });
 
 test("startup does not block indefinitely on fonts or analytics", () => {
@@ -108,6 +118,8 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
   const search = read("src/app/screens/search/SearchResultsScreen.tsx");
   const searchResultsView = read("src/components/discover/SearchResultsView.tsx");
+  const discoverV2 = read("src/app/screens/discover/DiscoverHomeScreenV2.tsx");
+  const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
   const merchantTabs = read("src/app/navigation/MerchantTabs.tsx");
   const zoomableMedia = read("src/components/social/ZoomableMedia.tsx");
   const zoomableVideo = read("src/components/social/ZoomableVideo.tsx");
@@ -115,15 +127,65 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(prefetch, /ExpoImage\.prefetch/);
   assert.match(prefetch, /const prefetchedDishDetails = new Set<string>\(\)/);
   assert.match(prefetch, /const prefetchedStallDetails = new Set<string>\(\)/);
+  assert.match(
+    prefetch,
+    /import \{ scheduleIdleWork \} from "@\/lib\/performance\/scheduleIdleWork"/,
+  );
+  assert.match(prefetch, /function schedulePrefetchWork/);
+  assert.match(prefetch, /const PREFETCH_FALLBACK_DELAY_MS = 160/);
+  assert.match(prefetch, /const scheduledRoutePreloads = new Set<string>\(\)/);
+  assert.match(prefetch, /const scheduledBrowseResultPrefetches = new Set<string>\(\)/);
   assert.match(prefetch, /export function prefetchDishDetail/);
   assert.match(prefetch, /export function prefetchStallDetail/);
   assert.match(prefetch, /export function prefetchPostDetail/);
   assert.match(prefetch, /export function preloadRoute/);
+  assert.match(prefetch, /export function prefetchBrowseResults/);
+  assert.match(prefetch, /getBrowseIndex\(repository\)/);
+  assert.match(prefetch, /searchBrowseDishes\(browseIndex/);
+  assert.match(prefetch, /finally \{[\s\S]*scheduledBrowseResultPrefetches\.delete\(key\)/);
+  assert.doesNotMatch(prefetch, /repository: DataRepository = getDataRepository\(\)/);
+  assert.match(prefetch, /schedulePrefetchWork\(\(\) => \{[\s\S]*"preload" in navigation/);
   assert.match(prefetch, /"preload" in navigation/);
   assert.match(prefetch, /export function prefetchMerchantTab/);
   assert.match(homeScreen, /onPressIn=\{\(\) => prefetchFeedCardRoute\(item\)\}/);
   assert.match(discover, /onPressIn=\{\(\) => prefetchBiteCard\(bite\)\}/);
+  assert.match(discover, /useDeferredValue\(activeDiscoverChipIds\)/);
+  assert.match(discover, /activeDiscoverChipSet\.has\(chip\.id\)/);
+  assert.match(discover, /prefetchBrowseResults\(item\.query, navigation/);
+  assert.match(discover, /<PopularFoodStyleItem/);
+  assert.match(searchResultsView, /const SearchResultRow = memo/);
+  assert.match(searchResultsView, /<SearchResultRow dish=\{dish\}/);
+  assert.doesNotMatch(discover, /preloadRoute\(navigation, "SearchResults"/);
+  assert.match(discover, /scheduleIdleWork\([\s\S]*recordTasteInteraction[\s\S]*popular_right_now/);
+  assert.match(
+    discover,
+    /navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
+  );
+  assert.match(
+    homeScreen,
+    /navigation\.navigate\("DishDetail", \{ dishId: primaryDish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
+  );
+  assert.match(
+    discoverV2,
+    /navigation\.navigate\("SearchResults", \{[\s\S]*initialQuery: "spicy"[\s\S]*scheduleIdleWork\([\s\S]*updateSearchQuery\("spicy"\)/,
+  );
+  assert.match(
+    quickBites,
+    /navigation\.navigate\("SearchHome"\);[\s\S]*scheduleIdleWork\([\s\S]*rememberSearch\(trimmed\)/,
+  );
   assert.match(search, /onPressIn=\{\(\) =>/);
+  assert.match(search, /function BrowseGridLoadingState/);
+  assert.match(search, /getCachedBrowseIndex\(repository\)/);
+  assert.match(search, /getBrowseIndex\(repository\)/);
+  assert.match(search, /isBrowseDataReady \? \(/);
+  assert.match(
+    search,
+    /navigation\.navigate\("DishDetail", \{ dishId: item\.dish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
+  );
+  assert.match(
+    search,
+    /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*rememberSearch\(filters\.query\)/,
+  );
   assert.match(search, /const browsePostIndexes = useMemo/);
   assert.match(search, /postByDishId\.get\(dish\.id\)/);
   assert.match(search, /postByVenueId\.get\(venue\.id\)/);
@@ -131,6 +193,7 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.doesNotMatch(search, /results\.slice\(0, 8\)\.forEach/);
   assert.doesNotMatch(search, /filteredFeedItems\.slice\(0, 8\)\.forEach/);
   assert.match(searchResultsView, /import \{ FlashList \} from "@shopify\/flash-list"/);
+  assert.match(searchResultsView, /function SearchResultsSkeletonList/);
   assert.match(searchResultsView, /renderItem=\{renderResult\}/);
   assert.doesNotMatch(searchResultsView, /results\.map/);
   assert.match(merchantTabs, /prefetchMerchantTab\(route\.name/);

@@ -15,6 +15,7 @@ import { useEffect } from "react";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui/AppText";
 import { useFoodCredStore, FOOD_CRED_LEVELS } from "@/store/useFoodCredStore";
+import { resolveFoodCredLevel, resolveLevelProgress } from "@/constants/foodCredConfig";
 
 interface FoodCredBadgeProps {
   size?: "sm" | "md" | "lg";
@@ -25,8 +26,8 @@ interface FoodCredBadgeProps {
 export function FoodCredBadge({ size = "md", showPoints = false, style }: FoodCredBadgeProps) {
   const { palette, radii, spacing, typography } = useHungryTheme();
   const totalPoints = useFoodCredStore((s) => s.totalPoints);
-  const currentLevel = useFoodCredStore((s) => s.currentLevel());
-  const levelProgress = useFoodCredStore((s) => s.levelProgress());
+  const currentLevel = resolveFoodCredLevel(totalPoints);
+  const levelProgress = resolveLevelProgress(totalPoints);
   const isMaxLevel = currentLevel.index >= FOOD_CRED_LEVELS.length - 1;
 
   // Animate progress bar fill

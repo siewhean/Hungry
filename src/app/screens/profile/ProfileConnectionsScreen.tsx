@@ -34,7 +34,7 @@ function normalizePersonName(name: string) {
 }
 
 function ProfileConnectionsScreen({ navigation }: Props) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const route = useRoute<ProfileConnectionsRoute>();
   const rootNavigation = getRootNavigation(navigation as any);
   const followedAuthors = useSocialStore((state) => state.followedAuthors);
@@ -236,7 +236,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
                 {
                   borderColor: palette.border,
                   borderWidth: 1,
-                  borderRadius: 16,
+                  borderRadius: componentRadii.card,
                   backgroundColor: pressed ? palette.bgSoft : palette.surface,
                 },
               ]}
@@ -263,7 +263,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
                               {
                                 backgroundColor: isFollowing ? palette.surface : palette.orange,
                                 borderColor: isFollowing ? palette.border : palette.orange,
-                                borderRadius: radii.pill,
+                                borderRadius: componentRadii.button,
                               },
                             ]}
                           >
@@ -303,7 +303,7 @@ export function FollowingScreen(props: Props) {
 const styles = StyleSheet.create({
   followButton: {
     alignItems: "center",
-    borderRadius: 999,
+    borderRadius: 12,
     borderWidth: 1,
     justifyContent: "center",
     minHeight: 32,

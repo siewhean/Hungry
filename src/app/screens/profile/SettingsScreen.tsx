@@ -126,8 +126,8 @@ export function SettingsScreen() {
   };
 
   return (
-    <ProfileScreenShell title="Settings" subtitle="Account and app preferences">
-      <SettingsSection title="Account">
+    <ProfileScreenShell title="Settings">
+      <SettingsSection>
         <SettingsRow
           label="Edit Profile"
           icon={<User size={20} color={palette.orange} />}
@@ -162,7 +162,7 @@ export function SettingsScreen() {
         />
       </SettingsSection>
 
-      <SettingsSection title="App Preferences">
+      <SettingsSection>
         <SettingsRow
           label="Left-handed mode"
           icon={<HandMetal size={20} color={palette.orange} />}

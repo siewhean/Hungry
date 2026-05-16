@@ -34,7 +34,7 @@ export function ManualLocationPickerScreen({ navigation }: Props) {
           onPress={() => navigation.goBack()}
           style={{ marginRight: spacing[3], padding: spacing[2] }}
         >
-          <ArrowLeft color={palette.navy} size={18} />
+          <ArrowLeft color={palette.text} size={18} />
         </Pressable>
         <AppText variant="h2">Pick a location</AppText>
       </View>

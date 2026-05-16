@@ -23,7 +23,7 @@ interface LocationSearchModalProps {
 }
 
 function DynamicHeader({ onClose }: { onClose: () => void }) {
-  const { palette, semanticSpacing, spacing } = useHungryTheme();
+  const { componentRadii, palette, semanticSpacing, spacing } = useHungryTheme();
   const { animatedIndex } = useBottomSheet();
   const insets = useSafeAreaInsets();
 
@@ -81,7 +81,8 @@ function DynamicFooter() {
 }
 
 export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
-  const { opacity, palette, radii, semanticSpacing, shadows, spacing } = useHungryTheme();
+  const { componentRadii, opacity, palette, radii, semanticSpacing, shadows, spacing } =
+    useHungryTheme();
   const currentLocation = useComposerStore((state) => state.location);
   const setLocation = useComposerStore((state) => state.setLocation);
   const locationOptions = useMemo(() => listComposerLocationOptions(), []);
@@ -198,7 +199,7 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
                 {
                   ...shadows.card,
                   backgroundColor: palette.surfaceGlass,
-                  borderRadius: radii.md,
+                  borderRadius: componentRadii.card,
                   bottom: spacing[3],
                   left: spacing[3],
                   padding: spacing[3],
@@ -238,7 +239,7 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
                       : pressed
                         ? palette.surfaceRaised
                         : "transparent",
-                  borderRadius: radii.md,
+                  borderRadius: componentRadii.card,
                   gap: spacing[3],
                   padding: spacing[3],
                 },

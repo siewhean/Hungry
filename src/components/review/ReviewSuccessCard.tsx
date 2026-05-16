@@ -36,7 +36,7 @@ export function ReviewSuccessCard({
   levelName = "Level 3 Foodie",
   levelProgress = 0.6,
 }: ReviewSuccessCardProps) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
 
   return (
     <View style={[styles.card, { gap: spacing[5] }]}>
@@ -45,7 +45,7 @@ export function ReviewSuccessCard({
         colors={["#E8531E", "#F59E0B"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[styles.pointsCard, { borderRadius: radii.lg, padding: spacing[5] }]}
+        style={[styles.pointsCard, { borderRadius: componentRadii.card, padding: spacing[5] }]}
       >
         <View style={[styles.checkCircle, { marginBottom: spacing[3] }]}>
           <Check color="#E8531E" size={32} strokeWidth={3} />

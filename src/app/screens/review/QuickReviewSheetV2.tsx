@@ -26,7 +26,7 @@ const TASTE_TAGS = [
 ];
 
 export function QuickReviewSheetV2({ navigation, route }: Props) {
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const onClose = () => navigation.goBack();
   const onSubmit = (review: any) => navigation.goBack();
 
@@ -114,7 +114,7 @@ export function QuickReviewSheetV2({ navigation, route }: Props) {
                   backgroundColor: palette.orangeLight,
                   borderWidth: 2,
                   borderColor: palette.orange,
-                  borderRadius: radii.lg,
+                  borderRadius: componentRadii.card,
                 }}
               >
                 <View
@@ -187,7 +187,7 @@ export function QuickReviewSheetV2({ navigation, route }: Props) {
                   borderStyle: "dashed",
                   borderWidth: 1,
                   borderColor: palette.border,
-                  borderRadius: radii.lg,
+                  borderRadius: componentRadii.card,
                   backgroundColor: palette.bgSoft,
                 }}
               >
@@ -322,7 +322,7 @@ export function QuickReviewSheetV2({ navigation, route }: Props) {
               style={{
                 width: 88,
                 height: 88,
-                borderRadius: 44,
+                borderRadius: componentRadii.iconButton,
                 backgroundColor: palette.successSoft,
                 alignItems: "center",
                 justifyContent: "center",
@@ -346,7 +346,7 @@ export function QuickReviewSheetV2({ navigation, route }: Props) {
               style={{
                 width: "100%",
                 backgroundColor: palette.orange,
-                borderRadius: radii.xl,
+                borderRadius: componentRadii.card,
                 padding: spacing[5],
                 alignItems: "center",
               }}

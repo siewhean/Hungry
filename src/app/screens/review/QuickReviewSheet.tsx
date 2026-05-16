@@ -31,7 +31,7 @@ export const QuickReviewSheet = ({
   dishName: initialDishName,
   onSuccess,
 }: QuickReviewSheetProps) => {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
 
   // Gamification store — provides live points/tier for the success card
   const { totalPoints, lastEarnedPoints, awardPoints, tier, levelProgress } =
@@ -152,7 +152,7 @@ export const QuickReviewSheet = ({
                 style={{
                   padding: spacing[4],
                   backgroundColor: palette.bgSoft,
-                  borderRadius: radii.lg,
+                  borderRadius: componentRadii.card,
                   borderWidth: 2,
                   borderColor: selectedDishId === dish.id ? palette.orange : "transparent",
                 }}

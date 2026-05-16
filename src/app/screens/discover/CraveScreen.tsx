@@ -28,7 +28,7 @@ export function CraveScreen() {
   const navigation = useNavigation<RootNavigation>();
   const repository = getDataRepository();
   const insets = useSafeAreaInsets();
-  const { palette, spacing, radii, shadows, motion, zIndex } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows, motion, zIndex } = useHungryTheme();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const profile = useProfileStore((state) => state.profile);
@@ -218,7 +218,7 @@ export function CraveScreen() {
               styles.card,
               {
                 backgroundColor: palette.surface,
-                borderRadius: radii.xxl,
+                borderRadius: componentRadii.card,
                 transform: [
                   { translateX: position.x },
                   { translateY: position.y },
@@ -354,7 +354,7 @@ export function CraveScreen() {
                 backgroundColor: "rgba(255,255,255,0.1)",
                 borderColor: palette.error,
                 borderWidth: 2,
-                borderRadius: radii.pill,
+                borderRadius: componentRadii.iconButton,
               },
               pressed && { opacity: 0.7 },
             ]}
@@ -371,7 +371,7 @@ export function CraveScreen() {
                 alignItems: "center",
                 justifyContent: "center",
                 backgroundColor: palette.orange,
-                borderRadius: radii.pill,
+                borderRadius: componentRadii.iconButton,
               },
               pressed && { scale: 0.9, opacity: 0.9 },
             ]}

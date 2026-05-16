@@ -18,9 +18,11 @@ import type {
   InteractionType,
   MerchantAccount,
   MerchantAnalytics,
+  MerchantNotification,
   MerchantNotificationPreferences,
   MerchantOutlet,
   MerchantPromotion,
+  MerchantWeeklySummary,
   MerchantTeamMember,
   MerchantRole,
   OCRDishDraft,
@@ -514,6 +516,10 @@ export interface HungryService {
     getVenue(id: string): Promise<VenueSummary | undefined>;
     listVenuesByBuilding(buildingId: string): Promise<VenueSummary[]>;
     getDish(id: string): Promise<DishDetail | undefined>;
+    recordDishView(
+      dishId: string,
+      context?: { sessionId?: string; userId?: string },
+    ): Promise<void>;
     listDishesByVenue(venueId: string): Promise<DishDetail[]>;
     listPopularNearby(lat?: number, lng?: number): Promise<DishDetail[]>;
     searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]>;
@@ -675,6 +681,10 @@ export interface HungryService {
 
     // Analytics
     getAnalytics(outletId: string, dateRange: "today" | "7d" | "30d"): Promise<MerchantAnalytics>;
+    getWeeklySummaryStats(outletId: string): Promise<MerchantWeeklySummary>;
+    getMerchantNotifications(merchantAccountId: string): Promise<MerchantNotification[]>;
+    syncLowRatingNotifications(outletId: string): Promise<MerchantNotification[]>;
+    sendWeeklySummaryNotifications(outletId: string): Promise<MerchantNotification[]>;
 
     // AI Tools
     generateDishDescription(dishName: string, ingredients?: string[]): Promise<string>;
@@ -694,6 +704,7 @@ export interface HungryService {
       merchantAccountId: string,
       email: string,
       role: MerchantRole,
+      displayName?: string,
     ): Promise<MerchantTeamMember>;
     removeTeamMember(memberId: string): Promise<void>;
     updateTeamMemberRole(memberId: string, role: MerchantRole): Promise<void>;

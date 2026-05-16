@@ -25,7 +25,7 @@ export function DecideForMeCard({
   onPress,
   animatePulse = false,
 }: DecideForMeCardProps) {
-  const { spacing, radii, palette } = useHungryTheme();
+  const { componentRadii, spacing, palette } = useHungryTheme();
   const navigation = useNavigation<Nav>();
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const shouldPulse = animatePulse;
@@ -62,7 +62,7 @@ export function DecideForMeCard({
         accessibilityLabel="Decide for me — let the Hungry wheel pick a dish"
         style={({ pressed }) => [
           styles.pressable,
-          { opacity: pressed ? 0.92 : 1, borderRadius: radii.lg },
+          { opacity: pressed ? 0.92 : 1, borderRadius: componentRadii.button },
         ]}
       >
         <LinearGradient
@@ -71,7 +71,7 @@ export function DecideForMeCard({
           end={{ x: 1, y: 1 }}
           style={[
             styles.gradient,
-            { borderRadius: radii.lg, padding: compact ? spacing[4] : spacing[5] },
+            { borderRadius: componentRadii.button, padding: compact ? spacing[4] : spacing[5] },
           ]}
         >
           <View style={[styles.row, { gap: compact ? spacing[3] : spacing[4] }]}>
@@ -91,7 +91,7 @@ export function DecideForMeCard({
               </AppText>
               <AppText
                 variant={compact ? "micro" : "bodySmall"}
-                numberOfLines={1}
+                numberOfLines={2}
                 style={{ color: palette.textSecondary }}
               >
                 Can&apos;t choose? Let the Hungry wheel pick for you!

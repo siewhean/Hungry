@@ -62,6 +62,9 @@ export function SettingsRow({
           style={{
             color: destructive ? palette.error : palette.text,
             fontWeight: "500",
+            flexShrink: 1,
+            flex: 1,
+            flexWrap: "wrap",
           }}
         >
           {label}
@@ -70,7 +73,7 @@ export function SettingsRow({
 
       <View style={styles.right}>
         {type === "value" && value ? (
-          <AppText tone="secondary" style={styles.valueText}>
+          <AppText tone="secondary" style={[styles.valueText, styles.rightText]} numberOfLines={1}>
             {value}
           </AppText>
         ) : null}
@@ -78,7 +81,11 @@ export function SettingsRow({
         {type === "navigation" ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             {value ? (
-              <AppText tone="secondary" style={styles.valueText}>
+              <AppText
+                tone="secondary"
+                style={[styles.valueText, styles.rightText]}
+                numberOfLines={1}
+              >
                 {value}
               </AppText>
             ) : null}
@@ -105,6 +112,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    minWidth: 0,
   },
   iconWrap: {
     marginRight: 12,
@@ -115,8 +123,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginLeft: 16,
+    flexShrink: 0,
+    minWidth: 0,
   },
   valueText: {
     fontSize: 14,
+  },
+  rightText: {
+    textAlign: "right",
   },
 });

@@ -38,16 +38,14 @@ test("profile home contract: profile stats use dynamic profile and social store 
   );
   assert.match(source, /followers: profile\.stats\.followersCount/);
   assert.match(source, /following: profile\.stats\.followingCount \+ followedCount/);
-  assert.match(source, /profile\.stats\.dishesReviewed === 0/);
-  assert.match(source, /profile\.stats\.dishesReviewed === 1/);
-  assert.match(source, /Updated based on \$\{profile\.stats\.dishesReviewed\} reviews/);
+  assert.match(source, /value=\{profile\.stats\.dishesReviewed\}/);
   assert.match(source, /label="Followers"/);
   assert.match(source, /label="Following"/);
   assert.match(source, /label="Reviews"[\s\S]*<PencilLine size=\{14\}/);
+  assert.match(source, /label="Stalls"[\s\S]*<Utensils size=\{14\}/);
   assert.match(source, /label="Saved"[\s\S]*<Bookmark size=\{14\}/);
   assert.match(source, /<AppText variant="h1" style=\{\{ color: palette\.orange \}\}>/);
   assert.match(source, /<AppText variant="h1" style=\{\{ color: palette\.text \}\}>/);
-  assert.match(source, /<AppText variant="bodyBold">Detailed Analysis<\/AppText>/);
   assert.match(
     source,
     /<AppText variant="h3" style=\{\{ color: palette\.text \}\}>\s*\{value\}\s*<\/AppText>/,

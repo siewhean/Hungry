@@ -14,8 +14,6 @@ import {
   Send,
   Star,
 } from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import Animated from "react-native-reanimated";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
@@ -27,7 +25,6 @@ import {
   IconButton,
   Input,
   Skeleton,
-  StickyBottomBar,
 } from "@/components/ui";
 import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
 import {
@@ -42,9 +39,6 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
-import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
-import { useCartStore } from "@/store/useCartStore";
-import { useOrderStore } from "@/store/useOrderStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
@@ -111,9 +105,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
-  const addItemToCart = useCartStore((state) => state.addItem);
-  const setActiveOrder = useOrderStore((state) => state.setActiveOrder);
-  const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const shareSheetRef = useRef<BottomSheetModal>(null);
@@ -126,6 +118,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
   const [isClaimPending, setIsClaimPending] = useState(() => hasPendingClaimForProfile(profile.id));
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+  const stallAddress = venue
+    ? [
+        venue.unitNumber,
+        building?.name,
+        building?.address,
+        building?.postalCode ? `Singapore ${building.postalCode}` : undefined,
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : "";
 
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
@@ -182,6 +184,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
           <EmptyState
             title="Stall not found"
             body="The stall you are looking for does not exist in our current directory."
+            errorMessage={`Missing stall data for ID: ${venueId || "unknown"}`}
+            sendErrorContext="Stall detail"
           />
         </SafeAreaView>
       </FeedErrorBoundary>
@@ -195,6 +199,52 @@ export function StallDetailScreen({ navigation, route }: Props) {
     : "Check Map";
 
   const communityReviews = deriveStallCommunityReviews(dishes);
+  const reviewedDishIds = profile.reviewedDishIds;
+  const hasReviewedDishAtVenue = dishes.some((dish) => reviewedDishIds.includes(dish.id));
+  const nextUnreviewedDish = dishes.find((dish) => !reviewedDishIds.includes(dish.id));
+  const headerButtonColor = palette.surface;
+  const headerButtonBorderColor = palette.border;
+
+  const handleReviewRequiredForTried = () => {
+    if (!isAuthenticated) {
+      showToast({
+        message: "Sign in to review this stall before marking it as visited.",
+        tone: "warning",
+        duration: 3000,
+      });
+      setReturnRoute({
+        name: "StallDetail",
+        params: { venueId: venue?.id ?? venueId },
+      });
+      navigation.navigate("AuthStack", { screen: "Login" });
+      return;
+    }
+
+    if (!venue) {
+      showToast({ message: "Sign in again and try again.", tone: "warning", duration: 3000 });
+      return;
+    }
+
+    const targetDishId = nextUnreviewedDish?.id ?? dishes[0]?.id;
+    if (!targetDishId) {
+      showToast({
+        message: "No dish available for review yet. Add a dish first.",
+        tone: "warning",
+        duration: 3000,
+      });
+      return;
+    }
+
+    showToast({
+      message: "Please review this stall first before marking it as visited.",
+      tone: "info",
+      duration: 3000,
+    });
+    navigation.navigate("ReviewStack", {
+      screen: "ReviewMain",
+      params: { venueId: venue.id, dishId: targetDishId },
+    });
+  };
 
   const submitReviewReply = (reviewId: string) => {
     if (!requireAuthForProtectedAction("Sign in to reply to this review.")) {
@@ -233,37 +283,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
     requestAnimationFrame(() => {
       shareSheetRef.current?.present();
     });
-  };
-
-  const handleOrderDelivery = () => {
-    if (!requireAuthForProtectedAction("Sign in to order from this stall.")) {
-      return;
-    }
-
-    const deliveryLink = venue.deliveryLinks[0];
-    if (deliveryLink) {
-      void openTrustedDeliveryUrl(
-        deliveryLink.platform,
-        deliveryLink.nativeUrl,
-        deliveryLink.webUrl,
-      );
-      return;
-    }
-
-    if (!leadDish) {
-      showToast({ message: "No menu item is available to add yet.", tone: "info" });
-      return;
-    }
-
-    addItemToCart({ dishId: leadDish.id });
-    setActiveOrder({
-      id: `order-${Date.now()}`,
-      venueId: venue.id,
-      totalAmount: leadDish.price,
-      status: "draft",
-      createdAt: new Date().toISOString(),
-    });
-    showToast({ message: `${leadDish.name} added to cart.`, tone: "success" });
   };
 
   const handleClaimThisStall = async () => {
@@ -334,15 +353,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
               },
             ]}
           >
-            <LinearGradient
-              colors={[palette.overlay, "transparent"]}
-              style={[StyleSheet.absoluteFill, { height: 100 }]}
-            />
             <IconButton
               variant="floating"
               accessibilityLabel="Go back"
               onPress={() => navigation.goBack()}
               icon={<ChevronLeft color={palette.text} size={24} />}
+              style={{ backgroundColor: headerButtonColor, borderColor: headerButtonBorderColor }}
             />
             <View style={{ flex: 1 }} />
             <View style={{ flexDirection: "row", gap: spacing[2] }}>
@@ -372,83 +388,41 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     size={20}
                   />
                 }
+                style={{
+                  backgroundColor: headerButtonColor,
+                  borderColor: headerButtonBorderColor,
+                }}
               />
               <IconButton
                 variant="floating"
                 accessibilityLabel="Share stall"
                 onPress={openShareSheet}
                 icon={<Send color={palette.text} size={20} />}
+                style={{
+                  backgroundColor: headerButtonColor,
+                  borderColor: headerButtonBorderColor,
+                }}
               />
             </View>
           </View>
 
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: insets.bottom + spacing[24] }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + spacing[8] }}
           >
-            {/* Hero image - 16:9 Ratio */}
+            {/* Hero image */}
             <View
               style={{
                 width: screenWidth,
-                height: screenWidth * (9 / 16),
+                height: screenWidth * 0.75,
                 position: "relative",
               }}
             >
-              <Animated.View style={StyleSheet.absoluteFill}>
-                <Image
-                  source={{ uri: leadDish?.imageUrl }}
-                  style={StyleSheet.absoluteFill}
-                  contentFit="cover"
-                />
-              </Animated.View>
-              <LinearGradient
-                colors={[`${palette.bg}00`, `${palette.bg}B3`, palette.bg]}
-                style={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: 80,
-                }}
+              <Image
+                source={{ uri: leadDish?.imageUrl }}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
               />
-              {/* Rating Pill + Hygiene Shield - Floating */}
-              <View
-                style={{
-                  position: "absolute",
-                  bottom: -spacing[2],
-                  left: profile.leftHandedMode ? spacing[4] : undefined,
-                  right: profile.leftHandedMode ? undefined : spacing[4],
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: spacing[2],
-                }}
-              >
-                <View
-                  style={[
-                    {
-                      backgroundColor: palette.amber,
-                      borderRadius: radii.pill,
-                      paddingHorizontal: spacing[3],
-                      paddingVertical: spacing[2],
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: spacing[1],
-                      ...shadows.floating,
-                    },
-                  ]}
-                >
-                  <Star color={palette.surface} fill={palette.surface} size={14} />
-                  <AppText
-                    style={{
-                      color: palette.surface,
-                      fontWeight: "800",
-                      fontSize: 15,
-                    }}
-                  >
-                    {(leadDish?.rating ?? 4.8).toFixed(1)}
-                  </AppText>
-                </View>
-              </View>
             </View>
 
             <View
@@ -488,9 +462,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 </AppText>
               </View>
 
-              {/* Save / Tried / Add-to-List */}
+              {/* Save / Visited / Add-to-List */}
               {isAuthenticated && venue && (
-                <StallInteractionBar stallId={venue.id} userId={profile.id} />
+                <StallInteractionBar
+                  stallId={venue.id}
+                  userId={profile.id}
+                  hasReviewedDishAtVenue={hasReviewedDishAtVenue}
+                  reviewPromptText="Please review a dish from this stall before marking it as visited."
+                  onReviewRequired={handleReviewRequiredForTried}
+                />
               )}
 
               {/* Attributes */}
@@ -508,9 +488,22 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 </Card>
               </View>
 
-              {/* Dishes Grid */}
+              {/* Address */}
+              <View style={{ gap: spacing[3] }}>
+                <AppText variant="h2">Address</AppText>
+                <Card style={{ padding: spacing[4], gap: spacing[2] }}>
+                  <View style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}>
+                    <MapPin color={palette.orange} size={18} />
+                    <AppText variant="body" tone="secondary" style={{ flex: 1 }}>
+                      {stallAddress}
+                    </AppText>
+                  </View>
+                </Card>
+              </View>
+
+              {/* Menu */}
               <View style={{ gap: spacing[4] }}>
-                <AppText variant="h2">Signature Dishes</AppText>
+                <AppText variant="h2">Menu</AppText>
                 <View
                   style={{
                     flexDirection: "row",
@@ -532,7 +525,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           style={{
                             width: "100%",
                             height: 120,
-                            borderRadius: radii.lg,
+                            borderRadius: componentRadii.card,
                           }}
                           contentFit="cover"
                         />
@@ -742,24 +735,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
               ) : null}
             </View>
           </ScrollView>
-
-          <StickyBottomBar
-            actions={[
-              {
-                label: venue.deliveryLinks.length > 0 ? "Order delivery" : "Add to cart",
-                variant: "secondary",
-                onPress: handleOrderDelivery,
-              },
-              {
-                label: "Directions",
-                variant: "primary",
-                icon: <MapPin color={palette.textOnPrimary} size={18} />,
-                onPress: () => {
-                  navigation.navigate("MapZoomedIn", { buildingId: venue.buildingId });
-                },
-              },
-            ]}
-          />
 
           <ReviewShareSheet
             activeReview={activeShareReview}

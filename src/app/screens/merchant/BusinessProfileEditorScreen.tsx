@@ -1,25 +1,18 @@
-import React, { useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-  Switch,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, StyleSheet, TextInput, TouchableOpacity, Alert, Switch, Image } from "react-native";
 import { Camera, Image as ImageIcon } from "lucide-react-native";
 import { useForm, Controller } from "react-hook-form";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { AppText, Button, Screen, Chip } from "@/components/ui";
+import { AppText, Button, EmptyState, Screen } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { MerchantOutlet, LocationPrivacy } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
+import { formatBusinessType } from "@/features/merchant/merchantReadiness";
 
 type NavigationProp = NativeStackNavigationProp<MerchantTabParamList, "BusinessProfileEditor">;
 
@@ -33,19 +26,197 @@ type FormData = {
   locationPrivacy: LocationPrivacy;
   operatingHours: string;
   temporaryClosure: string;
+  profilePhotoUrl: string;
+  coverPhotoUrl: string;
   contactPhone: string;
   contactEmail: string;
   dietaryLabels: string;
   tasteTags: string;
 };
 
+const BUSINESS_TYPE_OPTIONS: MerchantOutlet["businessType"][] = [
+  "hawker_stall",
+  "food_court_stall",
+  "restaurant",
+  "cafe",
+  "mall_tenant",
+  "home_based",
+];
+
+function loadImagePickerModule() {
+  try {
+    return require("expo-image-picker");
+  } catch {
+    return null;
+  }
+}
+
+function BusinessTypeDropdown({
+  value,
+  onChange,
+}: {
+  value: MerchantOutlet["businessType"];
+  onChange: (value: MerchantOutlet["businessType"]) => void;
+}) {
+  const { componentRadii, palette, spacing } = useHungryTheme();
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <View style={{ gap: spacing[2] }}>
+      <TouchableOpacity
+        activeOpacity={0.75}
+        onPress={() => setIsOpen((current) => !current)}
+        style={[
+          styles.input,
+          {
+            backgroundColor: palette.surface,
+            borderColor: palette.border,
+            borderRadius: componentRadii.card,
+            paddingHorizontal: spacing[3],
+            paddingVertical: spacing[3],
+          },
+        ]}
+      >
+        <AppText variant="bodyBold">{formatBusinessType(value)}</AppText>
+      </TouchableOpacity>
+      {isOpen ? (
+        <View
+          style={{
+            backgroundColor: palette.surface,
+            borderColor: palette.border,
+            borderRadius: componentRadii.card,
+            borderWidth: 1,
+            overflow: "hidden",
+          }}
+        >
+          {BUSINESS_TYPE_OPTIONS.map((type) => {
+            const selected = type === value;
+            return (
+              <TouchableOpacity
+                key={type}
+                activeOpacity={0.75}
+                onPress={() => {
+                  onChange(type);
+                  setIsOpen(false);
+                }}
+                style={{
+                  backgroundColor: selected ? palette.bgSoft : palette.surface,
+                  paddingHorizontal: spacing[3],
+                  paddingVertical: spacing[3],
+                }}
+              >
+                <AppText
+                  variant="bodySmallBold"
+                  style={{ color: selected ? palette.orange : palette.text }}
+                >
+                  {formatBusinessType(type)}
+                </AppText>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function BusinessImageField({
+  label,
+  value,
+  onChange,
+  isSaving,
+  icon,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  isSaving: boolean;
+  icon: React.ReactNode;
+}) {
+  const { componentRadii, palette, spacing } = useHungryTheme();
+  const [error, setError] = useState<string | null>(null);
+
+  const handlePick = async () => {
+    try {
+      setError(null);
+      const imagePicker = loadImagePickerModule();
+      if (!imagePicker) {
+        setError("Photo picker is unavailable in this build.");
+        return;
+      }
+      const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setError("Photos permission is required to upload this image.");
+        return;
+      }
+      const result = await imagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        mediaTypes: imagePicker.MediaTypeOptions.Images,
+        quality: 0.82,
+        selectionLimit: 1,
+      });
+      if (result.canceled || !result.assets?.length) return;
+      onChange(result.assets[0].uri);
+    } catch {
+      setError("Unable to open the photo library right now.");
+    }
+  };
+
+  return (
+    <View style={{ gap: spacing[2] }}>
+      <AppText variant="bodyBold">{label}</AppText>
+      {value.trim() ? (
+        <Image
+          source={{ uri: value.trim() }}
+          style={[
+            styles.photoPreview,
+            { borderRadius: componentRadii.input, borderColor: palette.border },
+          ]}
+        />
+      ) : (
+        <View
+          accessibilityLabel={`${label} preview`}
+          style={[
+            styles.photoPlaceholder,
+            {
+              backgroundColor: palette.bgSoft,
+              borderColor: palette.border,
+              borderRadius: componentRadii.input,
+            },
+          ]}
+        >
+          {icon}
+          <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
+            Upload from your phone or gallery.
+          </AppText>
+        </View>
+      )}
+      {isSaving && value ? (
+        <AppText variant="micro" tone="muted">
+          Uploading and saving image...
+        </AppText>
+      ) : null}
+      {error ? (
+        <AppText variant="micro" style={{ color: palette.error }}>
+          {error}
+        </AppText>
+      ) : null}
+      <View style={{ flexDirection: "row", gap: spacing[2] }}>
+        <Button label={value ? "Replace" : "Upload"} variant="secondary" onPress={handlePick} />
+        {value ? <Button label="Remove" variant="ghost" onPress={() => onChange("")} /> : null}
+      </View>
+    </View>
+  );
+}
+
 export function BusinessProfileEditorScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const rootNavigation = getRootNavigation(navigation as any);
   const repository = getDataRepository();
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const updateOutletProfile = useMerchantStore((state) => state.updateOutletProfile);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
 
   const {
     control,
@@ -63,6 +234,8 @@ export function BusinessProfileEditorScreen() {
       locationPrivacy: "exact",
       operatingHours: "",
       temporaryClosure: "",
+      profilePhotoUrl: "",
+      coverPhotoUrl: "",
       contactPhone: "",
       contactEmail: "",
       dietaryLabels: "",
@@ -81,6 +254,8 @@ export function BusinessProfileEditorScreen() {
       setValue("locationPrivacy", activeOutlet.locationPrivacy || "exact");
       setValue("operatingHours", activeOutlet.operatingHours || "");
       setValue("temporaryClosure", activeOutlet.temporaryClosure || "");
+      setValue("profilePhotoUrl", activeOutlet.profilePhotoUrl || "");
+      setValue("coverPhotoUrl", activeOutlet.coverPhotoUrl || "");
       setValue("contactPhone", activeOutlet.contactPhone || "");
       setValue("contactEmail", activeOutlet.contactEmail || "");
       setValue("dietaryLabels", activeOutlet.dietaryLabels?.join(", ") || "");
@@ -91,6 +266,17 @@ export function BusinessProfileEditorScreen() {
   const onSubmit = async (data: FormData) => {
     if (!activeOutlet) return;
     try {
+      const profilePhotoUrl = data.profilePhotoUrl.trim();
+      const coverPhotoUrl = data.coverPhotoUrl.trim();
+      setIsUploadingImages(
+        [profilePhotoUrl, coverPhotoUrl].some(
+          (value) =>
+            value.startsWith("file://") || value.startsWith("content://") || value.startsWith("/"),
+        ),
+      );
+      const galleryUrls = Array.from(
+        new Set([profilePhotoUrl, coverPhotoUrl, ...activeOutlet.galleryUrls].filter(Boolean)),
+      );
       const updates: Partial<MerchantOutlet> = {
         name: data.name,
         description: data.description,
@@ -104,6 +290,9 @@ export function BusinessProfileEditorScreen() {
         locationPrivacy: data.locationPrivacy,
         operatingHours: data.operatingHours,
         temporaryClosure: data.temporaryClosure,
+        ...(profilePhotoUrl ? { profilePhotoUrl } : {}),
+        ...(coverPhotoUrl ? { coverPhotoUrl } : {}),
+        galleryUrls,
         contactPhone: data.contactPhone,
         contactEmail: data.contactEmail,
         dietaryLabels: data.dietaryLabels
@@ -125,7 +314,9 @@ export function BusinessProfileEditorScreen() {
       navigation.goBack();
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Failed to update profile.");
+      Alert.alert("Error", error instanceof Error ? error.message : "Failed to update profile.");
+    } finally {
+      setIsUploadingImages(false);
     }
   };
 
@@ -153,7 +344,12 @@ export function BusinessProfileEditorScreen() {
   if (!activeOutlet) {
     return (
       <Screen title="Error">
-        <AppText>No active outlet selected.</AppText>
+        <EmptyState
+          title="No active outlet selected"
+          body="A business profile cannot be loaded until you choose a merchant outlet."
+          errorMessage="No active outlet was found for this merchant session."
+          sendErrorContext="Business profile editor"
+        />
       </Screen>
     );
   }
@@ -161,6 +357,7 @@ export function BusinessProfileEditorScreen() {
   return (
     <Screen
       title="Business Profile"
+      contentContainerStyle={{ paddingBottom: spacing[6] }}
       headerRight={
         <TouchableOpacity
           onPress={handlePreviewAsCustomer}
@@ -188,7 +385,7 @@ export function BusinessProfileEditorScreen() {
               {
                 paddingVertical: spacing[2],
                 paddingHorizontal: spacing[3],
-                borderRadius: radii.md,
+                borderRadius: componentRadii.card,
               },
               { backgroundColor: palette.successSoft, borderColor: palette.success },
             ]}
@@ -217,7 +414,7 @@ export function BusinessProfileEditorScreen() {
                   style={[
                     styles.input,
                     {
-                      borderRadius: radii.md,
+                      borderRadius: componentRadii.card,
                       paddingHorizontal: spacing[3],
                       paddingVertical: spacing[2],
                     },
@@ -255,7 +452,7 @@ export function BusinessProfileEditorScreen() {
                   style={[
                     styles.input,
                     {
-                      borderRadius: radii.md,
+                      borderRadius: componentRadii.card,
                       paddingHorizontal: spacing[3],
                       paddingVertical: spacing[2],
                     },
@@ -287,41 +484,7 @@ export function BusinessProfileEditorScreen() {
               control={control}
               name="businessType"
               render={({ field: { onChange, value } }) => (
-                <View style={[styles.pickerContainer, { gap: spacing[2], marginTop: spacing[1] }]}>
-                  {[
-                    "hawker_stall",
-                    "food_court_stall",
-                    "restaurant",
-                    "cafe",
-                    "mall_tenant",
-                    "home_based",
-                  ].map((type) => (
-                    <TouchableOpacity
-                      key={type}
-                      style={[
-                        styles.pickerChip,
-                        {
-                          paddingVertical: spacing[1],
-                          paddingHorizontal: spacing[3],
-                          borderRadius: radii.pill,
-                        },
-                        { backgroundColor: palette.bgSoft, borderColor: palette.border },
-                        value === type && {
-                          backgroundColor: palette.orangeLight,
-                          borderColor: palette.orange,
-                        },
-                      ]}
-                      onPress={() => onChange(type)}
-                    >
-                      <AppText
-                        variant="bodySmallBold"
-                        style={{ color: value === type ? palette.orange : palette.textMuted }}
-                      >
-                        {type.replace("_", " ")}
-                      </AppText>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                <BusinessTypeDropdown value={value} onChange={onChange} />
               )}
             />
           </View>
@@ -331,49 +494,35 @@ export function BusinessProfileEditorScreen() {
           <AppText variant="h3" style={{ fontWeight: "600" }}>
             Photos
           </AppText>
-          <View style={{ flexDirection: "row", gap: spacing[4] }}>
-            <View style={{ flex: 1, gap: spacing[2] }}>
-              <AppText variant="bodyBold">Profile Image</AppText>
-              <View
-                accessibilityLabel="Profile image upload unavailable"
-                style={{
-                  height: 100,
-                  backgroundColor: palette.bgSoft,
-                  borderColor: palette.border,
-                  borderWidth: 1,
-                  borderRadius: radii.xl,
-                  borderStyle: "dashed",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Camera size={24} color={palette.textMuted} />
-                <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
-                  Image URL only
-                </AppText>
-              </View>
-            </View>
-            <View style={{ flex: 1, gap: spacing[2] }}>
-              <AppText variant="bodyBold">Cover Image</AppText>
-              <View
-                accessibilityLabel="Cover image upload unavailable"
-                style={{
-                  height: 100,
-                  backgroundColor: palette.bgSoft,
-                  borderColor: palette.border,
-                  borderWidth: 1,
-                  borderRadius: radii.xl,
-                  borderStyle: "dashed",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <ImageIcon size={24} color={palette.textMuted} />
-                <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
-                  Image URL only
-                </AppText>
-              </View>
-            </View>
+
+          <View style={{ gap: spacing[4] }}>
+            <Controller
+              control={control}
+              name="profilePhotoUrl"
+              render={({ field: { onChange, value } }) => (
+                <BusinessImageField
+                  label="Profile Image"
+                  value={value}
+                  onChange={onChange}
+                  isSaving={isUploadingImages}
+                  icon={<Camera size={24} color={palette.textMuted} />}
+                />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="coverPhotoUrl"
+              render={({ field: { onChange, value } }) => (
+                <BusinessImageField
+                  label="Cover Image"
+                  value={value}
+                  onChange={onChange}
+                  isSaving={isUploadingImages}
+                  icon={<ImageIcon size={24} color={palette.textMuted} />}
+                />
+              )}
+            />
           </View>
         </View>
 
@@ -394,7 +543,7 @@ export function BusinessProfileEditorScreen() {
                   style={[
                     styles.input,
                     {
-                      borderRadius: radii.md,
+                      borderRadius: componentRadii.card,
                       paddingHorizontal: spacing[3],
                       paddingVertical: spacing[2],
                     },
@@ -426,7 +575,7 @@ export function BusinessProfileEditorScreen() {
                   style={[
                     styles.input,
                     {
-                      borderRadius: radii.md,
+                      borderRadius: componentRadii.card,
                       paddingHorizontal: spacing[3],
                       paddingVertical: spacing[2],
                     },
@@ -458,7 +607,7 @@ export function BusinessProfileEditorScreen() {
                   style={[
                     styles.input,
                     {
-                      borderRadius: radii.md,
+                      borderRadius: componentRadii.card,
                       paddingHorizontal: spacing[3],
                       paddingVertical: spacing[2],
                     },
@@ -497,7 +646,7 @@ export function BusinessProfileEditorScreen() {
                     style={[
                       styles.input,
                       {
-                        borderRadius: radii.md,
+                        borderRadius: componentRadii.card,
                         paddingHorizontal: spacing[3],
                         paddingVertical: spacing[2],
                       },
@@ -527,7 +676,7 @@ export function BusinessProfileEditorScreen() {
                     style={[
                       styles.input,
                       {
-                        borderRadius: radii.md,
+                        borderRadius: componentRadii.card,
                         paddingHorizontal: spacing[3],
                         paddingVertical: spacing[2],
                       },
@@ -559,7 +708,7 @@ export function BusinessProfileEditorScreen() {
                   style={[
                     styles.input,
                     {
-                      borderRadius: radii.md,
+                      borderRadius: componentRadii.card,
                       paddingHorizontal: spacing[3],
                       paddingVertical: spacing[2],
                     },
@@ -590,7 +739,7 @@ export function BusinessProfileEditorScreen() {
                   style={[
                     styles.input,
                     {
-                      borderRadius: radii.md,
+                      borderRadius: componentRadii.card,
                       paddingHorizontal: spacing[3],
                       paddingVertical: spacing[2],
                     },
@@ -663,7 +812,7 @@ export function BusinessProfileEditorScreen() {
                     style={[
                       styles.input,
                       {
-                        borderRadius: radii.md,
+                        borderRadius: componentRadii.card,
                         paddingHorizontal: spacing[3],
                         paddingVertical: spacing[2],
                       },
@@ -712,7 +861,7 @@ export function BusinessProfileEditorScreen() {
                     style={[
                       styles.input,
                       {
-                        borderRadius: radii.md,
+                        borderRadius: componentRadii.card,
                         paddingHorizontal: spacing[3],
                         paddingVertical: spacing[2],
                       },
@@ -771,6 +920,18 @@ const styles = StyleSheet.create({
   },
   textArea: {
     textAlignVertical: "top",
+  },
+  photoPreview: {
+    width: "100%",
+    height: 140,
+    borderWidth: 1,
+  },
+  photoPlaceholder: {
+    height: 140,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
   },
   pickerContainer: {
     flexDirection: "row",

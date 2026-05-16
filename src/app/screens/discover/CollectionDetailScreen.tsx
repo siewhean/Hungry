@@ -5,7 +5,7 @@
  * the user's save/tried interaction state for each.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View, FlatList, Pressable, Image, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Bookmark, BookmarkCheck, ChevronLeft } from "lucide-react-native";
@@ -31,13 +31,21 @@ interface StallRow {
 
 export function CollectionDetailScreen({ route, navigation }: Props) {
   const { collectionId } = route.params;
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
   const insets = useSafeAreaInsets();
 
-  const collection = useCollectionStore((s) => s.getCollectionById(collectionId));
+  const collections = useCollectionStore((state) => state.collections);
+  const collection = useMemo(
+    () => collections.find((item) => item.id === collectionId) ?? null,
+    [collections, collectionId],
+  );
   const loadCollections = useCollectionStore((s) => s.loadCollections);
   const loadItems = useCollectionStore((s) => s.loadCollectionItems);
-  const isSaved = useCollectionStore((s) => s.isSaved(collectionId));
+  const savedCollectionIds = useCollectionStore((state) => state.savedCollectionIds);
+  const isSaved = useMemo(
+    () => savedCollectionIds.has(collectionId),
+    [collectionId, savedCollectionIds],
+  );
   const toggleSave = useCollectionStore((s) => s.toggleSaveCollection);
 
   const interactions = useStallInteractionStore((s) => s.interactions);
@@ -69,7 +77,6 @@ export function CollectionDetailScreen({ route, navigation }: Props) {
     if (collection) {
       trackCollectionViewed({ collectionId, createdBy: collection.createdBy });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collectionId, collection?.createdBy]);
 
   const triedCount = rows.filter((r) => interactions[r.item.stallId]?.isTried).length;
@@ -93,7 +100,12 @@ export function CollectionDetailScreen({ route, navigation }: Props) {
   if (!collection) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
-        <EmptyState title="Collection not found" body="This collection may have been removed." />
+        <EmptyState
+          title="Collection not found"
+          body="This collection may have been removed."
+          errorMessage={`Unable to resolve collection ID ${collectionId}.`}
+          sendErrorContext={`Collection ${collectionId}`}
+        />
       </SafeAreaView>
     );
   }
@@ -188,7 +200,7 @@ export function CollectionDetailScreen({ route, navigation }: Props) {
                   {
                     backgroundColor: palette.surface,
                     borderColor: palette.border,
-                    borderRadius: radii.xl,
+                    borderRadius: componentRadii.card,
                     borderWidth: 1,
                     padding: spacing[4],
                     gap: spacing[1],

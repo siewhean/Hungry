@@ -15,7 +15,7 @@ import { mockGalleryAssets } from "@/lib/services/mock/storyGalleryFixtures";
 type GalleryFilter = "all" | StoryContent["type"];
 
 export function AddStoryScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const { addStory } = useStoryStore();
@@ -87,7 +87,7 @@ export function AddStoryScreen() {
         showsVerticalScrollIndicator={false}
       >
         {selectedAsset ? (
-          <View style={[styles.preview, { borderRadius: radii.xl }]}>
+          <View style={[styles.preview, { borderRadius: componentRadii.card }]}>
             <Image
               source={{ uri: selectedAsset.url }}
               contentFit="cover"
@@ -146,7 +146,7 @@ export function AddStoryScreen() {
                   styles.galleryItem,
                   {
                     borderColor: selected ? palette.orange : palette.border,
-                    borderRadius: radii.lg,
+                    borderRadius: componentRadii.button,
                   },
                 ]}
               >

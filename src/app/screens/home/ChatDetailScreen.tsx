@@ -16,7 +16,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText } from "@/components/ui";
+import { AppText, EmptyState } from "@/components/ui";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { ChatMessage } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
@@ -47,7 +47,7 @@ export function ChatDetailScreen({ navigation, route }: Props) {
     avatar: rawAvatar,
     isOnline: initialIsOnline,
   } = safeParams as Partial<Props["route"]["params"]>;
-  const { palette, spacing, semanticSpacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, semanticSpacing, radii } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -67,8 +67,8 @@ export function ChatDetailScreen({ navigation, route }: Props) {
   const hasValidChatTarget = Boolean(chatId);
 
   const styles = useMemo(
-    () => createStyles({ palette, spacing, semanticSpacing, radii }),
-    [palette, spacing, semanticSpacing, radii],
+    () => createStyles({ componentRadii, palette, spacing, semanticSpacing, radii }),
+    [componentRadii, palette, spacing, semanticSpacing, radii],
   );
 
   useEffect(() => {
@@ -157,11 +157,12 @@ export function ChatDetailScreen({ navigation, route }: Props) {
             <AppText variant="bodyBold">Chat unavailable</AppText>
           </View>
         </View>
-        <View style={styles.unavailableContainer}>
-          <AppText variant="body" tone="muted">
-            This chat could not be loaded.
-          </AppText>
-        </View>
+        <EmptyState
+          title="Chat unavailable"
+          body="This chat could not be loaded."
+          errorMessage="Unable to resolve chat target. The chat may have been removed."
+          sendErrorContext="Chat detail"
+        />
       </SafeAreaView>
     );
   }
@@ -225,11 +226,12 @@ export function ChatDetailScreen({ navigation, route }: Props) {
               </View>
             ) : null}
             {!isLoading && loadError ? (
-              <View style={styles.unavailableContainer}>
-                <AppText variant="body" tone="muted">
-                  {loadError}
-                </AppText>
-              </View>
+              <EmptyState
+                title="Unable to load messages"
+                body="There was a problem loading this chat."
+                errorMessage={loadError}
+                sendErrorContext={`Chat ${name}`}
+              />
             ) : null}
             {!isLoading && !loadError && messages.length === 0 ? (
               <View style={styles.unavailableContainer}>
@@ -321,11 +323,15 @@ export function ChatDetailScreen({ navigation, route }: Props) {
 }
 
 const createStyles = ({
+  componentRadii,
   palette,
   spacing,
   semanticSpacing,
   radii,
-}: Pick<ReturnType<typeof useHungryTheme>, "palette" | "spacing" | "semanticSpacing" | "radii">) =>
+}: Pick<
+  ReturnType<typeof useHungryTheme>,
+  "componentRadii" | "palette" | "spacing" | "semanticSpacing" | "radii"
+>) =>
   StyleSheet.create({
     header: {
       flexDirection: "row",
@@ -412,7 +418,7 @@ const createStyles = ({
     sendBtn: {
       width: 48,
       height: 48,
-      borderRadius: radii.pill,
+      borderRadius: componentRadii.iconButton,
       alignItems: "center",
       justifyContent: "center",
       marginTop: spacing[3],

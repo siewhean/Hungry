@@ -49,7 +49,7 @@ export function EditProfileScreen({ navigation }: Props) {
   const updateProfile = useProfileStore((state) => state.updateProfile);
   const setDietaryPreferences = useProfileStore((state) => state.setDietaryPreferences);
   const showToast = useUIStore((state) => state.showToast);
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [email, setEmail] = useState(profile.email);
   const [dietaryPreferences, setDietaryPreferencesState] = useState<DietaryFlag[]>(
@@ -122,7 +122,7 @@ export function EditProfileScreen({ navigation }: Props) {
             style={{
               width: 100,
               height: 100,
-              borderRadius: radii.pill,
+              borderRadius: componentRadii.iconButton,
               backgroundColor: palette.bgSoft,
               alignItems: "center",
               justifyContent: "center",

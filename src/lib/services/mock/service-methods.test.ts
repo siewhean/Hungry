@@ -139,11 +139,38 @@ test("auth.requestAccountDeletion clears mock session", async () => {
   assert.equal(session, null);
 });
 
+test("profile.updateProfile persists mock profile visibility", async () => {
+  const beforeProfile = await hungryService.profile.getProfile();
+
+  try {
+    const privateProfile = await hungryService.profile.updateProfile({
+      profileVisibility: "private",
+    });
+    assert.equal(privateProfile.profileVisibility, "private");
+    assert.equal((await hungryService.profile.getProfile()).profileVisibility, "private");
+
+    const publicProfile = await hungryService.profile.updateProfile({
+      profileVisibility: "public",
+    });
+    assert.equal(publicProfile.profileVisibility, "public");
+    assert.equal((await hungryService.profile.getProfile()).profileVisibility, "public");
+  } finally {
+    await hungryService.profile.updateProfile({
+      profileVisibility: beforeProfile.profileVisibility,
+    });
+  }
+});
+
 test("merchant menu methods persist CRUD and status toggles in mock state", async () => {
   const outletId = "outlet-wonton-mee";
+  const userVisibleVenueId = `mock-venue-${outletId}`;
   const beforeMenu = await hungryService.merchant.getMenu(outletId);
+  const seededDish = beforeMenu[0];
+  assert.ok(seededDish, "Expected seeded merchant menu dish");
+  assert.notEqual(seededDish.id, "dish-chicken-rice");
 
   const addedDish = await hungryService.merchant.addDish(outletId, {
+    id: "dish-chicken-rice",
     name: "Codex Test Noodles",
     price: 7.5,
     priceRange: "S$7.50",
@@ -158,6 +185,15 @@ test("merchant menu methods persist CRUD and status toggles in mock state", asyn
   const afterAdd = await hungryService.merchant.getMenu(outletId);
   assert.equal(afterAdd.length, beforeMenu.length + 1);
   assert.ok(afterAdd.some((dish) => dish.id === addedDish.id));
+  assert.notEqual(addedDish.id, "dish-chicken-rice");
+  const userVisibleVenue = await hungryService.discovery.getVenue(userVisibleVenueId);
+  assert.equal(userVisibleVenue?.name, "Uncle Tan's Wonton Mee");
+  assert.equal((await hungryService.discovery.getDish(addedDish.id))?.venueId, userVisibleVenueId);
+  assert.ok(
+    (await hungryService.discovery.listDishesByVenue(userVisibleVenueId)).some(
+      (dish) => dish.id === addedDish.id,
+    ),
+  );
 
   const editedDish = await hungryService.merchant.editDish(outletId, addedDish.id, {
     price: 8,
@@ -165,6 +201,7 @@ test("merchant menu methods persist CRUD and status toggles in mock state", asyn
   });
   assert.equal(editedDish.price, 8);
   assert.equal(editedDish.priceRange, "S$8.00");
+  assert.equal((await hungryService.discovery.getDish(addedDish.id))?.price, 8);
   assert.equal(addedDish.imageUrl, "https://example.com/codex-test-noodles.jpg");
   assert.deepEqual(addedDish.gallery, ["https://example.com/codex-test-noodles.jpg"]);
   assert.deepEqual(addedDish.tasteTags, ["egg noodles", "dark soy sauce"]);
@@ -176,6 +213,9 @@ test("merchant menu methods persist CRUD and status toggles in mock state", asyn
       .find((dish) => dish.id === addedDish.id)
       ?.availabilityFlags.includes("Sold out"),
   );
+  assert.ok(
+    (await hungryService.discovery.getDish(addedDish.id))?.availabilityFlags.includes("Sold out"),
+  );
 
   assert.equal(await hungryService.merchant.toggleFeatured(outletId, addedDish.id), true);
   assert.ok(
@@ -183,11 +223,78 @@ test("merchant menu methods persist CRUD and status toggles in mock state", asyn
       .find((dish) => dish.id === addedDish.id)
       ?.availabilityFlags.includes("Featured"),
   );
+  assert.ok(
+    (await hungryService.discovery.getDish(addedDish.id))?.availabilityFlags.includes("Featured"),
+  );
 
   await hungryService.merchant.deleteDish(outletId, addedDish.id);
   const afterDelete = await hungryService.merchant.getMenu(outletId);
   assert.equal(afterDelete.length, beforeMenu.length);
   assert.ok(!afterDelete.some((dish) => dish.id === addedDish.id));
+  assert.equal(await hungryService.discovery.getDish(addedDish.id), undefined);
+  assert.ok(
+    !(await hungryService.discovery.listDishesByVenue(userVisibleVenueId)).some(
+      (dish) => dish.id === addedDish.id,
+    ),
+  );
+});
+
+test("merchant seeded menu edits do not overwrite original mock catalog fixtures", async () => {
+  const outletId = "outlet-wonton-mee";
+  const seededDish = (await hungryService.merchant.getMenu(outletId))[0];
+  assert.ok(seededDish, "Expected seeded merchant menu dish");
+
+  await hungryService.merchant.toggleFeatured(outletId, seededDish.id);
+
+  const originalDish = await hungryService.discovery.getDish("dish-chicken-rice");
+  const merchantVisibleDish = await hungryService.discovery.getDish(seededDish.id);
+  assert.equal(originalDish?.venueId, "venue-tian-tian");
+  assert.equal(originalDish?.venueName, "Tian Tian Chicken Rice");
+  assert.equal(merchantVisibleDish?.venueId, `mock-venue-${outletId}`);
+  assert.ok(merchantVisibleDish?.availabilityFlags.includes("Featured"));
+});
+
+test("merchant seeded menu is immediately visible from mock user catalog", async () => {
+  const outletId = "outlet-wonton-mee";
+  const userVisibleVenueId = `mock-venue-${outletId}`;
+  const seededDish = (await hungryService.merchant.getMenu(outletId))[0];
+  assert.ok(seededDish, "Expected seeded merchant menu dish");
+
+  const userVisibleVenue = await hungryService.discovery.getVenue(userVisibleVenueId);
+  const userVisibleDish = await hungryService.discovery.getDish(seededDish.id);
+
+  assert.equal(userVisibleVenue?.id, userVisibleVenueId);
+  assert.equal(userVisibleVenue?.topDishId, seededDish.id);
+  assert.equal(userVisibleDish?.venueId, userVisibleVenueId);
+  assert.equal(userVisibleDish?.venueName, userVisibleVenue?.name);
+});
+
+test("merchant profile updates are visible from mock user venue reads", async () => {
+  const outletId = "outlet-wonton-mee";
+  const userVisibleVenueId = `mock-venue-${outletId}`;
+  const seededDish = (await hungryService.merchant.getMenu(outletId))[0];
+  assert.ok(seededDish, "Expected seeded merchant menu dish");
+
+  await hungryService.merchant.updateBusinessProfile(outletId, {
+    name: "Codex Mock Merchant Stall",
+    operatingHours: "9:00 AM – 4:00 PM",
+    temporaryClosure: "Closed for cleaning tomorrow",
+  });
+
+  const userVisibleVenue = await hungryService.discovery.getVenue(userVisibleVenueId);
+  assert.equal(userVisibleVenue?.name, "Codex Mock Merchant Stall");
+  assert.equal(userVisibleVenue?.operatingHours, "9:00 AM – 4:00 PM");
+  assert.equal(userVisibleVenue?.closureNotice, "Closed for cleaning tomorrow");
+  assert.equal(
+    (await hungryService.discovery.getDish(seededDish.id))?.venueName,
+    "Codex Mock Merchant Stall",
+  );
+
+  await hungryService.merchant.updateBusinessProfile(outletId, {
+    name: "Uncle Tan's Wonton Mee",
+    operatingHours: "7:00 AM – 3:00 PM",
+    temporaryClosure: undefined,
+  });
 });
 
 test("merchant OCR draft methods filter drafts and publish accepted dishes", async () => {
@@ -207,6 +314,15 @@ test("merchant OCR draft methods filter drafts and publish accepted dishes", asy
   const afterAcceptMenu = await hungryService.merchant.getMenu(outletId);
   assert.equal(afterAcceptMenu.length, beforeMenu.length + 1);
   assert.ok(afterAcceptMenu.some((dish) => dish.id === acceptedDish.id));
+  assert.equal(
+    (await hungryService.discovery.getDish(acceptedDish.id))?.venueId,
+    `mock-venue-${outletId}`,
+  );
+  assert.ok(
+    (await hungryService.discovery.listDishesByVenue(`mock-venue-${outletId}`)).some(
+      (dish) => dish.id === acceptedDish.id,
+    ),
+  );
 
   const afterAcceptDraft = (await hungryService.merchant.getOCRDrafts(outletId)).find(
     (draft) => draft.id === pendingDrafts[0].id,
@@ -341,6 +457,13 @@ test("merchant promotion create and update persist mock state", async () => {
   const created = await hungryService.merchant.createPromotion(outletId, {
     title: "Codex Draft Promo",
     description: "Draft campaign for service tests.",
+    promotionItemType: "existing_menu_item",
+    targetDishId: (await hungryService.merchant.getMenu(outletId))[0]?.id,
+    originalPrice: 6.5,
+    promotionalPrice: 5.5,
+    finalPrice: 5.5,
+    discountPercentage: 15,
+    isAvailable: true,
     startDate: "2026-05-15T03:00:00Z",
     endDate: "2026-05-16T07:00:00Z",
     targetAudience: ["nearby_users"],
@@ -349,6 +472,8 @@ test("merchant promotion create and update persist mock state", async () => {
 
   assert.match(created.id, /^promo-new-/);
   assert.equal(created.outletId, outletId);
+  assert.equal(created.promotionItemType, "existing_menu_item");
+  assert.equal(created.finalPrice, 5.5);
   assert.ok(created.createdAt);
   assert.deepEqual(created.analytics, {
     impressions: 0,
@@ -413,6 +538,41 @@ test("merchant promotion analytics returns analytics and rejects missing promoti
   );
 });
 
+test("merchant analytics records dish views without duplicate session increments", async () => {
+  const outletId = "outlet-wonton-mee";
+  const menu = await hungryService.merchant.getMenu(outletId);
+  assert.ok(menu[0], "Expected a merchant menu dish");
+
+  const before = await hungryService.merchant.getAnalytics(outletId, "7d");
+  await hungryService.discovery.recordDishView(menu[0].id, { sessionId: "service-methods-view" });
+  await hungryService.discovery.recordDishView(menu[0].id, { sessionId: "service-methods-view" });
+  const after = await hungryService.merchant.getAnalytics(outletId, "7d");
+
+  assert.equal(after.dishViews, before.dishViews + 1);
+  assert.ok(after.topDishes.some((dish) => dish.dishId === menu[0].id && dish.views >= 1));
+});
+
+test("merchant notifications sync low ratings and weekly summaries with dedupe", async () => {
+  const account = await hungryService.merchant.getMerchantAccount();
+  assert.ok(account);
+  const outletId = "outlet-wonton-mee";
+
+  const lowRatingNotifications = await hungryService.merchant.syncLowRatingNotifications(outletId);
+  assert.ok(lowRatingNotifications.length > 0);
+  assert.ok(lowRatingNotifications.every((notification) => notification.kind === "low_rating"));
+
+  const weeklySummary = await hungryService.merchant.getWeeklySummaryStats(outletId);
+  assert.ok(weeklySummary.totalViews >= weeklySummary.dishViews);
+
+  const weeklyNotifications = await hungryService.merchant.sendWeeklySummaryNotifications(outletId);
+  assert.ok(weeklyNotifications.length > 0);
+  assert.ok(weeklyNotifications.every((notification) => notification.kind === "weekly_summary"));
+
+  const allNotifications = await hungryService.merchant.getMerchantNotifications(account.id);
+  const dedupeKeys = new Set(allNotifications.map((notification) => notification.dedupeKey));
+  assert.equal(dedupeKeys.size, allNotifications.length);
+});
+
 test("merchant AI assistant returns insight slices and weekly summary", async () => {
   const outletId = "outlet-wonton-mee";
 
@@ -464,11 +624,14 @@ test("merchant settings team methods persist members and role changes", async ()
     account.id,
     " NewStaff@Hawker.sg ",
     "staff",
+    "New Staff",
   );
 
   assert.match(addedMember.id, /^tm-new-/);
   assert.equal(addedMember.email, "newstaff@hawker.sg");
+  assert.equal(addedMember.displayName, "New Staff");
   assert.equal(addedMember.role, "staff");
+  assert.equal(addedMember.inviteStatus, "pending");
 
   await hungryService.merchant.updateTeamMemberRole(addedMember.id, "manager");
   const afterRoleUpdate = await hungryService.merchant.getTeamMembers(account.id);
@@ -490,12 +653,16 @@ test("merchant settings team methods validate duplicates and protected owner rol
   assert.ok(owner, "Expected owner team member");
 
   await assert.rejects(
-    hungryService.merchant.addTeamMember(account.id, owner.email.toUpperCase(), "staff"),
+    hungryService.merchant.addTeamMember(account.id, owner.email.toUpperCase(), "staff", "Owner"),
     /already exists/,
   );
   await assert.rejects(
-    hungryService.merchant.addTeamMember(account.id, "not-an-email", "staff"),
+    hungryService.merchant.addTeamMember(account.id, "not-an-email", "staff", "Invalid"),
     /Valid team member email is required/,
+  );
+  await assert.rejects(
+    hungryService.merchant.addTeamMember(account.id, "valid@example.test", "staff", ""),
+    /Team member name is required/,
   );
   await assert.rejects(
     hungryService.merchant.updateTeamMemberRole(owner.id, "manager"),

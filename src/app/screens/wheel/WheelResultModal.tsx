@@ -27,7 +27,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelResult">;
 
 export function WheelResultModal({ navigation, route }: Props) {
-  const { palette, spacing, radii, shadows, motion } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows, motion } = useHungryTheme();
   const { winnerEntryId } = route.params;
   const repository = getDataRepository();
 
@@ -97,7 +97,7 @@ export function WheelResultModal({ navigation, route }: Props) {
       <Animated.View
         style={{
           backgroundColor: palette.surface,
-          borderRadius: radii.xl,
+          borderRadius: componentRadii.card,
           overflow: "hidden",
           transform: [{ scale: scaleAnim }],
           opacity: opacityAnim,

@@ -16,6 +16,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Chip, EmptyState, Screen } from "@/components/ui";
 import { getDiscoverStallCollections, useSearchData } from "@/features/search/search";
+import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
@@ -38,12 +39,25 @@ function formatDistance(distanceMeters: number) {
 
 export function DishSearchScreenV2() {
   const navigation = useNavigation<RootNavigation>();
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const { filters } = useSearchData();
   const profile = useProfileStore((state) => state.profile);
   const updateQuery = useSearchStore((state) => state.updateQuery);
+  const rememberSearch = useSearchStore((state) => state.rememberSearch);
+  const recentSearches = useSearchStore((state) => state.recentSearches);
   const [activeTab, setActiveTab] = useState<(typeof SEARCH_TABS)[number]>("Dishes");
   const [activeTasteFilters, setActiveTasteFilters] = useState<string[]>([]);
+  const safeRecentSearches = useMemo(
+    () =>
+      Array.isArray(recentSearches)
+        ? recentSearches
+            .map((search) =>
+              typeof search === "string" ? search.trim() : String(search ?? "").trim(),
+            )
+            .filter(Boolean)
+        : [],
+    [recentSearches],
+  );
   const baseCollections = useMemo(
     () => getDiscoverStallCollections(profile, filters.query),
     [filters.query, profile],
@@ -87,6 +101,25 @@ export function DishSearchScreenV2() {
     inputRange: [0, 1],
     outputRange: [0.85, 1],
     extrapolate: "clamp",
+  });
+  const searchPlaceholders = useMemo(
+    () =>
+      safeRecentSearches.length > 0
+        ? safeRecentSearches.slice(0, 5)
+        : [
+            "Search dishes, stalls, or hawker centres...",
+            "Try Laksa, satay, mee siam",
+            "Looking for noodles near you",
+          ],
+    [safeRecentSearches],
+  );
+  const animatedPlaceholder = useMovingSearchPlaceholder({
+    phrases: searchPlaceholders,
+    totalCycleMs: 2600,
+    tickMs: 2,
+    revealStepMs: 2,
+    deleteStepMs: 2,
+    pauseMs: 320,
   });
 
   const revealSearch = () => {
@@ -207,6 +240,7 @@ export function DishSearchScreenV2() {
                 height: 56,
                 alignItems: "center",
                 justifyContent: "center",
+                borderRadius: componentRadii.iconButton,
               }}
             >
               <SearchIcon color={palette.orange} size={20} />
@@ -219,7 +253,7 @@ export function DishSearchScreenV2() {
                 right: 0,
                 top: 0,
                 height: 56,
-                borderRadius: radii.pill,
+                borderRadius: componentRadii.search,
                 overflow: "hidden",
                 width: searchEntryAnimWidth,
                 backgroundColor: palette.surface,
@@ -243,9 +277,15 @@ export function DishSearchScreenV2() {
                   ref={searchInputRef}
                   autoCorrect={false}
                   onBlur={hideSearch}
-                  placeholder="Search..."
-                  onChangeText={updateQuery}
                   placeholderTextColor={palette.textMuted}
+                  onSubmitEditing={() => {
+                    const trimmedQuery = filters.query.trim();
+                    if (trimmedQuery) {
+                      rememberSearch(trimmedQuery);
+                    }
+                  }}
+                  placeholder={animatedPlaceholder}
+                  onChangeText={updateQuery}
                   style={{
                     color: palette.text,
                     fontFamily: "Nunito_400Regular",
@@ -434,7 +474,7 @@ export function DishSearchScreenV2() {
               margin: spacing[4],
               padding: spacing[4],
               backgroundColor: palette.bgSoft,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.card,
               borderWidth: 1,
               borderColor: palette.border,
             }}

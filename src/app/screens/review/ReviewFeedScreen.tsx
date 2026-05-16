@@ -17,14 +17,23 @@ import { Image } from "expo-image";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Bookmark, Heart, MessageCircle, MessageCircleMore, Send, Star } from "lucide-react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, type CompositeNavigationProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { MaterialTopTabNavigationProp } from "@react-navigation/material-top-tabs";
 
-import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { ReviewCommentsSheet, type ActiveReviewCommentTarget } from "@/components/social";
-import { AppHeader, AppText, Chip, EmptyState, ExpandableSearchLauncher } from "@/components/ui";
+import {
+  AppHeader,
+  AppText,
+  Chip,
+  EmptyState,
+  ExpandableSearchLauncher,
+  Skeleton,
+} from "@/components/ui";
 import { promptBlockReviewAuthor, promptReportReview } from "@/lib/security/communitySafety";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { useSocialStore, type InteractionState, type SocialComment } from "@/store/useSocialStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
@@ -33,7 +42,10 @@ import { listReviewFeedItems, type ReviewFeedItem } from "@/features/review/revi
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
+type RootNavigation = CompositeNavigationProp<
+  MaterialTopTabNavigationProp<MainTabParamList, "Review">,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 type FilterMode = "recent" | "top_rated" | "dish" | "location";
 
@@ -62,6 +74,49 @@ function StarRow({ rating, size = 12 }: { rating: number; size?: number }) {
   );
 }
 
+function ReviewFeedSkeleton() {
+  const { componentRadii, radii, spacing } = useHungryTheme();
+
+  return (
+    <View style={{ gap: spacing[4], paddingHorizontal: spacing[4], paddingTop: spacing[3] }}>
+      {[0, 1, 2].map((item) => (
+        <View key={item} style={{ gap: spacing[3] }}>
+          <Skeleton width="100%" height={180} borderRadius={componentRadii.card} />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+            <Skeleton width={36} height={36} borderRadius={radii.pill} />
+            <View style={{ flex: 1, gap: spacing[1] }}>
+              <Skeleton width="42%" height={16} borderRadius={radii.sm} />
+              <Skeleton width="32%" height={12} borderRadius={radii.sm} />
+            </View>
+          </View>
+          <Skeleton width="90%" height={16} borderRadius={radii.sm} />
+          <Skeleton width="62%" height={16} borderRadius={radii.sm} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function ReviewSearchQuerySummary({ query }: { query: string }) {
+  const trimmedQuery = query.trim();
+  const { spacing } = useHungryTheme();
+
+  if (!trimmedQuery) {
+    return null;
+  }
+
+  return (
+    <View style={{ gap: spacing[0.5], paddingHorizontal: spacing[1] }}>
+      <AppText variant="micro" tone="secondary">
+        Showing results for
+      </AppText>
+      <AppText variant="bodySmallBold" style={{ flexShrink: 1 }}>
+        {trimmedQuery}
+      </AppText>
+    </View>
+  );
+}
+
 // ─── ReviewCard ───────────────────────────────────────────────────────────────
 
 function ReviewCard({
@@ -81,7 +136,7 @@ function ReviewCard({
   onSharePress: (item: ReviewFeedItem) => void;
   onLikePress: (reviewId: string) => void;
 }) {
-  const { palette, radii, spacing, shadows, typography } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows, typography } = useHungryTheme();
   const CommentIcon = MessageCircle ?? MessageCircleMore;
   const { width } = useWindowDimensions();
   const hasPhoto = item.review.photos.length > 0;
@@ -95,7 +150,7 @@ function ReviewCard({
       style={[
         {
           backgroundColor: palette.surface,
-          borderRadius: radii.lg,
+          borderRadius: componentRadii.card,
           marginHorizontal: spacing[4],
           marginBottom: spacing[4],
           overflow: "hidden",
@@ -388,6 +443,8 @@ function ReviewCard({
 
 export function ReviewFeedScreen() {
   const navigation = useNavigation<RootNavigation>();
+  const route = useRoute();
+  const reviewFeedScrollRef = useRef<FlatList<ReviewFeedItem> | null>(null);
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -403,6 +460,7 @@ export function ReviewFeedScreen() {
 
   const [filterMode, setFilterMode] = useState<FilterMode>("recent");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [activeCommentReview, setActiveCommentReview] = useState<ActiveReviewCommentTarget | null>(
     null,
   );
@@ -413,6 +471,13 @@ export function ReviewFeedScreen() {
   const stallPosts = useMemo(() => repository.listStallPosts(), [repository]);
   const searchBarWidth = screenWidth - spacing[8];
   const headerActionSize = spacing[8] + spacing[2.5];
+  const showInitialSkeleton = useDelayedLoadingSkeleton(isInitialLoading, 0);
+  const reviewHeaderTitle = "Reviews";
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setIsInitialLoading(false), 0);
+    return () => clearTimeout(timeout);
+  }, []);
 
   // Gather reviews from all dishes
   const allReviews = useMemo<ReviewFeedItem[]>(() => {
@@ -469,6 +534,21 @@ export function ReviewFeedScreen() {
       commentsSheetRef.current?.snapToIndex(0);
     });
   }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("tabPress", (event) => {
+      if (event.target !== route.key) {
+        return;
+      }
+
+      reviewFeedScrollRef.current?.scrollToOffset({
+        offset: 0,
+        animated: true,
+      });
+    });
+
+    return unsubscribe;
+  }, [navigation, route.key]);
 
   const openShareReview = useCallback(
     (item: ReviewFeedItem) => {
@@ -592,15 +672,16 @@ export function ReviewFeedScreen() {
         }}
       >
         <AppHeader
-          title="Reviews"
+          title={reviewHeaderTitle}
           showBack={false}
           right={
             <ExpandableSearchLauncher
+              accessibilityLabel="Search reviews"
               query={searchQuery}
               onQueryChange={setSearchQuery}
               onSubmit={() => undefined}
               onClear={() => setSearchQuery("")}
-              placeholder="Search dish, stall, or taste tag..."
+              placeholder="Search Reviews"
               expandedWidth={searchBarWidth}
               iconAlignment="right"
               iconSize={headerActionSize}
@@ -609,6 +690,8 @@ export function ReviewFeedScreen() {
               backgroundColor={palette.bgSoft}
               textColor={palette.text}
               placeholderColor={palette.textSecondary}
+              enableMovingPlaceholder={false}
+              showExpandedBacking={false}
             />
           }
         />
@@ -628,25 +711,32 @@ export function ReviewFeedScreen() {
             />
           ))}
         </ScrollView>
+
+        <ReviewSearchQuerySummary query={searchQuery} />
       </View>
 
       {/* Review feed */}
-      <FlatList
-        data={filteredReviews}
-        keyExtractor={keyExtractor}
-        renderItem={renderItem}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingTop: spacing[3],
-          paddingBottom: spacing[20],
-        }}
-        ListEmptyComponent={
-          <EmptyState
-            title="No reviews yet"
-            body={searchQuery ? "Try a different search term." : "Be the first to review a dish!"}
-          />
-        }
-      />
+      {showInitialSkeleton ? (
+        <ReviewFeedSkeleton />
+      ) : (
+        <FlatList
+          ref={reviewFeedScrollRef}
+          data={filteredReviews}
+          keyExtractor={keyExtractor}
+          renderItem={renderItem}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingTop: spacing[3],
+            paddingBottom: spacing[20],
+          }}
+          ListEmptyComponent={
+            <EmptyState
+              title="No reviews yet"
+              body={searchQuery ? "Try a different search term." : "Be the first to review a dish!"}
+            />
+          }
+        />
+      )}
       <ReviewCommentsSheet
         activeReview={activeCommentReview}
         inputRef={commentInputRef}

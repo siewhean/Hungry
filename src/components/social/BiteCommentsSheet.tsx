@@ -7,8 +7,6 @@ import {
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import { MessageCircle, MessageCircleMore, X } from "lucide-react-native";
-
-const CommentIcon = MessageCircle ?? MessageCircleMore;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Avatar, EmptyState, Input } from "@/components/ui";
@@ -17,6 +15,8 @@ import type { Bite } from "@/lib/services/types";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore, type SocialComment, type SocialReply } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 interface BiteCommentsSheetProps {
   activeBite: Bite | null;
@@ -31,7 +31,7 @@ export function BiteCommentsSheet({
   innerRef,
   onDismiss,
 }: BiteCommentsSheetProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
@@ -124,7 +124,7 @@ export function BiteCommentsSheet({
                 style={{
                   alignItems: "center",
                   backgroundColor: palette.bgSoft,
-                  borderRadius: radii.md,
+                  borderRadius: componentRadii.card,
                   flexDirection: "row",
                   justifyContent: "space-between",
                   paddingHorizontal: spacing[3],

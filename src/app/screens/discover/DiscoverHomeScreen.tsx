@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
@@ -16,14 +16,16 @@ import {
   Utensils,
   Zap,
 } from "lucide-react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, type CompositeNavigationProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { MaterialTopTabNavigationProp } from "@react-navigation/material-top-tabs";
 
-import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Chip, EmptyState, IconButton, Screen, Skeleton } from "@/components/ui";
 import { getDiscoverBiteCollections, getDiscoverBites } from "@/features/discover/bites";
 import {
   prefetchDishDetail,
+  prefetchBrowseResults,
   prefetchImages,
   prefetchStallDetail,
   preloadRoute,
@@ -34,12 +36,16 @@ import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import type { Bite } from "@/lib/services/types";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
+import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
+import { TASTE_LABELS } from "@/constants/taste";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSearchStore } from "@/store/useSearchStore";
+import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { useHungryTheme } from "@/theme";
 import type { DietaryFlag, DishDetail, SearchCategory, VenueSummary } from "@/types/domain";
 
@@ -75,6 +81,12 @@ type PopularFoodStyle = {
   trending?: boolean;
 };
 
+type PopularFoodStyleItemData = PopularFoodStyle & {
+  dish: DishDetail | undefined;
+  imageSource: string | number;
+  imageUrl: string | undefined;
+};
+
 const POPULAR_FOOD_STYLES: readonly PopularFoodStyle[] = [
   {
     id: "laksa",
@@ -105,7 +117,13 @@ const POPULAR_FOOD_STYLES: readonly PopularFoodStyle[] = [
     imageSource: POPULAR_BAK_CHOR_MEE_GRAPHIC,
   },
 ] as const;
-type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
+const SEARCH_PLACEHOLDER_DEFAULT = "Dishes, stalls, or hawker centres…";
+const TASTE_DIMENSIONS = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"] as const;
+const TASTE_INTEREST_THRESHOLD = 6.8;
+type RootNavigation = CompositeNavigationProp<
+  MaterialTopTabNavigationProp<MainTabParamList, "Discover">,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 function DiscoverSkeleton() {
   const { spacing, radii, palette } = useHungryTheme();
@@ -144,7 +162,8 @@ function FoodStyleButton({
   const { palette, radii, spacing, shadows, typography } = useHungryTheme();
   const bowlSize = 72;
   const labelGap = spacing[1.5];
-  const buttonHeight = bowlSize + labelGap + typography.bodySmallBold.lineHeight * 2;
+  const labelLineHeight = typography.bodySmallBold.fontSize + spacing[1];
+  const buttonHeight = bowlSize + labelGap + labelLineHeight * 2;
 
   return (
     <Pressable
@@ -172,6 +191,8 @@ function FoodStyleButton({
           source={typeof imageSource === "string" ? { uri: imageSource } : imageSource}
           style={{ width: "100%", height: "100%", borderRadius: radii.pill }}
           contentFit="cover"
+          cachePolicy="memory-disk"
+          transition={120}
         />
       </View>
       <AppText
@@ -179,8 +200,9 @@ function FoodStyleButton({
         numberOfLines={2}
         style={{
           color: palette.text,
+          lineHeight: labelLineHeight,
           marginTop: labelGap,
-          minHeight: typography.bodySmallBold.lineHeight * 2,
+          minHeight: labelLineHeight * 2,
           textAlign: "center",
         }}
       >
@@ -190,11 +212,41 @@ function FoodStyleButton({
   );
 }
 
+const MemoFoodStyleButton = memo(FoodStyleButton);
+
+const PopularFoodStyleItem = memo(function PopularFoodStyleItem({
+  item,
+  onPress,
+  onPrefetch,
+}: {
+  item: PopularFoodStyleItemData;
+  onPress: (item: PopularFoodStyleItemData) => void;
+  onPrefetch: (item: PopularFoodStyleItemData) => void;
+}) {
+  const handlePressIn = useCallback(() => {
+    onPrefetch(item);
+  }, [item, onPrefetch]);
+  const handlePress = useCallback(() => {
+    onPress(item);
+  }, [item, onPress]);
+
+  return (
+    <MemoFoodStyleButton
+      imageSource={item.imageSource}
+      label={item.label}
+      trending={item.trending}
+      onPressIn={handlePressIn}
+      onPress={handlePress}
+    />
+  );
+});
+
 function PopularFoodStyleSkeleton() {
   const { palette, radii, spacing, shadows, typography } = useHungryTheme();
   const bowlSize = 72;
   const labelGap = spacing[1.5];
-  const buttonHeight = bowlSize + labelGap + typography.bodySmallBold.lineHeight * 2;
+  const labelLineHeight = typography.bodySmallBold.fontSize + spacing[1];
+  const buttonHeight = bowlSize + labelGap + labelLineHeight * 2;
 
   return (
     <>
@@ -224,7 +276,7 @@ function PopularFoodStyleSkeleton() {
             style={{
               gap: spacing[1],
               marginTop: labelGap,
-              minHeight: typography.bodySmallBold.lineHeight * 2,
+              minHeight: labelLineHeight * 2,
             }}
           >
             <Skeleton width={70} height={14} borderRadius={radii.sm} />
@@ -251,30 +303,56 @@ function FilteredResultsEmptyState({
           ? {
               alignItems: "center",
               minHeight,
+              height: minHeight,
               justifyContent: "center",
               paddingTop: 0,
               paddingBottom: 0,
+              overflow: "hidden",
             }
           : undefined
       }
     >
       <EmptyState
         title="No matching results"
-        body="Try removing a filter or choosing a broader category."
+        body="Try again later."
         icon={<SearchX color={palette.textSecondary} size={28} />}
       />
     </View>
   );
 }
 
-function NoFoodSectionEmptyState({ title }: { title: string }) {
+function NoFoodSectionEmptyState({
+  title,
+  preserveHeight,
+  minHeight,
+}: {
+  title: string;
+  preserveHeight?: boolean;
+  minHeight?: number;
+}) {
   const { palette } = useHungryTheme();
   return (
-    <EmptyState
-      title={title}
-      body={"No food found for this section right now.\nTry again later or adjust your filters."}
-      icon={<SearchX color={palette.textSecondary} size={28} />}
-    />
+    <View
+      style={
+        preserveHeight && minHeight
+          ? {
+              alignItems: "center",
+              minHeight,
+              height: minHeight,
+              justifyContent: "center",
+              paddingTop: 0,
+              paddingBottom: 0,
+              overflow: "hidden",
+            }
+          : undefined
+      }
+    >
+      <EmptyState
+        title={title}
+        body="Try again later."
+        icon={<SearchX color={palette.textSecondary} size={28} />}
+      />
+    </View>
   );
 }
 
@@ -295,14 +373,44 @@ function HalalLogoIcon({ color }: { color: string }) {
 
 export function DiscoverHomeScreen() {
   const navigation = useNavigation<RootNavigation>();
+  const route = useRoute();
   const repository = getDataRepository();
   const { width: screenWidth } = useWindowDimensions();
-  const { palette, radii, spacing, semanticSpacing, shadows, motion, colorScheme, typography } =
-    useHungryTheme();
+  const {
+    componentRadii,
+    palette,
+    radii,
+    spacing,
+    semanticSpacing,
+    shadows,
+    motion,
+    colorScheme,
+    typography,
+  } = useHungryTheme();
+  const discoverSectionGap = spacing[4];
+  const discoverContentGap = spacing[2];
+  const decisionCardGap = discoverContentGap;
+  const decisionCardInnerGap = spacing[2];
   const discoverRailCardWidth = screenWidth * 0.55;
   const discoverRailImageHeight = 130;
-  const decisionCardWidth = (screenWidth - spacing[8] - spacing[3]) / 2;
-  const popularFoodButtonHeight = 72 + spacing[1.5] + typography.bodySmallBold.lineHeight * 2;
+  const decisionCardWidth = (screenWidth - semanticSpacing.screenEdge * 2 - decisionCardGap) / 2;
+  const decisionCardPadding = spacing[2];
+  const decisionCardIconSize = 36;
+  const decisionCardIconGraphicSize = 19;
+  const decisionCardLabelFontSize = Math.max(15, typography.bodySmallBold.fontSize + 1);
+  const decisionCardLabelLineHeight = decisionCardLabelFontSize + spacing[1];
+  const decisionCardLabelMaxWidth = Math.max(
+    76,
+    decisionCardWidth - decisionCardPadding * 2 - decisionCardIconSize - decisionCardInnerGap,
+  );
+  const popularFoodLabelLineHeight = typography.bodySmallBold.fontSize + spacing[1];
+  const popularFoodButtonHeight = 72 + spacing[1.5] + popularFoodLabelLineHeight * 2;
+  const discoverRailReservedHeight =
+    discoverRailImageHeight +
+    spacing[6] +
+    typography.bodyBold.lineHeight +
+    typography.micro.lineHeight +
+    typography.price.lineHeight;
   const edgeToEdgeHorizontalScrollStyle = {
     width: screenWidth,
   };
@@ -337,17 +445,87 @@ export function DiscoverHomeScreen() {
   }, [refreshPopularNearby]);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
+  const recentSearches = useSearchStore((state) => state.recentSearches);
+  const safeRecentSearches = useMemo(
+    () =>
+      Array.isArray(recentSearches)
+        ? recentSearches
+            .map((search) =>
+              typeof search === "string" ? search.trim() : String(search ?? "").trim(),
+            )
+            .filter(Boolean)
+        : [],
+    [recentSearches],
+  );
+  const tasteVector = profile?.tasteVector ?? NEUTRAL_TASTE_VECTOR;
   const searchBarWidth = useMemo(
     () => Math.max(screenWidth - spacing[4] * 2, 240),
     [screenWidth, spacing],
   );
+  const discoverSearchPhrases = useMemo(() => {
+    const placeholders = [SEARCH_PLACEHOLDER_DEFAULT];
+    const seen = new Set([SEARCH_PLACEHOLDER_DEFAULT.toLowerCase()]);
+    const addUniquePhrase = (value: string) => {
+      const phrase = value.trim();
+      if (!phrase) {
+        return;
+      }
+      const key = phrase.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        placeholders.push(phrase);
+      }
+    };
+
+    safeRecentSearches.slice(0, 3).forEach((search) => {
+      addUniquePhrase(`Try ${search.trim()} near you`);
+    });
+
+    const interestPhrases = TASTE_DIMENSIONS.map((dimension) => ({
+      dimension,
+      score: tasteVector[dimension],
+      label: TASTE_LABELS[dimension],
+    }))
+      .filter((entry) => entry.score >= TASTE_INTEREST_THRESHOLD)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map((entry) => `${entry.label} bites nearby`);
+
+    interestPhrases.forEach(addUniquePhrase);
+
+    if (placeholders.length < 2) {
+      ["Try laksa", "Search for mee pok", "What’s near you?"].forEach((fallback) =>
+        addUniquePhrase(fallback),
+      );
+    }
+
+    return placeholders;
+  }, [tasteVector, safeRecentSearches]);
+
   const searchIconSize = 52;
+  const movingSearchPlaceholder = useMovingSearchPlaceholder({
+    phrases: discoverSearchPhrases,
+    totalCycleMs: 2400,
+    tickMs: 2,
+    revealStepMs: 2,
+    deleteStepMs: 2,
+    pauseMs: 300,
+  });
   const openSearchHome = useCallback(() => {
     navigation.navigate("SearchHome");
   }, [navigation]);
 
   const [activeDiscoverChipIds, setActiveDiscoverChipIds] = useState<DiscoverChipId[]>([]);
-  const isDiscoverFiltering = activeDiscoverChipIds.length > 0;
+  const deferredDiscoverChipIds = useDeferredValue(activeDiscoverChipIds);
+  const activeDiscoverChipSet = useMemo(
+    () => new Set<DiscoverChipId>(activeDiscoverChipIds),
+    [activeDiscoverChipIds],
+  );
+  const deferredDiscoverChipSet = useMemo(
+    () => new Set<DiscoverChipId>(deferredDiscoverChipIds),
+    [deferredDiscoverChipIds],
+  );
+  const isDiscoverFiltering = deferredDiscoverChipIds.length > 0;
 
   const areaBuildings = useMemo(
     () => getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 3, 14),
@@ -421,6 +599,23 @@ export function DiscoverHomeScreen() {
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
   }, [resetIdleTimer]);
+  const discoverScrollRef = useRef<ScrollView | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("tabPress", (event) => {
+      if (event.target !== route.key) {
+        return;
+      }
+      discoverScrollRef.current?.scrollTo({
+        x: 0,
+        y: 0,
+        animated: true,
+      });
+    });
+
+    return unsubscribe;
+  }, [navigation, route.key]);
+
   const allDiscoverVenues = useMemo(
     () =>
       repository
@@ -453,26 +648,30 @@ export function DiscoverHomeScreen() {
   );
   const toggleDiscoverChip = useCallback(
     (chipId: DiscoverChipId) => {
-      const wasActive = activeDiscoverChipIds.includes(chipId);
-      if (!wasActive && chipId !== "dietary") {
-        recordTasteInteraction({
-          type: "search_query",
-          surface: "discover",
-          query: chipId,
-          chipId,
-        });
-      }
-      setActiveDiscoverChipIds((current) =>
-        current.includes(chipId)
-          ? current.filter((value) => value !== chipId)
-          : [...current, chipId],
-      );
+      setActiveDiscoverChipIds((current) => {
+        const wasActive = current.includes(chipId);
+        if (!wasActive && chipId !== "dietary") {
+          scheduleIdleWork(
+            () => {
+              recordTasteInteraction({
+                type: "search_query",
+                surface: "discover",
+                query: chipId,
+                chipId,
+              });
+            },
+            { timeout: 500, fallbackDelayMs: 80 },
+          );
+        }
+
+        return wasActive ? current.filter((value) => value !== chipId) : [...current, chipId];
+      });
     },
-    [activeDiscoverChipIds, recordTasteInteraction],
+    [recordTasteInteraction],
   );
   const matchesDiscoverChipSelection = useCallback(
     (dish?: DishDetail, textParts: string[] = []) => {
-      if (!activeDiscoverChipIds.length) {
+      if (!deferredDiscoverChipSet.size) {
         return true;
       }
       let cachedHaystack: string | null = null;
@@ -494,7 +693,7 @@ export function DiscoverHomeScreen() {
         return cachedHaystack;
       };
 
-      return activeDiscoverChipIds.every((chipId) => {
+      return Array.from(deferredDiscoverChipSet).every((chipId) => {
         if (chipId === "dietary") {
           return dish
             ? discoverDietaryFlags.some((flag) => dish.dietaryFlags.includes(flag))
@@ -523,7 +722,7 @@ export function DiscoverHomeScreen() {
         return true;
       });
     },
-    [activeDiscoverChipIds, discoverDietaryFlags],
+    [deferredDiscoverChipSet, discoverDietaryFlags],
   );
   const discoverBaseBites = useMemo(() => getDiscoverBites(repository), [repository]);
   const discoverBiteCollections = useMemo(
@@ -616,15 +815,7 @@ export function DiscoverHomeScreen() {
           imageUrl: dish?.imageUrl ?? style.fallbackImageUrl,
           dish,
         };
-      }).filter(
-        (
-          style,
-        ): style is PopularFoodStyle & {
-          imageSource: string | number;
-          imageUrl: string | undefined;
-          dish: DishDetail | undefined;
-        } => Boolean(style.imageSource),
-      ),
+      }).filter((style): style is PopularFoodStyleItemData => Boolean(style.imageSource)),
     [repository],
   );
   const popularFoodStyleItems = useMemo(
@@ -732,38 +923,56 @@ export function DiscoverHomeScreen() {
   };
 
   const handleFoodStylePress = useCallback(
-    (item: PopularFoodStyle & { dish?: DishDetail }) => {
-      recordTasteInteraction({
-        type: "search_query",
-        surface: "discover",
-        dish: item.dish,
-        dishId: item.dishId,
-        query: item.query,
-        chipId: item.id,
-        buttonId: "popular_right_now",
-      });
-      updateSearchQuery(item.query);
-      rememberSearch(item.query);
+    (item: PopularFoodStyleItemData) => {
       navigation.navigate("SearchResults", {
         browseMode: "stalls",
         initialQuery: item.query,
       });
+
+      scheduleIdleWork(
+        () => {
+          recordTasteInteraction({
+            type: "search_query",
+            surface: "discover",
+            dish: item.dish,
+            dishId: item.dishId,
+            query: item.query,
+            chipId: item.id,
+            buttonId: "popular_right_now",
+          });
+          updateSearchQuery(item.query);
+          rememberSearch(item.query);
+        },
+        { timeout: 500, fallbackDelayMs: 80 },
+      );
     },
     [navigation, recordTasteInteraction, rememberSearch, updateSearchQuery],
   );
 
   const prefetchFoodStyle = useCallback(
-    (item: PopularFoodStyle) => {
-      if (item.dishId) {
-        prefetchDishDetail(item.dishId, repository);
+    (item: PopularFoodStyleItemData) => {
+      prefetchImages([item.imageUrl], 1);
+      prefetchBrowseResults(item.query, navigation, { browseMode: "stalls" });
+      if (item.dish?.id) {
+        prefetchDishDetail(item.dish.id, repository);
+        prefetchStallDetail(item.dish.venueId, repository);
       }
-      preloadRoute(navigation, "SearchResults", {
-        browseMode: "stalls",
-        initialQuery: item.query,
-      });
     },
     [navigation, repository],
   );
+
+  useEffect(() => {
+    const cancelPrefetch = scheduleIdleWork(
+      () => {
+        unfilteredPopularFoodStyleItems.slice(0, 4).forEach(prefetchFoodStyle);
+      },
+      { timeout: 700, fallbackDelayMs: 160 },
+    );
+
+    return () => {
+      cancelPrefetch();
+    };
+  }, [prefetchFoodStyle, unfilteredPopularFoodStyleItems]);
 
   const prefetchBiteCard = useCallback(
     (bite: Bite) => {
@@ -776,14 +985,19 @@ export function DiscoverHomeScreen() {
 
   const openBiteDish = useCallback(
     (bite: Bite, buttonId: string) => {
-      recordTasteInteraction({
-        type: "dish_result_click",
-        surface: "discover",
-        dish: getBiteDish(bite),
-        dishId: bite.dishId,
-        buttonId,
-      });
       navigation.navigate("DishDetail", { dishId: bite.dishId });
+      scheduleIdleWork(
+        () => {
+          recordTasteInteraction({
+            type: "dish_result_click",
+            surface: "discover",
+            dish: getBiteDish(bite),
+            dishId: bite.dishId,
+            buttonId,
+          });
+        },
+        { timeout: 500, fallbackDelayMs: 80 },
+      );
     },
     [getBiteDish, navigation, recordTasteInteraction],
   );
@@ -801,22 +1015,23 @@ export function DiscoverHomeScreen() {
 
   useEffect(() => {
     const leadingBites = [
-      ...quickBiteCards.slice(0, 3),
-      ...trendingCards.slice(0, 3),
-      ...editorChoiceCards.slice(0, 2),
+      ...unfilteredQuickBiteCards.slice(0, 3),
+      ...unfilteredTrendingCards.slice(0, 3),
+      ...unfilteredEditorChoiceCards.slice(0, 2),
     ];
     prefetchImages(
       leadingBites.map((bite) => bite.photoUrl),
       8,
     );
-  }, [editorChoiceCards, quickBiteCards, trendingCards]);
+  }, [unfilteredEditorChoiceCards, unfilteredQuickBiteCards, unfilteredTrendingCards]);
 
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
       <ScrollView
+        ref={discoverScrollRef}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          gap: semanticSpacing.sectionGap - spacing[1],
+          gap: discoverSectionGap,
           paddingHorizontal: semanticSpacing.screenEdge,
         }}
         onScroll={resetIdleTimer}
@@ -879,7 +1094,7 @@ export function DiscoverHomeScreen() {
             onPress={openSearchHome}
             style={{
               width: searchBarWidth,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.search,
               backgroundColor: themeTints.cardBg,
               borderWidth: themeTints.isDark ? 0 : 1,
               borderColor: palette.border,
@@ -892,7 +1107,7 @@ export function DiscoverHomeScreen() {
           >
             <View style={{ flex: 1 }}>
               <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
-                Dishes, stalls, or hawker centres…
+                {movingSearchPlaceholder}
               </AppText>
             </View>
             <View
@@ -916,7 +1131,7 @@ export function DiscoverHomeScreen() {
           contentContainerStyle={{ gap: spacing[2] }}
         >
           {sortedChips.map((chip) => {
-            const isActive = activeDiscoverChipIds.includes(chip.id);
+            const isActive = activeDiscoverChipSet.has(chip.id);
             return (
               <Chip
                 key={chip.id}
@@ -951,7 +1166,7 @@ export function DiscoverHomeScreen() {
         </ScrollView>
 
         {/* Popular food style buttons */}
-        <View style={{ gap: spacing[2] }}>
+        <View style={{ gap: discoverContentGap }}>
           <AppText variant="h2" style={{ color: themeTints.text }}>
             Popular right now
           </AppText>
@@ -972,13 +1187,11 @@ export function DiscoverHomeScreen() {
               contentContainerStyle={{ gap: spacing[2] }}
             >
               {popularFoodStyleItems.map((item) => (
-                <FoodStyleButton
+                <PopularFoodStyleItem
                   key={item.id}
-                  imageSource={item.imageSource}
-                  label={item.label}
-                  trending={item.trending}
-                  onPressIn={() => prefetchFoodStyle(item)}
-                  onPress={() => handleFoodStylePress(item)}
+                  item={item}
+                  onPrefetch={prefetchFoodStyle}
+                  onPress={handleFoodStylePress}
                 />
               ))}
             </ScrollView>
@@ -988,16 +1201,16 @@ export function DiscoverHomeScreen() {
         </View>
 
         {/* Decision action chips */}
-        <View style={{ flexDirection: "row", gap: spacing[3] }}>
+        <View style={{ flexDirection: "row", gap: decisionCardGap }}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Decide for me"
             onPressIn={() => preloadRoute(navigation, "DecideForMeResult")}
-            onPress={() => navigation.navigate("DecideForMeResult")}
+            onPress={handleDecideForMe}
             style={({ pressed }) => [
               shadows.card,
               {
-                borderRadius: radii.lg,
+                borderRadius: componentRadii.button,
                 height: 72,
                 opacity: pressed ? 0.92 : 1,
                 overflow: "hidden",
@@ -1011,11 +1224,12 @@ export function DiscoverHomeScreen() {
               end={{ x: 1, y: 1 }}
               style={{
                 alignItems: "center",
-                borderRadius: radii.lg,
+                borderRadius: componentRadii.button,
                 flexDirection: "row",
-                gap: spacing[2],
+                gap: decisionCardInnerGap,
                 height: "100%",
-                padding: spacing[3],
+                justifyContent: "center",
+                padding: decisionCardPadding,
               }}
             >
               <View
@@ -1023,14 +1237,30 @@ export function DiscoverHomeScreen() {
                   alignItems: "center",
                   backgroundColor: "rgba(255,255,255,0.2)",
                   borderRadius: radii.pill,
-                  height: 36,
+                  height: decisionCardIconSize,
                   justifyContent: "center",
-                  width: 36,
+                  width: decisionCardIconSize,
                 }}
               >
-                <Dices color={palette.white} size={20} />
+                <Dices color={palette.white} size={decisionCardIconGraphicSize} />
               </View>
-              <AppText variant="bodyBold" tone="inverse" numberOfLines={2} style={{ flex: 1 }}>
+              <AppText
+                adjustsFontSizeToFit
+                minimumFontScale={0.88}
+                variant="bodyBold"
+                tone="inverse"
+                numberOfLines={1}
+                style={{
+                  includeFontPadding: false,
+                  flexShrink: 1,
+                  fontSize: decisionCardLabelFontSize,
+                  lineHeight: decisionCardLabelLineHeight,
+                  maxWidth: decisionCardLabelMaxWidth,
+                  minWidth: 0,
+                  textAlign: "center",
+                  textAlignVertical: "center",
+                }}
+              >
                 Decide for Me
               </AppText>
             </LinearGradient>
@@ -1046,12 +1276,13 @@ export function DiscoverHomeScreen() {
               {
                 alignItems: "center",
                 backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.08)" : palette.navy,
-                borderRadius: radii.lg,
+                borderRadius: componentRadii.button,
                 flexDirection: "row",
-                gap: spacing[2],
+                gap: decisionCardInnerGap,
                 height: 72,
+                justifyContent: "center",
                 opacity: pressed ? 0.92 : 1,
-                padding: spacing[3],
+                padding: decisionCardPadding,
                 width: decisionCardWidth,
               },
             ]}
@@ -1061,22 +1292,38 @@ export function DiscoverHomeScreen() {
                 alignItems: "center",
                 backgroundColor: "rgba(255,255,255,0.15)",
                 borderRadius: radii.pill,
-                height: 36,
+                height: decisionCardIconSize,
                 justifyContent: "center",
-                width: 36,
+                width: decisionCardIconSize,
               }}
             >
-              <Compass color={palette.white} size={20} />
+              <Compass color={palette.white} size={decisionCardIconGraphicSize} />
             </View>
-            <AppText variant="bodyBold" tone="inverse" numberOfLines={2} style={{ flex: 1 }}>
+            <AppText
+              adjustsFontSizeToFit
+              minimumFontScale={0.88}
+              variant="bodyBold"
+              tone="inverse"
+              numberOfLines={1}
+              style={{
+                includeFontPadding: false,
+                flexShrink: 1,
+                fontSize: decisionCardLabelFontSize,
+                lineHeight: decisionCardLabelLineHeight,
+                maxWidth: decisionCardLabelMaxWidth,
+                minWidth: 0,
+                textAlign: "center",
+                textAlignVertical: "center",
+              }}
+            >
               Hungry Wheel
             </AppText>
           </Pressable>
         </View>
 
         {/* Discovery Targets — two large tap targets */}
-        <View style={{ gap: spacing[3] }}>
-          <View style={{ flexDirection: "row", gap: spacing[3] }}>
+        <View style={{ gap: discoverContentGap }}>
+          <View style={{ flexDirection: "row", gap: discoverContentGap }}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Browse stalls and restaurants"
@@ -1091,7 +1338,7 @@ export function DiscoverHomeScreen() {
                 shadows.card,
                 {
                   backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.08)" : palette.bgSoft,
-                  borderRadius: radii.lg,
+                  borderRadius: componentRadii.card,
                   flex: 1,
                   overflow: "hidden",
                   borderWidth: themeTints.isDark ? 0 : 1,
@@ -1104,6 +1351,7 @@ export function DiscoverHomeScreen() {
                   source={STALLS_CARD_GRAPHIC}
                   style={{ aspectRatio: 1.55, width: "100%" }}
                   contentFit="cover"
+                  cachePolicy="memory-disk"
                 />
                 <LinearGradient
                   colors={["rgba(15,23,42,0)", "rgba(15,23,42,0.68)"]}
@@ -1146,7 +1394,7 @@ export function DiscoverHomeScreen() {
                 shadows.card,
                 {
                   backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.08)" : palette.bgSoft,
-                  borderRadius: radii.lg,
+                  borderRadius: componentRadii.card,
                   flex: 1,
                   overflow: "hidden",
                   borderWidth: themeTints.isDark ? 0 : 1,
@@ -1159,6 +1407,7 @@ export function DiscoverHomeScreen() {
                   source={DISHES_CARD_GRAPHIC}
                   style={{ aspectRatio: 1.55, width: "100%" }}
                   contentFit="cover"
+                  cachePolicy="memory-disk"
                 />
                 <LinearGradient
                   colors={["rgba(15,23,42,0)", "rgba(15,23,42,0.68)"]}
@@ -1192,7 +1441,7 @@ export function DiscoverHomeScreen() {
         </View>
 
         {/* Proactive Selection */}
-        <View style={{ gap: spacing[3] }}>
+        <View style={{ gap: discoverContentGap }}>
           {/* Daily Crave */}
           {!isUserMode && FEATURE_FLAGS.craveEnabled ? (
             <Pressable
@@ -1204,7 +1453,7 @@ export function DiscoverHomeScreen() {
                 shadows.card,
                 {
                   backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.05)" : palette.bgSoft,
-                  borderRadius: radii.lg,
+                  borderRadius: componentRadii.button,
                   padding: spacing[4],
                   flexDirection: "row",
                   alignItems: "center",
@@ -1239,13 +1488,11 @@ export function DiscoverHomeScreen() {
                 size={20}
               />
             </Pressable>
-          ) : isDiscoverFiltering ? (
-            <FilteredResultsEmptyState />
           ) : null}
         </View>
 
         {/* Quick Bites */}
-        <View style={{ gap: spacing[3] }}>
+        <View style={{ gap: discoverContentGap }}>
           <View
             style={{
               flexDirection: "row",
@@ -1303,7 +1550,7 @@ export function DiscoverHomeScreen() {
                     shadows.card,
                     {
                       backgroundColor: themeTints.cardBg,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       overflow: "hidden",
                       width: discoverRailCardWidth,
                       borderWidth: themeTints.isDark ? 0 : 1,
@@ -1315,6 +1562,8 @@ export function DiscoverHomeScreen() {
                     source={{ uri: bite.photoUrl }}
                     style={{ height: discoverRailImageHeight, width: "100%" }}
                     contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={120}
                   />
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
                     <AppText
@@ -1356,14 +1605,18 @@ export function DiscoverHomeScreen() {
               ))}
             </ScrollView>
           ) : isDiscoverFiltering ? (
-            <FilteredResultsEmptyState />
+            <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
           ) : (
-            <NoFoodSectionEmptyState title="No quick bites found" />
+            <NoFoodSectionEmptyState
+              title="No quick bites found"
+              preserveHeight
+              minHeight={discoverRailReservedHeight}
+            />
           )}
         </View>
 
         {/* Recommended Dishes (Carousel) */}
-        <View style={{ gap: spacing[3] }}>
+        <View style={{ gap: discoverContentGap }}>
           <View
             style={{
               flexDirection: "row",
@@ -1401,7 +1654,7 @@ export function DiscoverHomeScreen() {
                     shadows.card,
                     {
                       backgroundColor: themeTints.cardBg,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       overflow: "hidden",
                       width: discoverRailCardWidth,
                       borderWidth: themeTints.isDark ? 0 : 1,
@@ -1413,6 +1666,8 @@ export function DiscoverHomeScreen() {
                     source={{ uri: bite.photoUrl }}
                     style={{ height: discoverRailImageHeight, width: "100%" }}
                     contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={120}
                   />
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
                     <AppText variant="h3" numberOfLines={1} style={{ color: themeTints.text }}>
@@ -1452,14 +1707,18 @@ export function DiscoverHomeScreen() {
               ))}
             </ScrollView>
           ) : isDiscoverFiltering ? (
-            <FilteredResultsEmptyState />
+            <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
           ) : (
-            <NoFoodSectionEmptyState title="No trending food found" />
+            <NoFoodSectionEmptyState
+              title="No trending food found"
+              preserveHeight
+              minHeight={discoverRailReservedHeight}
+            />
           )}
         </View>
 
         {/* Editor's Choice Carousel */}
-        <View style={{ gap: spacing[3] }}>
+        <View style={{ gap: discoverContentGap }}>
           <View
             style={{
               flexDirection: "row",
@@ -1513,7 +1772,7 @@ export function DiscoverHomeScreen() {
                     shadows.card,
                     {
                       backgroundColor: themeTints.cardBg,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       overflow: "hidden",
                       width: discoverRailCardWidth,
                       borderWidth: themeTints.isDark ? 0 : 1,
@@ -1525,6 +1784,8 @@ export function DiscoverHomeScreen() {
                     source={{ uri: bite.photoUrl }}
                     style={{ height: discoverRailImageHeight, width: "100%" }}
                     contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={120}
                   />
                   {/* Editor badge overlay */}
                   <View
@@ -1574,14 +1835,18 @@ export function DiscoverHomeScreen() {
               ))}
             </ScrollView>
           ) : isDiscoverFiltering ? (
-            <FilteredResultsEmptyState />
+            <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
           ) : (
-            <NoFoodSectionEmptyState title="No editor's choice food found" />
+            <NoFoodSectionEmptyState
+              title="No editor's choice food found"
+              preserveHeight
+              minHeight={discoverRailReservedHeight}
+            />
           )}
         </View>
 
         {/* Budget < S$8 Dish Carousel */}
-        <View style={{ gap: spacing[3] }}>
+        <View style={{ gap: discoverContentGap }}>
           <View
             style={{
               flexDirection: "row",
@@ -1635,7 +1900,7 @@ export function DiscoverHomeScreen() {
                     shadows.card,
                     {
                       backgroundColor: themeTints.cardBg,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       overflow: "hidden",
                       width: discoverRailCardWidth,
                       borderWidth: themeTints.isDark ? 0 : 1,
@@ -1647,6 +1912,8 @@ export function DiscoverHomeScreen() {
                     source={{ uri: bite.photoUrl }}
                     style={{ height: discoverRailImageHeight, width: "100%" }}
                     contentFit="cover"
+                    cachePolicy="memory-disk"
+                    transition={120}
                   />
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
                     <AppText
@@ -1674,15 +1941,19 @@ export function DiscoverHomeScreen() {
               ))}
             </ScrollView>
           ) : isDiscoverFiltering ? (
-            <FilteredResultsEmptyState />
+            <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
           ) : (
-            <NoFoodSectionEmptyState title="No budget-friendly food found" />
+            <NoFoodSectionEmptyState
+              title="No budget-friendly food found"
+              preserveHeight
+              minHeight={discoverRailReservedHeight}
+            />
           )}
         </View>
 
         {/* Late Night Makan */}
         {isLateNightMakanVisible ? (
-          <View style={{ gap: spacing[3] }}>
+          <View style={{ gap: discoverContentGap }}>
             <View
               style={{
                 flexDirection: "row",
@@ -1736,7 +2007,7 @@ export function DiscoverHomeScreen() {
                       shadows.card,
                       {
                         backgroundColor: themeTints.cardBg,
-                        borderRadius: radii.lg,
+                        borderRadius: componentRadii.card,
                         borderWidth: themeTints.isDark ? 0 : 1,
                         borderColor: palette.border,
                         overflow: "hidden",
@@ -1748,6 +2019,8 @@ export function DiscoverHomeScreen() {
                       source={{ uri: bite.photoUrl }}
                       style={{ height: discoverRailImageHeight, width: "100%" }}
                       contentFit="cover"
+                      cachePolicy="memory-disk"
+                      transition={120}
                     />
                     <View style={{ padding: spacing[3], gap: spacing[1] }}>
                       <AppText variant="h3" numberOfLines={1} style={{ color: themeTints.text }}>
@@ -1768,15 +2041,19 @@ export function DiscoverHomeScreen() {
                 ))}
               </ScrollView>
             ) : isDiscoverFiltering ? (
-              <FilteredResultsEmptyState />
+              <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
             ) : (
-              <NoFoodSectionEmptyState title="No late-night food found" />
+              <NoFoodSectionEmptyState
+                title="No late-night food found"
+                preserveHeight
+                minHeight={discoverRailReservedHeight}
+              />
             )}
           </View>
         ) : null}
 
         {/* Hawker Centres Near You (Horizontal Selection) */}
-        <View style={{ gap: spacing[3] }}>
+        <View style={{ gap: discoverContentGap }}>
           <View
             style={{
               flexDirection: "row",
@@ -1800,7 +2077,7 @@ export function DiscoverHomeScreen() {
               </Pressable>
             )}
           </View>
-          <View style={{ gap: spacing[3] }}>
+          <View style={{ gap: discoverContentGap }}>
             {areaStallCards.length ? (
               areaStallCards.map(({ venue, topDish }) => (
                 <Pressable
@@ -1834,7 +2111,7 @@ export function DiscoverHomeScreen() {
                     shadows.card,
                     {
                       backgroundColor: themeTints.cardBg,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       padding: spacing[3],
                       flexDirection: "row",
                       gap: spacing[3],
@@ -1856,6 +2133,8 @@ export function DiscoverHomeScreen() {
                       source={{ uri: topDish?.imageUrl }}
                       style={{ borderRadius: radii.pill, height: 48, width: 48 }}
                       contentFit="cover"
+                      cachePolicy="memory-disk"
+                      transition={120}
                     />
                   </View>
                   <View style={{ flex: 1, gap: 2 }}>
@@ -1878,8 +2157,14 @@ export function DiscoverHomeScreen() {
                 </Pressable>
               ))
             ) : isDiscoverFiltering ? (
-              <FilteredResultsEmptyState />
-            ) : null}
+              <FilteredResultsEmptyState preserveHeight minHeight={discoverRailReservedHeight} />
+            ) : (
+              <NoFoodSectionEmptyState
+                title="No stalls in your area currently"
+                preserveHeight
+                minHeight={discoverRailReservedHeight}
+              />
+            )}
           </View>
         </View>
       </ScrollView>

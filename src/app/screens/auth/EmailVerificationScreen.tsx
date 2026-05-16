@@ -18,7 +18,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, "EmailVerification">;
 export function EmailVerificationScreen({ navigation, route }: Props) {
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const showToast = useUIStore((state) => state.showToast);
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const isSupabaseMode = getConfiguredDataSource() === "supabase";
   const email = route.params?.email ?? "james.cook@chef.com";
   const [resendSeconds, setResendSeconds] = useState(54);
@@ -82,7 +82,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
               justifyContent: "center",
             }}
           >
-            <ArrowLeft color={palette.orange} size={14} />
+            <ArrowLeft color={palette.text} size={14} />
             <AppText tone="accent" style={{ fontWeight: "700" }}>
               Back to sign up
             </AppText>
@@ -177,7 +177,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
           <View
             style={{
               backgroundColor: palette.infoSoft,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.card,
               flexDirection: "row",
               gap: spacing[3],
               padding: spacing[3],
