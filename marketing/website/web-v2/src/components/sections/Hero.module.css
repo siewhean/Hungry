@@ -203,26 +203,6 @@
   bottom: 9%;
 }
 
-.deviceCluster {
-  position: absolute;
-  inset: 5% 9% 7% 18%;
-  display: grid;
-  place-items: center;
-}
-
-.deviceCluster > figure:first-child {
-  width: min(52vw, 21rem);
-  transform: rotate(-3deg);
-}
-
-.secondaryScreen {
-  position: absolute;
-  right: -7%;
-  bottom: 7%;
-  width: min(48vw, 25rem);
-  transform: rotate(5deg);
-}
-
 .chipLayer {
   position: absolute;
   inset: 0;
@@ -322,20 +302,6 @@
 
   .visualContent {
     min-height: 35rem;
-  }
-
-  .deviceCluster {
-    inset: 8% 6%;
-  }
-
-  .deviceCluster > figure:first-child {
-    width: min(72vw, 18rem);
-  }
-
-  .secondaryScreen {
-    right: 0;
-    bottom: 8%;
-    width: min(78vw, 22rem);
   }
 
   .foodCard1 {

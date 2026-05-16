@@ -53,3 +53,12 @@
 - For bottom-sheet controls that must remain visible while the list scrolls, verify with a simulator screenshot; absolute children inside scroll content can sit below the visible viewport instead of behaving like a floating overlay.
 - For Expo Web E2E, set both private and `EXPO_PUBLIC_` mock data-source flags in the Playwright web server; bundled web code cannot read private env vars, and tests should prove the rendered read path rather than only the composer success state.
 - Contract tests should not depend on Prettier-only formatting details such as trailing commas in collapsed arrays; assert the behavioral source dependency instead.
+- Press-intent handlers (`onPressIn`) must never synchronously resolve repositories, build large result sets, or preload heavy routes; schedule those prefetch/analytics/search-history tasks as deduped idle work so the actual `onPress` navigation can commit immediately.
+- Pull-to-refresh on an already loaded feed should use the native refresh indicator and preserve visible ready content; do not switch the whole feed back to a skeleton during manual refresh.
+- On dense Discover surfaces, keep major section gaps tighter than the global section token when many horizontal rails stack on one screen; use one named content-gap constant so heading-to-card spacing stays consistent.
+- For app-wide corner-radius requests, add a semantic theme contract first (`componentRadii`) and migrate shared primitives before individual screens; leave true circles explicit for avatars, logos, wheel graphics, progress dots, and checkmark badges.
+- After app-wide UI sweeps, re-check dense first-viewport screens like Discover for spacing regressions; global section tokens can create excessive gaps when applied to stacked rails and paired action cards.
+- When animating React Native UI with `requestAnimationFrame`, use the RAF timestamp as the cycle clock; mixing it with `Date.now()` can freeze derived animations at their first frame.
+- Search placeholder motion should be step-based when product expects one letter at a time; elapsed-time interpolation can skip characters under JS load and make the text appear in chunks.
+- When a worker edits the same contract surface, re-read the post-worker diff before continuing; normalize duplicate interfaces immediately so shared domain types do not diverge under parallel implementation.
+- Badge or achievement visuals must have an explicit unlock source before rendering as earned; do not treat missing unlock metadata as a default pass.

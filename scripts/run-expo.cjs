@@ -58,6 +58,12 @@ function maybeKillStaleIosBuilds() {
   const markers = [
     "run-expo.cjs run:ios",
     "xcodebuild -workspace ios/Hungry.xcworkspace",
+    "xcodebuild -workspace Hungry.xcworkspace",
+    "xcodebuild -project ios/Hungry.xcodeproj",
+    "xcodebuild -project Hungry.xcodeproj",
+    "expo start",
+    "metro",
+    "react-native start",
   ];
 
   let output = "";

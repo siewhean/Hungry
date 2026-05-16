@@ -74,24 +74,24 @@
 }
 
 .problemCard {
-  align-items: flex-start;
+  align-items: center;
   background-color: color-mix(in srgb, var(--color-white) 92%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
   color: var(--color-text-primary);
   display: grid;
   gap: var(--space-4);
-  grid-template-columns: auto auto 1fr;
-  min-height: 156px;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  min-height: clamp(8.75rem, 11vw, 10.5rem);
   padding: var(--space-7);
 }
 
 .problemCard:nth-child(even) {
-  transform: translateX(var(--space-8));
+  transform: translateX(var(--space-4));
 }
 
 .problemCard svg {
   color: var(--color-primary);
-  margin-top: 0.15rem;
+  margin-top: 0;
 }
 
 .cardIndex {
@@ -106,17 +106,20 @@
   font-size: clamp(var(--font-size-lg), 2vw, 1.65rem);
   font-weight: 800;
   line-height: 1.18;
+  margin: 0;
   max-width: 560px;
 }
 
 .solutionCard {
+  align-content: center;
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--color-ink-deep) 96%, var(--color-primary)), var(--color-plum-shadow));
   color: var(--color-white);
   display: grid;
   gap: var(--space-4);
   margin-top: var(--space-6);
-  padding: var(--space-9);
+  min-height: clamp(15rem, 24vw, 19rem);
+  padding: clamp(var(--space-7), 4vw, var(--space-10));
 }
 
 .solutionIcon {
@@ -131,16 +134,38 @@
 }
 
 .solutionCard h3 {
-  font-size: clamp(2rem, 4vw, 3.5rem);
-  line-height: 1;
-  max-width: 700px;
+  font-size: clamp(1.8rem, 3.4vw, 3.1rem);
+  line-height: 1.04;
+  margin: 0;
+  max-width: 760px;
 }
 
 .solutionCard p {
   color: color-mix(in srgb, var(--color-white) 78%, transparent);
-  font-size: var(--font-size-lg);
+  font-size: clamp(var(--font-size-md), 1.25vw, var(--font-size-lg));
   line-height: 1.55;
+  margin: 0;
   max-width: 620px;
+}
+
+@media (max-width: 640px) {
+  .problemCard {
+    align-items: start;
+    grid-template-columns: auto 1fr;
+  }
+
+  .problemCard svg {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .cardIndex {
+    grid-column: 1 / -1;
+  }
+
+  .problemCard p {
+    grid-column: 2;
+  }
 }
 
 @media (max-width: 900px) {

@@ -117,15 +117,6 @@
   position: relative;
 }
 
-.visualBackdrop {
-  background:
-    linear-gradient(135deg, var(--color-ink-deep), color-mix(in srgb, var(--color-primary) 30%, var(--color-plum-shadow)));
-  border-radius: var(--radius-3xl);
-  inset: 10% 0 8% 18%;
-  position: absolute;
-  transform: rotate(-3deg);
-}
-
 .screenWrap {
   display: grid;
   gap: var(--space-5);
@@ -158,10 +149,6 @@
 @media (max-width: 720px) {
   .visual {
     min-height: 500px;
-  }
-
-  .visualBackdrop {
-    inset: 8% 4% 6%;
   }
 
   .screenWrap {

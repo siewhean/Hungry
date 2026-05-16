@@ -11,10 +11,12 @@
   box-shadow: var(--shadow-xl);
   color: var(--color-white);
   display: grid;
-  gap: var(--space-10);
+  gap: var(--space-8);
+  justify-items: center;
   overflow: hidden;
-  padding: clamp(var(--space-9), 6vw, var(--space-18));
+  padding: clamp(var(--space-8), 5vw, var(--space-14));
   position: relative;
+  text-align: center;
 }
 
 .card::after {
@@ -25,12 +27,6 @@
   inset: 0;
   pointer-events: none;
   position: absolute;
-}
-
-@media (min-width: 900px) {
-  .card {
-    grid-template-columns: 1fr auto;
-  }
 }
 
 .copy,
@@ -51,23 +47,25 @@
 }
 
 .copy h2 {
-  font-size: clamp(2.6rem, 5.5vw, 5.5rem);
-  line-height: 0.98;
+  font-size: clamp(2.25rem, 4.4vw, 4.75rem);
+  line-height: 1.02;
   margin-bottom: var(--space-5);
-  max-width: 860px;
+  max-width: 18ch;
 }
 
 .copy p {
   color: color-mix(in srgb, var(--color-white) 78%, transparent);
   font-size: clamp(var(--font-size-md), 1.7vw, var(--font-size-xl));
   line-height: 1.55;
-  max-width: 720px;
+  margin: 0 auto;
+  max-width: 46rem;
 }
 
 .actions {
   display: grid;
   gap: var(--space-4);
-  min-width: min(100%, 320px);
+  grid-template-columns: 1fr;
+  width: min(100%, 43rem);
 }
 
 .primary,
@@ -86,6 +84,12 @@
     border-color var(--duration-medium) var(--ease-out),
     color var(--duration-medium) var(--ease-out),
     transform var(--duration-medium) var(--ease-out);
+}
+
+@media (min-width: 720px) {
+  .actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .primary {
