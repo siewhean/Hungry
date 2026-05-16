@@ -364,7 +364,7 @@ export interface AccountDeletionRequest {
   reason?: string;
 }
 
-export type ContentReportTargetType = "review" | "bite" | "reply" | "profile";
+export type ContentReportTargetType = "review" | "bite" | "reply" | "profile" | "post";
 
 export interface ContentReportRequest {
   targetType: ContentReportTargetType;
@@ -575,6 +575,8 @@ export interface HungryService {
   communitySafety: {
     reportContent(request: ContentReportRequest): Promise<void>;
     blockUser(request: BlockUserRequest): Promise<void>;
+    hidePost(postId: string, reason?: string): Promise<void>;
+    unhidePost(postId: string): Promise<void>;
   };
 
   // Content

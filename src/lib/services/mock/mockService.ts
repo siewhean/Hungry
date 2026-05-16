@@ -1181,6 +1181,26 @@ export const hungryService: HungryService = {
       _blockedUserKeys.add(request.blockedUserKey);
       return resolve(undefined);
     },
+
+    async hidePost(postId, reason) {
+      _contentReports.push({
+        reporterId: _profile.id,
+        targetType: "post",
+        targetId: postId,
+        reason: reason ?? "hidden_by_user",
+      });
+      return resolve(undefined);
+    },
+
+    async unhidePost(postId) {
+      _contentReports.push({
+        reporterId: _profile.id,
+        targetType: "post",
+        targetId: postId,
+        reason: "unhidden_by_user",
+      });
+      return resolve(undefined);
+    },
   },
 
   // ── Content ─────────────────────────────────────────────────────────────────

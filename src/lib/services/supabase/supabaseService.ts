@@ -11,7 +11,15 @@ import {
 } from "@/lib/ai/tasteEngine";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import {
+  getDishByIdViaRpc,
+  getBuildingDetailViaRpc,
+  getVenueByIdViaRpc,
+  listBuildingsViaRpc,
+  listDishesByVenueViaRpc,
+  listPopularNearbyViaRpc,
+  listVenuesByBuildingViaRpc,
   refreshSupabaseRepositoryCache,
+  searchDishesViaRpc,
   supabaseRepository,
 } from "@/lib/services/supabase/supabaseRepository";
 import { getSupabaseClient } from "@/lib/services/supabase/client";
@@ -144,6 +152,12 @@ function asStringArray(value: unknown): string[] {
 
 function asRecord(value: unknown): Row {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Row) : {};
+}
+
+function asRowArray(value: unknown): Row[] {
+  return Array.isArray(value)
+    ? value.map((item) => asRecord(item)).filter((item) => Object.keys(item).length > 0)
+    : [];
 }
 
 function isLocalUri(value: string): boolean {
@@ -597,7 +611,7 @@ async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Prom
     dishIds.length > 0
       ? client
           .from("dishes")
-          .select("id,name,price,rating_avg,rating,image_url,venue_id,building_id")
+          .select("id,name,price,rating_avg,image_url,venue_id,building_id")
           .in("id", dishIds)
           .then(({ data: rows, error: rowsError }) =>
             rowsError || !Array.isArray(rows) ? [] : (rows as Row[]),
@@ -691,9 +705,86 @@ async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Prom
         tasteStamp: tasteStampFromPostMeta(meta),
         cravingCount: asNumber(row.like_count) ?? 0,
         savedCount: asNumber(row.save_count) ?? 0,
-        rating:
-          asNumber(meta.rating) ?? asNumber(dishRow?.rating_avg) ?? asNumber(dishRow?.rating) ?? 0,
+        rating: asNumber(meta.rating) ?? asNumber(dishRow?.rating_avg) ?? 0,
         price: asNumber(dishRow?.price) ?? asNumber(dishMeta.price) ?? 0,
+        expiresAt:
+          asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+        createdAt:
+          asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+      } satisfies Bite;
+    }),
+  );
+}
+
+async function fetchHomeSocialFeedBitesViaRpc(
+  client: SupabaseClient,
+  limit = 40,
+): Promise<Bite[] | undefined> {
+  const v2Result = await client.rpc("get_home_social_feed_v2", {
+    p_limit: limit,
+    p_cursor_feed_created_at: null,
+    p_cursor_post_id: null,
+  });
+  const legacyResult = v2Result.error
+    ? await client.rpc("get_home_social_feed", {
+        p_limit: limit,
+        p_cursor_published_at: null,
+        p_cursor_id: null,
+      })
+    : v2Result;
+
+  if (legacyResult.error) {
+    console.warn("Failed to fetch Home social feed RPC", legacyResult.error.message);
+    return undefined;
+  }
+  if (!Array.isArray(legacyResult.data)) return undefined;
+
+  const rows = legacyResult.data as Row[];
+  return Promise.all(
+    rows.map(async (row) => {
+      const meta = asRecord(row.generated_content);
+      const authorMeta = asRecord(meta.author);
+      const dishMeta = asRecord(meta.dish);
+      const venueMeta = asRecord(meta.venue);
+      const mediaRows = asRowArray(row.media);
+      const mediaUrls = (
+        await Promise.all(mediaRows.map((mediaRow) => resolvePostMediaDisplayUrl(client, mediaRow)))
+      ).filter((url): url is string => url.length > 0);
+      const fallbackImage =
+        asString(row.dish_image_url) ??
+        asString(dishMeta.imageUrl) ??
+        asString(row.public_url) ??
+        "";
+      const photoUrl = mediaUrls[0] ?? fallbackImage;
+      const mediaType = resolvePostBiteMediaType(mediaRows, meta);
+
+      return {
+        id: asString(row.id) ?? `post-${Date.now()}`,
+        authorId: asString(row.author_id) ?? "unknown-author",
+        authorName:
+          asString(authorMeta.displayName) ?? asString(row.author_display_name) ?? "Hungry User",
+        authorAvatar: asString(authorMeta.avatarUrl) ?? asString(row.author_avatar_url),
+        dishId: asString(row.dish_id) ?? asString(dishMeta.id) ?? "",
+        dishName: asString(row.dish_name) ?? asString(dishMeta.name) ?? "Unknown dish",
+        venueId: asString(row.venue_id) ?? asString(venueMeta.id) ?? "",
+        venueName: asString(row.venue_name) ?? asString(venueMeta.name) ?? "Unknown venue",
+        unitNumber: asString(row.venue_unit_number) ?? asString(venueMeta.unitNumber) ?? "",
+        buildingId:
+          asString(row.building_id) ??
+          asString(row.venue_building_id) ??
+          asString(venueMeta.buildingId) ??
+          "",
+        buildingName: asString(row.building_name) ?? asString(venueMeta.buildingName) ?? "",
+        photoUrl,
+        mediaUrls: mediaUrls.length > 0 ? mediaUrls : photoUrl ? [photoUrl] : [],
+        mediaType,
+        caption: asString(row.caption) ?? "",
+        tags: asStringArray(meta.tags),
+        tasteStamp: tasteStampFromPostMeta(meta),
+        cravingCount: asNumber(row.like_count) ?? 0,
+        savedCount: asNumber(row.save_count) ?? 0,
+        rating: asNumber(meta.rating) ?? asNumber(row.dish_rating) ?? 0,
+        price: asNumber(row.dish_price) ?? asNumber(dishMeta.price) ?? 0,
         expiresAt:
           asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
         createdAt:
@@ -1983,11 +2074,15 @@ export const supabaseService: HungryService = {
   },
 
   discovery: {
-    async listBuildings() {
-      return supabaseRepository.listBuildings();
+    async listBuildings(lat, lng, radiusMeters) {
+      return (
+        (await listBuildingsViaRpc(lat, lng, radiusMeters)) ?? supabaseRepository.listBuildings()
+      );
     },
 
     async getBuildingDetail(id) {
+      const rpcDetail = await getBuildingDetailViaRpc(id);
+      if (rpcDetail) return rpcDetail;
       const building = supabaseRepository.listBuildings().find((item) => item.id === id);
       if (!building) return undefined;
       const venues = supabaseRepository.listVenuesByBuilding(id);
@@ -2020,26 +2115,33 @@ export const supabaseService: HungryService = {
     },
 
     async getVenue(id) {
-      return supabaseRepository.getVenueById(id);
+      return (await getVenueByIdViaRpc(id)) ?? supabaseRepository.getVenueById(id);
     },
 
     async listVenuesByBuilding(buildingId) {
-      return supabaseRepository.listVenuesByBuilding(buildingId);
+      return (
+        (await listVenuesByBuildingViaRpc(buildingId)) ??
+        supabaseRepository.listVenuesByBuilding(buildingId)
+      );
     },
 
     async getDish(id) {
-      return supabaseRepository.getDishById(id);
+      return (await getDishByIdViaRpc(id)) ?? supabaseRepository.getDishById(id);
     },
 
     async listDishesByVenue(venueId) {
-      return supabaseRepository.listDishesByVenue(venueId);
+      return (
+        (await listDishesByVenueViaRpc(venueId)) ?? supabaseRepository.listDishesByVenue(venueId)
+      );
     },
 
-    async listPopularNearby() {
-      return supabaseRepository.listPopularNearby();
+    async listPopularNearby(lat, lng) {
+      return (await listPopularNearbyViaRpc(lat, lng)) ?? supabaseRepository.listPopularNearby();
     },
 
     async searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]> {
+      const rpcResults = await searchDishesViaRpc(filters, tasteProfile);
+      if (rpcResults) return rpcResults;
       const results = supabaseRepository.searchDishes(filters, tasteProfile);
       return results.map((dish) => ({
         dish,
@@ -2273,6 +2375,8 @@ export const supabaseService: HungryService = {
   social: {
     async getBitesFeed() {
       const client = requireSupabaseClient();
+      const rpcBites = await fetchHomeSocialFeedBitesViaRpc(client);
+      if (rpcBites) return rpcBites;
       return fetchPublishedPostBites(client);
     },
 
@@ -2411,12 +2515,12 @@ export const supabaseService: HungryService = {
       const table = reaction === "craving" ? "post_likes" : "post_saves";
       const existing = await client
         .from(table)
-        .select("id")
+        .select("post_id")
         .eq("post_id", biteId)
         .eq("user_id", userId)
         .maybeSingle();
       if (existing.error) throw existing.error;
-      if ((existing.data as Row | null)?.id) {
+      if ((existing.data as Row | null)?.post_id) {
         const { error } = await client
           .from(table)
           .delete()
@@ -2814,6 +2918,22 @@ export const supabaseService: HungryService = {
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to report content.");
 
+      if (request.targetType === "post") {
+        if (!UUID_PATTERN.test(request.targetId)) {
+          throw new Error("Post reports require a valid post id.");
+        }
+
+        const { error } = await client.rpc("report_post", {
+          p_post_id: request.targetId,
+          p_reason_code: request.reason,
+          p_details: request.targetAuthorKey
+            ? `target_author_key:${request.targetAuthorKey}`
+            : null,
+        });
+        if (error) throw error;
+        return;
+      }
+
       const { error } = await client.from("content_reports").insert({
         reporter_id: userId,
         target_type: request.targetType,
@@ -2833,6 +2953,31 @@ export const supabaseService: HungryService = {
         blocker_id: userId,
         blocked_user_key: request.blockedUserKey,
         reason: request.reason ?? "user_initiated_block",
+      });
+      if (error) throw error;
+    },
+
+    async hidePost(postId: string, reason?: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to hide posts.");
+      if (!UUID_PATTERN.test(postId)) throw new Error("Post hiding requires a valid post id.");
+
+      const { error } = await client.rpc("hide_post", {
+        p_post_id: postId,
+        p_reason: reason ?? "hidden_by_user",
+      });
+      if (error) throw error;
+    },
+
+    async unhidePost(postId: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to unhide posts.");
+      if (!UUID_PATTERN.test(postId)) throw new Error("Post unhiding requires a valid post id.");
+
+      const { error } = await client.rpc("unhide_post", {
+        p_post_id: postId,
       });
       if (error) throw error;
     },

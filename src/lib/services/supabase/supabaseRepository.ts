@@ -1,6 +1,6 @@
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
-import type { DataRepository } from "@/lib/services/types";
+import type { BuildingDetail, DataRepository, SearchResult } from "@/lib/services/types";
 import type {
   BlogPost,
   BuildingSummary,
@@ -82,6 +82,12 @@ function toStringArray(value: unknown): string[] {
 
 function toRecord(value: unknown): Row {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Row) : {};
+}
+
+function toRowArray(value: unknown): Row[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is Row => Boolean(item) && typeof item === "object")
+    : [];
 }
 
 function mapTasteVector(row?: Row): TasteVector | undefined {
@@ -175,6 +181,89 @@ function mapDish(row: Row, venue?: VenueSummary, presentation?: DishPresentation
     mustOrder: toBool(row.must_order),
     availabilityFlags: toStringArray(row.availability_flags),
     reviews: [],
+  };
+}
+
+function mapReviewRows(value: unknown): DishDetail["reviews"] {
+  return toRowArray(value).map((row) => ({
+    id: toString(row.id),
+    authorName: toString(row.authorName, toString(row.author_name, "Hungry User")),
+    rating: toNumber(row.rating),
+    createdAt: toString(row.createdAt, toString(row.created_at, new Date().toISOString())),
+    text: toString(row.text),
+    tags: toStringArray(row.tags),
+    wouldRecommend: toBool(row.wouldRecommend ?? row.would_recommend, true),
+    photos: toStringArray(row.photos),
+  }));
+}
+
+function mapRpcDish(row: Row): DishDetail {
+  const venue: VenueSummary = {
+    id: toString(row.venue_id),
+    buildingId: toString(row.building_id),
+    name: toString(row.venue_name),
+    unitNumber: toString(row.unit_number),
+    floor: toString(row.floor),
+    isOpen: true,
+    liveCrowd: (toString(row.live_crowd) as VenueSummary["liveCrowd"]) || undefined,
+    topDishId: "",
+    operatingHours: "",
+    closureNotice: undefined,
+    deliveryLinks: [],
+  };
+  const gallery = toStringArray(row.gallery);
+  const presentation: DishPresentation = {
+    gallery,
+    dietaryFlags: toStringArray(row.dietary_flags) as DietaryFlag[],
+    tasteVector: mapTasteVector(toRecord(row.taste_vector)),
+  };
+  const dish = mapDish(
+    {
+      ...row,
+      id: toString(row.dish_id),
+      rating_avg: row.rating,
+    },
+    venue,
+    presentation,
+  );
+  const reviews = mapReviewRows(row.reviews);
+  return reviews.length > 0 ? { ...dish, reviews } : dish;
+}
+
+function mapRpcVenue(row: Row): VenueSummary {
+  const deliveryRows = toRowArray(row.delivery_links);
+  return {
+    id: toString(row.venue_id),
+    buildingId: toString(row.building_id),
+    name: toString(row.name),
+    unitNumber: toString(row.unit_number),
+    floor: toString(row.floor),
+    isOpen: toBool(row.is_open, true),
+    liveCrowd: (toString(row.live_crowd) as VenueSummary["liveCrowd"]) || undefined,
+    topDishId: toString(row.top_dish_id),
+    operatingHours: toString(row.operating_hours),
+    closureNotice: toString(row.closure_notice) || undefined,
+    deliveryLinks: deliveryRows.map((delivery) => ({
+      platform: toString(delivery.platform) as VenueSummary["deliveryLinks"][number]["platform"],
+      nativeUrl: toString(delivery.nativeUrl, toString(delivery.native_url)),
+      webUrl: toString(delivery.webUrl, toString(delivery.web_url)),
+      affiliateEligible: toBool(delivery.affiliateEligible ?? delivery.affiliate_eligible),
+    })),
+  };
+}
+
+function mapBuildingDetail(row: Row): BuildingDetail {
+  const building = mapBuilding(row);
+  return {
+    ...building,
+    address: toString(row.address),
+    postalCode: toString(row.postal_code),
+    operatingHours: toString(row.operating_hours),
+    description: toString(row.description) || undefined,
+    famousDishes: toStringArray(row.famous_dishes),
+    totalStalls: toNumber(row.total_stalls, building.venueCount),
+    openStalls: toNumber(row.open_stalls),
+    avgRating: toNumber(row.avg_rating),
   };
 }
 
@@ -456,6 +545,174 @@ function ensureHydrated(): void {
   if (!hydrated || Date.now() - hydratedAt > REFRESH_TTL_MS) {
     void refreshCache(!hydrated);
   }
+}
+
+async function rpcRows(functionName: string, args: Row): Promise<Row[] | undefined> {
+  if (!isSupabaseConfigured()) return undefined;
+  const client = getSupabaseClient();
+  if (!client) return undefined;
+  const { data, error } = await client.rpc(functionName, args);
+  if (error || !Array.isArray(data)) {
+    if (error) console.warn(`Supabase discovery RPC ${functionName} failed`, error.message);
+    return undefined;
+  }
+  return data as unknown as Row[];
+}
+
+export async function searchDishesViaRpc(
+  filters: SearchFilters,
+  tasteProfile: TasteVector,
+): Promise<SearchResult[] | undefined> {
+  const rows = await rpcRows("search_dishes", {
+    p_query: filters.query.trim() || null,
+    p_lat: null,
+    p_lng: null,
+    p_radius_meters: filters.radius || null,
+    p_dietary_flags: filters.dietaryFlags,
+    p_limit: 20,
+    p_cursor_score: null,
+    p_cursor_id: null,
+    p_venue_id: null,
+  });
+  if (!rows) return undefined;
+  return rows.map((row) => ({
+    dish: mapRpcDish(row),
+    score: toNumber(row.rank_score, similarityScoreFallback(mapRpcDish(row), tasteProfile)),
+  }));
+}
+
+export async function getDishByIdViaRpc(dishId: string): Promise<DishDetail | undefined> {
+  const rows = await rpcRows("get_dish_detail", { p_dish_id: dishId });
+  return rows?.[0] ? mapRpcDish(rows[0]) : undefined;
+}
+
+export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary | undefined> {
+  const rows = await rpcRows("get_venue_detail", { p_venue_id: venueId });
+  return rows?.[0] ? mapRpcVenue(rows[0]) : undefined;
+}
+
+export async function listBuildingsViaRpc(
+  lat?: number,
+  lng?: number,
+  radiusMeters?: number,
+): Promise<BuildingSummary[] | undefined> {
+  const hasLocation = typeof lat === "number" && typeof lng === "number";
+  const pageLimit = 100;
+  const maxPages = 5;
+  const rows: Row[] = [];
+  let cursorDistance: number | null = null;
+  let cursorId: string | null = null;
+
+  for (let page = 0; page < maxPages; page += 1) {
+    const pageRows = await rpcRows("list_buildings", {
+      p_lat: hasLocation ? lat : null,
+      p_lng: hasLocation ? lng : null,
+      p_radius_meters: hasLocation ? (radiusMeters ?? null) : null,
+      p_limit: pageLimit,
+      p_cursor_distance_meters: cursorDistance,
+      p_cursor_id: cursorId,
+    });
+    if (!pageRows) return undefined;
+    rows.push(...pageRows);
+    if (pageRows.length < pageLimit) break;
+    const last = pageRows[pageRows.length - 1];
+    cursorDistance = toNumber(last.cursor_distance_meters);
+    cursorId = toString(last.cursor_id);
+    if (!cursorId) break;
+  }
+
+  return rows.map(mapBuilding);
+}
+
+export async function getBuildingDetailViaRpc(
+  buildingId: string,
+): Promise<BuildingDetail | undefined> {
+  const rows = await rpcRows("get_building_detail", { p_building_id: buildingId });
+  return rows?.[0] ? mapBuildingDetail(rows[0]) : undefined;
+}
+
+export async function listVenuesByBuildingViaRpc(
+  buildingId: string,
+): Promise<VenueSummary[] | undefined> {
+  const pageLimit = 100;
+  const maxPages = 5;
+  const rows: Row[] = [];
+  let cursorFloorSort: number | null = null;
+  let cursorId: string | null = null;
+
+  for (let page = 0; page < maxPages; page += 1) {
+    const pageRows = await rpcRows("list_venues_by_building", {
+      p_building_id: buildingId,
+      p_open_now: null,
+      p_limit: pageLimit,
+      p_cursor_floor_sort: cursorFloorSort,
+      p_cursor_id: cursorId,
+    });
+    if (!pageRows) return undefined;
+    rows.push(...pageRows);
+    if (pageRows.length < pageLimit) break;
+    const last = pageRows[pageRows.length - 1];
+    cursorFloorSort = toNumber(last.cursor_floor_sort);
+    cursorId = toString(last.cursor_id);
+    if (!cursorId) break;
+  }
+
+  return rows.map(mapRpcVenue);
+}
+
+export async function listDishesByVenueViaRpc(venueId: string): Promise<DishDetail[] | undefined> {
+  const rows = await rpcRows("get_venue_detail", { p_venue_id: venueId });
+  const venue = rows?.[0];
+  if (!venue) return rows ? [] : undefined;
+  return toRowArray(venue.dishes).map(mapRpcDish);
+}
+
+export async function listPopularNearbyViaRpc(
+  lat?: number,
+  lng?: number,
+): Promise<DishDetail[] | undefined> {
+  const rows = await rpcRows("search_dishes", {
+    p_query: null,
+    p_lat: lat ?? null,
+    p_lng: lng ?? null,
+    p_radius_meters: 2500,
+    p_dietary_flags: [],
+    p_limit: 8,
+    p_cursor_score: null,
+    p_cursor_id: null,
+    p_venue_id: null,
+  });
+  return rows?.map(mapRpcDish);
+}
+
+export async function listNearbyOpenVenuesViaRpc(
+  lat?: number,
+  lng?: number,
+): Promise<VenueSummary[] | undefined> {
+  const rows = await rpcRows("get_nearby_open_venues", {
+    p_lat: lat ?? null,
+    p_lng: lng ?? null,
+    p_radius_meters: 2500,
+    p_limit: 20,
+    p_cursor_distance_meters: null,
+    p_cursor_id: null,
+  });
+  return rows?.map((row) =>
+    mapRpcVenue({
+      ...row,
+      venue_id: row.venue_id,
+      delivery_links: [],
+    }),
+  );
+}
+
+function similarityScoreFallback(dish: DishDetail, tasteProfile: TasteVector): number {
+  const axes = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"] as const;
+  const distance = axes.reduce(
+    (sum, axis) => sum + Math.abs(dish.tasteVector[axis] - tasteProfile[axis]),
+    0,
+  );
+  return Math.max(0, 1 - distance / (axes.length * 10));
 }
 
 const supabaseRepositoryImpl: DataRepository = {
