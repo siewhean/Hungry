@@ -720,18 +720,26 @@ async function fetchHomeSocialFeedBitesViaRpc(
   client: SupabaseClient,
   limit = 40,
 ): Promise<Bite[] | undefined> {
-  const { data, error } = await client.rpc("get_home_social_feed", {
+  const v2Result = await client.rpc("get_home_social_feed_v2", {
     p_limit: limit,
-    p_cursor_published_at: null,
-    p_cursor_id: null,
+    p_cursor_feed_created_at: null,
+    p_cursor_post_id: null,
   });
-  if (error) {
-    console.warn("Failed to fetch Home social feed RPC", error.message);
+  const legacyResult = v2Result.error
+    ? await client.rpc("get_home_social_feed", {
+        p_limit: limit,
+        p_cursor_published_at: null,
+        p_cursor_id: null,
+      })
+    : v2Result;
+
+  if (legacyResult.error) {
+    console.warn("Failed to fetch Home social feed RPC", legacyResult.error.message);
     return undefined;
   }
-  if (!Array.isArray(data)) return undefined;
+  if (!Array.isArray(legacyResult.data)) return undefined;
 
-  const rows = data as Row[];
+  const rows = legacyResult.data as Row[];
   return Promise.all(
     rows.map(async (row) => {
       const meta = asRecord(row.generated_content);
@@ -2910,6 +2918,22 @@ export const supabaseService: HungryService = {
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to report content.");
 
+      if (request.targetType === "post") {
+        if (!UUID_PATTERN.test(request.targetId)) {
+          throw new Error("Post reports require a valid post id.");
+        }
+
+        const { error } = await client.rpc("report_post", {
+          p_post_id: request.targetId,
+          p_reason_code: request.reason,
+          p_details: request.targetAuthorKey
+            ? `target_author_key:${request.targetAuthorKey}`
+            : null,
+        });
+        if (error) throw error;
+        return;
+      }
+
       const { error } = await client.from("content_reports").insert({
         reporter_id: userId,
         target_type: request.targetType,
@@ -2929,6 +2953,31 @@ export const supabaseService: HungryService = {
         blocker_id: userId,
         blocked_user_key: request.blockedUserKey,
         reason: request.reason ?? "user_initiated_block",
+      });
+      if (error) throw error;
+    },
+
+    async hidePost(postId: string, reason?: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to hide posts.");
+      if (!UUID_PATTERN.test(postId)) throw new Error("Post hiding requires a valid post id.");
+
+      const { error } = await client.rpc("hide_post", {
+        p_post_id: postId,
+        p_reason: reason ?? "hidden_by_user",
+      });
+      if (error) throw error;
+    },
+
+    async unhidePost(postId: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to unhide posts.");
+      if (!UUID_PATTERN.test(postId)) throw new Error("Post unhiding requires a valid post id.");
+
+      const { error } = await client.rpc("unhide_post", {
+        p_post_id: postId,
       });
       if (error) throw error;
     },
