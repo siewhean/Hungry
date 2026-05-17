@@ -181,8 +181,13 @@
 }
 
 .phoneMockup {
-  height: min(92%, 46rem);
-  max-height: calc(100svh - var(--announcement-height) - var(--header-height) - var(--space-12));
+  width: min(
+    100%,
+    30rem,
+    calc((100svh - var(--announcement-height) - var(--header-height) - var(--space-8)) * 0.462)
+  );
+  min-width: min(17rem, 100%);
+  aspect-ratio: 390 / 844;
   filter: drop-shadow(0 28px 52px rgb(26 46 68 / 0.26));
   pointer-events: auto;
   transform-origin: center;
@@ -317,7 +322,12 @@
   }
 
   .visualContent {
-    min-height: 35rem;
+    min-height: min(40rem, calc(100svh - var(--announcement-height) - var(--space-8)));
+  }
+
+  .phoneMockup {
+    width: min(82vw, 24rem, calc((100svh - var(--announcement-height) - var(--space-8)) * 0.462));
+    min-width: min(15.5rem, 82vw);
   }
 
   .foodCard1 {
