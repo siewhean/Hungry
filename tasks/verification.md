@@ -710,6 +710,13 @@ Use the smallest check that matches the change risk.
 | 2026-05-16 | app (MER-PORTAL-01 Merchant Portal Production Upgrade) | `git diff --check` | Pass | Current checkout diff has no whitespace errors after merchant portal and tracking-doc updates |
 | 2026-05-16 | app (MER-PORTAL-01 Merchant Portal Production Upgrade) | `npm run smoke:native:ios:prepared` | Blocked | Prepared Maestro iOS smoke reached the runner but Maestro reported 0 connected devices, despite XcodeBuildMCP listing a booted iPhone 17 Pro simulator |
 | 2026-05-16 | app (MER-PORTAL-01 Merchant Portal Production Upgrade) | `XcodeBuildMCP build_run_sim` + screenshot | Partial | XcodeBuildMCP build/run timed out after 120s while the native build continued; process evidence showed Hungry running on the iPhone 17 Pro simulator, screenshot captured at `/var/folders/ty/7bm_mb757m1f5wr1jlnyrdf80000gn/T/screenshot_optimized_2107a8ad-e226-4de5-8a8d-a9caf4318ffb.jpg`, and the stale `xcodebuild` process was stopped |
+| 2026-05-18 | app/Supabase (Neutral Supabase + Store Release Audit) | `npm run audit:supabase:static` | Pass | Static repo-only audit passed after fixing multi-row storage bucket detection; found 39 migrations, 85 repo-created tables, no static missing-RLS tables, one anon write policy, 9 storage bucket declarations, and no direct app Supabase clients outside the central client |
+| 2026-05-18 | app/Supabase (Neutral Supabase + Store Release Audit) | `npm run typecheck` | Pass | Strict TypeScript gate passed after audit docs/artifacts and the secure Supabase utility re-export |
+| 2026-05-18 | app/Supabase (Neutral Supabase + Store Release Audit) | `npm run lint` | Pass | ESLint completed with 0 errors after audit docs/artifacts |
+| 2026-05-18 | app/Supabase (Neutral Supabase + Store Release Audit) | `npm run test` | Pass | Full Node/source-contract suite passed with 332 tests total: 330 passing and 2 skipped |
+| 2026-05-18 | app/Supabase (Neutral Supabase + Store Release Audit) | `npx expo-doctor` | Pass | Expo Doctor initially flagged `expo-dev-client` patch mismatch; after updating to `~55.0.34`, rerun passed 17/17 checks |
+| 2026-05-18 | app/Supabase (Neutral Supabase + Store Release Audit) | `git diff --check` | Pass | Current checkout diff has no whitespace errors after audit artifacts and QA/QC cleanup |
+| 2026-05-18 | app/Supabase (Neutral Supabase + Store Release Audit) | `supabase migration list --local` | Blocked | Sandbox run could not access localhost; unrestricted retry reached `127.0.0.1:54322` but local Supabase Postgres was not running, so local DB smoke SQL was not executed |
 
 ## Outstanding Verification
 

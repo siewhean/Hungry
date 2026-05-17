@@ -84,7 +84,7 @@ Must fix before launch:
 Inventory from static audit:
 - 39 migrations through `supabase/migrations/0039_merchant_portal_readiness.sql`.
 - 85 repo-created tables found by static parser.
-- 214 static `create policy` statements found by the audit script.
+- 214 static `create policy` statements matched by the audit script; raw `rg` found 216 `create policy` strings, so live catalog verification remains required.
 - Three Edge Functions: `guest-sessions`, `ingest-menu-photo`, `ops-dishes-draft`.
 - PostgreSQL 17 local config in `supabase/config.toml`.
 
@@ -358,6 +358,7 @@ Safe changes applied in this audit:
 - `supabase/smoke/supabase_neutral_audit.sql`: read-only SQL that returns audit findings for missing RLS, missing policies, anon write policies, loose merchant analytics policies, client-writable email outbox, unsafe security-definer setup, and public storage buckets.
 - `.env.example`: added Edge Function and Supabase smoke placeholders without secret values.
 - `utils/supabase.ts`: removed the legacy direct Supabase client using AsyncStorage and re-exported the secure central client.
+- `package.json` / lockfile: updated `expo-dev-client` from `~55.0.33` to `~55.0.34` to satisfy Expo SDK 55 Doctor validation.
 
 Manual actions required:
 - Verify Supabase Auth settings: email confirmation, password recovery redirect URLs, OAuth providers, leaked-password protection, MFA roadmap, allowed redirect URLs.
@@ -374,17 +375,18 @@ Risky fixes intentionally not implemented in this pass:
 
 ## 14. Verification
 
-Commands planned for this audit branch:
-- `npm run audit:supabase:static`
-- `npm run typecheck`
-- `npm run lint`
-- `npm run test`
-- `npx expo-doctor --non-interactive`
-- `git diff --check`
-- `supabase migration list --local` or local DB smoke if sandbox allows it
+Commands run:
+- `npm run audit:supabase:static` - passed. Found 39 migrations, 85 repo-created tables, no static missing-RLS tables, one anon write policy (`merchant_dish_views_public_insert`), 9 storage bucket declarations, and no direct app Supabase clients outside the central client after this audit patch.
+- `npm run typecheck` - passed.
+- `npm run lint` - passed.
+- `npm run test` - passed: 330 passing, 2 skipped.
+- `npx expo-doctor --non-interactive` - failed because this Expo Doctor version interprets `--non-interactive` as a project path.
+- `npx expo-doctor` - initially failed on `expo-dev-client` patch mismatch; after updating `expo-dev-client` to `~55.0.34`, rerun passed 17/17 checks.
+- `git diff --check` - passed.
+- `supabase migration list --local` - environment-blocked. Sandbox run could not access `127.0.0.1:54322`; unrestricted retry reached localhost but the local Supabase Postgres port was not running (`connection refused`).
 
 Current environment limitation:
-- Local Supabase DB access is blocked in this sandbox (`127.0.0.1:54322 connect: operation not permitted` seen during baseline probing), so local DB smoke SQL may be documented as environment-blocked.
+- Local DB smoke SQL was not executed because the local Supabase database was not running. This is not evidence of a migration failure; run `supabase start` then `psql "$SUPABASE_DB_URL" -f supabase/smoke/supabase_neutral_audit.sql` in a local/staging environment.
 
 ## 15. App Store / Google Play Release Policy Review
 
@@ -409,4 +411,3 @@ Open store-specific repo evidence:
 - Privacy page is explicitly a stub in `marketing/website/web-v2/src/app/privacy/page.tsx`.
 - `app.json` declares location, camera, microphone, and photo permissions.
 - PostHog and Sentry SDKs exist in `package.json`; PostHog sink can identify users and set analytics properties.
-

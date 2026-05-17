@@ -104,13 +104,20 @@ for (const migration of migrations) {
       line: lineNumber(source, match.index ?? 0),
     });
   }
-  for (const match of source.matchAll(/insert\s+into\s+storage\.buckets[\s\S]*?values\s*\(\s*'([^']+)'[\s\S]*?\)/gi)) {
-    storageBuckets.push({
-      bucket: match[1],
-      file: migration.file,
-      line: lineNumber(source, match.index ?? 0),
-      public: /,\s*true\s*,/i.test(match[0]),
-    });
+  for (const match of source.matchAll(
+    /insert\s+into\s+storage\.buckets[\s\S]*?values\s*([\s\S]*?)(?:on\s+conflict|;)/gi,
+  )) {
+    const valuesBlock = match[1];
+    const tupleRegex =
+      /\(\s*'([^']+)'\s*,\s*'[^']+'\s*,\s*(true|false)\s*,[\s\S]*?\)(?=\s*,\s*\(|\s*$)/gi;
+    for (const tupleMatch of valuesBlock.matchAll(tupleRegex)) {
+      storageBuckets.push({
+        bucket: tupleMatch[1],
+        file: migration.file,
+        line: lineNumber(source, (match.index ?? 0) + (tupleMatch.index ?? 0)),
+        public: tupleMatch[2].toLowerCase() === "true",
+      });
+    }
   }
 }
 
