@@ -1,108 +1,108 @@
 /**
- * passportConfig.ts — Hungry Passport category definitions
+ * passportConfig.ts — Hungry Passport achievement stamp definitions
  *
  * These are static config/seed records — not user-generated.
  * Passport progress is computed at runtime by joining this config
  * against the user's stall interactions.
  *
- * MVP: 6 cuisine categories + 5 neighbourhood categories (11 total).
- * Phase 3: expand with Singapore Classics, Dietary, Budget categories.
+ * The visual language mirrors the Hungry Passport concept: food-travel
+ * achievement stamps that feel like immigration checkpoints.
  */
 
 import type { PassportCategory } from "@/types/domain";
 
-// ─── Cuisine Categories ───────────────────────────────────────────────────────
+// ─── Cuisine Achievement Stamps ───────────────────────────────────────────────
 
 export const PASSPORT_CUISINE_CATEGORIES: PassportCategory[] = [
   {
     id: "cuisine-hawker",
-    name: "Hawker Food Explorer",
-    description: "Explore Singapore's beloved hawker culture.",
+    name: "Hawker Explorer",
+    description: "Discover bold hawker flavours where the locals eat.",
     type: "cuisine",
     matchTag: "hawker",
     stampThresholds: [1, 3, 5, 10],
   },
   {
     id: "cuisine-chinese",
-    name: "Chinese Food Explorer",
-    description: "From char kway teow to roast duck.",
+    name: "Noodle Nomad",
+    description: "Collect noodle, roast, dumpling, and wok-hei checkpoints.",
     type: "cuisine",
     matchTag: "chinese",
     stampThresholds: [1, 3, 5, 10],
   },
   {
     id: "cuisine-malay",
-    name: "Malay Food Explorer",
-    description: "Nasi lemak, satay, mee rebus and more.",
+    name: "Spice Survivor",
+    description: "Conquer sambal, satay, nasi lemak, mee rebus, and heat-packed classics.",
     type: "cuisine",
     matchTag: "malay",
     stampThresholds: [1, 3, 5, 10],
   },
   {
     id: "cuisine-indian",
-    name: "Indian Food Explorer",
-    description: "Roti prata, biryani, fish head curry.",
+    name: "Curry Trailblazer",
+    description: "Journey through prata, biryani, thosai, curry, and masala-rich plates.",
     type: "cuisine",
     matchTag: "indian",
     stampThresholds: [1, 3, 5, 10],
   },
   {
     id: "cuisine-japanese",
-    name: "Japanese Explorer",
-    description: "Sushi, ramen, donburi and izakaya finds.",
+    name: "Ramen Rambler",
+    description: "Stamp your way through ramen, donburi, sushi, and izakaya finds.",
     type: "cuisine",
     matchTag: "japanese",
     stampThresholds: [1, 3, 5, 10],
   },
   {
     id: "cuisine-western",
-    name: "Western Food Explorer",
-    description: "Burgers, pasta, brunch and more.",
+    name: "Brunch Pilgrim",
+    description: "Explore burgers, pasta, brunch plates, grills, and cafe comfort food.",
     type: "cuisine",
     matchTag: "western",
     stampThresholds: [1, 3, 5, 10],
   },
 ];
 
-// ─── Neighbourhood Categories ─────────────────────────────────────────────────
+// ─── Neighbourhood Checkpoints ────────────────────────────────────────────────
 
 export const PASSPORT_NEIGHBOURHOOD_CATEGORIES: PassportCategory[] = [
   {
     id: "hood-cbd",
-    name: "CBD Lunch Explorer",
-    description: "The best quick lunches in the Central Business District.",
+    name: "CBD Lunch Pilot",
+    description: "Navigate the Central Business District's quickest lunch checkpoints.",
     type: "neighbourhood",
     matchTag: "cbd",
     stampThresholds: [1, 3, 5, 10],
   },
   {
     id: "hood-chinatown",
-    name: "Chinatown Classics",
-    description: "Old-school hawker culture in Singapore's heritage district.",
+    name: "Local Legend",
+    description: "Unlock heritage food routes through Chinatown's classic stalls.",
     type: "neighbourhood",
     matchTag: "chinatown",
     stampThresholds: [1, 3, 5, 10],
   },
   {
     id: "hood-bugis",
-    name: "Bugis Food Trail",
-    description: "From Arab Street to Bugis Junction.",
+    name: "Night Market Hunter",
+    description: "Hunt down Bugis, Arab Street, and after-dark food trail discoveries.",
     type: "neighbourhood",
     matchTag: "bugis",
     stampThresholds: [1, 3, 5, 10],
   },
   {
     id: "hood-tampines",
-    name: "Tampines Food Explorer",
-    description: "Discover the east's best hawker centres and cafes.",
+    name: "Neighbourhood Voyager",
+    description: "Collect east-side checkpoints across Tampines hawker centres and cafes.",
     type: "neighbourhood",
     matchTag: "tampines",
     stampThresholds: [1, 3, 5, 10],
   },
   {
     id: "hood-tiong-bahru",
-    name: "Tiong Bahru Cafe Trail",
-    description: "Coffee, brunch, and heritage in one of Singapore's trendiest areas.",
+    name: "Coffee Conqueror",
+    description: "Sip, savour, and discover Tiong Bahru's coffee and brunch trail.",
     type: "neighbourhood",
     matchTag: "tiong_bahru",
     stampThresholds: [1, 3, 5, 10],
