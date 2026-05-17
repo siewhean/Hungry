@@ -54,6 +54,7 @@ const migrations = migrationFiles.map((filePath) => ({
 const createTableMatches = [];
 const rlsEnabled = [];
 const policies = [];
+const activePolicies = new Map();
 const securityDefinerFunctions = [];
 const grants = [];
 const storageBuckets = [];
@@ -70,11 +71,16 @@ for (const migration of migrations) {
   for (const match of source.matchAll(/alter\s+table\s+(?:if\s+exists\s+)?(?:(public)\.)?("?[\w]+"?)\s+enable\s+row\s+level\s+security/gi)) {
     rlsEnabled.push(match[2].replaceAll('"', ""));
   }
+  for (const match of source.matchAll(/drop\s+policy\s+if\s+exists\s+"?([^"\n]+?)"?\s+on\s+("?[\w]+"?)\s*;/gi)) {
+    const name = match[1].trim();
+    const table = match[2].replaceAll('"', "");
+    activePolicies.delete(`${table}:${name}`);
+  }
   for (const match of source.matchAll(/create\s+policy\s+"?([^"\n]+?)"?\s+on\s+("?[\w]+"?)[\s\S]*?;/gi)) {
     const statement = match[0];
     const roleMatch = statement.match(/\bto\s+([^(\n]+?)(?:\s+using|\s+with\s+check|\s*$)/i);
     const commandMatch = statement.match(/\bfor\s+(all|select|insert|update|delete)\b/i);
-    policies.push({
+    const policy = {
       name: match[1].trim(),
       table: match[2].replaceAll('"', ""),
       command: commandMatch?.[1]?.toLowerCase() ?? "all",
@@ -82,7 +88,9 @@ for (const migration of migrations) {
       file: migration.file,
       line: lineNumber(source, match.index ?? 0),
       statement,
-    });
+    };
+    policies.push(policy);
+    activePolicies.set(`${policy.table}:${policy.name}`, policy);
   }
   for (const match of source.matchAll(/create\s+or\s+replace\s+function\s+public\.("?[\w]+"?)\s*\(([\s\S]*?)\)[\s\S]*?;/gi)) {
     const statement = match[0];
@@ -124,9 +132,10 @@ for (const migration of migrations) {
 const createdTables = unique(createTableMatches.map((entry) => entry.table));
 const rlsTables = new Set(unique(rlsEnabled));
 const tablesMissingRls = createdTables.filter((table) => !rlsTables.has(table));
-const policyTables = new Set(policies.map((policy) => policy.table));
+const effectivePolicies = Array.from(activePolicies.values());
+const policyTables = new Set(effectivePolicies.map((policy) => policy.table));
 const tablesWithoutPolicies = createdTables.filter((table) => !policyTables.has(table));
-const anonWritePolicies = policies.filter(
+const anonWritePolicies = effectivePolicies.filter(
   (policy) =>
     /\banon\b/i.test(policy.roles) &&
     ["all", "insert", "update", "delete"].includes(policy.command),
@@ -179,7 +188,7 @@ const report = {
     tablesWithoutPolicies,
   },
   policies: {
-    count: policies.length,
+    count: effectivePolicies.length,
     anonWritePolicies: anonWritePolicies.map(({ name, table, command, roles, file, line }) => ({
       name,
       table,

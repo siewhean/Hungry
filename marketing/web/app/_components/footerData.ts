@@ -37,6 +37,7 @@ export const footerSections = [
     links: [
       { href: "/terms", label: "Terms of Service" },
       { href: "/privacy", label: "Privacy Policy" },
+      { href: "/account/delete", label: "Account Deletion" },
     ],
   },
   {

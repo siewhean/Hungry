@@ -16,7 +16,7 @@ import { AuthScreenShell } from "./AuthScreenShell";
 type Props = NativeStackScreenProps<AuthStackParamList, "ResetPassword">;
 type FormValues = { password: string; confirmPassword: string };
 
-export function ResetPasswordScreen({ navigation }: Props) {
+export function ResetPasswordScreen({ navigation, route }: Props) {
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -34,9 +34,9 @@ export function ResetPasswordScreen({ navigation }: Props) {
   const handleReset = handleSubmit(async ({ password }) => {
     try {
       if (getConfiguredDataSource() === "supabase") {
-        await getHungryService().auth.resetPassword("", password);
+        await getHungryService().auth.resetPassword(route.params?.code ?? "", password);
       }
-      showToast({ message: "Password updated. Please check your inbox.", tone: "success" });
+      showToast({ message: "Password updated. Sign in with your new password.", tone: "success" });
       navigation.navigate("ResetPasswordSuccess");
     } catch {
       showToast({ message: "Password reset failed. Please try again.", tone: "error" });

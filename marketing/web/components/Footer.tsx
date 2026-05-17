@@ -31,8 +31,14 @@ export function Footer() {
           </div>
 
           <div className="flex items-center gap-6">
+            <a href="/terms" className="transition-colors hover:text-hungry-navy">
+              Terms
+            </a>
             <a href="/privacy" className="transition-colors hover:text-hungry-navy">
               Privacy
+            </a>
+            <a href="/account/delete" className="transition-colors hover:text-hungry-navy">
+              Delete account
             </a>
             <a href="mailto:hello@hungry.sg" className="transition-colors hover:text-hungry-navy">
               Contact

@@ -139,6 +139,9 @@ test("Supabase merchant portal readiness covers views, notifications, and promo 
   assert.match(hardening, /revoke insert, update, delete on table merchant_dish_view_events/);
   assert.match(hardening, /revoke insert, update, delete on table merchant_email_outbox/);
   assert.match(hardening, /record_merchant_dish_view/);
+  assert.match(hardening, /anonymous dish views require a bounded session id/);
+  assert.match(hardening, /session id format is invalid/);
+  assert.match(hardening, /dish view rate limit exceeded/);
   assert.match(hardening, /get_merchant_dish_view_counts/);
   assert.match(hardening, /app_enqueue_merchant_email/);
   assert.match(hardening, /enqueue_merchant_team_invite_email/);

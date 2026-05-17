@@ -29,9 +29,12 @@ export function ForgotPasswordScreen({ navigation }: Props) {
     try {
       if (getConfiguredDataSource() === "supabase") {
         await getHungryService().auth.forgotPassword(email);
+        showToast({ message: AUTH_COPY.forgotPassword.sentToast, tone: "info" });
+        navigation.navigate("Login");
+        return;
       }
       showToast({ message: AUTH_COPY.forgotPassword.sentToast, tone: "info" });
-      navigation.navigate("ResetPassword");
+      navigation.navigate("ResetPassword", { email });
     } catch {
       showToast({ message: AUTH_COPY.forgotPassword.genericErrorToast, tone: "error" });
     }

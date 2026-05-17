@@ -29,6 +29,23 @@ with findings as (
   union all
 
   select
+    'active_account_deletion_unique_guard_missing' as check_name,
+    'critical' as severity,
+    'uniq_account_deletion_requests_active_user' as detail
+  where not exists (
+    select 1
+    from pg_indexes
+    where schemaname = 'public'
+      and tablename = 'account_deletion_requests'
+      and indexname = 'uniq_account_deletion_requests_active_user'
+      and indexdef ilike '%unique%'
+      and indexdef ilike '%requested%'
+      and indexdef ilike '%processing%'
+  )
+
+  union all
+
+  select
     'account_deletion_audit_table_missing' as check_name,
     'critical' as severity,
     'public.account_deletion_processing_events' as detail

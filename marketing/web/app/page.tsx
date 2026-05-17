@@ -153,6 +153,15 @@ export default function Home() {
           <Link href="/merchant-login" className="hover:text-hungry-orange transition-colors">
             Merchant Portal
           </Link>
+          <Link href="/terms" className="hover:text-hungry-orange transition-colors">
+            Terms
+          </Link>
+          <Link href="/privacy" className="hover:text-hungry-orange transition-colors">
+            Privacy
+          </Link>
+          <Link href="/account/delete" className="hover:text-hungry-orange transition-colors">
+            Delete account
+          </Link>
         </div>
         <Link
           href="/join-waitlist"

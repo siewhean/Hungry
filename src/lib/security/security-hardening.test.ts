@@ -182,6 +182,9 @@ test("safe linking routes delivery and article opens through allowlisted helpers
 test("ingest-menu-photo requires auth and verifies submission ownership", () => {
   const source = readRepoFile("supabase/functions/ingest-menu-photo/index.ts");
 
+  assert.match(source, /function bytesToBase64\(bytes: Uint8Array\)/);
+  assert.match(source, /bytesToBase64\(imageBytes\)/);
+  assert.doesNotMatch(source, /btoa\(String\.fromCharCode\(\.\.\.imageBytes\)\)/);
   assert.match(source, /SUPABASE_ANON_KEY/);
   assert.match(source, /auth\.getUser\(\)/);
   assert.match(source, /submitted_by/);
@@ -240,6 +243,11 @@ test("store policy controls cover account deletion, UGC moderation, and location
   const serviceTypes = readRepoFile("src/lib/services/types.ts");
   const supabaseService = readRepoFile("src/lib/services/supabase/supabaseService.ts");
   const safetyHelper = readRepoFile("src/lib/security/communitySafety.ts");
+  const settingsScreen = readRepoFile("src/app/screens/profile/SettingsScreen.tsx");
+  const webV2Footer = readRepoFile("marketing/website/web-v2/src/content/site.ts");
+  const webFooter = readRepoFile("marketing/web/app/_components/footerData.ts");
+  const webV2DeletePage = readRepoFile("marketing/website/web-v2/src/app/account/delete/page.tsx");
+  const webDeletePage = readRepoFile("marketing/web/app/account/delete/page.tsx");
   const locationScreen = readRepoFile("src/app/screens/onboarding/LocationPermissionScreen.tsx");
   const appConfig = readRepoFile("app.json");
 
@@ -278,12 +286,21 @@ test("store policy controls cover account deletion, UGC moderation, and location
   assert.match(worker, /anonymize_account_deletion_request/);
   assert.match(worker, /auth\.admin\.deleteUser/);
   assert.match(worker, /complete_account_deletion_request/);
+  assert.match(settingsScreen, /getHungryService\(\)\.auth\.requestAccountDeletion/);
+  assert.match(settingsScreen, /https:\/\/hungry\.sg\/account\/delete/);
+  assert.match(webV2Footer, /Account Deletion/);
+  assert.match(webFooter, /Account Deletion/);
+  assert.match(webV2DeletePage, /Delete your Hungry account/);
+  assert.match(webDeletePage, /Delete your Hungry account/);
   assert.doesNotMatch(appConfig, /NSLocalNetworkUsageDescription/);
   assert.doesNotMatch(appConfig, /NSBonjourServices/);
 });
 
 test("password reset uses redirect URL and supports recovery code exchange", () => {
   const supabaseService = readRepoFile("src/lib/services/supabase/supabaseService.ts");
+  const resetScreen = readRepoFile("src/app/screens/auth/ResetPasswordScreen.tsx");
+  const forgotScreen = readRepoFile("src/app/screens/auth/ForgotPasswordScreen.tsx");
+  const linking = readRepoFile("src/app/navigation/linking.ts");
 
   assert.match(supabaseService, /resetPasswordForEmail\(email,\s*\{/);
   assert.match(supabaseService, /redirectTo: getAuthEmailRedirectTo\(\)/);
@@ -291,6 +308,28 @@ test("password reset uses redirect URL and supports recovery code exchange", () 
   assert.match(supabaseService, /Password recovery callback URL was not trusted/);
   assert.match(supabaseService, /Password recovery token fragments are not accepted/);
   assert.match(supabaseService, /exchangeCodeForSession\(code\)/);
+  assert.match(resetScreen, /route\.params\?\.code \?\? ""/);
+  assert.match(forgotScreen, /navigation\.navigate\("Login"\)/);
+  assert.match(linking, /ResetPassword: "auth\/callback"/);
+});
+
+test("UGC surfaces expose report, hide, and block safety actions", () => {
+  const helper = readRepoFile("src/lib/security/communitySafety.ts");
+  const home = readRepoFile("src/app/screens/home/HomeFeedScreen.tsx");
+  const activity = readRepoFile("src/app/screens/home/ActivityPostDetailScreen.tsx");
+  const socialPost = readRepoFile("src/app/screens/profile/SocialPostDetailScreen.tsx");
+  const comments = readRepoFile("src/components/social/ReviewCommentsSheet.tsx");
+
+  assert.match(helper, /promptPostSafetyActions/);
+  assert.match(helper, /promptCommentSafetyActions/);
+  assert.match(helper, /communitySafety\.reportContent/);
+  assert.match(helper, /communitySafety\.blockUser/);
+  assert.match(helper, /communitySafety\.hidePost/);
+  assert.match(home, /promptPostSafetyActions/);
+  assert.match(home, /promptCommentSafetyActions/);
+  assert.match(activity, /promptPostSafetyActions/);
+  assert.match(socialPost, /promptPostSafetyActions/);
+  assert.match(comments, /promptCommentSafetyActions/);
 });
 
 test("merchant portal RLS hardening protects merchant-only surfaces", () => {

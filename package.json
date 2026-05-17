@@ -19,6 +19,7 @@
     "test:e2e:headed": "playwright test --headed",
     "smoke:supabase-chat": "node scripts/supabase-chat-smoke.mjs",
     "audit:supabase:static": "node scripts/supabase-neutral-audit.mjs",
+    "check:edge-functions": "node scripts/check-edge-functions.mjs",
     "security:audit": "npm audit --audit-level=moderate",
     "security:gitleaks": "gitleaks protect --staged --redact",
     "security:trufflehog": "trufflehog filesystem --only-verified .",

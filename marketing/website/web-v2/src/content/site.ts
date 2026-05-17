@@ -9,6 +9,7 @@ export const footerLinks = {
   legal: [
     { label: "Terms of Service", href: "/terms" },
     { label: "Privacy Policy", href: "/privacy" },
+    { label: "Account Deletion", href: "/account/delete" },
   ],
   discover: [
     { label: "For Foodies", href: "/for-foodies" },

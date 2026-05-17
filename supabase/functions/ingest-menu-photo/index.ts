@@ -151,6 +151,15 @@ async function runVision(visionApiKey: string, imageBase64: string): Promise<str
   return typeof text === "string" ? text : "";
 }
 
+function bytesToBase64(bytes: Uint8Array): string {
+  const chunkSize = 0x8000;
+  const chunks: string[] = [];
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    chunks.push(String.fromCharCode(...bytes.subarray(offset, offset + chunkSize)));
+  }
+  return btoa(chunks.join(""));
+}
+
 async function runLlmExtraction(apiKey: string, text: string): Promise<ExtractionDish[] | null> {
   if (!apiKey) return null;
   const response = await fetch(
@@ -327,7 +336,7 @@ Deno.serve(async (request) => {
       throw new Error(`image_fetch_failed:${imageResponse.status}`);
     }
     const imageBytes = new Uint8Array(await imageResponse.arrayBuffer());
-    const imageBase64 = btoa(String.fromCharCode(...imageBytes));
+    const imageBase64 = bytesToBase64(imageBytes);
 
     const ocrText = await runVision(visionApiKey, imageBase64);
     const llmResult = await runLlmExtraction(llmApiKey, ocrText);

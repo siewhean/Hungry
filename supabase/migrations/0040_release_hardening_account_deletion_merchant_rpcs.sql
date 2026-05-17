@@ -18,6 +18,19 @@ alter table account_deletion_requests
 create index if not exists idx_account_deletion_requests_worker_queue
   on account_deletion_requests(status, legal_hold, created_at)
   where completed_at is null;
+create unique index if not exists uniq_account_deletion_requests_active_user
+  on account_deletion_requests(user_id)
+  where status in ('requested', 'processing');
+
+drop policy if exists "account_deletion_service_role_all" on account_deletion_requests;
+create policy "account_deletion_service_role_all"
+on account_deletion_requests for all to service_role
+using (true)
+with check (true);
+
+revoke update, delete on table account_deletion_requests from anon, authenticated;
+grant select, insert on table account_deletion_requests to authenticated;
+grant all on table account_deletion_requests to service_role;
 
 create table if not exists account_deletion_processing_events (
   id uuid primary key default gen_random_uuid(),
@@ -442,7 +455,27 @@ begin
     return null;
   end if;
 
-  v_session_id := coalesce(v_session_id, v_user_id::text, 'anonymous');
+  v_session_id := coalesce(v_session_id, v_user_id::text);
+
+  if v_session_id is null then
+    raise exception 'anonymous dish views require a bounded session id' using errcode = '22023';
+  end if;
+
+  if char_length(v_session_id) > 128 or v_session_id !~ '^[A-Za-z0-9:_-]{4,128}$' then
+    raise exception 'session id format is invalid' using errcode = '22023';
+  end if;
+
+  if v_user_id is null and exists (
+    select 1
+    from merchant_dish_view_events
+    where session_id = v_session_id
+      and viewed_at >= now() - interval '1 hour'
+    group by session_id
+    having count(*) >= 120
+  ) then
+    raise exception 'dish view rate limit exceeded' using errcode = 'P0001';
+  end if;
+
   v_dedupe_key := p_dish_id || ':' || v_session_id || ':' || to_char(now(), 'YYYY-MM-DD"T"HH24');
 
   insert into merchant_dish_view_events (

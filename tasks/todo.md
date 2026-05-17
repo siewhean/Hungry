@@ -37,6 +37,8 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
   - `305fbe782` `wip(marketing-web): checkpoint residual responsive mockup styles`
   - `ea8fa20ce` `wip(native): checkpoint expo doctor dependency adjustment`
   - `0802b3e4c` `chore(scope): checkpoint audit notes and remove temp floorplan artifacts`
+  - `3cf872a8b` `wip(release-hardening): checkpoint account deletion and policy edits`
+  - `cd82ae3f2` `chore(frontend-overhaul): gate unfinished production surfaces`
 
 ### Batch Status
 
@@ -56,7 +58,7 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 11 Auth/onboarding | Deferred | Existing tests pass; OAuth provider live-state audit remains open. |
 | 12 Native/iOS | Partial | Prepared iOS smoke attempted; blocked by 0 connected Maestro devices. Native/iOS changes should stay in a dedicated PR bucket. |
 | 13 Assets/bundle/licensing | Deferred | Large mobile/web asset inventory remains open. |
-| 14 CI/security | Partial | CI/security contracts pass in full test suite; security scans remain separate gate. |
+| 14 CI/security | Partial | CI now runs Supabase static audit, edge-function static checks, and skip-safe migration dry-run; security scans remain separate gate. |
 | 15 RC decision | Open | Do not merge as one PR yet; use split below unless remaining gates are completed. |
 
 ### Verification Results
@@ -75,6 +77,14 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 2026-05-18 | `python3 scripts/floorplan/score_validate_polygons.py --in data/floorplans/hc-maxwell/L1.raw.json --out /tmp/hungry-L1.validated.json --report /tmp/hungry-L1.validation-report.json` | Blocked | Python environment missing `cv2` / OpenCV. |
 | 2026-05-18 | `python3 scripts/floorplan/render_qa_overlay.py --in data/floorplans/hc-maxwell/L1.validated.json --image data/floorplans/hc-maxwell/L1.rectified.png --out output/qa/floorplans/hc-maxwell-L1-overlay.png` | Blocked | Python environment missing `cv2` / OpenCV. |
 | 2026-05-18 | `git diff --check` | Pass | No whitespace errors in the final cleanup diff. |
+| 2026-05-18 | `npm run check:edge-functions` | Pass | Static Edge Function guard script completed; CI now has a concrete script for the referenced package command. |
+| 2026-05-18 | `npm run audit:supabase:static` | Pass | Static audit found 40 migrations, 86 repo-created tables, 201 policies, and no anon write policies. |
+| 2026-05-18 | `npm run typecheck` | Pass | Rerun after CI/security/auth follow-up edits completed. |
+| 2026-05-18 | `npm run lint` | Pass | Rerun after CI/security/auth follow-up edits completed with 0 errors. |
+| 2026-05-18 | `npm run format:check` | Pass | Rerun after CI/security/auth follow-up edits completed. |
+| 2026-05-18 | `npm run test` | Pass | Rerun after CI/security/auth follow-up edits passed with 336 total, 334 passing, 2 skipped. |
+| 2026-05-18 | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass after unrestricted retry | Sandboxed rerun failed network checks (`ENOTFOUND exp.host`, React Native Directory response); unrestricted rerun passed 17/17. |
+| 2026-05-18 | `npx --no-install supabase db push --dry-run` | Pass after unrestricted retry | Sandboxed run failed DNS to the Supabase pooler; unrestricted dry-run succeeded and would push `0039` and `0040` without applying them. |
 
 ### Remaining Production Blockers
 

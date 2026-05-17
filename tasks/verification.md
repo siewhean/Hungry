@@ -729,6 +729,23 @@ Use the smallest check that matches the change risk.
 | 2026-05-18 | app (Frontend Design Overhaul Merge-Safety Cleanup) | `python3 scripts/floorplan/score_validate_polygons.py --in data/floorplans/hc-maxwell/L1.raw.json --out /tmp/hungry-L1.validated.json --report /tmp/hungry-L1.validation-report.json` | Blocked | Active Python environment is missing OpenCV `cv2` |
 | 2026-05-18 | app (Frontend Design Overhaul Merge-Safety Cleanup) | `python3 scripts/floorplan/render_qa_overlay.py --in data/floorplans/hc-maxwell/L1.validated.json --image data/floorplans/hc-maxwell/L1.rectified.png --out output/qa/floorplans/hc-maxwell-L1-overlay.png` | Blocked | Active Python environment is missing OpenCV `cv2` |
 | 2026-05-18 | app (Frontend Design Overhaul Merge-Safety Cleanup) | `git diff --check` | Pass | No whitespace errors in the final cleanup diff |
+| 2026-05-18 | app/CI/security (Frontend Design Overhaul Merge-Safety Cleanup) | `npm run check:edge-functions` | Pass | Static Edge Function guard script passed after wiring it into `package.json` and CI |
+| 2026-05-18 | app/CI/security (Frontend Design Overhaul Merge-Safety Cleanup) | `npm run audit:supabase:static` | Pass | Static audit found 40 migrations, 86 repo-created tables, 201 policies, and no anon write policies |
+| 2026-05-18 | app/CI/security (Frontend Design Overhaul Merge-Safety Cleanup) | `npm run typecheck` | Pass | Rerun after CI/security/auth follow-up edits completed |
+| 2026-05-18 | app/CI/security (Frontend Design Overhaul Merge-Safety Cleanup) | `npm run lint` | Pass | Rerun after CI/security/auth follow-up edits completed with 0 errors |
+| 2026-05-18 | app/CI/security (Frontend Design Overhaul Merge-Safety Cleanup) | `npm run format:check` | Pass | Rerun after CI/security/auth follow-up edits completed |
+| 2026-05-18 | app/CI/security (Frontend Design Overhaul Merge-Safety Cleanup) | `npm run test` | Pass | Rerun after CI/security/auth follow-up edits passed with 336 tests total: 334 passing and 2 skipped |
+| 2026-05-18 | app/CI/security (Frontend Design Overhaul Merge-Safety Cleanup) | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass | Sandboxed rerun failed network checks against Expo/React Native Directory APIs; unrestricted rerun passed 17/17 |
+| 2026-05-18 | app/Supabase/store (P0 Release Hardening) | `node --import tsx --test src/lib/security/security-hardening.test.ts src/lib/services/supabase/merchant-linkage.test.ts src/app/navigation/RootNavigator.linking.test.ts` | Pass | Focused release-hardening contracts passed 23/23 |
+| 2026-05-18 | app/Supabase/store (P0 Release Hardening) | `npm run audit:supabase:static` | Pass | Static audit now models dropped policies and reports 0 anon write policies |
+| 2026-05-18 | app/Supabase/store (P0 Release Hardening) | `npm run check:edge-functions` | Pass | Edge Function static checks passed, including OCR base64 guard |
+| 2026-05-18 | app/Supabase/store (P0 Release Hardening) | `npm run typecheck` | Pass | TypeScript contracts pass after auth callback, CI, and Supabase hardening edits |
+| 2026-05-18 | app/Supabase/store (P0 Release Hardening) | `npm run lint` | Pass | ESLint completed with 0 errors |
+| 2026-05-18 | app/Supabase/store (P0 Release Hardening) | `npm run format:check` | Pass | Prettier check passed for `src/` |
+| 2026-05-18 | app/Supabase/store (P0 Release Hardening) | `npm run test` | Pass | Full suite passed with 336 total tests: 334 passing and 2 skipped |
+| 2026-05-18 | app/Supabase/store (P0 Release Hardening) | `npx expo-doctor` | Pass | Sandboxed attempt failed on npm DNS; unrestricted rerun passed 17/17 checks |
+| 2026-05-18 | app/Supabase/store (P0 Release Hardening) | `npx --no-install supabase db push --dry-run` | Pass | Remote dry-run succeeded and would push pending `0039` and `0040`; no migrations applied |
+| 2026-05-18 | app/Supabase/store (P0 Release Hardening) | `git diff --check` | Pass | No whitespace errors |
 
 ## Outstanding Verification
 
