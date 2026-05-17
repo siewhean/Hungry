@@ -59,7 +59,6 @@ import {
   EmptyState,
   FeedErrorBoundary,
   FeedStateView,
-  HungryLogo,
   IconButton,
   Input,
   Skeleton,
@@ -86,7 +85,6 @@ import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getBuildingById, toSummary } from "@/lib/geo/singaporeBuildings";
 import { getHungryService } from "@/lib/services/serviceProvider";
-import { HUNGRY_LOGO_TEXT } from "@/constants/brandAssets";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
@@ -883,29 +881,15 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     ],
   );
 
-  const homeFeedLogo = useMemo(
-    () => (
-      <Image
-        source={HUNGRY_LOGO_TEXT}
-        style={{
-          width: 132,
-          height: 32,
-          marginLeft: -(semanticSpacing.screenEdge + 4),
-        }}
-        contentFit="contain"
-      />
-    ),
-    [semanticSpacing.screenEdge],
-  );
-
   const renderHeader = useCallback(
     () => (
       <View style={{ paddingBottom: 0, gap: 0 }}>
         <AppHeader
-          titleNode={homeFeedLogo}
+          title="Hungry"
           showBack={false}
           right={renderActivityButton()}
           horizontalPadding={semanticSpacing.screenEdge}
+          titleStyle={{ color: palette.orange }}
         />
         <CircleStoryCarousel
           stories={storyCarouselItems}
@@ -917,7 +901,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     [
       handleAddStoryPress,
       handleStoryPress,
-      homeFeedLogo,
+      palette.orange,
       renderActivityButton,
       semanticSpacing.screenEdge,
       storyCarouselItems,
@@ -1759,10 +1743,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             scrollEventThrottle={16}
           >
             <AppHeader
-              titleNode={homeFeedLogo}
+              title="Hungry"
               showBack={false}
               right={renderActivityButton()}
               horizontalPadding={semanticSpacing.screenEdge}
+              titleStyle={{ color: palette.orange }}
             />
             <View style={{ paddingTop: 0 }}>
               {sections.map((section) => (
