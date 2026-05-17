@@ -311,6 +311,7 @@ test("review tab covers loading state, review cards, and bite card icon/sheet bo
         /ReviewFeedSkeleton/,
         /ReviewCommentsSheet/,
         /ReviewShareSheet/,
+        /commentsEnabled=\{commentsEnabled\}/,
         /commentsSheetRef\.current\?\.present\(\)/,
         /accessibilityLabel="Open review comments"/,
         /accessibilityLabel=\{interaction\.liked \? "Unlike review" : "Like review"\}/,

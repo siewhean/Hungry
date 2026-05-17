@@ -664,21 +664,32 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           {FEATURE_FLAGS.merchantCentreEnabled ? (
             <RootStack.Screen getComponent={loadMerchantTabs} name="MerchantTabs" />
           ) : null}
-          <RootStack.Screen
-            getComponent={loadStoryViewerScreen}
-            name="StoryViewer"
-            options={{ presentation: "fullScreenModal", animation: "fade" }}
-          />
-          <RootStack.Screen
-            getComponent={loadAddStoryScreen}
-            name="AddStory"
-            options={{ presentation: "modal" }}
-          />
-          {/* Gamification */}
-          <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
-          <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
-          <RootStack.Screen getComponent={loadCollectionListScreen} name="CollectionList" />
-          <RootStack.Screen getComponent={loadCollectionDetailScreen} name="CollectionDetail" />
+          {FEATURE_FLAGS.storiesEnabled ? (
+            <>
+              <RootStack.Screen
+                getComponent={loadStoryViewerScreen}
+                name="StoryViewer"
+                options={{ presentation: "fullScreenModal", animation: "fade" }}
+              />
+              <RootStack.Screen
+                getComponent={loadAddStoryScreen}
+                name="AddStory"
+                options={{ presentation: "modal" }}
+              />
+            </>
+          ) : null}
+          {FEATURE_FLAGS.gamificationEnabled ? (
+            <>
+              <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
+              <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
+            </>
+          ) : null}
+          {FEATURE_FLAGS.collectionsEnabled ? (
+            <>
+              <RootStack.Screen getComponent={loadCollectionListScreen} name="CollectionList" />
+              <RootStack.Screen getComponent={loadCollectionDetailScreen} name="CollectionDetail" />
+            </>
+          ) : null}
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />

@@ -24,6 +24,7 @@ import {
   Heart,
   MessageCircle,
   MessageCircleMore,
+  MoreHorizontal,
   PlayCircle,
   Copy,
   Share2,
@@ -84,6 +85,10 @@ import {
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { getBuildingById, toSummary } from "@/lib/geo/singaporeBuildings";
+import {
+  promptCommentSafetyActions,
+  promptPostSafetyActions,
+} from "@/lib/security/communitySafety";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useActivityStore } from "@/store/useActivityStore";
@@ -212,6 +217,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     [readActivityIds, activityUpdates],
   );
   const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled;
+  const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
+  const storiesEnabled = FEATURE_FLAGS.storiesEnabled;
   const [chatUnreadCount, setChatUnreadCount] = useState(0);
   const activityUnreadCount = updateUnreadCount + (directMessagesEnabled ? chatUnreadCount : 0);
   const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
@@ -222,6 +229,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const isMerchantMode = useMerchantStore((state) => state.account !== null);
   const canAccessMap = isDeveloperMode || isMerchantMode;
   const storyCarouselItems = useMemo<StoryItem[]>(() => {
+    if (!storiesEnabled) {
+      return [];
+    }
+
     if (stories.some((story) => story.isOwn)) {
       return stories;
     }
@@ -237,7 +248,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       },
       ...stories,
     ];
-  }, [profile.avatarUrl, stories]);
+  }, [profile.avatarUrl, stories, storiesEnabled]);
 
   const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
   const [feedError, setFeedError] = useState("");
@@ -414,6 +425,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   const openComments = useCallback(
     (item: HomeFeedItem) => {
+      if (!commentsEnabled) return;
+
       recordPostDishInteraction(item, "comments", "food_button_click");
       setActiveCommentItem(item);
       setDraftComment("");
@@ -423,7 +436,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         commentsSheetRef.current?.snapToIndex(0);
       });
     },
-    [recordPostDishInteraction],
+    [commentsEnabled, recordPostDishInteraction],
   );
 
   const loadChatConversations = useCallback(async () => {
@@ -808,6 +821,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   const handleStoryPress = useCallback(
     (story: StoryItem) => {
+      if (!storiesEnabled) return;
+
       if (story.isOwn) {
         const ownStory = stories.find((candidate) => candidate.isOwn);
         if (ownStory) {
@@ -819,18 +834,20 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       }
       navigation.navigate("StoryViewer", { initialStoryId: story.id });
     },
-    [navigation, stories],
+    [navigation, stories, storiesEnabled],
   );
 
   const handleAddStoryPress = useCallback(() => {
+    if (!storiesEnabled) return;
+
     navigation.navigate("AddStory");
-  }, [navigation]);
+  }, [navigation, storiesEnabled]);
 
   useEffect(() => {
-    if (stories.length === 0) {
+    if (storiesEnabled && stories.length === 0) {
       void loadStories();
     }
-  }, [loadStories, stories.length]);
+  }, [loadStories, stories.length, storiesEnabled]);
 
   useEffect(() => {
     void loadChatConversations();
@@ -891,11 +908,13 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           horizontalPadding={semanticSpacing.screenEdge}
           titleStyle={{ color: palette.orange }}
         />
-        <CircleStoryCarousel
-          stories={storyCarouselItems}
-          onStoryPress={handleStoryPress}
-          onAddStoryPress={handleAddStoryPress}
-        />
+        {storiesEnabled ? (
+          <CircleStoryCarousel
+            stories={storyCarouselItems}
+            onStoryPress={handleStoryPress}
+            onAddStoryPress={handleAddStoryPress}
+          />
+        ) : null}
       </View>
     ),
     [
@@ -904,6 +923,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       palette.orange,
       renderActivityButton,
       semanticSpacing.screenEdge,
+      storiesEnabled,
       storyCarouselItems,
     ],
   );
@@ -1009,29 +1029,46 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 </View>
               </View>
 
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${isFollowingAuthor ? "Unfollow" : "Follow"} ${item.authorName}`}
-                hitSlop={8}
-                onPress={() => toggleAuthorFollow(item.authorName)}
-                style={[
-                  styles.followButton,
-                  {
-                    backgroundColor: isFollowingAuthor ? themeTints.cardBg : palette.orange,
-                    borderColor: isFollowingAuthor ? palette.border : palette.orange,
-                  },
-                ]}
-              >
-                <AppText
-                  variant="micro"
-                  style={{
-                    color: isFollowingAuthor ? themeTints.text : palette.white,
-                    fontWeight: "800",
-                  }}
+              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${isFollowingAuthor ? "Unfollow" : "Follow"} ${item.authorName}`}
+                  hitSlop={8}
+                  onPress={() => toggleAuthorFollow(item.authorName)}
+                  style={[
+                    styles.followButton,
+                    {
+                      backgroundColor: isFollowingAuthor ? themeTints.cardBg : palette.orange,
+                      borderColor: isFollowingAuthor ? palette.border : palette.orange,
+                    },
+                  ]}
                 >
-                  {isFollowingAuthor ? "Following" : "Follow"}
-                </AppText>
-              </Pressable>
+                  <AppText
+                    variant="micro"
+                    style={{
+                      color: isFollowingAuthor ? themeTints.text : palette.white,
+                      fontWeight: "800",
+                    }}
+                  >
+                    {isFollowingAuthor ? "Following" : "Follow"}
+                  </AppText>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Manage ${item.authorName}'s post`}
+                  hitSlop={10}
+                  onPress={() =>
+                    promptPostSafetyActions({
+                      postId: item.id,
+                      authorName: item.authorName,
+                      label: "post",
+                    })
+                  }
+                  style={styles.moreAction}
+                >
+                  <MoreHorizontal color={themeTints.text} size={20} />
+                </Pressable>
+              </View>
             </View>
 
             {/* Image Container */}
@@ -1280,21 +1317,23 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       size={24}
                     />
                   </Pressable>
-                  <Pressable
-                    hitSlop={10}
-                    onPress={() => openComments(item)}
-                    style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-                  >
-                    {CommentIcon ? <CommentIcon color={themeTints.text} size={24} /> : null}
-                    {interaction.commentCount > 0 && (
-                      <AppText
-                        variant="micro"
-                        style={{ color: themeTints.text, fontWeight: "600" }}
-                      >
-                        {interaction.commentCount}
-                      </AppText>
-                    )}
-                  </Pressable>
+                  {commentsEnabled ? (
+                    <Pressable
+                      hitSlop={10}
+                      onPress={() => openComments(item)}
+                      style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
+                    >
+                      {CommentIcon ? <CommentIcon color={themeTints.text} size={24} /> : null}
+                      {interaction.commentCount > 0 && (
+                        <AppText
+                          variant="micro"
+                          style={{ color: themeTints.text, fontWeight: "600" }}
+                        >
+                          {interaction.commentCount}
+                        </AppText>
+                      )}
+                    </Pressable>
+                  ) : null}
                   <Pressable
                     hitSlop={10}
                     onPress={() => handlePostLike(item)}
@@ -1613,6 +1652,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       profile.leftHandedMode,
       palette.white,
       carouselIndexByPostId,
+      commentsEnabled,
     ],
   );
 
@@ -1691,7 +1731,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         title="Feed temporarily unavailable"
         body="A display issue occurred while rendering this feed. Please retry."
       >
-        {mode === "social" ? (
+        {mode === "social" && commentsEnabled ? (
           <View testID="home-social-feed" style={{ flex: 1 }}>
             <FlashList
               ref={socialFeedListRef}
@@ -1950,15 +1990,35 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       <View style={{ flex: 1, gap: 2 }}>
                         <View
                           style={{
-                            flexDirection: "row",
                             alignItems: "center",
+                            flexDirection: "row",
                             gap: spacing[2],
+                            justifyContent: "space-between",
                           }}
                         >
-                          <AppText variant="bodySmallBold">{comment.authorName}</AppText>
-                          <AppText variant="micro" tone="muted">
-                            {formatTimeAgo(comment.createdAt)}
-                          </AppText>
+                          <View
+                            style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}
+                          >
+                            <AppText variant="bodySmallBold">{comment.authorName}</AppText>
+                            <AppText variant="micro" tone="muted">
+                              {formatTimeAgo(comment.createdAt)}
+                            </AppText>
+                          </View>
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityLabel={`Manage comment by ${comment.authorName}`}
+                            hitSlop={8}
+                            onPress={() =>
+                              promptCommentSafetyActions({
+                                commentId: comment.id,
+                                authorName: comment.authorName,
+                                postId: activeCommentItem?.id,
+                                label: "comment",
+                              })
+                            }
+                          >
+                            <MoreHorizontal color={palette.textMuted} size={18} />
+                          </Pressable>
                         </View>
                         <AppText variant="bodySmall" style={styles.commentText}>
                           {comment.text}
@@ -2000,17 +2060,41 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                                 <View style={{ flex: 1, gap: 2 }}>
                                   <View
                                     style={{
-                                      flexDirection: "row",
                                       alignItems: "center",
+                                      flexDirection: "row",
                                       gap: spacing[2],
+                                      justifyContent: "space-between",
                                     }}
                                   >
-                                    <AppText variant="micro" style={{ fontWeight: "700" }}>
-                                      {reply.authorName}
-                                    </AppText>
-                                    <AppText variant="micro" tone="muted">
-                                      {formatTimeAgo(reply.createdAt)}
-                                    </AppText>
+                                    <View
+                                      style={{
+                                        alignItems: "center",
+                                        flexDirection: "row",
+                                        gap: spacing[2],
+                                      }}
+                                    >
+                                      <AppText variant="micro" style={{ fontWeight: "700" }}>
+                                        {reply.authorName}
+                                      </AppText>
+                                      <AppText variant="micro" tone="muted">
+                                        {formatTimeAgo(reply.createdAt)}
+                                      </AppText>
+                                    </View>
+                                    <Pressable
+                                      accessibilityRole="button"
+                                      accessibilityLabel={`Manage reply by ${reply.authorName}`}
+                                      hitSlop={8}
+                                      onPress={() =>
+                                        promptCommentSafetyActions({
+                                          commentId: reply.id,
+                                          authorName: reply.authorName,
+                                          postId: activeCommentItem?.id,
+                                          label: "reply",
+                                        })
+                                      }
+                                    >
+                                      <MoreHorizontal color={palette.textMuted} size={16} />
+                                    </Pressable>
                                   </View>
                                   <AppText variant="bodySmall" style={styles.replyText}>
                                     {reply.text}
@@ -2182,6 +2266,13 @@ const createStyles = ({ palette, spacing, radii }: ReturnType<typeof useHungryTh
       minHeight: 32,
       minWidth: 78,
       paddingHorizontal: spacing[3],
+    },
+    moreAction: {
+      alignItems: "center",
+      borderRadius: radii.pill,
+      height: 32,
+      justifyContent: "center",
+      width: 32,
     },
     carouselPage: {
       overflow: "hidden",

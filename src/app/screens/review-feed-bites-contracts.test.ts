@@ -29,6 +29,7 @@ test("Review feed cards do not render bottom bites sections", () => {
     assert.match(source, /incrementShare/);
     assert.match(source, /ReviewCommentsSheet/);
     assert.match(source, /ReviewShareSheet/);
+    assert.match(source, /commentsEnabled=\{commentsEnabled\}/);
     assert.match(source, /commentsSheetRef\.current\?\.present\(\)/);
     assert.match(source, /shareSheetRef\.current\?\.present\(\)/);
     assert.match(
@@ -58,6 +59,7 @@ test("Review feed cards do not render bottom bites sections", () => {
   }
 
   assert.match(commentsSheet, /<BottomSheetModal/);
+  assert.match(commentsSheet, /if \(!FEATURE_FLAGS\.commentsEnabled\) \{\s*return null;\s*\}/);
   assert.match(commentsSheet, /<BottomSheetFooter/);
   assert.match(commentsSheet, /commentsByPostId\[activeReview\.id\] \?\? \[\]/);
   assert.match(commentsSheet, /addComment\(activeReview\.id, newComment\)/);

@@ -99,7 +99,9 @@ test("Home feed contract: story carousel opens existing own story and separates 
 
   assert.match(source, /useStoryStore/);
   assert.match(source, /loadStories/);
+  assert.match(source, /const storiesEnabled = FEATURE_FLAGS\.storiesEnabled/);
   assert.match(source, /storyCarouselItems/);
+  assert.match(source, /if \(!storiesEnabled\) \{\s*return \[\];\s*\}/);
   assert.match(source, /const styles = useMemo\(\(\) => createStyles\(theme\), \[theme\]\)/);
   assert.match(source, /const listHeader = useMemo\(\(\) => renderHeader\(\), \[renderHeader\]\)/);
   assert.match(source, /ListHeaderComponent=\{listHeader\}/);
@@ -107,6 +109,7 @@ test("Home feed contract: story carousel opens existing own story and separates 
   assert.match(source, /navigation\.navigate\("StoryViewer", \{ initialStoryId: story\.id \}\)/);
   assert.match(source, /navigation\.navigate\("StoryViewer", \{ initialStoryId: ownStory\.id \}\)/);
   assert.match(source, /navigation\.navigate\("AddStory"\)/);
+  assert.match(source, /storiesEnabled \? \([\s\S]*<CircleStoryCarousel/);
   assert.match(source, /onAddStoryPress=\{handleAddStoryPress\}/);
   assert.match(carouselSource, /onAddStoryPress/);
   assert.match(carouselSource, /export const CircleStoryCarousel = memo/);

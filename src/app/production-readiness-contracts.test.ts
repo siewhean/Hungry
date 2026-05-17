@@ -81,15 +81,19 @@ test("stall interaction loading flags clear after async failures", () => {
   assert.match(stallInteractionBar, /finally \{[\s\S]*setTryingInProgress\(false\)/);
 });
 
-test("passport card is visible for authenticated profile surfaces", () => {
+test("passport and mission profile entries are gated behind gamification flag", () => {
   const profileHome = read("src/app/screens/profile/ProfileHomeScreen.tsx");
 
   assert.match(profileHome, /import \{ PassportCard \}/);
+  assert.match(profileHome, /const gamificationEnabled = FEATURE_FLAGS\.gamificationEnabled/);
+  assert.match(profileHome, /isAuthenticated && gamificationEnabled/);
+  assert.match(profileHome, /gamificationEnabled \? \(/);
   assert.match(
     profileHome,
     /<PassportCard[\s\S]*onPressIn=\{\(\) => preloadRoute\(rootNavigation, "PassportScreen"\)\}/,
   );
   assert.match(profileHome, /onPress=\{\(\) => rootNavigation\.navigate\("PassportScreen"\)\}/);
+  assert.match(profileHome, /<MissionBanner/);
 });
 
 test("merchant audience switches set explicit values instead of double toggling", () => {

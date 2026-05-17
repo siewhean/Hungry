@@ -42,3 +42,23 @@ test("prototypeRoutesEnabled is available outside production only", () => {
   assert.equal(resolveFeatureFlags("qa").prototypeRoutesEnabled, true);
   assert.equal(resolveFeatureFlags("production").prototypeRoutesEnabled, false);
 });
+
+test("unfinished social and gamification surfaces are disabled in production", () => {
+  const flags = resolveFeatureFlags("production");
+
+  assert.equal(flags.commentsEnabled, false);
+  assert.equal(flags.gamificationEnabled, false);
+  assert.equal(flags.collectionsEnabled, false);
+  assert.equal(flags.storiesEnabled, false);
+});
+
+test("unfinished social and gamification surfaces are available outside production", () => {
+  for (const env of ["development", "staging", undefined, "qa"]) {
+    const flags = resolveFeatureFlags(env);
+
+    assert.equal(flags.commentsEnabled, true);
+    assert.equal(flags.gamificationEnabled, true);
+    assert.equal(flags.collectionsEnabled, true);
+    assert.equal(flags.storiesEnabled, true);
+  }
+});

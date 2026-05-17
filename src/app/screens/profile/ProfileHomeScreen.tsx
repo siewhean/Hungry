@@ -116,6 +116,8 @@ export function ProfileHomeScreen({
   const [selectedShareChatIds, setSelectedShareChatIds] = useState<string[]>([]);
   const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
   const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled;
+  const gamificationEnabled = FEATURE_FLAGS.gamificationEnabled;
+  const storiesEnabled = FEATURE_FLAGS.storiesEnabled;
   const [isTasteShareSheetOpen, setIsTasteShareSheetOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profilePosts, setProfilePosts] = useState<StallPost[]>([]);
@@ -155,20 +157,27 @@ export function ProfileHomeScreen({
 
   useEffect(() => {
     if (isAuthenticated) {
-      void loadStories();
-      void loadCredProfile(profile.id);
-      void loadMissions(profile.id);
-      void loadStallInteractions(profile.id).then(() => {
-        computePassportProgress(triedStallIds);
-      });
+      if (storiesEnabled) {
+        void loadStories();
+      }
+
+      if (gamificationEnabled) {
+        void loadCredProfile(profile.id);
+        void loadMissions(profile.id);
+        void loadStallInteractions(profile.id).then(() => {
+          computePassportProgress(triedStallIds);
+        });
+      }
     }
   }, [
     computePassportProgress,
+    gamificationEnabled,
     isAuthenticated,
     loadCredProfile,
     loadMissions,
     loadStallInteractions,
     loadStories,
+    storiesEnabled,
     triedStallIds,
     profile.id,
   ]);
@@ -562,7 +571,9 @@ export function ProfileHomeScreen({
             ) : null}
           </View>
 
-          {isAuthenticated && <FoodCredBadge size="md" style={{ alignSelf: "flex-start" }} />}
+          {isAuthenticated && gamificationEnabled ? (
+            <FoodCredBadge size="md" style={{ alignSelf: "flex-start" }} />
+          ) : null}
         </View>
 
         {!isAuthenticated ? (
@@ -625,12 +636,15 @@ export function ProfileHomeScreen({
                 onPress={() => navigation.navigate("SocialGrid", { type: "saved" })}
               />
             </View>
-            {/* Gamification */}
-            <PassportCard
-              onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
-              onPress={() => rootNavigation.navigate("PassportScreen")}
-            />
-            <MissionBanner onPress={() => navigation.navigate("MissionsScreen" as any)} />
+            {gamificationEnabled ? (
+              <>
+                <PassportCard
+                  onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
+                  onPress={() => rootNavigation.navigate("PassportScreen")}
+                />
+                <MissionBanner onPress={() => navigation.navigate("MissionsScreen" as any)} />
+              </>
+            ) : null}
             {/* Taste Fingerprint Section */}
             <View style={{ gap: spacing[4], marginTop: spacing[4] }}>
               <View

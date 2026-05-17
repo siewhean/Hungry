@@ -17,6 +17,86 @@
 
 ---
 
+## 2026-05-18 — Frontend Design Overhaul Merge-Safety Cleanup Ledger
+
+Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewability and production safety, not new UX.
+
+### Checkpoints and Main Sync
+
+- Pre-merge scoped checkpoints created:
+  - `bf259ace4` `wip(marketing-web): checkpoint current web-v2 edits`
+  - `90e6d4350` `wip(app-home): checkpoint current Home feed edits`
+  - `e3485ec70` `chore(logs): checkpoint task session notes`
+  - `2c62beaa3` `chore(smoke): checkpoint screenshot flow file`
+  - `5267c92ba` `wip(supabase-audit): checkpoint current audit edits`
+  - `3512238b9` `wip(marketing-web): checkpoint remaining mockup styles`
+  - `63ffc3704` `wip(audit-assets): checkpoint late audit and marketing edits`
+- `git fetch origin` — passed after unrestricted retry; sandbox could not write `.git/FETCH_HEAD`.
+- `git merge --no-ff origin/main -m "merge main into frontend-design-overhaul for cleanup baseline"` — passed; merge commit `4811a203f`.
+- Extra isolated checkpoints after baseline:
+  - `305fbe782` `wip(marketing-web): checkpoint residual responsive mockup styles`
+  - `ea8fa20ce` `wip(native): checkpoint expo doctor dependency adjustment`
+  - `0802b3e4c` `chore(scope): checkpoint audit notes and remove temp floorplan artifacts`
+
+### Batch Status
+
+| Batch | Status | Evidence / blocker |
+| --- | --- | --- |
+| 0 Baseline verification | Complete | Baseline gates below; branch synced with `origin/main` using merge, not rebase. |
+| 1 Scope hygiene | Partial | Deleted tracked temporary floorplan page extraction dirs `data/floorplans/hc-maxwell/tmp_page0..3`; retained root service-role smoke helpers because `src/lib/security/ci-supply-chain.test.ts` and security docs reference them. |
+| 2 Route and feature flag safety | Complete | Added `gamificationEnabled`, `collectionsEnabled`, `storiesEnabled`; changed `commentsEnabled` to non-production; gated root routes and entry points for stories, collections, gamification, and comments. |
+| 3 App shell QA contracts | Complete for source contracts | Source tests cover signed-out browsing, Profile auth gate, center create return routes, gated routes, and activity/detail comment gates. Manual swipe-vs-rail QA remains open. |
+| 4 Core consumer UX | Deferred | No new empty-state or analytics changes in this cleanup pass. Asset-size audit remains open. |
+| 5 Detail/data trust | Deferred | Existing data-trust contracts pass; broader hardcoded-claim audit remains in PR 2. |
+| 6 Social safety | Partial | Comments disabled in production and report/block actions remain service-backed. Backend moderation launch readiness still open. |
+| 7 Merchant mode | Deferred | Merchant remains flag-gated; role/verification launch gaps remain in PR 4. |
+| 8 Gamification | Partial | Passport/Missions routes and profile entry points gated by `gamificationEnabled`; asset/bundle/a11y audit remains open. |
+| 9 Maps/floorplan | Partial | Temp extraction artifacts removed; validation/overlay scripts blocked by missing OpenCV `cv2`; tap-accuracy QA open. |
+| 10 Supabase/OCR | Deferred | Chat smoke skipped due missing smoke env; OCR staging smoke not run in this pass. |
+| 11 Auth/onboarding | Deferred | Existing tests pass; OAuth provider live-state audit remains open. |
+| 12 Native/iOS | Partial | Prepared iOS smoke attempted; blocked by 0 connected Maestro devices. Native/iOS changes should stay in a dedicated PR bucket. |
+| 13 Assets/bundle/licensing | Deferred | Large mobile/web asset inventory remains open. |
+| 14 CI/security | Partial | CI/security contracts pass in full test suite; security scans remain separate gate. |
+| 15 RC decision | Open | Do not merge as one PR yet; use split below unless remaining gates are completed. |
+
+### Verification Results
+
+| Date | Command | Result | Notes |
+| --- | --- | --- | --- |
+| 2026-05-18 | `npm run typecheck` | Pass | `tsc --noEmit` completed. |
+| 2026-05-18 | `npm run lint` | Pass | `eslint src/ --ext .ts,.tsx` completed. |
+| 2026-05-18 | `npm run format:check` | Initial fail, then pass | Initial fail: `src/app/navigation/RootNavigator.tsx`; fixed with `npx prettier --write src/app/navigation/RootNavigator.tsx`; rerun passed. |
+| 2026-05-18 | `npm run test` | Initial fail, then pass | Initial fail: stale `discover-v2-production-contracts.test.ts` regex after collection gating. Updated contract; final rerun passed with 335 total, 333 passing, 2 skipped. |
+| 2026-05-18 | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor --non-interactive` | Fail | Exit 1: Expo Doctor `1.18.22` treats `--non-interactive` as a project path: `Project directory .../--non-interactive does not exist`. |
+| 2026-05-18 | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass after unrestricted retry | Sandboxed run failed network checks (`ENOTFOUND exp.host`, React Native Directory response); unrestricted rerun passed 17/17. |
+| 2026-05-18 | Focused route/source contracts | Pass | `node --import tsx --test` over feature flags, route readiness, nav contracts, story, profile, review, activity, and user coverage tests: 45 passing. |
+| 2026-05-18 | `npm run smoke:native:ios:prepared` | Blocked | Maestro reported 0 connected devices; `.maestro/ios-chat-smoke.yaml` failed. |
+| 2026-05-18 | `npm run smoke:supabase-chat` | Skipped | Command exited 0 with skip: missing `HUNGRY_SUPABASE_SMOKE_URL`, `HUNGRY_SUPABASE_SMOKE_SERVICE_ROLE_KEY`, `HUNGRY_SUPABASE_SMOKE_ANON_KEY`, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`. |
+| 2026-05-18 | `python3 scripts/floorplan/score_validate_polygons.py --in data/floorplans/hc-maxwell/L1.raw.json --out /tmp/hungry-L1.validated.json --report /tmp/hungry-L1.validation-report.json` | Blocked | Python environment missing `cv2` / OpenCV. |
+| 2026-05-18 | `python3 scripts/floorplan/render_qa_overlay.py --in data/floorplans/hc-maxwell/L1.validated.json --image data/floorplans/hc-maxwell/L1.rectified.png --out output/qa/floorplans/hc-maxwell-L1-overlay.png` | Blocked | Python environment missing `cv2` / OpenCV. |
+| 2026-05-18 | `git diff --check` | Pass | No whitespace errors in the final cleanup diff. |
+
+### Remaining Production Blockers
+
+- Finish manual QA for bottom-tab swipes versus horizontal rails.
+- Keep DMs, merchant centre, comments, stories, collections, and gamification production-disabled until backend moderation, role, and readiness gates are complete.
+- Complete bundle-size/licensing audit for `src/assets/discover/**`, passport assets, and marketing-only food images.
+- Install/activate OpenCV for floorplan validation and generate overlay QA for `hc-maxwell:L1`.
+- Run OCR staging smoke with required credentials; prove `dishes_draft` never leaks to consumer reads.
+- Run native smoke with a connected simulator/device.
+- Complete auth provider live-state audit; disable or label unavailable providers if OAuth is not live.
+
+### Recommended PR Split
+
+1. Branch Safety + Route Gates: checkpoints, scope cleanup, feature flags, route gates, navigation/source contracts, this ledger.
+2. Core Consumer UX/Data Trust: empty states, prefetch checks, hardcoded factual-claim cleanup.
+3. Social/Auth Safety: moderation readiness, report/block hardening, OAuth provider behavior, return-route tests.
+4. Merchant Staging Mode: role/verification access, merchant readiness docs, launch blockers.
+5. Gamification/Collections/Stories: assets, accessibility, bundle impact, production readiness.
+6. Maps/Floorplan/Supabase/OCR: floorplan validation/fallback, OCR smoke, draft-dish leak checks, ops admin checks.
+7. CI/Security/Native: CI gates, security scans, EAS behavior, iOS/native changes.
+8. Marketing Web: `marketing/web/**`, `marketing/website/web-v2/**`, web-only assets, web verification.
+
 ## 🟠 ACTIVE — Sprint 11: Design System & UX Overhaul (Phase A, B & C)
 
 > **Status:** Phase A & B complete. Phase C (Features) in progress — core Merchant mode and Review feed delivered.

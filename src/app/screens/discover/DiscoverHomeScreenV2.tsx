@@ -30,6 +30,7 @@ import { useCollectionStore } from "@/store/useCollectionStore";
 import { useHungryTheme } from "@/theme";
 import { CollectionCard } from "@/components/collections/CollectionCard";
 import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -95,7 +96,10 @@ export function DiscoverHomeScreenV2() {
   const tasteVector = profile?.tasteVector ?? NEUTRAL_TASTE_VECTOR;
 
   const allCollections = useCollectionStore((s) => s.collections);
-  const collections = useMemo(() => allCollections.slice(0, 6), [allCollections]);
+  const collections = useMemo(
+    () => (FEATURE_FLAGS.collectionsEnabled ? allCollections.slice(0, 6) : []),
+    [allCollections],
+  );
   const loadCollections = useCollectionStore((s) => s.loadCollections);
   useEffect(() => {
     void loadCollections();

@@ -17,11 +17,15 @@ function protectedRoutesBlock(source: string): string {
   return match[1];
 }
 
-test("production route gates hide prototypes, merchant centre, and direct messages", () => {
+test("production route gates hide prototypes, merchant centre, social, and gamification surfaces", () => {
   const flags = read("src/constants/featureFlags.ts");
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
 
   assert.match(flags, /prototypeRoutesEnabled/);
+  assert.match(flags, /gamificationEnabled: nonProductionSurfaceEnabled/);
+  assert.match(flags, /collectionsEnabled: nonProductionSurfaceEnabled/);
+  assert.match(flags, /storiesEnabled: nonProductionSurfaceEnabled/);
+  assert.match(flags, /commentsEnabled: nonProductionSurfaceEnabled/);
   assert.match(flags, /appEnv !== "production"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/);
   for (const routeName of [
@@ -43,6 +47,15 @@ test("production route gates hide prototypes, merchant centre, and direct messag
   assert.match(rootNavigator, /FEATURE_FLAGS\.directMessagesEnabled \? \(/);
   assert.match(rootNavigator, /name="ChatDetail"/);
   assert.match(rootNavigator, /name="DirectMessages"/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.storiesEnabled \? \(/);
+  assert.match(rootNavigator, /name="StoryViewer"/);
+  assert.match(rootNavigator, /name="AddStory"/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.gamificationEnabled \? \(/);
+  assert.match(rootNavigator, /name="PassportScreen"/);
+  assert.match(rootNavigator, /name="MissionsScreen"/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.collectionsEnabled \? \(/);
+  assert.match(rootNavigator, /name="CollectionList"/);
+  assert.match(rootNavigator, /name="CollectionDetail"/);
 });
 
 test("signed-out consumers can browse public discovery and detail routes", () => {

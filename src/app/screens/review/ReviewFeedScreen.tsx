@@ -39,6 +39,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "./ReviewShareSheet";
 import { listReviewFeedItems, type ReviewFeedItem } from "@/features/review/reviewFeed";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -122,6 +123,7 @@ function ReviewSearchQuerySummary({ query }: { query: string }) {
 function ReviewCard({
   item,
   interaction,
+  commentsEnabled,
   onCommentPress,
   onPressDish,
   onSavePress,
@@ -130,6 +132,7 @@ function ReviewCard({
 }: {
   item: ReviewFeedItem;
   interaction: InteractionState;
+  commentsEnabled: boolean;
   onCommentPress: (item: ReviewFeedItem) => void;
   onPressDish: (dishId: string) => void;
   onSavePress: (item: ReviewFeedItem) => void;
@@ -401,19 +404,21 @@ function ReviewCard({
                   size={22}
                 />
               </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Open review comments"
-                onPress={() => onCommentPress(item)}
-                style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
-              >
-                <CommentIcon color={palette.text} size={22} />
-                {interaction.commentCount > 0 ? (
-                  <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
-                    {interaction.commentCount}
-                  </AppText>
-                ) : null}
-              </Pressable>
+              {commentsEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Open review comments"
+                  onPress={() => onCommentPress(item)}
+                  style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
+                >
+                  <CommentIcon color={palette.text} size={22} />
+                  {interaction.commentCount > 0 ? (
+                    <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
+                      {interaction.commentCount}
+                    </AppText>
+                  ) : null}
+                </Pressable>
+              ) : null}
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={interaction.liked ? "Unlike review" : "Like review"}
@@ -449,6 +454,7 @@ export function ReviewFeedScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const repository = getDataRepository();
+  const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
   const interactions = useSocialStore((state) => state.interactions);
   const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
   const repliesByCommentId = useSocialStore((state) => state.repliesByCommentId);
@@ -522,18 +528,23 @@ export function ReviewFeedScreen() {
     );
   }, [allReviews, searchQuery]);
 
-  const openReviewComments = useCallback((item: ReviewFeedItem) => {
-    setActiveCommentReview({
-      id: item.review.id,
-      authorName: item.review.authorName,
-      dishName: item.dishName,
-      caption: item.review.text,
-    });
-    requestAnimationFrame(() => {
-      commentsSheetRef.current?.present();
-      commentsSheetRef.current?.snapToIndex(0);
-    });
-  }, []);
+  const openReviewComments = useCallback(
+    (item: ReviewFeedItem) => {
+      if (!commentsEnabled) return;
+
+      setActiveCommentReview({
+        id: item.review.id,
+        authorName: item.review.authorName,
+        dishName: item.dishName,
+        caption: item.review.text,
+      });
+      requestAnimationFrame(() => {
+        commentsSheetRef.current?.present();
+        commentsSheetRef.current?.snapToIndex(0);
+      });
+    },
+    [commentsEnabled],
+  );
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("tabPress", (event) => {
@@ -614,6 +625,7 @@ export function ReviewFeedScreen() {
         <ReviewCard
           item={item}
           interaction={{ ...baseInteraction, commentCount: computedCommentCount }}
+          commentsEnabled={commentsEnabled}
           onCommentPress={openReviewComments}
           onLikePress={(reviewId) => void toggleLike(reviewId)}
           onPressDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
@@ -630,6 +642,7 @@ export function ReviewFeedScreen() {
       handleSavePress,
       toggleLike,
       commentsByPostId,
+      commentsEnabled,
       repliesByCommentId,
     ],
   );
@@ -737,13 +750,15 @@ export function ReviewFeedScreen() {
           }
         />
       )}
-      <ReviewCommentsSheet
-        activeReview={activeCommentReview}
-        inputRef={commentInputRef}
-        innerRef={commentsSheetRef}
-        seededComments={seededCommentsForActiveReview}
-        onDismiss={() => setActiveCommentReview(null)}
-      />
+      {commentsEnabled ? (
+        <ReviewCommentsSheet
+          activeReview={activeCommentReview}
+          inputRef={commentInputRef}
+          innerRef={commentsSheetRef}
+          seededComments={seededCommentsForActiveReview}
+          onDismiss={() => setActiveCommentReview(null)}
+        />
+      ) : null}
       <ReviewShareSheet
         activeReview={activeShareReview}
         bottomInset={insets.bottom}

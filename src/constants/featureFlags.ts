@@ -16,6 +16,7 @@ export function resolveFeatureFlags(appEnvRaw = process.env.EXPO_PUBLIC_APP_ENV)
 
   const prototypeRoutesEnabled =
     appEnv !== "production" || (typeof __DEV__ !== "undefined" && __DEV__ === true);
+  const nonProductionSurfaceEnabled = prototypeRoutesEnabled;
 
   return {
     readsEnabled: true,
@@ -23,8 +24,11 @@ export function resolveFeatureFlags(appEnvRaw = process.env.EXPO_PUBLIC_APP_ENV)
     mockMapboxEnabled: false,
     hungryWheelEnabled: true,
     directMessagesEnabled: false,
-    commentsEnabled: true,
+    commentsEnabled: nonProductionSurfaceEnabled,
     craveEnabled: true,
+    gamificationEnabled: nonProductionSurfaceEnabled,
+    collectionsEnabled: nonProductionSurfaceEnabled,
+    storiesEnabled: nonProductionSurfaceEnabled,
     merchantClaimCtaEnabled,
     merchantCentreEnabled,
     prototypeRoutesEnabled,

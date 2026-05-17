@@ -30,5 +30,8 @@ test("discover V2 keeps Zustand selectors referentially stable", () => {
     /use[A-Za-z0-9]+Store\(\([^)]*\) => [^;]*(?:\.slice|\.map|\.filter)\(/,
   );
   assert.doesNotMatch(discover, /use[A-Za-z0-9]+Store\(\([^)]*\) => [^;]*\?\? \[\]/);
-  assert.match(discover, /const collections = useMemo\(\(\) => allCollections\.slice\(0, 6\)/);
+  assert.match(
+    discover,
+    /const collections = useMemo\(\s*\(\) => \(FEATURE_FLAGS\.collectionsEnabled \? allCollections\.slice\(0, 6\) : \[\]\)/,
+  );
 });

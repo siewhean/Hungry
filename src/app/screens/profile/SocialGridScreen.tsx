@@ -21,6 +21,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import type { Story, StallPost, DishDetail } from "@/types/domain";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 type SocialGridRouteProp = RouteProp<ProfileStackParamList, "SocialGrid">;
 
@@ -35,6 +36,7 @@ export function SocialGridScreen() {
   const { type } = route.params;
 
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const storiesEnabled = FEATURE_FLAGS.storiesEnabled;
   const profile = useProfileStore((state) => state.profile);
   const { stories, loadStories } = useStoryStore();
   const { interactions, initializeInteractions } = useSocialStore();
@@ -57,7 +59,9 @@ export function SocialGridScreen() {
         const repository = getDataRepository();
         const posts = await listSharedStallPosts(repository);
 
-        await loadStories();
+        if (storiesEnabled) {
+          await loadStories();
+        }
 
         setStallPosts(posts);
         initializeInteractions(posts);
@@ -68,21 +72,23 @@ export function SocialGridScreen() {
       }
     }
     void loadData();
-  }, [isAuthenticated, loadStories, initializeInteractions, publishedPosts]);
+  }, [isAuthenticated, loadStories, initializeInteractions, publishedPosts, storiesEnabled]);
 
   const items = useMemo(() => {
-    const filteredStories = stories
-      .filter((story) => {
-        const isLiked = story.interaction?.liked;
-        const isSaved = story.interaction?.saved;
-        return type === "liked" ? isLiked : isSaved;
-      })
-      .map((story) => ({
-        story,
-        savedAt: getSavedSortKey(story.interaction?.savedAt),
-      }))
-      .sort((a, b) => b.savedAt - a.savedAt)
-      .map(({ story }) => story);
+    const filteredStories = storiesEnabled
+      ? stories
+          .filter((story) => {
+            const isLiked = story.interaction?.liked;
+            const isSaved = story.interaction?.saved;
+            return type === "liked" ? isLiked : isSaved;
+          })
+          .map((story) => ({
+            story,
+            savedAt: getSavedSortKey(story.interaction?.savedAt),
+          }))
+          .sort((a, b) => b.savedAt - a.savedAt)
+          .map(({ story }) => story)
+      : [];
 
     const filteredPosts = stallPosts
       .map((post) => ({
@@ -121,7 +127,15 @@ export function SocialGridScreen() {
         : [];
 
     return [...filteredStories, ...filteredPosts, ...favouriteDishes];
-  }, [getSavedSortKey, interactions, profile.favouriteDishIds, stallPosts, stories, type]);
+  }, [
+    getSavedSortKey,
+    interactions,
+    profile.favouriteDishIds,
+    stallPosts,
+    stories,
+    storiesEnabled,
+    type,
+  ]);
 
   const renderItem = ({ item }: { item: Story | StallPost | DishDetail }) => {
     const isStory = "content" in item;
@@ -137,6 +151,7 @@ export function SocialGridScreen() {
         style={styles.gridItem}
         onPressIn={() => {
           if (isStory) {
+            if (!storiesEnabled) return;
             prefetchImage((item as Story).content.url);
             preloadRoute(navigation, "StoryViewer", { initialStoryId: (item as Story).id });
           } else if (isDish) {
@@ -152,6 +167,7 @@ export function SocialGridScreen() {
         }}
         onPress={() => {
           if (isStory) {
+            if (!storiesEnabled) return;
             navigation.navigate("StoryViewer", { initialStoryId: (item as Story).id });
           } else if (isDish) {
             navigation.navigate("DishDetail", { dishId: (item as DishDetail).id });

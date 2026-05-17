@@ -147,6 +147,8 @@ test("activity messages and update posts are functional routes, not static mocku
   assert.match(detail, /toggleSave\(post\.id\)/);
   assert.match(detail, /navigation\.navigate\("DishDetail"/);
   assert.match(detail, /ReviewCommentsSheet/);
+  assert.match(detail, /const commentsEnabled = FEATURE_FLAGS\.commentsEnabled/);
+  assert.match(detail, /\{commentsEnabled \? \(/);
   assert.match(detail, /commentsSheetRef\.current\?\.present\(\)/);
   assert.match(detail, /setActiveCommentReview/);
   assert.match(detail, /accessibilityLabel="Open comments"/);
