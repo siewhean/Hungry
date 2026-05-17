@@ -165,6 +165,27 @@
 .visualContent {
   position: relative;
   min-height: clamp(34rem, 66vw, 50rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phoneWrapper {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.phoneMockup {
+  height: min(92%, 46rem);
+  max-height: calc(100svh - var(--announcement-height) - var(--header-height) - var(--space-12));
+  filter: drop-shadow(0 28px 52px rgb(26 46 68 / 0.26));
+  pointer-events: auto;
+  transform-origin: center;
 }
 
 .foodOrbit {
@@ -189,18 +210,18 @@
 }
 
 .foodCard1 {
-  top: 7%;
-  left: 2%;
+  top: 5%;
+  left: -1%;
 }
 
 .foodCard2 {
-  right: 6%;
-  top: 8%;
+  right: 0;
+  top: 6%;
 }
 
 .foodCard3 {
-  left: 4%;
-  bottom: 9%;
+  left: 0;
+  bottom: 8%;
 }
 
 .chipLayer {
@@ -229,12 +250,12 @@
 
 .chip1 {
   top: 24%;
-  left: 0;
+  left: -2%;
 }
 
 .chip2 {
   top: 36%;
-  right: 0;
+  right: -1%;
 }
 
 .chip3 {
@@ -243,13 +264,8 @@
 }
 
 .chip4 {
-  right: 6%;
+  right: 2%;
   bottom: 25%;
-}
-
-.chip5 {
-  left: 38%;
-  top: 8%;
 }
 
 .orange {
@@ -314,8 +330,7 @@
   }
 
   .chip1,
-  .chip4,
-  .chip5 {
+  .chip4 {
     display: none;
   }
 }

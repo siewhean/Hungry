@@ -15,8 +15,8 @@ export default function StickyShowcase() {
             surrounding story move around the product instead of hiding it in a static mockup.
           </p>
         </Reveal>
+        <StickyScreenStory screens={homepage.productStory} />
       </div>
-      <StickyScreenStory screens={homepage.productStory} />
     </section>
   );
 }

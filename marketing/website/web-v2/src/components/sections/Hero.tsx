@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { homepage } from "../../content/site";
+import { DiscoveryPhoneMockup } from "../home/DiscoveryPhoneMockup";
 import styles from "./Hero.module.css";
 
 export default function Hero() {
@@ -116,6 +117,12 @@ export default function Hero() {
         </div>
 
         <div className={styles.visualContent} aria-label="Hungry app and food preview">
+          <div className={styles.phoneWrapper}>
+            <motion.div className={`${styles.phoneMockup} ${styles.visualLayer}`}>
+              <DiscoveryPhoneMockup />
+            </motion.div>
+          </div>
+
           <div className={`${styles.foodOrbit} ${styles.parallaxFast}`}>
             {homepage.hero.foodCards.map((card, index) => (
               <motion.div

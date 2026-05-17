@@ -1,20 +1,23 @@
 .frame {
   position: relative;
   overflow: hidden;
-  border: 1px solid var(--color-border-strong);
+  border: 10px solid #1a1a1a;
   background: var(--color-surface);
-  box-shadow: var(--shadow-float);
+  box-shadow: 0 25px 50px -12px rgb(26 46 68 / 0.35);
   isolation: isolate;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
 }
 
 .portrait {
-  aspect-ratio: 9 / 16;
-  border-radius: var(--radius-3xl);
+  aspect-ratio: 9 / 19.5;
+  border-radius: 44px;
 }
 
 .landscape {
   aspect-ratio: 16 / 11;
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-xl);
 }
 
 .screenChrome {
@@ -49,8 +52,8 @@
   z-index: 4;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
-  color: var(--color-text-primary);
+  background: var(--color-ink-deep);
+  color: var(--color-white);
   font-family: var(--font-mono);
   font-size: var(--font-size-xs);
   font-weight: 500;

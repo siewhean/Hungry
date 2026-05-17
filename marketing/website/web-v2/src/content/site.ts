@@ -103,7 +103,6 @@ export const homepage = {
       { label: "Open now", tone: "green" },
       { label: "Menu available", tone: "cream" },
       { label: "Ranked by foodies", tone: "amber" },
-      { label: "Claimed by merchant", tone: "navy" },
     ],
     foodCards: [topDownFoodImages[0], topDownFoodImages[1], topDownFoodImages[2]],
   },
@@ -115,7 +114,7 @@ export const homepage = {
         "Search by dish, compare actual food photos, and see whether a stall is worth the trip before hunger becomes indecision.",
       image: {
         src: "/images/people/restaurant-diner.jpg",
-        alt: "Diners eating inside a busy local restaurant",
+        alt: "Singaporean diners enjoying a meal in a local restaurant",
       },
       cta: { label: "Join Waitlist", href: "/for-foodies" },
     },
@@ -126,7 +125,7 @@ export const homepage = {
         "Give diners a clear view of your menu, hours, signature dishes, and business details when they are already nearby and hungry.",
       image: {
         src: "/images/people/hawker-cooking.jpg",
-        alt: "Hawker stall cook preparing food behind the counter",
+        alt: "Singapore hawker-centre stall owner cooking at the counter",
       },
       cta: { label: "Register Interest", href: "/for-merchants" },
     },

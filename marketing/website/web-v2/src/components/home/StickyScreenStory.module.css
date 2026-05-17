@@ -2,44 +2,40 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-10);
+  align-items: start;
 }
 
 .visualRail {
+  position: -webkit-sticky;
   position: sticky;
   top: calc(var(--header-height) + var(--space-6));
   z-index: 2;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-5);
   align-self: start;
-  min-height: calc(100svh - var(--header-height) - var(--space-12));
-  align-content: center;
+  height: calc(100vh - var(--header-height) - var(--space-12));
+  height: calc(100svh - var(--header-height) - var(--space-12));
+  max-height: 850px;
+  justify-content: center;
 }
 
 .deviceDeck {
   position: relative;
-  min-height: clamp(28rem, 70vh, 44rem);
-  border-radius: var(--radius-3xl);
-  background:
-    radial-gradient(circle at 20% 15%, color-mix(in srgb, var(--color-accent) 28%, transparent), transparent 34%),
-    linear-gradient(140deg, var(--color-text-primary), var(--color-ink-soft));
+  flex: 1;
+  min-height: 0;
+  border-radius: var(--radius-2xl);
+  background-color: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
   overflow: hidden;
-  box-shadow: var(--shadow-float);
-}
-
-.deviceDeck::before {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  border: 1px solid color-mix(in srgb, var(--color-surface) 16%, transparent);
-  border-radius: inherit;
-  pointer-events: none;
 }
 
 .screenLayer {
   position: absolute;
-  inset: clamp(1rem, 4vw, 3rem);
-  display: grid;
-  place-items: center;
+  inset: var(--space-6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   opacity: 0;
   transform: translateY(30px) scale(0.96) rotate(-1deg);
   transition:
@@ -48,12 +44,10 @@
 }
 
 .screenLayer > figure {
-  width: min(72vw, 22rem);
-  max-height: 100%;
-}
-
-.screenLayer:nth-child(n + 3) > figure {
-  width: min(78vw, 34rem);
+  height: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .active {
@@ -66,6 +60,7 @@
   display: flex;
   justify-content: center;
   gap: var(--space-3);
+  padding-bottom: var(--space-2);
 }
 
 .progressDot {
@@ -76,6 +71,9 @@
   transition:
     width var(--duration-fast) var(--ease-out),
     background var(--duration-fast) var(--ease-out);
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
 .progressDotActive {
@@ -86,6 +84,7 @@
 .copyRail {
   display: grid;
   gap: var(--space-8);
+  padding-bottom: 25vh;
 }
 
 .step {
@@ -106,32 +105,33 @@
 
 .eyebrow {
   width: fit-content;
-  border-radius: var(--radius-full);
-  background: var(--color-orange-light);
-  color: var(--color-primary);
-  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-muted);
   font-family: var(--font-mono);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   font-weight: 500;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .step h3 {
-  max-width: 14ch;
+  max-width: 16ch;
   color: var(--color-text-primary);
-  font-size: clamp(1.8rem, 3.25vw, 3.25rem);
+  font-size: clamp(2rem, 3.5vw, 3.5rem);
   line-height: 1.04;
+  letter-spacing: -0.02em;
+  margin: 0;
 }
 
 .step p {
   max-width: 31rem;
-  font-size: clamp(0.98rem, 1.05vw, 1.08rem);
+  font-size: clamp(1rem, 1.1vw, 1.125rem);
   line-height: 1.65;
+  margin: 0;
 }
 
 @media (min-width: 980px) {
   .story {
-    grid-template-columns: minmax(25rem, 0.9fr) minmax(26rem, 1fr);
+    grid-template-columns: minmax(25rem, 1fr) minmax(24rem, 1fr);
     gap: var(--space-16);
   }
 
@@ -140,19 +140,25 @@
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 979px) {
   .visualRail {
-    position: relative;
-    top: auto;
-    min-height: auto;
+    position: sticky;
+    top: calc(var(--header-height) + var(--space-2));
+    height: 50vh;
+    min-height: 380px;
+    background-color: var(--color-bg);
+    z-index: 10;
+    padding-top: var(--space-2);
+    margin-bottom: var(--space-8);
   }
 
   .deviceDeck {
-    min-height: 31rem;
+    border-radius: var(--radius-xl);
   }
 
   .step {
     min-height: auto;
+    padding-bottom: var(--space-12);
   }
 }
 

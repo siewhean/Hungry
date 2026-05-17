@@ -29,9 +29,13 @@ export default function ProblemStack() {
                 distance={42}
                 key={problem}
               >
-                <span className={styles.cardIndex}>0{index + 1}</span>
-                <Icon aria-hidden size={26} />
-                <p>{problem}</p>
+                <div className={styles.problemLine}>
+                  <span className={styles.cardIndex}>0{index + 1}</span>
+                  <span className={styles.iconWrap}>
+                    <Icon aria-hidden size={18} />
+                  </span>
+                  <p className={styles.problemText}>{problem}</p>
+                </div>
               </Reveal>
             );
           })}
