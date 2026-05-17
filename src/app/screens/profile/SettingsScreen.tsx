@@ -1,6 +1,6 @@
 import Constants from "expo-constants";
 import { useState } from "react";
-import { Alert, View, Linking } from "react-native";
+import { Alert, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
@@ -20,6 +20,8 @@ import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { Button } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
+import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
+import { getHungryService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
@@ -58,6 +60,7 @@ export function SettingsScreen() {
   const [showPassport, setShowPassport] = useState(true);
   const [showBadges, setShowBadges] = useState(true);
   const [missionNotifications, setMissionNotifications] = useState(true);
+  const [deletionRequested, setDeletionRequested] = useState(false);
 
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
   const normalizedThemePreference: ThemePreference =
@@ -79,21 +82,33 @@ export function SettingsScreen() {
   const handleDeleteAccount = () => {
     Alert.alert(
       "Delete account",
-      "This removes your local session and profile data. This action is permanent.",
+      "Hungry will queue deletion of your account and associated personal data. Some security, fraud, moderation, or legal records may be retained in anonymized form. This action is permanent.",
       [
         { text: "Cancel", style: "cancel" },
         {
-          text: "Delete",
+          text: "Request deletion",
           style: "destructive",
           onPress: () => {
             void (async () => {
-              await purgePersistedAccountData();
-              clearSession();
-              clearProfile();
-              clearSearchState();
-              resetDraft();
-              resetLocationState();
-              rootNavigation.navigate("AuthStack", { screen: "SignUp" });
+              try {
+                setDeletionRequested(true);
+                await getHungryService().auth.requestAccountDeletion({
+                  reason: "user_initiated_settings_flow",
+                });
+                await purgePersistedAccountData();
+                clearSession();
+                clearProfile();
+                clearSearchState();
+                resetDraft();
+                resetLocationState();
+                rootNavigation.navigate("AuthStack", { screen: "SignUp" });
+              } catch {
+                setDeletionRequested(false);
+                Alert.alert(
+                  "Deletion request failed",
+                  "We could not queue your account deletion request. Please try again or contact support.",
+                );
+              }
             })();
           },
         },
@@ -238,15 +253,19 @@ export function SettingsScreen() {
       <SettingsSection title="Support">
         <SettingsRow
           label="Help Center"
-          onPress={() => Linking.openURL("https://hungry.sg/help")}
+          onPress={() => void openTrustedExternalUrl("https://hungry.sg/help")}
         />
         <SettingsRow
           label="Privacy Policy"
-          onPress={() => Linking.openURL("https://hungry.sg/privacy")}
+          onPress={() => void openTrustedExternalUrl("https://hungry.sg/privacy")}
         />
         <SettingsRow
           label="Terms of Service"
-          onPress={() => Linking.openURL("https://hungry.sg/terms")}
+          onPress={() => void openTrustedExternalUrl("https://hungry.sg/terms")}
+        />
+        <SettingsRow
+          label="Delete account help"
+          onPress={() => void openTrustedExternalUrl("https://hungry.sg/account/delete")}
           isLast
         />
       </SettingsSection>
@@ -260,6 +279,7 @@ export function SettingsScreen() {
           label="Delete account"
           variant="destructive"
           onPress={handleDeleteAccount}
+          loading={deletionRequested}
           leftIcon={<Trash2 size={20} color={palette.white} />}
         />
       </View>

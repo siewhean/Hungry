@@ -3,6 +3,44 @@ export const metadata = {
   description: "Terms of Service for the Hungry app.",
 };
 
+const sections = [
+  {
+    title: "1. Using Hungry",
+    body:
+      "Hungry helps people discover dishes, stalls, hawker centres, restaurants, reviews, and merchant information in Singapore. You must use Hungry lawfully, provide accurate account information, and keep your account secure.",
+  },
+  {
+    title: "2. User-Generated Content",
+    body:
+      "You are responsible for reviews, posts, comments, messages, photos, videos, profile content, reports, and other content you submit. Do not post abusive, harassing, hateful, sexually explicit, violent, illegal, deceptive, spam, infringing, or unsafe content. Hungry may hide, remove, restrict, or preserve content when needed for safety, moderation, legal, or abuse-prevention reasons.",
+  },
+  {
+    title: "3. Reporting, Blocking, And Moderation",
+    body:
+      "Hungry provides report, hide, and block controls for community content. Reports are reviewed for safety and policy enforcement. Blocking reduces visibility between users where supported, but it may not remove already processed safety records or legal/audit records.",
+  },
+  {
+    title: "4. Merchant And Menu Information",
+    body:
+      "Merchant profiles, menus, promotions, verification evidence, and claim details must be accurate and must not mislead users. Hungry may review merchant submissions before publishing changes and may reject claims or edits that cannot be verified.",
+  },
+  {
+    title: "5. AI, OCR, And Recommendations",
+    body:
+      "AI-assisted menu extraction, replies, descriptions, and recommendations are provided to support discovery and merchant workflows. They may be incomplete or inaccurate and should be reviewed before relying on them for business, dietary, allergen, pricing, or safety decisions.",
+  },
+  {
+    title: "6. Account Deletion",
+    body:
+      "If you create an account, you can request account deletion in the app under Settings or at hungry.sg/account/delete. Hungry will remove or anonymize account-associated personal data unless limited retention is required for safety, fraud prevention, legal obligations, or audit purposes.",
+  },
+  {
+    title: "7. Changes And Contact",
+    body:
+      "Hungry may update these terms as the app and merchant tools evolve. For support, safety, privacy, or deletion requests, email hello@hungry.sg.",
+  },
+];
+
 export default function TermsOfService() {
   return (
     <main
@@ -13,18 +51,20 @@ export default function TermsOfService() {
         minHeight: "80vh",
       }}
     >
-      <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+      <article style={{ maxWidth: "860px", margin: "0 auto" }}>
         <h1
           style={{
             fontSize: "3rem",
             fontWeight: 800,
-            marginBottom: "var(--space-8)",
+            marginBottom: "var(--space-4)",
             color: "var(--color-text-primary)",
           }}
         >
           Terms of Service
         </h1>
-
+        <p style={{ color: "var(--color-text-secondary)", lineHeight: 1.8 }}>
+          <em>Last updated: May 18, 2026</em>
+        </p>
         <div
           style={{
             color: "var(--color-text-secondary)",
@@ -32,75 +72,26 @@ export default function TermsOfService() {
             display: "flex",
             flexDirection: "column",
             gap: "var(--space-6)",
+            marginTop: "var(--space-8)",
           }}
         >
-          <p>
-            <em>Last updated: May 2026</em>
-          </p>
-
-          <p>
-            Welcome to Hungry. This is a stub page for the full terms of service, which will be
-            updated before the official launch.
-          </p>
-
-          <h2
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: 700,
-              color: "var(--color-text-primary)",
-              marginTop: "var(--space-4)",
-            }}
-          >
-            1. Acceptance of Terms
-          </h2>
-          <p>
-            By accessing or using Hungry, you agree to be bound by these Terms of Service. If you do
-            not agree to these terms, please do not use our services.
-          </p>
-
-          <h2
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: 700,
-              color: "var(--color-text-primary)",
-              marginTop: "var(--space-4)",
-            }}
-          >
-            2. Use of Service
-          </h2>
-          <p>
-            Hungry provides a platform for discovering food in Singapore. You agree to use the
-            service only for lawful purposes and in accordance with these Terms.
-          </p>
-
-          <h2
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: 700,
-              color: "var(--color-text-primary)",
-              marginTop: "var(--space-4)",
-            }}
-          >
-            3. Waitlist Terms
-          </h2>
-          <p>
-            Joining our waitlist does not guarantee access to the platform. We reserve the right to
-            admit users at our discretion.
-          </p>
-
-          <h2
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: 700,
-              color: "var(--color-text-primary)",
-              marginTop: "var(--space-4)",
-            }}
-          >
-            4. Contact Us
-          </h2>
-          <p>If you have any questions about these Terms, please contact us at hello@hungry.sg.</p>
+          {sections.map((section) => (
+            <section key={section.title}>
+              <h2
+                style={{
+                  fontSize: "1.5rem",
+                  fontWeight: 700,
+                  color: "var(--color-text-primary)",
+                  marginBottom: "var(--space-2)",
+                }}
+              >
+                {section.title}
+              </h2>
+              <p>{section.body}</p>
+            </section>
+          ))}
         </div>
-      </div>
+      </article>
     </main>
   );
 }

@@ -233,6 +233,10 @@ test("OAuth flow validates callback URL and rejects implicit token fragments", (
 
 test("store policy controls cover account deletion, UGC moderation, and location disclosure", () => {
   const migration = readRepoFile("supabase/migrations/0017_store_policy_safety_controls.sql");
+  const hardening = readRepoFile(
+    "supabase/migrations/0040_release_hardening_account_deletion_merchant_rpcs.sql",
+  );
+  const worker = readRepoFile("supabase/functions/process-account-deletions/index.ts");
   const serviceTypes = readRepoFile("src/lib/services/types.ts");
   const supabaseService = readRepoFile("src/lib/services/supabase/supabaseService.ts");
   const safetyHelper = readRepoFile("src/lib/security/communitySafety.ts");
@@ -253,8 +257,40 @@ test("store policy controls cover account deletion, UGC moderation, and location
     locationScreen,
     /Hungry collects your approximate device location only while you use the app/,
   );
+  assert.match(hardening, /account_deletion_processing_events/);
+  assert.match(hardening, /claim_account_deletion_requests/);
+  assert.match(hardening, /anonymize_account_deletion_request/);
+  assert.match(hardening, /complete_account_deletion_request/);
+  assert.match(hardening, /legal_hold boolean not null default false/);
+  assert.match(hardening, /preserved_tables/);
+  assert.match(hardening, /content_reports/);
+  assert.match(hardening, /post_reports/);
+  assert.match(hardening, /moderation_actions/);
+  assert.match(hardening, /app_ops_audit_events/);
+  assert.match(hardening, /revoke all on function public\.anonymize_account_deletion_request/);
+  assert.match(
+    hardening,
+    /grant execute on function public\.anonymize_account_deletion_request[\s\S]*to service_role/,
+  );
+  assert.match(worker, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(worker, /ACCOUNT_DELETION_WORKER_TOKEN/);
+  assert.match(worker, /claim_account_deletion_requests/);
+  assert.match(worker, /anonymize_account_deletion_request/);
+  assert.match(worker, /auth\.admin\.deleteUser/);
+  assert.match(worker, /complete_account_deletion_request/);
   assert.doesNotMatch(appConfig, /NSLocalNetworkUsageDescription/);
   assert.doesNotMatch(appConfig, /NSBonjourServices/);
+});
+
+test("password reset uses redirect URL and supports recovery code exchange", () => {
+  const supabaseService = readRepoFile("src/lib/services/supabase/supabaseService.ts");
+
+  assert.match(supabaseService, /resetPasswordForEmail\(email,\s*\{/);
+  assert.match(supabaseService, /redirectTo: getAuthEmailRedirectTo\(\)/);
+  assert.match(supabaseService, /exchangeRecoveryCodeIfPresent/);
+  assert.match(supabaseService, /Password recovery callback URL was not trusted/);
+  assert.match(supabaseService, /Password recovery token fragments are not accepted/);
+  assert.match(supabaseService, /exchangeCodeForSession\(code\)/);
 });
 
 test("merchant portal RLS hardening protects merchant-only surfaces", () => {

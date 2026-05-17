@@ -1161,6 +1161,23 @@ function getAuthEmailRedirectTo(): string {
   return process.env.EXPO_PUBLIC_AUTH_REDIRECT_URL?.trim() || "hungry://auth/callback";
 }
 
+function getMerchantAnalyticsSince(dateRange: MerchantAnalytics["dateRange"]): string | null {
+  const now = new Date();
+  if (dateRange === "today") {
+    now.setHours(0, 0, 0, 0);
+    return now.toISOString();
+  }
+  if (dateRange === "7d") {
+    now.setDate(now.getDate() - 7);
+    return now.toISOString();
+  }
+  if (dateRange === "30d") {
+    now.setDate(now.getDate() - 30);
+    return now.toISOString();
+  }
+  return null;
+}
+
 function callbackBaseMatches(url: string, expectedRedirectTo: string): boolean {
   try {
     const parsed = new URL(url);
@@ -1173,6 +1190,39 @@ function callbackBaseMatches(url: string, expectedRedirectTo: string): boolean {
   } catch {
     return false;
   }
+}
+
+async function exchangeRecoveryCodeIfPresent(client: SupabaseClient, token: string): Promise<void> {
+  const trimmed = token.trim();
+  if (!trimmed) return;
+
+  let code = trimmed;
+  try {
+    const parsed = new URL(trimmed);
+    if (!callbackBaseMatches(parsed.toString(), getAuthEmailRedirectTo())) {
+      throw new Error("Password recovery callback URL was not trusted.");
+    }
+    const {
+      accessToken,
+      refreshToken,
+      code: callbackCode,
+    } = getAuthTokensFromCallback(parsed.toString());
+    if (accessToken || refreshToken) {
+      throw new Error("Password recovery token fragments are not accepted.");
+    }
+    code = callbackCode ?? "";
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("Password recovery")) {
+      throw error;
+    }
+  }
+
+  if (!code) {
+    throw new Error("Password recovery callback did not include a code.");
+  }
+
+  const { error } = await client.auth.exchangeCodeForSession(code);
+  if (error) throw error;
 }
 
 function getOAuthStateFromUrl(url: string): string | undefined {
@@ -2136,12 +2186,15 @@ export const supabaseService: HungryService = {
 
     async forgotPassword(email) {
       const client = requireSupabaseClient();
-      const { error } = await client.auth.resetPasswordForEmail(email);
+      const { error } = await client.auth.resetPasswordForEmail(email, {
+        redirectTo: getAuthEmailRedirectTo(),
+      });
       if (error) throw error;
     },
 
-    async resetPassword(_token, password) {
+    async resetPassword(token, password) {
       const client = requireSupabaseClient();
+      await exchangeRecoveryCodeIfPresent(client, token);
       const { error } = await client.auth.updateUser({ password });
       if (error) throw error;
     },
@@ -2220,39 +2273,11 @@ export const supabaseService: HungryService = {
     async recordDishView(dishId, context) {
       const client = getSupabaseClient();
       if (!client) return;
-      const { data: dishRow, error: dishError } = await client
-        .from("dishes")
-        .select("id, venue_id")
-        .eq("id", dishId)
-        .maybeSingle();
-      if (dishError) throw dishError;
-      const venueId = asString((dishRow as Row | null)?.venue_id);
-      if (!venueId) return;
-      const { data: outletRow, error: outletError } = await client
-        .from("merchant_outlets")
-        .select("id, merchant_account_id")
-        .eq("venue_id", venueId)
-        .maybeSingle();
-      if (outletError) throw outletError;
-      const outletId = asString((outletRow as Row | null)?.id);
-      const merchantAccountId = asString((outletRow as Row | null)?.merchant_account_id);
-      if (!outletId || !merchantAccountId) return;
-      const userId = context?.userId ?? (await getCurrentSupabaseUserId()) ?? undefined;
-      const sessionId = context?.sessionId ?? userId ?? "anonymous";
-      const dedupeWindow = new Date().toISOString().slice(0, 13);
-      const { error } = await client.from("merchant_dish_view_events").upsert(
-        {
-          outlet_id: outletId,
-          merchant_account_id: merchantAccountId,
-          venue_id: venueId,
-          dish_id: dishId,
-          user_id: userId ?? null,
-          session_id: sessionId,
-          dedupe_key: `${dishId}:${sessionId}:${dedupeWindow}`,
-          viewed_at: new Date().toISOString(),
-        },
-        { onConflict: "dedupe_key", ignoreDuplicates: true },
-      );
+      const sessionId = context?.sessionId ?? context?.userId ?? "anonymous";
+      const { error } = await client.rpc("record_merchant_dish_view", {
+        p_dish_id: dishId,
+        p_session_id: sessionId,
+      });
       if (error) throw error;
     },
 
@@ -3792,15 +3817,20 @@ export const supabaseService: HungryService = {
       const inbox = await this.getInbox(outletId);
       const outlet = await getMerchantOutletRow(client, outletId);
       const resolvedOutletId = asString(outlet.id) ?? outletId;
-      const { data: viewRows } = await client
-        .from("merchant_dish_view_events")
-        .select("dish_id")
-        .eq("outlet_id", resolvedOutletId);
+      const { data: viewRows, error: viewError } = await client.rpc(
+        "get_merchant_dish_view_counts",
+        {
+          p_outlet_id: resolvedOutletId,
+          p_since: getMerchantAnalyticsSince(dateRange),
+          p_until: null,
+        },
+      );
+      if (viewError) throw viewError;
       const viewCounts = new Map<string, number>();
       (Array.isArray(viewRows) ? (viewRows as Row[]) : []).forEach((row) => {
         const dishId = asString(row.dish_id);
         if (!dishId) return;
-        viewCounts.set(dishId, (viewCounts.get(dishId) ?? 0) + 1);
+        viewCounts.set(dishId, asNumber(row.view_count) ?? 0);
       });
       const dishViewTotal = Array.from(viewCounts.values()).reduce((sum, count) => sum + count, 0);
       const reviewRatings = inbox
@@ -3944,10 +3974,24 @@ export const supabaseService: HungryService = {
           metadata: row.metadata,
         }));
       if (emailRows.length > 0) {
-        const { error: emailError } = await client
-          .from("merchant_email_outbox")
-          .upsert(emailRows, { onConflict: "dedupe_key", ignoreDuplicates: true });
-        if (emailError) throw emailError;
+        await Promise.all(
+          emailRows.map(async (row) => {
+            const memberId = row.dedupe_key.split(":").at(-1) ?? row.recipient_email;
+            const { error: emailError } = await client.rpc(
+              "enqueue_merchant_weekly_summary_email",
+              {
+                p_merchant_account_id: merchantAccountId,
+                p_outlet_id: resolvedOutletId,
+                p_recipient_email: row.recipient_email,
+                p_summary_id: String(row.metadata.summaryId ?? summary.id),
+                p_member_id: memberId,
+                p_subject: row.subject,
+                p_body: row.body,
+              },
+            );
+            if (emailError) throw emailError;
+          }),
+        );
       }
       const { data, error: readError } = await client
         .from("merchant_notifications")
@@ -4105,25 +4149,16 @@ export const supabaseService: HungryService = {
           { onConflict: "dedupe_key", ignoreDuplicates: true },
         );
       if (notificationError) throw notificationError;
-      const { error: emailError } = await requireSupabaseClient()
-        .from("merchant_email_outbox")
-        .upsert(
-          {
-            merchant_account_id: merchantAccountId,
-            recipient_email: normalizedEmail,
-            template: "team_invite",
-            subject: "You have been invited to manage a Hungry stall",
-            body: `${trimmedName}, install or open Hungry to accept your merchant team invite.`,
-            status: "queued",
-            dedupe_key: `email:team-invite:${merchantAccountId}:${normalizedEmail}`,
-            metadata: {
-              memberId: asString(row.id),
-              role,
-              delivery: "email",
-            },
-          },
-          { onConflict: "dedupe_key", ignoreDuplicates: true },
-        );
+      const { error: emailError } = await requireSupabaseClient().rpc(
+        "enqueue_merchant_team_invite_email",
+        {
+          p_merchant_account_id: merchantAccountId,
+          p_recipient_email: normalizedEmail,
+          p_member_id: asString(row.id) ?? null,
+          p_role: role,
+          p_invitee_name: trimmedName,
+        },
+      );
       if (emailError) throw emailError;
       return {
         id: asString(row.id) ?? "",

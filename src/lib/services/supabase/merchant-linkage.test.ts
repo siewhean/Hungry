@@ -121,6 +121,9 @@ test("Supabase merchant catalog metadata RLS covers images and dietary links", (
 
 test("Supabase merchant portal readiness covers views, notifications, and promo pricing", () => {
   const migration = read("supabase/migrations/0039_merchant_portal_readiness.sql");
+  const hardening = read(
+    "supabase/migrations/0040_release_hardening_account_deletion_merchant_rpcs.sql",
+  );
   const service = read("src/lib/services/supabase/supabaseService.ts");
 
   assert.match(migration, /merchant_dish_view_events/);
@@ -131,15 +134,27 @@ test("Supabase merchant portal readiness covers views, notifications, and promo 
   assert.match(migration, /original_price numeric/);
   assert.match(migration, /profile_photo_url text/);
   assert.match(migration, /merchant_notifications_owner_manager_write/);
-  assert.match(migration, /merchant_email_outbox_owner_manager_insert/);
+  assert.match(hardening, /drop policy if exists "merchant_dish_views_public_insert"/);
+  assert.match(hardening, /drop policy if exists "merchant_email_outbox_owner_manager_insert"/);
+  assert.match(hardening, /revoke insert, update, delete on table merchant_dish_view_events/);
+  assert.match(hardening, /revoke insert, update, delete on table merchant_email_outbox/);
+  assert.match(hardening, /record_merchant_dish_view/);
+  assert.match(hardening, /get_merchant_dish_view_counts/);
+  assert.match(hardening, /app_enqueue_merchant_email/);
+  assert.match(hardening, /enqueue_merchant_team_invite_email/);
+  assert.match(hardening, /enqueue_merchant_weekly_summary_email/);
+  assert.match(hardening, /security definer/);
+  assert.match(hardening, /set search_path = public/);
   assert.match(service, /recordDishView/);
-  assert.match(service, /from\("merchant_dish_view_events"\)/);
+  assert.match(service, /rpc\("record_merchant_dish_view"/);
+  assert.match(service, /rpc\(\s*"get_merchant_dish_view_counts"/);
   assert.match(service, /getWeeklySummaryStats/);
   assert.match(service, /getMerchantNotifications/);
   assert.match(service, /syncLowRatingNotifications/);
   assert.match(service, /sendWeeklySummaryNotifications/);
-  assert.match(service, /from\("merchant_email_outbox"\)/);
-  assert.match(service, /template: "team_invite"/);
-  assert.match(service, /template: "weekly_summary"/);
+  assert.match(service, /rpc\(\s*"enqueue_merchant_team_invite_email"/);
+  assert.match(service, /rpc\(\s*"enqueue_merchant_weekly_summary_email"/);
+  assert.doesNotMatch(service, /from\("merchant_dish_view_events"\)/);
+  assert.doesNotMatch(service, /from\("merchant_email_outbox"\)/);
   assert.match(service, /bucket: "merchant-stall-images"/);
 });
