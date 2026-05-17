@@ -748,6 +748,12 @@ Use the smallest check that matches the change risk.
 | 2026-05-18 | app/Supabase/store (P0 Release Hardening) | `git diff --check` | Pass | No whitespace errors |
 | 2026-05-18 | app/Supabase/store (P0 Release Hardening QA) | `node --import tsx --test src/app/screens/sprint9-screen-contracts.test.ts src/constants/featureFlags.test.ts src/lib/security/security-hardening.test.ts src/lib/services/supabase/merchant-linkage.test.ts src/app/navigation/RootNavigator.linking.test.ts` | Pass | Post-QA fix: Home social feed no longer depends on `commentsEnabled`; focused contracts passed 42/42 |
 | 2026-05-18 | app/Supabase/store (P0 Release Hardening QA) | `npm run test` | Pass | Post-QA full suite passed with 336 total tests: 334 passing and 2 skipped |
+| 2026-05-18 | app (Frontend Design Overhaul Batch 4/5) | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/app/screens/search-v2-production-contracts.test.ts src/app/screens/discover-v2-production-contracts.test.ts src/app/screens/detail-v2-data-contracts.test.ts src/app/screens/v2-trust-claims-contracts.test.ts src/app/user-mode-coverage-contracts.test.ts` | Pass | Focused consumer empty-state and detail/data-trust contracts passed 17/17 |
+| 2026-05-18 | app (Frontend Design Overhaul Batch 4/5) | `npm run typecheck` | Pass | Strict TypeScript gate passed after Search/Discover/detail fixes |
+| 2026-05-18 | app (Frontend Design Overhaul Batch 4/5) | `npm run lint` | Pass | ESLint completed with 0 errors after Search/Discover/detail fixes |
+| 2026-05-18 | app (Frontend Design Overhaul Batch 4/5) | `git diff --check` | Pass | No whitespace errors after Search/Discover/detail fixes |
+| 2026-05-18 | app (Frontend Design Overhaul Batch 4/5) | `npm run format:check` | Pass | Prettier check passed after Search/Discover/detail fixes |
+| 2026-05-18 | app (Frontend Design Overhaul Batch 4/5) | `npm run test` | Pass | Full source suite passed with 338 tests total: 336 passing and 2 skipped |
 
 ## Outstanding Verification
 

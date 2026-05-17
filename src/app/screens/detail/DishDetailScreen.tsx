@@ -414,8 +414,8 @@ export function DishDetailScreen({ navigation, route }: Props) {
                   </View>
                 ) : (
                   <EmptyState
-                    title="Dine-in only"
-                    body="This stall has no verified delivery links yet."
+                    title="No delivery links listed"
+                    body="We do not have verified delivery links for this stall yet."
                   />
                 )}
               </Card>

@@ -196,7 +196,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
     ? leadDish.distanceMeters > 1000
       ? `${(leadDish.distanceMeters / 1000).toFixed(1)}km away`
       : `${leadDish.distanceMeters}m away`
-    : "Check Map";
+    : null;
+  const operatingStatusLabel = venue.isOpen ? "Open now" : (venue.closureNotice ?? "Closed now");
+  const operatingHoursLabel = venue.operatingHours?.trim()
+    ? venue.operatingHours.split(" – ")[0]
+    : "Hours unavailable";
 
   const communityReviews = deriveStallCommunityReviews(dishes);
   const reviewedDishIds = profile.reviewedDishIds;
@@ -458,7 +462,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   {venue.name}
                 </AppText>
                 <AppText variant="bodyLarge" tone="secondary">
-                  {venue.unitNumber} · {distanceLabel}
+                  {[venue.unitNumber, distanceLabel].filter(Boolean).join(" · ")}
                 </AppText>
               </View>
 
@@ -480,10 +484,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     OPERATING
                   </AppText>
                   <AppText variant="bodyLarge" style={{ fontWeight: "700" }}>
-                    Open Now
+                    {operatingStatusLabel}
                   </AppText>
                   <AppText variant="micro" tone="secondary">
-                    {venue.operatingHours.split(" – ")[0]}
+                    {operatingHoursLabel}
                   </AppText>
                 </Card>
               </View>

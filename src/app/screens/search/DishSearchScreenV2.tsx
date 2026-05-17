@@ -80,6 +80,10 @@ export function DishSearchScreenV2() {
 
     return filteredByTaste.slice(0, 5);
   }, [activeTasteFilters, baseCollections]);
+  const visibleCollections = useMemo(
+    () => collections.filter((item) => item.topDishes.length > 0),
+    [collections],
+  );
 
   const { width: screenWidth } = useWindowDimensions();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -374,22 +378,21 @@ export function DishSearchScreenV2() {
                   : "Trending dishes"}
             </AppText>
             <AppText variant="micro" tone="secondary" style={{ fontWeight: "600" }}>
-              {collections.length} results
+              {visibleCollections.length} results
             </AppText>
           </View>
 
           {/* Results List */}
           <View style={{ paddingHorizontal: spacing[4] }}>
-            {collections.length === 0 ? (
+            {visibleCollections.length === 0 ? (
               <EmptyState
                 icon={<ChefHat size={34} color={palette.orange} style={{ opacity: 0.9 }} />}
                 title="No matches"
                 body="Try a different dish, stall, or taste filter."
               />
             ) : null}
-            {collections.map((item) => {
+            {visibleCollections.map((item) => {
               const dish = item.topDishes[0];
-              if (!dish) return null;
               return (
                 <Pressable
                   key={dish.id}

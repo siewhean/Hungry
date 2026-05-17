@@ -48,8 +48,8 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 1 Scope hygiene | Partial | Deleted tracked temporary floorplan page extraction dirs `data/floorplans/hc-maxwell/tmp_page0..3`; retained root service-role smoke helpers because `src/lib/security/ci-supply-chain.test.ts` and security docs reference them. |
 | 2 Route and feature flag safety | Complete | Added `gamificationEnabled`, `collectionsEnabled`, `storiesEnabled`; changed `commentsEnabled` to non-production; gated root routes and entry points for stories, collections, gamification, and comments. |
 | 3 App shell QA contracts | Complete for source contracts | Source tests cover signed-out browsing, Profile auth gate, center create return routes, gated routes, and activity/detail comment gates. Manual swipe-vs-rail QA remains open. |
-| 4 Core consumer UX | Deferred | No new empty-state or analytics changes in this cleanup pass. Asset-size audit remains open. |
-| 5 Detail/data trust | Deferred | Existing data-trust contracts pass; broader hardcoded-claim audit remains in PR 2. |
+| 4 Core consumer UX | Partial | Added no-result/empty states for non-browse search results, Discover V2 trending rail, Discover V2 nearby stalls, and Search V2 visible result counts. Asset-size and analytics audits remain open. |
+| 5 Detail/data trust | Partial | Removed/neutralized misleading delivery, stall operating status, map-distance fallback, and closed-stall status-color claims. Broader hardcoded-claim audit remains in PR 2. |
 | 6 Social safety | Partial | Comments disabled in production and report/block actions remain service-backed. Backend moderation launch readiness still open. |
 | 7 Merchant mode | Deferred | Merchant remains flag-gated; role/verification launch gaps remain in PR 4. |
 | 8 Gamification | Partial | Passport/Missions routes and profile entry points gated by `gamificationEnabled`; asset/bundle/a11y audit remains open. |
@@ -85,6 +85,12 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 2026-05-18 | `npm run test` | Pass | Rerun after CI/security/auth follow-up edits passed with 336 total, 334 passing, 2 skipped. |
 | 2026-05-18 | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass after unrestricted retry | Sandboxed rerun failed network checks (`ENOTFOUND exp.host`, React Native Directory response); unrestricted rerun passed 17/17. |
 | 2026-05-18 | `npx --no-install supabase db push --dry-run` | Pass after unrestricted retry | Sandboxed run failed DNS to the Supabase pooler; unrestricted dry-run succeeded and would push `0039` and `0040` without applying them. |
+| 2026-05-18 | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/app/screens/search-v2-production-contracts.test.ts src/app/screens/discover-v2-production-contracts.test.ts src/app/screens/detail-v2-data-contracts.test.ts src/app/screens/v2-trust-claims-contracts.test.ts src/app/user-mode-coverage-contracts.test.ts` | Pass | Batch 4/5 focused contracts passed 17/17 after empty-state and data-trust fixes. |
+| 2026-05-18 | `npm run typecheck` | Pass | Rerun after Batch 4/5 component and detail-screen fixes completed. |
+| 2026-05-18 | `npm run lint` | Pass | Rerun after Batch 4/5 component and detail-screen fixes completed with 0 errors. |
+| 2026-05-18 | `git diff --check` | Pass | No whitespace errors after Batch 4/5 fixes. |
+| 2026-05-18 | `npm run format:check` | Pass | Prettier check passed after Batch 4/5 fixes. |
+| 2026-05-18 | `npm run test` | Pass | Full source suite passed after Batch 4/5 fixes with 338 total, 336 passing, 2 skipped. |
 
 ### Remaining Production Blockers
 

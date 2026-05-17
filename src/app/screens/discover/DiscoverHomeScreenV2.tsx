@@ -14,7 +14,15 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppHeader, AppText, Chip, Screen, IconButton, Skeleton } from "@/components/ui";
+import {
+  AppHeader,
+  AppText,
+  Chip,
+  EmptyState,
+  Screen,
+  IconButton,
+  Skeleton,
+} from "@/components/ui";
 import { DecideForMeCard } from "@/components/discover/DecideForMeCard";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestSingaporeArea } from "@/lib/geo/singaporeBuildings";
@@ -579,50 +587,61 @@ export function DiscoverHomeScreenV2() {
             <AppText variant="h2" style={{ fontWeight: "800" }}>
               Trending near you
             </AppText>
-            <Pressable onPress={() => navigation.navigate("SearchResults")}>
-              <AppText variant="bodySmallBold" tone="accent">
-                See all
-              </AppText>
-            </Pressable>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[3] }}
-          >
-            {recommendedDishes.map((dish) => (
-              <Pressable
-                key={dish.id}
-                onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
-                style={{
-                  width: 140,
-                  backgroundColor: palette.surface,
-                  borderRadius: radii.md,
-                  borderWidth: 1,
-                  borderColor: palette.border,
-                  overflow: "hidden",
-                  ...shadows.card,
-                }}
-              >
-                <Image
-                  source={{ uri: dish.imageUrl }}
-                  style={{ width: "100%", height: 100, backgroundColor: palette.bgSoft }}
-                  contentFit="cover"
-                />
-                <View style={{ padding: spacing[2] }}>
-                  <AppText variant="bodySmallBold" numberOfLines={1}>
-                    {dish.name}
-                  </AppText>
-                  <AppText variant="micro" tone="secondary" numberOfLines={1}>
-                    {dish.venueName}
-                  </AppText>
-                  <AppText variant="bodySmallBold" tone="accent" style={{ marginTop: 2 }}>
-                    S${dish.price.toFixed(2)}
-                  </AppText>
-                </View>
+            {recommendedDishes.length > 0 ? (
+              <Pressable onPress={() => navigation.navigate("SearchResults")}>
+                <AppText variant="bodySmallBold" tone="accent">
+                  See all
+                </AppText>
               </Pressable>
-            ))}
-          </ScrollView>
+            ) : null}
+          </View>
+          {recommendedDishes.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[3] }}
+            >
+              {recommendedDishes.map((dish) => (
+                <Pressable
+                  key={dish.id}
+                  onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
+                  style={{
+                    width: 140,
+                    backgroundColor: palette.surface,
+                    borderRadius: radii.md,
+                    borderWidth: 1,
+                    borderColor: palette.border,
+                    overflow: "hidden",
+                    ...shadows.card,
+                  }}
+                >
+                  <Image
+                    source={{ uri: dish.imageUrl }}
+                    style={{ width: "100%", height: 100, backgroundColor: palette.bgSoft }}
+                    contentFit="cover"
+                  />
+                  <View style={{ padding: spacing[2] }}>
+                    <AppText variant="bodySmallBold" numberOfLines={1}>
+                      {dish.name}
+                    </AppText>
+                    <AppText variant="micro" tone="secondary" numberOfLines={1}>
+                      {dish.venueName}
+                    </AppText>
+                    <AppText variant="bodySmallBold" tone="accent" style={{ marginTop: 2 }}>
+                      S${dish.price.toFixed(2)}
+                    </AppText>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={{ paddingHorizontal: spacing[4] }}>
+              <EmptyState
+                title="No trending dishes yet"
+                body="Try a different taste filter or check back after the feed refreshes."
+              />
+            </View>
+          )}
         </View>
 
         {/* Stalls Near You */}
@@ -639,23 +658,33 @@ export function DiscoverHomeScreenV2() {
             <AppText variant="h2" style={{ fontWeight: "800" }}>
               Stalls near you
             </AppText>
-            <Pressable onPress={() => navigation.navigate("DiscoverMap")}>
-              <AppText variant="bodySmallBold" tone="accent">
-                Map view
-              </AppText>
-            </Pressable>
-            {isDeveloperMode ? null : (
-              <Pressable
-                onPress={() => navigation.navigate("SearchResults", { browseMode: "stalls" })}
-              >
-                <AppText variant="bodySmallBold" tone="accent">
-                  View all
-                </AppText>
-              </Pressable>
-            )}
+            {nearbyStalls.length > 0 ? (
+              <View style={{ flexDirection: "row", gap: spacing[3] }}>
+                <Pressable onPress={() => navigation.navigate("DiscoverMap")}>
+                  <AppText variant="bodySmallBold" tone="accent">
+                    Map view
+                  </AppText>
+                </Pressable>
+                {isDeveloperMode ? null : (
+                  <Pressable
+                    onPress={() => navigation.navigate("SearchResults", { browseMode: "stalls" })}
+                  >
+                    <AppText variant="bodySmallBold" tone="accent">
+                      View all
+                    </AppText>
+                  </Pressable>
+                )}
+              </View>
+            ) : null}
           </View>
 
           <View style={{ paddingHorizontal: spacing[4] }}>
+            {nearbyStalls.length === 0 ? (
+              <EmptyState
+                title="No stalls nearby"
+                body="Try another area or refresh when location is available."
+              />
+            ) : null}
             {nearbyStalls.map(({ venue, topDish }) => {
               const isVerified = venue.verificationStatus === "verified";
               const statusLabel = venue.isOpen ? "Open" : (venue.closureNotice ?? "Closed");

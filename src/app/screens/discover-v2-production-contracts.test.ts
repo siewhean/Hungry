@@ -35,3 +35,13 @@ test("discover V2 keeps Zustand selectors referentially stable", () => {
     /const collections = useMemo\(\s*\(\) => \(FEATURE_FLAGS\.collectionsEnabled \? allCollections\.slice\(0, 6\) : \[\]\)/,
   );
 });
+
+test("discover V2 avoids blank rails when no data is available", () => {
+  const discover = read("src/app/screens/discover/DiscoverHomeScreenV2.tsx");
+
+  assert.match(discover, /recommendedDishes\.length > 0 \?/);
+  assert.match(discover, /No trending dishes yet/);
+  assert.match(discover, /nearbyStalls\.length > 0 \?/);
+  assert.match(discover, /nearbyStalls\.length === 0 \?/);
+  assert.match(discover, /No stalls nearby/);
+});

@@ -116,6 +116,11 @@ export function StallDetailScreenV2({ route }: Props) {
   const deliveryLinks = venue.deliveryLinks ?? [];
   const distanceLabel = formatDistance(leadDish?.distanceMeters);
   const statusLabel = formatVenueStatus(venue);
+  const statusColor = venue.isOpen
+    ? palette.success
+    : venue.closureNotice
+      ? palette.amber
+      : palette.textMuted;
   const totalReviewCount = dishes.reduce((sum, dish) => sum + dish.reviewCount, 0);
   const displayRating =
     dishes.length > 0
@@ -292,7 +297,7 @@ export function StallDetailScreenV2({ route }: Props) {
               </AppText>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-              <AppText variant="bodySmallBold" style={{ color: palette.success }}>
+              <AppText variant="bodySmallBold" style={{ color: statusColor }}>
                 {statusLabel}
               </AppText>
               {displayRating !== undefined && totalReviewCount > 0 ? (

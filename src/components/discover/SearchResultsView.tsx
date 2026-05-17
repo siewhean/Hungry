@@ -12,7 +12,7 @@ import { Search, X, SlidersHorizontal, Star } from "lucide-react-native";
 import { Image } from "expo-image";
 import { FlashList } from "@shopify/flash-list";
 
-import { AppText, Skeleton } from "@/components/ui";
+import { AppText, EmptyState, Skeleton } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
 import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
@@ -162,6 +162,10 @@ export function SearchResultsView({
     ),
     [onResultPress, onResultPressIn],
   );
+  const emptyTitle = query.trim() ? "No matches found" : "No dishes yet";
+  const emptyBody = query.trim()
+    ? "Try another dish or taste filter."
+    : "Search for a dish, stall, or craving.";
 
   const revealSearch = useCallback(() => {
     if (isSearchExpanded) return;
@@ -373,6 +377,13 @@ export function SearchResultsView({
           keyExtractor={(dish) => dish.id}
           renderItem={renderResult}
           ItemSeparatorComponent={() => <View style={{ height: spacing[4] }} />}
+          ListEmptyComponent={
+            <EmptyState
+              icon={<Search size={34} color={palette.orange} />}
+              title={emptyTitle}
+              body={emptyBody}
+            />
+          }
           // @ts-ignore FlashList v2 runtime supports this prop but its bundled RN type omits it.
           estimatedItemSize={96}
           contentContainerStyle={{ padding: spacing[4] }}
