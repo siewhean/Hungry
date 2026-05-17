@@ -1731,7 +1731,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         title="Feed temporarily unavailable"
         body="A display issue occurred while rendering this feed. Please retry."
       >
-        {mode === "social" && commentsEnabled ? (
+        {mode === "social" ? (
           <View testID="home-social-feed" style={{ flex: 1 }}>
             <FlashList
               ref={socialFeedListRef}

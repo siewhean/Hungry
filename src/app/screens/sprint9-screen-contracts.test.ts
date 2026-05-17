@@ -85,6 +85,8 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(source, /const bundle = await getHomeFeedBundle\(profile\)/);
   assert.match(source, /\.\.\.bundle\.socialFeed/);
   assert.match(source, /\.\.\.bundle\.sections\.flatMap\(\(section\) => section\.items\)/);
+  assert.match(source, /mode === "social" \? \(/);
+  assert.doesNotMatch(source, /mode === "social" && commentsEnabled/);
   assert.match(source, /const \[activeShareItem, setActiveShareItem\]/);
   assert.match(source, /const shareSheetRef = useRef<BottomSheetModal>\(null\)/);
   assert.match(source, /openShareSheet\(item\)/);

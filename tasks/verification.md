@@ -746,6 +746,8 @@ Use the smallest check that matches the change risk.
 | 2026-05-18 | app/Supabase/store (P0 Release Hardening) | `npx expo-doctor` | Pass | Sandboxed attempt failed on npm DNS; unrestricted rerun passed 17/17 checks |
 | 2026-05-18 | app/Supabase/store (P0 Release Hardening) | `npx --no-install supabase db push --dry-run` | Pass | Remote dry-run succeeded and would push pending `0039` and `0040`; no migrations applied |
 | 2026-05-18 | app/Supabase/store (P0 Release Hardening) | `git diff --check` | Pass | No whitespace errors |
+| 2026-05-18 | app/Supabase/store (P0 Release Hardening QA) | `node --import tsx --test src/app/screens/sprint9-screen-contracts.test.ts src/constants/featureFlags.test.ts src/lib/security/security-hardening.test.ts src/lib/services/supabase/merchant-linkage.test.ts src/app/navigation/RootNavigator.linking.test.ts` | Pass | Post-QA fix: Home social feed no longer depends on `commentsEnabled`; focused contracts passed 42/42 |
+| 2026-05-18 | app/Supabase/store (P0 Release Hardening QA) | `npm run test` | Pass | Post-QA full suite passed with 336 total tests: 334 passing and 2 skipped |
 
 ## Outstanding Verification
 
