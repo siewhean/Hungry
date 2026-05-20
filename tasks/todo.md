@@ -48,7 +48,7 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 1 Scope hygiene | Partial | Deleted tracked temporary floorplan page extraction dirs `data/floorplans/hc-maxwell/tmp_page0..3`; retained root service-role smoke helpers because `src/lib/security/ci-supply-chain.test.ts` and security docs reference them. |
 | 2 Route and feature flag safety | Complete | Added `gamificationEnabled`, `collectionsEnabled`, `storiesEnabled`; changed `commentsEnabled` to non-production; gated root routes and entry points for stories, collections, gamification, and comments. |
 | 3 App shell QA contracts | Complete for source contracts | Source tests cover signed-out browsing, Profile auth gate, center create return routes, gated routes, and activity/detail comment gates. Manual swipe-vs-rail QA remains open. |
-| 4 Core consumer UX | Partial | Added no-result/empty states for non-browse search results, Discover V2 trending rail, Discover V2 nearby stalls, and Search V2 visible result counts. Asset-size and analytics audits remain open. |
+| 4 Core consumer UX | Partial | Added no-result/empty states for non-browse search results, Discover V2 trending rail, Discover V2 nearby stalls, and Search V2 visible result counts. Asset audit command now records the mobile Discover bundle risk; analytics audit remains open. |
 | 5 Detail/data trust | Partial | Removed/neutralized misleading delivery, stall operating status, map-distance fallback, and closed-stall status-color claims. Broader hardcoded-claim audit remains in PR 2. |
 | 6 Social safety | Partial | Comments remain production-disabled; Home/review/bite comment entry points are flag-gated, seeded story/review/detail social counts were neutralized, and hide/block actions now update session filters plus current Home/Profile feeds. Backend moderation launch readiness still open. |
 | 7 Merchant mode | Deferred | Merchant remains flag-gated; role/verification launch gaps remain in PR 4. |
@@ -57,7 +57,7 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 10 Supabase/OCR | Deferred | Chat smoke skipped due missing smoke env; OCR staging smoke not run in this pass. |
 | 11 Auth/onboarding | Partial | OAuth provider buttons are now production-disabled and labeled unavailable until live Supabase provider smoke is complete. Broader auth return-route and provider dashboard audit remains open. |
 | 12 Native/iOS | Partial | Expo SDK 55 patch dependencies aligned and prepared iOS smoke passed on iPhone 17 Pro / iOS 26.1 once Metro was reachable. Broader native/iOS changes should still stay in a dedicated PR bucket. |
-| 13 Assets/bundle/licensing | Deferred | Large mobile/web asset inventory remains open. |
+| 13 Assets/bundle/licensing | Partial | Added `npm run audit:assets` to inventory mobile Discover, Passport, and marketing food assets. Current evidence: `src/assets/discover` is 121.43 MiB with 98.16 MiB apparently unreferenced, Passport assets are 1.54 MiB all referenced, and marketing food images are 95.6 MiB web-only/referenced. Compression/removal and provenance sign-off remain open. |
 | 14 CI/security | Partial | CI now runs Supabase static audit, edge-function static checks, and skip-safe migration dry-run; dependency audit is green after `ws` override patch. Broader security scans remain separate gate. |
 | 15 RC decision | Open | Do not merge as one PR yet; use split below unless remaining gates are completed. |
 
@@ -113,12 +113,18 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 2026-05-21 | `npm run typecheck` | Pass | Strict TypeScript gate passed after adding the production OAuth provider gate. |
 | 2026-05-21 | `npm run lint` | Pass | ESLint completed with 0 errors after adding the production OAuth provider gate. |
 | 2026-05-21 | `npm run format:check` | Pass | Prettier check passed after adding the production OAuth provider gate. |
+| 2026-05-21 | `npm run audit:assets` | Pass | Asset audit completed. `src/assets/discover`: 48 files / 121.43 MiB, 10 referenced / 23.28 MiB, 38 apparently unreferenced / 98.16 MiB. Passport: 10 files / 1.54 MiB all referenced. Marketing food: 38 files / 95.6 MiB all referenced and web-only. |
+| 2026-05-21 | `node --check scripts/audit-assets.mjs` | Pass | Asset audit script syntax passed. |
+| 2026-05-21 | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/system/asset-audit-contracts.test.ts` | Pass | Focused asset-audit contract passed 1/1. |
+| 2026-05-21 | `npx --no-install prettier --check package.json scripts/audit-assets.mjs src/features/system/asset-audit-contracts.test.ts` | Pass | Touched package/script/test formatting passed. Markdown ledger files were left in their existing table style to avoid unrelated table churn. |
+| 2026-05-21 | `npm run typecheck` | Pass | Strict TypeScript gate passed after the asset audit script/contract and ledger update. |
+| 2026-05-21 | `npm run lint` | Pass | ESLint completed with 0 errors after the asset audit script/contract and ledger update. |
 
 ### Remaining Production Blockers
 
 - Finish manual QA for bottom-tab swipes versus horizontal rails.
 - Keep DMs, merchant centre, comments, stories, collections, and gamification production-disabled until backend moderation, role, and readiness gates are complete.
-- Complete bundle-size/licensing audit for `src/assets/discover/**`, passport assets, and marketing-only food images.
+- Compress or remove the measured mobile Discover asset excess: `src/assets/discover` is 121.43 MiB, including 98.16 MiB apparently unreferenced copied food PNGs retained for now to avoid destabilizing the wider design branch; generated-art provenance sign-off remains open.
 - Install/activate OpenCV for floorplan validation and generate overlay QA for `hc-maxwell:L1`.
 - Run OCR staging smoke with required credentials; prove `dishes_draft` never leaks to consumer reads.
 - Complete auth provider live-state audit; OAuth buttons are disabled and labeled unavailable in production until Supabase Google/Apple providers are proven live.

@@ -777,6 +777,12 @@ Use the smallest check that matches the change risk.
 | 2026-05-21 | app/auth (Frontend Design Overhaul Batch 11 auth provider gate) | `npm run typecheck` | Pass | Strict TypeScript gate passed after adding the production OAuth provider gate |
 | 2026-05-21 | app/auth (Frontend Design Overhaul Batch 11 auth provider gate) | `npm run lint` | Pass | ESLint completed with 0 errors after adding the production OAuth provider gate |
 | 2026-05-21 | app/auth (Frontend Design Overhaul Batch 11 auth provider gate) | `npm run format:check` | Pass | Prettier check passed after adding the production OAuth provider gate |
+| 2026-05-21 | app/assets (Frontend Design Overhaul Batch 13 asset audit) | `npm run audit:assets` | Pass | Asset audit completed. `src/assets/discover`: 48 files / 121.43 MiB, 10 referenced / 23.28 MiB, 38 apparently unreferenced / 98.16 MiB. Passport: 10 files / 1.54 MiB all referenced. Marketing food: 38 files / 95.6 MiB all referenced and web-only |
+| 2026-05-21 | app/assets (Frontend Design Overhaul Batch 13 asset audit) | `node --check scripts/audit-assets.mjs` | Pass | Asset audit script syntax passed |
+| 2026-05-21 | app/assets (Frontend Design Overhaul Batch 13 asset audit) | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/system/asset-audit-contracts.test.ts` | Pass | Focused asset-audit contract passed 1/1 |
+| 2026-05-21 | app/assets (Frontend Design Overhaul Batch 13 asset audit) | `npx --no-install prettier --check package.json scripts/audit-assets.mjs src/features/system/asset-audit-contracts.test.ts` | Pass | Touched package/script/test formatting passed. Markdown ledger files were left in their existing table style to avoid unrelated table churn |
+| 2026-05-21 | app/assets (Frontend Design Overhaul Batch 13 asset audit) | `npm run typecheck` | Pass | Strict TypeScript gate passed after the asset audit script/contract and ledger update |
+| 2026-05-21 | app/assets (Frontend Design Overhaul Batch 13 asset audit) | `npm run lint` | Pass | ESLint completed with 0 errors after the asset audit script/contract and ledger update |
 
 ## Outstanding Verification
 
