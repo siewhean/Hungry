@@ -21,18 +21,33 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   assert.match(source, /const service = getHungryService\(\)/);
   assert.match(source, /service\.auth\.signInWithGoogle\(/);
   assert.match(source, /service\.auth\.signInWithApple\(/);
+  assert.match(source, /FEATURE_FLAGS\.oauthProvidersEnabled/);
   assert.match(source, /AUTH_COPY\.login/);
-  assert.match(source, /<AuthProviderButton[\s\S]*intent="signIn"[\s\S]*provider="google"/);
-  assert.match(source, /<AuthProviderButton[\s\S]*intent="signIn"[\s\S]*provider="apple"/);
+  assert.match(
+    source,
+    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="signIn"[\s\S]*provider="google"/,
+  );
+  assert.match(
+    source,
+    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="signIn"[\s\S]*provider="apple"/,
+  );
   assert.match(signUpSource, /AUTH_COPY\.signUp/);
-  assert.match(signUpSource, /<AuthProviderButton[\s\S]*intent="continue"[\s\S]*provider="google"/);
-  assert.match(signUpSource, /<AuthProviderButton[\s\S]*intent="continue"[\s\S]*provider="apple"/);
+  assert.match(signUpSource, /FEATURE_FLAGS\.oauthProvidersEnabled/);
+  assert.match(
+    signUpSource,
+    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="continue"[\s\S]*provider="google"/,
+  );
+  assert.match(
+    signUpSource,
+    /<AuthProviderButton[\s\S]*disabled=\{!oauthProvidersEnabled\}[\s\S]*intent="continue"[\s\S]*provider="apple"/,
+  );
   assert.match(forgotPasswordSource, /AUTH_COPY\.forgotPassword/);
   assert.match(source, /<FeedErrorBoundary/);
   assert.match(authCopySource, /login: \{/);
   assert.match(authCopySource, /signUp: \{/);
   assert.match(authCopySource, /forgotPassword: \{/);
   assert.match(authCopySource, /getAuthProviderButtonLabel/);
+  assert.match(authCopySource, /getAuthProviderUnavailableButtonLabel/);
   assert.match(authCopySource, /getAuthProviderUnavailableMessage/);
   assert.match(authCopySource, /getSignUpProviderSuccessMessage/);
   assert.doesNotMatch(source, /"Welcome back\."/);
@@ -42,6 +57,9 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   assert.match(providerButtonSource, /position: "absolute"/);
   assert.match(providerButtonSource, /textAlign: "center"/);
   assert.match(providerButtonSource, /getAuthProviderButtonLabel\(provider, intent\)/);
+  assert.match(providerButtonSource, /getAuthProviderUnavailableButtonLabel\(provider\)/);
+  assert.match(providerButtonSource, /accessibilityState=\{\{ disabled \}\}/);
+  assert.match(providerButtonSource, /disabled=\{disabled\}/);
   assert.match(providerLogoSource, /export const AUTH_PROVIDER_LOGO_SIZE = 20/);
   assert.match(providerLogoSource, /export const AUTH_PROVIDER_APPLE_LOGO_SIZE = 26/);
   assert.match(providerLogoSource, /export function GoogleLogo/);

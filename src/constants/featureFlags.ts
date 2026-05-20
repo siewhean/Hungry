@@ -25,6 +25,7 @@ export function resolveFeatureFlags(appEnvRaw = process.env.EXPO_PUBLIC_APP_ENV)
     hungryWheelEnabled: true,
     directMessagesEnabled: false,
     commentsEnabled: nonProductionSurfaceEnabled,
+    oauthProvidersEnabled: nonProductionSurfaceEnabled,
     craveEnabled: true,
     gamificationEnabled: nonProductionSurfaceEnabled,
     collectionsEnabled: nonProductionSurfaceEnabled,

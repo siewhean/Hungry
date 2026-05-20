@@ -4,24 +4,41 @@ import { Pressable, View } from "react-native";
 import { AppleLogo, GoogleLogo } from "@/components/icons/brand/AuthProviderLogos";
 import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
-import { getAuthProviderButtonLabel, type AuthProvider, type AuthProviderIntent } from "./authCopy";
+import {
+  getAuthProviderButtonLabel,
+  getAuthProviderUnavailableButtonLabel,
+  type AuthProvider,
+  type AuthProviderIntent,
+} from "./authCopy";
 
 type AuthProviderButtonProps = {
+  disabled?: boolean;
   intent: AuthProviderIntent;
   onPress: () => void;
   provider: AuthProvider;
 };
 
-export function AuthProviderButton({ intent, onPress, provider }: AuthProviderButtonProps) {
+export function AuthProviderButton({
+  disabled = false,
+  intent,
+  onPress,
+  provider,
+}: AuthProviderButtonProps) {
   const { componentCornerCurve, componentRadii, componentSizes, palette, spacing } =
     useHungryTheme();
   const icon = provider === "google" ? <GoogleLogo /> : <AppleLogo />;
+  const label = disabled
+    ? getAuthProviderUnavailableButtonLabel(provider)
+    : getAuthProviderButtonLabel(provider, intent);
 
   return (
     <Pressable
+      accessibilityState={{ disabled }}
       accessibilityRole="button"
+      disabled={disabled}
       onPress={onPress}
       onPressIn={() => {
+        if (disabled) return;
         void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }}
       style={({ pressed }) => [
@@ -36,10 +53,11 @@ export function AuthProviderButton({ intent, onPress, provider }: AuthProviderBu
           minHeight: componentSizes.buttonMdMinHeight,
           paddingHorizontal: spacing[4],
           position: "relative",
-          transform: [{ translateY: pressed ? 1 : 0 }],
+          transform: [{ translateY: pressed && !disabled ? 1 : 0 }],
           width: "100%",
         },
-        pressed ? { backgroundColor: palette.surfaceRaised } : null,
+        pressed && !disabled ? { backgroundColor: palette.surfaceRaised } : null,
+        disabled ? { opacity: 0.6 } : null,
       ]}
     >
       <View
@@ -54,7 +72,7 @@ export function AuthProviderButton({ intent, onPress, provider }: AuthProviderBu
         {icon}
       </View>
       <AppText variant="h3" style={{ color: palette.text, textAlign: "center" }}>
-        {getAuthProviderButtonLabel(provider, intent)}
+        {label}
       </AppText>
     </Pressable>
   );

@@ -55,7 +55,7 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 8 Gamification | Partial | Passport/Missions routes and profile entry points gated by `gamificationEnabled`; asset/bundle/a11y audit remains open. |
 | 9 Maps/floorplan | Partial | Temp extraction artifacts removed; validation/overlay scripts blocked by missing OpenCV `cv2`; tap-accuracy QA open. |
 | 10 Supabase/OCR | Deferred | Chat smoke skipped due missing smoke env; OCR staging smoke not run in this pass. |
-| 11 Auth/onboarding | Deferred | Existing tests pass; OAuth provider live-state audit remains open. |
+| 11 Auth/onboarding | Partial | OAuth provider buttons are now production-disabled and labeled unavailable until live Supabase provider smoke is complete. Broader auth return-route and provider dashboard audit remains open. |
 | 12 Native/iOS | Partial | Expo SDK 55 patch dependencies aligned and prepared iOS smoke passed on iPhone 17 Pro / iOS 26.1 once Metro was reachable. Broader native/iOS changes should still stay in a dedicated PR bucket. |
 | 13 Assets/bundle/licensing | Deferred | Large mobile/web asset inventory remains open. |
 | 14 CI/security | Partial | CI now runs Supabase static audit, edge-function static checks, and skip-safe migration dry-run; dependency audit is green after `ws` override patch. Broader security scans remain separate gate. |
@@ -109,6 +109,10 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 2026-05-21 | `npm run test` | Pass | Full source suite passed with 339 total, 337 passing, 2 skipped after dependency updates. |
 | 2026-05-21 | `npm run smoke:native:ios:prepared` | Initial fail, then pass | Sandbox run failed DNS to `github.com` while downloading Maestro; unrestricted first run reached iPhone 17 Pro / iOS 26.1 but app stayed on `Loading from Metro...`; rerun with Metro reachable at `127.0.0.1:8081/status` passed chat and media flows. |
 | 2026-05-21 | `git diff --check` | Pass | No whitespace errors after dependency updates. |
+| 2026-05-21 | `npm run test -- src/constants/featureFlags.test.ts src/app/navigation/route-production-readiness.test.ts src/app/screens/sprint9-screen-contracts.test.ts --watch=false` | Pass | NPM script expanded to the full source suite; 339 total, 337 passing, 2 skipped after adding the production OAuth provider gate. |
+| 2026-05-21 | `npm run typecheck` | Pass | Strict TypeScript gate passed after adding the production OAuth provider gate. |
+| 2026-05-21 | `npm run lint` | Pass | ESLint completed with 0 errors after adding the production OAuth provider gate. |
+| 2026-05-21 | `npm run format:check` | Pass | Prettier check passed after adding the production OAuth provider gate. |
 
 ### Remaining Production Blockers
 
@@ -117,7 +121,7 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 - Complete bundle-size/licensing audit for `src/assets/discover/**`, passport assets, and marketing-only food images.
 - Install/activate OpenCV for floorplan validation and generate overlay QA for `hc-maxwell:L1`.
 - Run OCR staging smoke with required credentials; prove `dishes_draft` never leaks to consumer reads.
-- Complete auth provider live-state audit; disable or label unavailable providers if OAuth is not live.
+- Complete auth provider live-state audit; OAuth buttons are disabled and labeled unavailable in production until Supabase Google/Apple providers are proven live.
 
 ### Recommended PR Split
 

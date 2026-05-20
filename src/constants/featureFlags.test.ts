@@ -47,6 +47,7 @@ test("unfinished social and gamification surfaces are disabled in production", (
   const flags = resolveFeatureFlags("production");
 
   assert.equal(flags.commentsEnabled, false);
+  assert.equal(flags.oauthProvidersEnabled, false);
   assert.equal(flags.gamificationEnabled, false);
   assert.equal(flags.collectionsEnabled, false);
   assert.equal(flags.storiesEnabled, false);
@@ -57,6 +58,7 @@ test("unfinished social and gamification surfaces are available outside producti
     const flags = resolveFeatureFlags(env);
 
     assert.equal(flags.commentsEnabled, true);
+    assert.equal(flags.oauthProvidersEnabled, true);
     assert.equal(flags.gamificationEnabled, true);
     assert.equal(flags.collectionsEnabled, true);
     assert.equal(flags.storiesEnabled, true);

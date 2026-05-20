@@ -76,6 +76,10 @@ export function getAuthProviderButtonLabel(
   return intent === "signIn" ? `Sign in with ${providerName}` : `Continue with ${providerName}`;
 }
 
+export function getAuthProviderUnavailableButtonLabel(provider: AuthProvider): string {
+  return `${AUTH_PROVIDER_NAMES[provider]} unavailable`;
+}
+
 export function getAuthProviderUnavailableMessage(provider: AuthProvider): string {
   return `${AUTH_PROVIDER_NAMES[provider]} sign-in is not enabled in Supabase Auth.`;
 }

@@ -773,6 +773,10 @@ Use the smallest check that matches the change risk.
 | 2026-05-21 | app/dependencies (Expo SDK patch alignment) | `npm run test` | Pass | Full source suite passed with 339 tests total: 337 passing and 2 skipped |
 | 2026-05-21 | app/dependencies (Expo SDK patch alignment) | `npm run smoke:native:ios:prepared` | Pass after setup retry | Sandbox run failed DNS to `github.com`; unrestricted first run downloaded Maestro and reached the iPhone 17 Pro / iOS 26.1 simulator but failed while app was loading from Metro; rerun with Metro reachable at `127.0.0.1:8081/status` passed chat and media flows |
 | 2026-05-21 | app/dependencies (Expo SDK patch alignment) | `git diff --check` | Pass | No whitespace errors after dependency updates |
+| 2026-05-21 | app/auth (Frontend Design Overhaul Batch 11 auth provider gate) | `npm run test -- src/constants/featureFlags.test.ts src/app/navigation/route-production-readiness.test.ts src/app/screens/sprint9-screen-contracts.test.ts --watch=false` | Pass | NPM script expanded to the full source suite; 339 total, 337 passing, 2 skipped after adding the production OAuth provider gate |
+| 2026-05-21 | app/auth (Frontend Design Overhaul Batch 11 auth provider gate) | `npm run typecheck` | Pass | Strict TypeScript gate passed after adding the production OAuth provider gate |
+| 2026-05-21 | app/auth (Frontend Design Overhaul Batch 11 auth provider gate) | `npm run lint` | Pass | ESLint completed with 0 errors after adding the production OAuth provider gate |
+| 2026-05-21 | app/auth (Frontend Design Overhaul Batch 11 auth provider gate) | `npm run format:check` | Pass | Prettier check passed after adding the production OAuth provider gate |
 
 ## Outstanding Verification
 

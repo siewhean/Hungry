@@ -26,6 +26,7 @@ test("production route gates hide prototypes, merchant centre, social, and gamif
   assert.match(flags, /collectionsEnabled: nonProductionSurfaceEnabled/);
   assert.match(flags, /storiesEnabled: nonProductionSurfaceEnabled/);
   assert.match(flags, /commentsEnabled: nonProductionSurfaceEnabled/);
+  assert.match(flags, /oauthProvidersEnabled: nonProductionSurfaceEnabled/);
   assert.match(flags, /appEnv !== "production"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/);
   for (const routeName of [

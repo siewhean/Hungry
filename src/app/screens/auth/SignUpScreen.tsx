@@ -5,6 +5,7 @@ import { Eye, EyeOff, User, Mail, Lock } from "lucide-react-native";
 import { useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getMockSignUpFailure } from "@/features/auth/mockAuth";
 import { validateEmail, validatePassword, validateRequired } from "@/features/auth/validation";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
@@ -29,6 +30,7 @@ type FormValues = { displayName: string; email: string; password: string };
 
 export function SignUpScreen({ navigation }: Props) {
   const { colorScheme, palette, spacing } = useHungryTheme();
+  const oauthProvidersEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
   const [showPassword, setShowPassword] = useState(false);
   const applyProfile = useProfileStore((state) => state.applyProfile);
   const showToast = useUIStore((state) => state.showToast);
@@ -200,6 +202,7 @@ export function SignUpScreen({ navigation }: Props) {
         <View style={{ gap: spacing[4] }}>
           <View style={{ gap: spacing[3] }}>
             <AuthProviderButton
+              disabled={!oauthProvidersEnabled}
               intent="continue"
               provider="google"
               onPress={() => {
@@ -207,6 +210,7 @@ export function SignUpScreen({ navigation }: Props) {
               }}
             />
             <AuthProviderButton
+              disabled={!oauthProvidersEnabled}
               intent="continue"
               provider="apple"
               onPress={() => {

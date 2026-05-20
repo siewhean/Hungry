@@ -5,6 +5,7 @@ import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react-native";
 import { useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getMockLoginFailure } from "@/features/auth/mockAuth";
 import { validateEmail, validateRequired } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -27,6 +28,7 @@ type FormValues = {
 
 export function LoginScreen({ navigation }: Props) {
   const { colorScheme, palette, spacing } = useHungryTheme();
+  const oauthProvidersEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
   const [showPassword, setShowPassword] = useState(false);
   const applyProfile = useProfileStore((state) => state.applyProfile);
   const completeAuth = useSessionStore((state) => state.completeAuth);
@@ -207,6 +209,7 @@ export function LoginScreen({ navigation }: Props) {
 
           <View style={{ gap: spacing[3] }}>
             <AuthProviderButton
+              disabled={!oauthProvidersEnabled}
               intent="signIn"
               provider="google"
               onPress={() => {
@@ -214,6 +217,7 @@ export function LoginScreen({ navigation }: Props) {
               }}
             />
             <AuthProviderButton
+              disabled={!oauthProvidersEnabled}
               intent="signIn"
               provider="apple"
               onPress={() => {
