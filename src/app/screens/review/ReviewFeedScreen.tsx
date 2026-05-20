@@ -34,7 +34,7 @@ import {
 import { promptBlockReviewAuthor, promptReportReview } from "@/lib/security/communitySafety";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
-import { useSocialStore, type InteractionState, type SocialComment } from "@/store/useSocialStore";
+import { useSocialStore, type InteractionState } from "@/store/useSocialStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "./ReviewShareSheet";
@@ -509,8 +509,8 @@ export function ReviewFeedScreen() {
     initializeInteractions(
       allReviews.map((item) => ({
         id: item.review.id,
-        commentCount: 1,
-        likeCount: item.review.rating,
+        commentCount: 0,
+        likeCount: 0,
         savedCount: 0,
       })),
     );
@@ -605,13 +605,10 @@ export function ReviewFeedScreen() {
         likeCount: 0,
         saveCount: 0,
         shareCount: 0,
-        commentCount: 1,
+        commentCount: 0,
       };
       const postComments = commentsByPostId[item.review.id] ?? [];
-      const commentIds = new Set<string>([
-        item.review.id,
-        ...postComments.map((comment) => comment.id),
-      ]);
+      const commentIds = new Set<string>(postComments.map((comment) => comment.id));
       const replyCount = Object.values(repliesByCommentId).reduce((acc, replies) => {
         const repliesForPost = replies.filter((reply) => commentIds.has(reply.parentCommentId));
         return acc + repliesForPost.length;
@@ -651,27 +648,6 @@ export function ReviewFeedScreen() {
     (item: ReviewFeedItem) => `${item.review.id}-${item.dishId}`,
     [],
   );
-
-  const seededCommentsForActiveReview = useMemo<SocialComment[]>(() => {
-    if (!activeCommentReview) {
-      return [];
-    }
-
-    const matchingItem = allReviews.find((item) => item.review.id === activeCommentReview.id);
-    if (!matchingItem) {
-      return [];
-    }
-
-    return [
-      {
-        id: matchingItem.review.id,
-        authorName: matchingItem.review.authorName,
-        authorAvatarUrl: undefined,
-        text: matchingItem.review.text,
-        createdAt: matchingItem.review.createdAt,
-      },
-    ];
-  }, [activeCommentReview, allReviews]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
@@ -755,7 +731,6 @@ export function ReviewFeedScreen() {
           activeReview={activeCommentReview}
           inputRef={commentInputRef}
           innerRef={commentsSheetRef}
-          seededComments={seededCommentsForActiveReview}
           onDismiss={() => setActiveCommentReview(null)}
         />
       ) : null}

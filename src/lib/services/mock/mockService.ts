@@ -164,7 +164,7 @@ let _mockStories: Story[] = [
       url: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=800&q=80",
     },
     createdAt: new Date(Date.now() - 3600000).toISOString(),
-    interaction: { liked: false, saved: false, likeCount: 120, commentCount: 12, shareCount: 5 },
+    interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
   },
   {
     id: "s2",
@@ -177,7 +177,7 @@ let _mockStories: Story[] = [
       url: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&q=80",
     },
     createdAt: new Date(Date.now() - 7200000).toISOString(),
-    interaction: { liked: false, saved: false, likeCount: 45, commentCount: 3, shareCount: 1 },
+    interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
   },
 ];
 

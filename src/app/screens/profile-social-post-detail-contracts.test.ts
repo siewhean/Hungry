@@ -55,14 +55,17 @@ test("profile social grid removes side padding for edge-to-edge tiles", () => {
   assert.match(gridSource, /width: ITEM_WIDTH/);
 });
 
-test("profile social post detail keeps like counts public", () => {
+test("profile social post detail shows only stored social counts", () => {
   const detailSource = read("src/app/screens/profile/SocialPostDetailScreen.tsx");
   const storeSource = read("src/store/useSocialStore.ts");
 
   assert.match(detailSource, /interaction\.likeCount > 0/);
-  assert.match(detailSource, /likeCount: primaryDish\?\.reviews\.length \?\? 0/);
-  assert.match(
-    storeSource,
-    /const seededLikes = item\.likeCount \?\? item\.cravingCount \?\? seededComments/,
-  );
+  assert.match(detailSource, /likeCount: 0/);
+  assert.match(detailSource, /commentCount: 0/);
+  assert.doesNotMatch(detailSource, /likeCount: primaryDish\?\.reviews\.length/);
+  assert.doesNotMatch(detailSource, /commentCount: primaryDish\?\.reviews\.length/);
+  assert.match(storeSource, /const seededCommentCount = item\.commentCount \?\? 0/);
+  assert.match(storeSource, /const seededLikes = item\.likeCount \?\? 0/);
+  assert.doesNotMatch(storeSource, /item\.cravingCount \?\? seededComments/);
+  assert.doesNotMatch(storeSource, /reviews\?\.length \?\? 0/);
 });

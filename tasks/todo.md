@@ -50,7 +50,7 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 3 App shell QA contracts | Complete for source contracts | Source tests cover signed-out browsing, Profile auth gate, center create return routes, gated routes, and activity/detail comment gates. Manual swipe-vs-rail QA remains open. |
 | 4 Core consumer UX | Partial | Added no-result/empty states for non-browse search results, Discover V2 trending rail, Discover V2 nearby stalls, and Search V2 visible result counts. Asset-size and analytics audits remain open. |
 | 5 Detail/data trust | Partial | Removed/neutralized misleading delivery, stall operating status, map-distance fallback, and closed-stall status-color claims. Broader hardcoded-claim audit remains in PR 2. |
-| 6 Social safety | Partial | Comments disabled in production and report/block actions remain service-backed. Backend moderation launch readiness still open. |
+| 6 Social safety | Partial | Comments remain production-disabled; Home/review/bite comment entry points are flag-gated, seeded story/review/detail social counts were neutralized, and hide/block actions now update session filters plus current Home/Profile feeds. Backend moderation launch readiness still open. |
 | 7 Merchant mode | Deferred | Merchant remains flag-gated; role/verification launch gaps remain in PR 4. |
 | 8 Gamification | Partial | Passport/Missions routes and profile entry points gated by `gamificationEnabled`; asset/bundle/a11y audit remains open. |
 | 9 Maps/floorplan | Partial | Temp extraction artifacts removed; validation/overlay scripts blocked by missing OpenCV `cv2`; tap-accuracy QA open. |
@@ -91,6 +91,14 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 2026-05-18 | `git diff --check` | Pass | No whitespace errors after Batch 4/5 fixes. |
 | 2026-05-18 | `npm run format:check` | Pass | Prettier check passed after Batch 4/5 fixes. |
 | 2026-05-18 | `npm run test` | Pass | Full source suite passed after Batch 4/5 fixes with 338 total, 336 passing, 2 skipped. |
+| 2026-05-21 | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/app/screens/review-feed-bites-contracts.test.ts src/lib/security/security-hardening.test.ts src/app/navigation/nav-activity-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/sprint9-screen-contracts.test.ts src/constants/featureFlags.test.ts` | Pass | Batch 6 focused social safety contracts passed 42/42. |
+| 2026-05-21 | `npm run typecheck` | Pass | Strict TypeScript gate passed after Batch 6 social safety edits. |
+| 2026-05-21 | `npm run lint` | Pass | ESLint completed with 0 errors after Batch 6 social safety edits. |
+| 2026-05-21 | `npm run format:check` | Pass | Prettier check passed after formatting touched Batch 6 files. |
+| 2026-05-21 | `npm run test` | Pass | Full source suite passed with 339 total, 337 passing, 2 skipped. |
+| 2026-05-21 | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor --non-interactive` | Fail | Exit 1: Expo Doctor `1.18.22` treats `--non-interactive` as a project path: `Project directory .../--non-interactive does not exist`. |
+| 2026-05-21 | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Fail after unrestricted retry | Sandboxed run failed two network-backed checks (`ENOTFOUND exp.host` and React Native Directory response). Unrestricted rerun reached the services but failed 1/17 checks because SDK patch versions are behind: `expo` expected `~55.0.25` found `55.0.24`, `expo-dev-client` expected `~55.0.35` found `55.0.34`, `expo-font` expected `~55.0.8` found `55.0.7`, `expo-updates` expected `~55.0.23` found `55.0.22`. |
+| 2026-05-21 | `git diff --check` | Pass | No whitespace errors after Batch 6 social safety edits. |
 
 ### Remaining Production Blockers
 
@@ -101,6 +109,7 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 - Run OCR staging smoke with required credentials; prove `dishes_draft` never leaks to consumer reads.
 - Run native smoke with a connected simulator/device.
 - Complete auth provider live-state audit; disable or label unavailable providers if OAuth is not live.
+- Align Expo SDK 55 patch package versions so Expo Doctor passes: `expo`, `expo-dev-client`, `expo-font`, and `expo-updates`.
 
 ### Recommended PR Split
 

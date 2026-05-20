@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, TextInput, View, useWindowDimensions } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
@@ -26,7 +26,7 @@ import {
 import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import { listSharedStallPosts, listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
-import { promptPostSafetyActions } from "@/lib/security/communitySafety";
+import { promptPostSafetyActions, targetAuthorKey } from "@/lib/security/communitySafety";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useSocialStore, type SocialComment } from "@/store/useSocialStore";
@@ -61,6 +61,14 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
 
   const [posts, setPosts] = useState<StallPost[]>(() => listSharedStallPostsSync(repository));
+  const hidePostFromCurrentFeed = useCallback((postId: string) => {
+    setPosts((current) => current.filter((post) => post.id !== postId));
+  }, []);
+  const hideAuthorFromCurrentFeed = useCallback((blockedAuthorKey: string) => {
+    setPosts((current) =>
+      current.filter((post) => targetAuthorKey(post.authorName) !== blockedAuthorKey),
+    );
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -138,10 +146,10 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
     const interaction = interactions[feedPost.id] ?? {
       liked: false,
       saved: false,
-      likeCount: primaryDish?.reviews.length ?? 0,
+      likeCount: 0,
       saveCount: 0,
       shareCount: 0,
-      commentCount: primaryDish?.reviews.length ?? 0,
+      commentCount: 0,
     };
     const isLiked = interaction.liked;
     const isSaved = interaction.saved;
@@ -248,6 +256,8 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
                     postId: feedPost.id,
                     authorName: feedPost.authorName,
                     label: "post",
+                    onHidden: hidePostFromCurrentFeed,
+                    onBlocked: hideAuthorFromCurrentFeed,
                   })
                 }
                 style={styles.inlineAction}

@@ -89,10 +89,10 @@ export const useSocialStore = create<SocialState>()(
                 seededCommentIds.has(reply.parentCommentId) ||
                 storedCommentIds.has(reply.parentCommentId),
             ).length;
-          const seededCommentCount = item.commentCount ?? item.dishes?.[0]?.reviews?.length ?? 0;
+          const seededCommentCount = item.commentCount ?? 0;
           const seededComments = seededCommentCount + storedCommentCount + storedReplyCount;
           if (!next[item.id]) {
-            const seededLikes = item.likeCount ?? item.cravingCount ?? seededComments;
+            const seededLikes = item.likeCount ?? 0;
             next[item.id] = {
               liked: false,
               saved: false,

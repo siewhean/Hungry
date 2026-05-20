@@ -116,10 +116,10 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const interaction = interactions[post.id] ?? {
     liked: false,
     saved: false,
-    likeCount: primaryDish?.reviews.length ?? 0,
+    likeCount: 0,
     saveCount: 0,
     shareCount: 0,
-    commentCount: primaryDish?.reviews.length ?? 0,
+    commentCount: 0,
   };
   const imageHeight = Math.min(Math.max(screenWidth * 1.12, 360), 460);
   const kindLabel = update?.kind === "like" ? "Like" : "Comment";

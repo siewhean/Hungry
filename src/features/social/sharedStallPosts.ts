@@ -1,5 +1,6 @@
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { biteToStallPost } from "@/lib/services/postTransforms";
+import { isContentHiddenForSession } from "@/lib/security/communitySafety";
 import type { DataRepository } from "@/lib/services/types";
 import type { StallPost } from "@/types/domain";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
@@ -7,6 +8,7 @@ import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 export function mergeStallPosts(...postLists: StallPost[][]): StallPost[] {
   const seen = new Set<string>();
   return postLists.flat().filter((post) => {
+    if (isContentHiddenForSession({ id: post.id, authorName: post.authorName })) return false;
     if (seen.has(post.id)) return false;
     seen.add(post.id);
     return true;

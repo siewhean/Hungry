@@ -10,6 +10,7 @@ import { MessageCircle, MessageCircleMore, X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Avatar, EmptyState, Input } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import type { Bite } from "@/lib/services/types";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -87,6 +88,10 @@ export function BiteCommentsSheet({
 
     setDraftComment("");
   }, [activeBite, activeReplyCommentId, addComment, addReply, draftComment, profile]);
+
+  if (!FEATURE_FLAGS.commentsEnabled) {
+    return null;
+  }
 
   return (
     <BottomSheetModal

@@ -10,6 +10,8 @@ type ContentSafetyTarget = {
   authorName: string;
   postId?: string;
   label?: string;
+  onHidden?: (postId: string) => void;
+  onBlocked?: (blockedAuthorKey: string) => void;
 };
 
 type ReviewSafetyTarget = {
@@ -17,8 +19,34 @@ type ReviewSafetyTarget = {
   authorName: string;
 };
 
+const hiddenPostIds = new Set<string>();
+const blockedAuthorKeys = new Set<string>();
+
 export function targetAuthorKey(authorName: string): string {
   return authorName.trim().toLowerCase().replace(/\s+/g, "-").slice(0, 80);
+}
+
+export function getHiddenPostIdsForSession(): ReadonlySet<string> {
+  return hiddenPostIds;
+}
+
+export function getBlockedAuthorKeysForSession(): ReadonlySet<string> {
+  return blockedAuthorKeys;
+}
+
+export function isContentHiddenForSession(target: {
+  id: string;
+  authorName?: string | null;
+}): boolean {
+  if (hiddenPostIds.has(target.id)) {
+    return true;
+  }
+
+  if (!target.authorName) {
+    return false;
+  }
+
+  return blockedAuthorKeys.has(targetAuthorKey(target.authorName));
 }
 
 function reportContent(target: ContentSafetyTarget): void {
@@ -42,14 +70,17 @@ function reportContent(target: ContentSafetyTarget): void {
 }
 
 function blockAuthor(
-  target: Pick<ContentSafetyTarget, "authorName" | "targetType" | "targetId">,
+  target: Pick<ContentSafetyTarget, "authorName" | "targetType" | "targetId" | "onBlocked">,
 ): void {
+  const blockedAuthorKey = targetAuthorKey(target.authorName);
   void getHungryService()
     .communitySafety.blockUser({
-      blockedUserKey: targetAuthorKey(target.authorName),
+      blockedUserKey: blockedAuthorKey,
       reason: `user_blocked_${target.targetType}_author`,
     })
     .then(() => {
+      blockedAuthorKeys.add(blockedAuthorKey);
+      target.onBlocked?.(blockedAuthorKey);
       trackAnalyticsEvent("user_blocked", {
         targetType: `${target.targetType}_author`,
         targetId: target.targetId,
@@ -68,6 +99,8 @@ function hidePost(target: ContentSafetyTarget): void {
   void getHungryService()
     .communitySafety.hidePost(postId, "hidden_from_content_safety_menu")
     .then(() => {
+      hiddenPostIds.add(postId);
+      target.onHidden?.(postId);
       trackAnalyticsEvent("post_hidden", {
         targetType: target.targetType,
         targetId: postId,
@@ -81,6 +114,10 @@ function hidePost(target: ContentSafetyTarget): void {
 
 export function promptContentSafetyActions(target: ContentSafetyTarget): void {
   const label = target.label ?? "content";
+  const canHidePost = target.targetType === "post" || Boolean(target.postId);
+  const managementCopy = canHidePost
+    ? `Report this ${label}, hide it, or block ${target.authorName}?`
+    : `Report this ${label} or block ${target.authorName}?`;
   const actions = [
     {
       text: "Report",
@@ -94,7 +131,7 @@ export function promptContentSafetyActions(target: ContentSafetyTarget): void {
     },
   ];
 
-  if (target.targetType === "post" || target.postId) {
+  if (canHidePost) {
     actions.splice(1, 0, {
       text: "Hide post",
       style: "destructive" as const,
@@ -102,22 +139,23 @@ export function promptContentSafetyActions(target: ContentSafetyTarget): void {
     });
   }
 
-  Alert.alert(`Manage ${label}`, `Report this ${label}, hide it, or block ${target.authorName}?`, [
-    { text: "Cancel", style: "cancel" },
-    ...actions,
-  ]);
+  Alert.alert(`Manage ${label}`, managementCopy, [{ text: "Cancel", style: "cancel" }, ...actions]);
 }
 
 export function promptPostSafetyActions(target: {
   postId: string;
   authorName: string;
   label?: string;
+  onHidden?: (postId: string) => void;
+  onBlocked?: (blockedAuthorKey: string) => void;
 }): void {
   promptContentSafetyActions({
     targetType: "post",
     targetId: target.postId,
     authorName: target.authorName,
     label: target.label ?? "post",
+    onHidden: target.onHidden,
+    onBlocked: target.onBlocked,
   });
 }
 
@@ -126,6 +164,8 @@ export function promptCommentSafetyActions(target: {
   authorName: string;
   postId?: string;
   label?: string;
+  onHidden?: (postId: string) => void;
+  onBlocked?: (blockedAuthorKey: string) => void;
 }): void {
   promptContentSafetyActions({
     targetType: "reply",
@@ -133,6 +173,8 @@ export function promptCommentSafetyActions(target: {
     authorName: target.authorName,
     postId: target.postId,
     label: target.label ?? "comment",
+    onHidden: target.onHidden,
+    onBlocked: target.onBlocked,
   });
 }
 
@@ -185,6 +227,7 @@ export function promptBlockReviewAuthor(target: ReviewSafetyTarget): void {
               reason: "user_blocked_from_review",
             })
             .then(() => {
+              blockedAuthorKeys.add(targetAuthorKey(target.authorName));
               trackAnalyticsEvent("user_blocked", {
                 targetType: "review_author",
                 targetId: target.reviewId,

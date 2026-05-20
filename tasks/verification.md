@@ -754,6 +754,14 @@ Use the smallest check that matches the change risk.
 | 2026-05-18 | app (Frontend Design Overhaul Batch 4/5) | `git diff --check` | Pass | No whitespace errors after Search/Discover/detail fixes |
 | 2026-05-18 | app (Frontend Design Overhaul Batch 4/5) | `npm run format:check` | Pass | Prettier check passed after Search/Discover/detail fixes |
 | 2026-05-18 | app (Frontend Design Overhaul Batch 4/5) | `npm run test` | Pass | Full source suite passed with 338 tests total: 336 passing and 2 skipped |
+| 2026-05-21 | app (Frontend Design Overhaul Batch 6 social safety) | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/app/screens/review-feed-bites-contracts.test.ts src/lib/security/security-hardening.test.ts src/app/navigation/nav-activity-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/sprint9-screen-contracts.test.ts src/constants/featureFlags.test.ts` | Pass | Focused social safety contracts passed 42/42 after flag-gating Home/review/bite comment entry points, session hide/block filters, and neutral social counts |
+| 2026-05-21 | app (Frontend Design Overhaul Batch 6 social safety) | `npm run typecheck` | Pass | Strict TypeScript gate passed after Batch 6 social safety edits |
+| 2026-05-21 | app (Frontend Design Overhaul Batch 6 social safety) | `npm run lint` | Pass | ESLint completed with 0 errors |
+| 2026-05-21 | app (Frontend Design Overhaul Batch 6 social safety) | `npm run format:check` | Pass | Prettier check passed after formatting touched Batch 6 files |
+| 2026-05-21 | app (Frontend Design Overhaul Batch 6 social safety) | `npm run test` | Pass | Full source suite passed with 339 tests total: 337 passing and 2 skipped |
+| 2026-05-21 | app (Frontend Design Overhaul Batch 6 social safety) | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor --non-interactive` | Fail | Expo Doctor 1.18.22 treats `--non-interactive` as a project path and exits with `Project directory .../--non-interactive does not exist` |
+| 2026-05-21 | app (Frontend Design Overhaul Batch 6 social safety) | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Fail | Sandboxed run failed network-backed checks; unrestricted rerun reached Expo/React Native Directory and failed 1/17 checks because `expo`, `expo-dev-client`, `expo-font`, and `expo-updates` are one SDK 55 patch behind expected versions |
+| 2026-05-21 | app (Frontend Design Overhaul Batch 6 social safety) | `git diff --check` | Pass | No whitespace errors after Batch 6 social safety edits |
 
 ## Outstanding Verification
 

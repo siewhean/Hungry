@@ -88,6 +88,7 @@ import { getBuildingById, toSummary } from "@/lib/geo/singaporeBuildings";
 import {
   promptCommentSafetyActions,
   promptPostSafetyActions,
+  targetAuthorKey,
 } from "@/lib/security/communitySafety";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -346,6 +347,28 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     },
     [initializeInteractions, profile, profileFeedKey],
   );
+
+  const hidePostFromCurrentFeed = useCallback((postId: string) => {
+    setSocialFeed((current) => current.filter((item) => item.id !== postId));
+    setSections((current) =>
+      current.map((section) => ({
+        ...section,
+        items: section.items.filter((item) => item.id !== postId),
+      })),
+    );
+  }, []);
+
+  const hideAuthorFromCurrentFeed = useCallback((blockedAuthorKey: string) => {
+    const isAllowedPost = (item: HomeFeedItem) =>
+      targetAuthorKey(item.authorName) !== blockedAuthorKey;
+    setSocialFeed((current) => current.filter(isAllowedPost));
+    setSections((current) =>
+      current.map((section) => ({
+        ...section,
+        items: section.items.filter(isAllowedPost),
+      })),
+    );
+  }, []);
 
   const refreshHomeFeed = useCallback(async () => {
     setIsRefreshing(true);
@@ -1062,6 +1085,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       postId: item.id,
                       authorName: item.authorName,
                       label: "post",
+                      onHidden: hidePostFromCurrentFeed,
+                      onBlocked: hideAuthorFromCurrentFeed,
                     })
                   }
                   style={styles.moreAction}
@@ -1358,12 +1383,35 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
               {/* Row 2: Caption */}
               <View style={{ gap: spacing[1] }}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Read comments for ${item.authorName}'s post`}
-                  onPress={() => openComments(item)}
-                  hitSlop={6}
-                >
+                {commentsEnabled ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Read comments for ${item.authorName}'s post`}
+                    onPress={() => openComments(item)}
+                    hitSlop={6}
+                  >
+                    <AppText
+                      variant="bodySmall"
+                      numberOfLines={2}
+                      onTextLayout={(event) => handleCaptionTextLayout(item.id, event)}
+                      style={{
+                        color: themeTints.text,
+                        textAlign: profile.leftHandedMode ? "right" : "left",
+                        marginTop: spacing[1],
+                      }}
+                    >
+                      {captionOverflows ? formatCollapsedCaption(item.caption) : item.caption}
+                      {captionOverflows ? (
+                        <AppText
+                          variant="bodySmall"
+                          style={{ color: palette.orange, fontWeight: "900" }}
+                        >
+                          {" more"}
+                        </AppText>
+                      ) : null}
+                    </AppText>
+                  </Pressable>
+                ) : (
                   <AppText
                     variant="bodySmall"
                     numberOfLines={2}
@@ -1384,7 +1432,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       </AppText>
                     ) : null}
                   </AppText>
-                </Pressable>
+                )}
                 <AppText
                   variant="micro"
                   tone="secondary"
