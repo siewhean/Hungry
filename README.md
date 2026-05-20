@@ -85,8 +85,11 @@ The application uses feature flags to toggle functionality for development and r
 | `HUNGRY_DATA_SOURCE` | Toggle between `mock` and `supabase` data layers. | `mock` |
 | `FEATURE_FLAGS.directMessagesEnabled` | Enable the Direct Messages tab and chat functionality. | `false` |
 | `FEATURE_FLAGS.prototypeRoutesEnabled` | Register V2/prototype routes outside production release builds. | `true` in development/staging, `false` in production |
-| `FEATURE_FLAGS.merchantCentreEnabled` | Register merchant centre routes for production-like builds. | `false` |
-| `FEATURE_FLAGS.commentsEnabled` | Enable the community comments section on dish posts. | `true` |
+| `FEATURE_FLAGS.merchantCentreEnabled` | Register merchant centre routes for staging or local `__DEV__` builds. | `true` in staging/local dev, `false` in production |
+| `FEATURE_FLAGS.commentsEnabled` | Enable community comments on posts and reviews. | `true` in development/staging, `false` in production |
+| `FEATURE_FLAGS.gamificationEnabled` | Enable Passport and Missions surfaces. | `true` in development/staging, `false` in production |
+| `FEATURE_FLAGS.collectionsEnabled` | Enable collection list/detail routes. | `true` in development/staging, `false` in production |
+| `FEATURE_FLAGS.storiesEnabled` | Enable story viewer and story creation surfaces. | `true` in development/staging, `false` in production |
 | `FEATURE_FLAGS.craveEnabled` | Enable the "Daily Crave" swiping discovery mode. | `true` |
 | `FEATURE_FLAGS.readsEnabled` | Enable the "Reads" (blog) tab. | `true` |
 | `FEATURE_FLAGS.mockMapboxEnabled` | Use a static fallback for the map in test environments. | `false` |
