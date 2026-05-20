@@ -56,9 +56,9 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 9 Maps/floorplan | Partial | Temp extraction artifacts removed; validation/overlay scripts blocked by missing OpenCV `cv2`; tap-accuracy QA open. |
 | 10 Supabase/OCR | Deferred | Chat smoke skipped due missing smoke env; OCR staging smoke not run in this pass. |
 | 11 Auth/onboarding | Deferred | Existing tests pass; OAuth provider live-state audit remains open. |
-| 12 Native/iOS | Partial | Prepared iOS smoke attempted; blocked by 0 connected Maestro devices. Native/iOS changes should stay in a dedicated PR bucket. |
+| 12 Native/iOS | Partial | Expo SDK 55 patch dependencies aligned and prepared iOS smoke passed on iPhone 17 Pro / iOS 26.1 once Metro was reachable. Broader native/iOS changes should still stay in a dedicated PR bucket. |
 | 13 Assets/bundle/licensing | Deferred | Large mobile/web asset inventory remains open. |
-| 14 CI/security | Partial | CI now runs Supabase static audit, edge-function static checks, and skip-safe migration dry-run; security scans remain separate gate. |
+| 14 CI/security | Partial | CI now runs Supabase static audit, edge-function static checks, and skip-safe migration dry-run; dependency audit is green after `ws` override patch. Broader security scans remain separate gate. |
 | 15 RC decision | Open | Do not merge as one PR yet; use split below unless remaining gates are completed. |
 
 ### Verification Results
@@ -99,6 +99,16 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 2026-05-21 | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor --non-interactive` | Fail | Exit 1: Expo Doctor `1.18.22` treats `--non-interactive` as a project path: `Project directory .../--non-interactive does not exist`. |
 | 2026-05-21 | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Fail after unrestricted retry | Sandboxed run failed two network-backed checks (`ENOTFOUND exp.host` and React Native Directory response). Unrestricted rerun reached the services but failed 1/17 checks because SDK patch versions are behind: `expo` expected `~55.0.25` found `55.0.24`, `expo-dev-client` expected `~55.0.35` found `55.0.34`, `expo-font` expected `~55.0.8` found `55.0.7`, `expo-updates` expected `~55.0.23` found `55.0.22`. |
 | 2026-05-21 | `git diff --check` | Pass | No whitespace errors after Batch 6 social safety edits. |
+| 2026-05-21 | `npm install expo@~55.0.25 expo-dev-client@~55.0.35 expo-font@~55.0.8 expo-updates@~55.0.23` | Pass | Updated Expo SDK 55 patch packages and lockfile; install changed 13 packages. |
+| 2026-05-21 | `npm audit fix` | Partial, then resolved with override | Non-force audit fix removed the `brace-expansion` advisory and updated Supabase lockfile packages to `2.106.1`; remaining `ws` advisory was caused by the repo override pinning `8.20.0`. Updated override to `8.20.1` and reran `npm install`. |
+| 2026-05-21 | `npm audit --audit-level=moderate` | Pass | 0 vulnerabilities after Expo patch alignment, Supabase lockfile refresh, and `ws` override update. |
+| 2026-05-21 | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass | Unrestricted run passed 17/17 checks after Expo SDK patch alignment. |
+| 2026-05-21 | `npm run typecheck` | Pass | Strict TypeScript gate passed after dependency updates. |
+| 2026-05-21 | `npm run lint` | Pass | ESLint completed with 0 errors after dependency updates. |
+| 2026-05-21 | `npm run format:check` | Pass | Prettier check passed after dependency updates. |
+| 2026-05-21 | `npm run test` | Pass | Full source suite passed with 339 total, 337 passing, 2 skipped after dependency updates. |
+| 2026-05-21 | `npm run smoke:native:ios:prepared` | Initial fail, then pass | Sandbox run failed DNS to `github.com` while downloading Maestro; unrestricted first run reached iPhone 17 Pro / iOS 26.1 but app stayed on `Loading from Metro...`; rerun with Metro reachable at `127.0.0.1:8081/status` passed chat and media flows. |
+| 2026-05-21 | `git diff --check` | Pass | No whitespace errors after dependency updates. |
 
 ### Remaining Production Blockers
 
@@ -107,9 +117,7 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 - Complete bundle-size/licensing audit for `src/assets/discover/**`, passport assets, and marketing-only food images.
 - Install/activate OpenCV for floorplan validation and generate overlay QA for `hc-maxwell:L1`.
 - Run OCR staging smoke with required credentials; prove `dishes_draft` never leaks to consumer reads.
-- Run native smoke with a connected simulator/device.
 - Complete auth provider live-state audit; disable or label unavailable providers if OAuth is not live.
-- Align Expo SDK 55 patch package versions so Expo Doctor passes: `expo`, `expo-dev-client`, `expo-font`, and `expo-updates`.
 
 ### Recommended PR Split
 

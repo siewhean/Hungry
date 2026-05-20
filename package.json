@@ -59,11 +59,11 @@
     "@shopify/flash-list": "2.0.2",
     "@shopify/react-native-skia": "2.4.18",
     "@supabase/supabase-js": "^2.103.1",
-    "expo": "~55.0.24",
+    "expo": "~55.0.25",
     "expo-asset": "~55.0.17",
     "expo-audio": "~55.0.14",
-    "expo-dev-client": "~55.0.34",
-    "expo-font": "~55.0.7",
+    "expo-dev-client": "~55.0.35",
+    "expo-font": "~55.0.8",
     "expo-haptics": "~55.0.14",
     "expo-image": "~55.0.10",
     "expo-image-picker": "~55.0.20",
@@ -72,7 +72,7 @@
     "expo-location": "~55.1.10",
     "expo-secure-store": "~55.0.13",
     "expo-status-bar": "~55.0.6",
-    "expo-updates": "~55.0.21",
+    "expo-updates": "~55.0.23",
     "expo-video": "~55.0.17",
     "expo-web-browser": "~55.0.16",
     "lucide-react-native": "^1.8.0",
@@ -111,7 +111,7 @@
     "typescript": "~5.9.2"
   },
   "overrides": {
-    "ws": "8.20.0",
+    "ws": "8.20.1",
     "postcss": "8.5.10",
     "@xmldom/xmldom": "0.8.13",
     "uuid": "14.0.0"

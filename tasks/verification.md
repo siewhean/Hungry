@@ -762,6 +762,17 @@ Use the smallest check that matches the change risk.
 | 2026-05-21 | app (Frontend Design Overhaul Batch 6 social safety) | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor --non-interactive` | Fail | Expo Doctor 1.18.22 treats `--non-interactive` as a project path and exits with `Project directory .../--non-interactive does not exist` |
 | 2026-05-21 | app (Frontend Design Overhaul Batch 6 social safety) | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Fail | Sandboxed run failed network-backed checks; unrestricted rerun reached Expo/React Native Directory and failed 1/17 checks because `expo`, `expo-dev-client`, `expo-font`, and `expo-updates` are one SDK 55 patch behind expected versions |
 | 2026-05-21 | app (Frontend Design Overhaul Batch 6 social safety) | `git diff --check` | Pass | No whitespace errors after Batch 6 social safety edits |
+| 2026-05-21 | app/dependencies (Expo SDK patch alignment) | `npm install expo@~55.0.25 expo-dev-client@~55.0.35 expo-font@~55.0.8 expo-updates@~55.0.23` | Pass | Updated Expo SDK 55 patch packages and lockfile |
+| 2026-05-21 | app/dependencies (Expo SDK patch alignment) | `npm audit fix` | Partial | Non-force fix removed the `brace-expansion` advisory and refreshed Supabase lockfile packages to `2.106.1`; remaining `ws` advisory required updating the existing `overrides.ws` pin instead of using `--force` |
+| 2026-05-21 | app/dependencies (Expo SDK patch alignment) | `npm install` | Pass | Regenerated lockfile after changing `overrides.ws` from `8.20.0` to `8.20.1`; npm install reported 0 vulnerabilities |
+| 2026-05-21 | app/dependencies (Expo SDK patch alignment) | `npm audit --audit-level=moderate` | Pass | npm audit reported 0 vulnerabilities |
+| 2026-05-21 | app/dependencies (Expo SDK patch alignment) | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass | Unrestricted run passed 17/17 Expo Doctor checks after dependency alignment |
+| 2026-05-21 | app/dependencies (Expo SDK patch alignment) | `npm run typecheck` | Pass | Strict TypeScript gate passed after dependency updates |
+| 2026-05-21 | app/dependencies (Expo SDK patch alignment) | `npm run lint` | Pass | ESLint completed with 0 errors after dependency updates |
+| 2026-05-21 | app/dependencies (Expo SDK patch alignment) | `npm run format:check` | Pass | Prettier check passed after dependency updates |
+| 2026-05-21 | app/dependencies (Expo SDK patch alignment) | `npm run test` | Pass | Full source suite passed with 339 tests total: 337 passing and 2 skipped |
+| 2026-05-21 | app/dependencies (Expo SDK patch alignment) | `npm run smoke:native:ios:prepared` | Pass after setup retry | Sandbox run failed DNS to `github.com`; unrestricted first run downloaded Maestro and reached the iPhone 17 Pro / iOS 26.1 simulator but failed while app was loading from Metro; rerun with Metro reachable at `127.0.0.1:8081/status` passed chat and media flows |
+| 2026-05-21 | app/dependencies (Expo SDK patch alignment) | `git diff --check` | Pass | No whitespace errors after dependency updates |
 
 ## Outstanding Verification
 
