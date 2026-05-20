@@ -783,6 +783,10 @@ Use the smallest check that matches the change risk.
 | 2026-05-21 | app/assets (Frontend Design Overhaul Batch 13 asset audit) | `npx --no-install prettier --check package.json scripts/audit-assets.mjs src/features/system/asset-audit-contracts.test.ts` | Pass | Touched package/script/test formatting passed. Markdown ledger files were left in their existing table style to avoid unrelated table churn |
 | 2026-05-21 | app/assets (Frontend Design Overhaul Batch 13 asset audit) | `npm run typecheck` | Pass | Strict TypeScript gate passed after the asset audit script/contract and ledger update |
 | 2026-05-21 | app/assets (Frontend Design Overhaul Batch 13 asset audit) | `npm run lint` | Pass | ESLint completed with 0 errors after the asset audit script/contract and ledger update |
+| 2026-05-21 | app/supabase-ocr (Frontend Design Overhaul Batch 10 draft safety) | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/lib/services/supabase/ocr-draft-safety.test.ts` | Initial fail, then pass | Initial fail was a stale source-block boundary in the new contract; final run passed 2/2 and proves consumer Supabase reads stay off `dishes_draft` while draft access stays in supply/merchant/ops paths |
+| 2026-05-21 | app/supabase-ocr (Frontend Design Overhaul Batch 10 draft safety) | `npx --no-install prettier --check src/lib/services/supabase/ocr-draft-safety.test.ts` | Initial fail, then pass | Prettier formatted the new OCR draft safety test; rerun passed |
+| 2026-05-21 | app/supabase-ocr (Frontend Design Overhaul Batch 10 draft safety) | `npm run typecheck` | Pass | Strict TypeScript gate passed after adding the OCR draft safety contract |
+| 2026-05-21 | app/supabase-ocr (Frontend Design Overhaul Batch 10 draft safety) | `npm run lint` | Pass | ESLint completed with 0 errors after adding the OCR draft safety contract |
 
 ## Outstanding Verification
 

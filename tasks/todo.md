@@ -54,7 +54,7 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 7 Merchant mode | Deferred | Merchant remains flag-gated; role/verification launch gaps remain in PR 4. |
 | 8 Gamification | Partial | Passport/Missions routes and profile entry points gated by `gamificationEnabled`; asset/bundle/a11y audit remains open. |
 | 9 Maps/floorplan | Partial | Temp extraction artifacts removed; validation/overlay scripts blocked by missing OpenCV `cv2`; tap-accuracy QA open. |
-| 10 Supabase/OCR | Deferred | Chat smoke skipped due missing smoke env; OCR staging smoke not run in this pass. |
+| 10 Supabase/OCR | Partial | Added source contracts proving consumer Supabase reads do not query `dishes_draft` and draft access is confined to supply/merchant/ops-admin paths. Chat/OCR live smokes remain blocked by missing smoke env/credentials. |
 | 11 Auth/onboarding | Partial | OAuth provider buttons are now production-disabled and labeled unavailable until live Supabase provider smoke is complete. Broader auth return-route and provider dashboard audit remains open. |
 | 12 Native/iOS | Partial | Expo SDK 55 patch dependencies aligned and prepared iOS smoke passed on iPhone 17 Pro / iOS 26.1 once Metro was reachable. Broader native/iOS changes should still stay in a dedicated PR bucket. |
 | 13 Assets/bundle/licensing | Partial | Added `npm run audit:assets` to inventory mobile Discover, Passport, and marketing food assets. Current evidence: `src/assets/discover` is 121.43 MiB with 98.16 MiB apparently unreferenced, Passport assets are 1.54 MiB all referenced, and marketing food images are 95.6 MiB web-only/referenced. Compression/removal and provenance sign-off remain open. |
@@ -119,6 +119,10 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 2026-05-21 | `npx --no-install prettier --check package.json scripts/audit-assets.mjs src/features/system/asset-audit-contracts.test.ts` | Pass | Touched package/script/test formatting passed. Markdown ledger files were left in their existing table style to avoid unrelated table churn. |
 | 2026-05-21 | `npm run typecheck` | Pass | Strict TypeScript gate passed after the asset audit script/contract and ledger update. |
 | 2026-05-21 | `npm run lint` | Pass | ESLint completed with 0 errors after the asset audit script/contract and ledger update. |
+| 2026-05-21 | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/lib/services/supabase/ocr-draft-safety.test.ts` | Initial fail, then pass | Initial fail was a stale source-block boundary in the new contract; final run passed 2/2 and proves consumer Supabase reads stay off `dishes_draft` while draft access stays in supply/merchant/ops paths. |
+| 2026-05-21 | `npx --no-install prettier --check src/lib/services/supabase/ocr-draft-safety.test.ts` | Initial fail, then pass | Prettier formatted the new OCR draft safety test; rerun passed. |
+| 2026-05-21 | `npm run typecheck` | Pass | Strict TypeScript gate passed after adding the OCR draft safety contract. |
+| 2026-05-21 | `npm run lint` | Pass | ESLint completed with 0 errors after adding the OCR draft safety contract. |
 
 ### Remaining Production Blockers
 
@@ -126,7 +130,7 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 - Keep DMs, merchant centre, comments, stories, collections, and gamification production-disabled until backend moderation, role, and readiness gates are complete.
 - Compress or remove the measured mobile Discover asset excess: `src/assets/discover` is 121.43 MiB, including 98.16 MiB apparently unreferenced copied food PNGs retained for now to avoid destabilizing the wider design branch; generated-art provenance sign-off remains open.
 - Install/activate OpenCV for floorplan validation and generate overlay QA for `hc-maxwell:L1`.
-- Run OCR staging smoke with required credentials; prove `dishes_draft` never leaks to consumer reads.
+- Run OCR staging smoke with required credentials. Repo-side source contracts now prove `dishes_draft` is not queried by consumer Supabase reads and is confined to supply/merchant/ops paths.
 - Complete auth provider live-state audit; OAuth buttons are disabled and labeled unavailable in production until Supabase Google/Apple providers are proven live.
 
 ### Recommended PR Split
