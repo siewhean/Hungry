@@ -53,11 +53,11 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 6 Social safety | Partial | Comments remain production-disabled; Home/review/bite comment entry points are flag-gated, seeded story/review/detail social counts were neutralized, and hide/block actions now update session filters plus current Home/Profile feeds. Backend moderation launch readiness still open. |
 | 7 Merchant mode | Deferred | Merchant remains flag-gated; role/verification launch gaps remain in PR 4. |
 | 8 Gamification | Partial | Passport/Missions routes and profile entry points gated by `gamificationEnabled`; asset/bundle/a11y audit remains open. |
-| 9 Maps/floorplan | Partial | Temp extraction artifacts removed; validation/overlay scripts blocked by missing OpenCV `cv2`; tap-accuracy QA open. |
-| 10 Supabase/OCR | Partial | Added source contracts proving consumer Supabase reads do not query `dishes_draft` and draft access is confined to supply/merchant/ops-admin paths. Chat/OCR live smokes remain blocked by missing smoke env/credentials. |
+| 9 Maps/floorplan | Partial | Temp extraction artifacts removed; installed OpenCV in the repo venv and reran Maxwell L1 validation/overlay successfully with the `floorplan_pdf` profile; tap-accuracy manual QA remains open. |
+| 10 Supabase/OCR | Partial | Added source contracts proving consumer Supabase reads do not query `dishes_draft` and draft access is confined to supply/merchant/ops-admin paths. Added skip-safe `npm run smoke:ocr-staging`; live OCR remains blocked by missing smoke env/image and Edge Function Vision config. |
 | 11 Auth/onboarding | Partial | OAuth provider buttons are now production-disabled and labeled unavailable until live Supabase provider smoke is complete. Broader auth return-route and provider dashboard audit remains open. |
 | 12 Native/iOS | Partial | Expo SDK 55 patch dependencies aligned and prepared iOS smoke passed on iPhone 17 Pro / iOS 26.1 once Metro was reachable. Broader native/iOS changes should still stay in a dedicated PR bucket. |
-| 13 Assets/bundle/licensing | Partial | Added `npm run audit:assets` to inventory mobile Discover, Passport, and marketing food assets. Current evidence: `src/assets/discover` is 121.43 MiB with 98.16 MiB apparently unreferenced, Passport assets are 1.54 MiB all referenced, and marketing food images are 95.6 MiB web-only/referenced. Compression/removal and provenance sign-off remain open. |
+| 13 Assets/bundle/licensing | Partial | Removed 38 audited unreferenced mobile Discover PNGs. Current evidence: `src/assets/discover` is 23.28 MiB with 10/10 files referenced and 0 MiB unreferenced; Passport assets are 1.54 MiB all referenced, and marketing food images are 95.6 MiB web-only/referenced. Generated-art provenance sign-off remains open. |
 | 14 CI/security | Partial | CI now runs Supabase static audit, edge-function static checks, and skip-safe migration dry-run; dependency audit is green after `ws` override patch. Broader security scans remain separate gate. |
 | 15 RC decision | Open | Do not merge as one PR yet; use split below unless remaining gates are completed. |
 
@@ -123,14 +123,40 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 2026-05-21 | `npx --no-install prettier --check src/lib/services/supabase/ocr-draft-safety.test.ts` | Initial fail, then pass | Prettier formatted the new OCR draft safety test; rerun passed. |
 | 2026-05-21 | `npm run typecheck` | Pass | Strict TypeScript gate passed after adding the OCR draft safety contract. |
 | 2026-05-21 | `npm run lint` | Pass | ESLint completed with 0 errors after adding the OCR draft safety contract. |
+| 2026-05-21 | `npm run audit:assets` | Pass | After removing 38 audited unreferenced mobile Discover PNGs, `src/assets/discover` reports 10 files / 23.28 MiB, all referenced, 0 MiB unreferenced. Passport remains 10 files / 1.54 MiB all referenced. Marketing food remains web-only/referenced. |
+| 2026-05-21 | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/system/asset-audit-contracts.test.ts` | Pass | Focused asset audit contract still passes 1/1 after pruning mobile Discover assets. |
+| 2026-05-21 | `./.venv/bin/python -m pip install opencv-python-headless numpy` | Pass after unrestricted retry | Sandbox DNS blocked PyPI; unrestricted retry installed `opencv-python-headless 4.13.0.92` and `numpy 2.4.6` into the repo venv for floorplan QA. |
+| 2026-05-21 | `./.venv/bin/python scripts/floorplan/score_validate_polygons.py --in data/floorplans/hc-maxwell/L1.raw.json --out data/floorplans/hc-maxwell/L1.validated.json --report data/floorplans/hc-maxwell/L1.validation-report.json --profile floorplan_pdf` | Pass | Maxwell L1 validation completed with 22 validated polygons and 4 unresolved polygons; output matched the tracked canonical artifacts. |
+| 2026-05-21 | `./.venv/bin/python scripts/floorplan/render_qa_overlay.py --in data/floorplans/hc-maxwell/L1.validated.json --image data/floorplans/hc-maxwell/L1.rectified.png --out output/qa/floorplans/hc-maxwell-L1-overlay.png` | Pass | Maxwell L1 overlay regenerated successfully; output matched the tracked QA artifact. |
+| 2026-05-21 | `./.venv/bin/python -m py_compile scripts/floorplan/score_validate_polygons.py scripts/floorplan/render_qa_overlay.py scripts/floorplan/common.py` | Pass | Floorplan validation/overlay script syntax passed in the OpenCV-capable venv. |
+| 2026-05-21 | `node --check scripts/supabase-ocr-smoke.mjs` | Pass | New OCR staging smoke script parses successfully. |
+| 2026-05-21 | `npm run smoke:ocr-staging` | Skipped | Skip-safe command exits 0 and reports missing `HUNGRY_SUPABASE_SMOKE_URL`, service role key, anon key, `HUNGRY_OCR_SMOKE_IMAGE_PATH`, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`; Edge Function also needs `GOOGLE_CLOUD_VISION_API_KEY`. |
+| 2026-05-21 | `npx --no-install prettier --check package.json scripts/supabase-ocr-smoke.mjs` | Initial fail, then pass | Prettier formatted the new OCR smoke script; rerun passed. |
+| 2026-05-21 | `npm run typecheck` | Pass | Final strict TypeScript gate passed after asset pruning, OCR smoke script, and ledger updates. |
+| 2026-05-21 | `npm run lint` | Pass | Final ESLint gate completed with 0 errors. |
+| 2026-05-21 | `npm run format:check` | Pass | Final Prettier check for `src/` passed. |
+| 2026-05-21 | `npm run test` | Pass | Final full source suite passed with 342 total, 340 passing, 2 skipped. |
+| 2026-05-21 | `npm run smoke:supabase-chat` | Skipped | Skip-safe chat smoke exits 0 and reports missing Supabase smoke URL/keys and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`. |
+| 2026-05-21 | `git diff --check` | Pass | No whitespace errors after final cleanup edits. |
+| 2026-05-21 | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor --non-interactive` | Fail | Expo Doctor 1.18.22 still treats `--non-interactive` as a project path and exits with `Project directory .../--non-interactive does not exist`. |
+| 2026-05-21 | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass after unrestricted retry | Sandbox run failed network-backed Expo/React Native Directory checks; unrestricted rerun passed 17/17. |
+| 2026-05-21 | `npm run security:audit` | Pass after unrestricted retry | Sandbox DNS to npm registry failed; unrestricted rerun reported 0 vulnerabilities. |
+| 2026-05-21 | `node --check scripts/supabase-ocr-smoke.mjs` | Pass | QA follow-up after making cleanup failures non-zero on successful OCR runs and treating `[::1]` as a local smoke target. |
+| 2026-05-21 | `npm run smoke:ocr-staging` | Skipped | Skip-safe path still exits 0 with missing Supabase smoke URL/keys, `HUNGRY_OCR_SMOKE_IMAGE_PATH`, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`. |
+| 2026-05-21 | `npx --no-install prettier --check package.json scripts/supabase-ocr-smoke.mjs` | Pass | OCR smoke script and package script formatting passed after QA follow-up. |
+| 2026-05-21 | `npm run typecheck` | Pass | Post-QA rerun after OCR smoke script fixes passed. |
+| 2026-05-21 | `npm run lint` | Pass | Post-QA rerun passed with 0 errors. |
+| 2026-05-21 | `npm run format:check` | Pass | Post-QA rerun passed for `src/`. |
+| 2026-05-21 | `npm run test` | Pass | Post-QA rerun passed with 342 total, 340 passing, 2 skipped. |
+| 2026-05-21 | `git diff --check` | Pass | Post-QA rerun found no whitespace errors. |
 
 ### Remaining Production Blockers
 
 - Finish manual QA for bottom-tab swipes versus horizontal rails.
 - Keep DMs, merchant centre, comments, stories, collections, and gamification production-disabled until backend moderation, role, and readiness gates are complete.
-- Compress or remove the measured mobile Discover asset excess: `src/assets/discover` is 121.43 MiB, including 98.16 MiB apparently unreferenced copied food PNGs retained for now to avoid destabilizing the wider design branch; generated-art provenance sign-off remains open.
-- Install/activate OpenCV for floorplan validation and generate overlay QA for `hc-maxwell:L1`.
-- Run OCR staging smoke with required credentials. Repo-side source contracts now prove `dishes_draft` is not queried by consumer Supabase reads and is confined to supply/merchant/ops paths.
+- Complete generated-art provenance sign-off for the remaining referenced mobile Discover and Passport assets. Mobile Discover excess has been pruned to 23.28 MiB with 0 MiB unreferenced.
+- Complete manual tap-accuracy QA for `hc-maxwell:L1`. OpenCV validation and overlay generation now pass in the repo venv.
+- Run `npm run smoke:ocr-staging` with required Supabase smoke URL/keys, `HUNGRY_OCR_SMOKE_IMAGE_PATH`, `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`, and Edge Function `GOOGLE_CLOUD_VISION_API_KEY`. Repo-side source contracts now prove `dishes_draft` is not queried by consumer Supabase reads and is confined to supply/merchant/ops paths.
 - Complete auth provider live-state audit; OAuth buttons are disabled and labeled unavailable in production until Supabase Google/Apple providers are proven live.
 
 ### Recommended PR Split

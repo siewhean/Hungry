@@ -18,6 +18,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "smoke:supabase-chat": "node scripts/supabase-chat-smoke.mjs",
+    "smoke:ocr-staging": "node scripts/supabase-ocr-smoke.mjs",
     "audit:supabase:static": "node scripts/supabase-neutral-audit.mjs",
     "audit:assets": "node scripts/audit-assets.mjs",
     "check:edge-functions": "node scripts/check-edge-functions.mjs",

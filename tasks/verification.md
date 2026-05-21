@@ -787,12 +787,38 @@ Use the smallest check that matches the change risk.
 | 2026-05-21 | app/supabase-ocr (Frontend Design Overhaul Batch 10 draft safety) | `npx --no-install prettier --check src/lib/services/supabase/ocr-draft-safety.test.ts` | Initial fail, then pass | Prettier formatted the new OCR draft safety test; rerun passed |
 | 2026-05-21 | app/supabase-ocr (Frontend Design Overhaul Batch 10 draft safety) | `npm run typecheck` | Pass | Strict TypeScript gate passed after adding the OCR draft safety contract |
 | 2026-05-21 | app/supabase-ocr (Frontend Design Overhaul Batch 10 draft safety) | `npm run lint` | Pass | ESLint completed with 0 errors after adding the OCR draft safety contract |
+| 2026-05-21 | app/assets (Frontend Design Overhaul Batch 13 asset prune) | `npm run audit:assets` | Pass | After removing 38 audited unreferenced mobile Discover PNGs, `src/assets/discover` reports 10 files / 23.28 MiB, all referenced, 0 MiB unreferenced; Passport remains 10 files / 1.54 MiB all referenced; marketing food remains web-only/referenced |
+| 2026-05-21 | app/assets (Frontend Design Overhaul Batch 13 asset prune) | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/system/asset-audit-contracts.test.ts` | Pass | Focused asset-audit contract passed 1/1 after pruning mobile Discover assets |
+| 2026-05-21 | floorplan (Frontend Design Overhaul Batch 9) | `./.venv/bin/python -m pip install opencv-python-headless numpy` | Pass after unrestricted retry | Sandbox DNS blocked PyPI; unrestricted retry installed `opencv-python-headless 4.13.0.92` and `numpy 2.4.6` into the repo venv for floorplan QA |
+| 2026-05-21 | floorplan (Frontend Design Overhaul Batch 9) | `./.venv/bin/python scripts/floorplan/score_validate_polygons.py --in data/floorplans/hc-maxwell/L1.raw.json --out data/floorplans/hc-maxwell/L1.validated.json --report data/floorplans/hc-maxwell/L1.validation-report.json --profile floorplan_pdf` | Pass | Maxwell L1 validation completed with 22 validated polygons and 4 unresolved polygons; output matched the tracked canonical artifacts |
+| 2026-05-21 | floorplan (Frontend Design Overhaul Batch 9) | `./.venv/bin/python scripts/floorplan/render_qa_overlay.py --in data/floorplans/hc-maxwell/L1.validated.json --image data/floorplans/hc-maxwell/L1.rectified.png --out output/qa/floorplans/hc-maxwell-L1-overlay.png` | Pass | Maxwell L1 overlay regenerated successfully; output matched the tracked QA artifact |
+| 2026-05-21 | floorplan (Frontend Design Overhaul Batch 9) | `./.venv/bin/python -m py_compile scripts/floorplan/score_validate_polygons.py scripts/floorplan/render_qa_overlay.py scripts/floorplan/common.py` | Pass | Floorplan validation/overlay script syntax passed in the OpenCV-capable venv |
+| 2026-05-21 | app/supabase-ocr (Frontend Design Overhaul Batch 10 smoke command) | `node --check scripts/supabase-ocr-smoke.mjs` | Pass | New OCR staging smoke script parses successfully |
+| 2026-05-21 | app/supabase-ocr (Frontend Design Overhaul Batch 10 smoke command) | `npm run smoke:ocr-staging` | Skipped | Skip-safe command exits 0 and reports missing `HUNGRY_SUPABASE_SMOKE_URL`, service role key, anon key, `HUNGRY_OCR_SMOKE_IMAGE_PATH`, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`; Edge Function also needs `GOOGLE_CLOUD_VISION_API_KEY` configured |
+| 2026-05-21 | app/supabase-ocr (Frontend Design Overhaul Batch 10 smoke command) | `npx --no-install prettier --check package.json scripts/supabase-ocr-smoke.mjs` | Initial fail, then pass | Prettier formatted the new OCR smoke script; rerun passed |
+| 2026-05-21 | app/release cleanup final gate | `npm run typecheck` | Pass | Final strict TypeScript gate passed after asset pruning, OCR smoke script, and ledger updates |
+| 2026-05-21 | app/release cleanup final gate | `npm run lint` | Pass | Final ESLint gate completed with 0 errors |
+| 2026-05-21 | app/release cleanup final gate | `npm run format:check` | Pass | Final Prettier check for `src/` passed |
+| 2026-05-21 | app/release cleanup final gate | `npm run test` | Pass | Final full source suite passed with 342 total, 340 passing, 2 skipped |
+| 2026-05-21 | app/release cleanup final gate | `npm run smoke:supabase-chat` | Skipped | Skip-safe chat smoke exits 0 and reports missing Supabase smoke URL/keys and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1` |
+| 2026-05-21 | app/release cleanup final gate | `git diff --check` | Pass | No whitespace errors after final cleanup edits |
+| 2026-05-21 | app/release cleanup final gate | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor --non-interactive` | Fail | Expo Doctor 1.18.22 still treats `--non-interactive` as a project path and exits with `Project directory .../--non-interactive does not exist` |
+| 2026-05-21 | app/release cleanup final gate | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass after unrestricted retry | Sandbox run failed network-backed Expo/React Native Directory checks; unrestricted rerun passed 17/17 |
+| 2026-05-21 | app/release cleanup final gate | `npm run security:audit` | Pass after unrestricted retry | Sandbox DNS to npm registry failed; unrestricted rerun reported 0 vulnerabilities |
+| 2026-05-21 | app/supabase-ocr (QA follow-up) | `node --check scripts/supabase-ocr-smoke.mjs` | Pass | QA follow-up after making cleanup failures non-zero on successful OCR runs and treating `[::1]` as a local smoke target |
+| 2026-05-21 | app/supabase-ocr (QA follow-up) | `npm run smoke:ocr-staging` | Skipped | Skip-safe path still exits 0 with missing Supabase smoke URL/keys, `HUNGRY_OCR_SMOKE_IMAGE_PATH`, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1` |
+| 2026-05-21 | app/supabase-ocr (QA follow-up) | `npx --no-install prettier --check package.json scripts/supabase-ocr-smoke.mjs` | Pass | OCR smoke script and package script formatting passed after QA follow-up |
+| 2026-05-21 | app/release cleanup post-QA gate | `npm run typecheck` | Pass | Rerun after OCR smoke QA fixes passed |
+| 2026-05-21 | app/release cleanup post-QA gate | `npm run lint` | Pass | Rerun after OCR smoke QA fixes passed with 0 errors |
+| 2026-05-21 | app/release cleanup post-QA gate | `npm run format:check` | Pass | Rerun after OCR smoke QA fixes passed for `src/` |
+| 2026-05-21 | app/release cleanup post-QA gate | `npm run test` | Pass | Rerun after OCR smoke QA fixes passed with 342 total, 340 passing, 2 skipped |
+| 2026-05-21 | app/release cleanup post-QA gate | `git diff --check` | Pass | Rerun after OCR smoke QA fixes found no whitespace errors |
 
 ## Outstanding Verification
 
 | id | scope | required proof | owner |
 |---|---|---|---|
-| OCR-DG-01 | Sprint 10 OCR | Staging photo upload to `dishes_draft` within 30s | Codex |
+| OCR-DG-01 | Sprint 10 OCR | Run `npm run smoke:ocr-staging` with Supabase smoke URL/keys, `HUNGRY_OCR_SMOKE_IMAGE_PATH`, `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`, and Edge Function Vision config; prove staging photo upload reaches `dishes_draft` within 30s | Codex |
 | WEB-11 | Marketing deploy | Preview + production deploy evidence | Codex + User |
 | ACCDEL-01 | Privacy/Legal | External public account deletion web endpoint + in-app/store policy link evidence | User |
 | SEC-01 | Security | Supabase leaked-password protection enabled in dashboard | User; blocked until paid Supabase plan is available |
