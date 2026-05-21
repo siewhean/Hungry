@@ -48,6 +48,7 @@ test("unfinished social and gamification surfaces are disabled in production", (
 
   assert.equal(flags.commentsEnabled, false);
   assert.equal(flags.oauthProvidersEnabled, false);
+  assert.equal(flags.floorplansEnabled, false);
   assert.equal(flags.gamificationEnabled, false);
   assert.equal(flags.collectionsEnabled, false);
   assert.equal(flags.storiesEnabled, false);
@@ -62,5 +63,11 @@ test("unfinished social and gamification surfaces are available outside producti
     assert.equal(flags.gamificationEnabled, true);
     assert.equal(flags.collectionsEnabled, true);
     assert.equal(flags.storiesEnabled, true);
+  }
+});
+
+test("indoor floorplans stay disabled in every environment until launch gates pass", () => {
+  for (const env of ["development", "staging", "production", undefined, "qa"]) {
+    assert.equal(resolveFeatureFlags(env).floorplansEnabled, false);
   }
 });

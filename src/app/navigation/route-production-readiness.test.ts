@@ -27,6 +27,7 @@ test("production route gates hide prototypes, merchant centre, social, and gamif
   assert.match(flags, /storiesEnabled: nonProductionSurfaceEnabled/);
   assert.match(flags, /commentsEnabled: nonProductionSurfaceEnabled/);
   assert.match(flags, /oauthProvidersEnabled: nonProductionSurfaceEnabled/);
+  assert.match(flags, /floorplansEnabled: false/);
   assert.match(flags, /appEnv !== "production"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/);
   for (const routeName of [
@@ -57,6 +58,21 @@ test("production route gates hide prototypes, merchant centre, social, and gamif
   assert.match(rootNavigator, /FEATURE_FLAGS\.collectionsEnabled \? \(/);
   assert.match(rootNavigator, /name="CollectionList"/);
   assert.match(rootNavigator, /name="CollectionDetail"/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
+  assert.match(rootNavigator, /name="BuildingDrillDown"/);
+  assert.match(rootNavigator, /name="BuildingDrillDownV2"/);
+  assert.match(rootNavigator, /name="VenueDirectory"/);
+});
+
+test("floorplan entry points are hidden behind the floorplans flag", () => {
+  const mapZoom = read("src/app/screens/discover/MapZoomedInScreen.tsx");
+  const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
+
+  assert.match(mapZoom, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
+  assert.match(mapZoom, /navigation\.navigate\("VenueDirectory"/);
+  assert.match(developerLauncher, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
+  assert.match(developerLauncher, /navigation\.navigate\("BuildingDrillDownV2"/);
+  assert.match(developerLauncher, /Floorplan routes are disabled for this build\./);
 });
 
 test("signed-out consumers can browse public discovery and detail routes", () => {

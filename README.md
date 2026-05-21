@@ -1,6 +1,6 @@
 # Hungry — Mobile Frontend
 
-Hungry is a dish-first food discovery app for Singapore hawker centres and food courts. Built with Expo + React Native. Frontend-only, mock-first, iOS + Android.
+Hungry is a dish-first food discovery app for Singapore hawker centres and food courts. Built with Expo + React Native. Mock-first for local demos, with Supabase-backed integrations staged behind release gates.
 
 ---
 
@@ -38,8 +38,8 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 | Product | Hungry — dish-first food discovery |
 | Market | Singapore (hawker centres, food courts, restaurants) |
 | Platform | iOS + Android (Expo SDK 55 / React Native 0.83.6) |
-| Phase | Consumer app, frontend-only, mock data only |
-| Not in scope | Website, admin portal, backend API, business portal |
+| Phase | Consumer mobile app, mock-first with gated Supabase integrations |
+| Not in public v1 scope | Production DMs, comments, stories, gamification, merchant centre, OAuth providers, and indoor floorplans until launch gates pass |
 | Core idea | Find the dish you want, then see which stall serves it — not the other way around |
 | Taste model | 6-axis vector: sweet · spicy · sour · salty · rich · aromatic |
 
@@ -87,6 +87,8 @@ The application uses feature flags to toggle functionality for development and r
 | `FEATURE_FLAGS.prototypeRoutesEnabled` | Register V2/prototype routes outside production release builds. | `true` in development/staging, `false` in production |
 | `FEATURE_FLAGS.merchantCentreEnabled` | Register merchant centre routes for staging or local `__DEV__` builds. | `true` in staging/local dev, `false` in production |
 | `FEATURE_FLAGS.commentsEnabled` | Enable community comments on posts and reviews. | `true` in development/staging, `false` in production |
+| `FEATURE_FLAGS.oauthProvidersEnabled` | Enable Google/Apple OAuth provider buttons. | `true` in development/staging, `false` in production |
+| `FEATURE_FLAGS.floorplansEnabled` | Register indoor floorplan routes and entry points. | `false` in all environments until launch gates pass |
 | `FEATURE_FLAGS.gamificationEnabled` | Enable Passport and Missions surfaces. | `true` in development/staging, `false` in production |
 | `FEATURE_FLAGS.collectionsEnabled` | Enable collection list/detail routes. | `true` in development/staging, `false` in production |
 | `FEATURE_FLAGS.storiesEnabled` | Enable story viewer and story creation surfaces. | `true` in development/staging, `false` in production |
@@ -133,6 +135,7 @@ To override these locally, you can use `.env.development` or modify the constant
 - V2/prototype routes are registered only when `FEATURE_FLAGS.prototypeRoutesEnabled` is true; production builds keep unfinished prototype/design routes off the root navigator
 - `MerchantTabs` is registered only when `FEATURE_FLAGS.merchantCentreEnabled` is true
 - Direct messages and chat entry points are hidden or disabled when `FEATURE_FLAGS.directMessagesEnabled` is false
+- Indoor floorplan routes and layout entry points are registered only when `FEATURE_FLAGS.floorplansEnabled` is true
 - `Reads` tab is behind `FEATURE_FLAGS.readsEnabled` (default `true`)
 - Map mock mode: set `FEATURE_FLAGS.mockMapboxEnabled = true` for test environments
 - Real map runtime: set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` locally to enable the live Mapbox surface; without it, the map falls back to a static coordinate preview so the repo screens stay inspectable.
@@ -148,7 +151,7 @@ To override these locally, you can use `.env.development` or modify the constant
 - Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
 - Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and polygon-based building directory layouts (including Wisma and JEM mall-style floor overlays with vertical level switching).
 - **Design Specifications** — Comprehensive visual, UX, and accessibility specs for all remaining backlog items are now available in `docs/audit/`. These serve as the authoritative implementation guide for Batch 1–8.
-- Current audit status: `npm run typecheck` passes, `npm run lint` passes with 0 errors, `npm test -- --watch=false` passes, `npm run test:e2e -- --reporter=line` passes when run with localhost access, `npm run smoke:native:ios:prepared` passes on the prepared iOS simulator path, and `npx expo-doctor` passes (17/17) when run with a writable npm cache path; see `tasks/verification.md`.
+- Current audit status: `npm run typecheck` passes, `npm run lint` passes with 0 errors, `npm test -- --watch=false` passes, `npm run test:e2e -- --reporter=line` passes when run with localhost access, `npm run smoke:native:ios:prepared` passes on the prepared iOS simulator path, `npx expo-doctor` passes (17/17) when run with a writable npm cache path, and mobile asset provenance/bundle evidence is recorded in `tasks/asset-provenance.md`; see `tasks/verification.md`.
 
 
 ## Commands

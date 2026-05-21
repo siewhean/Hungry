@@ -63,6 +63,11 @@ test("native activity smoke respects direct-message gating", () => {
   assert.match(flow, /text: "Hungry"\n\s+optional: true/);
   assert.match(flow, /text: "Continue"/);
   assert.match(flow, /text: "Close"/);
+  assert.match(flow, /visible: "Enter URL manually"/);
+  assert.match(flow, /point: "50%,34%"/);
+  assert.match(flow, /inputText: "exp:\/\/127\.0\.0\.1:8081"/);
+  assert.match(flow, /tapOn: "Connect"/);
+  assert.match(flow, /text: "Close"[\s\S]*optional: true[\s\S]*extendedWaitUntil/);
   assert.match(flow, /extendedWaitUntil:\n\s+visible: "Developer Launcher"\n\s+timeout: 60000/);
   assert.match(flow, /id: "dev-button-activity"/);
   assert.match(flow, /waitForAnimationToEnd:\n\s+timeout: 3000/);
@@ -101,6 +106,11 @@ test("native media picker smoke reaches the post composer gallery entry point", 
   assert.match(flow, /text: "Hungry, http:\/\/\.\*:8081"/);
   assert.match(flow, /text: "Continue"/);
   assert.match(flow, /text: "Close"/);
+  assert.match(flow, /visible: "Enter URL manually"/);
+  assert.match(flow, /point: "50%,34%"/);
+  assert.match(flow, /inputText: "exp:\/\/127\.0\.0\.1:8081"/);
+  assert.match(flow, /tapOn: "Connect"/);
+  assert.match(flow, /text: "Close"[\s\S]*optional: true[\s\S]*extendedWaitUntil/);
   assert.match(flow, /extendedWaitUntil:\n\s+visible: "Developer Launcher"\n\s+timeout: 60000/);
   assert.match(flow, /dev-section-toggle-post-composer-v2-settings/);
   assert.match(flow, /dev-button-launch-v2-composer/);

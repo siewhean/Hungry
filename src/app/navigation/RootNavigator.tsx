@@ -635,7 +635,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           ) : null}
           <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
           <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
-          <RootStack.Screen getComponent={loadBuildingDrillDownScreen} name="BuildingDrillDown" />
+          {FEATURE_FLAGS.floorplansEnabled ? (
+            <RootStack.Screen getComponent={loadBuildingDrillDownScreen} name="BuildingDrillDown" />
+          ) : null}
           <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
           <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />
           <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
@@ -645,10 +647,15 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetailV2" />
               <RootStack.Screen getComponent={loadDishSearchScreenV2} name="SearchHomeV2" />
               <RootStack.Screen getComponent={loadStallDetailScreenV2} name="StallDetailV2" />
-              <RootStack.Screen
-                getComponent={loadBuildingDrillDownScreenV2}
-                name="BuildingDrillDownV2"
-              />
+              {FEATURE_FLAGS.floorplansEnabled ? (
+                <>
+                  <RootStack.Screen
+                    getComponent={loadBuildingDrillDownScreenV2}
+                    name="BuildingDrillDownV2"
+                  />
+                  <RootStack.Screen getComponent={loadVenueDirectoryScreen} name="VenueDirectory" />
+                </>
+              ) : null}
               <RootStack.Screen getComponent={loadQuickReviewSheetV2} name="QuickReviewV2" />
               <RootStack.Screen getComponent={loadSplashScreenV2} name="SplashV2" />
               <RootStack.Screen getComponent={loadDesignGalleryScreen} name="DesignGallery" />
@@ -658,7 +665,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
                 name="PostComposerV2"
                 options={{ gestureEnabled: false }}
               />
-              <RootStack.Screen getComponent={loadVenueDirectoryScreen} name="VenueDirectory" />
             </>
           ) : null}
           {FEATURE_FLAGS.merchantCentreEnabled ? (

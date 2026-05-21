@@ -14,7 +14,7 @@ const groups = [
     assetDir: "src/assets/discover",
     scanDirs: ["src", "tasks"],
     source:
-      "Generated bitmap food art and app-card artwork; release requires generated-art provenance notes.",
+      "Generated bitmap food art and app-card artwork; provenance is recorded in tasks/asset-provenance.md.",
   },
   {
     key: "passport",

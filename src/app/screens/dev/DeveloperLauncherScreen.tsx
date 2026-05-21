@@ -17,6 +17,7 @@ import { ChevronDown, ChevronRight, Wifi, WifiOff, Zap } from "lucide-react-nati
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, Button, Card, Screen } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import {
   prefetchDishDetail,
   prefetchStallDetail,
@@ -501,6 +502,11 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   };
 
   const openBuilding = (buildingId: string) => {
+    if (!FEATURE_FLAGS.floorplansEnabled) {
+      showToast({ message: "Floorplan routes are disabled for this build.", tone: "info" });
+      return;
+    }
+
     const building = getSingaporeBuildings().find((b) => b.id === buildingId);
     if (!building) return;
     const summary = {
@@ -674,17 +680,19 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             onV1={() => openSampleDishDetail("v1")}
             onV2={() => openSampleDishDetail("v2")}
           />
-          <VersionPair
-            label="Building"
-            onV1PressIn={() =>
-              preloadRoute(navigation, "BuildingDrillDown", { buildingId: "hc-maxwell" })
-            }
-            onV2PressIn={() =>
-              preloadRoute(navigation, "BuildingDrillDownV2", { buildingId: "hc-maxwell" })
-            }
-            onV1={() => openBuilding("hc-maxwell")}
-            onV2={() => navigation.navigate("BuildingDrillDownV2", { buildingId: "hc-maxwell" })}
-          />
+          {FEATURE_FLAGS.floorplansEnabled ? (
+            <VersionPair
+              label="Building"
+              onV1PressIn={() =>
+                preloadRoute(navigation, "BuildingDrillDown", { buildingId: "hc-maxwell" })
+              }
+              onV2PressIn={() =>
+                preloadRoute(navigation, "BuildingDrillDownV2", { buildingId: "hc-maxwell" })
+              }
+              onV1={() => openBuilding("hc-maxwell")}
+              onV2={() => navigation.navigate("BuildingDrillDownV2", { buildingId: "hc-maxwell" })}
+            />
+          ) : null}
           <VersionPair
             label="QuickReview"
             onV1PressIn={() => preloadRoute(navigation, "ReviewStack", { screen: "ReviewMain" })}
@@ -1035,9 +1043,11 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         </CollapsibleSection>
 
         {/* ── SG Building Picker ─────────────────────────── */}
-        <CollapsibleSection title="SG Building Picker" subtitle="Jump to floor plan">
-          <SGBuildingPickerContent onOpenBuilding={openBuilding} />
-        </CollapsibleSection>
+        {FEATURE_FLAGS.floorplansEnabled ? (
+          <CollapsibleSection title="SG Building Picker" subtitle="Jump to floor plan">
+            <SGBuildingPickerContent onOpenBuilding={openBuilding} />
+          </CollapsibleSection>
+        ) : null}
 
         {/* ── Data Inspector ─────────────────────────────── */}
         <CollapsibleSection title="Data inspector" badge="Mock">

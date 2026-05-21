@@ -220,7 +220,7 @@ const loadMerchantSettingsScreen = () =>
     ).MerchantSettingsScreen,
   );
 
-function MerchantTabBar({ state, descriptors, navigation }: any) {
+function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const account = useMerchantStore((storeState) => storeState.account);
@@ -238,11 +238,16 @@ function MerchantTabBar({ state, descriptors, navigation }: any) {
         },
       ]}
     >
-      {state.routes.map((route: any, index: number) => {
+      {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
+        const tabBarStyle = StyleSheet.flatten(options.tabBarStyle);
+        const tabBarDisplay =
+          tabBarStyle && typeof tabBarStyle === "object" && "display" in tabBarStyle
+            ? tabBarStyle.display
+            : undefined;
 
         // Hide routes that shouldn't be in the tab bar
-        if (options.tabBarStyle?.display === "none") {
+        if (tabBarDisplay === "none") {
           return null;
         }
 

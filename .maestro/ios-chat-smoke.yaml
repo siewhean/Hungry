@@ -14,6 +14,18 @@ appId: ${APP_ID}
 - tapOn:
     text: "Close"
     optional: true
+- runFlow:
+    when:
+      visible: "Enter URL manually"
+    commands:
+      - tapOn: "Enter URL manually"
+      - tapOn:
+          point: "50%,34%"
+      - inputText: "exp://127.0.0.1:8081"
+      - tapOn: "Connect"
+- tapOn:
+    text: "Close"
+    optional: true
 - extendedWaitUntil:
     visible: "Developer Launcher"
     timeout: 60000
