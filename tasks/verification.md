@@ -838,6 +838,13 @@ Use the smallest check that matches the change risk.
 | 2026-05-21 | app (Safe Public V1 final post-asset gate) | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass after unrestricted retry | Sandboxed run failed Expo/React Native Directory DNS (`ENOTFOUND exp.host`); unrestricted rerun passed 17/17 checks |
 | 2026-05-21 | app/Supabase (Safe Public V1 final smoke) | `npm run smoke:supabase-chat` | Skipped | Skip-safe command exits 0 and reports missing Supabase smoke URL/keys plus `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1` |
 | 2026-05-21 | app/Supabase/OCR (Safe Public V1 final smoke) | `npm run smoke:ocr-staging` | Skipped | Skip-safe command exits 0 and reports missing Supabase smoke URL/keys, `HUNGRY_OCR_SMOKE_IMAGE_PATH`, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`; Edge Function also needs `GOOGLE_CLOUD_VISION_API_KEY` |
+| 2026-05-21 | app/Supabase (Safe Public V1 staging apply preflight) | `npx --no-install supabase db push --dry-run` | Pass | Linked staging project `vlqfgmrsprbrgzteixsj` would push only `0039_merchant_portal_readiness.sql` and `0040_release_hardening_account_deletion_merchant_rpcs.sql` |
+| 2026-05-21 | app/Supabase (Safe Public V1 staging apply) | `npx --no-install supabase db push --yes` | Pass | User explicitly approved applying `0039` and `0040` to linked Hungry staging; CLI applied both migrations successfully with expected idempotent policy-drop notices |
+| 2026-05-21 | app/Supabase (Safe Public V1 post-apply dry-run) | `npx --no-install supabase db push --dry-run` | Pass | Linked staging remote reports `Remote database is up to date` after applying `0039` and `0040` |
+| 2026-05-21 | app/Supabase (Safe Public V1 account deletion/merchant RPC smoke) | `npx --no-install supabase db query --linked -f supabase/smoke/account_deletion_merchant_rpc_hardening.sql -o table` | Pass | Read-only smoke returned no findings, confirming required account-deletion metadata, audit table, hardening RPCs, and direct merchant insert-policy guards are present |
+| 2026-05-21 | app/Supabase (Safe Public V1 store policy smoke) | `npx --no-install supabase db query --linked -f supabase/smoke/store_policy_safety_controls.sql -o table` | Pass | Linked smoke returned expected authenticated/service-role policies for account deletion, content reports, and user blocks |
+| 2026-05-21 | app/Supabase (Safe Public V1 post-apply static audit) | `npm run audit:supabase:static` | Pass | Static audit reports 40 migrations through `0040`, 86 created tables, 201 policies, and no anon write policies |
+| 2026-05-21 | app/CI/security (Safe Public V1 post-apply static audit) | `npm run check:edge-functions` | Pass | Edge Function static checks passed after staging migration apply |
 
 ## Outstanding Verification
 

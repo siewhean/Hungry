@@ -174,12 +174,19 @@ Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewabili
 | 2026-05-21 | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass after unrestricted retry | Sandboxed run failed network-backed Expo/React Native Directory checks with `ENOTFOUND exp.host`; unrestricted rerun passed 17/17. |
 | 2026-05-21 | `npm run smoke:supabase-chat` | Skipped | Skip-safe smoke still exits 0 and reports missing Supabase smoke URL/keys plus `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`. |
 | 2026-05-21 | `npm run smoke:ocr-staging` | Skipped | Skip-safe smoke still exits 0 and reports missing Supabase smoke URL/keys, `HUNGRY_OCR_SMOKE_IMAGE_PATH`, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`; Edge Function also needs `GOOGLE_CLOUD_VISION_API_KEY`. |
+| 2026-05-21 | `npx --no-install supabase db push --dry-run` | Pass | Pre-apply linked staging dry-run for project `vlqfgmrsprbrgzteixsj` would push only `0039_merchant_portal_readiness.sql` and `0040_release_hardening_account_deletion_merchant_rpcs.sql`. |
+| 2026-05-21 | `npx --no-install supabase db push --yes` | Pass | User explicitly approved applying `0039` and `0040` to linked Hungry staging Supabase project; CLI applied both migrations successfully. Notices were expected first-run policy drops for idempotency. |
+| 2026-05-21 | `npx --no-install supabase db push --dry-run` | Pass | Post-apply linked staging dry-run reports `Remote database is up to date`. |
+| 2026-05-21 | `npx --no-install supabase db query --linked -f supabase/smoke/account_deletion_merchant_rpc_hardening.sql -o table` | Pass | Read-only smoke returned no findings, meaning required account-deletion metadata, audit table, RPCs, and direct merchant insert-policy guards are present. |
+| 2026-05-21 | `npx --no-install supabase db query --linked -f supabase/smoke/store_policy_safety_controls.sql -o table` | Pass | Linked smoke returned expected account deletion, content report, and block policies. |
+| 2026-05-21 | `npm run audit:supabase:static` | Pass | Post-apply static audit reports 40 migrations through `0040`, 86 created tables, 201 policies, and 0 anon write policies. |
+| 2026-05-21 | `npm run check:edge-functions` | Pass | Post-apply edge-function static checks passed. |
 
 ### Remaining Production Blockers
 
 - Finish manual QA for bottom-tab swipes versus horizontal rails.
 - Keep DMs, merchant centre, comments, stories, collections, gamification, OAuth providers, and indoor floorplans production-disabled until backend moderation, role, provider, tap-accuracy, and readiness gates are complete.
-- Apply pending Supabase migrations `0039_merchant_portal_readiness.sql` and `0040_release_hardening_account_deletion_merchant_rpcs.sql` to staging/production after explicit target/environment approval, then rerun account-deletion, merchant, OCR, and ops smoke tests.
+- Run live Supabase/OCR/account-deletion/merchant smoke with configured smoke URL, anon key, service-role key, `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`, OCR image path, and required Edge Function secrets. Staging migrations `0039` and `0040` are now applied.
 - Marketing web food assets remain 95.6 MiB and should be compressed or CDN-backed before the marketing website production launch; they are web-only and not a mobile public-v1 blocker.
 - Complete manual tap-accuracy QA for `hc-maxwell:L1`. OpenCV validation and overlay generation now pass in the repo venv.
 - Run `npm run smoke:ocr-staging` with required Supabase smoke URL/keys, `HUNGRY_OCR_SMOKE_IMAGE_PATH`, `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`, and Edge Function `GOOGLE_CLOUD_VISION_API_KEY`. Repo-side source contracts now prove `dishes_draft` is not queried by consumer Supabase reads and is confined to supply/merchant/ops paths.
