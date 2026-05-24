@@ -7,27 +7,35 @@ This checklist is the canonical release gate for Apple App Store and Google Play
 ## Required Technical Gates
 
 1. `npm run typecheck` passes.
-2. `npm test -- --watch=false` passes.
-3. `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor` passes.
-4. Manual app smoke on iOS and Android for critical paths:
-- Auth (login/signup/forgot/reset)
-- Discover -> Stall -> Dish navigation
-- Review creation and submission
-- Post composer open/create/cancel flow
+2. `npm run test` passes.
+3. `npm run audit:supabase:static` passes.
+4. `npm run audit:assets` passes.
+5. `npm run security:trufflehog` passes.
+6. `npm run security:audit` passes.
+7. `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` passes.
+8. `npm run smoke:native:ios:prepared` passes on a prepared simulator/device.
+9. Android/EAS build or device smoke proof is attached.
+10. Live Supabase behavior smokes pass for chat/DM, social/gamification, Full Audit V1 readiness, and OCR.
 
 ## Required Product/Policy Gates
 
 1. No reviewer-visible mock/placeholder behavior in release path.
 2. App metadata accurately reflects shipped features and flows.
 3. Privacy policy is public, accessible, and linked in-app.
-4. Account deletion requirement is satisfied (in-app and external web path) when account creation exists.
-5. Google Play Data safety answers are consistent with real app behavior.
+4. Account deletion requirement is satisfied in-app and through a public external web path when account creation exists.
+5. Apple App Store Connect privacy labels are consistent with real app behavior.
+6. Google Play Data Safety and account-deletion answers are consistent with real app behavior.
+7. Reviewer access/test steps are available for gated/authenticated flows.
+8. Supabase leaked-password protection and remaining Security Advisor items are resolved or explicitly accepted by the owner with documented rationale.
 
 ## Required Evidence Surfaces
 
 1. `tasks/backlog.md` rows for release blockers are updated with status.
 2. `tasks/verification.md` includes dated rows for latest gate runs.
 3. `tasks/session-log.md` includes release work log entries.
+4. `tasks/backlog.md` and `tasks/verification.md` name any remaining No-Go blockers and latest evidence.
+5. `npm run release:ready` exits 0 only when local gates pass and external blockers are cleared.
+6. `npm run release:ready:local` can be used for local gate rehearsal without claiming public-launch readiness.
 
 ## Verdict
 

@@ -1,5 +1,23 @@
 const babel = require("@babel/core");
-const expoTransformer = require("@expo/metro-config/build/babel-transformer");
+const path = require("path");
+
+function resolveExpoTransformer() {
+  try {
+    return require("@expo/metro-config/build/babel-transformer");
+  } catch (error) {
+    if (error?.code !== "MODULE_NOT_FOUND") {
+      throw error;
+    }
+  }
+
+  const expoPackagePath = require.resolve("expo/package.json");
+  const expoRoot = path.dirname(expoPackagePath);
+  return require(
+    path.join(expoRoot, "node_modules", "@expo", "metro-config", "build", "babel-transformer.js"),
+  );
+}
+
+const expoTransformer = resolveExpoTransformer();
 
 const transformReactJsx = require("@babel/plugin-transform-react-jsx");
 const t = babel.types;
