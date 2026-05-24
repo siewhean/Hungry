@@ -165,11 +165,39 @@
 .visualContent {
   position: relative;
   min-height: clamp(34rem, 66vw, 50rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+}
+
+.phoneWrapper {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.phoneMockup {
+  width: min(
+    100%,
+    30rem,
+    calc((100svh - var(--announcement-height) - var(--header-height) - var(--space-20)) * 0.478)
+  );
+  min-width: min(17rem, 100%);
+  aspect-ratio: 71.5 / 149.6;
+  filter: drop-shadow(0 28px 52px rgb(26 46 68 / 0.26));
+  pointer-events: auto;
+  transform-origin: center;
 }
 
 .foodOrbit {
   position: absolute;
   inset: 0;
+  z-index: 2;
   pointer-events: none;
 }
 
@@ -181,6 +209,7 @@
   border-radius: 50%;
   box-shadow: var(--shadow-float);
   overflow: hidden;
+  z-index: 1;
   pointer-events: auto;
 }
 
@@ -189,49 +218,30 @@
 }
 
 .foodCard1 {
-  top: 7%;
-  left: 2%;
+  top: 5%;
+  left: -1%;
 }
 
 .foodCard2 {
-  right: 6%;
-  top: 8%;
+  right: 0;
+  top: 6%;
 }
 
 .foodCard3 {
-  left: 4%;
-  bottom: 9%;
-}
-
-.deviceCluster {
-  position: absolute;
-  inset: 5% 9% 7% 18%;
-  display: grid;
-  place-items: center;
-}
-
-.deviceCluster > figure:first-child {
-  width: min(52vw, 21rem);
-  transform: rotate(-3deg);
-}
-
-.secondaryScreen {
-  position: absolute;
-  right: -7%;
-  bottom: 7%;
-  width: min(48vw, 25rem);
-  transform: rotate(5deg);
+  left: 0;
+  bottom: 8%;
 }
 
 .chipLayer {
   position: absolute;
   inset: 0;
+  z-index: 8;
   pointer-events: none;
 }
 
 .floatChip {
   position: absolute;
-  z-index: 6;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   min-height: 2.8rem;
@@ -248,28 +258,23 @@
 }
 
 .chip1 {
-  top: 24%;
-  left: 0;
+  top: 18%;
+  left: 1%;
 }
 
 .chip2 {
   top: 36%;
-  right: 0;
+  right: -1%;
 }
 
 .chip3 {
-  left: 18%;
-  bottom: 16%;
+  top: 54%;
+  left: 4%;
 }
 
 .chip4 {
-  right: 6%;
+  right: 2%;
   bottom: 25%;
-}
-
-.chip5 {
-  left: 38%;
-  top: 8%;
 }
 
 .orange {
@@ -298,6 +303,52 @@
   }
 }
 
+@media (max-width: 979px) {
+  .visualContent {
+    min-height: clamp(40rem, 86vw, 50rem);
+  }
+
+  .foodCard {
+    width: clamp(7.75rem, 20vw, 12rem);
+    border-width: 7px;
+  }
+
+  .foodCard1 {
+    top: 4%;
+    left: 6%;
+  }
+
+  .foodCard2 {
+    top: 5%;
+    right: 6%;
+  }
+
+  .foodCard3 {
+    left: 7%;
+    bottom: 7%;
+  }
+
+  .chip1 {
+    top: 18%;
+    left: 6%;
+  }
+
+  .chip2 {
+    top: 38%;
+    right: 5%;
+  }
+
+  .chip3 {
+    top: 56%;
+    left: 6%;
+  }
+
+  .chip4 {
+    right: 6%;
+    bottom: 20%;
+  }
+}
+
 @media (max-width: 760px) {
   .heroSection {
     min-height: calc(100svh - var(--announcement-height));
@@ -321,21 +372,12 @@
   }
 
   .visualContent {
-    min-height: 35rem;
+    min-height: min(40rem, calc(100svh - var(--announcement-height) - var(--space-8)));
   }
 
-  .deviceCluster {
-    inset: 8% 6%;
-  }
-
-  .deviceCluster > figure:first-child {
-    width: min(72vw, 18rem);
-  }
-
-  .secondaryScreen {
-    right: 0;
-    bottom: 8%;
-    width: min(78vw, 22rem);
+  .phoneMockup {
+    width: min(82vw, 24rem, calc((100svh - var(--announcement-height) - var(--space-8)) * 0.478));
+    min-width: min(15.5rem, 82vw);
   }
 
   .foodCard1 {
@@ -348,8 +390,7 @@
   }
 
   .chip1,
-  .chip4,
-  .chip5 {
+  .chip4 {
     display: none;
   }
 }

@@ -6,7 +6,7 @@ export default function AnnouncementBar() {
     <div className={styles.announcementBar}>
       <div className={styles.announcementText}>
         <span>Hungry is coming soon in Singapore.</span>
-        <Link href="/for-foodies" className={styles.highlight}>
+        <Link href="/join-waitlist" className={styles.highlight}>
           Join the waitlist
         </Link>
       </div>

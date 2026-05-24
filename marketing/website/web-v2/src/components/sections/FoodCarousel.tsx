@@ -8,11 +8,11 @@ export default function FoodCarousel() {
     <section className={styles.section} id="hawker-culture">
       <div className="container-wide">
         <Reveal className={styles.header}>
-          <span className={styles.eyebrow}>Singapore eating culture</span>
-          <h2>Built for the way Singapore eats.</h2>
+          <span className={styles.eyebrow}>Singapore food coverage</span>
+          <h2>One flow for everyday food decisions.</h2>
           <p>
-            Hawker stalls, kopitiam staples, cafes, restaurants, and small food makers can all sit
-            in one dish-led discovery flow.
+            Hawker stalls, kopitiam staples, cafes, restaurants, and small food makers are easier to
+            compare when the dish is the starting point.
           </p>
         </Reveal>
       </div>

@@ -29,9 +29,13 @@ export default function ProblemStack() {
                 distance={42}
                 key={problem}
               >
-                <span className={styles.cardIndex}>0{index + 1}</span>
-                <Icon aria-hidden size={26} />
-                <p>{problem}</p>
+                <div className={styles.problemLine}>
+                  <span className={styles.cardIndex}>0{index + 1}</span>
+                  <span className={styles.iconWrap}>
+                    <Icon aria-hidden size={18} />
+                  </span>
+                  <p className={styles.problemText}>{problem}</p>
+                </div>
               </Reveal>
             );
           })}
@@ -40,11 +44,8 @@ export default function ProblemStack() {
             <div className={styles.solutionIcon}>
               <Utensils aria-hidden size={24} />
             </div>
-            <h3>Hungry connects craving, proof, and merchant updates.</h3>
-            <p>
-              The result is a product story that feels local, useful, and alive instead of another
-              static restaurant directory.
-            </p>
+            <h3>Hungry puts the dish, the proof, and the latest details together.</h3>
+            <p>Foodies can decide faster, and merchants can keep what customers see accurate.</p>
           </Reveal>
         </div>
       </div>

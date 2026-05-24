@@ -19,7 +19,7 @@ export default function Navbar() {
         </nav>
 
         <div className={styles.actions}>
-          <Link href="/for-foodies" className={styles.ctaButton}>
+          <Link href="/join-waitlist" className={styles.ctaButton}>
             Join Waitlist
           </Link>
         </div>

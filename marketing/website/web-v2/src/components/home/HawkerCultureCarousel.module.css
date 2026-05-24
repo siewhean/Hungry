@@ -1,5 +1,6 @@
 .carouselShell {
   position: relative;
+  padding-inline: clamp(var(--space-4), 4vw, var(--space-8));
 }
 
 .controls {
@@ -41,8 +42,8 @@
   overscroll-behavior-x: contain;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
-  padding: 0 var(--space-4) var(--space-2);
-  margin: 0 calc(var(--space-4) * -1);
+  padding: 0 0 var(--space-2);
+  margin: 0;
 }
 
 .rail::-webkit-scrollbar {

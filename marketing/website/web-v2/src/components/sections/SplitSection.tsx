@@ -11,10 +11,10 @@ export default function SplitSection() {
       <div className="container-wide">
         <Reveal className={styles.header}>
           <span className={styles.eyebrow}>Two sides of one food map</span>
-          <h2>Built for foodies and merchants.</h2>
+          <h2>One decision problem, solved from both sides.</h2>
           <p>
-            The homepage should prove Hungry is not another static directory. It is a living bridge
-            between cravings and the businesses serving them.
+            Foodies need confidence before they make the trip. Merchants need a better way to show
+            what is actually worth ordering today.
           </p>
         </Reveal>
 
@@ -25,7 +25,8 @@ export default function SplitSection() {
                 <Image
                   src={audience.image.src}
                   alt={audience.image.alt}
-                  fill
+                  width={1200}
+                  height={750}
                   sizes="(max-width: 768px) 100vw, 50vw"
                 />
               </div>

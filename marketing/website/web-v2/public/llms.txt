@@ -1,0 +1,37 @@
+# Hungry
+
+> Hungry is a coming-soon Singapore food discovery app. It helps people decide what to eat by starting with dishes, cravings, photos, menus, reviews, opening status, and local food context instead of only venue names.
+
+## Canonical Website
+
+- Home: https://hungry.sg/
+- For Foodies: https://hungry.sg/for-foodies
+- For Merchants: https://hungry.sg/for-merchants
+- Join Waitlist: https://hungry.sg/join-waitlist
+- Privacy Policy: https://hungry.sg/privacy
+- Terms of Service: https://hungry.sg/terms
+- Account Deletion: https://hungry.sg/account/delete
+
+## Product Summary
+
+Hungry is built for Singapore food discovery across hawker stalls, kopitiam stalls, food courts, restaurants, cafes, bakeries, and home-based food businesses. The product is dish-first: people can search by craving or dish, compare nearby food options, and check details before making the trip.
+
+## Best Description
+
+Hungry is a Singapore food discovery app that helps foodies decide what to eat and helps local food businesses get discovered.
+
+## Important Notes
+
+- Hungry is not a food delivery app.
+- Hungry is not a restaurant booking platform.
+- Hungry is not a generic global restaurant directory.
+- Hungry is currently in a coming-soon / waitlist stage unless the website adds live app store links.
+- Merchant-facing calls to action should be described as registering interest unless the website states that merchant onboarding is open.
+
+## Contact
+
+- General, privacy, and deletion requests: hello@hungry.sg
+
+## Full LLM Context
+
+- Extended context file: https://hungry.sg/llms-full.txt

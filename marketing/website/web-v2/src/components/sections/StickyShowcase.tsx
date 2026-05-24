@@ -8,15 +8,15 @@ export default function StickyShowcase() {
     <section className={styles.section} id="product-story">
       <div className="container-wide">
         <Reveal className={styles.header}>
-          <span className={styles.eyebrow}>Product proof</span>
-          <h2>Scroll through the decision flow.</h2>
+          <span className={styles.eyebrow}>App screens</span>
+          <h2>The app shows the answer before the trip.</h2>
           <p>
-            The site uses real Hungry prototype screens as the centrepiece, then lets the
-            surrounding story move around the product instead of hiding it in a static mockup.
+            Each screen maps to a real food-decision pain point: what looks good, what is open,
+            what to order, and what merchants can keep current.
           </p>
         </Reveal>
+        <StickyScreenStory screens={homepage.productStory} />
       </div>
-      <StickyScreenStory screens={homepage.productStory} />
     </section>
   );
 }

@@ -300,15 +300,15 @@ export const merchantPage = {
         icon: "visibility",
       },
       {
-        title: "Keep menus accurate",
+        title: "Keep stall information accurate",
         description:
-          "Update dish names, photos, prices, and availability before stale information costs a visit.",
+          "Keep menus, prices, opening hours, photos, and other stall details current before stale information costs a visit.",
         icon: "menu",
       },
       {
-        title: "Make hours trustworthy",
+        title: "Help diners know your stall",
         description:
-          "Share regular hours, rest days, and closures so customers do not arrive disappointed.",
+          "Show what you serve, when you are open, where to find you, and why your stall is worth visiting.",
         icon: "hours",
       },
     ],
