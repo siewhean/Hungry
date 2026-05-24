@@ -4,6 +4,7 @@
     "slug": "hungry-mobile",
     "version": "0.1.0",
     "runtimeVersion": "0.1.0",
+    "icon": "./assets/images/Logo/hungry_logo_icon_transparent.png",
     "updates": {
       "enabled": false
     },

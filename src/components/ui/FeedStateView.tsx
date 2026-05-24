@@ -9,6 +9,9 @@ interface FeedStateViewProps {
   title?: string;
   body?: string;
   ctaLabel?: string;
+  errorMessage?: string;
+  errorContext?: string;
+  onSendError?: () => void;
   loadingMessage?: string;
   onPress?: () => void;
 }
@@ -18,6 +21,9 @@ export function FeedStateView({
   title,
   body,
   ctaLabel,
+  errorMessage,
+  errorContext,
+  onSendError,
   loadingMessage,
   onPress,
 }: FeedStateViewProps) {
@@ -55,6 +61,9 @@ export function FeedStateView({
           (state === "error" ? "Please try again." : "Try adjusting filters and check again.")
         }
         ctaLabel={ctaLabel}
+        errorMessage={state === "error" ? errorMessage : undefined}
+        sendErrorContext={errorContext}
+        onSendError={onSendError}
         onPress={onPress}
       />
     </View>

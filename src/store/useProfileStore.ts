@@ -38,7 +38,7 @@ interface ProfileState {
     { rating: number; text: string; tags: string[]; createdAt: string }
   >;
   applyProfile: (profile: UserProfile) => void;
-  syncProfile: (isAuthenticated: boolean) => void;
+  syncProfile: (isAuthenticated: boolean, userId?: string | null) => void;
   toggleFavourite: (dish: DishDetail) => void;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email" | "avatarUrl">>) => void;
   setProfileVisibility: (profileVisibility: ProfileVisibility) => void;
@@ -47,6 +47,7 @@ interface ProfileState {
   setDietaryPreferences: (dietaryPreferences: DietaryFlag[]) => void;
   addReview: (dish: DishDetail) => void;
   addReviewedDish: (dishId: string) => void;
+  removeReviewedDish: (dishId: string) => void;
   recordReviewEntry: (
     dishId: string,
     entry: { rating: number; text: string; tags: string[] },
@@ -286,8 +287,8 @@ export const useProfileStore = create<ProfileState>()(
             vector: profile.tasteVector,
           },
         }),
-      syncProfile: (isAuthenticated) => {
-        set({ profile: getDataRepository().getProfile(isAuthenticated) });
+      syncProfile: (isAuthenticated, userId) => {
+        set({ profile: getDataRepository().getProfile(isAuthenticated, userId) });
       },
       toggleFavourite: (dish) => {
         let recordedEvent: TasteInteractionEvent | undefined;
@@ -463,6 +464,20 @@ export const useProfileStore = create<ProfileState>()(
             ? state.profile.reviewedDishIds
             : [...state.profile.reviewedDishIds, dishId];
 
+          return {
+            profile: {
+              ...state.profile,
+              reviewedDishIds,
+              stats: {
+                ...state.profile.stats,
+                dishesReviewed: reviewedDishIds.length,
+              },
+            },
+          };
+        }),
+      removeReviewedDish: (dishId) =>
+        set((state) => {
+          const reviewedDishIds = state.profile.reviewedDishIds.filter((id) => id !== dishId);
           return {
             profile: {
               ...state.profile,

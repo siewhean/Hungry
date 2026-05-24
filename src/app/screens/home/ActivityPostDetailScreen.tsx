@@ -7,6 +7,7 @@ import {
   Heart,
   MessageCircle,
   MessageCircleMore,
+  MoreHorizontal,
   PlayCircle,
   Send,
 } from "lucide-react-native";
@@ -18,6 +19,7 @@ import { ZoomableMedia } from "@/components/social";
 import { AppText, Avatar, Screen } from "@/components/ui";
 import { ACTIVITY_UPDATES } from "@/features/home/activity";
 import { listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
+import { promptPostSafetyActions } from "@/lib/security/communitySafety";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { ReviewCommentsSheet, type ActiveReviewCommentTarget } from "@/components/social";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
@@ -25,6 +27,7 @@ import { useActivityStore } from "@/store/useActivityStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useSocialStore, type SocialComment } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -34,6 +37,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const repository = getDataRepository();
+  const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
   const { postId, updateId } = route.params;
   const publishedPosts = usePublishedPostStore((state) => state.posts);
   const posts = useMemo(() => listSharedStallPostsSync(repository), [publishedPosts, repository]);
@@ -112,10 +116,10 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const interaction = interactions[post.id] ?? {
     liked: false,
     saved: false,
-    likeCount: primaryDish?.reviews.length ?? 0,
+    likeCount: 0,
     saveCount: 0,
     shareCount: 0,
-    commentCount: primaryDish?.reviews.length ?? 0,
+    commentCount: 0,
   };
   const imageHeight = Math.min(Math.max(screenWidth * 1.12, 360), 460);
   const kindLabel = update?.kind === "like" ? "Like" : "Comment";
@@ -158,14 +162,16 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
 
           {post.mediaType === "video" ? (
             <View pointerEvents="none" style={styles.playButtonContainer}>
-              <View style={styles.playButtonBackdrop}>
+              <View
+                style={[styles.playButtonBackdrop, { backgroundColor: palette.mediaScrimSubtle }]}
+              >
                 <PlayCircle color={palette.white} size={54} strokeWidth={1.4} />
               </View>
             </View>
           ) : null}
 
           <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.6)"]}
+            colors={["transparent", palette.mediaScrimStrong]}
             style={[styles.gradientScrim, { height: "40%", top: "60%" }]}
             pointerEvents="none"
           />
@@ -183,7 +189,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
             <AppText variant="h3" style={{ color: palette.white }}>
               {primaryDish?.name ?? venue?.name ?? post.authorName}
             </AppText>
-            <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)" }}>
+            <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
               {venue ? `${venue.name} · ${venue.floor} ${venue.unitNumber}` : post.authorLocation}
             </AppText>
           </View>
@@ -210,6 +216,21 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
             </View>
 
             <View style={styles.inlineActionsRow}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Manage ${post.authorName}'s post`}
+                hitSlop={10}
+                onPress={() =>
+                  promptPostSafetyActions({
+                    postId: post.id,
+                    authorName: post.authorName,
+                    label: "post",
+                  })
+                }
+                style={styles.inlineAction}
+              >
+                <MoreHorizontal color={palette.text} size={24} />
+              </Pressable>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Share post"
@@ -247,31 +268,33 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
                   size={24}
                 />
               </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Open comments"
-                hitSlop={10}
-                onPress={() => {
-                  setActiveCommentReview({
-                    id: post.id,
-                    authorName: post.authorName,
-                    dishName: primaryDish?.name ?? post.authorName,
-                    caption: post.caption,
-                  });
-                  requestAnimationFrame(() => {
-                    commentsSheetRef.current?.present();
-                    commentsSheetRef.current?.snapToIndex(0);
-                  });
-                }}
-                style={styles.inlineAction}
-              >
-                <CommentIcon color={palette.text} size={24} />
-                {interaction.commentCount > 0 ? (
-                  <AppText variant="micro" style={{ color: palette.text }}>
-                    {interaction.commentCount}
-                  </AppText>
-                ) : null}
-              </Pressable>
+              {commentsEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Open comments"
+                  hitSlop={10}
+                  onPress={() => {
+                    setActiveCommentReview({
+                      id: post.id,
+                      authorName: post.authorName,
+                      dishName: primaryDish?.name ?? post.authorName,
+                      caption: post.caption,
+                    });
+                    requestAnimationFrame(() => {
+                      commentsSheetRef.current?.present();
+                      commentsSheetRef.current?.snapToIndex(0);
+                    });
+                  }}
+                  style={styles.inlineAction}
+                >
+                  <CommentIcon color={palette.text} size={24} />
+                  {interaction.commentCount > 0 ? (
+                    <AppText variant="micro" style={{ color: palette.text }}>
+                      {interaction.commentCount}
+                    </AppText>
+                  ) : null}
+                </Pressable>
+              ) : null}
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Like post"
@@ -307,13 +330,15 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
         </View>
       </View>
 
-      <ReviewCommentsSheet
-        activeReview={activeCommentReview}
-        inputRef={commentInputRef}
-        innerRef={commentsSheetRef}
-        seededComments={seededCommentsForActiveReview}
-        onDismiss={() => setActiveCommentReview(null)}
-      />
+      {commentsEnabled ? (
+        <ReviewCommentsSheet
+          activeReview={activeCommentReview}
+          inputRef={commentInputRef}
+          innerRef={commentsSheetRef}
+          seededComments={seededCommentsForActiveReview}
+          onDismiss={() => setActiveCommentReview(null)}
+        />
+      ) : null}
 
       <ReviewShareSheet
         activeReview={activeShareReview}
@@ -359,7 +384,6 @@ const styles = StyleSheet.create({
   },
   playButtonBackdrop: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.28)",
     borderRadius: 36,
     height: 72,
     justifyContent: "center",

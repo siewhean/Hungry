@@ -10,10 +10,14 @@ const SUPABASE_ANON_KEY =
   (process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
     process.env.EXPO_PUBLIC_SUPABASE_KEY?.trim()) ??
   "";
+let configuredDataSourceOverride: HungryDataSource | null = null;
 
 let cachedClient: SupabaseClient | null | undefined;
 
 export function getConfiguredDataSource(): HungryDataSource {
+  if (configuredDataSourceOverride) {
+    return configuredDataSourceOverride;
+  }
   const privateSource = process.env.HUNGRY_DATA_SOURCE?.trim().toLowerCase();
   const publicSource = process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE?.trim().toLowerCase();
   const explicit = privateSource || publicSource;
@@ -21,6 +25,10 @@ export function getConfiguredDataSource(): HungryDataSource {
   if (explicit) return explicit === "supabase" ? "supabase" : "mock";
   // If not explicitly set but credentials are present, prefer supabase automatically.
   return SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0 ? "supabase" : "mock";
+}
+
+export function setConfiguredDataSource(override?: HungryDataSource): void {
+  configuredDataSourceOverride = override ?? null;
 }
 
 export function isSupabaseConfigured(): boolean {

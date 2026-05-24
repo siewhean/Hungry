@@ -6,16 +6,18 @@ import {
   BottomSheetModal,
   BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
-import { MessageCircle, MessageCircleMore, X } from "lucide-react-native";
-
-const CommentIcon = MessageCircle ?? MessageCircleMore;
+import { MessageCircle, MessageCircleMore, MoreHorizontal, X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Avatar, EmptyState, Input } from "@/components/ui";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
+import { promptCommentSafetyActions } from "@/lib/security/communitySafety";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore, type SocialComment, type SocialReply } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+
+const CommentIcon = MessageCircle ?? MessageCircleMore;
 
 export interface ActiveReviewCommentTarget {
   id: string;
@@ -39,7 +41,7 @@ export function ReviewCommentsSheet({
   innerRef,
   onDismiss,
 }: ReviewCommentsSheetProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
   const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
@@ -109,6 +111,10 @@ export function ReviewCommentsSheet({
     setDraftComment("");
   }, [activeReview, activeReplyCommentId, addComment, addReply, draftComment, profile]);
 
+  if (!FEATURE_FLAGS.commentsEnabled) {
+    return null;
+  }
+
   return (
     <BottomSheetModal
       ref={innerRef}
@@ -116,6 +122,7 @@ export function ReviewCommentsSheet({
       enableDynamicSizing={false}
       index={0}
       enablePanDownToClose
+      keyboardBehavior="extend"
       onDismiss={handleDismiss}
       backdropComponent={(props) => (
         <BottomSheetBackdrop
@@ -146,7 +153,7 @@ export function ReviewCommentsSheet({
                 style={{
                   alignItems: "center",
                   backgroundColor: palette.bgSoft,
-                  borderRadius: radii.md,
+                  borderRadius: componentRadii.card,
                   flexDirection: "row",
                   justifyContent: "space-between",
                   paddingHorizontal: spacing[3],
@@ -242,11 +249,35 @@ export function ReviewCommentsSheet({
                 <View style={{ flexDirection: "row", gap: spacing[3] }}>
                   <Avatar uri={comment.authorAvatarUrl} name={comment.authorName} size={36} />
                   <View style={{ flex: 1, gap: 2 }}>
-                    <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                      <AppText variant="bodySmallBold">{comment.authorName}</AppText>
-                      <AppText variant="micro" tone="muted">
-                        {formatTimeAgo(comment.createdAt)}
-                      </AppText>
+                    <View
+                      style={{
+                        alignItems: "center",
+                        flexDirection: "row",
+                        gap: spacing[2],
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                        <AppText variant="bodySmallBold">{comment.authorName}</AppText>
+                        <AppText variant="micro" tone="muted">
+                          {formatTimeAgo(comment.createdAt)}
+                        </AppText>
+                      </View>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Manage comment by ${comment.authorName}`}
+                        hitSlop={8}
+                        onPress={() =>
+                          promptCommentSafetyActions({
+                            commentId: comment.id,
+                            authorName: comment.authorName,
+                            postId: activeReview?.id,
+                            label: "comment",
+                          })
+                        }
+                      >
+                        <MoreHorizontal color={palette.textMuted} size={18} />
+                      </Pressable>
                     </View>
                     <AppText
                       variant="bodySmall"
@@ -280,14 +311,38 @@ export function ReviewCommentsSheet({
                                   alignItems: "center",
                                   flexDirection: "row",
                                   gap: spacing[2],
+                                  justifyContent: "space-between",
                                 }}
                               >
-                                <AppText variant="micro" style={{ fontWeight: "700" }}>
-                                  {reply.authorName}
-                                </AppText>
-                                <AppText variant="micro" tone="muted">
-                                  {formatTimeAgo(reply.createdAt)}
-                                </AppText>
+                                <View
+                                  style={{
+                                    alignItems: "center",
+                                    flexDirection: "row",
+                                    gap: spacing[2],
+                                  }}
+                                >
+                                  <AppText variant="micro" style={{ fontWeight: "700" }}>
+                                    {reply.authorName}
+                                  </AppText>
+                                  <AppText variant="micro" tone="muted">
+                                    {formatTimeAgo(reply.createdAt)}
+                                  </AppText>
+                                </View>
+                                <Pressable
+                                  accessibilityRole="button"
+                                  accessibilityLabel={`Manage reply by ${reply.authorName}`}
+                                  hitSlop={8}
+                                  onPress={() =>
+                                    promptCommentSafetyActions({
+                                      commentId: reply.id,
+                                      authorName: reply.authorName,
+                                      postId: activeReview?.id,
+                                      label: "reply",
+                                    })
+                                  }
+                                >
+                                  <MoreHorizontal color={palette.textMuted} size={16} />
+                                </Pressable>
                               </View>
                               <AppText
                                 variant="bodySmall"

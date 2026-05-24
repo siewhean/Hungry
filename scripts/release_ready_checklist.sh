@@ -22,10 +22,11 @@ echo "external release blockers. Use --local-only for local gate rehearsal."
 run_step "1) Typecheck" npm run typecheck
 run_step "2) Test suite" npm run test
 run_step "3) Static Supabase audit" npm run audit:supabase:static
-run_step "4) Asset audit" npm run audit:assets
-run_step "5) TruffleHog filesystem scan" npm run security:trufflehog
-run_step "6) npm audit" npm run security:audit
-run_step "7) Expo Doctor" env CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .
+run_step "4) Edge Function static checks" npm run check:edge-functions
+run_step "5) Asset audit" npm run audit:assets
+run_step "6) TruffleHog filesystem scan" npm run security:trufflehog
+run_step "7) npm audit" npm run security:audit
+run_step "8) Expo Doctor" env CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .
 
 echo
 echo "[Hungry] Native proof status"

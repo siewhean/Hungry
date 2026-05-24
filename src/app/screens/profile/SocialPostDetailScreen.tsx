@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, TextInput, View, useWindowDimensions } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
@@ -7,6 +7,7 @@ import {
   Heart,
   MessageCircle,
   MessageCircleMore,
+  MoreHorizontal,
   PlayCircle,
   Send,
 } from "lucide-react-native";
@@ -25,11 +26,13 @@ import {
 import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import { listSharedStallPosts, listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
+import { promptPostSafetyActions, targetAuthorKey } from "@/lib/security/communitySafety";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useSocialStore, type SocialComment } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
 import type { StallPost } from "@/types/domain";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -39,6 +42,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const { postId, type } = route.params;
+  const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
   const interactions = useSocialStore((state) => state.interactions);
   const initializeInteractions = useSocialStore((state) => state.initializeInteractions);
   const toggleLike = useSocialStore((state) => state.toggleLike);
@@ -57,6 +61,14 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
 
   const [posts, setPosts] = useState<StallPost[]>(() => listSharedStallPostsSync(repository));
+  const hidePostFromCurrentFeed = useCallback((postId: string) => {
+    setPosts((current) => current.filter((post) => post.id !== postId));
+  }, []);
+  const hideAuthorFromCurrentFeed = useCallback((blockedAuthorKey: string) => {
+    setPosts((current) =>
+      current.filter((post) => targetAuthorKey(post.authorName) !== blockedAuthorKey),
+    );
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -137,7 +149,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
       likeCount: primaryDish?.reviews.length ?? 0,
       saveCount: 0,
       shareCount: 0,
-      commentCount: primaryDish?.reviews.length ?? 0,
+      commentCount: 0,
     };
     const isLiked = interaction.liked;
     const isSaved = interaction.saved;
@@ -176,7 +188,10 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
           </Pressable>
 
           {isCarousel ? (
-            <View pointerEvents="none" style={styles.carouselBadge}>
+            <View
+              pointerEvents="none"
+              style={[styles.carouselBadge, { backgroundColor: palette.mediaScrimSoft }]}
+            >
               <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
                 1 / {mediaUrls.length}
               </AppText>
@@ -185,14 +200,16 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
 
           {feedPost.mediaType === "video" ? (
             <View pointerEvents="none" style={styles.playButtonContainer}>
-              <View style={styles.playButtonBackdrop}>
+              <View
+                style={[styles.playButtonBackdrop, { backgroundColor: palette.mediaScrimSubtle }]}
+              >
                 <PlayCircle color={palette.white} size={54} strokeWidth={1.4} />
               </View>
             </View>
           ) : null}
 
           <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.6)"]}
+            colors={["transparent", palette.mediaScrimStrong]}
             style={[styles.gradientScrim, { height: "40%", top: "60%" }]}
             pointerEvents="none"
           />
@@ -210,7 +227,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
             <AppText variant="h3" style={{ color: palette.white }}>
               {primaryDish?.name ?? venue?.name ?? feedPost.authorName}
             </AppText>
-            <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)" }}>
+            <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
               {venue
                 ? `${venue.name} · ${venue.floor} ${venue.unitNumber}`
                 : feedPost.authorLocation}
@@ -235,6 +252,23 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
             </View>
 
             <View style={styles.inlineActionsRow}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Manage ${feedPost.authorName}'s post`}
+                hitSlop={10}
+                onPress={() =>
+                  promptPostSafetyActions({
+                    postId: feedPost.id,
+                    authorName: feedPost.authorName,
+                    label: "post",
+                    onHidden: hidePostFromCurrentFeed,
+                    onBlocked: hideAuthorFromCurrentFeed,
+                  })
+                }
+                style={styles.inlineAction}
+              >
+                <MoreHorizontal color={palette.text} size={24} />
+              </Pressable>
               <Pressable
                 hitSlop={10}
                 onPress={() => {
@@ -286,32 +320,34 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
                   </AppText>
                 )}
               </Pressable>
-              <Pressable
-                hitSlop={10}
-                style={styles.inlineAction}
-                onPress={() => {
-                  setActiveCommentReview({
-                    id: feedPost.id,
-                    authorName: feedPost.authorName,
-                    dishName: primaryDish?.name ?? feedPost.authorName,
-                    caption: feedPost.caption,
-                  });
-                  requestAnimationFrame(() => {
-                    commentsSheetRef.current?.present();
-                    commentsSheetRef.current?.snapToIndex(0);
-                  });
-                }}
-              >
-                <CommentIcon color={palette.text} size={24} />
-                {interaction.commentCount > 0 && (
-                  <AppText
-                    variant="micro"
-                    style={[styles.inlineActionCount, { color: palette.text }]}
-                  >
-                    {interaction.commentCount}
-                  </AppText>
-                )}
-              </Pressable>
+              {commentsEnabled ? (
+                <Pressable
+                  hitSlop={10}
+                  style={styles.inlineAction}
+                  onPress={() => {
+                    setActiveCommentReview({
+                      id: feedPost.id,
+                      authorName: feedPost.authorName,
+                      dishName: primaryDish?.name ?? feedPost.authorName,
+                      caption: feedPost.caption,
+                    });
+                    requestAnimationFrame(() => {
+                      commentsSheetRef.current?.present();
+                      commentsSheetRef.current?.snapToIndex(0);
+                    });
+                  }}
+                >
+                  <CommentIcon color={palette.text} size={24} />
+                  {interaction.commentCount > 0 && (
+                    <AppText
+                      variant="micro"
+                      style={[styles.inlineActionCount, { color: palette.text }]}
+                    >
+                      {interaction.commentCount}
+                    </AppText>
+                  )}
+                </Pressable>
+              ) : null}
               <Pressable
                 hitSlop={10}
                 onPress={() => void toggleLike(feedPost.id)}
@@ -350,13 +386,15 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
     >
       <View style={{ paddingBottom: spacing[4] }}>{orderedPosts.map(renderFeedPost)}</View>
 
-      <ReviewCommentsSheet
-        activeReview={activeCommentReview}
-        inputRef={commentInputRef}
-        innerRef={commentsSheetRef}
-        seededComments={seededCommentsForActiveReview}
-        onDismiss={() => setActiveCommentReview(null)}
-      />
+      {commentsEnabled ? (
+        <ReviewCommentsSheet
+          activeReview={activeCommentReview}
+          inputRef={commentInputRef}
+          innerRef={commentsSheetRef}
+          seededComments={seededCommentsForActiveReview}
+          onDismiss={() => setActiveCommentReview(null)}
+        />
+      ) : null}
 
       <ReviewShareSheet
         activeReview={activeShareReview}
@@ -395,7 +433,6 @@ const styles = StyleSheet.create({
     right: 12,
     top: 12,
     borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.4)",
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
@@ -413,7 +450,6 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: "rgba(0,0,0,0.28)",
     alignItems: "center",
     justifyContent: "center",
   },

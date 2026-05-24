@@ -10,6 +10,7 @@
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { similarityScore } from "@/lib/ai/similarityScore";
+import { STORY_GALLERY_ASSETS } from "@/lib/services/storyGalleryAssets";
 import {
   blogPosts,
   buildings,
@@ -25,6 +26,7 @@ import {
   merchantCustomerInteractions,
   merchantOCRDrafts,
   merchantPromotions,
+  popularVisitorPins,
   userProfile,
   venues,
 } from "./data";
@@ -58,10 +60,16 @@ import type {
   DishDetail,
   DietaryFlag,
   HawkerTasteTag,
+  MerchantAnalytics,
+  MerchantDishViewEvent,
+  MerchantNotification,
   MerchantNotificationPreferences,
   MerchantPromotion,
   MerchantTeamMember,
+  MerchantWeeklySummary,
   OCRDishDraft,
+  PopularVisitorCandidate,
+  PopularVisitorPin,
   SearchFilters,
   TasteProfile,
   TasteVector,
@@ -69,6 +77,7 @@ import type {
   Story,
   StoryContent,
   MerchantAccount,
+  VenueSummary,
 } from "@/types/domain";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
 import {
@@ -124,8 +133,11 @@ let _merchantPromotionCounter = 0;
 let _merchantOCRDrafts: OCRDishDraft[] = clone(merchantOCRDrafts);
 let _merchantInbox: CustomerInteraction[] = clone(merchantCustomerInteractions);
 let _merchantPromotions: MerchantPromotion[] = clone(merchantPromotions);
+let _popularVisitorPins: PopularVisitorPin[] = clone(popularVisitorPins);
 let _merchantAIInsights = clone(merchantAIInsights);
 let _merchantTeamMemberCounter = 0;
+let _merchantDishViewCounter = 0;
+let _merchantNotificationCounter = 0;
 let _chatConversations: ChatConversation[] = clone(chatConversations);
 let _chatMessages: Record<string, ChatMessage[]> = clone(chatMessages);
 const _chatSubscribers = new Map<string, Set<(message: ChatMessage) => void>>();
@@ -157,7 +169,7 @@ let _mockStories: Story[] = [
       url: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=800&q=80",
     },
     createdAt: new Date(Date.now() - 3600000).toISOString(),
-    interaction: { liked: false, saved: false, likeCount: 120, commentCount: 12, shareCount: 5 },
+    interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
   },
   {
     id: "s2",
@@ -170,7 +182,7 @@ let _mockStories: Story[] = [
       url: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&q=80",
     },
     createdAt: new Date(Date.now() - 7200000).toISOString(),
-    interaction: { liked: false, saved: false, likeCount: 45, commentCount: 3, shareCount: 1 },
+    interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
   },
 ];
 
@@ -311,6 +323,8 @@ const _merchantTeamMembersByAccount = new Map<string, MerchantTeamMember[]>([
         email: merchantAccount.email,
         role: "owner",
         addedAt: merchantAccount.createdAt,
+        inviteStatus: "accepted",
+        acceptedAt: merchantAccount.createdAt,
       },
       {
         id: "tm-2",
@@ -320,6 +334,8 @@ const _merchantTeamMembersByAccount = new Map<string, MerchantTeamMember[]>([
         email: "meilin@hawker.sg",
         role: "manager",
         addedAt: "2026-04-01T09:00:00Z",
+        inviteStatus: "accepted",
+        acceptedAt: "2026-04-01T09:00:00Z",
       },
     ],
   ],
@@ -335,17 +351,9 @@ const DEFAULT_NOTIFICATION_PREFERENCES: MerchantNotificationPreferences = {
 const _merchantNotificationPreferencesByAccount = new Map<string, MerchantNotificationPreferences>([
   [merchantAccount.id, clone(DEFAULT_NOTIFICATION_PREFERENCES)],
 ]);
-const _merchantMenuByOutlet = new Map<string, DishDetail[]>(
-  merchantAccount.outlets.map((outlet) => {
-    const signatureDishes = outlet.signatureDishIds
-      .map((dishId) => dishes.find((dish) => dish.id === dishId))
-      .filter((dish): dish is DishDetail => Boolean(dish));
-    const fallbackDishes = dishes
-      .filter((dish) => dish.buildingId === outlet.buildingId)
-      .slice(0, 8);
-    return [outlet.id, clone(signatureDishes.length > 0 ? signatureDishes : fallbackDishes)];
-  }),
-);
+const _merchantDishViewEvents: MerchantDishViewEvent[] = [];
+const _merchantNotifications: MerchantNotification[] = [];
+const _merchantMenuByOutlet = new Map<string, DishDetail[]>();
 const _biteReactions: Record<string, { cravings: Set<string>; saves: Set<string> }> = {};
 const _merchantClaimInterests = new Set<string>();
 const _merchantInteractionReports: {
@@ -385,17 +393,205 @@ function getMerchantOutlet(outletId: string) {
   return outlet;
 }
 
+function getMockMerchantVenueId(outletId: string): string {
+  return `mock-venue-${outletId}`;
+}
+
+function getMockMerchantSeedDishId(outletId: string, dishId: string): string {
+  return `mock-${outletId}-${dishId}`;
+}
+
+function toMerchantMenuSeedDish(outletId: string, dish: DishDetail): DishDetail {
+  const outlet = getMerchantOutlet(outletId);
+  return {
+    ...dish,
+    id: getMockMerchantSeedDishId(outletId, dish.id),
+    venueId: getMockMerchantVenueId(outletId),
+    buildingId: outlet.buildingId ?? dish.buildingId,
+    venueName: outlet.name,
+    unitNumber: outlet.unitNumber ?? dish.unitNumber,
+    floor: outlet.floor ?? dish.floor,
+    venueVerificationStatus: outlet.verification.status,
+  };
+}
+
 function getMerchantMenu(outletId: string): DishDetail[] {
   const outlet = getMerchantOutlet(outletId);
   const existingMenu = _merchantMenuByOutlet.get(outletId);
-  if (existingMenu) return existingMenu;
+  if (existingMenu) {
+    syncMerchantMenuToUserCatalog(outletId, existingMenu);
+    return existingMenu;
+  }
 
   const seededMenu =
     outlet.signatureDishIds.length > 0
       ? dishes.filter((dish) => outlet.signatureDishIds.includes(dish.id)).slice(0, 8)
       : dishes.filter((dish) => dish.buildingId === outlet.buildingId).slice(0, 8);
-  _merchantMenuByOutlet.set(outletId, clone(seededMenu));
-  return _merchantMenuByOutlet.get(outletId) ?? [];
+  const merchantMenu = seededMenu.map((dish) => toMerchantMenuSeedDish(outletId, dish));
+  _merchantMenuByOutlet.set(outletId, merchantMenu);
+  syncMerchantMenuToUserCatalog(outletId, merchantMenu);
+  return merchantMenu;
+}
+
+function syncMerchantOutletToUserCatalog(
+  outlet: ReturnType<typeof getMerchantOutlet>,
+): VenueSummary {
+  const venueId = getMockMerchantVenueId(outlet.id);
+  const menu = _merchantMenuByOutlet.get(outlet.id) ?? [];
+  const topDishId = menu[0]?.id ?? outlet.signatureDishIds[0] ?? "";
+  const venue: VenueSummary = {
+    id: venueId,
+    buildingId: outlet.buildingId ?? "building-maxwell",
+    name: outlet.name,
+    unitNumber: outlet.unitNumber ?? "",
+    floor: outlet.floor ?? "",
+    isOpen: outlet.isLive && !outlet.temporaryClosure,
+    liveCrowd: "medium",
+    topDishId,
+    operatingHours: outlet.operatingHours,
+    closureNotice: outlet.temporaryClosure,
+    deliveryLinks: outlet.deliveryLinks,
+    verificationStatus: outlet.verification.status,
+  };
+  const venueIndex = venues.findIndex((item) => item.id === venueId);
+  if (venueIndex === -1) {
+    venues.push(venue);
+  } else {
+    venues[venueIndex] = venue;
+  }
+  dishes.forEach((dish) => {
+    if (dish.venueId !== venueId) return;
+    dish.buildingId = venue.buildingId;
+    dish.venueName = venue.name;
+    dish.unitNumber = venue.unitNumber;
+    dish.floor = venue.floor;
+    dish.liveCrowd = dish.liveCrowd ?? venue.liveCrowd;
+    dish.venueVerificationStatus = venue.verificationStatus;
+  });
+  return venue;
+}
+
+function syncMerchantDishToUserCatalog(outletId: string, dish: DishDetail): DishDetail {
+  const outlet = getMerchantOutlet(outletId);
+  const venue = syncMerchantOutletToUserCatalog(outlet);
+  const userVisibleDish: DishDetail = {
+    ...dish,
+    venueId: venue.id,
+    buildingId: venue.buildingId,
+    venueName: venue.name,
+    unitNumber: venue.unitNumber,
+    floor: venue.floor,
+    liveCrowd: dish.liveCrowd ?? venue.liveCrowd,
+    venueVerificationStatus: venue.verificationStatus,
+  };
+  const dishIndex = dishes.findIndex((item) => item.id === userVisibleDish.id);
+  if (dishIndex === -1) {
+    dishes.push(userVisibleDish);
+  } else {
+    dishes[dishIndex] = userVisibleDish;
+  }
+  syncMerchantOutletToUserCatalog(outlet);
+  return userVisibleDish;
+}
+
+function syncMerchantMenuToUserCatalog(outletId: string, menu: DishDetail[]): void {
+  syncMerchantOutletToUserCatalog(getMerchantOutlet(outletId));
+  menu.forEach((dish) => {
+    syncMerchantDishToUserCatalog(outletId, dish);
+  });
+}
+
+function sortPopularVisitorPins(pins: PopularVisitorPin[]): PopularVisitorPin[] {
+  return [...pins].sort((left, right) => {
+    if (left.sortOrder !== right.sortOrder) return left.sortOrder - right.sortOrder;
+    return new Date(right.pinnedAt).getTime() - new Date(left.pinnedAt).getTime();
+  });
+}
+
+function listActivePopularVisitorPins(outletId: string): PopularVisitorPin[] {
+  getMerchantOutlet(outletId);
+  return sortPopularVisitorPins(
+    _popularVisitorPins.filter((pin) => pin.outletId === outletId && pin.isActive),
+  ).slice(0, 6);
+}
+
+function getReviewBackedVisitorCandidates(outletId: string): PopularVisitorCandidate[] {
+  const outlet = getMerchantOutlet(outletId);
+  const venueId = getMockMerchantVenueId(outlet.id);
+  const menu = getMerchantMenu(outlet.id);
+  const fallbackDishName = menu[0]?.name;
+  const activePinByReviewId = new Map(
+    listActivePopularVisitorPins(outlet.id).map((pin) => [pin.reviewId, pin]),
+  );
+
+  return _merchantInbox
+    .filter((interaction) => interaction.outletId === outlet.id && interaction.type === "review")
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .map((interaction) => {
+      const reviewId = interaction.sourceId ?? interaction.id;
+      const activePin = activePinByReviewId.get(reviewId);
+      return {
+        outletId: outlet.id,
+        venueId,
+        reviewId,
+        sourceId: reviewId,
+        authorProfileId: `mock-profile-${interaction.authorName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "")}`,
+        authorName: interaction.authorName,
+        authorAvatarUrl: interaction.authorAvatarUrl,
+        authorLocation: "Singapore",
+        reviewText: interaction.text,
+        rating: interaction.rating ?? 0,
+        dishName: fallbackDishName,
+        visitedAt: interaction.createdAt,
+        isPinned: Boolean(activePin),
+        pinId: activePin?.id,
+        sortOrder: activePin?.sortOrder,
+      } satisfies PopularVisitorCandidate;
+    });
+}
+
+function buildPopularVisitorPin(outletId: string, reviewId: string): PopularVisitorPin {
+  const candidate = getReviewBackedVisitorCandidates(outletId).find(
+    (item) => item.reviewId === reviewId,
+  );
+  if (!candidate) {
+    throw new Error(`Review ${reviewId} was not found for outlet ${outletId}`);
+  }
+  const activePins = listActivePopularVisitorPins(outletId);
+  if (activePins.length >= 6) {
+    throw new Error("A stall can feature up to 6 popular visitors.");
+  }
+  const nextSortOrder = activePins.reduce((max, pin) => Math.max(max, pin.sortOrder), -1) + 1;
+  return {
+    id: `pin-${outletId}-${reviewId}`,
+    outletId: candidate.outletId,
+    venueId: candidate.venueId,
+    reviewId: candidate.reviewId,
+    sourceId: candidate.sourceId,
+    authorProfileId: candidate.authorProfileId,
+    authorName: candidate.authorName,
+    authorAvatarUrl: candidate.authorAvatarUrl,
+    authorLocation: candidate.authorLocation,
+    reviewText: candidate.reviewText,
+    rating: candidate.rating,
+    dishName: candidate.dishName,
+    visitedAt: candidate.visitedAt,
+    pinnedAt: new Date().toISOString(),
+    sortOrder: nextSortOrder,
+    isActive: true,
+  };
+}
+
+function removeMerchantDishFromUserCatalog(outletId: string, dishId: string): void {
+  const venueId = getMockMerchantVenueId(outletId);
+  const dishIndex = dishes.findIndex((dish) => dish.id === dishId && dish.venueId === venueId);
+  if (dishIndex !== -1) {
+    dishes.splice(dishIndex, 1);
+  }
+  syncMerchantOutletToUserCatalog(getMerchantOutlet(outletId));
 }
 
 function uniqueValues(values: string[]): string[] {
@@ -413,11 +609,13 @@ function buildMerchantDish(outletId: string, input: Partial<DishDetail>): DishDe
     getMerchantMenu(outletId)[0] ??
     dishes.find((dish) => dish.buildingId === outlet.buildingId) ??
     dishes[0];
+  const venueId = getMockMerchantVenueId(outletId);
 
   return {
     ...base,
     ...input,
     id: input.id ?? `merchant-dish-${++_merchantDishCounter}`,
+    venueId,
     buildingId: outlet.buildingId ?? base.buildingId,
     venueName: outlet.name,
     unitNumber: outlet.unitNumber ?? base.unitNumber,
@@ -477,6 +675,146 @@ function getNotificationPreferencesForAccount(
   const seeded = clone(DEFAULT_NOTIFICATION_PREFERENCES);
   _merchantNotificationPreferencesByAccount.set(merchantAccountId, seeded);
   return seeded;
+}
+
+function getOutletForDishView(dishId: string): ReturnType<typeof getMerchantOutlet> | undefined {
+  for (const outlet of _merchantAccount.outlets) {
+    const menu = getMerchantMenu(outlet.id);
+    if (menu.some((dish) => dish.id === dishId)) return outlet;
+    const userVisibleVenueId = getMockMerchantVenueId(outlet.id);
+    if (dishes.some((dish) => dish.id === dishId && dish.venueId === userVisibleVenueId)) {
+      return outlet;
+    }
+  }
+  return undefined;
+}
+
+function getDishViewCounts(outletId: string): Map<string, number> {
+  const counts = new Map<string, number>();
+  _merchantDishViewEvents
+    .filter((event) => event.outletId === outletId)
+    .forEach((event) => {
+      counts.set(event.dishId, (counts.get(event.dishId) ?? 0) + 1);
+    });
+  return counts;
+}
+
+function buildMockMerchantAnalytics(
+  outletId: string,
+  dateRange: "today" | "7d" | "30d",
+): MerchantAnalytics {
+  const base =
+    dateRange === "7d"
+      ? merchantAnalytics7d
+      : dateRange === "30d"
+        ? merchantAnalytics30d
+        : merchantAnalyticsToday;
+  const analytics = clone(base);
+  analytics.outletId = outletId;
+  analytics.dateRange = dateRange;
+
+  const menu = getMerchantMenu(outletId);
+  const viewCounts = getDishViewCounts(outletId);
+  const eventViews = Array.from(viewCounts.values()).reduce((sum, count) => sum + count, 0);
+  analytics.dishViews += eventViews;
+  analytics.menuViews += eventViews;
+  analytics.profileVisits += Math.floor(eventViews / 2);
+  analytics.topDishes = menu
+    .map((dish, index) => ({
+      dishId: dish.id,
+      name: dish.name,
+      views: (analytics.topDishes[index]?.views ?? 0) + (viewCounts.get(dish.id) ?? 0),
+      saves: analytics.topDishes[index]?.saves ?? 0,
+    }))
+    .sort((left, right) => right.views - left.views)
+    .slice(0, 5);
+
+  const reviews = _merchantInbox.filter(
+    (interaction) => interaction.outletId === outletId && interaction.type === "review",
+  );
+  const ratings = reviews
+    .map((interaction) => interaction.rating)
+    .filter((rating): rating is number => typeof rating === "number");
+  analytics.reviewCount = ratings.length;
+  analytics.averageRating =
+    ratings.length === 0 ? 0 : ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+  analytics.postInteractions = _merchantInbox.filter(
+    (interaction) => interaction.outletId === outletId,
+  ).length;
+  return analytics;
+}
+
+function createMerchantNotification(
+  input: Omit<MerchantNotification, "id" | "createdAt"> & { createdAt?: string },
+): MerchantNotification {
+  const existing = _merchantNotifications.find(
+    (notification) => notification.dedupeKey === input.dedupeKey,
+  );
+  if (existing) return existing;
+  const notification: MerchantNotification = {
+    ...input,
+    id: `merchant-note-${++_merchantNotificationCounter}`,
+    createdAt: input.createdAt ?? new Date().toISOString(),
+  };
+  _merchantNotifications.push(notification);
+  return notification;
+}
+
+function getLowRatingNotificationsForOutlet(outletId: string): MerchantNotification[] {
+  const outlet = getMerchantOutlet(outletId);
+  const lowReviews = _merchantInbox.filter(
+    (interaction) =>
+      interaction.outletId === outletId &&
+      interaction.type === "review" &&
+      typeof interaction.rating === "number" &&
+      interaction.rating <= 2,
+  );
+  return lowReviews.map((review) =>
+    createMerchantNotification({
+      merchantAccountId: outlet.merchantAccountId,
+      outletId,
+      kind: "low_rating",
+      title: `${outlet.name} received a low rating`,
+      body: `${review.rating?.toFixed(1)} stars: ${review.text.slice(0, 120)}`,
+      status: "unread",
+      dedupeKey: `low-rating:${review.id}`,
+      deepLink: "MerchantTabs/CustomerInbox",
+      metadata: {
+        reviewId: review.id,
+        rating: review.rating ?? null,
+        snippet: review.text,
+      },
+      createdAt: review.createdAt,
+    }),
+  );
+}
+
+function buildWeeklySummaryStats(outletId: string): MerchantWeeklySummary {
+  const analytics = buildMockMerchantAnalytics(outletId, "7d");
+  const interactions = _merchantInbox.filter((interaction) => interaction.outletId === outletId);
+  const reviews = interactions.filter((interaction) => interaction.type === "review");
+  const unrepliedReviews = reviews.filter((review) => !review.reply).length;
+  const promotionViews = _merchantPromotions
+    .filter((promotion) => promotion.outletId === outletId)
+    .reduce((sum, promotion) => sum + (promotion.analytics?.impressions ?? 0), 0);
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - 6);
+  return {
+    id: `weekly-${outletId}-${weekStart.toISOString().slice(0, 10)}`,
+    outletId,
+    weekStart: weekStart.toISOString(),
+    weekEnd: now.toISOString(),
+    totalViews: analytics.profileVisits + analytics.menuViews + analytics.dishViews,
+    dishViews: analytics.dishViews,
+    topDishes: analytics.topDishes,
+    newReviews: reviews.length,
+    averageRating: analytics.averageRating,
+    ratingChange: analytics.averageRating - analytics.previousPeriodComparison.averageRating,
+    unrepliedReviews,
+    promotionViews,
+    createdAt: now.toISOString(),
+  };
 }
 
 // ─── Mock bites feed ─────────────────────────────────────────────────────────
@@ -783,6 +1121,33 @@ export const hungryService: HungryService = {
       return resolve(dishes.find((d) => d.id === id));
     },
 
+    async recordDishView(dishId, context) {
+      const outlet = getOutletForDishView(dishId);
+      if (!outlet) return resolve(undefined);
+      const sessionId =
+        context?.sessionId ??
+        context?.userId ??
+        (_isAuthenticated ? _profile.id : "mock-guest-session");
+      const dedupeWindow = new Date().toISOString().slice(0, 13);
+      const hasRecentView = _merchantDishViewEvents.some(
+        (event) =>
+          event.dishId === dishId &&
+          event.outletId === outlet.id &&
+          event.sessionId === sessionId &&
+          event.viewedAt.slice(0, 13) === dedupeWindow,
+      );
+      if (hasRecentView) return resolve(undefined);
+      _merchantDishViewEvents.push({
+        id: `dish-view-${++_merchantDishViewCounter}`,
+        outletId: outlet.id,
+        dishId,
+        sessionId,
+        userId: context?.userId ?? (_isAuthenticated ? _profile.id : undefined),
+        viewedAt: new Date().toISOString(),
+      });
+      return resolve(undefined);
+    },
+
     async listDishesByVenue(venueId) {
       return resolve(dishes.filter((d) => d.venueId === venueId));
     },
@@ -987,6 +1352,10 @@ export const hungryService: HungryService = {
       return resolve([..._mockStories]);
     },
 
+    async listStoryGalleryAssets() {
+      return resolve([...STORY_GALLERY_ASSETS]);
+    },
+
     async likeStory(storyId: string) {
       await hydrateSocial();
       pruneMockStories();
@@ -1181,6 +1550,26 @@ export const hungryService: HungryService = {
       _blockedUserKeys.add(request.blockedUserKey);
       return resolve(undefined);
     },
+
+    async hidePost(postId, reason) {
+      _contentReports.push({
+        reporterId: _profile.id,
+        targetType: "post",
+        targetId: postId,
+        reason: reason ?? "hidden_by_user",
+      });
+      return resolve(undefined);
+    },
+
+    async unhidePost(postId) {
+      _contentReports.push({
+        reporterId: _profile.id,
+        targetType: "post",
+        targetId: postId,
+        reason: "unhidden_by_user",
+      });
+      return resolve(undefined);
+    },
   },
 
   // ── Content ─────────────────────────────────────────────────────────────────
@@ -1193,6 +1582,13 @@ export const hungryService: HungryService = {
     async listStallPosts() {
       await hydrateSocial();
       return resolve(listMockStallPosts());
+    },
+
+    async listPopularVisitorPinsByVenue(venueId) {
+      const pins = sortPopularVisitorPins(
+        _popularVisitorPins.filter((pin) => pin.venueId === venueId && pin.isActive),
+      ).slice(0, 6);
+      return resolve(clone(pins));
     },
 
     async getArticle(id) {
@@ -1474,6 +1870,7 @@ export const hungryService: HungryService = {
       const outlet = getMerchantOutlet(outletId);
       const normalized = validateMerchantProfileUpdates(updates);
       Object.assign(outlet, normalized);
+      syncMerchantOutletToUserCatalog(outlet);
       return resolve(outlet);
     },
 
@@ -1483,8 +1880,9 @@ export const hungryService: HungryService = {
 
     async addDish(outletId, dish) {
       const menu = getMerchantMenu(outletId);
-      const newDish = buildMerchantDish(outletId, dish);
+      const newDish = buildMerchantDish(outletId, { ...dish, id: undefined });
       menu.push(newDish);
+      syncMerchantDishToUserCatalog(outletId, newDish);
       return resolve(clone(newDish));
     },
 
@@ -1498,6 +1896,7 @@ export const hungryService: HungryService = {
         id: dishId,
       });
       menu[dishIndex] = updatedDish;
+      syncMerchantDishToUserCatalog(outletId, updatedDish);
       return resolve(clone(updatedDish));
     },
 
@@ -1506,6 +1905,7 @@ export const hungryService: HungryService = {
       const dishIndex = menu.findIndex((dish) => dish.id === dishId);
       if (dishIndex === -1) throw new Error(`Dish ${dishId} not found for outlet ${outletId}`);
       menu.splice(dishIndex, 1);
+      removeMerchantDishFromUserCatalog(outletId, dishId);
       return resolve(undefined);
     },
 
@@ -1515,6 +1915,7 @@ export const hungryService: HungryService = {
       if (!dish) throw new Error(`Dish ${dishId} not found for outlet ${outletId}`);
       const isSoldOut = !dish.availabilityFlags.includes("Sold out");
       dish.availabilityFlags = mergeAvailabilityFlag(dish.availabilityFlags, "Sold out", isSoldOut);
+      syncMerchantDishToUserCatalog(outletId, dish);
       return resolve(isSoldOut);
     },
 
@@ -1528,6 +1929,7 @@ export const hungryService: HungryService = {
         "Featured",
         isFeatured,
       );
+      syncMerchantDishToUserCatalog(outletId, dish);
       return resolve(isFeatured);
     },
 
@@ -1554,6 +1956,7 @@ export const hungryService: HungryService = {
         dietaryFlags: draft.suggestedDietaryTags ?? [],
       });
       getMerchantMenu(draft.outletId).push(acceptedDish);
+      syncMerchantDishToUserCatalog(draft.outletId, acceptedDish);
       draft.status = "accepted";
       return resolve(clone(acceptedDish));
     },
@@ -1605,6 +2008,63 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async listPopularVisitorCandidates(outletId) {
+      return resolve(clone(getReviewBackedVisitorCandidates(outletId)));
+    },
+
+    async listPopularVisitorPins(outletId) {
+      return resolve(clone(listActivePopularVisitorPins(outletId)));
+    },
+
+    async pinPopularVisitor(outletId, reviewId) {
+      getMerchantOutlet(outletId);
+      const existing = _popularVisitorPins.find(
+        (pin) => pin.outletId === outletId && pin.reviewId === reviewId,
+      );
+      if (existing?.isActive) {
+        return resolve(clone(existing));
+      }
+
+      const nextPin = buildPopularVisitorPin(outletId, reviewId);
+      if (existing) {
+        Object.assign(existing, {
+          ...nextPin,
+          id: existing.id,
+        });
+        return resolve(clone(existing));
+      }
+
+      _popularVisitorPins.push(nextPin);
+      return resolve(clone(nextPin));
+    },
+
+    async unpinPopularVisitor(pinId) {
+      const pin = _popularVisitorPins.find((item) => item.id === pinId);
+      if (!pin) throw new Error(`Popular visitor pin ${pinId} not found`);
+      pin.isActive = false;
+      return resolve(undefined);
+    },
+
+    async reorderPopularVisitorPins(outletId, orderedPinIds) {
+      const activePins = listActivePopularVisitorPins(outletId);
+      const activePinIds = new Set(activePins.map((pin) => pin.id));
+      const uniqueOrderedIds = Array.from(
+        new Set(orderedPinIds.filter((pinId) => activePinIds.has(pinId))),
+      );
+      const remainingIds = activePins
+        .map((pin) => pin.id)
+        .filter((pinId) => !uniqueOrderedIds.includes(pinId));
+
+      [...uniqueOrderedIds, ...remainingIds].forEach((pinId, index) => {
+        const pin = _popularVisitorPins.find(
+          (item) => item.id === pinId && item.outletId === outletId && item.isActive,
+        );
+        if (pin) pin.sortOrder = index;
+      });
+
+      return resolve(clone(listActivePopularVisitorPins(outletId)));
+    },
+
     async getPromotions(outletId, status) {
       getMerchantOutlet(outletId);
       let promotions = _merchantPromotions.filter((promo) => promo.outletId === outletId);
@@ -1649,10 +2109,54 @@ export const hungryService: HungryService = {
       return resolve(clone(promo.analytics));
     },
 
-    async getAnalytics(_outletId, dateRange) {
-      if (dateRange === "7d") return resolve(merchantAnalytics7d);
-      if (dateRange === "30d") return resolve(merchantAnalytics30d);
-      return resolve(merchantAnalyticsToday);
+    async getAnalytics(outletId, dateRange) {
+      getMerchantOutlet(outletId);
+      return resolve(clone(buildMockMerchantAnalytics(outletId, dateRange)));
+    },
+
+    async getWeeklySummaryStats(outletId) {
+      getMerchantOutlet(outletId);
+      return resolve(clone(buildWeeklySummaryStats(outletId)));
+    },
+
+    async getMerchantNotifications(merchantAccountId) {
+      getMerchantAccountById(merchantAccountId);
+      return resolve(
+        clone(
+          _merchantNotifications
+            .filter((notification) => notification.merchantAccountId === merchantAccountId)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+        ),
+      );
+    },
+
+    async syncLowRatingNotifications(outletId) {
+      const notifications = getLowRatingNotificationsForOutlet(outletId);
+      return resolve(clone(notifications));
+    },
+
+    async sendWeeklySummaryNotifications(outletId) {
+      const outlet = getMerchantOutlet(outletId);
+      const summary = buildWeeklySummaryStats(outletId);
+      const members = getTeamMembersForAccount(outlet.merchantAccountId).filter(
+        (member) => member.inviteStatus !== "removed",
+      );
+      const notifications = members.map((member) =>
+        createMerchantNotification({
+          merchantAccountId: outlet.merchantAccountId,
+          outletId,
+          recipientUserId: member.userId,
+          recipientEmail: member.email,
+          kind: "weekly_summary",
+          title: `${outlet.name} weekly summary is ready`,
+          body: `${summary.totalViews.toLocaleString()} views, ${summary.newReviews} new reviews, ${summary.unrepliedReviews} unreplied reviews.`,
+          status: "unread",
+          dedupeKey: `weekly-summary:${summary.id}:${member.id}`,
+          deepLink: "MerchantTabs/MerchantAnalytics",
+          metadata: { summaryId: summary.id },
+        }),
+      );
+      return resolve(clone(notifications));
     },
 
     async generateDishDescription(dishName, ingredients) {
@@ -1749,11 +2253,15 @@ export const hungryService: HungryService = {
       return resolve(clone(getTeamMembersForAccount(merchantAccountId)));
     },
 
-    async addTeamMember(merchantAccountId, email, role) {
+    async addTeamMember(merchantAccountId, email, role, displayName) {
       const members = getTeamMembersForAccount(merchantAccountId);
       const normalizedEmail = email.trim().toLowerCase();
+      const trimmedName = displayName?.trim() ?? "";
       if (!normalizedEmail || !normalizedEmail.includes("@")) {
         throw new Error("Valid team member email is required");
+      }
+      if (!trimmedName) {
+        throw new Error("Team member name is required");
       }
       if (members.some((member) => member.email.toLowerCase() === normalizedEmail)) {
         throw new Error(`Team member ${normalizedEmail} already exists`);
@@ -1761,13 +2269,30 @@ export const hungryService: HungryService = {
       const newMember: MerchantTeamMember = {
         id: `tm-new-${++_merchantTeamMemberCounter}`,
         merchantAccountId,
-        userId: `user-new-${_merchantTeamMemberCounter}`,
-        displayName: normalizedEmail.split("@")[0],
+        userId: `invited-user-${_merchantTeamMemberCounter}`,
+        displayName: trimmedName,
         email: normalizedEmail,
         role,
         addedAt: new Date().toISOString(),
+        inviteStatus: "pending",
+        invitedAt: new Date().toISOString(),
       };
       members.push(newMember);
+      createMerchantNotification({
+        merchantAccountId,
+        recipientEmail: normalizedEmail,
+        kind: "team_invite",
+        title: "You have been invited to manage a Hungry stall",
+        body: `${trimmedName}, open Hungry to accept your merchant team invite.`,
+        status: "sent",
+        dedupeKey: `team-invite:${merchantAccountId}:${normalizedEmail}`,
+        deepLink: "MerchantTabs/MerchantSettings",
+        metadata: {
+          memberId: newMember.id,
+          role,
+          delivery: "email",
+        },
+      });
       return resolve(clone(newMember));
     },
 

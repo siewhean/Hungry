@@ -4,6 +4,7 @@ import * as WebBrowser from "expo-web-browser";
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
+import { STORY_GALLERY_ASSETS } from "@/lib/services/storyGalleryAssets";
 import {
   averageTasteVectors,
   processExplicitFeedback as processExplicitFeedbackCore,
@@ -11,7 +12,15 @@ import {
 } from "@/lib/ai/tasteEngine";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import {
+  getDishByIdViaRpc,
+  getBuildingDetailViaRpc,
+  getVenueByIdViaRpc,
+  listBuildingsViaRpc,
+  listDishesByVenueViaRpc,
+  listPopularNearbyViaRpc,
+  listVenuesByBuildingViaRpc,
   refreshSupabaseRepositoryCache,
+  searchDishesViaRpc,
   supabaseRepository,
 } from "@/lib/services/supabase/supabaseRepository";
 import { getSupabaseClient } from "@/lib/services/supabase/client";
@@ -50,11 +59,16 @@ import type {
   InteractionType,
   MerchantAccount,
   MerchantAnalytics,
+  MerchantNotification,
   MerchantNotificationPreferences,
   MerchantOutlet,
   MerchantPromotion,
   MerchantRole,
+  MerchantTeamMember,
+  MerchantWeeklySummary,
   OCRDishDraft,
+  PopularVisitorCandidate,
+  PopularVisitorPin,
   PromotionStatus,
   SearchFilters,
   TasteProfile,
@@ -75,8 +89,7 @@ type DishPresentation = {
 };
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const DEFAULT_AUTH_PROFILE: UserProfile = {
-  id: "supabase-user",
+const DEFAULT_AUTH_PROFILE_BASE: Omit<UserProfile, "id"> = {
   displayName: "Hungry User",
   email: "",
   profileVisibility: "public",
@@ -94,7 +107,7 @@ const DEFAULT_AUTH_PROFILE: UserProfile = {
 };
 
 const DEFAULT_GUEST_PROFILE: UserProfile = {
-  ...DEFAULT_AUTH_PROFILE,
+  ...DEFAULT_AUTH_PROFILE_BASE,
   id: "guest-user",
   displayName: "Guest",
   email: "guest@hungry.local",
@@ -146,8 +159,20 @@ function asRecord(value: unknown): Row {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Row) : {};
 }
 
+function asRowArray(value: unknown): Row[] {
+  return Array.isArray(value)
+    ? value.map((item) => asRecord(item)).filter((item) => Object.keys(item).length > 0)
+    : [];
+}
+
 function isLocalUri(value: string): boolean {
   return value.startsWith("file://") || value.startsWith("content://") || value.startsWith("/");
+}
+
+function assertLocalUserMediaUri(value: string, label: string): void {
+  if (!isLocalUri(value)) {
+    throw new Error(`${label} must be uploaded from a local device file.`);
+  }
 }
 
 function sanitizeStorageSegment(value: string): string {
@@ -239,10 +264,12 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
   const reviewedDishIds = asStringArray(row.reviewed_dish_ids);
   const accountVisibility = asString(privacyRow.account_visibility);
   return {
-    ...DEFAULT_AUTH_PROFILE,
+    ...DEFAULT_AUTH_PROFILE_BASE,
     id: userId,
     displayName:
-      asString(row.display_name) ?? asString(row.displayName) ?? DEFAULT_AUTH_PROFILE.displayName,
+      asString(row.display_name) ??
+      asString(row.displayName) ??
+      DEFAULT_AUTH_PROFILE_BASE.displayName,
     email: asString(row.email) ?? email ?? "",
     avatarUrl: asString(row.avatar_url),
     profileVisibility: accountVisibility === "private" ? "private" : "public",
@@ -327,7 +354,7 @@ function buildStorySeed(displayName: string, avatarUrl?: string): Story[] {
         url: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=800&q=80",
       },
       createdAt: new Date(now - 3_600_000).toISOString(),
-      interaction: { liked: false, saved: false, likeCount: 120, commentCount: 12, shareCount: 5 },
+      interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
     },
     {
       id: `s_${now + 2}`,
@@ -340,7 +367,7 @@ function buildStorySeed(displayName: string, avatarUrl?: string): Story[] {
         url: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=800&q=80",
       },
       createdAt: new Date(now - 7_200_000).toISOString(),
-      interaction: { liked: false, saved: false, likeCount: 45, commentCount: 3, shareCount: 1 },
+      interaction: { liked: false, saved: false, likeCount: 0, commentCount: 0, shareCount: 0 },
     },
   ];
 }
@@ -391,8 +418,7 @@ async function uploadReviewPhotos(
     const uri = photos[index];
     if (!uri) continue;
     if (!isLocalUri(uri)) {
-      uploaded.push(uri);
-      continue;
+      throw new Error("Review photos must be uploaded from local device files.");
     }
     const extension = uri.split(".").pop()?.toLowerCase() || "jpg";
     const path = `${userId}/${reviewId}/photo-${index}.${extension}`;
@@ -412,8 +438,11 @@ async function uploadAvatarIfNeeded(
   userId: string,
   avatarUri?: string,
 ): Promise<string | undefined> {
-  if (!avatarUri || !isLocalUri(avatarUri)) {
-    return avatarUri;
+  if (!avatarUri) {
+    return undefined;
+  }
+  if (!isLocalUri(avatarUri)) {
+    throw new Error("Profile avatar must be uploaded from a local device file.");
   }
   const extension = avatarUri.split(".").pop()?.toLowerCase() || "jpg";
   const uploaded = await uploadImageFromUri({
@@ -506,16 +535,7 @@ async function buildPostMediaRows(
       continue;
     }
 
-    rows.push({
-      post_id: postId,
-      media_type: mediaKind,
-      storage_bucket: "external",
-      storage_path: uri,
-      public_url: uri,
-      mime_type: mediaKind === "video" ? "video/external" : "image/external",
-      sort_order: index,
-    });
-    displayUrls.push(uri);
+    throw new Error("Post media must be uploaded from local device files.");
   }
 
   return {
@@ -597,7 +617,7 @@ async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Prom
     dishIds.length > 0
       ? client
           .from("dishes")
-          .select("id,name,price,rating_avg,rating,image_url,venue_id,building_id")
+          .select("id,name,price,rating_avg,image_url,venue_id,building_id")
           .in("id", dishIds)
           .then(({ data: rows, error: rowsError }) =>
             rowsError || !Array.isArray(rows) ? [] : (rows as Row[]),
@@ -691,9 +711,86 @@ async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Prom
         tasteStamp: tasteStampFromPostMeta(meta),
         cravingCount: asNumber(row.like_count) ?? 0,
         savedCount: asNumber(row.save_count) ?? 0,
-        rating:
-          asNumber(meta.rating) ?? asNumber(dishRow?.rating_avg) ?? asNumber(dishRow?.rating) ?? 0,
+        rating: asNumber(meta.rating) ?? asNumber(dishRow?.rating_avg) ?? 0,
         price: asNumber(dishRow?.price) ?? asNumber(dishMeta.price) ?? 0,
+        expiresAt:
+          asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+        createdAt:
+          asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+      } satisfies Bite;
+    }),
+  );
+}
+
+async function fetchHomeSocialFeedBitesViaRpc(
+  client: SupabaseClient,
+  limit = 40,
+): Promise<Bite[] | undefined> {
+  const v2Result = await client.rpc("get_home_social_feed_v2", {
+    p_limit: limit,
+    p_cursor_feed_created_at: null,
+    p_cursor_post_id: null,
+  });
+  const legacyResult = v2Result.error
+    ? await client.rpc("get_home_social_feed", {
+        p_limit: limit,
+        p_cursor_published_at: null,
+        p_cursor_id: null,
+      })
+    : v2Result;
+
+  if (legacyResult.error) {
+    console.warn("Failed to fetch Home social feed RPC", legacyResult.error.message);
+    return undefined;
+  }
+  if (!Array.isArray(legacyResult.data)) return undefined;
+
+  const rows = legacyResult.data as Row[];
+  return Promise.all(
+    rows.map(async (row) => {
+      const meta = asRecord(row.generated_content);
+      const authorMeta = asRecord(meta.author);
+      const dishMeta = asRecord(meta.dish);
+      const venueMeta = asRecord(meta.venue);
+      const mediaRows = asRowArray(row.media);
+      const mediaUrls = (
+        await Promise.all(mediaRows.map((mediaRow) => resolvePostMediaDisplayUrl(client, mediaRow)))
+      ).filter((url): url is string => url.length > 0);
+      const fallbackImage =
+        asString(row.dish_image_url) ??
+        asString(dishMeta.imageUrl) ??
+        asString(row.public_url) ??
+        "";
+      const photoUrl = mediaUrls[0] ?? fallbackImage;
+      const mediaType = resolvePostBiteMediaType(mediaRows, meta);
+
+      return {
+        id: asString(row.id) ?? `post-${Date.now()}`,
+        authorId: asString(row.author_id) ?? "unknown-author",
+        authorName:
+          asString(authorMeta.displayName) ?? asString(row.author_display_name) ?? "Hungry User",
+        authorAvatar: asString(authorMeta.avatarUrl) ?? asString(row.author_avatar_url),
+        dishId: asString(row.dish_id) ?? asString(dishMeta.id) ?? "",
+        dishName: asString(row.dish_name) ?? asString(dishMeta.name) ?? "Unknown dish",
+        venueId: asString(row.venue_id) ?? asString(venueMeta.id) ?? "",
+        venueName: asString(row.venue_name) ?? asString(venueMeta.name) ?? "Unknown venue",
+        unitNumber: asString(row.venue_unit_number) ?? asString(venueMeta.unitNumber) ?? "",
+        buildingId:
+          asString(row.building_id) ??
+          asString(row.venue_building_id) ??
+          asString(venueMeta.buildingId) ??
+          "",
+        buildingName: asString(row.building_name) ?? asString(venueMeta.buildingName) ?? "",
+        photoUrl,
+        mediaUrls: mediaUrls.length > 0 ? mediaUrls : photoUrl ? [photoUrl] : [],
+        mediaType,
+        caption: asString(row.caption) ?? "",
+        tags: asStringArray(meta.tags),
+        tasteStamp: tasteStampFromPostMeta(meta),
+        cravingCount: asNumber(row.like_count) ?? 0,
+        savedCount: asNumber(row.save_count) ?? 0,
+        rating: asNumber(meta.rating) ?? asNumber(row.dish_rating) ?? 0,
+        price: asNumber(row.dish_price) ?? asNumber(dishMeta.price) ?? 0,
         expiresAt:
           asString(row.published_at) ?? asString(row.created_at) ?? new Date().toISOString(),
         createdAt:
@@ -720,7 +817,7 @@ function matchesRecommendationQuery(dish: DishDetail, query?: string) {
 
 function getRankedRecommendations(
   request: RecommendationSlateRequest,
-  profile: UserProfile = DEFAULT_AUTH_PROFILE,
+  profile: UserProfile = DEFAULT_GUEST_PROFILE,
 ): RankedRecommendation[] {
   const dishes = listAllDishesFromRepository().filter((dish) =>
     matchesRecommendationQuery(dish, request.query),
@@ -1064,16 +1161,83 @@ function normalizeMenuEntry(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function getOpsDraftApiKey(): string {
-  return (
-    process.env.EXPO_PUBLIC_OPS_DISHES_DRAFT_API_KEY?.trim() ??
-    process.env.OPS_DISHES_DRAFT_API_KEY?.trim() ??
-    ""
-  );
-}
-
 function getAuthEmailRedirectTo(): string {
   return process.env.EXPO_PUBLIC_AUTH_REDIRECT_URL?.trim() || "hungry://auth/callback";
+}
+
+function getMerchantAnalyticsSince(dateRange: MerchantAnalytics["dateRange"]): string | null {
+  const now = new Date();
+  if (dateRange === "today") {
+    now.setHours(0, 0, 0, 0);
+    return now.toISOString();
+  }
+  if (dateRange === "7d") {
+    now.setDate(now.getDate() - 7);
+    return now.toISOString();
+  }
+  if (dateRange === "30d") {
+    now.setDate(now.getDate() - 30);
+    return now.toISOString();
+  }
+  return null;
+}
+
+function callbackBaseMatches(url: string, expectedRedirectTo: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const expected = new URL(expectedRedirectTo);
+    return (
+      parsed.protocol === expected.protocol &&
+      parsed.hostname === expected.hostname &&
+      parsed.pathname === expected.pathname
+    );
+  } catch {
+    return false;
+  }
+}
+
+async function exchangeRecoveryCodeIfPresent(client: SupabaseClient, token: string): Promise<void> {
+  const trimmed = token.trim();
+  if (!trimmed) return;
+
+  let code = trimmed;
+  try {
+    const parsed = new URL(trimmed);
+    if (!callbackBaseMatches(parsed.toString(), getAuthEmailRedirectTo())) {
+      throw new Error("Password recovery callback URL was not trusted.");
+    }
+    const {
+      accessToken,
+      refreshToken,
+      code: callbackCode,
+    } = getAuthTokensFromCallback(parsed.toString());
+    if (accessToken || refreshToken) {
+      throw new Error("Password recovery token fragments are not accepted.");
+    }
+    code = callbackCode ?? "";
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("Password recovery")) {
+      throw error;
+    }
+  }
+
+  if (!code) {
+    throw new Error("Password recovery callback did not include a code.");
+  }
+
+  const { error } = await client.auth.exchangeCodeForSession(code);
+  if (error) throw error;
+}
+
+function getOAuthStateFromUrl(url: string): string | undefined {
+  try {
+    const parsed = new URL(url);
+    const query = new URLSearchParams(parsed.search.startsWith("?") ? parsed.search.slice(1) : "");
+    const hash = new URLSearchParams(parsed.hash.startsWith("#") ? parsed.hash.slice(1) : "");
+    return hash.get("state") ?? query.get("state") ?? undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function getAuthTokensFromCallback(url: string): {
@@ -1110,6 +1274,14 @@ const DEFAULT_MERCHANT_NOTIFICATION_PREFERENCES: MerchantNotificationPreferences
 function asMerchantRole(value: unknown): MerchantRole {
   const role = asString(value);
   return role === "manager" || role === "staff" ? role : "owner";
+}
+
+function asMerchantInviteStatus(value: unknown): MerchantTeamMember["inviteStatus"] {
+  const status = asString(value);
+  if (status === "accepted" || status === "active") return "accepted";
+  if (status === "declined") return "declined";
+  if (status === "removed") return "removed";
+  return "pending";
 }
 
 function normalizeAvailabilityFlag(flag: string): string {
@@ -1185,7 +1357,12 @@ async function toMerchantOutlet(client: SupabaseClient, row: Row): Promise<Merch
     description: asString(row.description) ?? "",
     cuisineCategories: [],
     operatingHours: asString(row.operating_hours) ?? venue?.operatingHours ?? "",
+    temporaryClosure: asString(row.temporary_closure),
+    profilePhotoUrl: asString(row.profile_photo_url),
+    coverPhotoUrl: asString(row.cover_photo_url),
     galleryUrls: [],
+    contactPhone: asString(row.contact_phone),
+    contactEmail: asString(row.contact_email),
     socialLinks: [],
     deliveryLinks: venue?.deliveryLinks ?? [],
     dietaryLabels: [],
@@ -1402,6 +1579,80 @@ async function requireLinkedMerchantOutlet(client: SupabaseClient, outletId: str
   return outlet;
 }
 
+function mapPopularVisitorPin(row: Row): PopularVisitorPin {
+  return {
+    id: asString(row.id) ?? "",
+    outletId: asString(row.outlet_id) ?? "",
+    venueId: asString(row.venue_id) ?? "",
+    reviewId: asString(row.review_id) ?? "",
+    sourceId: asString(row.source_id) ?? asString(row.review_id) ?? "",
+    authorProfileId: asString(row.author_profile_id),
+    authorName: asString(row.author_name) ?? "Hungry diner",
+    authorAvatarUrl: asString(row.author_avatar_url),
+    authorLocation: asString(row.author_location),
+    reviewText: asString(row.review_text) ?? "",
+    rating: asNumber(row.rating) ?? 0,
+    dishName: asString(row.dish_name),
+    visitedAt: asString(row.visited_at) ?? asString(row.created_at) ?? new Date().toISOString(),
+    pinnedAt: asString(row.pinned_at) ?? new Date().toISOString(),
+    sortOrder: asNumber(row.sort_order) ?? 0,
+    isActive: asBoolean(row.is_active) ?? true,
+  };
+}
+
+async function listSupabasePopularVisitorPinsForOutlet(
+  client: SupabaseClient,
+  outletId: string,
+): Promise<PopularVisitorPin[]> {
+  const { data, error } = await client
+    .from("merchant_popular_visitor_pins")
+    .select("*")
+    .eq("outlet_id", outletId)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("pinned_at", { ascending: false })
+    .limit(6);
+  if (error) throw error;
+  return (Array.isArray(data) ? (data as Row[]) : []).map(mapPopularVisitorPin);
+}
+
+async function listSupabasePopularVisitorPinsForVenue(
+  client: SupabaseClient,
+  venueId: string,
+): Promise<PopularVisitorPin[]> {
+  const { data, error } = await client
+    .from("merchant_popular_visitor_pins")
+    .select("*")
+    .eq("venue_id", venueId)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("pinned_at", { ascending: false })
+    .limit(6);
+  if (error) throw error;
+  return (Array.isArray(data) ? (data as Row[]) : []).map(mapPopularVisitorPin);
+}
+
+async function fetchSafeProfileRowsById(
+  client: SupabaseClient,
+  profileIds: string[],
+): Promise<Map<string, Row>> {
+  const uniqueIds = Array.from(new Set(profileIds.filter((id) => UUID_PATTERN.test(id))));
+  const profileById = new Map<string, Row>();
+  if (uniqueIds.length === 0) return profileById;
+
+  const { data, error } = await client
+    .from("public_profiles")
+    .select("id,display_name,avatar_url")
+    .in("id", uniqueIds);
+  if (error || !Array.isArray(data)) return profileById;
+
+  (data as Row[]).forEach((row) => {
+    const id = asString(row.id);
+    if (id) profileById.set(id, row);
+  });
+  return profileById;
+}
+
 function buildDishPayload(outlet: Row, dish: Partial<DishDetail>): Row {
   const venueId = asString(outlet.venue_id) ?? "";
   const buildingId = asString(outlet.building_id) ?? "";
@@ -1465,10 +1716,7 @@ async function resolveMerchantDishGalleryUrls(
 
   for (let index = 0; index < requestedUrls.length; index += 1) {
     const url = requestedUrls[index];
-    if (!isLocalUri(url)) {
-      uploadedUrls.push(url);
-      continue;
-    }
+    assertLocalUserMediaUri(url, "Merchant dish image");
     if (!userId) throw new Error("You must be signed in to upload merchant dish images.");
     const extension = extensionFromUri(url);
     const uploaded = await uploadImageFromUri({
@@ -1596,8 +1844,67 @@ function mapPromotion(row: Row): MerchantPromotion {
     endDate: asString(row.end_date) ?? new Date().toISOString(),
     targetAudience: asStringArray(row.target_audience) as MerchantPromotion["targetAudience"],
     status,
+    promotionItemType:
+      asString(row.promotion_item_type) === "existing_menu_item"
+        ? "existing_menu_item"
+        : "new_item",
+    originalPrice: asNumber(row.original_price),
+    promotionalPrice: asNumber(row.promotional_price),
+    finalPrice: asNumber(row.final_price),
+    discountPercentage: asNumber(row.discount_percentage),
+    isAvailable: asBoolean(row.is_available) ?? status === "active",
     createdAt: asString(row.created_at) ?? new Date().toISOString(),
     analytics,
+  };
+}
+
+function mapMerchantNotification(row: Row): MerchantNotification {
+  return {
+    id: asString(row.id) ?? "",
+    merchantAccountId: asString(row.merchant_account_id) ?? "",
+    outletId: asString(row.outlet_id),
+    recipientUserId: asString(row.recipient_user_id),
+    recipientEmail: asString(row.recipient_email),
+    kind: (asString(row.kind) as MerchantNotification["kind"]) ?? "ai_insight",
+    title: asString(row.title) ?? "",
+    body: asString(row.body) ?? "",
+    status: (asString(row.status) as MerchantNotification["status"]) ?? "unread",
+    dedupeKey: asString(row.dedupe_key) ?? "",
+    deepLink: asString(row.deep_link),
+    metadata:
+      row.metadata && typeof row.metadata === "object"
+        ? (asRecord(row.metadata) as Record<string, string | number | boolean | null>)
+        : undefined,
+    createdAt: asString(row.created_at) ?? new Date().toISOString(),
+  };
+}
+
+function buildWeeklySummaryFromAnalytics(
+  outletId: string,
+  analytics: MerchantAnalytics,
+  reviews: CustomerInteraction[],
+  promotions: MerchantPromotion[],
+): MerchantWeeklySummary {
+  const now = new Date();
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - 6);
+  return {
+    id: `weekly-${outletId}-${weekStart.toISOString().slice(0, 10)}`,
+    outletId,
+    weekStart: weekStart.toISOString(),
+    weekEnd: now.toISOString(),
+    totalViews: analytics.profileVisits + analytics.menuViews + analytics.dishViews,
+    dishViews: analytics.dishViews,
+    topDishes: analytics.topDishes,
+    newReviews: reviews.length,
+    averageRating: analytics.averageRating,
+    ratingChange: analytics.averageRating - analytics.previousPeriodComparison.averageRating,
+    unrepliedReviews: reviews.filter((review) => !review.reply).length,
+    promotionViews: promotions.reduce(
+      (sum, promotion) => sum + (promotion.analytics?.impressions ?? 0),
+      0,
+    ),
+    createdAt: now.toISOString(),
   };
 }
 
@@ -1616,20 +1923,24 @@ async function signInWithOAuthProvider(provider: "google" | "apple"): Promise<Se
     throw new Error("OAuth provider URL was not generated.");
   }
 
+  const expectedState = getOAuthStateFromUrl(data.url);
   WebBrowser.maybeCompleteAuthSession();
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
   if (result.type !== "success" || !result.url) {
     throw new Error("OAuth sign-in was cancelled.");
   }
+  if (!callbackBaseMatches(result.url, redirectTo)) {
+    throw new Error("OAuth callback URL was not trusted.");
+  }
+  if (expectedState && getOAuthStateFromUrl(result.url) !== expectedState) {
+    throw new Error("OAuth callback state did not match the sign-in request.");
+  }
 
   const { accessToken, refreshToken, code } = getAuthTokensFromCallback(result.url);
-  if (accessToken && refreshToken) {
-    const { error: sessionError } = await client.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-    if (sessionError) throw sessionError;
-  } else if (code) {
+  if (accessToken || refreshToken) {
+    throw new Error("OAuth callback token fragments are not accepted.");
+  }
+  if (code) {
     const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
     if (exchangeError) throw exchangeError;
   } else {
@@ -1701,8 +2012,8 @@ async function hydrateChatParticipants(
   const profileRows = new Map<string, Row>();
   if (userIds.length > 0) {
     const { data } = await client
-      .from("user_profiles")
-      .select("id,display_name,email,avatar_url")
+      .from("public_profiles")
+      .select("id,display_name,avatar_url")
       .in("id", userIds);
     (Array.isArray(data) ? (data as Row[]) : []).forEach((row) => {
       const id = asString(row.id);
@@ -1714,7 +2025,7 @@ async function hydrateChatParticipants(
   if (merchantIds.length > 0) {
     const { data } = await client
       .from("merchant_accounts")
-      .select("id,display_name,email")
+      .select("id,display_name")
       .in("id", merchantIds);
     (Array.isArray(data) ? (data as Row[]) : []).forEach((row) => {
       const id = asString(row.id);
@@ -1732,11 +2043,7 @@ async function hydrateChatParticipants(
     const participant: ChatParticipant = {
       ...fallback,
       displayName:
-        asString(profile?.display_name) ??
-        asString(profile?.email) ??
-        asString(merchant?.display_name) ??
-        asString(merchant?.email) ??
-        fallback.displayName,
+        asString(profile?.display_name) ?? asString(merchant?.display_name) ?? fallback.displayName,
       avatarUrl: asString(profile?.avatar_url) ?? fallback.avatarUrl,
     };
     participants.set(participantKey(participant), participant);
@@ -1957,12 +2264,15 @@ export const supabaseService: HungryService = {
 
     async forgotPassword(email) {
       const client = requireSupabaseClient();
-      const { error } = await client.auth.resetPasswordForEmail(email);
+      const { error } = await client.auth.resetPasswordForEmail(email, {
+        redirectTo: getAuthEmailRedirectTo(),
+      });
       if (error) throw error;
     },
 
-    async resetPassword(_token, password) {
+    async resetPassword(token, password) {
       const client = requireSupabaseClient();
+      await exchangeRecoveryCodeIfPresent(client, token);
       const { error } = await client.auth.updateUser({ password });
       if (error) throw error;
     },
@@ -1983,11 +2293,15 @@ export const supabaseService: HungryService = {
   },
 
   discovery: {
-    async listBuildings() {
-      return supabaseRepository.listBuildings();
+    async listBuildings(lat, lng, radiusMeters) {
+      return (
+        (await listBuildingsViaRpc(lat, lng, radiusMeters)) ?? supabaseRepository.listBuildings()
+      );
     },
 
     async getBuildingDetail(id) {
+      const rpcDetail = await getBuildingDetailViaRpc(id);
+      if (rpcDetail) return rpcDetail;
       const building = supabaseRepository.listBuildings().find((item) => item.id === id);
       if (!building) return undefined;
       const venues = supabaseRepository.listVenuesByBuilding(id);
@@ -2020,26 +2334,44 @@ export const supabaseService: HungryService = {
     },
 
     async getVenue(id) {
-      return supabaseRepository.getVenueById(id);
+      return (await getVenueByIdViaRpc(id)) ?? supabaseRepository.getVenueById(id);
     },
 
     async listVenuesByBuilding(buildingId) {
-      return supabaseRepository.listVenuesByBuilding(buildingId);
+      return (
+        (await listVenuesByBuildingViaRpc(buildingId)) ??
+        supabaseRepository.listVenuesByBuilding(buildingId)
+      );
     },
 
     async getDish(id) {
-      return supabaseRepository.getDishById(id);
+      return (await getDishByIdViaRpc(id)) ?? supabaseRepository.getDishById(id);
+    },
+
+    async recordDishView(dishId, context) {
+      const client = getSupabaseClient();
+      if (!client) return;
+      const sessionId = context?.sessionId ?? context?.userId ?? "anonymous";
+      const { error } = await client.rpc("record_merchant_dish_view", {
+        p_dish_id: dishId,
+        p_session_id: sessionId,
+      });
+      if (error) throw error;
     },
 
     async listDishesByVenue(venueId) {
-      return supabaseRepository.listDishesByVenue(venueId);
+      return (
+        (await listDishesByVenueViaRpc(venueId)) ?? supabaseRepository.listDishesByVenue(venueId)
+      );
     },
 
-    async listPopularNearby() {
-      return supabaseRepository.listPopularNearby();
+    async listPopularNearby(lat, lng) {
+      return (await listPopularNearbyViaRpc(lat, lng)) ?? supabaseRepository.listPopularNearby();
     },
 
     async searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]> {
+      const rpcResults = await searchDishesViaRpc(filters, tasteProfile);
+      if (rpcResults) return rpcResults;
       const results = supabaseRepository.searchDishes(filters, tasteProfile);
       return results.map((dish) => ({
         dish,
@@ -2273,6 +2605,8 @@ export const supabaseService: HungryService = {
   social: {
     async getBitesFeed() {
       const client = requireSupabaseClient();
+      const rpcBites = await fetchHomeSocialFeedBitesViaRpc(client);
+      if (rpcBites) return rpcBites;
       return fetchPublishedPostBites(client);
     },
 
@@ -2411,12 +2745,12 @@ export const supabaseService: HungryService = {
       const table = reaction === "craving" ? "post_likes" : "post_saves";
       const existing = await client
         .from(table)
-        .select("id")
+        .select("post_id")
         .eq("post_id", biteId)
         .eq("user_id", userId)
         .maybeSingle();
       if (existing.error) throw existing.error;
-      if ((existing.data as Row | null)?.id) {
+      if ((existing.data as Row | null)?.post_id) {
         const { error } = await client
           .from(table)
           .delete()
@@ -2431,6 +2765,10 @@ export const supabaseService: HungryService = {
 
     async getStories() {
       return getStoryCache();
+    },
+
+    async listStoryGalleryAssets() {
+      return [...STORY_GALLERY_ASSETS];
     },
 
     async likeStory(storyId: string) {
@@ -2587,39 +2925,15 @@ export const supabaseService: HungryService = {
       let conversationRow = existing.data as Row | null;
       if (!conversationRow) {
         const { data, error } = await client
-          .from("conversations")
-          .insert({
-            conversation_type: type,
-            dedupe_key: dedupeKey,
-            subject_merchant_account_id: input.target.merchantAccountId ?? null,
-            created_by_user_id: currentUserId,
+          .rpc("open_chat_conversation", {
+            p_target_user_id: input.target.kind === "user" ? input.target.userId : null,
+            p_target_merchant_account_id:
+              input.target.kind === "merchant" ? input.target.merchantAccountId : null,
+            p_conversation_type: type,
           })
-          .select("id,conversation_type,subject_merchant_account_id,created_by_user_id,updated_at")
           .maybeSingle();
         if (error || !data) throw error ?? new Error("Failed to create conversation.");
         conversationRow = data as Row;
-
-        const conversationId = asString(conversationRow.id);
-        if (!conversationId) throw new Error("Conversation id missing after create.");
-        const participantRows = [
-          {
-            conversation_id: conversationId,
-            participant_kind: "user",
-            participant_user_id: currentUserId,
-            participant_merchant_account_id: null,
-          },
-          {
-            conversation_id: conversationId,
-            participant_kind: input.target.kind,
-            participant_user_id: input.target.kind === "user" ? input.target.userId : null,
-            participant_merchant_account_id:
-              input.target.kind === "merchant" ? input.target.merchantAccountId : null,
-          },
-        ];
-        const { error: participantError } = await client
-          .from("conversation_participants")
-          .insert(participantRows);
-        if (participantError) throw participantError;
       }
 
       const conversationId = asString(conversationRow.id);
@@ -2674,28 +2988,15 @@ export const supabaseService: HungryService = {
       const body = input.body.trim();
       if (!body) throw new Error("Message cannot be empty.");
 
-      const now = new Date().toISOString();
       const { data, error } = await client
-        .from("messages")
-        .insert({
-          conversation_id: input.conversationId,
-          sender_user_id: input.senderMerchantAccountId ? null : currentUserId,
-          sender_merchant_account_id: input.senderMerchantAccountId ?? null,
-          body,
-          client_nonce: input.clientNonce ?? `${currentUserId}-${Date.now()}`,
-          delivered_at: now,
+        .rpc("send_chat_message", {
+          p_conversation_id: input.conversationId,
+          p_body: body,
+          p_client_nonce: input.clientNonce ?? `${currentUserId}-${Date.now()}`,
+          p_sender_merchant_account_id: input.senderMerchantAccountId ?? null,
         })
-        .select(
-          "id,conversation_id,sender_user_id,sender_merchant_account_id,body,client_nonce,delivered_at,created_at",
-        )
         .maybeSingle();
       if (error || !data) throw error ?? new Error("Failed to send message.");
-
-      const { error: updateError } = await client
-        .from("conversations")
-        .update({ updated_at: now })
-        .eq("id", input.conversationId);
-      if (updateError) throw updateError;
 
       const participantRows = await listConversationParticipantRows(client, [input.conversationId]);
       const participantsByKey = await hydrateChatParticipants(
@@ -2814,12 +3115,27 @@ export const supabaseService: HungryService = {
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to report content.");
 
-      const { error } = await client.from("content_reports").insert({
-        reporter_id: userId,
-        target_type: request.targetType,
-        target_id: request.targetId,
-        target_author_key: request.targetAuthorKey,
-        reason: request.reason,
+      if (request.targetType === "post") {
+        if (!UUID_PATTERN.test(request.targetId)) {
+          throw new Error("Post reports require a valid post id.");
+        }
+
+        const { error } = await client.rpc("report_post", {
+          p_post_id: request.targetId,
+          p_reason_code: request.reason,
+          p_details: request.targetAuthorKey
+            ? `target_author_key:${request.targetAuthorKey}`
+            : null,
+        });
+        if (error) throw error;
+        return;
+      }
+
+      const { error } = await client.rpc("report_content", {
+        p_target_type: request.targetType,
+        p_target_id: request.targetId,
+        p_reason: request.reason,
+        p_target_author_key: request.targetAuthorKey ?? null,
       });
       if (error) throw error;
     },
@@ -2836,6 +3152,31 @@ export const supabaseService: HungryService = {
       });
       if (error) throw error;
     },
+
+    async hidePost(postId: string, reason?: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to hide posts.");
+      if (!UUID_PATTERN.test(postId)) throw new Error("Post hiding requires a valid post id.");
+
+      const { error } = await client.rpc("hide_post", {
+        p_post_id: postId,
+        p_reason: reason ?? "hidden_by_user",
+      });
+      if (error) throw error;
+    },
+
+    async unhidePost(postId: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to unhide posts.");
+      if (!UUID_PATTERN.test(postId)) throw new Error("Post unhiding requires a valid post id.");
+
+      const { error } = await client.rpc("unhide_post", {
+        p_post_id: postId,
+      });
+      if (error) throw error;
+    },
   },
 
   content: {
@@ -2845,6 +3186,10 @@ export const supabaseService: HungryService = {
 
     async listStallPosts() {
       return supabaseRepository.listStallPosts();
+    },
+
+    async listPopularVisitorPinsByVenue(venueId) {
+      return listSupabasePopularVisitorPinsForVenue(requireSupabaseClient(), venueId);
     },
 
     async getArticle(id) {
@@ -2932,9 +3277,7 @@ export const supabaseService: HungryService = {
 
     async listDraftDishesQueue(venueId) {
       const client = requireSupabaseClient();
-      const opsApiKey = getOpsDraftApiKey();
       const { data, error } = await client.functions.invoke("ops-dishes-draft", {
-        headers: opsApiKey ? { "x-ops-api-key": opsApiKey } : undefined,
         body: {
           action: "list",
           venueId: venueId ?? null,
@@ -2977,9 +3320,7 @@ export const supabaseService: HungryService = {
 
     async reviewDraftDish(draftDishId, decision, notes) {
       const client = requireSupabaseClient();
-      const opsApiKey = getOpsDraftApiKey();
       const { error } = await client.functions.invoke("ops-dishes-draft", {
-        headers: opsApiKey ? { "x-ops-api-key": opsApiKey } : undefined,
         body: {
           action: "review",
           draftDishId,
@@ -3015,7 +3356,56 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const outlet = await getMerchantOutletRow(client, outletId);
       const resolvedOutletId = asString(outlet.id) ?? outletId;
-      const { data, error } = await client
+
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to upload verification evidence.");
+      assertLocalUserMediaUri(evidence.fileUrl, "Merchant verification evidence");
+
+      const { data: existingVerification, error: existingError } = await client
+        .from("merchant_verifications")
+        .select("id")
+        .eq("outlet_id", resolvedOutletId)
+        .maybeSingle();
+      if (existingError) throw existingError;
+
+      let verificationId = asString((existingVerification as Row | null)?.id);
+      if (!verificationId) {
+        const { data: createdVerification, error: createError } = await client
+          .from("merchant_verifications")
+          .insert({
+            outlet_id: resolvedOutletId,
+            status: "draft",
+            method: evidence.method,
+          })
+          .select("id")
+          .single();
+        if (createError) throw createError;
+        verificationId = asString((createdVerification as Row | null)?.id);
+      }
+      if (!verificationId) {
+        throw new Error("Unable to prepare verification evidence upload.");
+      }
+
+      const evidenceExtension = extensionFromUri(evidence.fileUrl);
+      const evidencePath = `${userId}/${resolvedOutletId}/${verificationId}-${Date.now()}.${evidenceExtension}`;
+      const uploadedEvidence = await uploadPostMediaFromUri({
+        client,
+        bucket: "merchant-verification-evidence",
+        path: evidencePath,
+        uri: evidence.fileUrl,
+      });
+      const { error: evidenceError } = await client.from("merchant_verification_evidence").insert({
+        verification_id: verificationId,
+        method: evidence.method,
+        file_url: `supabase://merchant-verification-evidence/${uploadedEvidence.path}`,
+        storage_bucket: "merchant-verification-evidence",
+        storage_path: uploadedEvidence.path,
+        uploaded_by: userId,
+        review_note: evidence.reviewNote ?? null,
+      });
+      if (evidenceError) throw evidenceError;
+
+      const { error } = await client
         .from("merchant_verifications")
         .upsert(
           {
@@ -3031,16 +3421,6 @@ export const supabaseService: HungryService = {
         .select("id")
         .single();
       if (error) throw error;
-
-      const userId = await getCurrentSupabaseUserId();
-      const { error: evidenceError } = await client.from("merchant_verification_evidence").insert({
-        verification_id: (data as Row).id,
-        method: evidence.method,
-        file_url: evidence.fileUrl,
-        uploaded_by: userId,
-        review_note: evidence.reviewNote ?? null,
-      });
-      if (evidenceError) throw evidenceError;
     },
 
     async resubmitVerification(outletId, evidence) {
@@ -3064,6 +3444,41 @@ export const supabaseService: HungryService = {
       if (normalized.description !== undefined) payload.description = normalized.description;
       if (normalized.operatingHours !== undefined) {
         payload.operating_hours = normalized.operatingHours;
+      }
+      if (normalized.temporaryClosure !== undefined) {
+        payload.temporary_closure = normalized.temporaryClosure || null;
+      }
+      if (normalized.contactPhone !== undefined) payload.contact_phone = normalized.contactPhone;
+      if (normalized.contactEmail !== undefined) payload.contact_email = normalized.contactEmail;
+      if (normalized.profilePhotoUrl !== undefined) {
+        payload.profile_photo_url = normalized.profilePhotoUrl || null;
+        if (normalized.profilePhotoUrl && isLocalUri(normalized.profilePhotoUrl)) {
+          const userId = await getCurrentSupabaseUserId();
+          if (!userId) throw new Error("You must be signed in to upload business photos.");
+          const extension = extensionFromUri(normalized.profilePhotoUrl);
+          const upload = await uploadImageFromUri({
+            client,
+            bucket: "merchant-stall-images",
+            path: `${userId}/${resolvedOutletId}/profile-${Date.now()}.${extension}`,
+            uri: normalized.profilePhotoUrl,
+          });
+          payload.profile_photo_url = upload.publicUrl;
+        }
+      }
+      if (normalized.coverPhotoUrl !== undefined) {
+        payload.cover_photo_url = normalized.coverPhotoUrl || null;
+        if (normalized.coverPhotoUrl && isLocalUri(normalized.coverPhotoUrl)) {
+          const userId = await getCurrentSupabaseUserId();
+          if (!userId) throw new Error("You must be signed in to upload business photos.");
+          const extension = extensionFromUri(normalized.coverPhotoUrl);
+          const upload = await uploadImageFromUri({
+            client,
+            bucket: "merchant-stall-images",
+            path: `${userId}/${resolvedOutletId}/cover-${Date.now()}.${extension}`,
+            uri: normalized.coverPhotoUrl,
+          });
+          payload.cover_photo_url = upload.publicUrl;
+        }
       }
       if (normalized.isLive !== undefined) payload.is_live = normalized.isLive;
 
@@ -3378,6 +3793,182 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
+    async listPopularVisitorCandidates(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const venueId = asString(outlet.venue_id) ?? "";
+
+      const { data, error } = await client
+        .from("reviews")
+        .select("id,user_id,dish_id,venue_id,author_name,rating,text,created_at")
+        .eq("venue_id", venueId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+
+      const reviewRows = Array.isArray(data) ? (data as Row[]) : [];
+      const activePins = await listSupabasePopularVisitorPinsForOutlet(client, resolvedOutletId);
+      const activePinByReviewId = new Map(activePins.map((pin) => [pin.reviewId, pin]));
+      const profileById = await fetchSafeProfileRowsById(
+        client,
+        reviewRows.map((row) => asString(row.user_id) ?? ""),
+      );
+      const dishIds = Array.from(
+        new Set(reviewRows.map((row) => asString(row.dish_id)).filter(Boolean)),
+      ) as string[];
+      const dishNameById = new Map<string, string>();
+      if (dishIds.length > 0) {
+        const dishRows = await client.from("dishes").select("id,name").in("id", dishIds);
+        if (dishRows.error) throw dishRows.error;
+        (Array.isArray(dishRows.data) ? (dishRows.data as Row[]) : []).forEach((row) => {
+          const id = asString(row.id);
+          const name = asString(row.name);
+          if (id && name) dishNameById.set(id, name);
+        });
+      }
+
+      return reviewRows.map((row) => {
+        const reviewId = asString(row.id) ?? "";
+        const profileId = asString(row.user_id);
+        const profile = profileId ? profileById.get(profileId) : undefined;
+        const activePin = activePinByReviewId.get(reviewId);
+        return {
+          outletId: resolvedOutletId,
+          venueId,
+          reviewId,
+          sourceId: reviewId,
+          authorProfileId: profileId,
+          authorName:
+            asString(profile?.display_name) ?? asString(row.author_name) ?? "Hungry diner",
+          authorAvatarUrl: asString(profile?.avatar_url),
+          reviewText: asString(row.text) ?? "",
+          rating: asNumber(row.rating) ?? 0,
+          dishName: dishNameById.get(asString(row.dish_id) ?? ""),
+          visitedAt: asString(row.created_at) ?? new Date().toISOString(),
+          isPinned: Boolean(activePin),
+          pinId: activePin?.id,
+          sortOrder: activePin?.sortOrder,
+        } satisfies PopularVisitorCandidate;
+      });
+    },
+
+    async listPopularVisitorPins(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      return listSupabasePopularVisitorPinsForOutlet(client, asString(outlet.id) ?? outletId);
+    },
+
+    async pinPopularVisitor(outletId, reviewId) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const venueId = asString(outlet.venue_id) ?? "";
+
+      const existingPin = await client
+        .from("merchant_popular_visitor_pins")
+        .select("*")
+        .eq("outlet_id", resolvedOutletId)
+        .eq("review_id", reviewId)
+        .maybeSingle();
+      if (existingPin.error) throw existingPin.error;
+      const existingPinRow = existingPin.data as Row | null;
+      if (existingPinRow && asBoolean(existingPinRow.is_active)) {
+        return mapPopularVisitorPin(existingPinRow);
+      }
+
+      const activePins = await listSupabasePopularVisitorPinsForOutlet(client, resolvedOutletId);
+      if (activePins.length >= 6) {
+        throw new Error("A stall can feature up to 6 popular visitors.");
+      }
+
+      const { data: reviewData, error } = await client
+        .from("reviews")
+        .select("id,user_id,dish_id,venue_id,author_name,rating,text,created_at")
+        .eq("id", reviewId)
+        .eq("venue_id", venueId)
+        .single();
+      if (error) throw error;
+
+      const reviewRow = reviewData as Row;
+      const profileId = asString(reviewRow.user_id);
+      const profileById = await fetchSafeProfileRowsById(client, profileId ? [profileId] : []);
+      const profile = profileId ? profileById.get(profileId) : undefined;
+      const safeProfileId = profile ? profileId : undefined;
+      const dishId = asString(reviewRow.dish_id);
+      let dishName: string | undefined;
+      if (dishId) {
+        const dishRow = await client.from("dishes").select("name").eq("id", dishId).maybeSingle();
+        if (dishRow.error) throw dishRow.error;
+        dishName = asString((dishRow.data as Row | null)?.name);
+      }
+      const nextSortOrder = activePins.reduce((max, pin) => Math.max(max, pin.sortOrder), -1) + 1;
+
+      const { data: pinData, error: pinError } = await client
+        .from("merchant_popular_visitor_pins")
+        .upsert(
+          {
+            outlet_id: resolvedOutletId,
+            venue_id: venueId,
+            review_id: reviewId,
+            source_id: reviewId,
+            author_profile_id: safeProfileId ?? null,
+            author_name:
+              asString(profile?.display_name) ?? asString(reviewRow.author_name) ?? "Hungry diner",
+            author_avatar_url: asString(profile?.avatar_url) ?? null,
+            author_location: null,
+            review_text: asString(reviewRow.text) ?? "",
+            rating: asNumber(reviewRow.rating) ?? 0,
+            dish_name: dishName ?? null,
+            visited_at: asString(reviewRow.created_at) ?? new Date().toISOString(),
+            pinned_at: new Date().toISOString(),
+            sort_order: nextSortOrder,
+            is_active: true,
+          },
+          { onConflict: "outlet_id,review_id" },
+        )
+        .select("*")
+        .single();
+      if (pinError) throw pinError;
+      return mapPopularVisitorPin(pinData as Row);
+    },
+
+    async unpinPopularVisitor(pinId) {
+      const { error } = await requireSupabaseClient()
+        .from("merchant_popular_visitor_pins")
+        .update({ is_active: false })
+        .eq("id", pinId);
+      if (error) throw error;
+    },
+
+    async reorderPopularVisitorPins(outletId, orderedPinIds) {
+      const client = requireSupabaseClient();
+      const outlet = await requireLinkedMerchantOutlet(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const activePins = await listSupabasePopularVisitorPinsForOutlet(client, resolvedOutletId);
+      const activePinIds = new Set(activePins.map((pin) => pin.id));
+      const uniqueOrderedIds = Array.from(
+        new Set(orderedPinIds.filter((pinId) => activePinIds.has(pinId))),
+      );
+      const finalOrder = [
+        ...uniqueOrderedIds,
+        ...activePins.map((pin) => pin.id).filter((pinId) => !uniqueOrderedIds.includes(pinId)),
+      ];
+
+      const updateResults = await Promise.all(
+        finalOrder.map((pinId, index) =>
+          client
+            .from("merchant_popular_visitor_pins")
+            .update({ sort_order: index })
+            .eq("id", pinId)
+            .eq("outlet_id", resolvedOutletId)
+            .eq("is_active", true),
+        ),
+      );
+      const failedUpdate = updateResults.find((result) => result.error);
+      if (failedUpdate?.error) throw failedUpdate.error;
+      return listSupabasePopularVisitorPinsForOutlet(client, resolvedOutletId);
+    },
+
     async getPromotions(outletId, status) {
       const client = requireSupabaseClient();
       const outlet = await getMerchantOutletRow(client, outletId);
@@ -3408,6 +3999,12 @@ export const supabaseService: HungryService = {
           end_date: promo.endDate,
           target_audience: promo.targetAudience,
           status: promo.status,
+          promotion_item_type: promo.promotionItemType ?? "new_item",
+          original_price: promo.originalPrice ?? null,
+          promotional_price: promo.promotionalPrice ?? null,
+          final_price: promo.finalPrice ?? promo.promotionalPrice ?? null,
+          discount_percentage: promo.discountPercentage ?? null,
+          is_available: promo.isAvailable ?? promo.status === "active",
           impressions: analytics.impressions,
           clicks: analytics.clicks,
           saves: analytics.saves,
@@ -3429,6 +4026,15 @@ export const supabaseService: HungryService = {
       if (updates.endDate !== undefined) payload.end_date = updates.endDate;
       if (updates.targetAudience !== undefined) payload.target_audience = updates.targetAudience;
       if (updates.status !== undefined) payload.status = updates.status;
+      if (updates.promotionItemType !== undefined)
+        payload.promotion_item_type = updates.promotionItemType;
+      if (updates.originalPrice !== undefined) payload.original_price = updates.originalPrice;
+      if (updates.promotionalPrice !== undefined)
+        payload.promotional_price = updates.promotionalPrice;
+      if (updates.finalPrice !== undefined) payload.final_price = updates.finalPrice;
+      if (updates.discountPercentage !== undefined)
+        payload.discount_percentage = updates.discountPercentage;
+      if (updates.isAvailable !== undefined) payload.is_available = updates.isAvailable;
       if (updates.analytics) {
         payload.impressions = updates.analytics.impressions;
         payload.clicks = updates.analytics.clicks;
@@ -3457,17 +4063,36 @@ export const supabaseService: HungryService = {
     },
 
     async getAnalytics(outletId, dateRange) {
+      const client = requireSupabaseClient();
       const menu = await this.getMenu(outletId);
       const inbox = await this.getInbox(outletId);
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const { data: viewRows, error: viewError } = await client.rpc(
+        "get_merchant_dish_view_counts",
+        {
+          p_outlet_id: resolvedOutletId,
+          p_since: getMerchantAnalyticsSince(dateRange),
+          p_until: null,
+        },
+      );
+      if (viewError) throw viewError;
+      const viewCounts = new Map<string, number>();
+      (Array.isArray(viewRows) ? (viewRows as Row[]) : []).forEach((row) => {
+        const dishId = asString(row.dish_id);
+        if (!dishId) return;
+        viewCounts.set(dishId, asNumber(row.view_count) ?? 0);
+      });
+      const dishViewTotal = Array.from(viewCounts.values()).reduce((sum, count) => sum + count, 0);
       const reviewRatings = inbox
         .map((interaction) => interaction.rating)
         .filter((rating): rating is number => typeof rating === "number");
       return {
         outletId,
         dateRange,
-        profileVisits: 0,
-        menuViews: 0,
-        dishViews: 0,
+        profileVisits: Math.floor(dishViewTotal / 2),
+        menuViews: dishViewTotal,
+        dishViews: dishViewTotal,
         directionTaps: 0,
         saves: 0,
         shares: 0,
@@ -3479,12 +4104,15 @@ export const supabaseService: HungryService = {
           reviewRatings.length === 0
             ? 0
             : reviewRatings.reduce((sum, rating) => sum + rating, 0) / reviewRatings.length,
-        topDishes: menu.slice(0, 3).map((dish) => ({
-          dishId: dish.id,
-          name: dish.name,
-          views: 0,
-          saves: 0,
-        })),
+        topDishes: menu
+          .map((dish) => ({
+            dishId: dish.id,
+            name: dish.name,
+            views: viewCounts.get(dish.id) ?? 0,
+            saves: 0,
+          }))
+          .sort((left, right) => right.views - left.views)
+          .slice(0, 5),
         mostSearchedKeywords: menu.slice(0, 4).map((dish) => dish.name.toLowerCase()),
         peakDiscoveryHours: [],
         customerTasteTags: [],
@@ -3495,6 +4123,137 @@ export const supabaseService: HungryService = {
           averageRating: 0,
         },
       } satisfies MerchantAnalytics;
+    },
+
+    async getWeeklySummaryStats(outletId) {
+      const analytics = await this.getAnalytics(outletId, "7d");
+      const reviews = await this.getInbox(outletId, { type: "review" });
+      const promotions = await this.getPromotions(outletId);
+      return buildWeeklySummaryFromAnalytics(outletId, analytics, reviews, promotions);
+    },
+
+    async getMerchantNotifications(merchantAccountId) {
+      const { data, error } = await requireSupabaseClient()
+        .from("merchant_notifications")
+        .select("*")
+        .eq("merchant_account_id", merchantAccountId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (Array.isArray(data) ? (data as Row[]) : []).map(mapMerchantNotification);
+    },
+
+    async syncLowRatingNotifications(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const merchantAccountId = asString(outlet.merchant_account_id) ?? "";
+      const outletName = asString(outlet.name) ?? "Your stall";
+      const reviews = await this.getInbox(outletId, { type: "review" });
+      const lowReviews = reviews.filter(
+        (review) => typeof review.rating === "number" && review.rating <= 2,
+      );
+      if (lowReviews.length === 0) return [];
+      const rows = lowReviews.map((review) => ({
+        merchant_account_id: merchantAccountId,
+        outlet_id: resolvedOutletId,
+        kind: "low_rating",
+        title: `${outletName} received a low rating`,
+        body: `${review.rating?.toFixed(1)} stars: ${review.text.slice(0, 120)}`,
+        status: "unread",
+        dedupe_key: `low-rating:${review.sourceId ?? review.id}`,
+        deep_link: "MerchantTabs/CustomerInbox",
+        metadata: {
+          reviewId: review.sourceId ?? review.id,
+          rating: review.rating,
+          snippet: review.text,
+        },
+        created_at: review.createdAt,
+      }));
+      const { error } = await client
+        .from("merchant_notifications")
+        .upsert(rows, { onConflict: "dedupe_key", ignoreDuplicates: true });
+      if (error) throw error;
+      const keys = rows.map((row) => row.dedupe_key);
+      const { data, error: readError } = await client
+        .from("merchant_notifications")
+        .select("*")
+        .in("dedupe_key", keys)
+        .order("created_at", { ascending: false });
+      if (readError) throw readError;
+      return (Array.isArray(data) ? (data as Row[]) : []).map(mapMerchantNotification);
+    },
+
+    async sendWeeklySummaryNotifications(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      const merchantAccountId = asString(outlet.merchant_account_id) ?? "";
+      const outletName = asString(outlet.name) ?? "Your stall";
+      const summary = await this.getWeeklySummaryStats(outletId);
+      const members = await this.getTeamMembers(merchantAccountId);
+      const rows = members
+        .filter((member) => member.inviteStatus !== "removed")
+        .map((member) => ({
+          merchant_account_id: merchantAccountId,
+          outlet_id: resolvedOutletId,
+          recipient_user_id: member.userId || null,
+          recipient_email: member.email,
+          kind: "weekly_summary",
+          title: `${outletName} weekly summary is ready`,
+          body: `${summary.totalViews.toLocaleString()} views, ${summary.newReviews} new reviews, ${summary.unrepliedReviews} unreplied reviews.`,
+          status: "unread",
+          dedupe_key: `weekly-summary:${summary.id}:${member.id}`,
+          deep_link: "MerchantTabs/MerchantAnalytics",
+          metadata: { summaryId: summary.id },
+        }));
+      if (rows.length === 0) return [];
+      const { error } = await client
+        .from("merchant_notifications")
+        .upsert(rows, { onConflict: "dedupe_key", ignoreDuplicates: true });
+      if (error) throw error;
+      const emailRows = rows
+        .filter((row) => row.recipient_email)
+        .map((row) => ({
+          merchant_account_id: merchantAccountId,
+          outlet_id: resolvedOutletId,
+          recipient_email: row.recipient_email,
+          template: "weekly_summary",
+          subject: row.title,
+          body: row.body,
+          status: "queued",
+          dedupe_key: `email:${row.dedupe_key}`,
+          metadata: row.metadata,
+        }));
+      if (emailRows.length > 0) {
+        await Promise.all(
+          emailRows.map(async (row) => {
+            const memberId = row.dedupe_key.split(":").at(-1) ?? row.recipient_email;
+            const { error: emailError } = await client.rpc(
+              "enqueue_merchant_weekly_summary_email",
+              {
+                p_merchant_account_id: merchantAccountId,
+                p_outlet_id: resolvedOutletId,
+                p_recipient_email: row.recipient_email,
+                p_summary_id: String(row.metadata.summaryId ?? summary.id),
+                p_member_id: memberId,
+                p_subject: row.subject,
+                p_body: row.body,
+              },
+            );
+            if (emailError) throw emailError;
+          }),
+        );
+      }
+      const { data, error: readError } = await client
+        .from("merchant_notifications")
+        .select("*")
+        .in(
+          "dedupe_key",
+          rows.map((row) => row.dedupe_key),
+        )
+        .order("created_at", { ascending: false });
+      if (readError) throw readError;
+      return (Array.isArray(data) ? (data as Row[]) : []).map(mapMerchantNotification);
     },
 
     async generateDishDescription(dishName, ingredients) {
@@ -3589,13 +4348,21 @@ export const supabaseService: HungryService = {
         email: asString(row.email) ?? "",
         role: asMerchantRole(row.role),
         addedAt: asString(row.created_at) ?? new Date().toISOString(),
+        inviteStatus: asMerchantInviteStatus(row.invite_status),
+        invitedAt: asString(row.invited_at),
+        acceptedAt: asString(row.accepted_at),
+        removedAt: asString(row.removed_at),
       }));
     },
 
-    async addTeamMember(merchantAccountId, email, role) {
+    async addTeamMember(merchantAccountId, email, role, displayName) {
       const normalizedEmail = email.trim().toLowerCase();
+      const trimmedName = displayName?.trim() ?? "";
       if (!normalizedEmail || !normalizedEmail.includes("@")) {
         throw new Error("Valid team member email is required");
+      }
+      if (!trimmedName) {
+        throw new Error("Team member name is required");
       }
       const { data, error } = await requireSupabaseClient()
         .from("merchant_roles")
@@ -3603,20 +4370,59 @@ export const supabaseService: HungryService = {
           merchant_account_id: merchantAccountId,
           user_id: null,
           email: normalizedEmail,
-          display_name: normalizedEmail.split("@")[0],
+          display_name: trimmedName,
           role,
+          invite_status: "pending",
+          invited_at: new Date().toISOString(),
         })
         .select("*")
         .single();
       if (error) throw error;
+      const row = data as Row;
+      const { error: notificationError } = await requireSupabaseClient()
+        .from("merchant_notifications")
+        .upsert(
+          {
+            merchant_account_id: merchantAccountId,
+            recipient_email: normalizedEmail,
+            kind: "team_invite",
+            title: "You have been invited to manage a Hungry stall",
+            body: `${trimmedName}, open Hungry to accept your merchant team invite.`,
+            status: "sent",
+            dedupe_key: `team-invite:${merchantAccountId}:${normalizedEmail}`,
+            deep_link: "MerchantTabs/MerchantSettings",
+            metadata: {
+              memberId: asString(row.id),
+              role,
+              delivery: "email",
+            },
+          },
+          { onConflict: "dedupe_key", ignoreDuplicates: true },
+        );
+      if (notificationError) throw notificationError;
+      const { error: emailError } = await requireSupabaseClient().rpc(
+        "enqueue_merchant_team_invite_email",
+        {
+          p_merchant_account_id: merchantAccountId,
+          p_recipient_email: normalizedEmail,
+          p_member_id: asString(row.id) ?? null,
+          p_role: role,
+          p_invitee_name: trimmedName,
+        },
+      );
+      if (emailError) throw emailError;
       return {
-        id: asString((data as Row).id) ?? "",
+        id: asString(row.id) ?? "",
         merchantAccountId,
-        userId: asString((data as Row).user_id) ?? "",
-        displayName: asString((data as Row).display_name) ?? normalizedEmail,
-        email: asString((data as Row).email) ?? normalizedEmail,
+        userId: asString(row.user_id) ?? "",
+        displayName: asString(row.display_name) ?? trimmedName,
+        email: asString(row.email) ?? normalizedEmail,
         role,
-        addedAt: asString((data as Row).created_at) ?? new Date().toISOString(),
+        inviteStatus: asMerchantInviteStatus(row.invite_status),
+        invitedAt: asString(row.invited_at),
+        acceptedAt: asString(row.accepted_at),
+        removedAt: asString(row.removed_at),
+        addedAt: asString(row.created_at) ?? new Date().toISOString(),
       };
     },
 

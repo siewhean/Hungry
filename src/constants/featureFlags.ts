@@ -11,20 +11,25 @@ export function resolveFeatureFlags(appEnvRaw = process.env.EXPO_PUBLIC_APP_ENV)
   const merchantClaimCtaEnabled =
     appEnv === "staging" || (typeof __DEV__ !== "undefined" && __DEV__ === true);
 
-  const merchantCentreEnabled =
-    appEnv === "staging" || (typeof __DEV__ !== "undefined" && __DEV__ === true);
+  const merchantCentreEnabled = appEnv === "staging";
 
   const prototypeRoutesEnabled =
     appEnv !== "production" || (typeof __DEV__ !== "undefined" && __DEV__ === true);
+  const nonProductionSurfaceEnabled = prototypeRoutesEnabled;
 
   return {
     readsEnabled: true,
     notificationsEnabled: false,
     mockMapboxEnabled: false,
     hungryWheelEnabled: true,
-    directMessagesEnabled: false,
+    directMessagesEnabled: true,
     commentsEnabled: true,
+    oauthProvidersEnabled: nonProductionSurfaceEnabled,
+    floorplansEnabled: false,
     craveEnabled: true,
+    gamificationEnabled: true,
+    collectionsEnabled: true,
+    storiesEnabled: true,
     merchantClaimCtaEnabled,
     merchantCentreEnabled,
     prototypeRoutesEnabled,

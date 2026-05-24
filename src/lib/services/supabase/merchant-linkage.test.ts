@@ -118,3 +118,85 @@ test("Supabase merchant catalog metadata RLS covers images and dietary links", (
   assert.match(smoke, /dish_taste_vectors_%_merchant/);
   assert.match(smoke, /dish_dietary_flags_%_merchant/);
 });
+
+test("Supabase merchant portal readiness covers views, notifications, and promo pricing", () => {
+  const migration = read("supabase/migrations/0039_merchant_portal_readiness.sql");
+  const hardening = read(
+    "supabase/migrations/0040_release_hardening_account_deletion_merchant_rpcs.sql",
+  );
+  const service = read("src/lib/services/supabase/supabaseService.ts");
+
+  assert.match(migration, /merchant_dish_view_events/);
+  assert.match(migration, /dedupe_key text not null unique/);
+  assert.match(migration, /merchant_notifications/);
+  assert.match(migration, /merchant_email_outbox/);
+  assert.match(migration, /promotion_item_type/);
+  assert.match(migration, /original_price numeric/);
+  assert.match(migration, /profile_photo_url text/);
+  assert.match(migration, /merchant_notifications_owner_manager_write/);
+  assert.match(hardening, /drop policy if exists "merchant_dish_views_public_insert"/);
+  assert.match(hardening, /drop policy if exists "merchant_email_outbox_owner_manager_insert"/);
+  assert.match(hardening, /revoke insert, update, delete on table merchant_dish_view_events/);
+  assert.match(hardening, /revoke insert, update, delete on table merchant_email_outbox/);
+  assert.match(hardening, /record_merchant_dish_view/);
+  assert.match(hardening, /anonymous dish views require a bounded session id/);
+  assert.match(hardening, /session id format is invalid/);
+  assert.match(hardening, /dish view rate limit exceeded/);
+  assert.match(hardening, /get_merchant_dish_view_counts/);
+  assert.match(hardening, /app_enqueue_merchant_email/);
+  assert.match(hardening, /enqueue_merchant_team_invite_email/);
+  assert.match(hardening, /enqueue_merchant_weekly_summary_email/);
+  assert.match(hardening, /security definer/);
+  assert.match(hardening, /set search_path = public/);
+  assert.match(service, /recordDishView/);
+  assert.match(service, /rpc\("record_merchant_dish_view"/);
+  assert.match(service, /rpc\(\s*"get_merchant_dish_view_counts"/);
+  assert.match(service, /getWeeklySummaryStats/);
+  assert.match(service, /getMerchantNotifications/);
+  assert.match(service, /syncLowRatingNotifications/);
+  assert.match(service, /sendWeeklySummaryNotifications/);
+  assert.match(service, /rpc\(\s*"enqueue_merchant_team_invite_email"/);
+  assert.match(service, /rpc\(\s*"enqueue_merchant_weekly_summary_email"/);
+  assert.doesNotMatch(service, /from\("merchant_dish_view_events"\)/);
+  assert.doesNotMatch(service, /from\("merchant_email_outbox"\)/);
+  assert.match(service, /bucket: "merchant-stall-images"/);
+});
+
+test("Supabase popular visitor pins are review-backed, merchant-managed, and public-active readable", () => {
+  const migration = read("supabase/migrations/20260524041000_merchant_popular_visitor_pins.sql");
+  const service = read("src/lib/services/supabase/supabaseService.ts");
+
+  assert.match(migration, /create table if not exists public\.merchant_popular_visitor_pins/);
+  assert.match(migration, /outlet_id uuid not null references public\.merchant_outlets/);
+  assert.match(migration, /venue_id text not null references public\.venues/);
+  assert.match(migration, /review_id uuid not null references public\.reviews/);
+  assert.match(migration, /unique \(outlet_id, review_id\)/);
+  assert.match(migration, /idx_popular_visitor_pins_venue_active_order/);
+  assert.match(migration, /normalize_merchant_popular_visitor_pin/);
+  assert.match(migration, /new\.venue_id is distinct from outlet_venue_id/);
+  assert.match(migration, /review_row\.venue_id is distinct from outlet_venue_id/);
+  assert.match(
+    migration,
+    /new\.author_name := coalesce\(profile_row\.display_name, review_row\.author_name/,
+  );
+  assert.match(
+    migration,
+    /alter table public\.merchant_popular_visitor_pins enable row level security/,
+  );
+  assert.match(migration, /popular_visitor_pins_public_active_read/);
+  assert.match(migration, /using \(is_active = true\)/);
+  assert.match(migration, /public\.merchant_can_manage_outlet_v2\(outlet_id\)/);
+  assert.match(migration, /mo\.venue_id = merchant_popular_visitor_pins\.venue_id/);
+  assert.match(migration, /r\.id = merchant_popular_visitor_pins\.review_id/);
+  assert.match(migration, /r\.venue_id = merchant_popular_visitor_pins\.venue_id/);
+
+  assert.match(service, /listSupabasePopularVisitorPinsForVenue/);
+  assert.match(service, /listSupabasePopularVisitorPinsForOutlet/);
+  assert.match(service, /fetchSafeProfileRowsById/);
+  assert.match(service, /public_profiles/);
+  assert.match(service, /async listPopularVisitorCandidates/);
+  assert.match(service, /async pinPopularVisitor/);
+  assert.match(service, /const safeProfileId = profile \? profileId : undefined/);
+  assert.match(service, /async reorderPopularVisitorPins/);
+  assert.match(service, /failedUpdate\?\.error/);
+});

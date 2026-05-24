@@ -156,6 +156,43 @@ export interface Review {
   photos: string[];
 }
 
+export interface PopularVisitorPin {
+  id: string;
+  outletId: string;
+  venueId: string;
+  reviewId: string;
+  sourceId: string;
+  authorProfileId?: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  authorLocation?: string;
+  reviewText: string;
+  rating: number;
+  dishName?: string;
+  visitedAt: string;
+  pinnedAt: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface PopularVisitorCandidate {
+  outletId: string;
+  venueId: string;
+  reviewId: string;
+  sourceId: string;
+  authorProfileId?: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  authorLocation?: string;
+  reviewText: string;
+  rating: number;
+  dishName?: string;
+  visitedAt: string;
+  isPinned: boolean;
+  pinId?: string;
+  sortOrder?: number;
+}
+
 export interface DishDetail extends DishSummary {
   gallery: string[];
   description?: string;
@@ -399,6 +436,13 @@ export type VerificationMethod =
 export type LocationPrivacy = "exact" | "approximate" | "hidden";
 
 export type MerchantRole = "owner" | "manager" | "staff";
+export type MerchantInviteStatus = "pending" | "accepted" | "declined" | "removed";
+export type MerchantNotificationKind =
+  | "team_invite"
+  | "team_added"
+  | "low_rating"
+  | "weekly_summary"
+  | "ai_insight";
 
 export interface VerificationEvidence {
   id: string;
@@ -466,6 +510,10 @@ export interface MerchantTeamMember {
   displayName: string;
   email: string;
   role: MerchantRole;
+  inviteStatus?: MerchantInviteStatus;
+  invitedAt?: string;
+  acceptedAt?: string;
+  removedAt?: string;
   addedAt: string;
 }
 
@@ -511,8 +559,14 @@ export interface MerchantPromotion {
   description: string;
   /** Dish ID if promoting a specific dish, else outlet-level */
   targetDishId?: string;
+  promotionItemType?: "new_item" | "existing_menu_item";
   startDate: string;
   endDate: string;
+  originalPrice?: number;
+  promotionalPrice?: number;
+  finalPrice?: number;
+  discountPercentage?: number;
+  isAvailable?: boolean;
   targetAudience: PromotionTargetAudience[];
   status: PromotionStatus;
   createdAt: string;
@@ -577,6 +631,47 @@ export interface MerchantNotificationPreferences {
   aiInsights: boolean;
 }
 
+export interface MerchantNotification {
+  id: string;
+  merchantAccountId: string;
+  outletId?: string;
+  recipientUserId?: string;
+  recipientEmail?: string;
+  kind: MerchantNotificationKind;
+  title: string;
+  body: string;
+  status: "unread" | "read" | "sent";
+  dedupeKey: string;
+  deepLink?: string;
+  metadata?: Record<string, string | number | boolean | null>;
+  createdAt: string;
+}
+
+export interface MerchantDishViewEvent {
+  id: string;
+  outletId: string;
+  dishId: string;
+  sessionId: string;
+  userId?: string;
+  viewedAt: string;
+}
+
+export interface MerchantWeeklySummary {
+  id: string;
+  outletId: string;
+  weekStart: string;
+  weekEnd: string;
+  totalViews: number;
+  dishViews: number;
+  topDishes: { dishId: string; name: string; views: number; saves: number }[];
+  newReviews: number;
+  averageRating: number;
+  ratingChange: number;
+  unrepliedReviews: number;
+  promotionViews: number;
+  createdAt: string;
+}
+
 export interface AIBusinessInsight {
   id: string;
   outletId: string;
@@ -617,9 +712,15 @@ export interface StoryContent {
   url: string;
 }
 
+export interface StoryGalleryAsset extends StoryContent {
+  id: string;
+  title: string;
+}
+
 export interface StoryInteraction {
   liked: boolean;
   saved: boolean;
+  savedAt?: string;
   likeCount: number;
   commentCount: number;
   shareCount: number;
@@ -760,7 +861,27 @@ export interface ReviewHelpfulVote {
 // ─── Passport ─────────────────────────────────────────────────────────────────
 
 /** Top-level dimension of the Hungry Passport */
-export type PassportCategoryType = "cuisine" | "neighbourhood";
+export type PassportCategoryType =
+  | "cuisine"
+  | "neighbourhood"
+  | "classic"
+  | "dietary"
+  | "contributor";
+
+export type PassportStampAssetKey =
+  | "stamp-cuisine-hawker"
+  | "stamp-classic-laksa"
+  | "stamp-hood-chinatown"
+  | "stamp-dietary-halal";
+
+export type PassportBadgeAssetKey =
+  | "badge-hawker-explorer"
+  | "badge-classics-trail"
+  | "badge-night-makan"
+  | "badge-contributor";
+
+export type PassportInkTone = "orange" | "amber" | "navy" | "teal";
+export type PassportStampShape = "rounded" | "oval" | "slanted";
 
 /**
  * A single passport category (e.g. "Japanese Explorer", "CBD Lunch Explorer").
@@ -777,6 +898,48 @@ export interface PassportCategory {
   stampThresholds: number[];
 }
 
+export interface PassportStampDefinition {
+  id: string;
+  categoryId: string;
+  threshold: number;
+  index: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  assetKey: PassportStampAssetKey;
+  inkTone: PassportInkTone;
+  stampShape: PassportStampShape;
+}
+
+export interface PassportBadgeDefinition {
+  id: string;
+  title: string;
+  description: string;
+  categoryType: PassportCategoryType;
+  assetKey: PassportBadgeAssetKey;
+  unlockCategoryId?: string;
+  unlockThreshold: number;
+}
+
+export interface EarnedPassportStamp extends PassportStampDefinition {
+  triedCount: number;
+}
+
+export interface PassportNextStamp {
+  category: PassportCategory;
+  stamp: PassportStampDefinition;
+  triedCount: number;
+  remainingCount: number;
+  progressFraction: number;
+}
+
+export interface PassportCelebrateMarker {
+  stampId: string;
+  categoryId: string;
+  title: string;
+  shouldCelebrate: boolean;
+}
+
 /**
  * A user's computed progress within one passport category.
  * Computed from user_stall_interactions — not stored independently for MVP.
@@ -789,6 +952,15 @@ export interface UserPassportProgress {
   nextStampIndex: number;
   /** Thresholds for which stamps have been awarded */
   earnedStampThresholds: number[];
+}
+
+export interface UserPassportStamp {
+  stampId: string;
+  categoryId: string;
+  threshold: number;
+  earnedAt: string;
+  triggerAction: FoodCredAction | "initial_sync";
+  celebratedAt?: string;
 }
 
 // ─── Collections ──────────────────────────────────────────────────────────────

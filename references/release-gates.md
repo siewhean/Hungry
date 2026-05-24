@@ -9,13 +9,14 @@ This checklist is the canonical release gate for Apple App Store and Google Play
 1. `npm run typecheck` passes.
 2. `npm run test` passes.
 3. `npm run audit:supabase:static` passes.
-4. `npm run audit:assets` passes.
-5. `npm run security:trufflehog` passes.
-6. `npm run security:audit` passes.
-7. `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` passes.
-8. `npm run smoke:native:ios:prepared` passes on a prepared simulator/device.
-9. Android/EAS build or device smoke proof is attached.
-10. Live Supabase behavior smokes pass for chat/DM, social/gamification, Full Audit V1 readiness, and OCR.
+4. `npm run check:edge-functions` passes.
+5. `npm run audit:assets` passes.
+6. `npm run security:trufflehog` passes.
+7. `npm run security:audit` passes.
+8. `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` passes.
+9. `npm run smoke:native:ios:prepared` passes on a prepared simulator/device.
+10. Android/EAS build or device smoke proof is attached.
+11. Live Supabase behavior smokes pass for chat/DM, social/gamification, Full Audit V1 readiness, and OCR.
 
 ## Required Product/Policy Gates
 

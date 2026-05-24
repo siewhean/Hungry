@@ -13,17 +13,23 @@ import type {
   CustomerInteraction,
   DishDetail,
   DietaryFlag,
+  FoodCredAction,
   FoodCollection,
   HawkerTasteTag,
   InteractionType,
   MerchantAccount,
   MerchantAnalytics,
+  MerchantNotification,
   MerchantNotificationPreferences,
   MerchantOutlet,
   MerchantPromotion,
+  MerchantWeeklySummary,
+  MissionType,
   MerchantTeamMember,
   MerchantRole,
   OCRDishDraft,
+  PopularVisitorCandidate,
+  PopularVisitorPin,
   PromotionStatus,
   RecommendationSurface,
   SearchFilters,
@@ -31,6 +37,7 @@ import type {
   StallPost,
   Story,
   StoryContent,
+  StoryGalleryAsset,
   TasteProfile,
   TasteInteractionEvent,
   TasteVector,
@@ -52,7 +59,7 @@ export interface DecideForMeOptions {
 }
 
 export interface DataRepository {
-  getProfile(isAuthenticated: boolean): UserProfile;
+  getProfile(isAuthenticated: boolean, userId?: string | null): UserProfile;
   listBuildings(): BuildingSummary[];
   listVenuesByBuilding(buildingId: string): VenueSummary[];
   getVenueById(venueId: string): VenueSummary | undefined;
@@ -74,6 +81,18 @@ export interface DataRepository {
   getUserFoodCred?(userId: string): Promise<UserFoodCred | null>;
   listActiveMissions?(): Promise<WeeklyMission[]>;
   listUserMissionProgress?(userId: string): Promise<UserMissionProgress[]>;
+  awardFoodCred?(
+    action: FoodCredAction,
+    relatedEntityId?: string,
+    relatedEntityType?: "stall" | "review" | "post" | "collection" | "mission",
+    points?: number,
+  ): Promise<{ totalPoints: number; levelIndex: number; pointsAwarded: number } | null>;
+  upsertStallInteraction?(
+    userId: string,
+    stallId: string,
+    patch: Partial<Pick<StallInteraction, "isSaved" | "isTried" | "isReviewed">>,
+  ): Promise<StallInteraction | null>;
+  incrementMissionProgress?(userId: string, missionType: MissionType): Promise<void>;
 }
 
 // ─── Floor Plan Types ──────────────────────────────────────────────────────────
@@ -364,7 +383,15 @@ export interface AccountDeletionRequest {
   reason?: string;
 }
 
-export type ContentReportTargetType = "review" | "bite" | "reply" | "profile";
+export type ContentReportTargetType =
+  | "review"
+  | "bite"
+  | "reply"
+  | "profile"
+  | "post"
+  | "post_comment"
+  | "story"
+  | "message";
 
 export interface ContentReportRequest {
   targetType: ContentReportTargetType;
@@ -514,6 +541,10 @@ export interface HungryService {
     getVenue(id: string): Promise<VenueSummary | undefined>;
     listVenuesByBuilding(buildingId: string): Promise<VenueSummary[]>;
     getDish(id: string): Promise<DishDetail | undefined>;
+    recordDishView(
+      dishId: string,
+      context?: { sessionId?: string; userId?: string },
+    ): Promise<void>;
     listDishesByVenue(venueId: string): Promise<DishDetail[]>;
     listPopularNearby(lat?: number, lng?: number): Promise<DishDetail[]>;
     searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]>;
@@ -551,6 +582,7 @@ export interface HungryService {
 
     // Stories
     getStories(): Promise<Story[]>;
+    listStoryGalleryAssets(): Promise<StoryGalleryAsset[]>;
     likeStory(storyId: string): Promise<void>;
     saveStory(storyId: string): Promise<void>;
     addStory(content: StoryContent): Promise<Story>;
@@ -575,12 +607,15 @@ export interface HungryService {
   communitySafety: {
     reportContent(request: ContentReportRequest): Promise<void>;
     blockUser(request: BlockUserRequest): Promise<void>;
+    hidePost(postId: string, reason?: string): Promise<void>;
+    unhidePost(postId: string): Promise<void>;
   };
 
   // Content
   content: {
     listArticles(): Promise<BlogPost[]>;
     listStallPosts(): Promise<StallPost[]>;
+    listPopularVisitorPinsByVenue(venueId: string): Promise<PopularVisitorPin[]>;
     getArticle(id: string): Promise<BlogPost | undefined>;
   };
 
@@ -661,6 +696,16 @@ export interface HungryService {
     replyToInteraction(interactionId: string, text: string): Promise<void>;
     reportInteraction(interactionId: string, reason: string): Promise<void>;
 
+    // Featured Visitors
+    listPopularVisitorCandidates(outletId: string): Promise<PopularVisitorCandidate[]>;
+    listPopularVisitorPins(outletId: string): Promise<PopularVisitorPin[]>;
+    pinPopularVisitor(outletId: string, reviewId: string): Promise<PopularVisitorPin>;
+    unpinPopularVisitor(pinId: string): Promise<void>;
+    reorderPopularVisitorPins(
+      outletId: string,
+      orderedPinIds: string[],
+    ): Promise<PopularVisitorPin[]>;
+
     // Promotions
     getPromotions(outletId: string, status?: PromotionStatus): Promise<MerchantPromotion[]>;
     createPromotion(
@@ -675,6 +720,10 @@ export interface HungryService {
 
     // Analytics
     getAnalytics(outletId: string, dateRange: "today" | "7d" | "30d"): Promise<MerchantAnalytics>;
+    getWeeklySummaryStats(outletId: string): Promise<MerchantWeeklySummary>;
+    getMerchantNotifications(merchantAccountId: string): Promise<MerchantNotification[]>;
+    syncLowRatingNotifications(outletId: string): Promise<MerchantNotification[]>;
+    sendWeeklySummaryNotifications(outletId: string): Promise<MerchantNotification[]>;
 
     // AI Tools
     generateDishDescription(dishName: string, ingredients?: string[]): Promise<string>;
@@ -694,6 +743,7 @@ export interface HungryService {
       merchantAccountId: string,
       email: string,
       role: MerchantRole,
+      displayName?: string,
     ): Promise<MerchantTeamMember>;
     removeTeamMember(memberId: string): Promise<void>;
     updateTeamMemberRole(memberId: string, role: MerchantRole): Promise<void>;

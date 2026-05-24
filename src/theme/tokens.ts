@@ -36,6 +36,36 @@ export const colors = {
     overlay: "rgba(17, 24, 39, 0.45)",
     surfaceTranslucent: "rgba(255, 255, 255, 0.9)",
     surfaceGlass: "rgba(255, 255, 255, 0.7)",
+    inverseTextSecondary: "rgba(255, 255, 255, 0.85)",
+    inverseTextMuted: "rgba(255, 255, 255, 0.7)",
+    inverseSurfaceStrong: "rgba(255, 255, 255, 0.25)",
+    inverseSurfaceSubtle: "rgba(255, 255, 255, 0.2)",
+    inverseSurfaceSoft: "rgba(255, 255, 255, 0.15)",
+    inverseSurfaceFaint: "rgba(255, 255, 255, 0.08)",
+    inverseSurfaceBarely: "rgba(255, 255, 255, 0.05)",
+    inverseIndicator: "rgba(255, 255, 255, 0.4)",
+    mediaBackdrop: "#000000",
+    mediaScrim: "rgba(0, 0, 0, 0.5)",
+    mediaScrimStrong: "rgba(0, 0, 0, 0.6)",
+    mediaScrimSoft: "rgba(0, 0, 0, 0.4)",
+    mediaScrimSubtle: "rgba(0, 0, 0, 0.2)",
+    mediaGradientMid: "rgba(0, 0, 0, 0.1)",
+    imageOverlayGradientStart: "rgba(15, 23, 42, 0)",
+    imageOverlayGradientEnd: "rgba(15, 23, 42, 0.68)",
+    imageLabelSurface: "rgba(15, 23, 42, 0.34)",
+    imageLabelBorder: "rgba(255, 255, 255, 0.16)",
+    detailHeroGradientStart: "rgba(255, 255, 255, 0)",
+    detailHeroGradientMid: "rgba(255, 255, 255, 0.72)",
+    detailHeaderSurface: "rgba(255, 255, 255, 0.88)",
+    detailHeaderBorder: "rgba(226, 232, 240, 0.78)",
+    detailImageOverlay: "rgba(15, 23, 42, 0.78)",
+    detailImageBadgeSurface: "rgba(15, 23, 42, 0.48)",
+    detailImageBadgeBorder: "rgba(255, 255, 255, 0.18)",
+    detailImageTextShadow: "rgba(0, 0, 0, 0.36)",
+    storyViewerBackground: "#000000",
+    storyProgressTrack: "rgba(255, 255, 255, 0.3)",
+    storyMetaText: "rgba(255, 255, 255, 0.7)",
+    storyControlBorder: "rgba(255, 255, 255, 0.4)",
   },
   dark: {
     bg: "#151B25",
@@ -74,6 +104,36 @@ export const colors = {
     overlay: "rgba(0, 0, 0, 0.5)",
     surfaceTranslucent: "rgba(26, 32, 44, 0.9)",
     surfaceGlass: "rgba(26, 32, 44, 0.7)",
+    inverseTextSecondary: "rgba(255, 255, 255, 0.85)",
+    inverseTextMuted: "rgba(255, 255, 255, 0.7)",
+    inverseSurfaceStrong: "rgba(255, 255, 255, 0.25)",
+    inverseSurfaceSubtle: "rgba(255, 255, 255, 0.2)",
+    inverseSurfaceSoft: "rgba(255, 255, 255, 0.15)",
+    inverseSurfaceFaint: "rgba(255, 255, 255, 0.08)",
+    inverseSurfaceBarely: "rgba(255, 255, 255, 0.05)",
+    inverseIndicator: "rgba(255, 255, 255, 0.4)",
+    mediaBackdrop: "#000000",
+    mediaScrim: "rgba(0, 0, 0, 0.5)",
+    mediaScrimStrong: "rgba(0, 0, 0, 0.6)",
+    mediaScrimSoft: "rgba(0, 0, 0, 0.4)",
+    mediaScrimSubtle: "rgba(0, 0, 0, 0.2)",
+    mediaGradientMid: "rgba(0, 0, 0, 0.1)",
+    imageOverlayGradientStart: "rgba(15, 23, 42, 0)",
+    imageOverlayGradientEnd: "rgba(15, 23, 42, 0.68)",
+    imageLabelSurface: "rgba(15, 23, 42, 0.34)",
+    imageLabelBorder: "rgba(255, 255, 255, 0.16)",
+    detailHeroGradientStart: "rgba(21, 27, 37, 0)",
+    detailHeroGradientMid: "rgba(21, 27, 37, 0.7)",
+    detailHeaderSurface: "#242F40",
+    detailHeaderBorder: "#2D3748",
+    detailImageOverlay: "rgba(0, 0, 0, 0.74)",
+    detailImageBadgeSurface: "rgba(0, 0, 0, 0.46)",
+    detailImageBadgeBorder: "rgba(255, 255, 255, 0.16)",
+    detailImageTextShadow: "rgba(0, 0, 0, 0.42)",
+    storyViewerBackground: "#000000",
+    storyProgressTrack: "rgba(255, 255, 255, 0.3)",
+    storyMetaText: "rgba(255, 255, 255, 0.7)",
+    storyControlBorder: "rgba(255, 255, 255, 0.4)",
   },
 } as const;
 
@@ -143,6 +203,18 @@ export const radii = {
   pill: 999,
 } as const;
 
+export const componentRadii = {
+  card: radii.lg,
+  button: radii.lg,
+  input: radii.lg,
+  search: radii.lg,
+  iconButton: radii.lg,
+} as const;
+
+export const componentCornerCurve = {
+  borderCurve: "continuous",
+} as const;
+
 export const opacity = {
   disabled: 0.5,
   disabledSubtle: 0.6,
@@ -177,7 +249,16 @@ export const shadows = {
   },
 } as const;
 
-export const typography = {
+const typographyLevelUp = 2;
+
+const scaleTypographyLevel = (value: number) => value + typographyLevelUp;
+const scaleTypography = <T extends { fontSize: number; lineHeight: number }>(variant: T) => ({
+  ...variant,
+  fontSize: scaleTypographyLevel(variant.fontSize),
+  lineHeight: variant.lineHeight + typographyLevelUp,
+});
+
+const baseTypography = {
   display: { fontSize: 34, lineHeight: 40, fontFamily: "Fraunces_700Bold" },
   displayBold: {
     fontSize: 42,
@@ -202,6 +283,23 @@ export const typography = {
   },
   price: { fontSize: 16, lineHeight: 24, fontFamily: "DMMono_400Regular" },
   code: { fontSize: 14, lineHeight: 22, fontFamily: "DMMono_400Regular" },
+} as const;
+
+export const typography = {
+  display: scaleTypography(baseTypography.display),
+  displayBold: scaleTypography(baseTypography.displayBold),
+  displaySm: scaleTypography(baseTypography.displaySm),
+  h1: scaleTypography(baseTypography.h1),
+  h2: scaleTypography(baseTypography.h2),
+  h3: scaleTypography(baseTypography.h3),
+  bodyLarge: scaleTypography(baseTypography.bodyLarge),
+  body: scaleTypography(baseTypography.body),
+  bodyBold: scaleTypography(baseTypography.bodyBold),
+  bodySmall: scaleTypography(baseTypography.bodySmall),
+  bodySmallBold: scaleTypography(baseTypography.bodySmallBold),
+  micro: scaleTypography(baseTypography.micro),
+  price: scaleTypography(baseTypography.price),
+  code: scaleTypography(baseTypography.code),
 } as const;
 
 export const motion = {

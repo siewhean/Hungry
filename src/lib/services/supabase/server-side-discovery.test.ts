@@ -1,0 +1,158 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import test from "node:test";
+
+const migrationSql = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/0029_server_side_discovery_reads.sql"),
+  "utf8",
+);
+
+const smokeSql = readFileSync(
+  resolve(process.cwd(), "supabase/smoke/server_side_discovery_reads.sql"),
+  "utf8",
+);
+
+const repositorySource = readFileSync(
+  resolve(process.cwd(), "src/lib/services/supabase/supabaseRepository.ts"),
+  "utf8",
+);
+
+const serviceSource = readFileSync(
+  resolve(process.cwd(), "src/lib/services/supabase/supabaseService.ts"),
+  "utf8",
+);
+
+const expectedFunctions = [
+  "search_dishes",
+  "get_dish_detail",
+  "get_venue_detail",
+  "get_nearby_open_venues",
+] as const;
+
+const expectedIndexes = [
+  "idx_dishes_rating_id",
+  "idx_dishes_price_id",
+  "idx_dishes_venue_rating_id",
+  "idx_venues_open_building",
+  "idx_dish_images_dish_order",
+  "idx_reviews_dish_created",
+  "idx_dish_dietary_flags_flag_dish",
+] as const;
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+test("0029 adds bounded server-side discovery read RPCs", () => {
+  for (const functionName of expectedFunctions) {
+    assert.match(
+      migrationSql,
+      new RegExp(`create\\s+or\\s+replace\\s+function\\s+public\\.${functionName}\\b`, "i"),
+      `${functionName} should be defined`,
+    );
+  }
+
+  assert.match(migrationSql, /p_cursor_score\s+double\s+precision/i);
+  assert.match(migrationSql, /p_cursor_distance_meters\s+integer/i);
+  assert.match(migrationSql, /order\s+by\s+scored\.rank_score\s+desc,\s+scored\.dish_id/i);
+  assert.match(migrationSql, /order\s+by\s+candidates\.distance_meters,\s+candidates\.venue_id/i);
+});
+
+test("0029 keeps discovery RPCs invoker-safe and executable by app clients", () => {
+  for (const functionName of expectedFunctions) {
+    const functionBlock = new RegExp(
+      `create\\s+or\\s+replace\\s+function\\s+public\\.${functionName}[\\s\\S]*?\\$\\$;`,
+      "i",
+    ).exec(migrationSql)?.[0];
+    assert.ok(functionBlock, `${functionName} body should be detectable`);
+    assert.match(functionBlock, /security\s+invoker/i, `${functionName} should be invoker`);
+    assert.doesNotMatch(
+      functionBlock,
+      /security\s+definer/i,
+      `${functionName} must not be definer`,
+    );
+    assert.match(functionBlock, /set\s+search_path\s+=\s+public/i);
+  }
+
+  assert.match(
+    migrationSql,
+    /grant\s+execute\s+on\s+function\s+public\.search_dishes[\s\S]*?to\s+anon,\s+authenticated/i,
+  );
+  assert.match(
+    migrationSql,
+    /grant\s+execute\s+on\s+function\s+public\.get_dish_detail\(text\)\s+to\s+anon,\s+authenticated/i,
+  );
+  assert.match(
+    migrationSql,
+    /grant\s+execute\s+on\s+function\s+public\.get_venue_detail\(text\)\s+to\s+anon,\s+authenticated/i,
+  );
+  assert.match(
+    migrationSql,
+    /grant\s+execute\s+on\s+function\s+public\.get_nearby_open_venues[\s\S]*?to\s+anon,\s+authenticated/i,
+  );
+});
+
+test("0029 adds query indexes without mutating canonical IDs or deferred models", () => {
+  for (const indexName of expectedIndexes) {
+    assert.match(
+      migrationSql,
+      new RegExp(`create\\s+index\\s+if\\s+not\\s+exists\\s+${escapeRegExp(indexName)}\\b`, "i"),
+      `${indexName} should exist`,
+    );
+  }
+
+  assert.doesNotMatch(migrationSql, /\bdrop\s+table\b/i);
+  assert.doesNotMatch(migrationSql, /\btruncate\s+table\b/i);
+  assert.doesNotMatch(
+    migrationSql,
+    /\balter\s+table\s+(buildings|venues|dishes|reviews|posts)[\s\S]{0,200}\b(alter\s+column\s+id|rename\s+column|drop\s+column|rename\s+to)\b/i,
+  );
+  assert.doesNotMatch(
+    migrationSql,
+    /\bcreate\s+(?:or\s+replace\s+)?function\s+public\.(get_home_feed|get_merchant_dashboard)\b/i,
+  );
+  assert.doesNotMatch(migrationSql, /\bidx_posts_feed_cursor\b/i);
+  assert.doesNotMatch(
+    migrationSql,
+    /\bcreate\s+table\s+if\s+not\s+exists\s+(feed_items|merchant_organizations|menu_versions|media_assets|background_jobs|orders|payments|refunds|payouts)\b/i,
+  );
+});
+
+test("Supabase discovery service uses RPC-first read paths with cache fallback", () => {
+  assert.match(repositorySource, /export\s+async\s+function\s+searchDishesViaRpc/i);
+  assert.match(repositorySource, /client\.rpc\(functionName,\s+args\)/);
+  assert.match(repositorySource, /rpcRows\("search_dishes"/);
+  assert.match(repositorySource, /rpcRows\("get_dish_detail"/);
+  assert.match(repositorySource, /rpcRows\("get_venue_detail"/);
+  assert.match(repositorySource, /rpcRows\("get_nearby_open_venues"/);
+
+  assert.match(serviceSource, /await\s+searchDishesViaRpc\(filters,\s*tasteProfile\)/);
+  assert.match(serviceSource, /await\s+getDishByIdViaRpc\(id\)/);
+  assert.match(serviceSource, /await\s+getVenueByIdViaRpc\(id\)/);
+  assert.match(serviceSource, /await\s+listDishesByVenueViaRpc\(venueId\)/);
+  assert.match(serviceSource, /await\s+listPopularNearbyViaRpc\(lat,\s*lng\)/);
+  assert.match(serviceSource, /\?\?\s+supabaseRepository\./);
+});
+
+test("server-side discovery smoke SQL checks functions, grants, indexes, and sample calls", () => {
+  for (const functionName of expectedFunctions) {
+    assert.match(
+      smokeSql,
+      new RegExp(`'${functionName}'`, "i"),
+      `${functionName} should be in smoke SQL`,
+    );
+  }
+
+  for (const indexName of expectedIndexes) {
+    assert.match(
+      smokeSql,
+      new RegExp(`'${escapeRegExp(indexName)}'`, "i"),
+      `${indexName} should be in smoke SQL`,
+    );
+  }
+
+  assert.match(smokeSql, /security_definer_not_allowed/i);
+  assert.match(smokeSql, /has_function_privilege/i);
+  assert.match(smokeSql, /public\.search_dishes\(null,\s*null,\s*null/i);
+  assert.match(smokeSql, /public\.get_nearby_open_venues\(null,\s*null/i);
+  assert.match(smokeSql, /server_side_discovery_reads_smoke_passed/i);
+});

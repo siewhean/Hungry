@@ -23,6 +23,8 @@ import {
 import { useUIStore } from "@/store/useUIStore";
 import {
   colors,
+  componentCornerCurve,
+  componentRadii,
   componentSizes,
   motion,
   opacity,
@@ -46,6 +48,8 @@ type HungryTheme = {
   motion: typeof motion;
   zIndex: typeof zIndex;
   componentSizes: typeof componentSizes;
+  componentRadii: typeof componentRadii;
+  componentCornerCurve: typeof componentCornerCurve;
   opacity: typeof opacity;
   fontsLoaded: boolean;
 };
@@ -163,6 +167,8 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
       motion,
       zIndex,
       componentSizes,
+      componentRadii,
+      componentCornerCurve,
       opacity,
       fontsLoaded: nunitoLoaded && monoLoaded && frauncesLoaded,
     }),

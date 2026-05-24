@@ -1,4 +1,5 @@
 import type { AnalyticsEventRecord, AnalyticsEventName, AnalyticsSink } from "./types";
+import { sanitizeAnalyticsProperties } from "./privacy";
 
 const MAX_BUFFER_SIZE = 500;
 const analyticsBuffer: AnalyticsEventRecord[] = [];
@@ -17,7 +18,7 @@ export function trackAnalyticsEvent(
 ): AnalyticsEventRecord {
   const record: AnalyticsEventRecord = {
     event,
-    properties,
+    properties: sanitizeAnalyticsProperties(properties),
     session_id: mockSessionId,
     user_id: options?.userId,
     timestamp: new Date().toISOString(),

@@ -3,6 +3,15 @@ export function createRootLinking(prefix: string) {
     prefixes: [prefix, "hungry://", "https://hungry.sg"],
     config: {
       screens: {
+        AuthStack: {
+          screens: {
+            Login: "login",
+            SignUp: "signup",
+            ForgotPassword: "forgot-password",
+            ResetPassword: "auth/callback",
+            ResetPasswordSuccess: "auth/reset/success",
+          },
+        },
         DishDetail: "dish/:id",
         StallDetail: "venue/:id",
         Post: "order",
