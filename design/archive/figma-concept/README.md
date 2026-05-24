@@ -37,7 +37,7 @@ http://127.0.0.1:4173
 ## Current Figma file
 
 - Existing Figma file: `Hungry Mobile UX Concept v1`
-- File key: `MKLpq8rdXHb2gMXyteIZ6c`
+- File key: `<set in Figma URL>`
 
 ## Source hierarchy used
 

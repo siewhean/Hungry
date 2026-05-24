@@ -33,9 +33,6 @@ EXPO_PUBLIC_POSTHOG_API_KEY=${EXPO_PUBLIC_POSTHOG_API_KEY}       # phc_xxxx — 
 EXPO_PUBLIC_POSTHOG_HOST=${EXPO_PUBLIC_POSTHOG_HOST}          # https://us.i.posthog.com (or EU endpoint)
 
 # ── Sentry ──────────────────────────────────────────────────────────────────
-EXPO_PUBLIC_SENTRY_DSN=https://64d7f7f36550f559d8aa484d8baeac84@o4511223191830528.ingest.us.sentry.io/4511223204347904            # https://xxx@oXX.ingest.sentry.io/yyy
-SENTRY_AUTH_TOKEN=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                 # CI-only: used for source map upload during EAS build
-
 EXPO_PUBLIC_SENTRY_DSN=${EXPO_PUBLIC_SENTRY_DSN}            # https://xxx@oXX.ingest.sentry.io/yyy
 SENTRY_AUTH_TOKEN=${SENTRY_AUTH_TOKEN}                 # CI-only: used for source map upload during EAS build
 SENTRY_ORG=${SENTRY_ORG}                        # slug from Sentry organisation settings
