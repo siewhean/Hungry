@@ -17,11 +17,19 @@ function protectedRoutesBlock(source: string): string {
   return match[1];
 }
 
-test("production route gates hide prototypes, merchant centre, and direct messages", () => {
+test("production route gates expose audited v1 surfaces and hide prototypes and floorplans", () => {
   const flags = read("src/constants/featureFlags.ts");
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
 
   assert.match(flags, /prototypeRoutesEnabled/);
+  assert.match(flags, /directMessagesEnabled: true/);
+  assert.match(flags, /gamificationEnabled: true/);
+  assert.match(flags, /collectionsEnabled: true/);
+  assert.match(flags, /storiesEnabled: true/);
+  assert.match(flags, /commentsEnabled: true/);
+  assert.match(flags, /const merchantCentreEnabled = true/);
+  assert.match(flags, /oauthProvidersEnabled: nonProductionSurfaceEnabled/);
+  assert.match(flags, /floorplansEnabled: false/);
   assert.match(flags, /appEnv !== "production"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/);
   for (const routeName of [
@@ -43,6 +51,30 @@ test("production route gates hide prototypes, merchant centre, and direct messag
   assert.match(rootNavigator, /FEATURE_FLAGS\.directMessagesEnabled \? \(/);
   assert.match(rootNavigator, /name="ChatDetail"/);
   assert.match(rootNavigator, /name="DirectMessages"/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.storiesEnabled \? \(/);
+  assert.match(rootNavigator, /name="StoryViewer"/);
+  assert.match(rootNavigator, /name="AddStory"/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.gamificationEnabled \? \(/);
+  assert.match(rootNavigator, /name="PassportScreen"/);
+  assert.match(rootNavigator, /name="MissionsScreen"/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.collectionsEnabled \? \(/);
+  assert.match(rootNavigator, /name="CollectionList"/);
+  assert.match(rootNavigator, /name="CollectionDetail"/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
+  assert.match(rootNavigator, /name="BuildingDrillDown"/);
+  assert.match(rootNavigator, /name="BuildingDrillDownV2"/);
+  assert.match(rootNavigator, /name="VenueDirectory"/);
+});
+
+test("floorplan entry points are hidden behind the floorplans flag", () => {
+  const mapZoom = read("src/app/screens/discover/MapZoomedInScreen.tsx");
+  const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
+
+  assert.match(mapZoom, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
+  assert.match(mapZoom, /navigation\.navigate\("VenueDirectory"/);
+  assert.match(developerLauncher, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
+  assert.match(developerLauncher, /navigation\.navigate\("BuildingDrillDownV2"/);
+  assert.match(developerLauncher, /Floorplan routes are disabled for this build\./);
 });
 
 test("signed-out consumers can browse public discovery and detail routes", () => {

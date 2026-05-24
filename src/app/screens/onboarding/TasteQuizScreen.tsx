@@ -160,7 +160,7 @@ const DIETARY_OPTIONS: {
 ];
 
 export function TasteQuizScreen({ navigation, route }: Props) {
-  const { motion, palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, motion, palette, radii, spacing } = useHungryTheme();
   const { width } = useWindowDimensions();
   const setTasteVector = useProfileStore((state) => state.setTasteVector);
   const profile = useProfileStore((state) => state.profile);
@@ -393,7 +393,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                           alignItems: "center",
                           backgroundColor: isSelected ? palette.orangeLight : palette.surface,
                           borderColor: isSelected ? palette.orange : palette.border,
-                          borderRadius: radii.lg,
+                          borderRadius: componentRadii.button,
                           borderWidth: 1,
                           flexDirection: "row",
                           gap: spacing[3],

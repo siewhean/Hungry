@@ -61,7 +61,8 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
 
   assert.match(home, /<Bell color=\{palette\.text\} size=\{22\}/);
   assert.match(home, /navigation\.navigate\("ActivityInbox", \{ initialTab: "updates" \}\)/);
-  assert.match(home, /useActivityStore\(\(state\) => state\.getUnreadCount\(\)\)/);
+  assert.match(home, /import \{ getActivityUnreadCount \} from "@\/features\/home\/activity"/);
+  assert.match(home, /getActivityUnreadCount\(readActivityIds, activityUpdates\)/);
   assert.match(home, /getHungryService\(\)[\s\S]*\.chat\.listConversations\(\)/);
   assert.match(home, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
   assert.match(home, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
@@ -146,12 +147,18 @@ test("activity messages and update posts are functional routes, not static mocku
   assert.match(detail, /toggleSave\(post\.id\)/);
   assert.match(detail, /navigation\.navigate\("DishDetail"/);
   assert.match(detail, /ReviewCommentsSheet/);
+  assert.match(detail, /const commentsEnabled = FEATURE_FLAGS\.commentsEnabled/);
+  assert.match(detail, /\{commentsEnabled \? \(/);
   assert.match(detail, /commentsSheetRef\.current\?\.present\(\)/);
   assert.match(detail, /setActiveCommentReview/);
   assert.match(detail, /accessibilityLabel="Open comments"/);
   assert.match(detail, /seededCommentsForActiveReview/);
+  assert.match(detail, /likeCount: 0/);
+  assert.match(detail, /commentCount: 0/);
   assert.match(detail, /ReviewShareSheet/);
   assert.match(detail, /incrementShare\(activeShareReview\.postId\)/);
+  assert.doesNotMatch(detail, /likeCount: primaryDish\?\.reviews\.length/);
+  assert.doesNotMatch(detail, /commentCount: primaryDish\?\.reviews\.length/);
   assert.doesNotMatch(detail, /localCommentCount/);
   assert.doesNotMatch(detail, /setLocalCommentCount/);
   assert.doesNotMatch(detail, /incrementShare\(post\.id\)/);

@@ -28,7 +28,7 @@ export function CraveScreen() {
   const navigation = useNavigation<RootNavigation>();
   const repository = getDataRepository();
   const insets = useSafeAreaInsets();
-  const { palette, spacing, radii, shadows, motion, zIndex } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows, motion, zIndex } = useHungryTheme();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const profile = useProfileStore((state) => state.profile);
@@ -179,7 +179,7 @@ export function CraveScreen() {
             >
               CRAVE
             </AppText>
-            <AppText variant="micro" style={{ color: "rgba(255,255,255,0.6)" }}>
+            <AppText variant="micro" style={{ color: palette.inverseTextMuted }}>
               SWIPE TO BUILD PROFILE
             </AppText>
           </View>
@@ -218,7 +218,7 @@ export function CraveScreen() {
               styles.card,
               {
                 backgroundColor: palette.surface,
-                borderRadius: radii.xxl,
+                borderRadius: componentRadii.card,
                 transform: [
                   { translateX: position.x },
                   { translateY: position.y },
@@ -282,7 +282,12 @@ export function CraveScreen() {
               </AppText>
             </Animated.View>
 
-            <View style={[styles.cardInfo, { padding: spacing[6] }]}>
+            <View
+              style={[
+                styles.cardInfo,
+                { backgroundColor: palette.mediaScrim, padding: spacing[6] },
+              ]}
+            >
               <View style={{ gap: spacing[0.5] }}>
                 <AppText
                   style={{
@@ -295,7 +300,7 @@ export function CraveScreen() {
                 </AppText>
                 <AppText
                   style={{
-                    color: "rgba(255,255,255,0.8)",
+                    color: palette.inverseTextSecondary,
                     fontSize: 16,
                     fontWeight: "600",
                   }}
@@ -314,7 +319,7 @@ export function CraveScreen() {
                   <View
                     key={tag}
                     style={{
-                      backgroundColor: "rgba(255,255,255,0.2)",
+                      backgroundColor: palette.inverseSurfaceSubtle,
                       paddingHorizontal: spacing[2.5],
                       paddingVertical: spacing[1],
                       borderRadius: radii.sm,
@@ -351,10 +356,10 @@ export function CraveScreen() {
                 height: 72,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: "rgba(255,255,255,0.1)",
+                backgroundColor: palette.inverseSurfaceFaint,
                 borderColor: palette.error,
                 borderWidth: 2,
-                borderRadius: radii.pill,
+                borderRadius: componentRadii.iconButton,
               },
               pressed && { opacity: 0.7 },
             ]}
@@ -371,7 +376,7 @@ export function CraveScreen() {
                 alignItems: "center",
                 justifyContent: "center",
                 backgroundColor: palette.orange,
-                borderRadius: radii.pill,
+                borderRadius: componentRadii.iconButton,
               },
               pressed && { scale: 0.9, opacity: 0.9 },
             ]}
@@ -395,7 +400,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "rgba(0,0,0,0.45)",
   },
   overlayLabel: {
     position: "absolute",

@@ -12,6 +12,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, View, type ViewStyle } from "react-native";
 import Svg, { G, Image as SvgImage, Polygon, Rect, Text as SvgText } from "react-native-svg";
 import { useHungryTheme } from "@/theme";
+import { componentRadii } from "@/theme/tokens";
 import type { FloorPlan, StallPolygon } from "@/lib/services/types";
 import { AppText } from "@/components/ui";
 
@@ -417,7 +418,7 @@ function StatChip({ color, count, label }: { color: string; count: number; label
 
 const styles = StyleSheet.create({
   wrapper: {
-    borderRadius: 12,
+    borderRadius: componentRadii.card,
     overflow: "hidden",
   },
   scrollView: {

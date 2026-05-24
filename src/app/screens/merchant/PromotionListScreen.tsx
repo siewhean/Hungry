@@ -1,39 +1,54 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, StyleSheet, Pressable, RefreshControl } from "react-native";
-import { Plus, Calendar, Users, Target, BarChart2 } from "lucide-react-native";
+import { View, ScrollView, StyleSheet, Pressable } from "react-native";
+import { Plus, Calendar, Users, Target, BarChart2, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { AppText, Button, IconButton, Chip, Screen } from "@/components/ui";
+import { AppText, Button, IconButton, Chip, Screen, EmptyState } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { MerchantPromotion, PromotionStatus } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
+import {
+  getPromotionPricing,
+  resolvePromotionRuntimeStatus,
+} from "@/features/merchant/merchantReadiness";
 
 type NavigationProp = NativeStackNavigationProp<MerchantTabParamList, "PromotionList">;
 
 export function PromotionListScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [promotions, setPromotions] = useState<MerchantPromotion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<PromotionStatus>("active");
 
   const loadPromotions = useCallback(async () => {
-    if (!activeOutlet) return;
+    if (!activeOutlet) {
+      setPromotions([]);
+      setIsLoading(false);
+      return;
+    }
+    setError(null);
     setIsLoading(true);
     try {
       const data = await getHungryService().merchant.getPromotions(activeOutlet.id);
       setPromotions(data);
     } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load promotions.");
       console.error(e);
     } finally {
       setIsLoading(false);
     }
   }, [activeOutlet]);
+
+  useEffect(() => {
+    void loadPromotions();
+  }, [loadPromotions]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
@@ -42,22 +57,27 @@ export function PromotionListScreen() {
     return unsubscribe;
   }, [navigation, loadPromotions]);
 
-  const filteredPromotions = promotions.filter((p) => p.status === filter);
+  if (error) {
+    return (
+      <Screen title="Promotions">
+        <EmptyState
+          title="Failed to load promotions"
+          body="Your promotions list is unavailable right now."
+          icon={<X size={40} color={palette.error} />}
+          errorMessage={error}
+          sendErrorContext="Promotion list"
+          ctaLabel="Retry"
+          onPress={loadPromotions}
+        />
+      </Screen>
+    );
+  }
 
-  const getStatusColor = (status: PromotionStatus) => {
-    switch (status) {
-      case "active":
-        return palette.success;
-      case "scheduled":
-        return palette.info;
-      case "draft":
-        return palette.textSecondary;
-      case "ended":
-        return palette.textMuted;
-      default:
-        return palette.text;
-    }
-  };
+  const promotionsWithRuntimeStatus = promotions.map((promotion) => ({
+    ...promotion,
+    status: resolvePromotionRuntimeStatus(promotion),
+  }));
+  const filteredPromotions = promotionsWithRuntimeStatus.filter((p) => p.status === filter);
 
   const getStatusBgColor = (status: PromotionStatus) => {
     switch (status) {
@@ -111,7 +131,10 @@ export function PromotionListScreen() {
               ]}
             >
               <View
-                style={[styles.emptyIcon, { backgroundColor: palette.bgSoft, borderRadius: 40 }]}
+                style={[
+                  styles.emptyIcon,
+                  { backgroundColor: palette.bgSoft, borderRadius: componentRadii.iconButton },
+                ]}
               >
                 <Target size={40} color={palette.textMuted} />
               </View>
@@ -133,126 +156,144 @@ export function PromotionListScreen() {
               />
             </View>
           ) : (
-            filteredPromotions.map((promo) => (
-              <Pressable
-                key={promo.id}
-                onPress={() => navigation.navigate("PromotionBuilder", { promotionId: promo.id })}
-                style={[
-                  styles.promoCard,
-                  {
-                    backgroundColor: palette.surface,
-                    borderColor: palette.border,
-                    borderRadius: radii.lg,
-                    padding: spacing[4],
-                  },
-                ]}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    marginBottom: spacing[3],
-                  }}
+            filteredPromotions.map((promo) => {
+              const pricing = getPromotionPricing(promo);
+              return (
+                <Pressable
+                  key={promo.id}
+                  onPress={() => navigation.navigate("PromotionBuilder", { promotionId: promo.id })}
+                  style={[
+                    styles.promoCard,
+                    {
+                      backgroundColor: palette.surface,
+                      borderColor: palette.border,
+                      borderRadius: componentRadii.card,
+                      padding: spacing[4],
+                    },
+                  ]}
                 >
-                  <View style={{ flex: 1, paddingRight: spacing[3] }}>
-                    <AppText variant="bodyBold">{promo.title}</AppText>
-                    <AppText
-                      variant="bodySmall"
-                      tone="muted"
-                      numberOfLines={2}
-                      style={{ marginTop: 2 }}
-                    >
-                      {promo.description}
-                    </AppText>
-                  </View>
                   <View
-                    style={{ backgroundColor: getStatusBgColor(promo.status), borderRadius: 16 }}
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      marginBottom: spacing[3],
+                    }}
                   >
-                    <Chip
-                      label={promo.status.charAt(0).toUpperCase() + promo.status.slice(1)}
-                      selected={false}
-                    />
-                  </View>
-                </View>
-
-                <View
-                  style={{
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: spacing[3],
-                    marginBottom: promo.analytics ? spacing[4] : 0,
-                  }}
-                >
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                    <Calendar size={14} color={palette.textSecondary} />
-                    <AppText variant="micro" tone="muted">
-                      {new Date(promo.startDate).toLocaleDateString()} -{" "}
-                      {new Date(promo.endDate).toLocaleDateString()}
-                    </AppText>
-                  </View>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                    <Users size={14} color={palette.textSecondary} />
-                    <AppText variant="micro" tone="muted">
-                      {promo.targetAudience.length} segments
-                    </AppText>
-                  </View>
-                </View>
-
-                {promo.analytics && (
-                  <View
-                    style={[
-                      styles.analyticsBox,
-                      {
-                        backgroundColor: palette.bgSoft,
-                        borderRadius: radii.md,
-                        padding: spacing[3],
-                      },
-                    ]}
-                  >
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 6,
-                        marginBottom: spacing[2],
-                      }}
-                    >
-                      <BarChart2 size={14} color={palette.textSecondary} />
-                      <AppText variant="bodySmallBold" tone="muted">
-                        Performance
+                    <View style={{ flex: 1, paddingRight: spacing[3] }}>
+                      <AppText variant="bodyBold">{promo.title}</AppText>
+                      <AppText
+                        variant="bodySmall"
+                        tone="muted"
+                        numberOfLines={2}
+                        style={{ marginTop: 2 }}
+                      >
+                        {promo.description}
                       </AppText>
                     </View>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                      <View style={styles.statItem}>
-                        <AppText variant="bodyBold">{promo.analytics.impressions}</AppText>
-                        <AppText variant="micro" tone="muted">
-                          Views
-                        </AppText>
-                      </View>
-                      <View style={styles.statItem}>
-                        <AppText variant="bodyBold">{promo.analytics.clicks}</AppText>
-                        <AppText variant="micro" tone="muted">
-                          Clicks
-                        </AppText>
-                      </View>
-                      <View style={styles.statItem}>
-                        <AppText variant="bodyBold">{promo.analytics.saves}</AppText>
-                        <AppText variant="micro" tone="muted">
-                          Saves
-                        </AppText>
-                      </View>
-                      <View style={styles.statItem}>
-                        <AppText variant="bodyBold">{promo.analytics.profileVisits}</AppText>
-                        <AppText variant="micro" tone="muted">
-                          Visits
-                        </AppText>
-                      </View>
+                    <View
+                      style={{
+                        backgroundColor: getStatusBgColor(promo.status),
+                        borderRadius: componentRadii.button,
+                      }}
+                    >
+                      <Chip
+                        label={promo.status.charAt(0).toUpperCase() + promo.status.slice(1)}
+                        selected={false}
+                      />
                     </View>
                   </View>
-                )}
-              </Pressable>
-            ))
+
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: spacing[3],
+                      marginBottom: promo.analytics ? spacing[4] : 0,
+                    }}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <Calendar size={14} color={palette.textSecondary} />
+                      <AppText variant="micro" tone="muted">
+                        {new Date(promo.startDate).toLocaleDateString()} -{" "}
+                        {new Date(promo.endDate).toLocaleDateString()}
+                      </AppText>
+                    </View>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <Users size={14} color={palette.textSecondary} />
+                      <AppText variant="micro" tone="muted">
+                        {promo.targetAudience.length} segments
+                      </AppText>
+                    </View>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <Target size={14} color={palette.textSecondary} />
+                      <AppText variant="micro" tone="muted">
+                        {promo.promotionItemType === "existing_menu_item"
+                          ? "Menu item promotion"
+                          : "New promotional item"}
+                      </AppText>
+                    </View>
+                  </View>
+
+                  <AppText variant="bodySmallBold" style={{ marginBottom: spacing[3] }}>
+                    {pricing.label}
+                  </AppText>
+
+                  {promo.analytics && (
+                    <View
+                      style={[
+                        styles.analyticsBox,
+                        {
+                          backgroundColor: palette.bgSoft,
+                          borderRadius: componentRadii.card,
+                          padding: spacing[3],
+                        },
+                      ]}
+                    >
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 6,
+                          marginBottom: spacing[2],
+                        }}
+                      >
+                        <BarChart2 size={14} color={palette.textSecondary} />
+                        <AppText variant="bodySmallBold" tone="muted">
+                          Performance
+                        </AppText>
+                      </View>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                        <View style={styles.statItem}>
+                          <AppText variant="bodyBold">{promo.analytics.impressions}</AppText>
+                          <AppText variant="micro" tone="muted">
+                            Views
+                          </AppText>
+                        </View>
+                        <View style={styles.statItem}>
+                          <AppText variant="bodyBold">{promo.analytics.clicks}</AppText>
+                          <AppText variant="micro" tone="muted">
+                            Clicks
+                          </AppText>
+                        </View>
+                        <View style={styles.statItem}>
+                          <AppText variant="bodyBold">{promo.analytics.saves}</AppText>
+                          <AppText variant="micro" tone="muted">
+                            Saves
+                          </AppText>
+                        </View>
+                        <View style={styles.statItem}>
+                          <AppText variant="bodyBold">{promo.analytics.profileVisits}</AppText>
+                          <AppText variant="micro" tone="muted">
+                            Visits
+                          </AppText>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })
           )}
         </View>
       </View>

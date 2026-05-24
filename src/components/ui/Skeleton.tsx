@@ -11,10 +11,17 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ width = "100%", height, borderRadius, style }: SkeletonProps) {
-  const { componentSizes, motion, opacity: opacityTokens, palette, radii } = useHungryTheme();
+  const {
+    componentCornerCurve,
+    componentRadii,
+    componentSizes,
+    motion,
+    opacity: opacityTokens,
+    palette,
+  } = useHungryTheme();
   const opacity = useRef(new Animated.Value(opacityTokens.skeletonMin)).current;
   const resolvedHeight = height ?? componentSizes.skeletonLine;
-  const resolvedRadius = borderRadius ?? radii.sm;
+  const resolvedRadius = borderRadius ?? componentRadii.card;
 
   useEffect(() => {
     Animated.loop(
@@ -43,6 +50,7 @@ export function Skeleton({ width = "100%", height, borderRadius, style }: Skelet
           height: resolvedHeight as DimensionValue,
           backgroundColor: palette.border,
           borderRadius: resolvedRadius,
+          borderCurve: componentCornerCurve.borderCurve,
           opacity,
         },
         style,

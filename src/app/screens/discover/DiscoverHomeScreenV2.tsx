@@ -14,11 +14,22 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppHeader, AppText, Chip, Screen, IconButton, Skeleton } from "@/components/ui";
+import {
+  AppHeader,
+  AppText,
+  Chip,
+  EmptyState,
+  Screen,
+  IconButton,
+  Skeleton,
+} from "@/components/ui";
 import { DecideForMeCard } from "@/components/discover/DecideForMeCard";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestSingaporeArea } from "@/lib/geo/singaporeBuildings";
 import { getDataRepository } from "@/lib/services/serviceProvider";
+import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
+import { NEUTRAL_TASTE_VECTOR, TASTE_LABELS } from "@/constants/taste";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useLocationStore } from "@/store/useLocationStore";
@@ -26,6 +37,8 @@ import { useSearchStore } from "@/store/useSearchStore";
 import { useCollectionStore } from "@/store/useCollectionStore";
 import { useHungryTheme } from "@/theme";
 import { CollectionCard } from "@/components/collections/CollectionCard";
+import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
@@ -36,12 +49,15 @@ const INTENT_CHIPS = [
   { id: "hawker", label: "Hawker", category: "rice", icon: "Home" },
   { id: "decide", label: "Decide for me", category: "all", icon: "Shuffle" },
 ] as const;
+const SEARCH_PLACEHOLDER_DEFAULT = "Dishes, stalls, or hawker centres…";
+const TASTE_DIMENSIONS = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"] as const;
+const TASTE_INTEREST_THRESHOLD = 6.8;
 
 export function DiscoverHomeScreenV2() {
   const navigation = useNavigation<RootNavigation>();
   const repository = getDataRepository();
   const { width: screenWidth } = useWindowDimensions();
-  const { palette, radii, spacing, semanticSpacing, shadows, motion, colorScheme } =
+  const { componentRadii, palette, radii, spacing, semanticSpacing, shadows, motion, colorScheme } =
     useHungryTheme();
   const locationPermission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
@@ -62,7 +78,7 @@ export function DiscoverHomeScreenV2() {
     }
   }, [locationPermission, manualLocation, grantLocation]);
 
-  const popularNearby = useDiscoveryStore((state) => state.popularNearby ?? []);
+  const popularNearby = useDiscoveryStore((state) => state.popularNearby);
   const refreshPopularNearby = useDiscoveryStore((state) => state.refreshPopularNearby);
 
   useEffect(() => {
@@ -72,8 +88,26 @@ export function DiscoverHomeScreenV2() {
   const searchQuery = useSearchStore((state) => state.filters.query);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
+  const recentSearches = useSearchStore((state) => state.recentSearches);
+  const safeRecentSearches = useMemo(
+    () =>
+      Array.isArray(recentSearches)
+        ? recentSearches
+            .map((search) =>
+              typeof search === "string" ? search.trim() : String(search ?? "").trim(),
+            )
+            .filter(Boolean)
+        : [],
+    [recentSearches],
+  );
+  const profile = useProfileStore((state) => state.profile);
+  const tasteVector = profile?.tasteVector ?? NEUTRAL_TASTE_VECTOR;
 
-  const collections = useCollectionStore((s) => s.collections.slice(0, 6));
+  const allCollections = useCollectionStore((s) => s.collections);
+  const collections = useMemo(
+    () => (FEATURE_FLAGS.collectionsEnabled ? allCollections.slice(0, 6) : []),
+    [allCollections],
+  );
   const loadCollections = useCollectionStore((s) => s.loadCollections);
   useEffect(() => {
     void loadCollections();
@@ -128,11 +162,16 @@ export function DiscoverHomeScreenV2() {
 
   const submitSearch = useCallback(() => {
     const trimmedQuery = searchQuery.trim();
-    if (trimmedQuery) {
-      rememberSearch(trimmedQuery);
-    }
     navigation.navigate("SearchHomeV2");
     hideSearch();
+    if (trimmedQuery) {
+      scheduleIdleWork(
+        () => {
+          rememberSearch(trimmedQuery);
+        },
+        { timeout: 500, fallbackDelayMs: 80 },
+      );
+    }
   }, [hideSearch, navigation, rememberSearch, searchQuery]);
 
   const cancelSearch = useCallback(() => {
@@ -156,6 +195,53 @@ export function DiscoverHomeScreenV2() {
     outputRange: [0.85, 1],
     extrapolate: "clamp",
   });
+  const discoverSearchPhrases = useMemo(() => {
+    const placeholders = [SEARCH_PLACEHOLDER_DEFAULT];
+    const seen = new Set([SEARCH_PLACEHOLDER_DEFAULT.toLowerCase()]);
+    const addUniquePhrase = (value: string) => {
+      const phrase = value.trim();
+      if (!phrase) {
+        return;
+      }
+      const key = phrase.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        placeholders.push(phrase);
+      }
+    };
+
+    safeRecentSearches.slice(0, 3).forEach((search) => {
+      addUniquePhrase(`Try ${search.trim()} near you`);
+    });
+
+    const interestPhrases = TASTE_DIMENSIONS.map((dimension) => ({
+      dimension,
+      score: tasteVector[dimension],
+      label: TASTE_LABELS[dimension],
+    }))
+      .filter((entry) => entry.score >= TASTE_INTEREST_THRESHOLD)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map((entry) => `${entry.label} bites nearby`);
+
+    interestPhrases.forEach(addUniquePhrase);
+
+    if (placeholders.length < 2) {
+      ["Try laksa", "Nasi lemak near you", "Search by stall"].forEach((fallback) =>
+        addUniquePhrase(fallback),
+      );
+    }
+
+    return placeholders;
+  }, [safeRecentSearches, tasteVector]);
+  const movingSearchPlaceholder = useMovingSearchPlaceholder({
+    phrases: discoverSearchPhrases,
+    totalCycleMs: 2400,
+    tickMs: 2,
+    revealStepMs: 2,
+    deleteStepMs: 2,
+    pauseMs: 300,
+  });
 
   const discoverLocationLabel =
     manualLocation ?? getNearestSingaporeArea(currentLocation.latitude, currentLocation.longitude);
@@ -174,38 +260,58 @@ export function DiscoverHomeScreenV2() {
   const recommendedDishes = popularNearby.slice(0, 5);
 
   const handleIntentChipPress = (chip: (typeof INTENT_CHIPS)[number]) => {
-    trackAnalyticsEvent("discover_intent_chip_tapped", {
-      chip_id: chip.id,
-      category: chip.category,
-    });
+    const trackIntentTap = () => {
+      scheduleIdleWork(
+        () => {
+          trackAnalyticsEvent("discover_intent_chip_tapped", {
+            chip_id: chip.id,
+            category: chip.category,
+          });
+        },
+        { timeout: 500, fallbackDelayMs: 80 },
+      );
+    };
 
     if (chip.id === "near_me") {
       navigation.navigate("DiscoverMap");
+      trackIntentTap();
       return;
     }
 
     if (chip.id === "spicy") {
-      updateSearchQuery("spicy");
-      rememberSearch("spicy");
       navigation.navigate("SearchResults", {
         browseMode: "dishes",
         initialQuery: "spicy",
         initialFilter: "Spicy",
       });
+      scheduleIdleWork(
+        () => {
+          updateSearchQuery("spicy");
+          rememberSearch("spicy");
+          trackAnalyticsEvent("discover_intent_chip_tapped", {
+            chip_id: chip.id,
+            category: chip.category,
+          });
+        },
+        { timeout: 500, fallbackDelayMs: 80 },
+      );
       return;
     }
 
     if (chip.id === "rated") {
       navigation.navigate("SearchResults", { browseMode: "dishes" });
+      trackIntentTap();
       return;
     }
 
     if (chip.id === "hawker") {
       navigation.navigate("SearchResults", { browseMode: "stalls" });
+      trackIntentTap();
       return;
     }
 
     navigation.navigate("DecideForMeResult");
+    trackIntentTap();
   };
 
   const nearbyStalls = repository
@@ -287,6 +393,7 @@ export function DiscoverHomeScreenV2() {
                 height: 52,
                 alignItems: "center",
                 justifyContent: "center",
+                borderRadius: componentRadii.iconButton,
               }}
             >
               <Search color={palette.textMuted} size={18} />
@@ -300,7 +407,7 @@ export function DiscoverHomeScreenV2() {
               right: 0,
               top: 0,
               height: 52,
-              borderRadius: radii.pill,
+              borderRadius: componentRadii.search,
               overflow: "hidden",
               backgroundColor: palette.bgSoft,
               width: searchEntryWidth,
@@ -326,7 +433,7 @@ export function DiscoverHomeScreenV2() {
                 ref={searchInputRef}
                 value={searchQuery}
                 onChangeText={updateSearchQuery}
-                placeholder="Dishes, stalls, or hawker centres…"
+                placeholder={movingSearchPlaceholder}
                 placeholderTextColor={palette.textMuted}
                 returnKeyType="search"
                 clearButtonMode="while-editing"
@@ -399,7 +506,7 @@ export function DiscoverHomeScreenV2() {
             style={({ pressed }) => ({
               flex: 1,
               backgroundColor: pressed ? palette.surfaceRaised : palette.bgSoft,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.card,
               padding: spacing[4],
               gap: spacing[2],
               borderWidth: 1,
@@ -432,7 +539,7 @@ export function DiscoverHomeScreenV2() {
             style={({ pressed }) => ({
               flex: 1,
               backgroundColor: pressed ? palette.surfaceRaised : palette.bgSoft,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.card,
               padding: spacing[4],
               gap: spacing[2],
               borderWidth: 1,
@@ -467,7 +574,7 @@ export function DiscoverHomeScreenV2() {
         </View>
 
         {/* Trending Near You */}
-        <View style={{ marginTop: spacing[6] }}>
+        <View style={{ marginTop: spacing[4] }}>
           <View
             style={{
               flexDirection: "row",
@@ -480,54 +587,65 @@ export function DiscoverHomeScreenV2() {
             <AppText variant="h2" style={{ fontWeight: "800" }}>
               Trending near you
             </AppText>
-            <Pressable onPress={() => navigation.navigate("SearchResults")}>
-              <AppText variant="bodySmallBold" tone="accent">
-                See all
-              </AppText>
-            </Pressable>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[3] }}
-          >
-            {recommendedDishes.map((dish) => (
-              <Pressable
-                key={dish.id}
-                onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
-                style={{
-                  width: 140,
-                  backgroundColor: palette.surface,
-                  borderRadius: radii.md,
-                  borderWidth: 1,
-                  borderColor: palette.border,
-                  overflow: "hidden",
-                  ...shadows.card,
-                }}
-              >
-                <Image
-                  source={{ uri: dish.imageUrl }}
-                  style={{ width: "100%", height: 100, backgroundColor: palette.bgSoft }}
-                  contentFit="cover"
-                />
-                <View style={{ padding: spacing[2] }}>
-                  <AppText variant="bodySmallBold" numberOfLines={1}>
-                    {dish.name}
-                  </AppText>
-                  <AppText variant="micro" tone="secondary" numberOfLines={1}>
-                    {dish.venueName}
-                  </AppText>
-                  <AppText variant="bodySmallBold" tone="accent" style={{ marginTop: 2 }}>
-                    S${dish.price.toFixed(2)}
-                  </AppText>
-                </View>
+            {recommendedDishes.length > 0 ? (
+              <Pressable onPress={() => navigation.navigate("SearchResults")}>
+                <AppText variant="bodySmallBold" tone="accent">
+                  See all
+                </AppText>
               </Pressable>
-            ))}
-          </ScrollView>
+            ) : null}
+          </View>
+          {recommendedDishes.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[3] }}
+            >
+              {recommendedDishes.map((dish) => (
+                <Pressable
+                  key={dish.id}
+                  onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
+                  style={{
+                    width: 140,
+                    backgroundColor: palette.surface,
+                    borderRadius: radii.md,
+                    borderWidth: 1,
+                    borderColor: palette.border,
+                    overflow: "hidden",
+                    ...shadows.card,
+                  }}
+                >
+                  <Image
+                    source={{ uri: dish.imageUrl }}
+                    style={{ width: "100%", height: 100, backgroundColor: palette.bgSoft }}
+                    contentFit="cover"
+                  />
+                  <View style={{ padding: spacing[2] }}>
+                    <AppText variant="bodySmallBold" numberOfLines={1}>
+                      {dish.name}
+                    </AppText>
+                    <AppText variant="micro" tone="secondary" numberOfLines={1}>
+                      {dish.venueName}
+                    </AppText>
+                    <AppText variant="bodySmallBold" tone="accent" style={{ marginTop: 2 }}>
+                      S${dish.price.toFixed(2)}
+                    </AppText>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={{ paddingHorizontal: spacing[4] }}>
+              <EmptyState
+                title="No trending dishes yet"
+                body="Try a different taste filter or check back after the feed refreshes."
+              />
+            </View>
+          )}
         </View>
 
         {/* Stalls Near You */}
-        <View style={{ marginTop: spacing[6] }}>
+        <View style={{ marginTop: spacing[4] }}>
           <View
             style={{
               flexDirection: "row",
@@ -540,23 +658,33 @@ export function DiscoverHomeScreenV2() {
             <AppText variant="h2" style={{ fontWeight: "800" }}>
               Stalls near you
             </AppText>
-            <Pressable onPress={() => navigation.navigate("DiscoverMap")}>
-              <AppText variant="bodySmallBold" tone="accent">
-                Map view
-              </AppText>
-            </Pressable>
-            {isDeveloperMode ? null : (
-              <Pressable
-                onPress={() => navigation.navigate("SearchResults", { browseMode: "stalls" })}
-              >
-                <AppText variant="bodySmallBold" tone="accent">
-                  View all
-                </AppText>
-              </Pressable>
-            )}
+            {nearbyStalls.length > 0 ? (
+              <View style={{ flexDirection: "row", gap: spacing[3] }}>
+                <Pressable onPress={() => navigation.navigate("DiscoverMap")}>
+                  <AppText variant="bodySmallBold" tone="accent">
+                    Map view
+                  </AppText>
+                </Pressable>
+                {isDeveloperMode ? null : (
+                  <Pressable
+                    onPress={() => navigation.navigate("SearchResults", { browseMode: "stalls" })}
+                  >
+                    <AppText variant="bodySmallBold" tone="accent">
+                      View all
+                    </AppText>
+                  </Pressable>
+                )}
+              </View>
+            ) : null}
           </View>
 
           <View style={{ paddingHorizontal: spacing[4] }}>
+            {nearbyStalls.length === 0 ? (
+              <EmptyState
+                title="No stalls nearby"
+                body="Try another area or refresh when location is available."
+              />
+            ) : null}
             {nearbyStalls.map(({ venue, topDish }) => {
               const isVerified = venue.verificationStatus === "verified";
               const statusLabel = venue.isOpen ? "Open" : (venue.closureNotice ?? "Closed");
@@ -642,7 +770,7 @@ export function DiscoverHomeScreenV2() {
 
         {/* Collections */}
         {collections.length > 0 && (
-          <View style={{ marginTop: spacing[6] }}>
+          <View style={{ marginTop: spacing[4] }}>
             <View
               style={{
                 flexDirection: "row",
@@ -675,7 +803,7 @@ export function DiscoverHomeScreenV2() {
                   style={{
                     width: 220,
                     backgroundColor: palette.surface,
-                    borderRadius: radii.xl,
+                    borderRadius: componentRadii.card,
                     borderWidth: 1,
                     borderColor: palette.border,
                     overflow: "hidden",

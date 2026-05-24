@@ -15,6 +15,7 @@ import { AppText } from "./AppText";
 
 interface AppHeaderProps {
   title?: string;
+  titleNode?: ReactNode;
   subtitle?: string;
   left?: ReactNode;
   right?: ReactNode;
@@ -29,6 +30,7 @@ interface AppHeaderProps {
 
 export function AppHeader({
   title,
+  titleNode,
   subtitle,
   left,
   right,
@@ -40,9 +42,9 @@ export function AppHeader({
   onBackPress,
   backIconSize = 20,
 }: AppHeaderProps) {
-  const { componentSizes, palette, radii, spacing, typography } = useHungryTheme();
+  const { componentRadii, componentSizes, palette, spacing, typography } = useHungryTheme();
   const navigation = useNavigation();
-  const styles = createStyles(componentSizes, radii, spacing, typography);
+  const styles = createStyles(componentRadii, componentSizes, spacing, typography);
   const canGoBack = navigation.canGoBack();
   const shouldShowBack = showBack && !left && canGoBack;
   const resolvedOnBackPress = onBackPress ?? (() => navigation.goBack());
@@ -64,7 +66,9 @@ export function AppHeader({
     <View style={[styles.header, { paddingHorizontal: horizontalPadding }, style]}>
       {renderLeft ? <View style={styles.side}>{renderLeft}</View> : null}
       <View style={styles.copy}>
-        {title ? (
+        {titleNode ? (
+          titleNode
+        ) : title ? (
           <AppText
             variant="h1"
             style={titleStyle ? [styles.title, titleStyle] : styles.title}
@@ -90,8 +94,8 @@ export function AppHeader({
 }
 
 const createStyles = (
+  componentRadii: ReturnType<typeof useHungryTheme>["componentRadii"],
   componentSizes: ReturnType<typeof useHungryTheme>["componentSizes"],
-  radii: ReturnType<typeof useHungryTheme>["radii"],
   spacing: ReturnType<typeof useHungryTheme>["spacing"],
   typography: ReturnType<typeof useHungryTheme>["typography"],
 ) =>
@@ -124,7 +128,7 @@ const createStyles = (
     },
     backButton: {
       alignItems: "center",
-      borderRadius: radii.pill,
+      borderRadius: componentRadii.iconButton,
       height: componentSizes.headerBackButton,
       justifyContent: "center",
       width: componentSizes.headerBackButton,

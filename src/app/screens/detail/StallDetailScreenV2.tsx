@@ -15,6 +15,7 @@ import { AppText, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
+import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
 import { useCartStore } from "@/store/useCartStore";
 import { useOrderStore } from "@/store/useOrderStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -43,13 +44,13 @@ function formatVenueStatus(venue: VenueSummary) {
   if (!venue.isOpen) {
     return venue.closureNotice ?? "Closed now";
   }
-  return venue.operatingHours;
+  return `Listed hours: ${venue.operatingHours}`;
 }
 
 export function StallDetailScreenV2({ route }: Props) {
   const navigation = useNavigation<RootNavigation>();
   const repository = getDataRepository();
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
 
   const venueId = route.params?.venueId ?? route.params?.id ?? "";
   const venue = useMemo(() => repository.getVenueById(venueId), [venueId, repository]);
@@ -103,6 +104,8 @@ export function StallDetailScreenV2({ route }: Props) {
         <EmptyState
           title="Stall not found"
           body="This stall could not be found. It may have moved or been removed."
+          errorMessage={`Missing stall data for ID: ${route.params?.venueId || "unknown"}`}
+          sendErrorContext="Stall detail"
           ctaLabel="Go back"
           onPress={() => navigation.goBack()}
         />
@@ -114,6 +117,11 @@ export function StallDetailScreenV2({ route }: Props) {
   const deliveryLinks = venue.deliveryLinks ?? [];
   const distanceLabel = formatDistance(leadDish?.distanceMeters);
   const statusLabel = formatVenueStatus(venue);
+  const statusColor = venue.isOpen
+    ? palette.success
+    : venue.closureNotice
+      ? palette.amber
+      : palette.textMuted;
   const totalReviewCount = dishes.reduce((sum, dish) => sum + dish.reviewCount, 0);
   const displayRating =
     dishes.length > 0
@@ -209,7 +217,7 @@ export function StallDetailScreenV2({ route }: Props) {
             style={{
               width: 36,
               height: 36,
-              borderRadius: 18,
+              borderRadius: componentRadii.iconButton,
               backgroundColor: palette.surface,
               alignItems: "center",
               justifyContent: "center",
@@ -225,7 +233,7 @@ export function StallDetailScreenV2({ route }: Props) {
               style={{
                 width: 36,
                 height: 36,
-                borderRadius: 18,
+                borderRadius: componentRadii.iconButton,
                 backgroundColor: palette.surface,
                 alignItems: "center",
                 justifyContent: "center",
@@ -243,7 +251,7 @@ export function StallDetailScreenV2({ route }: Props) {
               style={{
                 width: 36,
                 height: 36,
-                borderRadius: 18,
+                borderRadius: componentRadii.iconButton,
                 backgroundColor: palette.surface,
                 alignItems: "center",
                 justifyContent: "center",
@@ -290,7 +298,7 @@ export function StallDetailScreenV2({ route }: Props) {
               </AppText>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-              <AppText variant="bodySmallBold" style={{ color: palette.success }}>
+              <AppText variant="bodySmallBold" style={{ color: statusColor }}>
                 {statusLabel}
               </AppText>
               {displayRating !== undefined && totalReviewCount > 0 ? (
@@ -332,6 +340,8 @@ export function StallDetailScreenV2({ route }: Props) {
           style={{ height: 1, backgroundColor: palette.border, marginHorizontal: spacing[4] }}
         />
 
+        <PopularVisitorsSection venueId={venue.id} style={{ marginTop: spacing[4] }} />
+
         {/* Dishes Carousel */}
         <View style={{ marginTop: spacing[4] }}>
           <View
@@ -365,7 +375,7 @@ export function StallDetailScreenV2({ route }: Props) {
                   </AppText>
                   <AppText variant="micro" tone="secondary">
                     {dish.reviewCount > 0
-                      ? `${dish.rating.toFixed(1)} · ${dish.reviewCount} reviews`
+                      ? `${dish.rating.toFixed(1)} · ${dish.reviewCount} listed reviews`
                       : "No reviews yet"}
                   </AppText>
                   <AppText variant="bodySmallBold" tone="accent" style={{ marginTop: 2 }}>
@@ -419,11 +429,11 @@ export function StallDetailScreenV2({ route }: Props) {
               margin: spacing[4],
               padding: spacing[4],
               backgroundColor: palette.bgSoft,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.card,
             }}
           >
             <AppText variant="bodySmallBold" style={{ marginBottom: spacing[3] }}>
-              Taste profile{totalReviewCount > 0 ? ` (${totalReviewCount} reviews)` : ""}
+              Taste profile{totalReviewCount > 0 ? ` (${totalReviewCount} listed reviews)` : ""}
             </AppText>
             <View style={{ gap: spacing[2] }}>
               {tasteRows.map((item) => (
@@ -493,7 +503,7 @@ export function StallDetailScreenV2({ route }: Props) {
                     style={{
                       width: 28,
                       height: 28,
-                      borderRadius: 14,
+                      borderRadius: componentRadii.iconButton,
                       backgroundColor: palette.infoSoft,
                       alignItems: "center",
                       justifyContent: "center",

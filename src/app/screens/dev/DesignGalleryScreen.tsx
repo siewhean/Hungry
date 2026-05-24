@@ -28,7 +28,7 @@ import { LaksaIconV2 } from "@/components/icons/food/LaksaIconV2";
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function DesignGalleryScreen() {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -41,7 +41,9 @@ export function DesignGalleryScreen() {
   );
 
   const Item = ({ label, children }: { label: string; children: React.ReactNode }) => (
-    <View style={[styles.item, { backgroundColor: palette.bgSoft, borderRadius: radii.lg }]}>
+    <View
+      style={[styles.item, { backgroundColor: palette.bgSoft, borderRadius: componentRadii.card }]}
+    >
       <View style={styles.iconContainer}>{children}</View>
       <AppText variant="micro" tone="muted" style={{ textAlign: "center", marginTop: spacing[2] }}>
         {label}

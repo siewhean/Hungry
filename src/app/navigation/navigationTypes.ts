@@ -70,6 +70,7 @@ export type MerchantTabParamList = {
   DishEditor: { dishId?: string } | undefined;
   OCRDrafts: undefined;
   CustomerInbox: undefined;
+  FeaturedVisitors: undefined;
   PromotionBuilder: { promotionId?: string } | undefined;
   PromotionList: undefined;
   AIAssistant: undefined;
@@ -123,6 +124,7 @@ export type RootStackParamList = {
     authorName: string;
     authorAvatarUrl?: string;
     authorLocation?: string;
+    reviewSignalLabel?: string;
   };
   Offline: undefined;
   NotFound: { title?: string; body?: string } | undefined;

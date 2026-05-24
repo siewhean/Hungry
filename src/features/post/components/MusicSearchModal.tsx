@@ -80,7 +80,8 @@ interface MusicSearchModalProps {
 }
 
 export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
-  const { componentSizes, palette, radii, semanticSpacing, spacing } = useHungryTheme();
+  const { componentRadii, componentSizes, palette, radii, semanticSpacing, spacing } =
+    useHungryTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
 
@@ -131,7 +132,7 @@ export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
               : pressed
                 ? palette.surfaceRaised
                 : "transparent",
-            borderRadius: radii.md,
+            borderRadius: componentRadii.card,
             marginBottom: spacing[1],
             padding: spacing[3],
           },
@@ -147,7 +148,7 @@ export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
               styles.playButton,
               {
                 backgroundColor: palette.bgSoft,
-                borderRadius: radii.pill,
+                borderRadius: componentRadii.iconButton,
                 height: componentSizes.buttonSmMinHeight,
                 width: componentSizes.buttonSmMinHeight,
               },

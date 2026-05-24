@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Pressable, View } from "react-native";
 import { Image } from "expo-image";
 import { ArrowLeft, Search as SearchIcon } from "lucide-react-native";
@@ -8,6 +8,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, Chip, IconButton, Input, Screen } from "@/components/ui";
 import { getDiscoverStallCollections, useSearchData } from "@/features/search/search";
+import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
@@ -25,16 +26,46 @@ type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function DishSearchScreen() {
   const navigation = useNavigation<RootNavigation>();
-  const { motion, palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, motion, palette, radii, spacing, shadows } = useHungryTheme();
   const { filters } = useSearchData();
   const profile = useProfileStore((state) => state.profile);
   const updateQuery = useSearchStore((state) => state.updateQuery);
+  const rememberSearch = useSearchStore((state) => state.rememberSearch);
+  const recentSearches = useSearchStore((state) => state.recentSearches);
   const selectedCategories = useSearchStore((state) => state.filters.categories);
   const toggleCategory = useSearchStore((state) => state.toggleCategory);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const collections = getDiscoverStallCollections(profile, filters.query).slice(0, 4);
   const entryY = useRef(new Animated.Value(-28)).current;
   const entryOpacity = useRef(new Animated.Value(0)).current;
+  const safeRecentSearches = useMemo(
+    () =>
+      Array.isArray(recentSearches)
+        ? recentSearches
+            .map((search) =>
+              typeof search === "string" ? search.trim() : String(search ?? "").trim(),
+            )
+            .filter(Boolean)
+        : [],
+    [recentSearches],
+  );
+  const defaultSearchPlaceholders = useMemo(
+    () => ["Laksa, satay, Tian Tian...", "Try mee pok, ramen, and laksa", "Nasi lemak near you"],
+    [],
+  );
+  const animatedSearchPlaceholders = useMemo(
+    () =>
+      safeRecentSearches.length > 0 ? safeRecentSearches.slice(0, 5) : defaultSearchPlaceholders,
+    [defaultSearchPlaceholders, safeRecentSearches],
+  );
+  const animatedPlaceholder = useMovingSearchPlaceholder({
+    phrases: animatedSearchPlaceholders,
+    totalCycleMs: 2600,
+    tickMs: 2,
+    revealStepMs: 2,
+    deleteStepMs: 2,
+    pauseMs: 320,
+  });
 
   useEffect(() => {
     Animated.parallel([
@@ -79,7 +110,7 @@ export function DishSearchScreen() {
               }
               navigation.navigate("MainTabs", { screen: "Discover" });
             }}
-            icon={<ArrowLeft color={palette.navy} size={18} />}
+            icon={<ArrowLeft color={palette.text} size={18} />}
           />
           <View style={{ flex: 1 }}>
             <AppText variant="h1">Search</AppText>
@@ -88,10 +119,16 @@ export function DishSearchScreen() {
 
         <Input
           leftIcon={<SearchIcon color={palette.textMuted} size={18} />}
-          placeholder="Laksa, satay, Tian Tian..."
+          placeholder={animatedPlaceholder}
           value={filters.query}
           onChangeText={updateQuery}
-          onSubmitEditing={() => navigation.navigate("SearchResults")}
+          onSubmitEditing={() => {
+            const trimmedQuery = filters.query.trim();
+            if (trimmedQuery) {
+              rememberSearch(trimmedQuery);
+            }
+            navigation.navigate("SearchResults");
+          }}
         />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
           {SEARCH_CATEGORIES.map((category) => (
@@ -120,7 +157,7 @@ export function DishSearchScreen() {
           style={({ pressed }) => [
             {
               backgroundColor: pressed ? palette.bgSoft : palette.surface,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.card,
               borderWidth: 1,
               borderColor: palette.border,
               overflow: "hidden",
@@ -181,7 +218,7 @@ export function DishSearchScreen() {
               style={{
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
-                borderRadius: radii.lg,
+                borderRadius: componentRadii.card,
                 borderWidth: 1,
                 overflow: "hidden",
               }}

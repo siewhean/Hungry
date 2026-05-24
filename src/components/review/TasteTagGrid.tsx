@@ -61,7 +61,7 @@ export function TasteTagGrid({ selectedTags, onToggle }: TasteTagGridProps) {
             <AppText
               variant="bodySmall"
               style={{
-                color: isSelected ? "#FFFFFF" : palette.text,
+                color: isSelected ? palette.white : palette.text,
                 fontWeight: isSelected ? "700" : "500",
               }}
             >

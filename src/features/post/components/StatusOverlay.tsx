@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, StyleSheet, ActivityIndicator } from "react-native";
+import { Alert, Clipboard, Share, StyleSheet, View, ActivityIndicator } from "react-native";
 import { CheckCircle2, AlertCircle, X, Calendar, Save } from "lucide-react-native";
 import { AppText, Button, IconButton } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -11,11 +11,26 @@ interface StatusOverlayProps {
 }
 
 export function StatusOverlay({ onFinish }: StatusOverlayProps) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const publishingState = useComposerStore((state) => state.publishingState);
+  const publishingError = useComposerStore((state) => state.publishingError);
   const setPublishingState = useComposerStore((state) => state.setPublishingState);
   const reset = useComposerStore((state) => state.reset);
+  const shareErrorReport = async () => {
+    const report = `Hungry Post Composer Error\nState: ${publishingState}\nError: ${
+      publishingError || "Unable to publish post."
+    }`;
+    try {
+      await Clipboard.setString(report);
+      await Share.share({ message: report, title: "Hungry Post Composer Error" });
+    } catch {
+      Alert.alert(
+        "Error report",
+        "Unable to open sharing options. Error report copied to clipboard.",
+      );
+    }
+  };
 
   useEffect(() => {
     if (publishingState === "scheduled") {
@@ -42,9 +57,10 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
             styles.toast,
             {
               backgroundColor: palette.surface,
-              borderRadius: radii.md,
+              borderRadius: componentRadii.card,
               padding: spacing.lg,
               borderColor: palette.border,
+              shadowColor: palette.mediaBackdrop,
             },
           ]}
         >
@@ -71,7 +87,7 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
       style={[
         StyleSheet.absoluteFill,
         {
-          backgroundColor: "rgba(0,0,0,0.7)",
+          backgroundColor: palette.detailImageOverlay,
           zIndex: 1000,
           alignItems: "center",
           justifyContent: "center",
@@ -82,7 +98,11 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
       <View
         style={[
           styles.card,
-          { backgroundColor: palette.surface, borderRadius: radii.xl, padding: spacing.xxl },
+          {
+            backgroundColor: palette.surface,
+            borderRadius: componentRadii.card,
+            padding: spacing.xxl,
+          },
         ]}
       >
         {isProcessing ? (
@@ -156,7 +176,8 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
             <View style={{ alignItems: "center", gap: spacing.sm }}>
               <AppText variant="h3">Something went wrong</AppText>
               <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-                We couldn&apos;t publish your post. Please check your connection and try again.
+                {publishingError ||
+                  "We couldn&apos;t publish your post. Please check your connection and try again."}
               </AppText>
             </View>
             <Button
@@ -165,6 +186,7 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
               fullWidth
               onPress={() => setPublishingState("posting")}
             />
+            <Button label="Send error" variant="secondary" fullWidth onPress={shareErrorReport} />
             <Button
               label="Cancel"
               variant="ghost"
@@ -213,7 +235,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     borderWidth: 1,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,

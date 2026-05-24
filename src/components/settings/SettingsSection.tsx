@@ -2,6 +2,7 @@ import type { PropsWithChildren } from "react";
 import { View, StyleSheet } from "react-native";
 import { AppText } from "../ui";
 import { useHungryTheme } from "@/theme";
+import { componentRadii } from "@/theme/tokens";
 
 interface SettingsSectionProps {
   title?: string;
@@ -13,7 +14,7 @@ export function SettingsSection({
   description,
   children,
 }: PropsWithChildren<SettingsSectionProps>) {
-  const { spacing, palette } = useHungryTheme();
+  const { componentRadii, spacing, palette } = useHungryTheme();
 
   return (
     <View style={{ marginBottom: spacing[6] }}>
@@ -46,7 +47,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   content: {
-    borderRadius: 16,
+    borderRadius: componentRadii.card,
     borderWidth: 1,
     overflow: "hidden",
   },

@@ -19,7 +19,7 @@ interface DialogProps {
 }
 
 export function Dialog({ visible, title, message, buttons, onClose }: DialogProps) {
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentCornerCurve, componentRadii, palette, spacing, shadows } = useHungryTheme();
 
   if (!visible) {
     return null;
@@ -42,7 +42,8 @@ export function Dialog({ visible, title, message, buttons, onClose }: DialogProp
             styles.container,
             {
               backgroundColor: palette.surface,
-              borderRadius: radii.xl,
+              borderRadius: componentRadii.card,
+              borderCurve: componentCornerCurve.borderCurve,
               padding: spacing[6],
               ...shadows.floating,
             },

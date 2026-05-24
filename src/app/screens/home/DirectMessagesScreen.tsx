@@ -95,7 +95,12 @@ export function DirectMessagesScreen() {
             <EmptyState title="Loading messages" body="Fetching conversations..." />
           ) : null}
           {!isLoading && loadError ? (
-            <EmptyState title="Messages unavailable" body={loadError} />
+            <EmptyState
+              title="Messages unavailable"
+              body="Unable to load your conversations."
+              errorMessage={loadError}
+              sendErrorContext="Direct messages screen"
+            />
           ) : null}
           {!isLoading &&
             !loadError &&

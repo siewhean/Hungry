@@ -40,7 +40,8 @@ export function Button({
   onPressIn,
   ...props
 }: ButtonProps) {
-  const { componentSizes, opacity, palette, radii, spacing } = useHungryTheme();
+  const { componentCornerCurve, componentRadii, componentSizes, opacity, palette, spacing } =
+    useHungryTheme();
   const isDisabled = disabled || loading;
 
   const variantStyle: Record<ButtonVariant, ViewStyle> = {
@@ -104,7 +105,8 @@ export function Button({
         variantStyle[variant],
         sizeStyle[size],
         {
-          borderRadius: radii.pill,
+          borderRadius: componentRadii.button,
+          borderCurve: componentCornerCurve.borderCurve,
           opacity: isDisabled ? opacity.disabled : 1,
           width: fullWidth ? "100%" : undefined,
           transform: [{ translateY: pressed ? 1 : 0 }],

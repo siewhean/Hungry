@@ -3,6 +3,7 @@ import { StyleSheet, TextInput, View, type TextInputProps } from "react-native";
 
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
+import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -11,6 +12,8 @@ interface InputProps extends TextInputProps {
   error?: boolean;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
+  enableMovingPlaceholder?: boolean;
+  movingPlaceholderPhrases?: string[];
 }
 
 export const Input = forwardRef<TextInput, InputProps>(
@@ -22,6 +25,9 @@ export const Input = forwardRef<TextInput, InputProps>(
       error,
       leftIcon,
       rightIcon,
+      enableMovingPlaceholder,
+      movingPlaceholderPhrases,
+      placeholder,
       style,
       secureTextEntry,
       autoCorrect,
@@ -31,12 +37,27 @@ export const Input = forwardRef<TextInput, InputProps>(
     },
     ref,
   ) => {
-    const { componentSizes, palette, radii, semanticSpacing, spacing, typography } =
-      useHungryTheme();
+    const {
+      componentCornerCurve,
+      componentRadii,
+      componentSizes,
+      palette,
+      semanticSpacing,
+      spacing,
+      typography,
+    } = useHungryTheme();
     const isSecureField = Boolean(secureTextEntry);
     const resolvedAutoCorrect = autoCorrect ?? !isSecureField;
     const resolvedSpellCheck = spellCheck ?? !isSecureField;
     const resolvedAutoComplete = autoComplete ?? (isSecureField ? "off" : undefined);
+    const staticPlaceholder = typeof placeholder === "string" ? placeholder : "";
+    const shouldAnimatePlaceholder =
+      enableMovingPlaceholder ?? /^(search|find)\b/i.test(staticPlaceholder.trim());
+    const animatedPlaceholder = useMovingSearchPlaceholder({
+      phrases: movingPlaceholderPhrases ?? [staticPlaceholder || "Search..."],
+      enabled: shouldAnimatePlaceholder,
+    });
+    const placeholderValue = shouldAnimatePlaceholder ? animatedPlaceholder : staticPlaceholder;
 
     return (
       <View style={{ gap: semanticSpacing.textStack }}>
@@ -51,7 +72,8 @@ export const Input = forwardRef<TextInput, InputProps>(
             {
               backgroundColor: palette.surface,
               borderColor: error ? palette.error : palette.border,
-              borderRadius: radii.md,
+              borderRadius: componentRadii.input,
+              borderCurve: componentCornerCurve.borderCurve,
               gap: spacing[2],
               minHeight: componentSizes.inputMinHeight,
               paddingHorizontal: spacing[3],
@@ -65,6 +87,7 @@ export const Input = forwardRef<TextInput, InputProps>(
           ) : null}
           <TextInput
             ref={ref}
+            placeholder={placeholderValue}
             placeholderTextColor={palette.textMuted}
             secureTextEntry={secureTextEntry}
             autoCorrect={resolvedAutoCorrect}

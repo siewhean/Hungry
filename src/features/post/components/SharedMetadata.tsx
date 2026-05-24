@@ -13,7 +13,7 @@ interface SharedMetadataProps {
 }
 
 export function SharedMetadata({ onOpenLocation, onOpenCollaborators }: SharedMetadataProps) {
-  const { palette, radii } = useHungryTheme();
+  const { componentRadii, palette } = useHungryTheme();
   const location = useComposerStore((state) => state.location);
   const collaborators = useComposerStore((state) => state.collaborators);
   const foodTags = useComposerStore((state) => state.foodTags);
@@ -39,7 +39,7 @@ export function SharedMetadata({ onOpenLocation, onOpenCollaborators }: SharedMe
           styles.row,
           {
             backgroundColor: pressed ? palette.surfaceRaised : palette.surface,
-            borderRadius: radii.lg,
+            borderRadius: componentRadii.button,
             borderBottomWidth: 1,
             borderBottomColor: palette.border,
             paddingHorizontal: spacing.xl,
@@ -68,7 +68,7 @@ export function SharedMetadata({ onOpenLocation, onOpenCollaborators }: SharedMe
           styles.row,
           {
             backgroundColor: pressed ? palette.surfaceRaised : palette.surface,
-            borderRadius: radii.lg,
+            borderRadius: componentRadii.button,
             borderBottomWidth: 1,
             borderBottomColor: palette.border,
             paddingHorizontal: spacing.xl,
@@ -94,7 +94,11 @@ export function SharedMetadata({ onOpenLocation, onOpenCollaborators }: SharedMe
       <View
         style={[
           styles.tagsContainer,
-          { backgroundColor: palette.surface, borderRadius: radii.lg, padding: spacing.xl },
+          {
+            backgroundColor: palette.surface,
+            borderRadius: componentRadii.card,
+            padding: spacing.xl,
+          },
         ]}
       >
         <View
@@ -110,6 +114,22 @@ export function SharedMetadata({ onOpenLocation, onOpenCollaborators }: SharedMe
         </View>
 
         <View style={{ gap: spacing.lg }}>
+          <View>
+            <AppText variant="micro" tone="muted" style={{ marginBottom: spacing.md }}>
+              FOOD TAGS
+            </AppText>
+            <View style={[styles.chipRow, { gap: spacing.md }]}>
+              {["Noodles", "Rice", "Seafood", "Snack", "Dessert"].map((tag) => (
+                <Chip
+                  key={tag}
+                  label={tag}
+                  selected={foodTags.includes(tag)}
+                  onPress={() => toggleTag(tag, "food")}
+                />
+              ))}
+            </View>
+          </View>
+
           <View>
             <AppText variant="micro" tone="muted" style={{ marginBottom: spacing.md }}>
               TASTE PROFILE

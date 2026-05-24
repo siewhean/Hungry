@@ -26,11 +26,10 @@ appId: ${APP_ID}
 - tapOn:
     text: "Close"
     optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 - tapOn:
     text: "Continue"
-    optional: true
-- tapOn:
-    text: "Close"
     optional: true
 - extendedWaitUntil:
     visible: "Developer Launcher"
@@ -43,5 +42,5 @@ appId: ${APP_ID}
     visible:
       id: "activity-tab-updates"
     timeout: 30000
-- assertNotVisible:
+- assertVisible:
     id: "activity-tab-messages"

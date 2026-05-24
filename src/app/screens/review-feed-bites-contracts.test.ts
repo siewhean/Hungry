@@ -14,6 +14,8 @@ test("Review feed cards do not render bottom bites sections", () => {
   const reviewFeedV2 = read("src/app/screens/review/ReviewFeedScreenV2.tsx");
   const reviewShareSheet = read("src/app/screens/review/ReviewShareSheet.tsx");
   const commentsSheet = read("src/components/social/ReviewCommentsSheet.tsx");
+  const bitesCarousel = read("src/components/social/BitesCarousel.tsx");
+  const biteCommentsSheet = read("src/components/social/BiteCommentsSheet.tsx");
 
   for (const source of [reviewFeed, reviewFeedV2]) {
     assert.doesNotMatch(source, /ReviewBitesStrip/);
@@ -29,6 +31,7 @@ test("Review feed cards do not render bottom bites sections", () => {
     assert.match(source, /incrementShare/);
     assert.match(source, /ReviewCommentsSheet/);
     assert.match(source, /ReviewShareSheet/);
+    assert.match(source, /commentsEnabled=\{commentsEnabled\}/);
     assert.match(source, /commentsSheetRef\.current\?\.present\(\)/);
     assert.match(source, /shareSheetRef\.current\?\.present\(\)/);
     assert.match(
@@ -53,11 +56,18 @@ test("Review feed cards do not render bottom bites sections", () => {
     assert.match(source, /interaction\.commentCount > 0/);
     assert.match(source, /interaction\.likeCount > 0/);
     assert.match(source, /interaction\.shareCount > 0/);
+    assert.match(source, /commentCount: 0/);
+    assert.match(source, /likeCount: 0/);
+    assert.doesNotMatch(source, /commentCount: 1/);
+    assert.doesNotMatch(source, /likeCount: item\.review\.rating/);
+    assert.doesNotMatch(source, /seededCommentsForActiveReview/);
+    assert.doesNotMatch(source, /seededComments=\{/);
     assert.match(source, /<Send[\s\S]*<Bookmark[\s\S]*<CommentIcon[\s\S]*<Heart/);
     assert.match(source, /justifyContent: "space-between"[\s\S]*justifyContent: "flex-end"/);
   }
 
   assert.match(commentsSheet, /<BottomSheetModal/);
+  assert.match(commentsSheet, /if \(!FEATURE_FLAGS\.commentsEnabled\) \{\s*return null;\s*\}/);
   assert.match(commentsSheet, /<BottomSheetFooter/);
   assert.match(commentsSheet, /commentsByPostId\[activeReview\.id\] \?\? \[\]/);
   assert.match(commentsSheet, /addComment\(activeReview\.id, newComment\)/);
@@ -81,4 +91,12 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewShareSheet, /selectedCount=\{selectedChatIds\.length\}/);
   assert.match(reviewShareSheet, /accessibilityLabel="Send shared review"/);
   assert.doesNotMatch(reviewShareSheet, /showSendAction/);
+
+  assert.match(bitesCarousel, /FEATURE_FLAGS\.commentsEnabled/);
+  assert.match(
+    bitesCarousel,
+    /commented=\{commentsEnabled && Boolean\(commentedBites\[item\.id\]\)\}/,
+  );
+  assert.match(bitesCarousel, /onCommentPress=\{\s*commentsEnabled\s*\?/);
+  assert.match(biteCommentsSheet, /if \(!FEATURE_FLAGS\.commentsEnabled\) \{\s*return null;\s*\}/);
 });

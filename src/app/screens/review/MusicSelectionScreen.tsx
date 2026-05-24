@@ -210,7 +210,7 @@ function WaveformIndicator({
 
 export function MusicSelectionScreen() {
   const navigation = useNavigation();
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
 
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
@@ -299,7 +299,7 @@ export function MusicSelectionScreen() {
                   style={[
                     StyleSheet.absoluteFill,
                     {
-                      backgroundColor: "rgba(0,0,0,0.5)",
+                      backgroundColor: palette.mediaScrim,
                       borderRadius: radii.sm,
                       alignItems: "center",
                       justifyContent: "center",
@@ -381,7 +381,7 @@ export function MusicSelectionScreen() {
             style={{
               width: 40,
               height: 40,
-              borderRadius: 20,
+              borderRadius: componentRadii.iconButton,
               backgroundColor: palette.bgSoft,
               alignItems: "center",
               justifyContent: "center",
@@ -405,7 +405,7 @@ export function MusicSelectionScreen() {
               ) : undefined
             }
             style={{
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.input,
               backgroundColor: palette.surfaceRaised,
               minHeight: 50,
               borderWidth: 0,
@@ -429,6 +429,8 @@ export function MusicSelectionScreen() {
             styles.playerContainer,
             {
               backgroundColor: palette.surface,
+              borderColor: palette.inverseSurfaceBarely,
+              borderRadius: componentRadii.card,
               shadowColor: palette.navy,
               shadowOpacity: 0.15,
               shadowRadius: 20,
@@ -557,9 +559,7 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     padding: 16,
-    borderRadius: 24,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
   },
   playerRow: {
     flexDirection: "row",

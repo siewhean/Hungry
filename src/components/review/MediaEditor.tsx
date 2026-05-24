@@ -25,7 +25,7 @@ export function MediaEditor({
   onSave,
   initialFilterId = "none",
 }: MediaEditorProps) {
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
   const [selectedFilterId, setSelectedFilterId] = useState(initialFilterId);
   const skiaImage = useImage(uri);
 
@@ -61,7 +61,7 @@ export function MediaEditor({
             style={{
               width: PREVIEW_SIZE,
               height: PREVIEW_SIZE,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.card,
               overflow: "hidden",
               backgroundColor: palette.bgMuted,
               ...shadows.card,
@@ -103,7 +103,7 @@ export function MediaEditor({
                     style={{
                       width: 70,
                       height: 70,
-                      borderRadius: radii.md,
+                      borderRadius: componentRadii.card,
                       borderWidth: isSelected ? 3 : 1,
                       borderColor: isSelected ? palette.orange : palette.border,
                       overflow: "hidden",

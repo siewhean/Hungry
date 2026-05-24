@@ -27,13 +27,16 @@ export function ReadsFeedScreen({ navigation }: Props) {
   const { palette, spacing, radii, shadows } = useHungryTheme();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
+  const [feedError, setFeedError] = useState("");
 
   const loadPosts = useCallback(() => {
     setFeedState("loading");
     try {
       setPosts(getReadsFeed());
+      setFeedError("");
       setFeedState("ready");
-    } catch {
+    } catch (error) {
+      setFeedError(error instanceof Error ? error.message : "Unable to load review feed.");
       setFeedState("error");
     }
   }, []);
@@ -65,6 +68,8 @@ export function ReadsFeedScreen({ navigation }: Props) {
             state="error"
             title="Unable to load reviews"
             body="Please try again."
+            errorMessage={feedError}
+            errorContext="Reads feed"
             ctaLabel="Retry"
             onPress={loadPosts}
           />

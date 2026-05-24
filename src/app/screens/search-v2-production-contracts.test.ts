@@ -25,3 +25,15 @@ test("search V2 hides unsupported tabs and binds result badges to data", () => {
   assert.doesNotMatch(resultsView, /"Stalls"/);
   assert.doesNotMatch(resultsView, /"Reads"/);
 });
+
+test("search result surfaces show honest empty states", () => {
+  const search = read("src/app/screens/search/DishSearchScreenV2.tsx");
+  const resultsView = read("src/components/discover/SearchResultsView.tsx");
+
+  assert.match(search, /const visibleCollections = useMemo/);
+  assert.match(search, /visibleCollections\.length/);
+  assert.doesNotMatch(search, /if \(!dish\) return null/);
+  assert.match(resultsView, /ListEmptyComponent/);
+  assert.match(resultsView, /No matches found/);
+  assert.match(resultsView, /Try another dish or taste filter\./);
+});

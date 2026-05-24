@@ -38,9 +38,9 @@ test("social store contract: like and save toggles keep local state even if sync
 
   assert.match(source, /liked: isLiked/);
   assert.match(source, /saved: isSaved/);
-  assert.match(source, /Failed to sync liked post reaction; kept local state/);
-  assert.match(source, /Failed to sync saved post reaction; kept local state/);
-  assert.doesNotMatch(source, /\[postId\]: current/);
+  assert.match(source, /Failed to sync liked post reaction; reverting optimistic state\./);
+  assert.match(source, /Failed to sync saved post reaction; reverting optimistic state\./);
+  assert.match(source, /\[postId\]: current/);
 });
 
 test("profile grid contract: liked and saved posts read from the persisted social store", () => {

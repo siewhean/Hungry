@@ -1,4 +1,4 @@
-import type { PropsWithChildren, ReactNode } from "react";
+import type { PropsWithChildren, ReactNode, RefObject } from "react";
 import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -16,6 +16,7 @@ interface ScreenProps {
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   fullWidth?: boolean;
+  scrollRef?: RefObject<ScrollView>;
 }
 
 export function Screen({
@@ -29,6 +30,7 @@ export function Screen({
   style,
   contentContainerStyle,
   fullWidth = false,
+  scrollRef,
 }: PropsWithChildren<ScreenProps>) {
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const styles = createStyles(spacing);
@@ -55,6 +57,7 @@ export function Screen({
       {scroll ? (
         <ScrollView
           style={styles.flex}
+          ref={scrollRef}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[
             styles.content,

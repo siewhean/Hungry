@@ -1,5 +1,6 @@
-import { View } from "react-native";
+import { Image, View } from "react-native";
 
+import { HUNGRY_LOGO_ICON } from "@/constants/brandAssets";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
 
@@ -17,25 +18,16 @@ export function HungryLogo({
   opacity = 1,
 }: HungryLogoProps) {
   const { palette } = useHungryTheme();
-  const markSize = Math.max(24, Math.round(size * 0.58));
+  const markSize = showWordmark ? Math.max(32, Math.round(size * 0.58)) : Math.max(18, size);
   const finalWordmarkColor = wordmarkColor ?? palette.orange;
 
   return (
     <View style={{ alignItems: "center", gap: 8, opacity }}>
-      <View
-        style={{
-          alignItems: "center",
-          backgroundColor: palette.orangeLight,
-          borderRadius: Math.round(markSize / 3),
-          height: markSize,
-          justifyContent: "center",
-          width: markSize,
-        }}
-      >
-        <AppText variant="h2" style={{ color: palette.orange, fontFamily: "Nunito_700Bold" }}>
-          H
-        </AppText>
-      </View>
+      <Image
+        source={HUNGRY_LOGO_ICON}
+        resizeMode="contain"
+        style={{ width: markSize, height: markSize }}
+      />
       {showWordmark ? (
         <AppText variant="h2" style={{ color: finalWordmarkColor, fontFamily: "Nunito_700Bold" }}>
           Hungry

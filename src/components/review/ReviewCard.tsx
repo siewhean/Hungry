@@ -12,7 +12,7 @@ interface ReviewCardProps {
 }
 
 export function ReviewCard({ review }: ReviewCardProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
 
   const initials = review.authorName
     .split(" ")
@@ -62,7 +62,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
             <Image
               key={uri}
               source={{ uri }}
-              style={{ borderRadius: radii.sm, height: 72, width: 72 }}
+              style={{ borderRadius: componentRadii.card, height: 72, width: 72 }}
               contentFit="cover"
             />
           ))}

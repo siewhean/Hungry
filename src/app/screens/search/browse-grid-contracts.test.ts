@@ -14,10 +14,15 @@ test("Browse Stalls uses the active repository before showing empty state", () =
 
   assert.doesNotMatch(source, /dataRepositoryMock as fallbackBrowseRepository/);
   assert.doesNotMatch(source, /const fallbackAllVenues = useMemo/);
-  assert.match(source, /const getBrowseDishesByVenue = useCallback/);
-  assert.match(source, /repository\.listDishesByVenue\(venueId\)/);
-  assert.match(source, /const getBrowseDishById = useCallback/);
-  assert.match(source, /repository\.getDishById\(dishId\)/);
+  assert.match(source, /getCachedBrowseIndex\(repository\)/);
+  assert.match(source, /setBrowseIndex\(getBrowseIndex\(repository\)\)/);
+  assert.match(source, /browseIndex\.sortedDishesByVenueId\.get\(venue\.id\)/);
+  assert.match(source, /browseIndex\.dishById\.get\(venue\.topDishId\)/);
+  assert.match(source, /const BROWSE_GRID_HYDRATION_TIMEOUT_MS = 350/);
+  assert.match(source, /scheduleIdleWork/);
+  assert.match(source, /if \(!browseIndex \|\| shouldUseQueryScopedFeed\)/);
+  assert.match(source, /const queryMatchedDishes = useMemo/);
+  assert.match(source, /searchBrowseDishes\(browseIndex/);
   assert.match(source, /const buildStallItems =/);
   assert.match(source, /return buildStallItems\(browseVenues\)/);
   assert.match(source, /export function BrowseStallsScreen\(\)/);

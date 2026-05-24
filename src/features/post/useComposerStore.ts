@@ -58,6 +58,7 @@ interface ComposerState {
 
   // UI State
   publishingState: PublishingState;
+  publishingError: string | null;
   showPreview: boolean;
   previewPlatform: "hungry" | "instagram";
   editingMediaId: string | null;
@@ -85,6 +86,7 @@ interface ComposerState {
   setShowPreview: (show: boolean) => void;
   setPreviewPlatform: (platform: "hungry" | "instagram") => void;
   setEditingMediaId: (id: string | null) => void;
+  setPublishingError: (message: string | null) => void;
   setScheduledTime: (date: Date | null) => void;
   setIsBusinessMode: (isBusiness: boolean) => void;
   setCTA: (cta: string | null) => void;
@@ -124,6 +126,7 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
   isBusinessMode: false,
 
   publishingState: "empty",
+  publishingError: null,
   showPreview: false,
   previewPlatform: "hungry",
   editingMediaId: null,
@@ -198,6 +201,7 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
   setShowPreview: (showPreview) => set({ showPreview }),
   setPreviewPlatform: (previewPlatform) => set({ previewPlatform }),
   setEditingMediaId: (editingMediaId) => set({ editingMediaId }),
+  setPublishingError: (publishingError) => set({ publishingError }),
   setScheduledTime: (scheduledTime) => set({ scheduledTime }),
   setIsBusinessMode: (isBusinessMode) => set({ isBusinessMode }),
   setCTA: (ctaButton) => set({ ctaButton }),
@@ -269,5 +273,6 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
       publishingState: "empty",
       showPreview: false,
       isAiProcessing: false,
+      publishingError: null,
     }),
 }));

@@ -15,6 +15,7 @@ import { Utensils } from "lucide-react-native";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { BuildingType, Coordinate } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
+import { componentRadii } from "@/theme/tokens";
 import { AppText } from "@/components/ui";
 import { BuildingPin } from "./BuildingPin";
 
@@ -109,7 +110,7 @@ function MarkerVisual({
   zoomLevel?: number;
   isTrending?: boolean;
 }) {
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
   const showLabel = selected || zoomLevel >= 15.5;
 
   if (isTrending) {
@@ -120,7 +121,7 @@ function MarkerVisual({
             {
               width: 56,
               height: 56,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.card,
               borderWidth: 3,
               borderColor: palette.orange,
               backgroundColor: palette.surface,
@@ -168,7 +169,7 @@ function MarkerVisual({
           {
             backgroundColor: accent,
             borderColor: selected ? palette.surface : `${accent}40`,
-            borderRadius: radii.md,
+            borderRadius: componentRadii.iconButton,
             width: selected ? 44 : 36,
             height: selected ? 44 : 36,
             transform: [],
@@ -589,7 +590,7 @@ const styles = StyleSheet.create({
     top: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 14,
+    borderRadius: componentRadii.card,
     borderWidth: 1,
   },
 });

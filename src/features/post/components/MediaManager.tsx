@@ -11,7 +11,7 @@ import { semanticSpacing } from "@/theme/tokens";
 const { width } = Dimensions.get("window");
 
 export function MediaManager() {
-  const { palette, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, shadows } = useHungryTheme();
   const media = useComposerStore((state) => state.media);
   const addMedia = useComposerStore((state) => state.addMedia);
   const removeMedia = useComposerStore((state) => state.removeMedia);
@@ -82,7 +82,7 @@ export function MediaManager() {
           <Pressable
             key={item.id}
             onPress={() => setEditingMediaId(item.id)}
-            style={[styles.mediaWrapper, { borderRadius: radii.lg }]}
+            style={[styles.mediaWrapper, { borderRadius: componentRadii.card }]}
           >
             <Image source={{ uri: item.uri }} style={styles.media} contentFit="cover" />
             <IconButton
@@ -122,7 +122,7 @@ export function MediaManager() {
             {
               backgroundColor: palette.surfaceRaised,
               borderColor: palette.border,
-              borderRadius: radii.lg,
+              borderRadius: componentRadii.button,
             },
           ]}
         >

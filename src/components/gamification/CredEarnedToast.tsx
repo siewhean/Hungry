@@ -23,13 +23,15 @@ import * as Haptics from "expo-haptics";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui/AppText";
 import { useFoodCredStore } from "@/store/useFoodCredStore";
+import { resolveFoodCredLevel } from "@/constants/foodCredConfig";
 
 const AUTO_DISMISS_MS = 2500;
 
 export function CredEarnedToast() {
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const lastEarnedPoints = useFoodCredStore((s) => s.lastEarnedPoints);
-  const currentLevel = useFoodCredStore((s) => s.currentLevel());
+  const totalPoints = useFoodCredStore((s) => s.totalPoints);
+  const currentLevel = resolveFoodCredLevel(totalPoints);
 
   // Track which "version" of the toast we're showing — a new non-zero value triggers show
   const lastShownRef = useRef(0);
@@ -56,31 +58,32 @@ export function CredEarnedToast() {
       <Animated.View
         entering={FadeInDown.duration(200).springify()}
         exiting={FadeOutUp.duration(180).delay(AUTO_DISMISS_MS - 180)}
-        style={animStyle}
       >
-        <View
-          style={[
-            shadows.floating,
-            styles.pill,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.orange,
-              borderRadius: radii.pill,
-              borderWidth: 1.5,
-              paddingHorizontal: spacing[4],
-              paddingVertical: spacing[2],
-            },
-          ]}
-        >
-          <AppText
-            style={{ color: palette.orange, fontWeight: "700", fontSize: 15, lineHeight: 20 }}
+        <Animated.View style={animStyle}>
+          <View
+            style={[
+              shadows.floating,
+              styles.pill,
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.orange,
+                borderRadius: radii.pill,
+                borderWidth: 1.5,
+                paddingHorizontal: spacing[4],
+                paddingVertical: spacing[2],
+              },
+            ]}
           >
-            +{lastEarnedPoints} Food Cred
-          </AppText>
-          <AppText tone="muted" variant="micro" style={{ marginTop: 2 }}>
-            {currentLevel.name}
-          </AppText>
-        </View>
+            <AppText
+              style={{ color: palette.orange, fontWeight: "700", fontSize: 15, lineHeight: 20 }}
+            >
+              +{lastEarnedPoints} Food Cred
+            </AppText>
+            <AppText tone="muted" variant="micro" style={{ marginTop: 2 }}>
+              {currentLevel.name}
+            </AppText>
+          </View>
+        </Animated.View>
       </Animated.View>
     </View>
   );

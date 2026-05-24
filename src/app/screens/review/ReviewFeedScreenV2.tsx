@@ -29,14 +29,23 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { ReviewCommentsSheet, type ActiveReviewCommentTarget } from "@/components/social";
-import { AppHeader, AppText, Chip, EmptyState, ExpandableSearchLauncher } from "@/components/ui";
+import {
+  AppHeader,
+  AppText,
+  Chip,
+  EmptyState,
+  ExpandableSearchLauncher,
+  Skeleton,
+} from "@/components/ui";
 import { promptBlockReviewAuthor, promptReportReview } from "@/lib/security/communitySafety";
 import { getDataRepository } from "@/lib/services/serviceProvider";
-import { useSocialStore, type InteractionState, type SocialComment } from "@/store/useSocialStore";
+import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
+import { useSocialStore, type InteractionState } from "@/store/useSocialStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "./ReviewShareSheet";
 import { listReviewFeedItems, type ReviewFeedItem } from "@/features/review/reviewFeed";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -48,9 +57,53 @@ const FILTER_CHIPS: FilterMode[] = ["Recent", "Rating", "Dish", "Location", "Veg
 
 // ─── ReviewCardV2 ─────────────────────────────────────────────────────────────
 
+function ReviewFeedSkeleton() {
+  const { componentRadii, radii, spacing } = useHungryTheme();
+
+  return (
+    <View style={{ gap: spacing[4], paddingHorizontal: spacing[4], paddingTop: spacing[4] }}>
+      {[0, 1, 2].map((item) => (
+        <View key={item} style={{ gap: spacing[3] }}>
+          <Skeleton width="100%" height={180} borderRadius={componentRadii.card} />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+            <Skeleton width={36} height={36} borderRadius={radii.pill} />
+            <View style={{ flex: 1, gap: spacing[1] }}>
+              <Skeleton width="42%" height={16} borderRadius={radii.sm} />
+              <Skeleton width="32%" height={12} borderRadius={radii.sm} />
+            </View>
+          </View>
+          <Skeleton width="90%" height={16} borderRadius={radii.sm} />
+          <Skeleton width="62%" height={16} borderRadius={radii.sm} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function ReviewSearchQuerySummary({ query }: { query: string }) {
+  const trimmedQuery = query.trim();
+  const { spacing } = useHungryTheme();
+
+  if (!trimmedQuery) {
+    return null;
+  }
+
+  return (
+    <View style={{ gap: spacing[0.5], paddingHorizontal: spacing[1] }}>
+      <AppText variant="micro" tone="secondary">
+        Showing results for
+      </AppText>
+      <AppText variant="bodySmallBold" style={{ flexShrink: 1 }}>
+        {trimmedQuery}
+      </AppText>
+    </View>
+  );
+}
+
 function ReviewCardV2({
   item,
   interaction,
+  commentsEnabled,
   onCommentPress,
   onPressDish,
   onSavePress,
@@ -59,13 +112,14 @@ function ReviewCardV2({
 }: {
   item: ReviewFeedItem;
   interaction: InteractionState;
+  commentsEnabled: boolean;
   onCommentPress: (item: ReviewFeedItem) => void;
   onPressDish: (dishId: string) => void;
   onSavePress: (item: ReviewFeedItem) => void;
   onSharePress: (item: ReviewFeedItem) => void;
   onLikePress: (reviewId: string) => void;
 }) {
-  const { palette, radii, spacing, shadows, typography } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows, typography } = useHungryTheme();
   const CommentIcon = MessageCircle ?? MessageCircleMore;
   const { width } = useWindowDimensions();
   const hasPhoto = item.review.photos.length > 0;
@@ -79,7 +133,7 @@ function ReviewCardV2({
       style={[
         {
           backgroundColor: palette.surface,
-          borderRadius: radii.xl,
+          borderRadius: componentRadii.card,
           marginHorizontal: spacing[4],
           marginBottom: spacing[4],
           overflow: "hidden",
@@ -103,7 +157,7 @@ function ReviewCardV2({
                 position: "absolute",
                 top: spacing[3],
                 right: spacing[3],
-                backgroundColor: "rgba(34, 197, 94, 0.9)",
+                backgroundColor: palette.success,
                 paddingHorizontal: spacing[2],
                 paddingVertical: 4,
                 borderRadius: radii.sm,
@@ -132,7 +186,7 @@ function ReviewCardV2({
               style={{
                 width: 40,
                 height: 40,
-                borderRadius: 20,
+                borderRadius: componentRadii.iconButton,
                 backgroundColor: palette.orangeLight,
                 alignItems: "center",
                 justifyContent: "center",
@@ -157,7 +211,7 @@ function ReviewCardV2({
               backgroundColor: palette.amberLight,
               paddingHorizontal: 8,
               paddingVertical: 4,
-              borderRadius: 12,
+              borderRadius: componentRadii.card,
             }}
           >
             <Star size={12} color={palette.amber} fill={palette.amber} />
@@ -173,7 +227,7 @@ function ReviewCardV2({
           style={{
             backgroundColor: palette.bgSoft,
             padding: spacing[3],
-            borderRadius: radii.lg,
+            borderRadius: componentRadii.card,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
@@ -302,19 +356,21 @@ function ReviewCardV2({
                   size={22}
                 />
               </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Open review comments"
-                onPress={() => onCommentPress(item)}
-                style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
-              >
-                <CommentIcon color={palette.text} size={22} />
-                {interaction.commentCount > 0 ? (
-                  <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
-                    {interaction.commentCount}
-                  </AppText>
-                ) : null}
-              </Pressable>
+              {commentsEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Open review comments"
+                  onPress={() => onCommentPress(item)}
+                  style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
+                >
+                  <CommentIcon color={palette.text} size={22} />
+                  {interaction.commentCount > 0 ? (
+                    <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
+                      {interaction.commentCount}
+                    </AppText>
+                  ) : null}
+                </Pressable>
+              ) : null}
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={interaction.liked ? "Unlike review" : "Like review"}
@@ -348,6 +404,7 @@ export function ReviewFeedScreenV2() {
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const repository = getDataRepository();
+  const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
   const interactions = useSocialStore((state) => state.interactions);
   const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
   const repliesByCommentId = useSocialStore((state) => state.repliesByCommentId);
@@ -357,8 +414,9 @@ export function ReviewFeedScreenV2() {
   const incrementShare = useSocialStore((state) => state.incrementShare);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterMode>("Recent");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [activeCommentReview, setActiveCommentReview] = useState<ActiveReviewCommentTarget | null>(
     null,
   );
@@ -369,6 +427,13 @@ export function ReviewFeedScreenV2() {
   const stallPosts = useMemo(() => repository.listStallPosts(), [repository]);
   const searchBarWidth = screenWidth - spacing[8];
   const headerActionSize = spacing[8] + spacing[2.5];
+  const showInitialSkeleton = useDelayedLoadingSkeleton(isInitialLoading, 0);
+  const reviewHeaderTitle = "Reviews";
+
+  useEffect(() => {
+    const timeout = setTimeout(() => setIsInitialLoading(false), 0);
+    return () => clearTimeout(timeout);
+  }, []);
 
   // Get review feed data from the active repository.
   const allReviews = useMemo<ReviewFeedItem[]>(() => {
@@ -401,8 +466,8 @@ export function ReviewFeedScreenV2() {
     initializeInteractions(
       allReviews.map((item) => ({
         id: item.review.id,
-        commentCount: 1,
-        likeCount: item.review.rating,
+        commentCount: 0,
+        likeCount: 0,
         savedCount: 0,
       })),
     );
@@ -419,39 +484,23 @@ export function ReviewFeedScreenV2() {
     );
   }, [allReviews, searchQuery]);
 
-  const openReviewComments = useCallback((item: ReviewFeedItem) => {
-    setActiveCommentReview({
-      id: item.review.id,
-      authorName: item.review.authorName,
-      dishName: item.dishName,
-      caption: item.review.text,
-    });
-    requestAnimationFrame(() => {
-      commentsSheetRef.current?.present();
-      commentsSheetRef.current?.snapToIndex(0);
-    });
-  }, []);
+  const openReviewComments = useCallback(
+    (item: ReviewFeedItem) => {
+      if (!commentsEnabled) return;
 
-  const seededCommentsForActiveReview = useMemo<SocialComment[]>(() => {
-    if (!activeCommentReview) {
-      return [];
-    }
-
-    const matchingItem = filteredData.find((item) => item.review.id === activeCommentReview.id);
-    if (!matchingItem) {
-      return [];
-    }
-
-    return [
-      {
-        id: matchingItem.review.id,
-        authorName: matchingItem.review.authorName,
-        authorAvatarUrl: undefined,
-        text: matchingItem.review.text,
-        createdAt: matchingItem.review.createdAt,
-      },
-    ];
-  }, [activeCommentReview, filteredData]);
+      setActiveCommentReview({
+        id: item.review.id,
+        authorName: item.review.authorName,
+        dishName: item.dishName,
+        caption: item.review.text,
+      });
+      requestAnimationFrame(() => {
+        commentsSheetRef.current?.present();
+        commentsSheetRef.current?.snapToIndex(0);
+      });
+    },
+    [commentsEnabled],
+  );
 
   const openShareReview = useCallback(
     (item: ReviewFeedItem) => {
@@ -497,13 +546,10 @@ export function ReviewFeedScreenV2() {
         likeCount: 0,
         saveCount: 0,
         shareCount: 0,
-        commentCount: 1,
+        commentCount: 0,
       };
       const postComments = commentsByPostId[item.review.id] ?? [];
-      const commentIds = new Set<string>([
-        item.review.id,
-        ...postComments.map((comment) => comment.id),
-      ]);
+      const commentIds = new Set<string>(postComments.map((comment) => comment.id));
       const replyCount = Object.values(repliesByCommentId).reduce((acc, replies) => {
         const repliesForPost = replies.filter((reply) => commentIds.has(reply.parentCommentId));
         return acc + repliesForPost.length;
@@ -517,6 +563,7 @@ export function ReviewFeedScreenV2() {
         <ReviewCardV2
           item={item}
           interaction={{ ...baseInteraction, commentCount: computedCommentCount }}
+          commentsEnabled={commentsEnabled}
           onCommentPress={openReviewComments}
           onLikePress={(reviewId) => void toggleLike(reviewId)}
           onPressDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
@@ -533,6 +580,7 @@ export function ReviewFeedScreenV2() {
       handleSavePress,
       toggleLike,
       commentsByPostId,
+      commentsEnabled,
       repliesByCommentId,
     ],
   );
@@ -544,14 +592,15 @@ export function ReviewFeedScreenV2() {
         style={{ paddingHorizontal: semanticSpacing.screenEdge, paddingTop: 0, gap: spacing[4] }}
       >
         <AppHeader
-          title="Reviews"
+          title={reviewHeaderTitle}
           right={
             <ExpandableSearchLauncher
+              accessibilityLabel="Search reviews"
               query={searchQuery}
               onQueryChange={setSearchQuery}
               onSubmit={() => undefined}
               onClear={() => setSearchQuery("")}
-              placeholder="Search dish or location..."
+              placeholder="Search Reviews"
               expandedWidth={searchBarWidth}
               iconAlignment="right"
               iconSize={headerActionSize}
@@ -560,6 +609,8 @@ export function ReviewFeedScreenV2() {
               backgroundColor={palette.bgSoft}
               textColor={palette.text}
               placeholderColor={palette.textSecondary}
+              enableMovingPlaceholder={false}
+              showExpandedBacking={false}
             />
           }
         />
@@ -585,26 +636,36 @@ export function ReviewFeedScreenV2() {
             ))}
           </ScrollView>
         </View>
+
+        <ReviewSearchQuerySummary query={searchQuery} />
       </View>
 
       {/* Feed List */}
-      <FlatList
-        data={filteredData}
-        keyExtractor={(item) => item.review.id}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingTop: spacing[4], paddingBottom: spacing[24] }}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <EmptyState title="No reviews found" body="Try adjusting your filters or search query." />
-        }
-      />
-      <ReviewCommentsSheet
-        activeReview={activeCommentReview}
-        inputRef={commentInputRef}
-        innerRef={commentsSheetRef}
-        seededComments={seededCommentsForActiveReview}
-        onDismiss={() => setActiveCommentReview(null)}
-      />
+      {showInitialSkeleton ? (
+        <ReviewFeedSkeleton />
+      ) : (
+        <FlatList
+          data={filteredData}
+          keyExtractor={(item) => item.review.id}
+          renderItem={renderItem}
+          contentContainerStyle={{ paddingTop: spacing[4], paddingBottom: spacing[24] }}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <EmptyState
+              title="No reviews found"
+              body="Try adjusting your filters or search query."
+            />
+          }
+        />
+      )}
+      {commentsEnabled ? (
+        <ReviewCommentsSheet
+          activeReview={activeCommentReview}
+          inputRef={commentInputRef}
+          innerRef={commentsSheetRef}
+          onDismiss={() => setActiveCommentReview(null)}
+        />
+      ) : null}
       <ReviewShareSheet
         activeReview={activeShareReview}
         bottomInset={insets.bottom}

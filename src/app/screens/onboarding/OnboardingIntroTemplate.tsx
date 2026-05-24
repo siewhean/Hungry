@@ -17,6 +17,7 @@ import { ChevronRight } from "lucide-react-native";
 
 import { AppText, Button } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { componentRadii } from "@/theme/tokens";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import { ONBOARDING_ACTIONS_BOTTOM_PADDING, ONBOARDING_ACTIONS_GAP } from "./layoutConstants";
 
@@ -545,7 +546,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: 100,
     height: 64,
-    borderRadius: 18,
+    borderRadius: componentRadii.card,
   },
   // Hex grid
   hexGrid: {

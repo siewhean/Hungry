@@ -9,6 +9,11 @@ export interface ToastPayload {
   message: string;
   tone?: ToastTone;
   duration?: number;
+  backgroundColor?: string;
+  borderColor?: string;
+  textColor?: string;
+  iconColor?: string;
+  borderWidth?: number;
 }
 
 export interface QuickReviewPayload {

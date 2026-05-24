@@ -27,7 +27,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelResult">;
 
 export function WheelResultModal({ navigation, route }: Props) {
-  const { palette, spacing, radii, shadows, motion } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows, motion } = useHungryTheme();
   const { winnerEntryId } = route.params;
   const repository = getDataRepository();
 
@@ -90,14 +90,14 @@ export function WheelResultModal({ navigation, route }: Props) {
       }}
     >
       <LinearGradient
-        colors={[palette.overlay, "rgba(0,0,0,0.9)"]}
+        colors={[palette.overlay, palette.mediaBackdrop]}
         style={StyleSheet.absoluteFill}
       />
 
       <Animated.View
         style={{
           backgroundColor: palette.surface,
-          borderRadius: radii.xl,
+          borderRadius: componentRadii.card,
           overflow: "hidden",
           transform: [{ scale: scaleAnim }],
           opacity: opacityAnim,
@@ -148,7 +148,7 @@ export function WheelResultModal({ navigation, route }: Props) {
             </View>
           )}
           <LinearGradient
-            colors={["rgba(0,0,0,0.4)", "transparent", "rgba(0,0,0,0.6)"]}
+            colors={[palette.mediaScrimSoft, "transparent", palette.mediaScrimStrong]}
             style={StyleSheet.absoluteFill}
           />
         </View>

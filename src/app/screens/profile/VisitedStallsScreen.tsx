@@ -23,7 +23,7 @@ type VenueItem = {
 };
 
 export function VisitedStallsScreen({ navigation }: Props) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
   const repository = getDataRepository();
   const rootNavigation = getRootNavigation(navigation as any);
@@ -66,7 +66,7 @@ export function VisitedStallsScreen({ navigation }: Props) {
                 {
                   borderColor: palette.border,
                   borderWidth: 1,
-                  borderRadius: radii.lg,
+                  borderRadius: componentRadii.card,
                   backgroundColor: pressed ? palette.bgSoft : palette.surface,
                   overflow: "hidden",
                 },

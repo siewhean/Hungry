@@ -56,7 +56,7 @@ export function ImageCarousel({ images, width, height, children }: ImageCarousel
       </Animated.ScrollView>
 
       <LinearGradient
-        colors={["transparent", "rgba(0,0,0,0.1)", "rgba(0,0,0,0.4)"]}
+        colors={["transparent", palette.mediaGradientMid, palette.mediaScrimSoft]}
         style={StyleSheet.absoluteFill}
         pointerEvents="none"
       />
@@ -76,7 +76,7 @@ export function ImageCarousel({ images, width, height, children }: ImageCarousel
         <View
           style={{
             alignItems: "center",
-            backgroundColor: "rgba(0,0,0,0.2)",
+            backgroundColor: palette.mediaScrimSubtle,
             borderRadius: radii.pill,
             paddingHorizontal: 8,
             paddingVertical: 6,
@@ -93,7 +93,7 @@ export function ImageCarousel({ images, width, height, children }: ImageCarousel
               <View
                 key={`${uri}-${index}`}
                 style={{
-                  backgroundColor: "rgba(255,255,255,0.4)",
+                  backgroundColor: palette.inverseIndicator,
                   borderRadius: radii.pill,
                   height: indicatorDotSize,
                   left: index * indicatorStep,

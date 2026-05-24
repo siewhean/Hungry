@@ -220,7 +220,12 @@ function MessagesTab({
           <EmptyState title="Loading messages" body="Fetching conversations..." />
         ) : null}
         {!isLoading && loadError ? (
-          <EmptyState title="Messages unavailable" body={loadError} />
+          <EmptyState
+            title="Messages unavailable"
+            body="Unable to load your messages."
+            errorMessage={loadError}
+            sendErrorContext="Activity inbox"
+          />
         ) : null}
         {!isLoading &&
           !loadError &&

@@ -635,7 +635,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           ) : null}
           <RootStack.Screen getComponent={loadMusicSelectionScreen} name="MusicSelection" />
           <RootStack.Screen getComponent={loadDecideForMeResultScreen} name="DecideForMeResult" />
-          <RootStack.Screen getComponent={loadBuildingDrillDownScreen} name="BuildingDrillDown" />
+          {FEATURE_FLAGS.floorplansEnabled ? (
+            <RootStack.Screen getComponent={loadBuildingDrillDownScreen} name="BuildingDrillDown" />
+          ) : null}
           <RootStack.Screen getComponent={loadOfflineStateScreen} name="Offline" />
           <RootStack.Screen getComponent={loadNotFoundScreen} name="NotFound" />
           <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
@@ -645,10 +647,15 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetailV2" />
               <RootStack.Screen getComponent={loadDishSearchScreenV2} name="SearchHomeV2" />
               <RootStack.Screen getComponent={loadStallDetailScreenV2} name="StallDetailV2" />
-              <RootStack.Screen
-                getComponent={loadBuildingDrillDownScreenV2}
-                name="BuildingDrillDownV2"
-              />
+              {FEATURE_FLAGS.floorplansEnabled ? (
+                <>
+                  <RootStack.Screen
+                    getComponent={loadBuildingDrillDownScreenV2}
+                    name="BuildingDrillDownV2"
+                  />
+                  <RootStack.Screen getComponent={loadVenueDirectoryScreen} name="VenueDirectory" />
+                </>
+              ) : null}
               <RootStack.Screen getComponent={loadQuickReviewSheetV2} name="QuickReviewV2" />
               <RootStack.Screen getComponent={loadSplashScreenV2} name="SplashV2" />
               <RootStack.Screen getComponent={loadDesignGalleryScreen} name="DesignGallery" />
@@ -658,27 +665,37 @@ export function RootNavigator({ theme }: { theme: Theme }) {
                 name="PostComposerV2"
                 options={{ gestureEnabled: false }}
               />
-              <RootStack.Screen getComponent={loadVenueDirectoryScreen} name="VenueDirectory" />
             </>
           ) : null}
           {FEATURE_FLAGS.merchantCentreEnabled ? (
             <RootStack.Screen getComponent={loadMerchantTabs} name="MerchantTabs" />
           ) : null}
-          <RootStack.Screen
-            getComponent={loadStoryViewerScreen}
-            name="StoryViewer"
-            options={{ presentation: "fullScreenModal", animation: "fade" }}
-          />
-          <RootStack.Screen
-            getComponent={loadAddStoryScreen}
-            name="AddStory"
-            options={{ presentation: "modal" }}
-          />
-          {/* Gamification */}
-          <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
-          <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
-          <RootStack.Screen getComponent={loadCollectionListScreen} name="CollectionList" />
-          <RootStack.Screen getComponent={loadCollectionDetailScreen} name="CollectionDetail" />
+          {FEATURE_FLAGS.storiesEnabled ? (
+            <>
+              <RootStack.Screen
+                getComponent={loadStoryViewerScreen}
+                name="StoryViewer"
+                options={{ presentation: "fullScreenModal", animation: "fade" }}
+              />
+              <RootStack.Screen
+                getComponent={loadAddStoryScreen}
+                name="AddStory"
+                options={{ presentation: "modal" }}
+              />
+            </>
+          ) : null}
+          {FEATURE_FLAGS.gamificationEnabled ? (
+            <>
+              <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
+              <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
+            </>
+          ) : null}
+          {FEATURE_FLAGS.collectionsEnabled ? (
+            <>
+              <RootStack.Screen getComponent={loadCollectionListScreen} name="CollectionList" />
+              <RootStack.Screen getComponent={loadCollectionDetailScreen} name="CollectionDetail" />
+            </>
+          ) : null}
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />

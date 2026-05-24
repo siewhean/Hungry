@@ -74,6 +74,7 @@ import {
 import { getHomeFeedBundle, type HomeFeedItem, type HomeFeedSection } from "@/features/home/feed";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
+import { getActivityUnreadCount } from "@/features/home/activity";
 import {
   prefetchDishDetail,
   prefetchImages,
@@ -211,7 +212,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const addPostReply = useSocialStore((state) => state.addReply);
   const followedAuthors = useSocialStore((state) => state.followedAuthors);
   const toggleAuthorFollow = useSocialStore((state) => state.toggleAuthorFollow);
-  const updateUnreadCount = useActivityStore((state) => state.getUnreadCount());
+  const readActivityIds = useActivityStore((state) => state.readActivityIds);
+  const activityUpdates = useActivityStore((state) => state.activityUpdates);
+  const updateUnreadCount = useMemo(
+    () => getActivityUnreadCount(readActivityIds, activityUpdates),
+    [readActivityIds, activityUpdates],
+  );
   const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled;
   const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
   const storiesEnabled = FEATURE_FLAGS.storiesEnabled;

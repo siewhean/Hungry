@@ -46,7 +46,11 @@ test("root and nested route targets avoid stale or unregistered screens", () => 
     settings,
     /rootNavigation\.navigate\("OnboardingStack", \{ screen: "ManualLocationPicker" \}\)/,
   );
-  assert.match(merchantSettings, /rootNavigation\.navigate\("MainTabs", \{ screen: "Profile" \}\)/);
+  assert.match(merchantSettings, /CommonActions\.reset/);
+  assert.match(
+    merchantSettings,
+    /routes: \[\{ name: "MainTabs", params: \{ screen: "Home" \} \}\]/,
+  );
   assert.doesNotMatch(merchantSettings, /navigation\.navigate\("Profile" as never\)/);
 });
 

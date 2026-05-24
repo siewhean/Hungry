@@ -15,20 +15,37 @@
 
 import { create } from "zustand";
 import { getDataRepository } from "@/lib/services/serviceProvider";
-import { ALL_PASSPORT_CATEGORIES, computePassportProgress } from "@/constants/passportConfig";
-import type { UserPassportProgress } from "@/types/domain";
+import {
+  ALL_PASSPORT_CATEGORIES,
+  computePassportProgress,
+  createPassportCelebrateMarker,
+  getEarnedPassportStamps,
+  getNewlyEarnedUncelebratedStamp,
+  getNextPassportStamp,
+} from "@/constants/passportConfig";
+import type {
+  EarnedPassportStamp,
+  PassportCelebrateMarker,
+  PassportNextStamp,
+  UserPassportProgress,
+} from "@/types/domain";
 
 // ─── State Interface ──────────────────────────────────────────────────────────
 
 interface PassportState {
   /** Map of categoryId → computed progress */
   progressMap: Record<string, UserPassportProgress>;
+  celebratedStampIds: Record<string, boolean>;
   isComputed: boolean;
 
   // Queries
   getProgress: (categoryId: string) => UserPassportProgress | null;
   /** Returns categories with at least 1 stamp earned */
   getEarnedCategories: () => UserPassportProgress[];
+  getEarnedStamps: () => EarnedPassportStamp[];
+  getNextStamp: () => PassportNextStamp | null;
+  getNewlyEarnedUncelebratedStamp: () => EarnedPassportStamp | null;
+  getCelebrateMarker: () => PassportCelebrateMarker | null;
 
   // Actions
   /**
@@ -36,6 +53,7 @@ interface PassportState {
    * Call after markTried() or on screen focus.
    */
   computeProgress: (triedStallIds: string[]) => void;
+  markStampCelebrated: (stampId: string) => void;
   _reset: () => void;
 }
 
@@ -64,12 +82,25 @@ function countMatchingTriedStalls(triedStallIds: Set<string>, matchTag: string):
 
 export const usePassportStore = create<PassportState>()((set, get) => ({
   progressMap: {},
+  celebratedStampIds: {},
   isComputed: false,
 
   getProgress: (categoryId) => get().progressMap[categoryId] ?? null,
 
   getEarnedCategories: () =>
     Object.values(get().progressMap).filter((p) => p.earnedStampThresholds.length > 0),
+
+  getEarnedStamps: () => getEarnedPassportStamps(get().progressMap),
+
+  getNextStamp: () => getNextPassportStamp(get().progressMap),
+
+  getNewlyEarnedUncelebratedStamp: () =>
+    getNewlyEarnedUncelebratedStamp(get().progressMap, get().celebratedStampIds),
+
+  getCelebrateMarker: () =>
+    createPassportCelebrateMarker(
+      getNewlyEarnedUncelebratedStamp(get().progressMap, get().celebratedStampIds),
+    ),
 
   computeProgress: (triedStallIds) => {
     const stallSet = new Set(triedStallIds);
@@ -83,7 +114,15 @@ export const usePassportStore = create<PassportState>()((set, get) => ({
     set({ progressMap: newMap, isComputed: true });
   },
 
-  _reset: () => set({ progressMap: {}, isComputed: false }),
+  markStampCelebrated: (stampId) =>
+    set((state) => ({
+      celebratedStampIds: {
+        ...state.celebratedStampIds,
+        [stampId]: true,
+      },
+    })),
+
+  _reset: () => set({ progressMap: {}, celebratedStampIds: {}, isComputed: false }),
 }));
 
 /** All passport category configs — for display in the Passport screen */

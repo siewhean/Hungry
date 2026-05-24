@@ -12,7 +12,7 @@ import { useHungryTheme } from "@/theme";
 type Props = NativeStackScreenProps<RootStackParamList, "NotFound">;
 
 export function NotFoundScreen({ navigation, route }: Props) {
-  const { palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const [searchQuery, setSearchQuery] = useState("");
   const title = route.params?.title ?? "The kitchen is currently quiet.";
@@ -68,7 +68,7 @@ export function NotFoundScreen({ navigation, route }: Props) {
           <Button
             label="Back to Feed"
             onPress={() => navigation.navigate("MainTabs", { screen: "Home" })}
-            style={{ borderRadius: radii.pill, minHeight: 56, width: 220 }}
+            style={{ borderRadius: componentRadii.button, minHeight: 56, width: 220 }}
           />
           <ExpandableSearchLauncher
             query={searchQuery}

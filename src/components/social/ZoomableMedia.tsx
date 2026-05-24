@@ -3,6 +3,8 @@ import { Image } from "expo-image";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 
+import { useHungryTheme } from "@/theme";
+
 interface ZoomableMediaProps {
   uri: string;
   type: "image" | "video";
@@ -28,6 +30,7 @@ function ZoomableImage({
   onPress,
   style,
 }: Pick<ZoomableMediaProps, "uri" | "onPress" | "style">) {
+  const { palette } = useHungryTheme();
   const scale = useSharedValue(1);
   const focalX = useSharedValue(0);
   const focalY = useSharedValue(0);
@@ -56,7 +59,9 @@ function ZoomableImage({
 
   return (
     <GestureDetector gesture={pinchGesture}>
-      <Animated.View style={[styles.container, style, animatedStyle]}>
+      <Animated.View
+        style={[styles.container, { backgroundColor: palette.mediaBackdrop }, style, animatedStyle]}
+      >
         <Pressable onPress={onPress} style={StyleSheet.absoluteFill}>
           <Image
             source={{ uri }}
@@ -73,6 +78,5 @@ function ZoomableImage({
 const styles = StyleSheet.create({
   container: {
     overflow: "hidden",
-    backgroundColor: "#000",
   },
 });

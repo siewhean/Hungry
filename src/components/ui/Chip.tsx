@@ -14,7 +14,15 @@ interface ChipProps {
 }
 
 export function Chip({ label, selected = false, onPress, leftIcon, style }: ChipProps) {
-  const { colorScheme, componentSizes, opacity, palette, radii, spacing } = useHungryTheme();
+  const {
+    colorScheme,
+    componentCornerCurve,
+    componentRadii,
+    componentSizes,
+    opacity,
+    palette,
+    spacing,
+  } = useHungryTheme();
 
   return (
     <Pressable
@@ -33,7 +41,8 @@ export function Chip({ label, selected = false, onPress, leftIcon, style }: Chip
               ? palette.surfaceRaised
               : palette.surface,
           borderColor: selected ? palette.orange : palette.border,
-          borderRadius: radii.pill,
+          borderRadius: componentRadii.button,
+          borderCurve: componentCornerCurve.borderCurve,
           minHeight: componentSizes.touchTarget,
           paddingHorizontal: spacing[3],
           paddingVertical: spacing[2],

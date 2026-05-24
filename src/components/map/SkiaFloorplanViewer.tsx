@@ -5,6 +5,7 @@ import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-g
 import { useSharedValue, useDerivedValue } from "react-native-reanimated";
 
 import { useHungryTheme } from "@/theme";
+import { componentRadii } from "@/theme/tokens";
 import { MOCK_MAP_VIEWBOX, MOCK_POLYGONS, MockStallPolygon } from "@/data/mocks/v2_map_data";
 import { computeStallStatus } from "@/utils/stallStatus";
 import { getDataRepository } from "@/lib/services/serviceProvider";
@@ -159,13 +160,13 @@ export function SkiaFloorplanViewer({ buildingId, floor, onStallPress }: SkiaFlo
     const status = computeStallStatus(parsedHours);
     switch (status) {
       case "open":
-        return "#10B981"; // Green
+        return palette.statusFast;
       case "closing_soon":
-        return "#F59E0B"; // Orange
+        return palette.statusModerate;
       case "closed":
-        return "#EF4444"; // Red
+        return palette.statusBusy;
       default:
-        return stall.isOpen ? "#10B981" : "#EF4444";
+        return stall.isOpen ? palette.statusFast : palette.statusBusy;
     }
   };
 
@@ -180,7 +181,16 @@ export function SkiaFloorplanViewer({ buildingId, floor, onStallPress }: SkiaFlo
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <GestureDetector gesture={composedGesture}>
-        <View style={[styles.container, { width: CANVAS_SIZE, height: CANVAS_SIZE }]}>
+        <View
+          style={[
+            styles.container,
+            {
+              backgroundColor: palette.surfaceRaised,
+              width: CANVAS_SIZE,
+              height: CANVAS_SIZE,
+            },
+          ]}
+        >
           <Canvas style={styles.canvas}>
             <Group transform={transform}>
               {paths.map(
@@ -216,8 +226,7 @@ export function SkiaFloorplanViewer({ buildingId, floor, onStallPress }: SkiaFlo
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#F9FAFB",
-    borderRadius: 16,
+    borderRadius: componentRadii.card,
     overflow: "hidden",
     alignSelf: "center",
   },

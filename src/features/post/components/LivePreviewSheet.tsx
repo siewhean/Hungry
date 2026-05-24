@@ -4,12 +4,13 @@ import { X, Heart, MapPin } from "lucide-react-native";
 import { Image } from "expo-image";
 import { AppText, IconButton, HungryLogo, Badge } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { componentRadii } from "@/theme/tokens";
 import { useComposerStore } from "../useComposerStore";
 
 const { width: screenWidth } = Dimensions.get("window");
 
 export function LivePreviewSheet() {
-  const { palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const showPreview = useComposerStore((state) => state.showPreview);
   const setShowPreview = useComposerStore((state) => state.setShowPreview);
   const previewPlatform = useComposerStore((state) => state.previewPlatform);
@@ -27,14 +28,16 @@ export function LivePreviewSheet() {
   const captionToDisplay = postCaption || reviewCaption || "No caption written yet...";
 
   return (
-    <View style={[StyleSheet.absoluteFill, { backgroundColor: "rgba(0,0,0,0.9)", zIndex: 2000 }]}>
+    <View
+      style={[StyleSheet.absoluteFill, { backgroundColor: palette.mediaBackdrop, zIndex: 2000 }]}
+    >
       <View
         style={{
           flex: 1,
           marginTop: 60,
           backgroundColor: palette.bg,
-          borderTopLeftRadius: radii.xl,
-          borderTopRightRadius: radii.xl,
+          borderTopLeftRadius: componentRadii.card,
+          borderTopRightRadius: componentRadii.card,
         }}
       >
         {/* Header */}
@@ -107,7 +110,7 @@ export function LivePreviewSheet() {
                   style={{
                     width: 36,
                     height: 36,
-                    borderRadius: 18,
+                    borderRadius: componentRadii.iconButton,
                     backgroundColor: palette.orange,
                     alignItems: "center",
                     justifyContent: "center",
@@ -163,10 +166,10 @@ export function LivePreviewSheet() {
                       position: "absolute",
                       bottom: 12,
                       right: 12,
-                      backgroundColor: "rgba(0,0,0,0.5)",
+                      backgroundColor: palette.mediaScrim,
                       paddingHorizontal: 8,
                       paddingVertical: 4,
-                      borderRadius: 12,
+                      borderRadius: componentRadii.button,
                     }}
                   >
                     <AppText variant="micro" style={{ color: palette.white }}>
@@ -208,7 +211,12 @@ export function LivePreviewSheet() {
               </View>
             </View>
           ) : (
-            <View style={[styles.instaPreview, { backgroundColor: palette.surface }]}>
+            <View
+              style={[
+                styles.instaPreview,
+                { backgroundColor: palette.surface, borderColor: palette.border },
+              ]}
+            >
               <View style={{ flexDirection: "row", alignItems: "center", padding: 10, gap: 8 }}>
                 <View
                   style={{
@@ -244,10 +252,10 @@ export function LivePreviewSheet() {
                       position: "absolute",
                       top: 12,
                       right: 12,
-                      backgroundColor: "rgba(0,0,0,0.7)",
+                      backgroundColor: palette.detailImageOverlay,
                       paddingHorizontal: 8,
                       paddingVertical: 4,
-                      borderRadius: 12,
+                      borderRadius: componentRadii.button,
                     }}
                   >
                     <AppText variant="micro" style={{ color: palette.white, fontSize: 10 }}>
@@ -304,15 +312,14 @@ const styles = StyleSheet.create({
   },
   hungryPreview: {
     width: "100%",
-    borderRadius: 16,
+    borderRadius: componentRadii.card,
     borderWidth: 1,
     overflow: "hidden",
   },
   instaPreview: {
     width: "100%",
-    borderRadius: 8,
+    borderRadius: componentRadii.card,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#efefee",
   },
 });

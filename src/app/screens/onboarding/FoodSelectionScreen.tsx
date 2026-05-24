@@ -42,7 +42,7 @@ const CUISINE_MAP: Record<string, string[]> = {
 };
 
 export function FoodSelectionScreen({ navigation, route }: Props) {
-  const { motion, palette, spacing, radii, shadows } = useHungryTheme();
+  const { componentRadii, motion, palette, spacing, radii, shadows } = useHungryTheme();
   const setOnboardingSelectedDishIds = useProfileStore((s) => s.setOnboardingSelectedDishIds);
   const selectedCuisines = route.params.cuisines;
   const repository = getDataRepository();
@@ -164,7 +164,7 @@ export function FoodSelectionScreen({ navigation, route }: Props) {
                     {
                       width: "47%",
                       backgroundColor: palette.surface,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       overflow: "hidden",
                       borderWidth: 2,
                       borderColor: isSelected ? palette.orange : palette.border,

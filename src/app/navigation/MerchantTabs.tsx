@@ -163,6 +163,13 @@ const loadCustomerInboxScreen = () =>
       require("@/app/screens/merchant/CustomerInboxScreen") as typeof import("@/app/screens/merchant/CustomerInboxScreen")
     ).CustomerInboxScreen,
   );
+const loadFeaturedVisitorsScreen = () =>
+  createGuardedScreen(
+    "FeaturedVisitors",
+    (
+      require("@/app/screens/merchant/FeaturedVisitorsScreen") as typeof import("@/app/screens/merchant/FeaturedVisitorsScreen")
+    ).FeaturedVisitorsScreen,
+  );
 const loadBusinessProfileEditorScreen = () =>
   createGuardedScreen(
     "BusinessProfileEditor",
@@ -220,7 +227,7 @@ const loadMerchantSettingsScreen = () =>
     ).MerchantSettingsScreen,
   );
 
-function MerchantTabBar({ state, descriptors, navigation }: any) {
+function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const account = useMerchantStore((storeState) => storeState.account);
@@ -232,17 +239,22 @@ function MerchantTabBar({ state, descriptors, navigation }: any) {
         styles.tabBarContainer,
         {
           backgroundColor: palette.bg,
-          height: componentSizes.merchantTabBar + Math.max(insets.bottom, spacing[2]),
+          height: componentSizes.bottomTabBar + Math.max(insets.bottom, spacing[2]),
           paddingBottom: Math.max(insets.bottom, spacing[2]),
-          paddingTop: spacing[4],
+          paddingTop: spacing[2],
         },
       ]}
     >
-      {state.routes.map((route: any, index: number) => {
+      {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
+        const tabBarStyle = StyleSheet.flatten(options.tabBarStyle);
+        const tabBarDisplay =
+          tabBarStyle && typeof tabBarStyle === "object" && "display" in tabBarStyle
+            ? tabBarStyle.display
+            : undefined;
 
         // Hide routes that shouldn't be in the tab bar
-        if (options.tabBarStyle?.display === "none") {
+        if (tabBarDisplay === "none") {
           return null;
         }
 
@@ -260,14 +272,15 @@ function MerchantTabBar({ state, descriptors, navigation }: any) {
           }
         };
 
-        const Icon =
+        const tabConfig =
           route.name === "Dashboard"
-            ? LayoutDashboard
+            ? { icon: LayoutDashboard, label: "Home" }
             : route.name === "Menu"
-              ? UtensilsCrossed
+              ? { icon: UtensilsCrossed, label: "Menu" }
               : route.name === "Analytics"
-                ? BarChart3
-                : Store;
+                ? { icon: BarChart3, label: "Performance" }
+                : { icon: Store, label: "Profile" };
+        const Icon = tabConfig.icon;
 
         const color = isFocused ? palette.orange : palette.textMuted;
 
@@ -281,9 +294,22 @@ function MerchantTabBar({ state, descriptors, navigation }: any) {
             onPress={onPress}
             style={styles.tabItem}
             accessibilityRole="button"
+            accessibilityLabel={`Merchant ${tabConfig.label}`}
             accessibilityState={isFocused ? { selected: true } : {}}
           >
-            <Icon color={color} size={componentSizes.merchantTabIcon} />
+            <Icon color={color} size={componentSizes.bottomTabIcon} />
+            <AppText
+              variant="micro"
+              numberOfLines={1}
+              style={{
+                color,
+                fontSize: componentSizes.bottomTabLabelFontSize,
+                fontWeight: isFocused ? "800" : "700",
+                lineHeight: componentSizes.bottomTabLabelLineHeight,
+              }}
+            >
+              {tabConfig.label}
+            </AppText>
           </Pressable>
         );
       })}
@@ -447,6 +473,11 @@ export function MerchantTabs() {
         options={{ tabBarStyle: { display: "none" } }}
       />
       <Tab.Screen
+        name="FeaturedVisitors"
+        getComponent={loadFeaturedVisitorsScreen}
+        options={{ tabBarStyle: { display: "none" } }}
+      />
+      <Tab.Screen
         name="BusinessProfileEditor"
         getComponent={loadBusinessProfileEditorScreen}
         options={{ tabBarStyle: { display: "none" } }}
@@ -504,6 +535,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    gap: 2,
   },
   accessGate: {
     flex: 1,

@@ -32,14 +32,23 @@ export function IconButton({
   onPressIn,
   ...props
 }: Props) {
-  const { componentSizes, opacity, palette, radii, shadows, spacing } = useHungryTheme();
+  const {
+    componentCornerCurve,
+    componentRadii,
+    componentSizes,
+    opacity,
+    palette,
+    shadows,
+    spacing,
+  } = useHungryTheme();
   const isDisabled = Boolean(disabled);
   const resolvedSize = size ?? componentSizes.iconButton;
 
   const baseStyle: ViewStyle = {
     width: resolvedSize,
     height: resolvedSize,
-    borderRadius: Math.min(radii.pill, resolvedSize / 2),
+    borderRadius: componentRadii.iconButton,
+    borderCurve: componentCornerCurve.borderCurve,
     alignItems: "center",
     justifyContent: "center",
     opacity: isDisabled ? opacity.disabledSubtle : 1,

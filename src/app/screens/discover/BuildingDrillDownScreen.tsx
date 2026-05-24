@@ -12,6 +12,7 @@ import { getBuildingVenues } from "@/features/discovery/discovery";
 import { getDirectoryDescriptor } from "@/features/discovery/venueDescriptor";
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { getBuildingById, singaporeBuildings, toSummary } from "@/lib/geo/singaporeBuildings";
+import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import type { StallPolygon } from "@/lib/services/types";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
@@ -277,7 +278,8 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const repository = getDataRepository();
-  const { palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
+  const mapStatusDisclosure = getDataTrustDisclosure("mapStatus");
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const selectedFloor = useDiscoveryStore((state) => state.selectedFloor);
   const highlightedStallVenueId = useDiscoveryStore((state) => state.highlightedStallVenueId);
@@ -506,6 +508,9 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
               <AppText variant="bodySmall" tone="secondary">
                 Browse realistic floor overlays, select a unit polygon, then open the stall details.
               </AppText>
+              <AppText variant="micro" tone="muted">
+                {mapStatusDisclosure}
+              </AppText>
             </View>
 
             <Input
@@ -539,7 +544,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
               style={{
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
-                borderRadius: radii.xl,
+                borderRadius: componentRadii.card,
                 borderWidth: 1,
                 overflow: "hidden",
               }}
@@ -574,7 +579,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                     {
                       backgroundColor: palette.surfaceTranslucent,
                       borderColor: palette.border,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       padding: spacing[1],
                       left: spacing[3],
                       bottom: spacing[3],
@@ -611,7 +616,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                     {
                       backgroundColor: palette.surfaceTranslucent,
                       borderColor: palette.border,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       padding: spacing[1],
                       right: spacing[3],
                       bottom: spacing[3],
@@ -711,7 +716,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                 style={{
                   backgroundColor: palette.surface,
                   borderColor: palette.border,
-                  borderRadius: radii.xl,
+                  borderRadius: componentRadii.card,
                   borderWidth: 1,
                   gap: spacing[3],
                   paddingHorizontal: spacing[3],
@@ -750,7 +755,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                       style={{
                         backgroundColor: palette.bgSoft,
                         borderColor: palette.border,
-                        borderRadius: radii.lg,
+                        borderRadius: componentRadii.card,
                         borderWidth: 1,
                         gap: spacing[1],
                         minWidth: 164,
@@ -838,7 +843,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
                     style={{
                       backgroundColor: palette.bgSoft,
                       borderColor: palette.border,
-                      borderRadius: radii.lg,
+                      borderRadius: componentRadii.card,
                       borderWidth: 1,
                       padding: spacing[4],
                       flexDirection: "row",

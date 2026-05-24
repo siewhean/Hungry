@@ -5,6 +5,7 @@ import { Camera, Video, Edit2, X } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 
 import { useHungryTheme } from "@/theme";
+import { componentRadii } from "@/theme/tokens";
 import { useUIStore } from "@/store/useUIStore";
 import { AppText, Card } from "../ui";
 import { MediaEditor } from "./MediaEditor";
@@ -30,7 +31,7 @@ export function MediaPicker({
   onSetVideo,
   onSetFilter,
 }: MediaPickerProps) {
-  const { palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
   const [editingUri, setEditingUri] = useState<string | null>(null);
 
@@ -82,14 +83,20 @@ export function MediaPicker({
           <View style={styles.mediaContainer}>
             <Image
               source={{ uri: videoUri }}
-              style={[styles.media, { borderRadius: radii.md }]}
+              style={[
+                styles.media,
+                { backgroundColor: palette.mediaBackdrop, borderRadius: componentRadii.card },
+              ]}
               contentFit="cover"
             />
-            <View style={styles.badge}>
+            <View style={[styles.badge, { backgroundColor: palette.mediaScrim }]}>
               <Video size={12} color={palette.white} />
             </View>
             <View style={styles.mediaActions}>
-              <Pressable onPress={() => setEditingUri(videoUri)} style={styles.actionBtn}>
+              <Pressable
+                onPress={() => setEditingUri(videoUri)}
+                style={[styles.actionBtn, { backgroundColor: palette.mediaScrimStrong }]}
+              >
                 <Edit2 size={14} color={palette.white} />
               </Pressable>
               <Pressable
@@ -124,11 +131,17 @@ export function MediaPicker({
           <View key={uri} style={styles.mediaContainer}>
             <Image
               source={{ uri }}
-              style={[styles.media, { borderRadius: radii.md }]}
+              style={[
+                styles.media,
+                { backgroundColor: palette.mediaBackdrop, borderRadius: componentRadii.card },
+              ]}
               contentFit="cover"
             />
             <View style={styles.mediaActions}>
-              <Pressable onPress={() => setEditingUri(uri)} style={styles.actionBtn}>
+              <Pressable
+                onPress={() => setEditingUri(uri)}
+                style={[styles.actionBtn, { backgroundColor: palette.mediaScrimStrong }]}
+              >
                 <Edit2 size={14} color={palette.white} />
               </Pressable>
               <Pressable
@@ -187,12 +200,11 @@ const styles = StyleSheet.create({
   media: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#000",
   },
   pickerBtn: {
     width: 120,
     height: 160,
-    borderRadius: 12,
+    borderRadius: componentRadii.card,
     borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
@@ -202,7 +214,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     left: 8,
-    backgroundColor: "rgba(0,0,0,0.5)",
     padding: 4,
     borderRadius: 4,
   },
@@ -216,8 +227,7 @@ const styles = StyleSheet.create({
   actionBtn: {
     width: 28,
     height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: componentRadii.card,
     alignItems: "center",
     justifyContent: "center",
   },

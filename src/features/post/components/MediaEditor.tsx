@@ -88,7 +88,7 @@ export function MediaEditor({ mediaId, onClose }: Props) {
       </View>
 
       {/* Main Image View */}
-      <View style={styles.imageContainer}>
+      <View style={[styles.imageContainer, { backgroundColor: palette.mediaBackdrop }]}>
         <Image source={{ uri: media.uri }} style={styles.mainImage} contentFit="contain" />
 
         <View style={styles.floatingTools}>
@@ -170,7 +170,6 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     flex: 1,
-    backgroundColor: "#000",
     position: "relative",
   },
   mainImage: {

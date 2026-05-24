@@ -146,7 +146,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
     const interaction = interactions[feedPost.id] ?? {
       liked: false,
       saved: false,
-      likeCount: primaryDish?.reviews.length ?? 0,
+      likeCount: 0,
       saveCount: 0,
       shareCount: 0,
       commentCount: 0,
