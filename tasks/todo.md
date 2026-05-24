@@ -1,6 +1,6 @@
 # Hungry — Master Task Contract
 
-> **Last updated:** 2026-04-25 | **Phase:** Sprint 10 Code-Complete → Staging Smoke Tests
+> **Last updated:** 2026-05-21 | **Phase:** Frontend Design Overhaul Safe Public V1 Readiness
 > Shared execution contract between Claude, Codex, and all agents.
 > Read `tasks/lessons.md` before any implementation session.
 > **Roadmap:** `tasks/Roadmap/roadmap.md` — single entry point for phase/sprint sequencing.
@@ -16,6 +16,193 @@
 - Source of truth precedence: Figma > `product-context.md` > this file > memory.
 
 ---
+
+## 2026-05-18 — Frontend Design Overhaul Merge-Safety Cleanup Ledger
+
+Scope: `frontend-design-overhaul` merge-safety cleanup. Objective is reviewability and production safety, not new UX.
+
+### Checkpoints and Main Sync
+
+- Pre-merge scoped checkpoints created:
+  - `bf259ace4` `wip(marketing-web): checkpoint current web-v2 edits`
+  - `90e6d4350` `wip(app-home): checkpoint current Home feed edits`
+  - `e3485ec70` `chore(logs): checkpoint task session notes`
+  - `2c62beaa3` `chore(smoke): checkpoint screenshot flow file`
+  - `5267c92ba` `wip(supabase-audit): checkpoint current audit edits`
+  - `3512238b9` `wip(marketing-web): checkpoint remaining mockup styles`
+  - `63ffc3704` `wip(audit-assets): checkpoint late audit and marketing edits`
+- `git fetch origin` — passed after unrestricted retry; sandbox could not write `.git/FETCH_HEAD`.
+- `git merge --no-ff origin/main -m "merge main into frontend-design-overhaul for cleanup baseline"` — passed; merge commit `4811a203f`.
+- Extra isolated checkpoints after baseline:
+  - `305fbe782` `wip(marketing-web): checkpoint residual responsive mockup styles`
+  - `ea8fa20ce` `wip(native): checkpoint expo doctor dependency adjustment`
+  - `0802b3e4c` `chore(scope): checkpoint audit notes and remove temp floorplan artifacts`
+  - `3cf872a8b` `wip(release-hardening): checkpoint account deletion and policy edits`
+  - `cd82ae3f2` `chore(frontend-overhaul): gate unfinished production surfaces`
+
+### Batch Status
+
+| Batch | Status | Evidence / blocker |
+| --- | --- | --- |
+| 0 Baseline verification | Complete | Baseline gates below; branch synced with `origin/main` using merge, not rebase. |
+| 1 Scope hygiene | Partial | Deleted tracked temporary floorplan page extraction dirs `data/floorplans/hc-maxwell/tmp_page0..3`; retained root service-role smoke helpers because `src/lib/security/ci-supply-chain.test.ts` and security docs reference them. |
+| 2 Route and feature flag safety | Complete | Added `gamificationEnabled`, `collectionsEnabled`, `storiesEnabled`, and `floorplansEnabled`; changed `commentsEnabled` to non-production; gated root routes and entry points for stories, collections, gamification, comments, and indoor floorplans. |
+| 3 App shell QA contracts | Complete for source contracts | Source tests cover signed-out browsing, Profile auth gate, center create return routes, gated routes, and activity/detail comment gates. Manual swipe-vs-rail QA remains open. |
+| 4 Core consumer UX | Partial | Added no-result/empty states for non-browse search results, Discover V2 trending rail, Discover V2 nearby stalls, and Search V2 visible result counts. Asset audit command now records the mobile Discover bundle risk; analytics audit remains open. |
+| 5 Detail/data trust | Partial | Removed/neutralized misleading delivery, stall operating status, map-distance fallback, and closed-stall status-color claims. Broader hardcoded-claim audit remains in PR 2. |
+| 6 Social safety | Partial | Comments remain production-disabled; Home/review/bite comment entry points are flag-gated, seeded story/review/detail social counts were neutralized, and hide/block actions now update session filters plus current Home/Profile feeds. Backend moderation launch readiness still open. |
+| 7 Merchant mode | Deferred | Merchant remains flag-gated; role/verification launch gaps remain in PR 4. |
+| 8 Gamification | Partial | Passport/Missions routes and profile entry points gated by `gamificationEnabled`; asset/bundle/a11y audit remains open. |
+| 9 Maps/floorplan | Partial | Indoor floorplan root routes and entry points are hidden behind `floorplansEnabled`; temp extraction artifacts removed; installed OpenCV in the repo venv and reran Maxwell L1 validation/overlay successfully with the `floorplan_pdf` profile; tap-accuracy manual QA remains open. |
+| 10 Supabase/OCR | Partial | Added source contracts proving consumer Supabase reads do not query `dishes_draft` and draft access is confined to supply/merchant/ops-admin paths. Added skip-safe `npm run smoke:ocr-staging`; live OCR remains blocked by missing smoke env/image and Edge Function Vision config. |
+| 11 Auth/onboarding | Partial | OAuth provider buttons are now production-disabled and labeled unavailable until live Supabase provider smoke is complete. Broader auth return-route and provider dashboard audit remains open. |
+| 12 Native/iOS | Partial | Expo SDK 55 patch dependencies aligned and prepared iOS smoke passed on iPhone 17 Pro / iOS 26.1 after the Maestro flows were hardened for manual Expo URL entry and post-connect dev-menu close. Android build/smoke remains a pre-public-launch gate. |
+| 13 Assets/bundle/licensing | Complete for mobile PR | Removed 38 audited unreferenced mobile Discover PNGs, downscaled the remaining referenced mobile Discover assets from 23.28 MiB to 4.77 MiB, and added `tasks/asset-provenance.md`. Current evidence: `src/assets/discover` is 4.77 MiB with 10/10 files referenced and 0 MiB unreferenced; Passport assets are 1.54 MiB all referenced; marketing food images are 95.6 MiB web-only/referenced and belong in the marketing-web PR bucket. |
+| 14 CI/security | Partial | CI now runs Supabase static audit, edge-function static checks, and skip-safe migration dry-run; dependency audit is green after `ws` override patch. Broader security scans remain separate gate. |
+| 15 RC decision | Open | Do not merge as one PR yet; use split below unless remaining gates are completed. |
+
+### Verification Results
+
+| Date | Command | Result | Notes |
+| --- | --- | --- | --- |
+| 2026-05-18 | `npm run typecheck` | Pass | `tsc --noEmit` completed. |
+| 2026-05-18 | `npm run lint` | Pass | `eslint src/ --ext .ts,.tsx` completed. |
+| 2026-05-18 | `npm run format:check` | Initial fail, then pass | Initial fail: `src/app/navigation/RootNavigator.tsx`; fixed with `npx prettier --write src/app/navigation/RootNavigator.tsx`; rerun passed. |
+| 2026-05-18 | `npm run test` | Initial fail, then pass | Initial fail: stale `discover-v2-production-contracts.test.ts` regex after collection gating. Updated contract; final rerun passed with 335 total, 333 passing, 2 skipped. |
+| 2026-05-18 | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor --non-interactive` | Fail | Exit 1: Expo Doctor `1.18.22` treats `--non-interactive` as a project path: `Project directory .../--non-interactive does not exist`. |
+| 2026-05-18 | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass after unrestricted retry | Sandboxed run failed network checks (`ENOTFOUND exp.host`, React Native Directory response); unrestricted rerun passed 17/17. |
+| 2026-05-18 | Focused route/source contracts | Pass | `node --import tsx --test` over feature flags, route readiness, nav contracts, story, profile, review, activity, and user coverage tests: 45 passing. |
+| 2026-05-18 | `npm run smoke:native:ios:prepared` | Blocked | Maestro reported 0 connected devices; `.maestro/ios-chat-smoke.yaml` failed. |
+| 2026-05-18 | `npm run smoke:supabase-chat` | Skipped | Command exited 0 with skip: missing `HUNGRY_SUPABASE_SMOKE_URL`, `HUNGRY_SUPABASE_SMOKE_SERVICE_ROLE_KEY`, `HUNGRY_SUPABASE_SMOKE_ANON_KEY`, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`. |
+| 2026-05-18 | `python3 scripts/floorplan/score_validate_polygons.py --in data/floorplans/hc-maxwell/L1.raw.json --out /tmp/hungry-L1.validated.json --report /tmp/hungry-L1.validation-report.json` | Blocked | Python environment missing `cv2` / OpenCV. |
+| 2026-05-18 | `python3 scripts/floorplan/render_qa_overlay.py --in data/floorplans/hc-maxwell/L1.validated.json --image data/floorplans/hc-maxwell/L1.rectified.png --out output/qa/floorplans/hc-maxwell-L1-overlay.png` | Blocked | Python environment missing `cv2` / OpenCV. |
+| 2026-05-18 | `git diff --check` | Pass | No whitespace errors in the final cleanup diff. |
+| 2026-05-18 | `npm run check:edge-functions` | Pass | Static Edge Function guard script completed; CI now has a concrete script for the referenced package command. |
+| 2026-05-18 | `npm run audit:supabase:static` | Pass | Static audit found 40 migrations, 86 repo-created tables, 201 policies, and no anon write policies. |
+| 2026-05-18 | `npm run typecheck` | Pass | Rerun after CI/security/auth follow-up edits completed. |
+| 2026-05-18 | `npm run lint` | Pass | Rerun after CI/security/auth follow-up edits completed with 0 errors. |
+| 2026-05-18 | `npm run format:check` | Pass | Rerun after CI/security/auth follow-up edits completed. |
+| 2026-05-18 | `npm run test` | Pass | Rerun after CI/security/auth follow-up edits passed with 336 total, 334 passing, 2 skipped. |
+| 2026-05-18 | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass after unrestricted retry | Sandboxed rerun failed network checks (`ENOTFOUND exp.host`, React Native Directory response); unrestricted rerun passed 17/17. |
+| 2026-05-18 | `npx --no-install supabase db push --dry-run` | Pass after unrestricted retry | Sandboxed run failed DNS to the Supabase pooler; unrestricted dry-run succeeded and would push `0039` and `0040` without applying them. |
+| 2026-05-18 | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/app/screens/search-v2-production-contracts.test.ts src/app/screens/discover-v2-production-contracts.test.ts src/app/screens/detail-v2-data-contracts.test.ts src/app/screens/v2-trust-claims-contracts.test.ts src/app/user-mode-coverage-contracts.test.ts` | Pass | Batch 4/5 focused contracts passed 17/17 after empty-state and data-trust fixes. |
+| 2026-05-18 | `npm run typecheck` | Pass | Rerun after Batch 4/5 component and detail-screen fixes completed. |
+| 2026-05-18 | `npm run lint` | Pass | Rerun after Batch 4/5 component and detail-screen fixes completed with 0 errors. |
+| 2026-05-18 | `git diff --check` | Pass | No whitespace errors after Batch 4/5 fixes. |
+| 2026-05-18 | `npm run format:check` | Pass | Prettier check passed after Batch 4/5 fixes. |
+| 2026-05-18 | `npm run test` | Pass | Full source suite passed after Batch 4/5 fixes with 338 total, 336 passing, 2 skipped. |
+| 2026-05-21 | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/app/screens/review-feed-bites-contracts.test.ts src/lib/security/security-hardening.test.ts src/app/navigation/nav-activity-contracts.test.ts src/app/screens/profile-social-post-detail-contracts.test.ts src/app/screens/sprint9-screen-contracts.test.ts src/constants/featureFlags.test.ts` | Pass | Batch 6 focused social safety contracts passed 42/42. |
+| 2026-05-21 | `npm run typecheck` | Pass | Strict TypeScript gate passed after Batch 6 social safety edits. |
+| 2026-05-21 | `npm run lint` | Pass | ESLint completed with 0 errors after Batch 6 social safety edits. |
+| 2026-05-21 | `npm run format:check` | Pass | Prettier check passed after formatting touched Batch 6 files. |
+| 2026-05-21 | `npm run test` | Pass | Full source suite passed with 339 total, 337 passing, 2 skipped. |
+| 2026-05-21 | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor --non-interactive` | Fail | Exit 1: Expo Doctor `1.18.22` treats `--non-interactive` as a project path: `Project directory .../--non-interactive does not exist`. |
+| 2026-05-21 | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Fail after unrestricted retry | Sandboxed run failed two network-backed checks (`ENOTFOUND exp.host` and React Native Directory response). Unrestricted rerun reached the services but failed 1/17 checks because SDK patch versions are behind: `expo` expected `~55.0.25` found `55.0.24`, `expo-dev-client` expected `~55.0.35` found `55.0.34`, `expo-font` expected `~55.0.8` found `55.0.7`, `expo-updates` expected `~55.0.23` found `55.0.22`. |
+| 2026-05-21 | `git diff --check` | Pass | No whitespace errors after Batch 6 social safety edits. |
+| 2026-05-21 | `npm install expo@~55.0.25 expo-dev-client@~55.0.35 expo-font@~55.0.8 expo-updates@~55.0.23` | Pass | Updated Expo SDK 55 patch packages and lockfile; install changed 13 packages. |
+| 2026-05-21 | `npm audit fix` | Partial, then resolved with override | Non-force audit fix removed the `brace-expansion` advisory and updated Supabase lockfile packages to `2.106.1`; remaining `ws` advisory was caused by the repo override pinning `8.20.0`. Updated override to `8.20.1` and reran `npm install`. |
+| 2026-05-21 | `npm audit --audit-level=moderate` | Pass | 0 vulnerabilities after Expo patch alignment, Supabase lockfile refresh, and `ws` override update. |
+| 2026-05-21 | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass | Unrestricted run passed 17/17 checks after Expo SDK patch alignment. |
+| 2026-05-21 | `npm run typecheck` | Pass | Strict TypeScript gate passed after dependency updates. |
+| 2026-05-21 | `npm run lint` | Pass | ESLint completed with 0 errors after dependency updates. |
+| 2026-05-21 | `npm run format:check` | Pass | Prettier check passed after dependency updates. |
+| 2026-05-21 | `npm run test` | Pass | Full source suite passed with 339 total, 337 passing, 2 skipped after dependency updates. |
+| 2026-05-21 | `npm run smoke:native:ios:prepared` | Initial fail, then pass | Sandbox run failed DNS to `github.com` while downloading Maestro; unrestricted first run reached iPhone 17 Pro / iOS 26.1 but app stayed on `Loading from Metro...`; rerun with Metro reachable at `127.0.0.1:8081/status` passed chat and media flows. |
+| 2026-05-21 | `git diff --check` | Pass | No whitespace errors after dependency updates. |
+| 2026-05-21 | `npm run test -- src/constants/featureFlags.test.ts src/app/navigation/route-production-readiness.test.ts src/app/screens/sprint9-screen-contracts.test.ts --watch=false` | Pass | NPM script expanded to the full source suite; 339 total, 337 passing, 2 skipped after adding the production OAuth provider gate. |
+| 2026-05-21 | `npm run typecheck` | Pass | Strict TypeScript gate passed after adding the production OAuth provider gate. |
+| 2026-05-21 | `npm run lint` | Pass | ESLint completed with 0 errors after adding the production OAuth provider gate. |
+| 2026-05-21 | `npm run format:check` | Pass | Prettier check passed after adding the production OAuth provider gate. |
+| 2026-05-21 | `npm run audit:assets` | Pass | Asset audit completed. `src/assets/discover`: 48 files / 121.43 MiB, 10 referenced / 23.28 MiB, 38 apparently unreferenced / 98.16 MiB. Passport: 10 files / 1.54 MiB all referenced. Marketing food: 38 files / 95.6 MiB all referenced and web-only. |
+| 2026-05-21 | `node --check scripts/audit-assets.mjs` | Pass | Asset audit script syntax passed. |
+| 2026-05-21 | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/system/asset-audit-contracts.test.ts` | Pass | Focused asset-audit contract passed 1/1. |
+| 2026-05-21 | `npx --no-install prettier --check package.json scripts/audit-assets.mjs src/features/system/asset-audit-contracts.test.ts` | Pass | Touched package/script/test formatting passed. Markdown ledger files were left in their existing table style to avoid unrelated table churn. |
+| 2026-05-21 | `npm run typecheck` | Pass | Strict TypeScript gate passed after the asset audit script/contract and ledger update. |
+| 2026-05-21 | `npm run lint` | Pass | ESLint completed with 0 errors after the asset audit script/contract and ledger update. |
+| 2026-05-21 | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/lib/services/supabase/ocr-draft-safety.test.ts` | Initial fail, then pass | Initial fail was a stale source-block boundary in the new contract; final run passed 2/2 and proves consumer Supabase reads stay off `dishes_draft` while draft access stays in supply/merchant/ops paths. |
+| 2026-05-21 | `npx --no-install prettier --check src/lib/services/supabase/ocr-draft-safety.test.ts` | Initial fail, then pass | Prettier formatted the new OCR draft safety test; rerun passed. |
+| 2026-05-21 | `npm run typecheck` | Pass | Strict TypeScript gate passed after adding the OCR draft safety contract. |
+| 2026-05-21 | `npm run lint` | Pass | ESLint completed with 0 errors after adding the OCR draft safety contract. |
+| 2026-05-21 | `npm run audit:assets` | Pass | After removing 38 audited unreferenced mobile Discover PNGs, `src/assets/discover` reports 10 files / 23.28 MiB, all referenced, 0 MiB unreferenced. Passport remains 10 files / 1.54 MiB all referenced. Marketing food remains web-only/referenced. |
+| 2026-05-21 | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/system/asset-audit-contracts.test.ts` | Pass | Focused asset audit contract still passes 1/1 after pruning mobile Discover assets. |
+| 2026-05-21 | `./.venv/bin/python -m pip install opencv-python-headless numpy` | Pass after unrestricted retry | Sandbox DNS blocked PyPI; unrestricted retry installed `opencv-python-headless 4.13.0.92` and `numpy 2.4.6` into the repo venv for floorplan QA. |
+| 2026-05-21 | `./.venv/bin/python scripts/floorplan/score_validate_polygons.py --in data/floorplans/hc-maxwell/L1.raw.json --out data/floorplans/hc-maxwell/L1.validated.json --report data/floorplans/hc-maxwell/L1.validation-report.json --profile floorplan_pdf` | Pass | Maxwell L1 validation completed with 22 validated polygons and 4 unresolved polygons; output matched the tracked canonical artifacts. |
+| 2026-05-21 | `./.venv/bin/python scripts/floorplan/render_qa_overlay.py --in data/floorplans/hc-maxwell/L1.validated.json --image data/floorplans/hc-maxwell/L1.rectified.png --out output/qa/floorplans/hc-maxwell-L1-overlay.png` | Pass | Maxwell L1 overlay regenerated successfully; output matched the tracked QA artifact. |
+| 2026-05-21 | `./.venv/bin/python -m py_compile scripts/floorplan/score_validate_polygons.py scripts/floorplan/render_qa_overlay.py scripts/floorplan/common.py` | Pass | Floorplan validation/overlay script syntax passed in the OpenCV-capable venv. |
+| 2026-05-21 | `node --check scripts/supabase-ocr-smoke.mjs` | Pass | New OCR staging smoke script parses successfully. |
+| 2026-05-21 | `npm run smoke:ocr-staging` | Skipped | Skip-safe command exits 0 and reports missing `HUNGRY_SUPABASE_SMOKE_URL`, service role key, anon key, `HUNGRY_OCR_SMOKE_IMAGE_PATH`, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`; Edge Function also needs `GOOGLE_CLOUD_VISION_API_KEY`. |
+| 2026-05-21 | `npx --no-install prettier --check package.json scripts/supabase-ocr-smoke.mjs` | Initial fail, then pass | Prettier formatted the new OCR smoke script; rerun passed. |
+| 2026-05-21 | `npm run typecheck` | Pass | Final strict TypeScript gate passed after asset pruning, OCR smoke script, and ledger updates. |
+| 2026-05-21 | `npm run lint` | Pass | Final ESLint gate completed with 0 errors. |
+| 2026-05-21 | `npm run format:check` | Pass | Final Prettier check for `src/` passed. |
+| 2026-05-21 | `npm run test` | Pass | Final full source suite passed with 342 total, 340 passing, 2 skipped. |
+| 2026-05-21 | `npm run smoke:supabase-chat` | Skipped | Skip-safe chat smoke exits 0 and reports missing Supabase smoke URL/keys and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`. |
+| 2026-05-21 | `git diff --check` | Pass | No whitespace errors after final cleanup edits. |
+| 2026-05-21 | `NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor --non-interactive` | Fail | Expo Doctor 1.18.22 still treats `--non-interactive` as a project path and exits with `Project directory .../--non-interactive does not exist`. |
+| 2026-05-21 | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass after unrestricted retry | Sandbox run failed network-backed Expo/React Native Directory checks; unrestricted rerun passed 17/17. |
+| 2026-05-21 | `npm run security:audit` | Pass after unrestricted retry | Sandbox DNS to npm registry failed; unrestricted rerun reported 0 vulnerabilities. |
+| 2026-05-21 | `node --check scripts/supabase-ocr-smoke.mjs` | Pass | QA follow-up after making cleanup failures non-zero on successful OCR runs and treating `[::1]` as a local smoke target. |
+| 2026-05-21 | `npm run smoke:ocr-staging` | Skipped | Skip-safe path still exits 0 with missing Supabase smoke URL/keys, `HUNGRY_OCR_SMOKE_IMAGE_PATH`, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`. |
+| 2026-05-21 | `npx --no-install prettier --check package.json scripts/supabase-ocr-smoke.mjs` | Pass | OCR smoke script and package script formatting passed after QA follow-up. |
+| 2026-05-21 | `npm run typecheck` | Pass | Post-QA rerun after OCR smoke script fixes passed. |
+| 2026-05-21 | `npm run lint` | Pass | Post-QA rerun passed with 0 errors. |
+| 2026-05-21 | `npm run format:check` | Pass | Post-QA rerun passed for `src/`. |
+| 2026-05-21 | `npm run test` | Pass | Post-QA rerun passed with 342 total, 340 passing, 2 skipped. |
+| 2026-05-21 | `git diff --check` | Pass | Post-QA rerun found no whitespace errors. |
+| 2026-05-21 | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/constants/featureFlags.test.ts src/app/navigation/route-production-readiness.test.ts` | Pass | Safe public v1 floorplan/route contracts passed 14/14 after adding `floorplansEnabled` and gating `BuildingDrillDown`, `BuildingDrillDownV2`, `VenueDirectory`, map layout entry points, and developer floorplan shortcuts. |
+| 2026-05-21 | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/app/native-smoke-contracts.test.ts` | Pass | Native smoke source contracts passed 4/4 after hardening Expo manual URL entry and post-connect dev-menu close. |
+| 2026-05-21 | `npm run typecheck` | Pass | Safe public v1 final strict TypeScript gate passed after floorplan gates, MerchantTabs typing, and native smoke harness updates. |
+| 2026-05-21 | `npm run lint` | Pass | Safe public v1 final ESLint gate completed with 0 errors. |
+| 2026-05-21 | `npm run format:check` | Pass | Safe public v1 final Prettier check for `src/` passed. |
+| 2026-05-21 | `npm run test` | Pass | Safe public v1 full source suite passed with 344 total, 342 passing, 2 skipped. |
+| 2026-05-21 | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass after unrestricted retry | Sandboxed run failed network-backed checks with `ENOTFOUND exp.host`; unrestricted rerun passed 17/17. |
+| 2026-05-21 | `npm run smoke:native:ios:prepared` | Pass after unrestricted simulator run | Prepared Maestro smoke passed chat and media flows on iPhone 17 Pro / iOS 26.1 after starting Metro on `127.0.0.1:8081`; flows now handle manual `exp://127.0.0.1:8081` entry and close the post-connect Expo dev menu. |
+| 2026-05-21 | `npm run smoke:supabase-chat` | Skipped | Skip-safe smoke exits 0 and reports missing `HUNGRY_SUPABASE_SMOKE_URL`, service role key, anon key, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`. |
+| 2026-05-21 | `npm run smoke:ocr-staging` | Skipped | Skip-safe smoke exits 0 and reports missing `HUNGRY_SUPABASE_SMOKE_URL`, service role key, anon key, `HUNGRY_OCR_SMOKE_IMAGE_PATH`, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`; Edge Function also needs `GOOGLE_CLOUD_VISION_API_KEY`. |
+| 2026-05-21 | `npm run audit:supabase:static` | Pass | Static Supabase audit reports 40 migrations, 86 created tables, 201 policies, and 0 anon write policies. |
+| 2026-05-21 | `npm run check:edge-functions` | Pass | Edge Function static checks passed. |
+| 2026-05-21 | `npx --no-install supabase db push --dry-run` | Pass after unrestricted retry | Sandboxed run failed DNS to the Supabase pooler; unrestricted dry-run succeeded and would push pending `0039_merchant_portal_readiness.sql` and `0040_release_hardening_account_deletion_merchant_rpcs.sql` without applying them. |
+| 2026-05-21 | `npx --no-install supabase db push --yes` | Blocked | Escalation to mutate the linked remote database was rejected because the exact target/environment was not explicitly approved for live schema changes. No migrations were applied. |
+| 2026-05-21 | `npm run audit:assets` | Pass | After downscaling referenced mobile Discover assets, asset audit reports `src/assets/discover` 10 files / 4.77 MiB / 0 unreferenced, Passport 10 files / 1.54 MiB / 0 unreferenced, and marketing web food 38 files / 95.6 MiB / 0 unreferenced. |
+| 2026-05-21 | `HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/system/asset-audit-contracts.test.ts src/components/gamification/passport-production-contracts.test.ts` | Pass | Asset/provenance and Passport bitmap contracts passed 5/5 after adding `tasks/asset-provenance.md`. |
+| 2026-05-21 | `npx --no-install prettier --check scripts/audit-assets.mjs src/features/system/asset-audit-contracts.test.ts tasks/asset-provenance.md` | Pass | Touched asset audit script, source contract, and provenance note match Prettier. |
+| 2026-05-21 | `ls android` | Blocked | No local Android native project exists in this checkout. Android build/smoke remains a pre-public-launch gate and should be run via a dedicated native Android/EAS verification slice, not generated inside this mixed PR. |
+| 2026-05-21 | `npm run typecheck` | Pass | Final post-asset closeout strict TypeScript gate passed. |
+| 2026-05-21 | `npm run lint` | Pass | Final post-asset closeout ESLint gate completed with 0 errors. |
+| 2026-05-21 | `npm run format:check` | Pass | Final post-asset closeout Prettier check for `src/` passed. |
+| 2026-05-21 | `npm run test` | Pass | Final post-asset closeout full source suite passed with 344 total, 342 passing, 2 skipped. |
+| 2026-05-21 | `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` | Pass after unrestricted retry | Sandboxed run failed network-backed Expo/React Native Directory checks with `ENOTFOUND exp.host`; unrestricted rerun passed 17/17. |
+| 2026-05-21 | `npm run smoke:supabase-chat` | Skipped | Skip-safe smoke still exits 0 and reports missing Supabase smoke URL/keys plus `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`. |
+| 2026-05-21 | `npm run smoke:ocr-staging` | Skipped | Skip-safe smoke still exits 0 and reports missing Supabase smoke URL/keys, `HUNGRY_OCR_SMOKE_IMAGE_PATH`, and `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`; Edge Function also needs `GOOGLE_CLOUD_VISION_API_KEY`. |
+| 2026-05-21 | `npx --no-install supabase db push --dry-run` | Pass | Pre-apply linked staging dry-run for project `vlqfgmrsprbrgzteixsj` would push only `0039_merchant_portal_readiness.sql` and `0040_release_hardening_account_deletion_merchant_rpcs.sql`. |
+| 2026-05-21 | `npx --no-install supabase db push --yes` | Pass | User explicitly approved applying `0039` and `0040` to linked Hungry staging Supabase project; CLI applied both migrations successfully. Notices were expected first-run policy drops for idempotency. |
+| 2026-05-21 | `npx --no-install supabase db push --dry-run` | Pass | Post-apply linked staging dry-run reports `Remote database is up to date`. |
+| 2026-05-21 | `npx --no-install supabase db query --linked -f supabase/smoke/account_deletion_merchant_rpc_hardening.sql -o table` | Pass | Read-only smoke returned no findings, meaning required account-deletion metadata, audit table, RPCs, and direct merchant insert-policy guards are present. |
+| 2026-05-21 | `npx --no-install supabase db query --linked -f supabase/smoke/store_policy_safety_controls.sql -o table` | Pass | Linked smoke returned expected account deletion, content report, and block policies. |
+| 2026-05-21 | `npm run audit:supabase:static` | Pass | Post-apply static audit reports 40 migrations through `0040`, 86 created tables, 201 policies, and 0 anon write policies. |
+| 2026-05-21 | `npm run check:edge-functions` | Pass | Post-apply edge-function static checks passed. |
+
+### Remaining Production Blockers
+
+- Finish manual QA for bottom-tab swipes versus horizontal rails.
+- Keep DMs, merchant centre, comments, stories, collections, gamification, OAuth providers, and indoor floorplans production-disabled until backend moderation, role, provider, tap-accuracy, and readiness gates are complete.
+- Run live Supabase/OCR/account-deletion/merchant smoke with configured smoke URL, anon key, service-role key, `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`, OCR image path, and required Edge Function secrets. Staging migrations `0039` and `0040` are now applied.
+- Marketing web food assets remain 95.6 MiB and should be compressed or CDN-backed before the marketing website production launch; they are web-only and not a mobile public-v1 blocker.
+- Complete manual tap-accuracy QA for `hc-maxwell:L1`. OpenCV validation and overlay generation now pass in the repo venv.
+- Run `npm run smoke:ocr-staging` with required Supabase smoke URL/keys, `HUNGRY_OCR_SMOKE_IMAGE_PATH`, `HUNGRY_ALLOW_SERVICE_ROLE_SMOKE=1`, and Edge Function `GOOGLE_CLOUD_VISION_API_KEY`. Repo-side source contracts now prove `dishes_draft` is not queried by consumer Supabase reads and is confined to supply/merchant/ops paths.
+- Complete auth provider live-state audit; OAuth buttons are disabled and labeled unavailable in production until Supabase Google/Apple providers are proven live.
+- Run Android build/smoke before public launch; current native proof is iOS simulator only.
+
+### Recommended PR Split
+
+1. Branch Safety + Route Gates: checkpoints, scope cleanup, feature flags, route gates, navigation/source contracts, this ledger.
+2. Core Consumer UX/Data Trust: empty states, prefetch checks, hardcoded factual-claim cleanup.
+3. Social/Auth Safety: moderation readiness, report/block hardening, OAuth provider behavior, return-route tests.
+4. Merchant Staging Mode: role/verification access, merchant readiness docs, launch blockers.
+5. Gamification/Collections/Stories: assets, accessibility, bundle impact, production readiness.
+6. Maps/Floorplan/Supabase/OCR: floorplan validation/fallback, OCR smoke, draft-dish leak checks, ops admin checks.
+7. CI/Security/Native: CI gates, security scans, EAS behavior, iOS/native changes.
+8. Marketing Web: `marketing/web/**`, `marketing/website/web-v2/**`, web-only assets, web verification.
 
 ## 🟠 ACTIVE — Sprint 11: Design System & UX Overhaul (Phase A, B & C)
 
@@ -110,7 +297,7 @@
 - [x] **OCR-03 — Edge Function `ingest-menu-photo`** invoking Google Cloud Vision `DOCUMENT_TEXT_DETECTION` with `languageHints: ["zh-Hans", "zh-Hant", "en"]`. [Codex] *(new function: `supabase/functions/ingest-menu-photo/index.ts`.)*
 - [x] **OCR-04 — LLM extraction step** converts OCR text blob → `{name, price, modifiers[]}[]` with per-dish `extraction_confidence`. [Codex] *(implemented with Gemini Flash JSON extraction in `ingest-menu-photo`; regex fallback parser retained for resilience.)*
 - [x] **OCR-05 — Write to `dishes_draft` with dedupe** — cosine similarity on (name, price) vs existing draft rows for that venue; similarity > 0.9 → bump confidence on existing; else → insert new row. [Codex] *(implemented in `ingest-menu-photo` using vectorized name+price cosine scoring and confidence bump updates.)*
-- [x] **OCR-06 — Ops review queue at `/ops/dishes-draft`** for accept / reject / duplicate decisions before consumer display. [Codex] *(implemented as edge function `supabase/functions/ops-dishes-draft/index.ts` + local stub UI `ops/dishes-draft/index.html`, gated by `x-ops-api-key`.)*
+- [x] **OCR-06 — Ops review queue at `/ops/dishes-draft`** for accept / reject / duplicate decisions before consumer display. [Codex] *(implemented as edge function `supabase/functions/ops-dishes-draft/index.ts` + local stub UI `ops/dishes-draft/index.html`; SEC-08 replaced the old `x-ops-api-key` gate with Supabase JWT + `app_ops_admins`.)*
 
 ### Consumer-surface supply capture (Codex primary, Gemini copy)
 
@@ -296,6 +483,11 @@ All items completed. Verification evidence in session log:
 
 ### Session Entries (recent — full history in git log)
 
+- 2026-05-22 | Codex | Implemented Full Audit V1 repo-side production readiness: production flags expose DMs/comments/stories/collections/gamification/merchant; OAuth/prototypes/floorplans remain off; Supabase migrations `0041` and `0042` add social safety and gamification persistence; app services/stores use checked RPC/persistence paths; CI includes asset audit; docs/status ledger updated. | Status: local repo gates pass; remote migration blocker later superseded by the 2026-05-22 staging closeout entry below. | Verification: `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm run test` (346 total / 344 passing / 2 skipped), `npm run audit:assets`, `npm run audit:supabase:static`, `npm run check:edge-functions`, `npm audit --audit-level=moderate`, `npm run security:gitleaks`, floorplan validation/overlay, and `git diff --check` pass. | Blockers at time of entry: Expo Doctor and remote Supabase preflight were unavailable under sandbox DNS/escalation limits, native iOS smoke blocked by 0 connected devices, Supabase/OCR smoke env missing, `trufflehog` missing, Android/EAS proof open. | Next at time of entry was remote `0041`/`0042` apply; this is now closed below.
+- 2026-05-22 | Codex | QA/QC closeout for Full Audit V1: required subagent QA was attempted but blocked by account usage limit, so local QA continued and found/fixed a repeat FoodCred award bug in `0042` mission progress. | Status: QA finding fixed; final lint/format/diff gates were rerun in the staging closeout entry below. | Verification: focused Full Audit V1 safety contracts pass 4/4; `npm run typecheck` pass; `npm run test` pass with 346 total / 344 passing / 2 skipped; `npm run audit:supabase:static` pass. | Next at time of entry was final lint/format/diff and live release gates; final source gates are now closed below.
+- 2026-05-22 | Codex | Closed the Supabase `0041`/`0042` staging blocker for Full Audit V1: pre-apply dry-run showed only `0041_full_audit_social_safety.sql` and `0042_full_audit_gamification.sql`, approved linked `db push --yes` applied both migrations, post-apply dry-run reports the remote database is up to date, and `supabase/smoke/full_audit_v1_readiness.sql` was added plus exposed as `npm run smoke:supabase-full-audit-v1`. | Status: staging schema/control proof complete; live behavior smokes still open. | Verification: linked dry-run/apply/post-apply dry-run pass; linked Full Audit V1 readiness smoke pass/no findings; `npm run smoke:supabase-full-audit-v1` pass after unrestricted retry; focused Full Audit V1 route/flag/safety contracts pass 21/21; `npm run lint`, `npm run format:check`, `npm run audit:supabase:static`, `npm run check:edge-functions`, and `git diff --check` pass. | Remaining blockers: live multi-user report/block/DM/moderation/gamification smoke env, OCR smoke env/Vision config, Expo Doctor network, iOS device/simulator availability, Android/EAS proof, and `trufflehog` availability.
+- 2026-05-22 | Codex | Started the canonical food-business database incorporation slice (`DB-DATA-01`): added the staging-only canonical CSV importer, direct guarded Supabase apply path, package scripts, smoke wrapper, and import-total smoke checks while keeping production `buildings`, `venues`, `dishes`, and media untouched. | Status: local staging import path implemented; remote apply/import pending. | Verification: `python3 -m py_compile scripts/stage_canonical_food_businesses.py` pass; `node --check scripts/supabase-canonical-food-business-staging-smoke.mjs` pass; focused DB contracts pass 11/11; `npm run data:supabase:stage:canonical -- --summary-only` parsed 32,253 rows with 0 invalid/0 issues; `npm run data:supabase:stage:canonical` generated `/tmp/hungry-canonical-food-business-staging.sql`; broad local gates pass; linked smoke wrapper skip-safe locally; linked dry-run escalation was rejected because the approval account hit its usage limit. | Next: apply `0043` and import the generated staging rows to linked Supabase once DB/import credentials are available.
+- 2026-05-22 | Codex | Completed the canonical food-business staging import slice (`DB-DATA-01`): applied `0043` to linked Hungry staging, added chunked SQL import support after the one-file import hit `413 request entity too large`, applied 67 chunk files, and strengthened the linked smoke to prove the completed 32,253-row import summary and CSV hash. | Status: done for staging incorporation; reviewed promotion into canonical app tables remains separate. | Verification: linked dry-run/apply/post-apply dry-run pass; one-file import failed with expected `413`; split generation pass; chunked remote import applied 67/67 files; strict linked smoke pass; focused DB contracts pass 12/12. | Next: plan the reviewed dedupe/promotion pipeline from staging rows into `buildings`, `venues`, `dishes`, and media tables.
 - 2026-04-29 | Codex | Implemented Sprint 11 C9 Phase-1 realistic indoor layout pipeline for `hc-maxwell:L1`: added canonical `FloorPlanSourceV1` contracts, source adapter + precedence loading in `getFloorPlan()`, map polygon derivation from adapted floorplans, CV extraction scripts (`prepare_floorplan.py`, `extract_polygons.py`, `score_validate_polygons.py`, `export_floorplan.py`, `render_qa_overlay.py`), unit mapping workflow (`map_stalls.py`), and canonical artifacts under `data/floorplans/hc-maxwell/` (`L1.hungry.json`, `L1.geojson`, `L1.unit-map.csv`). Added adapter/fallback tests. | Status: implementation complete, QA checklist added; Expo dependency hygiene still open. | Verification: `python3 -m py_compile scripts/floorplan/*.py` pass; `npx tsx --test src/lib/geo/floorPlanSources.test.ts` pass (4/4); `npm run typecheck` pass; `npm run test` pass (90 pass, 0 fail). | Blockers: `npx expo-doctor` reports dependency mismatches (`@react-native-community/datetimepicker` expected 8.6.0 found 9.1.0, `expo` expected `~55.0.18` found `55.0.17`). | Next: run `npx expo install --check` and align SDK package versions before closing final done-gate.
 - 2026-04-29 | Codex | Sprint 11 C9 follow-up: aligned Expo package versions to satisfy doctor gate (`expo` -> `~55.0.18`, `@react-native-community/datetimepicker` -> `8.6.0`) and reran verification suite. | Status: automated terminal gates closed. | Verification: `npm run typecheck` pass; `npm run test` pass (90 pass, 0 fail); `npx expo-doctor` pass (17/17). | Next: run manual polygon overlay QA + in-app interaction QA to close remaining C9 done-gate items.
 - 2026-04-23 | Gemini | Completed core Phase C items: Implemented full Merchant mode (`Dashboard`, `Menu`, `Analytics`, `Profile`) with persona-driven accessibility for "Uncle Tan" (large fonts/buttons) and "Ahmad" (performance snapshots). Rebuilt the Review Feed (`ReviewFeedV2`) as a community-first tab with a "100% User Content" badge and specialized "Vegetarian" filters for "Sarah". Overhauled the Post Composer with a destination toggle and built the Music Selection library. Integrated persistent search history into the store. All V2 features verified with zero TypeScript errors and registered in the Developer Launcher. | Status: Phase C core features complete. | Verification: `npm run typecheck` pass; all V2 screens functional. | Next: Phase C4 (Messaging) and Phase C6 (Gamification).
@@ -309,7 +501,7 @@ All items completed. Verification evidence in session log:
 - 2026-04-22 | Codex | Continued Sprint 10 staging smokes: deployed supply edge functions and executed claim insert smoke with temp auth user + profile bootstrap to satisfy FK. | Status: claim insert smoke passed; OCR e2e blocked on missing vision secret. | Verification: `npx supabase functions deploy ingest-menu-photo --project-ref vlqfgmrsprbrgzteixsj` success; `npx supabase functions deploy ops-dishes-draft --project-ref vlqfgmrsprbrgzteixsj` success; staging claim smoke script returned `CLAIM_SMOKE_OK` with created `merchant_claim_interests.id` via `submit_merchant_claim_interest` RPC; `npx tsx --test src/constants/featureFlags.test.ts` pass (staging=true, production=false); function invoke check returned `{"error":"missing_vision_api_key"}`. | Next: set Supabase function secret `GOOGLE_CLOUD_VISION_API_KEY` (and optional `GEMINI_API_KEY`), rerun OCR e2e (upload→ingest→`dishes_draft`), then perform device CTA telemetry confirmation for `claim_this_stall_tapped`.
 - 2026-04-22 | Codex | Completed Sprint 10 OCR staging smoke and fixed runtime reliability issue in edge function. Root cause of previous OCR failure was stack overflow from `String.fromCharCode(...imageBytes)` on large uploads. Patched `supabase/functions/ingest-menu-photo/index.ts` to use chunked byte→base64 conversion, redeployed function, and reran full staging smoke (storage upload + submission insert + ingest invoke + queue verification). | Status: OCR done-gate closed. | Verification: `npx supabase functions deploy ingest-menu-photo --project-ref vlqfgmrsprbrgzteixsj` success; smoke result `OCR_SMOKE_OK {"latencyMs":6794,"ocrStatus":"succeeded","extractedRows":8}` with sample extracted rows and persisted `dishes_draft` entries tied to submission `161f16cb-e1b5-46c3-afdc-b7a2d4ee3816`. | Next: run one device-level CTA tap to confirm runtime telemetry event `claim_this_stall_tapped`, then close final Sprint 10 claim done-gate.
 
-- 2026-04-22 | Codex | Implemented Sprint 10 OCR-01..OCR-06 in developer-only flow: quick-review menu photo capture (`__DEV__` gated), supply service interface (`HungryService.supply`), menu-photo MIME/size validation + upload path, edge function `ingest-menu-photo` (Vision OCR + Gemini extraction + dedupe to `dishes_draft`), edge function `ops-dishes-draft` (list/review queue), and local ops stub UI at `ops/dishes-draft/index.html`. Updated `.env.example` with OCR/ops secrets. | Status: OCR-01, OCR-03, OCR-04, OCR-05, OCR-06 complete in code; OCR-02 bucket provisioning pending. | Verification: `npm run typecheck` pass. `npm run test` currently fails due existing environment/tooling issue (`esbuild` transform error at `node_modules/react-native/index.js` under Node v25), not from OCR files. | Next: deploy edge functions, create `menu-photos` bucket in Supabase, set secrets (`GOOGLE_CLOUD_VISION_API_KEY`, `GEMINI_API_KEY`, `OPS_DISHES_DRAFT_API_KEY`), then run staging E2E OCR smoke.
+- 2026-04-22 | Codex | Implemented Sprint 10 OCR-01..OCR-06 in developer-only flow: quick-review menu photo capture (`__DEV__` gated), supply service interface (`HungryService.supply`), menu-photo MIME/size validation + upload path, edge function `ingest-menu-photo` (Vision OCR + Gemini extraction + dedupe to `dishes_draft`), edge function `ops-dishes-draft` (list/review queue), and local ops stub UI at `ops/dishes-draft/index.html`. Updated `.env.example` with OCR/ops secrets. | Status: OCR-01, OCR-03, OCR-04, OCR-05, OCR-06 complete in code; OCR-02 bucket provisioning pending. SEC-08 later replaced the ops static-key model with Supabase JWT + `app_ops_admins` + allowed origins. | Verification: `npm run typecheck` pass. `npm run test` currently fails due existing environment/tooling issue (`esbuild` transform error at `node_modules/react-native/index.js` under Node v25), not from OCR files. | Next: deploy edge functions, create `menu-photos` bucket in Supabase, set secrets (`GOOGLE_CLOUD_VISION_API_KEY`, `GEMINI_API_KEY`, `OPS_DISHES_DRAFT_ALLOWED_ORIGINS`), seed `app_ops_admins`, then run staging E2E OCR smoke.
 
 - 2026-04-19 | Codex | Completed PROV verification sweep requested by user: live extension check, migration check (`0001`..`0009`), applied `supabase/seed.sql`, verified seed counts, created `storage.buckets` entry for `media`, added storage object policies, ran JS smoke for Supabase-mode read + two-user RLS + media upload/signed URL. | Status: PROV-02/03/04/06/07/08 moved to done. | Verification: SQL results — extensions present (`postgis`,`vector`,`pg_trgm`,`btree_gist`,`citext`,`pgcrypto`), migration versions `0001`..`0009`, seed counts (`buildings=4`,`venues=6`,`dishes=6`,`reviews=1`,`blog_posts=2`); JS smoke output — `SUPABASE_MODE_OK`, `RLS_TWO_USER_OK`, `MEDIA_UPLOAD_OK`, `ALL_SMOKES_OK`. | Next: user can run remaining end-to-end/manual done-gate checks (auth flow UX, crash-boundary runtime checks, mock fallback regression) immediately.
 

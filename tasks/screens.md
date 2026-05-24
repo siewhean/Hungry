@@ -48,6 +48,17 @@ Root Stack (RootNavigator)
 └── NotFound                        # 404 state
 ```
 
+Full Audit V1 route exposure:
+
+| Route group | Production exposure | Gate |
+|---|---|---|
+| Direct messages / chat | Registered | `directMessagesEnabled` |
+| Comments, stories, collections, gamification | Registered | `commentsEnabled`, `storiesEnabled`, `collectionsEnabled`, `gamificationEnabled` |
+| Merchant centre beta | Registered behind auth/role/verification guards | `merchantCentreEnabled` |
+| OAuth provider buttons | Hidden/disabled | `oauthProvidersEnabled: false` |
+| Prototype-only routes | Hidden | `prototypeRoutesEnabled: false` |
+| Indoor floorplans / building drill-down | Hidden | `floorplansEnabled: false` |
+
 ---
 
 ## Navigation Param Types
@@ -231,6 +242,25 @@ Source: `src/app/navigation/navigationTypes.ts`
 | Guards | `src/app/screens/profile/profileGuards.ts` |
 | State reads | `useProfileStore`, `useSessionStore` |
 | Key components | `ProfileRadarChart` |
+
+---
+
+### Merchant Centre — MerchantTabs
+
+| Screen | File | Purpose |
+|--------|------|---------|
+| `Dashboard` | `src/app/screens/merchant/MerchantDashboardScreen.tsx` | Merchant command centre |
+| `CustomerInbox` | `src/app/screens/merchant/CustomerInboxScreen.tsx` | Review/comment reply queue |
+| `FeaturedVisitors` | `src/app/screens/merchant/FeaturedVisitorsScreen.tsx` | Pin/unpin/reorder review-backed popular visitors for the public stall page |
+| `Menu` | `src/app/screens/merchant/MerchantMenuScreen.tsx` | Menu management |
+| `PromotionList` | `src/app/screens/merchant/PromotionListScreen.tsx` | Promotion management |
+
+| Key | Value |
+|-----|-------|
+| Stack | `src/app/navigation/MerchantTabs.tsx` |
+| Feature flag | `FEATURE_FLAGS.merchantCentreEnabled` |
+| Guard | `src/features/merchant/merchantGuards.ts` |
+| State reads | `useMerchantStore` |
 
 ---
 
