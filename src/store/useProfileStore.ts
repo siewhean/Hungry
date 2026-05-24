@@ -38,7 +38,7 @@ interface ProfileState {
     { rating: number; text: string; tags: string[]; createdAt: string }
   >;
   applyProfile: (profile: UserProfile) => void;
-  syncProfile: (isAuthenticated: boolean) => void;
+  syncProfile: (isAuthenticated: boolean, userId?: string | null) => void;
   toggleFavourite: (dish: DishDetail) => void;
   updateProfile: (next: Partial<Pick<UserProfile, "displayName" | "email" | "avatarUrl">>) => void;
   setProfileVisibility: (profileVisibility: ProfileVisibility) => void;
@@ -287,8 +287,8 @@ export const useProfileStore = create<ProfileState>()(
             vector: profile.tasteVector,
           },
         }),
-      syncProfile: (isAuthenticated) => {
-        set({ profile: getDataRepository().getProfile(isAuthenticated) });
+      syncProfile: (isAuthenticated, userId) => {
+        set({ profile: getDataRepository().getProfile(isAuthenticated, userId) });
       },
       toggleFavourite: (dish) => {
         let recordedEvent: TasteInteractionEvent | undefined;

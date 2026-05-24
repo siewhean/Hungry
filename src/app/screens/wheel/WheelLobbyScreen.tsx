@@ -122,7 +122,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
               <AppText
                 variant="micro"
                 style={{
-                  color: "rgba(255,255,255,0.8)",
+                  color: palette.inverseTextSecondary,
                   fontWeight: "800",
                   textTransform: "uppercase",
                 }}
@@ -143,7 +143,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
             <Pressable
               onPress={copyCode}
               style={({ pressed }) => ({
-                backgroundColor: "rgba(255,255,255,0.2)",
+                backgroundColor: palette.inverseSurfaceSubtle,
                 paddingHorizontal: spacing[4],
                 paddingVertical: spacing[3],
                 borderRadius: componentRadii.button,

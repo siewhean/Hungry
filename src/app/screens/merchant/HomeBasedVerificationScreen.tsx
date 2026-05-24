@@ -11,6 +11,23 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import type { LocationPrivacy } from "@/types/domain";
 
 type Props = NativeStackScreenProps<MerchantTabParamList, "HomeBasedVerification">;
+type PickedEvidenceAsset = { uri?: string };
+type ImagePickerModule = {
+  MediaTypeOptions: { Images: unknown };
+  requestMediaLibraryPermissionsAsync: () => Promise<{ granted?: boolean; status?: string }>;
+  launchImageLibraryAsync: (options: Record<string, unknown>) => Promise<{
+    canceled: boolean;
+    assets?: PickedEvidenceAsset[];
+  }>;
+};
+
+function loadImagePickerModule(): ImagePickerModule | null {
+  try {
+    return require("expo-image-picker") as ImagePickerModule;
+  } catch {
+    return null;
+  }
+}
 
 export function HomeBasedVerificationScreen({ navigation }: Props) {
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
@@ -19,9 +36,11 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
 
   const [displayName, setDisplayName] = useState(activeOutlet?.name || "");
   const [privacy, setPrivacy] = useState<LocationPrivacy>("approximate");
-  const [photosAttached, setPhotosAttached] = useState(false);
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [safetyChecked, setSafetyChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const photosAttached = photoUris.length > 0;
 
   if (!activeOutlet) {
     return (
@@ -37,6 +56,41 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
     );
   }
 
+  const handleAttachPhotos = async () => {
+    setPhotoError(null);
+    try {
+      const imagePicker = loadImagePickerModule();
+      if (!imagePicker) {
+        setPhotoError("Media picker is unavailable in this app build.");
+        return;
+      }
+
+      const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        setPhotoError("Photos permission is required to attach verification evidence.");
+        return;
+      }
+
+      const result = await imagePicker.launchImageLibraryAsync({
+        allowsEditing: false,
+        allowsMultipleSelection: true,
+        mediaTypes: imagePicker.MediaTypeOptions.Images,
+        quality: 0.82,
+        selectionLimit: 4,
+      });
+
+      if (result.canceled || !result.assets?.length) {
+        return;
+      }
+
+      setPhotoUris(
+        result.assets.map((asset) => asset.uri).filter((uri): uri is string => Boolean(uri)),
+      );
+    } catch {
+      setPhotoError("Unable to open the photo library right now.");
+    }
+  };
+
   const handleSubmit = async () => {
     if (!displayName.trim() || !photosAttached || !safetyChecked) return;
 
@@ -48,11 +102,12 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         locationPrivacy: privacy,
       });
 
-      // Then submit the verification request
-      await getHungryService().merchant.submitVerification(activeOutlet.id, {
-        method: "home_based_declaration",
-        fileUrl: "mock-url://home-based-photos",
-      });
+      for (const fileUrl of photoUris) {
+        await getHungryService().merchant.submitVerification(activeOutlet.id, {
+          method: "home_based_declaration",
+          fileUrl,
+        });
+      }
 
       const updatedAccount = await getHungryService().merchant.getMerchantAccount();
       if (updatedAccount) setAccount(updatedAccount);
@@ -147,10 +202,10 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
           accessibilityLabel={
             photosAttached
               ? "Home-based verification photos attached"
-              : "Attach mock menu and food photos"
+              : "Attach menu and food photos"
           }
           accessibilityState={{ selected: photosAttached }}
-          onPress={() => setPhotosAttached(true)}
+          onPress={() => void handleAttachPhotos()}
         >
           <Card
             style={[
@@ -180,7 +235,9 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
                 fontWeight: "bold",
               }}
             >
-              {photosAttached ? "Mock photos attached" : "Attach mock photos"}
+              {photosAttached
+                ? `${photoUris.length} photo${photoUris.length === 1 ? "" : "s"} attached`
+                : "Attach photos"}
             </AppText>
             <AppText
               variant="micro"
@@ -194,6 +251,11 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
             </AppText>
           </Card>
         </Pressable>
+        {photoError ? (
+          <AppText variant="micro" style={{ color: palette.error, marginTop: spacing[1] }}>
+            {photoError}
+          </AppText>
+        ) : null}
 
         <AppText
           variant="h3"

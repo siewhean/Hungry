@@ -56,7 +56,7 @@ export function BuildingDrillDownScreenV2({ route, navigation }: Props) {
             left: 0,
             right: 0,
             height: 100,
-            backgroundColor: "rgba(0,0,0,0.4)",
+            backgroundColor: palette.mediaScrimSoft,
           }}
         />
 
@@ -69,7 +69,7 @@ export function BuildingDrillDownScreenV2({ route, navigation }: Props) {
             width: 36,
             height: 36,
             borderRadius: componentRadii.search,
-            backgroundColor: "rgba(255,255,255,0.9)",
+            backgroundColor: palette.surfaceTranslucent,
             alignItems: "center",
             justifyContent: "center",
           }}

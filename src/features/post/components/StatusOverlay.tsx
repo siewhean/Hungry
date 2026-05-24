@@ -60,6 +60,7 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
               borderRadius: componentRadii.card,
               padding: spacing.lg,
               borderColor: palette.border,
+              shadowColor: palette.mediaBackdrop,
             },
           ]}
         >
@@ -86,7 +87,7 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
       style={[
         StyleSheet.absoluteFill,
         {
-          backgroundColor: "rgba(0,0,0,0.7)",
+          backgroundColor: palette.detailImageOverlay,
           zIndex: 1000,
           alignItems: "center",
           justifyContent: "center",
@@ -234,7 +235,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     borderWidth: 1,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,

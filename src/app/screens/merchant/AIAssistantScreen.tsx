@@ -119,8 +119,7 @@ export function AIAssistantScreen() {
     <Screen title="AI Assistant">
       <View style={{ gap: spacing[6], width: "100%" }}>
         <AppText variant="body" tone="muted" style={{ paddingHorizontal: spacing[1] }}>
-          AI-powered insights to help you optimize your menu, attract more customers, and boost
-          sales.
+          AI-assisted insights to help you review menu, photo, demand, and promotion opportunities.
         </AppText>
 
         {weeklySummary && (

@@ -43,7 +43,7 @@
   gap: var(--space-6);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 640px) {
   .grid {
     grid-template-columns: 1fr 1fr;
   }

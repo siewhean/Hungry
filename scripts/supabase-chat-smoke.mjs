@@ -8,6 +8,8 @@ const SMOKE_ANON_ENV = "HUNGRY_SUPABASE_SMOKE_ANON_KEY";
 const SMOKE_SERVICE_ENV = "HUNGRY_SUPABASE_SMOKE_SERVICE_ROLE_KEY";
 const SMOKE_PROJECT_REF_ENV = "HUNGRY_SUPABASE_SMOKE_PROJECT_REF";
 const SERVICE_ROLE_OPT_IN_ENV = "HUNGRY_ALLOW_SERVICE_ROLE_SMOKE";
+const REALTIME_TIMEOUT_MS = 30_000;
+const REALTIME_READY_SETTLE_MS = 1_000;
 
 function getAnonKey() {
   return process.env[SMOKE_ANON_ENV]?.trim() ?? "";
@@ -61,7 +63,9 @@ function assertSmokeTargetIsAllowed() {
   const expectedProjectRef = process.env[SMOKE_PROJECT_REF_ENV]?.trim() ?? "";
 
   if (!expectedProjectRef) {
-    fail(`cloud smoke target requires ${SMOKE_PROJECT_REF_ENV} to confirm the intended dev project`);
+    fail(
+      `cloud smoke target requires ${SMOKE_PROJECT_REF_ENV} to confirm the intended dev project`,
+    );
   }
   if (actualProjectRef !== expectedProjectRef) {
     fail(
@@ -83,6 +87,10 @@ function expectError(result, label) {
   }
 }
 
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function createRealtimeProbe(client, conversationId, clientNonce, runId) {
   let channel;
   let readySettled = false;
@@ -93,23 +101,21 @@ function createRealtimeProbe(client, conversationId, clientNonce, runId) {
 
   const received = new Promise((resolve, reject) => {
     rejectReceived = reject;
-    channel = client
-      .channel(`hungry-chat-smoke:${runId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        (payload) => {
-          if (receivedSettled || payload.new?.client_nonce !== clientNonce) return;
-          receivedSettled = true;
-          clearTimeout(receivedTimeout);
-          resolve(payload.new);
-        },
-      );
+    channel = client.channel(`hungry-chat-smoke:${runId}`).on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "messages",
+        filter: `conversation_id=eq.${conversationId}`,
+      },
+      (payload) => {
+        if (receivedSettled || payload.new?.client_nonce !== clientNonce) return;
+        receivedSettled = true;
+        clearTimeout(receivedTimeout);
+        resolve(payload.new);
+      },
+    );
   });
 
   const ready = new Promise((resolve, reject) => {
@@ -117,7 +123,7 @@ function createRealtimeProbe(client, conversationId, clientNonce, runId) {
       if (readySettled) return;
       readySettled = true;
       reject(new Error("Realtime subscription did not become ready in time."));
-    }, 10_000);
+    }, REALTIME_TIMEOUT_MS);
 
     channel.subscribe((status, error) => {
       if (readySettled) return;
@@ -149,7 +155,7 @@ function createRealtimeProbe(client, conversationId, clientNonce, runId) {
         if (receivedSettled) return;
         receivedSettled = true;
         rejectReceived(new Error("Realtime message was not received in time."));
-      }, 10_000);
+      }, REALTIME_TIMEOUT_MS);
     },
     async cleanup() {
       clearTimeout(readyTimeout);
@@ -216,23 +222,36 @@ async function cleanup(admin, userIds, conversationId) {
   };
 
   if (conversationId) {
-    await capture(admin.from("read_receipts").delete().eq("conversation_id", conversationId), "delete read receipts");
-    await capture(admin.from("messages").delete().eq("conversation_id", conversationId), "delete messages");
+    await capture(
+      admin.from("read_receipts").delete().eq("conversation_id", conversationId),
+      "delete read receipts",
+    );
+    await capture(
+      admin.from("messages").delete().eq("conversation_id", conversationId),
+      "delete messages",
+    );
     await capture(
       admin.from("conversation_participants").delete().eq("conversation_id", conversationId),
       "delete conversation participants",
     );
-    await capture(admin.from("conversations").delete().eq("id", conversationId), "delete conversation");
+    await capture(
+      admin.from("conversations").delete().eq("id", conversationId),
+      "delete conversation",
+    );
   }
   if (userIds.length > 0) {
     await capture(admin.from("user_profiles").delete().in("id", userIds), "delete user profiles");
   }
 
-  const deleteResults = await Promise.allSettled(userIds.map((userId) => admin.auth.admin.deleteUser(userId)));
+  const deleteResults = await Promise.allSettled(
+    userIds.map((userId) => admin.auth.admin.deleteUser(userId)),
+  );
   deleteResults.forEach((result, index) => {
     const userId = userIds[index];
     if (result.status === "rejected") {
-      errors.push(`delete auth user ${userId}: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`);
+      errors.push(
+        `delete auth user ${userId}: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`,
+      );
       return;
     }
     if (result.value.error) {
@@ -265,6 +284,7 @@ async function main() {
   let conversationId = "";
   let realtimeProbe;
   let primaryError;
+  let successPayload;
 
   try {
     const userA = await createTestUser(admin, runId, "a");
@@ -284,56 +304,57 @@ async function main() {
 
     const conversation = await expectNoError(
       await clientA
-        .from("conversations")
-        .insert({
-          conversation_type: "user",
-          dedupe_key: `smoke-chat:${runId}:${userA.id}:${userB.id}`,
-          created_by_user_id: userA.id,
+        .rpc("open_chat_conversation", {
+          p_target_user_id: userB.id,
+          p_target_merchant_account_id: null,
+          p_conversation_type: "user",
         })
-        .select("id")
         .maybeSingle(),
-      "create conversation as user A",
+      "open conversation as user A",
     );
     conversationId = conversation?.id;
-    if (!conversationId) fail("created conversation did not return an id");
+    if (!conversationId) fail("opened conversation did not return an id");
 
-    await expectNoError(
-      await clientA.from("conversation_participants").insert([
-        {
-          conversation_id: conversationId,
-          participant_kind: "user",
-          participant_user_id: userA.id,
-        },
-        {
-          conversation_id: conversationId,
-          participant_kind: "user",
-          participant_user_id: userB.id,
-        },
-      ]),
-      "insert conversation participants as creator",
+    const participantRows = await expectNoError(
+      await clientA
+        .from("conversation_participants")
+        .select("participant_user_id")
+        .eq("conversation_id", conversationId),
+      "list opened conversation participants",
     );
+    if (!Array.isArray(participantRows) || participantRows.length !== 2) {
+      fail("conversation opener did not create both user participants");
+    }
 
     const aToBNonce = `a-to-b-${runId}`;
     realtimeProbe = createRealtimeProbe(clientB, conversationId, aToBNonce, runId);
     await realtimeProbe.ready;
+    await delay(REALTIME_READY_SETTLE_MS);
     realtimeProbe.startReceiving();
 
     const messageA = await expectNoError(
-      await clientA
-        .from("messages")
-        .insert({
-          conversation_id: conversationId,
-          sender_user_id: userA.id,
-          body: `Smoke message A to B ${runId}`,
-          client_nonce: aToBNonce,
-          delivered_at: new Date().toISOString(),
-        })
-        .select("id,body,client_nonce")
-        .maybeSingle(),
-      "send user A message",
+      await clientA.rpc("send_chat_message", {
+        p_conversation_id: conversationId,
+        p_body: `Smoke message A to B ${runId}`,
+        p_client_nonce: aToBNonce,
+        p_sender_merchant_account_id: null,
+      }),
+      "send user A message through RPC",
     );
-    if (!messageA?.id) fail("user A message did not return an id");
+    const messageARow = Array.isArray(messageA) ? messageA[0] : messageA;
+    if (!messageARow?.id) fail("user A message did not return an id");
     await realtimeProbe.received;
+
+    expectError(
+      await clientA.from("messages").insert({
+        conversation_id: conversationId,
+        sender_user_id: userA.id,
+        body: `Direct insert should fail ${runId}`,
+        client_nonce: `a-direct-blocked-${runId}`,
+        delivered_at: new Date().toISOString(),
+      }),
+      "participant direct message insert",
+    );
 
     const bMessages = await expectNoError(
       await clientB
@@ -348,10 +369,7 @@ async function main() {
     }
 
     const cMessages = await expectNoError(
-      await clientC
-        .from("messages")
-        .select("id")
-        .eq("conversation_id", conversationId),
+      await clientC.from("messages").select("id").eq("conversation_id", conversationId),
       "user C non-participant message query",
     );
     if (Array.isArray(cMessages) && cMessages.length > 0) {
@@ -359,13 +377,13 @@ async function main() {
     }
 
     expectError(
-      await clientC.from("messages").insert({
-        conversation_id: conversationId,
-        sender_user_id: userC.id,
-        body: `Unauthorized smoke message ${runId}`,
-        client_nonce: `c-blocked-message-${runId}`,
+      await clientC.rpc("send_chat_message", {
+        p_conversation_id: conversationId,
+        p_body: `Unauthorized smoke message ${runId}`,
+        p_client_nonce: `c-blocked-message-${runId}`,
+        p_sender_merchant_account_id: null,
       }),
-      "user C non-participant message insert",
+      "user C non-participant message RPC",
     );
 
     expectError(
@@ -379,7 +397,7 @@ async function main() {
 
     await expectNoError(
       await clientB.from("read_receipts").insert({
-        message_id: messageA.id,
+        message_id: messageARow.id,
         conversation_id: conversationId,
         reader_user_id: userB.id,
         read_at: new Date().toISOString(),
@@ -392,7 +410,7 @@ async function main() {
         .from("read_receipts")
         .select("message_id,reader_user_id")
         .eq("conversation_id", conversationId)
-        .eq("message_id", messageA.id),
+        .eq("message_id", messageARow.id),
       "user A reads user B receipt",
     );
     if (!Array.isArray(visibleReceipts) || visibleReceipts.length !== 1) {
@@ -401,7 +419,7 @@ async function main() {
 
     expectError(
       await clientC.from("read_receipts").insert({
-        message_id: messageA.id,
+        message_id: messageARow.id,
         conversation_id: conversationId,
         reader_user_id: userC.id,
         read_at: new Date().toISOString(),
@@ -411,14 +429,13 @@ async function main() {
 
     const bToANonce = `b-to-a-${runId}`;
     await expectNoError(
-      await clientB.from("messages").insert({
-        conversation_id: conversationId,
-        sender_user_id: userB.id,
-        body: `Smoke reply B to A ${runId}`,
-        client_nonce: bToANonce,
-        delivered_at: new Date().toISOString(),
+      await clientB.rpc("send_chat_message", {
+        p_conversation_id: conversationId,
+        p_body: `Smoke reply B to A ${runId}`,
+        p_client_nonce: bToANonce,
+        p_sender_merchant_account_id: null,
       }),
-      "send user B reply",
+      "send user B reply through RPC",
     );
 
     const aReplies = await expectNoError(
@@ -433,29 +450,24 @@ async function main() {
       fail("user A could not read user B reply");
     }
 
-    console.log(
-      JSON.stringify(
-        {
-          ok: true,
-          runId,
-          conversationId,
-          verified: [
-            "auth users created",
-            "profiles upserted",
-            "conversation created by participant",
-            "participants inserted by creator",
-            "message delivered through realtime",
-            "recipient reads participant message",
-            "non-participant cannot read messages",
-            "non-participant cannot write messages, participants, or read receipts",
-            "read receipt visible to participant",
-            "reply visible to original sender",
-          ],
-        },
-        null,
-        2,
-      ),
-    );
+    successPayload = {
+      ok: true,
+      runId,
+      conversationId,
+      verified: [
+        "auth users created",
+        "profiles upserted",
+        "conversation opened through checked RPC",
+        "participants created by checked RPC",
+        "message delivered through checked RPC and realtime",
+        "direct message insert is revoked for app clients",
+        "recipient reads participant message",
+        "non-participant cannot read messages",
+        "non-participant cannot write messages, participants, or read receipts",
+        "read receipt visible to participant",
+        "reply visible to original sender",
+      ],
+    };
   } catch (error) {
     primaryError = error;
     throw error;
@@ -475,6 +487,10 @@ async function main() {
           : `[supabase-chat-smoke] cleanup failed: ${cleanupError}`,
       );
     }
+  }
+
+  if (successPayload) {
+    console.log(JSON.stringify(successPayload, null, 2));
   }
 }
 

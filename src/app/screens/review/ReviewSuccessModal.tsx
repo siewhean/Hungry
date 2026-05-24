@@ -32,7 +32,7 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
       <View
         style={{
           flex: 1,
-          backgroundColor: "rgba(17, 24, 39, 0.45)",
+          backgroundColor: palette.overlay,
           alignItems: "center",
           justifyContent: "center",
           padding: spacing[5],

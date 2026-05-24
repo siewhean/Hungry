@@ -20,8 +20,14 @@ appId: ${APP_ID}
       - tapOn: "Enter URL manually"
       - tapOn:
           point: "50%,34%"
-      - inputText: "exp://127.0.0.1:8081"
+      - inputText: "${METRO_URL}"
       - tapOn: "Connect"
+- tapOn:
+    text: "Close"
+    optional: true
+- tapOn:
+    text: "Continue"
+    optional: true
 - tapOn:
     text: "Close"
     optional: true

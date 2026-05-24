@@ -6,73 +6,76 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 
 ## Quick Reference
 
-| Need | Go to |
-|------|-------|
-| Start here (agents) | `AGENTS.md` |
-| Workflow rules | `CLAUDE.md` |
-| Operating model | `WORKFLOW.md` |
-| Low-token defaults | `ops/low-token-cheatsheet.md` |
-| Active backlog | `tasks/backlog.md` |
-| Verification evidence | `tasks/verification.md` |
-| Session history | `tasks/session-log.md` |
-| Tech stack + commands | `tasks/environment.md` |
-| Design tokens + components | `tasks/design-system.md` |
-| Screen inventory + navigation | `tasks/screens.md` |
-| Domain types + mock data | `tasks/data-contracts.md` |
-| Testing + feedback loops | `tasks/test-harness.md` |
-| Product requirements (summarised) | `tasks/product-context.md` |
-| Marketing launch kit | `marketing/` |
-| Historical roadmap + audit trail | `tasks/todo.md` |
-| Past lessons | `tasks/lessons.md` |
-| Product requirements | `Research/01_Product_Requirements_Document_Hungry.docx` |
-| App flow spec | `Research/02_App_Flow_Document_Hungry.docx` |
-| Frontend guidelines | `Research/03_Frontend_Guidelines_Hungry.docx` |
-| UI prototypes | `design/figma-v2/` and `design/stitch/` |
+| Need                              | Go to                                                   |
+| --------------------------------- | ------------------------------------------------------- |
+| Start here (agents)               | `AGENTS.md`                                             |
+| Workflow rules                    | `CLAUDE.md`                                             |
+| Operating model                   | `WORKFLOW.md`                                           |
+| Low-token defaults                | `ops/low-token-cheatsheet.md`                           |
+| Active backlog                    | `tasks/backlog.md`                                      |
+| Verification evidence             | `tasks/verification.md`                                 |
+| Session history                   | `tasks/session-log.md`                                  |
+| Tech stack + commands             | `tasks/environment.md`                                  |
+| Design tokens + components        | `tasks/design-system.md`                                |
+| Screen inventory + navigation     | `tasks/screens.md`                                      |
+| Domain types + mock data          | `tasks/data-contracts.md`                               |
+| Testing + feedback loops          | `tasks/test-harness.md`                                 |
+| Product requirements (summarised) | `tasks/product-context.md`                              |
+| Marketing launch kit              | `marketing/`                                            |
+| Historical roadmap + audit trail  | `tasks/todo.md`                                         |
+| Past lessons                      | `tasks/lessons.md`                                      |
+| Product requirements              | `Research/01_Product_Requirements_Document_Hungry.docx` |
+| App flow spec                     | `Research/02_App_Flow_Document_Hungry.docx`             |
+| Frontend guidelines               | `Research/03_Frontend_Guidelines_Hungry.docx`           |
+| UI prototypes                     | `design/figma-v2/` and `design/stitch/`                 |
 
 ---
 
 ## What This App Is
 
-| Key | Value |
-|-----|-------|
-| Product | Hungry — dish-first food discovery |
-| Market | Singapore (hawker centres, food courts, restaurants) |
-| Platform | iOS + Android (Expo SDK 55 / React Native 0.83.6) |
-| Phase | Consumer mobile app, mock-first with gated Supabase integrations |
-| Not in public v1 scope | Production DMs, comments, stories, gamification, merchant centre, OAuth providers, and indoor floorplans until launch gates pass |
-| Core idea | Find the dish you want, then see which stall serves it — not the other way around |
-| Taste model | 6-axis vector: sweet · spicy · sour · salty · rich · aromatic |
+| Key                       | Value                                                                                                                                                                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Product                   | Hungry — dish-first food discovery                                                                                                                                                                                       |
+| Market                    | Singapore (hawker centres, food courts, restaurants)                                                                                                                                                                     |
+| Platform                  | iOS + Android (Expo SDK 55 / React Native 0.83.6)                                                                                                                                                                        |
+| Phase                     | Consumer mobile app, mock-first locally with Supabase-backed Full Audit V1 integrations                                                                                                                                  |
+| Production posture        | DMs, comments, stories, collections, gamification, and merchant beta are enabled in code for Full Audit V1; live Supabase chat, social/gamification, and OCR smokes pass, but release remains blocked until Android/EAS, store-console, production-secret, and owner-action gates pass |
+| Still production-disabled | OAuth providers, prototype routes, and indoor floorplans                                                                                                                                                                 |
+| Core idea                 | Find the dish you want, then see which stall serves it — not the other way around                                                                                                                                        |
+| Taste model               | 6-axis vector: sweet · spicy · sour · salty · rich · aromatic                                                                                                                                                            |
 
 ---
 
 ## Stack
 
-| Layer | Choice |
-|-------|--------|
-| Framework | Expo SDK 55 + React Native 0.83.6 |
-| Language | TypeScript (strict mode) |
-| Navigation | React Navigation v7 |
-| State | Zustand |
-| Forms | React Hook Form |
-| Animation | Reanimated 3 |
-| Sheets | `@gorhom/bottom-sheet` |
-| Map | `@rnmapbox/maps` (mock surface available) |
-| Icons | `lucide-react-native` |
-| Fonts | Nunito + DM Mono |
+| Layer      | Choice                                    |
+| ---------- | ----------------------------------------- |
+| Framework  | Expo SDK 55 + React Native 0.83.6         |
+| Language   | TypeScript (strict mode)                  |
+| Navigation | React Navigation v7                       |
+| State      | Zustand                                   |
+| Forms      | React Hook Form                           |
+| Animation  | Reanimated 3                              |
+| Sheets     | `@gorhom/bottom-sheet`                    |
+| Map        | `@rnmapbox/maps` (mock surface available) |
+| Icons      | `lucide-react-native`                     |
+| Fonts      | Nunito + DM Mono                          |
 
 ---
 
 ## Commands
 
-| Command | Purpose |
-|---------|---------|
-| `npm install` | Install deps |
-| `npm run typecheck` | TypeScript check — **primary gate** |
-| `npm run start` | Expo dev server |
-| `npm run ios` | iOS simulator |
-| `npm run android` | Android emulator |
-| `npx expo-doctor` | Dependency health |
-| `npm run test` | TSX/Node test suite |
+| Command                                       | Purpose                                                                 |
+| --------------------------------------------- | ----------------------------------------------------------------------- |
+| `npm install`                                 | Install deps                                                            |
+| `npm run typecheck`                           | TypeScript check — **primary gate**                                     |
+| `npm run start`                               | Expo dev server                                                         |
+| `npm run ios`                                 | iOS simulator                                                           |
+| `npm run android`                             | Android emulator                                                        |
+| `npx expo-doctor`                             | Dependency health                                                       |
+| `npm run test`                                | TSX/Node test suite                                                     |
+| `npm run data:supabase:stage:canonical`       | Generate staging-only SQL for the canonical Singapore food-business CSV |
+| `npm run data:supabase:stage:canonical:split` | Generate chunked staging SQL files for linked Supabase imports          |
 
 ---
 
@@ -80,21 +83,21 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 
 The application uses feature flags to toggle functionality for development and release branches. These are configured in `src/constants/featureFlags.ts`.
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `HUNGRY_DATA_SOURCE` | Toggle between `mock` and `supabase` data layers. | `mock` |
-| `FEATURE_FLAGS.directMessagesEnabled` | Enable the Direct Messages tab and chat functionality. | `false` |
-| `FEATURE_FLAGS.prototypeRoutesEnabled` | Register V2/prototype routes outside production release builds. | `true` in development/staging, `false` in production |
-| `FEATURE_FLAGS.merchantCentreEnabled` | Register merchant centre routes for staging or local `__DEV__` builds. | `true` in staging/local dev, `false` in production |
-| `FEATURE_FLAGS.commentsEnabled` | Enable community comments on posts and reviews. | `true` in development/staging, `false` in production |
-| `FEATURE_FLAGS.oauthProvidersEnabled` | Enable Google/Apple OAuth provider buttons. | `true` in development/staging, `false` in production |
-| `FEATURE_FLAGS.floorplansEnabled` | Register indoor floorplan routes and entry points. | `false` in all environments until launch gates pass |
-| `FEATURE_FLAGS.gamificationEnabled` | Enable Passport and Missions surfaces. | `true` in development/staging, `false` in production |
-| `FEATURE_FLAGS.collectionsEnabled` | Enable collection list/detail routes. | `true` in development/staging, `false` in production |
-| `FEATURE_FLAGS.storiesEnabled` | Enable story viewer and story creation surfaces. | `true` in development/staging, `false` in production |
-| `FEATURE_FLAGS.craveEnabled` | Enable the "Daily Crave" swiping discovery mode. | `true` |
-| `FEATURE_FLAGS.readsEnabled` | Enable the "Reads" (blog) tab. | `true` |
-| `FEATURE_FLAGS.mockMapboxEnabled` | Use a static fallback for the map in test environments. | `false` |
+| Flag                                   | Description                                                                      | Default                                              |
+| -------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `HUNGRY_DATA_SOURCE`                   | Toggle between `mock` and `supabase` data layers.                                | `mock`                                               |
+| `FEATURE_FLAGS.directMessagesEnabled`  | Enable the Direct Messages tab and chat functionality.                           | `true` in Full Audit V1 production                   |
+| `FEATURE_FLAGS.prototypeRoutesEnabled` | Register V2/prototype routes outside production release builds.                  | `true` in development/staging, `false` in production |
+| `FEATURE_FLAGS.merchantCentreEnabled`  | Register merchant centre beta routes behind auth, role, and verification guards. | `true` in Full Audit V1 production                   |
+| `FEATURE_FLAGS.commentsEnabled`        | Enable community comments on posts and reviews.                                  | `true` in Full Audit V1 production                   |
+| `FEATURE_FLAGS.oauthProvidersEnabled`  | Enable Google/Apple OAuth provider buttons.                                      | `true` in development/staging, `false` in production |
+| `FEATURE_FLAGS.floorplansEnabled`      | Register indoor floorplan routes and entry points.                               | `false` in all environments until launch gates pass  |
+| `FEATURE_FLAGS.gamificationEnabled`    | Enable Passport and Missions surfaces.                                           | `true` in Full Audit V1 production                   |
+| `FEATURE_FLAGS.collectionsEnabled`     | Enable collection list/detail routes.                                            | `true` in Full Audit V1 production                   |
+| `FEATURE_FLAGS.storiesEnabled`         | Enable story viewer and story creation surfaces.                                 | `true` in Full Audit V1 production                   |
+| `FEATURE_FLAGS.craveEnabled`           | Enable the "Daily Crave" swiping discovery mode.                                 | `true`                                               |
+| `FEATURE_FLAGS.readsEnabled`           | Enable the "Reads" (blog) tab.                                                   | `true`                                               |
+| `FEATURE_FLAGS.mockMapboxEnabled`      | Use a static fallback for the map in test environments.                          | `false`                                              |
 
 To override these locally, you can use `.env.development` or modify the constants directly during prototyping.
 
@@ -102,25 +105,25 @@ To override these locally, you can use `.env.development` or modify the constant
 
 ## Project Status
 
-| Area | Status |
-|------|--------|
-| Expo scaffold | Done |
-| Domain types + stores | Done |
-| Mock repositories | Done |
-| Navigation shell | Done |
-| Home, Discover, Maps, Search | Done |
-| Auth, Onboarding | Done |
-| Developer launcher (dev-only) | Done |
-| Profile, Favourites, Review History | Done |
-| Review flow | Done |
-| Reads (feature-flagged) | Done |
-| Offline + NotFound states | Done |
-| Marketing launch kit | Done |
-| Typecheck | Passing |
-| Expo Doctor | Passing with writable npm cache path |
-| Agent harness docs | Done |
-| Unit tests | Passing (`npm test`) |
-| Playwright E2E | Passing when run with localhost access; Codex sandbox TCP bind needs elevated/local shell |
+| Area                                | Status                                                                                     |
+| ----------------------------------- | ------------------------------------------------------------------------------------------ |
+| Expo scaffold                       | Done                                                                                       |
+| Domain types + stores               | Done                                                                                       |
+| Mock repositories                   | Done                                                                                       |
+| Navigation shell                    | Done                                                                                       |
+| Home, Discover, Maps, Search        | Done                                                                                       |
+| Auth, Onboarding                    | Done                                                                                       |
+| Developer launcher (dev-only)       | Done                                                                                       |
+| Profile, Favourites, Review History | Done                                                                                       |
+| Review flow                         | Done                                                                                       |
+| Reads (feature-flagged)             | Done                                                                                       |
+| Offline + NotFound states           | Done                                                                                       |
+| Marketing launch kit                | Done                                                                                       |
+| Typecheck                           | Passing                                                                                    |
+| Expo Doctor                         | Passing 18/18 after SDK 55 patch-version alignment; rerun before RC if dependencies change |
+| Agent harness docs                  | Done                                                                                       |
+| Unit tests                          | Passing (`npm test`)                                                                       |
+| Playwright E2E                      | Passing when run with localhost access; Codex sandbox TCP bind needs elevated/local shell  |
 
 ---
 
@@ -151,8 +154,7 @@ To override these locally, you can use `.env.development` or modify the constant
 - Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
 - Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and polygon-based building directory layouts (including Wisma and JEM mall-style floor overlays with vertical level switching).
 - **Design Specifications** — Comprehensive visual, UX, and accessibility specs for all remaining backlog items are now available in `docs/audit/`. These serve as the authoritative implementation guide for Batch 1–8.
-- Current audit status: `npm run typecheck` passes, `npm run lint` passes with 0 errors, `npm test -- --watch=false` passes, `npm run test:e2e -- --reporter=line` passes when run with localhost access, `npm run smoke:native:ios:prepared` passes on the prepared iOS simulator path, `npx expo-doctor` passes (17/17) when run with a writable npm cache path, and mobile asset provenance/bundle evidence is recorded in `tasks/asset-provenance.md`; see `tasks/verification.md`.
-
+- Current Full Audit V1 status: source/static gates pass, Supabase migrations through `20260524032500_fix_upsert_stall_interaction_return_query.sql` are applied to linked Hungry staging, and the Supabase Advisor cleanup resolved app-owned public SECURITY DEFINER findings. The linked Security Advisor is still not clean: 9 findings remain for Supabase-owner PostGIS objects plus leaked-password protection. Expo Doctor now passes 18/18 after SDK 55 patch-version alignment; local TruffleHog now runs with 0 verified/unverified secrets. Prepared iOS Maestro smoke now passes on iPhone 17 Pro / iOS 26.1 when Metro runs in LAN mode with Watchman disabled and the smoke is given the generated LAN Metro URL. Live Supabase chat/DM smoke now passes through checked RPCs, Realtime delivery, direct-write denial, non-participant denial, and read receipts; live social/gamification smoke now passes report, moderation, block, FoodCred, stall interaction, and mission-progress checks; live OCR smoke now uploads a menu image, invokes `ingest-menu-photo`, reaches `succeeded`, and creates `dishes_draft` rows. Android/EAS proof is missing, and store/security owner gates remain open; see `tasks/verification.md`.
 
 ## Commands
 
@@ -162,6 +164,8 @@ To override these locally, you can use `.env.development` or modify the constant
 - `npm run android`
 - `npm run typecheck`
 - `npm run data:enrich`
+- `npm run data:supabase:stage:canonical`
+- `npm run data:supabase:stage:canonical:split`
 
 ## Notes
 

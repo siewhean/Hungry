@@ -21,6 +21,7 @@ import {
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
+import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
 import { useFoodCredStore } from "@/store/useFoodCredStore";
@@ -177,7 +178,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const repository = getDataRepository();
   const dishId = route.params?.dishId ?? route.params?.id ?? "";
   const dish = repository.getDishById(dishId);
-  const { colorScheme, componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
+  const waitEstimateDisclosure = getDataTrustDisclosure("waitEstimate");
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const profile = useProfileStore((state) => state.profile);
@@ -266,9 +268,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     ...(waitTime
       ? [
           {
-            label: "Wait Time",
+            label: "Estimated Wait",
             value: waitTime,
-            helper: venue.isOpen ? "Open now" : "Closed now",
+            helper: venue.isOpen
+              ? `${waitEstimateDisclosure} · based on listed crowd level`
+              : "Stall listed closed",
           },
         ]
       : []),
@@ -279,13 +283,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const signatureGridItemHeight = signatureGridItemWidth * 1.5;
   const reviewIconSize = 22;
   const canonicalDishUrl = `https://hungry.sg/dish/${dish.id}`;
-  const heroGradientColors: readonly [ColorValue, ColorValue, ColorValue] =
-    colorScheme === "dark"
-      ? [`${palette.bg}00`, `${palette.bg}B3`, palette.bg]
-      : ["rgba(255,255,255,0)", "rgba(255,255,255,0.72)", palette.bg];
-  const headerButtonBackground =
-    colorScheme === "dark" ? palette.surface : "rgba(255, 255, 255, 0.88)";
-  const headerButtonBorder = colorScheme === "dark" ? palette.border : "rgba(226, 232, 240, 0.78)";
+  const heroGradientColors: readonly [ColorValue, ColorValue, ColorValue] = [
+    palette.detailHeroGradientStart,
+    palette.detailHeroGradientMid,
+    palette.bg,
+  ];
+  const headerButtonBackground = palette.detailHeaderSurface;
+  const headerButtonBorder = palette.detailHeaderBorder;
   const shareReviewTarget = {
     reviewId: `dish-${dish.id}`,
     postId: dish.id,
@@ -493,7 +497,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         {dish.rating.toFixed(1)}
                       </AppText>
                       <AppText variant="bodySmall" tone="secondary">
-                        ({dish.reviewCount})
+                        ({dish.reviewCount} listed reviews)
                       </AppText>
                     </View>
                   </View>
@@ -596,7 +600,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               <View style={{ gap: spacing[3] }}>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
                   <Clock3 color={palette.orange} size={20} />
-                  <AppText variant="h2">Opening Hours</AppText>
+                  <AppText variant="h2">Listed Opening Hours</AppText>
                 </View>
                 <View
                   style={{
@@ -608,7 +612,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     padding: spacing[4],
                   }}
                 >
-                  <AppText style={{ fontWeight: "800" }}>Listed hours</AppText>
+                  <AppText style={{ fontWeight: "800" }}>Listed hours from venue</AppText>
                   {listedHours.length ? (
                     <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
                       {listedHours.map((row) => (
@@ -675,7 +679,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         style={{ flex: 1 }}
                       />
                       <LinearGradient
-                        colors={["transparent", "rgba(15, 23, 42, 0.78)"]}
+                        colors={["transparent", palette.detailImageOverlay]}
                         style={{
                           bottom: 0,
                           left: 0,
@@ -687,13 +691,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         <View
                           style={{
                             alignSelf: "flex-start",
-                            backgroundColor: "rgba(15, 23, 42, 0.48)",
-                            borderColor: "rgba(255, 255, 255, 0.18)",
+                            backgroundColor: palette.detailImageBadgeSurface,
+                            borderColor: palette.detailImageBadgeBorder,
                             borderRadius: radii.md,
                             borderWidth: 1,
                             paddingHorizontal: spacing[2],
                             paddingVertical: spacing[1],
-                            shadowColor: "#000000",
+                            shadowColor: palette.navy,
                             shadowOffset: { width: 0, height: 4 },
                             shadowOpacity: 0.24,
                             shadowRadius: 12,
@@ -703,7 +707,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                             style={{
                               color: palette.white,
                               fontWeight: "900",
-                              textShadowColor: "rgba(0, 0, 0, 0.36)",
+                              textShadowColor: palette.detailImageTextShadow,
                               textShadowOffset: { width: 0, height: 1 },
                               textShadowRadius: 3,
                             }}
@@ -714,7 +718,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                             variant="price"
                             style={{
                               color: palette.white,
-                              textShadowColor: "rgba(0, 0, 0, 0.36)",
+                              textShadowColor: palette.detailImageTextShadow,
                               textShadowOffset: { width: 0, height: 1 },
                               textShadowRadius: 3,
                             }}
@@ -823,11 +827,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   : pressed
                     ? palette.bg
                     : palette.bgSoft;
-                const normalizedBackgroundColor = backgroundColor.toLowerCase();
+                const normalizedBackgroundColor = backgroundColor.toLowerCase().replace("#", "");
                 const isWhiteOrBlackBackground =
                   !isDishTried &&
-                  (normalizedBackgroundColor === "#ffffff" ||
-                    normalizedBackgroundColor === "#000000");
+                  (normalizedBackgroundColor === "ffffff" ||
+                    normalizedBackgroundColor === "000000");
                 return {
                   alignItems: "center",
                   backgroundColor,

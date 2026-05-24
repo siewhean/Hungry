@@ -366,7 +366,7 @@ export function QuickReviewSheetV2({ navigation, route }: Props) {
                 style={{
                   width: "100%",
                   height: 6,
-                  backgroundColor: "rgba(255,255,255,0.2)",
+                  backgroundColor: palette.inverseSurfaceSubtle,
                   borderRadius: 3,
                   marginTop: 12,
                   overflow: "hidden",

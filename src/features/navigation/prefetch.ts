@@ -12,6 +12,7 @@ type MerchantPrefetchRoute =
   | "Analytics"
   | "Profile"
   | "CustomerInbox"
+  | "FeaturedVisitors"
   | "BusinessProfileEditor"
   | "VerificationCentre"
   | "PromotionList"
@@ -262,6 +263,13 @@ export function prefetchMerchantTab(
         }
         if (routeName === "CustomerInbox" && outletId) {
           await merchant.getInbox(outletId);
+          return;
+        }
+        if (routeName === "FeaturedVisitors" && outletId) {
+          await Promise.all([
+            merchant.listPopularVisitorPins(outletId),
+            merchant.listPopularVisitorCandidates(outletId),
+          ]);
           return;
         }
         if (routeName === "PromotionList" && outletId) {

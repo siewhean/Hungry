@@ -91,7 +91,7 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
       onLayout={(event) => {
         setVideoWidth(event.nativeEvent.layout.width);
       }}
-      style={[styles.container, style]}
+      style={[styles.container, { backgroundColor: palette.mediaBackdrop }, style]}
     >
       <GestureDetector gesture={videoGestures}>
         <View style={StyleSheet.absoluteFill}>
@@ -113,7 +113,10 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
       {isFastForwarding ? (
         <View
           pointerEvents="none"
-          style={[styles.fastForwardIndicator, { borderRadius: componentRadii.button }]}
+          style={[
+            styles.fastForwardIndicator,
+            { backgroundColor: palette.mediaScrim, borderRadius: componentRadii.button },
+          ]}
         >
           <AppText variant="h3" style={{ color: palette.white, fontWeight: "900" }}>
             2x Speed
@@ -123,7 +126,10 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
 
       <Pressable
         onPress={handleToggleMute}
-        style={[styles.muteButton, { borderRadius: componentRadii.iconButton }]}
+        style={[
+          styles.muteButton,
+          { backgroundColor: palette.mediaScrimSoft, borderRadius: componentRadii.iconButton },
+        ]}
       >
         {isMuted ? (
           <VolumeX color={palette.white} size={20} />
@@ -137,7 +143,6 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#000",
     overflow: "hidden",
   },
   centerIcon: {
@@ -151,7 +156,6 @@ const styles = StyleSheet.create({
   },
   fastForwardIndicator: {
     alignSelf: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
     paddingHorizontal: 16,
     paddingVertical: 8,
     position: "absolute",
@@ -160,7 +164,6 @@ const styles = StyleSheet.create({
   },
   muteButton: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
     bottom: 12,
     height: 36,
     justifyContent: "center",

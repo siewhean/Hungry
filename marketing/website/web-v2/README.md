@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hungry Web V2
 
-## Getting Started
+Next.js marketing site for Hungry, the Singapore dish-first food discovery app.
 
-First, run the development server:
+## Commands
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run lint
+npm run seo:audit
+npm run build:webpack
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Public Routes
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `/`
+- `/for-foodies`
+- `/for-merchants`
+- `/join-waitlist`
+- `/privacy`
+- `/terms`
+- `/account/delete`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Route metadata is centralized in `src/app/seo.ts`. Keep sitemap routes, canonical metadata, and LLM context files aligned with that source.
 
-## Learn More
+## SEO And AI Discovery Surfaces
 
-To learn more about Next.js, take a look at the following resources:
+- `src/app/layout.tsx`: metadata base, default title template, Open Graph, Twitter, robots metadata, and global JSON-LD.
+- `src/app/robots.ts`: public crawler policy for normal search crawlers and AI retrieval/training crawlers.
+- `src/app/sitemap.ts`: generated XML sitemap from the canonical public route list.
+- `src/components/seo/JsonLd.tsx`: JSON-LD script component.
+- `public/llms.txt`: concise AI/LLM context map.
+- `public/llms-full.txt`: expanded AI/LLM context and canonical wording.
+- `scripts/seo-ai-readiness-check.mjs`: local guard for crawler files, structured data, AI crawler markers, and stale LLM routes.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Environment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Set `NEXT_PUBLIC_SITE_URL` in production if the canonical domain changes. It defaults to `https://hungry.sg`.

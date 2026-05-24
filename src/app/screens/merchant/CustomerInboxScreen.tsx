@@ -429,7 +429,7 @@ function ReplyComposer({
     <View
       style={[
         StyleSheet.absoluteFill,
-        { backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+        { backgroundColor: palette.mediaScrim, justifyContent: "flex-end" },
       ]}
     >
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />

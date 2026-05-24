@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { HungryWordmark } from "./HungryWordmark";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -24,9 +25,7 @@ export function Navbar() {
       >
         <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-5">
           <Link href="/" className="flex items-end gap-3">
-            <span className="text-[1.35rem] font-extrabold tracking-[-0.04em] text-hungry-navy">
-              Hungry
-            </span>
+            <HungryWordmark />
             <span className="pb-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-hungry-text-muted">
               Singapore
             </span>

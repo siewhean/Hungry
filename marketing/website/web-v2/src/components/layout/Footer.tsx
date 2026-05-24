@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { footerLinks } from "@/content/site";
+import { HungryWordmark } from "@/components/brand/HungryWordmark";
 import styles from "./Footer.module.css";
 
 export default function Footer() {
@@ -8,7 +9,7 @@ export default function Footer() {
       <div className={`container-wide ${styles.footer}`}>
         <div className={styles.brandInfo}>
           <Link href="/" className={styles.logo}>
-            <span className={styles.logoText}>Hungry</span>
+            <HungryWordmark className={styles.logoText} />
           </Link>
           <p className={styles.tagline}>
             Built for the way Singapore eats. Discover the dish, not just the venue.

@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { StoryScreen } from "@/content/site";
 import { AppScreenshotFrame } from "./AppScreenshotFrame";
+import { DiscoveryPhoneMockup } from "./DiscoveryPhoneMockup";
 import styles from "./StickyScreenStory.module.css";
 
 type StickyScreenStoryProps = {
@@ -28,10 +29,13 @@ export function StickyScreenStory({ screens }: StickyScreenStoryProps) {
 
         ScrollTrigger.create({
           trigger: step,
-          start: "top 58%",
-          end: "bottom 42%",
-          onEnter: () => setActiveIndex(index),
-          onEnterBack: () => setActiveIndex(index),
+          start: "top 75%",
+          end: "bottom 25%",
+          onToggle: ({ isActive }) => {
+            if (isActive) {
+              setActiveIndex(index);
+            }
+          },
         });
 
         gsap.fromTo(
@@ -43,9 +47,9 @@ export function StickyScreenStory({ screens }: StickyScreenStoryProps) {
             ease: "power3.out",
             scrollTrigger: {
               trigger: step,
-              start: "top 80%",
-              end: "center 52%",
-              scrub: 0.55,
+              start: "top 82%",
+              end: "bottom 18%",
+              scrub: 0.45,
             },
           },
         );
@@ -64,12 +68,19 @@ export function StickyScreenStory({ screens }: StickyScreenStoryProps) {
               className={`${styles.screenLayer} ${index === activeIndex ? styles.active : ""}`}
               key={screen.title}
             >
-              <AppScreenshotFrame
-                src={screen.src}
-                alt={screen.alt}
-                label={screen.stat}
-                orientation={index > 1 ? "landscape" : "portrait"}
-              />
+              {index < 2 ? (
+                <figure className={styles.phonePreviewFrame} aria-label={screen.alt}>
+                  <DiscoveryPhoneMockup />
+                  <figcaption>{screen.stat}</figcaption>
+                </figure>
+              ) : (
+                <AppScreenshotFrame
+                  src={screen.src}
+                  alt={screen.alt}
+                  label={screen.stat}
+                  orientation="landscape"
+                />
+              )}
             </div>
           ))}
         </div>

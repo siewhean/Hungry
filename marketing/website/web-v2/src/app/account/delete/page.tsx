@@ -1,7 +1,6 @@
-export const metadata = {
-  title: "Delete Your Hungry Account | Hungry",
-  description: "How to request deletion of your Hungry account and associated data.",
-};
+import { routeMetadata } from "@/app/seo";
+
+export const metadata = routeMetadata("/account/delete");
 
 export default function AccountDeletionPage() {
   return (
@@ -47,7 +46,7 @@ export default function AccountDeletionPage() {
           </p>
           <h2 style={{ color: "var(--color-text-primary)", fontSize: "1.5rem" }}>Contact</h2>
           <p>
-            Email hello@hungry.sg with the subject "Account deletion" for status updates, access
+            Email hello@hungry.sg with the subject &quot;Account deletion&quot; for status updates, access
             questions, or correction requests.
           </p>
         </section>

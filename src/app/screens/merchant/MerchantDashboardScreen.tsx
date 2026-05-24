@@ -31,6 +31,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import type { CustomerInteraction, DishDetail, MerchantAnalytics } from "@/types/domain";
 import {
   buildMerchantDashboardMetrics,
@@ -368,6 +369,7 @@ export function MerchantDashboardScreen() {
     profileGaps.length > 0 ||
     unrepliedReviews.length > 0;
   const latestFeedback = interactions[0];
+  const analyticsDisclosure = getDataTrustDisclosure("merchantAnalytics");
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
@@ -408,6 +410,9 @@ export function MerchantDashboardScreen() {
 
         {/* Date Range Selector */}
         <DateRangeSelector selected={dateRange} onSelect={setDateRange} />
+        <AppText variant="micro" tone="muted">
+          {analyticsDisclosure}
+        </AppText>
 
         {/* Primary Metrics */}
         <View style={{ flexDirection: "row", gap: spacing[4] }}>
@@ -523,7 +528,7 @@ export function MerchantDashboardScreen() {
               <AppText variant="h3" style={{ color: palette.white, fontWeight: "800" }}>
                 Manage Menu
               </AppText>
-              <AppText variant="bodySmall" style={{ color: "rgba(255,255,255,0.8)" }}>
+              <AppText variant="bodySmall" style={{ color: palette.inverseTextSecondary }}>
                 Update prices or add new dishes
               </AppText>
             </View>
@@ -581,6 +586,15 @@ export function MerchantDashboardScreen() {
             actionText="Open Promotions"
             onPressIn={() => prefetchMerchantRoute("PromotionList")}
             onPress={() => navigation.navigate("PromotionList")}
+          />
+
+          <ActionCard
+            title="Featured Visitors"
+            description="Pin popular visitor reviews to your public stall page."
+            icon={<Users size={20} color={palette.orange} />}
+            actionText="Manage Visitors"
+            onPressIn={() => prefetchMerchantRoute("FeaturedVisitors")}
+            onPress={() => navigation.navigate("FeaturedVisitors")}
           />
 
           <ActionCard

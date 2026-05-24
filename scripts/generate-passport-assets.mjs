@@ -19,8 +19,32 @@ function makeCanvas(width, height, transparent = true) {
   return image;
 }
 
-function save(image, name) {
-  writeFileSync(path.join(outDir, name), PNG.sync.write(image));
+function resizeToMaxWidth(image, maxWidth) {
+  if (!maxWidth || image.width <= maxWidth) return image;
+
+  const scale = maxWidth / image.width;
+  const width = Math.max(1, Math.round(image.width * scale));
+  const height = Math.max(1, Math.round(image.height * scale));
+  const resized = new PNG({ width, height });
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const sourceX = Math.min(image.width - 1, Math.floor(x / scale));
+      const sourceY = Math.min(image.height - 1, Math.floor(y / scale));
+      const sourceIdx = (image.width * sourceY + sourceX) << 2;
+      const targetIdx = (width * y + x) << 2;
+      resized.data[targetIdx] = image.data[sourceIdx];
+      resized.data[targetIdx + 1] = image.data[sourceIdx + 1];
+      resized.data[targetIdx + 2] = image.data[sourceIdx + 2];
+      resized.data[targetIdx + 3] = image.data[sourceIdx + 3];
+    }
+  }
+
+  return resized;
+}
+
+function save(image, name, maxWidth) {
+  writeFileSync(path.join(outDir, name), PNG.sync.write(resizeToMaxWidth(image, maxWidth)));
 }
 
 function blendPixel(image, x, y, color) {
@@ -287,8 +311,8 @@ function badge(name, fill, rim, motif) {
   save(image, name);
 }
 
-save(passportCover(), "passport-cover-orange.png");
-save(paperSpread(), "passport-paper-spread.png");
+save(passportCover(), "passport-cover-orange.png", 280);
+save(paperSpread(), "passport-paper-spread.png", 280);
 stamp("stamp-cuisine-hawker.png", [228, 73, 26, 210], "rect");
 stamp("stamp-classic-laksa.png", [197, 42, 22, 205], "oval");
 stamp("stamp-hood-chinatown.png", [20, 58, 92, 212], "rect");

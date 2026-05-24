@@ -42,35 +42,37 @@ export function ReviewSuccessCard({
     <View style={[styles.card, { gap: spacing[5] }]}>
       {/* Points earned badge */}
       <LinearGradient
-        colors={["#E8531E", "#F59E0B"]}
+        colors={[palette.orange, palette.amber]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[styles.pointsCard, { borderRadius: componentRadii.card, padding: spacing[5] }]}
       >
-        <View style={[styles.checkCircle, { marginBottom: spacing[3] }]}>
-          <Check color="#E8531E" size={32} strokeWidth={3} />
+        <View
+          style={[styles.checkCircle, { backgroundColor: palette.white, marginBottom: spacing[3] }]}
+        >
+          <Check color={palette.orange} size={32} strokeWidth={3} />
         </View>
 
-        <AppText variant="h1" style={{ color: "#FFFFFF", textAlign: "center", fontWeight: "800" }}>
+        <AppText
+          variant="h1"
+          style={{ color: palette.white, textAlign: "center", fontWeight: "800" }}
+        >
           +{pointsEarned} pts
         </AppText>
         <AppText
           variant="bodySmall"
-          style={{ color: "rgba(255,255,255,0.85)", textAlign: "center" }}
+          style={{ color: palette.inverseTextSecondary, textAlign: "center" }}
         >
           Review submitted!
         </AppText>
 
         {/* Level progress */}
         <View style={[styles.levelRow, { gap: spacing[2], marginTop: spacing[4] }]}>
-          <Trophy color="rgba(255,255,255,0.9)" size={16} />
-          <AppText
-            variant="bodySmall"
-            style={{ color: "rgba(255,255,255,0.9)", fontWeight: "700" }}
-          >
+          <Trophy color={palette.white} size={16} />
+          <AppText variant="bodySmall" style={{ color: palette.white, fontWeight: "700" }}>
             {levelName}
           </AppText>
-          <AppText variant="micro" style={{ color: "rgba(255,255,255,0.7)" }}>
+          <AppText variant="micro" style={{ color: palette.inverseTextMuted }}>
             {totalPoints} pts
           </AppText>
         </View>
@@ -79,7 +81,7 @@ export function ReviewSuccessCard({
           style={[
             styles.progressTrack,
             {
-              backgroundColor: "rgba(255,255,255,0.25)",
+              backgroundColor: palette.inverseSurfaceStrong,
               borderRadius: radii.pill,
               marginTop: spacing[2],
             },
@@ -89,7 +91,7 @@ export function ReviewSuccessCard({
             style={[
               styles.progressFill,
               {
-                backgroundColor: "#FFFFFF",
+                backgroundColor: palette.white,
                 borderRadius: radii.pill,
                 width: `${Math.min(levelProgress * 100, 100)}%`,
               },
@@ -163,7 +165,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
   },

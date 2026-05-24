@@ -235,7 +235,7 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
                 alignItems: "center",
                 justifyContent: "center",
                 borderLeftWidth: 1,
-                borderLeftColor: "rgba(255,255,255,0.2)",
+                borderLeftColor: palette.inverseSurfaceSubtle,
               }}
             >
               <ChevronUp size={18} color={palette.white} />
@@ -250,7 +250,11 @@ export function ComposerBottomBar({ routeDishId, routeVenueId }: ComposerBottomB
             Platform.OS === "ios"
               ? [
                   styles.iosPickerContainer,
-                  { backgroundColor: palette.surface, paddingBottom: insets.bottom },
+                  {
+                    backgroundColor: palette.surface,
+                    paddingBottom: insets.bottom,
+                    shadowColor: palette.mediaBackdrop,
+                  },
                 ]
               : null
           }
@@ -423,7 +427,6 @@ const styles = StyleSheet.create({
     zIndex: 200,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,

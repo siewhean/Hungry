@@ -6,6 +6,7 @@ import { AppText, Screen, Card, Chip, Skeleton, EmptyState } from "@/components/
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import type { MerchantAnalytics } from "@/types/domain";
 
 function formatDelta(current: number, previous: number, options: { decimals?: number } = {}) {
@@ -33,6 +34,7 @@ export function MerchantAnalyticsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [range, setRange] = useState<"today" | "7d" | "30d">("7d");
   const [error, setError] = useState<string | null>(null);
+  const analyticsDisclosure = getDataTrustDisclosure("merchantAnalytics");
 
   const loadAnalytics = useCallback(async () => {
     setError(null);
@@ -129,6 +131,9 @@ export function MerchantAnalyticsScreen() {
           <Chip label="7 Days" selected={range === "7d"} onPress={() => setRange("7d")} />
           <Chip label="30 Days" selected={range === "30d"} onPress={() => setRange("30d")} />
         </View>
+        <AppText variant="micro" tone="muted" style={{ paddingHorizontal: spacing[1] }}>
+          {analyticsDisclosure}
+        </AppText>
 
         <View style={{ gap: spacing[4] }}>
           {/* Key Metrics Grid */}

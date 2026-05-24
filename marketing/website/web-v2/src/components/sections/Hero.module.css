@@ -170,6 +170,13 @@
   justify-content: center;
 }
 
+.previewStage {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
 .phoneWrapper {
   position: absolute;
   inset: 0;
@@ -195,13 +202,23 @@
 
 .foodOrbit {
   position: absolute;
-  inset: 0;
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+  width: min(
+    100%,
+    30rem,
+    calc((100svh - var(--announcement-height) - var(--header-height) - var(--space-8)) * 0.462)
+  );
+  min-width: min(17rem, 100%);
+  aspect-ratio: 390 / 844;
+  translate: -50% -50%;
   pointer-events: none;
 }
 
 .foodCard {
   position: absolute;
-  width: clamp(8rem, 14vw, 13rem);
+  width: clamp(7.5rem, 44%, 13rem);
   aspect-ratio: 1;
   border: 8px solid color-mix(in srgb, var(--color-surface) 82%, transparent);
   border-radius: 50%;
@@ -215,17 +232,17 @@
 }
 
 .foodCard1 {
-  top: 5%;
-  left: -1%;
+  top: -6%;
+  left: -28%;
 }
 
 .foodCard2 {
-  right: 0;
-  top: 6%;
+  right: -28%;
+  top: -4%;
 }
 
 .foodCard3 {
-  left: 0;
+  left: -24%;
   bottom: 8%;
 }
 
@@ -299,6 +316,27 @@
   }
 }
 
+@media (max-width: 979px) {
+  .heroContainer {
+    gap: clamp(var(--space-8), 7vw, var(--space-16));
+  }
+
+  .visualContent {
+    margin-top: var(--space-2);
+    min-height: clamp(38rem, 92vw, 54rem);
+  }
+
+  .phoneWrapper {
+    align-items: flex-start;
+    padding-top: var(--space-2);
+  }
+
+  .foodOrbit {
+    top: var(--space-2);
+    translate: -50% 0;
+  }
+}
+
 @media (max-width: 760px) {
   .heroSection {
     min-height: calc(100svh - var(--announcement-height));
@@ -322,7 +360,7 @@
   }
 
   .visualContent {
-    min-height: min(40rem, calc(100svh - var(--announcement-height) - var(--space-8)));
+    min-height: clamp(46rem, 185vw, 56rem);
   }
 
   .phoneMockup {
@@ -330,13 +368,19 @@
     min-width: min(15.5rem, 82vw);
   }
 
+  .foodOrbit {
+    width: min(82vw, 24rem, calc((100svh - var(--announcement-height) - var(--space-8)) * 0.462));
+    min-width: min(15.5rem, 82vw);
+  }
+
   .foodCard1 {
-    top: 1%;
+    top: -3%;
+    left: -22%;
   }
 
   .foodCard2 {
-    right: 0;
-    top: 4%;
+    right: -22%;
+    top: 0;
   }
 
   .chip1,

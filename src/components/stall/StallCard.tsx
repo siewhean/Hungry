@@ -44,7 +44,7 @@ export function StallCard({ venue, topDish, onPress }: StallCardProps) {
           <View style={styles.infoRow}>
             <Clock3 size={14} color={palette.textMuted} />
             <AppText variant="bodySmall" tone="secondary">
-              {venue.operatingHours}
+              Listed hours: {venue.operatingHours}
             </AppText>
           </View>
           {topDish ? (

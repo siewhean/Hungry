@@ -16,6 +16,7 @@ import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui/AppText";
 import { useFoodCredStore, FOOD_CRED_LEVELS } from "@/store/useFoodCredStore";
 import { resolveFoodCredLevel, resolveLevelProgress } from "@/constants/foodCredConfig";
+import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 
 interface FoodCredBadgeProps {
   size?: "sm" | "md" | "lg";
@@ -29,6 +30,7 @@ export function FoodCredBadge({ size = "md", showPoints = false, style }: FoodCr
   const currentLevel = resolveFoodCredLevel(totalPoints);
   const levelProgress = resolveLevelProgress(totalPoints);
   const isMaxLevel = currentLevel.index >= FOOD_CRED_LEVELS.length - 1;
+  const disclosure = getDataTrustDisclosure("foodCred");
 
   // Animate progress bar fill
   const progressWidth = useSharedValue(0);
@@ -90,6 +92,9 @@ export function FoodCredBadge({ size = "md", showPoints = false, style }: FoodCr
             {totalPoints} pts
           </AppText>
         )}
+        <AppText tone="muted" variant="micro" style={{ marginLeft: spacing[2] }}>
+          {disclosure}
+        </AppText>
       </View>
     );
   }
@@ -121,6 +126,9 @@ export function FoodCredBadge({ size = "md", showPoints = false, style }: FoodCr
           {totalPoints} pts
         </AppText>
       </View>
+      <AppText tone="muted" variant="micro">
+        {disclosure}
+      </AppText>
 
       {/* Progress bar */}
       {!isMaxLevel && nextLevel && (

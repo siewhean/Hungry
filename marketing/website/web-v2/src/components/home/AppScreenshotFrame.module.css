@@ -1,9 +1,9 @@
 .frame {
   position: relative;
   overflow: hidden;
-  border: 10px solid #1a1a1a;
-  background: var(--color-surface);
-  box-shadow: 0 25px 50px -12px rgb(26 46 68 / 0.35);
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   isolation: isolate;
   height: 100%;
   width: auto;
@@ -11,13 +11,15 @@
 }
 
 .portrait {
-  aspect-ratio: 9 / 19.5;
-  border-radius: 44px;
+  aspect-ratio: 71.5 / 149.6;
+  border-radius: 42px;
 }
 
 .landscape {
-  aspect-ratio: 16 / 11;
-  border-radius: var(--radius-xl);
+  aspect-ratio: 4 / 3;
+  border-width: 8px;
+  border-radius: 32px;
+  background: #0f1115;
 }
 
 .screenChrome {
@@ -29,6 +31,22 @@
   gap: 5px;
   transform: translateX(-50%);
   opacity: 0.48;
+}
+
+.portrait .screenChrome {
+  width: 6rem;
+  height: 1.45rem;
+  border-radius: var(--radius-full);
+  background: #000;
+  opacity: 1;
+}
+
+.portrait .screenChrome span {
+  display: none;
+}
+
+.landscape .screenChrome {
+  top: var(--space-4);
 }
 
 .screenChrome span {

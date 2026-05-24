@@ -17,15 +17,17 @@ function protectedRoutesBlock(source: string): string {
   return match[1];
 }
 
-test("production route gates hide prototypes, merchant centre, social, and gamification surfaces", () => {
+test("production route gates expose audited v1 surfaces and hide prototypes and floorplans", () => {
   const flags = read("src/constants/featureFlags.ts");
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
 
   assert.match(flags, /prototypeRoutesEnabled/);
-  assert.match(flags, /gamificationEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /collectionsEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /storiesEnabled: nonProductionSurfaceEnabled/);
-  assert.match(flags, /commentsEnabled: nonProductionSurfaceEnabled/);
+  assert.match(flags, /directMessagesEnabled: true/);
+  assert.match(flags, /gamificationEnabled: true/);
+  assert.match(flags, /collectionsEnabled: true/);
+  assert.match(flags, /storiesEnabled: true/);
+  assert.match(flags, /commentsEnabled: true/);
+  assert.match(flags, /const merchantCentreEnabled = true/);
   assert.match(flags, /oauthProvidersEnabled: nonProductionSurfaceEnabled/);
   assert.match(flags, /floorplansEnabled: false/);
   assert.match(flags, /appEnv !== "production"/);

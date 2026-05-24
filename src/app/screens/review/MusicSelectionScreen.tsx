@@ -299,7 +299,7 @@ export function MusicSelectionScreen() {
                   style={[
                     StyleSheet.absoluteFill,
                     {
-                      backgroundColor: "rgba(0,0,0,0.5)",
+                      backgroundColor: palette.mediaScrim,
                       borderRadius: radii.sm,
                       alignItems: "center",
                       justifyContent: "center",
@@ -429,6 +429,7 @@ export function MusicSelectionScreen() {
             styles.playerContainer,
             {
               backgroundColor: palette.surface,
+              borderColor: palette.inverseSurfaceBarely,
               borderRadius: componentRadii.card,
               shadowColor: palette.navy,
               shadowOpacity: 0.15,
@@ -559,7 +560,6 @@ const styles = StyleSheet.create({
     right: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
   },
   playerRow: {
     flexDirection: "row",

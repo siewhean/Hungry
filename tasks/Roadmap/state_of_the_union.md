@@ -78,7 +78,7 @@ The backlog claimed P2-42 ("removed `useNavigation<any>()` callsites") was **Don
 
 The `.env` file contains a **Mapbox access token** in plaintext:
 ```
-EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN=pk.eyJ1Ijoic2lld2hlYW4i...
+EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN=${EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN}
 ```
 - `.gitignore` includes `.env` — ✅ properly excluded from commits.
 - However, `EXPO_PUBLIC_*` variables are **compiled into the JS bundle** and visible to anyone who inspects the app binary. This is expected for Mapbox public tokens but should be documented as a known exposure.

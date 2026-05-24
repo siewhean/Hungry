@@ -157,7 +157,7 @@ function ReviewCardV2({
                 position: "absolute",
                 top: spacing[3],
                 right: spacing[3],
-                backgroundColor: "rgba(34, 197, 94, 0.9)",
+                backgroundColor: palette.success,
                 paddingHorizontal: spacing[2],
                 paddingVertical: 4,
                 borderRadius: radii.sm,

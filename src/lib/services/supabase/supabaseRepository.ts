@@ -6,11 +6,17 @@ import type {
   BuildingSummary,
   DishDetail,
   DietaryFlag,
+  FoodCredAction,
+  MissionType,
   SearchFilters,
+  StallInteraction,
   StallPost,
   TasteVector,
+  UserFoodCred,
+  UserMissionProgress,
   UserProfile,
   VenueSummary,
+  WeeklyMission,
 } from "@/types/domain";
 
 type Row = Record<string, unknown>;
@@ -20,8 +26,7 @@ type DishPresentation = {
   tasteVector?: TasteVector;
 };
 
-const DEFAULT_AUTH_PROFILE: UserProfile = {
-  id: "supabase-user",
+const DEFAULT_AUTH_PROFILE_BASE: Omit<UserProfile, "id"> = {
   displayName: "Hungry User",
   email: "",
   profileVisibility: "public",
@@ -39,11 +44,18 @@ const DEFAULT_AUTH_PROFILE: UserProfile = {
 };
 
 const DEFAULT_GUEST_PROFILE: UserProfile = {
-  ...DEFAULT_AUTH_PROFILE,
+  ...DEFAULT_AUTH_PROFILE_BASE,
   id: "guest-user",
   displayName: "Guest",
   email: "guest@hungry.local",
 };
+
+function buildAuthenticatedProfile(userId: string): UserProfile {
+  return {
+    ...DEFAULT_AUTH_PROFILE_BASE,
+    id: userId,
+  };
+}
 
 function toString(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value : fallback;
@@ -249,6 +261,51 @@ function mapRpcVenue(row: Row): VenueSummary {
       webUrl: toString(delivery.webUrl, toString(delivery.web_url)),
       affiliateEligible: toBool(delivery.affiliateEligible ?? delivery.affiliate_eligible),
     })),
+  };
+}
+
+function mapUserFoodCred(row: Row): UserFoodCred {
+  return {
+    userId: toString(row.user_id),
+    totalPoints: toNumber(row.total_points),
+    levelIndex: toNumber(row.level_index),
+  };
+}
+
+function mapStallInteraction(row: Row): StallInteraction {
+  return {
+    userId: toString(row.user_id),
+    stallId: toString(row.stall_id),
+    isSaved: toBool(row.is_saved),
+    isTried: toBool(row.is_tried),
+    isReviewed: toBool(row.is_reviewed),
+    savedAt: toString(row.saved_at) || undefined,
+    triedAt: toString(row.tried_at) || undefined,
+    reviewedAt: toString(row.reviewed_at) || undefined,
+  };
+}
+
+function mapWeeklyMission(row: Row): WeeklyMission {
+  return {
+    id: toString(row.id),
+    title: toString(row.title),
+    description: toString(row.description),
+    missionType: toString(row.mission_type) as MissionType,
+    requirementCount: toNumber(row.requirement_count),
+    rewardType: toString(row.reward_type) as WeeklyMission["rewardType"],
+    rewardValue: toNumber(row.reward_value),
+    weekStart: toString(row.week_start),
+    weekEnd: toString(row.week_end),
+    isActive: toBool(row.is_active),
+  };
+}
+
+function mapMissionProgress(row: Row): UserMissionProgress {
+  return {
+    userId: toString(row.user_id),
+    missionId: toString(row.mission_id),
+    currentCount: toNumber(row.current_count),
+    completedAt: toString(row.completed_at) || undefined,
   };
 }
 
@@ -716,9 +773,12 @@ function similarityScoreFallback(dish: DishDetail, tasteProfile: TasteVector): n
 }
 
 const supabaseRepositoryImpl: DataRepository = {
-  getProfile(isAuthenticated: boolean): UserProfile {
+  getProfile(isAuthenticated: boolean, userId?: string | null): UserProfile {
     ensureHydrated();
-    return isAuthenticated ? DEFAULT_AUTH_PROFILE : DEFAULT_GUEST_PROFILE;
+    if (!isAuthenticated || !userId) {
+      return DEFAULT_GUEST_PROFILE;
+    }
+    return buildAuthenticatedProfile(userId);
   },
 
   listBuildings(): BuildingSummary[] {
@@ -807,6 +867,129 @@ const supabaseRepositoryImpl: DataRepository = {
   listStallPosts(): StallPost[] {
     ensureHydrated();
     return cachedStallPosts;
+  },
+
+  async getStallInteraction(userId: string, stallId: string): Promise<StallInteraction | null> {
+    if (!isSupabaseConfigured()) return null;
+    const client = getSupabaseClient();
+    if (!client) return null;
+    const { data, error } = await client
+      .from("user_stall_interactions")
+      .select("user_id,stall_id,is_saved,is_tried,is_reviewed,saved_at,tried_at,reviewed_at")
+      .eq("user_id", userId)
+      .eq("stall_id", stallId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? mapStallInteraction(data as Row) : null;
+  },
+
+  async listStallInteractions(userId: string): Promise<StallInteraction[]> {
+    if (!isSupabaseConfigured()) return [];
+    const client = getSupabaseClient();
+    if (!client) return [];
+    const { data, error } = await client
+      .from("user_stall_interactions")
+      .select("user_id,stall_id,is_saved,is_tried,is_reviewed,saved_at,tried_at,reviewed_at")
+      .eq("user_id", userId);
+    if (error) throw error;
+    return (Array.isArray(data) ? (data as Row[]) : []).map(mapStallInteraction);
+  },
+
+  async getUserFoodCred(userId: string): Promise<UserFoodCred | null> {
+    if (!isSupabaseConfigured()) return null;
+    const client = getSupabaseClient();
+    if (!client) return null;
+    const { data, error } = await client
+      .from("user_food_cred")
+      .select("user_id,total_points,level_index")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? mapUserFoodCred(data as Row) : null;
+  },
+
+  async listActiveMissions(): Promise<WeeklyMission[]> {
+    if (!isSupabaseConfigured()) return [];
+    const client = getSupabaseClient();
+    if (!client) return [];
+    const { data, error } = await client
+      .from("weekly_missions")
+      .select(
+        "id,title,description,mission_type,requirement_count,reward_type,reward_value,week_start,week_end,is_active",
+      )
+      .eq("is_active", true)
+      .order("week_start", { ascending: false });
+    if (error) throw error;
+    return (Array.isArray(data) ? (data as Row[]) : []).map(mapWeeklyMission);
+  },
+
+  async listUserMissionProgress(userId: string): Promise<UserMissionProgress[]> {
+    if (!isSupabaseConfigured()) return [];
+    const client = getSupabaseClient();
+    if (!client) return [];
+    const { data, error } = await client
+      .from("user_mission_progress")
+      .select("user_id,mission_id,current_count,completed_at")
+      .eq("user_id", userId);
+    if (error) throw error;
+    return (Array.isArray(data) ? (data as Row[]) : []).map(mapMissionProgress);
+  },
+
+  async awardFoodCred(
+    action: FoodCredAction,
+    relatedEntityId?: string,
+    relatedEntityType?: "stall" | "review" | "post" | "collection" | "mission",
+    points?: number,
+  ): Promise<{ totalPoints: number; levelIndex: number; pointsAwarded: number } | null> {
+    if (!isSupabaseConfigured()) return null;
+    const client = getSupabaseClient();
+    if (!client) return null;
+    const { data, error } = await client
+      .rpc("award_food_cred", {
+        p_source_action: action,
+        p_related_entity_id: relatedEntityId ?? null,
+        p_related_entity_type: relatedEntityType ?? null,
+        p_points: points ?? null,
+      })
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    const row = data as Row;
+    return {
+      totalPoints: toNumber(row.total_points),
+      levelIndex: toNumber(row.level_index),
+      pointsAwarded: toNumber(row.points_awarded),
+    };
+  },
+
+  async upsertStallInteraction(
+    _userId: string,
+    stallId: string,
+    patch: Partial<Pick<StallInteraction, "isSaved" | "isTried" | "isReviewed">>,
+  ): Promise<StallInteraction | null> {
+    if (!isSupabaseConfigured()) return null;
+    const client = getSupabaseClient();
+    if (!client) return null;
+    const { data, error } = await client
+      .rpc("upsert_stall_interaction", {
+        p_stall_id: stallId,
+        p_is_saved: patch.isSaved ?? null,
+        p_is_tried: patch.isTried ?? null,
+        p_is_reviewed: patch.isReviewed ?? null,
+      })
+      .maybeSingle();
+    if (error) throw error;
+    return data ? mapStallInteraction(data as Row) : null;
+  },
+
+  async incrementMissionProgress(_userId: string, missionType: MissionType): Promise<void> {
+    if (!isSupabaseConfigured()) return;
+    const client = getSupabaseClient();
+    if (!client) return;
+    const { error } = await client.rpc("increment_mission_progress", {
+      p_mission_type: missionType,
+    });
+    if (error) throw error;
   },
 };
 

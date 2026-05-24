@@ -163,6 +163,13 @@ const loadCustomerInboxScreen = () =>
       require("@/app/screens/merchant/CustomerInboxScreen") as typeof import("@/app/screens/merchant/CustomerInboxScreen")
     ).CustomerInboxScreen,
   );
+const loadFeaturedVisitorsScreen = () =>
+  createGuardedScreen(
+    "FeaturedVisitors",
+    (
+      require("@/app/screens/merchant/FeaturedVisitorsScreen") as typeof import("@/app/screens/merchant/FeaturedVisitorsScreen")
+    ).FeaturedVisitorsScreen,
+  );
 const loadBusinessProfileEditorScreen = () =>
   createGuardedScreen(
     "BusinessProfileEditor",
@@ -463,6 +470,11 @@ export function MerchantTabs() {
       <Tab.Screen
         name="CustomerInbox"
         getComponent={loadCustomerInboxScreen}
+        options={{ tabBarStyle: { display: "none" } }}
+      />
+      <Tab.Screen
+        name="FeaturedVisitors"
+        getComponent={loadFeaturedVisitorsScreen}
         options={{ tabBarStyle: { display: "none" } }}
       />
       <Tab.Screen

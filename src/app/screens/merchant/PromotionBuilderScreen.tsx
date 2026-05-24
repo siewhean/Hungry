@@ -600,7 +600,7 @@ export function PromotionBuilderScreen() {
             {renderAudienceToggle(
               "taste_match_users",
               "Taste Match",
-              "AI-targeted users whose taste profile matches your menu",
+              "Users whose taste profile matches your menu",
             )}
           </View>
         </View>

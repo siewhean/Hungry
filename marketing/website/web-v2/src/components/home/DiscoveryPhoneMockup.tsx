@@ -4,11 +4,11 @@ import Image from "next/image";
 import {
   BookOpen,
   Compass,
+  Dices,
   Flame,
   Home,
   Plus,
   Search,
-  Settings,
   User,
   Utensils,
   Zap,
@@ -28,6 +28,11 @@ const filters = [
   { label: "Spicy", icon: Flame },
 ] as const;
 
+const quickBites = [
+  { image: "/images/food/yong-tau-foo-topdown.png", alt: "Yong tau foo quick bite" },
+  { image: "/images/food/satay-topdown.png", alt: "Satay quick bite" },
+] as const;
+
 export function DiscoveryPhoneMockup() {
   return (
     <div className={styles.device} aria-label="Hungry discovery page on iPhone">
@@ -37,7 +42,7 @@ export function DiscoveryPhoneMockup() {
 
       <div className={styles.screen}>
         <div className={styles.statusBar} aria-hidden="true">
-          <span className={styles.time}>12:02</span>
+          <span className={styles.time}>1:42</span>
           <span className={styles.island} />
           <span className={styles.statusIcons}>
             <span className={styles.signalDots}>••••</span>
@@ -46,20 +51,17 @@ export function DiscoveryPhoneMockup() {
           </span>
         </div>
 
-        <div className={styles.content} tabIndex={0} aria-label="Scrollable iPhone discovery feed preview">
+        <div className={styles.content} aria-label="iPhone discovery feed preview">
           <section className={styles.locationBlock}>
             <div>
               <p className={styles.locationEyebrow}>You are at</p>
               <h2>Chinatown</h2>
-              <p>969 places in this area</p>
+              <p>13 places in this area</p>
             </div>
-            <button className={styles.settingsButton} aria-label="Discovery settings">
-              <Settings size={28} strokeWidth={3} />
-            </button>
           </section>
 
           <div className={styles.searchBox}>
-            <span>Dishes, stalls, or hawker centres...</span>
+            <span aria-hidden="true" />
             <Search size={23} strokeWidth={2.5} />
           </div>
 
@@ -87,18 +89,18 @@ export function DiscoveryPhoneMockup() {
           </section>
 
           <div className={styles.actionGrid}>
-            <button className={styles.decideButton}>
+            <div className={styles.decideButton}>
               <span className={styles.actionIcon}>
-                <Zap size={21} fill="currentColor" />
+                <Dices size={21} />
               </span>
               Decide for Me
-            </button>
-            <button className={styles.wheelButton}>
+            </div>
+            <div className={styles.wheelButton}>
               <span className={styles.actionIcon}>
                 <Compass size={22} />
               </span>
               Hungry Wheel
-            </button>
+            </div>
           </div>
 
           <div className={styles.tileGrid}>
@@ -118,16 +120,19 @@ export function DiscoveryPhoneMockup() {
               <span>
                 <Zap size={15} fill="currentColor" /> &lt; 15 min
               </span>
-              <a href="/for-foodies">See all</a>
+              <span className={styles.seeAll}>See all</span>
             </div>
-            <div className={styles.quickGrid}>
-              <Image src="/images/food/yong-tau-foo-topdown.png" alt="" width={150} height={96} />
-              <Image src="/images/food/satay-topdown.png" alt="" width={150} height={96} />
+            <div className={styles.quickGrid} aria-hidden="true">
+              {quickBites.map((item) => (
+                <div className={styles.quickCard} key={item.image}>
+                  <Image src={item.image} alt={item.alt} fill sizes="140px" />
+                </div>
+              ))}
             </div>
           </section>
         </div>
 
-        <nav className={styles.bottomNav} aria-label="App preview navigation">
+        <div className={styles.bottomNav} aria-hidden="true">
           <span>
             <Home size={24} />
             Home
@@ -147,7 +152,7 @@ export function DiscoveryPhoneMockup() {
             <User size={24} />
             Profile
           </span>
-        </nav>
+        </div>
       </div>
     </div>
   );

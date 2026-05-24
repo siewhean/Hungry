@@ -70,6 +70,27 @@ function getSafeProfileId(): string {
   return getProfileStoreState().profile?.id ?? "guest-user";
 }
 
+function isUuidLike(value?: string | null): value is string {
+  return Boolean(
+    value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
+  );
+}
+
+function getAuthenticatedProfileId(): string | null {
+  const profileId = getProfileStoreState().profile?.id ?? null;
+  if (getConfiguredDataSource() === "supabase") {
+    return isUuidLike(profileId) ? profileId : null;
+  }
+  return profileId;
+}
+
+function syncProfileForAuthState(isAuthenticated: boolean, userId?: string | null): void {
+  if (getConfiguredDataSource() === "supabase" && isAuthenticated && !userId) {
+    return;
+  }
+  getProfileStoreState().syncProfile(isAuthenticated, userId);
+}
+
 function clearAccountScopedStores(): void {
   getMerchantStoreState().clearMerchant();
   useLocationStore.getState().resetLocationState();
@@ -119,25 +140,29 @@ export const useSessionStore = create<SessionState>()(
     (set) => ({
       ...initialState,
       completeAuth: (options) => {
-        const profile = getProfileStoreState().profile;
-        const nextUserId = profile?.id ?? null;
+        const nextUserId = getAuthenticatedProfileId();
+        const isSupabaseMode = getConfiguredDataSource() === "supabase";
+        const shouldAuthenticate = !isSupabaseMode || Boolean(nextUserId);
         const previousUserId = useSessionStore.getState().authenticatedUserId;
         if (previousUserId && nextUserId && previousUserId !== nextUserId) {
           clearAccountScopedStores();
         }
         set((state) => ({
           isAuthReady: true,
-          isAuthenticated: true,
-          authenticatedUserId: nextUserId,
+          isAuthenticated: shouldAuthenticate,
+          authenticatedUserId: shouldAuthenticate ? nextUserId : null,
           hasCompletedOnboarding: options?.completedOnboarding ?? state.hasCompletedOnboarding,
           hasSkippedTasteQuiz: options?.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
           sessionExpired: false,
         }));
-        getProfileStoreState().syncProfile(true);
+        syncProfileForAuthState(shouldAuthenticate, nextUserId);
+        if (!shouldAuthenticate) {
+          return;
+        }
         const syncedProfile = getProfileStoreState().profile;
         const profileId = syncedProfile?.id ?? "guest-user";
         identifyPostHogUser(profileId, buildPostHogIdentityProperties());
-        if (options?.trackSignInEvent ?? true) {
+        if (shouldAuthenticate && (options?.trackSignInEvent ?? true)) {
           trackAnalyticsEvent(
             "sign_in_completed",
             {
@@ -195,6 +220,24 @@ export const useSessionStore = create<SessionState>()(
       markAuthReady: () => set({ isAuthReady: true }),
       applyAuthStateFromSession: (session) => {
         const currentlyAuthenticated = useSessionStore.getState().isAuthenticated;
+        const isInvalidSupabaseAuthState =
+          getConfiguredDataSource() === "supabase" &&
+          session.isAuthenticated &&
+          !isUuidLike(session.userId);
+
+        if (isInvalidSupabaseAuthState) {
+          if (currentlyAuthenticated) {
+            clearAccountScopedStores();
+          }
+          set({
+            isAuthenticated: false,
+            isAuthReady: true,
+            authenticatedUserId: null,
+            sessionExpired: false,
+          });
+          syncProfileForAuthState(false, null);
+          return;
+        }
 
         if (session.isAuthenticated) {
           const previousUserId = useSessionStore.getState().authenticatedUserId;
@@ -210,7 +253,7 @@ export const useSessionStore = create<SessionState>()(
             hasSkippedTasteQuiz: session.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
             sessionExpired: false,
           }));
-          getProfileStoreState().syncProfile(true);
+          syncProfileForAuthState(true, session.userId);
 
           const profile = getProfileStoreState().profile;
           const profileId = session.userId ?? profile?.id ?? "guest-user";

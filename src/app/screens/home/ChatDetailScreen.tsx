@@ -263,7 +263,7 @@ export function ChatDetailScreen({ navigation, route }: Props) {
                   variant="micro"
                   style={{
                     alignSelf: msg.sentByCurrentUser ? "flex-end" : "flex-start",
-                    color: msg.sentByCurrentUser ? "rgba(255,255,255,0.72)" : palette.textMuted,
+                    color: msg.sentByCurrentUser ? palette.inverseTextMuted : palette.textMuted,
                     marginTop: spacing[1],
                   }}
                 >

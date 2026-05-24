@@ -1,5 +1,16 @@
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import {
+  Animated,
+  Pressable,
+  ScrollView,
+  View,
+  useWindowDimensions,
+  type GestureResponderEvent,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
@@ -34,7 +45,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestBuildings, getNearestSingaporeArea } from "@/lib/geo/singaporeBuildings";
 import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
 import { getDataRepository } from "@/lib/services/serviceProvider";
-import type { Bite } from "@/lib/services/types";
+import type { Bite, DataRepository } from "@/lib/services/types";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
@@ -86,6 +97,99 @@ type PopularFoodStyleItemData = PopularFoodStyle & {
   imageSource: string | number;
   imageUrl: string | undefined;
 };
+
+type DiscoverStallShowcaseCard = {
+  id: string;
+  venue: VenueSummary;
+  heroDish: DishDetail;
+  imageSource: string | number;
+  products: DishDetail[];
+};
+
+const STALL_SHOWCASE_CARD_LIMIT = 30;
+const STALL_SHOWCASE_IMAGE_REPEAT_BUFFER = 2;
+const STALL_SHOWCASE_FALLBACK_IMAGES = [
+  POPULAR_LAKSA_GRAPHIC,
+  POPULAR_CHICKEN_RICE_GRAPHIC,
+  POPULAR_CHAR_KWAY_TEOW_GRAPHIC,
+  POPULAR_BAK_CHOR_MEE_GRAPHIC,
+] as const;
+
+function buildStallShowcaseCardsFromVenues(
+  venues: VenueSummary[],
+  repository: DataRepository,
+): DiscoverStallShowcaseCard[] {
+  const uniqueVenues = Array.from(new Map(venues.map((venue) => [venue.id, venue])).values());
+
+  return uniqueVenues.flatMap((venue) => {
+    const venueDishes = repository.listDishesByVenue(venue.id);
+    const topDish = repository.getDishById(venue.topDishId);
+    const heroCandidates = [
+      ...(topDish ? [topDish] : []),
+      ...venueDishes.filter((dish) => dish.id !== topDish?.id),
+    ];
+
+    return heroCandidates.map((heroDish, heroIndex) => {
+      const products = [
+        heroDish,
+        ...venueDishes.filter((dish) => dish.id !== heroDish.id),
+      ].slice(0, 4);
+
+      return {
+        id: `${venue.id}-${heroDish.id}-${heroIndex}`,
+        venue,
+        heroDish,
+        imageSource:
+          heroDish.imageUrl ||
+          STALL_SHOWCASE_FALLBACK_IMAGES[heroIndex % STALL_SHOWCASE_FALLBACK_IMAGES.length],
+        products,
+      };
+    });
+  });
+}
+
+function extendStallShowcaseCards(
+  cards: DiscoverStallShowcaseCard[],
+  limit = STALL_SHOWCASE_CARD_LIMIT,
+) {
+  if (!cards.length) {
+    return [];
+  }
+
+  if (cards.length >= limit) {
+    return cards.slice(0, limit);
+  }
+
+  return Array.from({ length: limit }, (_, index) => cards[index % cards.length]);
+}
+
+function getStallShowcaseImageSources(card: DiscoverStallShowcaseCard) {
+  const sources = [
+    card.imageSource,
+    ...card.products.map((product) => product.imageUrl).filter((imageUrl): imageUrl is string =>
+      Boolean(imageUrl),
+    ),
+  ];
+  const uniqueSources = new Map<string, string | number>();
+
+  sources.forEach((source) => {
+    uniqueSources.set(String(source), source);
+  });
+
+  return Array.from(uniqueSources.values());
+}
+
+function buildLoopingStallShowcaseImageSources(
+  card: DiscoverStallShowcaseCard,
+  minimumFrameCount: number,
+) {
+  const sources = getStallShowcaseImageSources(card);
+
+  return Array.from(
+    { length: Math.max(minimumFrameCount, sources.length) },
+    (_, index) => sources[index % sources.length],
+  );
+}
 
 const POPULAR_FOOD_STYLES: readonly PopularFoodStyle[] = [
   {
@@ -356,6 +460,379 @@ function NoFoodSectionEmptyState({
   );
 }
 
+function VerticalStallShowcaseSection({
+  cards,
+  locationLabel,
+  pageHeight,
+  cardWidth,
+  scrollY,
+  onOpenCard,
+  onPrefetchCard,
+  onGestureStart,
+  onGestureEnd,
+  onTopBoundaryPull,
+  onRequestSectionFocus,
+  onSectionLayout,
+}: {
+  cards: DiscoverStallShowcaseCard[];
+  locationLabel: string;
+  pageHeight: number;
+  cardWidth: number;
+  scrollY: Animated.Value;
+  onOpenCard: (card: DiscoverStallShowcaseCard) => void;
+  onPrefetchCard: (card: DiscoverStallShowcaseCard) => void;
+  onGestureStart: () => void;
+  onGestureEnd: () => void;
+  onTopBoundaryPull: (deltaY: number) => void;
+  onRequestSectionFocus: () => void;
+  onSectionLayout: (event: LayoutChangeEvent) => void;
+}) {
+  const { componentRadii, palette, radii, spacing, shadows, typography } = useHungryTheme();
+  const visibleCards = useMemo(() => cards.slice(0, STALL_SHOWCASE_CARD_LIMIT), [cards]);
+  const columnGap = spacing[2];
+  const rowGap = spacing[2];
+  const columnCardWidth = (cardWidth - columnGap) / 2;
+  const headingReserveHeight = typography.h2.lineHeight + spacing[2];
+  const showcaseViewportHeight = Math.max(0, pageHeight - headingReserveHeight);
+  const availableRowHeight = (showcaseViewportHeight - rowGap * 2) / 3;
+  const maxTallCardHeight = columnCardWidth * 1.36;
+  const tallCardHeight = Math.max(0, Math.floor(Math.min(availableRowHeight, maxTallCardHeight)));
+  const rowSnapInterval = tallCardHeight + rowGap;
+  const showcaseRows = useMemo(() => {
+    const rows: DiscoverStallShowcaseCard[][] = [];
+    for (let index = 0; index < visibleCards.length; index += 2) {
+      rows.push(visibleCards.slice(index, index + 2));
+    }
+    return rows;
+  }, [visibleCards]);
+  const cardImageHeight = Math.floor(tallCardHeight * 0.6);
+  const contentTravel = columnCardWidth;
+  const showcaseKey = useMemo(
+    () => visibleCards.map((card, index) => `${card.id}-${index}`).join("|"),
+    [visibleCards],
+  );
+  const showcaseScrollOffsetRef = useRef(0);
+  const isParentScrollLockedRef = useRef(false);
+  const lastTouchYRef = useRef<number | null>(null);
+  const updateParentScrollLock = useCallback(
+    (isLocked: boolean) => {
+      if (isParentScrollLockedRef.current === isLocked) {
+        return;
+      }
+
+      isParentScrollLockedRef.current = isLocked;
+      if (isLocked) {
+        onGestureStart();
+        return;
+      }
+
+      onGestureEnd();
+    },
+    [onGestureEnd, onGestureStart],
+  );
+  const handleShowcaseGestureStart = useCallback(() => {
+    onRequestSectionFocus();
+    updateParentScrollLock(true);
+  }, [onRequestSectionFocus, updateParentScrollLock]);
+  const handleShowcaseGestureEnd = useCallback(() => {
+    lastTouchYRef.current = null;
+    updateParentScrollLock(false);
+  }, [updateParentScrollLock]);
+  const handleShowcaseTouchStart = useCallback(
+    (event: GestureResponderEvent) => {
+      lastTouchYRef.current = event.nativeEvent.pageY;
+      handleShowcaseGestureStart();
+    },
+    [handleShowcaseGestureStart],
+  );
+  const handleShowcaseTouchMove = useCallback(
+    (event: GestureResponderEvent) => {
+      const nextTouchY = event.nativeEvent.pageY;
+      const lastTouchY = lastTouchYRef.current ?? nextTouchY;
+      const deltaY = nextTouchY - lastTouchY;
+      lastTouchYRef.current = nextTouchY;
+
+      if (showcaseScrollOffsetRef.current <= 1 && deltaY > 0) {
+        updateParentScrollLock(false);
+        onTopBoundaryPull(deltaY);
+      }
+    },
+    [onTopBoundaryPull, updateParentScrollLock],
+  );
+  const handleShowcaseScroll = useCallback(
+    (event: { nativeEvent: { contentOffset: { y: number } } }) => {
+      const nextOffsetY = event.nativeEvent.contentOffset.y;
+      showcaseScrollOffsetRef.current = nextOffsetY;
+      updateParentScrollLock(nextOffsetY > 1);
+    },
+    [updateParentScrollLock],
+  );
+
+  useEffect(() => {
+    showcaseScrollOffsetRef.current = 0;
+    updateParentScrollLock(false);
+    scrollY.setValue(0);
+  }, [scrollY, showcaseKey, updateParentScrollLock]);
+
+  return (
+    <View onLayout={onSectionLayout} style={{ gap: spacing[2], height: pageHeight }}>
+      <View
+        style={{
+          alignItems: "center",
+          flexDirection: "row",
+          justifyContent: "space-between",
+        }}
+      >
+        <AppText variant="h2" numberOfLines={1} style={{ color: palette.text, flex: 1 }}>
+          More from {locationLabel}
+        </AppText>
+        <AppText
+          variant="micro"
+          style={{ color: palette.textSecondary, fontWeight: "800", marginLeft: spacing[2] }}
+        >
+          {visibleCards.length} {visibleCards.length === 1 ? "card" : "cards"}
+        </AppText>
+      </View>
+      <Animated.ScrollView
+        key={showcaseKey}
+        directionalLockEnabled
+        nestedScrollEnabled
+        snapToInterval={rowSnapInterval}
+        snapToAlignment="start"
+        decelerationRate="fast"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ gap: rowGap }}
+        style={{ height: showcaseViewportHeight, width: cardWidth }}
+        onTouchStart={handleShowcaseTouchStart}
+        onTouchMove={handleShowcaseTouchMove}
+        onTouchEnd={handleShowcaseGestureEnd}
+        onTouchCancel={handleShowcaseGestureEnd}
+        onScrollBeginDrag={handleShowcaseGestureStart}
+        onScrollEndDrag={handleShowcaseGestureEnd}
+        onMomentumScrollEnd={handleShowcaseGestureEnd}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+          listener: handleShowcaseScroll,
+          useNativeDriver: true,
+        })}
+        scrollEventThrottle={16}
+      >
+        {showcaseRows.map((rowCards, rowIndex) => {
+          const inputRange = [
+            (rowIndex - 3) * rowSnapInterval,
+            (rowIndex - 2) * rowSnapInterval,
+            rowIndex * rowSnapInterval,
+            (rowIndex + 1) * rowSnapInterval,
+          ];
+
+          return (
+            <View
+              key={`stall-showcase-row-${rowIndex}`}
+              style={{
+                flexDirection: "row",
+                gap: columnGap,
+                height: tallCardHeight,
+                width: cardWidth,
+              }}
+            >
+              {rowCards.map((card, columnIndex) => {
+                const imageInputStart = Math.max(0, (rowIndex - 3) * rowSnapInterval);
+                const imageInputEnd = Math.max(rowSnapInterval, (rowIndex + 1) * rowSnapInterval);
+                const imageScrollStepCount = Math.max(
+                  1,
+                  Math.round((imageInputEnd - imageInputStart) / rowSnapInterval),
+                );
+                const imageTravel = columnCardWidth * imageScrollStepCount;
+                const imageFrameCount = imageScrollStepCount + STALL_SHOWCASE_IMAGE_REPEAT_BUFFER;
+                const imageRailSources = buildLoopingStallShowcaseImageSources(
+                  card,
+                  imageFrameCount,
+                );
+                const direction = columnIndex === 0 ? -1 : 1;
+                const imageTranslateX = scrollY.interpolate({
+                  inputRange: [imageInputStart, imageInputEnd],
+                  outputRange:
+                    columnIndex === 0 ? [0, -imageTravel] : [-imageTravel, 0],
+                  extrapolate: "clamp",
+                });
+                const translateX = scrollY.interpolate({
+                  inputRange,
+                  outputRange: [-contentTravel * direction, 0, 0, contentTravel * direction],
+                  extrapolate: "clamp",
+                });
+                const opacity = scrollY.interpolate({
+                  inputRange,
+                  outputRange: [0.42, 1, 1, 0.42],
+                  extrapolate: "clamp",
+                });
+
+                return (
+                  <Pressable
+                    key={`${card.id}-${rowIndex}-${columnIndex}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${card.venue.name} details`}
+                    onPressIn={() => onPrefetchCard(card)}
+                    onPress={() => onOpenCard(card)}
+                    style={[
+                      shadows.card,
+                      {
+                        backgroundColor: palette.surface,
+                        borderColor: palette.border,
+                        borderRadius: componentRadii.card,
+                        borderWidth: 1,
+                        height: tallCardHeight,
+                        overflow: "hidden",
+                        width: columnCardWidth,
+                      },
+                    ]}
+                  >
+                    <Animated.View
+                      style={{
+                        height: "100%",
+                        opacity,
+                        transform: [{ translateX }],
+                        width: "100%",
+                      }}
+                    >
+                      <View
+                        style={{
+                          backgroundColor: palette.surfaceRaised,
+                          height: cardImageHeight,
+                          overflow: "hidden",
+                          width: "100%",
+                        }}
+                      >
+                        <Animated.View
+                          style={{
+                            flexDirection: "row",
+                            height: "100%",
+                            transform: [{ translateX: imageTranslateX }],
+                            width: columnCardWidth * imageRailSources.length,
+                          }}
+                        >
+                          {imageRailSources.map((imageSource, imageIndex) => (
+                            <Image
+                              key={`${card.id}-image-${imageIndex}`}
+                              source={
+                                typeof imageSource === "string" ? { uri: imageSource } : imageSource
+                              }
+                              style={{ height: "100%", width: columnCardWidth }}
+                              contentFit="cover"
+                              cachePolicy="memory-disk"
+                              transition={120}
+                            />
+                          ))}
+                        </Animated.View>
+                        <View
+                          style={{
+                            backgroundColor: palette.imageLabelSurface,
+                            borderColor: palette.imageLabelBorder,
+                            borderRadius: radii.pill,
+                            borderWidth: 1,
+                            left: spacing[2],
+                            paddingHorizontal: spacing[1.5],
+                            paddingVertical: spacing[0.5],
+                            position: "absolute",
+                            top: spacing[2],
+                          }}
+                        >
+                          <AppText
+                            variant="micro"
+                            style={{ color: palette.textOnDark, fontWeight: "900" }}
+                          >
+                            {card.venue.isOpen ? "OPEN" : "CLOSED"}
+                          </AppText>
+                        </View>
+                        <View
+                          style={{
+                            alignItems: "center",
+                            backgroundColor: palette.imageLabelSurface,
+                            borderColor: palette.imageLabelBorder,
+                            borderRadius: radii.pill,
+                            borderWidth: 1,
+                            bottom: spacing[2],
+                            flexDirection: "row",
+                            gap: spacing[0.5],
+                            paddingHorizontal: spacing[1.5],
+                            paddingVertical: spacing[0.5],
+                            position: "absolute",
+                            right: spacing[2],
+                          }}
+                        >
+                          <Star color={palette.amber} size={11} fill={palette.amber} />
+                          <AppText
+                            variant="micro"
+                            style={{ color: palette.textOnDark, fontWeight: "900" }}
+                          >
+                            {card.heroDish.rating.toFixed(1)}
+                          </AppText>
+                        </View>
+                      </View>
+                      <View style={{ flex: 1, gap: spacing[1.5], padding: spacing[2] }}>
+                        <View
+                          style={{
+                            alignItems: "center",
+                            flexDirection: "row",
+                            gap: spacing[1],
+                          }}
+                        >
+                          <View style={{ flex: 1, gap: spacing[0.5] }}>
+                            <AppText
+                              variant="bodySmall"
+                              numberOfLines={1}
+                              style={{ color: palette.text, fontWeight: "900" }}
+                            >
+                              {card.venue.name}
+                            </AppText>
+                            <AppText
+                              variant="micro"
+                              numberOfLines={1}
+                              style={{ color: palette.textSecondary }}
+                            >
+                              {card.venue.unitNumber}
+                            </AppText>
+                          </View>
+                          <ChevronRight color={palette.textMuted} size={16} />
+                        </View>
+                        <View style={{ gap: spacing[0.5] }}>
+                          <View
+                            style={{
+                              alignItems: "center",
+                              flexDirection: "row",
+                              justifyContent: "space-between",
+                            }}
+                          >
+                            <AppText
+                              variant="bodySmall"
+                              numberOfLines={1}
+                              style={{ color: palette.text, flex: 1, fontWeight: "800" }}
+                            >
+                              {card.heroDish.name}
+                            </AppText>
+                            <AppText
+                              variant="price"
+                              style={{
+                                color: palette.orange,
+                                fontWeight: "800",
+                                marginLeft: spacing[1],
+                              }}
+                            >
+                              S${card.heroDish.price.toFixed(2)}
+                            </AppText>
+                          </View>
+                        </View>
+                      </View>
+                    </Animated.View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          );
+        })}
+      </Animated.ScrollView>
+    </View>
+  );
+}
+
 function HalalLogoIcon({ color }: { color: string }) {
   return (
     <AppText
@@ -375,8 +852,9 @@ export function DiscoverHomeScreen() {
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute();
   const repository = getDataRepository();
-  const { width: screenWidth } = useWindowDimensions();
+  const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   const {
+    componentSizes,
     componentRadii,
     palette,
     radii,
@@ -387,6 +865,8 @@ export function DiscoverHomeScreen() {
     colorScheme,
     typography,
   } = useHungryTheme();
+  const insets = useSafeAreaInsets();
+  const [discoverViewportHeight, setDiscoverViewportHeight] = useState(screenHeight);
   const discoverSectionGap = spacing[4];
   const discoverContentGap = spacing[2];
   const decisionCardGap = discoverContentGap;
@@ -411,6 +891,12 @@ export function DiscoverHomeScreen() {
     typography.bodyBold.lineHeight +
     typography.micro.lineHeight +
     typography.price.lineHeight;
+  const bottomTabVisibleHeight = componentSizes.bottomTabBar + Math.max(insets.bottom, spacing[2]);
+  const stallShowcasePageHeight =
+    Math.max(0, (discoverViewportHeight || screenHeight) - bottomTabVisibleHeight) ||
+    discoverViewportHeight ||
+    screenHeight;
+  const stallShowcaseCardWidth = screenWidth - semanticSpacing.screenEdge * 2;
   const edgeToEdgeHorizontalScrollStyle = {
     width: screenWidth,
   };
@@ -526,6 +1012,20 @@ export function DiscoverHomeScreen() {
     [deferredDiscoverChipIds],
   );
   const isDiscoverFiltering = deferredDiscoverChipIds.length > 0;
+  const handleDiscoverViewportLayout = useCallback((event: LayoutChangeEvent) => {
+    const nextHeight = event.nativeEvent.layout.height;
+    if (nextHeight <= 0) {
+      return;
+    }
+
+    setDiscoverViewportHeight((currentHeight) =>
+      Math.abs(currentHeight - nextHeight) > 1 ? nextHeight : currentHeight,
+    );
+  }, []);
+
+  useEffect(() => {
+    setDiscoverViewportHeight(screenHeight);
+  }, [screenHeight]);
 
   const areaBuildings = useMemo(
     () => getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 3, 14),
@@ -600,6 +1100,82 @@ export function DiscoverHomeScreen() {
     };
   }, [resetIdleTimer]);
   const discoverScrollRef = useRef<ScrollView | null>(null);
+  const discoverScrollOffsetYRef = useRef(0);
+  const discoverScrollDirectionRef = useRef<"up" | "down" | null>(null);
+  const stallShowcaseTopYRef = useRef(0);
+  const stallShowcaseScrollY = useRef(new Animated.Value(0)).current;
+  const [isStallShowcaseGestureActive, setIsStallShowcaseGestureActive] = useState(false);
+  const handleDiscoverScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const nextOffsetY = event.nativeEvent.contentOffset.y;
+      const previousOffsetY = discoverScrollOffsetYRef.current;
+      if (nextOffsetY > previousOffsetY + 1) {
+        discoverScrollDirectionRef.current = "down";
+      } else if (nextOffsetY < previousOffsetY - 1) {
+        discoverScrollDirectionRef.current = "up";
+      }
+
+      discoverScrollOffsetYRef.current = nextOffsetY;
+      resetIdleTimer();
+    },
+    [resetIdleTimer],
+  );
+  const handleStallShowcaseLayout = useCallback((event: LayoutChangeEvent) => {
+    stallShowcaseTopYRef.current = event.nativeEvent.layout.y;
+  }, []);
+  const focusStallShowcaseSection = useCallback((animated = false) => {
+    const sectionTopY = stallShowcaseTopYRef.current;
+    if (sectionTopY <= 0) {
+      return;
+    }
+
+    if (Math.abs(discoverScrollOffsetYRef.current - sectionTopY) <= 1) {
+      return;
+    }
+
+    discoverScrollOffsetYRef.current = sectionTopY;
+    discoverScrollRef.current?.scrollTo({ x: 0, y: sectionTopY, animated });
+  }, []);
+  const handleDiscoverScrollEnd = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const nextOffsetY = event.nativeEvent.contentOffset.y;
+      const sectionTopY = stallShowcaseTopYRef.current;
+      discoverScrollOffsetYRef.current = nextOffsetY;
+      resetIdleTimer();
+
+      if (
+        discoverScrollDirectionRef.current !== "down" ||
+        sectionTopY <= 0 ||
+        nextOffsetY < sectionTopY - stallShowcasePageHeight / 2 ||
+        nextOffsetY >= sectionTopY - 1
+      ) {
+        return;
+      }
+
+      focusStallShowcaseSection(true);
+    },
+    [focusStallShowcaseSection, resetIdleTimer, stallShowcasePageHeight],
+  );
+  const handleStallShowcaseGestureStart = useCallback(() => {
+    resetIdleTimer();
+    focusStallShowcaseSection();
+    setIsStallShowcaseGestureActive(true);
+  }, [focusStallShowcaseSection, resetIdleTimer]);
+  const handleStallShowcaseGestureEnd = useCallback(() => {
+    resetIdleTimer();
+    setIsStallShowcaseGestureActive(false);
+  }, [resetIdleTimer]);
+  const handleStallShowcaseTopBoundaryPull = useCallback(
+    (deltaY: number) => {
+      resetIdleTimer();
+      setIsStallShowcaseGestureActive(false);
+      const nextParentOffsetY = Math.max(0, discoverScrollOffsetYRef.current - deltaY);
+      discoverScrollDirectionRef.current = "up";
+      discoverScrollOffsetYRef.current = nextParentOffsetY;
+      discoverScrollRef.current?.scrollTo({ x: 0, y: nextParentOffsetY, animated: false });
+    },
+    [resetIdleTimer],
+  );
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("tabPress", (event) => {
@@ -611,6 +1187,7 @@ export function DiscoverHomeScreen() {
         y: 0,
         animated: true,
       });
+      discoverScrollOffsetYRef.current = 0;
     });
 
     return unsubscribe;
@@ -854,6 +1431,25 @@ export function DiscoverHomeScreen() {
         : unfilteredAreaStallCards,
     [isDiscoverFiltering, matchesDiscoverChipSelection, unfilteredAreaStallCards],
   );
+  const unfilteredStallShowcaseCards = useMemo(() => {
+    const showcaseVenuePool = [...areaVenues, ...allDiscoverVenues];
+    return buildStallShowcaseCardsFromVenues(showcaseVenuePool, repository);
+  }, [allDiscoverVenues, areaVenues, repository]);
+  const stallShowcaseCards = useMemo(() => {
+    const filteredCards = isDiscoverFiltering
+      ? unfilteredStallShowcaseCards.filter(({ venue, heroDish, products }) =>
+          products.some((product) =>
+            matchesDiscoverChipSelection(product, [
+              venue.name,
+              heroDish.name,
+              ...product.tasteTags,
+            ]),
+          ),
+        )
+      : unfilteredStallShowcaseCards;
+
+    return extendStallShowcaseCards(filteredCards);
+  }, [isDiscoverFiltering, matchesDiscoverChipSelection, unfilteredStallShowcaseCards]);
   const discoverAreaCount =
     areaVenues.length || areaBuildings.length || repository.listBuildings().length;
   const handleDecideForMe = () => {
@@ -1025,16 +1621,76 @@ export function DiscoverHomeScreen() {
     );
   }, [unfilteredEditorChoiceCards, unfilteredQuickBiteCards, unfilteredTrendingCards]);
 
+  const prefetchStallShowcaseCard = useCallback(
+    (card: DiscoverStallShowcaseCard) => {
+      prefetchStallDetail(card.venue.id, repository);
+      prefetchDishDetail(card.heroDish.id, repository);
+      prefetchImages(
+        card.products.map((product) => product.imageUrl),
+        4,
+      );
+      if (isUserMode) {
+        preloadRoute(navigation, "StallDetail", { venueId: card.venue.id });
+        return;
+      }
+
+      preloadRoute(navigation, "MapZoomedIn", { buildingId: card.venue.buildingId });
+    },
+    [isUserMode, navigation, repository],
+  );
+
+  const openStallShowcaseCard = useCallback(
+    (card: DiscoverStallShowcaseCard) => {
+      scheduleIdleWork(
+        () => {
+          recordTasteInteraction({
+            type: "dish_result_click",
+            surface: "discover",
+            dish: card.heroDish,
+            dishId: card.heroDish.id,
+            buttonId: "vertical_stall_showcase_card",
+          });
+        },
+        { timeout: 500, fallbackDelayMs: 80 },
+      );
+
+      if (isUserMode) {
+        navigation.navigate("StallDetail", { venueId: card.venue.id });
+        return;
+      }
+
+      navigation.navigate("MapZoomedIn", { buildingId: card.venue.buildingId });
+    },
+    [isUserMode, navigation, recordTasteInteraction],
+  );
+
+  useEffect(() => {
+    const cancelPrefetch = scheduleIdleWork(
+      () => {
+        stallShowcaseCards.slice(0, 2).forEach(prefetchStallShowcaseCard);
+      },
+      { timeout: 700, fallbackDelayMs: 160 },
+    );
+
+    return () => {
+      cancelPrefetch();
+    };
+  }, [prefetchStallShowcaseCard, stallShowcaseCards]);
+
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
       <ScrollView
         ref={discoverScrollRef}
         showsVerticalScrollIndicator={false}
+        scrollEnabled={!isStallShowcaseGestureActive}
+        onLayout={handleDiscoverViewportLayout}
         contentContainerStyle={{
           gap: discoverSectionGap,
           paddingHorizontal: semanticSpacing.screenEdge,
         }}
-        onScroll={resetIdleTimer}
+        onScroll={handleDiscoverScroll}
+        onScrollEndDrag={handleDiscoverScrollEnd}
+        onMomentumScrollEnd={handleDiscoverScrollEnd}
         scrollEventThrottle={16}
       >
         {/* Dynamic Location Header */}
@@ -1219,7 +1875,7 @@ export function DiscoverHomeScreen() {
             ]}
           >
             <LinearGradient
-              colors={["#E8531E", "#F59E0B"]}
+              colors={[palette.orange, palette.amber]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={{
@@ -1235,7 +1891,7 @@ export function DiscoverHomeScreen() {
               <View
                 style={{
                   alignItems: "center",
-                  backgroundColor: "rgba(255,255,255,0.2)",
+                  backgroundColor: palette.inverseSurfaceSubtle,
                   borderRadius: radii.pill,
                   height: decisionCardIconSize,
                   justifyContent: "center",
@@ -1275,7 +1931,7 @@ export function DiscoverHomeScreen() {
               shadows.card,
               {
                 alignItems: "center",
-                backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.08)" : palette.navy,
+                backgroundColor: themeTints.isDark ? palette.inverseSurfaceFaint : palette.navy,
                 borderRadius: componentRadii.button,
                 flexDirection: "row",
                 gap: decisionCardInnerGap,
@@ -1290,7 +1946,7 @@ export function DiscoverHomeScreen() {
             <View
               style={{
                 alignItems: "center",
-                backgroundColor: "rgba(255,255,255,0.15)",
+                backgroundColor: palette.inverseSurfaceSoft,
                 borderRadius: radii.pill,
                 height: decisionCardIconSize,
                 justifyContent: "center",
@@ -1337,7 +1993,7 @@ export function DiscoverHomeScreen() {
               style={[
                 shadows.card,
                 {
-                  backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.08)" : palette.bgSoft,
+                  backgroundColor: themeTints.isDark ? palette.inverseSurfaceFaint : palette.bgSoft,
                   borderRadius: componentRadii.card,
                   flex: 1,
                   overflow: "hidden",
@@ -1354,7 +2010,7 @@ export function DiscoverHomeScreen() {
                   cachePolicy="memory-disk"
                 />
                 <LinearGradient
-                  colors={["rgba(15,23,42,0)", "rgba(15,23,42,0.68)"]}
+                  colors={[palette.imageOverlayGradientStart, palette.imageOverlayGradientEnd]}
                   style={{
                     bottom: 0,
                     left: 0,
@@ -1366,8 +2022,8 @@ export function DiscoverHomeScreen() {
                   <View
                     style={{
                       alignSelf: "flex-start",
-                      backgroundColor: "rgba(15, 23, 42, 0.34)",
-                      borderColor: "rgba(255, 255, 255, 0.16)",
+                      backgroundColor: palette.imageLabelSurface,
+                      borderColor: palette.imageLabelBorder,
                       borderRadius: radii.sm,
                       borderWidth: 1,
                       paddingHorizontal: spacing[2],
@@ -1393,7 +2049,7 @@ export function DiscoverHomeScreen() {
               style={[
                 shadows.card,
                 {
-                  backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.08)" : palette.bgSoft,
+                  backgroundColor: themeTints.isDark ? palette.inverseSurfaceFaint : palette.bgSoft,
                   borderRadius: componentRadii.card,
                   flex: 1,
                   overflow: "hidden",
@@ -1410,7 +2066,7 @@ export function DiscoverHomeScreen() {
                   cachePolicy="memory-disk"
                 />
                 <LinearGradient
-                  colors={["rgba(15,23,42,0)", "rgba(15,23,42,0.68)"]}
+                  colors={[palette.imageOverlayGradientStart, palette.imageOverlayGradientEnd]}
                   style={{
                     bottom: 0,
                     left: 0,
@@ -1422,8 +2078,8 @@ export function DiscoverHomeScreen() {
                   <View
                     style={{
                       alignSelf: "flex-start",
-                      backgroundColor: "rgba(15, 23, 42, 0.34)",
-                      borderColor: "rgba(255, 255, 255, 0.16)",
+                      backgroundColor: palette.imageLabelSurface,
+                      borderColor: palette.imageLabelBorder,
                       borderRadius: radii.sm,
                       borderWidth: 1,
                       paddingHorizontal: spacing[2],
@@ -1452,7 +2108,9 @@ export function DiscoverHomeScreen() {
               style={[
                 shadows.card,
                 {
-                  backgroundColor: themeTints.isDark ? "rgba(255,255,255,0.05)" : palette.bgSoft,
+                  backgroundColor: themeTints.isDark
+                    ? palette.inverseSurfaceBarely
+                    : palette.bgSoft,
                   borderRadius: componentRadii.button,
                   padding: spacing[4],
                   flexDirection: "row",
@@ -2167,6 +2825,23 @@ export function DiscoverHomeScreen() {
             )}
           </View>
         </View>
+
+        {stallShowcaseCards.length ? (
+          <VerticalStallShowcaseSection
+            cards={stallShowcaseCards}
+            locationLabel={discoverLocationLabel}
+            pageHeight={stallShowcasePageHeight}
+            cardWidth={stallShowcaseCardWidth}
+            scrollY={stallShowcaseScrollY}
+            onOpenCard={openStallShowcaseCard}
+            onPrefetchCard={prefetchStallShowcaseCard}
+            onGestureStart={handleStallShowcaseGestureStart}
+            onGestureEnd={handleStallShowcaseGestureEnd}
+            onTopBoundaryPull={handleStallShowcaseTopBoundaryPull}
+            onRequestSectionFocus={focusStallShowcaseSection}
+            onSectionLayout={handleStallShowcaseLayout}
+          />
+        ) : null}
       </ScrollView>
     </Screen>
   );

@@ -1,7 +1,6 @@
-export const metadata = {
-  title: "Terms of Service | Hungry",
-  description: "Terms of Service for the Hungry app.",
-};
+import { routeMetadata } from "@/app/seo";
+
+export const metadata = routeMetadata("/terms");
 
 const sections = [
   {

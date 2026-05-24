@@ -349,7 +349,10 @@ export function DecideForMeResultScreen() {
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
       {/* Navigation Overlay */}
       <View style={[styles.navOverlay, { top: insets.top, zIndex: 10 }]}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.navBtn}>
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={[styles.navBtn, { backgroundColor: palette.surfaceTranslucent }]}
+        >
           <ChevronLeft color={palette.text} size={24} />
         </Pressable>
         <AppText variant="h3" style={{ flex: 1, textAlign: "center", marginRight: 40 }}>
@@ -373,7 +376,7 @@ export function DecideForMeResultScreen() {
             contentFit="cover"
           />
           <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.2)", palette.bg]}
+            colors={["transparent", palette.mediaScrimSubtle, palette.bg]}
             style={StyleSheet.absoluteFill}
           />
         </Animated.View>
@@ -465,7 +468,16 @@ export function DecideForMeResultScreen() {
       </Animated.ScrollView>
 
       {/* Action Dock */}
-      <View style={[styles.actionDock, { paddingBottom: Math.max(insets.bottom, spacing[4]) }]}>
+      <View
+        style={[
+          styles.actionDock,
+          {
+            backgroundColor: palette.surfaceTranslucent,
+            borderTopColor: palette.inverseSurfaceBarely,
+            paddingBottom: Math.max(insets.bottom, spacing[4]),
+          },
+        ]}
+      >
         <Button label="Add to cart" style={{ flex: 1 }} onPress={handleAddToCart} />
       </View>
     </View>
@@ -486,7 +498,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.9)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -500,8 +511,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 16,
-    backgroundColor: "rgba(255,255,255,0.95)",
     borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.05)",
   },
 });

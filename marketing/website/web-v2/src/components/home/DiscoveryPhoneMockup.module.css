@@ -3,21 +3,18 @@
   container-type: inline-size;
   width: 100%;
   height: 100%;
-  aspect-ratio: 390 / 844;
-  border: 8px solid #101010;
-  border-radius: clamp(2.4rem, 4.8vw, 4.2rem);
+  aspect-ratio: 71.5 / 149.6;
+  border: 4px solid #101010;
+  border-radius: clamp(2rem, 4.2vw, 3.75rem);
   background: #101010;
-  box-shadow:
-    0 2px 0 rgb(255 255 255 / 0.18) inset,
-    0 34px 72px rgb(20 31 46 / 0.26);
   color: var(--color-text-primary);
 }
 
 .device::before {
   content: "";
   position: absolute;
-  inset: -2px;
-  border: 2px solid rgb(255 255 255 / 0.22);
+  inset: -1px;
+  border: 1px solid rgb(255 255 255 / 0.24);
   border-radius: inherit;
   pointer-events: none;
 }
@@ -26,8 +23,8 @@
 .sideButtonMid,
 .sideButtonLow {
   position: absolute;
-  left: -12px;
-  width: 5px;
+  left: -8px;
+  width: 3px;
   border-radius: 999px 0 0 999px;
   background: #2c2c2c;
   box-shadow: -1px 0 0 rgb(255 255 255 / 0.22) inset;
@@ -49,12 +46,12 @@
 }
 
 .screen {
-  --phone-unit: clamp(0.68rem, 3.72cqw, 1rem);
+  --phone-unit: clamp(0.58rem, 3.62cqw, 0.99rem);
 
   position: absolute;
-  inset: 10px;
+  inset: 5px;
   overflow: hidden;
-  border-radius: clamp(2rem, 4vw, 3.55rem);
+  border-radius: clamp(1.78rem, 3.7vw, 3.35rem);
   background: var(--color-white);
   box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08) inset;
   font-size: var(--phone-unit);
@@ -69,8 +66,8 @@
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  height: 4.4em;
-  padding: 0 2.3em;
+  height: 4.15em;
+  padding: 0 1.82em;
   background: linear-gradient(180deg, var(--color-white) 74%, rgb(255 255 255 / 0.82));
 }
 
@@ -81,8 +78,8 @@
 }
 
 .island {
-  width: 7.2em;
-  height: 2.15em;
+  width: 6.9em;
+  height: 2.04em;
   border-radius: 999px;
   background: #000;
 }
@@ -141,30 +138,13 @@
 
 .content {
   height: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 5.2em 1.75em 6.8em;
-  scroll-padding: 5.2em 0 6.8em;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-.content::-webkit-scrollbar {
-  display: none;
-}
-
-.content:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--color-primary) 62%, transparent);
-  outline-offset: -0.45em;
+  overflow: hidden;
+  padding: 4.52em 1.3em 5.55em;
+  pointer-events: none;
 }
 
 .locationBlock {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.2em;
-  margin-bottom: 1.3em;
+  margin-bottom: 0.92em;
 }
 
 .locationEyebrow {
@@ -179,46 +159,28 @@
 
 .locationBlock h2 {
   margin: 0;
-  font-size: 2.05em;
+  font-size: 2.18em;
   line-height: 0.98;
 }
 
 .locationBlock p:last-child {
-  margin: 0.45em 0 0;
+  margin: 0.32em 0 0;
   color: var(--color-text-secondary);
-  font-size: 1.05em;
+  font-size: 1.13em;
   font-weight: 800;
-}
-
-.settingsButton {
-  display: inline-grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 3.7em;
-  height: 3.7em;
-  border: 10px solid color-mix(in srgb, var(--color-text-muted) 20%, transparent);
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--color-text-muted) 48%, var(--color-white));
-  color: var(--color-white);
-  box-shadow: var(--shadow-lg);
-}
-
-.settingsButton svg {
-  width: 1.7em;
-  height: 1.7em;
 }
 
 .searchBox {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 3.9em;
-  margin-bottom: 1em;
-  padding: 0 1.2em;
+  height: 3.62em;
+  margin-bottom: 0.68em;
+  padding: 0 1.22em;
   border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
   border-radius: 1.7em;
   color: var(--color-text-secondary);
-  font-size: 1em;
+  font-size: 1.04em;
   font-weight: 700;
   box-shadow: 0 1px 6px rgb(26 46 68 / 0.05) inset;
 }
@@ -239,17 +201,10 @@
 
 .filterRow {
   display: flex;
-  gap: 0.7em;
-  margin-bottom: 1.35em;
-  overflow-x: auto;
-  overflow-y: hidden;
+  gap: 0.5em;
+  margin-bottom: 0.9em;
+  overflow: hidden;
   padding-bottom: 0.05em;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-}
-
-.filterRow::-webkit-scrollbar {
-  display: none;
 }
 
 .filterChip {
@@ -257,15 +212,14 @@
   align-items: center;
   gap: 0.5em;
   min-width: max-content;
-  min-height: 3em;
-  padding: 0 1em;
+  min-height: 2.78em;
+  padding: 0 0.86em;
   border: 1px solid color-mix(in srgb, var(--color-border) 84%, transparent);
   border-radius: var(--radius-full);
   color: var(--color-text-secondary);
-  font-size: 1.05em;
+  font-size: 1em;
   font-weight: 800;
   background: var(--color-white);
-  scroll-snap-align: start;
 }
 
 .popularSection h3,
@@ -278,16 +232,16 @@
 .popularGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.85em;
-  margin-top: 1em;
+  gap: 0.5em;
+  margin-top: 0.68em;
 }
 
 .dishItem {
   display: grid;
   justify-items: center;
-  gap: 0.42em;
+  gap: 0.45em;
   color: var(--color-text-primary);
-  font-size: 0.92em;
+  font-size: 0.98em;
   font-weight: 900;
   line-height: 1.08;
   text-align: center;
@@ -295,7 +249,7 @@
 
 .dishImage {
   position: relative;
-  width: 4.25em;
+  width: 4.08em;
   aspect-ratio: 1;
   overflow: hidden;
   border: 3px solid color-mix(in srgb, var(--color-border) 75%, transparent);
@@ -315,8 +269,8 @@
 .actionGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.7em;
-  margin-top: 1.25em;
+  gap: 0.58em;
+  margin-top: 0.82em;
 }
 
 .decideButton,
@@ -324,12 +278,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.7em;
-  min-height: 4.35em;
+  gap: 0.55em;
+  min-height: 4.1em;
   border: 0;
   border-radius: 1.35em;
   color: var(--color-white);
-  font-size: 1.06em;
+  font-size: 1.04em;
   font-weight: 900;
   letter-spacing: 0;
 }
@@ -345,8 +299,8 @@
 .actionIcon {
   display: inline-grid;
   place-items: center;
-  width: 2.25em;
-  height: 2.25em;
+  width: 2.15em;
+  height: 2.15em;
   border-radius: var(--radius-full);
   background: rgb(255 255 255 / 0.2);
 }
@@ -359,15 +313,15 @@
 .tileGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75em;
-  margin-top: 0.9em;
+  gap: 0.58em;
+  margin-top: 0.62em;
 }
 
 .categoryTile {
   position: relative;
   display: flex;
   align-items: end;
-  min-height: 6.45em;
+  min-height: 5.95em;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
   border-radius: 1.15em;
@@ -390,22 +344,22 @@
   position: relative;
   z-index: 1;
   max-width: 9ch;
-  padding: 0.8em 0.95em;
+  padding: 0.84em 0.9em;
   color: var(--color-white);
-  font-size: 1em;
+  font-size: 1.08em;
   font-weight: 900;
   line-height: 1.1;
 }
 
 .quickBites {
-  margin-top: 1.7em;
+  margin-top: 0.86em;
 }
 
 .sectionHeader {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 0.7em;
+  gap: 0.44em;
 }
 
 .sectionHeader span {
@@ -413,20 +367,20 @@
   align-items: center;
   gap: 0.25em;
   border-radius: var(--radius-full);
-  padding: 0.35em 0.8em;
+  padding: 0.32em 0.66em;
   background: var(--color-success);
   color: var(--color-white);
   font-family: var(--font-mono);
-  font-size: 0.82em;
+  font-size: 0.78em;
   font-weight: 500;
   text-transform: uppercase;
 }
 
-.sectionHeader a {
+.seeAll {
   margin-left: auto;
   color: var(--color-primary);
   font-family: var(--font-mono);
-  font-size: 0.88em;
+  font-size: 0.9em;
   font-weight: 500;
   text-transform: uppercase;
 }
@@ -437,21 +391,25 @@
 }
 
 .quickGrid {
-  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.8em;
-  height: 5.2em;
-  margin-top: 1em;
-  overflow: hidden;
-  border-radius: 1em;
+  gap: 0.58em;
+  margin-top: 0.55em;
+  height: 7.2em;
 }
 
-.quickGrid img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover;
+.quickCard {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
   border-radius: 1em;
+  background: var(--color-bg-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.quickCard img {
+  object-fit: cover;
 }
 
 .bottomNav {
@@ -463,8 +421,8 @@
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   align-items: end;
-  min-height: 5.75em;
-  padding: 0.65em 1.25em 1.05em;
+  min-height: 5.42em;
+  padding: 0.62em 0.92em 0.88em;
   background: linear-gradient(180deg, rgb(255 255 255 / 0.88), var(--color-white) 32%);
   box-shadow: 0 -10px 24px rgb(26 46 68 / 0.08);
 }
@@ -472,9 +430,9 @@
 .bottomNav span {
   display: grid;
   justify-items: center;
-  gap: 0.2em;
+  gap: 0.28em;
   color: var(--color-text-muted);
-  font-size: 0.72em;
+  font-size: 0.75em;
   font-weight: 800;
 }
 
@@ -498,7 +456,7 @@
   background: var(--color-primary);
   color: var(--color-white) !important;
   box-shadow: var(--shadow-lg);
-  transform: translateY(-0.18em);
+  transform: translateY(-0.22em);
 }
 
 .addButton svg {
@@ -506,15 +464,9 @@
   height: 2.2em;
 }
 
-@media (max-width: 760px) {
-  .device {
-    max-height: 40rem;
-  }
-}
-
 @media (max-width: 420px) {
   .screen {
-    --phone-unit: clamp(0.6rem, 3.45cqw, 0.86rem);
+    --phone-unit: clamp(0.5rem, 3.15cqw, 0.82rem);
   }
 
   .statusBar {
@@ -527,11 +479,6 @@
 
   .popularGrid {
     gap: 0.55em;
-  }
-
-  .actionGrid,
-  .tileGrid {
-    grid-template-columns: 1fr;
   }
 
   .bottomNav {

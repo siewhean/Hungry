@@ -226,6 +226,10 @@ test("remaining high-traffic profile, developer, and merchant links prefetch on 
   assert.match(merchantDashboard, /onPressIn=\{\(\) => prefetchMerchantRoute\("CustomerInbox"\)\}/);
   assert.match(
     merchantDashboard,
+    /onPressIn=\{\(\) => prefetchMerchantRoute\("FeaturedVisitors"\)\}/,
+  );
+  assert.match(
+    merchantDashboard,
     /onPressIn=\{\(\) => prefetchMerchantRoute\("BusinessProfileEditor"\)\}/,
   );
   assert.match(
@@ -293,6 +297,9 @@ test("developer and merchant surfaces defer non-selected work", () => {
   assert.match(prefetch, /merchant\.getAnalytics\(outletId, "7d"\)/);
   assert.match(prefetch, /routeName === "PromotionList"/);
   assert.match(prefetch, /merchant\.getPromotions\(outletId\)/);
+  assert.match(prefetch, /routeName === "FeaturedVisitors"/);
+  assert.match(prefetch, /merchant\.listPopularVisitorPins\(outletId\)/);
+  assert.match(prefetch, /merchant\.listPopularVisitorCandidates\(outletId\)/);
   assert.match(prefetch, /routeName === "AIAssistant"/);
   assert.match(prefetch, /merchant\.getAIInsights\(outletId\)/);
   assert.match(prefetch, /merchant\.getWeeklySummary\(outletId\)/);

@@ -117,30 +117,32 @@ export default function Hero() {
         </div>
 
         <div className={styles.visualContent} aria-label="Hungry app and food preview">
-          <div className={styles.phoneWrapper}>
-            <motion.div className={`${styles.phoneMockup} ${styles.visualLayer}`}>
-              <DiscoveryPhoneMockup />
-            </motion.div>
-          </div>
-
-          <div className={`${styles.foodOrbit} ${styles.parallaxFast}`}>
-            {homepage.hero.foodCards.map((card, index) => (
-              <motion.div
-                className={`${styles.foodCard} ${styles.visualLayer} ${styles[`foodCard${index + 1}`]}`}
-                key={card.src}
-                whileHover={{ scale: 1.06, rotate: index % 2 === 0 ? -2 : 2 }}
-                transition={{ duration: 0.26 }}
-              >
-                <Image
-                  src={card.src}
-                  alt={card.alt}
-                  className={styles.foodCardImage}
-                  fill
-                  sizes="(max-width: 760px) 30vw, 14vw"
-                  draggable={false}
-                />
+          <div className={`${styles.previewStage} ${styles.visualLayer}`}>
+            <div className={styles.phoneWrapper}>
+              <motion.div className={styles.phoneMockup}>
+                <DiscoveryPhoneMockup />
               </motion.div>
-            ))}
+            </div>
+
+            <div className={styles.foodOrbit}>
+              {homepage.hero.foodCards.map((card, index) => (
+                <motion.div
+                  className={`${styles.foodCard} ${styles[`foodCard${index + 1}`]}`}
+                  key={card.src}
+                  whileHover={{ scale: 1.06, rotate: index % 2 === 0 ? -2 : 2 }}
+                  transition={{ duration: 0.26 }}
+                >
+                  <Image
+                    src={card.src}
+                    alt={card.alt}
+                    className={styles.foodCardImage}
+                    fill
+                    sizes="(max-width: 760px) 30vw, 14vw"
+                    draggable={false}
+                  />
+                </motion.div>
+              ))}
+            </div>
           </div>
 
           <div className={styles.chipLayer}>

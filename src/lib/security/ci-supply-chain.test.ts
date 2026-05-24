@@ -38,17 +38,41 @@ test("release secrets are scoped to EAS steps, not install or workflow scope", (
 
 test("security workflow keeps dependency, gitleaks, and trufflehog gates", () => {
   const security = read(".github/workflows/security.yml");
+  const packageJson = read("package.json");
+  const trufflehogRunner = read("scripts/run-trufflehog.mjs");
 
   assert.match(security, /npm audit --audit-level=moderate/);
   assert.match(security, /gitleaks\/gitleaks-action@/);
   assert.match(security, /trufflesecurity\/trufflehog@/);
+  assert.match(packageJson, /"security:trufflehog": "node scripts\/run-trufflehog\.mjs"/);
+  assert.match(trufflehogRunner, /brew install trufflehog/);
+  assert.match(trufflehogRunner, /\.github\/workflows\/security\.yml/);
+  assert.match(trufflehogRunner, /"--no-update"/);
+  assert.match(trufflehogRunner, /--exclude-paths=scripts\/trufflehog-exclude-paths\.txt/);
+  assert.match(trufflehogRunner, /filesystem",[\s\S]*"--only-verified",[\s\S]*"\."/);
 });
 
-test("service-role helpers require explicit smoke opt-in and smoke env names", () => {
-  for (const helper of ["test_service_role.ts", "test_trigger.ts", "test_jwt.js"]) {
+test("release checklist includes the Supabase Advisor regression guard", () => {
+  const releaseChecklist = read("scripts/release_ready_checklist.sh");
+  const ci = read(".github/workflows/ci.yml");
+  const packageJson = read("package.json");
+  const advisorClassifier = read("scripts/supabase-advisor-security-classifier.mjs");
+
+  assert.match(packageJson, /"audit:supabase:advisor-security"/);
+  assert.match(releaseChecklist, /npm run audit:supabase:advisor-security/);
+  assert.match(ci, /Supabase Security Advisor guard/);
+  assert.match(ci, /npm run audit:supabase:advisor-security/);
+  assert.match(ci, /SUPABASE_NPX_ALLOW_INSTALL: "1"/);
+  assert.match(advisorClassifier, /unexpected app-owned Advisor findings/);
+  assert.match(advisorClassifier, /HUNGRY_SUPABASE_ADVISOR_FAIL_ON_EXTERNAL/);
+  assert.match(advisorClassifier, /SUPABASE_NPX_ALLOW_INSTALL/);
+});
+
+test("service-role smoke scripts require explicit opt-in and smoke env names", () => {
+  for (const helper of ["scripts/supabase-chat-smoke.mjs", "scripts/supabase-ocr-smoke.mjs"]) {
     const source = read(helper);
     assert.match(source, /HUNGRY_ALLOW_SERVICE_ROLE_SMOKE/);
-    assert.match(source, /HUNGRY_SMOKE_SUPABASE_SERVICE_ROLE_KEY/);
+    assert.match(source, /HUNGRY_SUPABASE_SMOKE_SERVICE_ROLE_KEY/);
     assert.doesNotMatch(source, /readFileSync\(["']\.env\.local/);
   }
 });

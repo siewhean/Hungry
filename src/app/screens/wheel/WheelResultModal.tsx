@@ -90,7 +90,7 @@ export function WheelResultModal({ navigation, route }: Props) {
       }}
     >
       <LinearGradient
-        colors={[palette.overlay, "rgba(0,0,0,0.9)"]}
+        colors={[palette.overlay, palette.mediaBackdrop]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -148,7 +148,7 @@ export function WheelResultModal({ navigation, route }: Props) {
             </View>
           )}
           <LinearGradient
-            colors={["rgba(0,0,0,0.4)", "transparent", "rgba(0,0,0,0.6)"]}
+            colors={[palette.mediaScrimSoft, "transparent", palette.mediaScrimStrong]}
             style={StyleSheet.absoluteFill}
           />
         </View>

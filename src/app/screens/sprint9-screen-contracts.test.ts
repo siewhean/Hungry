@@ -65,14 +65,14 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   assert.match(providerLogoSource, /export function GoogleLogo/);
   assert.match(providerLogoSource, /size = AUTH_PROVIDER_LOGO_SIZE/);
   assert.match(providerLogoSource, /viewBox="1 1 21\.56 22"/);
-  assert.match(providerLogoSource, /fill="#4285F4"/);
-  assert.match(providerLogoSource, /fill="#34A853"/);
-  assert.match(providerLogoSource, /fill="#FBBC05"/);
-  assert.match(providerLogoSource, /fill="#EA4335"/);
+  assert.match(providerLogoSource, /AUTH_PROVIDER_GOOGLE_LOGO_COLORS\.blue/);
+  assert.match(providerLogoSource, /AUTH_PROVIDER_GOOGLE_LOGO_COLORS\.green/);
+  assert.match(providerLogoSource, /AUTH_PROVIDER_GOOGLE_LOGO_COLORS\.yellow/);
+  assert.match(providerLogoSource, /AUTH_PROVIDER_GOOGLE_LOGO_COLORS\.red/);
   assert.match(providerLogoSource, /export function AppleLogo/);
   assert.match(providerLogoSource, /size = AUTH_PROVIDER_APPLE_LOGO_SIZE/);
   assert.match(providerLogoSource, /viewBox="2\.94 2 17\.15 20"/);
-  assert.match(providerLogoSource, /fill="#000000"/);
+  assert.match(providerLogoSource, /AUTH_PROVIDER_APPLE_LOGO_COLOR/);
 });
 
 test("Sprint 9 screen contract: Review screen submits via service and triggers success UI", () => {
@@ -388,7 +388,9 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /formatBasePrice\(dish\.price\)/);
   assert.match(source, /fontSize: 28, lineHeight: 34/);
   assert.match(source, /const heroGradientColors: readonly \[ColorValue, ColorValue, ColorValue\]/);
-  assert.match(source, /"rgba\(255,255,255,0\)", "rgba\(255,255,255,0\.72\)", palette\.bg/);
+  assert.match(source, /palette\.detailHeroGradientStart/);
+  assert.match(source, /palette\.detailHeroGradientMid/);
+  assert.match(source, /palette\.bg/);
   assert.match(source, /colors=\{heroGradientColors\}/);
   assert.match(source, /locations=\{\[0, 0\.58, 1\]\}/);
   assert.doesNotMatch(source, /Epicurean Discovery/);
@@ -406,7 +408,7 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /signatureDishes\.slice\(0, 4\)\.map/);
   assert.match(source, /height: signatureGridItemHeight/);
   assert.match(source, /width: signatureGridItemWidth/);
-  assert.match(source, /backgroundColor: "rgba\(15, 23, 42, 0\.48\)"/);
+  assert.match(source, /palette\.detailImageBadgeSurface/);
   assert.match(source, /shadowRadius: 12/);
   assert.match(source, /textShadowRadius: 3/);
   assert.match(source, /formatBasePrice\(item\.price\)/);

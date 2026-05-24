@@ -75,7 +75,13 @@ export function DecideForMeCard({
           ]}
         >
           <View style={[styles.row, { gap: compact ? spacing[3] : spacing[4] }]}>
-            <View style={[styles.iconWrap, compact && styles.iconWrapCompact]}>
+            <View
+              style={[
+                styles.iconWrap,
+                { backgroundColor: palette.inverseSurfaceSubtle },
+                compact && styles.iconWrapCompact,
+              ]}
+            >
               {shouldPulse ? (
                 <Shuffle color={palette.white} size={compact ? 24 : 28} />
               ) : (
@@ -120,7 +126,6 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
   },

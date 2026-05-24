@@ -40,7 +40,7 @@ const FEATURE_ROWS = [
   {
     key: "wait",
     title: "Stall Wait Times",
-    description: "Check real-time queues before you head out for lunch.",
+    description: "Use timing cues before you head out for lunch.",
     icon: Clock3,
     iconTone: "error",
     iconBgTone: "errorSoft",

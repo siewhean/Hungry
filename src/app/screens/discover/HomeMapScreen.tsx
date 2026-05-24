@@ -42,6 +42,7 @@ import {
   singaporeBuildings,
   toSummary,
 } from "@/lib/geo/singaporeBuildings";
+import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
@@ -114,6 +115,7 @@ export function HomeMapScreen() {
   const insets = useSafeAreaInsets();
   const { componentRadii, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
+  const mapStatusDisclosure = getDataTrustDisclosure("mapStatus");
   const searchQuery = useSearchStore((state) => state.filters.query);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
@@ -539,6 +541,9 @@ export function HomeMapScreen() {
                     <AppText variant="micro" tone="secondary">
                       {venue.floor} {venue.unitNumber} · {venue.operatingHours}
                     </AppText>
+                    <AppText variant="micro" tone="muted">
+                      {mapStatusDisclosure}
+                    </AppText>
                   </View>
                   <ChevronRight size={16} color={palette.orange} />
                 </Pressable>
@@ -614,6 +619,9 @@ export function HomeMapScreen() {
                     </View>
                     <AppText variant="micro" tone="secondary">
                       {dish.venueName}
+                    </AppText>
+                    <AppText variant="micro" tone="muted">
+                      {mapStatusDisclosure}
                     </AppText>
                   </View>
                 </Pressable>

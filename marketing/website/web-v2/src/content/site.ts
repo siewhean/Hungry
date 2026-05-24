@@ -2,7 +2,7 @@ export const siteNav = [
   { label: "For Foodies", href: "/for-foodies" },
   { label: "For Merchants", href: "/for-merchants" },
   { label: "About", href: "/#hawker-culture" },
-  { label: "Merchant Portal", href: "/for-merchants#merchant-flow" },
+  { label: "Merchant Portal", href: "/for-merchants#merchant-tools" },
 ] as const;
 
 export const footerLinks = {
@@ -17,8 +17,8 @@ export const footerLinks = {
     { label: "Hawker Culture", href: "/#hawker-culture" },
   ],
   connect: [
-    { label: "Merchant Interest", href: "/for-merchants" },
-    { label: "Join Waitlist", href: "/for-foodies" },
+    { label: "Merchant Interest", href: "/join-waitlist?audience=merchant" },
+    { label: "Join Waitlist", href: "/join-waitlist" },
     { label: "Contact", href: "mailto:hello@hungry.sg" },
   ],
 } as const;
@@ -79,11 +79,11 @@ export type StoryScreen = ImageAsset & {
 
 export const homepage = {
   hero: {
-    eyebrow: "Singapore dish-first food discovery",
-    lines: ["Discover food around you.", "Get Hungry."],
-    proof: "Find the dish. Not just the restaurant.",
-    body: "Hungry helps foodies discover nearby dishes, menus, reviews, rankings, and stall information while helping merchants get discovered by people deciding what to eat next.",
-    primaryCta: { label: "Join Waitlist", href: "/for-foodies" },
+    eyebrow: "Singapore food decisions, simplified",
+    lines: ["Know what to eat.", "Before you go."],
+    proof: "Find the dish. Check the proof. Avoid the wasted trip.",
+    body: "Hungry brings scattered menus, dish photos, reviews, opening hours, and stall details into one clear local guide for foodies and merchants.",
+    primaryCta: { label: "Join Waitlist", href: "/join-waitlist" },
     secondaryCta: { label: "Register Interest", href: "/for-merchants" },
     atmosphere: {
       src: "/images/food/stalls-restaurants-wide.png",
@@ -110,23 +110,23 @@ export const homepage = {
   audiences: [
     {
       title: "For foodies",
-      eyebrow: "Decide faster",
+      eyebrow: "Stop guessing",
       description:
-        "Search by dish, compare actual food photos, and see whether a stall is worth the trip before hunger becomes indecision.",
+        "See what people are eating, compare real dish photos, and check whether a stall is worth the trip before you leave.",
       image: {
-        src: "/images/people/restaurant-diner.jpg",
-        alt: "Singaporean diners enjoying a meal in a local restaurant",
+        src: "/images/people/maxwell-hawker-centre-diners.jpg",
+        alt: "People eating at Maxwell Food Centre in Singapore",
       },
-      cta: { label: "Join Waitlist", href: "/for-foodies" },
+      cta: { label: "Join Waitlist", href: "/join-waitlist" },
     },
     {
       title: "For merchants",
-      eyebrow: "Get found by craving",
+      eyebrow: "Show what is ready",
       description:
-        "Give diners a clear view of your menu, hours, signature dishes, and business details when they are already nearby and hungry.",
+        "Keep dishes, photos, menus, hours, and profile details visible when nearby diners are deciding what to eat next.",
       image: {
         src: "/images/people/hawker-cooking.jpg",
-        alt: "Singapore hawker-centre stall owner cooking at the counter",
+        alt: "Close-up of a Singapore hawker cooking at a stall",
       },
       cta: { label: "Register Interest", href: "/for-merchants" },
     },
@@ -137,40 +137,88 @@ export const homepage = {
     "Great stalls get missed when discovery starts with venues instead of dishes.",
     "Smaller merchants lack a simple way to show what they actually serve today.",
   ],
+  localGuide: {
+    title: "Your personal local guide",
+    description: "The missing context for deciding what to eat in Singapore, built around the dish itself.",
+    cards: [
+      {
+        title: "Discover nearby food",
+        description: "See nearby stalls, restaurants, and dishes without switching between apps.",
+        icon: "explore",
+        variant: "map",
+        image: {
+          src: "/images/people/maxwell-hawker-centre-diners.jpg",
+          alt: "Diners at a Singapore hawker centre for nearby discovery",
+        },
+      },
+      {
+        title: "Find the dish",
+        description: "Search by craving, dish name, or local favourite instead of only by venue.",
+        icon: "dish",
+        variant: "dish",
+        image: {
+          src: "/images/food/laksa-topdown.png",
+          alt: "Close-up top-down bowl of Singapore laksa",
+        },
+      },
+      {
+        title: "Know what is open",
+        description:
+          "Check clearer hours and live context before making the trip across the neighbourhood.",
+        icon: "open",
+        variant: "plain",
+        image: {
+          src: "/images/people/hawker-cooking.jpg",
+          alt: "Singapore hawker stall in service for opening-hours discovery",
+        },
+      },
+      {
+        title: "See menus before you go",
+        description:
+          "Browse visual menus with actual dish photos so you know what to order before you queue.",
+        icon: "menu",
+        variant: "open",
+        image: {
+          src: "/images/food/dishes-wide.png",
+          alt: "Singapore dishes laid out visually for menu browsing",
+        },
+      },
+    ],
+  },
   productStory: [
     {
       eyebrow: "Browse",
-      title: "See food first, then decide where to go.",
+      title: "Choose with real dish context.",
       description:
-        "A visual feed gives every dish room to stand out, with local context and enough detail to make a fast decision.",
-      stat: "Dish-first",
+        "Nearby dishes, food photos, open status, and stall details sit in one decision view.",
+      stat: "Discover",
       src: "/images/screens/foodies-screen.png",
       alt: "Hungry visual foodie discovery interface",
     },
     {
       eyebrow: "Compare",
-      title: "Move from craving to shortlist without tab-hopping.",
+      title: "Stop jumping between menus and reviews.",
       description:
-        "Menus, ratings, open status, and community proof sit together so the next step feels obvious.",
-      stat: "Menus + reviews",
+        "Dish photos, menus, ratings, open status, and saved places stay in one flow.",
+      stat: "Shortlist",
       src: "/images/screens/app-showcase.png",
       alt: "Hungry app screens showing discovery and dish details",
     },
     {
       eyebrow: "Operate",
-      title: "Merchants keep the live details fresh.",
+      title: "Keep menu details current.",
       description:
-        "Food businesses can update menus, opening hours, and profile details from a simple merchant surface.",
-      stat: "Merchant-led",
+        "Merchants update dishes, prices, photos, and availability from one surface.",
+      stat: "Menu",
       src: "/images/screens/menu-management.png",
       alt: "Hungry menu management interface",
     },
     {
       eyebrow: "Stay current",
-      title: "Avoid disappointed trips with clearer hours.",
+      title: "Prevent wasted trips.",
       description:
-        "Opening hour tools and live profile states help users know what is open before they leave.",
-      stat: "Open now",
+        "Opening-hour tools make closures, rest days, and regular hours easier to trust.",
+      stat: "Hours",
       src: "/images/screens/opening-hours.png",
       alt: "Hungry opening hours editor interface",
     },
@@ -211,39 +259,162 @@ export const homepage = {
       },
     },
   ],
-  merchantSteps: [
-    {
-      title: "Claim the profile",
-      description:
-        "Start with the essentials: business name, location, cuisine, and signature dishes.",
-      image: "/images/screens/merchant-dashboard.png",
-    },
-    {
-      title: "Keep menus alive",
-      description:
-        "Update dishes, prices, photos, and availability without waiting on a static listing.",
-      image: "/images/screens/menu-management.png",
-    },
-    {
-      title: "Show what is open",
-      description: "Make opening hours and special closures clearer for diners planning a trip.",
-      image: "/images/screens/opening-hours.png",
-    },
-  ],
   community: [
     {
-      title: "Reviews attached to dishes",
-      description: "Hungry keeps feedback close to the food people are deciding on.",
+      title: "Dish reviews",
+      description: "Feedback stays with the dish, not hidden on a separate page.",
     },
     {
       title: "Local rankings",
       description:
-        "Neighbourhood discovery becomes more useful when it reflects what nearby foodies save and rate.",
+        "Nearby saves and ratings help people compare real options faster.",
     },
     {
-      title: "Photo-led confidence",
+      title: "Photo proof",
       description:
-        "A dish photo answers questions faster than a venue name or generic category ever can.",
+        "Actual food photos answer questions a category label cannot.",
     },
   ],
+} as const;
+
+export const merchantPage = {
+  hero: {
+    title: "Make your food easier to choose before customers arrive.",
+    description:
+      "Hungry helps diners see your dishes, menu, hours, and profile details while they are deciding what to eat nearby.",
+    cta: { label: "Register Merchant Interest", href: "/join-waitlist?audience=merchant" },
+    image: {
+      src: "/images/people/hawker-cooking.jpg",
+      alt: "Singapore hawker stall owner cooking at the counter",
+    },
+  },
+  benefits: {
+    title: "Solve the gaps that lose hungry diners.",
+    description:
+      "A clear merchant profile gives customers the proof they need before they walk over.",
+    items: [
+      {
+        title: "Show the dish first",
+        description:
+          "Turn signature dishes into visual reasons to visit, not just a venue name in a list.",
+        icon: "visibility",
+      },
+      {
+        title: "Keep stall information accurate",
+        description:
+          "Keep menus, prices, opening hours, photos, and other stall details current before stale information costs a visit.",
+        icon: "menu",
+      },
+      {
+        title: "Help diners know your stall",
+        description:
+          "Show what you serve, when you are open, where to find you, and why your stall is worth visiting.",
+        icon: "hours",
+      },
+    ],
+  },
+  workflow: {
+    eyebrow: "Merchant workflow",
+    title: "Make every dish easier to find before a diner arrives.",
+    description:
+      "Keep menus, hours, and profile details current so customers see what is available today.",
+    steps: [
+      {
+        title: "Claim the profile",
+        description:
+          "Start with the essentials: business name, location, cuisine, and signature dishes.",
+        image: "/images/screens/merchant-dashboard.png",
+      },
+      {
+        title: "Keep menus alive",
+        description:
+          "Update dishes, prices, photos, and availability before customers see old information.",
+        image: "/images/screens/menu-management.png",
+      },
+      {
+        title: "Show what is open",
+        description: "Make opening hours and special closures clearer for diners planning a trip.",
+        image: "/images/screens/opening-hours.png",
+      },
+    ],
+  },
+  featureProof: {
+    title: "Merchant tools for daily customer questions",
+    description: "Profile, menu, and opening-hour screens keep customer-facing details current.",
+    items: [
+      {
+        title: "Profile readiness",
+        description: "See missing details before customers do.",
+        image: {
+          src: "/images/screens/merchant-dashboard.png",
+          alt: "Hungry merchant dashboard showing profile readiness",
+        },
+      },
+      {
+        title: "Menu control",
+        description: "Keep dish photos and menu information current.",
+        image: {
+          src: "/images/screens/menu-management.png",
+          alt: "Hungry merchant menu management screen",
+        },
+      },
+      {
+        title: "Opening hours",
+        description: "Update regular hours and closure details.",
+        image: {
+          src: "/images/screens/opening-hours.png",
+          alt: "Hungry merchant opening-hours editor",
+        },
+      },
+    ],
+  },
+  creatorTypes: {
+    title: "Different food businesses, same customer problem.",
+    description: "People need to know what you serve, when you are open, and why it is worth the trip.",
+    items: [
+      {
+        title: "Hawker stalls",
+        description:
+          "Show signature dishes clearly so locals can find the stall before they arrive.",
+        image: {
+          src: "/images/food/stalls-restaurants-wide.png",
+          alt: "Bustling Singapore hawker stall scene",
+        },
+        size: "large",
+      },
+      {
+        title: "Cafes and bakeries",
+        description: "Make coffee, bakes, and brunch items visible when nearby diners search.",
+        image: {
+          src: "/images/people/restaurant-diner.jpg",
+          alt: "Local diners enjoying a warm Singapore restaurant meal",
+        },
+        size: "wide",
+      },
+      {
+        title: "Restaurants",
+        description: "Help diners compare full menus by dish, photo, and availability.",
+        image: {
+          src: "/images/food/dishes-wide.png",
+          alt: "Restaurant dishes presented for discovery",
+        },
+        size: "small",
+      },
+      {
+        title: "Home-based",
+        description: "Explain what you make and when customers can order it.",
+        image: {
+          src: "/images/food/dim-sum-topdown.png",
+          alt: "Home-based specialty food represented by dim sum",
+        },
+        size: "small",
+      },
+    ],
+  },
+  finalCta: {
+    title: "Ready to make your menu easier to find?",
+    description:
+      "Join the merchant waitlist and we will follow up when onboarding opens.",
+    cta: { label: "Register Merchant Interest", href: "/join-waitlist?audience=merchant" },
+  },
 } as const;

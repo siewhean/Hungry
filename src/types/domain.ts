@@ -156,6 +156,43 @@ export interface Review {
   photos: string[];
 }
 
+export interface PopularVisitorPin {
+  id: string;
+  outletId: string;
+  venueId: string;
+  reviewId: string;
+  sourceId: string;
+  authorProfileId?: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  authorLocation?: string;
+  reviewText: string;
+  rating: number;
+  dishName?: string;
+  visitedAt: string;
+  pinnedAt: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface PopularVisitorCandidate {
+  outletId: string;
+  venueId: string;
+  reviewId: string;
+  sourceId: string;
+  authorProfileId?: string;
+  authorName: string;
+  authorAvatarUrl?: string;
+  authorLocation?: string;
+  reviewText: string;
+  rating: number;
+  dishName?: string;
+  visitedAt: string;
+  isPinned: boolean;
+  pinId?: string;
+  sortOrder?: number;
+}
+
 export interface DishDetail extends DishSummary {
   gallery: string[];
   description?: string;
@@ -673,6 +710,11 @@ export interface StoryItem {
 export interface StoryContent {
   type: "image" | "video";
   url: string;
+}
+
+export interface StoryGalleryAsset extends StoryContent {
+  id: string;
+  title: string;
 }
 
 export interface StoryInteraction {

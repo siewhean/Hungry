@@ -1,0 +1,15 @@
+^\.git/
+^\.venv/
+^\.venv-floorplan/
+^node_modules/
+^ios/Pods/
+^android/build/
+^dist/
+^output/
+^graphify-out/
+^marketing/web/node_modules/
+^marketing/web/\.next/
+^marketing/website/web-v2/node_modules/
+^marketing/website/web-v2/\.next/
+^data/processed/
+^data/cache/

@@ -1,0 +1,200 @@
+#!/usr/bin/env node
+
+import { spawn } from "node:child_process";
+
+const REQUIRED_ENV = "HUNGRY_SUPABASE_ADVISOR_REQUIRED";
+const FAIL_ON_EXTERNAL_ENV = "HUNGRY_SUPABASE_ADVISOR_FAIL_ON_EXTERNAL";
+const IGNORE_LEAKED_PASSWORD_ENV = "HUNGRY_SUPABASE_ADVISOR_IGNORE_LEAKED_PASSWORD";
+const npxCommand = process.env.SUPABASE_NPX_COMMAND || "npx";
+const npxInstallArgs = process.env.SUPABASE_NPX_ALLOW_INSTALL === "1" ? [] : ["--no-install"];
+const args = [
+  ...npxInstallArgs,
+  "supabase",
+  "db",
+  "advisors",
+  "--linked",
+  "--type",
+  "security",
+  "--level",
+  "warn",
+  "-o",
+  "json",
+];
+
+function isRequired() {
+  return process.argv.includes("--require-network") || process.env[REQUIRED_ENV] === "1";
+}
+
+function shouldFailOnExternal() {
+  return process.argv.includes("--fail-on-external") || process.env[FAIL_ON_EXTERNAL_ENV] === "1";
+}
+
+function shouldIgnoreLeakedPassword() {
+  return (
+    process.argv.includes("--ignore-leaked-password") ||
+    process.env[IGNORE_LEAKED_PASSWORD_ENV] === "1"
+  );
+}
+
+function runAdvisor() {
+  return new Promise((resolve) => {
+    const child = spawn(npxCommand, args, {
+      cwd: process.cwd(),
+      env: process.env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk.toString();
+    });
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk.toString();
+    });
+    child.on("error", (error) => {
+      resolve({ code: 1, stdout, stderr: `${stderr}${error.message}` });
+    });
+    child.on("close", (code) => {
+      resolve({ code: code ?? 1, stdout, stderr });
+    });
+  });
+}
+
+function isSkippableEnvironmentError(stderr) {
+  const message = stderr.toLowerCase();
+  return [
+    "access token",
+    "cannot find project ref",
+    "command not found",
+    "eai_again",
+    "enotfound",
+    "failed to dial",
+    "lookup api.supabase.com",
+    "no such host",
+    "not logged in",
+    "not linked",
+    "spawn npx enoent",
+    "timed out",
+  ].some((snippet) => message.includes(snippet));
+}
+
+function fail(message, details) {
+  console.error(`[supabase-advisor-security-classifier] ${message}`);
+  if (details?.trim()) console.error(details.trim());
+  process.exit(1);
+}
+
+function externalReason(finding) {
+  const metadata = finding.metadata || {};
+  const detail = finding.detail || "";
+
+  if (
+    finding.name === "rls_disabled_in_public" &&
+    metadata.schema === "public" &&
+    metadata.name === "spatial_ref_sys"
+  ) {
+    return "Supabase/PostGIS-owned table; requires owner/support RLS action";
+  }
+
+  if (
+    finding.name === "extension_in_public" &&
+    metadata.schema === "public" &&
+    metadata.name === "postgis"
+  ) {
+    return "existing PostGIS-in-public installation; requires support-assisted relocation";
+  }
+
+  if (
+    (finding.name === "anon_security_definer_function_executable" ||
+      finding.name === "authenticated_security_definer_function_executable") &&
+    metadata.schema === "public" &&
+    metadata.name === "st_estimatedextent" &&
+    detail.includes("public.st_estimatedextent")
+  ) {
+    return "Supabase/PostGIS-owned SECURITY DEFINER function grant";
+  }
+
+  if (finding.name === "auth_leaked_password_protection") {
+    return "Supabase Auth dashboard/Management API setting";
+  }
+
+  return null;
+}
+
+function summarizeFinding(finding) {
+  return `${finding.level || "UNKNOWN"} ${finding.name || "unknown"} ${finding.cache_key || ""}`.trim();
+}
+
+const result = await runAdvisor();
+
+if (result.code !== 0) {
+  if (!isRequired() && isSkippableEnvironmentError(result.stderr)) {
+    console.log(
+      `[supabase-advisor-security-classifier] skipped; linked Supabase Advisor is not reachable from this environment. Set ${REQUIRED_ENV}=1 to make this a hard failure.`,
+    );
+    process.exit(0);
+  }
+
+  fail("failed to fetch linked Supabase Security Advisor output.", result.stderr || result.stdout);
+}
+
+let findings;
+try {
+  findings = JSON.parse(result.stdout);
+} catch (error) {
+  fail("failed to parse linked Supabase Security Advisor JSON output.", String(error));
+}
+
+if (!Array.isArray(findings)) {
+  fail("linked Supabase Security Advisor output was not an array.");
+}
+
+const classified = findings.map((finding) => ({
+  finding,
+  externalReason: externalReason(finding),
+}));
+const unexpected = classified.filter((item) => !item.externalReason);
+const ignoredExternal = shouldIgnoreLeakedPassword()
+  ? classified.filter((item) => item.finding.name === "auth_leaked_password_protection")
+  : [];
+const external = classified.filter(
+  (item) => item.externalReason && !ignoredExternal.includes(item),
+);
+
+if (unexpected.length > 0) {
+  console.error("[supabase-advisor-security-classifier] unexpected app-owned Advisor findings:");
+  for (const item of unexpected) {
+    console.error(`- ${summarizeFinding(item.finding)}`);
+    if (item.finding.detail) console.error(`  ${item.finding.detail}`);
+  }
+  process.exit(1);
+}
+
+if (external.length === 0) {
+  if (ignoredExternal.length > 0) {
+    console.log(
+      `[supabase-advisor-security-classifier] passed; ignored leaked-password protection findings: ${ignoredExternal.length}`,
+    );
+  } else {
+    console.log("[supabase-advisor-security-classifier] passed; no Security Advisor findings.");
+  }
+  process.exit(0);
+}
+
+console.log(
+  `[supabase-advisor-security-classifier] no unexpected app-owned findings. Known external findings remain: ${external.length}`,
+);
+for (const item of external) {
+  console.log(`- ${summarizeFinding(item.finding)} — ${item.externalReason}`);
+}
+if (ignoredExternal.length > 0) {
+  console.log(
+    `[supabase-advisor-security-classifier] ignored leaked-password protection findings: ${ignoredExternal.length}`,
+  );
+}
+
+if (shouldFailOnExternal()) {
+  process.exit(1);
+}

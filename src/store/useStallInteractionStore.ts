@@ -4,10 +4,8 @@
  * Tracks whether the current user has saved, tried, or reviewed each stall.
  * This is the prerequisite for passport progress computation.
  *
- * Production swap plan:
- *   1. Replace `loadInteractions()` with Supabase query on `user_stall_interactions`.
- *   2. Replace `toggleSaved()` / `markTried()` with Supabase upserts.
- *   3. Award Food Cred by calling `useFoodCredStore.awardPoints()` after each mutation.
+ * Repository-backed: mock mode keeps local demo state, while Supabase mode
+ * hydrates and upserts `user_stall_interactions`.
  */
 
 import { create } from "zustand";
@@ -69,8 +67,7 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
   loadInteractions: async (userId) => {
     if (get().isLoaded) return;
 
-    // Mock phase: load from repository
-    // Production swap: Supabase query on user_stall_interactions WHERE user_id = userId
+    // Active repository handles mock or Supabase `user_stall_interactions` hydration.
     const repo = getDataRepository();
     const list: StallInteraction[] = (await repo.listStallInteractions?.(userId)) ?? [];
 
@@ -102,6 +99,15 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
       interactions: { ...state.interactions, [stallId]: updated },
     }));
 
+    const remoteUpdated = await getDataRepository().upsertStallInteraction?.(userId, stallId, {
+      isSaved: !wasSaved,
+    });
+    if (remoteUpdated) {
+      set((state) => ({
+        interactions: { ...state.interactions, [stallId]: remoteUpdated },
+      }));
+    }
+
     if (!wasSaved) {
       // Rate-limit: count today's saves
       const todaySaveCount = Object.values(get().interactions).filter(
@@ -115,8 +121,6 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
     if (!wasSaved) {
       trackStallSaved({ stallId, sourceScreen: "StallDetail" });
     }
-
-    // TODO (production): supabase.from('user_stall_interactions').upsert({ user_id: userId, stall_id: stallId, is_saved: !wasSaved })
   },
 
   markTried: async (userId, stallId) => {
@@ -139,6 +143,15 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
       interactions: { ...state.interactions, [stallId]: updated },
     }));
 
+    const remoteUpdated = await getDataRepository().upsertStallInteraction?.(userId, stallId, {
+      isTried: !shouldUnmark,
+    });
+    if (remoteUpdated) {
+      set((state) => ({
+        interactions: { ...state.interactions, [stallId]: remoteUpdated },
+      }));
+    }
+
     let pointsAwarded = 0;
     if (!shouldUnmark) {
       // Rate-limit: count today's tried marks
@@ -157,8 +170,6 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
       isTried: !shouldUnmark,
       pointsAwarded,
     };
-
-    // TODO (production): supabase.from('user_stall_interactions').upsert({ ..., is_tried: true, tried_at: now })
   },
 
   markReviewed: async (userId, stallId) => {
@@ -181,8 +192,16 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
       interactions: { ...state.interactions, [stallId]: updated },
     }));
 
+    const remoteUpdated = await getDataRepository().upsertStallInteraction?.(userId, stallId, {
+      isReviewed: true,
+    });
+    if (remoteUpdated) {
+      set((state) => ({
+        interactions: { ...state.interactions, [stallId]: remoteUpdated },
+      }));
+    }
+
     // Cred for review_created is awarded by the review flow, not here
-    // TODO (production): upsert is_reviewed = true
   },
 
   _reset: () => set({ interactions: {}, isLoaded: false }),

@@ -156,6 +156,7 @@ type HomeFeedScreenProps = {
 const DOUBLE_TAP_DELAY_MS = 280;
 const COLLAPSED_CAPTION_MAX_CHARS = 118;
 const FEED_LOAD_DEDUPE_MS = 1500;
+const STORY_OPENING_RING_HOLD_MS = 2200;
 const MAP_BUILDING_ID_ALIASES: Record<string, string> = {
   "building-amoy": "hc-amoy",
   "building-lau-pa-sat": "hc-lau-pa-sat",
@@ -266,6 +267,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     {},
   );
   const [carouselIndexByPostId, setCarouselIndexByPostId] = useState<Record<string, number>>({});
+  const [openingUnseenStoryId, setOpeningUnseenStoryId] = useState<string | null>(null);
+  const [openingUnseenStoryDisplayName, setOpeningUnseenStoryDisplayName] = useState<string | null>(
+    null,
+  );
   const carouselScrollRefs = useRef<Record<string, ScrollView | null>>({});
   const commentsSheetRef = useRef<BottomSheetModal>(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
@@ -274,6 +279,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const shareSnapPoints = useMemo(() => ["45%"], []);
   const lastImageTapRef = useRef<{ postId: string; at: number } | null>(null);
   const singleTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openingStoryRingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openingUnseenStoryIdRef = useRef<string | null>(null);
+  const openingUnseenStoryDisplayNameRef = useRef<string | null>(null);
   const heartBurstAnim = useRef(new Animated.Value(0)).current;
   const [heartBurst, setHeartBurst] = useState<{
     postId: string;
@@ -378,6 +386,48 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       setIsRefreshing(false);
     }
   }, [loadFeed]);
+
+  const clearOpeningStoryRingHold = useCallback(() => {
+    if (openingStoryRingTimerRef.current) {
+      clearTimeout(openingStoryRingTimerRef.current);
+      openingStoryRingTimerRef.current = null;
+    }
+    openingUnseenStoryIdRef.current = null;
+    openingUnseenStoryDisplayNameRef.current = null;
+    setOpeningUnseenStoryId(null);
+    setOpeningUnseenStoryDisplayName(null);
+  }, []);
+
+  const holdOpeningStoryRing = useCallback(
+    (story: StoryItem) => {
+      if (!story.hasUnseen || story.isOwn) {
+        return;
+      }
+
+      if (openingStoryRingTimerRef.current) {
+        clearTimeout(openingStoryRingTimerRef.current);
+      }
+      openingUnseenStoryIdRef.current = story.id;
+      openingUnseenStoryDisplayNameRef.current = story.displayName;
+      setOpeningUnseenStoryId(story.id);
+      setOpeningUnseenStoryDisplayName(story.displayName);
+      openingStoryRingTimerRef.current = setTimeout(
+        clearOpeningStoryRingHold,
+        STORY_OPENING_RING_HOLD_MS,
+      );
+    },
+    [clearOpeningStoryRingHold],
+  );
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      if (openingUnseenStoryIdRef.current) {
+        clearOpeningStoryRingHold();
+      }
+    });
+
+    return unsubscribe;
+  }, [clearOpeningStoryRingHold, navigation]);
 
   useFocusEffect(
     useCallback(() => {
@@ -715,7 +765,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       text: palette.text,
       secondaryText: palette.textSecondary,
       badgeBg: palette.bgSoft,
-      actionOverlayBg: "rgba(255,255,255,0.85)",
+      actionOverlayBg: palette.surfaceTranslucent,
       isDark,
     };
   }, [palette, colorScheme]);
@@ -855,9 +905,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         navigation.navigate("AddStory");
         return;
       }
+      holdOpeningStoryRing(story);
       navigation.navigate("StoryViewer", { initialStoryId: story.id });
     },
-    [navigation, stories, storiesEnabled],
+    [holdOpeningStoryRing, navigation, stories, storiesEnabled],
   );
 
   const handleAddStoryPress = useCallback(() => {
@@ -880,6 +931,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     () => () => {
       if (singleTapTimerRef.current) {
         clearTimeout(singleTapTimerRef.current);
+      }
+      if (openingStoryRingTimerRef.current) {
+        clearTimeout(openingStoryRingTimerRef.current);
       }
     },
     [],
@@ -934,6 +988,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         {storiesEnabled ? (
           <CircleStoryCarousel
             stories={storyCarouselItems}
+            openingUnseenStoryId={openingUnseenStoryId}
+            openingUnseenStoryDisplayName={openingUnseenStoryDisplayName}
+            onStoryPressIn={holdOpeningStoryRing}
             onStoryPress={handleStoryPress}
             onAddStoryPress={handleAddStoryPress}
           />
@@ -943,6 +1000,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     [
       handleAddStoryPress,
       handleStoryPress,
+      holdOpeningStoryRing,
+      openingUnseenStoryDisplayName,
+      openingUnseenStoryId,
       palette.orange,
       renderActivityButton,
       semanticSpacing.screenEdge,
@@ -1213,7 +1273,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               ) : null}
 
               <LinearGradient
-                colors={["transparent", "rgba(0,0,0,0.6)"]}
+                colors={["transparent", palette.mediaScrimStrong]}
                 style={[styles.gradientScrim, { height: "40%", top: "60%" }]}
                 pointerEvents="none"
               />
@@ -1239,12 +1299,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     onPressIn={() => prefetchMapRoute(item)}
                     onPress={() => openVenueOnMap(item)}
                   >
-                    <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)" }}>
+                    <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
                       {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
                     </AppText>
                   </Pressable>
                 ) : (
-                  <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)" }}>
+                  <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
                     {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
                   </AppText>
                 )}
@@ -2337,7 +2397,7 @@ const createStyles = ({ palette, spacing, radii }: ReturnType<typeof useHungryTh
       top: spacing[3],
     },
     carouselDot: {
-      backgroundColor: "rgba(255,255,255,0.48)",
+      backgroundColor: palette.inverseIndicator,
       borderRadius: radii.pill,
       height: 6,
       width: 6,
@@ -2421,7 +2481,7 @@ const createStyles = ({ palette, spacing, radii }: ReturnType<typeof useHungryTh
       width: 68,
       height: 68,
       borderRadius: radii.pill,
-      backgroundColor: "rgba(0,0,0,0.35)",
+      backgroundColor: palette.mediaScrimSoft,
       alignItems: "center",
       justifyContent: "center",
     },

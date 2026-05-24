@@ -73,7 +73,7 @@ export function FavouritesScreen({ navigation }: Props) {
                       width: 32,
                       height: 32,
                       borderRadius: componentRadii.iconButton,
-                      backgroundColor: "rgba(255,255,255,0.9)",
+                      backgroundColor: palette.surfaceTranslucent,
                       alignItems: "center",
                       justifyContent: "center",
                     }}

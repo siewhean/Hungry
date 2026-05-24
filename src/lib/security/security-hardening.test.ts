@@ -223,6 +223,131 @@ test("app security hardening migration restricts ops RPCs and verification evide
   assert.match(service, /from\("public_profiles"\)/);
 });
 
+test("security advisor migration replaces public_profiles view with RLS table", () => {
+  const advisorFix = readRepoFile(
+    "supabase/migrations/20260522124728_security_advisor_rls_view_fixes.sql",
+  );
+
+  assert.match(advisorFix, /public_profiles_kind/);
+  assert.match(advisorFix, /drop view public\.public_profiles/);
+  assert.doesNotMatch(advisorFix, /drop view if exists public\.public_profiles/);
+  assert.match(advisorFix, /create table if not exists public\.public_profiles/);
+  assert.match(advisorFix, /alter table public\.public_profiles enable row level security/);
+  assert.match(advisorFix, /create policy public_profiles_select_visible/);
+  assert.match(advisorFix, /using \(public\.can_read_author_content\(id\)\)/);
+  assert.match(advisorFix, /create schema if not exists app_private/);
+  assert.match(advisorFix, /create or replace function app_private\.sync_public_profile/);
+  assert.match(advisorFix, /security definer/);
+  assert.match(
+    advisorFix,
+    /revoke all on function app_private\.sync_public_profile\(\) from public, anon, authenticated/,
+  );
+  assert.match(advisorFix, /alter table public\.spatial_ref_sys enable row level security/);
+  assert.doesNotMatch(advisorFix, /email/);
+});
+
+test("advisor warning hardening pins app-owned functions and removes anon RPC execution", () => {
+  const hardening = readRepoFile(
+    "supabase/migrations/20260522131215_advisor_security_warning_hardening.sql",
+  );
+  const grantFix = readRepoFile(
+    "supabase/migrations/20260522132749_advisor_public_profile_anon_grant_fix.sql",
+  );
+  const rlsAutoEnableFix = readRepoFile(
+    "supabase/migrations/20260522134703_advisor_rls_auto_enable_execute_fix.sql",
+  );
+  const triggerFunctionFix = readRepoFile(
+    "supabase/migrations/20260522134944_advisor_trigger_function_execute_fix.sql",
+  );
+  const extensionSchemaFix = readRepoFile(
+    "supabase/migrations/20260522135336_advisor_non_postgis_extension_schema_fix.sql",
+  );
+  const postgisRpcGrantFix = readRepoFile(
+    "supabase/migrations/20260522135654_advisor_postgis_rpc_grant_fix.sql",
+  );
+  const privateRpcWrappers = readRepoFile(
+    "supabase/migrations/20260522142004_advisor_private_rpc_wrappers.sql",
+  );
+
+  assert.match(hardening, /alter function public\.food_cred_level_index\(integer\)/);
+  assert.match(hardening, /alter function public\.food_cred_default_points\(text\)/);
+  assert.match(hardening, /alter function public\.food_cred_daily_cap\(text\)/);
+  assert.match(hardening, /set search_path = public, pg_temp/);
+
+  for (const functionName of [
+    "app_user_block_exists",
+    "can_access_conversation",
+    "can_read_author_content",
+    "can_read_post",
+    "report_post",
+    "send_chat_message",
+    "submit_menu_photo",
+    "submit_merchant_claim_interest",
+    "sync_home_feed_item_for_post",
+    "sync_post_engagement_counts",
+  ]) {
+    assert.match(
+      hardening,
+      new RegExp(`revoke execute on function public\\.${functionName}\\(`),
+      `${functionName} should no longer be anon-executable by default`,
+    );
+  }
+
+  assert.doesNotMatch(hardening, /alter extension postgis/i);
+  assert.doesNotMatch(hardening, /drop extension postgis/i);
+  assert.doesNotMatch(hardening, /alter table public\.spatial_ref_sys/i);
+  assert.doesNotMatch(hardening, /rls_auto_enable/);
+  assert.match(
+    grantFix,
+    /grant execute on function public\.can_read_author_content\(uuid\) to anon/,
+  );
+  assert.match(rlsAutoEnableFix, /to_regprocedure\('public\.rls_auto_enable\(\)'\)/);
+  assert.match(
+    rlsAutoEnableFix,
+    /revoke execute on function public\.rls_auto_enable\(\) from authenticated/,
+  );
+  assert.match(
+    triggerFunctionFix,
+    /revoke execute on function public\.sync_home_feed_item_for_post\(\)/,
+  );
+  assert.match(
+    triggerFunctionFix,
+    /revoke execute on function public\.sync_post_engagement_counts\(\)/,
+  );
+  assert.match(triggerFunctionFix, /from public, anon, authenticated/);
+  for (const extensionName of ["vector", "pg_trgm", "btree_gist", "citext"]) {
+    assert.match(extensionSchemaFix, new RegExp(`'${extensionName}'`));
+  }
+  assert.match(extensionSchemaFix, /alter extension %I set schema extensions/);
+  assert.doesNotMatch(extensionSchemaFix, /postgis/);
+  assert.match(
+    postgisRpcGrantFix,
+    /revoke execute on function public\.st_estimatedextent\(text, text\)/,
+  );
+  assert.match(
+    postgisRpcGrantFix,
+    /revoke execute on function public\.st_estimatedextent\(text, text, text\)/,
+  );
+  assert.match(
+    postgisRpcGrantFix,
+    /revoke execute on function public\.st_estimatedextent\(text, text, text, boolean\)/,
+  );
+  assert.match(privateRpcWrappers, /create schema if not exists app_private/);
+  assert.match(privateRpcWrappers, /alter function %s set schema app_private/);
+  assert.match(privateRpcWrappers, /security invoker/);
+  assert.match(privateRpcWrappers, /app_private\.%I/);
+  for (const functionName of [
+    "send_chat_message",
+    "report_content",
+    "award_food_cred",
+    "upsert_stall_interaction",
+    "increment_mission_progress",
+    "submit_menu_photo",
+  ]) {
+    assert.match(privateRpcWrappers, new RegExp(`'${functionName}'`));
+  }
+});
+
 test("OAuth flow validates callback URL and rejects implicit token fragments", () => {
   const service = readRepoFile("src/lib/services/supabase/supabaseService.ts");
 
@@ -257,7 +382,7 @@ test("store policy controls cover account deletion, UGC moderation, and location
   assert.match(migration, /enable row level security/);
   assert.match(serviceTypes, /communitySafety/);
   assert.match(supabaseService, /account_deletion_requests/);
-  assert.match(supabaseService, /content_reports/);
+  assert.match(supabaseService, /report_content/);
   assert.match(supabaseService, /user_blocks/);
   assert.match(safetyHelper, /promptReportReview/);
   assert.match(safetyHelper, /promptBlockReviewAuthor/);

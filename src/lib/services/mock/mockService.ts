@@ -10,6 +10,7 @@
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { similarityScore } from "@/lib/ai/similarityScore";
+import { STORY_GALLERY_ASSETS } from "@/lib/services/storyGalleryAssets";
 import {
   blogPosts,
   buildings,
@@ -25,6 +26,7 @@ import {
   merchantCustomerInteractions,
   merchantOCRDrafts,
   merchantPromotions,
+  popularVisitorPins,
   userProfile,
   venues,
 } from "./data";
@@ -66,6 +68,8 @@ import type {
   MerchantTeamMember,
   MerchantWeeklySummary,
   OCRDishDraft,
+  PopularVisitorCandidate,
+  PopularVisitorPin,
   SearchFilters,
   TasteProfile,
   TasteVector,
@@ -129,6 +133,7 @@ let _merchantPromotionCounter = 0;
 let _merchantOCRDrafts: OCRDishDraft[] = clone(merchantOCRDrafts);
 let _merchantInbox: CustomerInteraction[] = clone(merchantCustomerInteractions);
 let _merchantPromotions: MerchantPromotion[] = clone(merchantPromotions);
+let _popularVisitorPins: PopularVisitorPin[] = clone(popularVisitorPins);
 let _merchantAIInsights = clone(merchantAIInsights);
 let _merchantTeamMemberCounter = 0;
 let _merchantDishViewCounter = 0;
@@ -494,6 +499,90 @@ function syncMerchantMenuToUserCatalog(outletId: string, menu: DishDetail[]): vo
   menu.forEach((dish) => {
     syncMerchantDishToUserCatalog(outletId, dish);
   });
+}
+
+function sortPopularVisitorPins(pins: PopularVisitorPin[]): PopularVisitorPin[] {
+  return [...pins].sort((left, right) => {
+    if (left.sortOrder !== right.sortOrder) return left.sortOrder - right.sortOrder;
+    return new Date(right.pinnedAt).getTime() - new Date(left.pinnedAt).getTime();
+  });
+}
+
+function listActivePopularVisitorPins(outletId: string): PopularVisitorPin[] {
+  getMerchantOutlet(outletId);
+  return sortPopularVisitorPins(
+    _popularVisitorPins.filter((pin) => pin.outletId === outletId && pin.isActive),
+  ).slice(0, 6);
+}
+
+function getReviewBackedVisitorCandidates(outletId: string): PopularVisitorCandidate[] {
+  const outlet = getMerchantOutlet(outletId);
+  const venueId = getMockMerchantVenueId(outlet.id);
+  const menu = getMerchantMenu(outlet.id);
+  const fallbackDishName = menu[0]?.name;
+  const activePinByReviewId = new Map(
+    listActivePopularVisitorPins(outlet.id).map((pin) => [pin.reviewId, pin]),
+  );
+
+  return _merchantInbox
+    .filter((interaction) => interaction.outletId === outlet.id && interaction.type === "review")
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .map((interaction) => {
+      const reviewId = interaction.sourceId ?? interaction.id;
+      const activePin = activePinByReviewId.get(reviewId);
+      return {
+        outletId: outlet.id,
+        venueId,
+        reviewId,
+        sourceId: reviewId,
+        authorProfileId: `mock-profile-${interaction.authorName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-|-$/g, "")}`,
+        authorName: interaction.authorName,
+        authorAvatarUrl: interaction.authorAvatarUrl,
+        authorLocation: "Singapore",
+        reviewText: interaction.text,
+        rating: interaction.rating ?? 0,
+        dishName: fallbackDishName,
+        visitedAt: interaction.createdAt,
+        isPinned: Boolean(activePin),
+        pinId: activePin?.id,
+        sortOrder: activePin?.sortOrder,
+      } satisfies PopularVisitorCandidate;
+    });
+}
+
+function buildPopularVisitorPin(outletId: string, reviewId: string): PopularVisitorPin {
+  const candidate = getReviewBackedVisitorCandidates(outletId).find(
+    (item) => item.reviewId === reviewId,
+  );
+  if (!candidate) {
+    throw new Error(`Review ${reviewId} was not found for outlet ${outletId}`);
+  }
+  const activePins = listActivePopularVisitorPins(outletId);
+  if (activePins.length >= 6) {
+    throw new Error("A stall can feature up to 6 popular visitors.");
+  }
+  const nextSortOrder = activePins.reduce((max, pin) => Math.max(max, pin.sortOrder), -1) + 1;
+  return {
+    id: `pin-${outletId}-${reviewId}`,
+    outletId: candidate.outletId,
+    venueId: candidate.venueId,
+    reviewId: candidate.reviewId,
+    sourceId: candidate.sourceId,
+    authorProfileId: candidate.authorProfileId,
+    authorName: candidate.authorName,
+    authorAvatarUrl: candidate.authorAvatarUrl,
+    authorLocation: candidate.authorLocation,
+    reviewText: candidate.reviewText,
+    rating: candidate.rating,
+    dishName: candidate.dishName,
+    visitedAt: candidate.visitedAt,
+    pinnedAt: new Date().toISOString(),
+    sortOrder: nextSortOrder,
+    isActive: true,
+  };
 }
 
 function removeMerchantDishFromUserCatalog(outletId: string, dishId: string): void {
@@ -1263,6 +1352,10 @@ export const hungryService: HungryService = {
       return resolve([..._mockStories]);
     },
 
+    async listStoryGalleryAssets() {
+      return resolve([...STORY_GALLERY_ASSETS]);
+    },
+
     async likeStory(storyId: string) {
       await hydrateSocial();
       pruneMockStories();
@@ -1489,6 +1582,13 @@ export const hungryService: HungryService = {
     async listStallPosts() {
       await hydrateSocial();
       return resolve(listMockStallPosts());
+    },
+
+    async listPopularVisitorPinsByVenue(venueId) {
+      const pins = sortPopularVisitorPins(
+        _popularVisitorPins.filter((pin) => pin.venueId === venueId && pin.isActive),
+      ).slice(0, 6);
+      return resolve(clone(pins));
     },
 
     async getArticle(id) {
@@ -1906,6 +2006,63 @@ export const hungryService: HungryService = {
         reportedAt: new Date().toISOString(),
       });
       return resolve(undefined);
+    },
+
+    async listPopularVisitorCandidates(outletId) {
+      return resolve(clone(getReviewBackedVisitorCandidates(outletId)));
+    },
+
+    async listPopularVisitorPins(outletId) {
+      return resolve(clone(listActivePopularVisitorPins(outletId)));
+    },
+
+    async pinPopularVisitor(outletId, reviewId) {
+      getMerchantOutlet(outletId);
+      const existing = _popularVisitorPins.find(
+        (pin) => pin.outletId === outletId && pin.reviewId === reviewId,
+      );
+      if (existing?.isActive) {
+        return resolve(clone(existing));
+      }
+
+      const nextPin = buildPopularVisitorPin(outletId, reviewId);
+      if (existing) {
+        Object.assign(existing, {
+          ...nextPin,
+          id: existing.id,
+        });
+        return resolve(clone(existing));
+      }
+
+      _popularVisitorPins.push(nextPin);
+      return resolve(clone(nextPin));
+    },
+
+    async unpinPopularVisitor(pinId) {
+      const pin = _popularVisitorPins.find((item) => item.id === pinId);
+      if (!pin) throw new Error(`Popular visitor pin ${pinId} not found`);
+      pin.isActive = false;
+      return resolve(undefined);
+    },
+
+    async reorderPopularVisitorPins(outletId, orderedPinIds) {
+      const activePins = listActivePopularVisitorPins(outletId);
+      const activePinIds = new Set(activePins.map((pin) => pin.id));
+      const uniqueOrderedIds = Array.from(
+        new Set(orderedPinIds.filter((pinId) => activePinIds.has(pinId))),
+      );
+      const remainingIds = activePins
+        .map((pin) => pin.id)
+        .filter((pinId) => !uniqueOrderedIds.includes(pinId));
+
+      [...uniqueOrderedIds, ...remainingIds].forEach((pinId, index) => {
+        const pin = _popularVisitorPins.find(
+          (item) => item.id === pinId && item.outletId === outletId && item.isActive,
+        );
+        if (pin) pin.sortOrder = index;
+      });
+
+      return resolve(clone(listActivePopularVisitorPins(outletId)));
     },
 
     async getPromotions(outletId, status) {

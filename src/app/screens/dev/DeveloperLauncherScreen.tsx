@@ -1002,11 +1002,20 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             {NETWORK_PRESETS.map((preset) => {
               const icon =
                 preset.id === "live" ? (
-                  <Zap size={14} color={network === preset.id ? "#fff" : palette.textMuted} />
+                  <Zap
+                    size={14}
+                    color={network === preset.id ? palette.white : palette.textMuted}
+                  />
                 ) : preset.id === "slow" ? (
-                  <Wifi size={14} color={network === preset.id ? "#fff" : palette.textMuted} />
+                  <Wifi
+                    size={14}
+                    color={network === preset.id ? palette.white : palette.textMuted}
+                  />
                 ) : (
-                  <WifiOff size={14} color={network === preset.id ? "#fff" : palette.textMuted} />
+                  <WifiOff
+                    size={14}
+                    color={network === preset.id ? palette.white : palette.textMuted}
+                  />
                 );
 
               return (

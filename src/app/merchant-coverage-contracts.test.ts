@@ -39,6 +39,7 @@ test("merchant access, dashboard, and tab routes cover primary merchant entry po
       /name="BusinessProfileEditor"/,
       /name="DishEditor"/,
       /name="OCRDrafts"/,
+      /name="FeaturedVisitors"/,
       /name="PromotionList"/,
       /name="PromotionBuilder"/,
       /name="AIAssistant"/,
@@ -48,7 +49,14 @@ test("merchant access, dashboard, and tab routes cover primary merchant entry po
   );
   assertSourceIncludes(
     guards,
-    [/"Dashboard"/, /"Menu"/, /"CustomerInbox"/, /"PromotionBuilder"/, /"MerchantSettings"/],
+    [
+      /"Dashboard"/,
+      /"Menu"/,
+      /"CustomerInbox"/,
+      /"FeaturedVisitors"/,
+      /"PromotionBuilder"/,
+      /"MerchantSettings"/,
+    ],
     "merchant verified-only guards",
   );
   assertSourceIncludes(
@@ -57,9 +65,11 @@ test("merchant access, dashboard, and tab routes cover primary merchant entry po
       /service\.merchant\.getAnalytics/,
       /navigation\.navigate\("BusinessProfileEditor"\)/,
       /navigation\.navigate\("CustomerInbox"\)/,
+      /navigation\.navigate\("FeaturedVisitors"\)/,
       /navigation\.navigate\("Menu"\)/,
       /Manage Menu/,
       /Recent Reviews/,
+      /Featured Visitors/,
       /Actionable Insights/,
     ],
     "merchant dashboard actions",
@@ -215,6 +225,7 @@ test("merchant menu and OCR flows cover catalog writes that become consumer-visi
 
 test("merchant inbox, promotions, AI assistant, and settings use service-backed state", () => {
   const inbox = readRepoFile("src/app/screens/merchant/CustomerInboxScreen.tsx");
+  const featuredVisitors = readRepoFile("src/app/screens/merchant/FeaturedVisitorsScreen.tsx");
   const promotionList = readRepoFile("src/app/screens/merchant/PromotionListScreen.tsx");
   const promotionBuilder = readRepoFile("src/app/screens/merchant/PromotionBuilderScreen.tsx");
   const assistant = readRepoFile("src/app/screens/merchant/AIAssistantScreen.tsx");
@@ -232,6 +243,17 @@ test("merchant inbox, promotions, AI assistant, and settings use service-backed 
       /accessibilityLabel="Close reply composer"/,
     ],
     "CustomerInboxScreen",
+  );
+  assertSourceIncludes(
+    featuredVisitors,
+    [
+      /merchant\.listPopularVisitorPins\(/,
+      /merchant\.listPopularVisitorCandidates\(/,
+      /merchant\.pinPopularVisitor\(/,
+      /merchant\.unpinPopularVisitor\(/,
+      /merchant\.reorderPopularVisitorPins\(/,
+    ],
+    "FeaturedVisitorsScreen",
   );
   assertSourceIncludes(
     promotionList,
@@ -293,6 +315,7 @@ test("merchant inbox, promotions, AI assistant, and settings use service-backed 
       /merchant inbox filters interactions by outlet, type, and unreplied status/,
       /merchant inbox reply and report methods validate input and persist replies/,
       /merchant promotion create and update persist mock state/,
+      /merchant popular visitor pins stay review-backed, capped, reorderable, and venue-filtered/,
       /merchant settings team methods validate duplicates and protected owner role/,
       /merchant settings notification preferences persist partial updates/,
       /merchant AI assistant returns insight slices and weekly summary/,
@@ -329,7 +352,7 @@ test("merchant Playwright and native smoke coverage entry points stay registered
     nativeContracts,
     [
       /native media picker smoke reaches the post composer gallery entry point/,
-      /native activity smoke respects direct-message gating/,
+      /native activity smoke exposes the audited direct-message tab/,
       /native source-smoke coverage includes gestures, bottom sheets, media, and keyboard-sensitive entry points/,
     ],
     "native smoke coverage contract",

@@ -83,14 +83,20 @@ export function MediaPicker({
           <View style={styles.mediaContainer}>
             <Image
               source={{ uri: videoUri }}
-              style={[styles.media, { borderRadius: componentRadii.card }]}
+              style={[
+                styles.media,
+                { backgroundColor: palette.mediaBackdrop, borderRadius: componentRadii.card },
+              ]}
               contentFit="cover"
             />
-            <View style={styles.badge}>
+            <View style={[styles.badge, { backgroundColor: palette.mediaScrim }]}>
               <Video size={12} color={palette.white} />
             </View>
             <View style={styles.mediaActions}>
-              <Pressable onPress={() => setEditingUri(videoUri)} style={styles.actionBtn}>
+              <Pressable
+                onPress={() => setEditingUri(videoUri)}
+                style={[styles.actionBtn, { backgroundColor: palette.mediaScrimStrong }]}
+              >
                 <Edit2 size={14} color={palette.white} />
               </Pressable>
               <Pressable
@@ -125,11 +131,17 @@ export function MediaPicker({
           <View key={uri} style={styles.mediaContainer}>
             <Image
               source={{ uri }}
-              style={[styles.media, { borderRadius: componentRadii.card }]}
+              style={[
+                styles.media,
+                { backgroundColor: palette.mediaBackdrop, borderRadius: componentRadii.card },
+              ]}
               contentFit="cover"
             />
             <View style={styles.mediaActions}>
-              <Pressable onPress={() => setEditingUri(uri)} style={styles.actionBtn}>
+              <Pressable
+                onPress={() => setEditingUri(uri)}
+                style={[styles.actionBtn, { backgroundColor: palette.mediaScrimStrong }]}
+              >
                 <Edit2 size={14} color={palette.white} />
               </Pressable>
               <Pressable
@@ -188,7 +200,6 @@ const styles = StyleSheet.create({
   media: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#000",
   },
   pickerBtn: {
     width: 120,
@@ -203,7 +214,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     left: 8,
-    backgroundColor: "rgba(0,0,0,0.5)",
     padding: 4,
     borderRadius: 4,
   },
@@ -218,7 +228,6 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: componentRadii.card,
-    backgroundColor: "rgba(0,0,0,0.6)",
     alignItems: "center",
     justifyContent: "center",
   },

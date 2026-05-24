@@ -6,6 +6,7 @@ import {
   ScrollView,
   useWindowDimensions,
   Animated,
+  type ViewToken,
 } from "react-native";
 import { Image } from "expo-image";
 import { ArrowLeft, MapPinned, Heart } from "lucide-react-native";
@@ -17,6 +18,10 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Chip, ExpandableSearchLauncher, Screen, Avatar } from "@/components/ui";
+import {
+  CyclingGridImage,
+  CYCLING_GRID_IMAGE_INTERVAL_MS,
+} from "@/components/discover/CyclingGridImage";
 import {
   prefetchDishDetail,
   prefetchImages,
@@ -39,6 +44,116 @@ import {
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type QuickBitesRoute = RouteProp<RootStackParamList, "QuickBites">;
+type QuickBiteGridItem = Bite & { distance: number };
+
+function getQuickBiteCycleSlides(item: QuickBiteGridItem, items: QuickBiteGridItem[]) {
+  const crossStallSlides = items.filter(
+    (candidate) => candidate.id !== item.id && candidate.venueId !== item.venueId,
+  );
+  const fallbackSlides = items.filter((candidate) => candidate.id !== item.id);
+
+  return [item, ...crossStallSlides, ...fallbackSlides].slice(0, 4);
+}
+
+function QuickBiteGridCard({
+  allItems,
+  index,
+  item,
+  itemWidth,
+  isAutoCycleActive,
+  onOpen,
+  onPrefetch,
+}: {
+  allItems: QuickBiteGridItem[];
+  index: number;
+  item: QuickBiteGridItem;
+  itemWidth: number;
+  isAutoCycleActive: boolean;
+  onOpen: (item: QuickBiteGridItem) => void;
+  onPrefetch: (item: QuickBiteGridItem) => void;
+}) {
+  const { palette } = useHungryTheme();
+  const slides = useMemo(() => getQuickBiteCycleSlides(item, allItems), [allItems, item]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeSlide = slides[activeIndex] ?? item;
+  const handleActiveIndexChange = useCallback((nextIndex: number) => {
+    setActiveIndex(nextIndex);
+  }, []);
+
+  useEffect(() => {
+    if (activeIndex >= slides.length) {
+      setActiveIndex(0);
+    }
+  }, [activeIndex, slides.length]);
+
+  return (
+    <Pressable
+      onPressIn={() => onPrefetch(activeSlide)}
+      onPress={() => onOpen(activeSlide)}
+      style={{
+        width: itemWidth,
+        height: itemWidth * 1.35,
+        backgroundColor: palette.surface,
+        borderRightWidth: 0.5,
+        borderBottomWidth: 0.5,
+        borderColor: palette.border,
+      }}
+    >
+      <CyclingGridImage
+        images={slides.map((slide) => slide.photoUrl)}
+        cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
+        isAutoCycleActive={isAutoCycleActive}
+        startDelayMs={(index % 4) * 350}
+        onActiveIndexChange={handleActiveIndexChange}
+        style={StyleSheet.absoluteFill}
+      />
+      <LinearGradient
+        pointerEvents="none"
+        colors={["transparent", palette.mediaGradientMid, palette.detailImageOverlay]}
+        style={StyleSheet.absoluteFill}
+      />
+      <View pointerEvents="none" style={styles.cardContent}>
+        <View style={[styles.authorBadge, { backgroundColor: palette.mediaScrimSoft }]}>
+          <Avatar uri={activeSlide.authorAvatar} name={activeSlide.authorName} size={18} />
+          <AppText
+            variant="micro"
+            style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
+          >
+            {activeSlide.authorName}
+          </AppText>
+        </View>
+        <View style={{ flex: 1 }} />
+        <AppText
+          variant="bodySmallBold"
+          style={{ color: palette.white, marginBottom: 2 }}
+          numberOfLines={1}
+        >
+          {activeSlide.dishName}
+        </AppText>
+        <View style={styles.metaRow}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
+            <MapPinned size={10} color={palette.white} />
+            <AppText
+              variant="micro"
+              style={{ color: palette.white, fontWeight: "600", fontSize: 10 }}
+            >
+              {activeSlide.distance}m
+            </AppText>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+            <Heart size={10} color={palette.white} fill={palette.white} style={{ opacity: 0.8 }} />
+            <AppText
+              variant="micro"
+              style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
+            >
+              {activeSlide.cravingCount}
+            </AppText>
+          </View>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
 
 export const COLLECTION_COPY: Record<
   NonNullable<DiscoverCollection>,
@@ -93,6 +208,7 @@ export function QuickBitesScreen() {
 
   const [selectedCuisine, setSelectedCuisine] = useState("All");
   const [bites, setBites] = useState<Bite[]>(fallbackBites);
+  const [fullyVisibleBiteIds, setFullyVisibleBiteIds] = useState<Set<string>>(() => new Set());
   const searchQuery = useSearchStore((state) => state.filters.query);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
@@ -194,73 +310,32 @@ export function QuickBitesScreen() {
 
   const numColumns = 2;
   const itemWidth = screenWidth / numColumns;
+  const fullTileViewabilityConfig = useRef({ itemVisiblePercentThreshold: 100 }).current;
+  const handleFullyVisibleBitesChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      setFullyVisibleBiteIds(
+        new Set(
+          viewableItems
+            .filter((token) => token.isViewable && token.item)
+            .map((token) => (token.item as QuickBiteGridItem).id),
+        ),
+      );
+    },
+  ).current;
 
   const renderBiteItem = useCallback(
-    ({ item }: { item: Bite & { distance: number } }) => (
-      <Pressable
-        onPressIn={() => prefetchBiteRoute(item)}
-        onPress={() => navigation.navigate("DishDetail", { dishId: item.dishId })}
-        style={{
-          width: itemWidth,
-          height: itemWidth * 1.35,
-          backgroundColor: palette.surface,
-          borderRightWidth: 0.5,
-          borderBottomWidth: 0.5,
-          borderColor: palette.border,
-        }}
-      >
-        <Image source={{ uri: item.photoUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
-        <LinearGradient
-          colors={["transparent", "rgba(0,0,0,0.15)", "rgba(0,0,0,0.8)"]}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={styles.cardContent}>
-          <View style={styles.authorBadge}>
-            <Avatar uri={item.authorAvatar} name={item.authorName} size={18} />
-            <AppText
-              variant="micro"
-              style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
-            >
-              {item.authorName}
-            </AppText>
-          </View>
-          <View style={{ flex: 1 }} />
-          <AppText
-            variant="bodySmallBold"
-            style={{ color: palette.white, marginBottom: 2 }}
-            numberOfLines={1}
-          >
-            {item.dishName}
-          </AppText>
-          <View style={styles.metaRow}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
-              <MapPinned size={10} color={palette.white} />
-              <AppText
-                variant="micro"
-                style={{ color: palette.white, fontWeight: "600", fontSize: 10 }}
-              >
-                {item.distance}m
-              </AppText>
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-              <Heart
-                size={10}
-                color={palette.white}
-                fill={palette.white}
-                style={{ opacity: 0.8 }}
-              />
-              <AppText
-                variant="micro"
-                style={{ color: palette.white, fontWeight: "700", fontSize: 10 }}
-              >
-                {item.cravingCount}
-              </AppText>
-            </View>
-          </View>
-        </View>
-      </Pressable>
+    ({ item, index }: { item: QuickBiteGridItem; index: number }) => (
+      <QuickBiteGridCard
+        allItems={filteredBites}
+        index={index}
+        isAutoCycleActive={fullyVisibleBiteIds.has(item.id)}
+        item={item}
+        itemWidth={itemWidth}
+        onOpen={(activeItem) => navigation.navigate("DishDetail", { dishId: activeItem.dishId })}
+        onPrefetch={prefetchBiteRoute}
+      />
     ),
-    [itemWidth, palette, navigation, prefetchBiteRoute],
+    [filteredBites, fullyVisibleBiteIds, itemWidth, navigation, prefetchBiteRoute],
   );
 
   const renderFoodCarousel = useCallback(
@@ -394,6 +469,8 @@ export function QuickBitesScreen() {
           data={filteredBites}
           renderItem={renderBiteItem}
           keyExtractor={(item) => item.id}
+          onViewableItemsChanged={handleFullyVisibleBitesChanged}
+          viewabilityConfig={fullTileViewabilityConfig}
           onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
             useNativeDriver: false,
           })}
@@ -456,7 +533,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(0,0,0,0.4)",
     padding: 4,
     paddingRight: 8,
     borderRadius: 12,

@@ -9,6 +9,7 @@ function read(pathFromRepoRoot: string): string {
 
 test("native Maestro smoke scripts are skip-safe and target the Hungry app id", () => {
   const packageJson = read("package.json");
+  const metroConfig = read("metro.config.js");
   const runner = read("scripts/run-maestro-smoke.mjs");
   const preparedRunner = read("scripts/prepare-maestro-smoke.mjs");
 
@@ -36,10 +37,25 @@ test("native Maestro smoke scripts are skip-safe and target the Hungry app id", 
   );
   assert.match(runner, /HUNGRY_NATIVE_APP_ID/);
   assert.match(runner, /HUNGRY_MAESTRO_REQUIRED/);
+  assert.match(runner, /DEFAULT_METRO_STATUS_URLS = \[/);
+  assert.match(runner, /"http:\/\/127\.0\.0\.1:8081\/status"/);
+  assert.match(runner, /"http:\/\/localhost:8081\/status"/);
+  assert.match(runner, /DEFAULT_METRO_URL = "exp:\/\/localhost:8081"/);
+  assert.match(runner, /HUNGRY_NATIVE_SMOKE_METRO_STATUS_URL/);
+  assert.match(runner, /HUNGRY_NATIVE_SMOKE_METRO_URL/);
+  assert.match(runner, /HUNGRY_NATIVE_SMOKE_SKIP_METRO_CHECK/);
+  assert.match(runner, /packager-status:running/);
+  assert.match(
+    runner,
+    /Start `HUNGRY_METRO_USE_WATCHMAN=0 npm run start -- --host lan --port 8081`/,
+  );
+  assert.match(runner, /HUNGRY_NATIVE_SMOKE_METRO_STATUS_URL/);
   assert.match(runner, /maestro", \["--version"\]/);
   assert.match(runner, /skipped; Maestro CLI is not installed or not on PATH/);
   assert.match(runner, /appJson\.expo\?\.ios\?\.bundleIdentifier/);
   assert.match(runner, /APP_ID=\$\{appId\}/);
+  assert.match(runner, /replaceAll\("\$\{METRO_URL\}", metroUrl\)/);
+  assert.match(runner, /mkdtempSync/);
   assert.match(runner, /\.maestro\/ios-chat-smoke\.yaml/);
   assert.match(runner, /\.maestro\/ios-media-picker-permission\.yaml/);
   assert.match(preparedRunner, /HUNGRY_NATIVE_SMOKE_CACHE_DIR/);
@@ -51,9 +67,11 @@ test("native Maestro smoke scripts are skip-safe and target the Hungry app id", 
   assert.match(preparedRunner, /scripts\/run-maestro-smoke\.mjs/);
   assert.match(preparedRunner, /--require-maestro/);
   assert.match(preparedRunner, /MAESTRO_CLI_NO_ANALYTICS/);
+  assert.match(metroConfig, /HUNGRY_METRO_USE_WATCHMAN/);
+  assert.match(metroConfig, /config\.resolver\.useWatchman = false/);
 });
 
-test("native activity smoke respects direct-message gating", () => {
+test("native activity smoke exposes the audited direct-message tab", () => {
   const flow = read(".maestro/ios-chat-smoke.yaml");
   const activity = read("src/app/screens/home/ActivityInboxScreen.tsx");
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");
@@ -65,7 +83,7 @@ test("native activity smoke respects direct-message gating", () => {
   assert.match(flow, /text: "Close"/);
   assert.match(flow, /visible: "Enter URL manually"/);
   assert.match(flow, /point: "50%,34%"/);
-  assert.match(flow, /inputText: "exp:\/\/127\.0\.0\.1:8081"/);
+  assert.match(flow, /inputText: "\$\{METRO_URL\}"/);
   assert.match(flow, /tapOn: "Connect"/);
   assert.match(flow, /text: "Close"[\s\S]*optional: true[\s\S]*extendedWaitUntil/);
   assert.match(flow, /extendedWaitUntil:\n\s+visible: "Developer Launcher"\n\s+timeout: 60000/);
@@ -82,7 +100,7 @@ test("native activity smoke respects direct-message gating", () => {
     developerLauncher,
     /openActivityInboxSmoke[\s\S]*navigation\.navigate\("ActivityInbox", \{ initialTab: "updates" \}\)/,
   );
-  assert.match(flow, /assertNotVisible:\n\s+id: "activity-tab-messages"/);
+  assert.match(flow, /assertVisible:\n\s+id: "activity-tab-messages"/);
   assert.match(flow, /activity-tab-messages/);
   assert.doesNotMatch(flow, /activity-chat-row-1/);
   assert.doesNotMatch(flow, /chat-detail-screen/);
@@ -108,7 +126,7 @@ test("native media picker smoke reaches the post composer gallery entry point", 
   assert.match(flow, /text: "Close"/);
   assert.match(flow, /visible: "Enter URL manually"/);
   assert.match(flow, /point: "50%,34%"/);
-  assert.match(flow, /inputText: "exp:\/\/127\.0\.0\.1:8081"/);
+  assert.match(flow, /inputText: "\$\{METRO_URL\}"/);
   assert.match(flow, /tapOn: "Connect"/);
   assert.match(flow, /text: "Close"[\s\S]*optional: true[\s\S]*extendedWaitUntil/);
   assert.match(flow, /extendedWaitUntil:\n\s+visible: "Developer Launcher"\n\s+timeout: 60000/);

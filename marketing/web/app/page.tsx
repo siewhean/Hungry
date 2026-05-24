@@ -17,6 +17,7 @@ import {
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import { HungryWordmark } from "../components/HungryWordmark";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -124,6 +125,7 @@ export default function Home() {
 
   return (
     <main
+      id="home-top"
       ref={mainRef}
       className="w-full bg-hungry-bg text-hungry-text font-body selection:bg-hungry-orange selection:text-white"
     >
@@ -137,9 +139,9 @@ export default function Home() {
 
       {/* Navigation */}
       <nav className="sticky top-0 z-50 w-full bg-hungry-bg/90 backdrop-blur-md border-b border-hungry-border py-4 px-6 md:px-12 flex justify-between items-center">
-        <div className="font-display font-bold text-2xl tracking-tight text-hungry-text">
-          Hungry
-        </div>
+        <Link href="/#home-top" className="inline-flex items-center" scroll={false}>
+          <HungryWordmark className="h-8 w-auto sm:h-10" />
+        </Link>
         <div className="hidden md:flex gap-8 text-hungry-text-secondary font-medium text-sm">
           <Link href="/for-foodies" className="hover:text-hungry-orange transition-colors">
             Foodies

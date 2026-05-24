@@ -15,6 +15,7 @@ import { AppText, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
+import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
 import { useCartStore } from "@/store/useCartStore";
 import { useOrderStore } from "@/store/useOrderStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -43,7 +44,7 @@ function formatVenueStatus(venue: VenueSummary) {
   if (!venue.isOpen) {
     return venue.closureNotice ?? "Closed now";
   }
-  return venue.operatingHours;
+  return `Listed hours: ${venue.operatingHours}`;
 }
 
 export function StallDetailScreenV2({ route }: Props) {
@@ -339,6 +340,8 @@ export function StallDetailScreenV2({ route }: Props) {
           style={{ height: 1, backgroundColor: palette.border, marginHorizontal: spacing[4] }}
         />
 
+        <PopularVisitorsSection venueId={venue.id} style={{ marginTop: spacing[4] }} />
+
         {/* Dishes Carousel */}
         <View style={{ marginTop: spacing[4] }}>
           <View
@@ -372,7 +375,7 @@ export function StallDetailScreenV2({ route }: Props) {
                   </AppText>
                   <AppText variant="micro" tone="secondary">
                     {dish.reviewCount > 0
-                      ? `${dish.rating.toFixed(1)} · ${dish.reviewCount} reviews`
+                      ? `${dish.rating.toFixed(1)} · ${dish.reviewCount} listed reviews`
                       : "No reviews yet"}
                   </AppText>
                   <AppText variant="bodySmallBold" tone="accent" style={{ marginTop: 2 }}>
@@ -430,7 +433,7 @@ export function StallDetailScreenV2({ route }: Props) {
             }}
           >
             <AppText variant="bodySmallBold" style={{ marginBottom: spacing[3] }}>
-              Taste profile{totalReviewCount > 0 ? ` (${totalReviewCount} reviews)` : ""}
+              Taste profile{totalReviewCount > 0 ? ` (${totalReviewCount} listed reviews)` : ""}
             </AppText>
             <View style={{ gap: spacing[2] }}>
               {tasteRows.map((item) => (

@@ -8,8 +8,8 @@ import {
   TextInput,
   View,
   useWindowDimensions,
+  type ViewToken,
 } from "react-native";
-import { Image } from "expo-image";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -19,6 +19,10 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Avatar, Chip, EmptyState, Screen, Skeleton } from "@/components/ui";
+import {
+  CyclingGridImage,
+  CYCLING_GRID_IMAGE_INTERVAL_MS,
+} from "@/components/discover/CyclingGridImage";
 import { SearchResultsView } from "@/components/discover/SearchResultsView";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
@@ -63,6 +67,132 @@ type BrowseFeedItem = {
   venue?: VenueSummary;
 };
 
+function getCrossStallBrowseSlides(item: BrowseFeedItem, items: BrowseFeedItem[]) {
+  const crossStallSlides = items.filter(
+    (candidate) => candidate.id !== item.id && candidate.dish.venueId !== item.dish.venueId,
+  );
+  const fallbackSlides = items.filter((candidate) => candidate.id !== item.id);
+
+  return [item, ...crossStallSlides, ...fallbackSlides].slice(0, 4);
+}
+
+function getStallBrowseSlides(item: BrowseFeedItem, venueDishes: DishDetail[]) {
+  const dishes = [item.dish, ...venueDishes.filter((dish) => dish.id !== item.dish.id)];
+
+  return dishes.slice(0, 4).map((dish) => ({
+    ...item,
+    id: `${item.id}-${dish.id}`,
+    title: dish.name,
+    imageUrl: dish.imageUrl,
+    distanceMeters: dish.distanceMeters,
+    likeCount: dish.reviewCount,
+    dish,
+  }));
+}
+
+function BrowseGridCard({
+  index,
+  isAutoCycleActive,
+  item,
+  itemWidth,
+  onOpen,
+  onPrefetch,
+  slides,
+}: {
+  index: number;
+  isAutoCycleActive: boolean;
+  item: BrowseFeedItem;
+  itemWidth: number;
+  onOpen: (item: BrowseFeedItem) => void;
+  onPrefetch: (item: BrowseFeedItem) => void;
+  slides: BrowseFeedItem[];
+}) {
+  const { palette } = useHungryTheme();
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeSlide = slides[activeIndex] ?? item;
+  const handleActiveIndexChange = useCallback((nextIndex: number) => {
+    setActiveIndex(nextIndex);
+  }, []);
+
+  useEffect(() => {
+    if (activeIndex >= slides.length) {
+      setActiveIndex(0);
+    }
+  }, [activeIndex, slides.length]);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${activeSlide.title}`}
+      onPressIn={() => onPrefetch(activeSlide)}
+      onPress={() => onOpen(activeSlide)}
+      style={{
+        backgroundColor: palette.surface,
+        borderBottomColor: palette.border,
+        borderBottomWidth: 0.5,
+        borderRightColor: palette.border,
+        borderRightWidth: 0.5,
+        height: itemWidth * 1.35,
+        width: itemWidth,
+      }}
+    >
+      <CyclingGridImage
+        images={slides.map((slide) => slide.imageUrl)}
+        cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
+        isAutoCycleActive={isAutoCycleActive}
+        startDelayMs={(index % 4) * 350}
+        onActiveIndexChange={handleActiveIndexChange}
+        style={StyleSheet.absoluteFill}
+      />
+      <LinearGradient
+        pointerEvents="none"
+        colors={["transparent", palette.mediaGradientMid, palette.detailImageOverlay]}
+        style={StyleSheet.absoluteFill}
+      />
+      <View pointerEvents="none" style={browseStyles.cardContent}>
+        <View style={[browseStyles.authorBadge, { backgroundColor: palette.mediaScrimSoft }]}>
+          <Avatar uri={activeSlide.authorAvatarUrl} name={activeSlide.authorName} size={18} />
+          <AppText
+            variant="micro"
+            style={{ color: palette.white, fontSize: 10, fontWeight: "700" }}
+            numberOfLines={1}
+          >
+            {activeSlide.authorName}
+          </AppText>
+        </View>
+        <View style={{ flex: 1 }} />
+        <AppText
+          variant="bodySmallBold"
+          style={{ color: palette.white, marginBottom: 2 }}
+          numberOfLines={1}
+        >
+          {activeSlide.title}
+        </AppText>
+        <View style={browseStyles.metaRow}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
+            <MapPinned color={palette.white} size={10} />
+            <AppText
+              variant="micro"
+              style={{ color: palette.white, fontSize: 10, fontWeight: "600" }}
+            >
+              {Math.round(activeSlide.distanceMeters)}m
+            </AppText>
+          </View>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+            <Heart color={palette.white} fill={palette.white} size={10} style={{ opacity: 0.82 }} />
+            <AppText
+              variant="micro"
+              style={{ color: palette.white, fontSize: 10, fontWeight: "700" }}
+            >
+              {activeSlide.likeCount}
+            </AppText>
+          </View>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
 const BROWSE_FILTERS = ["All", "Local", "Halal", "Japanese", "Western", "Noodles", "Rice", "Spicy"];
 const BROWSE_GRID_HYDRATION_TIMEOUT_MS = 350;
 const BROWSE_GRID_HYDRATION_FALLBACK_DELAY_MS = 80;
@@ -103,6 +233,9 @@ function BrowseGridScreen({
   const [searchLauncherLeft, setSearchLauncherLeft] = useState(0);
   const [backControlLimit, setBackControlLimit] = useState(spacing[4] + 32);
   const [selectedFilter, setSelectedFilter] = useState("All");
+  const [fullyVisibleFeedItemIds, setFullyVisibleFeedItemIds] = useState<Set<string>>(
+    () => new Set(),
+  );
   const searchInputRef = useRef<TextInput | null>(null);
   const normalizedQuery = searchQuery.trim().toLowerCase();
   const shouldUseQueryScopedFeed = normalizedQuery.length > 0;
@@ -362,6 +495,18 @@ function BrowseGridScreen({
 
     return filtered.length || query ? filtered : feedItems;
   }, [feedItems, isBrowseDataReady, searchQuery, selectedFilter]);
+  const fullTileViewabilityConfig = useRef({ itemVisiblePercentThreshold: 100 }).current;
+  const handleFullyVisibleFeedItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      setFullyVisibleFeedItemIds(
+        new Set(
+          viewableItems
+            .filter((token) => token.isViewable && token.item)
+            .map((token) => (token.item as BrowseFeedItem).id),
+        ),
+      );
+    },
+  ).current;
   useEffect(() => {
     if (!isBrowseDataReady) {
       return;
@@ -480,101 +625,58 @@ function BrowseGridScreen({
   }, [searchRevealProgress]);
 
   const renderBrowseItem = useCallback(
-    ({ item }: { item: BrowseFeedItem }) => (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Open ${item.title}`}
-        onPressIn={() => {
-          prefetchDishDetail(item.dish.id, repository);
-          if (item.venue?.id) {
-            prefetchStallDetail(item.venue.id, repository);
-          }
-          preloadRoute(navigation, "DishDetail", { dishId: item.dish.id });
-        }}
-        onPress={() => {
-          navigation.navigate("DishDetail", { dishId: item.dish.id });
-          scheduleIdleWork(
-            () => {
-              recordTasteInteraction({
-                type: "dish_result_click",
-                surface: "search",
-                dish: item.dish,
-                query: searchQuery,
-                buttonId: `${mode}_browse_card`,
-              });
-            },
-            { timeout: 500, fallbackDelayMs: 80 },
-          );
-        }}
-        style={{
-          backgroundColor: palette.surface,
-          borderBottomColor: palette.border,
-          borderBottomWidth: 0.5,
-          borderRightColor: palette.border,
-          borderRightWidth: 0.5,
-          height: itemWidth * 1.35,
-          width: itemWidth,
-        }}
-      >
-        <Image
-          source={{ uri: item.imageUrl }}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          cachePolicy="memory-disk"
-          transition={120}
+    ({ item, index }: { item: BrowseFeedItem; index: number }) => {
+      const slides =
+        mode === "stalls" && item.venue?.id
+          ? getStallBrowseSlides(
+              item,
+              browseIndex?.sortedDishesByVenueId.get(item.venue.id) ?? [item.dish],
+            )
+          : getCrossStallBrowseSlides(item, filteredFeedItems);
+
+      return (
+        <BrowseGridCard
+          index={index}
+          isAutoCycleActive={fullyVisibleFeedItemIds.has(item.id)}
+          item={item}
+          itemWidth={itemWidth}
+          slides={slides}
+          onPrefetch={(activeItem) => {
+            prefetchDishDetail(activeItem.dish.id, repository);
+            if (activeItem.venue?.id) {
+              prefetchStallDetail(activeItem.venue.id, repository);
+            }
+            preloadRoute(navigation, "DishDetail", { dishId: activeItem.dish.id });
+          }}
+          onOpen={(activeItem) => {
+            navigation.navigate("DishDetail", { dishId: activeItem.dish.id });
+            scheduleIdleWork(
+              () => {
+                recordTasteInteraction({
+                  type: "dish_result_click",
+                  surface: "search",
+                  dish: activeItem.dish,
+                  query: searchQuery,
+                  buttonId: `${mode}_browse_card`,
+                });
+              },
+              { timeout: 500, fallbackDelayMs: 80 },
+            );
+          }}
         />
-        <LinearGradient
-          colors={["transparent", "rgba(0,0,0,0.15)", "rgba(0,0,0,0.82)"]}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={browseStyles.cardContent}>
-          <View style={browseStyles.authorBadge}>
-            <Avatar uri={item.authorAvatarUrl} name={item.authorName} size={18} />
-            <AppText
-              variant="micro"
-              style={{ color: palette.white, fontSize: 10, fontWeight: "700" }}
-              numberOfLines={1}
-            >
-              {item.authorName}
-            </AppText>
-          </View>
-          <View style={{ flex: 1 }} />
-          <AppText
-            variant="bodySmallBold"
-            style={{ color: palette.white, marginBottom: 2 }}
-            numberOfLines={1}
-          >
-            {item.title}
-          </AppText>
-          <View style={browseStyles.metaRow}>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
-              <MapPinned color={palette.white} size={10} />
-              <AppText
-                variant="micro"
-                style={{ color: palette.white, fontSize: 10, fontWeight: "600" }}
-              >
-                {Math.round(item.distanceMeters)}m
-              </AppText>
-            </View>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
-              <Heart
-                color={palette.white}
-                fill={palette.white}
-                size={10}
-                style={{ opacity: 0.82 }}
-              />
-              <AppText
-                variant="micro"
-                style={{ color: palette.white, fontSize: 10, fontWeight: "700" }}
-              >
-                {item.likeCount}
-              </AppText>
-            </View>
-          </View>
-        </View>
-      </Pressable>
-    ),
-    [itemWidth, mode, navigation, palette, recordTasteInteraction, repository, searchQuery],
+      );
+    },
+    [
+      browseIndex,
+      filteredFeedItems,
+      fullyVisibleFeedItemIds,
+      itemWidth,
+      mode,
+      navigation,
+      recordTasteInteraction,
+      repository,
+      searchQuery,
+    ],
   );
 
   return (
@@ -722,6 +824,8 @@ function BrowseGridScreen({
           data={filteredFeedItems}
           renderItem={renderBrowseItem}
           keyExtractor={(item) => item.id}
+          onViewableItemsChanged={handleFullyVisibleFeedItemsChanged}
+          viewabilityConfig={fullTileViewabilityConfig}
           // @ts-ignore FlashList v2 runtime supports this prop but its bundled RN type omits it.
           estimatedItemSize={220}
           numColumns={numColumns}
@@ -743,7 +847,6 @@ function BrowseGridScreen({
 const browseStyles = StyleSheet.create({
   authorBadge: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.4)",
     borderRadius: 12,
     flexDirection: "row",
     gap: 6,

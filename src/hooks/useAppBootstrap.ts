@@ -24,8 +24,8 @@ function applyProfile(profile: UserProfile) {
   getProfileStoreState().applyProfile(profile);
 }
 
-function syncProfile(isAuthenticated: boolean) {
-  getProfileStoreState().syncProfile(isAuthenticated);
+function syncProfile(isAuthenticated: boolean, userId?: string | null) {
+  getProfileStoreState().syncProfile(isAuthenticated, userId);
 }
 
 type BrowserIdleHandle = number;
@@ -48,6 +48,7 @@ function runAfterIdle(callback: () => void) {
 
 export function useAppBootstrap() {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const authenticatedUserId = useSessionStore((state) => state.authenticatedUserId);
   const applyAuthStateFromSession = useSessionStore((state) => state.applyAuthStateFromSession);
   const markAuthReady = useSessionStore((state) => state.markAuthReady);
   const setOffline = useUIStore((state) => state.setOffline);
@@ -125,19 +126,22 @@ export function useAppBootstrap() {
       .then(async ({ data }) => {
         if (!active) return;
         const user = data.session?.user;
-        applyAuthStateFromSession({
-          isAuthenticated: Boolean(user),
-          userId: user?.id ?? null,
-        });
-        if (user) {
-          try {
-            const profile = await getHungryService().profile.getProfile();
-            if (!active) return;
-            applyProfile(profile);
-          } catch {
-            // Keep the restored auth session even if profile hydration needs to retry later.
-          }
+        if (!user) {
+          applyAuthStateFromSession({ isAuthenticated: false, userId: null });
+          return;
         }
+
+        try {
+          const profile = await getHungryService().profile.getProfile();
+          if (!active) return;
+          applyProfile(profile);
+        } catch {
+          // Keep the restored auth session even if profile hydration needs to retry later.
+        }
+        applyAuthStateFromSession({
+          isAuthenticated: true,
+          userId: user.id,
+        });
       })
       .catch(() => {
         if (!active) return;
@@ -151,17 +155,24 @@ export function useAppBootstrap() {
 
     const { data: subscription } = client.auth.onAuthStateChange((_event, session) => {
       const user = session?.user;
-      applyAuthStateFromSession({
-        isAuthenticated: Boolean(user),
-        userId: user?.id ?? null,
-      });
-      if (!user) return;
+      if (!user) {
+        applyAuthStateFromSession({ isAuthenticated: false, userId: null });
+        return;
+      }
+
       void getHungryService()
         .profile.getProfile()
         .then((profile) => {
           if (active) applyProfile(profile);
         })
-        .catch(() => undefined);
+        .catch(() => undefined)
+        .finally(() => {
+          if (!active) return;
+          applyAuthStateFromSession({
+            isAuthenticated: true,
+            userId: user.id,
+          });
+        });
     });
 
     return () => {
@@ -182,7 +193,7 @@ export function useAppBootstrap() {
       return;
     }
 
-    syncProfile(isAuthenticated);
+    syncProfile(isAuthenticated, authenticatedUserId);
     previousAuth.current = isAuthenticated;
-  }, [isAuthenticated]);
+  }, [authenticatedUserId, isAuthenticated]);
 }

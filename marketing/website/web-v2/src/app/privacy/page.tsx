@@ -1,7 +1,6 @@
-export const metadata = {
-  title: "Privacy Policy | Hungry",
-  description: "Privacy Policy for the Hungry mobile app and website.",
-};
+import { routeMetadata } from "@/app/seo";
+
+export const metadata = routeMetadata("/privacy");
 
 const sections = [
   {
@@ -72,7 +71,7 @@ export default function PrivacyPolicy() {
         </p>
         <p style={{ color: "var(--color-text-secondary)", lineHeight: 1.8 }}>
           This policy covers the Hungry mobile app, merchant tools, and Hungry website surfaces that
-          link to this page. It should be reviewed by the owner before public store submission.
+          link to this page.
         </p>
 
         <div

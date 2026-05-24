@@ -3,6 +3,18 @@
 > Canonical checklist surface for store-submission documentation tasks.
 > Update this file when submission requirements or evidence links change.
 
+## Policy Source Spot-Check — 2026-05-23
+
+Official sources checked for the current No-Go store-submission gate:
+
+- Apple account deletion: https://developer.apple.com/support/offering-account-deletion-in-your-app/
+- Apple App Review Guidelines: https://developer.apple.com/app-store/review/guidelines/
+- Google Play user-generated content policy: https://support.google.com/googleplay/android-developer/answer/9876937
+- Google Play account deletion requirements: https://support.google.com/googleplay/android-developer/answer/13327111
+- Google Play Data Safety overview: https://support.google.com/googleplay/answer/11416267
+
+Current evidence status: repo-side privacy/account-deletion/UGC surfaces exist, but store submission remains blocked until final public URL reachability, App Store Connect privacy metadata, Google Play Data Safety/account-deletion answers, and reviewer access/test steps are verified from the external store consoles.
+
 ## APPLE-02 — App Store Metadata + Review Notes Checklist
 
 Owner: User  

@@ -4,14 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, BadgeCheck } from "lucide-react";
-import { homepage } from "../../content/site";
+import { merchantPage } from "@/content/site";
 import { Reveal } from "../../components/motion/Reveal";
 import { AppScreenshotFrame } from "../../components/home/AppScreenshotFrame";
 import styles from "./MerchantStory.module.css";
 
 export default function MerchantStory() {
   const [activeStep, setActiveStep] = useState(0);
-  const active = homepage.merchantSteps[activeStep];
+  const steps = merchantPage.workflow.steps;
+  const active = steps[activeStep];
 
   return (
     <section className={styles.section} id="merchant-flow">
@@ -25,7 +26,7 @@ export default function MerchantStory() {
           </p>
 
           <div className={styles.steps} role="tablist" aria-label="Merchant workflow">
-            {homepage.merchantSteps.map((step, index) => (
+            {steps.map((step, index) => (
               <button
                 aria-controls="merchant-proof-panel"
                 aria-selected={activeStep === index}

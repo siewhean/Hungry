@@ -70,6 +70,7 @@ export type MerchantTabParamList = {
   DishEditor: { dishId?: string } | undefined;
   OCRDrafts: undefined;
   CustomerInbox: undefined;
+  FeaturedVisitors: undefined;
   PromotionBuilder: { promotionId?: string } | undefined;
   PromotionList: undefined;
   AIAssistant: undefined;

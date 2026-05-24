@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { siteNav } from "@/content/site";
+import { HungryWordmark } from "@/components/brand/HungryWordmark";
 import styles from "./Navbar.module.css";
 
 export default function Navbar() {
@@ -7,7 +8,7 @@ export default function Navbar() {
     <header className={styles.navbarWrapper}>
       <div className={`container-wide ${styles.navbar}`}>
         <Link href="/" className={styles.logo}>
-          <span className={styles.logoText}>Hungry</span>
+          <HungryWordmark className={styles.logoText} />
         </Link>
 
         <nav className={styles.navLinks} aria-label="Primary navigation">
@@ -19,7 +20,7 @@ export default function Navbar() {
         </nav>
 
         <div className={styles.actions}>
-          <Link href="/for-foodies" className={styles.ctaButton}>
+          <Link href="/join-waitlist" className={styles.ctaButton}>
             Join Waitlist
           </Link>
         </div>

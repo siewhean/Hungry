@@ -101,7 +101,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
                 <AppText variant="h2" style={{ color: palette.white }}>
                   Host a Party
                 </AppText>
-                <AppText variant="bodySmall" style={{ color: "rgba(255,255,255,0.8)" }}>
+                <AppText variant="bodySmall" style={{ color: palette.inverseTextSecondary }}>
                   Start a new room and invite your friends to join the spin.
                 </AppText>
               </View>
@@ -110,7 +110,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
                   width: 44,
                   height: 44,
                   borderRadius: 22,
-                  backgroundColor: "rgba(255,255,255,0.2)",
+                  backgroundColor: palette.inverseSurfaceSubtle,
                   alignItems: "center",
                   justifyContent: "center",
                 }}

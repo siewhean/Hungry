@@ -85,6 +85,28 @@ async function expectNoError(result, label) {
   return result.data;
 }
 
+async function describeFunctionError(error) {
+  const context = error?.context;
+  if (!context || typeof context !== "object") {
+    return error?.message ?? "unknown function error";
+  }
+
+  const status =
+    typeof context.status === "number" ? `${context.status}` : String(context.status ?? "unknown");
+  const statusText = typeof context.statusText === "string" ? context.statusText : "";
+  let body = "";
+  try {
+    const cloned = typeof context.clone === "function" ? context.clone() : context;
+    body = typeof cloned.text === "function" ? await cloned.text() : "";
+  } catch {
+    body = "";
+  }
+
+  return [error?.message, `status=${status}`, statusText, body ? `body=${body}` : ""]
+    .filter(Boolean)
+    .join("; ");
+}
+
 function inferContentType(filePath) {
   const extension = path.extname(filePath).toLowerCase();
   if (extension === ".jpg" || extension === ".jpeg") return "image/jpeg";
@@ -216,7 +238,7 @@ async function main() {
   const runId = `${Date.now()}-${randomUUID().slice(0, 8)}`;
   const admin = createSupabaseClient(process.env[SMOKE_SERVICE_ENV].trim());
   const anonKey = process.env[SMOKE_ANON_ENV].trim();
-  const origin = process.env[OCR_ORIGIN_ENV]?.trim() || "http://localhost:8081";
+  const origin = process.env[OCR_ORIGIN_ENV]?.trim() || "";
   const imagePath = path.resolve(process.env[OCR_IMAGE_ENV].trim());
   const contentType = inferContentType(imagePath);
 
@@ -266,12 +288,12 @@ async function main() {
     const ingest = await invokeWithTimeout(
       userClient.functions.invoke("ingest-menu-photo", {
         body: { submissionId },
-        headers: { Origin: origin },
+        headers: origin ? { Origin: origin } : undefined,
       }),
       timeoutMs,
     );
     if (ingest.error) {
-      fail(`ingest-menu-photo: ${ingest.error.message}`);
+      fail(`ingest-menu-photo: ${await describeFunctionError(ingest.error)}`);
     }
     if (!ingest.data?.ok) {
       fail(`ingest-menu-photo returned ${JSON.stringify(ingest.data)}`);

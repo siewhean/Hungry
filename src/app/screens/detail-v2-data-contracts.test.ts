@@ -19,6 +19,8 @@ test("stall detail V2 handles missing data and uses real venue/dish values", () 
   assert.match(stall, /Math\.max\(insets\.bottom, spacing\[4\]\)/);
   assert.match(stall, /formatDistance\(leadDish\?\.distanceMeters\)/);
   assert.match(stall, /formatVenueStatus\(venue\)/);
+  assert.match(stall, /PopularVisitorsSection/);
+  assert.match(legacyStall, /PopularVisitorsSection/);
   assert.match(stall, /const statusColor = venue\.isOpen/);
   assert.doesNotMatch(stall, /style=\{\{ color: palette\.success \}\}[\s\S]*\{statusLabel\}/);
   assert.match(stall, /Saved top dish to favourites/);

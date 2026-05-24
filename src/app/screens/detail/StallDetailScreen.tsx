@@ -2,7 +2,7 @@ import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "re
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Image } from "expo-image";
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ChevronLeft,
@@ -41,11 +41,17 @@ import {
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
+import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
 import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
+import {
+  CyclingGridImage,
+  CYCLING_GRID_IMAGE_INTERVAL_MS,
+} from "@/components/discover/CyclingGridImage";
+import type { DishDetail } from "@/types/domain";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -84,6 +90,64 @@ type ReviewReply = {
   text: string;
   createdAt: string;
 };
+
+function getStallDishCycleSlides(dish: DishDetail, dishes: DishDetail[]) {
+  return [dish, ...dishes.filter((candidate) => candidate.id !== dish.id)].slice(0, 4);
+}
+
+function StallMenuDishCard({
+  dish,
+  dishes,
+  index,
+  onPress,
+  width,
+}: {
+  dish: DishDetail;
+  dishes: DishDetail[];
+  index: number;
+  onPress: (dish: DishDetail) => void;
+  width: number;
+}) {
+  const { componentRadii, palette, spacing } = useHungryTheme();
+  const slides = useMemo(() => getStallDishCycleSlides(dish, dishes), [dish, dishes]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeDish = slides[activeIndex] ?? dish;
+  const handleActiveIndexChange = useCallback((nextIndex: number) => {
+    setActiveIndex(nextIndex);
+  }, []);
+
+  useEffect(() => {
+    if (activeIndex >= slides.length) {
+      setActiveIndex(0);
+    }
+  }, [activeIndex, slides.length]);
+
+  return (
+    <Pressable onPress={() => onPress(activeDish)} style={{ width }}>
+      <View style={{ gap: spacing[2] }}>
+        <CyclingGridImage
+          images={slides.map((slide) => slide.imageUrl)}
+          cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
+          startDelayMs={(index % 4) * 350}
+          onActiveIndexChange={handleActiveIndexChange}
+          style={{
+            width: "100%",
+            height: 120,
+            borderRadius: componentRadii.card,
+          }}
+        />
+        <View style={{ gap: spacing[1] }}>
+          <AppText variant="bodyBold" numberOfLines={1}>
+            {activeDish.name}
+          </AppText>
+          <AppText variant="price" style={{ color: palette.orange }}>
+            {activeDish.priceRange}
+          </AppText>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
 
 export function StallDetailScreen({ navigation, route }: Props) {
   const venueId = route.params?.venueId ?? route.params?.id ?? "";
@@ -505,6 +569,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 </Card>
               </View>
 
+              <PopularVisitorsSection venueId={venue.id} horizontalPadding={0} />
+
               {/* Menu */}
               <View style={{ gap: spacing[4] }}>
                 <AppText variant="h2">Menu</AppText>
@@ -515,34 +581,17 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     gap: spacing[3],
                   }}
                 >
-                  {dishes.map((dish) => (
-                    <Pressable
+                  {dishes.map((dish, index) => (
+                    <StallMenuDishCard
                       key={dish.id}
-                      onPress={() => navigation.navigate("DishDetail", { dishId: dish.id })}
-                      style={{
-                        width: (screenWidth - spacing[5] * 2 - spacing[3]) / 2,
-                      }}
-                    >
-                      <View style={{ gap: spacing[2] }}>
-                        <Image
-                          source={{ uri: dish.imageUrl }}
-                          style={{
-                            width: "100%",
-                            height: 120,
-                            borderRadius: componentRadii.card,
-                          }}
-                          contentFit="cover"
-                        />
-                        <View style={{ gap: spacing[1] }}>
-                          <AppText variant="bodyBold" numberOfLines={1}>
-                            {dish.name}
-                          </AppText>
-                          <AppText variant="price" style={{ color: palette.orange }}>
-                            {dish.priceRange}
-                          </AppText>
-                        </View>
-                      </View>
-                    </Pressable>
+                      dish={dish}
+                      dishes={dishes}
+                      index={index}
+                      width={(screenWidth - spacing[5] * 2 - spacing[3]) / 2}
+                      onPress={(activeDish) =>
+                        navigation.navigate("DishDetail", { dishId: activeDish.id })
+                      }
+                    />
                   ))}
                 </View>
               </View>

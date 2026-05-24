@@ -26,7 +26,7 @@ export default function SplitSection() {
                   src={audience.image.src}
                   alt={audience.image.alt}
                   fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  sizes="(max-width: 639px) 100vw, 50vw"
                 />
               </div>
               <div className={styles.cardContent}>

@@ -188,7 +188,10 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
           </Pressable>
 
           {isCarousel ? (
-            <View pointerEvents="none" style={styles.carouselBadge}>
+            <View
+              pointerEvents="none"
+              style={[styles.carouselBadge, { backgroundColor: palette.mediaScrimSoft }]}
+            >
               <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
                 1 / {mediaUrls.length}
               </AppText>
@@ -197,14 +200,16 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
 
           {feedPost.mediaType === "video" ? (
             <View pointerEvents="none" style={styles.playButtonContainer}>
-              <View style={styles.playButtonBackdrop}>
+              <View
+                style={[styles.playButtonBackdrop, { backgroundColor: palette.mediaScrimSubtle }]}
+              >
                 <PlayCircle color={palette.white} size={54} strokeWidth={1.4} />
               </View>
             </View>
           ) : null}
 
           <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.6)"]}
+            colors={["transparent", palette.mediaScrimStrong]}
             style={[styles.gradientScrim, { height: "40%", top: "60%" }]}
             pointerEvents="none"
           />
@@ -222,7 +227,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
             <AppText variant="h3" style={{ color: palette.white }}>
               {primaryDish?.name ?? venue?.name ?? feedPost.authorName}
             </AppText>
-            <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)" }}>
+            <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
               {venue
                 ? `${venue.name} · ${venue.floor} ${venue.unitNumber}`
                 : feedPost.authorLocation}
@@ -428,7 +433,6 @@ const styles = StyleSheet.create({
     right: 12,
     top: 12,
     borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.4)",
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
@@ -446,7 +450,6 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: "rgba(0,0,0,0.28)",
     alignItems: "center",
     justifyContent: "center",
   },

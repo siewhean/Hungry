@@ -20,6 +20,13 @@ function exists(relativePath: string): boolean {
   return existsSync(path.join(root, relativePath));
 }
 
+function segmentBetween(source: string, start: string, end: string): string {
+  const startIndex = source.indexOf(start);
+  if (startIndex < 0) return "";
+  const endIndex = source.indexOf(end, startIndex + start.length);
+  return source.slice(startIndex, endIndex < 0 ? undefined : endIndex);
+}
+
 const merchantScreens = [
   {
     route: "Dashboard",
@@ -57,6 +64,12 @@ const merchantScreens = [
     route: "CustomerInbox",
     component: "CustomerInboxScreen",
     file: "src/app/screens/merchant/CustomerInboxScreen.tsx",
+    hidden: true,
+  },
+  {
+    route: "FeaturedVisitors",
+    component: "FeaturedVisitorsScreen",
+    file: "src/app/screens/merchant/FeaturedVisitorsScreen.tsx",
     hidden: true,
   },
   {
@@ -145,6 +158,7 @@ test("Merchant screen contract: verified-only routes are guarded by merchant acc
     "DishEditor",
     "OCRDrafts",
     "CustomerInbox",
+    "FeaturedVisitors",
     "PromotionBuilder",
     "PromotionList",
     "AIAssistant",
@@ -173,7 +187,13 @@ test("Merchant screen contract: merchant navigation buttons are accessible and h
   assert.match(tabs, /accessibilityLabel=\{`Merchant \$\{tabConfig\.label\}`\}/);
   assert.match(tabs, /tabConfig\.label/);
 
-  for (const route of ["PromotionList", "AIAssistant", "MerchantSettings", "OrdersComingSoon"]) {
+  for (const route of [
+    "FeaturedVisitors",
+    "PromotionList",
+    "AIAssistant",
+    "MerchantSettings",
+    "OrdersComingSoon",
+  ]) {
     assert.match(dashboard, new RegExp(`prefetchMerchantRoute\\("${route}"\\)`));
     assert.match(dashboard, new RegExp(`navigation\\.navigate\\("${route}"\\)`));
   }
@@ -186,6 +206,7 @@ test("Merchant screen contract: merchant route params match editable sub-screen 
   assert.match(navigationTypes, /PromotionBuilder: \{ promotionId\?: string \} \| undefined;/);
   assert.match(navigationTypes, /OCRDrafts: undefined;/);
   assert.match(navigationTypes, /CustomerInbox: undefined;/);
+  assert.match(navigationTypes, /FeaturedVisitors: undefined;/);
   assert.match(navigationTypes, /PromotionList: undefined;/);
   assert.match(navigationTypes, /AIAssistant: undefined;/);
   assert.match(navigationTypes, /MerchantSettings: undefined;/);
@@ -220,6 +241,9 @@ test("Merchant screen contract: menu management screens are wired to merchant se
 
 test("Merchant screen contract: profile, menu, and analytics use production-ready controls", () => {
   const profile = read("src/app/screens/merchant/BusinessProfileEditorScreen.tsx");
+  const verificationCentre = read("src/app/screens/merchant/VerificationCentreScreen.tsx");
+  const homeBasedVerification = read("src/app/screens/merchant/HomeBasedVerificationScreen.tsx");
+  const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
   const menu = read("src/app/screens/merchant/MerchantMenuScreen.tsx");
   const analytics = read("src/app/screens/merchant/MerchantAnalyticsScreen.tsx");
   const dashboard = read("src/app/screens/merchant/MerchantDashboardScreen.tsx");
@@ -228,6 +252,29 @@ test("Merchant screen contract: profile, menu, and analytics use production-read
   assert.match(profile, /launchImageLibraryAsync/);
   assert.match(profile, /BusinessImageField/);
   assert.doesNotMatch(profile, /Profile image upload unavailable/);
+  assert.match(verificationCentre, /launchImageLibraryAsync/);
+  assert.match(verificationCentre, /submitVerification\(activeOutlet\.id/);
+  assert.match(homeBasedVerification, /launchImageLibraryAsync/);
+  assert.match(homeBasedVerification, /for \(const fileUrl of photoUris\)/);
+  assert.match(homeBasedVerification, /submitVerification\(activeOutlet\.id/);
+  assert.doesNotMatch(`${verificationCentre}\n${homeBasedVerification}`, /mock-url:\/\//);
+  assert.doesNotMatch(`${verificationCentre}\n${homeBasedVerification}`, /Mock photos|Attach mock/);
+  const submitVerification = segmentBetween(
+    supabaseService,
+    "async submitVerification(outletId, evidence)",
+    "async resubmitVerification",
+  );
+  assert.ok(submitVerification);
+  assert.ok(
+    submitVerification.indexOf("assertLocalUserMediaUri") <
+      submitVerification.indexOf('.from("merchant_verifications")'),
+    "verification evidence must be validated before a verification row can be written",
+  );
+  assert.ok(
+    submitVerification.indexOf('status: "submitted"') >
+      submitVerification.indexOf('.from("merchant_verification_evidence").insert'),
+    "verification status must become submitted only after evidence insert is attempted",
+  );
   assert.match(menu, /title="Menu"/);
   assert.match(menu, /<FAB>/);
   assert.match(menu, /Add Menu Item Manually/);
@@ -252,6 +299,7 @@ test("Merchant screen contract: dish details record merchant dish views once per
 
 test("Merchant screen contract: inbox, promotions, assistant, and settings screens use merchant services", () => {
   const inbox = read("src/app/screens/merchant/CustomerInboxScreen.tsx");
+  const featuredVisitors = read("src/app/screens/merchant/FeaturedVisitorsScreen.tsx");
   const promotionList = read("src/app/screens/merchant/PromotionListScreen.tsx");
   const promotionBuilder = read("src/app/screens/merchant/PromotionBuilderScreen.tsx");
   const assistant = read("src/app/screens/merchant/AIAssistantScreen.tsx");
@@ -262,6 +310,12 @@ test("Merchant screen contract: inbox, promotions, assistant, and settings scree
   assert.match(inbox, /merchant\.reportInteraction\(/);
   assert.match(inbox, /merchant\.generateAIReply\(/);
   assert.match(inbox, /onViewOriginal/);
+
+  assert.match(featuredVisitors, /merchant\.listPopularVisitorPins\(/);
+  assert.match(featuredVisitors, /merchant\.listPopularVisitorCandidates\(/);
+  assert.match(featuredVisitors, /merchant\.pinPopularVisitor\(/);
+  assert.match(featuredVisitors, /merchant\.unpinPopularVisitor\(/);
+  assert.match(featuredVisitors, /merchant\.reorderPopularVisitorPins\(/);
 
   assert.match(promotionList, /merchant\.getPromotions\(/);
   assert.match(promotionList, /navigate\("PromotionBuilder"/);

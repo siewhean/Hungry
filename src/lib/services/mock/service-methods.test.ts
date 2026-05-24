@@ -538,6 +538,80 @@ test("merchant promotion analytics returns analytics and rejects missing promoti
   );
 });
 
+test("merchant popular visitor pins stay review-backed, capped, reorderable, and venue-filtered", async () => {
+  const outletId = "outlet-wonton-mee";
+  const venueId = `mock-venue-${outletId}`;
+  const candidates = await hungryService.merchant.listPopularVisitorCandidates(outletId);
+
+  assert.ok(candidates.length >= 7, "Expected enough review-backed visitors for cap coverage");
+  assert.ok(candidates.every((candidate) => candidate.reviewId === candidate.sourceId));
+  assert.ok(candidates.every((candidate) => candidate.venueId === venueId));
+
+  const initialPins = await hungryService.merchant.listPopularVisitorPins(outletId);
+  assert.ok(initialPins.length > 1);
+  assert.ok(initialPins.length <= 6);
+  assert.ok(
+    initialPins.every(
+      (pin, index) => index === 0 || initialPins[index - 1].sortOrder <= pin.sortOrder,
+    ),
+  );
+  assert.equal(
+    (await hungryService.content.listPopularVisitorPinsByVenue("missing-venue")).length,
+    0,
+  );
+  assert.equal(
+    (await hungryService.content.listPopularVisitorPinsByVenue(venueId)).length,
+    initialPins.length,
+  );
+
+  const firstUnpinned = candidates.find((candidate) => !candidate.isPinned);
+  assert.ok(firstUnpinned, "Expected an unpinned review candidate");
+  const addedPin = await hungryService.merchant.pinPopularVisitor(outletId, firstUnpinned.reviewId);
+  assert.equal(addedPin.reviewId, firstUnpinned.reviewId);
+  assert.equal(addedPin.venueId, venueId);
+  assert.ok(
+    (await hungryService.content.listPopularVisitorPinsByVenue(venueId)).some(
+      (pin) => pin.id === addedPin.id,
+    ),
+  );
+
+  await hungryService.merchant.unpinPopularVisitor(addedPin.id);
+  assert.ok(
+    !(await hungryService.merchant.listPopularVisitorPins(outletId)).some(
+      (pin) => pin.id === addedPin.id,
+    ),
+  );
+
+  const beforeReorder = await hungryService.merchant.listPopularVisitorPins(outletId);
+  const reordered = await hungryService.merchant.reorderPopularVisitorPins(
+    outletId,
+    beforeReorder
+      .slice()
+      .reverse()
+      .map((pin) => pin.id),
+  );
+  assert.equal(reordered[0].id, beforeReorder[beforeReorder.length - 1].id);
+  assert.ok(reordered.every((pin, index) => pin.sortOrder === index));
+
+  let activePins = await hungryService.merchant.listPopularVisitorPins(outletId);
+  for (const candidate of await hungryService.merchant.listPopularVisitorCandidates(outletId)) {
+    if (activePins.length >= 6) break;
+    if (!activePins.some((pin) => pin.reviewId === candidate.reviewId)) {
+      await hungryService.merchant.pinPopularVisitor(outletId, candidate.reviewId);
+      activePins = await hungryService.merchant.listPopularVisitorPins(outletId);
+    }
+  }
+  assert.equal(activePins.length, 6);
+  const overflowCandidate = (
+    await hungryService.merchant.listPopularVisitorCandidates(outletId)
+  ).find((candidate) => !activePins.some((pin) => pin.reviewId === candidate.reviewId));
+  assert.ok(overflowCandidate, "Expected an overflow candidate beyond the 6 visible pins");
+  await assert.rejects(
+    hungryService.merchant.pinPopularVisitor(outletId, overflowCandidate.reviewId),
+    /up to 6 popular visitors/,
+  );
+});
+
 test("merchant analytics records dish views without duplicate session increments", async () => {
   const outletId = "outlet-wonton-mee";
   const menu = await hungryService.merchant.getMenu(outletId);

@@ -162,14 +162,16 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
 
           {post.mediaType === "video" ? (
             <View pointerEvents="none" style={styles.playButtonContainer}>
-              <View style={styles.playButtonBackdrop}>
+              <View
+                style={[styles.playButtonBackdrop, { backgroundColor: palette.mediaScrimSubtle }]}
+              >
                 <PlayCircle color={palette.white} size={54} strokeWidth={1.4} />
               </View>
             </View>
           ) : null}
 
           <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.6)"]}
+            colors={["transparent", palette.mediaScrimStrong]}
             style={[styles.gradientScrim, { height: "40%", top: "60%" }]}
             pointerEvents="none"
           />
@@ -187,7 +189,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
             <AppText variant="h3" style={{ color: palette.white }}>
               {primaryDish?.name ?? venue?.name ?? post.authorName}
             </AppText>
-            <AppText variant="micro" style={{ color: "rgba(255,255,255,0.8)" }}>
+            <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
               {venue ? `${venue.name} · ${venue.floor} ${venue.unitNumber}` : post.authorLocation}
             </AppText>
           </View>
@@ -382,7 +384,6 @@ const styles = StyleSheet.create({
   },
   playButtonBackdrop: {
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.28)",
     borderRadius: 36,
     height: 72,
     justifyContent: "center",

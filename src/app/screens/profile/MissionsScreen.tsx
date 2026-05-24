@@ -16,6 +16,7 @@ import { useMissionStore } from "@/store/useMissionStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { trackMissionViewed } from "@/lib/analytics/gamificationEvents";
+import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 
 type Props = NativeStackScreenProps<RootStackParamList, "MissionsScreen">;
 
@@ -32,6 +33,7 @@ export function MissionsScreen({ navigation: _nav }: Props) {
     return missions.filter((mission) => !progressMap[mission.id]?.completedAt);
   }, [missions, progressMap]);
   const completedCount = completedMissions.length;
+  const disclosure = getDataTrustDisclosure("missions");
 
   useEffect(() => {
     loadMissions(profile.id);
@@ -47,7 +49,7 @@ export function MissionsScreen({ navigation: _nav }: Props) {
   return (
     <ProfileScreenShell
       title="Weekly Missions"
-      subtitle={`${completedCount}/${missions.length} completed · ${weekLabel}`}
+      subtitle={`${completedCount}/${missions.length} completed · ${weekLabel} · ${disclosure}`}
     >
       {missions.length === 0 ? (
         <EmptyState title="No missions this week" body="Check back on Monday for new missions." />

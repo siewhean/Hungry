@@ -214,6 +214,189 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /Stalls in \{discoverLocationLabel\}[\s\S]*areaStallCards\.length \? \([\s\S]*areaStallCards\.map[\s\S]*\) : isDiscoverFiltering \?/,
   );
+  assert.match(discover, /type DiscoverStallShowcaseCard = \{/);
+  assert.match(discover, /id: string/);
+  assert.match(discover, /imageSource: string \| number/);
+  assert.match(discover, /const STALL_SHOWCASE_CARD_LIMIT = 30/);
+  assert.match(discover, /const STALL_SHOWCASE_FALLBACK_IMAGES = \[/);
+  assert.match(discover, /function buildStallShowcaseCardsFromVenues/);
+  assert.match(discover, /repository: DataRepository/);
+  assert.match(
+    discover,
+    /const uniqueVenues = Array\.from\(new Map\(venues\.map\(\(venue\) => \[venue\.id, venue\]\)\)\.values\(\)\)/,
+  );
+  assert.match(discover, /return uniqueVenues\.flatMap\(\(venue\) =>/);
+  assert.match(discover, /const heroCandidates = \[/);
+  assert.match(discover, /return heroCandidates\.map\(\(heroDish, heroIndex\) =>/);
+  assert.match(discover, /imageSource:\s*heroDish\.imageUrl \|\|/);
+  assert.match(
+    discover,
+    /STALL_SHOWCASE_FALLBACK_IMAGES\[heroIndex % STALL_SHOWCASE_FALLBACK_IMAGES\.length\]/,
+  );
+  assert.match(discover, /function extendStallShowcaseCards/);
+  assert.match(
+    discover,
+    /Array\.from\(\{ length: limit \}, \(_, index\) => cards\[index % cards\.length\]\)/,
+  );
+  assert.match(discover, /function VerticalStallShowcaseSection/);
+  assert.match(discover, /const unfilteredStallShowcaseCards = useMemo/);
+  assert.match(discover, /const stallShowcaseCards = useMemo/);
+  assert.match(discover, /const STALL_SHOWCASE_IMAGE_REPEAT_BUFFER = 2/);
+  assert.match(discover, /\.slice\(0, STALL_SHOWCASE_CARD_LIMIT\)/);
+  assert.match(
+    discover,
+    /const visibleCards = useMemo\(\(\) => cards\.slice\(0, STALL_SHOWCASE_CARD_LIMIT\), \[cards\]\)/,
+  );
+  assert.match(discover, /function getStallShowcaseImageSources/);
+  assert.match(discover, /function buildLoopingStallShowcaseImageSources/);
+  assert.match(discover, /const columnGap = spacing\[2\]/);
+  assert.match(discover, /const rowGap = spacing\[2\]/);
+  assert.match(discover, /const columnCardWidth = \(cardWidth - columnGap\) \/ 2/);
+  assert.match(discover, /const headingReserveHeight = typography\.h2\.lineHeight \+ spacing\[2\]/);
+  assert.match(
+    discover,
+    /const showcaseViewportHeight = Math\.max\(0, pageHeight - headingReserveHeight\)/,
+  );
+  assert.match(
+    discover,
+    /const availableRowHeight = \(showcaseViewportHeight - rowGap \* 2\) \/ 3/,
+  );
+  assert.match(discover, /const maxTallCardHeight = columnCardWidth \* 1\.36/);
+  assert.match(
+    discover,
+    /const tallCardHeight = Math\.max\(0, Math\.floor\(Math\.min\(availableRowHeight, maxTallCardHeight\)\)\)/,
+  );
+  assert.match(discover, /const cardImageHeight = Math\.floor\(tallCardHeight \* 0\.6\)/);
+  assert.doesNotMatch(
+    discover,
+    /const showcaseSwipeX = useRef\(new Animated\.Value\(0\)\)\.current/,
+  );
+  assert.match(discover, /return rows/);
+  assert.doesNotMatch(discover, /return rows\.slice\(0, 3\)/);
+  assert.match(discover, /const showcaseVenuePool = \[\.\.\.areaVenues, \.\.\.allDiscoverVenues\]/);
+  assert.match(
+    discover,
+    /return buildStallShowcaseCardsFromVenues\(showcaseVenuePool, repository\)/,
+  );
+  assert.match(
+    discover,
+    /matchesDiscoverChipSelection\(product, \[\s*venue\.name,\s*heroDish\.name,\s*\.\.\.product\.tasteTags,/,
+  );
+  assert.match(discover, /directionalLockEnabled/);
+  assert.doesNotMatch(discover, /pagingEnabled/);
+  assert.doesNotMatch(discover, /disableIntervalMomentum/);
+  assert.match(discover, /const showcaseKey = useMemo/);
+  assert.match(discover, /const lastTouchYRef = useRef<number \| null>\(null\)/);
+  assert.doesNotMatch(discover, /const gestureStartTouchYRef = useRef<number \| null>\(null\)/);
+  assert.match(discover, /showcaseScrollOffsetRef\.current = 0/);
+  assert.match(discover, /updateParentScrollLock\(false\)/);
+  assert.doesNotMatch(discover, /Animated\.spring\(showcaseSwipeX/);
+  assert.match(discover, /function VerticalStallShowcaseSection[\s\S]*onTopBoundaryPull/);
+  assert.match(discover, /function VerticalStallShowcaseSection[\s\S]*onRequestSectionFocus/);
+  assert.match(discover, /function VerticalStallShowcaseSection[\s\S]*onSectionLayout/);
+  assert.match(discover, /onRequestSectionFocus\(\)/);
+  assert.match(discover, /updateParentScrollLock\(true\)/);
+  assert.match(discover, /const handleShowcaseTouchMove = useCallback/);
+  assert.match(discover, /showcaseScrollOffsetRef\.current <= 1 && deltaY > 0/);
+  assert.match(discover, /onTopBoundaryPull\(deltaY\)/);
+  assert.match(discover, /const discoverScrollOffsetYRef = useRef\(0\)/);
+  assert.match(discover, /const discoverScrollDirectionRef = useRef<"up" \| "down" \| null>\(null\)/);
+  assert.match(discover, /const stallShowcaseTopYRef = useRef\(0\)/);
+  assert.match(discover, /const handleDiscoverScroll = useCallback/);
+  assert.match(discover, /const previousOffsetY = discoverScrollOffsetYRef\.current/);
+  assert.match(discover, /discoverScrollDirectionRef\.current = "down"/);
+  assert.match(discover, /discoverScrollDirectionRef\.current = "up"/);
+  assert.match(
+    discover,
+    /discoverScrollOffsetYRef\.current = nextOffsetY/,
+  );
+  assert.match(discover, /const handleStallShowcaseLayout = useCallback/);
+  assert.match(discover, /stallShowcaseTopYRef\.current = event\.nativeEvent\.layout\.y/);
+  assert.match(discover, /const focusStallShowcaseSection = useCallback/);
+  assert.match(discover, /const sectionTopY = stallShowcaseTopYRef\.current/);
+  assert.match(
+    discover,
+    /discoverScrollRef\.current\?\.scrollTo\(\{ x: 0, y: sectionTopY, animated \}\)/,
+  );
+  assert.match(discover, /const handleDiscoverScrollEnd = useCallback/);
+  assert.match(discover, /nextOffsetY < sectionTopY - stallShowcasePageHeight \/ 2/);
+  assert.match(discover, /focusStallShowcaseSection\(true\)/);
+  assert.match(discover, /const handleStallShowcaseTopBoundaryPull = useCallback/);
+  assert.match(
+    discover,
+    /discoverScrollRef\.current\?\.scrollTo\(\{ x: 0, y: nextParentOffsetY, animated: false \}\)/,
+  );
+  assert.match(discover, /onScroll=\{handleDiscoverScroll\}/);
+  assert.match(discover, /onScrollEndDrag=\{handleDiscoverScrollEnd\}/);
+  assert.match(discover, /onMomentumScrollEnd=\{handleDiscoverScrollEnd\}/);
+  assert.match(discover, /scrollY\.setValue\(0\)/);
+  assert.match(discover, /key=\{showcaseKey\}/);
+  assert.match(discover, /\$\{card\.id\}-\$\{index\}/);
+  assert.match(discover, /onTouchStart=\{handleShowcaseTouchStart\}/);
+  assert.match(discover, /onTouchMove=\{handleShowcaseTouchMove\}/);
+  assert.match(
+    discover,
+    /<View onLayout=\{onSectionLayout\} style=\{\{ gap: spacing\[2\], height: pageHeight \}\}>/,
+  );
+  assert.match(discover, /snapToInterval=\{rowSnapInterval\}/);
+  assert.match(discover, /snapToAlignment="start"/);
+  assert.match(discover, /style=\{\{ height: showcaseViewportHeight, width: cardWidth \}\}/);
+  assert.match(discover, /contentContainerStyle=\{\{ gap: rowGap \}\}/);
+  assert.match(discover, /showcaseRows\.map\(\(rowCards, rowIndex\) =>/);
+  assert.match(discover, /rowCards\.map\(\(card, columnIndex\) =>/);
+  assert.match(
+    discover,
+    /const imageInputStart = Math\.max\(0, \(rowIndex - 3\) \* rowSnapInterval\)/,
+  );
+  assert.match(
+    discover,
+    /const imageInputEnd = Math\.max\(rowSnapInterval, \(rowIndex \+ 1\) \* rowSnapInterval\)/,
+  );
+  assert.match(discover, /const imageScrollStepCount = Math\.max/);
+  assert.match(discover, /const imageRailSources = buildLoopingStallShowcaseImageSources/);
+  assert.match(discover, /const imageTranslateX = scrollY\.interpolate/);
+  assert.match(
+    discover,
+    /outputRange:\s*columnIndex === 0 \? \[0, -imageTravel\] : \[-imageTravel, 0\]/,
+  );
+  assert.match(discover, /const direction = columnIndex === 0 \? -1 : 1/);
+  assert.match(discover, /const contentTravel = columnCardWidth/);
+  assert.match(
+    discover,
+    /outputRange: \[-contentTravel \* direction, 0, 0, contentTravel \* direction\]/,
+  );
+  assert.match(discover, /outputRange: \[0\.42, 1, 1, 0\.42\]/);
+  assert.match(discover, /opacity,\s*transform: \[\{ translateX \}\]/);
+  assert.match(discover, /imageRailSources\.map\(\(imageSource, imageIndex\) =>/);
+  assert.match(discover, /transform: \[\{ translateX: imageTranslateX \}\]/);
+  assert.match(discover, /typeof imageSource === "string"/);
+  assert.match(
+    discover,
+    /bottom: spacing\[2\],[\s\S]*right: spacing\[2\],[\s\S]*<Star color=\{palette\.amber\} size=\{11\} fill=\{palette\.amber\} \/>[\s\S]*\{card\.heroDish\.rating\.toFixed\(1\)\}/,
+  );
+  assert.doesNotMatch(discover, /style=\{\{ alignItems: "center", flexDirection: "row", gap: spacing\[1\] \}\}[\s\S]*\{card\.heroDish\.rating\.toFixed\(1\)\}/);
+  assert.doesNotMatch(discover, /secondaryProducts\.map/);
+  assert.match(discover, /height: tallCardHeight/);
+  assert.match(discover, /width: columnCardWidth/);
+  assert.match(
+    discover,
+    /const \[isStallShowcaseGestureActive, setIsStallShowcaseGestureActive\] = useState\(false\)/,
+  );
+  assert.match(discover, /scrollEnabled=\{!isStallShowcaseGestureActive\}/);
+  assert.match(discover, /onTouchStart=\{handleShowcaseTouchStart\}/);
+  assert.match(discover, /onTopBoundaryPull=\{handleStallShowcaseTopBoundaryPull\}/);
+  assert.match(discover, /onRequestSectionFocus=\{focusStallShowcaseSection\}/);
+  assert.match(discover, /onSectionLayout=\{handleStallShowcaseLayout\}/);
+  assert.match(discover, /onTouchEnd=\{handleShowcaseGestureEnd\}/);
+  assert.match(discover, /onScrollBeginDrag=\{handleShowcaseGestureStart\}/);
+  assert.match(discover, /onScrollEndDrag=\{handleShowcaseGestureEnd\}/);
+  assert.match(discover, /listener: handleShowcaseScroll/);
+  assert.match(discover, /onOpenCard=\{openStallShowcaseCard\}/);
+  assert.match(discover, /onPrefetchCard=\{prefetchStallShowcaseCard\}/);
+  assert.match(
+    discover,
+    /Stalls in \{discoverLocationLabel\}[\s\S]*areaStallCards\.map[\s\S]*stallShowcaseCards\.length \? \([\s\S]*<VerticalStallShowcaseSection/,
+  );
   assert.match(discover, /No matching results/);
   assert.match(discover, /Try again later\./);
   assert.doesNotMatch(discover, /NoFoodForFilter|No food for this filter|BowlIllustrationV2/);
@@ -386,8 +569,8 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /paddingTop: spacing\[1\]/);
   assert.match(discover, /Stalls & Restaurants/);
   assert.match(discover, /Dishes/);
-  assert.match(discover, /backgroundColor: "rgba\(15, 23, 42, 0\.34\)"/);
-  assert.match(discover, /borderColor: "rgba\(255, 255, 255, 0\.16\)"/);
+  assert.match(discover, /backgroundColor: palette\.imageLabelSurface/);
+  assert.match(discover, /borderColor: palette\.imageLabelBorder/);
   assert.match(discover, /const bowlSize = 72/);
   assert.match(discover, /style=\{\{ alignItems: "center", height: buttonHeight, width: 88 \}\}/);
   assert.doesNotMatch(discover, /fontSize: 24, lineHeight: 28/);
@@ -482,6 +665,31 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /Stalls in \{discoverLocationLabel\}[\s\S]*<View style=\{\{ gap: discoverContentGap \}\}>[\s\S]*areaStallCards\.map/,
   );
+  assert.match(
+    discover,
+    /const \[discoverViewportHeight, setDiscoverViewportHeight\] = useState\(screenHeight\)/,
+  );
+  assert.match(discover, /import \{ useSafeAreaInsets \} from "react-native-safe-area-context"/);
+  assert.match(discover, /const insets = useSafeAreaInsets\(\)/);
+  assert.match(
+    discover,
+    /const bottomTabVisibleHeight = componentSizes\.bottomTabBar \+ Math\.max\(insets\.bottom, spacing\[2\]\)/,
+  );
+  assert.match(
+    discover,
+    /const stallShowcasePageHeight =[\s\S]*Math\.max\(0, \(discoverViewportHeight \|\| screenHeight\) - bottomTabVisibleHeight\)[\s\S]*discoverViewportHeight[\s\S]*screenHeight/,
+  );
+  assert.match(discover, /const handleDiscoverViewportLayout = useCallback/);
+  assert.match(
+    discover,
+    /setDiscoverViewportHeight\(\(currentHeight\) =>[\s\S]*Math\.abs\(currentHeight - nextHeight\) > 1 \? nextHeight : currentHeight/,
+  );
+  assert.match(discover, /setDiscoverViewportHeight\(screenHeight\)/);
+  assert.match(discover, /onLayout=\{handleDiscoverViewportLayout\}/);
+  assert.match(
+    discover,
+    /const stallShowcaseCardWidth = screenWidth - semanticSpacing\.screenEdge \* 2/,
+  );
   assert.doesNotMatch(discover, /areaStallCards\.map[\s\S]*width: screenWidth \* 0\.72/);
   assert.doesNotMatch(discover, /discoverNearbyCount/);
 });
@@ -525,7 +733,7 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
   assert.doesNotMatch(targetCardsBlock, /aspectRatio: 1\.75/);
   assert.doesNotMatch(targetCardsBlock, /aspectRatio: 1\.8/);
   assert.doesNotMatch(targetCardsBlock, /contentFit="contain"/);
-  assert.match(targetCardsBlock, /<LinearGradient[\s\S]*rgba\(15,23,42,0\.68\)/);
+  assert.match(targetCardsBlock, /<LinearGradient[\s\S]*palette\.imageOverlayGradientEnd/);
   assert.match(targetCardsBlock, /Stalls & Restaurants/);
   assert.match(targetCardsBlock, /Dishes/);
   assert.match(targetCardsBlock, /position: "absolute"/);
@@ -571,9 +779,15 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
   assert.match(searchResults, /<FlashList[\s\S]*numColumns=\{numColumns\}/);
   assert.match(searchResults, /const numColumns = 2/);
   assert.match(searchResults, /const itemWidth = screenWidth \/ numColumns/);
-  assert.match(searchResults, /<LinearGradient[\s\S]*rgba\(0,0,0,0\.82\)/);
-  assert.match(searchResults, /<Avatar uri=\{item\.authorAvatarUrl\}/);
-  assert.match(searchResults, /navigation\.navigate\("DishDetail", \{ dishId: item\.dish\.id \}\)/);
+  assert.match(
+    searchResults,
+    /<LinearGradient[\s\S]*palette\.mediaGradientMid[\s\S]*palette\.detailImageOverlay/,
+  );
+  assert.match(searchResults, /<Avatar uri=\{activeSlide\.authorAvatarUrl\}/);
+  assert.match(
+    searchResults,
+    /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dish\.id \}\)/,
+  );
   assert.doesNotMatch(searchResults, /navigation\.navigate\("StallDetail"/);
   assert.doesNotMatch(searchResults, /Dishes in \$\{areaLabel\}/);
   assert.doesNotMatch(searchResults, /Stalls & restaurants in \$\{areaLabel\}/);
@@ -618,7 +832,10 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
     quickBites,
     /collectionBites\.some\(\(collectionBite\) => collectionBite\.id === bite\.id\)/,
   );
-  assert.match(quickBites, /navigation\.navigate\("DishDetail", \{ dishId: item\.dishId \}\)/);
+  assert.match(
+    quickBites,
+    /onOpen=\{\(activeItem\) => navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId \}\)\}/,
+  );
   assert.match(quickBites, /navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId \}\)/);
   assert.doesNotMatch(quickBites, /navigation\.navigate\("StallDetail"/);
   const mockData = read("src/lib/services/mock/data.ts");
