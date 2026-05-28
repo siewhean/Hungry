@@ -2,27 +2,55 @@
 
 ## 1. Purpose
 
-This document updates the Hungry website direction to reflect the current Merchant Mode implementation in the app and defines a new private **Hungry Developer Console** website for managing the app, website, merchants, users, feedback, moderation, operations, and controlled app-wide updates.
+This document defines the updated Hungry merchant website direction and the private **Hungry Console** for managing the Hungry app, website, merchants, users, feedback, moderation, product operations, analytics, and controlled app-wide updates.
+
+It now incorporates research from public documentation for mature operational consoles and admin products including Shopify Admin, Stripe Dashboard, Sentry, Firebase, LaunchDarkly, PostHog, and Retool.
 
 The goal is to create two connected web experiences:
 
-1. **Public merchant website updates** — a stronger merchant-facing marketing/product page that accurately explains what Merchant Mode can do.
-2. **Private developer/admin console** — an internal web portal for the Hungry team to operate both the mobile app and website safely.
+1. **Public merchant website updates** — a stronger merchant-facing marketing/product page that accurately explains current and planned Merchant Mode capabilities.
+2. **Private Hungry Console** — an internal admin/developer/ops portal for safely operating the mobile app, website, merchant mode, user trust workflows, feedback, releases, notifications, feature flags, and data quality.
 
 ---
 
-## 2. Current Merchant Mode Reference
+## 2. Research Sources and Industry Patterns
 
-The current app implementation already supports a much richer merchant mode than the original marketing page explains.
+The following public product docs were used as benchmarks:
 
-### Merchant Mode areas already reflected in app structure
+| Company / product | Relevant pattern for Hungry |
+|---|---|
+| Shopify Admin | Central back-office for store operations, sidebar navigation, search, alerts feed, analytics, staff permissions, multi-store switching |
+| Stripe Dashboard | Business home dashboard, configurable widgets, resource search, customers/products/transactions, team roles, Workbench logs, review queues, risk review assignment |
+| Sentry | Issue grouping, issue triage states, filters, dashboards with global filters, release health, crash-free sessions/users, regressions |
+| Firebase Console | Analytics, Crashlytics, Performance Monitoring, Cloud Messaging, In-App Messaging, Remote Config, A/B Testing, App Distribution |
+| LaunchDarkly | Feature flag targeting, contexts, segments, rules, percentage/progressive rollouts, guarded rollouts, release pipelines, change history |
+| PostHog | Product analytics, dashboards, active users, traffic sources, feature flags, cohorts, session replay, feature impact analysis |
+| Retool | Internal apps that interact with operational data, permission management, organization/user governance, internal app development model |
 
-Merchant Mode should be presented on the website as a business management centre with these areas:
+### Key lessons to adopt
+
+1. **Central hub model** — like Shopify and Stripe, Hungry Console should start from an overview dashboard with urgent tasks, alerts, growth metrics, and operational queues.
+2. **Global search** — like Shopify and Stripe, the console should support searching users, merchants, stalls, dishes, reports, feedback, applications, and internal issues from anywhere.
+3. **Queue-first operations** — like Stripe Radar and Sentry Issues, trust, feedback, application, and moderation work should appear in prioritized queues with ownership, status, risk, and next actions.
+4. **Global filters and drill-downs** — like Sentry dashboards, analytics pages should have global filters for date range, audience, platform, app version, region, and user/merchant type.
+5. **Role-based access control** — like Shopify staff permissions and Retool permissions, console capabilities must be controlled by roles, teams, and permission groups.
+6. **Auditability** — every admin action that affects users, merchants, content, notifications, feature flags, or app configuration must be logged.
+7. **Safe rollout controls** — like LaunchDarkly and PostHog, feature flags should support targeting, percentage rollout, kill switches, internal-only testing, and change history.
+8. **Operational observability** — like Sentry and Firebase, Hungry should link crashes, releases, app versions, feedback, reports, and affected users.
+9. **Do not rebuild specialist tools too early** — Hungry Console should summarize and deep-link into tools like PostHog, Sentry, Vercel, GitHub, EAS, and Firebase where those tools are stronger.
+
+---
+
+## 3. Current Merchant Mode Reference
+
+Merchant Mode in the Hungry app already supports a much richer business management surface than the original marketing website described.
+
+### App Merchant Mode areas to reflect publicly
 
 - Merchant dashboard
 - Menu management
 - Analytics / performance
-- Business profile management
+- Business profile editor
 - Verification centre
 - Home-based verification
 - Customer inbox
@@ -35,9 +63,7 @@ Merchant Mode should be presented on the website as a business management centre
 - Orders coming soon
 - Merchant settings
 
-### Merchant account and business support
-
-Merchant Mode supports multiple food-business types:
+### Supported business types
 
 - Hawker stalls
 - Food court stalls
@@ -46,9 +72,9 @@ Merchant Mode supports multiple food-business types:
 - Mall tenants
 - Home-based food businesses
 
-### Merchant profile fields to reflect on the website
+### Merchant profile fields
 
-The merchant website should mention that merchants can eventually manage:
+The public merchant page should communicate that Merchant Mode can support these profile areas:
 
 - Business name
 - Business description
@@ -70,36 +96,29 @@ The merchant website should mention that merchants can eventually manage:
 - Signature dishes
 - Verification status
 
-### Merchant operations already modelled
-
-The website and developer console should support the following operational concepts:
+### Merchant operational states
 
 - Verification status: not started, draft, submitted, in review, verified, rejected, more info needed
 - Verification methods: video walkaround, licence upload, Singpass/Myinfo Business, home-based declaration
 - Location privacy: exact, approximate, hidden
 - Merchant roles: owner, manager, staff
-- Merchant analytics: profile visits, menu views, dish views, direction taps, saves, shares, contact taps, social link taps, post interactions, reviews, average rating, top dishes, searched keywords, peak discovery hours, taste tags
 - Promotions: draft, scheduled, active, ended
 - Customer interactions: reviews, comments, post mentions, questions
 - OCR dish drafts from menu photos
 
 ---
 
-## 3. Public Merchant Website Update
+## 4. Public Merchant Website Update
 
-The `/for-merchants` page should be updated from a simple merchant-interest page into a product-led Merchant Mode page.
+The `/for-merchants` page should be updated from a simple interest page into a product-led Merchant Mode page.
 
-### 3.1 New merchant page positioning
+### New merchant page positioning
 
-Current message:
+```text
+Get discovered, keep your menu current, and manage how customers see your food.
+```
 
-> Get discovered.
-
-Expanded message:
-
-> Get discovered, keep your menu current, and manage how customers see your food.
-
-### 3.2 Recommended page structure
+### Recommended page structure
 
 ```text
 /for-merchants
@@ -116,10 +135,6 @@ Expanded message:
   Final CTA: Register Merchant Interest
 ```
 
----
-
-## 4. Merchant Website Sections
-
 ### Section 1 — Merchant Hero
 
 Headline:
@@ -131,7 +146,7 @@ Get discovered by people deciding what to eat nearby.
 Supporting copy:
 
 ```text
-Hungry helps hawker stalls, food courts, cafes, restaurants, and home-based food businesses manage their food profile, menu, photos, hours, and customer interactions from Merchant Mode.
+Hungry helps hawker stalls, food courts, cafes, restaurants, and home-based food businesses manage their food profile, menu, photos, hours, customer interactions, and verification from Merchant Mode.
 ```
 
 Primary CTA:
@@ -146,13 +161,9 @@ Secondary CTA:
 Preview Merchant Mode
 ```
 
----
-
 ### Section 2 — Merchant Mode Product Preview
 
-Purpose:
-
-Show that Merchant Mode is not just a claim form. It is a business management surface.
+Show that Merchant Mode is a business management surface, not just a claim form.
 
 Feature cards:
 
@@ -165,11 +176,7 @@ Feature cards:
 - Promotions
 - AI assistant
 
----
-
 ### Section 3 — Verification and Stall Application
-
-Purpose:
 
 Explain how merchants apply, verify, and claim ownership.
 
@@ -182,19 +189,7 @@ Content:
 - Hungry reviews applications before approval
 - Verified merchants receive a Hungry verification indicator
 
-Recommended CTA:
-
-```text
-Start Merchant Application
-```
-
----
-
 ### Section 4 — Business Profile Management
-
-Purpose:
-
-Explain the editable business profile.
 
 Feature list:
 
@@ -208,13 +203,7 @@ Feature list:
 - Signature dishes
 - Preview as customer
 
----
-
 ### Section 5 — Menu and Dish Management
-
-Purpose:
-
-Show menu control as a core value proposition.
 
 Feature list:
 
@@ -227,13 +216,7 @@ Feature list:
 - Accept, reject, or edit OCR dish suggestions
 - Use AI to draft dish descriptions
 
----
-
 ### Section 6 — Customer Inbox
-
-Purpose:
-
-Show merchant-customer communication.
 
 Feature list:
 
@@ -246,13 +229,7 @@ Feature list:
 - View the original review or post
 - Sentiment summary
 
----
-
 ### Section 7 — Analytics and Performance
-
-Purpose:
-
-Give merchants a reason to maintain their profile.
 
 Feature list:
 
@@ -269,13 +246,7 @@ Feature list:
 - Customer taste tag distribution
 - Period comparison
 
----
-
 ### Section 8 — Promotions and Visibility
-
-Purpose:
-
-Prepare merchants for future paid / featured tools.
 
 Feature list:
 
@@ -286,13 +257,7 @@ Feature list:
 - Target audience: nearby users, users who saved the stall, taste-match users, followers
 - Promotion analytics: impressions, clicks, saves, profile visits, dish views
 
----
-
 ### Section 9 — AI Assistant
-
-Purpose:
-
-Position Hungry as useful for busy merchants.
 
 Feature list:
 
@@ -306,75 +271,30 @@ Feature list:
 
 ---
 
-### Section 10 — Supported Business Types
+## 5. Hungry Console Definition
 
-Show that Hungry is not only for hawker stalls.
-
-Business type cards:
-
-- Hawker stalls
-- Food court stalls
-- Restaurants
-- Cafes and bakeries
-- Mall tenants
-- Home-based food businesses
-
----
-
-## 5. New Private Developer/Admin Website
-
-The new internal website should be called:
+Recommended name:
 
 ```text
 Hungry Console
 ```
 
-Alternative names:
-
-- Hungry Admin
-- Hungry Ops Console
-- Hungry Control Centre
-- Hungry Developer Portal
-
-Recommendation:
+Positioning:
 
 ```text
-Hungry Console
+Hungry Console is the private operations portal for managing the Hungry app, website, merchants, users, reports, feedback, releases, notifications, analytics, and product configuration.
 ```
 
-It sounds broader than developer-only and can cover engineering, support, merchant operations, moderation, growth, and product management.
+It should be broader than a developer-only dashboard. It should support engineering, support, merchant operations, trust and safety, growth, analytics, data quality, and product management.
 
 ---
 
-## 6. Hungry Console Goals
-
-Hungry Console should allow the team to:
-
-- manage the mobile app and website
-- review app feedback
-- review merchant stall applications
-- review new stall submissions
-- manage user reports
-- manage merchant issues
-- moderate content
-- send app-wide notifications
-- send targeted messages
-- publish app activity / announcements
-- manage feature flags and rollouts
-- monitor app health
-- review analytics
-- resolve user and merchant support issues
-- audit all admin actions
-
----
-
-## 7. Hungry Console Navigation
-
-Recommended private route structure:
+## 6. Hungry Console Navigation
 
 ```text
 /console
 /console/overview
+/console/search
 /console/inbox
 /console/feedback
 /console/reports
@@ -392,7 +312,7 @@ Recommended private route structure:
 /console/feature-flags
 /console/experiments
 /console/app-config
-/console/analytics
+/console/product-analytics
 /console/data-quality
 /console/issues
 /console/audit-log
@@ -400,19 +320,36 @@ Recommended private route structure:
 /console/settings
 ```
 
+### Global console shell
+
+Every console page should include:
+
+- Left sidebar navigation
+- Global search bar
+- Environment switcher: production / staging / preview
+- Date range selector on analytics pages
+- Active outlet / merchant quick search
+- Internal user profile and role indicator
+- Alerts feed
+- Recent actions shortcut
+- Help / docs link
+
 ---
 
-## 8. Hungry Console Main Modules
+## 7. Console Modules
 
-## 8.1 Overview Dashboard
+## 7.1 Overview Dashboard
 
 Purpose:
 
-Give developers and operators a live snapshot of Hungry.
+Provide a live operational snapshot, like Shopify Home and Stripe Dashboard Home.
 
 Widgets:
 
-- Active users
+- New app users
+- New website users / visitors
+- Active foodie users
+- Active merchant users
 - New signups
 - New waitlist entries
 - New merchant applications
@@ -426,7 +363,7 @@ Widgets:
 - Deployment status
 - Recent admin actions
 
-Recommended alerts:
+Alerts:
 
 - High severity bug spike
 - Surge in user reports
@@ -434,16 +371,36 @@ Recommended alerts:
 - Failed notification campaign
 - Spike in negative reviews
 - Content moderation queue too large
+- App version with elevated crash rate
+- Critical feature flag changed in production
 
----
+## 7.2 Global Search
 
-## 8.2 Unified Inbox
+Inspired by Shopify Admin and Stripe Dashboard.
 
-Purpose:
+Search across:
 
-One queue for all operational work.
+- Users
+- Merchants
+- Outlets
+- Stalls
+- Dishes
+- Reviews
+- Posts
+- Reports
+- Feedback
+- Merchant applications
+- Stall submissions
+- Notifications
+- Feature flags
+- Releases
+- Admin actions
 
-Inbox item types:
+Search result categories should be filterable and keyboard-friendly.
+
+## 7.3 Unified Inbox
+
+Queue item types:
 
 - User feedback
 - Merchant issue
@@ -454,7 +411,7 @@ Inbox item types:
 - Review moderation
 - Post moderation
 - Bug report
-- App crash linked to user feedback
+- App crash linked to feedback
 - Data correction request
 
 Fields:
@@ -462,7 +419,7 @@ Fields:
 - Type
 - Priority
 - Status
-- Assigned team member
+- Assigned owner
 - Related user
 - Related merchant
 - Related stall / dish / post
@@ -485,19 +442,13 @@ Statuses:
 - Escalated
 - Closed
 
----
-
-## 8.3 Feedback Management
-
-Purpose:
-
-Capture and resolve feedback from the app and website.
+## 7.4 Feedback Management
 
 Features:
 
 - Feedback inbox
 - Search and filters
-- Tags: bug, UX issue, feature request, data issue, menu issue, opening-hours issue, merchant issue, payment issue, account issue
+- Tags: bug, UX issue, feature request, data issue, menu issue, opening-hours issue, merchant issue, account issue
 - Attach screenshot / session context
 - Link to GitHub issue or internal task
 - Assign to developer / support / ops
@@ -506,17 +457,7 @@ Features:
 - Convert feedback into product roadmap item
 - Feedback trend summary
 
-Recommended priority:
-
-High. This should be part of the first Hungry Console release.
-
----
-
-## 8.4 Reports and Trust & Safety
-
-Purpose:
-
-Handle user, merchant, review, dish, stall, and post reports.
+## 7.5 Reports and Trust & Safety
 
 Report categories:
 
@@ -547,13 +488,7 @@ Actions:
 - Link to merchant application
 - Create data correction task
 
----
-
-## 8.5 Merchant Applications
-
-Purpose:
-
-Review merchant registrations, stall claims, and verification submissions.
+## 7.6 Merchant Applications
 
 Application types:
 
@@ -563,23 +498,6 @@ Application types:
 - Restaurant / cafe business profile
 - Multi-outlet brand request
 - Ownership dispute
-
-Review fields:
-
-- Business name
-- Business type
-- Applicant name
-- Applicant email / phone
-- Claimed stall or new stall
-- Address / area / building / unit
-- Menu evidence
-- Licence or business evidence
-- Video walkaround
-- Social proof link
-- Home-based location privacy setting
-- Verification method
-- Risk score
-- Reviewer notes
 
 Decision actions:
 
@@ -592,29 +510,7 @@ Decision actions:
 - Grant verified badge
 - Create merchant account
 
----
-
-## 8.6 New Stall Submission Review
-
-Purpose:
-
-Review new stall submissions from users and merchants before they appear in app data.
-
-Submission fields:
-
-- Stall name
-- Business type
-- Location
-- Unit number / floor
-- Menu photos
-- Dish suggestions
-- Opening hours
-- Contact details
-- Photos
-- Submitter identity
-- Confidence score
-- Duplicate detection
-- Map pin confidence
+## 7.7 New Stall Submission Review
 
 Review actions:
 
@@ -626,13 +522,7 @@ Review actions:
 - Publish draft listing
 - Send correction notice
 
----
-
-## 8.7 Users Management
-
-Purpose:
-
-Support, moderation, and account control.
+## 7.8 Users Management
 
 Features:
 
@@ -649,19 +539,7 @@ Features:
 - Account status: active, warned, suspended, deleted
 - Manual account actions with audit log
 
-Recommended admin controls:
-
-- Do not allow casual account impersonation.
-- Use support-view mode with sensitive fields masked by default.
-- Require elevated permission and audit log for any destructive action.
-
----
-
-## 8.8 Merchant Management
-
-Purpose:
-
-Manage merchant accounts after approval.
+## 7.9 Merchant Management
 
 Features:
 
@@ -682,13 +560,7 @@ Features:
 - Revoke verification
 - Merge / split outlets
 
----
-
-## 8.9 Content Moderation
-
-Purpose:
-
-Moderate user-generated and merchant-generated content.
+## 7.10 Content Moderation
 
 Content types:
 
@@ -714,13 +586,7 @@ Moderation tools:
 - Appeal handling
 - Audit log
 
----
-
-## 8.10 Notifications and Messaging Control
-
-Purpose:
-
-Allow the team to send controlled updates to the app.
+## 7.11 Notifications and Messaging Control
 
 Notification types:
 
@@ -736,19 +602,6 @@ Notification types:
 - Incident notice
 - Promotion / campaign message
 
-Targeting options:
-
-- Everyone
-- Foodies only
-- Merchants only
-- Verified merchants
-- Users in selected area
-- Users who saved a stall
-- Users who follow a merchant
-- Users with specific taste tags
-- Users on app version X
-- Test users / internal users
-
 Required controls:
 
 - Draft mode
@@ -763,17 +616,9 @@ Required controls:
 - Open / tap-through stats
 - Rollback / disable in-app message
 
-Recommendation:
+App-wide notifications should require two-step confirmation, role approval, and audit logging.
 
-App-wide notifications should require two-step confirmation and audit logging.
-
----
-
-## 8.11 Activity Feed Management
-
-Purpose:
-
-Control in-app announcements and operational updates.
+## 7.12 Activity Feed Management
 
 Activity item types:
 
@@ -786,104 +631,82 @@ Activity item types:
 - Safety notice
 - Community guideline update
 
-Fields:
+## 7.13 Feature Flags and Remote Config
 
-- Title
-- Body
-- Image
-- Deep link
-- Audience
-- Start date
-- End date
-- Priority
-- Publish status
+Feature flag controls:
 
----
-
-## 8.12 Feature Flags and Remote Config
-
-Purpose:
-
-Control app behaviour without redeploying.
-
-Features:
-
-- Feature flags
-- Rollout percentages
-- User / merchant targeting
-- Internal-only features
+- Boolean flags
+- Multivariate flags
+- Targeting by user, merchant, outlet, app version, platform, region, or internal status
+- Percentage rollouts
+- Progressive rollout plan
+- Scheduled changes
 - Kill switches
-- Remote config values
-- App maintenance mode
-- Minimum supported version
-- Experiment assignment
+- Dependencies
+- Remote config payloads
 - Change history
-- Approvals
+- Approval requirement for production changes
 
 Example flags:
 
-- `merchantCentreEnabled`
-- `merchantVerificationEnabled`
-- `merchantPromotionsEnabled`
-- `merchantAIAssistantEnabled`
-- `ocrMenuImportEnabled`
-- `newStallSubmissionEnabled`
-- `reviewsEnabled`
-- `notificationsEnabled`
-- `homeBasedBusinessesEnabled`
+```text
+merchantCentreEnabled
+merchantVerificationEnabled
+merchantPromotionsEnabled
+merchantAIAssistantEnabled
+ocrMenuImportEnabled
+newStallSubmissionEnabled
+reviewsEnabled
+notificationsEnabled
+homeBasedBusinessesEnabled
+```
 
----
+## 7.14 Releases and App Health
 
-## 8.13 Releases and Deployment Management
-
-Purpose:
-
-Track app and website releases.
+Inspired by Sentry Releases, Firebase Crashlytics, Firebase Performance Monitoring, and Stripe Workbench.
 
 Features:
 
 - Current production app version
 - Current preview app version
 - Website deployment status
-- Changelog composer
-- Release notes
-- Rollback checklist
-- App store review status
 - EAS update channel status
 - Vercel deployment links
-- Build logs
+- Release notes
+- Changelog composer
+- Crash-free users
+- Crash-free sessions
+- Release adoption
+- Regressions introduced by release
+- API errors
+- Webhook/log events
 - Failed deployment alerts
 
----
+## 7.15 Product Analytics
 
-## 8.14 Analytics and Product Insights
+This module is expanded in `product_analytics_posthog_console_spec.md`.
 
-Purpose:
+Top-level metrics should include:
 
-Understand user, merchant, and product performance.
-
-Dashboards:
-
-- User growth
-- Activation funnel
-- Search queries
-- Dish discovery funnel
-- Save / review / visit intent funnel
-- Merchant application funnel
+- New users
+- App active users
+- Website visitors
+- Merchant users
+- Foodie users
+- Waitlist conversions
+- Merchant interest conversions
+- Search volume
+- Dish views
+- Reviews
+- Saves
+- Merchant applications
 - Merchant verification funnel
-- Menu update activity
-- Report volume
-- Feedback trends
+- Feedback volume
+- Reports volume
 - Notification performance
-- Retention cohorts
+- Data quality
 
----
-
-## 8.15 Data Quality Management
-
-Purpose:
-
-Keep Hungry’s food database accurate.
+## 7.16 Data Quality Management
 
 Features:
 
@@ -898,13 +721,7 @@ Features:
 - Scraped data import review
 - Bulk edit tools
 
----
-
-## 8.16 Audit Log
-
-Purpose:
-
-Protect the platform from unsafe internal changes.
+## 7.17 Audit Log
 
 Log every admin action:
 
@@ -920,7 +737,7 @@ Log every admin action:
 - Data exported
 - Admin permission changed
 
-Fields:
+Audit fields:
 
 - Actor
 - Role
@@ -934,9 +751,7 @@ Fields:
 
 ---
 
-## 9. Roles and Permissions
-
-Recommended admin roles:
+## 8. Roles and Permissions
 
 | Role | Access |
 |---|---|
@@ -948,107 +763,27 @@ Recommended admin roles:
 | Trust & Safety | Reports, moderation, suspensions, appeals |
 | Content Moderator | Reviews, posts, photos, dish/stall content |
 | Growth | Notifications, campaigns, activity feed, analytics, no destructive access |
+| Data Analyst | Product analytics, exports, PostHog links, no destructive access |
 | Read-only | View dashboards only |
 
-Security recommendation:
+Security rules:
 
-- Owner/Admin permissions should require 2FA.
-- App-wide notifications and production config changes should require approval.
-- Sensitive data should be masked by default.
-
----
-
-## 10. Industry Features to Include
-
-These are common features used by modern app/product operations teams.
-
-### Product and engineering
-
-- Feature flags
-- Percentage rollouts
-- Kill switches
-- A/B experiments
-- Remote config
-- Release management
-- Deployment status
-- App version control
-- Changelog and release notes
-- Crash and error monitoring
-- Performance monitoring
-- Session replay / screen recording context
-- Internal QA tester management
-
-### Support and feedback
-
-- User feedback inbox
-- Bug report capture
-- Screenshot capture
-- Session context
-- Issue assignment
-- GitHub/Jira issue linking
-- Support reply workflow
-- SLA tracking
-- Feedback categorisation
-- AI feedback summaries
-
-### Operations and moderation
-
-- User reports
-- Merchant reports
-- Review/post/photo moderation
-- Spam detection
-- Abuse workflows
-- User suspension
-- Merchant restriction
-- Appeals
-- Content restoration
-- Audit log
-
-### Merchant operations
-
-- Merchant application queue
-- Stall claim review
-- Verification workflow
-- Ownership dispute handling
-- Home-based business privacy workflow
-- Multi-outlet management
-- Merchant support history
-- Merchant performance dashboard
-
-### Growth and communication
-
-- Push notifications
-- In-app banners
-- App-wide announcements
-- Scheduled campaigns
-- Targeted campaigns
-- Deep links
-- Notification analytics
-- Activity feed management
-- Campaign approval flow
-
-### Data operations
-
-- Data import review
-- Duplicate detection
-- Missing fields dashboard
-- Data correction requests
-- Opening hours freshness
-- Menu price conflicts
-- Bulk edits
-- Export/import tooling
+- Owner/Admin permissions require 2FA.
+- App-wide notifications and production config changes require approval.
+- Sensitive data is masked by default.
+- Support-view mode is the default for user detail pages.
+- Elevated access is needed to view verification documents or exact home-based addresses.
 
 ---
 
-## 11. Recommended Build Priority
+## 9. Recommended Build Priority
 
 ### Phase 1 — Must-have admin foundation
 
-Build first:
-
 - `/console` private shell
-- Role-based access control
+- RBAC
 - Overview dashboard
+- Global search
 - Unified inbox
 - Feedback management
 - Reports management
@@ -1057,10 +792,9 @@ Build first:
 - Users search
 - Merchants search
 - Audit log
+- Product Analytics MVP shell
 
 ### Phase 2 — Merchant ops and moderation
-
-Add next:
 
 - Merchant verification workflow
 - Home-based business review workflow
@@ -1069,10 +803,9 @@ Add next:
 - Data correction queue
 - Merchant issue management
 - Support replies
+- Data quality dashboard
 
 ### Phase 3 — App control and growth
-
-Add once the foundation is safe:
 
 - Push notification composer
 - In-app announcement composer
@@ -1085,8 +818,6 @@ Add once the foundation is safe:
 
 ### Phase 4 — Advanced product ops
 
-Add later:
-
 - Experiments and A/B testing
 - Session replay integration
 - AI feedback summaries
@@ -1098,9 +829,7 @@ Add later:
 
 ---
 
-## 12. Recommended Data Model
-
-Suggested tables / collections:
+## 10. Recommended Data Model
 
 ```text
 admin_users
@@ -1128,11 +857,14 @@ release_notes
 app_versions
 data_quality_issues
 internal_notes
+product_metric_definitions
+product_metrics_daily
+posthog_dashboard_links
 ```
 
 ---
 
-## 13. Critical Safety Rules
+## 11. Critical Safety Rules
 
 ### App-wide notification safety
 
@@ -1166,70 +898,28 @@ internal_notes
 ### Data privacy
 
 - Mask emails, phone numbers, and private addresses by default
-- Home-based businesses should default to approximate or hidden location
+- Home-based businesses default to approximate or hidden location
 - Only elevated roles can see sensitive documents
 - Log every access to verification evidence
+- Do not pipe verification evidence, exact home addresses, raw support messages, or sensitive identifiers into analytics tools
 
 ---
 
-## 14. Recommended Public Website Copy Updates
+## 12. Final Recommendation
 
-### Merchant hero
+Build **Hungry Console** as a private internal web app within the website workspace only if routing, auth, RBAC, and audit logging are strict.
 
-```text
-Get discovered by people deciding what to eat nearby.
-```
-
-### Merchant subcopy
-
-```text
-Hungry helps food businesses manage dishes, menus, photos, hours, customer interactions, and verification from Merchant Mode.
-```
-
-### Merchant feature labels
-
-```text
-Business profile
-Menu manager
-Dish editor
-Opening hours
-Verification centre
-Customer inbox
-Analytics
-Promotions
-AI assistant
-```
-
-### Developer console positioning
-
-This should not be public-facing marketing copy. In internal documentation, describe it as:
-
-```text
-Hungry Console is the private operations portal for managing the Hungry app, website, merchants, users, reports, feedback, releases, notifications, and product configuration.
-```
-
----
-
-## 15. Final Recommendation
-
-Build **Hungry Console** as a private internal web application, separate from the public marketing pages but within the same website workspace if routing and permissions are strict.
-
-Recommended final structure:
+Recommended immediate structure:
 
 ```text
 marketing/website/web-v2
   public marketing website
   /for-merchants updated to reflect Merchant Mode
   /console private internal admin portal
+  /console/product-analytics private product analysis dashboard
 ```
 
 If security or deployment complexity grows, split the console into a separate internal app later:
-
-```text
-admin.usehungry.com
-```
-
-or
 
 ```text
 console.usehungry.com
@@ -1239,5 +929,5 @@ Best immediate path:
 
 1. Update `/for-merchants` with Merchant Mode features.
 2. Add `/console` private shell.
-3. Build overview, inbox, feedback, reports, merchant applications, and stall submission review first.
-4. Add notifications and feature flags only after RBAC and audit logging are complete.
+3. Build overview, global search, inbox, feedback, reports, merchant applications, stall submissions, audit log, and Product Analytics MVP first.
+4. Add notifications and feature flags only after RBAC, approvals, and audit logging are complete.
