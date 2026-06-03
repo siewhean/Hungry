@@ -57,38 +57,52 @@
   margin: 0;
 }
 
-.toggleRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
+.tabList {
+  background: color-mix(in srgb, var(--color-bg-soft) 72%, var(--color-white));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  display: grid;
+  gap: var(--space-1);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: var(--space-1);
 }
 
-.toggleButton {
+.tabButton {
   align-items: center;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
-  border-radius: 999px;
-  color: var(--color-text-primary);
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: var(--radius-full) !important;
+  color: var(--color-text-primary) !important;
   cursor: pointer;
   display: inline-flex;
-  gap: var(--space-3);
+  gap: var(--space-2) !important;
   font-weight: 700;
-  padding: var(--space-4) var(--space-6);
+  justify-content: center;
+  min-height: 2.9rem !important;
+  padding: var(--space-2) var(--space-3) !important;
   transition:
-    border-color var(--duration-fast) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
     box-shadow var(--duration-fast) var(--ease-out);
 }
 
-.toggleButton:hover {
-  border-color: color-mix(in srgb, var(--color-text-primary) 26%, transparent);
-  transform: translateY(-1px);
+.tabButton:hover {
+  background: color-mix(in srgb, var(--color-primary) 16%, transparent) !important;
+  color: var(--color-text-primary) !important;
 }
 
-.toggleButtonActive {
-  background: var(--color-primary);
-  border-color: color-mix(in srgb, var(--color-primary) 90%, transparent);
-  color: var(--color-white);
+.tabButton:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 45%, transparent);
+  outline-offset: -2px;
+}
+
+.tabButton:hover .icon {
+  color: inherit;
+}
+
+.tabButtonActive {
+  background: var(--color-primary) !important;
+  color: var(--color-white) !important;
   box-shadow: 0 12px 28px -18px color-mix(in srgb, var(--color-primary) 58%, transparent);
 }
 
@@ -101,6 +115,8 @@
   gap: var(--space-6);
   padding: clamp(var(--space-8), 4vw, var(--space-12));
   align-content: start;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .waitlistCard h2 {
@@ -121,6 +137,18 @@
   gap: var(--space-4);
 }
 
+.cardContent {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.merchantTransition {
+  display: grid;
+  gap: var(--space-4);
+  overflow: hidden;
+  transform-origin: top;
+}
+
 .label {
   color: var(--color-text-primary);
   display: block;
@@ -134,6 +162,7 @@
 }
 
 .input {
+  appearance: none;
   border-radius: var(--radius-xl);
   border: 1px solid var(--color-border-strong);
   color: var(--color-text-primary);
@@ -145,6 +174,20 @@
   transition:
     border-color var(--duration-fast) var(--ease-out),
     box-shadow var(--duration-fast) var(--ease-out);
+}
+
+select.input {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--color-text-secondary) 50%),
+    linear-gradient(135deg, var(--color-text-secondary) 50%, transparent 50%);
+  background-position:
+    calc(100% - 1.15rem) 50%,
+    calc(100% - 0.8rem) 50%;
+  background-repeat: no-repeat;
+  background-size:
+    0.35rem 0.35rem,
+    0.35rem 0.35rem;
+  padding-right: var(--space-10);
 }
 
 .input:focus {

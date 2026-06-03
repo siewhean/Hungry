@@ -5,16 +5,18 @@ type HungryWordmarkProps = {
 };
 
 const logoPath = "/images/Logo/hungry_logo_text_transparent.png";
+const HUNGRY_LOGO_WIDTH = 140;
+const HUNGRY_LOGO_HEIGHT = 40;
 
 export function HungryWordmark({ className = "" }: HungryWordmarkProps) {
   return (
     <Image
       alt="Hungry"
-      className={`h-auto w-auto object-contain ${className}`}
-      height={40}
+      className={`object-contain ${className}`}
+      height={HUNGRY_LOGO_HEIGHT}
+      style={{ width: `${HUNGRY_LOGO_WIDTH}px`, height: `${HUNGRY_LOGO_HEIGHT}px` }}
       src={logoPath}
-      width={140}
+      width={HUNGRY_LOGO_WIDTH}
     />
   );
 }
-

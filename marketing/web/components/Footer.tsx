@@ -27,7 +27,7 @@ export function Footer() {
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-8 text-xs text-hungry-text-muted sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <Link className="inline-flex items-center" href="/">
-              <HungryWordmark className="h-5 w-auto" />
+              <HungryWordmark />
             </Link>
             <span className="font-mono uppercase tracking-[0.18em]">Singapore</span>
           </div>

@@ -1,5 +1,6 @@
 import { routeMetadata } from "@/app/seo";
 
+export const revalidate = 3600;
 export const metadata = routeMetadata("/privacy");
 
 const sections = [

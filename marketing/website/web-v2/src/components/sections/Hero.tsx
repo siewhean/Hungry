@@ -6,11 +6,12 @@ import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { homepage } from "../../content/site";
 import { DiscoveryPhoneMockup } from "../home/DiscoveryPhoneMockup";
+import { homepage } from "@/content/site";
 import styles from "./Hero.module.css";
 
 export default function Hero() {
+  const hero = homepage.hero;
   const shouldReduceMotion = useReducedMotion();
   const heroRef = useRef<HTMLElement>(null);
 
@@ -83,7 +84,7 @@ export default function Hero() {
     <section className={styles.heroSection} ref={heroRef}>
       <div className={styles.atmosphere} aria-hidden="true">
         <Image
-          src={homepage.hero.atmosphere.src}
+          src={hero.atmosphere.src}
           alt=""
           className={`${styles.atmosphereImage} ${styles.parallaxSlow}`}
           fill
@@ -95,23 +96,25 @@ export default function Hero() {
 
       <div className={`container-wide ${styles.heroContainer}`}>
         <div className={styles.textContent}>
-          <p className={styles.eyebrow}>{homepage.hero.eyebrow}</p>
+          <p className={styles.eyebrow}>{hero.eyebrow}</p>
           <h1 className={styles.headline}>
-            {homepage.hero.lines.map((line) => (
+            {hero.lines.map((line) => (
               <span className={styles.lineMask} key={line}>
-                <span className={styles.headlineLine}>{line}</span>
+                <span className={styles.headlineLine}>
+                  {line}
+                </span>
               </span>
             ))}
           </h1>
-          <p className={`${styles.proofLine} ${styles.copyReveal}`}>{homepage.hero.proof}</p>
-          <p className={`${styles.description} ${styles.copyReveal}`}>{homepage.hero.body}</p>
+          <p className={`${styles.proofLine} ${styles.copyReveal}`}>{hero.proof}</p>
+          <p className={`${styles.description} ${styles.copyReveal}`}>{hero.body}</p>
 
           <div className={`${styles.ctas} ${styles.copyReveal}`}>
-            <Link href={homepage.hero.primaryCta.href} className={styles.primaryCta}>
-              {homepage.hero.primaryCta.label}
+            <Link href={hero.primaryCta.href} className={styles.primaryCta}>
+              {hero.primaryCta.label}
             </Link>
-            <Link href={homepage.hero.secondaryCta.href} className={styles.secondaryCta}>
-              {homepage.hero.secondaryCta.label}
+            <Link href={hero.secondaryCta.href} className={styles.secondaryCta}>
+              {hero.secondaryCta.label}
             </Link>
           </div>
         </div>
@@ -125,7 +128,7 @@ export default function Hero() {
             </div>
 
             <div className={styles.foodOrbit}>
-              {homepage.hero.foodCards.map((card, index) => (
+              {hero.foodCards.map((card, index) => (
                 <motion.div
                   className={`${styles.foodCard} ${styles[`foodCard${index + 1}`]}`}
                   key={card.src}
@@ -146,7 +149,7 @@ export default function Hero() {
           </div>
 
           <div className={styles.chipLayer}>
-            {homepage.hero.cards.map((card, index) => (
+            {hero.cards.map((card, index) => (
               <motion.span
                 key={card.label}
                 className={`${styles.floatChip} ${styles[`chip${index + 1}`]} ${styles[card.tone]}`}

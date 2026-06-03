@@ -147,7 +147,7 @@ function enhanceWaitlistPage(html: string): string {
       /<header class="w-full py-lg px-screen-edge flex justify-center items-center">[\s\S]*?<\/header>/,
       `<header class="w-full py-lg px-screen-edge flex justify-between items-center max-w-7xl mx-auto sticky top-0 z-[90] bg-paper-warm">
 <a class="inline-flex items-center" href="/for-foodies">
-  <img alt="Hungry" class="h-[40px] w-auto object-contain" src="/images/Logo/hungry_logo_text_transparent.png" />
+  <img alt="Hungry" class="h-[40px] w-[140px] object-contain" src="/images/Logo/hungry_logo_text_transparent.png" />
 </a>
 <div class="hidden md:flex items-center gap-8 font-['Plus_Jakarta_Sans']">
 <a class="text-stone-600 font-medium hover:text-[#E8531E] transition-colors" href="/for-foodies">For Foodies</a>
@@ -194,7 +194,7 @@ function enhanceMerchantLoginPage(html: string): string {
   return html
     .replace(
       '<div class="font-h1 text-h1 text-hungry-orange tracking-tight">Hungry</div>',
-      '<a class="inline-flex items-center" href="/for-foodies"><img alt="Hungry" class="h-[40px] w-auto object-contain" src="/images/Logo/hungry_logo_text_transparent.png" /></a>',
+      '<a class="inline-flex items-center" href="/for-foodies"><img alt="Hungry" class="h-[40px] w-[140px] object-contain" src="/images/Logo/hungry_logo_text_transparent.png" /></a>',
     )
     .replace(
       /<main class="flex-grow flex items-center justify-center px-screen-edge py-region-gap">[\s\S]*?<\/main>/,
@@ -281,11 +281,11 @@ function standardizeNavigation(html: string): string {
   return html
     .replace(
       /<div class="text-2xl font-extrabold tracking-tight text-\[#E8531E\] dark:text-\[#FF6B35\]">Hungry<\/div>/g,
-      '<a class="inline-flex items-center" href="/for-foodies" aria-label="Hungry home"><img alt="Hungry" class="h-[40px] w-auto object-contain" src="/images/Logo/hungry_logo_text_transparent.png" /></a>',
+      '<a class="inline-flex items-center" href="/for-foodies" aria-label="Hungry home"><img alt="Hungry" class="h-[40px] w-[140px] object-contain" src="/images/Logo/hungry_logo_text_transparent.png" /></a>',
     )
     .replace(
       /<a class="text-2xl font-extrabold tracking-tight text-\[#E8531E\] dark:text-\[#FF6B35\]" href="#">\s*Hungry\s*<\/a>/g,
-      '<a class="inline-flex items-center" href="/for-foodies" aria-label="Hungry home"><img alt="Hungry" class="h-[40px] w-auto object-contain" src="/images/Logo/hungry_logo_text_transparent.png" /></a>',
+      '<a class="inline-flex items-center" href="/for-foodies" aria-label="Hungry home"><img alt="Hungry" class="h-[40px] w-[140px] object-contain" src="/images/Logo/hungry_logo_text_transparent.png" /></a>',
     );
 }
 

@@ -2,6 +2,8 @@
   background-color: var(--color-bg);
   border-top: 1px solid var(--color-border);
   padding: var(--space-32) 0 var(--space-20);
+  position: relative;
+  z-index: 1;
 }
 
 .header {
@@ -33,4 +35,11 @@
   color: var(--color-text-secondary);
   font-size: clamp(var(--font-size-md), 1.8vw, var(--font-size-xl));
   line-height: 1.55;
+}
+
+@media (min-width: 980px) {
+  .header {
+    margin-left: calc(42% + var(--space-6));
+    max-width: min(52rem, calc(58% - var(--space-6)));
+  }
 }

@@ -28,10 +28,6 @@
   min-width: max-content;
 }
 
-.logoText {
-  letter-spacing: 0;
-}
-
 .navLinks {
   display: flex;
   align-items: center;
@@ -41,6 +37,7 @@
   min-width: 0;
   max-width: 100%;
   white-space: nowrap;
+  flex-wrap: nowrap;
 }
 
 .navLink {
@@ -60,6 +57,7 @@
   align-items: center;
   justify-self: end;
   gap: var(--space-4);
+  flex-shrink: 0;
 }
 
 .ctaButton {
@@ -89,9 +87,12 @@
   }
 
   .navLinks {
+    padding-bottom: var(--space-1);
     overflow-x: auto;
+    overflow-y: hidden;
     justify-content: center;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
   }
 
   .navLinks::-webkit-scrollbar {

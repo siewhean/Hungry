@@ -11,8 +11,8 @@ export default function FinalCTA() {
           <span className={styles.eyebrow}>Next step</span>
           <h2>Bring Singapore’s food decisions into one visual map.</h2>
           <p>
-            Join as a foodie, or register merchant interest if your business should be discoverable
-            by dish, menu, hours, and local proof.
+            Join as a foodie for early access, or explore Merchant Mode if your food business
+            should be discoverable by dish, menu, hours, and local proof.
           </p>
         </Reveal>
 
@@ -24,7 +24,7 @@ export default function FinalCTA() {
           </Link>
           <Link className={styles.secondary} href="/for-merchants">
             <Store aria-hidden size={20} />
-            Register Interest
+            Explore Merchant Mode
           </Link>
         </Reveal>
       </div>

@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import { Nunito, DM_Mono } from "next/font/google";
-import AnnouncementBar from "@/components/layout/AnnouncementBar";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+import { Nunito } from "next/font/google";
+import AppLayoutWrapper from "@/components/layout/AppLayoutWrapper";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { hungryJsonLd, siteConfig } from "./seo";
 import "./globals.css";
@@ -11,12 +9,6 @@ const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
-});
-
-const dmMono = DM_Mono({
-  variable: "--font-dm-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -73,13 +65,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang={siteConfig.language} className={`${nunito.variable} ${dmMono.variable}`}>
+    <html lang={siteConfig.language} className={nunito.variable}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://images.unsplash.com" />
+      </head>
       <body>
         <JsonLd data={hungryJsonLd} />
-        <AnnouncementBar />
-        <Navbar />
-        {children}
-        <Footer />
+        <AppLayoutWrapper>
+          {children}
+        </AppLayoutWrapper>
       </body>
     </html>
   );

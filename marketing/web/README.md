@@ -8,7 +8,7 @@ Marketing landing site for Hungry, built with Next.js App Router in `marketing/w
 - `/about` - static brand/context page
 - `/for-merchants` - static merchant-facing page
 - `/privacy` - static privacy page
-- `/api/waitlist` - in-memory waitlist endpoint used by the form (`POST` submit, `GET` count/health)
+- `/api/waitlist` - Supabase-backed waitlist endpoint used by the form (`POST` submit, `GET` count/health)
 - `app/layout.tsx` - site metadata, fonts, and global shell
 - `components/` - canonical landing-page sections
 - `app/_components/MarketingStaticPage.tsx` - shared static-page shell
@@ -45,7 +45,7 @@ npm run build
 - `app/about/page.tsx`, `app/for-merchants/page.tsx`, and `app/privacy/page.tsx` provide the current static routes
 - `components/*.tsx` contains section-level UI
 - `app/_components/MarketingStaticPage.tsx` is the shared static-page template
-- `app/api/waitlist/route.ts` holds the current waitlist handler
+- `app/api/waitlist/route.ts` holds the current Supabase-backed waitlist handler
 - `public/` contains static assets such as the OG image
 - `next.config.ts` defines app-level Next.js config, including the Turbopack root pin for this workspace
 
@@ -54,10 +54,11 @@ npm run build
 - Metadata defaults to `https://hungry.sg`
 - Set `NEXT_PUBLIC_SITE_URL` if you need a different canonical/OG base URL for preview or staging deployments
 - The OG asset is the checked-in SVG at `public/og-image.svg`
+- The waitlist endpoint writes to `public.website_waitlist_entries` when `NEXT_PUBLIC_SUPABASE_URL` plus a public Supabase key is configured. Set `SUPABASE_SERVICE_ROLE_KEY` or `HUNGRY_SUPABASE_SERVICE_ROLE_KEY` to allow idempotent upserts and live count reads.
 
 ## Current gaps
 
-- The waitlist endpoint is intentionally in-memory for now, so data resets on server restart until it is replaced with a persistent backend
+- Without a Supabase service-role key, `GET /api/waitlist` returns a configured health response but not a live count. Public `POST` submissions still use the anon/publishable key path when available.
 
 ## References
 

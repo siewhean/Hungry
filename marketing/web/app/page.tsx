@@ -140,7 +140,7 @@ export default function Home() {
       {/* Navigation */}
       <nav className="sticky top-0 z-50 w-full bg-hungry-bg/90 backdrop-blur-md border-b border-hungry-border py-4 px-6 md:px-12 flex justify-between items-center">
         <Link href="/#home-top" className="inline-flex items-center" scroll={false}>
-          <HungryWordmark className="h-8 w-auto sm:h-10" />
+          <HungryWordmark />
         </Link>
         <div className="hidden md:flex gap-8 text-hungry-text-secondary font-medium text-sm">
           <Link href="/for-foodies" className="hover:text-hungry-orange transition-colors">

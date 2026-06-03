@@ -2,7 +2,6 @@ export const siteNav = [
   { label: "For Foodies", href: "/for-foodies" },
   { label: "For Merchants", href: "/for-merchants" },
   { label: "About", href: "/#hawker-culture" },
-  { label: "Merchant Portal", href: "/for-merchants#merchant-tools" },
 ] as const;
 
 export const footerLinks = {
@@ -79,10 +78,10 @@ export type StoryScreen = ImageAsset & {
 
 export const homepage = {
   hero: {
-    eyebrow: "Singapore food decisions, simplified",
-    lines: ["Know what to eat.", "Before you go."],
-    proof: "Find the dish. Check the proof. Avoid the wasted trip.",
-    body: "Hungry brings scattered menus, dish photos, reviews, opening hours, and stall details into one clear local guide for foodies and merchants.",
+    eyebrow: "Hungry? Don't know where to eat?",
+    lines: ["Find your next", "makan place"],
+    proof: "Find your favourite food instantly",
+    body: "Hungry brings menus, dish photos, reviews, opening hours, and stall details into an app for foodies and merchants.",
     primaryCta: { label: "Join Waitlist", href: "/join-waitlist" },
     secondaryCta: { label: "Register Interest", href: "/for-merchants" },
     atmosphere: {
@@ -110,7 +109,7 @@ export const homepage = {
   audiences: [
     {
       title: "For foodies",
-      eyebrow: "Stop guessing",
+      eyebrow: "Explore local cravings using real food proof",
       description:
         "See what people are eating, compare real dish photos, and check whether a stall is worth the trip before you leave.",
       image: {
@@ -121,7 +120,7 @@ export const homepage = {
     },
     {
       title: "For merchants",
-      eyebrow: "Show what is ready",
+      eyebrow: "Share your stall",
       description:
         "Keep dishes, photos, menus, hours, and profile details visible when nearby diners are deciding what to eat next.",
       image: {
@@ -139,7 +138,7 @@ export const homepage = {
   ],
   localGuide: {
     title: "Your personal local guide",
-    description: "The missing context for deciding what to eat in Singapore, built around the dish itself.",
+    description: "",
     cards: [
       {
         title: "Discover nearby food",
@@ -283,6 +282,7 @@ export const merchantPage = {
     description:
       "Hungry helps diners see your dishes, menu, hours, and profile details while they are deciding what to eat nearby.",
     cta: { label: "Register Merchant Interest", href: "/join-waitlist?audience=merchant" },
+    secondaryCta: { label: "See merchant tools", href: "#merchant-tools" },
     image: {
       src: "/images/people/hawker-cooking.jpg",
       alt: "Singapore hawker stall owner cooking at the counter",
@@ -310,6 +310,24 @@ export const merchantPage = {
         description:
           "Show what you serve, when you are open, where to find you, and why your stall is worth visiting.",
         icon: "hours",
+      },
+      {
+        title: "See what diners care about",
+        description:
+          "Use dish views, profile interest, and review signals to understand what customers check before visiting.",
+        icon: "analytics",
+      },
+      {
+        title: "Customer replies",
+        description:
+          "Keep review follow-ups and diner questions visible so your team can respond before trust is lost.",
+        icon: "replies",
+      },
+      {
+        title: "Promotions",
+        description:
+          "Highlight seasonal dishes, discounts, or limited-time items when nearby diners are choosing what to eat.",
+        icon: "promotions",
       },
     ],
   },
@@ -365,6 +383,158 @@ export const merchantPage = {
           src: "/images/screens/opening-hours.png",
           alt: "Hungry merchant opening-hours editor",
         },
+      },
+    ],
+  },
+  previewFeatures: {
+    title: "Preview the merchant flow before onboarding.",
+    description:
+      "Hungry gives stall teams a focused place to manage customer-facing details before diners arrive.",
+    items: [
+      {
+        title: "Dashboard overview",
+        description: "See profile readiness, menu status, views, and review tasks in one place.",
+      },
+      {
+        title: "Customer-facing preview",
+        description: "Check how your stall and dishes appear to foodies before publishing changes.",
+      },
+      {
+        title: "Operational prompts",
+        description: "Spot missing photos, stale hours, and unreplied reviews before they hurt visits.",
+      },
+    ],
+  },
+  verification: {
+    title: "Verify the stall before it goes live.",
+    description:
+      "A simple verification journey protects diners and gives merchants a clear path to launch.",
+    steps: [
+      {
+        title: "Submit business details",
+        description: "Share outlet name, location, contact details, and business type.",
+      },
+      {
+        title: "Upload proof",
+        description: "Add licence, storefront, menu, or ownership proof for review.",
+      },
+      {
+        title: "Get reviewed",
+        description: "Hungry Console reviews the claim and updates the verification status.",
+      },
+    ],
+  },
+  profileMgmt: {
+    title: "Keep the business profile accurate.",
+    description:
+      "Make core stall details clear for diners comparing nearby options.",
+    items: [
+      {
+        title: "Location and hours",
+        description: "Maintain outlet address, opening hours, closures, and contact details.",
+      },
+      {
+        title: "Photos and cover image",
+        description: "Show a professional first impression with current stall and food images.",
+      },
+      {
+        title: "Profile completeness",
+        description: "See what is missing before customers rely on incomplete information.",
+      },
+    ],
+  },
+  menuMgmt: {
+    title: "Manage dishes without hiding the details diners need.",
+    description:
+      "Keep dish names, prices, images, categories, and availability ready for discovery.",
+    features: [
+      {
+        title: "Dish catalogue",
+        description: "Add and update menu items with descriptions, prices, and images.",
+      },
+      {
+        title: "Availability control",
+        description: "Mark dishes active or unavailable so customers do not make wasted trips.",
+      },
+      {
+        title: "Menu preview",
+        description: "Review the menu as customers see it before saving changes.",
+      },
+    ],
+  },
+  customerInbox: {
+    title: "Respond where customer questions arrive.",
+    description:
+      "Keep review and enquiry follow-up connected to the stall profile.",
+    features: [
+      {
+        title: "Unreplied review queue",
+        description: "Find reviews that still need a merchant response.",
+      },
+      {
+        title: "Team visibility",
+        description: "Let approved team members help manage customer follow-up.",
+      },
+      {
+        title: "Low-rating attention",
+        description: "Surface urgent feedback so teams can respond quickly.",
+      },
+    ],
+  },
+  analytics: {
+    title: "Understand what diners view before they visit.",
+    description:
+      "Use stall, dish, review, and promotion signals to improve the customer journey.",
+    metrics: [
+      {
+        title: "Dish views",
+        description: "See which dishes attract attention and which need stronger photos or copy.",
+      },
+      {
+        title: "Review trends",
+        description: "Track average rating, new reviews, and unreplied feedback.",
+      },
+      {
+        title: "Menu performance",
+        description: "Compare views across dishes and categories over time.",
+      },
+    ],
+  },
+  promotions: {
+    title: "Promote the right item at the right time.",
+    description:
+      "Create simple promotions that stay tied to real menu items and availability windows.",
+    features: [
+      {
+        title: "Menu item promotions",
+        description: "Apply a discount or promotional price to an existing dish.",
+      },
+      {
+        title: "Scheduled visibility",
+        description: "Set start and end dates so expired promotions do not appear active.",
+      },
+      {
+        title: "Performance view",
+        description: "Compare promotion views with regular menu performance.",
+      },
+    ],
+  },
+  aiAssistant: {
+    title: "Turn merchant data into practical next steps.",
+    description:
+      "Rule-based insights help teams act on views, reviews, menu quality, and promotion signals.",
+    features: [
+      {
+        title: "Photo improvement prompts",
+        description: "Spot high-view dishes that may need clearer images or descriptions.",
+      },
+      {
+        title: "Review theme detection",
+        description: "Highlight repeated customer comments such as wait time or missing details.",
+      },
+      {
+        title: "Weekly summary",
+        description: "Summarise views, dish performance, new reviews, and open tasks.",
       },
     ],
   },

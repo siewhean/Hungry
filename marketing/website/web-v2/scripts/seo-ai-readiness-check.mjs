@@ -36,7 +36,6 @@ const requiredSourceMarkers = [
 
 const staleRouteMarkers = [
   "/about",
-  "/join-waitlist",
   "/merchant-login",
   "/merchant-dashboard",
 ];

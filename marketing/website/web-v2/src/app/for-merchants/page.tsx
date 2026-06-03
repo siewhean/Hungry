@@ -1,16 +1,29 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, CalendarClock, Eye, Home, MenuSquare, Store, Utensils } from "lucide-react";
-import { merchantPage } from "@/content/site";
-import { Reveal } from "@/components/motion/Reveal";
-import MerchantStory from "@/components/sections/MerchantStory";
-import { routeMetadata } from "@/app/seo";
+import {
+  ArrowRight,
+  BarChart2,
+  CalendarClock,
+  Eye,
+  Home,
+  Inbox,
+  MenuSquare,
+  Store,
+  Utensils,
+  Zap,
+} from "lucide-react";
+import type { ReactNode } from "react";
 import styles from "./page.module.css";
+import { merchantPage } from "@/content/site";
+import { routeMetadata } from "@/app/seo";
 
 const benefitIcons = {
   visibility: Eye,
   menu: MenuSquare,
   hours: CalendarClock,
+  analytics: BarChart2,
+  replies: Inbox,
+  promotions: Zap,
 } as const;
 
 const typeIcons = {
@@ -20,11 +33,24 @@ const typeIcons = {
   "Hawker stalls": Store,
 } as const;
 
+type StaticRevealProps = {
+  as?: "div" | "article";
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+};
+
+function Reveal({ as: Component = "div", children, className }: StaticRevealProps) {
+  return <Component className={className}>{children}</Component>;
+}
+
 export const metadata = routeMetadata("/for-merchants");
+export const revalidate = 3600;
 
 export default function ForMerchants() {
   return (
     <main className={styles.main}>
+      {/* 1. Hero Section */}
       <section className={styles.hero}>
         <Image
           src={merchantPage.hero.image.src}
@@ -39,14 +65,24 @@ export default function ForMerchants() {
           <span className={styles.eyebrow}>For Singapore food businesses</span>
           <h1>{merchantPage.hero.title}</h1>
           <p>{merchantPage.hero.description}</p>
-          <Link href={merchantPage.hero.cta.href} className={styles.primaryCta}>
-            {merchantPage.hero.cta.label}
-            <ArrowRight aria-hidden size={20} />
-          </Link>
+          <div className={styles.heroActions}>
+            <Link href={merchantPage.hero.cta.href} className={styles.primaryCta} prefetch>
+              {merchantPage.hero.cta.label}
+              <ArrowRight aria-hidden size={20} />
+            </Link>
+            <Link
+              href={merchantPage.hero.secondaryCta.href}
+              className={styles.secondaryCtaLink}
+              prefetch
+            >
+              {merchantPage.hero.secondaryCta.label}
+            </Link>
+          </div>
         </Reveal>
       </section>
 
-      <section className={styles.benefits}>
+      {/* 2. Spacing / Benefits Section */}
+      <section className={styles.benefits} id="merchant-tools">
         <div className="container-wide">
           <Reveal className={styles.sectionHeader}>
             <span className={styles.eyebrow}>Merchant advantage</span>
@@ -56,7 +92,7 @@ export default function ForMerchants() {
 
           <div className={styles.benefitGrid}>
             {merchantPage.benefits.items.map((item, index) => {
-              const Icon = benefitIcons[item.icon];
+              const Icon = benefitIcons[item.icon as keyof typeof benefitIcons] ?? Eye;
 
               return (
                 <Reveal as="article" className={styles.benefitCard} delay={index * 0.08} key={item.title}>
@@ -72,39 +108,12 @@ export default function ForMerchants() {
         </div>
       </section>
 
-      <MerchantStory />
-
-      <section className={styles.creatorTypes} id="merchant-tools">
+      {/* Supported Business Types */}
+      <section className={styles.creatorTypes}>
         <div className="container-wide">
-          <Reveal className={styles.proofHeader}>
-            <span className={styles.eyebrow}>Merchant tools</span>
-            <h2>{merchantPage.featureProof.title}</h2>
-            <p>{merchantPage.featureProof.description}</p>
-          </Reveal>
-
-          <div className={styles.proofGrid}>
-            {merchantPage.featureProof.items.map((item, index) => (
-              <Reveal as="article" className={styles.proofCard} delay={index * 0.08} key={item.title}>
-                <div className={styles.proofImageWrap}>
-                  <Image
-                    src={item.image.src}
-                    alt={item.image.alt}
-                    fill
-                    sizes="(max-width: 900px) 100vw, 33vw"
-                    className={styles.proofImage}
-                  />
-                </div>
-                <div className={styles.proofContent}>
-                  <h3>{item.title}</h3>
-                  <p>{item.description}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-
           <Reveal className={styles.creatorHeader}>
             <div>
-              <span className={styles.eyebrow}>Food creator coverage</span>
+              <span className={styles.eyebrow}>Supported food businesses</span>
               <h2>{merchantPage.creatorTypes.title}</h2>
             </div>
             <p>{merchantPage.creatorTypes.description}</p>
@@ -147,13 +156,18 @@ export default function ForMerchants() {
         </div>
       </section>
 
+      {/* Final Call to Action */}
       <section className={styles.finalSection} id="register-interest">
         <Reveal className={styles.finalCard}>
           <div className={styles.finalCopy}>
             <span className={styles.eyebrow}>Next step</span>
             <h2>{merchantPage.finalCta.title}</h2>
             <p>{merchantPage.finalCta.description}</p>
-            <Link href="/join-waitlist?audience=merchant" className={styles.primaryCta}>
+            <Link
+              href="/join-waitlist?audience=merchant"
+              className={styles.primaryCta}
+              prefetch
+            >
               {merchantPage.finalCta.cta.label}
             </Link>
           </div>

@@ -3,12 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "build:webpack": "next build --webpack",
-    "start": "next start",
+    "clean": "rm -rf .next",
+    "dev:clean": "rm -rf .next && rm -f .next/lock && NEXT_DISABLE_SWC=1 /opt/homebrew/bin/node ./node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3000",
+    "dev": "rm -f .next/lock && NEXT_DISABLE_SWC=1 /opt/homebrew/bin/node ./node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3000",
+    "build": "rm -f .next/lock && NEXT_DISABLE_SWC=1 /opt/homebrew/bin/node ./node_modules/next/dist/bin/next build",
+    "build:webpack": "rm -f .next/lock && NEXT_DISABLE_SWC=1 /opt/homebrew/bin/node ./node_modules/next/dist/bin/next build --webpack",
+    "start": "rm -f .next/lock && NEXT_DISABLE_SWC=1 /opt/homebrew/bin/node ./node_modules/next/dist/bin/next start",
     "lint": "eslint",
-    "seo:audit": "node scripts/seo-ai-readiness-check.mjs"
+    "seo:audit": "node scripts/seo-ai-readiness-check.mjs",
+    "security:audit": "node scripts/security-route-contracts.mjs"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",
@@ -17,6 +20,9 @@
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4"
+  },
+  "overrides": {
+    "postcss": "8.5.10"
   },
   "devDependencies": {
     "@types/node": "^20",

@@ -4,56 +4,65 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { StoryScreen } from "@/content/site";
-import { AppScreenshotFrame } from "./AppScreenshotFrame";
-import { DiscoveryPhoneMockup } from "./DiscoveryPhoneMockup";
+import { DiscoveryPhoneMockup, type DiscoveryPhoneMockupScreen } from "./DiscoveryPhoneMockup";
 import styles from "./StickyScreenStory.module.css";
 
 type StickyScreenStoryProps = {
   screens: readonly StoryScreen[];
+  animateContent?: boolean;
 };
 
-export function StickyScreenStory({ screens }: StickyScreenStoryProps) {
+const storyScreens: readonly DiscoveryPhoneMockupScreen[] = [
+  "discover",
+  "stall-detail",
+  "stall-menu",
+  "review-feed",
+];
+
+export function StickyScreenStory({
+  screens,
+  animateContent = false,
+}: StickyScreenStoryProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion) return undefined;
-
     gsap.registerPlugin(ScrollTrigger);
 
     const ctx = gsap.context(() => {
-      stepRefs.current.forEach((step, index) => {
-        if (!step) return;
+      const updateActiveStep = () => {
+        const viewportAnchor = window.innerHeight * 0.52;
+        let closestIndex = 0;
+        let closestDistance = Number.POSITIVE_INFINITY;
 
-        ScrollTrigger.create({
-          trigger: step,
-          start: "top 75%",
-          end: "bottom 25%",
-          onToggle: ({ isActive }) => {
-            if (isActive) {
-              setActiveIndex(index);
-            }
-          },
+        stepRefs.current.forEach((step, index) => {
+          if (!step) return;
+
+          const rect = step.getBoundingClientRect();
+          const stepAnchor = rect.top + rect.height * 0.42;
+          const distance = Math.abs(stepAnchor - viewportAnchor);
+
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestIndex = index;
+          }
         });
 
-        gsap.fromTo(
-          step,
-          { autoAlpha: 0.35, y: 28 },
-          {
-            autoAlpha: 1,
-            y: 0,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: step,
-              start: "top 82%",
-              end: "bottom 18%",
-              scrub: 0.45,
-            },
-          },
-        );
+        setActiveIndex((current) => (current === closestIndex ? current : closestIndex));
+      };
+
+      ScrollTrigger.create({
+        trigger: rootRef.current,
+        start: "top bottom",
+        end: "bottom top",
+        onEnter: updateActiveStep,
+        onEnterBack: updateActiveStep,
+        onUpdate: updateActiveStep,
+        onRefresh: updateActiveStep,
       });
+
+      updateActiveStep();
     }, rootRef);
 
     return () => ctx.revert();
@@ -68,19 +77,14 @@ export function StickyScreenStory({ screens }: StickyScreenStoryProps) {
               className={`${styles.screenLayer} ${index === activeIndex ? styles.active : ""}`}
               key={screen.title}
             >
-              {index < 2 ? (
-                <figure className={styles.phonePreviewFrame} aria-label={screen.alt}>
-                  <DiscoveryPhoneMockup />
-                  <figcaption>{screen.stat}</figcaption>
-                </figure>
-              ) : (
-                <AppScreenshotFrame
-                  src={screen.src}
-                  alt={screen.alt}
-                  label={screen.stat}
-                  orientation="landscape"
+              <figure className={styles.phonePreviewFrame} aria-label={screen.alt}>
+                <DiscoveryPhoneMockup
+                  screen={storyScreens[index] ?? "discover"}
+                  isActive={index === activeIndex}
+                  animateContent={animateContent}
                 />
-              )}
+                <figcaption>{screen.stat}</figcaption>
+              </figure>
             </div>
           ))}
         </div>

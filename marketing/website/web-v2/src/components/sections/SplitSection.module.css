@@ -112,12 +112,27 @@
 
 .cardCta {
   align-items: center;
-  color: var(--color-primary);
+  align-self: flex-start;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  color: var(--color-white);
   display: inline-flex;
   font-weight: 800;
   gap: var(--space-2);
+  justify-content: center;
   margin-top: auto;
+  min-height: 3.4rem;
+  padding: var(--space-3) var(--space-7);
   text-decoration: none;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.cardCta:hover {
+  background: var(--color-primary-dark);
+  color: var(--color-white);
+  transform: translateY(-2px);
 }
 
 @media (prefers-reduced-motion: reduce) {

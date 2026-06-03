@@ -143,6 +143,412 @@
   pointer-events: none;
 }
 
+.discoveryContent {
+  background: var(--color-white);
+}
+
+.productContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.72em;
+  padding: 4.34em 1.15em 5.78em;
+  background: var(--color-white);
+}
+
+.detailPreview,
+.menuPreview,
+.reviewPreview {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  gap: 0.72em;
+}
+
+.appTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.36em;
+}
+
+.appTopBar > span {
+  display: inline-grid;
+  place-items: center;
+  width: 2.34em;
+  height: 2.34em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  border-radius: var(--radius-full);
+  background: var(--color-white);
+  color: var(--color-text-secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.appTopBar svg {
+  width: 1.08em;
+  height: 1.08em;
+}
+
+.openStatus {
+  width: auto !important;
+  padding: 0 0.86em;
+  color: var(--color-success) !important;
+  font-size: 0.78em;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.stallHeroImage {
+  position: relative;
+  height: 8.6em;
+  overflow: hidden;
+  border-radius: 1.28em;
+  background: var(--color-bg-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.stallHeroImage::after,
+.signatureCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 38%, rgb(14 24 38 / 0.58));
+}
+
+.stallHeroImage img,
+.signatureCard img,
+.menuDishImage img,
+.reviewPhoto img {
+  object-fit: cover;
+}
+
+.stallIntro,
+.menuHeader,
+.reviewHeader {
+  display: grid;
+  gap: 0.18em;
+}
+
+.stallIntro h2,
+.menuHeader h2,
+.reviewHeader h2 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 1.68em;
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.stallIntro p,
+.menuHeader p,
+.reviewHeader p,
+.infoCard p,
+.menuDishCard p,
+.reviewBody p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.stallIntro p:not(.locationEyebrow),
+.menuHeader p:not(.locationEyebrow),
+.reviewHeader p:not(.locationEyebrow) {
+  font-size: 0.82em;
+  font-weight: 700;
+  line-height: 1.32;
+}
+
+.infoPillRow,
+.menuTabs,
+.reviewFilterRow {
+  display: flex;
+  gap: 0.42em;
+  overflow: hidden;
+  padding-top: 0.16em;
+}
+
+.infoPillRow span,
+.menuTabs span,
+.reviewFilterRow span {
+  display: inline-flex;
+  align-items: center;
+  min-width: max-content;
+  min-height: 2.16em;
+  padding: 0 0.72em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: var(--radius-full);
+  background: var(--color-white);
+  color: var(--color-text-secondary);
+  font-size: 0.74em;
+  font-weight: 900;
+}
+
+.tabActive {
+  border-color: transparent !important;
+  background: var(--color-primary) !important;
+  color: var(--color-white) !important;
+}
+
+.infoCard {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.52em;
+  align-items: start;
+  padding: 0.68em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: 1.02em;
+  background: color-mix(in srgb, var(--color-bg-soft) 58%, var(--color-white));
+}
+
+.infoCard svg {
+  width: 1.05em;
+  height: 1.05em;
+  color: var(--color-primary);
+}
+
+.infoCard strong {
+  display: block;
+  margin-bottom: 0.12em;
+  font-size: 0.82em;
+}
+
+.infoCard p {
+  font-size: 0.72em;
+  font-weight: 700;
+  line-height: 1.28;
+}
+
+.signatureStrip,
+.menuList,
+.reviewList {
+  display: grid;
+  gap: 0.54em;
+}
+
+.sectionHeaderCompact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6em;
+}
+
+.sectionHeaderCompact h3 {
+  margin: 0;
+  font-size: 1.05em;
+}
+
+.sectionHeaderCompact span {
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 0.68em;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.signatureGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.52em;
+}
+
+.signatureCard {
+  position: relative;
+  display: flex;
+  min-height: 5.95em;
+  align-items: end;
+  overflow: hidden;
+  border-radius: 1em;
+  background: var(--color-bg-soft);
+}
+
+.signatureCard span {
+  position: relative;
+  z-index: 1;
+  padding: 0.7em;
+  color: var(--color-white);
+  font-size: 0.72em;
+  font-weight: 900;
+  line-height: 1.12;
+}
+
+.menuList {
+  gap: 0.48em;
+}
+
+.menuDishCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: 4em minmax(0, 1fr);
+  gap: 0.56em;
+  min-height: 4.88em;
+  padding: 0.55em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: 1em;
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.menuDishImage {
+  position: relative;
+  height: 4em;
+  overflow: hidden;
+  border-radius: 0.78em;
+  background: var(--color-bg-soft);
+}
+
+.menuDishCard strong {
+  display: block;
+  padding-right: 3.8em;
+  font-size: 0.78em;
+  line-height: 1.14;
+}
+
+.menuDishCard p {
+  margin-top: 0.14em;
+  font-size: 0.65em;
+  font-weight: 700;
+  line-height: 1.22;
+}
+
+.menuDishCard div:last-of-type span {
+  display: block;
+  margin-top: 0.16em;
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  font-weight: 500;
+}
+
+.menuDishCard small {
+  position: absolute;
+  right: 0.58em;
+  bottom: 0.52em;
+  color: var(--color-success);
+  font-size: 0.62em;
+  font-weight: 900;
+}
+
+.reviewFilterRow {
+  padding-top: 0;
+}
+
+.reviewList {
+  gap: 0.56em;
+}
+
+.reviewCard {
+  display: grid;
+  grid-template-columns: 4.8em minmax(0, 1fr);
+  gap: 0.58em;
+  padding: 0.58em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: 1em;
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.reviewPhoto {
+  position: relative;
+  height: 6.05em;
+  overflow: hidden;
+  border-radius: 0.84em;
+  background: var(--color-bg-soft);
+}
+
+.reviewBody {
+  min-width: 0;
+}
+
+.reviewMeta {
+  display: grid;
+  grid-template-columns: 1.92em minmax(0, 1fr) auto;
+  gap: 0.34em;
+  align-items: start;
+}
+
+.reviewMeta > span:first-child {
+  display: grid;
+  width: 1.92em;
+  height: 1.92em;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-white));
+  color: var(--color-primary);
+  font-weight: 900;
+}
+
+.reviewMeta strong {
+  display: block;
+  overflow: hidden;
+  font-size: 0.72em;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reviewMeta p {
+  overflow: hidden;
+  font-size: 0.6em;
+  font-weight: 700;
+  line-height: 1.16;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.starRating {
+  display: inline-flex;
+  gap: 0.02em;
+  color: var(--color-accent);
+}
+
+.starRating svg {
+  width: 0.58em;
+  height: 0.58em;
+}
+
+.reviewDishTag {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0.3em 0 0.18em;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  padding: 0.24em 0.54em;
+  background: color-mix(in srgb, var(--color-primary) 9%, var(--color-white));
+  color: var(--color-primary);
+  font-size: 0.58em;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reviewBody > p {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.67em;
+  font-weight: 700;
+  line-height: 1.26;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.reviewActions {
+  display: flex;
+  gap: 0.6em;
+  margin-top: 0.28em;
+  color: var(--color-text-muted);
+  font-size: 0.64em;
+  font-weight: 900;
+}
+
+.reviewActions span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18em;
+}
+
+.reviewActions svg {
+  width: 1em;
+  height: 1em;
+}
+
 .locationBlock {
   margin-bottom: 0.92em;
 }

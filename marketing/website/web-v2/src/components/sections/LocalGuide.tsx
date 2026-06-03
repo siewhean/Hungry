@@ -9,7 +9,7 @@ export default function LocalGuide() {
       <div className={`container-wide ${styles.shell}`}>
         <Reveal className={styles.header}>
           <h2 id="local-guide-title">{homepage.localGuide.title}</h2>
-          <p>{homepage.localGuide.description}</p>
+          {homepage.localGuide.description ? <p>{homepage.localGuide.description}</p> : null}
         </Reveal>
 
         <div className={styles.grid}>

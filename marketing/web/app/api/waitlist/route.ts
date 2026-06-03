@@ -2,13 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 
 type JoiningAs = "diner" | "hawker" | "both";
 
-const waitlist: {
-  email: string;
-  name?: string;
-  establishment_type?: string;
-  joining_as: JoiningAs;
-  created_at: string;
-}[] = [];
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
+  process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() ||
+  "";
+
+const SUPABASE_ANON_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
+  process.env.EXPO_PUBLIC_SUPABASE_KEY?.trim() ||
+  "";
+
+const SUPABASE_SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
+  process.env.HUNGRY_SUPABASE_SERVICE_ROLE_KEY?.trim() ||
+  "";
 
 function normalizeJoiningAs(value: unknown): JoiningAs {
   if (value === "hawker" || value === "merchant") {
@@ -20,6 +29,61 @@ function normalizeJoiningAs(value: unknown): JoiningAs {
   }
 
   return "diner";
+}
+
+function toWaitlistAudience(joiningAs: JoiningAs) {
+  if (joiningAs === "hawker") return "merchant";
+  if (joiningAs === "both") return "both";
+  return "foodie";
+}
+
+function getSupabaseRestUrl(path: string, params?: Record<string, string>) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error("Supabase is not configured for the Hungry waitlist.");
+  }
+  const url = new URL(`${SUPABASE_URL.replace(/\/$/, "")}/${path}`);
+  Object.entries(params ?? {}).forEach(([key, value]) => url.searchParams.set(key, value));
+  return url;
+}
+
+async function saveWaitlistSubmission(input: {
+  email: string;
+  establishmentType?: string;
+  joiningAs: JoiningAs;
+  name?: string;
+  req: NextRequest;
+}) {
+  const requestKey = SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY;
+  const response = await fetch(getSupabaseRestUrl("rest/v1/website_waitlist_entries", { on_conflict: "email" }), {
+    body: JSON.stringify({
+      audience: toWaitlistAudience(input.joiningAs),
+      email: input.email,
+      establishment_type: input.establishmentType ?? null,
+      metadata: {
+        referrer: input.req.headers.get("referer") ?? undefined,
+        userAgent: input.req.headers.get("user-agent") ?? undefined,
+      },
+      name: input.name ?? null,
+      source: "marketing_web",
+      submitted_at: new Date().toISOString(),
+    }),
+    cache: "no-store",
+    headers: {
+      apikey: requestKey,
+      Authorization: `Bearer ${requestKey}`,
+      "Content-Type": "application/json",
+      Prefer: SUPABASE_SERVICE_ROLE_KEY
+        ? "resolution=merge-duplicates,return=minimal"
+        : "return=minimal",
+    },
+    method: "POST",
+  });
+
+  if (!response.ok && response.status !== 409) {
+    throw new Error(await response.text());
+  }
+
+  return { alreadyExists: response.status === 409 };
 }
 
 async function parseSubmission(req: NextRequest) {
@@ -100,27 +164,22 @@ export async function POST(req: NextRequest) {
         : NextResponse.json({ errors }, { status: 400 });
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
-    const existing = waitlist.find((entry) => entry.email === normalizedEmail);
-
-    if (!existing) {
-      waitlist.push({
-        email: normalizedEmail,
-        name: typeof name === "string" && name.trim() ? name.trim() : undefined,
-        establishment_type:
-          typeof establishment_type === "string" && establishment_type.trim()
-            ? establishment_type.trim()
-            : undefined,
-        joining_as: joiningAs,
-        created_at: new Date().toISOString(),
-      });
-    }
+    const result = await saveWaitlistSubmission({
+      email: email.toLowerCase().trim(),
+      establishmentType:
+        typeof establishment_type === "string" && establishment_type.trim()
+          ? establishment_type.trim()
+          : undefined,
+      joiningAs,
+      name: typeof name === "string" && name.trim() ? name.trim() : undefined,
+      req,
+    });
 
     if (mode === "form") {
       return redirectToWaitlist(req, "submitted", joiningAs);
     }
 
-    return NextResponse.json({ success: true, already_exists: Boolean(existing) });
+    return NextResponse.json({ success: true, already_exists: result.alreadyExists });
   } catch (err) {
     console.error("[waitlist] Error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -128,5 +187,28 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  return NextResponse.json({ count: waitlist.length });
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ configured: false, count: 0 });
+  }
+
+  const response = await fetch(getSupabaseRestUrl("rest/v1/website_waitlist_entries", { select: "id" }), {
+    cache: "no-store",
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      Prefer: "count=exact",
+      Range: "0-0",
+    },
+  });
+
+  if (!response.ok) {
+    return NextResponse.json(
+      { configured: true, count: 0, error: "Unable to load waitlist count." },
+      { status: 502 },
+    );
+  }
+
+  const contentRange = response.headers.get("content-range") ?? "";
+  const count = Number(contentRange.split("/").at(-1));
+  return NextResponse.json({ configured: true, count: Number.isFinite(count) ? count : 0 });
 }

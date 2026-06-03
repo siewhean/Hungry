@@ -36,3 +36,20 @@ Route metadata is centralized in `src/app/seo.ts`. Keep sitemap routes, canonica
 ## Environment
 
 Set `NEXT_PUBLIC_SITE_URL` in production if the canonical domain changes. It defaults to `https://hungry.sg`.
+
+Database-backed waitlist, Console, and Merchant Portal routes require the shared Hungry Supabase project:
+
+- `NEXT_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, or the Expo public anon key equivalents
+- `SUPABASE_SERVICE_ROLE_KEY` or `HUNGRY_SUPABASE_SERVICE_ROLE_KEY` for Console reads/admin writes and waitlist upserts
+- `HUNGRY_CONSOLE_API_TOKEN` or `HUNGRY_CONSOLE_ADMIN_TOKEN` for production Console API access. The token can be supplied by `x-hungry-console-token`, `Authorization: Bearer ...`, or a `hungry_console_api_token` secure cookie. Production blocks service-role Console APIs when no token is configured.
+- Supabase Auth bearer tokens can also access Console APIs when the user is listed as `active` with role `admin` or `ops` in `public.website_console_admins`. The shared Console token should be kept only for automation or break-glass access.
+- Optional durable rate limiting uses an Upstash Redis REST-compatible store:
+  - `HUNGRY_RATE_LIMIT_REDIS_REST_URL` / `HUNGRY_RATE_LIMIT_REDIS_REST_TOKEN`
+  - or `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
+  - Without those values, route limits fall back to an in-memory process-local guard for local development only.
+- Console prototype localStorage persistence is disabled in production unless `NEXT_PUBLIC_HUNGRY_CONSOLE_PROTOTYPE_STORAGE=1` is explicitly set. Production Console authority should come from server APIs, not browser-local state.
+
+The public waitlist writes to `public.website_waitlist_entries`. Console summary and merchant verification APIs read/write the app merchant tables through the service role. The Merchant Portal uses Supabase Auth cookies and the same `merchant_accounts`, `merchant_outlets`, `merchant_verifications`, `dishes`, and review/analytics tables used by the mobile merchant surface, with the web shell linking to `hungry://merchant` for the app portal.
+
+Merchant Portal mutation APIs use a double-submit CSRF guard. Login and session checks issue the readable `hungry_merchant_csrf_token` cookie, login rejects cross-site or non-JSON cookie-setting requests, and client-side merchant mutations send the matching `x-hungry-csrf-token` header through `merchantMutationFetch`. Server routes also reject mismatched cross-origin mutation requests unless explicitly allowed by `HUNGRY_MERCHANT_PORTAL_ORIGIN`.

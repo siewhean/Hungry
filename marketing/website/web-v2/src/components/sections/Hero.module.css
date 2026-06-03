@@ -68,7 +68,7 @@
 .headline {
   display: grid;
   gap: var(--space-1);
-  max-width: 11ch;
+  max-width: min(100%, 17ch);
   font-size: clamp(3.1rem, 5.9vw, 5.8rem);
   line-height: 0.94;
   letter-spacing: 0;
@@ -84,9 +84,14 @@
 .headlineLine {
   display: block;
   transform: none;
+  white-space: nowrap;
 }
 
-.lineMask:nth-child(2) .headlineLine {
+.headlineLinePrimary {
+  color: var(--color-text-primary);
+}
+
+.headlineLineAccent {
   color: var(--color-primary);
 }
 
@@ -163,6 +168,12 @@
 }
 
 .visualContent {
+  --hero-phone-width: min(
+    100%,
+    30rem,
+    calc((100svh - var(--announcement-height) - var(--header-height) - var(--space-8)) * 0.462)
+  );
+
   position: relative;
   min-height: clamp(34rem, 66vw, 50rem);
   display: flex;
@@ -188,11 +199,7 @@
 }
 
 .phoneMockup {
-  width: min(
-    100%,
-    30rem,
-    calc((100svh - var(--announcement-height) - var(--header-height) - var(--space-8)) * 0.462)
-  );
+  width: var(--hero-phone-width);
   min-width: min(17rem, 100%);
   aspect-ratio: 390 / 844;
   filter: drop-shadow(0 28px 52px rgb(26 46 68 / 0.26));
@@ -205,11 +212,7 @@
   left: 50%;
   top: 50%;
   z-index: 4;
-  width: min(
-    100%,
-    30rem,
-    calc((100svh - var(--announcement-height) - var(--header-height) - var(--space-8)) * 0.462)
-  );
+  width: var(--hero-phone-width);
   min-width: min(17rem, 100%);
   aspect-ratio: 390 / 844;
   translate: -50% -50%;
@@ -248,7 +251,13 @@
 
 .chipLayer {
   position: absolute;
-  inset: 0;
+  z-index: 8;
+  left: 50%;
+  top: 50%;
+  width: var(--hero-phone-width);
+  min-width: min(17rem, 100%);
+  aspect-ratio: 390 / 844;
+  translate: -50% -50%;
   pointer-events: none;
 }
 
@@ -271,23 +280,23 @@
 }
 
 .chip1 {
-  top: 24%;
-  left: -2%;
+  top: 25%;
+  left: -38%;
 }
 
 .chip2 {
-  top: 36%;
-  right: -1%;
+  top: 38%;
+  right: -34%;
 }
 
 .chip3 {
-  left: 18%;
-  bottom: 16%;
+  left: -30%;
+  bottom: 0;
 }
 
 .chip4 {
-  right: 2%;
-  bottom: 25%;
+  right: -28%;
+  bottom: 22%;
 }
 
 .orange {
@@ -310,13 +319,13 @@
   color: var(--color-text-primary);
 }
 
-@media (min-width: 980px) {
+@media (min-width: 900px) {
   .heroContainer {
-    grid-template-columns: minmax(26rem, 0.88fr) minmax(28rem, 1fr);
+    grid-template-columns: minmax(22rem, 0.88fr) minmax(23rem, 1fr);
   }
 }
 
-@media (max-width: 979px) {
+@media (max-width: 899px) {
   .heroContainer {
     gap: clamp(var(--space-8), 7vw, var(--space-16));
   }
@@ -335,6 +344,11 @@
     top: var(--space-2);
     translate: -50% 0;
   }
+
+  .chipLayer {
+    top: var(--space-2);
+    translate: -50% 0;
+  }
 }
 
 @media (max-width: 760px) {
@@ -347,7 +361,7 @@
   }
 
   .headline {
-    font-size: clamp(3rem, 17vw, 5.2rem);
+    font-size: clamp(2.65rem, 12.2vw, 5.2rem);
   }
 
   .ctas {
@@ -360,16 +374,20 @@
   }
 
   .visualContent {
+    --hero-phone-width: min(82vw, 24rem, calc((100svh - var(--announcement-height) - var(--space-8)) * 0.462));
+
     min-height: clamp(46rem, 185vw, 56rem);
   }
 
   .phoneMockup {
-    width: min(82vw, 24rem, calc((100svh - var(--announcement-height) - var(--space-8)) * 0.462));
     min-width: min(15.5rem, 82vw);
   }
 
   .foodOrbit {
-    width: min(82vw, 24rem, calc((100svh - var(--announcement-height) - var(--space-8)) * 0.462));
+    min-width: min(15.5rem, 82vw);
+  }
+
+  .chipLayer {
     min-width: min(15.5rem, 82vw);
   }
 

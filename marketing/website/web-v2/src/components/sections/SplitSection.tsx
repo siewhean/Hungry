@@ -10,12 +10,7 @@ export default function SplitSection() {
     <section className={styles.section} id="audiences">
       <div className="container-wide">
         <Reveal className={styles.header}>
-          <span className={styles.eyebrow}>Two sides of one food map</span>
           <h2>Built for foodies and merchants.</h2>
-          <p>
-            The homepage should prove Hungry is not another static directory. It is a living bridge
-            between cravings and the businesses serving them.
-          </p>
         </Reveal>
 
         <div className={styles.grid}>

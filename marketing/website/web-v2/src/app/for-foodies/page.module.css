@@ -3,7 +3,7 @@
 }
 
 .hero {
-  padding: var(--space-20) 0 var(--space-24);
+  padding: var(--space-4) 0 var(--space-20);
   background:
     radial-gradient(circle at 18% 14%, color-mix(in srgb, var(--color-orange-light) 72%, transparent), transparent 28%),
     linear-gradient(180deg, var(--color-bg) 0%, var(--color-white) 100%);
@@ -123,7 +123,7 @@
 
 .phoneFrame {
   aspect-ratio: 71.5 / 149.6;
-  width: min(100%, 24rem, calc((100svh - var(--header-height) - var(--space-12)) * 0.478));
+  width: min(100%, 24rem, calc((100svh - var(--header-height) - var(--announcement-height) - var(--space-8)) * 0.478));
 }
 
 .features {

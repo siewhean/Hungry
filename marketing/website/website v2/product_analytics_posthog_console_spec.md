@@ -1,26 +1,91 @@
-# Hungry Console — Product Analytics and PostHog Spec
+# Hungry Console — Product Analytics and PostHog Spec v2
 
 ## 1. Purpose
 
-This document expands the Hungry Console plan with a dedicated **Product Analysis** area for viewing product statistics across:
+This document updates the Product Analytics and PostHog Console plan with research from mature product operations tools including PostHog, Firebase, Sentry, LaunchDarkly-style feature flag systems, Shopify Admin, Stripe Dashboard, and Retool-style internal tools.
+
+Hungry Console should give the team one private place to view statistics for:
 
 - Hungry mobile app
-- Hungry website
+- Hungry marketing website
 - Foodie users
 - Merchant users
 - Merchant applications
 - Stall submissions
 - Feedback and issues
 - Notifications and campaigns
+- Feature rollouts
+- App releases and stability
 - PostHog product analytics
-
-The goal is to give the Hungry team one internal place to understand growth, activation, engagement, retention, merchant health, website conversion, app behaviour, and operational issues.
 
 ---
 
-## 2. Recommended Console Routes
+## 2. Industry Research Summary
 
-Add these routes to the private console:
+### PostHog-inspired product analytics
+
+PostHog positions product analytics around understanding users and provides dashboard templates for active users, feature flags, growth accounting, traffic sources, website traffic, realtime analytics, and retention-oriented use cases.
+
+Apply to Hungry:
+
+- Product analytics dashboards
+- Active user tracking
+- Website traffic dashboard
+- Traffic source analysis
+- Funnel tracking
+- Retention cohorts
+- Feature flag impact
+- Session replay links where safe
+- Experiment results
+
+### Firebase-inspired app operations
+
+Firebase groups app operations around analytics, Cloud Messaging, In-App Messaging, Crashlytics, Performance Monitoring, Remote Config, A/B Testing, and App Distribution.
+
+Apply to Hungry:
+
+- Push notification metrics
+- In-app message metrics
+- Remote configuration tracking
+- A/B test result views
+- Crash-free users and sessions
+- Performance issue summaries
+- Tester/build distribution context
+
+### Sentry-inspired issue and release analysis
+
+Sentry groups similar events into issues, lets teams filter by device, browser, affected users, handled/unhandled status, and triage issue states such as unresolved, for review, regressed, archived, and escalating. Sentry Releases also surfaces release adoption, crash-free users, crash-free sessions, regressions, and commits.
+
+Apply to Hungry:
+
+- Issue grouping
+- Affected user count
+- Issue trend and escalation view
+- Release adoption
+- Crash-free users and sessions
+- Regression detection
+- App version filtering
+- Links from issue to release and suspected change
+
+### Shopify / Stripe-inspired admin dashboard patterns
+
+Mature business dashboards usually provide a home screen, global search, operational queues, recent activity, alerts, reports, and drill-down views into business objects.
+
+Apply to Hungry:
+
+- Global search for users, merchants, stalls, dishes, reports, feedback, applications, and campaigns
+- Dashboard cards that link into operational queues
+- Role-based views
+- Exportable reports
+- Recent activity and alert feed
+
+### Retool-style internal tool pattern
+
+Internal tools should connect operational data with safe actions. For Hungry, this means analytics charts should not be read-only when action is needed. A spike in reports should link to Reports. A merchant application backlog should link to Merchant Applications. A notification failure should link to Notifications.
+
+---
+
+## 3. Recommended Console Routes
 
 ```text
 /console/product-analytics
@@ -35,6 +100,8 @@ Add these routes to the private console:
 /console/product-analytics/cohorts
 /console/product-analytics/notifications
 /console/product-analytics/feedback-and-issues
+/console/product-analytics/releases
+/console/product-analytics/feature-flags
 /console/product-analytics/data-quality
 /console/product-analytics/posthog
 ```
@@ -42,32 +109,34 @@ Add these routes to the private console:
 Recommendation:
 
 - Use `/console/product-analytics` as the main dashboard.
-- Use `/console/product-analytics/posthog` for PostHog-specific dashboards, event explorer, cohort links, and embedded/deep-linked PostHog reports.
-- Keep `/console/analytics` as a short redirect to `/console/product-analytics` if it already exists in planning.
+- Use `/console/product-analytics/posthog` for PostHog dashboard shortcuts and event exploration.
+- Use `/console/product-analytics/releases` for release health and crash trend analysis.
+- Redirect `/console/analytics` to `/console/product-analytics`.
 
 ---
 
-## 3. Product Analysis Page Goals
+## 4. Product Analysis Page Goals
 
 The Product Analysis page should answer:
 
-1. Are users growing?
-2. Are merchants growing?
-3. Are people using the app after sign-up?
-4. Are users finding dishes and stalls successfully?
-5. Are merchants completing applications and verification?
+1. Are app users growing?
+2. Are website visitors converting?
+3. Are foodies using the app after signup?
+4. Are merchants completing applications and verification?
+5. Are users finding food successfully?
 6. Are merchants updating menus and opening hours?
-7. Which pages convert on the website?
-8. What are users searching for?
-9. What issues and reports are increasing?
-10. Which features are sticky, broken, or underused?
-11. Are app-wide notifications and campaigns working?
-12. Which cohorts retain?
-13. Where do users drop off?
+7. Which website pages convert best?
+8. Which features are sticky, broken, or underused?
+9. Which cohorts retain?
+10. Where do users drop off?
+11. What issues and reports are increasing?
+12. Are notifications and campaigns working?
+13. Did a release introduce regressions?
+14. Are feature rollouts healthy?
 
 ---
 
-## 4. Product Analysis Overview Dashboard
+## 5. Overview Dashboard
 
 Route:
 
@@ -75,15 +144,14 @@ Route:
 /console/product-analytics/overview
 ```
 
-### Top-level KPI cards
-
-Show these at the top:
+### Top KPI cards
 
 ```text
 New app users today
 New app users this week
 New app users this month
 Website visitors today
+Website visitors this week
 Website waitlist signups
 Merchant interest submissions
 Active foodie users
@@ -94,11 +162,15 @@ Open feedback items
 Open reports
 Notification open rate
 App crash/error count
+Crash-free users
+Crash-free sessions
+Latest production app version
+Latest website deployment
 ```
 
 ### Audience split
 
-Show all KPIs split by:
+Show KPIs by:
 
 - Foodies
 - Merchants
@@ -107,44 +179,33 @@ Show all KPIs split by:
 - Logged-in users
 - Verified merchants
 - Unverified merchants
+- Internal/test users
 
-### Time filters
-
-Required date ranges:
+### Global filters
 
 ```text
-Today
-Yesterday
-Last 7 days
-Last 30 days
-Month to date
-Last 90 days
-Custom range
+Date range
+Audience
+Platform
+Region
+App version
+Acquisition source
+User type
+Merchant status
+Environment: production / staging / preview
 ```
-
-### Comparison options
-
-- Compare to previous period
-- Compare to same weekday last week
-- Compare to same period last month
 
 ---
 
-## 5. North Star Metrics
-
-Hungry should define separate north-star metrics for consumer and merchant health.
+## 6. North Star Metrics
 
 ### Consumer north-star metric
-
-Recommended:
 
 ```text
 Qualified Food Discovery Sessions
 ```
 
-Definition:
-
-A session where a user performs at least one meaningful food discovery action, such as:
+A session where a user performs at least one meaningful food discovery action:
 
 - submits a search
 - views a dish
@@ -157,15 +218,11 @@ A session where a user performs at least one meaningful food discovery action, s
 
 ### Merchant north-star metric
 
-Recommended:
-
 ```text
 Active Merchant Profiles
 ```
 
-Definition:
-
-A merchant outlet that has performed at least one meaningful profile-management action in the selected period, such as:
+A merchant outlet that performs at least one meaningful profile-management action:
 
 - profile update
 - menu update
@@ -177,73 +234,58 @@ A merchant outlet that has performed at least one meaningful profile-management 
 
 ### Marketplace health metric
 
-Recommended:
-
 ```text
 Discoverable Food Supply
 ```
 
-Definition:
-
-Number of live stalls/outlets/dishes with enough usable data to appear confidently in discovery.
-
-Minimum fields:
-
-- name
-- location or service area
-- business type
-- at least one dish or menu photo
-- opening hours or availability state
-- image or visual proof
+Number of live stalls, outlets, or dishes with enough usable data to appear confidently in discovery.
 
 ---
 
-## 6. PostHog Integration
+## 7. PostHog Integration Strategy
 
-Hungry already has a PostHog analytics sink in the app. The console should make use of PostHog data rather than duplicating all product analytics logic.
+Hungry already has a PostHog analytics sink. Hungry Console should use PostHog for product analytics rather than duplicating the entire analytics stack.
 
-### Recommended PostHog usage
+### Use PostHog for
 
-Use PostHog for:
+- Event tracking
+- Person/user profiles
+- Cohorts
+- Funnels
+- Retention charts
+- Trends
+- Path analysis
+- Session replay links where safe
+- Feature flags
+- Experiments
+- Surveys
+- Website traffic and source analytics
 
-- event tracking
-- user/person profiles
-- cohorts
-- funnels
-- retention charts
-- trends
-- path analysis
-- session replay, if enabled safely
-- feature flags
-- experiments
-- surveys
-- product usage dashboards
+### Use Hungry database for
 
-Use Hungry’s own database for:
+- Merchant application workflow state
+- Verification review status
+- Stall submission status
+- Moderation queues
+- Support issues
+- Internal admin actions
+- Business evidence and review notes
+- User reports and appeals
 
-- merchant application state
-- verification review status
-- stall submission status
-- moderation queues
-- support issues
-- internal admin actions
-- sensitive business evidence
-- product-specific operational workflow state
-
-### Console integration approach
+### Console approach
 
 Use both:
 
-1. **PostHog deep links** for advanced analysis.
-2. **PostHog API-backed summary cards** inside Hungry Console.
+1. PostHog dashboard deep links for deep analysis.
+2. Hungry Console summary cards for daily operating metrics.
 
-The console should not try to rebuild all of PostHog. It should pull core metrics, show summaries, and link operators into PostHog for deep analysis.
+Do not rebuild the whole PostHog UI.
 
 ---
 
-## 7. Current App Events to Surface
+## 8. Current App Events to Surface
 
-The existing analytics event taxonomy already includes these app events and should be represented in Product Analysis:
+Existing Hungry app events to include:
 
 ```text
 app_launched
@@ -273,28 +315,26 @@ review_submitted
 claim_this_stall_tapped
 ```
 
-### Dashboard mapping
+### Event mapping
 
 | Event | Console usage |
 |---|---|
 | `app_launched` | DAU/WAU/MAU, session activity |
-| `sign_up_completed` | new users, acquisition, activation |
-| `onboarding_completed` | activation funnel |
-| `taste_quiz_completed` | personalisation adoption |
-| `location_permission_result` | permission conversion |
-| `search_submitted` | discovery demand, search trends |
-| `dish_viewed` | dish discovery engagement |
-| `dish_favourited` | save intent |
+| `sign_up_completed` | New users, acquisition, activation |
+| `onboarding_completed` | Activation funnel |
+| `taste_quiz_completed` | Personalisation adoption |
+| `location_permission_result` | Permission conversion |
+| `search_submitted` | Discovery demand, search trends |
+| `dish_viewed` | Dish discovery engagement |
+| `dish_favourited` | Save intent |
 | `review_started` / `review_submitted` | UGC contribution funnel |
-| `claim_this_stall_tapped` | merchant intent signal |
-| `delivery_link_tapped` | monetisable intent / partner intent |
-| `decide_for_me_*` | recommendation feature engagement |
+| `claim_this_stall_tapped` | Merchant intent signal |
+| `delivery_link_tapped` | Partner/delivery intent |
+| `decide_for_me_*` | Recommendation feature engagement |
 
 ---
 
-## 8. Additional Events to Add
-
-Add these events to properly support the product analysis page.
+## 9. Additional Events to Add
 
 ### Website events
 
@@ -309,26 +349,6 @@ website_scroll_depth_reached
 website_outbound_link_clicked
 website_form_error_shown
 ```
-
-Recommended properties:
-
-```text
-page_path
-page_name
-referrer
-utm_source
-utm_medium
-utm_campaign
-utm_content
-utm_term
-cta_label
-cta_location
-audience
-form_type
-scroll_depth
-```
-
----
 
 ### Foodie app events
 
@@ -349,8 +369,6 @@ review_video_added
 report_submitted
 feedback_submitted
 ```
-
----
 
 ### Merchant app events
 
@@ -384,8 +402,6 @@ merchant_ai_suggestion_used
 merchant_settings_updated
 ```
 
----
-
 ### Console/admin events
 
 ```text
@@ -413,11 +429,9 @@ console_admin_action_audited
 
 ---
 
-## 9. PostHog User, Group, and Property Model
+## 10. User, Merchant, and Group Analytics Model
 
-### Person/user properties
-
-Attach these properties to PostHog persons where safe:
+### User properties
 
 ```text
 user_id
@@ -436,28 +450,13 @@ region
 is_internal_user
 ```
 
-Do not send raw email, phone, exact address, documents, or precise home-based location.
-
 ### Merchant group analytics
-
-Use PostHog Group Analytics if available.
 
 Recommended groups:
 
 ```text
 merchant_account
 merchant_outlet
-```
-
-Merchant account properties:
-
-```text
-merchant_account_id
-merchant_role
-outlet_count
-created_at
-verification_status
-has_verified_outlet
 ```
 
 Merchant outlet properties:
@@ -479,8 +478,6 @@ is_live
 
 ### Website visitor properties
 
-For anonymous website visitors:
-
 ```text
 anonymous_id
 first_seen_at
@@ -493,17 +490,11 @@ last_seen_at
 waitlist_audience
 ```
 
-When a visitor joins the waitlist, connect anonymous activity to the waitlist record where privacy rules allow.
-
 ---
 
-## 10. Product Analysis Page Sections
+## 11. Product Analysis Page Sections
 
-## 10.1 Executive Overview
-
-Purpose:
-
-Give a founder/operator a single page to check product health.
+## 11.1 Executive Overview
 
 Cards:
 
@@ -521,6 +512,8 @@ Reviews submitted
 Reports submitted
 Open issues
 Crash/error count
+Crash-free users
+Crash-free sessions
 ```
 
 Charts:
@@ -532,14 +525,9 @@ Charts:
 - Website conversion funnel
 - App activation funnel
 - Feedback/report trend
+- Release health trend
 
----
-
-## 10.2 Foodie Analytics
-
-Purpose:
-
-Understand user behaviour in the consumer app.
+## 11.2 Foodie Analytics
 
 Metrics:
 
@@ -563,32 +551,7 @@ Decide For Me usage
 Delivery link taps
 ```
 
-Funnels:
-
-```text
-App launch → Sign up → Onboarding complete → First search → First dish view → First save/review
-Search submitted → Search result clicked → Dish viewed → Stall viewed → Direction/delivery tapped
-Review started → Photos added → Review submitted
-```
-
-Retention:
-
-```text
-Day 1 retention
-Day 7 retention
-Day 30 retention
-Weekly returning users
-Cohort retention by signup source
-Cohort retention by taste quiz completion
-```
-
----
-
-## 10.3 Merchant Analytics
-
-Purpose:
-
-Understand merchant onboarding, health, and activity.
+## 11.3 Merchant Analytics
 
 Metrics:
 
@@ -611,35 +574,7 @@ Promotions created
 AI assistant usage
 ```
 
-Funnels:
-
-```text
-Merchant interest → Application started → Application submitted → In review → Approved → Verified
-Merchant mode opened → Profile editor opened → Profile updated → Preview as customer
-Merchant mode opened → Menu viewed → Dish created/updated → Menu previewed
-Customer inbox viewed → Reply composer opened → Reply sent
-```
-
-Merchant health scores:
-
-```text
-Profile completion score
-Menu completeness score
-Photo completeness score
-Opening-hours freshness score
-Verification status
-Reply rate
-Review response time
-Promotion activity
-```
-
----
-
-## 10.4 Website Analytics
-
-Purpose:
-
-Track public website performance and conversion.
+## 11.4 Website Analytics
 
 Metrics:
 
@@ -662,120 +597,7 @@ Conversion rate by page
 Conversion rate by UTM source
 ```
 
-Key page breakdown:
-
-```text
-/
-/for-foodies
-/for-merchants
-/about
-/join-waitlist
-/privacy
-/terms
-```
-
-Funnels:
-
-```text
-Landing page view → CTA click → Waitlist form start → Waitlist submitted
-For Merchants view → Register Interest click → Merchant form start → Merchant interest submitted
-Homepage view → Audience card click → Audience page view → CTA click → Signup
-```
-
----
-
-## 10.5 Acquisition Analytics
-
-Purpose:
-
-Understand where users and merchants come from.
-
-Dimensions:
-
-```text
-UTM source
-UTM medium
-UTM campaign
-UTM content
-UTM term
-Referrer
-Landing page
-Organic search query, if available
-Device type
-Platform
-Country / region
-```
-
-Metrics:
-
-```text
-Visitors by channel
-Waitlist conversion by channel
-Merchant interest conversion by channel
-App signup conversion by channel
-Cost per signup, if ad cost is imported later
-Campaign retention
-```
-
----
-
-## 10.6 Funnel Analysis
-
-Purpose:
-
-Let operators build and inspect product funnels.
-
-Required built-in funnels:
-
-### Foodie activation funnel
-
-```text
-app_launched
-sign_up_completed
-onboarding_completed
-taste_quiz_completed
-search_submitted
-dish_viewed
-dish_favourited OR review_submitted OR delivery_link_tapped
-```
-
-### Merchant activation funnel
-
-```text
-merchant_mode_opened
-merchant_application_started
-merchant_application_submitted
-merchant_verification_submitted
-merchant_profile_updated
-merchant_menu_viewed
-merchant_dish_created OR merchant_dish_updated
-```
-
-### Website waitlist funnel
-
-```text
-website_page_viewed
-website_cta_clicked
-website_waitlist_started
-website_waitlist_submitted
-```
-
-### Merchant website funnel
-
-```text
-website_page_viewed with page_path=/for-merchants
-website_cta_clicked with audience=merchant
-website_merchant_interest_started
-website_merchant_interest_submitted
-```
-
----
-
-## 10.7 Retention and Cohorts
-
-Purpose:
-
-Understand if Hungry is becoming a habit.
+## 11.5 Retention and Cohorts
 
 Cohorts:
 
@@ -791,212 +613,72 @@ Users who submitted a review
 Merchants who updated menu
 Merchants who completed verification
 Merchants who replied to customers
+Users exposed to feature flag X
+Users who received notification campaign Y
 ```
 
-Retention views:
-
-- Day 1 / Day 7 / Day 30 retention
-- Weekly retention
-- Monthly retention
-- Retention by acquisition source
-- Retention by first action
-- Retention by merchant verification status
-
----
-
-## 10.8 Event Explorer
-
-Purpose:
-
-Let the team debug analytics and inspect raw events.
-
-Features:
-
-- Search event name
-- Filter by user type
-- Filter by platform
-- Filter by app version
-- Filter by date range
-- Filter by session id
-- Filter by user id / merchant id where permission allows
-- View event properties
-- Link to PostHog event/person
-- Flag malformed events
-- Export CSV for internal analysis
-
-Recommendation:
-
-Use PostHog as the source of truth for raw event exploration, but surface a simplified event explorer in Hungry Console for common debugging.
-
----
-
-## 10.9 Notifications Analytics
-
-Purpose:
-
-Measure app-wide and targeted messages.
+## 11.6 Release and App Health Analytics
 
 Metrics:
 
 ```text
-Notifications drafted
-Notifications scheduled
-Notifications sent
-Delivery rate
-Open rate
-Click/tap rate
-Conversion after notification
-Unsubscribe/opt-out rate
-App opens after notification
-Deep-link completion rate
+Current production app version
+Current preview app version
+Release adoption
+Crash-free users
+Crash-free sessions
+New issues by release
+Regressions by release
+Users affected by issue
+Performance issues
+App start time
+Screen render time
+API/network error rate
+Build/deployment failures
 ```
 
-Breakdowns:
-
-- Campaign
-- Audience segment
-- Platform
-- User type
-- Location / area
-- App version
-
----
-
-## 10.10 Feedback and Issues Analytics
-
-Purpose:
-
-Track product quality and support burden.
+## 11.7 Feature Flag and Experiment Analytics
 
 Metrics:
 
 ```text
-New feedback items
-New bug reports
-New user reports
-New merchant reports
-Open issues
-Resolved issues
-Average first response time
-Average resolution time
-SLA breach count
-Top issue categories
-Top affected app versions
-Repeated user complaints
-Merchant issue volume
+Active flags
+Flags changed in last 7 days
+Users exposed by flag
+Conversion by flag variant
+Crash/error rate by flag variant
+Retention by flag variant
+Experiment winner / inconclusive status
+Rollout percentage
+Kill switch status
 ```
-
-Charts:
-
-- Issues by category over time
-- Bugs by app version
-- Feedback sentiment trend
-- Merchant issues by verification status
-- Reports by content type
 
 ---
 
-## 10.11 Data Quality Analytics
+## 12. Product Analytics Layout
 
-Purpose:
-
-Track the health of Hungry’s food database.
-
-Metrics:
-
-```text
-Total stalls
-Live stalls
-Draft stalls
-Verified stalls
-Total dishes
-Dishes with photos
-Dishes missing price
-Stalls missing opening hours
-Stalls with stale opening hours
-Duplicate stall candidates
-Menu conflict count
-Pending data corrections
-Approved stall submissions
-Rejected stall submissions
-Merchant-updated fields
-```
-
-Recommended scorecards:
-
-- Stall completeness score
-- Dish completeness score
-- Menu freshness score
-- Location confidence score
-- Merchant trust score
-
----
-
-## 11. Product Analytics Layout
-
-Recommended desktop layout:
+Desktop layout:
 
 ```text
 Top filter bar:
-  Date range | Audience | Platform | Region | App version | Segment
+  Date range | Audience | Platform | Region | App version | Segment | Environment
 
 KPI row:
-  New users | Active users | Merchant applications | Searches | Dish views | Reports
+  New users | Active users | Website visitors | Merchant applications | Searches | Dish views | Reports
 
 Main chart area:
-  Growth chart | Activation funnel | Retention chart
+  Growth chart | Activation funnel | Retention chart | Release health
 
 Breakdown grids:
-  Foodies | Merchants | Website | Notifications | Feedback | Data quality
+  Foodies | Merchants | Website | Notifications | Feedback | Data quality | Feature flags
 
 Lower section:
-  Top events | Top searches | Top pages | Top issue categories | PostHog links
+  Top events | Top searches | Top pages | Top issue categories | PostHog links | Sentry/Firebase links
 ```
-
-Recommended mobile layout:
-
-```text
-Date range filter
-Primary KPI cards
-Tabbed dashboard sections
-Charts as vertical cards
-Export/share controls hidden behind menu
-```
-
----
-
-## 12. PostHog Dashboard Links to Add
-
-Hungry Console should have shortcuts to saved PostHog dashboards:
-
-```text
-PostHog Overview
-PostHog Foodie Activation
-PostHog Merchant Activation
-PostHog Website Conversion
-PostHog Retention
-PostHog Search and Discovery
-PostHog Reviews and UGC
-PostHog Notifications
-PostHog Feature Flags
-PostHog Experiments
-PostHog Session Replay
-```
-
-Each card should show:
-
-- dashboard name
-- description
-- last viewed / updated
-- owner
-- open in PostHog link
-- key metric summary if API integration exists
 
 ---
 
 ## 13. Data Sources
-
-Hungry Console Product Analysis should combine these data sources:
 
 | Source | Use |
 |---|---|
@@ -1004,16 +686,15 @@ Hungry Console Product Analysis should combine these data sources:
 | Supabase / app database | Users, merchants, applications, stalls, dishes, reports, support states |
 | Website database | Waitlist, merchant interest, form submissions |
 | Vercel | Website deployment, web performance, traffic if available |
-| Sentry | Crashes, errors, performance issues |
+| Sentry | Crashes, issues, affected users, releases, performance issues |
+| Firebase | Cloud Messaging, Crashlytics, Remote Config, A/B Testing, App Distribution if used |
 | EAS / app release tooling | App versions, update channels, releases |
 | Notification provider | Push delivery, opens, failures |
 | GitHub | Linked engineering issues, pull requests, releases |
 
 ---
 
-## 14. Recommended Data Model Additions
-
-Add these tables or materialized views if the console needs faster dashboard loading:
+## 14. Data Model Additions
 
 ```text
 product_metric_definitions
@@ -1027,60 +708,30 @@ feedback_metrics_daily
 report_metrics_daily
 notification_metrics_daily
 data_quality_metrics_daily
+release_health_daily
+feature_flag_exposures_daily
+experiment_results_daily
 posthog_dashboard_links
 posthog_saved_queries
+sentry_project_links
+firebase_project_links
 analytics_event_quality_issues
 console_saved_views
 console_metric_annotations
-```
-
-### Metric definition fields
-
-```text
-id
-key
-name
-description
-source
-query_type
-owner
-refresh_frequency
-is_sensitive
-created_at
-updated_at
-```
-
-### Daily metric fields
-
-```text
-metric_key
-date
-audience
-platform
-region
-app_version
-value
-comparison_value
-source
-last_refreshed_at
 ```
 
 ---
 
 ## 15. Privacy and Analytics Safety
 
-Hungry already has analytics sanitisation logic. Product Analytics must preserve and extend this approach.
-
 Rules:
 
-- Do not send raw email, phone, passwords, tokens, cookies, auth headers, secrets, or private addresses to PostHog.
-- Do not send exact home-based business addresses to analytics.
-- Do not send raw verification documents or evidence metadata into PostHog.
-- Round coordinates or aggregate them by area before analytics use.
+- Do not send private identifiers, home addresses, verification documents, or sensitive admin fields to product analytics tools.
+- Aggregate or round location data before analytics use.
 - Mark internal staff/test users clearly.
 - Allow opt-out where required.
 - Separate operational records from analytics events.
-- Limit session replay on sensitive screens such as login, profile, verification, payments, and support forms.
+- Limit replay tooling on sensitive screens.
 - Mask input fields in replay tools.
 
 Sensitive screens where recording should be disabled or masked:
@@ -1100,8 +751,6 @@ Admin console user detail pages
 
 ## 16. Product Analysis MVP
 
-Build this first:
-
 ### Phase 1 — Product analytics foundation
 
 ```text
@@ -1116,7 +765,9 @@ Merchant interest submissions card
 Searches submitted card
 Dish views card
 Open feedback/reports card
+Crash-free users/sessions card
 Basic PostHog dashboard links
+Basic Sentry/Firebase links
 ```
 
 ### Phase 2 — Core funnels
@@ -1130,6 +781,7 @@ Retention chart
 Top events table
 Top pages table
 Top searches table
+Release health trend
 ```
 
 ### Phase 3 — Merchant and operations analytics
@@ -1143,9 +795,10 @@ Customer inbox reply metrics
 Feedback issue trends
 Report trends
 Data quality dashboard
+Feature flag impact summary
 ```
 
-### Phase 4 — Advanced PostHog integration
+### Phase 4 — Advanced analytics integration
 
 ```text
 PostHog API-backed charts
@@ -1155,68 +808,13 @@ Experiment analysis
 Session replay deep links
 Saved PostHog query library
 Metric annotations
+Sentry release health sync
+Firebase messaging metrics sync
 ```
 
 ---
 
-## 17. Recommended Product Analysis Widgets
-
-### Required widgets
-
-```text
-New users
-Active users
-Website visitors
-Waitlist conversion
-Merchant interest conversion
-Foodie activation funnel
-Merchant activation funnel
-Search volume
-Dish views
-Review submissions
-Save/favourite actions
-Merchant applications
-Merchant verification status
-Menu updates
-Open feedback
-Open reports
-Notification performance
-PostHog dashboard shortcuts
-```
-
-### Should-have widgets
-
-```text
-Retention cohorts
-Top search terms
-Top dishes viewed
-Top stalls viewed
-Top merchant issue categories
-Data freshness
-Feature flag adoption
-Experiment results
-Crash/error trend
-Session replay links
-```
-
-### Later widgets
-
-```text
-Revenue / paid promotion metrics
-Ad campaign ROI
-Merchant subscription health
-Marketplace supply-demand balance
-Food area heatmap
-Churn prediction
-Merchant risk score
-AI-generated weekly analysis
-```
-
----
-
-## 18. Recommended PostHog Dashboards to Create
-
-Create these in PostHog itself, then link them in Hungry Console:
+## 17. Recommended PostHog Dashboards to Create
 
 ```text
 Hungry Executive Overview
@@ -1234,16 +832,14 @@ Hungry Error and Issue Correlation
 
 ---
 
-## 19. Recommendation
+## 18. Recommendation
 
-Add Product Analysis to the first release of Hungry Console, but start with summary metrics and PostHog links rather than recreating all of PostHog.
+Add Product Analysis to the first release of Hungry Console, but start with summary metrics and PostHog/Sentry/Firebase links rather than recreating those products.
 
 Best immediate implementation:
 
 1. Instrument missing website and merchant events.
 2. Create key PostHog dashboards.
-3. Build `/console/product-analytics` with KPI cards, core funnels, and dashboard deep links.
-4. Add PostHog API summaries only for metrics the team checks daily.
-5. Add deeper event explorer and cohorts later.
-
-This gives Hungry immediate visibility into users, merchants, website conversion, app behaviour, and product quality without overbuilding analytics too early.
+3. Build `/console/product-analytics` with KPI cards, core funnels, release health, and dashboard deep links.
+4. Add API summaries only for metrics the team checks daily.
+5. Add deeper event explorer, cohorts, replay links, and feature flag impact later.

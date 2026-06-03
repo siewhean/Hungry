@@ -7,7 +7,7 @@ export const siteConfig = {
   url: rawSiteUrl.replace(/\/$/, ""),
   title: "Hungry - Singapore Food Discovery",
   description:
-    "Hungry is a dish-first food discovery app for Singapore, helping foodies decide what to eat and helping local food businesses get discovered.",
+    "Hungry is a Singapore food discovery app for diners and food businesses — discover dishes faster and manage menus, photos, hours, and profiles with Merchant Mode.",
   locale: "en_SG",
   language: "en-SG",
   contactEmail: "hello@hungry.sg",
@@ -42,19 +42,19 @@ export const publicRoutes = [
   },
   {
     path: "/for-merchants",
-    title: "Hungry for Merchants | Register Merchant Interest",
+    title: "Hungry for Merchants | Merchant Mode for Singapore food businesses",
     description:
-      "Register interest for Hungry merchant tools that help Singapore hawker stalls, cafes, restaurants, and home-based food businesses get discovered.",
+      "Join the Hungry merchant waitlist for Merchant Mode — manage menus, photos, opening hours, verification, customer replies, promotions, and performance.",
     priority: 0.9,
-    lastModified: "2026-05-24",
+    lastModified: "2026-06-01",
   },
   {
     path: "/join-waitlist",
-    title: "Hungry Waitlist | Join as Foodie or Merchant",
+    title: "Hungry waitlist | Foodie early access and Merchant Mode updates",
     description:
-      "Choose foodie early access or merchant onboarding interest for Hungry and stay updated as we launch in Singapore.",
+      "Join the Hungry waitlist for foodie early access or Merchant Mode updates for Singapore food businesses.",
     priority: 0.9,
-    lastModified: "2026-05-24",
+    lastModified: "2026-06-01",
   },
   {
     path: "/privacy",

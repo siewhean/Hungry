@@ -30,8 +30,63 @@ a {
 button {
   background: none;
   border: none;
-  font-family: inherit;
   cursor: pointer;
+}
+
+input,
+textarea,
+select {
+  font-family: var(--font-body);
+}
+
+:where(
+  button,
+  [role="button"],
+  a[class*="Button"],
+  a[class*="button"],
+  a[class*="Btn"],
+  a[class*="btn"],
+  a[class*="Cta"],
+  a[class*="cta"],
+  a[class*="Action"],
+  a[class*="action"]
+) {
+  align-items: center;
+  background-color: var(--button-background);
+  border: 1px solid var(--button-border-color);
+  border-radius: var(--button-radius) !important;
+  color: var(--button-color);
+  display: inline-flex;
+  font-family: var(--button-font-family) !important;
+  font-size: var(--button-font-size) !important;
+  font-weight: var(--button-font-weight) !important;
+  gap: var(--button-gap) !important;
+  justify-content: center;
+  line-height: var(--button-line-height) !important;
+  letter-spacing: var(--button-letter-spacing) !important;
+  min-height: var(--button-min-height) !important;
+  padding: var(--button-padding-block) var(--button-padding-inline) !important;
+  text-align: center;
+  white-space: nowrap;
+}
+
+:where(
+  button,
+  [role="button"],
+  a[class*="Button"],
+  a[class*="button"],
+  a[class*="Btn"],
+  a[class*="btn"],
+  a[class*="Cta"],
+  a[class*="cta"],
+  a[class*="Action"],
+  a[class*="action"]
+) :where(span, strong) {
+  font-family: var(--button-font-family) !important;
+  font-size: var(--button-font-size) !important;
+  font-weight: var(--button-font-weight) !important;
+  line-height: var(--button-line-height) !important;
+  letter-spacing: var(--button-letter-spacing) !important;
 }
 
 h1, h2, h3, h4, h5, h6 {

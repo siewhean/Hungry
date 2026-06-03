@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
-import { DiscoveryPhoneMockup } from "@/components/home/DiscoveryPhoneMockup";
 import { Reveal } from "@/components/motion/Reveal";
+import { DiscoveryPhoneMockup } from "@/components/home/DiscoveryPhoneMockup";
 import { routeMetadata } from "@/app/seo";
 import styles from "./page.module.css";
 
 export const metadata = routeMetadata("/for-foodies");
+export const revalidate = 3600;
 
 const proofPoints = [
   "See dish photos before you queue.",
@@ -60,11 +61,19 @@ export default function ForFoodies() {
                 ))}
               </div>
               <div className={styles.ctas}>
-                <Link href="/join-waitlist?audience=foodie" className={styles.primaryCta}>
+                <Link
+                  href="/join-waitlist?audience=foodie"
+                  className={styles.primaryCta}
+                  prefetch
+                >
                   Join Waitlist
                   <ArrowRight aria-hidden size={19} />
                 </Link>
-                <Link href="/join-waitlist?audience=merchant" className={styles.secondaryCta}>
+                <Link
+                  href="/join-waitlist?audience=merchant"
+                  className={styles.secondaryCta}
+                  prefetch
+                >
                   For Merchants
                 </Link>
               </div>
@@ -94,7 +103,13 @@ export default function ForFoodies() {
             {featureCards.map((card, index) => (
               <Reveal as="article" className={styles.featureCard} delay={index * 0.08} key={card.title}>
                 <div className={styles.featureImageWrap}>
-                  <Image src={card.image} alt={card.alt} fill sizes="(max-width: 760px) 100vw, 33vw" />
+                  <Image
+                    src={card.image}
+                    alt={card.alt}
+                    fill
+                    loading="lazy"
+                    sizes="(max-width: 760px) 100vw, 33vw"
+                  />
                 </div>
                 <div className={styles.featureCopy}>
                   <h3>{card.title}</h3>

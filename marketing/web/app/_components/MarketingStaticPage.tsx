@@ -250,7 +250,7 @@ export function MarketingStaticPage({
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <Link className="inline-flex items-center" href="/">
-                <HungryWordmark className="h-6 w-auto" />
+                <HungryWordmark />
               </Link>
               <span className="h-2 w-2 rounded-full bg-hungry-orange" />
             </div>
