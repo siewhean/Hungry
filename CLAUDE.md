@@ -1,120 +1,218 @@
-# Claude Entrypoint — Hungry
+# Claude Entrypoint - Hungry
+
+Purpose: give Claude the smallest useful project map before it reads any large files. Keep this file stable and concise so repeated Claude sessions can reuse/cache the same prefix. Put volatile status in `tasks/backlog.md`, `tasks/verification.md`, and `tasks/session-log.md`, not here.
+
+Token design basis: Anthropic recommends placing stable reusable context first for prompt caching, using direct structured prompts, and managing long context explicitly. See:
+- https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
+- https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview
+- https://docs.anthropic.com/en/docs/build-with-claude/context-windows
 
 ---
 
-## Startup Sequence
+## 0. Default Token Contract
 
-| Step | Action |
-|------|--------|
-| 1 | Read `README.md` — project state and quick reference map |
-| 2 | Read `AGENTS.md` — master harness dictionary and document TOC |
-| 3 | Read `WORKFLOW.md` — operating model and role split |
-| 4 | Read `ops/low-token-cheatsheet.md` — default prompt/output compression rules |
-| 5 | Read `tasks/backlog.md` — canonical active task list |
-| 6 | Read `tasks/verification.md` — latest evidence |
-| 7 | Read `tasks/lessons.md` — rules from past corrections |
+Use low-token mode unless the user explicitly asks for a broad explanation.
 
----
-
-## Workflow Rules
-
-### 1. Plan Mode Default
-- Enter plan mode for any non-trivial task (3+ steps or architectural decisions)
-- Use plan mode for verification steps, not just building
-- Write scoped canonical task rows to `tasks/backlog.md` upfront to reduce ambiguity
-
-### 2. Subagent Strategy
-- Use subagents liberally to keep main context window clean
-- Offload research, exploration, and parallel analysis to subagents
-- For complex problems, throw more compute at it via subagents
-- One task per subagent for focused execution
-
-### 3. Self-Improvement Loop
-- After any correction from the user: update `tasks/lessons.md` with the pattern
-- Write rules that prevent the same mistake
-- Ruthlessly iterate on these lessons until mistake rate drops
-- Review lessons at session start
-
-### 4. Verification Before Done
-- Never mark a task complete without proving it works
-- For small iterative changes, do not require full QA/QC, `npm run ios`, full tests, or default `npm run typecheck`; run a focused check only if useful, or state that checks were skipped by design
-- For medium/broad/risky changes, choose the verification budget in `AGENTS.md` / `tasks/test-harness.md`
-- Ask: "Would a staff engineer approve this?"
-
-### 5. Demand Elegance (Balanced)
-- For non-trivial changes: pause and ask "is there a more elegant way?"
-- If a fix feels hacky: implement the elegant solution instead
-- Skip this for simple, obvious fixes — do not over-engineer
-
-### 6. Autonomous Bug Fixing
-- When given a bug report: just fix it — no hand-holding
-- Point at logs, errors, failing tests — then resolve them
-- Go fix failing CI tests without being told how
-
-### Task Management
-- **Plan first** — update `tasks/backlog.md` with scoped rows
-- **Verify plan** — check in before implementation
-- **Track progress** — update canonical rows as you go
-- **Explain changes** — high-level summary at each step
-- **Document results** — record evidence in `tasks/verification.md`
-- **Log execution** — append `tasks/session-log.md`
-- **Capture lessons** — update `tasks/lessons.md` after corrections
-- **Stay compressed** — default to low-token prompts, bounded reads, and delta-only outputs unless a broad narrative is explicitly needed
+- Read this file first.
+- Read only the next specific doc/file needed for the task.
+- Prefer `rg`, `sed`, and `git diff` over broad file opens.
+- Return deltas: changed files, verification, blockers.
+- Do not restate project history when `tasks/session-log.md` already has it.
+- Do not open archive/roadmap files unless the active task names them.
+- Use one task ID, one feature area, or one route surface at a time.
+- For status, trust in order: `tasks/backlog.md` -> `tasks/verification.md` -> `tasks/session-log.md`.
 
 ---
 
-## Core Principles
+## 1. Fast Project Shape
 
-| Principle | Rule |
-|-----------|------|
-| Simplicity first | Make every change as small as possible. Impact minimal code. |
-| No laziness | Find root causes. No temporary fixes. Senior developer standards. |
-| Minimal impact | Changes should only touch what is necessary. Avoid introducing bugs. |
-| Protect working paths | Do not casually refactor: navigation wiring, session store, mock data, domain types, or theme tokens. Treat as protected unless explicitly asked. |
-| Patch, do not churn | On protected paths, use the smallest viable fix. Keep existing behavior unless task explicitly requires change. |
-
----
-
-## Harness Document Map
-
-| Document | Read before |
-|----------|------------|
-| `tasks/environment.md` | Any code work |
-| `WORKFLOW.md` | Any non-trivial planning or coordination work |
-| `tasks/design-system.md` | Any UI or component work |
-| `tasks/screens.md` | Any screen or navigation work |
-| `tasks/data-contracts.md` | Any data, store, or mock work |
-| `tasks/test-harness.md` | Any feature or bug-fix work |
+| Area | Path | Read when |
+| --- | --- | --- |
+| App shell/navigation | `src/app/navigation/` | Routes, deep links, tabs, auth gating |
+| Screens | `src/app/screens/` | User, merchant, auth, onboarding, detail, Discover, Profile, Review |
+| Shared UI | `src/components/ui/` | Buttons, inputs, sheets, dialogs, typography, image semantics |
+| Domain components | `src/components/{dish,stall,social,merchant,review,...}/` | Reusable feature cards/sections |
+| Feature logic | `src/features/` | Prefetch, post composer, merchant validation, search hooks |
+| Stores | `src/store/` | Zustand session/profile/social/location/merchant state |
+| Services | `src/lib/services/` | Mock/Supabase service provider contracts |
+| Theme/tokens | `src/theme/` | Colors, spacing, typography, radii, accessibility contrast |
+| Types | `src/types/domain.ts` | Canonical domain model; do not duplicate types |
+| Constants/flags | `src/constants/featureFlags.ts` | Production/staging/dev route and feature gates |
+| Supabase | `supabase/{migrations,smoke,functions}/` | Database, RLS, storage, smoke SQL |
+| Tests | `src/**/*.test.ts`, `tests/e2e/`, `.maestro/` | Source contracts, Playwright, native smoke |
+| Product/workflow docs | `tasks/` | Active task state, verification, lessons, contracts |
+| Design sources | `design/`, `tasks/design-system.md`, `PROJECT_INSTRUCTIONS.md` | UI work only |
+| Marketing site | `marketing/website/web-v2/` | Next.js marketing work only |
+| Data/floorplans | `data/`, `scripts/floorplan/`, `store-layout-editor/` | Mall/store/floorplan work only |
 
 ---
 
-## Session-End Checklist
+## 2. Canonical Entry Points
 
+Open these files only when the task requires them.
+
+| Task type | Minimal read set |
+| --- | --- |
+| Bug in a screen | Specific screen + directly imported component/store/service |
+| UI polish | `PROJECT_INSTRUCTIONS.md`, `tasks/design-system.md`, specific screen/component |
+| Navigation/auth | `src/app/navigation/navigationTypes.ts`, `RootNavigator.tsx`, relevant stack/tab file |
+| Data/service behavior | `src/types/domain.ts`, `src/lib/services/types.ts`, active mock/supabase implementation |
+| Supabase work | Relevant migration/smoke + `src/lib/services/supabase/supabaseService.ts` |
+| Feature flag/gating | `src/constants/featureFlags.ts`, `RootNavigator.tsx`, focused route contract |
+| Accessibility | `accessibility-audit-report.md`, `docs/accessibility-style-guide.md`, touched primitive/screen |
+| Performance/prefetch | `src/features/navigation/prefetch.ts`, navigation file, affected screen |
+| Merchant portal | `src/app/screens/merchant/`, `src/components/merchant/`, merchant service methods |
+| Testing only | `tasks/test-harness.md`, exact focused test file |
+| Release readiness | `tasks/backlog.md`, `tasks/verification.md`, `tasks/environment.md` |
+
+---
+
+## 3. Protected Sources
+
+Treat these as high blast-radius. Read before editing, patch narrowly, and run a relevant focused check.
+
+- `src/app/navigation/RootNavigator.tsx`
+- `src/app/navigation/navigationTypes.ts`
+- `src/store/useSessionStore.ts`
+- `src/lib/services/mock/data.ts`
+- `src/lib/services/types.ts`
+- `src/types/domain.ts`
+- `src/theme/tokens.ts`
+- `src/constants/featureFlags.ts`
+- Supabase migrations and RLS policies
+
+---
+
+## 4. Workflow Rules
+
+1. Use `hungry-intent-router` for broad, vague, or multi-step Hungry requests.
+2. For non-trivial work, update/consult `tasks/backlog.md` first if a row already exists.
+3. Implement directly when the request is clear; do not stop at a proposal.
+4. Do not revert unrelated dirty work.
+5. Record verification in `tasks/verification.md` for broad/risky changes.
+6. Append a short line to `tasks/session-log.md` after focused task work.
+7. Update `tasks/lessons.md` only after a correction or repeated mistake.
+8. Keep final responses short: what changed, what passed, what remains.
+
+---
+
+## 5. Verification Budget
+
+| Change | Default verification |
+| --- | --- |
+| Docs-only | `git diff --check -- <touched docs>` |
+| One screen/style tweak | Focused source contract or visual smoke if relevant |
+| Shared UI/theme/types | Focused tests + `npm run typecheck` |
+| Navigation/auth/service/Supabase | Focused tests + `npm run typecheck` + relevant smoke |
+| Release/PR readiness | `npm run typecheck`, focused tests, broader suite as needed |
+
+Do not run full suites by default for small edits. Do run full suites when the change touches shared contracts or the user asks for production readiness.
+
+---
+
+## 6. Search Patterns
+
+Use these before reading broad files.
+
+```bash
+rg -n "RouteName|component|functionName" src
+rg --files src/app/screens src/components src/features
+git diff -- <file>
+git status --short
 ```
-Before ending any session that changed code:
-  [ ] Verification budget selected — focused check run or intentionally skipped for small iterative change
-  [ ] tasks/backlog.md — canonical rows updated
-  [ ] tasks/verification.md — verification written when task/release work changed
-  [ ] tasks/session-log.md — entry appended
-  [ ] tasks/lessons.md — corrections recorded
-  [ ] README.md — status updated if progress or decisions changed
+
+For current status:
+
+```bash
+rg -n "TASK-ID|area keyword" tasks/backlog.md tasks/verification.md tasks/session-log.md
 ```
-Then read `AGENTS.md` and follow its workflow, including keeping `README.md` updated whenever task context, progress, decisions, or blockers change.
 
-## Mandatory execution workflow for Hungry
+---
 
-1. Treat `tasks/backlog.md` as the shared active task contract between Claude and Codex.
-2. For non-trivial work, write/update scoped rows in `tasks/backlog.md` before implementation.
-3. Update canonical task status frequently (at least once per focused work block, and always before ending a session).
-4. Do not mark tasks done without recording a verification step in `tasks/verification.md`.
-5. Append a concise entry in `tasks/session-log.md` with date, actor, status, blockers, and next step.
-6. Default to low-token mode: bounded scope, canonical docs first, and concise output.
+## 7. Graphify
 
-## graphify
+Use `graphify-out/` only for architecture or dependency-map questions. Skip it for routine code edits, UI polish, docs updates, and focused bug fixes.
 
-This project has a graphify knowledge graph at graphify-out/.
+If used:
+- Prefer `graphify-out/wiki/index.md` when present.
+- Otherwise read `graphify-out/GRAPH_REPORT.md`.
+- Do not rebuild graphify unless the task explicitly needs an architecture map refresh.
 
-Rules:
-- Before answering architecture or codebase questions, read graphify-out/GRAPH_REPORT.md for god nodes and community structure
-- If graphify-out/wiki/index.md exists, navigate it instead of reading raw files
-- After modifying code files in this session, run `python3 -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"` to keep the graph current
+---
+
+## 8. Session-End Checklist
+
+Before ending a session that changed files:
+
+- Verification selected and run, or intentionally skipped with reason.
+- `tasks/backlog.md` updated if task status changed.
+- `tasks/verification.md` updated for broad/risky/task work.
+- `tasks/session-log.md` appended for focused work.
+- `tasks/lessons.md` updated only if a correction/lesson occurred.
+- Final answer gives only delta, verification, and blockers.
+
+# CLAUDE.md
+
+Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
+
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+
+## 1. Think Before Coding
+
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them - don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+## 2. Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+## 3. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it - don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+## 4. Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+3. [Step] → verify: [check]
+```
+
+Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+---
+
+**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.

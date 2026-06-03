@@ -20,6 +20,7 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 | Screen inventory + navigation     | `tasks/screens.md`                                      |
 | Domain types + mock data          | `tasks/data-contracts.md`                               |
 | Testing + feedback loops          | `tasks/test-harness.md`                                 |
+| Accessibility source guide        | `docs/accessibility-style-guide.md`                     |
 | Product requirements (summarised) | `tasks/product-context.md`                              |
 | Marketing launch kit              | `marketing/`                                            |
 | Historical roadmap + audit trail  | `tasks/todo.md`                                         |
