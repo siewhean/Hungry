@@ -4,10 +4,9 @@ import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
 import { Star } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-import { Image } from "expo-image";
 
 import { useHungryTheme } from "@/theme";
-import { AppText, Button, StickyBottomBar } from "@/components/ui";
+import { AccessibleImage, AppText, Button, StickyBottomBar } from "@/components/ui";
 import { useUIStore } from "@/store/useUIStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { ReviewTasteTag, DishSummary } from "@/types/domain";
@@ -359,10 +358,11 @@ export const QuickReviewSheet = ({
               />
               {menuPhotoUri ? (
                 <View style={{ gap: spacing[2] }}>
-                  <Image
+                  <AccessibleImage
                     source={{ uri: menuPhotoUri }}
                     style={{ width: "100%", height: 140, borderRadius: radii.md }}
                     contentFit="cover"
+                    accessibilityLabel="Selected menu photo preview"
                   />
                   <Button
                     label="Remove Photo"

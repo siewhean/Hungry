@@ -10,6 +10,7 @@ export type AuthStackParamList = {
 };
 
 export type OnboardingStackParamList = {
+  OnboardingWelcome: undefined;
   OnboardingIntro1: undefined;
   OnboardingIntro2: undefined;
   OnboardingIntro3: undefined;
@@ -23,20 +24,32 @@ export type OnboardingStackParamList = {
   TasteProfileResult: undefined;
   LocationPermission: undefined;
   ManualLocationPicker: undefined;
+  OnboardingAuth: undefined;
 };
 export type ProfileStackParamList = {
   ProfileHome: undefined;
   ProfilePremium: undefined;
   Favourites: undefined;
   ReviewHistory: undefined;
-  Followers: undefined;
-  Following: undefined;
+  Followers: { userId?: string; userDisplayName?: string } | undefined;
+  Following: { userId?: string; userDisplayName?: string } | undefined;
   VisitedStalls: undefined;
   Settings: undefined;
   SocialGrid: { type: "liked" | "saved" };
   SocialPostDetail: { postId: string; type: "liked" | "saved" };
   EditProfile: undefined;
+  AddStall: undefined;
   ReviewFlow: undefined;
+  ChecklistsHome: undefined;
+  ChecklistDetail: { checklistId: string };
+  ChecklistItemPicker: { checklistId: string; mode: "dish" | "stall" | "custom" };
+  PortfoliosHome: undefined;
+  PortfolioDetail: { portfolioId: string };
+  PortfolioCreate: undefined;
+  PortfolioEdit: { portfolioId: string };
+  PortfolioItemPicker: { portfolioId: string; mode: "dish" | "stall" };
+  PortfolioCollaborators: { portfolioId: string };
+  PortfolioSearch: undefined;
 };
 
 export type ReviewStackParamList = {
@@ -125,6 +138,7 @@ export type RootStackParamList = {
     authorAvatarUrl?: string;
     authorLocation?: string;
     reviewSignalLabel?: string;
+    authorId?: string;
   };
   Offline: undefined;
   NotFound: { title?: string; body?: string } | undefined;
@@ -140,13 +154,9 @@ export type RootStackParamList = {
   SplashV2: { variant?: "A" | "B"; stay?: boolean } | undefined;
   DesignGallery: undefined;
   // V2 Prototypes
-  ReviewFeedV2: undefined;
   PostComposerV2: { venueId?: string; dishId?: string } | undefined;
-  DiscoverV2: undefined;
-  SearchHomeV2: undefined;
   StallDetailV2: { venueId?: string; id?: string };
   BuildingDrillDownV2: { buildingId: string };
-  QuickReviewV2: { venueId?: string; dishId?: string } | undefined;
   VenueDirectory: { venueId: string };
   StoryViewer: { initialStoryId: string };
   AddStory: undefined;
@@ -155,4 +165,9 @@ export type RootStackParamList = {
   MissionsScreen: undefined;
   CollectionList: undefined;
   CollectionDetail: { collectionId: string };
+  // Checklist & Portfolio (root-level access)
+  ChecklistDetail: { checklistId: string };
+  PortfolioDetail: { portfolioId: string };
+  PortfolioPublicView: { portfolioId: string };
+  AdminPortfolioFlags: undefined;
 };

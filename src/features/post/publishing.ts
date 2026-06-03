@@ -110,6 +110,7 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
     mediaUrls: media.mediaUrls,
     mediaType: media.mediaType,
     mediaTypes: media.mediaTypes,
+    showFoodContextOverlay: state.showFoodContextOverlay,
     caption,
     tags: [...state.foodTags, ...state.tasteTags],
     tasteStamp: dish.tasteVector ?? NEUTRAL_TASTE_VECTOR,
@@ -126,6 +127,7 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
     mediaType: bite.mediaType ?? media.mediaType,
     mediaUrls: bite.mediaUrls ?? media.mediaUrls,
     tags: [...state.foodTags, ...state.tasteTags],
+    showFoodContextOverlay: state.showFoodContextOverlay,
   });
   const post: StallPost = {
     ...transformedPost,

@@ -21,11 +21,17 @@ test("stall detail V2 handles missing data and uses real venue/dish values", () 
   assert.match(stall, /formatVenueStatus\(venue\)/);
   assert.match(stall, /PopularVisitorsSection/);
   assert.match(legacyStall, /PopularVisitorsSection/);
-  assert.match(stall, /const statusColor = venue\.isOpen/);
+  assert.match(
+    stall,
+    /const isVenueOpen = isVenueOpenFromHours\(venue\.operatingHours, venue\.isOpen\)/,
+  );
   assert.doesNotMatch(stall, /style=\{\{ color: palette\.success \}\}[\s\S]*\{statusLabel\}/);
   assert.match(stall, /Saved top dish to favourites/);
   assert.doesNotMatch(stall, /Save stall/);
-  assert.match(legacyStall, /const operatingStatusLabel = venue\.isOpen/);
+  assert.match(
+    legacyStall,
+    /const isVenueOpen = isVenueOpenFromHours\(venue\.operatingHours, venue\.isOpen\)/,
+  );
   assert.match(legacyStall, /const operatingHoursLabel = venue\.operatingHours/);
   assert.doesNotMatch(legacyStall, /Open Now/);
   assert.doesNotMatch(legacyStall, /Check Map/);

@@ -1,8 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Image } from "expo-image";
 import { ArrowLeft, Heart, MapPin, Navigation, Send, Star } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type {
@@ -11,9 +10,9 @@ import type {
 } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Button, Card, EmptyState, Screen } from "@/components/ui";
+import { AccessibleImage, AppText, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
 import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
 import { useCartStore } from "@/store/useCartStore";
@@ -24,6 +23,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import type { DeliveryLink, VenueSummary } from "@/types/domain";
+import { isVenueOpenFromHours } from "@/utils/stallStatus";
 
 type Props = NativeStackScreenProps<RootStackParamList, "StallDetailV2">;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -41,7 +41,8 @@ function formatDistance(distanceMeters?: number): string | null {
 }
 
 function formatVenueStatus(venue: VenueSummary) {
-  if (!venue.isOpen) {
+  const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
+  if (!isVenueOpen) {
     return venue.closureNotice ?? "Closed now";
   }
   return `Listed hours: ${venue.operatingHours}`;
@@ -66,6 +67,7 @@ export function StallDetailScreenV2({ route }: Props) {
   const setActiveOrder = useOrderStore((state) => state.setActiveOrder);
   const showToast = useUIStore((state) => state.showToast);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+  const trackedStallViewId = useRef<string | null>(null);
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
       reviewId: `stall-${venue?.id ?? ""}`,
@@ -92,11 +94,27 @@ export function StallDetailScreenV2({ route }: Props) {
       return;
     }
 
+    void getHungryService().discovery.recordMerchantActionEvent({
+      eventType: "share",
+      venueId: venue.id,
+      dishId: leadDish?.id,
+      userId: profile.id,
+    });
     setActiveShareReview(shareReviewTarget);
     requestAnimationFrame(() => {
       shareSheetRef.current?.present();
     });
   };
+
+  useEffect(() => {
+    if (!venue || trackedStallViewId.current === venue.id) return;
+    trackedStallViewId.current = venue.id;
+    void getHungryService().discovery.recordMerchantActionEvent({
+      eventType: "stall_profile_view",
+      venueId: venue.id,
+      userId: profile.id,
+    });
+  }, [profile.id, venue]);
 
   if (!venue) {
     return (
@@ -117,7 +135,8 @@ export function StallDetailScreenV2({ route }: Props) {
   const deliveryLinks = venue.deliveryLinks ?? [];
   const distanceLabel = formatDistance(leadDish?.distanceMeters);
   const statusLabel = formatVenueStatus(venue);
-  const statusColor = venue.isOpen
+  const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
+  const statusColor = isVenueOpen
     ? palette.success
     : venue.closureNotice
       ? palette.amber
@@ -152,6 +171,14 @@ export function StallDetailScreenV2({ route }: Props) {
     }
 
     toggleFavourite(leadDish);
+    if (!isSaved) {
+      void getHungryService().discovery.recordMerchantActionEvent({
+        eventType: "save",
+        venueId: venue.id,
+        dishId: leadDish.id,
+        userId: profile.id,
+      });
+    }
     showToast({
       message: isSaved ? "Removed from favourites." : "Saved top dish to favourites.",
       tone: "success",
@@ -179,6 +206,16 @@ export function StallDetailScreenV2({ route }: Props) {
     void openTrustedDeliveryUrl(link.platform, link.nativeUrl, link.webUrl);
   };
 
+  const handleDirections = () => {
+    void getHungryService().discovery.recordMerchantActionEvent({
+      eventType: "direction_tap",
+      venueId: venue.id,
+      dishId: leadDish?.id,
+      userId: profile.id,
+    });
+    navigation.navigate("MapZoomedIn", { buildingId: venue.buildingId });
+  };
+
   const handlePrimaryOrderAction = () => {
     const preferredLink = deliveryLinks[0];
     if (preferredLink) {
@@ -193,10 +230,11 @@ export function StallDetailScreenV2({ route }: Props) {
     <Screen scroll={false} style={{ backgroundColor: palette.bg }}>
       {/* Hero Image */}
       <View style={{ height: HERO_HEIGHT, width: "100%", overflow: "hidden" }}>
-        <Image
+        <AccessibleImage
           source={{ uri: dishes[0]?.imageUrl }}
           style={{ width: "100%", height: "100%" }}
           contentFit="cover"
+          accessibilityLabel={`${venue.name} hero dish photo`}
         />
         <View style={[StyleSheet.absoluteFill, { backgroundColor: palette.overlay }]} />
 
@@ -364,10 +402,11 @@ export function StallDetailScreenV2({ route }: Props) {
           >
             {dishes.map((dish) => (
               <Card key={dish.id} style={{ width: 140, padding: 0, overflow: "hidden" }}>
-                <Image
+                <AccessibleImage
                   source={{ uri: dish.imageUrl }}
                   style={{ width: "100%", height: 95, backgroundColor: palette.bgSoft }}
                   contentFit="cover"
+                  decorative
                 />
                 <View style={{ padding: spacing[2] }}>
                   <AppText variant="bodySmallBold" numberOfLines={1}>
@@ -562,7 +601,7 @@ export function StallDetailScreenV2({ route }: Props) {
           style={{ flex: 1, height: 52 }}
           leftIcon={<Navigation size={18} color={palette.text} />}
           label="Directions"
-          onPress={() => navigation.navigate("MapZoomedIn", { buildingId: venue.buildingId })}
+          onPress={handleDirections}
         />
         <Button
           variant="primary"

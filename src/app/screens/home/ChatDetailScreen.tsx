@@ -11,12 +11,11 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChevronLeft, Send } from "lucide-react-native";
-import { Image } from "expo-image";
 import Animated, { FadeIn } from "react-native-reanimated";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, EmptyState } from "@/components/ui";
+import { AccessibleImage, AppText, EmptyState } from "@/components/ui";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { ChatMessage } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
@@ -185,7 +184,11 @@ export function ChatDetailScreen({ navigation, route }: Props) {
 
         <View style={styles.userInfo}>
           {avatar ? (
-            <Image source={{ uri: avatar }} style={[styles.avatar, { borderRadius: radii.pill }]} />
+            <AccessibleImage
+              source={{ uri: avatar }}
+              style={[styles.avatar, { borderRadius: radii.pill }]}
+              accessibilityLabel={`Avatar for ${name}`}
+            />
           ) : (
             <View style={[styles.avatarFallback, { borderRadius: radii.pill }]}>
               <AppText variant="bodySmallBold">{name.slice(0, 1).toUpperCase()}</AppText>

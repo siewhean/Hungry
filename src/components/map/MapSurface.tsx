@@ -8,7 +8,6 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { Image } from "expo-image";
 import MapboxGL from "@rnmapbox/maps";
 import { Utensils } from "lucide-react-native";
 
@@ -16,7 +15,7 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { BuildingType, Coordinate } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
-import { AppText } from "@/components/ui";
+import { AccessibleImage, AppText } from "@/components/ui";
 import { BuildingPin } from "./BuildingPin";
 
 const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
@@ -130,10 +129,11 @@ function MarkerVisual({
             shadows.floating,
           ]}
         >
-          <Image
+          <AccessibleImage
             source="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=120&q=80"
             style={{ flex: 1 }}
             contentFit="cover"
+            decorative
           />
         </View>
         {showLabel && (

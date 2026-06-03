@@ -53,6 +53,10 @@ export function ForgotPasswordScreen({ navigation }: Props) {
         wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
         footer={
           <Pressable
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={AUTH_COPY.forgotPassword.backToLogin}
+            accessibilityHint="Returns to the sign in screen"
             onPress={() => {
               if (navigation.canGoBack()) {
                 navigation.goBack();

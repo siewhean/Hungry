@@ -72,35 +72,28 @@ test("Screen header contract: shared app headers use one fixed title treatment",
   assert.doesNotMatch(expandableSearch, /flexDirection: "row-reverse"/);
 });
 
-test("Screen header contract: V2 Discover, Review, and New Post headers use AppHeader", () => {
+test("Screen header contract: live Discover, Review, and New Post headers use AppHeader", () => {
   const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
-  const discoverV2 = read("src/app/screens/discover/DiscoverHomeScreenV2.tsx");
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   const reviews = read("src/app/screens/review/ReviewFeedScreen.tsx");
-  const reviewsV2 = read("src/app/screens/review/ReviewFeedScreenV2.tsx");
   const profileShell = read("src/app/screens/profile/ProfileScreenShell.tsx");
   const composerHeader = read("src/features/post/components/ComposerHeader.tsx");
   const reviewSearchSummary =
     reviews.match(/function ReviewSearchQuerySummary[\s\S]*?\n}\n\n\/\//)?.[0] ?? "";
-  const reviewV2SearchSummary =
-    reviewsV2.match(/function ReviewSearchQuerySummary[\s\S]*?\n}\n\nfunction ReviewCardV2/)?.[0] ??
-    "";
   assert.match(discover, /YOU ARE AT/);
   assert.doesNotMatch(discover, /<AppHeader[\s\S]*title="Discover"/);
-  assert.match(discoverV2, /<AppHeader[\s\S]*title="Discover"/);
   assert.match(
     discover,
-    /getNearestSingaporeArea\(currentLocation\.latitude, currentLocation\.longitude\)/,
+    /const discoverLocationLatitude = manualCoordinate\?\.latitude \?\? currentLocation\.latitude/,
   );
   assert.match(
-    discoverV2,
-    /getNearestSingaporeArea\(currentLocation\.latitude, currentLocation\.longitude\)/,
+    discover,
+    /getNearestSingaporeArea\(discoverLocationLatitude, discoverLocationLongitude\)/,
   );
-  assert.doesNotMatch(discoverV2, /\?\? "Nearby"/);
   assert.match(tabs, /<Tab\.Screen name="Discover" component=\{DiscoverWrapper\}/);
   assert.match(tabs, /require\("@\/app\/screens\/discover\/DiscoverHomeScreen"\)/);
-  assert.doesNotMatch(tabs, /<Tab\.Screen name="Discover" component=\{DiscoverHomeScreenV2\}/);
+  assert.doesNotMatch(tabs, /DiscoverHomeScreenV2/);
   assert.match(home, /<AppHeader[\s\S]*title="Hungry"/);
   assert.match(home, /horizontalPadding=\{semanticSpacing\.screenEdge\}/);
   assert.doesNotMatch(home, /homeHeaderTopOffset/);
@@ -116,27 +109,22 @@ test("Screen header contract: V2 Discover, Review, and New Post headers use AppH
   assert.doesNotMatch(reviews, /ReviewSearchBar|navigation\.navigate\("SearchHome"\)/);
   assert.doesNotMatch(reviews, /useMovingSearchPlaceholder|movingSearchPlaceholder/);
   assert.match(reviews, /const searchBarWidth = screenWidth - spacing\[8\]/);
+  assert.match(reviews, /FilterChipRail/);
+  assert.match(
+    reviews,
+    /\/\* Filter chips \*\/[\s\S]*<FilterChipRail[\s\S]*options=\{FILTER_OPTIONS\}[\s\S]*selectedId=\{filterMode\}[\s\S]*onSelect=\{setFilterMode\}[\s\S]*onSwipeLockChange=\{setTabSwipeLocked\}[\s\S]*gap=\{spacing\[2\]\}/,
+  );
+  assert.doesNotMatch(
+    reviews,
+    /filterChipRailScrollStyle|filterChipRailContentStyle|handleChipRailGestureStart|handleChipRailGestureEnd|chipRailUnlockTimerRef/,
+  );
+  assert.match(reviews, /navigation\.setOptions\(\{ swipeEnabled: !isLocked \}\)/);
   assert.match(reviews, /function ReviewSearchQuerySummary/);
   assert.match(reviews, /<ReviewSearchQuerySummary query=\{searchQuery\} \/>/);
   assert.match(reviews, /\{trimmedQuery\}/);
   assert.match(reviewSearchSummary, /Showing results for/);
   assert.doesNotMatch(reviewSearchSummary, /Searching for|backgroundColor|borderRadius/);
-  assert.match(reviewsV2, /const reviewHeaderTitle = "Reviews"/);
-  assert.match(reviewsV2, /<AppHeader[\s\S]*title=\{reviewHeaderTitle\}/);
-  assert.match(
-    reviewsV2,
-    /right=\{\s*<ExpandableSearchLauncher[\s\S]*accessibilityLabel="Search reviews"[\s\S]*placeholder="Search Reviews"[\s\S]*iconAlignment="right"[\s\S]*enableMovingPlaceholder=\{false\}[\s\S]*showExpandedBacking=\{false\}[\s\S]*\/>\s*\}/,
-  );
-  assert.doesNotMatch(reviewsV2, /ReviewSearchBar|navigation\.navigate\("SearchHome"\)/);
-  assert.doesNotMatch(reviewsV2, /useMovingSearchPlaceholder|movingSearchPlaceholder/);
-  assert.match(reviewsV2, /const searchBarWidth = screenWidth - spacing\[8\]/);
-  assert.match(reviewsV2, /function ReviewSearchQuerySummary/);
-  assert.match(reviewsV2, /<ReviewSearchQuerySummary query=\{searchQuery\} \/>/);
-  assert.match(reviewsV2, /\{trimmedQuery\}/);
-  assert.match(reviewV2SearchSummary, /Showing results for/);
-  assert.doesNotMatch(reviewV2SearchSummary, /Searching for|backgroundColor|borderRadius/);
   assert.doesNotMatch(reviews, /showSearch|setShowSearch/);
-  assert.doesNotMatch(reviewsV2, /placeholder="Search dish or location\.\.\."[\s\S]*<Input/);
   assert.match(profileShell, /contentContainerStyle=\{\{ paddingTop: 0 \}\}/);
   assert.match(composerHeader, /<AppHeader[\s\S]*title=\{title\}/);
   assert.doesNotMatch(composerHeader, /fontSize: 16/);
@@ -188,27 +176,27 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /Popular right now[\s\S]*!popularFoodStyleItems\.length && showPopularFoodSkeleton \? \([\s\S]*<PopularFoodStyleSkeleton \/>[\s\S]*\) : popularFoodStyleItems\.length \? \(/,
+    /Popular right now[\s\S]*shouldShowPopularFoodSkeleton \? \([\s\S]*<PopularFoodStyleSkeleton \/>[\s\S]*\) : popularFoodStyleItems\.length \? \(/,
   );
   assert.match(
     discover,
-    /Quick Bites[\s\S]*quickBiteCards\.length \? \([\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
+    /Quick Bites[\s\S]*showDiscoverFilterRailSkeleton \? \([\s\S]*<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : quickBiteCards\.length \? \([\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
   );
   assert.match(
     discover,
-    /Trending in \{discoverLocationLabel\}[\s\S]*trendingCards\.length \? \([\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
+    /Trending in \{discoverLocationLabel\}[\s\S]*showDiscoverFilterRailSkeleton \? \([\s\S]*<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : trendingCards\.length \? \([\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
   );
   assert.match(
     discover,
-    /Editor&apos;s Choice[\s\S]*editorChoiceCards\.length \? \([\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
+    /Editor&apos;s Choice[\s\S]*showDiscoverFilterRailSkeleton \? \([\s\S]*<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : editorChoiceCards\.length \? \([\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
   );
   assert.match(
     discover,
-    /Budget &lt; S\$8[\s\S]*budgetCards\.length \? \([\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
+    /Budget &lt; S\$8[\s\S]*showDiscoverFilterRailSkeleton \? \([\s\S]*<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : budgetCards\.length \? \([\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
   );
   assert.match(
     discover,
-    /Late Night Makan[\s\S]*lateNightCards\.length \? \([\s\S]*lateNightCards\.map[\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
+    /Late Night Makan[\s\S]*showDiscoverFilterRailSkeleton \? \([\s\S]*<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : lateNightCards\.length \? \([\s\S]*lateNightCards\.map[\s\S]*\) : isDiscoverFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{discoverRailReservedHeight\} \/>/,
   );
   assert.match(
     discover,
@@ -250,9 +238,9 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /function getStallShowcaseImageSources/);
   assert.match(discover, /function buildLoopingStallShowcaseImageSources/);
   assert.match(discover, /const columnGap = spacing\[2\]/);
-  assert.match(discover, /const rowGap = spacing\[2\]/);
+  assert.match(discover, /const rowGap = spacing\[1\.5\]/);
   assert.match(discover, /const columnCardWidth = \(cardWidth - columnGap\) \/ 2/);
-  assert.match(discover, /const headingReserveHeight = typography\.h2\.lineHeight \+ spacing\[2\]/);
+  assert.match(discover, /const headingReserveHeight = typography\.h2\.lineHeight \+ spacing\[3\]/);
   assert.match(
     discover,
     /const showcaseViewportHeight = Math\.max\(0, pageHeight - headingReserveHeight\)/,
@@ -261,12 +249,19 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /const availableRowHeight = \(showcaseViewportHeight - rowGap \* 2\) \/ 3/,
   );
-  assert.match(discover, /const maxTallCardHeight = columnCardWidth \* 1\.36/);
+  assert.match(discover, /const maxTallCardHeight = columnCardWidth \* 1\.1/);
   assert.match(
     discover,
     /const tallCardHeight = Math\.max\(0, Math\.floor\(Math\.min\(availableRowHeight, maxTallCardHeight\)\)\)/,
   );
-  assert.match(discover, /const cardImageHeight = Math\.floor\(tallCardHeight \* 0\.6\)/);
+  assert.match(
+    discover,
+    /const compactCardDetailsHeight =[\s\S]*typography\.bodySmall\.lineHeight \* 2 \+ spacing\[0\.5\] \+ spacing\[1\]/,
+  );
+  assert.match(
+    discover,
+    /const cardImageHeight = Math\.max\(0, Math\.floor\(tallCardHeight - compactCardDetailsHeight\)\)/,
+  );
   assert.doesNotMatch(
     discover,
     /const showcaseSwipeX = useRef\(new Animated\.Value\(0\)\)\.current/,
@@ -300,16 +295,16 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /showcaseScrollOffsetRef\.current <= 1 && deltaY > 0/);
   assert.match(discover, /onTopBoundaryPull\(deltaY\)/);
   assert.match(discover, /const discoverScrollOffsetYRef = useRef\(0\)/);
-  assert.match(discover, /const discoverScrollDirectionRef = useRef<"up" \| "down" \| null>\(null\)/);
+  assert.match(
+    discover,
+    /const discoverScrollDirectionRef = useRef<"up" \| "down" \| null>\(null\)/,
+  );
   assert.match(discover, /const stallShowcaseTopYRef = useRef\(0\)/);
   assert.match(discover, /const handleDiscoverScroll = useCallback/);
   assert.match(discover, /const previousOffsetY = discoverScrollOffsetYRef\.current/);
   assert.match(discover, /discoverScrollDirectionRef\.current = "down"/);
   assert.match(discover, /discoverScrollDirectionRef\.current = "up"/);
-  assert.match(
-    discover,
-    /discoverScrollOffsetYRef\.current = nextOffsetY/,
-  );
+  assert.match(discover, /discoverScrollOffsetYRef\.current = nextOffsetY/);
   assert.match(discover, /const handleStallShowcaseLayout = useCallback/);
   assert.match(discover, /stallShowcaseTopYRef\.current = event\.nativeEvent\.layout\.y/);
   assert.match(discover, /const focusStallShowcaseSection = useCallback/);
@@ -374,7 +369,14 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /bottom: spacing\[2\],[\s\S]*right: spacing\[2\],[\s\S]*<Star color=\{palette\.amber\} size=\{11\} fill=\{palette\.amber\} \/>[\s\S]*\{card\.heroDish\.rating\.toFixed\(1\)\}/,
   );
-  assert.doesNotMatch(discover, /style=\{\{ alignItems: "center", flexDirection: "row", gap: spacing\[1\] \}\}[\s\S]*\{card\.heroDish\.rating\.toFixed\(1\)\}/);
+  assert.match(
+    discover,
+    /\{card\.venue\.name\}[\s\S]*flexShrink: 0[\s\S]*\{card\.venue\.unitNumber\}/,
+  );
+  assert.doesNotMatch(
+    discover,
+    /style=\{\{ alignItems: "center", flexDirection: "row", gap: spacing\[1\] \}\}[\s\S]*\{card\.heroDish\.rating\.toFixed\(1\)\}/,
+  );
   assert.doesNotMatch(discover, /secondaryProducts\.map/);
   assert.match(discover, /height: tallCardHeight/);
   assert.match(discover, /width: columnCardWidth/);
@@ -418,7 +420,17 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /const deferredDiscoverChipIds = useDeferredValue\(activeDiscoverChipIds\)/,
   );
-  assert.match(discover, /const activeDiscoverChipSet = useMemo/);
+  assert.doesNotMatch(discover, /const activeDiscoverChipSet = useMemo/);
+  assert.match(discover, /const deferredDiscoverChipSet = useMemo/);
+  assert.match(discover, /const activeDiscoverChipSignature = activeDiscoverChipIds\.join\("\|"\)/);
+  assert.match(
+    discover,
+    /const deferredDiscoverChipSignature = deferredDiscoverChipIds\.join\("\|"\)/,
+  );
+  assert.match(
+    discover,
+    /const isPopularFoodFilterPending =[\s\S]*activeDiscoverChipSignature !== deferredDiscoverChipSignature/,
+  );
   assert.match(discover, /const isDiscoverFiltering =/);
   assert.match(
     discover,
@@ -430,31 +442,33 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const discoverBiteCollections = useMemo/);
   assert.match(
     discover,
-    /const discoverBaseBites = useMemo\(\(\) => getDiscoverBites\(repository\)/,
+    /const discoverBaseBites = useMemo\([\s\S]*getDiscoverBites\(repository\)\.filter/,
   );
   assert.match(discover, /getDiscoverBiteCollections\(discoverBaseBites, repository\)/);
   assert.match(discover, /const discoverDishById = useMemo/);
   assert.match(discover, /discoverDishById\.get\(bite\.dishId\)/);
   assert.match(discover, /function PopularFoodStyleSkeleton/);
+  assert.match(discover, /function DiscoverFoodRailLoadingSkeleton/);
+  assert.match(discover, /function DiscoverStallListLoadingSkeleton/);
   assert.doesNotMatch(discover, /setShowPopularFoodSkeleton/);
   assert.match(
     discover,
     /const isWaitingForPopularFoodStyles = !isDiscoverFiltering && popularFoodStyleItems\.length === 0/,
   );
-  assert.match(
-    discover,
-    /!popularFoodStyleItems\.length && showPopularFoodSkeleton \? \([\s\S]*<PopularFoodStyleSkeleton \/>/,
-  );
+  assert.match(discover, /shouldShowPopularFoodSkeleton \? \([\s\S]*<PopularFoodStyleSkeleton \/>/);
   assert.match(
     discover,
     /function FoodStyleButton[\s\S]*const labelGap = spacing\[1\.5\][\s\S]*const labelLineHeight = typography\.bodySmallBold\.fontSize \+ spacing\[1\][\s\S]*const buttonHeight = bowlSize \+ labelGap \+ labelLineHeight \* 2[\s\S]*style=\{\{ alignItems: "center", height: buttonHeight, width: 88 \}\}[\s\S]*lineHeight: labelLineHeight[\s\S]*marginTop: labelGap[\s\S]*minHeight: labelLineHeight \* 2/,
+  );
+  assert.match(
+    discover,
+    /numberOfLines=\{2\}[\s\S]*adjustsFontSizeToFit[\s\S]*minimumFontScale=\{0\.84\}/,
   );
   assert.doesNotMatch(discover, /sublabel: string/);
   assert.doesNotMatch(discover, /Always a classic|Comfort bowl/);
   assert.doesNotMatch(discover, /setTimeout\(\(\) => setIsLoading\(false\), 800\)/);
   assert.doesNotMatch(discover, /isDiscoverFiltering \? \(\s*<PopularFoodStyleSkeleton/);
-  assert.doesNotMatch(discover, /function DiscoverBiteRailSkeleton/);
-  assert.doesNotMatch(discover, /function DiscoverStallListSkeleton/);
+  assert.match(discover, /const showDiscoverFilterRailSkeleton = showPopularFoodFilterSkeleton/);
   assert.match(discover, /chipId === "dietary"[\s\S]*discoverDietaryFlags\.some/);
   assert.match(discover, /chipId === "halal"[\s\S]*dietaryFlags\.includes\("halal"\)/);
   assert.match(discover, /chipId === "spicy"[\s\S]*tasteVector\.spicy >= 6/);
@@ -556,6 +570,17 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     /source=\{typeof imageSource === "string" \? \{ uri: imageSource \} : imageSource\}/,
   );
   assert.match(discover, /<MemoFoodStyleButton[\s\S]*imageSource=\{item\.imageSource\}/);
+  assert.match(discover, /const showPopularFoodFilterSkeleton = isPopularFoodFilterPending/);
+  assert.match(discover, /POPULAR_FOOD_FILTER_SKELETON_MIN_MS = 1200/);
+  assert.match(discover, /setIsPopularFoodFilterSkeletonPending\(true\)/);
+  assert.match(
+    discover,
+    /const shouldShowPopularFoodSkeleton = showPopularFoodSkeleton \|\| showPopularFoodFilterSkeleton/,
+  );
+  assert.match(
+    discover,
+    /\{shouldShowPopularFoodSkeleton \? \([\s\S]*<PopularFoodStyleSkeleton \/>/,
+  );
   assert.match(discover, /overflow: "hidden"/);
   assert.match(discover, /onPress=\{handleFoodStylePress\}/);
   assert.match(discover, /updateSearchQuery\(item\.query\)/);
@@ -575,15 +600,23 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /style=\{\{ alignItems: "center", height: buttonHeight, width: 88 \}\}/);
   assert.doesNotMatch(discover, /fontSize: 24, lineHeight: 28/);
   assert.doesNotMatch(discover, /fontSize: 11, lineHeight: 13/);
-  assert.doesNotMatch(discover, /paddingRight: spacing\[2\]/);
+  assert.doesNotMatch(discover, /TextAlignVertical: "center"[\s\S]*paddingRight: spacing\[2\]/);
   assert.match(discover, /height: 48/);
   assert.match(discover, /Dishes, stalls, or hawker centres…/);
+  assert.match(discover, /useMovingSearchPlaceholder/);
+  assert.match(discover, /\{movingSearchPlaceholder\}/);
   assert.doesNotMatch(discover, /flexWrap: "wrap"/);
   assert.match(
     discover,
     /<Screen scroll=\{false\} fullWidth style=\{\{ backgroundColor: themeTints\.bg \}\}>/,
   );
   assert.match(discover, /const edgeToEdgeHorizontalScrollStyle = \{\s*width: screenWidth,\s*\}/);
+  assert.doesNotMatch(discover, /const chipRailScrollStyle|const chipRailContentStyle/);
+  assert.doesNotMatch(discover, /sortedChips\.map\(\(chip\) =>/);
+  assert.doesNotMatch(
+    discover,
+    /style=\{index === 0 \? \{ marginLeft: spacing\[1\] \} : undefined\}/,
+  );
   assert.doesNotMatch(discover, /paddingRight: spacing\[4\]/);
   assert.doesNotMatch(discover, /visibleIntentRailWidth/);
   assert.doesNotMatch(discover, /visibleIntentChipWidths/);
@@ -596,8 +629,9 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /Home,\s*Utensils/);
   assert.match(
     discover,
-    /\/\* Intent Chips with Icons \*\/[\s\S]*<ScrollView[\s\S]*horizontal[\s\S]*style=\{edgeToEdgeHorizontalScrollStyle\}[\s\S]*contentContainerStyle=\{\{ gap: spacing\[2\] \}\}[\s\S]*onPress=\{\(\) => toggleDiscoverChip\(chip\.id\)\}/,
+    /\/\* Intent Chips with Icons \*\/[\s\S]*<FilterChipRail[\s\S]*options=\{sortedChips\}[\s\S]*selectedIds=\{activeDiscoverChipIds\}[\s\S]*onSelect=\{toggleDiscoverChip\}[\s\S]*onSwipeLockChange=\{setTabSwipeLocked\}[\s\S]*renderLeftIcon=\{\(chip, isActive\) =>/,
   );
+  assert.match(discover, /navigation\.setOptions\(\{ swipeEnabled: !isLocked \}\)/);
   assert.match(
     discover,
     /Quick Bites[\s\S]*style=\{edgeToEdgeHorizontalScrollStyle\}[\s\S]*contentContainerStyle=\{\{ gap: spacing\[4\] \}\}[\s\S]*quickBiteCards\.map/,
@@ -630,8 +664,8 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(lateNightCardsBlock, /tone="inverse"/);
   assert.doesNotMatch(lateNightCardsBlock, /opacity: 0\.85/);
   assert.doesNotMatch(discover, /contentContainerStyle=\{\{ gap: spacing\[(2|4)\], paddingRight:/);
-  assert.match(discover, /const isActive = activeDiscoverChipSet\.has\(chip\.id\)/);
-  assert.match(discover, /onPress=\{\(\) => toggleDiscoverChip\(chip\.id\)\}/);
+  assert.match(discover, /renderLeftIcon=\{\(chip, isActive\) =>/);
+  assert.match(discover, /onSelect=\{toggleDiscoverChip\}/);
   assert.match(
     discover,
     /<AppText variant="h2" style=\{\{ color: themeTints\.text \}\}>\s*Popular right now\s*<\/AppText>/,
@@ -661,13 +695,34 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /height: 52/);
   assert.match(discover, /Trending in \{discoverLocationLabel\}/);
   assert.match(discover, /Stalls in \{discoverLocationLabel\}/);
+  assert.match(discover, /const DISCOVER_AREA_RADIUS_METERS = 3000/);
+  assert.match(
+    discover,
+    /const isSupabaseDataSource = getServiceProvider\(\)\.mode === "supabase"/,
+  );
+  assert.match(
+    discover,
+    /const \[supabaseDiscoverAreaCount, setSupabaseDiscoverAreaCount\] = useState<number \| null>\(null\)/,
+  );
+  assert.match(
+    discover,
+    /getHungryService\(\)[\s\S]*\.discovery\.countVenuesInArea\([\s\S]*discoverLocationLatitude,[\s\S]*discoverLocationLongitude,[\s\S]*DISCOVER_AREA_RADIUS_METERS/,
+  );
+  assert.match(
+    discover,
+    /setSupabaseDiscoverAreaCount\(typeof venueCount === "number" \? venueCount : null\)/,
+  );
+  assert.match(
+    discover,
+    /const discoverAreaCount = supabaseDiscoverAreaCount \?\? areaVenues\.length/,
+  );
   assert.match(
     discover,
     /Stalls in \{discoverLocationLabel\}[\s\S]*<View style=\{\{ gap: discoverContentGap \}\}>[\s\S]*areaStallCards\.map/,
   );
   assert.match(
     discover,
-    /const \[discoverViewportHeight, setDiscoverViewportHeight\] = useState\(screenHeight\)/,
+    /const \[discoverViewportHeight, setDiscoverViewportHeight\] = useState\(0\)/,
   );
   assert.match(discover, /import \{ useSafeAreaInsets \} from "react-native-safe-area-context"/);
   assert.match(discover, /const insets = useSafeAreaInsets\(\)/);
@@ -677,14 +732,22 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /const stallShowcasePageHeight =[\s\S]*Math\.max\(0, \(discoverViewportHeight \|\| screenHeight\) - bottomTabVisibleHeight\)[\s\S]*discoverViewportHeight[\s\S]*screenHeight/,
+    /const fallbackDiscoverViewportHeight = Math\.max\(0, screenHeight - insets\.top\)/,
+  );
+  assert.match(
+    discover,
+    /const effectiveDiscoverViewportHeight =[\s\S]*discoverViewportHeight \|\| fallbackDiscoverViewportHeight/,
+  );
+  assert.match(
+    discover,
+    /const stallShowcasePageHeight =[\s\S]*Math\.max\(0, effectiveDiscoverViewportHeight - bottomTabVisibleHeight\)[\s\S]*effectiveDiscoverViewportHeight[\s\S]*fallbackDiscoverViewportHeight/,
   );
   assert.match(discover, /const handleDiscoverViewportLayout = useCallback/);
   assert.match(
     discover,
     /setDiscoverViewportHeight\(\(currentHeight\) =>[\s\S]*Math\.abs\(currentHeight - nextHeight\) > 1 \? nextHeight : currentHeight/,
   );
-  assert.match(discover, /setDiscoverViewportHeight\(screenHeight\)/);
+  assert.doesNotMatch(discover, /setDiscoverViewportHeight\(screenHeight\)/);
   assert.match(discover, /onLayout=\{handleDiscoverViewportLayout\}/);
   assert.match(
     discover,
@@ -771,7 +834,8 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
     searchResults,
     /style=\{\[browseStyles\.inlineSearchLauncher[\s\S]*\{isSearchExpanded \? \([\s\S]*<Animated\.View/,
   );
-  assert.match(searchResults, /<TextInput[\s\S]*placeholder=\{movingSearchPlaceholder\}/);
+  assert.match(searchResults, /<TextInput[\s\S]*placeholder=\{searchPlaceholder\}/);
+  assert.doesNotMatch(searchResults, /useMovingSearchPlaceholder|movingSearchPlaceholder/);
   assert.match(
     searchResults,
     /const searchPlaceholder = isDishGrid \? "Find dishes\.\.\." : "Find stalls\.\.\."/,

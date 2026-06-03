@@ -137,6 +137,8 @@ export function ReviewShareSheet({
         snapPoints={snapPoints}
         index={0}
         enablePanDownToClose
+        accessibilityLabel="Share review"
+        accessibilityViewIsModal
         onDismiss={resetAndDismiss}
         backdropComponent={(props) => (
           <BottomSheetBackdrop
@@ -145,6 +147,9 @@ export function ReviewShareSheet({
             disappearsOnIndex={-1}
             opacity={0.4}
             pressBehavior="close"
+            accessibilityRole="button"
+            accessibilityLabel="Close share sheet"
+            accessibilityHint="Dismisses the review sharing sheet"
           />
         )}
         backgroundStyle={{ backgroundColor: palette.surface }}

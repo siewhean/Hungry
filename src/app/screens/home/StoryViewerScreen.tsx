@@ -9,7 +9,6 @@ import {
   InteractionManager,
   type LayoutChangeEvent,
 } from "react-native";
-import { Image } from "expo-image";
 import Reanimated, {
   cancelAnimation,
   Easing as ReanimatedEasing,
@@ -22,8 +21,8 @@ import Reanimated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Heart, Bookmark } from "lucide-react-native";
-import { AppText, IconButton, Avatar } from "@/components/ui";
+import { Heart, Share2 } from "lucide-react-native";
+import { AccessibleImage, AppText, IconButton, Avatar } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useStoryStore } from "@/store/useStoryStore";
 import { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -31,7 +30,8 @@ import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 
 import { useUIStore } from "@/store/useUIStore";
 
-const STORY_DURATION = 5000;
+const STORY_IMAGE_DURATION_MS = 7000;
+const STORY_VIDEO_DURATION_MS = 7000;
 const STORY_OPEN_READY_FALLBACK_MS = 850;
 const STORY_SEEN_OPEN_FALLBACK_MS = 1400;
 const STORY_MEDIA_READY_FALLBACK_MS = 1200;
@@ -43,31 +43,35 @@ type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 const StoryMedia = React.memo(function StoryMedia({
   storyId,
   uri,
+  authorName,
+  opacity,
   rotateY,
   onReady,
 }: {
   storyId: string;
   uri: string;
+  authorName: string;
+  opacity: RNAnimated.Value;
   rotateY: RNAnimated.Value;
   onReady: (storyId: string) => void;
 }) {
+  const mediaRotateY = rotateY.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: [`-${STORY_ROTATE_ANGLE}deg`, "0deg", `${STORY_ROTATE_ANGLE}deg`],
+  });
   return (
     <RNAnimated.View
       style={[
         StyleSheet.absoluteFill,
         {
           backfaceVisibility: "hidden",
+          opacity,
           transform: [
             { perspective: 520 },
-            {
-              rotateY: rotateY.interpolate({
-                inputRange: [-STORY_ROTATE_ANGLE, 0, STORY_ROTATE_ANGLE],
-                outputRange: [`-${STORY_ROTATE_ANGLE}deg`, "0deg", `${STORY_ROTATE_ANGLE}deg`],
-              }),
-            },
+            { rotateY: mediaRotateY },
             {
               scale: rotateY.interpolate({
-                inputRange: [-STORY_ROTATE_ANGLE, 0, STORY_ROTATE_ANGLE],
+                inputRange: [-1, 0, 1],
                 outputRange: [0.9, 1, 0.9],
               }),
             },
@@ -75,10 +79,11 @@ const StoryMedia = React.memo(function StoryMedia({
         },
       ]}
     >
-      <Image
+      <AccessibleImage
         source={{ uri }}
         style={StyleSheet.absoluteFill}
         contentFit="cover"
+        accessibilityLabel={`Story by ${authorName}`}
         onLoadEnd={() => onReady(storyId)}
       />
     </RNAnimated.View>
@@ -97,7 +102,7 @@ export function StoryViewerScreen() {
   const route = useRoute<RouteProp<RootStackParamList, "StoryViewer">>();
   const initialStoryId = route.params.initialStoryId;
 
-  const { stories, loadStories, likeStory, saveStory, markSeenForDisplayName } = useStoryStore();
+  const { stories, loadStories, likeStory, shareStory, markSeenForDisplayName } = useStoryStore();
   const showToast = useUIStore((state) => state.showToast);
   const [activeStoryId, setActiveStoryId] = useState(() => initialStoryId);
   const [isPaused, setIsPaused] = useState(false);
@@ -111,6 +116,7 @@ export function StoryViewerScreen() {
 
   const progressAnim = useSharedValue(0);
   const progressTrackWidth = useSharedValue(0);
+  const storyOpacity = useRef(new RNAnimated.Value(1)).current;
   const rotateY = useRef(new RNAnimated.Value(0)).current;
   const closeOpacity = useRef(new RNAnimated.Value(1)).current;
   const playbackStoryIdsRef = useRef<string[]>([]);
@@ -124,6 +130,11 @@ export function StoryViewerScreen() {
     isCurrentMediaReady &&
     isActiveProgressTrackMeasured &&
     !isStoryTransitioning;
+  const currentStoryDuration = useMemo(
+    () =>
+      currentStory?.content.type === "video" ? STORY_VIDEO_DURATION_MS : STORY_IMAGE_DURATION_MS,
+    [currentStory?.content.type],
+  );
 
   useEffect(() => {
     if (stories.length === 0) {
@@ -169,9 +180,10 @@ export function StoryViewerScreen() {
     progressAnim.value = 0;
     progressTrackWidth.value = 0;
     setIsActiveProgressTrackMeasured(false);
-    rotateY.setValue(0);
     closeOpacity.setValue(1);
-  }, [closeOpacity, currentStory?.id, progressAnim, progressTrackWidth, rotateY]);
+    storyOpacity.setValue(1);
+    rotateY.setValue(0);
+  }, [closeOpacity, currentStory?.id, progressAnim, progressTrackWidth, rotateY, storyOpacity]);
 
   const startProgress = useCallback(
     (fromValue = progressAnim.value) => {
@@ -179,11 +191,11 @@ export function StoryViewerScreen() {
       cancelAnimation(progressAnim);
       progressAnim.value = clampedValue;
       progressAnim.value = withTiming(1, {
-        duration: Math.max(0, (1 - clampedValue) * STORY_DURATION),
+        duration: Math.max(0, (1 - clampedValue) * currentStoryDuration),
         easing: ReanimatedEasing.linear,
       });
     },
-    [progressAnim],
+    [currentStoryDuration, progressAnim],
   );
 
   const activeProgressStyle = useAnimatedStyle(() => {
@@ -204,26 +216,25 @@ export function StoryViewerScreen() {
     [progressTrackWidth],
   );
 
-  const runRotateTransition = (nextId: string, direction: "next" | "prev") => {
+  const runRotateTransition = (nextId: string, direction: 1 | -1 = 1) => {
     if (isStoryTransitioningRef.current) {
       return;
     }
     isStoryTransitioningRef.current = true;
     setIsStoryTransitioning(true);
     cancelAnimation(progressAnim);
+    rotateY.setValue(0);
 
-    const outAngle = direction === "next" ? -STORY_ROTATE_ANGLE : STORY_ROTATE_ANGLE;
-    const inAngle = direction === "next" ? STORY_ROTATE_ANGLE : -STORY_ROTATE_ANGLE;
     RNAnimated.timing(rotateY, {
-      toValue: outAngle,
+      toValue: direction,
       duration: 320,
       useNativeDriver: true,
     }).start(() => {
       setActiveStoryId(nextId);
-      rotateY.setValue(inAngle);
+      rotateY.setValue(-direction);
       RNAnimated.timing(rotateY, {
         toValue: 0,
-        duration: 320,
+        duration: 220,
         useNativeDriver: true,
       }).start(() => {
         isStoryTransitioningRef.current = false;
@@ -257,7 +268,7 @@ export function StoryViewerScreen() {
       }
 
       // Different user — rotate the block to indicate a user change
-      runRotateTransition(prev.id, "prev");
+      runRotateTransition(prev.id, -1);
     } else {
       startProgress(0);
     }
@@ -317,8 +328,8 @@ export function StoryViewerScreen() {
 
       commitSeenIfReady(currentStory.displayName);
 
-      // Different user — rotate the block to indicate a user change
-      runRotateTransition(next.id, "next");
+      // Different user — fade stories to indicate a user change
+      runRotateTransition(next.id, 1);
     } else {
       handleCloseStory();
     }
@@ -493,16 +504,13 @@ export function StoryViewerScreen() {
     }
   };
 
-  const onSave = async () => {
+  const onShare = async () => {
     if (!currentStory) return;
     try {
-      await saveStory(currentStory.id);
-      showToast({
-        message: currentStory.interaction.saved ? "Story removed from saved" : "Story saved",
-        tone: "success",
-      });
+      await shareStory(currentStory.id);
+      showToast({ message: "Story shared", tone: "success" });
     } catch (e) {
-      showToast({ message: "Failed to save story", tone: "error" });
+      showToast({ message: "Failed to share story", tone: "error" });
     }
   };
 
@@ -549,6 +557,8 @@ export function StoryViewerScreen() {
       <StoryMedia
         storyId={currentStory.id}
         uri={currentStory.content.url}
+        authorName={currentStory.displayName}
+        opacity={storyOpacity}
         rotateY={rotateY}
         onReady={handleCurrentMediaReady}
       />
@@ -621,14 +631,22 @@ export function StoryViewerScreen() {
         </View>
 
         <View style={styles.userInfoRow} pointerEvents="box-none">
-          <View style={styles.userInfoLeft} pointerEvents="none">
-            <Avatar uri={currentStory.avatarUrl} name={currentStory.displayName} size={32} />
-            <AppText style={{ color: palette.white, fontWeight: "bold", marginLeft: 8 }}>
-              {currentStory.displayName}
-            </AppText>
-            <AppText style={{ color: palette.storyMetaText, marginLeft: 8, fontSize: 12 }}>
-              {formatTimeAgo(new Date(currentStory.createdAt))}
-            </AppText>
+          <View
+            style={[
+              styles.userInfoLeftScrim,
+              { backgroundColor: palette.mediaScrimSubtle, borderRadius: radii.md },
+            ]}
+            pointerEvents="none"
+          >
+            <View style={styles.userInfoLeft}>
+              <Avatar uri={currentStory.avatarUrl} name={currentStory.displayName} size={32} />
+              <AppText style={{ color: palette.white, fontWeight: "bold", marginLeft: 8 }}>
+                {currentStory.displayName}
+              </AppText>
+              <AppText style={{ color: palette.storyMetaText, marginLeft: 8, fontSize: 12 }}>
+                {formatTimeAgo(new Date(currentStory.createdAt))}
+              </AppText>
+            </View>
           </View>
         </View>
       </View>
@@ -669,17 +687,13 @@ export function StoryViewerScreen() {
 
           <View style={styles.actionButtonStack}>
             <IconButton
-              icon={
-                <Bookmark
-                  color={currentStory.interaction.saved ? palette.orange : palette.white}
-                  fill={currentStory.interaction.saved ? palette.orange : "transparent"}
-                  size={28}
-                />
-              }
-              onPress={onSave}
-              accessibilityLabel="Save story"
+              icon={<Share2 color={palette.white} size={28} />}
+              onPress={onShare}
+              accessibilityLabel="Share story"
             />
-            <AppText style={[styles.actionCountText, { color: palette.white }]}> </AppText>
+            <AppText style={[styles.actionCountText, { color: palette.white }]}>
+              {currentStory.interaction.shareCount > 0 ? currentStory.interaction.shareCount : " "}
+            </AppText>
           </View>
         </View>
       </View>
@@ -738,6 +752,12 @@ const styles = StyleSheet.create({
   userInfoLeft: {
     flexDirection: "row",
     alignItems: "center",
+  },
+  userInfoLeftScrim: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   footerOverlay: {
     position: "absolute",

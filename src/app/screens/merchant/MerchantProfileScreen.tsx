@@ -151,7 +151,10 @@ export function MerchantProfileScreen() {
             variant="destructive"
             onPress={() => {
               signOut();
-              navigation.reset({ index: 0, routes: [{ name: "AuthStack" as any }] });
+              rootNavigation.reset({
+                index: 0,
+                routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+              });
             }}
             leftIcon={<LogOut size={20} color="white" />}
           />

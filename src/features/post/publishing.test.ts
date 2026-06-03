@@ -32,6 +32,7 @@ test("composer publish writes a shared post visible in feed and profile sources"
     postCaption: "A real shared post from the composer.",
     foodTags: ["Composer"],
     tasteTags: ["Aromatic"],
+    showFoodContextOverlay: false,
   });
 
   const published = await publishComposerPost({
@@ -47,6 +48,7 @@ test("composer publish writes a shared post visible in feed and profile sources"
   assert.equal(published.publishedStatus, "published");
   assert.equal(published.visibility, "public");
   assert.deepEqual(published.dishIds, ["dish-chicken-rice"]);
+  assert.equal(published.showFoodContextOverlay, false);
 
   const sharedPosts = await listSharedStallPosts();
   assert.ok(sharedPosts.some((post) => post.id === published.id));
@@ -60,6 +62,7 @@ test("composer publish writes a shared post visible in feed and profile sources"
   assert.ok(serviceBackedPost);
   assert.equal(serviceBackedPost.authorId, sessionA.profile.id);
   assert.equal(serviceBackedPost.authorName, "Author A");
+  assert.equal(serviceBackedPost.showFoodContextOverlay, false);
 
   const authorFeed = await getHomeSocialFeed(sessionA.profile);
   assert.ok(authorFeed.some((post) => post.id === published.id));

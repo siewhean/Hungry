@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
-import { Image } from "expo-image";
 
 import { AppText } from "@/components/ui/AppText";
+import { AccessibleImage } from "@/components/ui/AccessibleImage";
 import { PassportBadgeImage } from "@/components/gamification/PassportBadgeImage";
 import { PassportCover } from "@/components/gamification/PassportCover";
 import { PASSPORT_TEXTURE_ASSETS } from "@/components/gamification/passportAssets";
@@ -45,14 +45,15 @@ export function PassportBook({ earnedStamps, badges, nextStamp }: PassportBookPr
           },
         ]}
       >
-        <Image
+        <AccessibleImage
           cachePolicy="memory-disk"
           contentFit="cover"
+          decorative
           source={PASSPORT_TEXTURE_ASSETS.paperSpread}
           style={[StyleSheet.absoluteFill, styles.paperTexture]}
         />
         <View style={{ gap: spacing[1] }}>
-          <AppText variant="micro" style={{ color: palette.orange, fontWeight: "900" }}>
+          <AppText variant="micro" style={{ color: palette.accentText, fontWeight: "900" }}>
             REPUBLIC OF HUNGRY
           </AppText>
           <AppText variant="h3">Food Discovery Passport</AppText>

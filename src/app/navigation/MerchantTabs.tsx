@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
@@ -7,7 +7,7 @@ import type { NavigationProp } from "@react-navigation/native";
 import { LayoutDashboard, UtensilsCrossed, BarChart3, Store } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, Button, Screen } from "@/components/ui";
+import { AppBottomTabItem, AppText, Button, Screen } from "@/components/ui";
 import { resolveMerchantAccess, VERIFIED_ONLY_SCREENS } from "@/features/merchant/merchantGuards";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
@@ -285,32 +285,19 @@ function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         const color = isFocused ? palette.orange : palette.textMuted;
 
         return (
-          <Pressable
+          <AppBottomTabItem
             key={route.key}
+            accessibilityLabel={`Merchant ${tabConfig.label}`}
+            color={color}
+            focused={isFocused}
+            icon={Icon}
+            label={tabConfig.label}
+            onPress={onPress}
             onPressIn={() => {
               prefetchMerchantTab(route.name, activeOutlet?.id, account?.id);
               preloadRoute(navigation, route.name);
             }}
-            onPress={onPress}
-            style={styles.tabItem}
-            accessibilityRole="button"
-            accessibilityLabel={`Merchant ${tabConfig.label}`}
-            accessibilityState={isFocused ? { selected: true } : {}}
-          >
-            <Icon color={color} size={componentSizes.bottomTabIcon} />
-            <AppText
-              variant="micro"
-              numberOfLines={1}
-              style={{
-                color,
-                fontSize: componentSizes.bottomTabLabelFontSize,
-                fontWeight: isFocused ? "800" : "700",
-                lineHeight: componentSizes.bottomTabLabelLineHeight,
-              }}
-            >
-              {tabConfig.label}
-            </AppText>
-          </Pressable>
+          />
         );
       })}
     </View>
@@ -530,12 +517,6 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "space-around",
     alignItems: "center",
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 2,
   },
   accessGate: {
     flex: 1,

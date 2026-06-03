@@ -124,6 +124,10 @@ export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
     return (
       <Pressable
         onPress={() => handleSelectTrack(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`${isSelected ? "Selected music" : "Select music"} ${item.title} by ${item.artist}`}
+        accessibilityHint="Sets this track as the music for the post"
+        accessibilityState={{ selected: isSelected }}
         style={({ pressed }) => [
           styles.trackItem,
           {
@@ -144,6 +148,10 @@ export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
               e.stopPropagation();
               togglePlay(item.id);
             }}
+            accessibilityRole="button"
+            accessibilityLabel={`${isPlaying ? "Pause" : "Play"} preview for ${item.title}`}
+            accessibilityHint="Toggles the music preview"
+            accessibilityState={{ selected: isPlaying }}
             style={[
               styles.playButton,
               {
@@ -179,7 +187,12 @@ export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
   };
 
   return (
-    <BottomSheet ref={innerRef} snapPoints={["85%"]} keyboardBehavior="interactive">
+    <BottomSheet
+      ref={innerRef}
+      snapPoints={["85%"]}
+      keyboardBehavior="interactive"
+      accessibilityLabel="Music library"
+    >
       <View style={{ flex: 1, marginHorizontal: -semanticSpacing.screenEdge }}>
         <View
           style={[
@@ -208,7 +221,13 @@ export function MusicSearchModal({ innerRef }: MusicSearchModalProps) {
             leftIcon={<Search size={18} color={palette.textMuted} />}
             rightIcon={
               searchQuery.length > 0 ? (
-                <Pressable onPress={() => setSearchQuery("")} style={{ padding: spacing[1] }}>
+                <Pressable
+                  onPress={() => setSearchQuery("")}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear music search"
+                  accessibilityHint="Clears the current music search text"
+                  style={{ padding: spacing[1] }}
+                >
                   <X size={16} color={palette.textMuted} />
                 </Pressable>
               ) : undefined

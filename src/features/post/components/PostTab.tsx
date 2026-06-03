@@ -25,6 +25,8 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
   const setCaption = useComposerStore((state) => state.setCaption);
   const useSameCaption = useComposerStore((state) => state.useSameCaption);
   const setUseSameCaption = useComposerStore((state) => state.setUseSameCaption);
+  const showFoodContextOverlay = useComposerStore((state) => state.showFoodContextOverlay);
+  const setShowFoodContextOverlay = useComposerStore((state) => state.setShowFoodContextOverlay);
   const musicId = useComposerStore((state) => state.musicId);
   const selectedTrackName = useComposerStore((state) => state.selectedTrackName);
   const selectedTrackArtist = useComposerStore((state) => state.selectedTrackArtist);
@@ -92,6 +94,43 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
             />
           </View>
         )}
+      </View>
+
+      <View
+        style={[
+          styles.overlayToggleRow,
+          {
+            backgroundColor: palette.surface,
+            borderColor: palette.border,
+            borderRadius: componentRadii.card,
+            paddingHorizontal: spacing.xl,
+            paddingVertical: spacing.md,
+          },
+        ]}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.lg, flex: 1 }}>
+          <Eye size={20} color={showFoodContextOverlay ? palette.orange : palette.text} />
+          <View style={{ flex: 1 }}>
+            <AppText
+              variant="bodySmallBold"
+              style={{ color: showFoodContextOverlay ? palette.orange : palette.text }}
+            >
+              Dish title on post
+            </AppText>
+            <AppText variant="micro" tone="secondary" style={{ marginTop: 2 }}>
+              Food title and stall name
+            </AppText>
+          </View>
+        </View>
+        <Switch
+          value={showFoodContextOverlay}
+          onValueChange={setShowFoodContextOverlay}
+          trackColor={{ false: palette.border, true: palette.orange }}
+          thumbColor={palette.white}
+          accessibilityLabel="Show food title and stall name on post"
+          accessibilityHint="Adds or removes the bottom-left label on post media"
+          style={{ transform: [{ scaleX: 0.82 }, { scaleY: 0.82 }] }}
+        />
       </View>
 
       {/* Music Section */}
@@ -234,6 +273,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderWidth: 1,
     borderColor: "transparent",
+  },
+  overlayToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
   },
   toggleRow: {
     flexDirection: "row",

@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Image } from "expo-image";
 import { Camera, Check, ChevronLeft, Film, Image as ImageIcon } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, Button, IconButton, Screen } from "@/components/ui";
+import { AccessibleImage, AppText, Button, IconButton, Screen } from "@/components/ui";
 import { useStoryStore } from "@/store/useStoryStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -110,10 +109,11 @@ export function AddStoryScreen() {
       >
         {selectedAsset ? (
           <View style={[styles.preview, { borderRadius: componentRadii.card }]}>
-            <Image
+            <AccessibleImage
               source={{ uri: selectedAsset.url }}
               contentFit="cover"
               style={StyleSheet.absoluteFill}
+              accessibilityLabel={`Selected ${selectedAsset.type} preview`}
             />
             {selectedAsset.type === "video" ? (
               <View style={[styles.videoPill, { backgroundColor: palette.detailImageOverlay }]}>
@@ -172,10 +172,11 @@ export function AddStoryScreen() {
                   },
                 ]}
               >
-                <Image
+                <AccessibleImage
                   source={{ uri: asset.url }}
                   contentFit="cover"
                   style={StyleSheet.absoluteFill}
+                  decorative
                 />
                 <View
                   style={[

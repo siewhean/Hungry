@@ -8,6 +8,7 @@
  */
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
+import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import { STORY_GALLERY_ASSETS } from "@/lib/services/storyGalleryAssets";
@@ -40,10 +41,14 @@ import type {
   ChatMessage,
   ChatParticipant,
   ChatSubscriptionHandlers,
+  ChecklistItemCreateInput,
   ExplicitFeedbackInput,
   ExtendedRecommendationContext,
   HungryService,
   ImplicitSignalInput,
+  PortfolioCreateInput,
+  PortfolioItemCreateInput,
+  PortfolioMutationOptions,
   QuizAnswer,
   RankedRecommendation,
   RecommendationContext,
@@ -78,6 +83,19 @@ import type {
   StoryContent,
   MerchantAccount,
   VenueSummary,
+  Checklist,
+  ChecklistItem,
+  Portfolio,
+  PortfolioCollaborator,
+  PortfolioFlag,
+  PortfolioFlagReason,
+  PortfolioFollow,
+  PortfolioItem,
+  PassportEventType,
+  PassportProgressEvent,
+  PassportStamp,
+  SubmitUserStallSubmissionInput,
+  UserStallSubmission,
 } from "@/types/domain";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
 import {
@@ -87,6 +105,7 @@ import {
 import type { ExplicitFeedbackEvent } from "@/lib/ai/tasteEngine";
 import { applyVerificationSubmission } from "@/features/merchant/verificationStateMachine";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
+import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import { loadMockState, saveMockState } from "./persistence";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import {
@@ -94,6 +113,15 @@ import {
   hydratePublishedStallPosts,
   listMockStallPosts,
 } from "./stallPostState";
+
+type MerchantActionEventInput = Parameters<
+  HungryService["discovery"]["recordMerchantActionEvent"]
+>[0];
+type MockMerchantActionEvent = MerchantActionEventInput & {
+  outletId: string;
+  sessionId: string;
+  occurredAt: string;
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -123,6 +151,135 @@ function matchReason(userVec: TasteVector, dishVec: TasteVector): string {
   return `${labels[topKey]} — matches your taste profile`;
 }
 
+function canViewMockPortfolio(portfolio: Portfolio): boolean {
+  return (
+    portfolio.ownerId === _profile.id ||
+    portfolio.visibility === "public" ||
+    _portfolioFollows.some(
+      (follow) => follow.portfolioId === portfolio.id && follow.userId === _profile.id,
+    )
+  );
+}
+
+function assertMockPortfolioVersion(portfolioId: string, options?: PortfolioMutationOptions): void {
+  if (!options?.expectedUpdatedAt) return;
+  const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+  if (!portfolio || portfolio.updatedAt !== options.expectedUpdatedAt) {
+    throw new Error(
+      "This portfolio changed elsewhere. Review the latest version before saving again.",
+    );
+  }
+}
+
+function ensureMockContributorStamp(now = new Date().toISOString()): PassportStamp {
+  const existing = _passportStamps.find(
+    (stamp) => stamp.userId === _profile.id && stamp.categoryId === "contributor",
+  );
+  if (existing) {
+    return existing;
+  }
+
+  const stamp: PassportStamp = {
+    id: `passport-stamp-${++_passportStampCounter}`,
+    userId: _profile.id,
+    categoryId: "contributor",
+    level: 1,
+    dishesTriedCount: 0,
+    stallsVisitedCount: 0,
+    stallsSubmittedCount: 0,
+    reviewsPostedCount: 0,
+    photosPostedCount: 0,
+    portfolioItemsAdded: 0,
+    publicPortfoliosPublished: 0,
+    trailsCompleted: 0,
+    createdAt: now,
+    updatedAt: now,
+  };
+  _passportStamps = [..._passportStamps, stamp];
+  return stamp;
+}
+
+function recordMockPassportProgress(eventType: PassportEventType, referenceId?: string): void {
+  const now = new Date().toISOString();
+  const event: PassportProgressEvent = {
+    id: `passport-event-${++_passportEventCounter}`,
+    userId: _profile.id,
+    categoryId: "contributor",
+    eventType,
+    referenceId,
+    createdAt: now,
+  };
+  _passportEvents = [event, ..._passportEvents];
+
+  ensureMockContributorStamp(now);
+  _passportStamps = _passportStamps.map((stamp) => {
+    if (stamp.userId !== _profile.id || stamp.categoryId !== "contributor") {
+      return stamp;
+    }
+
+    return {
+      ...stamp,
+      portfolioItemsAdded:
+        eventType === "portfolio_item_added"
+          ? stamp.portfolioItemsAdded + 1
+          : stamp.portfolioItemsAdded,
+      publicPortfoliosPublished:
+        eventType === "public_portfolio_published"
+          ? stamp.publicPortfoliosPublished + 1
+          : stamp.publicPortfoliosPublished,
+      trailsCompleted:
+        eventType === "trail_completed" ? stamp.trailsCompleted + 1 : stamp.trailsCompleted,
+      stallsSubmittedCount:
+        eventType === "stall_submitted"
+          ? stamp.stallsSubmittedCount + 1
+          : stamp.stallsSubmittedCount,
+      updatedAt: now,
+    };
+  });
+}
+
+function cleanOptionalText(value?: string): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): UserStallSubmission {
+  const now = new Date().toISOString();
+  return {
+    id: `mock-stall-submission-${++_userStallSubmissionCounter}`,
+    userId: _profile.id,
+    stallName: input.stallName.trim(),
+    imageUrl: input.imageUri,
+    galleryImageUrls: input.imageUris?.length ? input.imageUris : [input.imageUri],
+    imageMimeType: input.imageMimeType,
+    sourceUrl: cleanOptionalText(input.sourceUrl),
+    buildingName: cleanOptionalText(input.buildingName),
+    area: cleanOptionalText(input.area),
+    address: cleanOptionalText(input.address),
+    postalCode: cleanOptionalText(input.postalCode),
+    unitNumber: cleanOptionalText(input.unitNumber),
+    floor: cleanOptionalText(input.floor),
+    operatingHours: cleanOptionalText(input.operatingHours),
+    menuItems: (input.menuItems ?? [])
+      .map((item) => ({
+        name: item.name.trim(),
+        priceRange: cleanOptionalText(item.priceRange),
+        notes: cleanOptionalText(item.notes),
+      }))
+      .filter((item) => item.name.length > 0),
+    deliveryLinks: (input.deliveryLinks ?? [])
+      .map((link) => ({
+        label: link.label.trim(),
+        url: link.url.trim(),
+      }))
+      .filter((link) => link.label.length > 0 && link.url.length > 0),
+    notes: cleanOptionalText(input.notes),
+    status: "pending",
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
 // ─── Mutable in-memory state (mirrors what Supabase would persist) ─────────────
 
 let _profile: UserProfile = { ...guestProfile };
@@ -138,6 +295,26 @@ let _merchantAIInsights = clone(merchantAIInsights);
 let _merchantTeamMemberCounter = 0;
 let _merchantDishViewCounter = 0;
 let _merchantNotificationCounter = 0;
+let _checklistCounter = 0;
+let _checklistItemCounter = 0;
+let _portfolioCounter = 0;
+let _portfolioItemCounter = 0;
+let _portfolioCollaboratorCounter = 0;
+let _portfolioFollowCounter = 0;
+let _portfolioFlagCounter = 0;
+let _passportStampCounter = 0;
+let _passportEventCounter = 0;
+let _userStallSubmissionCounter = 0;
+let _checklists: Checklist[] = [];
+let _checklistItems: ChecklistItem[] = [];
+let _portfolios: Portfolio[] = [];
+let _portfolioItems: PortfolioItem[] = [];
+let _portfolioCollaborators: PortfolioCollaborator[] = [];
+let _portfolioFollows: PortfolioFollow[] = [];
+let _portfolioFlags: PortfolioFlag[] = [];
+let _passportStamps: PassportStamp[] = [];
+let _passportEvents: PassportProgressEvent[] = [];
+let _userStallSubmissions: UserStallSubmission[] = [];
 let _chatConversations: ChatConversation[] = clone(chatConversations);
 let _chatMessages: Record<string, ChatMessage[]> = clone(chatMessages);
 const _chatSubscribers = new Map<string, Set<(message: ChatMessage) => void>>();
@@ -147,6 +324,8 @@ let _mockStories: Story[] = [
   {
     id: "s0",
     displayName: "Your Story",
+    authorId: _profile.id,
+    authorProfileVisibility: _profile.profileVisibility,
     avatarUrl: "https://i.pravatar.cc/150?u=me",
     hasUnseen: false,
     isStall: false,
@@ -161,6 +340,8 @@ let _mockStories: Story[] = [
   {
     id: "s1",
     displayName: "Tian Tian",
+    authorId: "story-author-tian-tian",
+    authorProfileVisibility: "public",
     avatarUrl: "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=150&h=150&fit=crop",
     hasUnseen: true,
     isStall: true,
@@ -174,6 +355,8 @@ let _mockStories: Story[] = [
   {
     id: "s2",
     displayName: "Wei Ming",
+    authorId: "story-author-wei-ming",
+    authorProfileVisibility: "public",
     avatarUrl: "https://i.pravatar.cc/150?u=wm",
     hasUnseen: true,
     isStall: false,
@@ -352,6 +535,7 @@ const _merchantNotificationPreferencesByAccount = new Map<string, MerchantNotifi
   [merchantAccount.id, clone(DEFAULT_NOTIFICATION_PREFERENCES)],
 ]);
 const _merchantDishViewEvents: MerchantDishViewEvent[] = [];
+const _merchantActionEvents: MockMerchantActionEvent[] = [];
 const _merchantNotifications: MerchantNotification[] = [];
 const _merchantMenuByOutlet = new Map<string, DishDetail[]>();
 const _biteReactions: Record<string, { cravings: Set<string>; saves: Set<string> }> = {};
@@ -369,6 +553,72 @@ const _contentReports: {
   reason: string;
 }[] = [];
 const _blockedUserKeys = new Set<string>();
+const _userFollows = new Set<string>(); // Set of followee userId strings (current user follows these)
+const _mockFollowersByUser: Record<
+  string,
+  { userId: string; displayName: string; avatarUrl?: string }[]
+> = {
+  [userProfile.id]: [
+    {
+      userId: "user-sarah-lim",
+      displayName: "Sarah Lim",
+      avatarUrl: "https://i.pravatar.cc/64?img=5",
+    },
+    {
+      userId: "user-sarah-l",
+      displayName: "Sarah L",
+      avatarUrl: "https://i.pravatar.cc/64?img=6",
+    },
+    {
+      userId: "user-tan-ah-teck",
+      displayName: "Tan Ah Teck",
+      avatarUrl: "https://i.pravatar.cc/64?img=15",
+    },
+    {
+      userId: "user-emma-watson",
+      displayName: "Emma Watson",
+      avatarUrl: "https://i.pravatar.cc/64?img=47",
+    },
+    {
+      userId: "user-emma-c",
+      displayName: "Emma C",
+      avatarUrl: "https://i.pravatar.cc/64?img=50",
+    },
+    {
+      userId: "user-wei-ming",
+      displayName: "Wei Ming",
+      avatarUrl: "https://i.pravatar.cc/64?img=11",
+    },
+  ],
+};
+
+function dedupeMockFollowers(
+  followers: { userId: string; displayName: string; avatarUrl?: string }[],
+) {
+  const seen = new Set<string>();
+
+  return followers.filter((follower) => {
+    const normalizedId = follower.userId.trim();
+    const normalizedName = follower.displayName.trim().toLowerCase();
+    const key = normalizedId || normalizedName;
+
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+const _mockComments: Record<
+  string,
+  {
+    id: string;
+    userId: string;
+    body: string;
+    createdAt: string;
+    parentCommentId?: string;
+    authorName?: string;
+    authorAvatarUrl?: string;
+  }[]
+> = {};
 
 if (typeof __DEV__ !== "undefined" && __DEV__) {
   // TODO(api): keep fixture validation while mock mode is active; remove once backend contracts are fully live.
@@ -431,6 +681,12 @@ function getMerchantMenu(outletId: string): DishDetail[] {
   _merchantMenuByOutlet.set(outletId, merchantMenu);
   syncMerchantMenuToUserCatalog(outletId, merchantMenu);
   return merchantMenu;
+}
+
+function getMerchantPromotionOutletDishIds(outletId: string): string[] {
+  const outlet = getMerchantOutlet(outletId);
+  const menu = getMerchantMenu(outletId);
+  return Array.from(new Set([...menu.map((dish) => dish.id), ...outlet.signatureDishIds]));
 }
 
 function syncMerchantOutletToUserCatalog(
@@ -689,6 +945,33 @@ function getOutletForDishView(dishId: string): ReturnType<typeof getMerchantOutl
   return undefined;
 }
 
+function getOutletForMerchantAction(
+  input: MerchantActionEventInput,
+): ReturnType<typeof getMerchantOutlet> | undefined {
+  if (input.outletId) {
+    const outlet = _merchantAccount.outlets.find((candidate) => candidate.id === input.outletId);
+    if (outlet) return outlet;
+  }
+
+  if (input.dishId) {
+    const outlet = getOutletForDishView(input.dishId);
+    if (outlet) return outlet;
+  }
+
+  if (input.venueId) {
+    return _merchantAccount.outlets.find(
+      (outlet) =>
+        getMockMerchantVenueId(outlet.id) === input.venueId ||
+        dishes.some(
+          (dish) =>
+            dish.venueId === input.venueId && getOutletForDishView(dish.id)?.id === outlet.id,
+        ),
+    );
+  }
+
+  return undefined;
+}
+
 function getDishViewCounts(outletId: string): Map<string, number> {
   const counts = new Map<string, number>();
   _merchantDishViewEvents
@@ -716,15 +999,31 @@ function buildMockMerchantAnalytics(
   const menu = getMerchantMenu(outletId);
   const viewCounts = getDishViewCounts(outletId);
   const eventViews = Array.from(viewCounts.values()).reduce((sum, count) => sum + count, 0);
+  const actionEvents = _merchantActionEvents.filter((event) => event.outletId === outletId);
+  const countActions = (eventType: MerchantActionEventInput["eventType"]) =>
+    actionEvents.filter((event) => event.eventType === eventType).length;
+  const saveCounts = new Map<string, number>();
+  actionEvents
+    .filter((event) => event.eventType === "save" && event.dishId)
+    .forEach((event) => {
+      saveCounts.set(event.dishId!, (saveCounts.get(event.dishId!) ?? 0) + 1);
+    });
   analytics.dishViews += eventViews;
   analytics.menuViews += eventViews;
   analytics.profileVisits += Math.floor(eventViews / 2);
+  analytics.profileVisits += countActions("stall_profile_view");
+  analytics.menuViews += countActions("menu_view");
+  analytics.directionTaps += countActions("direction_tap");
+  analytics.saves += countActions("save");
+  analytics.shares += countActions("share");
+  analytics.contactTaps += countActions("contact_tap");
+  analytics.socialLinkTaps += countActions("social_link_tap");
   analytics.topDishes = menu
     .map((dish, index) => ({
       dishId: dish.id,
       name: dish.name,
       views: (analytics.topDishes[index]?.views ?? 0) + (viewCounts.get(dish.id) ?? 0),
-      saves: analytics.topDishes[index]?.saves ?? 0,
+      saves: (analytics.topDishes[index]?.saves ?? 0) + (saveCounts.get(dish.id) ?? 0),
     }))
     .sort((left, right) => right.views - left.views)
     .slice(0, 5);
@@ -1081,6 +1380,15 @@ export const hungryService: HungryService = {
       return resolve([...buildings]);
     },
 
+    async countVenuesInArea(lat?, lng?, radiusMeters?) {
+      const scopedBuildings =
+        typeof lat === "number" && typeof lng === "number"
+          ? getNearestBuildings(lat, lng, radiusMeters ? radiusMeters / 1000 : 3, 14)
+          : buildings;
+      const scopedBuildingIds = new Set(scopedBuildings.map((building) => building.id));
+      return resolve(venues.filter((venue) => scopedBuildingIds.has(venue.buildingId)).length);
+    },
+
     async getBuildingDetail(id) {
       const building = buildings.find((b) => b.id === id);
       if (!building) return resolve(undefined);
@@ -1144,6 +1452,21 @@ export const hungryService: HungryService = {
         sessionId,
         userId: context?.userId ?? (_isAuthenticated ? _profile.id : undefined),
         viewedAt: new Date().toISOString(),
+      });
+      return resolve(undefined);
+    },
+
+    async recordMerchantActionEvent(input) {
+      const outlet = getOutletForMerchantAction(input);
+      if (!outlet) return resolve(undefined);
+      _merchantActionEvents.push({
+        ...input,
+        outletId: outlet.id,
+        sessionId:
+          input.sessionId ??
+          input.userId ??
+          (_isAuthenticated ? _profile.id : "mock-guest-session"),
+        occurredAt: new Date().toISOString(),
       });
       return resolve(undefined);
     },
@@ -1297,6 +1620,7 @@ export const hungryService: HungryService = {
         photoUrl: draft.photoUrl,
         mediaUrls: draft.mediaUrls,
         mediaType: draft.mediaType,
+        showFoodContextOverlay: draft.showFoodContextOverlay,
         caption: draft.caption,
         tags: draft.tags,
         tasteStamp: draft.tasteStamp,
@@ -1314,6 +1638,7 @@ export const hungryService: HungryService = {
           mediaType: draft.mediaType,
           mediaUrls: draft.mediaUrls ?? [draft.photoUrl],
           tags: draft.tags,
+          showFoodContextOverlay: draft.showFoodContextOverlay,
         }),
       );
       return resolve(newBite);
@@ -1379,12 +1704,25 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async shareStory(storyId: string) {
+      await hydrateSocial();
+      pruneMockStories();
+      const story = _mockStories.find((s) => s.id === storyId);
+      if (story) {
+        story.interaction.shareCount += 1;
+        void saveMockState("stories", _mockStories);
+      }
+      return resolve(undefined);
+    },
+
     async addStory(content: StoryContent) {
       await hydrateSocial();
       pruneMockStories();
       const newStory: Story = {
         id: `s_${Date.now()}`,
         displayName: _profile.displayName || "You",
+        authorId: _profile.id,
+        authorProfileVisibility: _profile.profileVisibility,
         avatarUrl: _profile.avatarUrl || "https://i.pravatar.cc/150?u=me",
         hasUnseen: false,
         isStall: false,
@@ -1431,6 +1769,67 @@ export const hungryService: HungryService = {
       );
       const likedBites = MOCK_BITES_FEED.filter((b) => likedBiteIds.includes(b.id));
       return resolve(likedBites);
+    },
+
+    async followUser(userId: string) {
+      _userFollows.add(userId);
+      return resolve(undefined as void);
+    },
+
+    async unfollowUser(userId: string) {
+      _userFollows.delete(userId);
+      return resolve(undefined as void);
+    },
+
+    async listFollowers(_userId: string) {
+      return resolve(
+        dedupeMockFollowers(
+          _mockFollowersByUser[_userId]?.filter(Boolean) ??
+            _mockFollowersByUser[userProfile.id] ??
+            [],
+        ),
+      );
+    },
+
+    async listFollowing(_userId: string) {
+      return resolve(
+        Array.from(_userFollows).map((id) => ({
+          userId: id,
+          displayName: id,
+          avatarUrl: undefined,
+        })),
+      );
+    },
+
+    async isFollowing(userId: string) {
+      return resolve(_userFollows.has(userId));
+    },
+
+    async createComment(postId: string, body: string, parentCommentId?: string) {
+      const id = `mock-comment-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const comment = {
+        id,
+        userId: _profile.id,
+        body,
+        createdAt: new Date().toISOString(),
+        parentCommentId,
+        authorName: _profile.displayName,
+        authorAvatarUrl: _profile.avatarUrl,
+      };
+      if (!_mockComments[postId]) _mockComments[postId] = [];
+      _mockComments[postId].push(comment);
+      return resolve(comment);
+    },
+
+    async deleteComment(commentId: string) {
+      for (const postId of Object.keys(_mockComments)) {
+        _mockComments[postId] = (_mockComments[postId] ?? []).filter((c) => c.id !== commentId);
+      }
+      return resolve(undefined as void);
+    },
+
+    async listCommentsForPost(postId: string) {
+      return resolve(_mockComments[postId] ?? []);
     },
   },
 
@@ -1569,6 +1968,37 @@ export const hungryService: HungryService = {
         reason: "unhidden_by_user",
       });
       return resolve(undefined);
+    },
+
+    async getBlockedUsers() {
+      return resolve([]);
+    },
+  },
+
+  // ── User Contributions ─────────────────────────────────────────────────────
+
+  contributions: {
+    async submitDiscoveredStall(input) {
+      if (!_isAuthenticated) {
+        throw new Error("You must be signed in to add a stall.");
+      }
+      if (!input.stallName.trim()) {
+        throw new Error("Stall name is required.");
+      }
+      if (!input.imageUri.trim()) {
+        throw new Error("Stall image is required.");
+      }
+
+      const submission = createMockUserStallSubmission(input);
+      _userStallSubmissions = [submission, ..._userStallSubmissions];
+      return resolve(clone(submission));
+    },
+
+    async listMyDiscoveredStalls() {
+      if (!_isAuthenticated) return resolve([]);
+      return resolve(
+        clone(_userStallSubmissions.filter((submission) => submission.userId === _profile.id)),
+      );
     },
   },
 
@@ -2079,12 +2509,20 @@ export const hungryService: HungryService = {
 
     async createPromotion(outletId, promo) {
       getMerchantOutlet(outletId);
+      const validatedPromo = validateMerchantPromotionInput(promo, {
+        outletDishIds: getMerchantPromotionOutletDishIds(outletId),
+      });
       const newPromotion: MerchantPromotion = {
-        ...promo,
+        ...validatedPromo,
         id: `promo-new-${++_merchantPromotionCounter}`,
         outletId,
         createdAt: new Date().toISOString(),
-        analytics: getPromotionAnalyticsValue({ ...promo, id: "preview", outletId, createdAt: "" }),
+        analytics: getPromotionAnalyticsValue({
+          ...validatedPromo,
+          id: "preview",
+          outletId,
+          createdAt: "",
+        }),
       };
       _merchantPromotions.push(newPromotion);
       return resolve(clone(newPromotion));
@@ -2093,9 +2531,26 @@ export const hungryService: HungryService = {
     async updatePromotion(promoId, updates) {
       const promoIndex = _merchantPromotions.findIndex((p) => p.id === promoId);
       if (promoIndex === -1) throw new Error(`Promotion ${promoId} not found`);
+      const currentPromotion = _merchantPromotions[promoIndex];
+      const validatedPromotion = validateMerchantPromotionInput(
+        {
+          ...currentPromotion,
+          ...updates,
+          targetDishId: updates.targetDishId ?? currentPromotion.targetDishId,
+          promotionItemType: updates.promotionItemType ?? currentPromotion.promotionItemType,
+          originalPrice: updates.originalPrice ?? currentPromotion.originalPrice,
+          promotionalPrice: updates.promotionalPrice ?? currentPromotion.promotionalPrice,
+          finalPrice: updates.finalPrice ?? updates.promotionalPrice ?? currentPromotion.finalPrice,
+          discountPercentage: updates.discountPercentage ?? currentPromotion.discountPercentage,
+          isAvailable: updates.isAvailable ?? currentPromotion.isAvailable,
+        },
+        {
+          outletDishIds: getMerchantPromotionOutletDishIds(currentPromotion.outletId),
+        },
+      );
       const updatedPromotion: MerchantPromotion = {
         ..._merchantPromotions[promoIndex],
-        ...updates,
+        ...validatedPromotion,
       };
       updatedPromotion.analytics = getPromotionAnalyticsValue(updatedPromotion);
       _merchantPromotions[promoIndex] = updatedPromotion;
@@ -2329,6 +2784,781 @@ export const hungryService: HungryService = {
     async updateNotificationPreferences(merchantAccountId, prefs) {
       const current = getNotificationPreferencesForAccount(merchantAccountId);
       Object.assign(current, prefs);
+      return resolve(undefined);
+    },
+  },
+
+  // ── Checklist ───────────────────────────────────────────────────────────────
+
+  checklist: {
+    async createChecklist(name: string) {
+      const now = new Date().toISOString();
+      const checklist: Checklist = {
+        id: `checklist-${++_checklistCounter}`,
+        userId: _profile.id,
+        name: name.trim() || "Untitled checklist",
+        createdAt: now,
+        updatedAt: now,
+      };
+      _checklists = [checklist, ..._checklists];
+      return resolve(clone(checklist));
+    },
+
+    async getChecklists() {
+      return resolve(
+        clone(
+          _checklists
+            .filter((checklist) => checklist.userId === _profile.id)
+            .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
+        ),
+      );
+    },
+
+    async getChecklist(id: string) {
+      const checklist = _checklists.find(
+        (entry) => entry.id === id && entry.userId === _profile.id,
+      );
+      if (!checklist) {
+        throw new Error(`Checklist ${id} not found`);
+      }
+      return resolve(clone(checklist));
+    },
+
+    async updateChecklist(id: string, name: string) {
+      const updatedAt = new Date().toISOString();
+      let found = false;
+      _checklists = _checklists.map((checklist) => {
+        if (checklist.id !== id || checklist.userId !== _profile.id) {
+          return checklist;
+        }
+        found = true;
+        return {
+          ...checklist,
+          name: name.trim() || checklist.name,
+          updatedAt,
+        };
+      });
+      if (!found) {
+        throw new Error(`Checklist ${id} not found`);
+      }
+      return resolve(undefined);
+    },
+
+    async deleteChecklist(id: string) {
+      const beforeCount = _checklists.length;
+      _checklists = _checklists.filter(
+        (checklist) => !(checklist.id === id && checklist.userId === _profile.id),
+      );
+      if (_checklists.length === beforeCount) {
+        throw new Error(`Checklist ${id} not found`);
+      }
+      _checklistItems = _checklistItems.filter((item) => item.checklistId !== id);
+      return resolve(undefined);
+    },
+
+    async addChecklistItem(input: ChecklistItemCreateInput) {
+      const checklist = _checklists.find(
+        (entry) => entry.id === input.checklistId && entry.userId === _profile.id,
+      );
+      if (!checklist) {
+        throw new Error(`Checklist ${input.checklistId} not found`);
+      }
+      if (input.itemType === "custom" && !input.customText?.trim()) {
+        throw new Error("Custom checklist items require text");
+      }
+      if (
+        input.itemType !== "custom" &&
+        _checklistItems.some(
+          (item) =>
+            item.checklistId === input.checklistId &&
+            item.itemType === input.itemType &&
+            item.dishId === input.dishId &&
+            item.stallId === input.stallId,
+        )
+      ) {
+        throw new Error("This item is already in the checklist");
+      }
+      const now = new Date().toISOString();
+      const position =
+        Math.max(
+          -1,
+          ..._checklistItems
+            .filter((item) => item.checklistId === input.checklistId)
+            .map((item) => item.position),
+        ) + 1;
+      const item: ChecklistItem = {
+        id: `checklist-item-${++_checklistItemCounter}`,
+        checklistId: input.checklistId,
+        itemType: input.itemType,
+        dishId: input.dishId,
+        stallId: input.stallId,
+        customText: input.customText?.trim(),
+        reminderAt: input.reminderAt,
+        plannedVisitDate: input.plannedVisitDate,
+        triedAt: undefined,
+        position,
+        createdAt: now,
+        updatedAt: now,
+      };
+      _checklistItems = [..._checklistItems, item];
+      _checklists = _checklists.map((entry) =>
+        entry.id === checklist.id ? { ...entry, updatedAt: now } : entry,
+      );
+      return resolve(clone(item));
+    },
+
+    async getChecklistItems(checklistId: string) {
+      const checklist = _checklists.find(
+        (entry) => entry.id === checklistId && entry.userId === _profile.id,
+      );
+      if (!checklist) {
+        throw new Error(`Checklist ${checklistId} not found`);
+      }
+      return resolve(
+        clone(
+          _checklistItems
+            .filter((item) => item.checklistId === checklistId)
+            .sort((left, right) => left.position - right.position),
+        ),
+      );
+    },
+
+    async updateChecklistItem(id: string, updates: Partial<ChecklistItemCreateInput>) {
+      const updatedAt = new Date().toISOString();
+      let updatedChecklistId: string | undefined;
+      _checklistItems = _checklistItems.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
+        const checklist = _checklists.find(
+          (entry) => entry.id === item.checklistId && entry.userId === _profile.id,
+        );
+        if (!checklist) {
+          return item;
+        }
+        updatedChecklistId = item.checklistId;
+        return {
+          ...item,
+          ...updates,
+          customText: updates.customText?.trim() ?? item.customText,
+          updatedAt,
+        };
+      });
+      if (!updatedChecklistId) {
+        throw new Error(`Checklist item ${id} not found`);
+      }
+      _checklists = _checklists.map((entry) =>
+        entry.id === updatedChecklistId ? { ...entry, updatedAt } : entry,
+      );
+      return resolve(undefined);
+    },
+
+    async markChecklistItemTried(id: string) {
+      const triedAt = new Date().toISOString();
+      let updatedChecklistId: string | undefined;
+      _checklistItems = _checklistItems.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
+        const checklist = _checklists.find(
+          (entry) => entry.id === item.checklistId && entry.userId === _profile.id,
+        );
+        if (!checklist) {
+          return item;
+        }
+        updatedChecklistId = item.checklistId;
+        return { ...item, triedAt, updatedAt: triedAt };
+      });
+      if (!updatedChecklistId) {
+        throw new Error(`Checklist item ${id} not found`);
+      }
+      _checklists = _checklists.map((entry) =>
+        entry.id === updatedChecklistId ? { ...entry, updatedAt: triedAt } : entry,
+      );
+      return resolve(undefined);
+    },
+
+    async deleteChecklistItem(id: string) {
+      const item = _checklistItems.find((entry) => entry.id === id);
+      if (!item) {
+        throw new Error(`Checklist item ${id} not found`);
+      }
+      const checklist = _checklists.find(
+        (entry) => entry.id === item.checklistId && entry.userId === _profile.id,
+      );
+      if (!checklist) {
+        throw new Error(`Checklist item ${id} not found`);
+      }
+      _checklistItems = _checklistItems.filter((entry) => entry.id !== id);
+      const remainingItems = _checklistItems
+        .filter((entry) => entry.checklistId === item.checklistId)
+        .sort((left, right) => left.position - right.position)
+        .map((entry, position) => ({ ...entry, position }));
+      _checklistItems = [
+        ..._checklistItems.filter((entry) => entry.checklistId !== item.checklistId),
+        ...remainingItems,
+      ];
+      _checklists = _checklists.map((entry) =>
+        entry.id === item.checklistId ? { ...entry, updatedAt: new Date().toISOString() } : entry,
+      );
+      return resolve(undefined);
+    },
+
+    async reorderChecklistItems(checklistId: string, itemIds: string[]) {
+      const checklist = _checklists.find(
+        (entry) => entry.id === checklistId && entry.userId === _profile.id,
+      );
+      if (!checklist) {
+        throw new Error(`Checklist ${checklistId} not found`);
+      }
+      const currentItems = _checklistItems.filter((item) => item.checklistId === checklistId);
+      const itemById = new Map(currentItems.map((item) => [item.id, item]));
+      const requestedIds = new Set(itemIds);
+      if (
+        requestedIds.size !== itemIds.length ||
+        requestedIds.size !== currentItems.length ||
+        itemIds.some((id) => !itemById.has(id))
+      ) {
+        throw new Error("Checklist reorder requires every current item exactly once");
+      }
+      const orderedItems = itemIds
+        .map((id) => itemById.get(id))
+        .filter((item): item is ChecklistItem => Boolean(item));
+      const updatedAt = new Date().toISOString();
+      const nextItems = orderedItems.map((item, position) => ({
+        ...item,
+        position,
+        updatedAt,
+      }));
+      _checklistItems = [
+        ..._checklistItems.filter((item) => item.checklistId !== checklistId),
+        ...nextItems,
+      ];
+      _checklists = _checklists.map((entry) =>
+        entry.id === checklistId ? { ...entry, updatedAt } : entry,
+      );
+      return resolve(undefined);
+    },
+  },
+
+  // ── Portfolio ───────────────────────────────────────────────────────────────
+
+  portfolio: {
+    async createPortfolio(input: PortfolioCreateInput) {
+      const now = new Date().toISOString();
+      const portfolio: Portfolio = {
+        id: `portfolio-${++_portfolioCounter}`,
+        ownerId: _profile.id,
+        name: input.name.trim() || "Untitled portfolio",
+        description: input.description?.trim(),
+        type: input.type,
+        visibility: input.visibility,
+        publishedAt: undefined,
+        createdAt: now,
+        updatedAt: now,
+      };
+      _portfolios = [portfolio, ..._portfolios];
+      return resolve(clone(portfolio));
+    },
+
+    async getPortfolios(filters?: { userId?: string; visibility?: string; type?: string }) {
+      const visiblePortfolios = _portfolios.filter((portfolio) => {
+        if (filters?.userId && portfolio.ownerId !== filters.userId) return false;
+        if (filters?.visibility && portfolio.visibility !== filters.visibility) return false;
+        if (filters?.type && portfolio.type !== filters.type) return false;
+        if (portfolio.ownerId === _profile.id) return true;
+        if (portfolio.visibility === "public") return true;
+        return _portfolioFollows.some(
+          (follow) => follow.portfolioId === portfolio.id && follow.userId === _profile.id,
+        );
+      });
+      return resolve(
+        clone(
+          visiblePortfolios.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
+        ),
+      );
+    },
+
+    async getPortfolio(id: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === id);
+      if (!portfolio) {
+        throw new Error(`Portfolio ${id} not found`);
+      }
+      if (!canViewMockPortfolio(portfolio)) {
+        throw new Error(`Portfolio ${id} not found`);
+      }
+      return resolve(clone(portfolio));
+    },
+
+    async updatePortfolio(
+      id: string,
+      updates: Partial<PortfolioCreateInput>,
+      options?: PortfolioMutationOptions,
+    ) {
+      assertMockPortfolioVersion(id, options);
+      const updatedAt = new Date().toISOString();
+      let found = false;
+      _portfolios = _portfolios.map((portfolio) => {
+        if (portfolio.id !== id || portfolio.ownerId !== _profile.id) {
+          return portfolio;
+        }
+        found = true;
+        return {
+          ...portfolio,
+          ...updates,
+          name: updates.name?.trim() ?? portfolio.name,
+          description: updates.description?.trim() ?? portfolio.description,
+          updatedAt,
+        };
+      });
+      if (!found) {
+        throw new Error(`Portfolio ${id} not found`);
+      }
+      return resolve(undefined);
+    },
+
+    async deletePortfolio(id: string, options?: PortfolioMutationOptions) {
+      assertMockPortfolioVersion(id, options);
+      const beforeCount = _portfolios.length;
+      _portfolios = _portfolios.filter(
+        (portfolio) => !(portfolio.id === id && portfolio.ownerId === _profile.id),
+      );
+      if (_portfolios.length === beforeCount) {
+        throw new Error(`Portfolio ${id} not found`);
+      }
+      _portfolioItems = _portfolioItems.filter((item) => item.portfolioId !== id);
+      _portfolioCollaborators = _portfolioCollaborators.filter(
+        (collaborator) => collaborator.portfolioId !== id,
+      );
+      _portfolioFollows = _portfolioFollows.filter((follow) => follow.portfolioId !== id);
+      return resolve(undefined);
+    },
+
+    async publishPortfolio(id: string, options?: PortfolioMutationOptions) {
+      assertMockPortfolioVersion(id, options);
+      const publishedAt = new Date().toISOString();
+      let found = false;
+      let shouldRecordPublish = false;
+      let publishedPortfolioType: Portfolio["type"] | undefined;
+      _portfolios = _portfolios.map((portfolio) => {
+        if (portfolio.id !== id || portfolio.ownerId !== _profile.id) {
+          return portfolio;
+        }
+        found = true;
+        shouldRecordPublish = !portfolio.publishedAt;
+        publishedPortfolioType = portfolio.type;
+        return {
+          ...portfolio,
+          publishedAt,
+          visibility: "public",
+          updatedAt: publishedAt,
+        };
+      });
+      if (!found) {
+        throw new Error(`Portfolio ${id} not found`);
+      }
+      if (shouldRecordPublish) {
+        recordMockPassportProgress("public_portfolio_published", id);
+        if (publishedPortfolioType === "trail") {
+          recordMockPassportProgress("trail_completed", id);
+        }
+      }
+      return resolve(undefined);
+    },
+
+    async addPortfolioItem(input: PortfolioItemCreateInput, options?: PortfolioMutationOptions) {
+      assertMockPortfolioVersion(input.portfolioId, options);
+      const portfolio = _portfolios.find(
+        (entry) => entry.id === input.portfolioId && entry.ownerId === _profile.id,
+      );
+      const canEdit =
+        Boolean(portfolio) ||
+        _portfolioCollaborators.some(
+          (collaborator) =>
+            collaborator.portfolioId === input.portfolioId &&
+            collaborator.userId === _profile.id &&
+            collaborator.role === "editor",
+        );
+      if (!canEdit) {
+        throw new Error(`Portfolio ${input.portfolioId} not found`);
+      }
+      const duplicateItem = _portfolioItems.find(
+        (item) =>
+          item.portfolioId === input.portfolioId &&
+          item.itemType === input.itemType &&
+          item.dishId === input.dishId &&
+          item.stallId === input.stallId,
+      );
+      if (duplicateItem) {
+        throw new Error("This item is already in the portfolio");
+      }
+      if (typeof input.score === "number" && (input.score < 1 || input.score > 10)) {
+        throw new Error("Portfolio item score must be between 1 and 10");
+      }
+      const now = new Date().toISOString();
+      const position =
+        Math.max(
+          -1,
+          ..._portfolioItems
+            .filter((item) => item.portfolioId === input.portfolioId)
+            .map((item) => item.position),
+        ) + 1;
+      const item: PortfolioItem = {
+        id: `portfolio-item-${++_portfolioItemCounter}`,
+        portfolioId: input.portfolioId,
+        itemType: input.itemType,
+        dishId: input.dishId,
+        stallId: input.stallId,
+        score: input.score,
+        publicNotes: input.publicNotes?.trim(),
+        privateNotes: input.privateNotes?.trim(),
+        position,
+        createdAt: now,
+        updatedAt: now,
+      };
+      _portfolioItems = [..._portfolioItems, item];
+      _portfolios = _portfolios.map((entry) =>
+        entry.id === input.portfolioId ? { ...entry, updatedAt: now } : entry,
+      );
+      recordMockPassportProgress("portfolio_item_added", item.id);
+      return resolve(clone(item));
+    },
+
+    async getPortfolioItems(portfolioId: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+      if (!portfolio || !canViewMockPortfolio(portfolio)) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      return resolve(
+        clone(
+          _portfolioItems
+            .filter((item) => item.portfolioId === portfolioId)
+            .sort((left, right) => left.position - right.position),
+        ),
+      );
+    },
+
+    async updatePortfolioItem(
+      id: string,
+      updates: Partial<PortfolioItemCreateInput>,
+      options?: PortfolioMutationOptions,
+    ) {
+      if (options?.portfolioId) {
+        assertMockPortfolioVersion(options.portfolioId, options);
+      }
+      const updatedAt = new Date().toISOString();
+      let updatedPortfolioId: string | undefined;
+      _portfolioItems = _portfolioItems.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
+        const portfolio = _portfolios.find(
+          (entry) => entry.id === item.portfolioId && entry.ownerId === _profile.id,
+        );
+        if (!portfolio) {
+          return item;
+        }
+        if (typeof updates.score === "number" && (updates.score < 1 || updates.score > 10)) {
+          throw new Error("Portfolio item score must be between 1 and 10");
+        }
+        updatedPortfolioId = item.portfolioId;
+        return {
+          ...item,
+          ...updates,
+          publicNotes: updates.publicNotes?.trim() ?? item.publicNotes,
+          privateNotes: updates.privateNotes?.trim() ?? item.privateNotes,
+          updatedAt,
+        };
+      });
+      if (!updatedPortfolioId) {
+        throw new Error(`Portfolio item ${id} not found`);
+      }
+      _portfolios = _portfolios.map((entry) =>
+        entry.id === updatedPortfolioId ? { ...entry, updatedAt } : entry,
+      );
+      return resolve(undefined);
+    },
+
+    async deletePortfolioItem(id: string, options?: PortfolioMutationOptions) {
+      const item = _portfolioItems.find((entry) => entry.id === id);
+      if (!item) {
+        throw new Error(`Portfolio item ${id} not found`);
+      }
+      assertMockPortfolioVersion(item.portfolioId, options);
+      const portfolio = _portfolios.find(
+        (entry) => entry.id === item.portfolioId && entry.ownerId === _profile.id,
+      );
+      if (!portfolio) {
+        throw new Error(`Portfolio item ${id} not found`);
+      }
+      _portfolioItems = _portfolioItems.filter((entry) => entry.id !== id);
+      const remainingItems = _portfolioItems
+        .filter((entry) => entry.portfolioId === item.portfolioId)
+        .sort((left, right) => left.position - right.position)
+        .map((entry, position) => ({ ...entry, position }));
+      _portfolioItems = [
+        ..._portfolioItems.filter((entry) => entry.portfolioId !== item.portfolioId),
+        ...remainingItems,
+      ];
+      _portfolios = _portfolios.map((entry) =>
+        entry.id === item.portfolioId ? { ...entry, updatedAt: new Date().toISOString() } : entry,
+      );
+      return resolve(undefined);
+    },
+
+    async reorderPortfolioItems(
+      portfolioId: string,
+      itemIds: string[],
+      options?: PortfolioMutationOptions,
+    ) {
+      assertMockPortfolioVersion(portfolioId, options);
+      const portfolio = _portfolios.find(
+        (entry) => entry.id === portfolioId && entry.ownerId === _profile.id,
+      );
+      if (!portfolio) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      const currentItems = _portfolioItems.filter((item) => item.portfolioId === portfolioId);
+      const itemById = new Map(currentItems.map((item) => [item.id, item]));
+      const requestedIds = new Set(itemIds);
+      if (
+        requestedIds.size !== itemIds.length ||
+        requestedIds.size !== currentItems.length ||
+        itemIds.some((id) => !itemById.has(id))
+      ) {
+        throw new Error("Portfolio reorder requires every current item exactly once");
+      }
+      const orderedItems = itemIds
+        .map((id) => itemById.get(id))
+        .filter((item): item is PortfolioItem => Boolean(item));
+      const updatedAt = new Date().toISOString();
+      const nextItems = orderedItems.map((item, position) => ({
+        ...item,
+        position,
+        updatedAt,
+      }));
+      _portfolioItems = [
+        ..._portfolioItems.filter((item) => item.portfolioId !== portfolioId),
+        ...nextItems,
+      ];
+      _portfolios = _portfolios.map((entry) =>
+        entry.id === portfolioId ? { ...entry, updatedAt } : entry,
+      );
+      return resolve(undefined);
+    },
+
+    async addPortfolioCollaborator(
+      portfolioId: string,
+      userId: string,
+      role: "viewer" | "editor",
+      options?: PortfolioMutationOptions,
+    ) {
+      assertMockPortfolioVersion(portfolioId, options);
+      const portfolio = _portfolios.find(
+        (entry) => entry.id === portfolioId && entry.ownerId === _profile.id,
+      );
+      if (!portfolio) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      _portfolioCollaborators = _portfolioCollaborators.filter(
+        (collaborator) =>
+          !(collaborator.portfolioId === portfolioId && collaborator.userId === userId),
+      );
+      _portfolioCollaborators = [
+        ..._portfolioCollaborators,
+        {
+          id: `portfolio-collaborator-${++_portfolioCollaboratorCounter}`,
+          portfolioId,
+          userId,
+          role,
+          createdAt: new Date().toISOString(),
+        },
+      ];
+      return resolve(undefined);
+    },
+
+    async getPortfolioCollaborators(portfolioId: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+      if (!portfolio || !canViewMockPortfolio(portfolio)) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      return resolve(
+        clone(_portfolioCollaborators.filter((entry) => entry.portfolioId === portfolioId)),
+      );
+    },
+
+    async removePortfolioCollaborator(
+      portfolioId: string,
+      userId: string,
+      options?: PortfolioMutationOptions,
+    ) {
+      assertMockPortfolioVersion(portfolioId, options);
+      const portfolio = _portfolios.find(
+        (entry) => entry.id === portfolioId && entry.ownerId === _profile.id,
+      );
+      if (!portfolio) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      _portfolioCollaborators = _portfolioCollaborators.filter(
+        (entry) => !(entry.portfolioId === portfolioId && entry.userId === userId),
+      );
+      return resolve(undefined);
+    },
+
+    async followPortfolio(portfolioId: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+      if (!portfolio) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      if (portfolio.ownerId === _profile.id) {
+        return resolve(undefined);
+      }
+      const existingFollow = _portfolioFollows.find(
+        (follow) => follow.portfolioId === portfolioId && follow.userId === _profile.id,
+      );
+      if (!existingFollow) {
+        _portfolioFollows = [
+          ..._portfolioFollows,
+          {
+            id: `portfolio-follow-${++_portfolioFollowCounter}`,
+            portfolioId,
+            userId: _profile.id,
+            createdAt: new Date().toISOString(),
+          },
+        ];
+      }
+      return resolve(undefined);
+    },
+
+    async unfollowPortfolio(portfolioId: string) {
+      _portfolioFollows = _portfolioFollows.filter(
+        (follow) => !(follow.portfolioId === portfolioId && follow.userId === _profile.id),
+      );
+      return resolve(undefined);
+    },
+
+    async getPortfolioFollows(portfolioId: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+      if (!portfolio || !canViewMockPortfolio(portfolio)) {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      return resolve(clone(_portfolioFollows.filter((entry) => entry.portfolioId === portfolioId)));
+    },
+
+    async isFollowingPortfolio(portfolioId: string) {
+      return resolve(
+        _portfolioFollows.some(
+          (follow) => follow.portfolioId === portfolioId && follow.userId === _profile.id,
+        ),
+      );
+    },
+
+    async flagPortfolio(portfolioId: string, reason: string, details?: string) {
+      const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
+      if (!portfolio || portfolio.visibility !== "public") {
+        throw new Error(`Portfolio ${portfolioId} not found`);
+      }
+      const normalizedReason = (
+        ["spam", "inappropriate", "misleading"].includes(reason) ? reason : "other"
+      ) as PortfolioFlagReason;
+      const existingFlag = _portfolioFlags.find(
+        (flag) => flag.portfolioId === portfolioId && flag.reporterId === _profile.id,
+      );
+      if (existingFlag) {
+        return resolve(undefined);
+      }
+      _portfolioFlags = [
+        ..._portfolioFlags,
+        {
+          id: `portfolio-flag-${++_portfolioFlagCounter}`,
+          portfolioId,
+          reporterId: _profile.id,
+          reason: normalizedReason,
+          details: details?.trim(),
+          status: "pending",
+          createdAt: new Date().toISOString(),
+        },
+      ];
+      return resolve(undefined);
+    },
+
+    async getPortfolioFlags(filters?: { status?: string }) {
+      return resolve(
+        clone(
+          _portfolioFlags.filter((flag) => {
+            if (!filters?.status) return true;
+            return flag.status === filters.status;
+          }),
+        ),
+      );
+    },
+
+    async resolvePortfolioFlag(flagId: string, resolution: "dismissed" | "removed") {
+      const reviewedAt = new Date().toISOString();
+      let found = false;
+      _portfolioFlags = _portfolioFlags.map((flag) => {
+        if (flag.id !== flagId) {
+          return flag;
+        }
+        found = true;
+        return {
+          ...flag,
+          status: resolution,
+          reviewedAt,
+          reviewedBy: _profile.id,
+        };
+      });
+      if (!found) {
+        throw new Error(`Portfolio flag ${flagId} not found`);
+      }
+      return resolve(undefined);
+    },
+
+    async searchPortfolios(query: string, filters?: { type?: string; visibility?: string }) {
+      const normalizedQuery = query.trim().toLowerCase();
+      const results = _portfolios.filter((portfolio) => {
+        if (portfolio.visibility !== "public" && portfolio.ownerId !== _profile.id) return false;
+        if (filters?.type && portfolio.type !== filters.type) return false;
+        if (filters?.visibility && portfolio.visibility !== filters.visibility) return false;
+        if (!normalizedQuery) return true;
+        return `${portfolio.name} ${portfolio.description ?? ""} ${portfolio.type}`
+          .toLowerCase()
+          .includes(normalizedQuery);
+      });
+      return resolve(
+        clone(results.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))),
+      );
+    },
+  },
+
+  // ── Passport ────────────────────────────────────────────────────────────────
+
+  passport: {
+    async getPassportStamps() {
+      return resolve(clone(_passportStamps.filter((stamp) => stamp.userId === _profile.id)));
+    },
+
+    async getPassportProgressEvents(categoryId?: string) {
+      const events = _passportEvents.filter(
+        (event) => event.userId === _profile.id && (!categoryId || event.categoryId === categoryId),
+      );
+      return resolve(clone(events));
+    },
+
+    async recordProgress(categoryId, eventType, referenceId) {
+      if (categoryId !== "contributor") {
+        return resolve(undefined);
+      }
+      recordMockPassportProgress(eventType, referenceId);
+      return resolve(undefined);
+    },
+  },
+
+  notifications: {
+    async listActivityEvents() {
+      return resolve([]);
+    },
+    async markActivityRead(_eventId: string) {
       return resolve(undefined);
     },
   },

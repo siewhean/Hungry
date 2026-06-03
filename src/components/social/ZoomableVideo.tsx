@@ -12,10 +12,11 @@ const EDGE_FAST_FORWARD_FRACTION = 0.2;
 
 type ZoomableVideoProps = {
   uri: string;
+  accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
 };
 
-export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
+export function ZoomableVideo({ uri, accessibilityLabel, style }: ZoomableVideoProps) {
   const { componentRadii, palette } = useHungryTheme();
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
@@ -28,6 +29,10 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
   });
 
   useEffect(() => {
+    player.loop = true;
+  }, [player]);
+
+  useEffect(() => {
     player.muted = isMuted;
   }, [isMuted, player]);
 
@@ -38,6 +43,19 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
     }
 
     player.pause();
+  }, [isPlaying, player]);
+
+  useEffect(() => {
+    const replaySubscription = player.addListener("playToEnd", () => {
+      if (!isPlaying) {
+        return;
+      }
+
+      player.currentTime = 0;
+      player.play();
+    });
+
+    return () => replaySubscription.remove();
   }, [isPlaying, player]);
 
   const handleTogglePlay = () => {
@@ -94,7 +112,16 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
       style={[styles.container, { backgroundColor: palette.mediaBackdrop }, style]}
     >
       <GestureDetector gesture={videoGestures}>
-        <View style={StyleSheet.absoluteFill}>
+        <View
+          accessible
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel ?? "Post video"}
+          accessibilityHint="Double tap to pause or play. Long press the left or right edge to play at 2x speed."
+          accessibilityValue={{ text: isPlaying ? "Playing" : "Paused" }}
+          onAccessibilityTap={handleTogglePlay}
+          onMagicTap={handleTogglePlay}
+          style={StyleSheet.absoluteFill}
+        >
           <VideoView
             player={player}
             style={StyleSheet.absoluteFill}
@@ -125,6 +152,10 @@ export function ZoomableVideo({ uri, style }: ZoomableVideoProps) {
       ) : null}
 
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={isMuted ? "Unmute video" : "Mute video"}
+        accessibilityHint={isMuted ? "Turns on video sound" : "Turns off video sound"}
+        accessibilityState={{ selected: !isMuted }}
         onPress={handleToggleMute}
         style={[
           styles.muteButton,

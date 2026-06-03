@@ -1,5 +1,5 @@
-import React from "react";
-import { View, StyleSheet, Modal, Pressable } from "react-native";
+import React, { useEffect } from "react";
+import { AccessibilityInfo, View, StyleSheet, Modal, Pressable } from "react-native";
 import { AppText } from "./AppText";
 import { Button } from "./Button";
 import { useHungryTheme } from "@/theme";
@@ -18,15 +18,33 @@ interface DialogProps {
   onClose: () => void;
 }
 
+/**
+ * Accessibility contract:
+ * - Dialog open state is announced with the title.
+ * - The backdrop is an explicit labelled dismiss target.
+ * - Nested action buttons remain reachable; do not group the dialog container as one element.
+ */
 export function Dialog({ visible, title, message, buttons, onClose }: DialogProps) {
   const { componentCornerCurve, componentRadii, palette, spacing, shadows } = useHungryTheme();
+
+  useEffect(() => {
+    if (visible) {
+      AccessibilityInfo.announceForAccessibility(title);
+    }
+  }, [title, visible]);
 
   if (!visible) {
     return null;
   }
 
   return (
-    <Modal transparent visible={visible} animationType="fade" onRequestClose={onClose}>
+    <Modal
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onClose}
+      accessibilityViewIsModal
+    >
       <View
         style={[
           styles.overlay,
@@ -36,8 +54,15 @@ export function Dialog({ visible, title, message, buttons, onClose }: DialogProp
           },
         ]}
       >
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Close dialog"
+          accessibilityHint="Dismisses the dialog"
+        />
         <View
+          accessibilityViewIsModal
           style={[
             styles.container,
             {
@@ -49,7 +74,7 @@ export function Dialog({ visible, title, message, buttons, onClose }: DialogProp
             },
           ]}
         >
-          <AppText variant="h3" style={{ marginBottom: spacing[2] }}>
+          <AppText accessibilityRole="header" variant="h3" style={{ marginBottom: spacing[2] }}>
             {title}
           </AppText>
           {message ? (

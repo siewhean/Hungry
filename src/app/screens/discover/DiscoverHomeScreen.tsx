@@ -3,6 +3,7 @@ import {
   Animated,
   Pressable,
   ScrollView,
+  TextInput,
   View,
   useWindowDimensions,
   type GestureResponderEvent,
@@ -11,7 +12,6 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -32,7 +32,15 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { MaterialTopTabNavigationProp } from "@react-navigation/material-top-tabs";
 
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Chip, EmptyState, IconButton, Screen, Skeleton } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  EmptyState,
+  FilterChipRail,
+  IconButton,
+  Screen,
+  Skeleton,
+} from "@/components/ui";
 import { getDiscoverBiteCollections, getDiscoverBites } from "@/features/discover/bites";
 import {
   prefetchDishDetail,
@@ -44,13 +52,15 @@ import {
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getNearestBuildings, getNearestSingaporeArea } from "@/lib/geo/singaporeBuildings";
 import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import type { Bite, DataRepository } from "@/lib/services/types";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
-import { TASTE_LABELS } from "@/constants/taste";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -59,6 +69,7 @@ import { useSearchStore } from "@/store/useSearchStore";
 import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { useHungryTheme } from "@/theme";
 import type { DietaryFlag, DishDetail, SearchCategory, VenueSummary } from "@/types/domain";
+import { isVenueOpenFromHours } from "@/utils/stallStatus";
 
 type DiscoverChipId = "dietary" | "spicy" | "halal" | "late" | "cheap";
 
@@ -108,6 +119,7 @@ type DiscoverStallShowcaseCard = {
 
 const STALL_SHOWCASE_CARD_LIMIT = 30;
 const STALL_SHOWCASE_IMAGE_REPEAT_BUFFER = 2;
+const DISCOVER_AREA_RADIUS_METERS = 3000;
 const STALL_SHOWCASE_FALLBACK_IMAGES = [
   POPULAR_LAKSA_GRAPHIC,
   POPULAR_CHICKEN_RICE_GRAPHIC,
@@ -130,10 +142,10 @@ function buildStallShowcaseCardsFromVenues(
     ];
 
     return heroCandidates.map((heroDish, heroIndex) => {
-      const products = [
-        heroDish,
-        ...venueDishes.filter((dish) => dish.id !== heroDish.id),
-      ].slice(0, 4);
+      const products = [heroDish, ...venueDishes.filter((dish) => dish.id !== heroDish.id)].slice(
+        0,
+        4,
+      );
 
       return {
         id: `${venue.id}-${heroDish.id}-${heroIndex}`,
@@ -166,9 +178,9 @@ function extendStallShowcaseCards(
 function getStallShowcaseImageSources(card: DiscoverStallShowcaseCard) {
   const sources = [
     card.imageSource,
-    ...card.products.map((product) => product.imageUrl).filter((imageUrl): imageUrl is string =>
-      Boolean(imageUrl),
-    ),
+    ...card.products
+      .map((product) => product.imageUrl)
+      .filter((imageUrl): imageUrl is string => Boolean(imageUrl)),
   ];
   const uniqueSources = new Map<string, string | number>();
 
@@ -222,8 +234,47 @@ const POPULAR_FOOD_STYLES: readonly PopularFoodStyle[] = [
   },
 ] as const;
 const SEARCH_PLACEHOLDER_DEFAULT = "Dishes, stalls, or hawker centres…";
-const TASTE_DIMENSIONS = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"] as const;
-const TASTE_INTEREST_THRESHOLD = 6.8;
+const DISCOVER_SEARCH_PLACEHOLDER_PHRASES = [
+  SEARCH_PLACEHOLDER_DEFAULT,
+  "Try laksa nearby",
+  "Search for mee pok",
+  "What's near you?",
+] as const;
+
+function DiscoverSearchPlaceholder() {
+  const { palette, typography } = useHungryTheme();
+  const movingSearchPlaceholder = useMovingSearchPlaceholder({
+    phrases: DISCOVER_SEARCH_PLACEHOLDER_PHRASES,
+    tickMs: 55,
+    revealStepMs: 55,
+    deleteStepMs: 55,
+    pauseMs: 950,
+    totalCycleMs: 6200,
+  });
+
+  return (
+    <TextInput
+      editable={false}
+      value=""
+      placeholder={movingSearchPlaceholder}
+      placeholderTextColor={palette.textSecondary}
+      pointerEvents="none"
+      style={{
+        color: palette.text,
+        flex: 1,
+        height: 48,
+        padding: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
+        includeFontPadding: false,
+        ...typography.body,
+        textAlignVertical: "center",
+      }}
+    />
+  );
+}
+
+const POPULAR_FOOD_FILTER_SKELETON_MIN_MS = 1200;
 type RootNavigation = CompositeNavigationProp<
   MaterialTopTabNavigationProp<MainTabParamList, "Discover">,
   NativeStackNavigationProp<RootStackParamList>
@@ -291,17 +342,20 @@ function FoodStyleButton({
           },
         ]}
       >
-        <Image
+        <AccessibleImage
           source={typeof imageSource === "string" ? { uri: imageSource } : imageSource}
           style={{ width: "100%", height: "100%", borderRadius: radii.pill }}
           contentFit="cover"
           cachePolicy="memory-disk"
           transition={120}
+          decorative
         />
       </View>
       <AppText
         variant="bodySmallBold"
         numberOfLines={2}
+        adjustsFontSizeToFit
+        minimumFontScale={0.84}
         style={{
           color: palette.text,
           lineHeight: labelLineHeight,
@@ -386,6 +440,89 @@ function PopularFoodStyleSkeleton() {
             <Skeleton width={70} height={14} borderRadius={radii.sm} />
             <Skeleton width={54} height={14} borderRadius={radii.sm} />
           </View>
+        </View>
+      ))}
+    </>
+  );
+}
+
+function DiscoverFoodRailLoadingSkeleton({
+  cardWidth,
+  imageHeight,
+}: {
+  cardWidth: number;
+  imageHeight: number;
+}) {
+  const { colorScheme, componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
+  const isDark = colorScheme === "dark";
+
+  return (
+    <>
+      {[0, 1, 2].map((slot) => (
+        <View
+          key={`discover-food-rail-loading-${slot}`}
+          style={[
+            shadows.card,
+            {
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+              borderRadius: componentRadii.card,
+              borderWidth: isDark ? 0 : 1,
+              overflow: "hidden",
+              width: cardWidth,
+            },
+          ]}
+        >
+          <Skeleton width="100%" height={imageHeight} borderRadius={0} />
+          <View style={{ gap: spacing[1.5], padding: spacing[3] }}>
+            <Skeleton width="82%" height={16} borderRadius={radii.sm} />
+            <Skeleton width="58%" height={12} borderRadius={radii.sm} />
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginTop: spacing[1],
+              }}
+            >
+              <Skeleton width={54} height={16} borderRadius={radii.sm} />
+              <Skeleton width={44} height={14} borderRadius={radii.sm} />
+            </View>
+          </View>
+        </View>
+      ))}
+    </>
+  );
+}
+
+function DiscoverStallListLoadingSkeleton({ rowCount = 3 }: { rowCount?: number }) {
+  const { colorScheme, componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
+  const isDark = colorScheme === "dark";
+
+  return (
+    <>
+      {Array.from({ length: rowCount }, (_, slot) => (
+        <View
+          key={`discover-stall-list-loading-${slot}`}
+          style={[
+            shadows.card,
+            {
+              alignItems: "center",
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+              borderRadius: componentRadii.card,
+              borderWidth: isDark ? 0 : 1,
+              flexDirection: "row",
+              gap: spacing[3],
+              padding: spacing[3],
+            },
+          ]}
+        >
+          <Skeleton width={56} height={56} borderRadius={radii.pill} />
+          <View style={{ flex: 1, gap: spacing[1.5] }}>
+            <Skeleton width="72%" height={16} borderRadius={radii.sm} />
+            <Skeleton width="48%" height={12} borderRadius={radii.sm} />
+          </View>
+          <Skeleton width={20} height={20} borderRadius={radii.pill} />
         </View>
       ))}
     </>
@@ -490,13 +627,14 @@ function VerticalStallShowcaseSection({
   const { componentRadii, palette, radii, spacing, shadows, typography } = useHungryTheme();
   const visibleCards = useMemo(() => cards.slice(0, STALL_SHOWCASE_CARD_LIMIT), [cards]);
   const columnGap = spacing[2];
-  const rowGap = spacing[2];
+  const rowGap = spacing[1.5];
   const columnCardWidth = (cardWidth - columnGap) / 2;
-  const headingReserveHeight = typography.h2.lineHeight + spacing[2];
+  const headingReserveHeight = typography.h2.lineHeight + spacing[3];
   const showcaseViewportHeight = Math.max(0, pageHeight - headingReserveHeight);
   const availableRowHeight = (showcaseViewportHeight - rowGap * 2) / 3;
-  const maxTallCardHeight = columnCardWidth * 1.36;
+  const maxTallCardHeight = columnCardWidth * 1.1;
   const tallCardHeight = Math.max(0, Math.floor(Math.min(availableRowHeight, maxTallCardHeight)));
+  const compactCardDetailsHeight = typography.bodySmall.lineHeight * 2 + spacing[0.5] + spacing[1];
   const rowSnapInterval = tallCardHeight + rowGap;
   const showcaseRows = useMemo(() => {
     const rows: DiscoverStallShowcaseCard[][] = [];
@@ -505,7 +643,7 @@ function VerticalStallShowcaseSection({
     }
     return rows;
   }, [visibleCards]);
-  const cardImageHeight = Math.floor(tallCardHeight * 0.6);
+  const cardImageHeight = Math.max(0, Math.floor(tallCardHeight - compactCardDetailsHeight));
   const contentTravel = columnCardWidth;
   const showcaseKey = useMemo(
     () => visibleCards.map((card, index) => `${card.id}-${index}`).join("|"),
@@ -650,8 +788,7 @@ function VerticalStallShowcaseSection({
                 const direction = columnIndex === 0 ? -1 : 1;
                 const imageTranslateX = scrollY.interpolate({
                   inputRange: [imageInputStart, imageInputEnd],
-                  outputRange:
-                    columnIndex === 0 ? [0, -imageTravel] : [-imageTravel, 0],
+                  outputRange: columnIndex === 0 ? [0, -imageTravel] : [-imageTravel, 0],
                   extrapolate: "clamp",
                 });
                 const translateX = scrollY.interpolate({
@@ -710,7 +847,7 @@ function VerticalStallShowcaseSection({
                           }}
                         >
                           {imageRailSources.map((imageSource, imageIndex) => (
-                            <Image
+                            <AccessibleImage
                               key={`${card.id}-image-${imageIndex}`}
                               source={
                                 typeof imageSource === "string" ? { uri: imageSource } : imageSource
@@ -719,6 +856,7 @@ function VerticalStallShowcaseSection({
                               contentFit="cover"
                               cachePolicy="memory-disk"
                               transition={120}
+                              decorative
                             />
                           ))}
                         </Animated.View>
@@ -739,7 +877,9 @@ function VerticalStallShowcaseSection({
                             variant="micro"
                             style={{ color: palette.textOnDark, fontWeight: "900" }}
                           >
-                            {card.venue.isOpen ? "OPEN" : "CLOSED"}
+                            {isVenueOpenFromHours(card.venue.operatingHours, card.venue.isOpen)
+                              ? "OPEN"
+                              : "CLOSED"}
                           </AppText>
                         </View>
                         <View
@@ -767,7 +907,15 @@ function VerticalStallShowcaseSection({
                           </AppText>
                         </View>
                       </View>
-                      <View style={{ flex: 1, gap: spacing[1.5], padding: spacing[2] }}>
+                      <View
+                        style={{
+                          flex: 1,
+                          gap: spacing[0.5],
+                          justifyContent: "center",
+                          paddingHorizontal: spacing[2],
+                          paddingVertical: spacing[0.5],
+                        }}
+                      >
                         <View
                           style={{
                             alignItems: "center",
@@ -775,50 +923,57 @@ function VerticalStallShowcaseSection({
                             gap: spacing[1],
                           }}
                         >
-                          <View style={{ flex: 1, gap: spacing[0.5] }}>
+                          <View
+                            style={{
+                              alignItems: "center",
+                              flex: 1,
+                              flexDirection: "row",
+                              gap: spacing[1],
+                            }}
+                          >
                             <AppText
                               variant="bodySmall"
                               numberOfLines={1}
-                              style={{ color: palette.text, fontWeight: "900" }}
+                              style={{ color: palette.text, flex: 1, fontWeight: "900" }}
                             >
                               {card.venue.name}
                             </AppText>
                             <AppText
                               variant="micro"
                               numberOfLines={1}
-                              style={{ color: palette.textSecondary }}
+                              style={{ color: palette.textSecondary, flexShrink: 0 }}
                             >
                               {card.venue.unitNumber}
                             </AppText>
                           </View>
                           <ChevronRight color={palette.textMuted} size={16} />
                         </View>
-                        <View style={{ gap: spacing[0.5] }}>
-                          <View
+                        <View
+                          style={{
+                            alignItems: "center",
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <AppText
+                            variant="bodySmall"
+                            numberOfLines={1}
+                            style={{ color: palette.text, flex: 1, fontWeight: "800" }}
+                          >
+                            {card.heroDish.name}
+                          </AppText>
+                          <AppText
+                            variant="price"
                             style={{
-                              alignItems: "center",
-                              flexDirection: "row",
-                              justifyContent: "space-between",
+                              color: palette.orange,
+                              fontSize: typography.bodySmallBold.fontSize,
+                              fontWeight: "800",
+                              lineHeight: typography.bodySmallBold.lineHeight,
+                              marginLeft: spacing[1],
                             }}
                           >
-                            <AppText
-                              variant="bodySmall"
-                              numberOfLines={1}
-                              style={{ color: palette.text, flex: 1, fontWeight: "800" }}
-                            >
-                              {card.heroDish.name}
-                            </AppText>
-                            <AppText
-                              variant="price"
-                              style={{
-                                color: palette.orange,
-                                fontWeight: "800",
-                                marginLeft: spacing[1],
-                              }}
-                            >
-                              S${card.heroDish.price.toFixed(2)}
-                            </AppText>
-                          </View>
+                            S${card.heroDish.price.toFixed(2)}
+                          </AppText>
                         </View>
                       </View>
                     </Animated.View>
@@ -851,7 +1006,11 @@ function HalalLogoIcon({ color }: { color: string }) {
 export function DiscoverHomeScreen() {
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute();
+  const isTabSwipeLockedRef = useRef(false);
+  const popularFoodFilterSkeletonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const repository = getDataRepository();
+  const isSupabaseDataSource = getServiceProvider().mode === "supabase";
+  const [supabaseDiscoverAreaCount, setSupabaseDiscoverAreaCount] = useState<number | null>(null);
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   const {
     componentSizes,
@@ -866,7 +1025,7 @@ export function DiscoverHomeScreen() {
     typography,
   } = useHungryTheme();
   const insets = useSafeAreaInsets();
-  const [discoverViewportHeight, setDiscoverViewportHeight] = useState(screenHeight);
+  const [discoverViewportHeight, setDiscoverViewportHeight] = useState(0);
   const discoverSectionGap = spacing[4];
   const discoverContentGap = spacing[2];
   const decisionCardGap = discoverContentGap;
@@ -892,19 +1051,41 @@ export function DiscoverHomeScreen() {
     typography.micro.lineHeight +
     typography.price.lineHeight;
   const bottomTabVisibleHeight = componentSizes.bottomTabBar + Math.max(insets.bottom, spacing[2]);
+  const fallbackDiscoverViewportHeight = Math.max(0, screenHeight - insets.top);
+  const effectiveDiscoverViewportHeight = discoverViewportHeight || fallbackDiscoverViewportHeight;
   const stallShowcasePageHeight =
-    Math.max(0, (discoverViewportHeight || screenHeight) - bottomTabVisibleHeight) ||
-    discoverViewportHeight ||
-    screenHeight;
+    Math.max(0, effectiveDiscoverViewportHeight - bottomTabVisibleHeight) ||
+    effectiveDiscoverViewportHeight ||
+    fallbackDiscoverViewportHeight;
   const stallShowcaseCardWidth = screenWidth - semanticSpacing.screenEdge * 2;
   const edgeToEdgeHorizontalScrollStyle = {
     width: screenWidth,
   };
+  const setTabSwipeLocked = useCallback(
+    (isLocked: boolean) => {
+      if (isTabSwipeLockedRef.current === isLocked) {
+        return;
+      }
+
+      isTabSwipeLockedRef.current = isLocked;
+      navigation.setOptions({ swipeEnabled: !isLocked });
+    },
+    [navigation],
+  );
+  const clearPopularFoodFilterSkeletonTimer = useCallback(() => {
+    if (!popularFoodFilterSkeletonTimerRef.current) {
+      return;
+    }
+
+    clearTimeout(popularFoodFilterSkeletonTimerRef.current);
+    popularFoodFilterSkeletonTimerRef.current = null;
+  }, []);
   const profile = useProfileStore((state) => state.profile);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const locationPermission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
+  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const grantLocation = useLocationStore((state) => state.grantLocation);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore((state) => state.account !== null);
@@ -915,6 +1096,16 @@ export function DiscoverHomeScreen() {
       void grantLocation();
     }
   }, [locationPermission, manualLocation, grantLocation]);
+
+  useEffect(
+    () => () => {
+      clearPopularFoodFilterSkeletonTimer();
+      if (isTabSwipeLockedRef.current) {
+        navigation.setOptions({ swipeEnabled: true });
+      }
+    },
+    [clearPopularFoodFilterSkeletonTimer, navigation],
+  );
 
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const refreshPopularNearby = useDiscoveryStore((state) => state.refreshPopularNearby);
@@ -931,86 +1122,28 @@ export function DiscoverHomeScreen() {
   }, [refreshPopularNearby]);
   const updateSearchQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
-  const recentSearches = useSearchStore((state) => state.recentSearches);
-  const safeRecentSearches = useMemo(
-    () =>
-      Array.isArray(recentSearches)
-        ? recentSearches
-            .map((search) =>
-              typeof search === "string" ? search.trim() : String(search ?? "").trim(),
-            )
-            .filter(Boolean)
-        : [],
-    [recentSearches],
-  );
-  const tasteVector = profile?.tasteVector ?? NEUTRAL_TASTE_VECTOR;
   const searchBarWidth = useMemo(
     () => Math.max(screenWidth - spacing[4] * 2, 240),
     [screenWidth, spacing],
   );
-  const discoverSearchPhrases = useMemo(() => {
-    const placeholders = [SEARCH_PLACEHOLDER_DEFAULT];
-    const seen = new Set([SEARCH_PLACEHOLDER_DEFAULT.toLowerCase()]);
-    const addUniquePhrase = (value: string) => {
-      const phrase = value.trim();
-      if (!phrase) {
-        return;
-      }
-      const key = phrase.toLowerCase();
-      if (!seen.has(key)) {
-        seen.add(key);
-        placeholders.push(phrase);
-      }
-    };
-
-    safeRecentSearches.slice(0, 3).forEach((search) => {
-      addUniquePhrase(`Try ${search.trim()} near you`);
-    });
-
-    const interestPhrases = TASTE_DIMENSIONS.map((dimension) => ({
-      dimension,
-      score: tasteVector[dimension],
-      label: TASTE_LABELS[dimension],
-    }))
-      .filter((entry) => entry.score >= TASTE_INTEREST_THRESHOLD)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 3)
-      .map((entry) => `${entry.label} bites nearby`);
-
-    interestPhrases.forEach(addUniquePhrase);
-
-    if (placeholders.length < 2) {
-      ["Try laksa", "Search for mee pok", "What’s near you?"].forEach((fallback) =>
-        addUniquePhrase(fallback),
-      );
-    }
-
-    return placeholders;
-  }, [tasteVector, safeRecentSearches]);
-
   const searchIconSize = 52;
-  const movingSearchPlaceholder = useMovingSearchPlaceholder({
-    phrases: discoverSearchPhrases,
-    totalCycleMs: 2400,
-    tickMs: 2,
-    revealStepMs: 2,
-    deleteStepMs: 2,
-    pauseMs: 300,
-  });
   const openSearchHome = useCallback(() => {
     navigation.navigate("SearchHome");
   }, [navigation]);
 
   const [activeDiscoverChipIds, setActiveDiscoverChipIds] = useState<DiscoverChipId[]>([]);
+  const [isPopularFoodFilterSkeletonPending, setIsPopularFoodFilterSkeletonPending] =
+    useState(false);
   const deferredDiscoverChipIds = useDeferredValue(activeDiscoverChipIds);
-  const activeDiscoverChipSet = useMemo(
-    () => new Set<DiscoverChipId>(activeDiscoverChipIds),
-    [activeDiscoverChipIds],
-  );
   const deferredDiscoverChipSet = useMemo(
     () => new Set<DiscoverChipId>(deferredDiscoverChipIds),
     [deferredDiscoverChipIds],
   );
+  const activeDiscoverChipSignature = activeDiscoverChipIds.join("|");
+  const deferredDiscoverChipSignature = deferredDiscoverChipIds.join("|");
+  const isPopularFoodFilterPending =
+    activeDiscoverChipSignature !== deferredDiscoverChipSignature ||
+    isPopularFoodFilterSkeletonPending;
   const isDiscoverFiltering = deferredDiscoverChipIds.length > 0;
   const handleDiscoverViewportLayout = useCallback((event: LayoutChangeEvent) => {
     const nextHeight = event.nativeEvent.layout.height;
@@ -1023,16 +1156,43 @@ export function DiscoverHomeScreen() {
     );
   }, []);
 
-  useEffect(() => {
-    setDiscoverViewportHeight(screenHeight);
-  }, [screenHeight]);
-
+  const discoverLocationLatitude = manualCoordinate?.latitude ?? currentLocation.latitude;
+  const discoverLocationLongitude = manualCoordinate?.longitude ?? currentLocation.longitude;
   const areaBuildings = useMemo(
-    () => getNearestBuildings(currentLocation.latitude, currentLocation.longitude, 3, 14),
-    [currentLocation.latitude, currentLocation.longitude],
+    () => getNearestBuildings(discoverLocationLatitude, discoverLocationLongitude, 3, 14),
+    [discoverLocationLatitude, discoverLocationLongitude],
   );
   const discoverLocationLabel =
-    manualLocation ?? getNearestSingaporeArea(currentLocation.latitude, currentLocation.longitude);
+    manualLocation ?? getNearestSingaporeArea(discoverLocationLatitude, discoverLocationLongitude);
+
+  useEffect(() => {
+    if (!isSupabaseDataSource) {
+      setSupabaseDiscoverAreaCount(null);
+      return;
+    }
+
+    let isActive = true;
+    setSupabaseDiscoverAreaCount(null);
+    void getHungryService()
+      .discovery.countVenuesInArea(
+        discoverLocationLatitude,
+        discoverLocationLongitude,
+        DISCOVER_AREA_RADIUS_METERS,
+      )
+      .then((venueCount) => {
+        if (!isActive) return;
+        setSupabaseDiscoverAreaCount(typeof venueCount === "number" ? venueCount : null);
+      })
+      .catch(() => {
+        if (isActive) {
+          setSupabaseDiscoverAreaCount(null);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [discoverLocationLatitude, discoverLocationLongitude, isSupabaseDataSource]);
 
   const themeTints = useMemo(() => {
     const isDark = colorScheme === "dark";
@@ -1177,43 +1337,29 @@ export function DiscoverHomeScreen() {
     [resetIdleTimer],
   );
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("tabPress", (event) => {
-      if (event.target !== route.key) {
-        return;
-      }
-      discoverScrollRef.current?.scrollTo({
-        x: 0,
-        y: 0,
-        animated: true,
-      });
-      discoverScrollOffsetYRef.current = 0;
-    });
+  // Tab press-to-top behavior intentionally disabled for bottom navigation.
 
-    return unsubscribe;
-  }, [navigation, route.key]);
-
-  const allDiscoverVenues = useMemo(
-    () =>
-      repository
-        .listBuildings()
-        .flatMap((building) => repository.listVenuesByBuilding(building.id)),
-    [repository],
-  );
   const areaVenues = useMemo(() => {
     const scopedVenues = areaBuildings.flatMap((building) =>
       repository.listVenuesByBuilding(building.id),
     );
     const uniqueVenues = new Map(scopedVenues.map((venue) => [venue.id, venue]));
-    return uniqueVenues.size ? Array.from(uniqueVenues.values()) : allDiscoverVenues;
-  }, [allDiscoverVenues, areaBuildings, repository]);
-  const allDiscoverDishes = useMemo(
-    () => allDiscoverVenues.flatMap((venue) => repository.listDishesByVenue(venue.id)),
-    [allDiscoverVenues, repository],
-  );
+    return Array.from(uniqueVenues.values());
+  }, [areaBuildings, repository]);
   const areaDishes = useMemo(
     () => areaVenues.flatMap((venue) => repository.listDishesByVenue(venue.id)),
     [areaVenues, repository],
+  );
+  const allDiscoverVenues = useMemo(() => {
+    const discoveredVenues = repository
+      .listBuildings()
+      .flatMap((building) => repository.listVenuesByBuilding(building.id));
+    const uniqueVenues = new Map(discoveredVenues.map((venue) => [venue.id, venue]));
+    return Array.from(uniqueVenues.values());
+  }, [repository]);
+  const allDiscoverDishes = useMemo(
+    () => allDiscoverVenues.flatMap((venue) => repository.listDishesByVenue(venue.id)),
+    [allDiscoverVenues, repository],
   );
   const areaDishPool = areaDishes.length ? areaDishes : allDiscoverDishes;
   const currentHour = new Date().getHours();
@@ -1225,26 +1371,39 @@ export function DiscoverHomeScreen() {
   );
   const toggleDiscoverChip = useCallback(
     (chipId: DiscoverChipId) => {
-      setActiveDiscoverChipIds((current) => {
-        const wasActive = current.includes(chipId);
-        if (!wasActive && chipId !== "dietary") {
-          scheduleIdleWork(
-            () => {
-              recordTasteInteraction({
-                type: "search_query",
-                surface: "discover",
-                query: chipId,
-                chipId,
-              });
-            },
-            { timeout: 500, fallbackDelayMs: 80 },
-          );
-        }
+      const wasActive = activeDiscoverChipIds.includes(chipId);
+      const nextChipIds = wasActive
+        ? activeDiscoverChipIds.filter((value) => value !== chipId)
+        : [...activeDiscoverChipIds, chipId];
 
-        return wasActive ? current.filter((value) => value !== chipId) : [...current, chipId];
-      });
+      clearPopularFoodFilterSkeletonTimer();
+      if (nextChipIds.length > 0) {
+        setIsPopularFoodFilterSkeletonPending(true);
+        popularFoodFilterSkeletonTimerRef.current = setTimeout(() => {
+          popularFoodFilterSkeletonTimerRef.current = null;
+          setIsPopularFoodFilterSkeletonPending(false);
+        }, POPULAR_FOOD_FILTER_SKELETON_MIN_MS);
+      } else {
+        setIsPopularFoodFilterSkeletonPending(false);
+      }
+
+      if (!wasActive && chipId !== "dietary") {
+        scheduleIdleWork(
+          () => {
+            recordTasteInteraction({
+              type: "search_query",
+              surface: "discover",
+              query: chipId,
+              chipId,
+            });
+          },
+          { timeout: 500, fallbackDelayMs: 80 },
+        );
+      }
+
+      setActiveDiscoverChipIds(nextChipIds);
     },
-    [recordTasteInteraction],
+    [activeDiscoverChipIds, clearPopularFoodFilterSkeletonTimer, recordTasteInteraction],
   );
   const matchesDiscoverChipSelection = useCallback(
     (dish?: DishDetail, textParts: string[] = []) => {
@@ -1301,7 +1460,14 @@ export function DiscoverHomeScreen() {
     },
     [deferredDiscoverChipSet, discoverDietaryFlags],
   );
-  const discoverBaseBites = useMemo(() => getDiscoverBites(repository), [repository]);
+  const areaVenueIds = useMemo(() => new Set(areaVenues.map((venue) => venue.id)), [areaVenues]);
+  const discoverBaseBites = useMemo(
+    () =>
+      getDiscoverBites(repository).filter(
+        (bite) => !areaVenueIds.size || areaVenueIds.has(bite.venueId),
+      ),
+    [areaVenueIds, repository],
+  );
   const discoverBiteCollections = useMemo(
     () => getDiscoverBiteCollections(discoverBaseBites, repository),
     [discoverBaseBites, repository],
@@ -1406,9 +1572,12 @@ export function DiscoverHomeScreen() {
   );
   const isWaitingForPopularFoodStyles = !isDiscoverFiltering && popularFoodStyleItems.length === 0;
   const showPopularFoodSkeleton = useDelayedLoadingSkeleton(isWaitingForPopularFoodStyles);
+  const showPopularFoodFilterSkeleton = isPopularFoodFilterPending;
+  const shouldShowPopularFoodSkeleton = showPopularFoodSkeleton || showPopularFoodFilterSkeleton;
+  const showDiscoverFilterRailSkeleton = showPopularFoodFilterSkeleton;
   const unfilteredAreaStallCards = useMemo(
     () =>
-      (areaBuildings.length ? areaBuildings : repository.listBuildings())
+      areaBuildings
         .map((building) => {
           const venues = repository.listVenuesByBuilding(building.id);
           const venue = venues[0];
@@ -1450,8 +1619,7 @@ export function DiscoverHomeScreen() {
 
     return extendStallShowcaseCards(filteredCards);
   }, [isDiscoverFiltering, matchesDiscoverChipSelection, unfilteredStallShowcaseCards]);
-  const discoverAreaCount =
-    areaVenues.length || areaBuildings.length || repository.listBuildings().length;
+  const discoverAreaCount = supabaseDiscoverAreaCount ?? areaVenues.length;
   const handleDecideForMe = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const radiusMeters = 500;
@@ -1762,9 +1930,7 @@ export function DiscoverHomeScreen() {
             }}
           >
             <View style={{ flex: 1 }}>
-              <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
-                {movingSearchPlaceholder}
-              </AppText>
+              <DiscoverSearchPlaceholder />
             </View>
             <View
               style={{
@@ -1780,53 +1946,32 @@ export function DiscoverHomeScreen() {
         </View>
 
         {/* Intent Chips with Icons */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={edgeToEdgeHorizontalScrollStyle}
-          contentContainerStyle={{ gap: spacing[2] }}
-        >
-          {sortedChips.map((chip) => {
-            const isActive = activeDiscoverChipSet.has(chip.id);
-            return (
-              <Chip
-                key={chip.id}
-                label={chip.label}
-                selected={isActive}
-                onPress={() => toggleDiscoverChip(chip.id)}
-                leftIcon={
-                  chip.id === "dietary" ? (
-                    <Utensils
-                      size={14}
-                      color={isActive ? palette.orange : themeTints.secondaryText}
-                    />
-                  ) : chip.id === "spicy" ? (
-                    <Flame size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
-                  ) : chip.id === "halal" ? (
-                    <HalalLogoIcon color={isActive ? palette.orange : themeTints.secondaryText} />
-                  ) : chip.id === "late" ? (
-                    <Compass
-                      size={14}
-                      color={isActive ? palette.orange : themeTints.secondaryText}
-                    />
-                  ) : (
-                    <Utensils
-                      size={14}
-                      color={isActive ? palette.orange : themeTints.secondaryText}
-                    />
-                  )
-                }
-              />
-            );
-          })}
-        </ScrollView>
+        <FilterChipRail
+          options={sortedChips}
+          selectedIds={activeDiscoverChipIds}
+          onSelect={toggleDiscoverChip}
+          onSwipeLockChange={setTabSwipeLocked}
+          renderLeftIcon={(chip, isActive) =>
+            chip.id === "dietary" ? (
+              <Utensils size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+            ) : chip.id === "spicy" ? (
+              <Flame size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+            ) : chip.id === "halal" ? (
+              <HalalLogoIcon color={isActive ? palette.orange : themeTints.secondaryText} />
+            ) : chip.id === "late" ? (
+              <Compass size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+            ) : (
+              <Utensils size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+            )
+          }
+        />
 
         {/* Popular food style buttons */}
         <View style={{ gap: discoverContentGap }}>
           <AppText variant="h2" style={{ color: themeTints.text }}>
             Popular right now
           </AppText>
-          {!popularFoodStyleItems.length && showPopularFoodSkeleton ? (
+          {shouldShowPopularFoodSkeleton ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -2003,11 +2148,12 @@ export function DiscoverHomeScreen() {
               ]}
             >
               <View>
-                <Image
+                <AccessibleImage
                   source={STALLS_CARD_GRAPHIC}
                   style={{ aspectRatio: 1.55, width: "100%" }}
                   contentFit="cover"
                   cachePolicy="memory-disk"
+                  decorative
                 />
                 <LinearGradient
                   colors={[palette.imageOverlayGradientStart, palette.imageOverlayGradientEnd]}
@@ -2059,11 +2205,12 @@ export function DiscoverHomeScreen() {
               ]}
             >
               <View>
-                <Image
+                <AccessibleImage
                   source={DISHES_CARD_GRAPHIC}
                   style={{ aspectRatio: 1.55, width: "100%" }}
                   contentFit="cover"
                   cachePolicy="memory-disk"
+                  decorative
                 />
                 <LinearGradient
                   colors={[palette.imageOverlayGradientStart, palette.imageOverlayGradientEnd]}
@@ -2190,7 +2337,19 @@ export function DiscoverHomeScreen() {
               </AppText>
             </Pressable>
           </View>
-          {quickBiteCards.length ? (
+          {showDiscoverFilterRailSkeleton ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={edgeToEdgeHorizontalScrollStyle}
+              contentContainerStyle={{ gap: spacing[4] }}
+            >
+              <DiscoverFoodRailLoadingSkeleton
+                cardWidth={discoverRailCardWidth}
+                imageHeight={discoverRailImageHeight}
+              />
+            </ScrollView>
+          ) : quickBiteCards.length ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -2216,12 +2375,13 @@ export function DiscoverHomeScreen() {
                     },
                   ]}
                 >
-                  <Image
+                  <AccessibleImage
                     source={{ uri: bite.photoUrl }}
                     style={{ height: discoverRailImageHeight, width: "100%" }}
                     contentFit="cover"
                     cachePolicy="memory-disk"
                     transition={120}
+                    decorative
                   />
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
                     <AppText
@@ -2294,7 +2454,19 @@ export function DiscoverHomeScreen() {
               </AppText>
             </Pressable>
           </View>
-          {trendingCards.length ? (
+          {showDiscoverFilterRailSkeleton ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={edgeToEdgeHorizontalScrollStyle}
+              contentContainerStyle={{ gap: spacing[4] }}
+            >
+              <DiscoverFoodRailLoadingSkeleton
+                cardWidth={discoverRailCardWidth}
+                imageHeight={discoverRailImageHeight}
+              />
+            </ScrollView>
+          ) : trendingCards.length ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -2320,12 +2492,13 @@ export function DiscoverHomeScreen() {
                     },
                   ]}
                 >
-                  <Image
+                  <AccessibleImage
                     source={{ uri: bite.photoUrl }}
                     style={{ height: discoverRailImageHeight, width: "100%" }}
                     contentFit="cover"
                     cachePolicy="memory-disk"
                     transition={120}
+                    decorative
                   />
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
                     <AppText variant="h3" numberOfLines={1} style={{ color: themeTints.text }}>
@@ -2412,7 +2585,19 @@ export function DiscoverHomeScreen() {
               </AppText>
             </Pressable>
           </View>
-          {editorChoiceCards.length ? (
+          {showDiscoverFilterRailSkeleton ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={edgeToEdgeHorizontalScrollStyle}
+              contentContainerStyle={{ gap: spacing[4] }}
+            >
+              <DiscoverFoodRailLoadingSkeleton
+                cardWidth={discoverRailCardWidth}
+                imageHeight={discoverRailImageHeight}
+              />
+            </ScrollView>
+          ) : editorChoiceCards.length ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -2438,12 +2623,13 @@ export function DiscoverHomeScreen() {
                     },
                   ]}
                 >
-                  <Image
+                  <AccessibleImage
                     source={{ uri: bite.photoUrl }}
                     style={{ height: discoverRailImageHeight, width: "100%" }}
                     contentFit="cover"
                     cachePolicy="memory-disk"
                     transition={120}
+                    decorative
                   />
                   {/* Editor badge overlay */}
                   <View
@@ -2540,7 +2726,19 @@ export function DiscoverHomeScreen() {
               </AppText>
             </Pressable>
           </View>
-          {budgetCards.length ? (
+          {showDiscoverFilterRailSkeleton ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={edgeToEdgeHorizontalScrollStyle}
+              contentContainerStyle={{ gap: spacing[4] }}
+            >
+              <DiscoverFoodRailLoadingSkeleton
+                cardWidth={discoverRailCardWidth}
+                imageHeight={discoverRailImageHeight}
+              />
+            </ScrollView>
+          ) : budgetCards.length ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -2566,12 +2764,13 @@ export function DiscoverHomeScreen() {
                     },
                   ]}
                 >
-                  <Image
+                  <AccessibleImage
                     source={{ uri: bite.photoUrl }}
                     style={{ height: discoverRailImageHeight, width: "100%" }}
                     contentFit="cover"
                     cachePolicy="memory-disk"
                     transition={120}
+                    decorative
                   />
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
                     <AppText
@@ -2647,7 +2846,19 @@ export function DiscoverHomeScreen() {
                 </AppText>
               </Pressable>
             </View>
-            {lateNightCards.length ? (
+            {showDiscoverFilterRailSkeleton ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={edgeToEdgeHorizontalScrollStyle}
+                contentContainerStyle={{ gap: spacing[4] }}
+              >
+                <DiscoverFoodRailLoadingSkeleton
+                  cardWidth={discoverRailCardWidth}
+                  imageHeight={discoverRailImageHeight}
+                />
+              </ScrollView>
+            ) : lateNightCards.length ? (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -2673,12 +2884,13 @@ export function DiscoverHomeScreen() {
                       },
                     ]}
                   >
-                    <Image
+                    <AccessibleImage
                       source={{ uri: bite.photoUrl }}
                       style={{ height: discoverRailImageHeight, width: "100%" }}
                       contentFit="cover"
                       cachePolicy="memory-disk"
                       transition={120}
+                      decorative
                     />
                     <View style={{ padding: spacing[3], gap: spacing[1] }}>
                       <AppText variant="h3" numberOfLines={1} style={{ color: themeTints.text }}>
@@ -2736,7 +2948,9 @@ export function DiscoverHomeScreen() {
             )}
           </View>
           <View style={{ gap: discoverContentGap }}>
-            {areaStallCards.length ? (
+            {showDiscoverFilterRailSkeleton ? (
+              <DiscoverStallListLoadingSkeleton />
+            ) : areaStallCards.length ? (
               areaStallCards.map(({ venue, topDish }) => (
                 <Pressable
                   key={venue.id}
@@ -2787,12 +3001,13 @@ export function DiscoverHomeScreen() {
                       borderColor: palette.orange,
                     }}
                   >
-                    <Image
+                    <AccessibleImage
                       source={{ uri: topDish?.imageUrl }}
                       style={{ borderRadius: radii.pill, height: 48, width: 48 }}
                       contentFit="cover"
                       cachePolicy="memory-disk"
                       transition={120}
+                      decorative
                     />
                   </View>
                   <View style={{ flex: 1, gap: 2 }}>

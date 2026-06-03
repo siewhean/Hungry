@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { hungryPersistStorage } from "./persistStorage";
-import { getHungryService } from "@/lib/services/serviceProvider";
+import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { useActivityStore } from "./useActivityStore";
 import { useProfileStore } from "@/store/useProfileStore";
 
@@ -17,6 +17,7 @@ export interface InteractionState {
 
 export interface SocialComment {
   id: string;
+  userId?: string;
   authorName: string;
   authorAvatarUrl?: string;
   text: string;
@@ -51,17 +52,35 @@ function isUuidPostId(postId: string) {
 interface SocialState {
   interactions: Record<string, InteractionState>;
   followedAuthors: Record<string, boolean>;
+  followedUserIds: Record<string, boolean>;
   commentsByPostId: Record<string, SocialComment[]>;
   repliesByCommentId: Record<string, SocialReply[]>;
 
   toggleLike: (postId: string) => void;
   toggleSave: (postId: string) => void;
   toggleAuthorFollow: (authorName: string) => void;
+  toggleFollow: (userId: string) => void;
   incrementShare: (postId: string) => void;
   addComment: (postId: string, comment: SocialComment) => void;
   addReply: (postId: string, reply: SocialReply) => void;
+  loadCommentsForPost: (postId: string) => Promise<void>;
   setInteraction: (postId: string, state: InteractionState) => void;
   initializeInteractions: (items: any[]) => void;
+}
+
+type ServiceComment = Awaited<
+  ReturnType<ReturnType<typeof getHungryService>["social"]["listCommentsForPost"]>
+>[number];
+
+function toSocialComment(row: ServiceComment, fallbackName: string, fallbackAvatarUrl?: string) {
+  return {
+    id: row.id,
+    userId: row.userId,
+    authorName: row.authorName?.trim() || fallbackName,
+    authorAvatarUrl: row.authorAvatarUrl || fallbackAvatarUrl,
+    text: row.body,
+    createdAt: row.createdAt,
+  } satisfies SocialComment;
 }
 
 export const useSocialStore = create<SocialState>()(
@@ -69,6 +88,7 @@ export const useSocialStore = create<SocialState>()(
     (set, get) => ({
       interactions: {},
       followedAuthors: {},
+      followedUserIds: {},
       commentsByPostId: {},
       repliesByCommentId: {},
 
@@ -124,8 +144,6 @@ export const useSocialStore = create<SocialState>()(
       toggleLike: (postId) => {
         void triggerLightImpact();
         const { interactions } = get();
-        const { addActivityUpdate } = useActivityStore.getState();
-        const actorName = useProfileStore.getState().profile.displayName || "You";
         const current = interactions[postId] ?? {
           liked: false,
           saved: false,
@@ -143,13 +161,17 @@ export const useSocialStore = create<SocialState>()(
         };
 
         if (isLiked) {
-          addActivityUpdate({
-            kind: "like",
-            postId,
-            actorName,
-            text: "liked your post",
-            target: postId,
-            time: "now",
+          requestAnimationFrame(() => {
+            const { addActivityUpdate } = useActivityStore.getState();
+            const actorName = useProfileStore.getState().profile.displayName || "You";
+            addActivityUpdate({
+              kind: "like",
+              postId,
+              actorName,
+              text: "liked your post",
+              target: postId,
+              time: "now",
+            });
           });
         }
 
@@ -165,13 +187,10 @@ export const useSocialStore = create<SocialState>()(
             try {
               await getHungryService().social.reactToBite(postId, "craving");
             } catch (e) {
-              set((prev) => ({
-                interactions: {
-                  ...prev.interactions,
-                  [postId]: current,
-                },
-              }));
-              console.warn("Failed to sync liked post reaction; reverting optimistic state.", e);
+              console.warn(
+                "Failed to sync liked post reaction; kept optimistic state and will retry later.",
+                e,
+              );
             }
           })();
         }
@@ -211,13 +230,10 @@ export const useSocialStore = create<SocialState>()(
             try {
               await getHungryService().social.reactToBite(postId, "save");
             } catch (e) {
-              set((prev) => ({
-                interactions: {
-                  ...prev.interactions,
-                  [postId]: current,
-                },
-              }));
-              console.warn("Failed to sync saved post reaction; reverting optimistic state.", e);
+              console.warn(
+                "Failed to sync saved post reaction; kept optimistic state and will retry later.",
+                e,
+              );
             }
           })();
         }
@@ -230,6 +246,85 @@ export const useSocialStore = create<SocialState>()(
             [authorName]: !prev.followedAuthors[authorName],
           },
         }));
+      },
+
+      toggleFollow: (userId: string) => {
+        const isFollowing = get().followedUserIds[userId] ?? false;
+        set((prev) => ({
+          followedUserIds: {
+            ...prev.followedUserIds,
+            [userId]: !isFollowing,
+          },
+        }));
+        if (getServiceProvider().mode !== "mock") {
+          const service = getHungryService();
+          void (
+            isFollowing ? service.social.unfollowUser(userId) : service.social.followUser(userId)
+          ).catch((error) => {
+            console.error("Failed to sync follow state", error);
+            set((prev) => ({
+              followedUserIds: { ...prev.followedUserIds, [userId]: isFollowing },
+            }));
+          });
+        }
+      },
+
+      loadCommentsForPost: async (postId) => {
+        if (getServiceProvider().mode === "mock") return;
+
+        const profile = useProfileStore.getState().profile;
+        const loadedComments = await getHungryService().social.listCommentsForPost(postId);
+        const nextComments: SocialComment[] = [];
+        const nextRepliesByCommentId: Record<string, SocialReply[]> = {};
+
+        loadedComments.forEach((comment) => {
+          const isOwnComment = comment.userId === profile.id;
+          const normalized = toSocialComment(
+            comment,
+            isOwnComment ? profile.displayName : "Hungry User",
+            isOwnComment ? profile.avatarUrl : undefined,
+          );
+          if (comment.parentCommentId) {
+            nextRepliesByCommentId[comment.parentCommentId] = [
+              ...(nextRepliesByCommentId[comment.parentCommentId] ?? []),
+              {
+                ...normalized,
+                parentCommentId: comment.parentCommentId,
+              },
+            ];
+            return;
+          }
+
+          nextComments.push(normalized);
+        });
+
+        set((prev) => {
+          const current = prev.interactions[postId] ?? {
+            liked: false,
+            saved: false,
+            likeCount: 0,
+            saveCount: 0,
+            shareCount: 0,
+            commentCount: 0,
+          };
+          return {
+            commentsByPostId: {
+              ...prev.commentsByPostId,
+              [postId]: nextComments,
+            },
+            repliesByCommentId: {
+              ...prev.repliesByCommentId,
+              ...nextRepliesByCommentId,
+            },
+            interactions: {
+              ...prev.interactions,
+              [postId]: {
+                ...current,
+                commentCount: loadedComments.length,
+              },
+            },
+          };
+        });
       },
 
       incrementShare: (postId) => {
@@ -287,6 +382,35 @@ export const useSocialStore = create<SocialState>()(
           target: postId,
           time: "now",
         });
+        if (getServiceProvider().mode !== "mock") {
+          void getHungryService()
+            .social.createComment(postId, comment.text)
+            .then((syncedComment) => {
+              const profile = useProfileStore.getState().profile;
+              const normalized = toSocialComment(
+                syncedComment,
+                profile.displayName,
+                profile.avatarUrl,
+              );
+              set((prev) => {
+                const existing = prev.commentsByPostId[postId] ?? [];
+                const replaced = existing.some((candidate) => candidate.id === comment.id)
+                  ? existing.map((candidate) =>
+                      candidate.id === comment.id ? { ...normalized } : candidate,
+                    )
+                  : [...existing, normalized];
+                return {
+                  commentsByPostId: {
+                    ...prev.commentsByPostId,
+                    [postId]: replaced,
+                  },
+                };
+              });
+            })
+            .catch((error) => {
+              console.error("Failed to sync comment to backend", error);
+            });
+        }
       },
 
       addReply: (postId, reply) => {
@@ -325,6 +449,37 @@ export const useSocialStore = create<SocialState>()(
           target: postId,
           time: "now",
         });
+        if (getServiceProvider().mode !== "mock") {
+          void getHungryService()
+            .social.createComment(postId, reply.text, reply.parentCommentId)
+            .then((syncedReply) => {
+              const profile = useProfileStore.getState().profile;
+              const normalized = toSocialComment(
+                syncedReply,
+                profile.displayName,
+                profile.avatarUrl,
+              );
+              const parentCommentId = syncedReply.parentCommentId ?? reply.parentCommentId;
+              set((prev) => {
+                const existing = prev.repliesByCommentId[parentCommentId] ?? [];
+                const replacement = { ...normalized, parentCommentId } satisfies SocialReply;
+                const replaced = existing.some((candidate) => candidate.id === reply.id)
+                  ? existing.map((candidate) =>
+                      candidate.id === reply.id ? replacement : candidate,
+                    )
+                  : [...existing, replacement];
+                return {
+                  repliesByCommentId: {
+                    ...prev.repliesByCommentId,
+                    [parentCommentId]: replaced,
+                  },
+                };
+              });
+            })
+            .catch((error) => {
+              console.error("Failed to sync reply to backend", error);
+            });
+        }
       },
     }),
     {

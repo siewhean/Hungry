@@ -14,7 +14,19 @@ export function createRootLinking(prefix: string) {
         },
         DishDetail: "dish/:id",
         StallDetail: "venue/:id",
+        PortfolioPublicView: "portfolio/:portfolioId",
         Post: "order",
+        MerchantTabs: {
+          path: "merchant",
+          screens: {
+            Dashboard: "",
+            Menu: "menu",
+            Analytics: "analytics",
+            Profile: "profile",
+            VerificationCentre: "verification",
+            MerchantSettings: "settings",
+          },
+        },
         WheelStack: {
           path: "join/:code",
           screens: {

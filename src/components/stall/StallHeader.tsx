@@ -4,6 +4,7 @@ import { AppText, Badge } from "../ui";
 import { useHungryTheme } from "@/theme";
 import { OperatingHours } from "./OperatingHours";
 import type { VenueSummary } from "@/types/domain";
+import { isVenueOpenFromHours } from "@/utils/stallStatus";
 
 interface StallHeaderProps {
   venue: VenueSummary;
@@ -11,6 +12,7 @@ interface StallHeaderProps {
 
 export function StallHeader({ venue }: StallHeaderProps) {
   const { spacing } = useHungryTheme();
+  const isOpenNow = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
 
   return (
     <View style={{ gap: spacing[3] }}>
@@ -21,14 +23,11 @@ export function StallHeader({ venue }: StallHeaderProps) {
         </AppText>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-        <Badge
-          label={venue.isOpen ? "Open" : "Closed"}
-          tone={venue.isOpen ? "success" : "warning"}
-        />
+        <Badge label={isOpenNow ? "Open" : "Closed"} tone={isOpenNow ? "success" : "warning"} />
       </View>
       <OperatingHours
         hours={venue.operatingHours}
-        isOpen={venue.isOpen}
+        isOpen={isOpenNow}
         closureNotice={venue.closureNotice}
       />
     </View>

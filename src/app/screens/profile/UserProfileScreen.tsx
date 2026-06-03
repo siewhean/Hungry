@@ -12,6 +12,7 @@ export function UserProfileScreen({ navigation, route }: UserProfileScreenRouteP
       mode="other"
       authorName={route.params.authorName}
       authorAvatarUrl={route.params.authorAvatarUrl}
+      authorId={route.params.authorId}
       reviewSignalLabel={route.params.reviewSignalLabel}
     />
   );

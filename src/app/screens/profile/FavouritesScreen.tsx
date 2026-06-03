@@ -1,9 +1,8 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Pressable, ScrollView, View } from "react-native";
-import { Image } from "expo-image";
 import { Heart, Star } from "lucide-react-native";
 
-import { AppText, Button, Card, EmptyState } from "@/components/ui";
+import { AccessibleImage, AppText, Button, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
 import { getDataRepository } from "@/lib/services/serviceProvider";
@@ -41,6 +40,8 @@ export function FavouritesScreen({ navigation }: Props) {
             return (
               <Pressable
                 key={dish.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${dish.name}${venue?.name ? ` at ${venue.name}` : ""}`}
                 onPressIn={() => {
                   prefetchDishDetail(dish.id, repository);
                   preloadRoute(rootNavigation, "DishDetail", { dishId: dish.id });
@@ -59,12 +60,15 @@ export function FavouritesScreen({ navigation }: Props) {
                 ]}
               >
                 <View style={{ height: 120, width: "100%", position: "relative" }}>
-                  <Image
+                  <AccessibleImage
                     source={{ uri: dish.imageUrl }}
                     style={{ width: "100%", height: "100%" }}
                     contentFit="cover"
+                    decorative
                   />
                   <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${dish.name} from favourites`}
                     onPress={() => toggleFavourite(dish)}
                     style={{
                       position: "absolute",

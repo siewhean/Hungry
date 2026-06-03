@@ -3,11 +3,18 @@ import { Pressable, ScrollView, View } from "react-native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { CompositeScreenProps } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Image } from "expo-image";
 
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { getReadsFeed } from "@/features/reads/feed";
-import { AppText, Badge, Card, FeedErrorBoundary, FeedStateView, Screen } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  Badge,
+  Card,
+  FeedErrorBoundary,
+  FeedStateView,
+  Screen,
+} from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { BlogPost } from "@/types/domain";
 
@@ -110,11 +117,13 @@ export function ReadsFeedScreen({ navigation }: Props) {
             {posts.map((post) => (
               <Pressable
                 key={post.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Open story ${post.title}`}
                 onPress={() => navigation.navigate("BlogPost", { postId: post.id })}
               >
                 <Card>
                   <View style={{ flexDirection: "row", gap: spacing[3] }}>
-                    <Image
+                    <AccessibleImage
                       source={{ uri: post.imageUrl }}
                       style={{
                         width: 80,
@@ -122,6 +131,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
                         borderRadius: radii.sm,
                       }}
                       contentFit="cover"
+                      decorative
                     />
                     <View style={{ flex: 1, gap: spacing[1] }}>
                       <AppText variant="micro" tone="accent" style={{ textTransform: "uppercase" }}>
@@ -183,6 +193,8 @@ export function ReadsFeedScreen({ navigation }: Props) {
               {posts.map((post) => (
                 <Pressable
                   key={`focus-${post.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open story ${post.title}`}
                   onPress={() => navigation.navigate("BlogPost", { postId: post.id })}
                   style={{
                     width: 260,
@@ -192,7 +204,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
                     backgroundColor: palette.navy,
                   }}
                 >
-                  <Image
+                  <AccessibleImage
                     source={{ uri: post.imageUrl }}
                     style={{
                       width: "100%",
@@ -200,6 +212,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
                       position: "absolute",
                       opacity: 0.4,
                     }}
+                    decorative
                     contentFit="cover"
                   />
                   <View
@@ -277,10 +290,12 @@ export function ReadsFeedScreen({ navigation }: Props) {
             {posts.slice(0, 1).map((post) => (
               <Pressable
                 key={`latest-${post.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Open story ${post.title}`}
                 onPress={() => navigation.navigate("BlogPost", { postId: post.id })}
               >
                 <Card>
-                  <Image
+                  <AccessibleImage
                     source={{ uri: post.imageUrl }}
                     style={{
                       width: "100%",
@@ -288,6 +303,7 @@ export function ReadsFeedScreen({ navigation }: Props) {
                       borderRadius: radii.sm,
                     }}
                     contentFit="cover"
+                    decorative
                   />
                   <View style={{ gap: spacing[1] }}>
                     <AppText variant="h3">{post.title}</AppText>

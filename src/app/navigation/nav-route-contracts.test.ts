@@ -59,7 +59,7 @@ test("synthetic create tab targets root routes without registering a fake tab ro
   const types = read("src/app/navigation/navigationTypes.ts");
 
   assert.doesNotMatch(tabs, /<Tab\.Screen name="Create"/);
-  assert.doesNotMatch(types, /Create: undefined/);
+  assert.doesNotMatch(types, /^\s+Create: undefined;/m);
   assert.match(tabs, /navigation\.getParent<NavigationProp<RootStackParamList>>\(\)/);
   assert.match(
     tabs,

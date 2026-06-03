@@ -12,6 +12,17 @@ test("root linking config exposes dish, venue, and order entry points", () => {
   assert.equal(screens.DishDetail, "dish/:id");
   assert.equal(screens.StallDetail, "venue/:id");
   assert.equal(screens.Post, "order");
+  assert.deepEqual(screens.MerchantTabs, {
+    path: "merchant",
+    screens: {
+      Analytics: "analytics",
+      Dashboard: "",
+      Menu: "menu",
+      MerchantSettings: "settings",
+      Profile: "profile",
+      VerificationCentre: "verification",
+    },
+  });
 });
 
 test("order deep link parses venueId query parameter", () => {

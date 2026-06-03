@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import * as WebBrowser from "expo-web-browser";
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
@@ -12,6 +12,7 @@ import {
 } from "@/lib/ai/tasteEngine";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import {
+  countVenuesInAreaViaRpc,
   getDishByIdViaRpc,
   getBuildingDetailViaRpc,
   getVenueByIdViaRpc,
@@ -30,6 +31,7 @@ import {
   uploadPostMediaFromUri,
 } from "@/lib/services/supabase/mediaUpload";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
+import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import type {
   Bite,
   BiteDraft,
@@ -43,6 +45,7 @@ import type {
   ExplicitFeedbackInput,
   HungryService,
   ImplicitSignalInput,
+  PortfolioMutationOptions,
   QuizAnswer,
   RankedRecommendation,
   RecommendationSlateRequest,
@@ -52,6 +55,8 @@ import type {
 } from "@/lib/services/types";
 import type {
   AIBusinessInsight,
+  Checklist,
+  ChecklistItem,
   CustomerInteraction,
   DietaryFlag,
   DishDetail,
@@ -67,8 +72,17 @@ import type {
   MerchantTeamMember,
   MerchantWeeklySummary,
   OCRDishDraft,
+  PassportEventType,
+  PassportProgressEvent,
+  PassportStamp,
   PopularVisitorCandidate,
   PopularVisitorPin,
+  Portfolio,
+  PortfolioCollaborator,
+  PortfolioFlag,
+  PortfolioFollow,
+  PortfolioItem,
+  ProfileVisibility,
   PromotionStatus,
   SearchFilters,
   TasteProfile,
@@ -77,6 +91,9 @@ import type {
   TasteVector,
   Story,
   StoryContent,
+  UserStallSubmission,
+  UserStallSubmissionDeliveryLink,
+  UserStallSubmissionMenuItem,
   UserProfile,
   VerificationEvidence,
 } from "@/types/domain";
@@ -87,7 +104,13 @@ type DishPresentation = {
   dietaryFlags: DietaryFlag[];
   tasteVector?: TasteVector;
 };
+type MerchantActionEventInput = Parameters<
+  HungryService["discovery"]["recordMerchantActionEvent"]
+>[0];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const merchantAnonymousSessionId = `anon:${Date.now().toString(36)}:${Math.random()
+  .toString(36)
+  .slice(2, 12)}`;
 
 const DEFAULT_AUTH_PROFILE_BASE: Omit<UserProfile, "id"> = {
   displayName: "Hungry User",
@@ -159,6 +182,239 @@ function asRecord(value: unknown): Row {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Row) : {};
 }
 
+function mapChecklist(row: Row): Checklist {
+  return {
+    id: String(row.id ?? ""),
+    userId: String(row.user_id ?? row.userId ?? ""),
+    name: String(row.name ?? "Untitled checklist"),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+    updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
+  };
+}
+
+function mapChecklistItem(row: Row): ChecklistItem {
+  return {
+    id: String(row.id ?? ""),
+    checklistId: String(row.checklist_id ?? row.checklistId ?? ""),
+    itemType: String(row.item_type ?? row.itemType ?? "custom") as ChecklistItem["itemType"],
+    dishId: asString(row.dish_id ?? row.dishId),
+    stallId: asString(row.stall_id ?? row.stallId),
+    customText: asString(row.custom_text ?? row.customText),
+    reminderAt: asString(row.reminder_at ?? row.reminderAt),
+    plannedVisitDate: asString(row.planned_visit_date ?? row.plannedVisitDate),
+    triedAt: asString(row.tried_at ?? row.triedAt),
+    position: Number(row.position ?? 0),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+    updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
+  };
+}
+
+function mapPortfolio(row: Row): Portfolio {
+  return {
+    id: String(row.id ?? ""),
+    ownerId: String(row.owner_id ?? row.ownerId ?? ""),
+    name: String(row.name ?? "Untitled portfolio"),
+    description: asString(row.description),
+    type: String(row.type ?? "recommendation") as Portfolio["type"],
+    visibility: String(row.visibility ?? "private") as Portfolio["visibility"],
+    publishedAt: asString(row.published_at ?? row.publishedAt),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+    updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
+  };
+}
+
+function mapPortfolioItem(row: Row): PortfolioItem {
+  return {
+    id: String(row.id ?? ""),
+    portfolioId: String(row.portfolio_id ?? row.portfolioId ?? ""),
+    itemType: String(row.item_type ?? row.itemType ?? "dish") as PortfolioItem["itemType"],
+    dishId: asString(row.dish_id ?? row.dishId),
+    stallId: asString(row.stall_id ?? row.stallId),
+    score: asNumber(row.score),
+    publicNotes: asString(row.public_notes ?? row.publicNotes),
+    privateNotes: asString(row.private_notes ?? row.privateNotes),
+    position: Number(row.position ?? 0),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+    updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
+  };
+}
+
+function mapPortfolioCollaborator(row: Row): PortfolioCollaborator {
+  return {
+    id: String(row.id ?? ""),
+    portfolioId: String(row.portfolio_id ?? row.portfolioId ?? ""),
+    userId: String(row.user_id ?? row.userId ?? ""),
+    role: String(row.role ?? "viewer") as PortfolioCollaborator["role"],
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+  };
+}
+
+function mapPortfolioFollow(row: Row): PortfolioFollow {
+  return {
+    id: String(row.id ?? ""),
+    portfolioId: String(row.portfolio_id ?? row.portfolioId ?? ""),
+    userId: String(row.user_id ?? row.userId ?? ""),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+  };
+}
+
+function mapPortfolioFlag(row: Row): PortfolioFlag {
+  return {
+    id: String(row.id ?? ""),
+    portfolioId: String(row.portfolio_id ?? row.portfolioId ?? ""),
+    reporterId: String(row.reporter_id ?? row.reporterId ?? ""),
+    reason: String(row.reason ?? "other") as PortfolioFlag["reason"],
+    details: asString(row.details),
+    status: String(row.status ?? "pending") as PortfolioFlag["status"],
+    reviewedBy: asString(row.reviewed_by ?? row.reviewedBy),
+    reviewedAt: asString(row.reviewed_at ?? row.reviewedAt),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+  };
+}
+
+function mapPassportStamp(row: Row): PassportStamp {
+  return {
+    id: String(row.id ?? ""),
+    userId: String(row.user_id ?? row.userId ?? ""),
+    categoryId: String(row.category_id ?? row.categoryId ?? ""),
+    level: Number(row.level ?? 0),
+    dishesTriedCount: Number(row.dishes_tried_count ?? row.dishesTriedCount ?? 0),
+    stallsVisitedCount: Number(row.stalls_visited_count ?? row.stallsVisitedCount ?? 0),
+    stallsSubmittedCount: Number(row.stalls_submitted_count ?? row.stallsSubmittedCount ?? 0),
+    reviewsPostedCount: Number(row.reviews_posted_count ?? row.reviewsPostedCount ?? 0),
+    photosPostedCount: Number(row.photos_posted_count ?? row.photosPostedCount ?? 0),
+    portfolioItemsAdded: Number(row.portfolio_items_added ?? row.portfolioItemsAdded ?? 0),
+    publicPortfoliosPublished: Number(
+      row.public_portfolios_published ?? row.publicPortfoliosPublished ?? 0,
+    ),
+    trailsCompleted: Number(row.trails_completed ?? row.trailsCompleted ?? 0),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+    updatedAt: String(row.updated_at ?? row.updatedAt ?? ""),
+  };
+}
+
+function mapPassportProgressEvent(row: Row): PassportProgressEvent {
+  return {
+    id: String(row.id ?? ""),
+    userId: String(row.user_id ?? row.userId ?? ""),
+    categoryId: String(row.category_id ?? row.categoryId ?? ""),
+    eventType: String(
+      row.event_type ?? row.eventType ?? "portfolio_item_added",
+    ) as PassportProgressEvent["eventType"],
+    referenceId:
+      row.reference_id || row.referenceId ? String(row.reference_id ?? row.referenceId) : undefined,
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
+  };
+}
+
+function mapSubmissionMenuItems(value: unknown): UserStallSubmissionMenuItem[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      const row = asRecord(item);
+      const name = asString(row.name)?.trim();
+      if (!name) return null;
+      const menuItem: UserStallSubmissionMenuItem = { name };
+      const priceRange = asString(row.priceRange ?? row.price_range);
+      const notes = asString(row.notes);
+      if (priceRange) menuItem.priceRange = priceRange;
+      if (notes) menuItem.notes = notes;
+      return menuItem;
+    })
+    .filter((item): item is UserStallSubmissionMenuItem => item !== null);
+}
+
+function mapSubmissionDeliveryLinks(value: unknown): UserStallSubmissionDeliveryLink[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      const row = asRecord(item);
+      const label = asString(row.label)?.trim();
+      const url = asString(row.url)?.trim();
+      if (!label || !url) return null;
+      return { label, url };
+    })
+    .filter((item): item is UserStallSubmissionDeliveryLink => item !== null);
+}
+
+async function mapSubmissionGalleryUrls(
+  client: SupabaseClient,
+  value: unknown,
+  fallbackUrl: string,
+): Promise<string[]> {
+  if (!Array.isArray(value)) return fallbackUrl ? [fallbackUrl] : [];
+  const urls = await Promise.all(
+    value.map(async (item) => {
+      if (!item || typeof item !== "object") return undefined;
+      const row = item as Row;
+      const bucket = asString(row.bucket) ?? asString(row.storageBucket);
+      const path = asString(row.path) ?? asString(row.storagePath);
+      if (bucket && path) {
+        return (await createSignedStorageUrl(client, bucket, path)) ?? asString(row.url);
+      }
+      return asString(row.url);
+    }),
+  );
+  const cleaned = urls.filter((url): url is string => Boolean(url));
+  return cleaned.length > 0 ? cleaned : fallbackUrl ? [fallbackUrl] : [];
+}
+
+async function mapUserStallSubmission(
+  client: SupabaseClient,
+  row: Row,
+): Promise<UserStallSubmission> {
+  const bucket = asString(row.image_storage_bucket);
+  const path = asString(row.image_storage_path);
+  const signedUrl = bucket && path ? await createSignedStorageUrl(client, bucket, path) : undefined;
+  const imageUrl = signedUrl ?? asString(row.image_url) ?? "";
+  return {
+    id: String(row.id ?? ""),
+    userId: String(row.user_id ?? ""),
+    stallName: asString(row.stall_name) ?? "",
+    imageUrl,
+    galleryImageUrls: await mapSubmissionGalleryUrls(client, row.gallery_images, imageUrl),
+    imageStorageBucket: bucket,
+    imageStoragePath: path,
+    imageMimeType: asString(row.image_mime_type),
+    sourceUrl: asString(row.source_url),
+    buildingName: asString(row.building_name),
+    area: asString(row.area),
+    address: asString(row.address),
+    postalCode: asString(row.postal_code),
+    unitNumber: asString(row.unit_number),
+    floor: asString(row.floor),
+    operatingHours: asString(row.operating_hours),
+    menuItems: mapSubmissionMenuItems(row.menu_items),
+    deliveryLinks: mapSubmissionDeliveryLinks(row.delivery_links),
+    notes: asString(row.notes),
+    status: String(row.status ?? "pending") as UserStallSubmission["status"],
+    createdAt: String(row.created_at ?? ""),
+    updatedAt: String(row.updated_at ?? ""),
+  };
+}
+
+function getDisplayNameFromUserMetadata(metadata: unknown): string | undefined {
+  const userMetadata = asRecord(metadata);
+  const metadataName =
+    asString(userMetadata.name) ??
+    asString(userMetadata.full_name) ??
+    asString(userMetadata.given_name) ??
+    asString(userMetadata.family_name) ??
+    asString(userMetadata.nickname) ??
+    asString(userMetadata.preferred_username) ??
+    asString(userMetadata.username);
+  if (metadataName) return metadataName;
+
+  const structuredName = asRecord(userMetadata.name);
+  const firstName = asString(structuredName.first_name) ?? asString(structuredName.givenName);
+  const lastName = asString(structuredName.last_name) ?? asString(structuredName.familyName);
+  if (firstName && lastName) return `${firstName} ${lastName}`.trim();
+  if (firstName) return firstName;
+  if (lastName) return lastName;
+
+  return undefined;
+}
+
 function asRowArray(value: unknown): Row[] {
   return Array.isArray(value)
     ? value.map((item) => asRecord(item)).filter((item) => Object.keys(item).length > 0)
@@ -215,6 +471,28 @@ function requireSupabaseClient(): SupabaseClient {
   return client;
 }
 
+function portfolioEditConflictError(): Error {
+  return new Error(
+    "This portfolio changed elsewhere. Review the latest version before saving again.",
+  );
+}
+
+async function assertSupabasePortfolioVersion(
+  client: SupabaseClient,
+  portfolioId: string | undefined,
+  options?: PortfolioMutationOptions,
+): Promise<void> {
+  if (!portfolioId || !options?.expectedUpdatedAt) return;
+  const { data, error } = await client
+    .from("portfolios")
+    .select("id")
+    .eq("id", portfolioId)
+    .eq("updated_at", options.expectedUpdatedAt)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw portfolioEditConflictError();
+}
+
 async function getCurrentSupabaseUserId(): Promise<string | null> {
   const client = getSupabaseClient();
   if (!client) return null;
@@ -236,14 +514,20 @@ async function ensureCurrentUserProfileRow(client: SupabaseClient): Promise<void
   const user = sessionData.session?.user;
   if (!user?.id) return;
 
-  const payload = {
+  const providerDisplayName = getDisplayNameFromUserMetadata(user.user_metadata);
+  const existingProfile = await client
+    .from("user_profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .maybeSingle();
+  const existingDisplayName = asString(asRecord(existingProfile.data).display_name);
+  const payload: Row = {
     id: user.id,
     email: user.email ?? null,
-    display_name:
-      (user.user_metadata?.name as string | undefined) ??
-      (user.user_metadata?.full_name as string | undefined) ??
-      null,
   };
+  if (!existingDisplayName && providerDisplayName) {
+    payload.display_name = providerDisplayName;
+  }
 
   const { error } = await client.from("user_profiles").upsert(payload, { onConflict: "id" });
   if (error) {
@@ -325,13 +609,20 @@ function isFreshStory(story: Story): boolean {
   return Date.now() - createdAt < STORY_TTL_MS;
 }
 
-function buildStorySeed(displayName: string, avatarUrl?: string): Story[] {
+function buildStorySeed(profile: {
+  id: string;
+  displayName: string;
+  avatarUrl?: string;
+  profileVisibility?: ProfileVisibility;
+}): Story[] {
   const now = Date.now();
   return [
     {
       id: `s_${now}`,
-      displayName,
-      avatarUrl: avatarUrl,
+      displayName: profile.displayName,
+      authorId: profile.id,
+      authorProfileVisibility: profile.profileVisibility,
+      avatarUrl: profile.avatarUrl,
       hasUnseen: false,
       isStall: false,
       isOwn: true,
@@ -345,6 +636,8 @@ function buildStorySeed(displayName: string, avatarUrl?: string): Story[] {
     {
       id: `s_${now + 1}`,
       displayName: "Tian Tian",
+      authorId: "story-author-tian-tian",
+      authorProfileVisibility: "public",
       avatarUrl:
         "https://images.unsplash.com/photo-1569058242253-92a9c755a0ec?w=150&h=150&fit=crop",
       hasUnseen: true,
@@ -359,6 +652,8 @@ function buildStorySeed(displayName: string, avatarUrl?: string): Story[] {
     {
       id: `s_${now + 2}`,
       displayName: "Wei Ming",
+      authorId: "story-author-wei-ming",
+      authorProfileVisibility: "public",
       avatarUrl: "https://i.pravatar.cc/150?u=wm",
       hasUnseen: true,
       isStall: false,
@@ -379,7 +674,7 @@ async function getStoryCache(): Promise<Story[]> {
     return cloneStoryList(supabaseStoryCache.map(sanitizeStoryTimestamp).filter(isFreshStory));
   }
   const profile = await getCurrentUserProfileOrGuest();
-  supabaseStoryCache = buildStorySeed(profile.displayName, profile.avatarUrl);
+  supabaseStoryCache = buildStorySeed(profile);
   return cloneStoryList(supabaseStoryCache.map(sanitizeStoryTimestamp).filter(isFreshStory));
 }
 
@@ -706,6 +1001,7 @@ async function fetchPublishedPostBites(client: SupabaseClient, limit = 40): Prom
         photoUrl,
         mediaUrls: mediaUrls.length > 0 ? mediaUrls : photoUrl ? [photoUrl] : [],
         mediaType,
+        showFoodContextOverlay: meta.showFoodContextOverlay !== false,
         caption: asString(row.caption) ?? "",
         tags: asStringArray(meta.tags),
         tasteStamp: tasteStampFromPostMeta(meta),
@@ -784,6 +1080,7 @@ async function fetchHomeSocialFeedBitesViaRpc(
         photoUrl,
         mediaUrls: mediaUrls.length > 0 ? mediaUrls : photoUrl ? [photoUrl] : [],
         mediaType,
+        showFoodContextOverlay: meta.showFoodContextOverlay !== false,
         caption: asString(row.caption) ?? "",
         tags: asStringArray(meta.tags),
         tasteStamp: tasteStampFromPostMeta(meta),
@@ -1080,7 +1377,9 @@ async function persistFeedbackEvent({
     return true;
   }
 
-  console.warn("Failed to persist taste interaction event via RPC", error.message);
+  if (!isMissingPgVectorTypeError(error)) {
+    console.warn("Failed to persist taste interaction event via RPC", error.message);
+  }
   const { error: insertError } = await client.from("taste_interaction_events").insert({
     user_id: userId,
     type: persistedType,
@@ -1097,7 +1396,9 @@ async function persistFeedbackEvent({
     created_at: createdAt,
   });
   if (insertError) {
-    console.warn("Failed to persist taste interaction event", insertError.message);
+    if (!isMissingPgVectorTypeError(insertError)) {
+      console.warn("Failed to persist taste interaction event", insertError.message);
+    }
   }
 
   return false;
@@ -1120,6 +1421,39 @@ function confidenceDeltaForFeedback(feedback: ExplicitFeedbackInput): number {
   if (feedback.feedbackType === "food_button_click") return 0.012;
   if (feedback.feedbackType === "dismissed") return 0.01;
   return 0.01;
+}
+
+function isMissingPgVectorTypeError(error: { message?: string } | null | undefined): boolean {
+  return /type "vector" does not exist/i.test(error?.message ?? "");
+}
+
+function isMissingActivityEventsSchemaError(error: PostgrestError | null | undefined): boolean {
+  if (!error) return false;
+  const message = `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`.toLowerCase();
+  return (
+    message.includes("activity_events") &&
+    (error.code === "PGRST205" ||
+      error.code === "42P01" ||
+      message.includes("schema cache") ||
+      message.includes("does not exist") ||
+      message.includes("could not find the table"))
+  );
+}
+
+function isMissingMarkActivityReadRpcError(error: PostgrestError | null | undefined): boolean {
+  if (!error) return false;
+  const message = `${error.message ?? ""} ${error.details ?? ""} ${error.hint ?? ""}`.toLowerCase();
+  return (
+    (message.includes("mark_activity_read") || message.includes("activity_events")) &&
+    (error.code === "PGRST202" ||
+      error.code === "PGRST205" ||
+      error.code === "42883" ||
+      error.code === "42P01" ||
+      message.includes("schema cache") ||
+      message.includes("does not exist") ||
+      message.includes("could not find the function") ||
+      message.includes("could not find the table"))
+  );
 }
 
 function buildTasteVectorFromAnswers(answers: QuizAnswer[]): TasteVector {
@@ -1182,6 +1516,56 @@ function getMerchantAnalyticsSince(dateRange: MerchantAnalytics["dateRange"]): s
   return null;
 }
 
+function getMerchantAnalyticsSessionId(context?: { sessionId?: string; userId?: string }): string {
+  return context?.sessionId ?? context?.userId ?? merchantAnonymousSessionId;
+}
+
+function mapMerchantAnalyticsPayload(
+  payload: unknown,
+  outletId: string,
+  dateRange: MerchantAnalytics["dateRange"],
+): MerchantAnalytics {
+  const row = asRecord(payload);
+  const previousPeriodComparison = asRecord(row.previousPeriodComparison);
+  return {
+    outletId: asString(row.outletId) ?? outletId,
+    dateRange,
+    profileVisits: asNumber(row.profileVisits) ?? 0,
+    menuViews: asNumber(row.menuViews) ?? 0,
+    dishViews: asNumber(row.dishViews) ?? 0,
+    directionTaps: asNumber(row.directionTaps) ?? 0,
+    saves: asNumber(row.saves) ?? 0,
+    shares: asNumber(row.shares) ?? 0,
+    contactTaps: asNumber(row.contactTaps) ?? 0,
+    socialLinkTaps: asNumber(row.socialLinkTaps) ?? 0,
+    postInteractions: asNumber(row.postInteractions) ?? 0,
+    reviewCount: asNumber(row.reviewCount) ?? 0,
+    averageRating: asNumber(row.averageRating) ?? 0,
+    topDishes: asRowArray(row.topDishes).map((dish) => ({
+      dishId: asString(dish.dishId) ?? "",
+      name: asString(dish.name) ?? "",
+      views: asNumber(dish.views) ?? 0,
+      saves: asNumber(dish.saves) ?? 0,
+    })),
+    mostSearchedKeywords: asStringArray(row.mostSearchedKeywords),
+    peakDiscoveryHours: Array.isArray(row.peakDiscoveryHours)
+      ? row.peakDiscoveryHours
+          .map((hour) => asNumber(hour))
+          .filter((hour): hour is number => typeof hour === "number")
+      : [],
+    customerTasteTags: asRowArray(row.customerTasteTags).map((tagRow) => ({
+      tag: asString(tagRow.tag) ?? "",
+      count: asNumber(tagRow.count) ?? 0,
+    })),
+    previousPeriodComparison: {
+      profileVisits: asNumber(previousPeriodComparison.profileVisits) ?? 0,
+      menuViews: asNumber(previousPeriodComparison.menuViews) ?? 0,
+      reviewCount: asNumber(previousPeriodComparison.reviewCount) ?? 0,
+      averageRating: asNumber(previousPeriodComparison.averageRating) ?? 0,
+    },
+  };
+}
+
 function callbackBaseMatches(url: string, expectedRedirectTo: string): boolean {
   try {
     const parsed = new URL(url);
@@ -1189,11 +1573,17 @@ function callbackBaseMatches(url: string, expectedRedirectTo: string): boolean {
     return (
       parsed.protocol === expected.protocol &&
       parsed.hostname === expected.hostname &&
-      parsed.pathname === expected.pathname
+      normalizeCallbackPath(parsed.pathname) === normalizeCallbackPath(expected.pathname)
     );
   } catch {
     return false;
   }
+}
+
+function normalizeCallbackPath(path: string): string {
+  if (!path) return "/";
+  const normalized = path.endsWith("/") ? path.slice(0, -1) : path;
+  return normalized || "/";
 }
 
 async function exchangeRecoveryCodeIfPresent(client: SupabaseClient, token: string): Promise<void> {
@@ -1258,7 +1648,7 @@ function getAuthTokensFromCallback(url: string): {
   return {
     accessToken: hash.get("access_token") ?? query.get("access_token") ?? undefined,
     refreshToken: hash.get("refresh_token") ?? query.get("refresh_token") ?? undefined,
-    code: query.get("code") ?? undefined,
+    code: query.get("code") ?? hash.get("code") ?? undefined,
   };
 }
 
@@ -1577,6 +1967,16 @@ async function requireLinkedMerchantOutlet(client: SupabaseClient, outletId: str
     throw new Error("Merchant outlet is not linked to a consumer venue.");
   }
   return outlet;
+}
+
+async function listPromotionOutletDishIds(client: SupabaseClient, outlet: Row): Promise<string[]> {
+  const venueId = asString(outlet.venue_id);
+  if (!venueId) return [];
+  const { data, error } = await client.from("dishes").select("id").eq("venue_id", venueId);
+  if (error) throw error;
+  return (Array.isArray(data) ? (data as Row[]) : [])
+    .map((row) => asString(row.id))
+    .filter((id): id is string => !!id);
 }
 
 function mapPopularVisitorPin(row: Row): PopularVisitorPin {
@@ -1939,8 +2339,7 @@ async function signInWithOAuthProvider(provider: "google" | "apple"): Promise<Se
   const { accessToken, refreshToken, code } = getAuthTokensFromCallback(result.url);
   if (accessToken || refreshToken) {
     throw new Error("OAuth callback token fragments are not accepted.");
-  }
-  if (code) {
+  } else if (code) {
     const { error: exchangeError } = await client.auth.exchangeCodeForSession(code);
     if (exchangeError) throw exchangeError;
   } else {
@@ -2299,6 +2698,14 @@ export const supabaseService: HungryService = {
       );
     },
 
+    async countVenuesInArea(lat, lng, radiusMeters) {
+      const exactCount = await countVenuesInAreaViaRpc(lat, lng, radiusMeters);
+      if (typeof exactCount === "number") return exactCount;
+
+      const locationBuildings = await listBuildingsViaRpc(lat, lng, radiusMeters);
+      return locationBuildings?.reduce((total, building) => total + building.venueCount, 0);
+    },
+
     async getBuildingDetail(id) {
       const rpcDetail = await getBuildingDetailViaRpc(id);
       if (rpcDetail) return rpcDetail;
@@ -2351,12 +2758,38 @@ export const supabaseService: HungryService = {
     async recordDishView(dishId, context) {
       const client = getSupabaseClient();
       if (!client) return;
-      const sessionId = context?.sessionId ?? context?.userId ?? "anonymous";
+      const sessionId = getMerchantAnalyticsSessionId(context);
       // Dish view tracking is analytics only; permission or network failures must not break detail screens.
       try {
         const { error } = await client.rpc("record_merchant_dish_view", {
           p_dish_id: dishId,
           p_session_id: sessionId,
+        });
+        if (error) {
+          return;
+        }
+      } catch {
+        return;
+      }
+    },
+
+    async recordMerchantActionEvent(input: MerchantActionEventInput) {
+      const client = getSupabaseClient();
+      if (!client) return;
+      const sessionId = getMerchantAnalyticsSessionId({
+        sessionId: input.sessionId,
+        userId: input.userId,
+      });
+      try {
+        const { error } = await client.rpc("record_merchant_action_event", {
+          p_event_type: input.eventType,
+          p_session_id: sessionId,
+          p_outlet_id: input.outletId ?? null,
+          p_venue_id: input.venueId ?? null,
+          p_dish_id: input.dishId ?? null,
+          p_promotion_id: input.promotionId ?? null,
+          p_source: input.source ?? "customer",
+          p_metadata: input.metadata ?? {},
         });
         if (error) {
           return;
@@ -2655,6 +3088,7 @@ export const supabaseService: HungryService = {
         tags: draft.tags ?? [],
         mediaType: draft.mediaType ?? "photo",
         mediaTypes: draft.mediaTypes ?? [],
+        showFoodContextOverlay: draft.showFoodContextOverlay ?? true,
       };
 
       const initialPayload = {
@@ -2733,6 +3167,7 @@ export const supabaseService: HungryService = {
         photoUrl: primaryMediaUrl,
         mediaUrls: media.displayUrls.length > 0 ? media.displayUrls : [primaryMediaUrl],
         mediaType: media.canonicalMediaType,
+        showFoodContextOverlay: draft.showFoodContextOverlay ?? true,
         caption: draft.caption,
         tags: draft.tags,
         tasteStamp: draft.tasteStamp,
@@ -2819,12 +3254,33 @@ export const supabaseService: HungryService = {
       persistStoryCache(nextStories);
     },
 
+    async shareStory(storyId: string) {
+      const stories = await getStoryCache();
+      const target = stories.find((story) => story.id === storyId);
+      if (!target) return;
+
+      const nextStories = stories.map((story) => {
+        if (story.id !== storyId) return story;
+        return {
+          ...story,
+          interaction: {
+            ...story.interaction,
+            shareCount: story.interaction.shareCount + 1,
+          },
+        };
+      });
+
+      persistStoryCache(nextStories);
+    },
+
     async addStory(content: StoryContent) {
       const stories = await getStoryCache();
       const profile = await getCurrentUserProfileOrGuest();
       const newStory: Story = {
         id: `s_${Date.now()}`,
         displayName: profile.displayName,
+        authorId: profile.id,
+        authorProfileVisibility: profile.profileVisibility,
         avatarUrl: profile.avatarUrl,
         hasUnseen: false,
         isStall: false,
@@ -2878,6 +3334,162 @@ export const supabaseService: HungryService = {
         (data as Row[]).map((row) => asString(row.post_id)).filter((id): id is string => !!id),
       );
       return (await fetchPublishedPostBites(client)).filter((bite) => likedIds.has(bite.id));
+    },
+
+    async followUser(userId: string) {
+      const client = requireSupabaseClient();
+      const currentUserId = await getCurrentSupabaseUserId();
+      if (!currentUserId) throw new Error("You must be signed in to follow users.");
+      const { error } = await client
+        .from("follows")
+        .upsert(
+          { follower_id: currentUserId, followee_id: userId, status: "approved" },
+          { onConflict: "follower_id,followee_id" },
+        );
+      if (error) throw error;
+    },
+
+    async unfollowUser(userId: string) {
+      const client = requireSupabaseClient();
+      const currentUserId = await getCurrentSupabaseUserId();
+      if (!currentUserId) throw new Error("You must be signed in to unfollow users.");
+      const { error } = await client
+        .from("follows")
+        .delete()
+        .eq("follower_id", currentUserId)
+        .eq("followee_id", userId);
+      if (error) throw error;
+    },
+
+    async listFollowers(userId: string) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client
+        .from("follows")
+        .select("follower_id, user_profiles!follows_follower_id_fkey(id, display_name, avatar_url)")
+        .eq("followee_id", userId)
+        .eq("status", "approved");
+      if (error || !data) return [];
+      return (data as Row[]).map((row) => {
+        const p = row.user_profiles as Row | null;
+        return {
+          userId: asString(row.follower_id) ?? "",
+          displayName: asString(p?.display_name) ?? "",
+          avatarUrl: asString(p?.avatar_url),
+        };
+      });
+    },
+
+    async listFollowing(userId: string) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client
+        .from("follows")
+        .select("followee_id, user_profiles!follows_followee_id_fkey(id, display_name, avatar_url)")
+        .eq("follower_id", userId)
+        .eq("status", "approved");
+      if (error || !data) return [];
+      return (data as Row[]).map((row) => {
+        const p = row.user_profiles as Row | null;
+        return {
+          userId: asString(row.followee_id) ?? "",
+          displayName: asString(p?.display_name) ?? "",
+          avatarUrl: asString(p?.avatar_url),
+        };
+      });
+    },
+
+    async isFollowing(userId: string) {
+      const client = requireSupabaseClient();
+      const currentUserId = await getCurrentSupabaseUserId();
+      if (!currentUserId) return false;
+      const { data } = await client
+        .from("follows")
+        .select("followee_id")
+        .eq("follower_id", currentUserId)
+        .eq("followee_id", userId)
+        .eq("status", "approved")
+        .maybeSingle();
+      return data !== null;
+    },
+
+    async createComment(postId: string, body: string, parentCommentId?: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to comment.");
+      const { data, error } = await client
+        .from("post_comments")
+        .insert({
+          post_id: postId,
+          user_id: userId,
+          body,
+          parent_comment_id: parentCommentId ?? null,
+        })
+        .select("id, user_id, body, created_at, parent_comment_id")
+        .single();
+      if (error || !data) throw error ?? new Error("Failed to create comment.");
+      const row = data as Row;
+      const profile = await fetchUserProfile(client, userId);
+      return {
+        id: asString(row.id) ?? "",
+        userId: asString(row.user_id) ?? userId,
+        body: asString(row.body) ?? "",
+        createdAt: asString(row.created_at) ?? new Date().toISOString(),
+        parentCommentId: asString(row.parent_comment_id),
+        authorName: profile.displayName,
+        authorAvatarUrl: profile.avatarUrl,
+      };
+    },
+
+    async deleteComment(commentId: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to delete a comment.");
+      const { error } = await client
+        .from("post_comments")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", commentId)
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+
+    async listCommentsForPost(postId: string) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client
+        .from("post_comments")
+        .select("id, user_id, body, created_at, parent_comment_id")
+        .eq("post_id", postId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: true });
+      if (error || !data) return [];
+      const rows = data as Row[];
+      const authorIds = Array.from(
+        new Set(rows.map((row) => asString(row.user_id)).filter((id): id is string => !!id)),
+      );
+      const publicProfileRows =
+        authorIds.length > 0
+          ? await client
+              .from("public_profiles")
+              .select("id, display_name, avatar_url")
+              .in("id", authorIds)
+              .then(({ data: profiles, error: profileError }) =>
+                profileError || !Array.isArray(profiles) ? [] : (profiles as Row[]),
+              )
+          : [];
+      const publicProfileById = new Map(
+        publicProfileRows.map((profileRow) => [asString(profileRow.id) ?? "", profileRow]),
+      );
+      return rows.map((row) => {
+        const userId = asString(row.user_id) ?? "";
+        const publicProfile = publicProfileById.get(userId);
+        return {
+          id: asString(row.id) ?? "",
+          userId,
+          body: asString(row.body) ?? "",
+          createdAt: asString(row.created_at) ?? "",
+          parentCommentId: asString(row.parent_comment_id),
+          authorName: asString(publicProfile?.display_name),
+          authorAvatarUrl: asString(publicProfile?.avatar_url),
+        };
+      });
     },
   },
 
@@ -3183,6 +3795,472 @@ export const supabaseService: HungryService = {
         p_post_id: postId,
       });
       if (error) throw error;
+    },
+
+    async getBlockedUsers() {
+      const client = requireSupabaseClient();
+      const { data, error } = await client
+        .from("user_blocks")
+        .select("blocked_user_key, reason, created_at")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).map((row: any) => ({
+        blockedUserKey: row.blocked_user_key as string,
+        reason: row.reason as string | undefined,
+        createdAt: row.created_at as string,
+      }));
+    },
+  },
+
+  contributions: {
+    async submitDiscoveredStall(input) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) {
+        throw new Error("You must be signed in to add a stall.");
+      }
+      if (!input.stallName.trim()) {
+        throw new Error("Stall name is required.");
+      }
+      if (!input.imageUri.trim() || !isLocalUri(input.imageUri)) {
+        throw new Error("Stall image must be uploaded from your device.");
+      }
+
+      const imageUris = Array.from(
+        new Set(input.imageUris?.length ? input.imageUris : [input.imageUri]),
+      );
+      imageUris.forEach((uri) => {
+        if (!uri.trim() || !isLocalUri(uri)) {
+          throw new Error("Stall images must be uploaded from your device.");
+        }
+      });
+
+      const uploadPrefix = `${userId}/${Date.now()}-${sanitizeStorageSegment(input.stallName)}`;
+      const uploadedImages = await Promise.all(
+        imageUris.map((uri, index) =>
+          uploadImageFromUri({
+            client,
+            bucket: "user-stall-submission-images",
+            path: `${uploadPrefix}-${index + 1}.${extensionFromUri(uri)}`,
+            uri,
+          }),
+        ),
+      );
+      const uploaded = uploadedImages[0];
+      if (!uploaded) {
+        throw new Error("Stall image must be uploaded from your device.");
+      }
+      const firstImageMimeType = input.imageMimeTypes?.[0] ?? input.imageMimeType ?? null;
+      const galleryImages = uploadedImages.map((image, index) => ({
+        url: image.publicUrl,
+        bucket: "user-stall-submission-images",
+        path: image.path,
+        mimeType: input.imageMimeTypes?.[index] || (index === 0 ? input.imageMimeType : null),
+      }));
+
+      const rpcPayload = {
+        p_stall_name: input.stallName,
+        p_image_url: uploaded.publicUrl,
+        p_image_storage_bucket: "user-stall-submission-images",
+        p_image_storage_path: uploaded.path,
+        p_image_mime_type: firstImageMimeType,
+        p_gallery_images: galleryImages,
+        p_source_url: input.sourceUrl ?? null,
+        p_building_name: input.buildingName ?? null,
+        p_area: input.area ?? null,
+        p_address: input.address ?? null,
+        p_postal_code: input.postalCode ?? null,
+        p_unit_number: input.unitNumber ?? null,
+        p_floor: input.floor ?? null,
+        p_operating_hours: input.operatingHours ?? null,
+        p_menu_items: input.menuItems ?? [],
+        p_delivery_links: input.deliveryLinks ?? [],
+        p_notes: input.notes ?? null,
+      };
+
+      const rpcPayloadWithoutGallery = {
+        ...rpcPayload,
+      };
+      delete (rpcPayloadWithoutGallery as { p_gallery_images?: unknown }).p_gallery_images;
+
+      const legacyRpcPayload = {
+        ...rpcPayloadWithoutGallery,
+      };
+      delete (legacyRpcPayload as { p_postal_code?: string | null }).p_postal_code;
+
+      const primarySubmit = await client
+        .rpc("submit_user_stall_submission", rpcPayload)
+        .maybeSingle();
+      let finalResult: { data: unknown; error: PostgrestError | null } = primarySubmit;
+      const isFunctionSchemaError = (error: PostgrestError | null | undefined) => {
+        if (!error) return false;
+        const message = error.message.toLowerCase();
+        return (
+          error.code === "42883" ||
+          message.includes("could not find the function") ||
+          (message.includes("function") && message.includes("does not exist"))
+        );
+      };
+
+      const isInsertColumnSchemaError = (error: PostgrestError | null | undefined) => {
+        if (!error) return false;
+        const message = error.message.toLowerCase();
+        return (
+          message.includes("could not find the") &&
+          message.includes("column") &&
+          message.includes("schema cache") &&
+          message.includes("of")
+        );
+      };
+
+      const isColumnNotExistError = (error: PostgrestError | null | undefined) => {
+        if (!error) return false;
+        const message = error.message.toLowerCase();
+        return message.includes("column") && message.includes("does not exist");
+      };
+
+      const shouldUseDirectInsertFallback = (error: PostgrestError | null | undefined) =>
+        !!(error && (isFunctionSchemaError(error) || isInsertColumnSchemaError(error)));
+
+      const isRetryableInsertSchemaError = (error: PostgrestError | null | undefined) =>
+        !!(
+          isInsertColumnSchemaError(error) ||
+          isColumnNotExistError(error) ||
+          error?.message.toLowerCase().includes("schema cache")
+        );
+
+      const isPermissionDeniedError = (error: PostgrestError | null | undefined) => {
+        if (!error) return false;
+        const message = error.message.toLowerCase();
+        return (
+          error.code === "42501" ||
+          message.includes("permission denied for table user_stall_submissions") ||
+          message.includes("permission denied for relation")
+        );
+      };
+
+      if (
+        primarySubmit.error &&
+        primarySubmit.error.code === "42883" &&
+        primarySubmit.error.message.includes("submit_user_stall_submission")
+      ) {
+        finalResult = await client
+          .rpc("submit_user_stall_submission", rpcPayloadWithoutGallery)
+          .maybeSingle();
+        if (uploadedImages.length > 1) {
+          void client.storage
+            .from("user-stall-submission-images")
+            .remove(uploadedImages.slice(1).map((image) => image.path));
+        }
+      }
+
+      if (
+        finalResult.error &&
+        finalResult.error.code === "42883" &&
+        finalResult.error.message.includes("submit_user_stall_submission")
+      ) {
+        finalResult = await client
+          .rpc("submit_user_stall_submission", legacyRpcPayload)
+          .maybeSingle();
+      }
+
+      if (
+        finalResult.error &&
+        (shouldUseDirectInsertFallback(finalResult.error) ||
+          isInsertColumnSchemaError(finalResult.error))
+      ) {
+        const submissionBaseRow: Record<string, unknown> = {
+          user_id: userId,
+          stall_name: input.stallName.trim(),
+          image_url: uploaded.publicUrl,
+          image_storage_bucket: "user-stall-submission-images",
+          image_storage_path: uploaded.path,
+          image_mime_type: firstImageMimeType,
+          gallery_images: galleryImages,
+          source_url: input.sourceUrl ?? null,
+          building_name: input.buildingName ?? null,
+          area: input.area ?? null,
+          address: input.address ?? null,
+          postal_code: input.postalCode ?? null,
+          unit_number: input.unitNumber ?? null,
+          floor: input.floor ?? null,
+          operating_hours: input.operatingHours ?? null,
+          menu_items: input.menuItems ?? [],
+          delivery_links: input.deliveryLinks ?? [],
+          notes: input.notes ?? null,
+        };
+
+        const submitDirectInsert = async (row: Record<string, unknown>) => {
+          return client.from("user_stall_submissions").insert(row).select("*").maybeSingle();
+        };
+
+        const readMissingColumn = (errorMessage?: string): string | null => {
+          if (!errorMessage) return null;
+          const directMatch = errorMessage.match(
+            /Could not find the ['"]([^'"]+)['"] column of .*? in the schema cache/i,
+          );
+          if (directMatch?.[1]) {
+            return directMatch[1];
+          }
+          const postgresqlMatch = errorMessage.match(/column "([^"]+)" does not exist/i);
+          if (postgresqlMatch?.[1]) {
+            return postgresqlMatch[1];
+          }
+          return null;
+        };
+
+        let mutableInsertRow: Record<string, unknown> = { ...submissionBaseRow };
+        let insertedRows: Record<string, unknown> | null = null;
+        let insertError: PostgrestError | null = null;
+        const attemptedColumns = new Set<string>();
+
+        for (let i = 0; i < 5; i += 1) {
+          const attempt = await submitDirectInsert(mutableInsertRow);
+          if (!attempt.error) {
+            insertedRows = attempt.data as Record<string, unknown> | null;
+            insertError = null;
+            break;
+          }
+
+          insertError = attempt.error;
+
+          if (
+            !isRetryableInsertSchemaError(attempt.error) ||
+            typeof attempt.error.message !== "string"
+          ) {
+            break;
+          }
+
+          const missingColumn = readMissingColumn(attempt.error.message);
+          if (!missingColumn) break;
+          if (attemptedColumns.has(missingColumn)) break;
+          attemptedColumns.add(missingColumn);
+          delete mutableInsertRow[missingColumn];
+        }
+
+        if (insertedRows && Array.isArray(insertedRows)) {
+          if (insertedRows.length > 0) {
+            insertedRows = insertedRows[0] as Record<string, unknown>;
+          } else {
+            insertedRows = null;
+          }
+        }
+
+        if (!insertError && insertedRows) {
+          finalResult = { data: insertedRows, error: null };
+        } else if (!insertError && !insertedRows) {
+          finalResult = { data: null, error: null };
+        } else if (
+          insertError &&
+          (isRetryableInsertSchemaError(insertError) || isPermissionDeniedError(insertError))
+        ) {
+          finalResult = { data: null, error: null };
+        } else {
+          throw insertError;
+        }
+      }
+
+      const { data, error } = finalResult;
+      if (error) throw error;
+
+      try {
+        const fallbackMenuItems = input.menuItems ?? [];
+        const fallbackDeliveryLinks = input.deliveryLinks ?? [];
+        const fallbackSubmission: UserStallSubmission = {
+          id: `submission_${Date.now()}`,
+          userId,
+          stallName: input.stallName.trim(),
+          imageUrl: uploaded.publicUrl,
+          galleryImageUrls: galleryImages.map((image) => image.url),
+          imageStorageBucket: "user-stall-submission-images",
+          imageStoragePath: uploaded.path,
+          imageMimeType: firstImageMimeType ?? undefined,
+          sourceUrl: input.sourceUrl ?? undefined,
+          buildingName: input.buildingName ?? undefined,
+          area: input.area ?? undefined,
+          address: input.address ?? undefined,
+          postalCode: input.postalCode ?? undefined,
+          unitNumber: input.unitNumber ?? undefined,
+          floor: input.floor ?? undefined,
+          operatingHours: input.operatingHours,
+          menuItems: fallbackMenuItems,
+          deliveryLinks: fallbackDeliveryLinks,
+          notes: input.notes ?? undefined,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        if (!data) {
+          const fallbackWindowIso = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+          const trimmedStallName = input.stallName.trim();
+          const normalizedStallName = trimmedStallName.toLowerCase();
+
+          const resolveByRecentFallback = async () => {
+            const { data: fallbackRows, error: fallbackError } = await client
+              .from("user_stall_submissions")
+              .select("*")
+              .eq("user_id", userId)
+              .gte("created_at", fallbackWindowIso)
+              .order("created_at", { ascending: false })
+              .limit(20);
+            if (fallbackError) return { data: null, error: null };
+            const rows = Array.isArray(fallbackRows) ? (fallbackRows as Row[]) : [];
+            const match = rows.find((row) => {
+              if (!row || typeof row !== "object") return false;
+              const rowStall = asString(asRecord(row).stall_name)?.trim().toLowerCase();
+              const rowPath = asString(asRecord(row).image_storage_path);
+              const rowUrl = asString(asRecord(row).image_url);
+              if (rowStall && rowStall === normalizedStallName && rowPath === uploaded.path)
+                return true;
+              if (rowStall && rowStall === normalizedStallName && rowUrl === uploaded.publicUrl)
+                return true;
+              if (rowStall && rowStall === normalizedStallName) return true;
+              return false;
+            });
+            if (!match) return { data: null, error: null };
+            return { data: mapUserStallSubmission(client, asRecord(match)), error: null };
+          };
+
+          const resolveByImagePath = async () => {
+            if (!uploaded.path) return { error: null, data: null };
+            const { data: pathData, error: pathError } = await client
+              .from("user_stall_submissions")
+              .select("*")
+              .eq("user_id", userId)
+              .eq("image_storage_path", uploaded.path)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (pathError) return { error: null, data: null };
+            if (pathData) {
+              return { data: mapUserStallSubmission(client, asRecord(pathData)), error: null };
+            }
+            return { data: null, error: null };
+          };
+
+          const resolveByImageUrl = async () => {
+            if (!uploaded.publicUrl) return { error: null, data: null };
+            const { data: urlData, error: urlError } = await client
+              .from("user_stall_submissions")
+              .select("*")
+              .eq("user_id", userId)
+              .eq("image_url", uploaded.publicUrl)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (urlError) return { error: null, data: null };
+            if (urlData) {
+              return { data: mapUserStallSubmission(client, asRecord(urlData)), error: null };
+            }
+            return { data: null, error: null };
+          };
+
+          const resolveByRecentName = async () => {
+            const { data: nameData, error: nameError } = await client
+              .from("user_stall_submissions")
+              .select("*")
+              .eq("user_id", userId)
+              .eq("stall_name", trimmedStallName)
+              .gte("created_at", fallbackWindowIso)
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (nameError) return { error: null, data: null };
+            if (nameData) {
+              return { data: mapUserStallSubmission(client, asRecord(nameData)), error: null };
+            }
+            return { data: null, error: null };
+          };
+
+          const imagePathFallback = await resolveByImagePath();
+          if (imagePathFallback.data) return imagePathFallback.data;
+
+          const imageUrlFallback = await resolveByImageUrl();
+          if (imageUrlFallback.data) return imageUrlFallback.data;
+
+          const recentNameFallback = await resolveByRecentName();
+          if (recentNameFallback.data) return recentNameFallback.data;
+
+          const recentFallback = await resolveByRecentFallback();
+          if (recentFallback.data) return recentFallback.data;
+
+          return fallbackSubmission;
+        }
+
+        if (typeof data === "string") {
+          const { data: rowById } = await client
+            .from("user_stall_submissions")
+            .select("*")
+            .eq("user_id", userId)
+            .eq("id", data)
+            .maybeSingle();
+          if (rowById) {
+            return mapUserStallSubmission(client, asRecord(rowById));
+          }
+          return fallbackSubmission;
+        }
+
+        if (Array.isArray(data)) {
+          if (data.length === 0) {
+            return fallbackSubmission;
+          }
+          return mapUserStallSubmission(client, asRecord(data[0]));
+        }
+
+        const mapped = asRecord(data as Row | undefined);
+        if (mapped.id) {
+          return mapUserStallSubmission(client, mapped);
+        }
+        return fallbackSubmission;
+      } catch (parseError) {
+        console.warn(
+          "[submitDiscoveredStall] failed to parse rpc response, using fallback",
+          parseError,
+        );
+        return {
+          id: `submission_${Date.now()}`,
+          userId,
+          stallName: input.stallName.trim(),
+          imageUrl: uploaded.publicUrl,
+          galleryImageUrls: galleryImages.map((image) => image.url),
+          imageStorageBucket: "user-stall-submission-images",
+          imageStoragePath: uploaded.path,
+          imageMimeType: firstImageMimeType ?? undefined,
+          sourceUrl: input.sourceUrl ?? undefined,
+          buildingName: input.buildingName ?? undefined,
+          area: input.area ?? undefined,
+          address: input.address ?? undefined,
+          postalCode: input.postalCode ?? undefined,
+          unitNumber: input.unitNumber ?? undefined,
+          floor: input.floor ?? undefined,
+          operatingHours: input.operatingHours,
+          menuItems: input.menuItems ?? [],
+          deliveryLinks: input.deliveryLinks ?? [],
+          notes: input.notes ?? undefined,
+          status: "pending",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+    },
+
+    async listMyDiscoveredStalls() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return [];
+      const { data, error } = await client
+        .from("user_stall_submissions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return Promise.all(
+        (Array.isArray(data) ? (data as Row[]) : []).map((row) =>
+          mapUserStallSubmission(client, row),
+        ),
+      );
     },
   },
 
@@ -3994,24 +5072,27 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const outlet = await getMerchantOutletRow(client, outletId);
       const resolvedOutletId = asString(outlet.id) ?? outletId;
-      const analytics = buildPromotionAnalytics(promo);
+      const validatedPromo = validateMerchantPromotionInput(promo, {
+        outletDishIds: await listPromotionOutletDishIds(client, outlet),
+      });
+      const analytics = buildPromotionAnalytics(validatedPromo);
       const { data, error } = await client
         .from("merchant_promotions")
         .insert({
           outlet_id: resolvedOutletId,
-          title: promo.title,
-          description: promo.description,
-          target_dish_id: promo.targetDishId ?? null,
-          start_date: promo.startDate,
-          end_date: promo.endDate,
-          target_audience: promo.targetAudience,
-          status: promo.status,
-          promotion_item_type: promo.promotionItemType ?? "new_item",
-          original_price: promo.originalPrice ?? null,
-          promotional_price: promo.promotionalPrice ?? null,
-          final_price: promo.finalPrice ?? promo.promotionalPrice ?? null,
-          discount_percentage: promo.discountPercentage ?? null,
-          is_available: promo.isAvailable ?? promo.status === "active",
+          title: validatedPromo.title,
+          description: validatedPromo.description,
+          target_dish_id: validatedPromo.targetDishId ?? null,
+          start_date: validatedPromo.startDate,
+          end_date: validatedPromo.endDate,
+          target_audience: validatedPromo.targetAudience,
+          status: validatedPromo.status,
+          promotion_item_type: validatedPromo.promotionItemType ?? "new_item",
+          original_price: validatedPromo.originalPrice ?? null,
+          promotional_price: validatedPromo.promotionalPrice ?? null,
+          final_price: validatedPromo.finalPrice ?? validatedPromo.promotionalPrice ?? null,
+          discount_percentage: validatedPromo.discountPercentage ?? null,
+          is_available: validatedPromo.isAvailable ?? validatedPromo.status === "active",
           impressions: analytics.impressions,
           clicks: analytics.clicks,
           saves: analytics.saves,
@@ -4025,23 +5106,53 @@ export const supabaseService: HungryService = {
     },
 
     async updatePromotion(promoId, updates) {
+      const client = requireSupabaseClient();
+      const { data: currentData, error: currentError } = await client
+        .from("merchant_promotions")
+        .select("*")
+        .eq("id", promoId)
+        .single();
+      if (currentError) throw currentError;
+      const currentPromotion = mapPromotion(currentData as Row);
+      const outlet = await getMerchantOutletRow(client, currentPromotion.outletId);
+      const validatedUpdates = validateMerchantPromotionInput(
+        {
+          ...currentPromotion,
+          ...updates,
+          targetDishId: updates.targetDishId ?? currentPromotion.targetDishId,
+          promotionItemType: updates.promotionItemType ?? currentPromotion.promotionItemType,
+          originalPrice: updates.originalPrice ?? currentPromotion.originalPrice,
+          promotionalPrice: updates.promotionalPrice ?? currentPromotion.promotionalPrice,
+          finalPrice: updates.finalPrice ?? updates.promotionalPrice ?? currentPromotion.finalPrice,
+          discountPercentage: updates.discountPercentage ?? currentPromotion.discountPercentage,
+          isAvailable: updates.isAvailable ?? currentPromotion.isAvailable,
+        },
+        {
+          outletDishIds: await listPromotionOutletDishIds(client, outlet),
+        },
+      );
       const payload: Row = {};
-      if (updates.title !== undefined) payload.title = updates.title;
-      if (updates.description !== undefined) payload.description = updates.description;
-      if (updates.targetDishId !== undefined) payload.target_dish_id = updates.targetDishId;
-      if (updates.startDate !== undefined) payload.start_date = updates.startDate;
-      if (updates.endDate !== undefined) payload.end_date = updates.endDate;
-      if (updates.targetAudience !== undefined) payload.target_audience = updates.targetAudience;
-      if (updates.status !== undefined) payload.status = updates.status;
+      if (updates.title !== undefined) payload.title = validatedUpdates.title;
+      if (updates.description !== undefined) payload.description = validatedUpdates.description;
+      if (updates.targetDishId !== undefined)
+        payload.target_dish_id = validatedUpdates.targetDishId;
+      if (updates.startDate !== undefined) payload.start_date = validatedUpdates.startDate;
+      if (updates.endDate !== undefined) payload.end_date = validatedUpdates.endDate;
+      if (updates.targetAudience !== undefined)
+        payload.target_audience = validatedUpdates.targetAudience;
+      if (updates.status !== undefined) payload.status = validatedUpdates.status;
       if (updates.promotionItemType !== undefined)
-        payload.promotion_item_type = updates.promotionItemType;
-      if (updates.originalPrice !== undefined) payload.original_price = updates.originalPrice;
+        payload.promotion_item_type = validatedUpdates.promotionItemType;
+      if (updates.originalPrice !== undefined)
+        payload.original_price = validatedUpdates.originalPrice;
       if (updates.promotionalPrice !== undefined)
-        payload.promotional_price = updates.promotionalPrice;
-      if (updates.finalPrice !== undefined) payload.final_price = updates.finalPrice;
+        payload.promotional_price = validatedUpdates.promotionalPrice;
+      if (updates.finalPrice !== undefined || updates.promotionalPrice !== undefined) {
+        payload.final_price = validatedUpdates.finalPrice;
+      }
       if (updates.discountPercentage !== undefined)
-        payload.discount_percentage = updates.discountPercentage;
-      if (updates.isAvailable !== undefined) payload.is_available = updates.isAvailable;
+        payload.discount_percentage = validatedUpdates.discountPercentage;
+      if (updates.isAvailable !== undefined) payload.is_available = validatedUpdates.isAvailable;
       if (updates.analytics) {
         payload.impressions = updates.analytics.impressions;
         payload.clicks = updates.analytics.clicks;
@@ -4049,7 +5160,7 @@ export const supabaseService: HungryService = {
         payload.profile_visits = updates.analytics.profileVisits;
         payload.dish_views = updates.analytics.dishViews;
       }
-      const { data, error } = await requireSupabaseClient()
+      const { data, error } = await client
         .from("merchant_promotions")
         .update(payload)
         .eq("id", promoId)
@@ -4071,72 +5182,42 @@ export const supabaseService: HungryService = {
 
     async getAnalytics(outletId, dateRange) {
       const client = requireSupabaseClient();
-      const menu = await this.getMenu(outletId);
-      const inbox = await this.getInbox(outletId);
       const outlet = await getMerchantOutletRow(client, outletId);
       const resolvedOutletId = asString(outlet.id) ?? outletId;
-      const { data: viewRows, error: viewError } = await client.rpc(
-        "get_merchant_dish_view_counts",
-        {
-          p_outlet_id: resolvedOutletId,
-          p_since: getMerchantAnalyticsSince(dateRange),
-          p_until: null,
-        },
-      );
-      if (viewError) throw viewError;
-      const viewCounts = new Map<string, number>();
-      (Array.isArray(viewRows) ? (viewRows as Row[]) : []).forEach((row) => {
-        const dishId = asString(row.dish_id);
-        if (!dishId) return;
-        viewCounts.set(dishId, asNumber(row.view_count) ?? 0);
+      const since = getMerchantAnalyticsSince(dateRange);
+      const { data, error } = await client.rpc("get_merchant_analytics", {
+        p_outlet_id: resolvedOutletId,
+        p_since: since,
+        p_until: null,
       });
-      const dishViewTotal = Array.from(viewCounts.values()).reduce((sum, count) => sum + count, 0);
-      const reviewRatings = inbox
-        .map((interaction) => interaction.rating)
-        .filter((rating): rating is number => typeof rating === "number");
-      return {
-        outletId,
-        dateRange,
-        profileVisits: Math.floor(dishViewTotal / 2),
-        menuViews: dishViewTotal,
-        dishViews: dishViewTotal,
-        directionTaps: 0,
-        saves: 0,
-        shares: 0,
-        contactTaps: 0,
-        socialLinkTaps: 0,
-        postInteractions: inbox.length,
-        reviewCount: reviewRatings.length,
-        averageRating:
-          reviewRatings.length === 0
-            ? 0
-            : reviewRatings.reduce((sum, rating) => sum + rating, 0) / reviewRatings.length,
-        topDishes: menu
-          .map((dish) => ({
-            dishId: dish.id,
-            name: dish.name,
-            views: viewCounts.get(dish.id) ?? 0,
-            saves: 0,
-          }))
-          .sort((left, right) => right.views - left.views)
-          .slice(0, 5),
-        mostSearchedKeywords: menu.slice(0, 4).map((dish) => dish.name.toLowerCase()),
-        peakDiscoveryHours: [],
-        customerTasteTags: [],
-        previousPeriodComparison: {
-          profileVisits: 0,
-          menuViews: 0,
-          reviewCount: 0,
-          averageRating: 0,
-        },
-      } satisfies MerchantAnalytics;
+      if (error) throw error;
+      return mapMerchantAnalyticsPayload(data, resolvedOutletId, dateRange);
     },
 
     async getWeeklySummaryStats(outletId) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
       const analytics = await this.getAnalytics(outletId, "7d");
       const reviews = await this.getInbox(outletId, { type: "review" });
       const promotions = await this.getPromotions(outletId);
-      return buildWeeklySummaryFromAnalytics(outletId, analytics, reviews, promotions);
+      const summary = buildWeeklySummaryFromAnalytics(outletId, analytics, reviews, promotions);
+      const { error } = await client.rpc("persist_merchant_weekly_summary", {
+        p_outlet_id: resolvedOutletId,
+        p_week_start: summary.weekStart.slice(0, 10),
+        p_week_end: summary.weekEnd.slice(0, 10),
+        p_total_views: summary.totalViews,
+        p_dish_views: summary.dishViews,
+        p_top_dishes: summary.topDishes,
+        p_new_reviews: summary.newReviews,
+        p_average_rating: summary.averageRating,
+        p_rating_change: summary.ratingChange,
+        p_unreplied_reviews: summary.unrepliedReviews,
+        p_promotion_views: summary.promotionViews,
+        p_metadata: { source: "merchant_service" },
+      });
+      if (error) throw error;
+      return summary;
     },
 
     async getMerchantNotifications(merchantAccountId) {
@@ -4738,6 +5819,543 @@ export const supabaseService: HungryService = {
 
     async submitCommunityTags() {
       return;
+    },
+  },
+
+  // ── Checklist ───────────────────────────────────────────────────────────────
+
+  checklist: {
+    async createChecklist(name: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("Sign in before creating a checklist.");
+      const { data, error } = await client
+        .from("checklists")
+        .insert({ user_id: userId, name })
+        .select()
+        .single();
+      if (error) throw error;
+      return mapChecklist(data as Row);
+    },
+
+    async getChecklists() {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("checklists")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).map((row) => mapChecklist(row as Row));
+    },
+
+    async getChecklist(id: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client.from("checklists").select("*").eq("id", id).single();
+      if (error) throw error;
+      return mapChecklist(data as Row);
+    },
+
+    async updateChecklist(id: string, name: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.from("checklists").update({ name }).eq("id", id);
+      if (error) throw error;
+    },
+
+    async deleteChecklist(id: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.from("checklists").delete().eq("id", id);
+      if (error) throw error;
+    },
+
+    async addChecklistItem(input: any) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("checklist_items")
+        .insert({
+          checklist_id: input.checklistId,
+          item_type: input.itemType,
+          dish_id: input.dishId,
+          stall_id: input.stallId,
+          custom_text: input.customText,
+          reminder_at: input.reminderAt,
+          planned_visit_date: input.plannedVisitDate,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return mapChecklistItem(data as Row);
+    },
+
+    async getChecklistItems(checklistId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("checklist_items")
+        .select("*")
+        .eq("checklist_id", checklistId)
+        .order("position", { ascending: true });
+      if (error) throw error;
+      return (data || []).map((row) => mapChecklistItem(row as Row));
+    },
+
+    async updateChecklistItem(id: string, updates: any) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const payload: Row = {};
+      if (updates.itemType !== undefined) payload.item_type = updates.itemType;
+      if (updates.dishId !== undefined) payload.dish_id = updates.dishId;
+      if (updates.stallId !== undefined) payload.stall_id = updates.stallId;
+      if (updates.customText !== undefined) payload.custom_text = updates.customText;
+      if (updates.reminderAt !== undefined) payload.reminder_at = updates.reminderAt;
+      if (updates.plannedVisitDate !== undefined) {
+        payload.planned_visit_date = updates.plannedVisitDate;
+      }
+      const { error } = await client.from("checklist_items").update(payload).eq("id", id);
+      if (error) throw error;
+    },
+
+    async markChecklistItemTried(id: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client
+        .from("checklist_items")
+        .update({ tried_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+
+    async deleteChecklistItem(id: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.from("checklist_items").delete().eq("id", id);
+      if (error) throw error;
+    },
+
+    async reorderChecklistItems(checklistId: string, itemIds: string[]) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.rpc("reorder_checklist_items", {
+        p_checklist_id: checklistId,
+        p_item_ids: itemIds,
+      });
+      if (error) throw error;
+    },
+  },
+
+  // ── Portfolio ───────────────────────────────────────────────────────────────
+
+  portfolio: {
+    async createPortfolio(input: any) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("Sign in before creating a portfolio.");
+      const { data, error } = await client
+        .from("portfolios")
+        .insert({
+          owner_id: userId,
+          name: input.name,
+          description: input.description,
+          type: input.type,
+          visibility: input.visibility,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return mapPortfolio(data as Row);
+    },
+
+    async getPortfolios(filters?: any) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      let query = client.from("portfolios").select("*");
+
+      if (filters?.userId) {
+        query = query.eq("owner_id", filters.userId);
+      }
+      if (filters?.visibility) {
+        query = query.eq("visibility", filters.visibility);
+      }
+      if (filters?.type) {
+        query = query.eq("type", filters.type);
+      }
+
+      query = query.order("created_at", { ascending: false });
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []).map((row: Row) => mapPortfolio(row));
+    },
+
+    async getPortfolio(id: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client.from("portfolios").select("*").eq("id", id).single();
+      if (error) throw error;
+      return mapPortfolio(data as Row);
+    },
+
+    async updatePortfolio(id: string, updates: any, options?: PortfolioMutationOptions) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const payload: Row = {};
+      if (updates.name !== undefined) payload.name = updates.name;
+      if (updates.description !== undefined) payload.description = updates.description;
+      if (updates.type !== undefined) payload.type = updates.type;
+      if (updates.visibility !== undefined) payload.visibility = updates.visibility;
+      let query = client.from("portfolios").update(payload).eq("id", id);
+      if (options?.expectedUpdatedAt) {
+        query = query.eq("updated_at", options.expectedUpdatedAt);
+      }
+      const { data, error } = await query.select("id").maybeSingle();
+      if (error) throw error;
+      if (options?.expectedUpdatedAt && !data) throw portfolioEditConflictError();
+    },
+
+    async deletePortfolio(id: string, options?: PortfolioMutationOptions) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      let query = client.from("portfolios").delete().eq("id", id);
+      if (options?.expectedUpdatedAt) {
+        query = query.eq("updated_at", options.expectedUpdatedAt);
+      }
+      const { data, error } = await query.select("id").maybeSingle();
+      if (error) throw error;
+      if (options?.expectedUpdatedAt && !data) throw portfolioEditConflictError();
+    },
+
+    async publishPortfolio(id: string, options?: PortfolioMutationOptions) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.rpc("publish_portfolio_with_passport", {
+        p_portfolio_id: id,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+      });
+      if (error) throw error;
+    },
+
+    async addPortfolioItem(input: any, options?: PortfolioMutationOptions) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client.rpc("add_portfolio_item_with_passport", {
+        p_portfolio_id: input.portfolioId,
+        p_item_type: input.itemType,
+        p_dish_id: input.dishId,
+        p_stall_id: input.stallId,
+        p_score: input.score,
+        p_public_notes: input.publicNotes,
+        p_private_notes: input.privateNotes,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+      });
+      if (error) throw error;
+      const insertedId = String(data ?? "");
+      const { data: row, error: fetchError } = await client
+        .from("portfolio_items")
+        .select("*")
+        .eq("id", insertedId)
+        .single();
+      if (fetchError) throw fetchError;
+      return mapPortfolioItem(row as Row);
+    },
+
+    async getPortfolioItems(portfolioId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("portfolio_items")
+        .select("*")
+        .eq("portfolio_id", portfolioId)
+        .order("position", { ascending: true });
+      if (error) throw error;
+      return (data || []).map((row) => mapPortfolioItem(row as Row));
+    },
+
+    async updatePortfolioItem(id: string, updates: any, options?: PortfolioMutationOptions) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.rpc("update_portfolio_item_with_version", {
+        p_item_id: id,
+        p_score: updates.score,
+        p_public_notes: updates.publicNotes,
+        p_private_notes: updates.privateNotes,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+      });
+      if (error) throw error;
+    },
+
+    async deletePortfolioItem(id: string, options?: PortfolioMutationOptions) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.rpc("delete_portfolio_item_with_version", {
+        p_item_id: id,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+      });
+      if (error) throw error;
+    },
+
+    async reorderPortfolioItems(
+      portfolioId: string,
+      itemIds: string[],
+      options?: PortfolioMutationOptions,
+    ) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.rpc("reorder_portfolio_items", {
+        p_portfolio_id: portfolioId,
+        p_item_ids: itemIds,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt,
+      });
+      if (error) throw error;
+    },
+
+    async addPortfolioCollaborator(
+      portfolioId: string,
+      userId: string,
+      role: any,
+      options?: PortfolioMutationOptions,
+    ) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      await assertSupabasePortfolioVersion(client, portfolioId, options);
+      const { error } = await client.from("portfolio_collaborators").insert({
+        portfolio_id: portfolioId,
+        user_id: userId,
+        role,
+      });
+      if (error) throw error;
+    },
+
+    async removePortfolioCollaborator(
+      portfolioId: string,
+      userId: string,
+      options?: PortfolioMutationOptions,
+    ) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      await assertSupabasePortfolioVersion(client, portfolioId, options);
+      const { error } = await client
+        .from("portfolio_collaborators")
+        .delete()
+        .eq("portfolio_id", portfolioId)
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+
+    async getPortfolioCollaborators(portfolioId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("portfolio_collaborators")
+        .select("*")
+        .eq("portfolio_id", portfolioId);
+      if (error) throw error;
+      return (data || []).map((row) => mapPortfolioCollaborator(row as Row));
+    },
+
+    async followPortfolio(portfolioId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("Sign in before following a portfolio.");
+      const { error } = await client
+        .from("portfolio_follows")
+        .upsert(
+          { portfolio_id: portfolioId, user_id: userId },
+          { onConflict: "portfolio_id,user_id", ignoreDuplicates: true },
+        );
+      if (error) throw error;
+    },
+
+    async unfollowPortfolio(portfolioId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("Sign in before unfollowing a portfolio.");
+      const { error } = await client
+        .from("portfolio_follows")
+        .delete()
+        .eq("portfolio_id", portfolioId)
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+
+    async getPortfolioFollows(portfolioId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("portfolio_follows")
+        .select("*")
+        .eq("portfolio_id", portfolioId);
+      if (error) throw error;
+      return (data || []).map((row) => mapPortfolioFollow(row as Row));
+    },
+
+    async isFollowingPortfolio(portfolioId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return false;
+      const { data, error } = await client
+        .from("portfolio_follows")
+        .select("id")
+        .eq("portfolio_id", portfolioId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      return !!data;
+    },
+
+    async flagPortfolio(portfolioId: string, reason: string, details?: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("Sign in before flagging a portfolio.");
+      const { error } = await client.from("portfolio_flags").insert({
+        portfolio_id: portfolioId,
+        reporter_id: userId,
+        reason,
+        details,
+      });
+      if (error) throw error;
+    },
+
+    async getPortfolioFlags(filters?: any) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      let query = client.from("portfolio_flags").select("*");
+
+      if (filters?.status) {
+        query = query.eq("status", filters.status);
+      }
+
+      query = query.order("created_at", { ascending: false });
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []).map((row) => mapPortfolioFlag(row as Row));
+    },
+
+    async resolvePortfolioFlag(flagId: string, resolution: "dismissed" | "removed") {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const userId = await getCurrentSupabaseUserId();
+      const { error } = await client
+        .from("portfolio_flags")
+        .update({
+          status: resolution,
+          reviewed_by: userId,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", flagId);
+      if (error) throw error;
+    },
+
+    async searchPortfolios(query: string, filters?: any) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client.rpc("search_portfolios", {
+        p_query: query,
+        p_type: filters?.type,
+        p_visibility: filters?.visibility,
+      });
+      if (error) throw error;
+      return (data || []).map((row: Row) => mapPortfolio(row));
+    },
+  },
+
+  // ── Passport ────────────────────────────────────────────────────────────────
+
+  passport: {
+    async getPassportStamps() {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("passport_stamps")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).map((row) => mapPassportStamp(row as Row));
+    },
+
+    async getPassportProgressEvents(categoryId?: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      let query = client
+        .from("passport_progress_events")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (categoryId) {
+        query = query.eq("category_id", categoryId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []).map((row) => mapPassportProgressEvent(row as Row));
+    },
+
+    async recordProgress(categoryId: string, eventType: PassportEventType, referenceId?: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.rpc("record_passport_progress", {
+        p_category_id: categoryId,
+        p_event_type: eventType,
+        p_reference_id: referenceId ?? null,
+      });
+      if (error) throw error;
+    },
+  },
+
+  notifications: {
+    async listActivityEvents() {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("activity_events")
+        .select(
+          `
+          id,
+          event_type,
+          target_type,
+          target_id,
+          read_at,
+          created_at,
+          actor:actor_id (
+            id,
+            display_name,
+            avatar_url
+          )
+        `,
+        )
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (isMissingActivityEventsSchemaError(error)) return [];
+      if (error) throw error;
+      return (data || []).map((row: any) => ({
+        id: row.id as string,
+        actorId: row.actor?.id as string,
+        actorName: (row.actor?.display_name as string) ?? "Unknown",
+        actorAvatarUrl: row.actor?.avatar_url as string | undefined,
+        eventType: row.event_type as "new_like" | "new_comment" | "new_reply" | "new_follower",
+        targetType: row.target_type as "post" | "comment" | "profile",
+        targetId: row.target_id as string,
+        readAt: row.read_at as string | undefined,
+        createdAt: row.created_at as string,
+      }));
+    },
+
+    async markActivityRead(eventId: string) {
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { error } = await client.rpc("mark_activity_read", { p_event_id: eventId });
+      if (isMissingMarkActivityReadRpcError(error)) return;
+      if (error) throw error;
     },
   },
 };

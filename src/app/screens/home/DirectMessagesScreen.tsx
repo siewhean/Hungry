@@ -4,10 +4,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronLeft, Search } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NavigationProp } from "@react-navigation/native";
-import { Image } from "expo-image";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, EmptyState, Input } from "@/components/ui";
+import { AccessibleImage, AppText, EmptyState, Input } from "@/components/ui";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { ChatConversation } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
@@ -130,9 +129,10 @@ export function DirectMessagesScreen() {
                   }}
                 >
                   {avatar ? (
-                    <Image
+                    <AccessibleImage
                       source={{ uri: avatar }}
                       style={{ width: 56, height: 56, borderRadius: radii.pill }}
+                      accessibilityLabel={`Avatar for ${name}`}
                     />
                   ) : (
                     <View

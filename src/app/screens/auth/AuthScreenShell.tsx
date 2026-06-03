@@ -3,6 +3,7 @@ import { View } from "react-native";
 
 import { Screen, AppText, HungryLogo } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
 
 interface AuthScreenShellProps {
   title: string;
@@ -29,7 +30,7 @@ export function AuthScreenShell({
   const titleGap = compact ? spacing[4] : spacing[8];
   const innerGap = compact ? spacing[3] : spacing[4];
   const footerTopGap = compact ? spacing[2] : spacing[3];
-  const logoSize = compact ? 104 : 140;
+  const logoSize = HUNGRY_LOGO_STANDARD_SIZE;
   const effectiveWordmarkColor = wordmarkColor ?? palette.navy;
 
   return (
@@ -38,10 +39,12 @@ export function AuthScreenShell({
         <View style={{ alignItems: "center", gap: titleGap, marginBottom: innerGap }}>
           <HungryLogo size={logoSize} showWordmark wordmarkColor={effectiveWordmarkColor} />
           <View style={{ alignItems: "center", gap: spacing[1] }}>
-            <AppText variant="h1" style={{ textAlign: "center", fontSize: 24 }}>
-              {title}
-            </AppText>
-            {subtitle ? (
+            {title.trim().length > 0 ? (
+              <AppText variant="h1" style={{ textAlign: "center", fontSize: 24 }}>
+                {title}
+              </AppText>
+            ) : null}
+            {subtitle?.trim().length ? (
               <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
                 {subtitle}
               </AppText>

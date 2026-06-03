@@ -10,9 +10,10 @@
  * A static Hungry logo badge is overlaid at the centre.
  */
 
-import { Image, View } from "react-native";
+import { View } from "react-native";
 import { G, Path, Svg, Text as SvgText } from "react-native-svg";
 
+import { AccessibleImage } from "@/components/ui/AccessibleImage";
 import { HUNGRY_LOGO_ICON } from "@/constants/brandAssets";
 import { useHungryTheme } from "@/theme";
 import type { WheelEntry } from "@/types/domain";
@@ -87,7 +88,12 @@ export function WheelSvg({ entries, size = 300 }: Props) {
   const maxLabelChars = active.length <= 4 ? 10 : active.length <= 8 ? 7 : 5;
 
   return (
-    <View style={{ width: size, height: size }}>
+    <View
+      accessible
+      accessibilityLabel={`Hungry wheel with ${active.length} options`}
+      accessibilityRole="image"
+      style={{ width: size, height: size }}
+    >
       <Svg width={size} height={size}>
         <G>
           {active.map((entry, i) => {
@@ -142,9 +148,10 @@ export function WheelSvg({ entries, size = 300 }: Props) {
           justifyContent: "center",
         }}
       >
-        <Image
+        <AccessibleImage
           source={HUNGRY_LOGO_ICON}
-          resizeMode="contain"
+          contentFit="contain"
+          decorative
           style={{ width: logoSize, height: logoSize }}
         />
       </View>

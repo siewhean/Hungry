@@ -15,7 +15,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Constants from "expo-constants";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { HUNGRY_LOGO_ICON } from "@/constants/brandAssets";
+import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui";
@@ -25,7 +25,6 @@ type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
 export function SplashScreen({ navigation }: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
-  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const { palette, motion, spacing, radii, typography } = useHungryTheme();
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
   const styles = createStyles({ palette, typography, spacing, radii });
@@ -82,10 +81,10 @@ export function SplashScreen({ navigation }: Props) {
         return;
       }
 
-      if (isAuthenticated && !hasCompletedOnboarding) {
+      if (!hasCompletedOnboarding) {
         navigation.reset({
           index: 0,
-          routes: [{ name: "OnboardingStack", params: { screen: "OnboardingIntro1" } }],
+          routes: [{ name: "OnboardingStack", params: { screen: "OnboardingWelcome" } }],
         });
         return;
       }
@@ -105,7 +104,6 @@ export function SplashScreen({ navigation }: Props) {
   }, [
     hasCompletedOnboarding,
     isAuthReady,
-    isAuthenticated,
     motion.splashDot,
     motion.splashFast,
     motion.splashReveal,
@@ -120,7 +118,14 @@ export function SplashScreen({ navigation }: Props) {
         <Animated.Image
           source={HUNGRY_LOGO_ICON}
           resizeMode="contain"
-          style={[styles.logoImage, { opacity: logoOpacity, transform: [{ scale: logoScale }] }]}
+          accessibilityLabel="Hungry logo"
+          accessibilityRole="image"
+          style={{
+            height: HUNGRY_LOGO_STANDARD_SIZE,
+            opacity: logoOpacity,
+            transform: [{ scale: logoScale }],
+            width: HUNGRY_LOGO_STANDARD_SIZE,
+          }}
         />
 
         {/* Pulsing orange dot */}
@@ -182,10 +187,6 @@ const createStyles = ({
     },
     lockup: {
       alignItems: "center",
-    },
-    logoImage: {
-      width: 116,
-      height: 116,
     },
     dot: {
       width: 10,

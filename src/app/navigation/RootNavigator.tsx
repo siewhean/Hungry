@@ -51,7 +51,6 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "DishDetail",
   "DishDetailV2",
   "SearchHome",
-  "SearchHomeV2",
   "SearchResults",
   "BrowseDishes",
   "BrowseStalls",
@@ -78,13 +77,9 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "EditProfile",
   "SplashV2",
   "DesignGallery",
-  "ReviewFeedV2",
   "PostComposerV2",
-  "DiscoverV2",
-  "SearchHomeV2",
   "StallDetailV2",
   "BuildingDrillDownV2",
-  "QuickReviewV2",
   "VenueDirectory",
   "StoryViewer",
   "AddStory",
@@ -92,6 +87,8 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "MissionsScreen",
   "CollectionList",
   "CollectionDetail",
+  "PortfolioPublicView",
+  "AdminPortfolioFlags",
   "Offline",
   "NotFound",
   "UserProfile",
@@ -112,12 +109,12 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "ReviewHistory",
   "Settings",
   "ReviewStack",
-  "QuickReviewV2",
   "AddStory",
   "MusicSelection",
   "MerchantClaimExplainer",
   "PassportScreen",
   "MissionsScreen",
+  "AdminPortfolioFlags",
 ]);
 
 function isMainTabRouteName(value: string): value is MainTabRouteName {
@@ -251,14 +248,6 @@ const loadNotFoundScreen = () =>
   (
     require("@/app/screens/detail/NotFoundScreen") as typeof import("@/app/screens/detail/NotFoundScreen")
   ).NotFoundScreen;
-const loadDiscoverHomeScreenV2 = () =>
-  (
-    require("@/app/screens/discover/DiscoverHomeScreenV2") as typeof import("@/app/screens/discover/DiscoverHomeScreenV2")
-  ).DiscoverHomeScreenV2;
-const loadDishSearchScreenV2 = () =>
-  (
-    require("@/app/screens/search/DishSearchScreenV2") as typeof import("@/app/screens/search/DishSearchScreenV2")
-  ).DishSearchScreenV2;
 const loadStallDetailScreenV2 = () =>
   (
     require("@/app/screens/detail/StallDetailScreenV2") as typeof import("@/app/screens/detail/StallDetailScreenV2")
@@ -267,10 +256,6 @@ const loadBuildingDrillDownScreenV2 = () =>
   (
     require("@/app/screens/discover/BuildingDrillDownScreenV2") as typeof import("@/app/screens/discover/BuildingDrillDownScreenV2")
   ).BuildingDrillDownScreenV2;
-const loadQuickReviewSheetV2 = () =>
-  (
-    require("@/app/screens/review/QuickReviewSheetV2") as typeof import("@/app/screens/review/QuickReviewSheetV2")
-  ).QuickReviewSheetV2;
 const loadQuickBitesScreen = () =>
   (
     require("@/app/screens/discover/QuickBitesScreen") as typeof import("@/app/screens/discover/QuickBitesScreen")
@@ -285,10 +270,6 @@ const loadDesignGalleryScreen = () =>
 const loadMerchantTabs = () =>
   (require("@/app/navigation/MerchantTabs") as typeof import("@/app/navigation/MerchantTabs"))
     .MerchantTabs;
-const loadReviewFeedScreenV2 = () =>
-  (
-    require("@/app/screens/review/ReviewFeedScreenV2") as typeof import("@/app/screens/review/ReviewFeedScreenV2")
-  ).ReviewFeedScreenV2;
 const loadPostComposerScreenV2 = () =>
   (
     require("@/app/screens/post/PostComposerScreenV2") as typeof import("@/app/screens/post/PostComposerScreenV2")
@@ -326,6 +307,14 @@ const loadCollectionDetailScreen = () =>
   (
     require("@/app/screens/discover/CollectionDetailScreen") as typeof import("@/app/screens/discover/CollectionDetailScreen")
   ).CollectionDetailScreen;
+const loadPortfolioPublicViewScreen = () =>
+  (
+    require("@/app/screens/portfolio/PortfolioPublicViewScreen") as typeof import("@/app/screens/portfolio/PortfolioPublicViewScreen")
+  ).PortfolioPublicViewScreen;
+const loadAdminPortfolioFlagsScreen = () =>
+  (
+    require("@/app/screens/portfolio/AdminPortfolioFlagsScreen") as typeof import("@/app/screens/portfolio/AdminPortfolioFlagsScreen")
+  ).AdminPortfolioFlagsScreen;
 
 function BlogPostRouteScreen({
   navigation,
@@ -364,6 +353,8 @@ function GlobalScrollBackButton() {
     <View pointerEvents="box-none" style={styles.globalBackWrap}>
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel="Go back"
+        accessibilityHint="Returns to the previous screen"
         onPress={() => {
           navigationRef.goBack();
           resetScrollBack();
@@ -488,7 +479,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       if (isAuthenticated && !hasCompletedOnboarding) {
         navigationRef.resetRoot({
           index: 0,
-          routes: [{ name: "OnboardingStack", params: { screen: "OnboardingIntro1" } }],
+          routes: [{ name: "OnboardingStack", params: { screen: "OnboardingWelcome" } }],
         });
         return;
       }
@@ -499,7 +490,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     if (currentTopRoute === "OnboardingStack" && hasCompletedOnboarding) {
-      navigateHome();
+      if (isAuthenticated) {
+        navigateHome();
+      } else {
+        navigationRef.resetRoot({
+          index: 0,
+          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+        });
+      }
     }
   }, [hasCompletedOnboarding, isAuthenticated, isAuthReady, navigateHome]);
 
@@ -643,9 +641,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadQuickBitesScreen} name="QuickBites" />
           {FEATURE_FLAGS.prototypeRoutesEnabled ? (
             <>
-              <RootStack.Screen getComponent={loadDiscoverHomeScreenV2} name="DiscoverV2" />
               <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetailV2" />
-              <RootStack.Screen getComponent={loadDishSearchScreenV2} name="SearchHomeV2" />
               <RootStack.Screen getComponent={loadStallDetailScreenV2} name="StallDetailV2" />
               {FEATURE_FLAGS.floorplansEnabled ? (
                 <>
@@ -656,10 +652,8 @@ export function RootNavigator({ theme }: { theme: Theme }) {
                   <RootStack.Screen getComponent={loadVenueDirectoryScreen} name="VenueDirectory" />
                 </>
               ) : null}
-              <RootStack.Screen getComponent={loadQuickReviewSheetV2} name="QuickReviewV2" />
               <RootStack.Screen getComponent={loadSplashScreenV2} name="SplashV2" />
               <RootStack.Screen getComponent={loadDesignGalleryScreen} name="DesignGallery" />
-              <RootStack.Screen getComponent={loadReviewFeedScreenV2} name="ReviewFeedV2" />
               <RootStack.Screen
                 getComponent={loadPostComposerScreenV2}
                 name="PostComposerV2"
@@ -696,6 +690,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               <RootStack.Screen getComponent={loadCollectionDetailScreen} name="CollectionDetail" />
             </>
           ) : null}
+          <RootStack.Screen
+            getComponent={loadPortfolioPublicViewScreen}
+            name="PortfolioPublicView"
+          />
+          <RootStack.Screen
+            getComponent={loadAdminPortfolioFlagsScreen}
+            name="AdminPortfolioFlags"
+          />
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />

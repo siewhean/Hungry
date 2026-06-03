@@ -1,5 +1,5 @@
-import { forwardRef, type ReactNode } from "react";
-import { StyleSheet, TextInput, View, type TextInputProps } from "react-native";
+import { forwardRef, useEffect, useState, type ReactNode } from "react";
+import { AccessibilityInfo, StyleSheet, TextInput, View, type TextInputProps } from "react-native";
 
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
@@ -16,6 +16,12 @@ interface InputProps extends TextInputProps {
   movingPlaceholderPhrases?: string[];
 }
 
+/**
+ * Accessibility contract:
+ * - Prefer a visible `label`; otherwise the static placeholder becomes the accessible name.
+ * - Moving search placeholders are disabled while a screen reader is enabled.
+ * - Error text uses a polite live region so validation changes are announced.
+ */
 export const Input = forwardRef<TextInput, InputProps>(
   (
     {
@@ -33,6 +39,8 @@ export const Input = forwardRef<TextInput, InputProps>(
       autoCorrect,
       spellCheck,
       autoComplete,
+      allowFontScaling,
+      maxFontSizeMultiplier,
       ...props
     },
     ref,
@@ -41,6 +49,7 @@ export const Input = forwardRef<TextInput, InputProps>(
       componentCornerCurve,
       componentRadii,
       componentSizes,
+      fontScaling,
       palette,
       semanticSpacing,
       spacing,
@@ -50,14 +59,30 @@ export const Input = forwardRef<TextInput, InputProps>(
     const resolvedAutoCorrect = autoCorrect ?? !isSecureField;
     const resolvedSpellCheck = spellCheck ?? !isSecureField;
     const resolvedAutoComplete = autoComplete ?? (isSecureField ? "off" : undefined);
+    const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
+    useEffect(() => {
+      let mounted = true;
+      void AccessibilityInfo.isScreenReaderEnabled().then((enabled) => {
+        if (mounted) setIsScreenReaderEnabled(enabled);
+      });
+      const subscription = AccessibilityInfo.addEventListener(
+        "screenReaderChanged",
+        setIsScreenReaderEnabled,
+      );
+      return () => {
+        mounted = false;
+        subscription.remove();
+      };
+    }, []);
     const staticPlaceholder = typeof placeholder === "string" ? placeholder : "";
-    const shouldAnimatePlaceholder =
-      enableMovingPlaceholder ?? /^(search|find)\b/i.test(staticPlaceholder.trim());
+    const shouldAnimatePlaceholder = !isScreenReaderEnabled && enableMovingPlaceholder === true;
     const animatedPlaceholder = useMovingSearchPlaceholder({
       phrases: movingPlaceholderPhrases ?? [staticPlaceholder || "Search..."],
       enabled: shouldAnimatePlaceholder,
     });
     const placeholderValue = shouldAnimatePlaceholder ? animatedPlaceholder : staticPlaceholder;
+    const accessibilityLabel =
+      props.accessibilityLabel ?? label ?? (staticPlaceholder ? staticPlaceholder : undefined);
 
     return (
       <View style={{ gap: semanticSpacing.textStack }}>
@@ -88,11 +113,14 @@ export const Input = forwardRef<TextInput, InputProps>(
           <TextInput
             ref={ref}
             placeholder={placeholderValue}
+            accessibilityLabel={accessibilityLabel}
             placeholderTextColor={palette.textMuted}
             secureTextEntry={secureTextEntry}
             autoCorrect={resolvedAutoCorrect}
             spellCheck={resolvedSpellCheck}
             autoComplete={resolvedAutoComplete}
+            allowFontScaling={allowFontScaling ?? true}
+            maxFontSizeMultiplier={maxFontSizeMultiplier ?? fontScaling.bodyMaxMultiplier}
             style={[
               typography.body,
               {

@@ -34,15 +34,11 @@ test.describe("production route gating", () => {
     expect(rootNavigator).toContain("FEATURE_FLAGS.collectionsEnabled ? (");
 
     for (const routeName of [
-      "DiscoverV2",
       "DishDetailV2",
-      "SearchHomeV2",
       "StallDetailV2",
       "BuildingDrillDownV2",
-      "QuickReviewV2",
       "SplashV2",
       "DesignGallery",
-      "ReviewFeedV2",
       "VenueDirectory",
       "MerchantTabs",
       "ChatDetail",
@@ -55,6 +51,9 @@ test.describe("production route gating", () => {
       "CollectionDetail",
     ]) {
       expect(rootNavigator).toContain(`name="${routeName}"`);
+    }
+    for (const removedRouteName of ["DiscoverV2", "SearchHomeV2", "QuickReviewV2", "ReviewFeedV2"]) {
+      expect(rootNavigator).not.toContain(`name="${removedRouteName}"`);
     }
   });
 });

@@ -7,13 +7,21 @@ import { AppText } from "./AppText";
 
 interface ChipProps {
   label: string;
+  accessibilityLabel?: string;
   selected?: boolean;
   onPress?: () => void;
   leftIcon?: ReactNode;
   style?: StyleProp<ViewStyle>;
 }
 
-export function Chip({ label, selected = false, onPress, leftIcon, style }: ChipProps) {
+export function Chip({
+  label,
+  accessibilityLabel,
+  selected = false,
+  onPress,
+  leftIcon,
+  style,
+}: ChipProps) {
   const {
     colorScheme,
     componentCornerCurve,
@@ -27,6 +35,7 @@ export function Chip({ label, selected = false, onPress, leftIcon, style }: Chip
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ selected }}
       onPress={() => {
         void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

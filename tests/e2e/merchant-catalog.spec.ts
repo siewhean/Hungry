@@ -13,7 +13,7 @@ test.describe("merchant catalog", () => {
     await resetAppState(page);
     await clickDevButton(page, "Merchant", "Developer mode");
 
-    await expect(page.getByText(/Tiong Bahru Chicken Rice|Your Stall/).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /Switch outlet, current outlet/ })).toBeVisible();
     await expect(page.getByText("Manage Menu").first()).toBeVisible();
 
     await page.getByText("Manage Menu").first().click();

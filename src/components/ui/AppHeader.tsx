@@ -102,11 +102,14 @@ const createStyles = (
   StyleSheet.create({
     header: {
       alignItems: "center",
+      elevation: 20,
       flexDirection: "row",
       gap: spacing[3],
       height: componentSizes.headerMinHeight,
+      overflow: "visible",
       paddingBottom: spacing[1],
       paddingTop: spacing[1],
+      zIndex: 20,
     },
     copy: {
       flex: 1,
@@ -123,8 +126,11 @@ const createStyles = (
     },
     side: {
       alignItems: "center",
+      elevation: 21,
       justifyContent: "center",
       height: componentSizes.headerMinHeight,
+      overflow: "visible",
+      zIndex: 21,
     },
     backButton: {
       alignItems: "center",

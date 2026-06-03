@@ -11,6 +11,7 @@ import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { SkiaFloorplanViewer } from "@/components/map/SkiaFloorplanViewer";
+import { FloorSelector } from "@/components/map/FloorSelector";
 import { MAXWELL_L1_FLOOR_PLAN } from "@/lib/geo/maxwell_floorplan";
 import { useUIStore } from "@/store/useUIStore";
 
@@ -111,36 +112,13 @@ export function VenueDirectoryScreen({ route, navigation }: Props) {
           <Badge label={building.type.replace("_", " ")} tone="info" />
         </View>
 
-        {/* Floor Selector */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.floorSelector, { paddingHorizontal: spacing[4] }]}
-        >
-          {floors.map((floor) => (
-            <Pressable
-              key={floor}
-              onPress={() => setSelectedFloor(floor)}
-              style={[
-                styles.floorChip,
-                {
-                  backgroundColor: selectedFloor === floor ? palette.orange : palette.bgSoft,
-                  borderRadius: radii.pill,
-                },
-              ]}
-            >
-              <AppText
-                variant="bodySmall"
-                style={{
-                  color: selectedFloor === floor ? palette.surface : palette.text,
-                  fontWeight: selectedFloor === floor ? "800" : "600",
-                }}
-              >
-                Level {floor.replace("L", "")}
-              </AppText>
-            </Pressable>
-          ))}
-        </ScrollView>
+        <View style={{ paddingHorizontal: spacing[4] }}>
+          <FloorSelector
+            floors={floors}
+            selectedFloor={selectedFloor}
+            onSelectFloor={setSelectedFloor}
+          />
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + spacing[8] }}>
@@ -276,13 +254,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     marginTop: 2,
-  },
-  floorSelector: {
-    gap: 8,
-  },
-  floorChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
   },
   infoCard: {
     padding: 12,

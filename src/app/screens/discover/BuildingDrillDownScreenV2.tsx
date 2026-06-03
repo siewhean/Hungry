@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Search, Star } from "lucide-react-native";
-import { Image } from "expo-image";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { FloorPlanViewer } from "@/components/map/FloorPlanViewer";

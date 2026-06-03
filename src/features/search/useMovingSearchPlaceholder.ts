@@ -1,3 +1,4 @@
+import { AccessibilityInfo } from "react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type MovingSearchPlaceholderOptions = {
@@ -46,6 +47,8 @@ export function useMovingSearchPlaceholder({
   deleteStepMs = MIN_SLIDE_STEP_MS,
 }: MovingSearchPlaceholderOptions) {
   const normalizedPhrases = useMemo(() => normalizePhrases(phrases), [phrases]);
+  const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
+  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
 
   const [animatedPlaceholder, setAnimatedPlaceholder] = useState(() =>
     getInitialAnimatedPlaceholder(normalizedPhrases),
@@ -56,7 +59,35 @@ export function useMovingSearchPlaceholder({
   const lastTextRef = useRef<string>(getInitialAnimatedPlaceholder(normalizedPhrases));
 
   useEffect(() => {
-    if (!enabled || normalizedPhrases.length === 0) {
+    let active = true;
+
+    void AccessibilityInfo.isScreenReaderEnabled().then((value) => {
+      if (active) setIsScreenReaderEnabled(value);
+    });
+    void AccessibilityInfo.isReduceMotionEnabled().then((value) => {
+      if (active) setReduceMotionEnabled(value);
+    });
+
+    const screenReaderSubscription = AccessibilityInfo.addEventListener(
+      "screenReaderChanged",
+      setIsScreenReaderEnabled,
+    );
+    const reduceMotionSubscription = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      setReduceMotionEnabled,
+    );
+
+    return () => {
+      active = false;
+      screenReaderSubscription.remove();
+      reduceMotionSubscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    const canAnimate = enabled && !isScreenReaderEnabled && !reduceMotionEnabled;
+
+    if (!canAnimate || normalizedPhrases.length === 0) {
       const fallback = normalizedPhrases[0] ?? DEFAULT_PLACEHOLDER;
       lastTextRef.current = fallback;
       setAnimatedPlaceholder(fallback);
@@ -143,7 +174,17 @@ export function useMovingSearchPlaceholder({
         timeoutRef.current = null;
       }
     };
-  }, [enabled, normalizedPhrases, pauseMs, tickMs, totalCycleMs, revealStepMs, deleteStepMs]);
+  }, [
+    enabled,
+    isScreenReaderEnabled,
+    normalizedPhrases,
+    pauseMs,
+    reduceMotionEnabled,
+    tickMs,
+    totalCycleMs,
+    revealStepMs,
+    deleteStepMs,
+  ]);
 
   return animatedPlaceholder;
 }

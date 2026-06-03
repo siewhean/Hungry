@@ -2,12 +2,20 @@ import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { Alert, Pressable, View, StyleSheet, ScrollView } from "react-native";
 import { BarChart3, TrendingUp, PieChart, Star, Users, Clock, Flame, X } from "lucide-react-native";
 
-import { AppText, Screen, Card, Chip, Skeleton, EmptyState } from "@/components/ui";
+import { AppText, Screen, Card, FilterChipRail, Skeleton, EmptyState } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import type { MerchantAnalytics } from "@/types/domain";
+
+type AnalyticsRange = "today" | "7d" | "30d";
+
+const ANALYTICS_RANGE_OPTIONS: { id: AnalyticsRange; label: string }[] = [
+  { id: "today", label: "Today" },
+  { id: "7d", label: "7 Days" },
+  { id: "30d", label: "30 Days" },
+];
 
 function formatDelta(current: number, previous: number, options: { decimals?: number } = {}) {
   if (previous <= 0) {
@@ -32,7 +40,7 @@ export function MerchantAnalyticsScreen() {
 
   const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [range, setRange] = useState<"today" | "7d" | "30d">("7d");
+  const [range, setRange] = useState<AnalyticsRange>("7d");
   const [error, setError] = useState<string | null>(null);
   const analyticsDisclosure = getDataTrustDisclosure("merchantAnalytics");
 
@@ -126,11 +134,12 @@ export function MerchantAnalyticsScreen() {
         contentContainerStyle={{ padding: spacing[4], gap: spacing[6] }}
       >
         {/* Range Selector */}
-        <View style={{ flexDirection: "row", gap: spacing[2], paddingHorizontal: spacing[1] }}>
-          <Chip label="Today" selected={range === "today"} onPress={() => setRange("today")} />
-          <Chip label="7 Days" selected={range === "7d"} onPress={() => setRange("7d")} />
-          <Chip label="30 Days" selected={range === "30d"} onPress={() => setRange("30d")} />
-        </View>
+        <FilterChipRail
+          options={ANALYTICS_RANGE_OPTIONS}
+          selectedId={range}
+          onSelect={setRange}
+          gap={spacing[2]}
+        />
         <AppText variant="micro" tone="muted" style={{ paddingHorizontal: spacing[1] }}>
           {analyticsDisclosure}
         </AppText>

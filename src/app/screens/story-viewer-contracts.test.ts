@@ -143,9 +143,9 @@ test("Story viewer contract: cross-user transitions and footer actions are stand
     /accessibilityLabel=\{\s*currentStory\.isOwn \? "Add another story" : `Message \$\{currentStory\.displayName\}`\s*\}/,
   );
   assert.match(source, /accessibilityLabel="Like story"/);
-  assert.match(source, /accessibilityLabel="Save story"/);
+  assert.match(source, /accessibilityLabel="Share story"/);
   assert.doesNotMatch(source, /Share feature coming soon/);
-  assert.doesNotMatch(source, /accessibilityLabel="Share story"/);
+  assert.doesNotMatch(source, /accessibilityLabel="Save story"/);
   assert.match(source, /styles\.actionButtonStack/);
   assert.match(source, /styles\.actionCountText/);
   assert.doesNotMatch(source, /actionIcon/);
@@ -249,6 +249,17 @@ test("Home feed contract: story carousel opens existing own story and separates 
   assert.match(carouselSource, /openingUnseenStoryDisplayName/);
   assert.match(carouselSource, /onStoryPressIn/);
   assert.match(carouselSource, /const shouldShowUnseenRing/);
+  assert.match(carouselSource, /accessibilityLabel="Stories"/);
+  assert.match(carouselSource, /accessible/);
+  assert.match(carouselSource, /accessibilityRole="button"/);
+  assert.match(carouselSource, /Opens this unseen story/);
+  assert.match(carouselSource, /Replays this story/);
+  assert.match(
+    carouselSource,
+    /accessibilityState=\{\{ selected: Boolean\(shouldShowUnseenRing\) \}\}/,
+  );
+  assert.match(carouselSource, /accessibilityHint="Starts a new story"/);
+  assert.match(carouselSource, /importantForAccessibility="no"/);
   assert.match(
     carouselSource,
     /story\.hasUnseen \|\|[\s\S]*story\.id === openingUnseenStoryId[\s\S]*story\.displayName === openingUnseenStoryDisplayName/,

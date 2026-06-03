@@ -1,39 +1,66 @@
 import { StyleSheet, Pressable, type GestureResponderEvent } from "react-native";
-import { Image } from "expo-image";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 
 import { useHungryTheme } from "@/theme";
+import { AccessibleImage } from "@/components/ui/AccessibleImage";
 
 interface ZoomableMediaProps {
   uri: string;
   type: "image" | "video";
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
   onPress?: (event: GestureResponderEvent) => void;
   style?: any;
 }
 
-export function ZoomableMedia({ uri, type, onPress, style }: ZoomableMediaProps) {
+export function ZoomableMedia({
+  uri,
+  type,
+  accessibilityLabel,
+  accessibilityHint,
+  onPress,
+  style,
+}: ZoomableMediaProps) {
   if (type === "video") {
-    return <ZoomableVideoHost uri={uri} style={style} />;
+    return <ZoomableVideoHost uri={uri} accessibilityLabel={accessibilityLabel} style={style} />;
   }
 
-  return <ZoomableImage uri={uri} onPress={onPress} style={style} />;
+  return (
+    <ZoomableImage
+      uri={uri}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      onPress={onPress}
+      style={style}
+    />
+  );
 }
 
-function ZoomableVideoHost({ uri, style }: Pick<ZoomableMediaProps, "uri" | "style">) {
+function ZoomableVideoHost({
+  uri,
+  accessibilityLabel,
+  style,
+}: Pick<ZoomableMediaProps, "uri" | "accessibilityLabel" | "style">) {
   const { ZoomableVideo } = require("./ZoomableVideo") as typeof import("./ZoomableVideo");
-  return <ZoomableVideo uri={uri} style={style} />;
+  return <ZoomableVideo uri={uri} accessibilityLabel={accessibilityLabel} style={style} />;
 }
 
 function ZoomableImage({
   uri,
+  accessibilityLabel,
+  accessibilityHint,
   onPress,
   style,
-}: Pick<ZoomableMediaProps, "uri" | "onPress" | "style">) {
+}: Pick<
+  ZoomableMediaProps,
+  "uri" | "accessibilityLabel" | "accessibilityHint" | "onPress" | "style"
+>) {
   const { palette } = useHungryTheme();
   const scale = useSharedValue(1);
   const focalX = useSharedValue(0);
   const focalY = useSharedValue(0);
+  const resolvedAccessibilityLabel = accessibilityLabel ?? "Post image";
 
   const pinchGesture = Gesture.Pinch()
     .onStart((e) => {
@@ -62,13 +89,31 @@ function ZoomableImage({
       <Animated.View
         style={[styles.container, { backgroundColor: palette.mediaBackdrop }, style, animatedStyle]}
       >
-        <Pressable onPress={onPress} style={StyleSheet.absoluteFill}>
-          <Image
-            source={{ uri }}
-            style={StyleSheet.absoluteFill}
-            contentFit="cover"
-            transition={200}
-          />
+        <Pressable
+          accessible={Boolean(onPress)}
+          accessibilityRole={onPress ? "button" : undefined}
+          accessibilityLabel={onPress ? `Open ${resolvedAccessibilityLabel}` : undefined}
+          accessibilityHint={onPress ? (accessibilityHint ?? "Opens this media item") : undefined}
+          onPress={onPress}
+          style={StyleSheet.absoluteFill}
+        >
+          {onPress ? (
+            <AccessibleImage
+              source={{ uri }}
+              decorative
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              transition={200}
+            />
+          ) : (
+            <AccessibleImage
+              source={{ uri }}
+              accessibilityLabel={resolvedAccessibilityLabel}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              transition={200}
+            />
+          )}
         </Pressable>
       </Animated.View>
     </GestureDetector>

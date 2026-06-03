@@ -1,6 +1,6 @@
 import { StyleSheet, View } from "react-native";
-import { Image } from "expo-image";
 
+import { AccessibleImage } from "@/components/ui/AccessibleImage";
 import { AppText } from "@/components/ui/AppText";
 import { PASSPORT_TEXTURE_ASSETS } from "@/components/gamification/passportAssets";
 import { useHungryTheme } from "@/theme";
@@ -27,9 +27,10 @@ export function PassportCover({ earnedStampCount, nextLabel }: PassportCoverProp
         },
       ]}
     >
-      <Image
+      <AccessibleImage
         cachePolicy="memory-disk"
         contentFit="cover"
+        decorative
         source={PASSPORT_TEXTURE_ASSETS.cover}
         style={[StyleSheet.absoluteFill, styles.texture]}
       />

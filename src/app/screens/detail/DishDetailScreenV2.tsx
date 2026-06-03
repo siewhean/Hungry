@@ -3,7 +3,6 @@ import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import type { ColorValue } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   ArrowLeft,
@@ -30,11 +29,12 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
-import { AppText, Button, EmptyState, FeedErrorBoundary } from "@/components/ui";
+import { AccessibleImage, AppText, Button, EmptyState, FeedErrorBoundary } from "@/components/ui";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import type { DishDetail } from "@/types/domain";
+import { isVenueOpenFromHours } from "@/utils/stallStatus";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -249,6 +249,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const dominantTaste = getDominantTaste(dish);
   const isSaved = profile.favouriteDishIds.includes(dish.id);
   const waitTime = formatWaitTime(venue.liveCrowd ?? dish.liveCrowd);
+  const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
   const attributes: Attribute[] = [
     {
       label: "Taste Intensity",
@@ -270,7 +271,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           {
             label: "Estimated Wait",
             value: waitTime,
-            helper: venue.isOpen
+            helper: isVenueOpen
               ? `${waitEstimateDisclosure} · based on listed crowd level`
               : "Stall listed closed",
           },
@@ -302,6 +303,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   };
 
   const openShareSheet = () => {
+    void getHungryService().discovery.recordMerchantActionEvent({
+      eventType: "share",
+      venueId: dish.venueId,
+      dishId: dish.id,
+      userId: isAuthenticated ? profile.id : undefined,
+    });
     setActiveShareReview(shareReviewTarget);
     requestAnimationFrame(() => {
       shareSheetRef.current?.present();
@@ -319,6 +326,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     }
 
     toggleFavourite(dish);
+    if (!isSaved) {
+      void getHungryService().discovery.recordMerchantActionEvent({
+        eventType: "save",
+        venueId: dish.venueId,
+        dishId: dish.id,
+        userId: profile.id,
+      });
+    }
     showToast({
       message: isSaved ? "Removed from favourites." : "Saved to favourites!",
       tone: "success",
@@ -410,7 +425,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             contentContainerStyle={{ paddingBottom: insets.bottom + 104 }}
           >
             <View style={{ height: heroHeight }}>
-              <Image source={{ uri: heroImage }} contentFit="cover" style={{ flex: 1 }} />
+              <AccessibleImage
+                source={{ uri: heroImage }}
+                contentFit="cover"
+                style={{ flex: 1 }}
+                accessibilityLabel={`${dish.name} photo`}
+              />
               <LinearGradient
                 colors={heroGradientColors}
                 locations={[0, 0.58, 1]}
@@ -673,10 +693,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         width: signatureGridItemWidth,
                       }}
                     >
-                      <Image
+                      <AccessibleImage
                         source={{ uri: item.imageUrl }}
                         contentFit="cover"
                         style={{ flex: 1 }}
+                        decorative
                       />
                       <LinearGradient
                         colors={["transparent", palette.detailImageOverlay]}

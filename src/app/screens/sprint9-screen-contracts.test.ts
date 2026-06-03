@@ -13,6 +13,8 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   const source = read("src/app/screens/auth/LoginScreen.tsx");
   const signUpSource = read("src/app/screens/auth/SignUpScreen.tsx");
   const forgotPasswordSource = read("src/app/screens/auth/ForgotPasswordScreen.tsx");
+  const resetPasswordSource = read("src/app/screens/auth/ResetPasswordScreen.tsx");
+  const emailVerificationSource = read("src/app/screens/auth/EmailVerificationScreen.tsx");
   const authCopySource = read("src/app/screens/auth/authCopy.ts");
   const providerButtonSource = read("src/app/screens/auth/AuthProviderButton.tsx");
   const providerLogoSource = read("src/components/icons/brand/AuthProviderLogos.tsx");
@@ -58,8 +60,43 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   assert.match(providerButtonSource, /textAlign: "center"/);
   assert.match(providerButtonSource, /getAuthProviderButtonLabel\(provider, intent\)/);
   assert.match(providerButtonSource, /getAuthProviderUnavailableButtonLabel\(provider\)/);
+  assert.match(providerButtonSource, /accessibilityLabel=\{label\}/);
   assert.match(providerButtonSource, /accessibilityState=\{\{ disabled \}\}/);
   assert.match(providerButtonSource, /disabled=\{disabled\}/);
+  assert.match(
+    source,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{AUTH_COPY\.login\.footerAction\}/,
+  );
+  assert.match(source, /accessibilityHint="Opens the account creation screen"/);
+  assert.match(source, /accessibilityLabel=\{showPassword \? "Hide password" : "Show password"\}/);
+  assert.match(source, /accessibilityHint=\{[\s\S]*Shows the password characters[\s\S]*\}/);
+  assert.match(
+    source,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{AUTH_COPY\.login\.forgotPasswordLink\}/,
+  );
+  assert.match(source, /accessibilityHint="Opens password reset"/);
+  assert.match(signUpSource, /accessibilityLabel=\{AUTH_COPY\.signUp\.footerAction\}/);
+  assert.match(signUpSource, /accessibilityHint="Returns to the sign in screen"/);
+  assert.match(
+    signUpSource,
+    /accessibilityLabel=\{showPassword \? "Hide password" : "Show password"\}/,
+  );
+  assert.match(
+    forgotPasswordSource,
+    /accessibilityLabel=\{AUTH_COPY\.forgotPassword\.backToLogin\}/,
+  );
+  assert.match(forgotPasswordSource, /accessibilityHint="Returns to the sign in screen"/);
+  assert.match(resetPasswordSource, /accessibilityLabel="Back to Sign In"/);
+  assert.match(
+    resetPasswordSource,
+    /accessibilityLabel=\{showPassword \? "Hide password" : "Show password"\}/,
+  );
+  assert.match(
+    resetPasswordSource,
+    /accessibilityLabel=\{\s*showConfirmPassword\s*\?\s*"Hide confirmation password"\s*:\s*"Show confirmation password"\s*\}/,
+  );
+  assert.match(emailVerificationSource, /accessibilityLabel=\{[\s\S]*Resend verification email/);
+  assert.match(emailVerificationSource, /accessibilityHint="Requests a new verification email"/);
   assert.match(providerLogoSource, /export const AUTH_PROVIDER_LOGO_SIZE = 20/);
   assert.match(providerLogoSource, /export const AUTH_PROVIDER_APPLE_LOGO_SIZE = 26/);
   assert.match(providerLogoSource, /export function GoogleLogo/);
@@ -82,6 +119,92 @@ test("Sprint 9 screen contract: Review screen submits via service and triggers s
   assert.match(source, /showReviewSuccess\(/);
   assert.match(source, /showToast\(\{ message: "Review posted!"/);
   assert.match(source, /<FeedErrorBoundary/);
+});
+
+test("Sprint 9 screen contract: onboarding icon controls and location rows are labelled", () => {
+  const locationPermission = read("src/app/screens/onboarding/LocationPermissionScreen.tsx");
+  const manualLocation = read("src/app/screens/onboarding/ManualLocationPickerScreen.tsx");
+  const tasteProfileResult = read("src/app/screens/onboarding/TasteProfileResultScreen.tsx");
+  const tasteQuiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
+
+  assert.match(locationPermission, /accessibilityLabel="Back to taste quiz"/);
+  assert.match(locationPermission, /accessibilityHint="Returns to the taste preference questions"/);
+  assert.match(manualLocation, /accessibilityLabel="Back to location permission"/);
+  assert.match(manualLocation, /accessibilityLabel="Search Singapore location"/);
+  assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{area\.name\}`\}/);
+  assert.match(manualLocation, /accessibilityHint="Sets this as your Hungry discovery location"/);
+  assert.match(tasteProfileResult, /accessibilityLabel=\{`Save \$\{dish\.name\}`\}/);
+  assert.match(tasteProfileResult, /accessibilityHint="Adds this dish to your favourites"/);
+  assert.match(
+    tasteQuiz,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`\$\{labels\[index\]\} \$\{QUESTIONS\[currentKey\]\}`\}/,
+  );
+  assert.match(
+    tasteQuiz,
+    /accessibilityHint=\{`Selects \$\{choiceFoods\[index\]\.label\} as your answer for this taste question`\}/,
+  );
+  assert.match(
+    tasteQuiz,
+    /accessibilityState=\{\{ selected: isSelected, disabled: isTransitioning \}\}/,
+  );
+  assert.match(
+    tasteQuiz,
+    /accessibilityRole="checkbox"[\s\S]*accessibilityLabel=\{`Dietary preference \$\{option\.label\}`\}/,
+  );
+  assert.match(tasteQuiz, /accessibilityState=\{\{ checked: isSelected \}\}/);
+  assert.match(tasteQuiz, /const \{ fontScale, width \} = useWindowDimensions\(\)/);
+  assert.match(
+    tasteQuiz,
+    /const accessibilityFooterReserve = Math\.ceil\(Math\.max\(fontScale - 1, 0\) \* 96\)/,
+  );
+  assert.match(
+    tasteQuiz,
+    /const actionFooterBottomPadding = ONBOARDING_ACTIONS_BOTTOM_PADDING \+ spacing\[2\]/,
+  );
+  assert.match(tasteQuiz, /paddingBottom: spacing\[6\] \+ accessibilityFooterReserve/);
+  assert.match(tasteQuiz, /flexShrink: 0/);
+  assert.match(tasteQuiz, /paddingBottom: actionFooterBottomPadding/);
+  assert.match(tasteQuiz, /labelNumberOfLines=\{fontScale > 1\.15 \? 2 : 1\}/);
+});
+
+test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
+  const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+
+  assert.match(
+    stallDetail,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`Open \$\{activeDish\.name\}`\}/,
+  );
+  assert.match(stallDetail, /accessibilityHint="Opens this dish detail page"/);
+});
+
+test("Sprint 9 screen contract: Search cards expose actionable semantics", () => {
+  const search = read("src/app/screens/search/DishSearchScreen.tsx");
+  const collectionDetail = read("src/app/screens/discover/CollectionDetailScreen.tsx");
+  const buildingDrillDown = read("src/app/screens/discover/BuildingDrillDownScreen.tsx");
+  const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
+
+  assert.match(search, /accessibilityLabel="Search dishes, stalls, or hawker centres"/);
+  assert.match(search, /const suggestedDish = collections\[0\]\?\.topDishes\[0\]/);
+  assert.match(
+    search,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{[\s\S]*`Open suggested dish \$\{suggestedDish\.name\}`/,
+  );
+  assert.match(search, /accessibilityHint="Opens this dish detail page"/);
+  assert.match(search, /accessibilityState=\{\{ disabled: !suggestedDish \}\}/);
+  assert.match(search, /accessibilityLabel=\{`Open \$\{collection\.venue\.name\} stall details`\}/);
+  assert.match(search, /accessibilityHint="Opens this stall page with menu and dish information"/);
+  assert.match(
+    collectionDetail,
+    /accessibilityLabel=\{`Open \$\{row\.venue\?\.name \?\? row\.item\.stallId\} stall details`\}/,
+  );
+  assert.match(
+    collectionDetail,
+    /accessibilityHint="Opens this stall page with menu and dish information"/,
+  );
+  assert.match(buildingDrillDown, /accessibilityLabel=\{`Show floor \$\{floor\}`\}/);
+  assert.match(buildingDrillDown, /accessibilityState=\{\{ selected \}\}/);
+  assert.match(rootNavigator, /accessibilityLabel="Go back"/);
+  assert.match(rootNavigator, /accessibilityHint="Returns to the previous screen"/);
 });
 
 test("Sprint 9 screen contract: Home feed interactions are wired for like/save/comment/share", () => {
@@ -111,9 +234,25 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(source, /sendPostToHungryUsers/);
   assert.match(source, /sharePostToChat\(chatId,/);
   assert.match(source, /incrementPostShare\(activeShareItem\.id\)/);
+  assert.match(source, /const actionTargetName = item\.dishes\[0\]\?\.name \?\? item\.venue\.name/);
+  assert.match(source, /accessibilityLabel=\{`Share \$\{actionTargetName\} in Hungry`\}/);
+  assert.match(source, /accessibilityHint="Opens sharing options for this post"/);
   assert.match(
     source,
-    /accessibilityLabel=\{`Share \$\{item\.dishes\[0\]\?\.name \?\? item\.venue\.name\} in Hungry`\}/,
+    /accessibilityLabel=\{`\$\{isSaved \? "Unsave" : "Save"\} \$\{actionTargetName\}`\}/,
+  );
+  assert.match(source, /isSaved\s*\?\s*"Removes this post from your saved items"/);
+  assert.match(source, /accessibilityLabel=\{`Comment on \$\{actionTargetName\}`\}/);
+  assert.match(source, /accessibilityHint="Opens the comments for this post"/);
+  assert.match(
+    source,
+    /accessibilityLabel=\{`\$\{isLiked \? "Unlike" : "Like"\} \$\{actionTargetName\}`\}/,
+  );
+  assert.match(source, /isLiked\s*\?\s*"Removes your like from this post"/);
+  assert.match(source, /accessibilityLabel="Home food feed"/);
+  assert.match(
+    source,
+    /accessibilityHint="Swipe vertically to browse food posts and pull down to refresh"/,
   );
   assert.match(source, /directMessagesEnabled \? "Share in Hungry" : "Share post"/);
   assert.match(source, /FloatingShareSendButton/);
@@ -126,7 +265,14 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(source, /recipientAccessibilityLabelPrefix="Share post to"/);
   assert.match(source, /Clipboard\.setString/);
   assert.match(source, /Share\.share\(/);
-  assert.match(source, /commentsSheetRef\.current\?\.present\(\)/);
+  assert.match(source, /const openCommentSheet = useCallback/);
+  assert.match(source, /const commentSheet = commentsSheetRef\.current/);
+  assert.match(source, /openCommentSheet\(\)/);
+  assert.match(
+    source,
+    /const loadCommentsForPost = useSocialStore\(\(state\) => state\.loadCommentsForPost\)/,
+  );
+  assert.match(source, /void loadCommentsForPost\(activeCommentItem\.id\)/);
   assert.match(source, /<BottomSheetModal/);
   assert.match(source, /commentsByPostId\[activeCommentItem\.id\] \?\? \[\]/);
   assert.match(source, /addPostComment\(activeCommentItem\.id, newComment\)/);
@@ -150,7 +296,7 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(source, /accessibilityLabel=\{`Open \$\{item\.authorName\} profile photo`\}/);
   assert.match(
     source,
-    /openUserProfile\(item\.authorName, item\.authorAvatarUrl, item\.authorLocation\)/,
+    /openUserProfile\([\s\S]*item\.authorName,[\s\S]*item\.authorAvatarUrl,[\s\S]*item\.authorLocation/,
   );
   assert.match(source, /onPress=\{\(\) => openVenueOnMap\(item\)\}/);
   assert.match(
@@ -159,9 +305,22 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   );
   assert.match(
     source,
+    /const followedUserIds = useSocialStore\(\(state\) => state\.followedUserIds\)/,
+  );
+  assert.match(
+    source,
     /const toggleAuthorFollow = useSocialStore\(\(state\) => state\.toggleAuthorFollow\)/,
   );
-  assert.match(source, /const isFollowingAuthor = Boolean\(followedAuthors\[item\.authorName\]\)/);
+  assert.match(source, /const toggleFollow = useSocialStore\(\(state\) => state\.toggleFollow\)/);
+  assert.match(source, /const followTargetId = item\.authorId/);
+  assert.match(
+    source,
+    /followTargetId[\s\S]*\? Boolean\(followedUserIds\[followTargetId\]\)[\s\S]*: Boolean\(followedAuthors\[item\.authorName\]\)/,
+  );
+  assert.match(
+    source,
+    /followTargetId[\s\S]*\? toggleFollow\(followTargetId\)[\s\S]*: toggleAuthorFollow\(item\.authorName\)/,
+  );
   assert.match(
     source,
     /accessibilityLabel=\{`\$\{isFollowingAuthor \? "Unfollow" : "Follow"\} \$\{item\.authorName\}`\}/,
@@ -308,6 +467,10 @@ test("Sprint 9 screen contract: feed videos pause on tap and fast-forward only f
   assert.match(source, /if \(!isEdgeHold\) \{\s*return;\s*\}/);
   assert.match(source, /player\.playbackRate = 2\.0/);
   assert.match(source, /player\.playbackRate = 1\.0/);
+  assert.match(source, /player\.loop = true/);
+  assert.match(source, /player\.addListener\("playToEnd"/);
+  assert.match(source, /player\.currentTime = 0/);
+  assert.match(source, /player\.play\(\)/);
   assert.match(source, /Gesture\.LongPress\(\)[\s\S]*runOnJS\(startFastForward\)\(event\.x\)/);
   assert.match(source, /Gesture\.Tap\(\)\.onEnd[\s\S]*runOnJS\(handleTogglePlay\)\(\)/);
   assert.match(

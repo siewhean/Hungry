@@ -64,6 +64,7 @@ function relatedEntityTypeForAction(
   if (
     action === "stall_saved" ||
     action === "stall_marked_tried" ||
+    action === "stall_submitted" ||
     action === "stall_info_corrected"
   ) {
     return "stall";

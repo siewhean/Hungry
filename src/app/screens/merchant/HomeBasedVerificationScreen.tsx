@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useHungryTheme } from "@/theme";
 import { AppText, Button, EmptyState, Screen, IconButton, Input, Card } from "@/components/ui";
+import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -65,8 +66,20 @@ export function HomeBasedVerificationScreen({ navigation }: Props) {
         return;
       }
 
+      const shouldRequestPermission = await confirmGalleryAccess({
+        title: "Allow gallery access",
+        message:
+          "Hungry needs access to your photo library to upload photos for verification evidence.",
+        confirmLabel: "Allow",
+        cancelLabel: "Not now",
+      });
+
+      if (!shouldRequestPermission) {
+        return;
+      }
+
       const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
+      if (!isGalleryPermissionGranted(permission)) {
         setPhotoError("Photos permission is required to attach verification evidence.");
         return;
       }

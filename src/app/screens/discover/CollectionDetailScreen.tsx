@@ -6,12 +6,13 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { View, FlatList, Pressable, Image, StyleSheet } from "react-native";
+import { View, FlatList, Pressable, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Bookmark, BookmarkCheck, ChevronLeft } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { AccessibleImage } from "@/components/ui/AccessibleImage";
 import { AppText, EmptyState, IconButton, Skeleton } from "@/components/ui";
 import { useCollectionStore } from "@/store/useCollectionStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
@@ -156,10 +157,10 @@ export function CollectionDetailScreen({ route, navigation }: Props) {
           <View>
             {/* Cover image */}
             {collection.coverImageUrl ? (
-              <Image
+              <AccessibleImage
                 source={{ uri: collection.coverImageUrl }}
                 style={{ width: "100%", height: 220 }}
-                resizeMode="cover"
+                contentFit="cover"
                 accessibilityLabel={`Cover for ${collection.title}`}
               />
             ) : (
@@ -187,6 +188,8 @@ export function CollectionDetailScreen({ route, navigation }: Props) {
           return (
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel={`Open ${row.venue?.name ?? row.item.stallId} stall details`}
+              accessibilityHint="Opens this stall page with menu and dish information"
               onPress={() => navigation.navigate("StallDetail", { venueId: row.item.stallId })}
               style={({ pressed }) => ({
                 backgroundColor: pressed ? palette.bgSoft : "transparent",

@@ -110,7 +110,42 @@ function matchesContentTypeMagic(bytes: Uint8Array, contentType: string): boolea
 }
 
 async function assertValidMagicBytes(blob: Blob, contentType: string): Promise<void> {
-  const sample = new Uint8Array(await blob.slice(0, MAGIC_BYTE_SAMPLE_BYTES).arrayBuffer());
+  const sliceEnd = Math.min(MAGIC_BYTE_SAMPLE_BYTES, blob.size ?? MAGIC_BYTE_SAMPLE_BYTES);
+  const maybeSlice = typeof blob.slice === "function" ? blob.slice(0, sliceEnd) : blob;
+  let sampleBuffer: ArrayBuffer | undefined;
+
+  if (
+    typeof (blob as Blob & { arrayBuffer?: () => Promise<ArrayBuffer> }).arrayBuffer === "function"
+  ) {
+    sampleBuffer = await (blob as Blob & { arrayBuffer: () => Promise<ArrayBuffer> }).arrayBuffer();
+  } else if (
+    typeof (maybeSlice as Blob & { arrayBuffer?: () => Promise<ArrayBuffer> }).arrayBuffer ===
+    "function"
+  ) {
+    sampleBuffer = await (
+      maybeSlice as Blob & { arrayBuffer: () => Promise<ArrayBuffer> }
+    ).arrayBuffer();
+  } else if (typeof FileReader === "function") {
+    sampleBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result;
+        if (result instanceof ArrayBuffer) {
+          resolve(result);
+          return;
+        }
+        reject(new Error("Unable to read media magic bytes in this environment."));
+      };
+      reader.onerror = () => reject(reader.error ?? new Error("Unable to read media magic bytes."));
+      reader.readAsArrayBuffer(maybeSlice);
+    });
+  }
+
+  if (!sampleBuffer) {
+    return;
+  }
+
+  const sample = new Uint8Array(sampleBuffer);
   if (!matchesContentTypeMagic(sample, contentType)) {
     throw new Error("Media upload content does not match its declared type.");
   }

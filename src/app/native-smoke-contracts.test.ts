@@ -143,6 +143,11 @@ test("native media picker smoke reaches the post composer gallery entry point", 
   assert.match(mediaManager, /launchImageLibraryAsync/);
   assert.match(mediaManager, /mediaTypes: ImagePicker\.MediaTypeOptions\.All/);
   assert.match(mediaManager, /allowsMultipleSelection: true/);
+  assert.match(mediaManager, /videoMaxDuration: 60/);
+  assert.match(mediaManager, /function ComposerVideoPreview/);
+  assert.match(mediaManager, /<VideoView/);
+  assert.match(mediaManager, /videoPlayer\.loop = true/);
+  assert.match(mediaManager, /player\.addListener\("playToEnd"/);
   assert.match(mediaManager, /accessibilityLabel="Add media from gallery"/);
   assert.match(mediaManager, /testID="post-composer-add-media"/);
 });

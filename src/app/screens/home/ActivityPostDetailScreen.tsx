@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, TextInput, View, useWindowDimensions } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { LinearGradient } from "expo-linear-gradient";
@@ -43,6 +43,8 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const posts = useMemo(() => listSharedStallPostsSync(repository), [publishedPosts, repository]);
   const post = posts.find((candidate) => candidate.id === postId);
   const activityUpdates = useActivityStore((state) => state.activityUpdates);
+  const dbActivityEvents = useActivityStore((state) => state.dbActivityEvents);
+  const fetchActivityEvents = useActivityStore((state) => state.fetchActivityEvents);
   const interactions = useSocialStore((state) => state.interactions);
   const initializeInteractions = useSocialStore((state) => state.initializeInteractions);
   const toggleLike = useSocialStore((state) => state.toggleLike);
@@ -57,6 +59,12 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
     null,
   );
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+  const openCommentsSheet = useCallback(() => {
+    void commentsSheetRef.current?.present();
+    requestAnimationFrame(() => {
+      commentsSheetRef.current?.snapToIndex(0);
+    });
+  }, []);
 
   useEffect(() => {
     initializeInteractions(posts);
@@ -68,12 +76,17 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
     }
   }, [markActivityRead, updateId]);
 
+  useEffect(() => {
+    void fetchActivityEvents();
+  }, [fetchActivityEvents]);
+
   const update = useMemo(() => {
     return (
       ACTIVITY_UPDATES.find((candidate) => candidate.id === updateId) ??
+      dbActivityEvents.find((candidate) => candidate.id === updateId) ??
       activityUpdates.find((candidate) => candidate.id === updateId)
     );
-  }, [activityUpdates, updateId]);
+  }, [activityUpdates, dbActivityEvents, updateId]);
 
   const seededCommentsForActiveReview = useMemo<SocialComment[]>(() => {
     if (!activeCommentReview) {
@@ -122,8 +135,22 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
     commentCount: 0,
   };
   const imageHeight = Math.min(Math.max(screenWidth * 1.12, 360), 460);
-  const kindLabel = update?.kind === "like" ? "Like" : "Comment";
-  const kindColor = update?.kind === "like" ? palette.error : palette.orange;
+  const kindLabel =
+    update?.kind === "like"
+      ? "Like"
+      : update?.kind === "share"
+        ? "Share"
+        : update?.kind === "submission"
+          ? "Submission"
+          : "Comment";
+  const kindColor =
+    update?.kind === "like"
+      ? palette.error
+      : update?.kind === "share"
+        ? palette.orange
+        : update?.kind === "submission"
+          ? palette.orange
+          : palette.orange;
 
   return (
     <Screen
@@ -157,6 +184,9 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
           <ZoomableMedia
             uri={post.mediaUrl}
             type={post.mediaType === "video" ? "video" : "image"}
+            accessibilityLabel={`${primaryDish?.name ?? venue?.name ?? "Activity post"} ${
+              post.mediaType === "video" ? "video" : "image"
+            }`}
             style={styles.heroImage}
           />
 
@@ -280,10 +310,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
                       dishName: primaryDish?.name ?? post.authorName,
                       caption: post.caption,
                     });
-                    requestAnimationFrame(() => {
-                      commentsSheetRef.current?.present();
-                      commentsSheetRef.current?.snapToIndex(0);
-                    });
+                    openCommentsSheet();
                   }}
                   style={styles.inlineAction}
                 >

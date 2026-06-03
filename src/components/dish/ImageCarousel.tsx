@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import { useRef } from "react";
 import { Animated, StyleSheet, View } from "react-native";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { useHungryTheme } from "@/theme";
+import { AccessibleImage } from "@/components/ui/AccessibleImage";
 
 interface ImageCarouselProps {
   images: string[];
@@ -49,7 +49,12 @@ export function ImageCarousel({ images, width, height, children }: ImageCarousel
         {images.map((uri, index) => (
           <View key={`${uri}-${index}`} style={{ height: "100%", width }}>
             <Animated.View style={StyleSheet.absoluteFill}>
-              <Image source={uri} style={StyleSheet.absoluteFill} contentFit="cover" />
+              <AccessibleImage
+                source={uri}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+                accessibilityLabel={`Dish photo ${index + 1} of ${images.length}`}
+              />
             </Animated.View>
           </View>
         ))}

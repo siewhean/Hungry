@@ -14,13 +14,12 @@ import {
   Animated,
   Easing,
 } from "react-native";
-import { Image } from "expo-image";
 import { useNavigation } from "@react-navigation/native";
 import { ChevronLeft, Play, Pause, Bookmark, Search, X, Music2 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Slider from "@react-native-community/slider";
 
-import { AppText, Input, Button } from "@/components/ui";
+import { AccessibleImage, AppText, Input, Button } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
 // ─── Mock Data ──────────────────────────────────────────────────────────────
@@ -290,9 +289,11 @@ export function MusicSelectionScreen() {
         >
           <View style={styles.trackInfo}>
             <View style={styles.thumbnailContainer}>
-              <Image
+              <AccessibleImage
                 source={{ uri: item.thumbnail }}
                 style={[StyleSheet.absoluteFill, { borderRadius: radii.sm }]}
+                contentFit="cover"
+                decorative
               />
               {isPlaying && (
                 <View
@@ -440,9 +441,11 @@ export function MusicSelectionScreen() {
           ]}
         >
           <View style={styles.playerRow}>
-            <Image
+            <AccessibleImage
               source={{ uri: playingTrack.thumbnail }}
               style={[styles.playerThumbnail, { borderRadius: radii.sm }]}
+              contentFit="cover"
+              accessibilityLabel={`${playingTrack.title} artwork`}
             />
             <View style={{ flex: 1, marginLeft: spacing[3] }}>
               <AppText variant="bodyBold" numberOfLines={1}>

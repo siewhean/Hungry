@@ -16,7 +16,6 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   Bookmark,
@@ -53,6 +52,7 @@ import { FlashList, type FlashListRef } from "@shopify/flash-list";
 
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
+  AccessibleImage,
   AppHeader,
   AppText,
   Avatar,
@@ -90,7 +90,7 @@ import {
   promptPostSafetyActions,
   targetAuthorKey,
 } from "@/lib/security/communitySafety";
-import { getHungryService } from "@/lib/services/serviceProvider";
+import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
@@ -210,13 +210,24 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const repliesByCommentId = useSocialStore((state) => state.repliesByCommentId);
   const addPostComment = useSocialStore((state) => state.addComment);
   const addPostReply = useSocialStore((state) => state.addReply);
+  const loadCommentsForPost = useSocialStore((state) => state.loadCommentsForPost);
   const followedAuthors = useSocialStore((state) => state.followedAuthors);
+  const followedUserIds = useSocialStore((state) => state.followedUserIds);
   const toggleAuthorFollow = useSocialStore((state) => state.toggleAuthorFollow);
+  const toggleFollow = useSocialStore((state) => state.toggleFollow);
   const readActivityIds = useActivityStore((state) => state.readActivityIds);
   const activityUpdates = useActivityStore((state) => state.activityUpdates);
+  const dbActivityEvents = useActivityStore((state) => state.dbActivityEvents);
+  const fetchActivityEvents = useActivityStore((state) => state.fetchActivityEvents);
   const updateUnreadCount = useMemo(
-    () => getActivityUnreadCount(readActivityIds, activityUpdates),
-    [readActivityIds, activityUpdates],
+    () =>
+      getActivityUnreadCount(
+        readActivityIds,
+        getServiceProvider().mode === "mock"
+          ? activityUpdates
+          : [...dbActivityEvents, ...activityUpdates],
+      ),
+    [readActivityIds, activityUpdates, dbActivityEvents],
   );
   const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled;
   const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
@@ -230,8 +241,19 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore((state) => state.account !== null);
   const canAccessMap = isDeveloperMode || isMerchantMode;
+  const isUserMode = !isDeveloperMode && !isMerchantMode;
+  const shouldShowStories = storiesEnabled && !isUserMode;
+
+  useEffect(() => {
+    if (getServiceProvider().mode === "mock") return;
+    void fetchActivityEvents();
+  }, [fetchActivityEvents]);
   const storyCarouselItems = useMemo<StoryItem[]>(() => {
     if (!storiesEnabled) {
+      return [];
+    }
+
+    if (isUserMode) {
       return [];
     }
 
@@ -250,7 +272,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       },
       ...stories,
     ];
-  }, [profile.avatarUrl, stories, storiesEnabled]);
+  }, [isUserMode, profile.avatarUrl, stories, storiesEnabled]);
 
   const [feedState, setFeedState] = useState<"loading" | "ready" | "error">("loading");
   const [feedError, setFeedError] = useState("");
@@ -276,6 +298,15 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const commentInputRef = useRef<any>(null);
   const commentSnapPoints = useMemo(() => ["50%", "88%"], []);
+  const openCommentSheet = useCallback(() => {
+    const commentSheet = commentsSheetRef.current;
+    if (!commentSheet) return;
+
+    void commentSheet.present?.();
+    requestAnimationFrame(() => {
+      commentSheet.snapToIndex(0);
+    });
+  }, []);
   const shareSnapPoints = useMemo(() => ["45%"], []);
   const lastImageTapRef = useRef<{ postId: string; at: number } | null>(null);
   const singleTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -446,29 +477,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     }, [loadFeed]),
   );
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("tabPress", (event) => {
-      if (event.target !== route.key) {
-        return;
-      }
-
-      if (mode === "social") {
-        socialFeedListRef.current?.scrollToOffset({
-          offset: 0,
-          animated: true,
-        });
-        return;
-      }
-
-      reviewFeedScrollRef.current?.scrollTo({
-        x: 0,
-        y: 0,
-        animated: true,
-      });
-    });
-
-    return unsubscribe;
-  }, [mode, navigation, route.key]);
+  // Tab press-to-top behavior intentionally disabled for bottom navigation.
 
   useEffect(() => {
     const leadingItems = [
@@ -504,12 +513,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       setActiveCommentItem(item);
       setDraftComment("");
       setActiveReplyCommentId(null);
-      requestAnimationFrame(() => {
-        commentsSheetRef.current?.present();
-        commentsSheetRef.current?.snapToIndex(0);
-      });
+      openCommentSheet();
     },
-    [commentsEnabled, recordPostDishInteraction],
+    [commentsEnabled, openCommentSheet, recordPostDishInteraction],
   );
 
   const loadChatConversations = useCallback(async () => {
@@ -599,7 +605,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   }, [activeShareItem]);
 
   const openUserProfile = useCallback(
-    (authorName: string, authorAvatarUrl?: string, authorLocation?: string) => {
+    (authorName: string, authorAvatarUrl?: string, authorLocation?: string, authorId?: string) => {
       const normalizedAuthorName = authorName.trim();
       const normalizedAvatarUrl = authorAvatarUrl?.trim();
       const normalizedLocation = authorLocation?.trim();
@@ -607,6 +613,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         authorName: normalizedAuthorName,
         authorAvatarUrl: normalizedAvatarUrl,
         authorLocation: normalizedLocation,
+        authorId: authorId?.trim(),
       });
     },
     [navigation],
@@ -618,6 +625,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         authorName: item.authorName.trim(),
         authorAvatarUrl: item.authorAvatarUrl?.trim(),
         authorLocation: item.authorLocation?.trim(),
+        authorId: item.authorId?.trim(),
       });
       prefetchImages([item.authorAvatarUrl?.trim()], 1);
     },
@@ -665,13 +673,15 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   const handlePostLike = useCallback(
     (item: HomeFeedItem) => {
-      const wasLiked = interactions[item.id]?.liked;
+      const wasLiked = useSocialStore.getState().interactions[item.id]?.liked;
       void togglePostLike(item.id);
       if (!wasLiked) {
-        recordPostDishInteraction(item, "like", "dish_like");
+        requestAnimationFrame(() => {
+          recordPostDishInteraction(item, "like", "dish_like");
+        });
       }
     },
-    [interactions, recordPostDishInteraction, togglePostLike],
+    [recordPostDishInteraction, togglePostLike],
   );
 
   const handlePostSave = useCallback(
@@ -679,7 +689,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       void togglePostSave(item.id);
       const primaryDish = item.dishes?.[0];
       if (primaryDish?.id) {
-        toggleFavourite(primaryDish);
+        requestAnimationFrame(() => {
+          toggleFavourite(primaryDish);
+        });
       }
     },
     [toggleFavourite, togglePostSave],
@@ -719,6 +731,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     );
   }, [activeCommentItem, commentsByPostId]);
 
+  useEffect(() => {
+    if (!activeCommentItem?.id) return;
+    void loadCommentsForPost(activeCommentItem.id);
+  }, [activeCommentItem?.id, loadCommentsForPost]);
+
   const handlePostCommentOrReply = useCallback(() => {
     if (!activeCommentItem || !draftComment.trim().length) return;
 
@@ -726,6 +743,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       const newReply: SocialReply = {
         id: `reply-${Date.now()}`,
         parentCommentId: activeReplyCommentId,
+        userId: profile.id,
         authorName: profile.displayName,
         authorAvatarUrl: profile.avatarUrl,
         text: draftComment.trim(),
@@ -737,6 +755,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     } else {
       const newComment: SocialComment = {
         id: `comment-${Date.now()}`,
+        userId: profile.id,
         authorName: profile.displayName,
         authorAvatarUrl: profile.avatarUrl,
         text: draftComment.trim(),
@@ -753,6 +772,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     addPostReply,
     draftComment,
     activeReplyCommentId,
+    profile.id,
     profile.avatarUrl,
     profile.displayName,
   ]);
@@ -894,7 +914,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   const handleStoryPress = useCallback(
     (story: StoryItem) => {
-      if (!storiesEnabled) return;
+      if (!shouldShowStories) return;
 
       if (story.isOwn) {
         const ownStory = stories.find((candidate) => candidate.isOwn);
@@ -908,20 +928,20 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       holdOpeningStoryRing(story);
       navigation.navigate("StoryViewer", { initialStoryId: story.id });
     },
-    [holdOpeningStoryRing, navigation, stories, storiesEnabled],
+    [holdOpeningStoryRing, navigation, shouldShowStories, stories],
   );
 
   const handleAddStoryPress = useCallback(() => {
-    if (!storiesEnabled) return;
+    if (!shouldShowStories) return;
 
     navigation.navigate("AddStory");
-  }, [navigation, storiesEnabled]);
+  }, [navigation, shouldShowStories]);
 
   useEffect(() => {
-    if (storiesEnabled && stories.length === 0) {
+    if (shouldShowStories && stories.length === 0) {
       void loadStories();
     }
-  }, [loadStories, stories.length, storiesEnabled]);
+  }, [loadStories, shouldShowStories, stories.length]);
 
   useEffect(() => {
     void loadChatConversations();
@@ -979,21 +999,23 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     () => (
       <View style={{ paddingBottom: 0, gap: 0 }}>
         <AppHeader
-          title="Hungry"
+          title="Home"
           showBack={false}
           right={renderActivityButton()}
           horizontalPadding={semanticSpacing.screenEdge}
-          titleStyle={{ color: palette.orange }}
+          style={{ minHeight: 68 }}
         />
         {storiesEnabled ? (
-          <CircleStoryCarousel
-            stories={storyCarouselItems}
-            openingUnseenStoryId={openingUnseenStoryId}
-            openingUnseenStoryDisplayName={openingUnseenStoryDisplayName}
-            onStoryPressIn={holdOpeningStoryRing}
-            onStoryPress={handleStoryPress}
-            onAddStoryPress={handleAddStoryPress}
-          />
+          shouldShowStories ? (
+            <CircleStoryCarousel
+              stories={storyCarouselItems}
+              openingUnseenStoryId={openingUnseenStoryId}
+              openingUnseenStoryDisplayName={openingUnseenStoryDisplayName}
+              onStoryPressIn={holdOpeningStoryRing}
+              onStoryPress={handleStoryPress}
+              onAddStoryPress={handleAddStoryPress}
+            />
+          ) : null
         ) : null}
       </View>
     ),
@@ -1006,6 +1028,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       palette.orange,
       renderActivityButton,
       semanticSpacing.screenEdge,
+      shouldShowStories,
       storiesEnabled,
       storyCarouselItems,
     ],
@@ -1033,7 +1056,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         const likeIconTargetTranslateX = screenWidth - spacing[3] - 12 - heartOriginX;
         const likeIconTargetTranslateY =
           imageHeight + spacing[3] + 32 + spacing[2] + 12 - heartOriginY;
-        const isFollowingAuthor = Boolean(followedAuthors[item.authorName]);
+        const followTargetId = item.authorId;
+        const isFollowingAuthor = followTargetId
+          ? Boolean(followedUserIds[followTargetId])
+          : Boolean(followedAuthors[item.authorName]);
         const postAgeLabel = formatPostAge(item.createdAt);
         const mediaUrls =
           item.mediaType === "photo" && item.mediaUrls?.length ? item.mediaUrls : [item.mediaUrl];
@@ -1051,6 +1077,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         const postTags =
           (item.tags?.length ? item.tags : item.dishes[0]?.tasteTags)?.slice(0, 4) ?? [];
         const captionOverflows = Boolean(captionOverflowByPostId[item.id]);
+        const actionTargetName = item.dishes[0]?.name ?? item.venue.name;
+        const shouldShowFoodContextOverlay = item.showFoodContextOverlay !== false;
 
         return (
           <View key={item.id} style={[styles.feedItemWrap, { backgroundColor: themeTints.bg }]}>
@@ -1071,7 +1099,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   hitSlop={8}
                   onPressIn={() => prefetchUserProfileRoute(item)}
                   onPress={() =>
-                    openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
+                    openUserProfile(
+                      item.authorName,
+                      item.authorAvatarUrl,
+                      item.authorLocation,
+                      item.authorId,
+                    )
                   }
                 >
                   <Avatar uri={item.authorAvatarUrl} name={item.authorName} size={32} />
@@ -1083,7 +1116,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                     hitSlop={8}
                     onPressIn={() => prefetchUserProfileRoute(item)}
                     onPress={() =>
-                      openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
+                      openUserProfile(
+                        item.authorName,
+                        item.authorAvatarUrl,
+                        item.authorLocation,
+                        item.authorId,
+                      )
                     }
                   >
                     <AppText variant="bodySmallBold" style={{ color: themeTints.text }}>
@@ -1117,7 +1155,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   accessibilityRole="button"
                   accessibilityLabel={`${isFollowingAuthor ? "Unfollow" : "Follow"} ${item.authorName}`}
                   hitSlop={8}
-                  onPress={() => toggleAuthorFollow(item.authorName)}
+                  onPress={() =>
+                    followTargetId
+                      ? toggleFollow(followTargetId)
+                      : toggleAuthorFollow(item.authorName)
+                  }
                   style={[
                     styles.followButton,
                     {
@@ -1214,7 +1256,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   }}
                   style={StyleSheet.absoluteFill}
                 >
-                  {carouselSlideOptions.map(({ key, uri }) => (
+                  {carouselSlideOptions.map(({ key, uri, index }) => (
                     <View
                       key={key}
                       style={[styles.carouselPage, { width: screenWidth, height: imageHeight }]}
@@ -1222,6 +1264,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                       <ZoomableMedia
                         uri={uri}
                         type="image"
+                        accessibilityLabel={`${actionTargetName} post image ${index + 1} of ${
+                          carouselSlideOptions.length
+                        }`}
+                        accessibilityHint="Opens this image and supports double tap to like"
                         onPress={(event) =>
                           handlePostImagePress(item, event, {
                             isCarousel: true,
@@ -1238,6 +1284,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 <ZoomableMedia
                   uri={mediaUrls[0]}
                   type={item.mediaType === "video" ? "video" : "image"}
+                  accessibilityLabel={`${actionTargetName} post ${
+                    item.mediaType === "video" ? "video" : "image"
+                  }`}
+                  accessibilityHint="Opens this media and supports double tap to like"
                   onPress={(event) => handlePostImagePress(item, event)}
                   style={styles.heroImage}
                 />
@@ -1272,43 +1322,47 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 </View>
               ) : null}
 
-              <LinearGradient
-                colors={["transparent", palette.mediaScrimStrong]}
-                style={[styles.gradientScrim, { height: "40%", top: "60%" }]}
-                pointerEvents="none"
-              />
+              {shouldShowFoodContextOverlay ? (
+                <>
+                  <LinearGradient
+                    colors={["transparent", palette.mediaScrimStrong]}
+                    style={[styles.gradientScrim, { height: "40%", top: "60%" }]}
+                    pointerEvents="none"
+                  />
 
-              <View
-                style={{
-                  position: "absolute",
-                  bottom: spacing[3],
-                  left: spacing[3],
-                  right: spacing[3],
-                  gap: spacing[0.5],
-                }}
-                pointerEvents="box-none"
-              >
-                <AppText variant="h3" style={{ color: palette.white }}>
-                  {item.dishes[0]?.name ?? item.venue.name}
-                </AppText>
-                {canAccessMap ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Show ${item.venue.name} on map`}
-                    hitSlop={8}
-                    onPressIn={() => prefetchMapRoute(item)}
-                    onPress={() => openVenueOnMap(item)}
+                  <View
+                    style={{
+                      position: "absolute",
+                      bottom: spacing[3],
+                      left: spacing[3],
+                      right: spacing[3],
+                      gap: spacing[0.5],
+                    }}
+                    pointerEvents="box-none"
                   >
-                    <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
-                      {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
+                    <AppText variant="h3" style={{ color: palette.white }}>
+                      {item.dishes[0]?.name ?? item.venue.name}
                     </AppText>
-                  </Pressable>
-                ) : (
-                  <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
-                    {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
-                  </AppText>
-                )}
-              </View>
+                    {canAccessMap ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Show ${item.venue.name} on map`}
+                        hitSlop={8}
+                        onPressIn={() => prefetchMapRoute(item)}
+                        onPress={() => openVenueOnMap(item)}
+                      >
+                        <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
+                          {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
+                        </AppText>
+                      </Pressable>
+                    ) : (
+                      <AppText variant="micro" style={{ color: palette.inverseTextSecondary }}>
+                        {item.venue.name} · {item.venue.floor} {item.venue.unitNumber}
+                      </AppText>
+                    )}
+                  </View>
+                </>
+              ) : null}
             </View>
 
             {heartBurst?.postId === item.id ? (
@@ -1377,7 +1431,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   <Pressable
                     hitSlop={10}
                     accessibilityRole="button"
-                    accessibilityLabel={`Share ${item.dishes[0]?.name ?? item.venue.name} in Hungry`}
+                    accessibilityLabel={`Share ${actionTargetName} in Hungry`}
+                    accessibilityHint="Opens sharing options for this post"
                     onPress={() => openShareSheet(item)}
                     style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
                   >
@@ -1393,6 +1448,14 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   </Pressable>
                   <Pressable
                     hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${isSaved ? "Unsave" : "Save"} ${actionTargetName}`}
+                    accessibilityHint={
+                      isSaved
+                        ? "Removes this post from your saved items"
+                        : "Adds this post to your saved items"
+                    }
+                    accessibilityState={{ selected: isSaved }}
                     onPress={() => handlePostSave(item)}
                     style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
                   >
@@ -1405,6 +1468,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   {commentsEnabled ? (
                     <Pressable
                       hitSlop={10}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Comment on ${actionTargetName}`}
+                      accessibilityHint="Opens the comments for this post"
                       onPress={() => openComments(item)}
                       style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
                     >
@@ -1421,6 +1487,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                   ) : null}
                   <Pressable
                     hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${isLiked ? "Unlike" : "Like"} ${actionTargetName}`}
+                    accessibilityHint={
+                      isLiked ? "Removes your like from this post" : "Adds a like to this post"
+                    }
+                    accessibilityState={{ selected: isLiked }}
                     onPress={() => handlePostLike(item)}
                     style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
                   >
@@ -1533,6 +1605,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               ? `Open details for ${item.dishes[0]?.name ?? "dish"}`
               : `Open stall details for ${item.venue.name}`
           }
+          accessibilityHint="Opens the related dish or stall detail page"
           onPressIn={() => prefetchFeedCardRoute(item)}
           onPress={() => {
             navigateToDish(item);
@@ -1549,10 +1622,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             },
           ]}
         >
-          <Image
+          <AccessibleImage
             source={{ uri: item.mediaUrls?.[0] ?? item.mediaUrl }}
             style={{ width: "100%", height: 180 }}
             contentFit="cover"
+            decorative
           />
 
           {/* Interaction Overlay */}
@@ -1566,6 +1640,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             }}
           >
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${isLiked ? "Unlike" : "Like"} ${item.dishes[0]?.name ?? item.venue.name}`}
+              accessibilityHint={
+                isLiked ? "Removes your like from this post" : "Adds a like to this post"
+              }
+              accessibilityState={{ selected: isLiked }}
               onPress={(event) => {
                 event.stopPropagation();
                 handlePostLike(item);
@@ -1586,6 +1666,14 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               />
             </Pressable>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${isSaved ? "Unsave" : "Save"} ${item.dishes[0]?.name ?? item.venue.name}`}
+              accessibilityHint={
+                isSaved
+                  ? "Removes this post from your saved items"
+                  : "Adds this post to your saved items"
+              }
+              accessibilityState={{ selected: isSaved }}
               onPress={(event) => {
                 event.stopPropagation();
                 handlePostSave(item);
@@ -1651,7 +1739,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 accessibilityLabel={`Open ${item.authorName} profile`}
                 onPressIn={() => prefetchUserProfileRoute(item)}
                 onPress={() =>
-                  openUserProfile(item.authorName, item.authorAvatarUrl, item.authorLocation)
+                  openUserProfile(
+                    item.authorName,
+                    item.authorAvatarUrl,
+                    item.authorLocation,
+                    item.authorId,
+                  )
                 }
               >
                 <AppText
@@ -1733,6 +1826,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       heartBurst,
       heartBurstAnim,
       followedAuthors,
+      followedUserIds,
       navigateToDish,
       shadows.card,
       themeTints,
@@ -1747,6 +1841,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       handlePostLike,
       handlePostSave,
       toggleAuthorFollow,
+      toggleFollow,
       incrementPostShare,
       openShareSheet,
       navigation,
@@ -1843,6 +1938,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           <View testID="home-social-feed" style={{ flex: 1 }}>
             <FlashList
               ref={socialFeedListRef}
+              accessibilityLabel="Home food feed"
+              accessibilityHint="Swipe vertically to browse food posts and pull down to refresh"
               data={socialFeed}
               keyExtractor={keyExtractor}
               ListHeaderComponent={listHeader}
@@ -1875,6 +1972,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         ) : (
           <Animated.ScrollView
             ref={reviewFeedScrollRef}
+            accessibilityLabel="Home review feed"
+            accessibilityHint="Swipe vertically to browse review posts and pull down to refresh"
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{
               paddingBottom: insets.bottom + spacing[24],
@@ -1941,6 +2040,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
             snapPoints={commentSnapPoints}
             index={1}
             enablePanDownToClose
+            accessibilityLabel="Post comments"
+            accessibilityViewIsModal
             onDismiss={() => {
               setActiveCommentItem(null);
               setActiveReplyCommentId(null);
@@ -1953,6 +2054,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                 disappearsOnIndex={-1}
                 opacity={0.5}
                 pressBehavior="close"
+                accessibilityRole="button"
+                accessibilityLabel="Close comments"
+                accessibilityHint="Dismisses the comments sheet"
               />
             )}
             backgroundStyle={{ backgroundColor: palette.surface }}
@@ -1991,15 +2095,20 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                           }
                         </AppText>
                       </AppText>
-                      <Pressable onPress={() => setActiveReplyCommentId(null)}>
+                      <Pressable
+                        onPress={() => setActiveReplyCommentId(null)}
+                        accessibilityRole="button"
+                        accessibilityLabel="Cancel reply"
+                        accessibilityHint="Stops replying to the selected comment"
+                      >
                         <X size={14} color={palette.textMuted} />
                       </Pressable>
                     </View>
                   ) : null}
                   <View
                     style={{
+                      alignItems: "center",
                       flexDirection: "row",
-                      alignItems: "flex-end",
                       gap: spacing[2],
                     }}
                   >
@@ -2009,8 +2118,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                         placeholder={activeReplyCommentId ? "Write a reply..." : "Add a comment..."}
                         value={draftComment}
                         onChangeText={setDraftComment}
-                        multiline
-                        style={{ maxHeight: 100 }}
+                        multiline={false}
+                        numberOfLines={1}
+                        textAlignVertical="center"
+                        style={{ minHeight: 44, maxHeight: 44 }}
                       />
                     </View>
                     <Pressable
@@ -2031,21 +2142,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               </BottomSheetFooter>
             )}
           >
-            <View
-              style={{
-                borderBottomWidth: 1,
-                borderBottomColor: palette.border,
-                paddingVertical: spacing[3],
-                alignItems: "center",
-              }}
-            >
-              <AppText variant="h3">Comments</AppText>
-            </View>
             <BottomSheetScrollView
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{
                 paddingHorizontal: spacing[3],
-                paddingVertical: spacing[4],
+                paddingTop: spacing[0.5],
                 paddingBottom: spacing[24] + spacing[8] + insets.bottom,
               }}
             >
@@ -2090,6 +2191,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
                             comment.authorName,
                             comment.authorAvatarUrl,
                             activeCommentItem?.authorLocation,
+                            comment.userId,
                           )
                         }
                       >
@@ -2241,6 +2343,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           snapPoints={shareSnapPoints}
           index={0}
           enablePanDownToClose
+          accessibilityLabel="Share post"
+          accessibilityViewIsModal
           onDismiss={resetShareSheet}
           backdropComponent={(props) => (
             <BottomSheetBackdrop
@@ -2249,6 +2353,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               disappearsOnIndex={-1}
               opacity={0.4}
               pressBehavior="close"
+              accessibilityRole="button"
+              accessibilityLabel="Close share sheet"
+              accessibilityHint="Dismisses the post sharing sheet"
             />
           )}
           backgroundStyle={{ backgroundColor: palette.surface }}

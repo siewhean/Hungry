@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { View, Pressable, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import type { MaterialTopTabBarProps } from "@react-navigation/material-top-tabs";
 import type { NavigationProp } from "@react-navigation/native";
@@ -7,7 +7,7 @@ import { House, Compass, BookOpenText, Plus, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HomeFeedScreen } from "@/app/screens/home/HomeFeedScreen";
-import { AppText, Skeleton } from "@/components/ui";
+import { AppBottomTabItem, Skeleton } from "@/components/ui";
 import { preloadRoute } from "@/features/navigation/prefetch";
 import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -185,8 +185,8 @@ const DiscoverWrapper = createDeferredTabScreen(discoverScreenLoader);
 const ProfileWrapper = createDeferredTabScreen(profileStackLoader);
 
 function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
-  const { componentSizes, palette, radii, spacing } = useHungryTheme();
-  const styles = createStyles(componentSizes, spacing);
+  const { componentSizes, palette, spacing } = useHungryTheme();
+  const styles = createStyles();
   const insets = useSafeAreaInsets();
   const [highlightVisible, setHighlightVisible] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -296,48 +296,18 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         const currentColor = isFocused && highlightVisible ? activeColor : inactiveColor;
 
         return (
-          <Pressable
+          <AppBottomTabItem
             key={routeKey}
+            accessibilityLabel={item.label}
+            color={currentColor}
+            createAction={isCreateAction}
+            focused={isFocused}
+            icon={Icon}
+            label={item.label}
             onPress={onPress}
             onPressIn={onPressIn}
-            style={styles.tabItem}
-            accessibilityRole="button"
-            accessibilityState={isFocused ? { selected: true } : {}}
-            accessibilityLabel={item.label}
-          >
-            <View
-              style={
-                isCreateAction
-                  ? [
-                      styles.createButton,
-                      {
-                        backgroundColor: palette.orange,
-                        borderRadius: radii.pill,
-                      },
-                    ]
-                  : styles.iconSlot
-              }
-            >
-              <Icon
-                color={isCreateAction ? palette.white : currentColor}
-                size={componentSizes.bottomTabIcon}
-              />
-            </View>
-            {isCreateAction ? null : (
-              <AppText
-                variant="micro"
-                numberOfLines={1}
-                style={{
-                  color: currentColor,
-                  fontSize: componentSizes.bottomTabLabelFontSize,
-                  fontWeight: isFocused ? "800" : "700",
-                  lineHeight: componentSizes.bottomTabLabelLineHeight,
-                }}
-              >
-                {item.label}
-              </AppText>
-            )}
-          </Pressable>
+            showLabel={!isCreateAction}
+          />
         );
       })}
     </View>
@@ -378,34 +348,13 @@ export function SwipeableTabNavigator() {
   );
 }
 
-const createStyles = (
-  componentSizes: ReturnType<typeof useHungryTheme>["componentSizes"],
-  spacing: ReturnType<typeof useHungryTheme>["spacing"],
-) =>
+const createStyles = () =>
   StyleSheet.create({
     tabBarContainer: {
       flexDirection: "row",
       borderTopWidth: 0,
       elevation: 0,
       shadowOpacity: 0,
-    },
-    tabItem: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      gap: spacing[0.5],
-    },
-    iconSlot: {
-      alignItems: "center",
-      height: componentSizes.bottomTabIconSlotHeight,
-      justifyContent: "center",
-      width: componentSizes.bottomTabIconSlotWidth,
-    },
-    createButton: {
-      alignItems: "center",
-      height: componentSizes.bottomTabCreateButton,
-      justifyContent: "center",
-      width: componentSizes.bottomTabCreateButton,
     },
   });
 

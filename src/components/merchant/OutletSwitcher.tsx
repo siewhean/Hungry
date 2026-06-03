@@ -26,6 +26,9 @@ export const OutletSwitcher: React.FC = () => {
       <TouchableOpacity
         activeOpacity={0.7}
         onPress={handlePresentModalPress}
+        accessibilityRole="button"
+        accessibilityLabel={`Switch outlet, current outlet ${activeOutlet.name}`}
+        accessibilityHint="Opens the outlet switcher"
         style={[
           {
             flexDirection: "row",
@@ -51,7 +54,11 @@ export const OutletSwitcher: React.FC = () => {
         <ChevronDown size={14} color={palette.textMuted} />
       </TouchableOpacity>
 
-      <BottomSheet ref={bottomSheetRef} snapPoints={["40%", "60%"]}>
+      <BottomSheet
+        ref={bottomSheetRef}
+        snapPoints={["40%", "60%"]}
+        accessibilityLabel="Switch outlet"
+      >
         <View style={{ gap: spacing[4], paddingBottom: spacing[6] }}>
           <View style={{ marginBottom: spacing[2] }}>
             <AppText variant="h2">Switch Outlet</AppText>
@@ -68,6 +75,10 @@ export const OutletSwitcher: React.FC = () => {
                     setActiveOutlet(outlet.id);
                     bottomSheetRef.current?.dismiss();
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${isActive ? "Current outlet" : "Switch to outlet"} ${outlet.name}`}
+                  accessibilityHint="Changes the active merchant outlet"
+                  accessibilityState={{ selected: isActive }}
                   style={({ pressed }) => [
                     {
                       flexDirection: "row",

@@ -9,6 +9,8 @@ import type {
   AIBusinessInsight,
   BlogPost,
   BuildingSummary,
+  Checklist,
+  ChecklistItem,
   CollectionItem,
   CustomerInteraction,
   DishDetail,
@@ -28,8 +30,15 @@ import type {
   MerchantTeamMember,
   MerchantRole,
   OCRDishDraft,
+  PassportProgressEvent,
+  PassportStamp,
   PopularVisitorCandidate,
   PopularVisitorPin,
+  Portfolio,
+  PortfolioCollaborator,
+  PortfolioFlag,
+  PortfolioFollow,
+  PortfolioItem,
   PromotionStatus,
   RecommendationSurface,
   SearchFilters,
@@ -38,11 +47,13 @@ import type {
   Story,
   StoryContent,
   StoryGalleryAsset,
+  SubmitUserStallSubmissionInput,
   TasteProfile,
   TasteInteractionEvent,
   TasteVector,
   UserFoodCred,
   UserMissionProgress,
+  UserStallSubmission,
   UserProfile,
   VerificationEvidence,
   VenueSummary,
@@ -56,6 +67,42 @@ export interface DecideForMeOptions {
   neophiliaIndex?: number;
   latitude?: number;
   longitude?: number;
+}
+
+// ─── Checklist Input Types ────────────────────────────────────────────────────
+
+export interface ChecklistItemCreateInput {
+  checklistId: string;
+  itemType: "dish" | "stall" | "custom";
+  dishId?: string;
+  stallId?: string;
+  customText?: string;
+  reminderAt?: string;
+  plannedVisitDate?: string;
+}
+
+// ─── Portfolio Input Types ────────────────────────────────────────────────────
+
+export interface PortfolioCreateInput {
+  name: string;
+  description?: string;
+  type: "recommendation" | "ranking" | "trail" | "collection";
+  visibility: "private" | "followers_only" | "public";
+}
+
+export interface PortfolioItemCreateInput {
+  portfolioId: string;
+  itemType: "dish" | "stall";
+  dishId?: string;
+  stallId?: string;
+  score?: number;
+  publicNotes?: string;
+  privateNotes?: string;
+}
+
+export interface PortfolioMutationOptions {
+  expectedUpdatedAt?: string;
+  portfolioId?: string;
 }
 
 export interface DataRepository {
@@ -93,6 +140,79 @@ export interface DataRepository {
     patch: Partial<Pick<StallInteraction, "isSaved" | "isTried" | "isReviewed">>,
   ): Promise<StallInteraction | null>;
   incrementMissionProgress?(userId: string, missionType: MissionType): Promise<void>;
+
+  // ─── Checklist Methods ────────────────────────────────────────────────────────
+  insertChecklist?(userId: string, name: string): Promise<Checklist>;
+  fetchChecklists?(userId: string): Promise<Checklist[]>;
+  fetchChecklist?(id: string): Promise<Checklist | null>;
+  updateChecklistName?(id: string, name: string): Promise<void>;
+  deleteChecklist?(id: string): Promise<void>;
+
+  insertChecklistItem?(item: ChecklistItemCreateInput): Promise<ChecklistItem>;
+  fetchChecklistItems?(checklistId: string): Promise<ChecklistItem[]>;
+  updateChecklistItem?(id: string, updates: Partial<ChecklistItemCreateInput>): Promise<void>;
+  markChecklistItemTried?(id: string): Promise<void>;
+  deleteChecklistItem?(id: string): Promise<void>;
+  reorderChecklistItems?(checklistId: string, itemIds: string[]): Promise<void>;
+
+  // ─── Portfolio Methods ────────────────────────────────────────────────────────
+  insertPortfolio?(userId: string, input: PortfolioCreateInput): Promise<Portfolio>;
+  fetchPortfolios?(filters: {
+    userId?: string;
+    visibility?: string;
+    type?: string;
+  }): Promise<Portfolio[]>;
+  fetchPortfolio?(id: string): Promise<Portfolio | null>;
+  updatePortfolio?(id: string, updates: Partial<PortfolioCreateInput>): Promise<void>;
+  deletePortfolio?(id: string): Promise<void>;
+  publishPortfolio?(id: string): Promise<void>;
+
+  insertPortfolioItem?(item: PortfolioItemCreateInput): Promise<PortfolioItem>;
+  fetchPortfolioItems?(portfolioId: string): Promise<PortfolioItem[]>;
+  updatePortfolioItem?(id: string, updates: Partial<PortfolioItemCreateInput>): Promise<void>;
+  deletePortfolioItem?(id: string): Promise<void>;
+  reorderPortfolioItems?(portfolioId: string, itemIds: string[]): Promise<void>;
+
+  insertPortfolioCollaborator?(
+    portfolioId: string,
+    userId: string,
+    role: "viewer" | "editor",
+  ): Promise<void>;
+  deletePortfolioCollaborator?(portfolioId: string, userId: string): Promise<void>;
+  fetchPortfolioCollaborators?(portfolioId: string): Promise<PortfolioCollaborator[]>;
+
+  insertPortfolioFollow?(portfolioId: string, userId: string): Promise<void>;
+  deletePortfolioFollow?(portfolioId: string, userId: string): Promise<void>;
+  fetchPortfolioFollows?(portfolioId: string): Promise<PortfolioFollow[]>;
+  checkPortfolioFollow?(portfolioId: string, userId: string): Promise<boolean>;
+
+  insertPortfolioFlag?(
+    portfolioId: string,
+    userId: string,
+    reason: string,
+    details?: string,
+  ): Promise<void>;
+  fetchPortfolioFlags?(filters?: { status?: string }): Promise<PortfolioFlag[]>;
+  updatePortfolioFlagStatus?(flagId: string, status: "dismissed" | "removed"): Promise<void>;
+
+  // ─── Passport Methods ─────────────────────────────────────────────────────────
+  fetchPassportStamps?(userId: string): Promise<PassportStamp[]>;
+  fetchPassportProgressEvents?(
+    userId: string,
+    categoryId?: string,
+  ): Promise<PassportProgressEvent[]>;
+  recordPassportProgress?(
+    userId: string,
+    categoryId: string,
+    eventType: string,
+    referenceId?: string,
+  ): Promise<void>;
+
+  // ─── Search Methods ───────────────────────────────────────────────────────────
+  searchPortfolios?(
+    query: string,
+    filters?: { type?: string; visibility?: string },
+  ): Promise<Portfolio[]>;
 }
 
 // ─── Floor Plan Types ──────────────────────────────────────────────────────────
@@ -204,6 +324,7 @@ export interface Bite {
   mediaUrls?: string[];
   mediaType?: "photo" | "video";
   mediaTypes?: ("photo" | "video")[];
+  showFoodContextOverlay?: boolean;
   caption: string;
   tags?: string[];
   tasteStamp: TasteStamp;
@@ -222,6 +343,7 @@ export interface BiteDraft {
   mediaUrls?: string[];
   mediaType?: "photo" | "video";
   mediaTypes?: ("photo" | "video")[];
+  showFoodContextOverlay?: boolean;
   caption: string;
   tags?: string[];
   tasteStamp: TasteStamp;
@@ -535,6 +657,11 @@ export interface HungryService {
   // Discovery
   discovery: {
     listBuildings(lat?: number, lng?: number, radiusMeters?: number): Promise<BuildingSummary[]>;
+    countVenuesInArea(
+      lat?: number,
+      lng?: number,
+      radiusMeters?: number,
+    ): Promise<number | undefined>;
     getBuildingDetail(id: string): Promise<BuildingDetail | undefined>;
     getFloorPlan(buildingId: string, floor: string): Promise<FloorPlan | undefined>;
     listFloors(buildingId: string): Promise<string[]>;
@@ -545,6 +672,29 @@ export interface HungryService {
       dishId: string,
       context?: { sessionId?: string; userId?: string },
     ): Promise<void>;
+    recordMerchantActionEvent(input: {
+      eventType:
+        | "stall_profile_view"
+        | "menu_view"
+        | "direction_tap"
+        | "contact_tap"
+        | "social_link_tap"
+        | "save"
+        | "share"
+        | "promotion_impression"
+        | "promotion_click"
+        | "promotion_save"
+        | "promotion_profile_visit"
+        | "promotion_dish_view";
+      outletId?: string;
+      venueId?: string;
+      dishId?: string;
+      promotionId?: string;
+      sessionId?: string;
+      userId?: string;
+      source?: "customer" | "merchant_preview" | "system";
+      metadata?: Record<string, string | number | boolean | null>;
+    }): Promise<void>;
     listDishesByVenue(venueId: string): Promise<DishDetail[]>;
     listPopularNearby(lat?: number, lng?: number): Promise<DishDetail[]>;
     searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]>;
@@ -585,11 +735,50 @@ export interface HungryService {
     listStoryGalleryAssets(): Promise<StoryGalleryAsset[]>;
     likeStory(storyId: string): Promise<void>;
     saveStory(storyId: string): Promise<void>;
+    shareStory(storyId: string): Promise<void>;
     addStory(content: StoryContent): Promise<Story>;
     getLikedStories(): Promise<Story[]>;
     getSavedStories(): Promise<Story[]>;
     getSavedBites(): Promise<Bite[]>;
     getLikedBites(): Promise<Bite[]>;
+
+    // Follows
+    followUser(userId: string): Promise<void>;
+    unfollowUser(userId: string): Promise<void>;
+    listFollowers(
+      userId: string,
+    ): Promise<{ userId: string; displayName: string; avatarUrl?: string }[]>;
+    listFollowing(
+      userId: string,
+    ): Promise<{ userId: string; displayName: string; avatarUrl?: string }[]>;
+    isFollowing(userId: string): Promise<boolean>;
+
+    // Comments
+    createComment(
+      postId: string,
+      body: string,
+      parentCommentId?: string,
+    ): Promise<{
+      id: string;
+      userId: string;
+      body: string;
+      createdAt: string;
+      parentCommentId?: string;
+      authorName?: string;
+      authorAvatarUrl?: string;
+    }>;
+    deleteComment(commentId: string): Promise<void>;
+    listCommentsForPost(postId: string): Promise<
+      {
+        id: string;
+        userId: string;
+        body: string;
+        createdAt: string;
+        parentCommentId?: string;
+        authorName?: string;
+        authorAvatarUrl?: string;
+      }[]
+    >;
   };
 
   chat: {
@@ -609,6 +798,12 @@ export interface HungryService {
     blockUser(request: BlockUserRequest): Promise<void>;
     hidePost(postId: string, reason?: string): Promise<void>;
     unhidePost(postId: string): Promise<void>;
+    getBlockedUsers(): Promise<{ blockedUserKey: string; reason?: string; createdAt: string }[]>;
+  };
+
+  contributions: {
+    submitDiscoveredStall(input: SubmitUserStallSubmissionInput): Promise<UserStallSubmission>;
+    listMyDiscoveredStalls(): Promise<UserStallSubmission[]>;
   };
 
   // Content
@@ -768,5 +963,112 @@ export interface HungryService {
       decision: "accepted" | "rejected" | "duplicate",
       notes?: string,
     ): Promise<void>;
+  };
+
+  // Checklist
+  checklist: {
+    createChecklist(name: string): Promise<Checklist>;
+    getChecklists(): Promise<Checklist[]>;
+    getChecklist(id: string): Promise<Checklist>;
+    updateChecklist(id: string, name: string): Promise<void>;
+    deleteChecklist(id: string): Promise<void>;
+
+    addChecklistItem(input: ChecklistItemCreateInput): Promise<ChecklistItem>;
+    getChecklistItems(checklistId: string): Promise<ChecklistItem[]>;
+    updateChecklistItem(id: string, updates: Partial<ChecklistItemCreateInput>): Promise<void>;
+    markChecklistItemTried(id: string): Promise<void>;
+    deleteChecklistItem(id: string): Promise<void>;
+    reorderChecklistItems(checklistId: string, itemIds: string[]): Promise<void>;
+  };
+
+  // Portfolio
+  portfolio: {
+    createPortfolio(input: PortfolioCreateInput): Promise<Portfolio>;
+    getPortfolios(filters?: {
+      userId?: string;
+      visibility?: string;
+      type?: string;
+    }): Promise<Portfolio[]>;
+    getPortfolio(id: string): Promise<Portfolio>;
+    updatePortfolio(
+      id: string,
+      updates: Partial<PortfolioCreateInput>,
+      options?: PortfolioMutationOptions,
+    ): Promise<void>;
+    deletePortfolio(id: string, options?: PortfolioMutationOptions): Promise<void>;
+    publishPortfolio(id: string, options?: PortfolioMutationOptions): Promise<void>;
+
+    addPortfolioItem(
+      input: PortfolioItemCreateInput,
+      options?: PortfolioMutationOptions,
+    ): Promise<PortfolioItem>;
+    getPortfolioItems(portfolioId: string): Promise<PortfolioItem[]>;
+    updatePortfolioItem(
+      id: string,
+      updates: Partial<PortfolioItemCreateInput>,
+      options?: PortfolioMutationOptions,
+    ): Promise<void>;
+    deletePortfolioItem(id: string, options?: PortfolioMutationOptions): Promise<void>;
+    reorderPortfolioItems(
+      portfolioId: string,
+      itemIds: string[],
+      options?: PortfolioMutationOptions,
+    ): Promise<void>;
+
+    addPortfolioCollaborator(
+      portfolioId: string,
+      userId: string,
+      role: "viewer" | "editor",
+      options?: PortfolioMutationOptions,
+    ): Promise<void>;
+    removePortfolioCollaborator(
+      portfolioId: string,
+      userId: string,
+      options?: PortfolioMutationOptions,
+    ): Promise<void>;
+    getPortfolioCollaborators(portfolioId: string): Promise<PortfolioCollaborator[]>;
+
+    followPortfolio(portfolioId: string): Promise<void>;
+    unfollowPortfolio(portfolioId: string): Promise<void>;
+    getPortfolioFollows(portfolioId: string): Promise<PortfolioFollow[]>;
+    isFollowingPortfolio(portfolioId: string): Promise<boolean>;
+
+    flagPortfolio(portfolioId: string, reason: string, details?: string): Promise<void>;
+    getPortfolioFlags(filters?: { status?: string }): Promise<PortfolioFlag[]>;
+    resolvePortfolioFlag(flagId: string, resolution: "dismissed" | "removed"): Promise<void>;
+
+    searchPortfolios(
+      query: string,
+      filters?: { type?: string; visibility?: string },
+    ): Promise<Portfolio[]>;
+  };
+
+  // Passport
+  passport: {
+    getPassportStamps(): Promise<PassportStamp[]>;
+    getPassportProgressEvents(categoryId?: string): Promise<PassportProgressEvent[]>;
+    recordProgress(
+      categoryId: string,
+      eventType: PassportProgressEvent["eventType"],
+      referenceId?: string,
+    ): Promise<void>;
+  };
+
+  // Notifications / Activity
+  notifications: {
+    listActivityEvents(): Promise<
+      {
+        id: string;
+        actorId: string;
+        actorName: string;
+        actorAvatarUrl?: string;
+        eventType: "new_like" | "new_comment" | "new_reply" | "new_follower";
+        targetType: "post" | "comment" | "profile";
+        targetId: string;
+        readAt?: string;
+        createdAt: string;
+      }[]
+    >;
+    markActivityRead(eventId: string): Promise<void>;
   };
 }

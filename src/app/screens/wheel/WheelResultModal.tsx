@@ -13,11 +13,10 @@ import type {
   NativeStackNavigationProp,
   NativeStackScreenProps,
 } from "@react-navigation/native-stack";
-import { Image } from "expo-image";
 import { MapPin, Navigation, Trophy, RotateCcw, CheckCircle2 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { AppText, Button } from "@/components/ui";
+import { AccessibleImage, AppText, Button } from "@/components/ui";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
@@ -130,10 +129,11 @@ export function WheelResultModal({ navigation, route }: Props) {
         {/* Hero image */}
         <View style={{ height: 240, width: "100%", position: "relative" }}>
           {heroDish?.imageUrl ? (
-            <Image
+            <AccessibleImage
               source={{ uri: heroDish.imageUrl }}
               style={StyleSheet.absoluteFill}
               contentFit="cover"
+              accessibilityLabel={`${heroDish.name} photo`}
             />
           ) : (
             <View

@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Image } from "expo-image";
 import { Sparkles, ChevronLeft, Shuffle, MapPin, Star } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,7 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
+import { AccessibleImage, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { findBuildingById } from "@/features/discovery/discovery";
 import { blendedMatchScore, TASTE_LABELS } from "@/lib/ai/tasteEngine";
 import { getDataRepository } from "@/lib/services/serviceProvider";
@@ -370,10 +369,11 @@ export function DecideForMeResultScreen() {
       >
         {/* Parallax Hero */}
         <Animated.View style={[styles.heroContainer, { height: HERO_HEIGHT }, heroStyle]}>
-          <Image
+          <AccessibleImage
             source={{ uri: dish.imageUrl }}
             style={StyleSheet.absoluteFill}
             contentFit="cover"
+            accessibilityLabel={`${dish.name} photo`}
           />
           <LinearGradient
             colors={["transparent", palette.mediaScrimSubtle, palette.bg]}

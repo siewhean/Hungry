@@ -1,8 +1,8 @@
 import React from "react";
 import { View, StyleSheet, ScrollView, Pressable, Dimensions } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { X, Heart, MapPin } from "lucide-react-native";
-import { Image } from "expo-image";
-import { AppText, IconButton, HungryLogo, Badge } from "@/components/ui";
+import { AccessibleImage, AppText, IconButton, HungryLogo, Badge } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
 import { useComposerStore } from "../useComposerStore";
@@ -20,12 +20,16 @@ export function LivePreviewSheet() {
   const reviewCaption = useComposerStore((state) => state.reviewCaption);
   const media = useComposerStore((state) => state.media);
   const location = useComposerStore((state) => state.location);
+  const foodTags = useComposerStore((state) => state.foodTags);
   const tasteTags = useComposerStore((state) => state.tasteTags);
   const rating = useComposerStore((state) => state.rating);
+  const showFoodContextOverlay = useComposerStore((state) => state.showFoodContextOverlay);
 
   if (!showPreview) return null;
 
   const captionToDisplay = postCaption || reviewCaption || "No caption written yet...";
+  const overlayDishTitle = foodTags[0] ?? "Food title";
+  const overlayStallName = location?.name ?? "Stall name";
 
   return (
     <View
@@ -146,12 +150,13 @@ export function LivePreviewSheet() {
                     showsHorizontalScrollIndicator={false}
                     style={{ flex: 1 }}
                   >
-                    {media.map((item) => (
-                      <Image
+                    {media.map((item, index) => (
+                      <AccessibleImage
                         key={item.id}
                         source={item.uri}
                         style={{ width: screenWidth - 42, height: screenWidth - 42 }}
                         contentFit="cover"
+                        accessibilityLabel={`Preview media ${index + 1}`}
                       />
                     ))}
                   </ScrollView>
@@ -176,6 +181,37 @@ export function LivePreviewSheet() {
                       1/{media.length}
                     </AppText>
                   </View>
+                )}
+                {showFoodContextOverlay && (
+                  <>
+                    <LinearGradient
+                      colors={["transparent", palette.mediaScrimStrong]}
+                      pointerEvents="none"
+                      style={styles.foodContextScrim}
+                    />
+                    <View
+                      pointerEvents="none"
+                      style={[
+                        styles.foodContextOverlay,
+                        {
+                          bottom: spacing.md,
+                          left: spacing.md,
+                          right: media.length > 1 ? 72 : spacing.md,
+                        },
+                      ]}
+                    >
+                      <AppText variant="h3" style={{ color: palette.white }} numberOfLines={1}>
+                        {overlayDishTitle}
+                      </AppText>
+                      <AppText
+                        variant="micro"
+                        style={{ color: palette.inverseTextSecondary }}
+                        numberOfLines={1}
+                      >
+                        {overlayStallName}
+                      </AppText>
+                    </View>
+                  </>
                 )}
               </View>
 
@@ -234,12 +270,13 @@ export function LivePreviewSheet() {
               <View style={{ width: "100%", aspectRatio: 1, backgroundColor: palette.bgSoft }}>
                 {media.length > 0 ? (
                   <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
-                    {media.map((item) => (
-                      <Image
+                    {media.map((item, index) => (
+                      <AccessibleImage
                         key={item.id}
                         source={item.uri}
                         style={{ width: screenWidth - 42, height: screenWidth - 42 }}
                         contentFit="cover"
+                        accessibilityLabel={`Preview media ${index + 1}`}
                       />
                     ))}
                   </ScrollView>
@@ -321,5 +358,16 @@ const styles = StyleSheet.create({
     borderRadius: componentRadii.card,
     overflow: "hidden",
     borderWidth: 1,
+  },
+  foodContextScrim: {
+    bottom: 0,
+    height: "42%",
+    left: 0,
+    position: "absolute",
+    right: 0,
+  },
+  foodContextOverlay: {
+    gap: 2,
+    position: "absolute",
   },
 });

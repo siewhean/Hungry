@@ -1,10 +1,18 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Image, View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { Check, Edit2, RefreshCw, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { AppText, Button, Screen, Chip, EmptyState } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  Button,
+  ChipGroup,
+  EmptyState,
+  Screen,
+  StatusChip,
+} from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -14,7 +22,7 @@ import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 type NavigationProp = NativeStackNavigationProp<MerchantTabParamList, "OCRDrafts">;
 
 export function OCRDraftScreen() {
-  const { componentRadii, palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
@@ -197,24 +205,20 @@ export function OCRDraftScreen() {
                     </AppText>
                   )}
                 </View>
-                <View
-                  style={{
-                    backgroundColor:
-                      draft.confidence > 0.8 ? palette.successSoft : palette.warningSoft,
-                    borderRadius: componentRadii.button,
-                  }}
-                >
-                  <Chip label={`${Math.round(draft.confidence * 100)}% Match`} selected={false} />
-                </View>
+                <StatusChip
+                  label={`${Math.round(draft.confidence * 100)}% Match`}
+                  tone={draft.confidence > 0.8 ? "success" : "warning"}
+                />
               </View>
 
               {draft.sourcePhotoUrl ? (
-                <Image
+                <AccessibleImage
                   source={{ uri: draft.sourcePhotoUrl }}
                   style={[
                     styles.sourceImage,
                     { borderRadius: componentRadii.card, marginBottom: spacing[3] },
                   ]}
+                  accessibilityLabel={`${draft.name} source menu photo`}
                 />
               ) : null}
 
@@ -225,19 +229,22 @@ export function OCRDraftScreen() {
               )}
 
               {draft.suggestedTasteTags && draft.suggestedTasteTags.length > 0 && (
-                <View style={[styles.tagRow, { gap: spacing[2], marginBottom: spacing[3] }]}>
-                  {draft.suggestedTasteTags.slice(0, 4).map((tag) => (
-                    <Chip key={tag} label={tag} selected={false} />
-                  ))}
-                </View>
+                <ChipGroup
+                  options={draft.suggestedTasteTags
+                    .slice(0, 4)
+                    .map((tag) => ({ id: tag, label: tag }))}
+                  style={{ marginBottom: spacing[3] }}
+                />
               )}
 
               {draft.suggestedDietaryTags && draft.suggestedDietaryTags.length > 0 && (
-                <View style={[styles.tagRow, { gap: spacing[2], marginBottom: spacing[3] }]}>
-                  {draft.suggestedDietaryTags.slice(0, 4).map((tag) => (
-                    <Chip key={tag} label={tag.replace(/_/g, "-")} selected={false} />
-                  ))}
-                </View>
+                <ChipGroup
+                  options={draft.suggestedDietaryTags.slice(0, 4).map((tag) => ({
+                    id: tag,
+                    label: tag.replace(/_/g, "-"),
+                  }))}
+                  style={{ marginBottom: spacing[3] }}
+                />
               )}
 
               <Button
@@ -280,10 +287,6 @@ const styles = StyleSheet.create({
   sourceImage: {
     width: "100%",
     height: 160,
-  },
-  tagRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
   },
   emptyContainer: {
     alignItems: "center",

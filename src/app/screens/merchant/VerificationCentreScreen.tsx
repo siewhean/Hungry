@@ -14,6 +14,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useHungryTheme } from "@/theme";
 import { AppText, Button, EmptyState, Screen } from "@/components/ui";
+import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -68,8 +69,20 @@ export function VerificationCentreScreen({ navigation }: Props) {
       throw new Error("Media picker is unavailable in this app build.");
     }
 
+    const shouldRequestPermission = await confirmGalleryAccess({
+      title: "Allow gallery access",
+      message:
+        "Hungry needs access to your gallery to attach verification evidence for this outlet.",
+      confirmLabel: "Allow",
+      cancelLabel: "Not now",
+    });
+
+    if (!shouldRequestPermission) {
+      return null;
+    }
+
     const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
+    if (!isGalleryPermissionGranted(permission)) {
       throw new Error("Photos permission is required to attach verification evidence.");
     }
 

@@ -5,15 +5,7 @@
  * No discovery or editorial content here.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  FlatList,
-  Pressable,
-  ScrollView,
-  type TextInput,
-  View,
-  useWindowDimensions,
-} from "react-native";
-import { Image } from "expo-image";
+import { FlatList, Pressable, type TextInput, View, useWindowDimensions } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Bookmark, Heart, MessageCircle, MessageCircleMore, Send, Star } from "lucide-react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
@@ -24,11 +16,12 @@ import type { MaterialTopTabNavigationProp } from "@react-navigation/material-to
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { ReviewCommentsSheet, type ActiveReviewCommentTarget } from "@/components/social";
 import {
+  AccessibleImage,
   AppHeader,
   AppText,
-  Chip,
   EmptyState,
   ExpandableSearchLauncher,
+  FilterChipRail,
   Skeleton,
 } from "@/components/ui";
 import { promptBlockReviewAuthor, promptReportReview } from "@/lib/security/communitySafety";
@@ -165,11 +158,16 @@ function ReviewCard({
     >
       {/* Photo */}
       {hasPhoto && (
-        <Pressable onPress={() => onPressDish(item.dishId)}>
-          <Image
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Open ${item.dishName} from review photo`}
+          onPress={() => onPressDish(item.dishId)}
+        >
+          <AccessibleImage
             source={{ uri: item.review.photos[0] }}
             style={{ width: "100%", height: width * 0.55 }}
             contentFit="cover"
+            decorative
           />
         </Pressable>
       )}
@@ -450,6 +448,7 @@ export function ReviewFeedScreen() {
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute();
   const reviewFeedScrollRef = useRef<FlatList<ReviewFeedItem> | null>(null);
+  const isTabSwipeLockedRef = useRef(false);
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -474,8 +473,28 @@ export function ReviewFeedScreen() {
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const commentInputRef = useRef<TextInput>(null);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+  const openCommentsSheet = useCallback(() => {
+    const commentSheet = commentsSheetRef.current;
+    if (!commentSheet) return;
+
+    void commentSheet.present?.();
+    requestAnimationFrame(() => {
+      commentSheet.snapToIndex(0);
+    });
+  }, []);
   const stallPosts = useMemo(() => repository.listStallPosts(), [repository]);
   const searchBarWidth = screenWidth - spacing[8];
+  const setTabSwipeLocked = useCallback(
+    (isLocked: boolean) => {
+      if (isTabSwipeLockedRef.current === isLocked) {
+        return;
+      }
+
+      isTabSwipeLockedRef.current = isLocked;
+      navigation.setOptions({ swipeEnabled: !isLocked });
+    },
+    [navigation],
+  );
   const headerActionSize = spacing[8] + spacing[2.5];
   const showInitialSkeleton = useDelayedLoadingSkeleton(isInitialLoading, 0);
   const reviewHeaderTitle = "Reviews";
@@ -484,6 +503,15 @@ export function ReviewFeedScreen() {
     const timeout = setTimeout(() => setIsInitialLoading(false), 0);
     return () => clearTimeout(timeout);
   }, []);
+
+  useEffect(
+    () => () => {
+      if (isTabSwipeLockedRef.current) {
+        navigation.setOptions({ swipeEnabled: true });
+      }
+    },
+    [navigation],
+  );
 
   // Gather reviews from all dishes
   const allReviews = useMemo<ReviewFeedItem[]>(() => {
@@ -538,28 +566,12 @@ export function ReviewFeedScreen() {
         dishName: item.dishName,
         caption: item.review.text,
       });
-      requestAnimationFrame(() => {
-        commentsSheetRef.current?.present();
-        commentsSheetRef.current?.snapToIndex(0);
-      });
+      openCommentsSheet();
     },
-    [commentsEnabled],
+    [commentsEnabled, openCommentsSheet],
   );
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("tabPress", (event) => {
-      if (event.target !== route.key) {
-        return;
-      }
-
-      reviewFeedScrollRef.current?.scrollToOffset({
-        offset: 0,
-        animated: true,
-      });
-    });
-
-    return unsubscribe;
-  }, [navigation, route.key]);
+  // Tab press-to-top behavior intentionally disabled for bottom navigation.
 
   const openShareReview = useCallback(
     (item: ReviewFeedItem) => {
@@ -591,7 +603,9 @@ export function ReviewFeedScreen() {
 
       const dish = repository.getDishById(item.dishId) ?? item.dish;
       if (dish?.id) {
-        toggleFavourite(dish);
+        requestAnimationFrame(() => {
+          toggleFavourite(dish);
+        });
       }
     },
     [repository, toggleFavourite, toggleSave],
@@ -686,20 +700,13 @@ export function ReviewFeedScreen() {
         />
 
         {/* Filter chips */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: spacing[2] }}
-        >
-          {FILTER_OPTIONS.map((opt) => (
-            <Chip
-              key={opt.id}
-              label={opt.label}
-              selected={filterMode === opt.id}
-              onPress={() => setFilterMode(opt.id)}
-            />
-          ))}
-        </ScrollView>
+        <FilterChipRail
+          options={FILTER_OPTIONS}
+          selectedId={filterMode}
+          onSelect={setFilterMode}
+          onSwipeLockChange={setTabSwipeLocked}
+          gap={spacing[2]}
+        />
 
         <ReviewSearchQuerySummary query={searchQuery} />
       </View>

@@ -59,6 +59,15 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
     null,
   );
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+  const openCommentsSheet = useCallback(() => {
+    const commentSheet = commentsSheetRef.current;
+    if (!commentSheet) return;
+
+    void commentSheet.present?.();
+    requestAnimationFrame(() => {
+      commentSheet.snapToIndex(0);
+    });
+  }, []);
 
   const [posts, setPosts] = useState<StallPost[]>(() => listSharedStallPostsSync(repository));
   const hidePostFromCurrentFeed = useCallback((postId: string) => {
@@ -168,6 +177,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Open ${primaryDish?.name ?? venue?.name ?? "post"} details`}
+            accessibilityHint="Opens the linked customer detail page for this post"
             onPressIn={() => {
               if (!primaryDish) return;
               prefetchDishDetail(primaryDish.id, repository);
@@ -183,6 +193,9 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
             <ZoomableMedia
               uri={mediaUrls[0]}
               type={feedPost.mediaType === "video" ? "video" : "image"}
+              accessibilityLabel={`${primaryDish?.name ?? venue?.name ?? "Post"} ${
+                feedPost.mediaType === "video" ? "video" : "image"
+              }`}
               style={styles.heroImage}
             />
           </Pressable>
@@ -331,10 +344,7 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
                       dishName: primaryDish?.name ?? feedPost.authorName,
                       caption: feedPost.caption,
                     });
-                    requestAnimationFrame(() => {
-                      commentsSheetRef.current?.present();
-                      commentsSheetRef.current?.snapToIndex(0);
-                    });
+                    openCommentsSheet();
                   }}
                 >
                   <CommentIcon color={palette.text} size={24} />

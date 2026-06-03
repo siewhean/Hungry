@@ -1,9 +1,10 @@
 import React from "react";
-import { Image, View } from "react-native";
+import { View } from "react-native";
 
-import { HUNGRY_LOGO_ICON } from "@/constants/brandAssets";
+import { AccessibleImage } from "@/components/ui/AccessibleImage";
+import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_TEXT } from "@/constants/brandAssets";
+import { HUNGRY_LOGO_STANDARD_WORDMARK_SIZE } from "@/constants/brandAssets";
 import { useHungryTheme } from "@/theme";
-import { AppText } from "@/components/ui";
 
 interface LogoProps {
   size?: number;
@@ -11,32 +12,40 @@ interface LogoProps {
   showWordmark?: boolean;
 }
 
-export function IconWordmarkLogoV2({ size = 160, color, showWordmark = true }: LogoProps) {
+export function IconWordmarkLogoV2({
+  size = HUNGRY_LOGO_STANDARD_WORDMARK_SIZE,
+  color,
+  showWordmark = true,
+}: LogoProps) {
   const { palette, spacing } = useHungryTheme();
   const finalColor = color || palette.orange;
-  const iconSize = showWordmark ? size * 0.25 : size;
+  const iconSize = showWordmark ? Math.round(size * 0.25) : size;
+  const wordmarkWidth = Math.round(size * 0.95);
+  const wordmarkHeight = Math.round(size * 0.26);
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+    <View
+      accessible
+      accessibilityLabel="Hungry logo"
+      accessibilityRole="image"
+      style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}
+    >
       <View style={{ width: iconSize, height: iconSize }}>
-        <Image
+        <AccessibleImage
           source={HUNGRY_LOGO_ICON}
-          resizeMode="contain"
+          contentFit="contain"
+          decorative
           style={{ width: iconSize, height: iconSize }}
         />
       </View>
 
       {showWordmark && (
-        <AppText
-          variant="displaySm"
-          style={{
-            fontSize: size * 0.2,
-            color: finalColor,
-            fontFamily: "Fraunces_700Bold",
-          }}
-        >
-          Hungry
-        </AppText>
+        <AccessibleImage
+          source={HUNGRY_LOGO_TEXT}
+          contentFit="contain"
+          decorative
+          style={{ width: wordmarkWidth, height: wordmarkHeight, tintColor: finalColor }}
+        />
       )}
     </View>
   );

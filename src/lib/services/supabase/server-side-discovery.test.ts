@@ -13,6 +13,16 @@ const smokeSql = readFileSync(
   "utf8",
 );
 
+const discoverAreaCountMigrationSql = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260527090000_discover_area_venue_count.sql"),
+  "utf8",
+);
+
+const discoverAreaCountSmokeSql = readFileSync(
+  resolve(process.cwd(), "supabase/smoke/discover_area_venue_count.sql"),
+  "utf8",
+);
+
 const repositorySource = readFileSync(
   resolve(process.cwd(), "src/lib/services/supabase/supabaseRepository.ts"),
   "utf8",
@@ -131,6 +141,39 @@ test("Supabase discovery service uses RPC-first read paths with cache fallback",
   assert.match(serviceSource, /await\s+listDishesByVenueViaRpc\(venueId\)/);
   assert.match(serviceSource, /await\s+listPopularNearbyViaRpc\(lat,\s*lng\)/);
   assert.match(serviceSource, /\?\?\s+supabaseRepository\./);
+});
+
+test("Discover area count uses exact RPC before location-scoped building fallback", () => {
+  assert.match(
+    discoverAreaCountMigrationSql,
+    /create\s+or\s+replace\s+function\s+public\.count_venues_in_area\b/i,
+  );
+  assert.match(discoverAreaCountMigrationSql, /returns\s+integer/i);
+  assert.match(discoverAreaCountMigrationSql, /security\s+invoker/i);
+  assert.doesNotMatch(discoverAreaCountMigrationSql, /security\s+definer/i);
+  assert.match(discoverAreaCountMigrationSql, /set\s+search_path\s+=\s+public/i);
+  assert.match(
+    discoverAreaCountMigrationSql,
+    /st_dwithin\([\s\S]*b\.location[\s\S]*st_setsrid\(st_makepoint\(p_lng,\s*p_lat\),\s*4326\)::geography[\s\S]*p_radius_meters[\s\S]*\)/i,
+  );
+  assert.match(
+    discoverAreaCountMigrationSql,
+    /grant\s+execute\s+on\s+function\s+public\.count_venues_in_area[\s\S]*to\s+anon,\s+authenticated/i,
+  );
+
+  assert.match(repositorySource, /export\s+async\s+function\s+countVenuesInAreaViaRpc/i);
+  assert.match(repositorySource, /client\.rpc\("count_venues_in_area"/);
+  const countServiceBlock =
+    /async\s+countVenuesInArea\(lat,\s*lng,\s*radiusMeters\)[\s\S]*?\n    },/.exec(
+      serviceSource,
+    )?.[0];
+  assert.ok(countServiceBlock, "countVenuesInArea service method should be detectable");
+  assert.match(countServiceBlock, /await\s+countVenuesInAreaViaRpc\(lat,\s*lng,\s*radiusMeters\)/);
+  assert.match(countServiceBlock, /await\s+listBuildingsViaRpc\(lat,\s*lng,\s*radiusMeters\)/);
+  assert.doesNotMatch(countServiceBlock, /supabaseRepository\.listBuildings\(\)/);
+
+  assert.match(discoverAreaCountSmokeSql, /count_venues_in_area/);
+  assert.match(discoverAreaCountSmokeSql, /nearby_venue_count/);
 });
 
 test("server-side discovery smoke SQL checks functions, grants, indexes, and sample calls", () => {

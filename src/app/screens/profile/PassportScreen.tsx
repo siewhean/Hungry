@@ -3,7 +3,8 @@
  */
 
 import { AccessibilityInfo, ScrollView, View } from "react-native";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as Haptics from "expo-haptics";
 
@@ -25,6 +26,7 @@ import {
 import { usePassportStore } from "@/store/usePassportStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useHungryTheme } from "@/theme";
+import type { PassportContributionStats, PassportProgressEvent } from "@/types/domain";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PassportScreen">;
 
@@ -43,12 +45,35 @@ const CATEGORIES_BY_ID = ALL_PASSPORT_CATEGORIES.reduce<
   return map;
 }, {});
 
+const CONTRIBUTION_EVENT_LABELS: Record<PassportProgressEvent["eventType"], string> = {
+  dish_tried: "Tried a dish",
+  stall_visited: "Visited a stall",
+  stall_submitted: "Submitted a stall",
+  review_posted: "Posted a review",
+  photo_posted: "Added a photo",
+  portfolio_item_added: "Added to a portfolio",
+  public_portfolio_published: "Published a portfolio",
+  trail_completed: "Completed a trail",
+};
+
+function formatContributionDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Recently";
+  }
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 export function PassportScreen({ navigation: _nav }: Props) {
-  const { spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const progressMap = usePassportStore((s) => s.progressMap);
   const celebratedStampIds = usePassportStore((s) => s.celebratedStampIds);
   const computeProgress = usePassportStore((s) => s.computeProgress);
   const markStampCelebrated = usePassportStore((s) => s.markStampCelebrated);
+  const loadPassportStamps = usePassportStore((s) => s.loadStamps);
+  const loadPassportEvents = usePassportStore((s) => s.loadEvents);
+  const passportStamps = usePassportStore((s) => s.stamps);
+  const passportEvents = usePassportStore((s) => s.events);
   const stallInteractions = useStallInteractionStore((state) => state.interactions);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [celebratingStampId, setCelebratingStampId] = useState<string | null>(null);
@@ -63,6 +88,10 @@ export function PassportScreen({ navigation: _nav }: Props) {
 
   const earnedStamps = useMemo(() => getEarnedPassportStamps(progressMap), [progressMap]);
   const nextStamp = useMemo(() => getNextPassportStamp(progressMap), [progressMap]);
+  const contributionStats = useMemo(
+    () => usePassportStore.getState().getPortfolioContributionStats(),
+    [passportEvents, passportStamps],
+  );
   const celebrateMarker = useMemo(
     () =>
       createPassportCelebrateMarker(
@@ -80,6 +109,13 @@ export function PassportScreen({ navigation: _nav }: Props) {
   useEffect(() => {
     computeProgress(triedStallIds);
   }, [computeProgress, triedStallIds]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void Promise.all([loadPassportStamps(), loadPassportEvents()]).catch(() => undefined);
+    }, [loadPassportEvents, loadPassportStamps]),
+  );
+
   const totalStamps = earnedStamps.length;
 
   useEffect(() => {
@@ -138,6 +174,14 @@ export function PassportScreen({ navigation: _nav }: Props) {
             nextStamp={nextStamp}
           />
         </PassportPageFlip>
+
+        <PortfolioContributionPanel
+          componentRadii={componentRadii}
+          contributionStats={contributionStats}
+          palette={palette}
+          radii={radii}
+          spacing={spacing}
+        />
 
         {earnedStamps.length === 0 && !nextStamp ? (
           <EmptyState
@@ -198,5 +242,113 @@ export function PassportScreen({ navigation: _nav }: Props) {
         ))}
       </ScrollView>
     </ProfileScreenShell>
+  );
+}
+
+function PortfolioContributionPanel({
+  componentRadii,
+  contributionStats,
+  palette,
+  radii,
+  spacing,
+}: {
+  componentRadii: ReturnType<typeof useHungryTheme>["componentRadii"];
+  contributionStats: PassportContributionStats;
+  palette: ReturnType<typeof useHungryTheme>["palette"];
+  radii: ReturnType<typeof useHungryTheme>["radii"];
+  spacing: ReturnType<typeof useHungryTheme>["spacing"];
+}) {
+  const stats = [
+    { label: "Stalls added", value: contributionStats.stallsSubmitted },
+    { label: "Items", value: contributionStats.portfolioItemsAdded },
+    { label: "Published", value: contributionStats.publicPortfoliosPublished },
+    { label: "Trails", value: contributionStats.trailsCompleted },
+  ];
+  const hasRecentActivity = contributionStats.recentEvents.length > 0;
+
+  return (
+    <View
+      style={{
+        backgroundColor: palette.surface,
+        borderColor: palette.border,
+        borderRadius: componentRadii.card,
+        borderWidth: 1,
+        gap: spacing[4],
+        padding: spacing[4],
+      }}
+    >
+      <View style={{ gap: spacing[1] }}>
+        <AppText variant="h3">Portfolio contributions</AppText>
+        <AppText tone="muted" variant="bodySmall">
+          Public lists, trails, and ranked picks that help other diners discover where to eat.
+        </AppText>
+      </View>
+
+      <View style={{ flexDirection: "row", gap: spacing[2] }}>
+        {stats.map((stat) => (
+          <View
+            key={stat.label}
+            style={{
+              backgroundColor: palette.orangeLight,
+              borderColor: palette.orange,
+              borderRadius: radii.lg,
+              borderWidth: 1,
+              flex: 1,
+              gap: spacing[1],
+              paddingHorizontal: spacing[3],
+              paddingVertical: spacing[2],
+            }}
+          >
+            <AppText style={{ color: palette.orangeDark }} variant="bodyBold">
+              {stat.value}
+            </AppText>
+            <AppText tone="muted" variant="micro">
+              {stat.label}
+            </AppText>
+          </View>
+        ))}
+      </View>
+
+      <View style={{ gap: spacing[2] }}>
+        <AppText variant="bodySmallBold">Recent contribution activity</AppText>
+        {hasRecentActivity ? (
+          contributionStats.recentEvents.map((event) => (
+            <View
+              key={event.id}
+              style={{
+                alignItems: "center",
+                borderColor: palette.border,
+                borderRadius: radii.md,
+                borderWidth: 1,
+                flexDirection: "row",
+                justifyContent: "space-between",
+                paddingHorizontal: spacing[3],
+                paddingVertical: spacing[2],
+              }}
+            >
+              <AppText variant="bodySmall">
+                {CONTRIBUTION_EVENT_LABELS[event.eventType] ?? "Contribution recorded"}
+              </AppText>
+              <AppText tone="muted" variant="micro">
+                {formatContributionDate(event.createdAt)}
+              </AppText>
+            </View>
+          ))
+        ) : (
+          <View
+            style={{
+              backgroundColor: palette.bg,
+              borderRadius: radii.md,
+              padding: spacing[3],
+            }}
+          >
+            <AppText tone="muted" variant="bodySmall">
+              Add dishes or stalls to a portfolio, then publish a public list to build your
+              contributor marks.
+            </AppText>
+          </View>
+        )}
+      </View>
+    </View>
   );
 }

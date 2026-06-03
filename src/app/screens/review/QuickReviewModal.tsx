@@ -23,7 +23,15 @@ export function QuickReviewModal() {
 
   const renderBackdrop = useCallback(
     (props: any) => (
-      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.5}
+        accessibilityRole="button"
+        accessibilityLabel="Close quick review"
+        accessibilityHint="Dismisses the quick review sheet"
+      />
     ),
     [],
   );
@@ -36,6 +44,8 @@ export function QuickReviewModal() {
       snapPoints={snapPoints}
       backdropComponent={renderBackdrop}
       onDismiss={hideQuickReview}
+      accessibilityLabel="Quick review"
+      accessibilityViewIsModal
       backgroundStyle={{ backgroundColor: palette.surface }}
       handleIndicatorStyle={{ backgroundColor: palette.border }}
     >

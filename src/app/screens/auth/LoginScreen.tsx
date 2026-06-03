@@ -71,6 +71,33 @@ export function LoginScreen({ navigation }: Props) {
   });
 
   const handleProviderLogin = async (provider: AuthProvider) => {
+    const providerErrorMessage = (error: unknown) => {
+      const rawMessage =
+        (error as { message?: string })?.message ?? AUTH_COPY.login.genericErrorToast;
+      const message = rawMessage.toLowerCase();
+      if (message.includes("provider is not enabled")) {
+        return getAuthProviderUnavailableMessage(provider);
+      }
+      if (message.includes("cancelled")) {
+        return AUTH_COPY.login.providerCancelledToast;
+      }
+      if (message.includes("callback url was not trusted")) {
+        return message;
+      }
+      if (message.includes("state did not match")) {
+        return message;
+      }
+      if (message.includes("no active session") || message.includes("session credentials")) {
+        return rawMessage;
+      }
+
+      if (typeof __DEV__ !== "undefined" && __DEV__) {
+        return rawMessage;
+      }
+
+      return AUTH_COPY.login.genericErrorToast;
+    };
+
     try {
       if (getConfiguredDataSource() === "supabase") {
         const service = getHungryService();
@@ -85,19 +112,11 @@ export function LoginScreen({ navigation }: Props) {
       completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
       showToast({ message: AUTH_COPY.login.providerSuccessToast, tone: "success" });
     } catch (err) {
-      const message = (err as { message?: string })?.message?.toLowerCase() ?? "";
-      if (message.includes("provider is not enabled")) {
-        showToast({
-          message: getAuthProviderUnavailableMessage(provider),
-          tone: "error",
-        });
-        return;
-      }
-      if (message.includes("cancelled")) {
-        showToast({ message: AUTH_COPY.login.providerCancelledToast, tone: "warning" });
-        return;
-      }
-      showToast({ message: AUTH_COPY.login.genericErrorToast, tone: "error" });
+      const message = providerErrorMessage(err);
+      showToast({
+        message,
+        tone: message === AUTH_COPY.login.providerCancelledToast ? "warning" : "error",
+      });
     }
   };
 
@@ -119,7 +138,13 @@ export function LoginScreen({ navigation }: Props) {
             }}
           >
             <AppText tone="secondary">{AUTH_COPY.login.footerPrompt}</AppText>
-            <Pressable onPress={() => navigation.navigate("SignUp")}>
+            <Pressable
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={AUTH_COPY.login.footerAction}
+              accessibilityHint="Opens the account creation screen"
+              onPress={() => navigation.navigate("SignUp")}
+            >
               <AppText variant="bodyBold" tone="accent">
                 {AUTH_COPY.login.footerAction}
               </AppText>
@@ -163,7 +188,18 @@ export function LoginScreen({ navigation }: Props) {
                     onChangeText={onChange}
                     leftIcon={<Lock color={palette.textMuted} size={18} />}
                     rightIcon={
-                      <Pressable onPress={() => setShowPassword((current) => !current)} hitSlop={8}>
+                      <Pressable
+                        accessible
+                        accessibilityRole="button"
+                        accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                        accessibilityHint={
+                          showPassword
+                            ? "Hides the password characters"
+                            : "Shows the password characters"
+                        }
+                        onPress={() => setShowPassword((current) => !current)}
+                        hitSlop={8}
+                      >
                         {showPassword ? (
                           <EyeOff color={palette.textMuted} size={18} />
                         ) : (
@@ -175,7 +211,13 @@ export function LoginScreen({ navigation }: Props) {
                     errorText={errors.password?.message}
                   />
                   <View style={{ alignItems: "flex-end" }}>
-                    <Pressable onPress={() => navigation.navigate("ForgotPassword")}>
+                    <Pressable
+                      accessible
+                      accessibilityRole="button"
+                      accessibilityLabel={AUTH_COPY.login.forgotPasswordLink}
+                      accessibilityHint="Opens password reset"
+                      onPress={() => navigation.navigate("ForgotPassword")}
+                    >
                       <AppText variant="micro" tone="accent">
                         {AUTH_COPY.login.forgotPasswordLink}
                       </AppText>
@@ -190,6 +232,7 @@ export function LoginScreen({ navigation }: Props) {
             label={AUTH_COPY.login.primaryButton}
             onPress={handleLogin}
             rightIcon={<ArrowRight size={18} color={palette.white} />}
+            labelColor={palette.white}
           />
 
           <View

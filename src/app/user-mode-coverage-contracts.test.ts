@@ -133,7 +133,9 @@ test("home feed post cards cover carousel media, captions, comments, reactions, 
       /numberOfLines=\{2\}/,
       /\{" more"\}/,
       /activeCommentItem\.caption/,
-      /commentsSheetRef\.current\?\.present\(\)/,
+      /const openCommentSheet = useCallback/,
+      /const commentSheet = commentsSheetRef\.current/,
+      /openCommentSheet\(\)/,
       /commentsByPostId\[activeCommentItem\.id\] \?\? \[\]/,
       /addPostComment\(activeCommentItem\.id, newComment\)/,
       /addPostReply\(activeCommentItem\.id, newReply\)/,
@@ -225,9 +227,9 @@ test("discover and search keep user mode map-free while browse grids open matchi
     [
       /title: dish\.name,[\s\S]*imageUrl: dish\.imageUrl,[\s\S]*dish,/,
       /title: topDish\.name,[\s\S]*imageUrl: topDish\.imageUrl,[\s\S]*dish: topDish/,
-      /source=\{\{ uri: item\.imageUrl \}\}/,
-      /\{item\.title\}/,
-      /navigation\.navigate\("DishDetail", \{ dishId: item\.dish\.id \}\)/,
+      /images=\{slides\.map\(\(slide\) => slide\.imageUrl\)\}/,
+      /\{activeSlide\.title\}/,
+      /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dish\.id \}\)/,
       /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\)/,
       /onSubmitQuery=\{recordCommittedSearchQuery\}/,
       /rememberSearch\(filters\.query\)/,
@@ -271,8 +273,8 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /<AppText variant="h2">Address<\/AppText>/,
       /\{stallAddress\}/,
       /<AppText variant="h2">Menu<\/AppText>/,
-      /dishes\.map\(\(dish\) =>/,
-      /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\)/,
+      /dishes\.map\(\(dish, index\) =>/,
+      /navigation\.navigate\("DishDetail", \{ dishId: activeDish\.id \}\)/,
       /StallInteractionBar/,
       /ReviewShareSheet/,
     ],
@@ -294,39 +296,38 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
   );
   assert.match(
     userModeStallPress,
-    /navigation\.navigate\("StallDetail", \{ venueId: venue\.id \}\)/,
+    /navigation\.navigate\("StallDetail", \{ venueId: card\.venue\.id \}\)/,
   );
 });
 
 test("review tab covers loading state, review cards, and bite card icon/sheet boundaries", () => {
   const reviewFeed = readRepoFile("src/app/screens/review/ReviewFeedScreen.tsx");
-  const reviewFeedV2 = readRepoFile("src/app/screens/review/ReviewFeedScreenV2.tsx");
   const bitesContract = readRepoFile("src/app/screens/review-feed-bites-contracts.test.ts");
 
-  for (const source of [reviewFeed, reviewFeedV2]) {
-    assertSourceIncludes(
-      source,
-      [
-        /useDelayedLoadingSkeleton\(isInitialLoading/,
-        /ReviewFeedSkeleton/,
-        /ReviewCommentsSheet/,
-        /ReviewShareSheet/,
-        /commentsEnabled=\{commentsEnabled\}/,
-        /commentsSheetRef\.current\?\.present\(\)/,
-        /accessibilityLabel="Open review comments"/,
-        /accessibilityLabel=\{interaction\.liked \? "Unlike review" : "Like review"\}/,
-        /accessibilityLabel=\{interaction\.saved \? "Unsave review" : "Save review"\}/,
-        /<Send[\s\S]*<Bookmark[\s\S]*<CommentIcon[\s\S]*<Heart/,
-        /justifyContent: "flex-end"/,
-      ],
-      "review feed card actions",
-    );
-    assertSourceExcludes(
-      source,
-      [/BiteCommentsSheet/, /activeCommentBite/, /getHomeBitesFeed\(\)/],
-      "review feed bite sheet regressions",
-    );
-  }
+  assertSourceIncludes(
+    reviewFeed,
+    [
+      /useDelayedLoadingSkeleton\(isInitialLoading/,
+      /ReviewFeedSkeleton/,
+      /ReviewCommentsSheet/,
+      /ReviewShareSheet/,
+      /commentsEnabled=\{commentsEnabled\}/,
+      /const openCommentsSheet = useCallback/,
+      /const commentSheet = commentsSheetRef\.current/,
+      /openCommentsSheet\(\)/,
+      /accessibilityLabel="Open review comments"/,
+      /accessibilityLabel=\{interaction\.liked \? "Unlike review" : "Like review"\}/,
+      /accessibilityLabel=\{interaction\.saved \? "Unsave review" : "Save review"\}/,
+      /<Send[\s\S]*<Bookmark[\s\S]*<CommentIcon[\s\S]*<Heart/,
+      /justifyContent: "flex-end"/,
+    ],
+    "review feed card actions",
+  );
+  assertSourceExcludes(
+    reviewFeed,
+    [/BiteCommentsSheet/, /activeCommentBite/, /getHomeBitesFeed\(\)/],
+    "review feed bite sheet regressions",
+  );
 
   assertSourceIncludes(
     bitesContract,
@@ -412,7 +413,7 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
   assertSourceIncludes(
     profileHome,
     [
-      /profile\.avatarUrl \? \([\s\S]*<Image[\s\S]*source=\{\{ uri: profile\.avatarUrl \}\}/,
+      /profile\.avatarUrl \? \([\s\S]*<AccessibleImage[\s\S]*source=\{\{ uri: profile\.avatarUrl \}\}/,
       /avatarInitials/,
       /<UserProfileContent[\s\S]*authorName=\{viewerAuthorName\}[\s\S]*authorAvatarUrl=\{viewerAuthorAvatarUrl\}/,
       /<AppText variant="h2">Taste Fingerprint<\/AppText>/,
@@ -422,6 +423,12 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
       /label="Stalls"/,
       /label="Saved"/,
       /accessibilityLabel=\{menuOpen \? "Close quick access" : "Open quick access"\}/,
+      /accessibilityLabel="Edit profile photo"/,
+      /accessibilityLabel="Share Taste Fingerprint"/,
+      /<AppText\s+variant="h1"\s+numberOfLines=\{1\}\s+adjustsFontSizeToFit\s+minimumFontScale=\{0\.78\}[\s\S]*profile\.displayName/,
+      /accessibilityLabel="Show profile posts"/,
+      /accessibilityState=\{\{ selected: activeShareTab === "posts" \}\}/,
+      /accessibilityState=\{\{ selected: activeShareTab === "reviews" \}\}/,
       /navigation\.navigate\("Settings"\)/,
     ],
     "ProfileHomeScreen own profile",

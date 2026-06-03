@@ -1,14 +1,14 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Pressable, ScrollView, View } from "react-native";
 import { Heart } from "lucide-react-native";
-import { Image } from "expo-image";
 
-import { AppText, Button, Card } from "@/components/ui";
+import { AccessibleImage, AppText, Button, Card } from "@/components/ui";
 import { dataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
+import { getOnboardingDishImageSource } from "./onboardingFoodImages";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileResult">;
 
@@ -44,10 +44,11 @@ export function TasteProfileResultScreen({ navigation }: Props) {
               key={dish.id}
               style={{ borderRadius: radii.md, overflow: "hidden", padding: 0, width: "48%" }}
             >
-              <Image
-                source={{ uri: dish.imageUrl }}
+              <AccessibleImage
+                source={getOnboardingDishImageSource(dish.id)}
                 contentFit="cover"
                 style={{ height: 120, width: "100%" }}
+                accessibilityLabel={`${dish.name} generated food photo`}
               />
               <View style={{ gap: spacing[1], padding: spacing[2] }}>
                 <AppText variant="bodyBold" numberOfLines={1}>
@@ -63,7 +64,13 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                   <AppText variant="micro" tone="secondary" numberOfLines={1}>
                     {dish.tasteTags.slice(0, 2).join(" · ")}
                   </AppText>
-                  <Pressable onPress={() => toggleFavourite(dish)} style={{ padding: spacing[1] }}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Save ${dish.name}`}
+                    accessibilityHint="Adds this dish to your favourites"
+                    onPress={() => toggleFavourite(dish)}
+                    style={{ padding: spacing[1] }}
+                  >
                     <Heart color={palette.orange} size={15} />
                   </Pressable>
                 </View>

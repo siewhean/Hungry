@@ -1,14 +1,20 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Pressable, View } from "react-native";
-import { Image } from "expo-image";
 import { ArrowLeft, Search as SearchIcon } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Button, Chip, IconButton, Input, Screen } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  Button,
+  ChipGroup,
+  IconButton,
+  Input,
+  Screen,
+} from "@/components/ui";
 import { getDiscoverStallCollections, useSearchData } from "@/features/search/search";
-import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
@@ -22,6 +28,10 @@ const SEARCH_CATEGORIES: SearchCategory[] = [
   "desserts",
   "late night",
 ];
+const SEARCH_CATEGORY_OPTIONS = SEARCH_CATEGORIES.map((category) => ({
+  id: category,
+  label: category.replace(/\b\w/g, (char) => char.toUpperCase()),
+}));
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 
 export function DishSearchScreen() {
@@ -31,41 +41,13 @@ export function DishSearchScreen() {
   const profile = useProfileStore((state) => state.profile);
   const updateQuery = useSearchStore((state) => state.updateQuery);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
-  const recentSearches = useSearchStore((state) => state.recentSearches);
   const selectedCategories = useSearchStore((state) => state.filters.categories);
   const toggleCategory = useSearchStore((state) => state.toggleCategory);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const collections = getDiscoverStallCollections(profile, filters.query).slice(0, 4);
   const entryY = useRef(new Animated.Value(-28)).current;
   const entryOpacity = useRef(new Animated.Value(0)).current;
-  const safeRecentSearches = useMemo(
-    () =>
-      Array.isArray(recentSearches)
-        ? recentSearches
-            .map((search) =>
-              typeof search === "string" ? search.trim() : String(search ?? "").trim(),
-            )
-            .filter(Boolean)
-        : [],
-    [recentSearches],
-  );
-  const defaultSearchPlaceholders = useMemo(
-    () => ["Laksa, satay, Tian Tian...", "Try mee pok, ramen, and laksa", "Nasi lemak near you"],
-    [],
-  );
-  const animatedSearchPlaceholders = useMemo(
-    () =>
-      safeRecentSearches.length > 0 ? safeRecentSearches.slice(0, 5) : defaultSearchPlaceholders,
-    [defaultSearchPlaceholders, safeRecentSearches],
-  );
-  const animatedPlaceholder = useMovingSearchPlaceholder({
-    phrases: animatedSearchPlaceholders,
-    totalCycleMs: 2600,
-    tickMs: 2,
-    revealStepMs: 2,
-    deleteStepMs: 2,
-    pauseMs: 320,
-  });
+  const suggestedDish = collections[0]?.topDishes[0];
 
   useEffect(() => {
     Animated.parallel([
@@ -119,7 +101,8 @@ export function DishSearchScreen() {
 
         <Input
           leftIcon={<SearchIcon color={palette.textMuted} size={18} />}
-          placeholder={animatedPlaceholder}
+          placeholder="Laksa, satay, Tian Tian..."
+          accessibilityLabel="Search dishes, stalls, or hawker centres"
           value={filters.query}
           onChangeText={updateQuery}
           onSubmitEditing={() => {
@@ -130,16 +113,11 @@ export function DishSearchScreen() {
             navigation.navigate("SearchResults");
           }}
         />
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-          {SEARCH_CATEGORIES.map((category) => (
-            <Chip
-              key={category}
-              label={category.replace(/\b\w/g, (char) => char.toUpperCase())}
-              selected={selectedCategories.includes(category)}
-              onPress={() => toggleCategory(category)}
-            />
-          ))}
-        </View>
+        <ChipGroup
+          options={SEARCH_CATEGORY_OPTIONS}
+          selectedIds={selectedCategories}
+          onSelect={toggleCategory}
+        />
         <Button
           label="Adjust taste filter"
           variant="secondary"
@@ -148,12 +126,20 @@ export function DishSearchScreen() {
         <Button label="View search results" onPress={() => navigation.navigate("SearchResults")} />
         <Pressable
           onPress={() => {
-            const match = collections[0]?.topDishes[0];
-            if (match) {
-              setDecideForMe(match);
-              navigation.navigate("DishDetail", { dishId: match.id });
+            if (suggestedDish) {
+              setDecideForMe(suggestedDish);
+              navigation.navigate("DishDetail", { dishId: suggestedDish.id });
             }
           }}
+          disabled={!suggestedDish}
+          accessibilityRole="button"
+          accessibilityLabel={
+            suggestedDish
+              ? `Open suggested dish ${suggestedDish.name}`
+              : "Suggested dish unavailable"
+          }
+          accessibilityHint="Opens this dish detail page"
+          accessibilityState={{ disabled: !suggestedDish }}
           style={({ pressed }) => [
             {
               backgroundColor: pressed ? palette.bgSoft : palette.surface,
@@ -177,7 +163,7 @@ export function DishSearchScreen() {
                 SUGGESTED FOR TONIGHT
               </AppText>
               <AppText variant="h2" style={{ marginTop: spacing[1] }}>
-                Craving {collections[0]?.topDishes[0]?.name ?? "something special"}?
+                Craving {suggestedDish?.name ?? "something special"}?
               </AppText>
               <AppText variant="bodySmall" tone="secondary" style={{ marginTop: spacing[1] }}>
                 Best match within 2km. Start strong, widen later if needed.
@@ -192,15 +178,16 @@ export function DishSearchScreen() {
                   borderRadius: radii.pill,
                 }}
               >
-                <AppText variant="micro" style={{ color: palette.orange, fontWeight: "700" }}>
+                <AppText variant="micro" style={{ color: palette.accentText, fontWeight: "700" }}>
                   BROWSE DISH
                 </AppText>
               </View>
             </View>
-            <Image
-              source={{ uri: collections[0]?.topDishes[0]?.imageUrl }}
+            <AccessibleImage
+              source={{ uri: suggestedDish?.imageUrl }}
               style={{ borderRadius: radii.md, height: 120, width: 100 }}
               contentFit="cover"
+              decorative
             />
           </View>
         </Pressable>
@@ -215,6 +202,9 @@ export function DishSearchScreen() {
                   venueId: collection.venue.id,
                 })
               }
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${collection.venue.name} stall details`}
+              accessibilityHint="Opens this stall page with menu and dish information"
               style={{
                 backgroundColor: palette.surface,
                 borderColor: palette.border,
@@ -230,10 +220,11 @@ export function DishSearchScreen() {
                   padding: spacing[4],
                 }}
               >
-                <Image
+                <AccessibleImage
                   source={{ uri: collection.posts[0]?.mediaUrl }}
                   style={{ borderRadius: radii.md, height: 84, width: 84 }}
                   contentFit="cover"
+                  decorative
                 />
                 <View style={{ flex: 1, gap: spacing[1] }}>
                   <View

@@ -9,13 +9,11 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Search, X, SlidersHorizontal, Star } from "lucide-react-native";
-import { Image } from "expo-image";
 import { FlashList } from "@shopify/flash-list";
 
-import { AppText, EmptyState, Skeleton } from "@/components/ui";
+import { AccessibleImage, AppText, EmptyState, Skeleton } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
-import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 
 type FilterTab = "All" | "Dishes";
 
@@ -82,8 +80,9 @@ const SearchResultRow = memo(function SearchResultRow({
       onPress={handlePress}
       style={{ flexDirection: "row", gap: spacing[3] }}
     >
-      <Image
+      <AccessibleImage
         source={{ uri: dish.imageUrl }}
+        accessibilityLabel={`${dish.name} from ${dish.venueName}`}
         style={{ width: 80, height: 80, borderRadius: radii.md }}
         contentFit="cover"
         cachePolicy="memory-disk"
@@ -146,14 +145,6 @@ export function SearchResultsView({
     inputRange: [0, 1],
     outputRange: [0.85, 1],
     extrapolate: "clamp",
-  });
-  const movingSearchPlaceholder = useMovingSearchPlaceholder({
-    phrases: ["Search dishes, stalls, or your cravings"],
-    totalCycleMs: 2400,
-    tickMs: 2,
-    revealStepMs: 2,
-    deleteStepMs: 2,
-    pauseMs: 320,
   });
   const TABS: FilterTab[] = ["All", "Dishes"];
   const renderResult = useCallback(
@@ -284,7 +275,7 @@ export function SearchResultsView({
                   onChangeText={onQueryChange}
                   onSubmitEditing={() => onSubmitQuery?.(query)}
                   onBlur={hideSearch}
-                  placeholder={movingSearchPlaceholder}
+                  placeholder="Search dishes, stalls, or your cravings"
                   placeholderTextColor={palette.textMuted}
                   returnKeyType="search"
                   style={{

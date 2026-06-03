@@ -7,7 +7,6 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { Image } from "expo-image";
 import { Heart, X, ChevronLeft, Sparkles } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -15,7 +14,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Haptics from "expo-haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Button, HungryLogo } from "@/components/ui";
+import { AccessibleImage, AppText, Button, HungryLogo } from "@/components/ui";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
@@ -202,10 +201,11 @@ export function CraveScreen() {
                   },
                 ]}
               >
-                <Image
+                <AccessibleImage
                   source={{ uri: nextDish.imageUrl }}
                   style={StyleSheet.absoluteFill}
                   contentFit="cover"
+                  accessibilityLabel={`${nextDish.name} preview photo`}
                 />
               </View>
             </View>
@@ -228,10 +228,11 @@ export function CraveScreen() {
               shadows.floating,
             ]}
           >
-            <Image
+            <AccessibleImage
               source={{ uri: currentDish.imageUrl }}
               style={StyleSheet.absoluteFill}
               contentFit="cover"
+              accessibilityLabel={`${currentDish.name} photo`}
             />
 
             {/* Feedback Overlays */}

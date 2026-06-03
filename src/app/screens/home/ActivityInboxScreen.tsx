@@ -2,12 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Image } from "expo-image";
-import { ChevronLeft, Heart, MessageCircleMore } from "lucide-react-native";
+import { ChevronLeft, Heart, MessageCircleMore, Share2, Store } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppHeader, AppText, EmptyState, IconButton } from "@/components/ui";
+import { AccessibleImage, AppHeader, AppText, EmptyState, IconButton } from "@/components/ui";
 import {
   ACTIVITY_UPDATES,
   getActivityReadKey,
@@ -15,10 +14,15 @@ import {
 } from "@/features/home/activity";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import type { ChatConversation } from "@/lib/services/types";
 import { useActivityStore } from "@/store/useActivityStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ActivityInbox">;
@@ -49,6 +53,9 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
   const [messagesError, setMessagesError] = useState<string | null>(null);
   const readActivityIds = useActivityStore((state) => state.readActivityIds);
   const activityUpdates = useActivityStore((state) => state.activityUpdates);
+  const dbActivityEvents = useActivityStore((state) => state.dbActivityEvents);
+  const fetchActivityEvents = useActivityStore((state) => state.fetchActivityEvents);
+  const userId = useProfileStore((state) => state.profile.id);
   const repository = getDataRepository();
   const publishedPosts = usePublishedPostStore((state) => state.posts);
   const posts = useMemo(() => {
@@ -58,7 +65,11 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
   const postById = useMemo(() => new Map(posts.map((post) => [post.id, post])), [posts]);
   const { palette, spacing, semanticSpacing, radii } = useHungryTheme();
   const allUpdates = useMemo(() => {
-    return [...ACTIVITY_UPDATES, ...activityUpdates].map((update) => {
+    const sourceUpdates =
+      getServiceProvider().mode === "mock"
+        ? [...ACTIVITY_UPDATES, ...activityUpdates]
+        : [...dbActivityEvents, ...activityUpdates];
+    return sourceUpdates.map((update) => {
       const post = postById.get(update.postId);
       const postName = post?.authorName ?? post?.caption ?? "Post";
       const venueName = post ? `${post.authorLocation}` : "";
@@ -67,7 +78,41 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
         target: update.target || (venueName ? `${postName} · ${venueName}` : postName),
       };
     });
-  }, [postById, activityUpdates]);
+  }, [postById, activityUpdates, dbActivityEvents]);
+
+  const visibleUpdates = useMemo(() => {
+    const parseRelativeMinutes = (value: string) => {
+      const normalized = value.trim().toLowerCase();
+
+      if (normalized === "now") return 0;
+
+      const minutesMatch = normalized.match(/^(\d+)\s*m$/);
+      if (minutesMatch) return Number(minutesMatch[1]);
+
+      const hoursMatch = normalized.match(/^(\d+)\s*h$/);
+      if (hoursMatch) return Number(hoursMatch[1]) * 60;
+
+      const daysMatch = normalized.match(/^(\d+)\s*d$/);
+      if (daysMatch) return Number(daysMatch[1]) * 60 * 24;
+
+      return Number.POSITIVE_INFINITY;
+    };
+
+    const createdAt = (value: string, fallbackToRelative = true) => {
+      const absolute = Date.parse(value);
+      if (Number.isFinite(absolute)) {
+        return absolute;
+      }
+
+      if (!fallbackToRelative) return Number.POSITIVE_INFINITY;
+
+      return Date.now() - parseRelativeMinutes(value) * 60_000;
+    };
+
+    return allUpdates
+      .filter((update) => !update.recipientUserId || update.recipientUserId === userId)
+      .sort((a, b) => createdAt(b.time) - createdAt(a.time));
+  }, [allUpdates, userId]);
 
   const styles = useMemo(
     () => createStyles({ spacing, semanticSpacing, radii }),
@@ -100,13 +145,15 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     void loadConversations();
-  }, [loadConversations]);
+    void fetchActivityEvents();
+  }, [fetchActivityEvents, loadConversations]);
 
   useFocusEffect(
     useCallback(() => {
       void loadConversations();
+      void fetchActivityEvents();
       return undefined;
-    }, [loadConversations]),
+    }, [fetchActivityEvents, loadConversations]),
   );
 
   return (
@@ -131,7 +178,7 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
             const unreadCount =
               tab === "messages"
                 ? conversations.reduce((total, conversation) => total + conversation.unreadCount, 0)
-                : allUpdates.filter(
+                : visibleUpdates.filter(
                     (update) =>
                       update.unread &&
                       !readActivityIds.includes(getActivityReadKey("update", update.id)),
@@ -184,7 +231,7 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
             }}
           />
         ) : (
-          <UpdatesTab navigation={navigation} updates={allUpdates} />
+          <UpdatesTab navigation={navigation} updates={visibleUpdates} />
         )}
       </View>
     </SafeAreaView>
@@ -267,9 +314,10 @@ function MessagesTab({
               >
                 <View style={stylesInline.messageAvatarSlot}>
                   {normalizedAvatar ? (
-                    <Image
+                    <AccessibleImage
                       source={{ uri: normalizedAvatar }}
                       style={{ width: 56, height: 56, borderRadius: radii.pill }}
+                      accessibilityLabel={`Avatar for ${normalizedName}`}
                     />
                   ) : (
                     <View
@@ -340,7 +388,14 @@ function UpdatesTab({
         const post = repository
           .listStallPosts()
           .find((candidate) => candidate.id === update.postId);
-        const kindColor = update.kind === "like" ? palette.error : palette.orange;
+        const kindColor =
+          update.kind === "like"
+            ? palette.error
+            : update.kind === "share"
+              ? palette.orange
+              : update.kind === "submission"
+                ? palette.orange
+                : palette.orange;
         const isUnread =
           update.unread && !readActivityIds.includes(getActivityReadKey("update", update.id));
 
@@ -351,22 +406,25 @@ function UpdatesTab({
             accessibilityLabel={`Open update for ${update.target}`}
             onPress={() => {
               markActivityRead("update", update.id);
-              navigation.navigate("ActivityPostDetail", {
-                postId: update.postId,
-                updateId: update.id,
-              });
+              if (post) {
+                navigation.navigate("ActivityPostDetail", {
+                  postId: update.postId,
+                  updateId: update.id,
+                });
+              }
             }}
             style={[stylesInline.updateRow, { gap: spacing[3] }]}
           >
             <View style={[stylesInline.kindBadge, { backgroundColor: palette.bgSoft }]}>
               {update.kind === "like" ? (
                 <Heart color={kindColor} size={20} />
+              ) : update.kind === "share" ? (
+                <Share2 color={kindColor} size={20} />
+              ) : update.kind === "submission" ? (
+                <Store color={kindColor} size={20} />
               ) : (
                 <MessageCircleMore color={kindColor} size={20} />
               )}
-              <AppText variant="micro" style={{ color: kindColor, fontWeight: "800" }}>
-                {update.kind === "like" ? "Like" : "Comment"}
-              </AppText>
             </View>
             <View style={{ flex: 1, gap: spacing[1] }}>
               <View style={stylesInline.rowBetween}>
@@ -375,7 +433,7 @@ function UpdatesTab({
                   {update.time}
                 </AppText>
               </View>
-              <AppText variant="bodySmall" tone="secondary">
+              <AppText variant="bodySmall" tone="secondary" style={stylesInline.updateText}>
                 {update.text}
               </AppText>
               <AppText variant="micro" tone="secondary" numberOfLines={1}>
@@ -384,9 +442,10 @@ function UpdatesTab({
             </View>
             <View style={stylesInline.updateMediaSlot}>
               {post ? (
-                <Image
+                <AccessibleImage
                   source={{ uri: post.mediaUrl }}
                   style={{ width: 56, height: 56, borderRadius: radii.md }}
+                  decorative
                 />
               ) : null}
               <View style={stylesInline.updateUnreadSlot}>
@@ -404,7 +463,7 @@ function UpdatesTab({
       })}
 
       {updates.length === 0 ? (
-        <EmptyState title="No updates yet" body="Comments, likes, and shares will appear here." />
+        <EmptyState title="No updates yet" body="Activity updates will appear here." />
       ) : null}
     </ScrollView>
   );
@@ -488,6 +547,10 @@ const stylesInline = StyleSheet.create({
   updateRow: {
     alignItems: "center",
     flexDirection: "row",
+  },
+  updateText: {
+    alignSelf: "stretch",
+    width: "100%",
   },
   updateMediaSlot: {
     alignItems: "center",

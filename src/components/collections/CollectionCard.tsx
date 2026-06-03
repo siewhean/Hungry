@@ -3,11 +3,12 @@
  * Shows cover image, title, stall count, and save state.
  */
 
-import { View, Pressable, StyleSheet, Image } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import { Bookmark, BookmarkCheck } from "lucide-react-native";
 import { useMemo } from "react";
 
 import { useHungryTheme } from "@/theme";
+import { AccessibleImage } from "@/components/ui/AccessibleImage";
 import { AppText } from "@/components/ui/AppText";
 import { useCollectionStore } from "@/store/useCollectionStore";
 import type { FoodCollection } from "@/types/domain";
@@ -56,11 +57,11 @@ export function CollectionCard({ collection, userId, onPress }: CollectionCardPr
     >
       {/* Cover image */}
       {collection.coverImageUrl ? (
-        <Image
+        <AccessibleImage
           source={{ uri: collection.coverImageUrl }}
           style={[styles.image, { height: CARD_IMAGE_HEIGHT }]}
-          resizeMode="cover"
-          accessibilityLabel={`Cover photo for ${collection.title}`}
+          contentFit="cover"
+          decorative
         />
       ) : (
         <View

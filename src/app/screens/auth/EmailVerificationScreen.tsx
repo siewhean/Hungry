@@ -110,6 +110,12 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
 
           <Pressable
             accessibilityRole="button"
+            accessibilityLabel={
+              resendSeconds > 0
+                ? `Resend verification email available in ${minuteText}:${secondText}`
+                : "Resend verification email"
+            }
+            accessibilityHint="Requests a new verification email"
             accessibilityState={{ disabled: resendSeconds > 0 }}
             disabled={resendSeconds > 0}
             onPress={() => {

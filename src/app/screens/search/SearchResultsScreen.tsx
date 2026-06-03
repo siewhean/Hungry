@@ -3,7 +3,6 @@ import {
   Animated,
   Easing,
   Pressable,
-  ScrollView,
   StyleSheet,
   TextInput,
   View,
@@ -18,7 +17,7 @@ import { FlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Avatar, Chip, EmptyState, Screen, Skeleton } from "@/components/ui";
+import { AppText, Avatar, EmptyState, FilterChipRail, Screen, Skeleton } from "@/components/ui";
 import {
   CyclingGridImage,
   CYCLING_GRID_IMAGE_INTERVAL_MS,
@@ -50,7 +49,6 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail, VenueSummary } from "@/types/domain";
-import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type SearchResultsRoute = RouteProp<RootStackParamList, "SearchResults">;
@@ -194,6 +192,7 @@ function BrowseGridCard({
 }
 
 const BROWSE_FILTERS = ["All", "Local", "Halal", "Japanese", "Western", "Noodles", "Rice", "Spicy"];
+const BROWSE_FILTER_OPTIONS = BROWSE_FILTERS.map((filter) => ({ id: filter, label: filter }));
 const BROWSE_GRID_HYDRATION_TIMEOUT_MS = 350;
 const BROWSE_GRID_HYDRATION_FALLBACK_DELAY_MS = 80;
 
@@ -532,14 +531,6 @@ function BrowseGridScreen({
   const itemWidth = screenWidth / numColumns;
   const browseTitle = isDishGrid ? "Dishes" : "Stalls & Restaurants";
   const searchPlaceholder = isDishGrid ? "Find dishes..." : "Find stalls...";
-  const movingSearchPlaceholder = useMovingSearchPlaceholder({
-    phrases: [searchPlaceholder],
-    totalCycleMs: 2400,
-    tickMs: 2,
-    revealStepMs: 2,
-    deleteStepMs: 2,
-    pauseMs: 280,
-  });
   const searchBarWidth = Math.max(screenWidth - spacing[4] * 2, 240);
   const searchIconSize = 56;
   const fallbackLauncherLeft = screenWidth - spacing[4] - searchIconSize;
@@ -776,7 +767,7 @@ function BrowseGridScreen({
                       onBlur={hideSearch}
                       onChangeText={setSearchQuery}
                       onSubmitEditing={recordBrowseSearchQuery}
-                      placeholder={movingSearchPlaceholder}
+                      placeholder={searchPlaceholder}
                       placeholderTextColor={palette.textMuted}
                       returnKeyType="search"
                       style={[
@@ -803,21 +794,14 @@ function BrowseGridScreen({
             </View>
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ marginTop: spacing[2], marginBottom: spacing[2] }}
-            contentContainerStyle={{ gap: spacing[2], paddingLeft: spacing[4] }}
-          >
-            {BROWSE_FILTERS.map((filter) => (
-              <Chip
-                key={filter}
-                label={filter}
-                selected={selectedFilter === filter}
-                onPress={() => setSelectedFilter(filter)}
-              />
-            ))}
-          </ScrollView>
+          <View style={{ marginTop: spacing[2], marginBottom: spacing[2] }}>
+            <FilterChipRail
+              options={BROWSE_FILTER_OPTIONS}
+              selectedId={selectedFilter}
+              onSelect={setSelectedFilter}
+              gap={spacing[2]}
+            />
+          </View>
         </View>
 
         <FlashList

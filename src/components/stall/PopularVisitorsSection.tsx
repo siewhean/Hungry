@@ -136,7 +136,7 @@ export function PopularVisitorsSection({
         ))}
       </ScrollView>
 
-      <BottomSheet ref={actionSheetRef} snapPoints={["28%"]}>
+      <BottomSheet ref={actionSheetRef} snapPoints={["28%"]} accessibilityLabel="Visitor actions">
         <View style={{ gap: spacing[3] }}>
           {selectedPin ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
@@ -156,7 +156,7 @@ export function PopularVisitorsSection({
         </View>
       </BottomSheet>
 
-      <BottomSheet ref={reviewSheetRef} snapPoints={["48%"]}>
+      <BottomSheet ref={reviewSheetRef} snapPoints={["48%"]} accessibilityLabel="Visitor review">
         {selectedPin ? (
           <View style={{ gap: spacing[3] }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>

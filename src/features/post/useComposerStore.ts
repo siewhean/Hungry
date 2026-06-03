@@ -41,6 +41,7 @@ interface ComposerState {
   foodTags: string[];
   tasteTags: string[];
   useSameCaption: boolean;
+  showFoodContextOverlay: boolean;
 
   // Tab Specific Data
   reviewCaption: string;
@@ -70,6 +71,7 @@ interface ComposerState {
   updateMediaAdjustment: (id: string, adjustments: Partial<MediaItem["adjustments"]>) => void;
   setCaption: (text: string) => void;
   setUseSameCaption: (useSame: boolean) => void;
+  setShowFoodContextOverlay: (show: boolean) => void;
   toggleTag: (tag: string, type: "food" | "taste") => void;
   setRating: (rating: number) => void;
   setMusic: (
@@ -111,6 +113,7 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
   foodTags: [],
   tasteTags: [],
   useSameCaption: false,
+  showFoodContextOverlay: true,
 
   reviewCaption: "",
   postCaption: "",
@@ -175,6 +178,7 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
         reviewCaption: syncedCaption.slice(0, 500),
       };
     }),
+  setShowFoodContextOverlay: (showFoodContextOverlay) => set({ showFoodContextOverlay }),
   toggleTag: (tag, type) =>
     set((state) => {
       const field = type === "food" ? "foodTags" : "tasteTags";
@@ -260,6 +264,7 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
       foodTags: [],
       tasteTags: [],
       useSameCaption: false,
+      showFoodContextOverlay: true,
       reviewCaption: "",
       postCaption: "",
       rating: 0,

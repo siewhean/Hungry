@@ -23,9 +23,14 @@ import {
   prefetchStallDetail,
   preloadRoute,
 } from "@/features/navigation/prefetch";
-import { setMockServiceProvider, setSupabaseServiceProvider } from "@/lib/services/serviceProvider";
+import {
+  getHungryService,
+  setMockServiceProvider,
+  setSupabaseServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore, type PendingRoute } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -401,6 +406,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const clearSession = useSessionStore((state) => state.clearSession);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const applyProfile = useProfileStore((state) => state.applyProfile);
   const setMerchantAccount = useMerchantStore((state) => state.setAccount);
   const setDeveloperMerchantMode = useMerchantStore((state) => state.setDeveloperMerchantMode);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
@@ -431,23 +437,34 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     hideReviewSuccess();
     showToast({ message: "Session reset to signed out.", tone: "info" });
   };
+  const seedMockAuthProfile = async () => {
+    const session = await getHungryService().auth.signIn("weiming@example.sg", "dev-password");
+    applyProfile(session.profile);
+  };
+
   const resetToAuthIncomplete = () => {
+    setMockServiceProvider();
     clearSession();
-    completeAuth();
-    setReturnRoute(undefined);
-    hideReviewSuccess();
-    showToast({
-      message: "Session → Authenticated (onboarding pending)",
-      tone: "info",
+    void seedMockAuthProfile().then(() => {
+      completeAuth();
+      setReturnRoute(undefined);
+      hideReviewSuccess();
+      showToast({
+        message: "Session → Authenticated (onboarding pending)",
+        tone: "info",
+      });
     });
   };
   const resetToAuthComplete = () => {
+    setMockServiceProvider();
     clearSession();
-    completeAuth();
-    completeOnboarding(false);
-    setReturnRoute(undefined);
-    hideReviewSuccess();
-    showToast({ message: "Session → Fully authenticated", tone: "success" });
+    void seedMockAuthProfile().then(() => {
+      completeAuth();
+      completeOnboarding(false);
+      setReturnRoute(undefined);
+      hideReviewSuccess();
+      showToast({ message: "Session → Fully authenticated", tone: "success" });
+    });
   };
 
   const enterMerchantMode = () => {
@@ -653,20 +670,6 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           defaultExpanded
         >
           <VersionPair
-            label="Discover"
-            onV1PressIn={() => preloadRoute(navigation, "MainTabs", { screen: "Discover" })}
-            onV2PressIn={() => preloadRoute(navigation, "DiscoverV2")}
-            onV1={() => navigation.navigate("MainTabs", { screen: "Discover" })}
-            onV2={() => navigation.navigate("DiscoverV2")}
-          />
-          <VersionPair
-            label="Search"
-            onV1PressIn={() => preloadRoute(navigation, "SearchHome")}
-            onV2PressIn={() => preloadRoute(navigation, "SearchHomeV2")}
-            onV1={() => navigation.navigate("SearchHome")}
-            onV2={() => navigation.navigate("SearchHomeV2")}
-          />
-          <VersionPair
             label="Stall Detail"
             onV1PressIn={() => prefetchSampleStallDetail("v1")}
             onV2PressIn={() => prefetchSampleStallDetail("v2")}
@@ -693,20 +696,6 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
               onV2={() => navigation.navigate("BuildingDrillDownV2", { buildingId: "hc-maxwell" })}
             />
           ) : null}
-          <VersionPair
-            label="QuickReview"
-            onV1PressIn={() => preloadRoute(navigation, "ReviewStack", { screen: "ReviewMain" })}
-            onV2PressIn={() => preloadRoute(navigation, "QuickReviewV2")}
-            onV1={() => navigation.navigate("ReviewStack", { screen: "ReviewMain" })}
-            onV2={() => navigation.navigate("QuickReviewV2")}
-          />
-          <VersionPair
-            label="Review Feed"
-            onV1PressIn={() => preloadRoute(navigation, "MainTabs", { screen: "Review" })}
-            onV2PressIn={() => preloadRoute(navigation, "ReviewFeedV2")}
-            onV1={() => navigation.navigate("MainTabs", { screen: "Review" })}
-            onV2={() => navigation.navigate("ReviewFeedV2" as any)}
-          />
           <VersionPair
             label="Post Composer"
             onV1PressIn={() =>

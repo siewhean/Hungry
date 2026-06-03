@@ -1,10 +1,20 @@
 import React, { useCallback, useState, useEffect } from "react";
-import { View, StyleSheet, Switch, Alert, Pressable } from "react-native";
-import { Shield, HelpCircle, LogOut, ChevronRight, UserPlus, Trash2, X } from "lucide-react-native";
+import { View, StyleSheet, Alert } from "react-native";
+import { Shield, HelpCircle, LogOut, UserPlus, Trash2, X } from "lucide-react-native";
 import { CommonActions, useNavigation } from "@react-navigation/native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { AppText, Button, IconButton, Input, Screen, Chip, EmptyState } from "@/components/ui";
+import {
+  AppText,
+  Button,
+  ChipGroup,
+  IconButton,
+  Input,
+  Screen,
+  StatusChip,
+  EmptyState,
+} from "@/components/ui";
+import { SettingsRow, SettingsSection } from "@/components/settings";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -16,8 +26,16 @@ import type {
   MerchantWeeklySummary,
 } from "@/types/domain";
 
+const TEAM_ROLE_OPTIONS: {
+  id: Extract<MerchantTeamMember["role"], "manager" | "staff">;
+  label: string;
+}[] = [
+  { id: "manager", label: "Manager" },
+  { id: "staff", label: "Staff" },
+];
+
 export function MerchantSettingsScreen() {
-  const { componentRadii, palette, spacing } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
   const navigation = useNavigation();
   const rootNavigation = getRootNavigation(navigation as any);
   const activeOutlet = useMerchantStore(getActiveOutlet);
@@ -231,23 +249,7 @@ export function MerchantSettingsScreen() {
     <Screen title="Settings" contentContainerStyle={{ paddingBottom: spacing[6] }}>
       <View style={{ gap: spacing[5], width: "100%" }}>
         {/* Account Info */}
-        <View
-          style={[
-            styles.section,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.border,
-              borderRadius: componentRadii.card,
-            },
-          ]}
-        >
-          <View
-            style={{ padding: spacing[3], borderBottomWidth: 1, borderBottomColor: palette.border }}
-          >
-            <AppText variant="bodySmallBold" tone="muted" style={{ textTransform: "uppercase" }}>
-              Business Account
-            </AppText>
-          </View>
+        <SettingsSection title="Business Account">
           <View style={{ padding: spacing[3] }}>
             <AppText variant="bodyBold">{account?.displayName}</AppText>
             <AppText variant="body" tone="muted" style={{ marginTop: 2 }}>
@@ -257,19 +259,10 @@ export function MerchantSettingsScreen() {
               {activeOutlet?.name ?? "No active outlet selected"}
             </AppText>
           </View>
-        </View>
+        </SettingsSection>
 
         {/* Team Management */}
-        <View
-          style={[
-            styles.section,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.border,
-              borderRadius: componentRadii.card,
-            },
-          ]}
-        >
+        <SettingsSection title="Team Management">
           <View
             style={{
               flexDirection: "row",
@@ -302,16 +295,13 @@ export function MerchantSettingsScreen() {
                 placeholder="staff@example.com"
                 value={inviteEmail}
               />
-              <View style={{ flexDirection: "row", gap: spacing[2] }}>
-                {(["manager", "staff"] as const).map((role) => (
-                  <Pressable key={role} onPress={() => setInviteRole(role)}>
-                    <Chip
-                      label={role === "manager" ? "Manager" : "Staff"}
-                      selected={inviteRole === role}
-                    />
-                  </Pressable>
-                ))}
-              </View>
+              <ChipGroup
+                options={TEAM_ROLE_OPTIONS}
+                selectedId={
+                  inviteRole === "manager" || inviteRole === "staff" ? inviteRole : "staff"
+                }
+                onSelect={setInviteRole}
+              />
               {inviteError ? (
                 <AppText variant="micro" style={{ color: palette.error }}>
                   {inviteError}
@@ -345,26 +335,17 @@ export function MerchantSettingsScreen() {
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
                   <AppText variant="bodyBold">{member.displayName}</AppText>
-                  {member.role === "owner" && (
-                    <View
-                      style={{
-                        backgroundColor: palette.orangeLight,
-                        borderRadius: componentRadii.card,
-                      }}
-                    >
-                      <Chip label="Owner" selected={true} />
-                    </View>
-                  )}
-                  {member.role === "manager" && <Chip label="Manager" selected={false} />}
-                  {member.role === "staff" && <Chip label="Staff" selected={false} />}
+                  {member.role === "owner" && <StatusChip label="Owner" tone="accent" />}
+                  {member.role === "manager" && <StatusChip label="Manager" tone="info" />}
+                  {member.role === "staff" && <StatusChip label="Staff" tone="neutral" />}
                 </View>
                 <AppText variant="bodySmall" tone="muted" style={{ marginTop: 2 }}>
                   {member.email}
                 </AppText>
                 <View style={{ marginTop: spacing[1], alignSelf: "flex-start" }}>
-                  <Chip
+                  <StatusChip
                     label={member.inviteStatus === "accepted" ? "Accepted" : "Pending invite"}
-                    selected={member.inviteStatus === "accepted"}
+                    tone={member.inviteStatus === "accepted" ? "success" : "warning"}
                   />
                 </View>
               </View>
@@ -377,107 +358,42 @@ export function MerchantSettingsScreen() {
               )}
             </View>
           ))}
-        </View>
+        </SettingsSection>
 
         {/* Notifications */}
-        <View
-          style={[
-            styles.section,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.border,
-              borderRadius: componentRadii.card,
-            },
-          ]}
-        >
-          <View
-            style={{ padding: spacing[3], borderBottomWidth: 1, borderBottomColor: palette.border }}
-          >
-            <AppText variant="bodySmallBold" tone="muted" style={{ textTransform: "uppercase" }}>
-              Notification Preferences
-            </AppText>
-          </View>
+        <SettingsSection title="Notification Preferences">
+          <SettingsRow
+            label="New Reviews"
+            description="Alert when a customer leaves a review"
+            type="toggle"
+            isEnabled={notifications.newReviews}
+            onToggle={() => handleToggleNotification("newReviews")}
+          />
+          <SettingsRow
+            label="Low Rating Alerts"
+            description="Immediate alert for reviews 2 stars or below"
+            type="toggle"
+            isEnabled={notifications.lowRatingAlerts}
+            onToggle={() => handleToggleNotification("lowRatingAlerts")}
+          />
+          <SettingsRow
+            label="Weekly Digest"
+            description="Weekly email summary of your analytics"
+            type="toggle"
+            isEnabled={notifications.weeklyDigest}
+            onToggle={() => handleToggleNotification("weeklyDigest")}
+          />
+          <SettingsRow
+            label="AI Insights"
+            description="Notifications when AI finds a menu improvement"
+            type="toggle"
+            isEnabled={notifications.aiInsights}
+            onToggle={() => handleToggleNotification("aiInsights")}
+            isLast
+          />
+        </SettingsSection>
 
-          <View
-            style={[styles.settingRow, { borderBottomColor: palette.border, padding: spacing[4] }]}
-          >
-            <View style={{ flex: 1, paddingRight: spacing[3] }}>
-              <AppText variant="bodyBold">New Reviews</AppText>
-              <AppText variant="bodySmall" tone="muted">
-                Alert when a customer leaves a review
-              </AppText>
-            </View>
-            <Switch
-              value={notifications.newReviews}
-              onValueChange={() => handleToggleNotification("newReviews")}
-              trackColor={{ true: palette.orange, false: palette.border }}
-            />
-          </View>
-
-          <View
-            style={[styles.settingRow, { borderBottomColor: palette.border, padding: spacing[4] }]}
-          >
-            <View style={{ flex: 1, paddingRight: spacing[3] }}>
-              <AppText variant="bodyBold">Low Rating Alerts</AppText>
-              <AppText variant="bodySmall" tone="muted">
-                Immediate alert for reviews 2 stars or below
-              </AppText>
-            </View>
-            <Switch
-              value={notifications.lowRatingAlerts}
-              onValueChange={() => handleToggleNotification("lowRatingAlerts")}
-              trackColor={{ true: palette.orange, false: palette.border }}
-            />
-          </View>
-
-          <View
-            style={[styles.settingRow, { borderBottomColor: palette.border, padding: spacing[4] }]}
-          >
-            <View style={{ flex: 1, paddingRight: spacing[3] }}>
-              <AppText variant="bodyBold">Weekly Digest</AppText>
-              <AppText variant="bodySmall" tone="muted">
-                Weekly email summary of your analytics
-              </AppText>
-            </View>
-            <Switch
-              value={notifications.weeklyDigest}
-              onValueChange={() => handleToggleNotification("weeklyDigest")}
-              trackColor={{ true: palette.orange, false: palette.border }}
-            />
-          </View>
-
-          <View style={[styles.settingRow, { borderBottomWidth: 0, padding: spacing[4] }]}>
-            <View style={{ flex: 1, paddingRight: spacing[3] }}>
-              <AppText variant="bodyBold">AI Insights</AppText>
-              <AppText variant="bodySmall" tone="muted">
-                Notifications when AI finds a menu improvement
-              </AppText>
-            </View>
-            <Switch
-              value={notifications.aiInsights}
-              onValueChange={() => handleToggleNotification("aiInsights")}
-              trackColor={{ true: palette.orange, false: palette.border }}
-            />
-          </View>
-        </View>
-
-        <View
-          style={[
-            styles.section,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.border,
-              borderRadius: componentRadii.card,
-            },
-          ]}
-        >
-          <View
-            style={{ padding: spacing[3], borderBottomWidth: 1, borderBottomColor: palette.border }}
-          >
-            <AppText variant="bodySmallBold" tone="muted" style={{ textTransform: "uppercase" }}>
-              Weekly Summary & Alerts
-            </AppText>
-          </View>
+        <SettingsSection title="Weekly Summary & Alerts">
           <View style={{ gap: spacing[3], padding: spacing[4] }}>
             {weeklySummary ? (
               <View style={{ gap: spacing[1] }}>
@@ -510,48 +426,23 @@ export function MerchantSettingsScreen() {
               </View>
             ))}
           </View>
-        </View>
+        </SettingsSection>
 
         {/* Links & Legal */}
-        <View
-          style={[
-            styles.section,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.border,
-              borderRadius: componentRadii.card,
-            },
-          ]}
-        >
-          <Pressable
-            style={[styles.linkRow, { borderBottomColor: palette.border, padding: spacing[4] }]}
+        <SettingsSection title="Support">
+          <SettingsRow
+            label="Verification Status"
+            value={activeOutlet?.verification?.status === "verified" ? "Verified" : "Pending"}
+            icon={<Shield size={20} color={palette.textSecondary} />}
             onPress={() => navigation.navigate("VerificationCentre" as never)}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-              <Shield size={20} color={palette.textSecondary} />
-              <AppText variant="bodyBold">Verification Status</AppText>
-            </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-              <AppText variant="bodySmall" tone="muted">
-                {activeOutlet?.verification?.status === "verified" ? "Verified" : "Pending"}
-              </AppText>
-              <ChevronRight size={18} color={palette.textMuted} />
-            </View>
-          </Pressable>
-
-          <Pressable
-            style={[styles.linkRow, { padding: spacing[4] }]}
-            accessibilityRole="button"
-            accessibilityLabel="Open merchant help and support"
+          />
+          <SettingsRow
+            label="Help & Support"
+            icon={<HelpCircle size={20} color={palette.textSecondary} />}
             onPress={() => void openTrustedExternalUrl("https://hungry.sg/help")}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-              <HelpCircle size={20} color={palette.textSecondary} />
-              <AppText variant="bodyBold">Help & Support</AppText>
-            </View>
-            <ChevronRight size={18} color={palette.textMuted} />
-          </Pressable>
-        </View>
+            isLast
+          />
+        </SettingsSection>
 
         {/* Logout */}
         <Button
@@ -567,28 +458,7 @@ export function MerchantSettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  section: {
-    borderWidth: 1,
-    overflow: "hidden",
-  },
   teamMemberRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-  },
-  settingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-  },
-  linkRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",

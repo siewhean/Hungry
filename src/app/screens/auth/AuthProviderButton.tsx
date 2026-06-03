@@ -35,6 +35,7 @@ export function AuthProviderButton({
     <Pressable
       accessibilityState={{ disabled }}
       accessibilityRole="button"
+      accessibilityLabel={label}
       disabled={disabled}
       onPress={onPress}
       onPressIn={() => {

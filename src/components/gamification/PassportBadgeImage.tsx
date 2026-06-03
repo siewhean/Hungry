@@ -1,6 +1,6 @@
 import { StyleSheet, View, type ViewStyle } from "react-native";
-import { Image } from "expo-image";
 
+import { AccessibleImage } from "@/components/ui/AccessibleImage";
 import { AppText } from "@/components/ui/AppText";
 import { PASSPORT_BADGE_ASSETS } from "@/components/gamification/passportAssets";
 import { useHungryTheme } from "@/theme";
@@ -47,9 +47,10 @@ export function PassportBadgeImage({
           },
         ]}
       >
-        <Image
+        <AccessibleImage
           cachePolicy="memory-disk"
           contentFit="contain"
+          decorative
           source={PASSPORT_BADGE_ASSETS[badge.assetKey]}
           style={StyleSheet.absoluteFill}
         />

@@ -9,7 +9,8 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { Image } from "expo-image";
+
+import { AccessibleImage } from "@/components/ui/AccessibleImage";
 
 const DEFAULT_CYCLE_MS = 4000;
 const AUTO_ADVANCE_SETTLE_MS = 520;
@@ -20,6 +21,7 @@ interface CyclingGridImageProps {
   isAutoCycleActive?: boolean;
   startDelayMs?: number;
   style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
   onActiveIndexChange?: (index: number) => void;
 }
 
@@ -29,6 +31,7 @@ export function CyclingGridImage({
   isAutoCycleActive = true,
   startDelayMs = 0,
   style,
+  accessibilityLabel = "Featured food image",
   onActiveIndexChange,
 }: CyclingGridImageProps) {
   const containerRef = useRef<View | null>(null);
@@ -243,8 +246,9 @@ export function CyclingGridImage({
         >
           {safeImages.map((imageUrl, index) => (
             <View key={`${imageUrl}-${index}`} style={{ width: layoutWidth, height: "100%" }}>
-              <Image
+              <AccessibleImage
                 source={{ uri: imageUrl }}
+                accessibilityLabel={`${accessibilityLabel} ${index + 1} of ${safeImages.length}`}
                 style={StyleSheet.absoluteFill}
                 contentFit="cover"
               />
@@ -252,7 +256,12 @@ export function CyclingGridImage({
           ))}
         </ScrollView>
       ) : (
-        <Image source={{ uri: activeImage }} style={StyleSheet.absoluteFill} contentFit="cover" />
+        <AccessibleImage
+          source={{ uri: activeImage }}
+          accessibilityLabel={accessibilityLabel}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+        />
       )}
     </View>
   );

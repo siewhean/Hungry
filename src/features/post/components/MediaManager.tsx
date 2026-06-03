@@ -1,14 +1,54 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, ScrollView, Pressable, StyleSheet, Dimensions } from "react-native";
-import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { Camera, Plus, Wand2, Scissors } from "lucide-react-native";
-import { AppText, IconButton, Dialog } from "@/components/ui";
+import { Camera, Plus, Wand2, Scissors, Video } from "lucide-react-native";
+import { VideoView, useVideoPlayer } from "expo-video";
+import { AccessibleImage, AppText, IconButton, Dialog } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore, MediaItem } from "../useComposerStore";
 import { semanticSpacing } from "@/theme/tokens";
+import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 
 const { width } = Dimensions.get("window");
+
+function ComposerVideoPreview({ uri }: { uri: string }) {
+  const { palette } = useHungryTheme();
+  const player = useVideoPlayer(uri, (videoPlayer) => {
+    videoPlayer.loop = true;
+    videoPlayer.muted = true;
+    videoPlayer.play();
+  });
+
+  useEffect(() => {
+    player.loop = true;
+    player.muted = true;
+    player.play();
+
+    const replaySubscription = player.addListener("playToEnd", () => {
+      player.currentTime = 0;
+      player.play();
+    });
+
+    return () => replaySubscription.remove();
+  }, [player]);
+
+  return (
+    <View style={StyleSheet.absoluteFill}>
+      <VideoView
+        player={player}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        nativeControls={false}
+      />
+      <View style={[styles.videoBadge, { backgroundColor: palette.mediaScrimSoft }]}>
+        <Video size={12} color={palette.white} />
+        <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
+          Video
+        </AppText>
+      </View>
+    </View>
+  );
+}
 
 export function MediaManager() {
   const { componentRadii, palette, shadows } = useHungryTheme();
@@ -25,9 +65,20 @@ export function MediaManager() {
 
   const handlePickMedia = async () => {
     try {
+      const shouldRequestPermission = await confirmGalleryAccess({
+        title: "Allow gallery access",
+        message: "Hungry needs access to your photo library to add media to your post.",
+        confirmLabel: "Allow",
+        cancelLabel: "Not now",
+      });
+
+      if (!shouldRequestPermission) {
+        return;
+      }
+
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-      if (status !== "granted") {
+      if (!isGalleryPermissionGranted({ status })) {
         setDialogConfig({
           visible: true,
           title: "Permission Required",
@@ -41,6 +92,7 @@ export function MediaManager() {
         allowsMultipleSelection: true,
         quality: 1,
         selectionLimit: 10,
+        videoMaxDuration: 60,
       });
 
       if (!result.canceled && result.assets) {
@@ -81,10 +133,21 @@ export function MediaManager() {
         {media.map((item) => (
           <Pressable
             key={item.id}
+            accessibilityRole="button"
+            accessibilityLabel="Edit selected media"
             onPress={() => setEditingMediaId(item.id)}
             style={[styles.mediaWrapper, { borderRadius: componentRadii.card }]}
           >
-            <Image source={{ uri: item.uri }} style={styles.media} contentFit="cover" />
+            {item.type === "video" ? (
+              <ComposerVideoPreview uri={item.uri} />
+            ) : (
+              <AccessibleImage
+                source={{ uri: item.uri }}
+                style={styles.media}
+                contentFit="cover"
+                decorative
+              />
+            )}
             <IconButton
               variant="surface"
               size={28}
@@ -167,6 +230,16 @@ const styles = StyleSheet.create({
     bottom: 6,
     right: 6,
     flexDirection: "row",
+  },
+  videoBadge: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
+    left: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    position: "absolute",
+    top: 8,
   },
   addMediaBtn: {
     width: width * 0.25,

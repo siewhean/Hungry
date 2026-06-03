@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View } from "react-native";
-import { ArrowLeft, CheckCircle2, Eye, EyeOff, RotateCcw } from "lucide-react-native";
+import { ArrowLeft, CheckCircle2, Eye, EyeOff } from "lucide-react-native";
 import { useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
@@ -17,7 +17,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, "ResetPassword">;
 type FormValues = { password: string; confirmPassword: string };
 
 export function ResetPasswordScreen({ navigation, route }: Props) {
-  const { componentRadii, palette, spacing, radii } = useHungryTheme();
+  const { colorScheme, componentRadii, palette, spacing, radii } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const showToast = useUIStore((state) => state.showToast);
@@ -49,10 +49,15 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
       body="Couldn't load password reset right now. Please retry."
     >
       <AuthScreenShell
-        title="Reset password"
-        subtitle="Secure your account with a new password."
+        title=""
+        wordmarkColor={colorScheme === "dark" ? palette.white : palette.navy}
+        scroll={false}
         footer={
           <Pressable
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel="Back to Sign In"
+            accessibilityHint="Returns to the sign in screen"
             onPress={() => navigation.navigate("Login")}
             style={{
               alignItems: "center",
@@ -69,26 +74,6 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
         }
       >
         <View style={{ gap: spacing[4] }}>
-          <View
-            style={{
-              alignItems: "center",
-              backgroundColor: palette.orangeLight,
-              borderRadius: radii.pill,
-              height: 60,
-              justifyContent: "center",
-              width: 60,
-              alignSelf: "center",
-            }}
-          >
-            <RotateCcw color={palette.orange} size={22} />
-          </View>
-          <AppText variant="display" style={{ textAlign: "center" }}>
-            Reset Password
-          </AppText>
-          <AppText tone="secondary" style={{ textAlign: "center" }}>
-            Secure your account by creating a new strong password.
-          </AppText>
-
           <Controller
             control={control}
             name="password"
@@ -103,7 +88,18 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
                 error={!!errors.password}
                 errorText={errors.password?.message}
                 rightIcon={
-                  <Pressable onPress={() => setShowPassword((current) => !current)} hitSlop={8}>
+                  <Pressable
+                    accessible
+                    accessibilityRole="button"
+                    accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                    accessibilityHint={
+                      showPassword
+                        ? "Hides the password characters"
+                        : "Shows the password characters"
+                    }
+                    onPress={() => setShowPassword((current) => !current)}
+                    hitSlop={8}
+                  >
                     {showPassword ? (
                       <EyeOff color={palette.textMuted} size={15} />
                     ) : (
@@ -129,6 +125,18 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
                 errorText={errors.confirmPassword?.message}
                 rightIcon={
                   <Pressable
+                    accessible
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      showConfirmPassword
+                        ? "Hide confirmation password"
+                        : "Show confirmation password"
+                    }
+                    accessibilityHint={
+                      showConfirmPassword
+                        ? "Hides the confirmation password characters"
+                        : "Shows the confirmation password characters"
+                    }
                     onPress={() => setShowConfirmPassword((current) => !current)}
                     hitSlop={8}
                   >

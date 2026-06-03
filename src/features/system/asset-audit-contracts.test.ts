@@ -9,7 +9,7 @@ function read(relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
-test("asset audit script covers mobile, passport, and marketing asset buckets", () => {
+test("asset audit script covers mobile, onboarding, passport, and marketing asset buckets", () => {
   const pkg = read("package.json");
   const script = read("scripts/audit-assets.mjs");
   const provenance = read("tasks/asset-provenance.md");
@@ -17,6 +17,7 @@ test("asset audit script covers mobile, passport, and marketing asset buckets", 
   assert.match(pkg, /"audit:assets": "node scripts\/audit-assets\.mjs"/);
   assert.match(script, /src\/assets\/discover/);
   assert.match(script, /src\/assets\/gamification\/passport/);
+  assert.match(script, /src\/assets\/onboarding\/food/);
   assert.match(script, /marketing\/website\/web-v2\/public\/images\/food/);
   assert.match(
     script,
@@ -27,6 +28,8 @@ test("asset audit script covers mobile, passport, and marketing asset buckets", 
   assert.match(script, /tasks\/asset-provenance\.md/);
   assert.match(provenance, /src\/assets\/discover/);
   assert.match(provenance, /src\/assets\/gamification\/passport/);
+  assert.match(provenance, /src\/assets\/onboarding\/food/);
   assert.match(provenance, /marketing\/website\/web-v2\/public\/images\/food/);
   assert.match(provenance, /Generated with the built-in image generation workflow/);
+  assert.match(provenance, /professional restaurant-style generated food photography/);
 });

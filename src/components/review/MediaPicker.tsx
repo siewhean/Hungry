@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, View, ScrollView } from "react-native";
-import { Image } from "expo-image";
 import { Camera, Video, Edit2, X } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 
 import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
 import { useUIStore } from "@/store/useUIStore";
-import { AppText, Card } from "../ui";
+import { AccessibleImage, AppText, Card } from "../ui";
 import { MediaEditor } from "./MediaEditor";
+import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 
 interface MediaPickerProps {
   photos: string[];
@@ -36,8 +36,20 @@ export function MediaPicker({
   const [editingUri, setEditingUri] = useState<string | null>(null);
 
   const handlePickMedia = async (type: "image" | "video") => {
+    const shouldOpenPicker = await confirmGalleryAccess({
+      title: "Allow gallery access",
+      message:
+        "Hungry needs access to your photo and video library to attach media to your review.",
+      confirmLabel: "Allow",
+      cancelLabel: "Not now",
+    });
+
+    if (!shouldOpenPicker) {
+      return;
+    }
+
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
+    if (!isGalleryPermissionGranted(permission)) {
       showToast({ message: "Gallery permission is required.", tone: "warning" });
       return;
     }
@@ -81,8 +93,9 @@ export function MediaPicker({
         {/* Video/Reel Slot */}
         {videoUri ? (
           <View style={styles.mediaContainer}>
-            <Image
+            <AccessibleImage
               source={{ uri: videoUri }}
+              accessibilityLabel="Selected review reel"
               style={[
                 styles.media,
                 { backgroundColor: palette.mediaBackdrop, borderRadius: componentRadii.card },
@@ -129,8 +142,9 @@ export function MediaPicker({
         {/* Photos */}
         {photos.map((uri) => (
           <View key={uri} style={styles.mediaContainer}>
-            <Image
+            <AccessibleImage
               source={{ uri }}
+              accessibilityLabel="Selected review photo"
               style={[
                 styles.media,
                 { backgroundColor: palette.mediaBackdrop, borderRadius: componentRadii.card },

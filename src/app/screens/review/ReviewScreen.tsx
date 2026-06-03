@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, Pressable, ScrollView, FlatList, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Image } from "expo-image";
 import { Search, MapPin, ChevronRight, Check, Music } from "lucide-react-native";
 
 import {
+  AccessibleImage,
   AppText,
   Button,
   Card,
   Input,
   Screen,
   Badge,
-  Chip,
+  ChipGroup,
   FeedErrorBoundary,
 } from "@/components/ui";
 import { MediaPicker, StarRating } from "@/components/review";
@@ -217,9 +217,10 @@ export function ReviewScreen({ navigation, route }: Props) {
                 }}
               >
                 <View style={{ flexDirection: "row", gap: spacing[3], alignItems: "center" }}>
-                  <Image
+                  <AccessibleImage
                     source={{ uri: selectedDish.imageUrl }}
                     style={{ width: 60, height: 60, borderRadius: radii.md }}
+                    accessibilityLabel={`${selectedDish.name} photo`}
                   />
                   <View style={{ flex: 1 }}>
                     <AppText style={{ fontWeight: "700" }}>{selectedDish.name}</AppText>
@@ -263,16 +264,11 @@ export function ReviewScreen({ navigation, route }: Props) {
 
             <View style={{ gap: spacing[3] }}>
               <AppText variant="h3">Taste Tags</AppText>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-                {REVIEW_TAGS.map((tag) => (
-                  <Chip
-                    key={tag}
-                    label={tag}
-                    selected={draft.selectedTags.includes(tag)}
-                    onPress={() => actions.toggleTag(tag)}
-                  />
-                ))}
-              </View>
+              <ChipGroup
+                options={REVIEW_TAGS.map((tag) => ({ id: tag, label: tag }))}
+                selectedIds={draft.selectedTags}
+                onSelect={actions.toggleTag}
+              />
             </View>
 
             <View style={{ gap: spacing[3] }}>

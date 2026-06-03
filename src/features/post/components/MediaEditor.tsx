@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { View, StyleSheet, Pressable, ScrollView } from "react-native";
-import { Image } from "expo-image";
 import { X, Check, Sun, Droplet, Wand2, Sparkles } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
-import { AppText, IconButton, Badge, Dialog } from "@/components/ui";
+import { AccessibleImage, AppText, IconButton, Badge, Dialog } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
 
@@ -89,7 +88,12 @@ export function MediaEditor({ mediaId, onClose }: Props) {
 
       {/* Main Image View */}
       <View style={[styles.imageContainer, { backgroundColor: palette.mediaBackdrop }]}>
-        <Image source={{ uri: media.uri }} style={styles.mainImage} contentFit="contain" />
+        <AccessibleImage
+          source={{ uri: media.uri }}
+          style={styles.mainImage}
+          contentFit="contain"
+          accessibilityLabel="Selected media preview"
+        />
 
         <View style={styles.floatingTools}>
           <Badge label="✨ AI ENHANCED" tone="orange" />

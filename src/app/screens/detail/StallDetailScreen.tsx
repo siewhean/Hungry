@@ -1,7 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Image } from "expo-image";
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -17,6 +16,7 @@ import {
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
+  AccessibleImage,
   AppText,
   EmptyState,
   FeedErrorBoundary,
@@ -46,12 +46,17 @@ import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { isVenueOpenFromHours } from "@/utils/stallStatus";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import {
   CyclingGridImage,
   CYCLING_GRID_IMAGE_INTERVAL_MS,
 } from "@/components/discover/CyclingGridImage";
 import type { DishDetail } from "@/types/domain";
+import {
+  DetailSaveActionsCard,
+  useDetailSaveActions,
+} from "@/features/checklistPortfolio/DetailSaveActions";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -123,7 +128,13 @@ function StallMenuDishCard({
   }, [activeIndex, slides.length]);
 
   return (
-    <Pressable onPress={() => onPress(activeDish)} style={{ width }}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${activeDish.name}`}
+      accessibilityHint="Opens this dish detail page"
+      onPress={() => onPress(activeDish)}
+      style={{ width }}
+    >
       <View style={{ gap: spacing[2] }}>
         <CyclingGridImage
           images={slides.map((slide) => slide.imageUrl)}
@@ -182,6 +193,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
   const [isClaimPending, setIsClaimPending] = useState(() => hasPendingClaimForProfile(profile.id));
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+  const trackedStallViewId = useRef<string | null>(null);
+  const detailSaveActions = useDetailSaveActions({
+    navigation,
+    target: {
+      itemType: "stall",
+      id: venue?.id ?? venueId,
+      label: venue?.name ?? "Stall",
+      venueId: venue?.id ?? venueId,
+    },
+  });
   const stallAddress = venue
     ? [
         venue.unitNumber,
@@ -216,6 +237,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
   useEffect(() => {
     setIsClaimPending(hasPendingClaimForProfile(profile.id));
   }, [profile.id]);
+
+  useEffect(() => {
+    if (!venue || trackedStallViewId.current === venue.id) return;
+    trackedStallViewId.current = venue.id;
+    void getHungryService().discovery.recordMerchantActionEvent({
+      eventType: "stall_profile_view",
+      venueId: venue.id,
+      userId: isAuthenticated ? profile.id : undefined,
+    });
+  }, [isAuthenticated, profile.id, venue]);
 
   const requireAuthForProtectedAction = (message: string) => {
     if (isAuthenticated) {
@@ -261,7 +292,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
       ? `${(leadDish.distanceMeters / 1000).toFixed(1)}km away`
       : `${leadDish.distanceMeters}m away`
     : null;
-  const operatingStatusLabel = venue.isOpen ? "Open now" : (venue.closureNotice ?? "Closed now");
+  const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
+  const operatingStatusLabel = isVenueOpen ? "Open now" : (venue.closureNotice ?? "Closed now");
   const operatingHoursLabel = venue.operatingHours?.trim()
     ? venue.operatingHours.split(" – ")[0]
     : "Hours unavailable";
@@ -347,10 +379,26 @@ export function StallDetailScreen({ navigation, route }: Props) {
       return;
     }
 
+    void getHungryService().discovery.recordMerchantActionEvent({
+      eventType: "share",
+      venueId: venue.id,
+      dishId: leadDish?.id,
+      userId: isAuthenticated ? profile.id : undefined,
+    });
     setActiveShareReview(shareReviewTarget);
     requestAnimationFrame(() => {
       shareSheetRef.current?.present();
     });
+  };
+
+  const openMenuDish = (activeDish: DishDetail) => {
+    void getHungryService().discovery.recordMerchantActionEvent({
+      eventType: "menu_view",
+      venueId: venue.id,
+      dishId: activeDish.id,
+      userId: isAuthenticated ? profile.id : undefined,
+    });
+    navigation.navigate("DishDetail", { dishId: activeDish.id });
   };
 
   const handleClaimThisStall = async () => {
@@ -442,7 +490,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     return;
                   }
                   if (leadDish) {
+                    const wasSaved = profile.favouriteDishIds.includes(leadDish.id);
                     toggleFavourite(leadDish);
+                    if (!wasSaved) {
+                      void getHungryService().discovery.recordMerchantActionEvent({
+                        eventType: "save",
+                        venueId: venue.id,
+                        dishId: leadDish.id,
+                        userId: profile.id,
+                      });
+                    }
                   }
                 }}
                 icon={
@@ -486,10 +543,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 position: "relative",
               }}
             >
-              <Image
+              <AccessibleImage
                 source={{ uri: leadDish?.imageUrl }}
                 style={StyleSheet.absoluteFill}
                 contentFit="cover"
+                accessibilityLabel={`${venue.name} hero dish photo`}
               />
             </View>
 
@@ -541,6 +599,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 />
               )}
 
+              <DetailSaveActionsCard
+                title="Save this stall"
+                body="Add this stall to your trying list or keep it in a private Hungry Portfolio."
+                onAddToChecklist={detailSaveActions.addToChecklist}
+                onAddToPortfolio={detailSaveActions.addToPortfolio}
+                isAddingToChecklist={detailSaveActions.isAddingToChecklist}
+                isAddingToPortfolio={detailSaveActions.isAddingToPortfolio}
+              />
+
               {/* Attributes */}
               <View style={{ flexDirection: "row", gap: spacing[3] }}>
                 <Card style={{ flex: 1, padding: spacing[4], gap: spacing[1] }}>
@@ -588,9 +655,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       dishes={dishes}
                       index={index}
                       width={(screenWidth - spacing[5] * 2 - spacing[3]) / 2}
-                      onPress={(activeDish) =>
-                        navigation.navigate("DishDetail", { dishId: activeDish.id })
-                      }
+                      onPress={openMenuDish}
                     />
                   ))}
                 </View>
@@ -616,13 +681,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           gap: spacing[3],
                         }}
                       >
-                        <Image
+                        <AccessibleImage
                           source={{ uri: review.avatarUrl }}
                           style={{
                             borderRadius: radii.pill,
                             height: 40,
                             width: 40,
                           }}
+                          accessibilityLabel={`Avatar of ${review.authorName}`}
                         />
                         <View style={{ flex: 1 }}>
                           <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>

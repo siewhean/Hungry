@@ -3,10 +3,10 @@ import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { AuthProvider } from "@/lib/services/types";
-import { getConfiguredDataSource } from "@/lib/services/supabase/client";
+import { getConfiguredDataSource, type HungryDataSource } from "@/lib/services/supabase/client";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "./useLocationStore";
-import { hungrySecurePersistStorage } from "./secureStorage";
+import { hungryPersistStorage } from "./persistStorage";
 
 export interface PendingRoute {
   name: string;
@@ -20,6 +20,7 @@ interface SessionState {
   hasCompletedOnboarding: boolean;
   hasSkippedTasteQuiz: boolean;
   authenticatedUserId?: string | null;
+  authDataSource?: HungryDataSource | null;
   returnRoute?: string | PendingRoute;
   sessionExpired: boolean;
   completeAuth: (options?: {
@@ -52,6 +53,7 @@ const initialState = {
   hasCompletedOnboarding: false,
   hasSkippedTasteQuiz: false,
   authenticatedUserId: null,
+  authDataSource: null,
   returnRoute: undefined,
   sessionExpired: false,
 } as const;
@@ -140,8 +142,9 @@ export const useSessionStore = create<SessionState>()(
     (set) => ({
       ...initialState,
       completeAuth: (options) => {
+        const authDataSource = getConfiguredDataSource();
         const nextUserId = getAuthenticatedProfileId();
-        const isSupabaseMode = getConfiguredDataSource() === "supabase";
+        const isSupabaseMode = authDataSource === "supabase";
         const shouldAuthenticate = !isSupabaseMode || Boolean(nextUserId);
         const previousUserId = useSessionStore.getState().authenticatedUserId;
         if (previousUserId && nextUserId && previousUserId !== nextUserId) {
@@ -151,6 +154,7 @@ export const useSessionStore = create<SessionState>()(
           isAuthReady: true,
           isAuthenticated: shouldAuthenticate,
           authenticatedUserId: shouldAuthenticate ? nextUserId : null,
+          authDataSource: shouldAuthenticate ? authDataSource : null,
           hasCompletedOnboarding: options?.completedOnboarding ?? state.hasCompletedOnboarding,
           hasSkippedTasteQuiz: options?.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
           sessionExpired: false,
@@ -195,12 +199,18 @@ export const useSessionStore = create<SessionState>()(
       setSkippedTasteQuiz: (hasSkippedTasteQuiz) => set({ hasSkippedTasteQuiz }),
       signOut: () => {
         const profileId = getSafeProfileId();
+        const hasSkippedTasteQuiz = useSessionStore.getState().hasSkippedTasteQuiz;
         if (getConfiguredDataSource() === "supabase") {
           void getHungryService()
             .auth.signOut()
             .catch(() => undefined);
         }
-        set({ ...initialState, isAuthReady: true });
+        set({
+          ...initialState,
+          isAuthReady: true,
+          hasCompletedOnboarding: true,
+          hasSkippedTasteQuiz,
+        });
         clearAccountScopedStores();
         getProfileStoreState().clearProfile();
         getProfileStoreState().syncProfile(false);
@@ -233,6 +243,7 @@ export const useSessionStore = create<SessionState>()(
             isAuthenticated: false,
             isAuthReady: true,
             authenticatedUserId: null,
+            authDataSource: null,
             sessionExpired: false,
           });
           syncProfileForAuthState(false, null);
@@ -249,6 +260,7 @@ export const useSessionStore = create<SessionState>()(
             isAuthenticated: true,
             isAuthReady: true,
             authenticatedUserId: nextUserId,
+            authDataSource: getConfiguredDataSource(),
             hasCompletedOnboarding: session.completedOnboarding ?? state.hasCompletedOnboarding,
             hasSkippedTasteQuiz: session.skippedTasteQuiz ?? state.hasSkippedTasteQuiz,
             sessionExpired: false,
@@ -283,6 +295,7 @@ export const useSessionStore = create<SessionState>()(
           isAuthenticated: false,
           isAuthReady: true,
           authenticatedUserId: null,
+          authDataSource: null,
           sessionExpired: false,
         });
         clearAccountScopedStores();
@@ -297,10 +310,14 @@ export const useSessionStore = create<SessionState>()(
     }),
     {
       name: "hungry-session-v1",
-      storage: hungrySecurePersistStorage,
+      // This store persists only app-session metadata such as user id,
+      // onboarding state, and data source. Supabase refresh/access tokens stay
+      // in the dedicated SecureStore-backed auth adapter.
+      storage: hungryPersistStorage,
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
         authenticatedUserId: state.authenticatedUserId,
+        authDataSource: state.authDataSource,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         hasSkippedTasteQuiz: state.hasSkippedTasteQuiz,
       }),

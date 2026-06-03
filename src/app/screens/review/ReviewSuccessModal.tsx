@@ -28,8 +28,10 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
       transparent
       visible={Boolean(payload)}
       onRequestClose={hideReviewSuccess}
+      accessibilityViewIsModal
     >
       <View
+        accessibilityViewIsModal
         style={{
           flex: 1,
           backgroundColor: palette.overlay,
@@ -62,6 +64,8 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
             </View>
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Close review success"
+              accessibilityHint="Dismisses the review confirmation"
               onPress={hideReviewSuccess}
               style={{
                 width: 44,

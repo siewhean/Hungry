@@ -14,6 +14,10 @@ test("passport store exposes stamp selector and celebration marker contract", ()
   assert.match(source, /getNextStamp: \(\) => PassportNextStamp \| null/);
   assert.match(source, /getNewlyEarnedUncelebratedStamp: \(\) => EarnedPassportStamp \| null/);
   assert.match(source, /getCelebrateMarker: \(\) => PassportCelebrateMarker \| null/);
+  assert.match(source, /getPortfolioContributionStats: \(\) => PassportContributionStats/);
   assert.match(source, /markStampCelebrated: \(stampId: string\) => void/);
   assert.match(source, /celebratedStampIds: Record<string, boolean>/);
+  assert.match(source, /portfolioItemsAdded/);
+  assert.match(source, /publicPortfoliosPublished/);
+  assert.match(source, /trailsCompleted/);
 });

@@ -2,14 +2,14 @@ import { useState } from "react";
 import { View, Pressable } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronRight, Camera } from "lucide-react-native";
-import { Image } from "expo-image";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { AppText, Button, Card, Chip, Input } from "@/components/ui";
+import { AccessibleImage, AppText, Button, Card, Chip, Input } from "@/components/ui";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 import type { DietaryFlag } from "@/types/domain";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
@@ -59,6 +59,17 @@ export function EditProfileScreen({ navigation }: Props) {
   const [isSaving, setIsSaving] = useState(false);
 
   const handlePickAvatar = async () => {
+    const shouldRequestPermission = await confirmGalleryAccess({
+      title: "Allow gallery access",
+      message: "Hungry needs access to your photo library to update your profile picture.",
+      confirmLabel: "Allow",
+      cancelLabel: "Not now",
+    });
+
+    if (!shouldRequestPermission) {
+      return;
+    }
+
     const imagePicker = loadImagePickerModule();
     if (!imagePicker) {
       showToast({
@@ -69,7 +80,7 @@ export function EditProfileScreen({ navigation }: Props) {
     }
 
     const permission = await imagePicker.requestMediaLibraryPermissionsAsync();
-    if (permission.status !== "granted") {
+    if (!isGalleryPermissionGranted(permission)) {
       showToast({
         message: "Photo permission is required to update your avatar.",
         tone: "warning",
@@ -130,10 +141,11 @@ export function EditProfileScreen({ navigation }: Props) {
             }}
           >
             {avatarUri ? (
-              <Image
+              <AccessibleImage
                 source={{ uri: avatarUri }}
                 style={{ height: "100%", width: "100%" }}
                 contentFit="cover"
+                accessibilityLabel="Profile avatar preview"
               />
             ) : (
               <AppText

@@ -1,6 +1,6 @@
 import { StyleSheet, View } from "react-native";
-import { Image } from "expo-image";
 
+import { AccessibleImage } from "@/components/ui/AccessibleImage";
 import { AppText } from "@/components/ui/AppText";
 import { PASSPORT_STAMP_ASSETS } from "@/components/gamification/passportAssets";
 import { useHungryTheme } from "@/theme";
@@ -36,9 +36,10 @@ export function PassportStampBadge({
         },
       ]}
     >
-      <Image
+      <AccessibleImage
         cachePolicy="memory-disk"
         contentFit="contain"
+        decorative
         source={PASSPORT_STAMP_ASSETS[stamp.assetKey]}
         style={StyleSheet.absoluteFill}
       />
@@ -72,15 +73,23 @@ function getTone(
   palette: ReturnType<typeof useHungryTheme>["palette"],
 ) {
   if (tone === "amber") {
-    return { background: palette.amberLight, border: palette.amber, foreground: palette.warning };
+    return {
+      background: palette.amberLight,
+      border: palette.amber,
+      foreground: palette.warningText,
+    };
   }
   if (tone === "teal") {
-    return { background: palette.infoSoft, border: palette.teal, foreground: palette.teal };
+    return { background: palette.infoSoft, border: palette.teal, foreground: palette.infoText };
   }
   if (tone === "navy") {
-    return { background: palette.infoSoft, border: palette.navy, foreground: palette.navy };
+    return { background: palette.infoSoft, border: palette.navy, foreground: palette.infoText };
   }
-  return { background: palette.orangeLight, border: palette.orange, foreground: palette.orange };
+  return {
+    background: palette.orangeLight,
+    border: palette.orange,
+    foreground: palette.accentText,
+  };
 }
 
 const styles = StyleSheet.create({

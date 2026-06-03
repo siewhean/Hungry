@@ -26,6 +26,8 @@ import {
   componentCornerCurve,
   componentRadii,
   componentSizes,
+  contrastRatios,
+  fontScaling,
   motion,
   opacity,
   radii,
@@ -48,8 +50,10 @@ type HungryTheme = {
   motion: typeof motion;
   zIndex: typeof zIndex;
   componentSizes: typeof componentSizes;
+  fontScaling: typeof fontScaling;
   componentRadii: typeof componentRadii;
   componentCornerCurve: typeof componentCornerCurve;
+  contrastRatios: typeof contrastRatios;
   opacity: typeof opacity;
   fontsLoaded: boolean;
 };
@@ -167,8 +171,10 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
       motion,
       zIndex,
       componentSizes,
+      fontScaling,
       componentRadii,
       componentCornerCurve,
+      contrastRatios,
       opacity,
       fontsLoaded: nunitoLoaded && monoLoaded && frauncesLoaded,
     }),

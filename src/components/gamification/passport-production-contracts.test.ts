@@ -65,3 +65,33 @@ test("passport screen announces and marks one-time stamp celebrations", () => {
   assert.match(screen, /reduceMotion/);
   assert.match(screen, /PassportPageFlip/);
 });
+
+test("passport screen surfaces portfolio contribution stats", () => {
+  const screen = read("src/app/screens/profile/PassportScreen.tsx");
+  const store = read("src/store/usePassportStore.ts");
+  const mockService = read("src/lib/services/mock/mockService.ts");
+
+  assert.match(screen, /Portfolio contributions/);
+  assert.match(screen, /getPortfolioContributionStats/);
+  assert.match(screen, /loadPassportStamps/);
+  assert.match(screen, /loadPassportEvents/);
+  assert.match(screen, /useFocusEffect/);
+  assert.match(store, /PassportContributionStats/);
+  assert.match(mockService, /recordMockPassportProgress\("portfolio_item_added"/);
+  assert.match(mockService, /recordMockPassportProgress\("public_portfolio_published"/);
+  assert.match(mockService, /recordMockPassportProgress\("trail_completed"/);
+});
+
+test("supabase passport service maps database rows to app-domain shape", () => {
+  const service = read("src/lib/services/supabase/supabaseService.ts");
+
+  assert.match(service, /function mapPassportStamp/);
+  assert.match(service, /portfolioItemsAdded: Number\(row\.portfolio_items_added/);
+  assert.match(service, /publicPortfoliosPublished: Number\(/);
+  assert.match(service, /trailsCompleted: Number\(row\.trails_completed/);
+  assert.match(service, /getPassportStamps\(\)[\s\S]*mapPassportStamp/);
+  assert.match(
+    service,
+    /getPassportProgressEvents\(categoryId\?: string\)[\s\S]*mapPassportProgressEvent/,
+  );
+});

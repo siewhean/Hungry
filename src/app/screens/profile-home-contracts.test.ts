@@ -45,7 +45,10 @@ test("profile home contract: profile stats use dynamic profile and social store 
   assert.match(source, /label="Stalls"[\s\S]*<Utensils size=\{14\}/);
   assert.match(source, /label="Saved"[\s\S]*<Bookmark size=\{14\}/);
   assert.match(source, /<AppText variant="h1" style=\{\{ color: palette\.orange \}\}>/);
-  assert.match(source, /<AppText variant="h1" style=\{\{ color: palette\.text \}\}>/);
+  assert.match(
+    source,
+    /<AppText\s+variant="h1"\s+numberOfLines=\{1\}\s+adjustsFontSizeToFit\s+minimumFontScale=\{0\.78\}[\s\S]*style=\{\{ color: palette\.text \}\}/,
+  );
   assert.match(
     source,
     /<AppText variant="h3" style=\{\{ color: palette\.text \}\}>\s*\{value\}\s*<\/AppText>/,

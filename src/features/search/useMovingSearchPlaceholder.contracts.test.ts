@@ -31,3 +31,15 @@ test("moving search placeholder enforces readable pacing even when callers pass 
   assert.match(hookSource, /const MIN_SLIDE_STEP_MS = 32/);
   assert.match(hookSource, /Math\.max\(MIN_CYCLE_MS, totalCycleMs\)/);
 });
+
+test("moving search placeholder disables animation for screen reader and reduced motion users", () => {
+  assert.match(hookSource, /AccessibilityInfo\.isScreenReaderEnabled/);
+  assert.match(hookSource, /AccessibilityInfo\.isReduceMotionEnabled/);
+  assert.match(hookSource, /screenReaderChanged/);
+  assert.match(hookSource, /reduceMotionChanged/);
+  assert.match(
+    hookSource,
+    /const canAnimate = enabled && !isScreenReaderEnabled && !reduceMotionEnabled/,
+  );
+  assert.match(hookSource, /if \(!canAnimate \|\| normalizedPhrases\.length === 0\)/);
+});

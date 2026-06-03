@@ -48,8 +48,14 @@ test("security workflow keeps dependency, gitleaks, and trufflehog gates", () =>
   assert.match(trufflehogRunner, /brew install trufflehog/);
   assert.match(trufflehogRunner, /\.github\/workflows\/security\.yml/);
   assert.match(trufflehogRunner, /"--no-update"/);
+  assert.match(trufflehogRunner, /"--fail"/);
   assert.match(trufflehogRunner, /--exclude-paths=scripts\/trufflehog-exclude-paths\.txt/);
   assert.match(trufflehogRunner, /filesystem",[\s\S]*"--only-verified",[\s\S]*"\."/);
+
+  const trufflehogExcludes = read("scripts/trufflehog-exclude-paths.txt");
+  assert.match(trufflehogExcludes, /\^\\\.env\$/);
+  assert.match(trufflehogExcludes, /\^\\\.env\\\.local\$/);
+  assert.match(trufflehogExcludes, /\^\\\.env\\\.\.\*\\\.local\$/);
 });
 
 test("release checklist includes the Supabase Advisor regression guard", () => {
@@ -57,9 +63,33 @@ test("release checklist includes the Supabase Advisor regression guard", () => {
   const ci = read(".github/workflows/ci.yml");
   const packageJson = read("package.json");
   const advisorClassifier = read("scripts/supabase-advisor-security-classifier.mjs");
+  const releaseGates = read("references/release-gates.md");
+  const auditStatus = read("tasks/Roadmap/claude-full-project-audit-implementation-status.md");
+  const releaseEvidenceExample = read("tasks/release-evidence/full-audit-v1.example.env");
 
   assert.match(packageJson, /"audit:supabase:advisor-security"/);
   assert.match(releaseChecklist, /npm run audit:supabase:advisor-security/);
+  assert.match(releaseChecklist, /HUNGRY_RELEASE_EVIDENCE_FILE/);
+  assert.match(releaseChecklist, /tasks\/release-evidence\/full-audit-v1\.env/);
+  assert.match(releaseChecklist, /pushed GitHub CI evidence/);
+  assert.match(releaseChecklist, /dirty-worktree reconciliation/);
+  assert.match(releaseChecklist, /SEC-06/);
+  assert.match(releaseChecklist, /SEC-08/);
+  assert.match(releaseChecklist, /MER-PORTAL-01/);
+  assert.match(releaseChecklist, /MERCH-P0-ANALYTICS-01/);
+  assert.match(releaseChecklist, /MERCH_P0_ANALYTICS_PROOF/);
+  assert.match(releaseGates, /tasks\/Roadmap\/claude-full-project-audit\.md/);
+  assert.match(releaseGates, /tasks\/release-evidence\/full-audit-v1\.env/);
+  assert.match(auditStatus, /verified-only filesystem scan/);
+  assert.match(auditStatus, /pushed GitHub CI evidence/);
+  assert.match(auditStatus, /dirty-worktree reconciliation/);
+  assert.match(auditStatus, /SEC-06/);
+  assert.match(auditStatus, /SEC-08/);
+  assert.match(auditStatus, /MER-PORTAL-01/);
+  assert.match(auditStatus, /MERCH-P0-ANALYTICS-01/);
+  assert.match(releaseEvidenceExample, /ANDROID_EAS_PROOF=0/);
+  assert.match(releaseEvidenceExample, /DIRTY_WORKTREE_RECONCILED=0/);
+  assert.match(releaseEvidenceExample, /MERCH_P0_ANALYTICS_PROOF=0/);
   assert.match(ci, /Supabase Security Advisor guard/);
   assert.match(ci, /npm run audit:supabase:advisor-security/);
   assert.match(ci, /SUPABASE_NPX_ALLOW_INSTALL: "1"/);

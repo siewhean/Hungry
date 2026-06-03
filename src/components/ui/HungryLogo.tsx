@@ -1,8 +1,12 @@
-import { Image, View } from "react-native";
+import { View } from "react-native";
 
-import { HUNGRY_LOGO_ICON } from "@/constants/brandAssets";
+import {
+  HUNGRY_LOGO_ICON,
+  HUNGRY_LOGO_STANDARD_SIZE,
+  HUNGRY_LOGO_TEXT,
+} from "@/constants/brandAssets";
 import { useHungryTheme } from "@/theme";
-import { AppText } from "./AppText";
+import { AccessibleImage } from "./AccessibleImage";
 
 type HungryLogoProps = {
   size?: number;
@@ -12,26 +16,37 @@ type HungryLogoProps = {
 };
 
 export function HungryLogo({
-  size = 64,
+  size = HUNGRY_LOGO_STANDARD_SIZE,
   showWordmark = true,
   wordmarkColor,
   opacity = 1,
 }: HungryLogoProps) {
   const { palette } = useHungryTheme();
-  const markSize = showWordmark ? Math.max(32, Math.round(size * 0.58)) : Math.max(18, size);
+  const markSize = showWordmark ? Math.round(size * 0.58) : size;
+  const wordmarkHeight = Math.round(size * 0.26);
+  const wordmarkWidth = Math.round(size * 1.28);
   const finalWordmarkColor = wordmarkColor ?? palette.orange;
 
   return (
-    <View style={{ alignItems: "center", gap: 8, opacity }}>
-      <Image
+    <View
+      accessible
+      accessibilityLabel="Hungry logo"
+      accessibilityRole="image"
+      style={{ alignItems: "center", gap: 8, opacity }}
+    >
+      <AccessibleImage
         source={HUNGRY_LOGO_ICON}
-        resizeMode="contain"
+        contentFit="contain"
+        decorative
         style={{ width: markSize, height: markSize }}
       />
       {showWordmark ? (
-        <AppText variant="h2" style={{ color: finalWordmarkColor, fontFamily: "Nunito_700Bold" }}>
-          Hungry
-        </AppText>
+        <AccessibleImage
+          source={HUNGRY_LOGO_TEXT}
+          contentFit="contain"
+          decorative
+          style={{ width: wordmarkWidth, height: wordmarkHeight, tintColor: finalWordmarkColor }}
+        />
       ) : null}
     </View>
   );

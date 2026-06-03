@@ -1,11 +1,10 @@
 import { memo } from "react";
 import { ScrollView, StyleSheet, View, Pressable } from "react-native";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Plus, Utensils } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
-import { AppText } from "../ui";
+import { AccessibleImage, AppText } from "../ui";
 import type { StoryItem } from "@/types/domain";
 
 interface CircleStoryCarouselProps {
@@ -31,6 +30,8 @@ export const CircleStoryCarousel = memo(function CircleStoryCarousel({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
+      accessibilityLabel="Stories"
+      accessibilityHint="Swipe horizontally to browse story buttons"
       contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[3] }}
     >
       {stories.map((story) => {
@@ -46,9 +47,19 @@ export const CircleStoryCarousel = memo(function CircleStoryCarousel({
             style={styles.item}
             onPressIn={() => onStoryPressIn?.(story)}
             onPress={() => onStoryPress?.(story)}
+            accessible
+            accessibilityRole="button"
             accessibilityLabel={
               story.isOwn ? "Add to your story" : `View ${story.displayName}'s story`
             }
+            accessibilityHint={
+              story.isOwn
+                ? "Opens your story or starts a new story"
+                : shouldShowUnseenRing
+                  ? "Opens this unseen story"
+                  : "Replays this story"
+            }
+            accessibilityState={{ selected: Boolean(shouldShowUnseenRing) }}
           >
             <View style={styles.ringOuter}>
               {/* Ring: orange gradient = unseen (any story type), grey = already seen */}
@@ -65,8 +76,9 @@ export const CircleStoryCarousel = memo(function CircleStoryCarousel({
                       { backgroundColor: palette.bg, borderRadius: radii.pill },
                     ]}
                   >
-                    <Image
+                    <AccessibleImage
                       source={{ uri: story.avatarUrl }}
+                      decorative
                       style={[styles.avatar, { borderRadius: radii.pill }]}
                     />
                   </View>
@@ -87,8 +99,9 @@ export const CircleStoryCarousel = memo(function CircleStoryCarousel({
                       { backgroundColor: palette.bg, borderRadius: radii.pill },
                     ]}
                   >
-                    <Image
+                    <AccessibleImage
                       source={{ uri: story.avatarUrl }}
+                      decorative
                       style={[styles.avatar, { borderRadius: radii.pill }]}
                     />
                   </View>
@@ -100,6 +113,7 @@ export const CircleStoryCarousel = memo(function CircleStoryCarousel({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Create a story"
+                  accessibilityHint="Starts a new story"
                   style={[
                     styles.addBadge,
                     { backgroundColor: palette.orange, borderColor: palette.bg },
@@ -116,6 +130,8 @@ export const CircleStoryCarousel = memo(function CircleStoryCarousel({
               {/* Stall fork badge */}
               {story.isStall && !story.isOwn && (
                 <View
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
                   style={[
                     styles.forkBadge,
                     { backgroundColor: palette.orange, borderColor: palette.bg },

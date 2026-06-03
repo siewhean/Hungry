@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabaseAuthStorage } from "./authStorage";
+import { installPkceCryptoPolyfill } from "./pkceCryptoPolyfill";
 
 export type HungryDataSource = "mock" | "supabase";
 
@@ -36,6 +37,7 @@ export function isSupabaseConfigured(): boolean {
 }
 
 export function getSupabaseClient(): SupabaseClient | null {
+  installPkceCryptoPolyfill();
   if (cachedClient !== undefined) {
     return cachedClient;
   }
@@ -57,6 +59,7 @@ export function getSupabaseClient(): SupabaseClient | null {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: false,
+      flowType: "pkce",
     },
   });
   return cachedClient;

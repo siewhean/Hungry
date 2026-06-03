@@ -31,6 +31,10 @@ import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton
 import { ImageCarousel } from "@/components/dish/ImageCarousel";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
+import {
+  DetailSaveActionsCard,
+  useDetailSaveActions,
+} from "@/features/checklistPortfolio/DetailSaveActions";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">;
 
@@ -70,6 +74,10 @@ export function DishDetailScreen({ navigation, route }: Props) {
   >({});
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const [isTryingFood, setIsTryingFood] = useState(false);
+  const detailSaveActions = useDetailSaveActions({
+    navigation,
+    target: { itemType: "dish", id: dish?.id ?? deepLinkedDishId, label: dish?.name ?? "Dish" },
+  });
 
   const venue = useMemo(
     () => (dish ? repository.getVenueById(dish.venueId) : undefined),
@@ -127,6 +135,12 @@ export function DishDetailScreen({ navigation, route }: Props) {
       return;
     }
 
+    void getHungryService().discovery.recordMerchantActionEvent({
+      eventType: "share",
+      venueId: venue.id,
+      dishId: dish.id,
+      userId: isAuthenticated ? profile.id : undefined,
+    });
     setActiveShareReview(shareReviewTarget);
     requestAnimationFrame(() => {
       shareSheetRef.current?.present();
@@ -341,6 +355,15 @@ export function DishDetailScreen({ navigation, route }: Props) {
                   {dish.priceRange}
                 </AppText>
               </View>
+
+              <DetailSaveActionsCard
+                title="Save this dish"
+                body="Add it to a checklist for later, or keep it in a private Hungry Portfolio."
+                onAddToChecklist={detailSaveActions.addToChecklist}
+                onAddToPortfolio={detailSaveActions.addToPortfolio}
+                isAddingToChecklist={detailSaveActions.isAddingToChecklist}
+                isAddingToPortfolio={detailSaveActions.isAddingToPortfolio}
+              />
 
               {/* Taste graph */}
               <View>
@@ -586,6 +609,14 @@ export function DishDetailScreen({ navigation, route }: Props) {
                   return;
                 }
                 toggleFavourite(dish);
+                if (!isSaved) {
+                  void getHungryService().discovery.recordMerchantActionEvent({
+                    eventType: "save",
+                    venueId: dish.venueId,
+                    dishId: dish.id,
+                    userId: profile.id,
+                  });
+                }
                 showToast({
                   message: isSaved ? "Removed from favourites." : "Saved to favourites!",
                   tone: "success",

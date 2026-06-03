@@ -118,7 +118,6 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
   const search = read("src/app/screens/search/SearchResultsScreen.tsx");
   const searchResultsView = read("src/components/discover/SearchResultsView.tsx");
-  const discoverV2 = read("src/app/screens/discover/DiscoverHomeScreenV2.tsx");
   const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
   const merchantTabs = read("src/app/navigation/MerchantTabs.tsx");
   const zoomableMedia = read("src/components/social/ZoomableMedia.tsx");
@@ -150,7 +149,7 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(homeScreen, /onPressIn=\{\(\) => prefetchFeedCardRoute\(item\)\}/);
   assert.match(discover, /onPressIn=\{\(\) => prefetchBiteCard\(bite\)\}/);
   assert.match(discover, /useDeferredValue\(activeDiscoverChipIds\)/);
-  assert.match(discover, /activeDiscoverChipSet\.has\(chip\.id\)/);
+  assert.match(discover, /renderLeftIcon=\{\(chip, isActive\) =>/);
   assert.match(discover, /prefetchBrowseResults\(item\.query, navigation/);
   assert.match(discover, /<PopularFoodStyleItem/);
   assert.match(searchResultsView, /const SearchResultRow = memo/);
@@ -166,10 +165,6 @@ test("prefetch layer warms images, data, and route modules without blocking navi
     /navigation\.navigate\("DishDetail", \{ dishId: primaryDish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
   );
   assert.match(
-    discoverV2,
-    /navigation\.navigate\("SearchResults", \{[\s\S]*initialQuery: "spicy"[\s\S]*scheduleIdleWork\([\s\S]*updateSearchQuery\("spicy"\)/,
-  );
-  assert.match(
     quickBites,
     /navigation\.navigate\("SearchHome"\);[\s\S]*scheduleIdleWork\([\s\S]*rememberSearch\(trimmed\)/,
   );
@@ -180,7 +175,7 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(search, /isBrowseDataReady \? \(/);
   assert.match(
     search,
-    /navigation\.navigate\("DishDetail", \{ dishId: item\.dish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
+    /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
   );
   assert.match(
     search,
@@ -264,7 +259,10 @@ test("remaining high-traffic profile, developer, and merchant links prefetch on 
   assert.match(developerLauncher, /const prefetchSampleDishDetail =/);
   assert.match(developerLauncher, /onV1PressIn=\{\(\) => prefetchSampleStallDetail\("v1"\)\}/);
   assert.match(developerLauncher, /onV2PressIn=\{\(\) => prefetchSampleDishDetail\("v2"\)\}/);
-  assert.match(developerLauncher, /onV1PressIn=\{\(\) => preloadRoute\(navigation, "MainTabs"/);
+  assert.match(
+    developerLauncher,
+    /onV1PressIn=\{\(\) =>\s+preloadRoute\(navigation, "PostComposerV2"/,
+  );
 });
 
 test("developer and merchant surfaces defer non-selected work", () => {

@@ -11,10 +11,9 @@
 import { useState, useMemo } from "react";
 import { FlatList, Modal, Pressable, ScrollView, View, Alert } from "react-native";
 import { X, Search, Compass, Heart, Plus, ShieldAlert, Sparkles } from "lucide-react-native";
-import { Image } from "expo-image";
 import * as Haptics from "expo-haptics";
 
-import { AppText, Badge, Card, EmptyState, Input } from "@/components/ui";
+import { AccessibleImage, AppText, Badge, Card, EmptyState, Input } from "@/components/ui";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useWheelStore } from "@/store/useWheelStore";
@@ -82,7 +81,7 @@ function VenueRow({
     >
       <View style={{ position: "relative" }}>
         {hero?.imageUrl ? (
-          <Image
+          <AccessibleImage
             source={{ uri: hero.imageUrl }}
             style={{
               width: 56,
@@ -92,6 +91,7 @@ function VenueRow({
               borderColor: palette.orange,
             }}
             contentFit="cover"
+            accessibilityLabel={`${hero.name} photo`}
           />
         ) : (
           <View
@@ -284,14 +284,22 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   ];
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+      accessibilityViewIsModal
+    >
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Close add option sheet"
+        accessibilityHint="Dismisses the option picker"
         style={{ flex: 1, backgroundColor: palette.overlay }}
         onPress={onClose}
       />
       <View
+        accessibilityViewIsModal
         style={{
           backgroundColor: palette.bg,
           borderTopLeftRadius: radii.xxl,

@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import {
-  View,
-  ScrollView,
-  TextInput,
-  StyleSheet,
-  Pressable,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { View, StyleSheet, Pressable, ActivityIndicator, Alert } from "react-native";
 import {
   MessageSquare,
   Star,
@@ -22,7 +14,8 @@ import {
   AppText,
   Button,
   IconButton,
-  Chip,
+  FilterChipRail,
+  Input,
   Screen,
   Avatar,
   Skeleton,
@@ -33,13 +26,23 @@ import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { CustomerInteraction, InteractionType } from "@/types/domain";
 
+type InboxFilter = InteractionType | "all" | "unreplied";
+
+const INBOX_FILTER_OPTIONS: { id: InboxFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "unreplied", label: "Unreplied" },
+  { id: "review", label: "Reviews" },
+  { id: "comment", label: "Comments" },
+  { id: "post_mention", label: "Mentions" },
+];
+
 export function CustomerInboxScreen() {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
   const [interactions, setInteractions] = useState<CustomerInteraction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<InteractionType | "all" | "unreplied">("all");
+  const [filter, setFilter] = useState<InboxFilter>("all");
   const [replyingTo, setReplyingTo] = useState<CustomerInteraction | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,33 +105,12 @@ export function CustomerInboxScreen() {
     <Screen title="Customer Inbox">
       <View style={{ gap: spacing[4], width: "100%" }}>
         {/* Filters */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: spacing[2], paddingHorizontal: spacing[1] }}
-        >
-          <Chip label="All" selected={filter === "all"} onPress={() => setFilter("all")} />
-          <Chip
-            label="Unreplied"
-            selected={filter === "unreplied"}
-            onPress={() => setFilter("unreplied")}
-          />
-          <Chip
-            label="Reviews"
-            selected={filter === "review"}
-            onPress={() => setFilter("review")}
-          />
-          <Chip
-            label="Comments"
-            selected={filter === "comment"}
-            onPress={() => setFilter("comment")}
-          />
-          <Chip
-            label="Mentions"
-            selected={filter === "post_mention"}
-            onPress={() => setFilter("post_mention")}
-          />
-        </ScrollView>
+        <FilterChipRail
+          options={INBOX_FILTER_OPTIONS}
+          selectedId={filter}
+          onSelect={setFilter}
+          gap={spacing[2]}
+        />
 
         {/* Sentiment Summary */}
         <SentimentSummary interactions={interactions} />
@@ -489,23 +471,13 @@ function ReplyComposer({
           </Pressable>
         )}
 
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: palette.bgSoft,
-              borderRadius: componentRadii.input,
-              color: palette.text,
-              borderColor: palette.border,
-              padding: spacing[4],
-            },
-          ]}
+        <Input
           placeholder="Type your message..."
-          placeholderTextColor={palette.textMuted}
           multiline
           value={text}
           onChangeText={setText}
           autoFocus
+          style={{ minHeight: 120, textAlignVertical: "top" }}
         />
 
         <Button
@@ -533,12 +505,6 @@ const styles = StyleSheet.create({
   },
   replyBox: {},
   composer: {},
-  input: {
-    height: 120,
-    borderWidth: 1,
-    textAlignVertical: "top",
-    fontSize: 16,
-  },
   aiChip: {
     borderWidth: 1,
   },

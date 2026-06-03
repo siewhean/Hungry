@@ -8,7 +8,6 @@ import {
   Animated,
   type ViewToken,
 } from "react-native";
-import { Image } from "expo-image";
 import { ArrowLeft, MapPinned, Heart } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute, type RouteProp } from "@react-navigation/native";
@@ -17,7 +16,14 @@ import { FlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Chip, ExpandableSearchLauncher, Screen, Avatar } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  ExpandableSearchLauncher,
+  FilterChipRail,
+  Screen,
+  Avatar,
+} from "@/components/ui";
 import {
   CyclingGridImage,
   CYCLING_GRID_IMAGE_INTERVAL_MS,
@@ -207,6 +213,10 @@ export function QuickBitesScreen() {
   const fallbackBites = useMemo(() => getDiscoverBites(), []);
 
   const [selectedCuisine, setSelectedCuisine] = useState("All");
+  const cuisineFilterOptions = useMemo(
+    () => DISCOVER_CUISINE_FILTERS.map((cuisine) => ({ id: cuisine, label: cuisine })),
+    [],
+  );
   const [bites, setBites] = useState<Bite[]>(fallbackBites);
   const [fullyVisibleBiteIds, setFullyVisibleBiteIds] = useState<Set<string>>(() => new Set());
   const searchQuery = useSearchStore((state) => state.filters.query);
@@ -366,10 +376,11 @@ export function QuickBitesScreen() {
                   },
                 ]}
               >
-                <Image
+                <AccessibleImage
                   source={{ uri: bite.photoUrl }}
                   style={{ height: 104, width: "100%" }}
                   contentFit="cover"
+                  decorative
                 />
                 <View style={{ padding: spacing[2], gap: 2 }}>
                   <AppText variant="bodySmallBold" numberOfLines={1}>
@@ -447,20 +458,13 @@ export function QuickBitesScreen() {
             overflow: "hidden",
           }}
         >
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingVertical: spacing[3], gap: spacing[2] }}
-          >
-            {DISCOVER_CUISINE_FILTERS.map((cuisine) => (
-              <Chip
-                key={cuisine}
-                label={cuisine}
-                selected={selectedCuisine === cuisine}
-                onPress={() => setSelectedCuisine(cuisine)}
-              />
-            ))}
-          </ScrollView>
+          <FilterChipRail
+            options={cuisineFilterOptions}
+            selectedId={selectedCuisine}
+            onSelect={setSelectedCuisine}
+            gap={spacing[2]}
+            contentContainerStyle={{ paddingVertical: spacing[3] }}
+          />
         </Animated.View>
       </View>
 

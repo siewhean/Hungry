@@ -110,6 +110,192 @@ test("recommendations.recordExplicitFeedback applies food-specific click signals
   assert.notDeepEqual(result.tasteVector, beforeProfile.tasteVector);
 });
 
+test("checklist mock service persists items, tried state, and reorder", async () => {
+  const checklist = await hungryService.checklist.createChecklist("Codex checklist");
+  const firstItem = await hungryService.checklist.addChecklistItem({
+    checklistId: checklist.id,
+    itemType: "custom",
+    customText: "Try breakfast bee hoon",
+  });
+  const secondItem = await hungryService.checklist.addChecklistItem({
+    checklistId: checklist.id,
+    itemType: "dish",
+    dishId: dishes[0].id,
+  });
+
+  assert.ok(
+    (await hungryService.checklist.getChecklists()).some((entry) => entry.id === checklist.id),
+  );
+  assert.deepEqual(
+    (await hungryService.checklist.getChecklistItems(checklist.id)).map((item) => item.id),
+    [firstItem.id, secondItem.id],
+  );
+
+  await hungryService.checklist.markChecklistItemTried(secondItem.id);
+  assert.ok(
+    (await hungryService.checklist.getChecklistItems(checklist.id)).find(
+      (item) => item.id === secondItem.id,
+    )?.triedAt,
+  );
+
+  await hungryService.checklist.reorderChecklistItems(checklist.id, [secondItem.id, firstItem.id]);
+  assert.deepEqual(
+    (await hungryService.checklist.getChecklistItems(checklist.id)).map((item) => item.id),
+    [secondItem.id, firstItem.id],
+  );
+
+  await assert.rejects(
+    hungryService.checklist.addChecklistItem({
+      checklistId: checklist.id,
+      itemType: "dish",
+      dishId: dishes[0].id,
+    }),
+    /already in the checklist/,
+  );
+  await assert.rejects(
+    hungryService.checklist.reorderChecklistItems(checklist.id, [firstItem.id]),
+    /requires every current item exactly once/,
+  );
+});
+
+test("portfolio mock service persists publish, item, follow, flag, and search state", async () => {
+  const portfolio = await hungryService.portfolio.createPortfolio({
+    name: "Codex hawker picks",
+    description: "Reliable lunch ideas",
+    type: "recommendation",
+    visibility: "public",
+  });
+  const item = await hungryService.portfolio.addPortfolioItem({
+    portfolioId: portfolio.id,
+    itemType: "dish",
+    dishId: dishes[0].id,
+    score: 9,
+    publicNotes: "Worth queueing for",
+  });
+
+  await hungryService.portfolio.publishPortfolio(portfolio.id);
+  const published = await hungryService.portfolio.getPortfolio(portfolio.id);
+  assert.ok(published.publishedAt);
+  assert.equal((await hungryService.portfolio.getPortfolioItems(portfolio.id))[0]?.id, item.id);
+
+  await assert.rejects(
+    hungryService.portfolio.addPortfolioItem({
+      portfolioId: portfolio.id,
+      itemType: "dish",
+      dishId: dishes[0].id,
+    }),
+    /already in the portfolio/,
+  );
+
+  await assert.rejects(
+    hungryService.portfolio.addPortfolioItem({
+      portfolioId: portfolio.id,
+      itemType: "dish",
+      dishId: dishes[1].id,
+      score: 11,
+    }),
+    /score must be between 1 and 10/,
+  );
+  await assert.rejects(
+    hungryService.portfolio.reorderPortfolioItems(portfolio.id, []),
+    /requires every current item exactly once/,
+  );
+
+  await hungryService.portfolio.flagPortfolio(portfolio.id, "misleading", "test report");
+  assert.ok(
+    (await hungryService.portfolio.getPortfolioFlags({ status: "pending" })).some(
+      (flag) => flag.portfolioId === portfolio.id && flag.reason === "misleading",
+    ),
+  );
+
+  const results = await hungryService.portfolio.searchPortfolios("hawker");
+  assert.ok(results.some((entry) => entry.id === portfolio.id));
+});
+
+test("portfolio mock service rejects stale optimistic mutation versions", async () => {
+  const portfolio = await hungryService.portfolio.createPortfolio({
+    name: "Codex conflict picks",
+    description: "Original version",
+    type: "collection",
+    visibility: "private",
+  });
+  const staleVersion = portfolio.updatedAt;
+
+  await new Promise((resolve) => setTimeout(resolve, 2));
+  await hungryService.portfolio.updatePortfolio(portfolio.id, {
+    name: "Remote edit",
+    type: portfolio.type,
+    visibility: portfolio.visibility,
+  });
+
+  await assert.rejects(
+    hungryService.portfolio.addPortfolioItem(
+      {
+        portfolioId: portfolio.id,
+        itemType: "dish",
+        dishId: dishes[2].id,
+      },
+      { portfolioId: portfolio.id, expectedUpdatedAt: staleVersion },
+    ),
+    /changed elsewhere/,
+  );
+
+  const latest = await hungryService.portfolio.getPortfolio(portfolio.id);
+  await hungryService.portfolio.addPortfolioItem(
+    {
+      portfolioId: portfolio.id,
+      itemType: "dish",
+      dishId: dishes[2].id,
+    },
+    { portfolioId: portfolio.id, expectedUpdatedAt: latest.updatedAt },
+  );
+  assert.equal((await hungryService.portfolio.getPortfolioItems(portfolio.id)).length, 1);
+});
+
+test("portfolio mock service records passport contribution progress", async () => {
+  const beforeEvents = await hungryService.passport.getPassportProgressEvents();
+  const portfolio = await hungryService.portfolio.createPortfolio({
+    name: "Codex trail passport",
+    description: "A public trail contribution",
+    type: "trail",
+    visibility: "private",
+  });
+  const item = await hungryService.portfolio.addPortfolioItem({
+    portfolioId: portfolio.id,
+    itemType: "dish",
+    dishId: dishes[1].id,
+    score: 8,
+  });
+
+  await hungryService.portfolio.publishPortfolio(portfolio.id);
+
+  const stamps = await hungryService.passport.getPassportStamps();
+  const events = await hungryService.passport.getPassportProgressEvents();
+  const newEvents = events.filter(
+    (event) => !beforeEvents.some((beforeEvent) => beforeEvent.id === event.id),
+  );
+
+  assert.ok(stamps.some((stamp) => stamp.portfolioItemsAdded >= 1));
+  assert.ok(stamps.some((stamp) => stamp.publicPortfoliosPublished >= 1));
+  assert.ok(stamps.some((stamp) => stamp.trailsCompleted >= 1));
+  assert.ok(
+    newEvents.some(
+      (event) => event.eventType === "portfolio_item_added" && event.referenceId === item.id,
+    ),
+  );
+  assert.ok(
+    newEvents.some(
+      (event) =>
+        event.eventType === "public_portfolio_published" && event.referenceId === portfolio.id,
+    ),
+  );
+  assert.ok(
+    newEvents.some(
+      (event) => event.eventType === "trail_completed" && event.referenceId === portfolio.id,
+    ),
+  );
+});
+
 test("ai.processImplicitFeedback is no-op while explicit learning stabilizes", async () => {
   const dish = dishes[0];
   assert.ok(dish, "Expected fixture dish for implicit feedback no-op test");
@@ -501,6 +687,32 @@ test("merchant promotion create and update persist mock state", async () => {
     ),
   );
 
+  const repriced = await hungryService.merchant.updatePromotion(created.id, {
+    promotionalPrice: 4.5,
+    discountPercentage: 31,
+  });
+  assert.equal(repriced.promotionalPrice, 4.5);
+  assert.equal(repriced.finalPrice, 4.5);
+
+  await assert.rejects(
+    hungryService.merchant.createPromotion(outletId, {
+      title: "Wrong outlet dish",
+      description: "Should not link another outlet's menu item.",
+      promotionItemType: "existing_menu_item",
+      targetDishId: "dish-from-another-outlet",
+      originalPrice: 6.5,
+      promotionalPrice: 5.5,
+      finalPrice: 5.5,
+      discountPercentage: 15,
+      isAvailable: true,
+      startDate: "2026-05-15T03:00:00Z",
+      endDate: "2026-05-16T07:00:00Z",
+      targetAudience: ["nearby_users"],
+      status: "draft",
+    }),
+    /this outlet/,
+  );
+
   await assert.rejects(
     hungryService.merchant.updatePromotion("missing-promo", { title: "Missing" }),
     /Promotion missing-promo not found/,
@@ -624,6 +836,66 @@ test("merchant analytics records dish views without duplicate session increments
 
   assert.equal(after.dishViews, before.dishViews + 1);
   assert.ok(after.topDishes.some((dish) => dish.dishId === menu[0].id && dish.views >= 1));
+});
+
+test("merchant analytics records explicit customer action events", async () => {
+  const outletId = "outlet-wonton-mee";
+  const menu = await hungryService.merchant.getMenu(outletId);
+  assert.ok(menu[0], "Expected a merchant menu dish");
+
+  const before = await hungryService.merchant.getAnalytics(outletId, "7d");
+  await hungryService.discovery.recordMerchantActionEvent({
+    eventType: "stall_profile_view",
+    outletId,
+    dishId: menu[0].id,
+    sessionId: "service-methods-action-profile",
+  });
+  await hungryService.discovery.recordMerchantActionEvent({
+    eventType: "menu_view",
+    outletId,
+    dishId: menu[0].id,
+    sessionId: "service-methods-action-menu",
+  });
+  await hungryService.discovery.recordMerchantActionEvent({
+    eventType: "direction_tap",
+    outletId,
+    dishId: menu[0].id,
+    sessionId: "service-methods-action-direction",
+  });
+  await hungryService.discovery.recordMerchantActionEvent({
+    eventType: "contact_tap",
+    outletId,
+    dishId: menu[0].id,
+    sessionId: "service-methods-action-contact",
+  });
+  await hungryService.discovery.recordMerchantActionEvent({
+    eventType: "social_link_tap",
+    outletId,
+    dishId: menu[0].id,
+    sessionId: "service-methods-action-social",
+  });
+  await hungryService.discovery.recordMerchantActionEvent({
+    eventType: "save",
+    outletId,
+    dishId: menu[0].id,
+    sessionId: "service-methods-action-save",
+  });
+  await hungryService.discovery.recordMerchantActionEvent({
+    eventType: "share",
+    outletId,
+    dishId: menu[0].id,
+    sessionId: "service-methods-action-share",
+  });
+  const after = await hungryService.merchant.getAnalytics(outletId, "7d");
+
+  assert.equal(after.profileVisits, before.profileVisits + 1);
+  assert.equal(after.menuViews, before.menuViews + 1);
+  assert.equal(after.directionTaps, before.directionTaps + 1);
+  assert.equal(after.contactTaps, before.contactTaps + 1);
+  assert.equal(after.socialLinkTaps, before.socialLinkTaps + 1);
+  assert.equal(after.saves, before.saves + 1);
+  assert.equal(after.shares, before.shares + 1);
+  assert.ok(after.topDishes.some((dish) => dish.dishId === menu[0].id && dish.saves >= 1));
 });
 
 test("merchant notifications sync low ratings and weekly summaries with dedupe", async () => {

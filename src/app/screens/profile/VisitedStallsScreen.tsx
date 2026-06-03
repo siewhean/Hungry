@@ -8,6 +8,7 @@ import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
+import { isVenueOpenFromHours } from "@/utils/stallStatus";
 import type { ProfileStackParamList } from "./ProfileStack";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
@@ -84,7 +85,9 @@ export function VisitedStallsScreen({ navigation }: Props) {
                     </AppText>
                     <AppText tone="secondary" variant="micro">
                       {venue.operatingHours ?? "Hours unavailable"} ·{" "}
-                      {venue.isOpen ? "Open now" : "Closed"}
+                      {isVenueOpenFromHours(venue.operatingHours, !!venue.isOpen)
+                        ? "Open now"
+                        : "Closed"}
                     </AppText>
                   </View>
                 </View>

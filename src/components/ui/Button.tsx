@@ -5,6 +5,7 @@ import {
   StyleSheet,
   View,
   type StyleProp,
+  type TextStyle,
   type ViewStyle,
   type PressableProps,
 } from "react-native";
@@ -23,10 +24,19 @@ interface ButtonProps extends Omit<PressableProps, "style"> {
   loading?: boolean;
   fullWidth?: boolean;
   style?: StyleProp<ViewStyle>;
+  labelColor?: string;
+  labelNumberOfLines?: number;
+  labelEllipsizeMode?: "head" | "middle" | "tail" | "clip";
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
 }
 
+/**
+ * Accessibility contract:
+ * - Visible `label` is the accessible name by default.
+ * - `loading` maps to `accessibilityState.busy` and disables the control.
+ * - Caller-provided `accessibilityState` is merged, not replaced.
+ */
 export function Button({
   label,
   variant = "primary",
@@ -35,9 +45,14 @@ export function Button({
   disabled,
   fullWidth = true,
   style,
+  labelColor,
+  labelNumberOfLines,
+  labelEllipsizeMode,
   leftIcon,
   rightIcon,
   onPressIn,
+  accessibilityLabel,
+  accessibilityState,
   ...props
 }: ButtonProps) {
   const { componentCornerCurve, componentRadii, componentSizes, opacity, palette, spacing } =
@@ -89,10 +104,29 @@ export function Button({
       paddingHorizontal: spacing[6],
     },
   };
+  const foregroundColor =
+    variant === "primary"
+      ? palette.textOnOrange
+      : variant === "destructive" || variant === "glass"
+        ? palette.textOnDark
+        : undefined;
+  const labelTextStyle: TextStyle[] = [];
+  if (foregroundColor) {
+    labelTextStyle.push({ color: foregroundColor });
+  }
+  if (labelColor) {
+    labelTextStyle.push({ color: labelColor });
+  }
 
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{
+        ...accessibilityState,
+        disabled: Boolean(accessibilityState?.disabled || isDisabled),
+        busy: Boolean(accessibilityState?.busy || loading),
+      }}
       disabled={isDisabled}
       onPressIn={(event) => {
         if (!isDisabled) {
@@ -120,7 +154,13 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === "primary" || variant === "destructive" ? palette.white : palette.text}
+          color={
+            variant === "primary"
+              ? palette.white
+              : variant === "destructive"
+                ? palette.white
+                : palette.text
+          }
         />
       ) : (
         <View
@@ -138,6 +178,9 @@ export function Button({
                 ? "inverse"
                 : "default"
             }
+            style={labelTextStyle}
+            numberOfLines={labelNumberOfLines}
+            ellipsizeMode={labelEllipsizeMode}
           >
             {label}
           </AppText>

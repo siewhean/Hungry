@@ -33,18 +33,17 @@ test("production route gates expose audited v1 surfaces and hide prototypes and 
   assert.match(flags, /appEnv !== "production"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/);
   for (const routeName of [
-    "DiscoverV2",
     "DishDetailV2",
-    "SearchHomeV2",
     "StallDetailV2",
     "BuildingDrillDownV2",
-    "QuickReviewV2",
     "SplashV2",
     "DesignGallery",
-    "ReviewFeedV2",
     "VenueDirectory",
   ]) {
     assert.match(rootNavigator, new RegExp(`name="${routeName}"`));
+  }
+  for (const removedRouteName of ["DiscoverV2", "SearchHomeV2", "QuickReviewV2", "ReviewFeedV2"]) {
+    assert.doesNotMatch(rootNavigator, new RegExp(`name="${removedRouteName}"`));
   }
   assert.match(rootNavigator, /FEATURE_FLAGS\.merchantCentreEnabled \? \(/);
   assert.match(rootNavigator, /name="MerchantTabs"/);
@@ -128,7 +127,6 @@ test("protected actions preserve return routes before auth", () => {
     "ReviewHistory",
     "Settings",
     "ReviewStack",
-    "QuickReviewV2",
     "AddStory",
     "MusicSelection",
     "MerchantClaimExplainer",

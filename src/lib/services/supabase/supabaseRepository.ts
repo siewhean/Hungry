@@ -408,6 +408,7 @@ function mapPostRowToStallPost(
     mediaType,
     mediaUrl,
     mediaUrls: mediaUrls.length > 0 ? mediaUrls : mediaUrl ? [mediaUrl] : undefined,
+    showFoodContextOverlay: meta.showFoodContextOverlay !== false,
     caption: toString(row.caption),
     tags: toStringArray(meta.tags),
     dishIds: [toString(row.dish_id) || dish?.id || toString(dishMeta.id)].filter(Boolean),
@@ -614,6 +615,37 @@ async function rpcRows(functionName: string, args: Row): Promise<Row[] | undefin
     return undefined;
   }
   return data as unknown as Row[];
+}
+
+export async function countVenuesInAreaViaRpc(
+  lat?: number,
+  lng?: number,
+  radiusMeters?: number,
+): Promise<number | undefined> {
+  if (!isSupabaseConfigured() || typeof lat !== "number" || typeof lng !== "number") {
+    return undefined;
+  }
+
+  const client = getSupabaseClient();
+  if (!client) return undefined;
+
+  const { data, error } = await client.rpc("count_venues_in_area", {
+    p_lat: lat,
+    p_lng: lng,
+    p_radius_meters: radiusMeters ?? null,
+  });
+
+  if (error) {
+    console.warn("Supabase discovery RPC count_venues_in_area failed", error.message);
+    return undefined;
+  }
+
+  if (typeof data === "number" && Number.isFinite(data)) return data;
+  if (typeof data === "string") {
+    const parsed = Number(data);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
 }
 
 export async function searchDishesViaRpc(

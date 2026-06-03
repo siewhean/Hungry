@@ -1,9 +1,18 @@
 import React, { useCallback, useState, useEffect } from "react";
-import { Image, View, TextInput, StyleSheet, Alert, Switch, Pressable } from "react-native";
+import { View, StyleSheet, Alert, Pressable } from "react-native";
 import { Sparkles, X } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
-import { AppText, Button, Chip, Screen, EmptyState } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  Button,
+  ChipGroup,
+  EmptyState,
+  FormSwitchRow,
+  Input,
+  Screen,
+} from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
@@ -49,7 +58,7 @@ function clampTasteValue(value: string): number {
 }
 
 export function DishEditorScreen() {
-  const { componentRadii, palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const dishId = route.params?.dishId;
@@ -233,47 +242,21 @@ export function DishEditorScreen() {
     <Screen title={dishId ? "Edit Dish" : "Add Dish"}>
       <View style={{ gap: spacing[5], width: "100%" }}>
         <View>
-          <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-            Dish Name *
-          </AppText>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                color: palette.text,
-                borderRadius: componentRadii.card,
-                padding: spacing[3],
-              },
-            ]}
+          <Input
+            label="Dish Name *"
             value={name}
             onChangeText={setName}
             placeholder="e.g. Signature Wonton Mee"
-            placeholderTextColor={palette.textMuted}
           />
         </View>
 
         <View>
-          <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-            Price ($)
-          </AppText>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                color: palette.text,
-                borderRadius: componentRadii.card,
-                padding: spacing[3],
-              },
-            ]}
+          <Input
+            label="Price ($)"
             value={price}
             onChangeText={setPrice}
             keyboardType="decimal-pad"
             placeholder="e.g. 5.50"
-            placeholderTextColor={palette.textMuted}
           />
         </View>
 
@@ -282,29 +265,19 @@ export function DishEditorScreen() {
             Dish Picture
           </AppText>
           {imageUrl.trim() ? (
-            <Image
+            <AccessibleImage
               source={{ uri: imageUrl.trim() }}
               style={[
                 styles.imagePreview,
                 { borderRadius: componentRadii.card, marginBottom: spacing[3] },
               ]}
+              accessibilityLabel="Dish picture preview"
             />
           ) : null}
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                color: palette.text,
-                borderRadius: componentRadii.card,
-                padding: spacing[3],
-              },
-            ]}
+          <Input
             value={imageUrl}
             onChangeText={setImageUrl}
             placeholder="Paste image URL or use the sample photo"
-            placeholderTextColor={palette.textMuted}
             autoCapitalize="none"
           />
           <Button
@@ -326,26 +299,13 @@ export function DishEditorScreen() {
           <View style={[styles.tasteGrid, { gap: spacing[2] }]}>
             {TASTE_DIMENSIONS.map((dimension) => (
               <View key={dimension.key} style={{ flexBasis: "31%", flexGrow: 1 }}>
-                <AppText variant="micro" tone="muted" style={{ marginBottom: spacing[1] }}>
-                  {dimension.label}
-                </AppText>
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      color: palette.text,
-                      borderRadius: componentRadii.card,
-                      padding: spacing[3],
-                    },
-                  ]}
+                <Input
+                  label={dimension.label}
                   value={String(tasteVector[dimension.key])}
                   onChangeText={(value) => handleTasteVectorChange(dimension.key, value)}
                   keyboardType="number-pad"
                   maxLength={2}
                   placeholder="0-10"
-                  placeholderTextColor={palette.textMuted}
                 />
               </View>
             ))}
@@ -372,21 +332,10 @@ export function DishEditorScreen() {
               </AppText>
             </Pressable>
           </View>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                color: palette.text,
-                borderRadius: componentRadii.card,
-                padding: spacing[3],
-              },
-            ]}
+          <Input
             value={ingredients}
             onChangeText={setIngredients}
             placeholder="Comma separated (e.g. noodles, pork, wonton)"
-            placeholderTextColor={palette.textMuted}
             multiline
           />
           <Button
@@ -412,16 +361,14 @@ export function DishEditorScreen() {
           <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[3] }}>
             Choose customer-facing labels for dietary needs and ingredient exclusions.
           </AppText>
-          <View style={[styles.chipWrap, { gap: spacing[2] }]}>
-            {DIETARY_OPTIONS.map((option) => (
-              <Chip
-                key={option.value}
-                label={option.label}
-                selected={dietaryFlags.includes(option.value)}
-                onPress={() => toggleDietaryFlag(option.value)}
-              />
-            ))}
-          </View>
+          <ChipGroup
+            options={DIETARY_OPTIONS.map((option) => ({
+              id: option.value,
+              label: option.label,
+            }))}
+            selectedIds={dietaryFlags}
+            onSelect={toggleDietaryFlag}
+          />
         </View>
 
         <View>
@@ -444,74 +391,28 @@ export function DishEditorScreen() {
               </AppText>
             </Pressable>
           </View>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                height: 100,
-                textAlignVertical: "top",
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                color: palette.text,
-                borderRadius: componentRadii.card,
-                padding: spacing[3],
-              },
-            ]}
+          <Input
             value={description}
             onChangeText={setDescription}
             multiline
             placeholder="Describe your dish to make it sound appetizing..."
-            placeholderTextColor={palette.textMuted}
+            style={{ minHeight: 100, textAlignVertical: "top" }}
           />
         </View>
 
-        <View
-          style={[
-            styles.switchRow,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.border,
-              borderRadius: componentRadii.card,
-              padding: spacing[4],
-            },
-          ]}
-        >
-          <View>
-            <AppText variant="bodyBold">Available for sale</AppText>
-            <AppText variant="bodySmall" tone="muted">
-              Turn off to mark as Sold Out
-            </AppText>
-          </View>
-          <Switch
-            value={isAvailable}
-            onValueChange={setIsAvailable}
-            trackColor={{ true: palette.success, false: palette.border }}
-          />
-        </View>
+        <FormSwitchRow
+          label="Available for sale"
+          description="Turn off to mark as Sold Out"
+          value={isAvailable}
+          onValueChange={setIsAvailable}
+        />
 
-        <View
-          style={[
-            styles.switchRow,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.border,
-              borderRadius: componentRadii.card,
-              padding: spacing[4],
-            },
-          ]}
-        >
-          <View>
-            <AppText variant="bodyBold">Featured Dish</AppText>
-            <AppText variant="bodySmall" tone="muted">
-              Highlight at top of menu
-            </AppText>
-          </View>
-          <Switch
-            value={isFeatured}
-            onValueChange={setIsFeatured}
-            trackColor={{ true: palette.orange, false: palette.border }}
-          />
-        </View>
+        <FormSwitchRow
+          label="Featured Dish"
+          description="Highlight at top of menu"
+          value={isFeatured}
+          onValueChange={setIsFeatured}
+        />
 
         <Button
           label={isSaving ? "Saving..." : "Save Dish"}
@@ -527,26 +428,12 @@ export function DishEditorScreen() {
 }
 
 const styles = StyleSheet.create({
-  input: {
-    borderWidth: 1,
-    fontSize: 16,
-  },
   tasteGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
   },
-  switchRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderWidth: 1,
-  },
   imagePreview: {
     width: "100%",
     height: 180,
-  },
-  chipWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
   },
 });

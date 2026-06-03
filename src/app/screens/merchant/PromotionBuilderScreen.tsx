@@ -1,9 +1,17 @@
 import React, { useCallback, useState, useEffect } from "react";
-import { View, TextInput, StyleSheet, Alert, Switch, Pressable } from "react-native";
+import { View, StyleSheet, Alert, Pressable } from "react-native";
 import { Calendar, X } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
-import { AppText, Button, Screen, EmptyState } from "@/components/ui";
+import {
+  AppText,
+  Button,
+  ChipGroup,
+  EmptyState,
+  FormSwitchRow,
+  Input,
+  Screen,
+} from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -18,11 +26,18 @@ import {
   getPromotionPricing,
   resolvePromotionRuntimeStatus,
 } from "@/features/merchant/merchantReadiness";
+import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 
 type RouteProps = RouteProp<MerchantTabParamList, "PromotionBuilder">;
+type PromotionItemType = NonNullable<MerchantPromotion["promotionItemType"]>;
+
+const PROMOTION_ITEM_TYPE_OPTIONS: readonly { id: PromotionItemType; label: string }[] = [
+  { id: "new_item", label: "New item" },
+  { id: "existing_menu_item", label: "Existing menu item" },
+];
 
 export function PromotionBuilderScreen() {
-  const { componentRadii, palette, spacing, radii } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const navigation = useNavigation();
   const route = useRoute<RouteProps>();
   const promotionId = route.params?.promotionId;
@@ -147,7 +162,7 @@ export function PromotionBuilderScreen() {
           })
         : "draft";
 
-      const promoData: Omit<MerchantPromotion, "id" | "outletId" | "createdAt" | "analytics"> = {
+      const promoData = validateMerchantPromotionInput({
         title,
         description,
         targetDishId,
@@ -161,7 +176,7 @@ export function PromotionBuilderScreen() {
         finalPrice: parsedPromotionalPrice ?? parsedOriginalPrice,
         discountPercentage: parsedDiscount,
         isAvailable,
-      };
+      });
 
       if (promotionId) {
         await getHungryService().merchant.updatePromotion(promotionId, promoData);
@@ -172,7 +187,7 @@ export function PromotionBuilderScreen() {
       Alert.alert("Success", `Promotion ${publish ? "published" : "saved as draft"}!`);
       navigation.goBack();
     } catch (e) {
-      Alert.alert("Error", "Failed to save promotion.");
+      Alert.alert("Error", e instanceof Error ? e.message : "Failed to save promotion.");
       console.error(e);
     } finally {
       setIsSaving(false);
@@ -206,33 +221,12 @@ export function PromotionBuilderScreen() {
   const renderAudienceToggle = (id: PromotionTargetAudience, label: string, desc: string) => {
     const isSelected = targetAudiences.has(id);
     return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${isSelected ? "Remove" : "Add"} audience ${label}`}
-        accessibilityState={{ selected: isSelected }}
-        onPress={() => setAudienceSelected(id, !isSelected)}
-        style={[
-          styles.audienceCard,
-          {
-            backgroundColor: palette.surface,
-            borderColor: isSelected ? palette.success : palette.border,
-            borderRadius: componentRadii.card,
-            padding: spacing[4],
-          },
-        ]}
-      >
-        <View style={{ flex: 1, paddingRight: spacing[3] }}>
-          <AppText variant="bodyBold" style={{ color: palette.text }}>
-            {label}
-          </AppText>
-          <AppText variant="micro" tone="muted" style={{ marginTop: 2 }}>
-            {desc}
-          </AppText>
-        </View>
-        <Switch
+      <Pressable onPress={() => setAudienceSelected(id, !isSelected)}>
+        <FormSwitchRow
+          label={label}
+          description={desc}
           value={isSelected}
           onValueChange={(value) => setAudienceSelected(id, value)}
-          trackColor={{ true: palette.success, false: palette.border }}
         />
       </Pressable>
     );
@@ -323,75 +317,32 @@ export function PromotionBuilderScreen() {
         </View>
 
         <View>
-          <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-            Promotion Title *
-          </AppText>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                color: palette.text,
-                borderRadius: componentRadii.card,
-                padding: spacing[3],
-              },
-            ]}
+          <Input
+            label="Promotion Title *"
             value={title}
             onChangeText={setTitle}
             placeholder="e.g. 20% off all noodles"
-            placeholderTextColor={palette.textMuted}
           />
         </View>
 
         <View>
-          <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-            Description *
-          </AppText>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                height: 80,
-                textAlignVertical: "top",
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                color: palette.text,
-                borderRadius: componentRadii.card,
-                padding: spacing[3],
-              },
-            ]}
+          <Input
+            label="Description *"
             value={description}
             onChangeText={setDescription}
             multiline
             placeholder="e.g. Show this post to get 20% off your total bill when you order any noodle dish between 2pm-5pm."
-            placeholderTextColor={palette.textMuted}
+            style={{ minHeight: 80, textAlignVertical: "top" }}
           />
         </View>
 
         <View style={{ gap: spacing[3] }}>
           <AppText variant="bodyBold">Promotion Item</AppText>
-          <View style={{ flexDirection: "row", gap: spacing[2] }}>
-            {(["new_item", "existing_menu_item"] as const).map((type) => (
-              <Pressable
-                key={type}
-                onPress={() => setPromotionItemType(type)}
-                style={[
-                  styles.typeOption,
-                  {
-                    backgroundColor: promotionItemType === type ? palette.bgSoft : palette.surface,
-                    borderColor: promotionItemType === type ? palette.success : palette.border,
-                    borderRadius: componentRadii.card,
-                    padding: spacing[3],
-                  },
-                ]}
-              >
-                <AppText variant="bodySmallBold">
-                  {type === "new_item" ? "New item" : "Existing menu item"}
-                </AppText>
-              </Pressable>
-            ))}
-          </View>
+          <ChipGroup
+            options={PROMOTION_ITEM_TYPE_OPTIONS}
+            selectedId={promotionItemType}
+            onSelect={setPromotionItemType}
+          />
 
           {promotionItemType === "existing_menu_item" ? (
             <View style={{ gap: spacing[2] }}>
@@ -429,151 +380,72 @@ export function PromotionBuilderScreen() {
 
           <View style={{ flexDirection: "row", gap: spacing[3] }}>
             <View style={{ flex: 1 }}>
-              <AppText variant="bodySmallBold" style={{ marginBottom: spacing[1] }}>
-                Original Price
-              </AppText>
-              <TextInput
+              <Input
+                label="Original Price"
                 keyboardType="decimal-pad"
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: palette.surface,
-                    borderColor: palette.border,
-                    borderRadius: componentRadii.card,
-                    color: palette.text,
-                    padding: spacing[3],
-                  },
-                ]}
                 value={originalPrice}
                 onChangeText={setOriginalPrice}
                 placeholder="6.50"
-                placeholderTextColor={palette.textMuted}
               />
             </View>
             <View style={{ flex: 1 }}>
-              <AppText variant="bodySmallBold" style={{ marginBottom: spacing[1] }}>
-                Final Price
-              </AppText>
-              <TextInput
+              <Input
+                label="Final Price"
                 keyboardType="decimal-pad"
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: palette.surface,
-                    borderColor: palette.border,
-                    borderRadius: componentRadii.card,
-                    color: palette.text,
-                    padding: spacing[3],
-                  },
-                ]}
                 value={promotionalPrice}
                 onChangeText={setPromotionalPrice}
                 placeholder="5.50"
-                placeholderTextColor={palette.textMuted}
               />
             </View>
           </View>
 
           <View style={{ flexDirection: "row", gap: spacing[3] }}>
             <View style={{ flex: 1 }}>
-              <AppText variant="bodySmallBold" style={{ marginBottom: spacing[1] }}>
-                Discount %
-              </AppText>
-              <TextInput
+              <Input
+                label="Discount %"
                 keyboardType="decimal-pad"
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: palette.surface,
-                    borderColor: palette.border,
-                    borderRadius: componentRadii.card,
-                    color: palette.text,
-                    padding: spacing[3],
-                  },
-                ]}
                 value={discountPercentage}
                 onChangeText={setDiscountPercentage}
                 placeholder="15"
-                placeholderTextColor={palette.textMuted}
               />
             </View>
-            <View style={[styles.availabilityRow, { paddingTop: spacing[4] }]}>
-              <AppText variant="bodySmallBold">Available</AppText>
-              <Switch
-                value={isAvailable}
-                onValueChange={setIsAvailable}
-                trackColor={{ true: palette.success, false: palette.border }}
-              />
-            </View>
+            <FormSwitchRow
+              label="Available"
+              value={isAvailable}
+              onValueChange={setIsAvailable}
+              style={{ flex: 1 }}
+            />
           </View>
         </View>
 
         <View style={{ flexDirection: "row", gap: spacing[3] }}>
           <View style={{ flex: 1 }}>
-            <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-              Start Date
-            </AppText>
-            <View
-              style={[
-                styles.dateInput,
-                {
-                  backgroundColor: palette.surface,
-                  borderColor: dateErrors.start ? palette.error : palette.border,
-                  borderRadius: componentRadii.card,
-                  paddingHorizontal: spacing[3],
-                  paddingVertical: spacing[2],
-                },
-              ]}
-            >
-              <Calendar size={18} color={palette.textSecondary} />
-              <TextInput
-                style={{ flex: 1, color: palette.text, fontSize: 16 }}
-                value={startDate}
-                onChangeText={(text) => {
-                  setStartDate(text);
-                  setDateErrors((prev) => ({ ...prev, start: false }));
-                }}
-                placeholder="YYYY-MM-DD"
-              />
-            </View>
-            {dateErrors.start && (
-              <AppText variant="micro" style={{ color: palette.error, marginTop: spacing[1] }}>
-                Format: YYYY-MM-DD
-              </AppText>
-            )}
+            <Input
+              label="Start Date"
+              value={startDate}
+              onChangeText={(text) => {
+                setStartDate(text);
+                setDateErrors((prev) => ({ ...prev, start: false }));
+              }}
+              placeholder="YYYY-MM-DD"
+              leftIcon={<Calendar size={18} color={palette.textSecondary} />}
+              error={dateErrors.start}
+              errorText="Format: YYYY-MM-DD"
+            />
           </View>
           <View style={{ flex: 1 }}>
-            <AppText variant="bodyBold" style={{ marginBottom: spacing[2] }}>
-              End Date
-            </AppText>
-            <View
-              style={[
-                styles.dateInput,
-                {
-                  backgroundColor: palette.surface,
-                  borderColor: dateErrors.end ? palette.error : palette.border,
-                  borderRadius: componentRadii.card,
-                  paddingHorizontal: spacing[3],
-                  paddingVertical: spacing[2],
-                },
-              ]}
-            >
-              <Calendar size={18} color={palette.textSecondary} />
-              <TextInput
-                style={{ flex: 1, color: palette.text, fontSize: 16 }}
-                value={endDate}
-                onChangeText={(text) => {
-                  setEndDate(text);
-                  setDateErrors((prev) => ({ ...prev, end: false }));
-                }}
-                placeholder="YYYY-MM-DD"
-              />
-            </View>
-            {dateErrors.end && (
-              <AppText variant="micro" style={{ color: palette.error, marginTop: spacing[1] }}>
-                Format: YYYY-MM-DD
-              </AppText>
-            )}
+            <Input
+              label="End Date"
+              value={endDate}
+              onChangeText={(text) => {
+                setEndDate(text);
+                setDateErrors((prev) => ({ ...prev, end: false }));
+              }}
+              placeholder="YYYY-MM-DD"
+              leftIcon={<Calendar size={18} color={palette.textSecondary} />}
+              error={dateErrors.end}
+              errorText="Format: YYYY-MM-DD"
+            />
           </View>
         </View>
 
@@ -627,39 +499,13 @@ export function PromotionBuilderScreen() {
 }
 
 const styles = StyleSheet.create({
-  input: {
-    borderWidth: 1,
-    fontSize: 16,
-  },
   previewCard: {
     borderWidth: 1,
     borderStyle: "dashed",
   },
-  dateInput: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    gap: 8,
-  },
-  audienceCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderWidth: 1,
-  },
-  typeOption: {
-    borderWidth: 1,
-    flex: 1,
-  },
   menuItemOption: {
     alignItems: "center",
     borderWidth: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  availabilityRow: {
-    alignItems: "center",
-    flex: 1,
     flexDirection: "row",
     justifyContent: "space-between",
   },

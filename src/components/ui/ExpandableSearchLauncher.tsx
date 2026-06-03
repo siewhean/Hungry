@@ -82,8 +82,7 @@ export function ExpandableSearchLauncher({
   const resolvedIconSize = iconSize ?? componentSizes.searchIconSlot;
   const resolvedBarHeight = barHeight ?? componentSizes.searchBarHeight;
   const searchIconSlotWidth = resolvedIconSize;
-  const shouldAnimatePlaceholder =
-    enableMovingPlaceholder ?? /^(search|find)\b/i.test(placeholder.trim());
+  const shouldAnimatePlaceholder = enableMovingPlaceholder === true;
   const animatedPlaceholder = useMovingSearchPlaceholder({
     phrases: movingPlaceholderPhrases ?? [placeholder || "Search..."],
     enabled: shouldAnimatePlaceholder,
@@ -258,6 +257,7 @@ export function ExpandableSearchLauncher({
             onChangeText={onQueryChange}
             placeholder={placeholderText}
             placeholderTextColor={placeholderColor ?? palette.textSecondary}
+            accessibilityLabel={accessibilityLabel ?? placeholder}
             returnKeyType="search"
             clearButtonMode="never"
             style={[
@@ -276,7 +276,12 @@ export function ExpandableSearchLauncher({
         </Animated.View>
         <Animated.View style={{ opacity: searchInputOpacity }}>
           {query.length > 0 ? (
-            <Pressable accessibilityRole="button" onPress={handleClear}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Clear search"
+              accessibilityHint="Clears the current search query"
+              onPress={handleClear}
+            >
               <X color={palette.textMuted} size={18} />
             </Pressable>
           ) : null}

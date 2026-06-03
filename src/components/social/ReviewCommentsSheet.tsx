@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useState, type RefObject } from "react";
 import { Pressable, View, type TextInput } from "react-native";
 import {
   BottomSheetBackdrop,
@@ -48,10 +48,16 @@ export function ReviewCommentsSheet({
   const repliesByCommentId = useSocialStore((state) => state.repliesByCommentId);
   const addComment = useSocialStore((state) => state.addComment);
   const addReply = useSocialStore((state) => state.addReply);
+  const loadCommentsForPost = useSocialStore((state) => state.loadCommentsForPost);
 
   const [draftComment, setDraftComment] = useState("");
   const [activeReplyCommentId, setActiveReplyCommentId] = useState<string | null>(null);
   const emptyStateSpacing = Math.max(spacing[6], insets.bottom);
+
+  useEffect(() => {
+    if (!activeReview?.id) return;
+    void loadCommentsForPost(activeReview.id);
+  }, [activeReview?.id, loadCommentsForPost]);
 
   const commentsForActiveReview = useMemo<SocialComment[]>(() => {
     if (!activeReview) {
@@ -88,6 +94,7 @@ export function ReviewCommentsSheet({
       const newReply: SocialReply = {
         id: `reply-${Date.now()}`,
         parentCommentId: activeReplyCommentId,
+        userId: profile.id,
         authorName: profile.displayName,
         authorAvatarUrl: profile.avatarUrl,
         text: draftComment.trim(),
@@ -99,6 +106,7 @@ export function ReviewCommentsSheet({
     } else {
       const newComment: SocialComment = {
         id: `comment-${Date.now()}`,
+        userId: profile.id,
         authorName: profile.displayName,
         authorAvatarUrl: profile.avatarUrl,
         text: draftComment.trim(),
@@ -120,9 +128,10 @@ export function ReviewCommentsSheet({
       ref={innerRef}
       snapPoints={["50%", "88%"]}
       enableDynamicSizing={false}
-      index={0}
       enablePanDownToClose
       keyboardBehavior="extend"
+      accessibilityLabel="Review comments"
+      accessibilityViewIsModal
       onDismiss={handleDismiss}
       backdropComponent={(props) => (
         <BottomSheetBackdrop
@@ -131,6 +140,9 @@ export function ReviewCommentsSheet({
           disappearsOnIndex={-1}
           opacity={0.5}
           pressBehavior="close"
+          accessibilityRole="button"
+          accessibilityLabel="Close comments"
+          accessibilityHint="Dismisses the review comments sheet"
         />
       )}
       backgroundStyle={{ backgroundColor: palette.surface }}
@@ -167,7 +179,12 @@ export function ReviewCommentsSheet({
                       ?.authorName ?? "comment"}
                   </AppText>
                 </AppText>
-                <Pressable onPress={() => setActiveReplyCommentId(null)}>
+                <Pressable
+                  onPress={() => setActiveReplyCommentId(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel reply"
+                  accessibilityHint="Stops replying to the selected comment"
+                >
                   <X size={14} color={palette.textMuted} />
                 </Pressable>
               </View>
@@ -179,8 +196,10 @@ export function ReviewCommentsSheet({
                   placeholder={activeReplyCommentId ? "Write a reply..." : "Add a comment..."}
                   value={draftComment}
                   onChangeText={setDraftComment}
-                  multiline
-                  style={{ maxHeight: 100 }}
+                  multiline={false}
+                  numberOfLines={1}
+                  textAlignVertical="center"
+                  style={{ maxHeight: 44, minHeight: 44 }}
                 />
               </View>
               <Pressable
@@ -203,14 +222,12 @@ export function ReviewCommentsSheet({
     >
       <View
         style={{
-          borderBottomWidth: 1,
-          borderBottomColor: palette.border,
           gap: spacing[1],
           paddingHorizontal: spacing[4],
-          paddingVertical: spacing[3],
+          paddingTop: spacing[1],
+          paddingBottom: spacing[3],
         }}
       >
-        <AppText variant="h3">Comments</AppText>
         {activeReview ? (
           <>
             <View style={{ gap: spacing[1] }}>
@@ -240,7 +257,7 @@ export function ReviewCommentsSheet({
             ? spacing[24] + spacing[8] + insets.bottom
             : emptyStateSpacing,
           paddingHorizontal: spacing[3],
-          paddingVertical: spacing[4],
+          paddingTop: spacing[2],
         }}
       >
         {commentsForActiveReview.length

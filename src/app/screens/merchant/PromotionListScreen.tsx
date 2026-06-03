@@ -1,10 +1,19 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, ScrollView, StyleSheet, Pressable } from "react-native";
+import { View, StyleSheet, Pressable } from "react-native";
 import { Plus, Calendar, Users, Target, BarChart2, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { AppText, Button, IconButton, Chip, Screen, EmptyState } from "@/components/ui";
+import {
+  AppText,
+  Button,
+  IconButton,
+  FilterChipRail,
+  Screen,
+  EmptyState,
+  StatusChip,
+  type StatusChipTone,
+} from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -16,6 +25,28 @@ import {
 } from "@/features/merchant/merchantReadiness";
 
 type NavigationProp = NativeStackNavigationProp<MerchantTabParamList, "PromotionList">;
+
+const PROMOTION_FILTER_OPTIONS: { id: PromotionStatus; label: string }[] = [
+  { id: "active", label: "Active" },
+  { id: "scheduled", label: "Scheduled" },
+  { id: "draft", label: "Drafts" },
+  { id: "ended", label: "Ended" },
+];
+
+function getPromotionStatusTone(status: PromotionStatus): StatusChipTone {
+  switch (status) {
+    case "active":
+      return "success";
+    case "scheduled":
+      return "info";
+    case "draft":
+      return "neutral";
+    case "ended":
+      return "neutral";
+    default:
+      return "neutral";
+  }
+}
 
 export function PromotionListScreen() {
   const { componentRadii, palette, spacing } = useHungryTheme();
@@ -79,21 +110,6 @@ export function PromotionListScreen() {
   }));
   const filteredPromotions = promotionsWithRuntimeStatus.filter((p) => p.status === filter);
 
-  const getStatusBgColor = (status: PromotionStatus) => {
-    switch (status) {
-      case "active":
-        return palette.successSoft;
-      case "scheduled":
-        return palette.infoSoft;
-      case "draft":
-        return palette.bgSoft;
-      case "ended":
-        return palette.bgSoft;
-      default:
-        return palette.bgSoft;
-    }
-  };
-
   return (
     <Screen
       title="Promotions"
@@ -107,20 +123,12 @@ export function PromotionListScreen() {
     >
       <View style={{ gap: spacing[4], width: "100%" }}>
         {/* Filters */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: spacing[2], paddingHorizontal: spacing[1] }}
-        >
-          <Chip label="Active" selected={filter === "active"} onPress={() => setFilter("active")} />
-          <Chip
-            label="Scheduled"
-            selected={filter === "scheduled"}
-            onPress={() => setFilter("scheduled")}
-          />
-          <Chip label="Drafts" selected={filter === "draft"} onPress={() => setFilter("draft")} />
-          <Chip label="Ended" selected={filter === "ended"} onPress={() => setFilter("ended")} />
-        </ScrollView>
+        <FilterChipRail
+          options={PROMOTION_FILTER_OPTIONS}
+          selectedId={filter}
+          onSelect={setFilter}
+          gap={spacing[2]}
+        />
 
         <View style={{ gap: spacing[4], paddingBottom: 100 }}>
           {filteredPromotions.length === 0 && !isLoading ? (
@@ -191,17 +199,10 @@ export function PromotionListScreen() {
                         {promo.description}
                       </AppText>
                     </View>
-                    <View
-                      style={{
-                        backgroundColor: getStatusBgColor(promo.status),
-                        borderRadius: componentRadii.button,
-                      }}
-                    >
-                      <Chip
-                        label={promo.status.charAt(0).toUpperCase() + promo.status.slice(1)}
-                        selected={false}
-                      />
-                    </View>
+                    <StatusChip
+                      label={promo.status.charAt(0).toUpperCase() + promo.status.slice(1)}
+                      tone={getPromotionStatusTone(promo.status)}
+                    />
                   </View>
 
                   <View

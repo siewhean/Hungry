@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { View, StyleSheet, Pressable, ActivityIndicator, Dimensions } from "react-native";
-import { Image } from "expo-image";
 import { FlashList } from "@shopify/flash-list";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
-import { AppText, EmptyState, Screen } from "@/components/ui";
+import { AccessibleImage, AppText, EmptyState, Screen } from "@/components/ui";
 import {
   prefetchDishDetail,
   prefetchImage,
@@ -145,9 +144,16 @@ export function SocialGridScreen() {
     if (isStory) imageUrl = (item as Story).content.url;
     else if (isDish) imageUrl = (item as DishDetail).imageUrl;
     else imageUrl = (item as StallPost).mediaUrl;
+    const itemLabel = isStory
+      ? "Open story"
+      : isDish
+        ? `Open ${(item as DishDetail).name}`
+        : `Open post ${(item as StallPost).caption || (item as StallPost).id}`;
 
     return (
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={itemLabel}
         style={styles.gridItem}
         onPressIn={() => {
           if (isStory) {
@@ -179,7 +185,12 @@ export function SocialGridScreen() {
           }
         }}
       >
-        <Image source={{ uri: imageUrl }} style={styles.image} contentFit="cover" />
+        <AccessibleImage
+          source={{ uri: imageUrl }}
+          style={styles.image}
+          contentFit="cover"
+          decorative
+        />
         {isStory && (
           <View style={[styles.badge, { backgroundColor: palette.orange }]}>
             <AppText variant="bodySmallBold" style={{ color: palette.white }}>

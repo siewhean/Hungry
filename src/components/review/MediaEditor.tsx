@@ -5,7 +5,7 @@ import { X, Check } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
 import { AppText, Button } from "../ui";
-import { FILTERS, type Filter } from "@/features/review/filterData";
+import { FILTERS } from "@/features/review/filterData";
 
 interface MediaEditorProps {
   uri: string;
@@ -25,7 +25,7 @@ export function MediaEditor({
   onSave,
   initialFilterId = "none",
 }: MediaEditorProps) {
-  const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
+  const { componentRadii, palette, spacing, shadows } = useHungryTheme();
   const [selectedFilterId, setSelectedFilterId] = useState(initialFilterId);
   const skiaImage = useImage(uri);
 
@@ -37,7 +37,13 @@ export function MediaEditor({
   if (!skiaImage) return null;
 
   return (
-    <Modal visible={isVisible} animationType="slide" presentationStyle="fullScreen">
+    <Modal
+      visible={isVisible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+      onRequestClose={onClose}
+      accessibilityViewIsModal
+    >
       <View style={{ flex: 1, backgroundColor: palette.bg, padding: spacing[4], paddingTop: 60 }}>
         <View
           style={{
@@ -47,17 +53,32 @@ export function MediaEditor({
             marginBottom: spacing[4],
           }}
         >
-          <Pressable onPress={onClose}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close media editor"
+            accessibilityHint="Closes the editor without applying the selected filter"
+            onPress={onClose}
+          >
             <X size={24} color={palette.text} />
           </Pressable>
-          <AppText variant="h2">Edit Media</AppText>
-          <Pressable onPress={() => onSave(selectedFilterId)}>
+          <AppText accessibilityRole="header" variant="h2">
+            Edit Media
+          </AppText>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Save edited media"
+            accessibilityHint={`Applies the ${activeFilter.name} filter and closes the editor`}
+            onPress={() => onSave(selectedFilterId)}
+          >
             <Check size={24} color={palette.orange} />
           </Pressable>
         </View>
 
         <View style={{ alignItems: "center", justifyContent: "center", flex: 1 }}>
           <View
+            accessible
+            accessibilityRole="image"
+            accessibilityLabel={`Media preview with ${activeFilter.name} filter`}
             style={{
               width: PREVIEW_SIZE,
               height: PREVIEW_SIZE,
@@ -67,7 +88,7 @@ export function MediaEditor({
               ...shadows.card,
             }}
           >
-            <Canvas style={{ flex: 1 }}>
+            <Canvas accessibilityElementsHidden importantForAccessibility="no" style={{ flex: 1 }}>
               <Image
                 image={skiaImage}
                 x={0}
@@ -96,6 +117,9 @@ export function MediaEditor({
               return (
                 <Pressable
                   key={filter.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${filter.name} filter preview`}
+                  accessibilityState={{ selected: isSelected }}
                   onPress={() => setSelectedFilterId(filter.id)}
                   style={{ alignItems: "center", gap: spacing[2] }}
                 >
@@ -109,7 +133,11 @@ export function MediaEditor({
                       overflow: "hidden",
                     }}
                   >
-                    <Canvas style={{ flex: 1 }}>
+                    <Canvas
+                      accessibilityElementsHidden
+                      importantForAccessibility="no"
+                      style={{ flex: 1 }}
+                    >
                       <Image image={skiaImage} x={0} y={0} width={70} height={70} fit="cover">
                         <ColorMatrix matrix={filter.matrix} />
                       </Image>

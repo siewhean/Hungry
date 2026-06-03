@@ -8,6 +8,7 @@ export function biteToStallPost(
     mediaType?: StallPost["mediaType"];
     mediaUrls?: string[];
     tags?: string[];
+    showFoodContextOverlay?: boolean;
   } = {},
 ): StallPost {
   const mediaUrl = bite.photoUrl;
@@ -28,6 +29,7 @@ export function biteToStallPost(
     mediaType: options.mediaType ?? bite.mediaType ?? "photo",
     mediaUrl,
     mediaUrls,
+    showFoodContextOverlay: options.showFoodContextOverlay ?? bite.showFoodContextOverlay,
     caption: bite.caption,
     tags: options.tags?.length ? options.tags : bite.tags?.length ? bite.tags : undefined,
     dishIds: [bite.dishId],

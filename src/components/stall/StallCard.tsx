@@ -3,6 +3,7 @@ import { Clock3, MapPinned } from "lucide-react-native";
 
 import type { VenueSummary, DishSummary } from "@/types/domain";
 import { useHungryTheme } from "@/theme";
+import { isVenueOpenFromHours } from "@/utils/stallStatus";
 import { AppText, Badge, Card } from "../ui";
 
 interface StallCardProps {
@@ -14,6 +15,7 @@ interface StallCardProps {
 export function StallCard({ venue, topDish, onPress }: StallCardProps) {
   const { palette, spacing } = useHungryTheme();
   const styles = createStyles(spacing);
+  const isOpenNow = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
 
   return (
     <Card style={{ padding: spacing[3] }}>
@@ -36,10 +38,7 @@ export function StallCard({ venue, topDish, onPress }: StallCardProps) {
             </AppText>
           </View>
           <View style={styles.metaRow}>
-            <Badge
-              label={venue.isOpen ? "Open" : "Closed"}
-              tone={venue.isOpen ? "success" : "warning"}
-            />
+            <Badge label={isOpenNow ? "Open" : "Closed"} tone={isOpenNow ? "success" : "warning"} />
           </View>
           <View style={styles.infoRow}>
             <Clock3 size={14} color={palette.textMuted} />
