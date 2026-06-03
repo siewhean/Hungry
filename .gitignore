@@ -37,6 +37,7 @@ tasks/release-evidence/*.env
 *.watchman-cookie-*
 .watchman-cookie-*
 node_modules.bak_*/
+claude-mem/
 
 # Local build/cache artifacts (large)
 .DerivedData/
