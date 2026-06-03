@@ -1,10 +1,16 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 
 const REQUIRED_ENV = "HUNGRY_SUPABASE_ADVISOR_SNAPSHOT_REQUIRED";
 const npxCommand = process.env.SUPABASE_NPX_COMMAND || "npx";
 const npxInstallArgs = process.env.SUPABASE_NPX_ALLOW_INSTALL === "1" ? [] : ["--no-install"];
+const installedSupabaseCli =
+  process.env.SUPABASE_CLI_COMMAND ||
+  ["/opt/homebrew/bin/supabase", "/usr/local/bin/supabase"].find((candidate) =>
+    existsSync(candidate),
+  );
 
 const SNAPSHOT_SQL = `
 with role_state as (
@@ -115,7 +121,9 @@ select jsonb_build_object(
 from role_state, spatial_ref_sys_state, postgis_state, st_estimatedextent_state, postgis_typed_columns, geo_rpc_search_paths;
 `;
 
-const args = [...npxInstallArgs, "supabase", "db", "query", "--linked", "-o", "json", SNAPSHOT_SQL];
+const args = ["db", "query", "--linked", "-o", "json", SNAPSHOT_SQL];
+const command = installedSupabaseCli || npxCommand;
+const commandArgs = installedSupabaseCli ? args : [...npxInstallArgs, "supabase", ...args];
 
 function isRequired() {
   return process.argv.includes("--require-network") || process.env[REQUIRED_ENV] === "1";
@@ -123,7 +131,7 @@ function isRequired() {
 
 function runSnapshotQuery() {
   return new Promise((resolve) => {
-    const child = spawn(npxCommand, args, {
+    const child = spawn(command, commandArgs, {
       cwd: process.cwd(),
       env: process.env,
       stdio: ["ignore", "pipe", "pipe"],

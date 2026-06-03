@@ -1,22 +1,20 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 
 const REQUIRED_ENV = "HUNGRY_SUPABASE_SMOKE_REQUIRED";
 const smokeSqlPath = "supabase/smoke/full_audit_v1_readiness.sql";
 
-const command = process.platform === "win32" ? "npx.cmd" : "npx";
-const args = [
-  "--no-install",
-  "supabase",
-  "db",
-  "query",
-  "--linked",
-  "-f",
-  smokeSqlPath,
-  "-o",
-  "table",
-];
+const installedSupabaseCli =
+  process.env.SUPABASE_CLI_COMMAND ||
+  ["/opt/homebrew/bin/supabase", "/usr/local/bin/supabase"].find((candidate) =>
+    existsSync(candidate),
+  );
+const npxCommand = process.platform === "win32" ? "npx.cmd" : "npx";
+const args = ["db", "query", "--linked", "-f", smokeSqlPath, "-o", "table"];
+const command = installedSupabaseCli || npxCommand;
+const commandArgs = installedSupabaseCli ? args : ["--no-install", "supabase", ...args];
 
 function isRequired() {
   return process.argv.includes("--require-network") || process.env[REQUIRED_ENV] === "1";
@@ -24,7 +22,7 @@ function isRequired() {
 
 function runSupabaseQuery() {
   return new Promise((resolve) => {
-    const child = spawn(command, args, {
+    const child = spawn(command, commandArgs, {
       cwd: process.cwd(),
       env: process.env,
       stdio: ["ignore", "pipe", "pipe"],

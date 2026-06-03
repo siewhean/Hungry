@@ -16,7 +16,7 @@ import re
 import uuid
 from collections import Counter
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
@@ -443,7 +443,7 @@ def rest_import_run(
     valid_rows = sum(1 for row in staged_rows if row.values["validation_status"] == "valid")
     invalid_rows = sum(1 for row in staged_rows if row.values["validation_status"] == "invalid")
     dedupe_rows = sum(1 for row in staged_rows if row.values["validation_status"] == "dedupe_candidate")
-    now = datetime.now(UTC).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     payload = {
         "id": import_run_id,
         "source_slug": SOURCE_SLUG,

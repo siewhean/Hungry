@@ -85,34 +85,40 @@ Out of scope: any separate marketing website, unrelated Anthropic products menti
 - Confirm App Store Review and Google Play Data Safety pass on a pre-submission staging build.
 - Enable branch protection with required security workflow on `main`, including `npm audit`, `gitleaks`, and `trufflehog` gates.
 
-## Supabase Advisor Owner-Action Findings (2026-05-22)
+## Supabase Advisor Findings (2026-05-27)
 
-The following Supabase Security Advisor items cannot be fully resolved by normal project migrations and require dashboard, paid-plan, or Supabase owner/support action:
+Linked Supabase Advisor state after `20260527144633` and `20260527145534`:
 
-Current linked Security Advisor state after `20260522142004`: 9 total security findings: 1 owner-blocked `public.spatial_ref_sys` RLS error and 8 warnings: 3 anon PostGIS `st_estimatedextent(...)` warnings, 3 authenticated PostGIS `st_estimatedextent(...)` warnings, 1 `postgis` extension-in-public warning, and 1 leaked-password-protection warning. This is not Advisor-clean.
+- Security Advisor: one remaining warning, `auth_leaked_password_protection`.
+- Performance Advisor: no issues.
+- PostGIS: `postgis` is installed in `extensions`, `extrelocatable = false`.
+- `spatial_ref_sys`: table is now in `extensions`, owned by `supabase_admin`, with no exposed-`public` RLS finding.
 
 - `RLS Disabled in Public` on `public.spatial_ref_sys`
-  - Status: Owner/support action required.
-  - Rationale: `spatial_ref_sys` is extension-owned by PostGIS and cannot be altered by project migration roles (`ERROR 42501: must be owner of table spatial_ref_sys`).
-  - Mitigation while pending: No app-owned user data is stored in this table. Core app tables enforce RLS and explicit policies. Required owner SQL is documented at `supabase/manual/spatial_ref_sys_rls_admin.sql`.
+  - Status: Resolved by Supabase owner/support relocation.
+  - Evidence: linked object-state query shows `spatial_ref_sys` in `extensions`, not `public`.
 
 - `Extension in Public` for `postgis`
-  - Status: Dedicated hardening window required.
-  - Rationale: Current schema uses PostGIS from `public` for compatibility with existing migrations and production queries. PostGIS is owned by `supabase_admin`, is not normally relocatable, and Supabase documents support-assisted relocation for older public-schema installs. Relocatable extensions `vector`, `pg_trgm`, `btree_gist`, and `citext` were moved to `extensions` in `20260522135336_advisor_non_postgis_extension_schema_fix.sql`.
-  - Mitigation while pending: Do not move/recreate PostGIS as a quick fix. Plan extension relocation with backup, dependency rewrite, and full DB smoke.
+  - Status: Resolved by Supabase owner/support relocation.
+  - Evidence: linked extension-state query shows `postgis` in `extensions`.
 
 - `Security Definer Function Executable` on PostGIS `st_estimatedextent(...)`
-  - Status: Owner/support action required.
-  - Rationale: The three overloads are owned and granted by `supabase_admin`. Project migration `20260522135654_advisor_postgis_rpc_grant_fix.sql` attempted to revoke client execute grants but Supabase returned `WARNING 01006: no privileges could be revoked`.
-  - Mitigation while pending: App code does not call these RPCs; request Supabase owner/support to revoke anon/authenticated/public execute grants or relocate/update PostGIS.
+  - Status: Resolved after PostGIS relocation/update.
+  - Evidence: linked Security Advisor no longer reports PostGIS function warnings.
 
 - `Security Definer Function Executable` on app-owned authenticated RPC/helper functions
-  - Status: Resolved in staging.
-  - Rationale: `20260522142004_advisor_private_rpc_wrappers.sql` moved app-owned SECURITY DEFINER bodies into non-exposed `app_private` and preserved public RPC names as SECURITY INVOKER wrappers.
-  - Verification: Linked Security Advisor now reports no app-owned public SECURITY DEFINER executable findings; remaining function warnings are PostGIS-owned `st_estimatedextent(...)` overloads.
+  - Status: Resolved in linked staging.
+  - Rationale: `20260522142004_advisor_private_rpc_wrappers.sql` and `20260527144633_advisor_security_cleanup_public_rpc_wrappers.sql` move app-owned SECURITY DEFINER bodies into non-exposed `app_private` and preserve public RPC names as SECURITY INVOKER wrappers.
+  - Verification: `npm run audit:supabase:advisor-security:non-password` passes.
 
-Non-accepted (must fix):
+- Performance Advisor policy warnings
+  - Status: Resolved in linked staging.
+  - Rationale: `20260527145534_advisor_performance_policy_cleanup.sql` optimizes auth/current-setting policy calls and splits or merges overlapping permissive policies.
+  - Verification: linked Performance Advisor reports `No issues found`.
+
+Accepted external/Auth-console warning:
 
 - `Leaked Password Protection Disabled` (Auth)
-  - Status: Blocked on current Supabase plan.
-  - Required action: Enable leaked password protection under Authentication password security settings after upgrading to a paid plan, or run `npm run security:supabase:enable-leaked-password` with a `SUPABASE_ACCESS_TOKEN` that has auth config write access.
+  - Status: Accepted by project owner on 2026-05-27 as an ignored Supabase Auth warning for the current Advisor cleanup pass.
+  - Optional hardening: Enable leaked password protection under Authentication password security settings, or run `npm run security:supabase:enable-leaked-password` with a `SUPABASE_ACCESS_TOKEN` that has auth config write access.
+  - Gate: This warning is excluded from the current non-password Security Advisor hard gate; do not treat it as an app-owned schema/RLS blocker.

@@ -32,6 +32,11 @@ src/graphify-out/
 .env.staging.local
 .env.production.local
 .env.local
+tasks/release-evidence/*.env
+!tasks/release-evidence/*.example.env
+*.watchman-cookie-*
+.watchman-cookie-*
+node_modules.bak_*/
 
 # Local build/cache artifacts (large)
 .DerivedData/

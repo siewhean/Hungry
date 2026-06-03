@@ -1,25 +1,21 @@
 #!/usr/bin/env node
 
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 
 const REQUIRED_ENV = "HUNGRY_SUPABASE_ADVISOR_REQUIRED";
 const FAIL_ON_EXTERNAL_ENV = "HUNGRY_SUPABASE_ADVISOR_FAIL_ON_EXTERNAL";
 const IGNORE_LEAKED_PASSWORD_ENV = "HUNGRY_SUPABASE_ADVISOR_IGNORE_LEAKED_PASSWORD";
 const npxCommand = process.env.SUPABASE_NPX_COMMAND || "npx";
 const npxInstallArgs = process.env.SUPABASE_NPX_ALLOW_INSTALL === "1" ? [] : ["--no-install"];
-const args = [
-  ...npxInstallArgs,
-  "supabase",
-  "db",
-  "advisors",
-  "--linked",
-  "--type",
-  "security",
-  "--level",
-  "warn",
-  "-o",
-  "json",
-];
+const installedSupabaseCli =
+  process.env.SUPABASE_CLI_COMMAND ||
+  ["/opt/homebrew/bin/supabase", "/usr/local/bin/supabase"].find((candidate) =>
+    existsSync(candidate),
+  );
+const args = ["db", "advisors", "--linked", "--type", "security", "--level", "warn", "-o", "json"];
+const command = installedSupabaseCli || npxCommand;
+const commandArgs = installedSupabaseCli ? args : [...npxInstallArgs, "supabase", ...args];
 
 function isRequired() {
   return process.argv.includes("--require-network") || process.env[REQUIRED_ENV] === "1";
@@ -38,7 +34,7 @@ function shouldIgnoreLeakedPassword() {
 
 function runAdvisor() {
   return new Promise((resolve) => {
-    const child = spawn(npxCommand, args, {
+    const child = spawn(command, commandArgs, {
       cwd: process.cwd(),
       env: process.env,
       stdio: ["ignore", "pipe", "pipe"],
@@ -72,9 +68,11 @@ function isSkippableEnvironmentError(stderr) {
     "enotfound",
     "failed to dial",
     "lookup api.supabase.com",
+    "missing packages and no yes option",
     "no such host",
     "not logged in",
     "not linked",
+    "npx canceled due to missing packages",
     "spawn npx enoent",
     "timed out",
   ].some((snippet) => message.includes(snippet));

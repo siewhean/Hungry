@@ -44,6 +44,12 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Merchant catalog E2E smoke
+        run: npm run test:e2e:merchant-catalog
+
       - name: Supabase static audit
         run: npm run audit:supabase:static
 

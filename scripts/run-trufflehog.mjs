@@ -7,6 +7,7 @@ const args = [
   ...globalArgs,
   "filesystem",
   "--only-verified",
+  "--fail",
   "--exclude-paths=scripts/trufflehog-exclude-paths.txt",
   ".",
 ];

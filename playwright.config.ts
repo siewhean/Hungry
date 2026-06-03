@@ -50,7 +50,7 @@ export default defineConfig({
   ],
   webServer: shouldStartWebServer
     ? {
-        command: `node ./scripts/run-expo.cjs start --web --localhost --port=${port} --clear`,
+        command: `node ./scripts/run-expo.cjs start --web --localhost --port ${port} --clear`,
         url: baseURL,
         timeout: 120_000,
         reuseExistingServer: !process.env.CI,
@@ -60,6 +60,7 @@ export default defineConfig({
           HUNGRY_DATA_SOURCE: "mock",
           EXPO_PUBLIC_HUNGRY_DATA_SOURCE: "mock",
           EXPO_PUBLIC_DISABLE_POSTHOG: "1",
+          EXPO_NO_DOTENV: "1",
           EXPO_NO_TELEMETRY: "1",
         },
       }

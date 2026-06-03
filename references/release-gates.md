@@ -36,8 +36,8 @@ This checklist is the canonical release gate for Apple App Store and Google Play
 1. `tasks/backlog.md` rows for release blockers are updated with status.
 2. `tasks/verification.md` includes dated rows for latest gate runs.
 3. `tasks/session-log.md` includes release work log entries.
-4. `tasks/Roadmap/claude-full-project-audit-implementation-status.md` names any remaining No-Go blockers.
-5. `npm run release:ready` exits 0 only when local gates pass and external blockers are cleared.
+4. `tasks/Roadmap/claude-full-project-audit.md` names any remaining No-Go blockers.
+5. `npm run release:ready` exits 0 only when local gates pass and every external blocker is backed by `tasks/release-evidence/full-audit-v1.env`.
 6. `npm run release:ready:local` can be used for local gate rehearsal without claiming public-launch readiness.
 
 ## Verdict

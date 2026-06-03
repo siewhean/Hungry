@@ -4,6 +4,11 @@ Project ref: `vlqfgmrsprbrgzteixsj`
 
 ## Request
 
+Status update, 2026-05-27: Supabase Support relocation is complete on the
+linked project. Live checks show `postgis` in `extensions`,
+`spatial_ref_sys` in `extensions`, and no remaining non-password Security
+Advisor findings. Keep this file as the historical support/evidence record.
+
 Please resolve the remaining Supabase Security Advisor findings that require
 `supabase_admin` / PostGIS owner action:
 
@@ -189,7 +194,7 @@ The command is read-only and prints the current linked role, PostGIS ownership,
 `spatial_ref_sys` RLS state, `st_estimatedextent(...)` ACLs, active PostGIS
 typed columns, and app-owned geo RPC search paths.
 
-```text
+````text
 Project ref: vlqfgmrsprbrgzteixsj
 
 Please resolve the remaining Supabase Security Advisor findings for
@@ -216,9 +221,16 @@ Please apply the owner-context RLS/revoke hardening for spatial_ref_sys and
 st_estimatedextent, and advise or perform the supported PostGIS relocation from
 public to extensions for this existing project.
 
+Use this exact SQL bundle in the owner SQL session (or Supabase Support):
+
+```sql
+\i supabase/manual/postgis_owner_remediation.sql
+````
+
 Prior CLI support report for spatial_ref_sys:
 5789f01ec3724199bf9e675a48ca92f1
-```
+
+````
 
 ## Optional CLI support-ticket path
 
@@ -230,7 +242,7 @@ probe to create a support ticket without changing database state:
 ```bash
 npx --no-install supabase db query --linked --create-ticket -o json \
   "begin; alter table public.spatial_ref_sys enable row level security; rollback;"
-```
+````
 
 Do not run the full owner-action SQL from the normal project role just to retry
 the known failure; current live metadata already proves the project role cannot
@@ -265,6 +277,42 @@ If Supabase recommends clearing both `rls_disabled_in_public` and
 `public` to `extensions`. This must be scheduled separately because current
 Hungry migrations and database functions depend on existing PostGIS objects and
 need a full backup, dependency review, and linked smoke verification.
+
+2026-05-26 Supabase Support confirmed this is the recommended path for the
+linked project because PostGIS was enabled in `public` under `supabase_admin`.
+Support offered to run the owner-context relocation SQL below with explicit
+project-owner approval:
+
+```sql
+BEGIN;
+UPDATE pg_extension
+  SET extrelocatable = true
+WHERE extname = 'postgis';
+
+ALTER EXTENSION postgis
+  SET SCHEMA extensions;
+
+ALTER EXTENSION postgis
+  UPDATE TO "3.3.7next";
+
+ALTER EXTENSION postgis UPDATE;
+
+UPDATE pg_extension
+  SET extrelocatable = false
+WHERE extname = 'postgis';
+COMMIT;
+```
+
+Approval wording to send to Supabase Support:
+
+> I approve Supabase Support relocating the existing `postgis` extension for
+> the linked Hungry project from `public` to `extensions` using the
+> transaction SQL you provided, including temporarily setting
+> `extrelocatable = true`, updating through `"3.3.7next"`, and restoring
+> `extrelocatable = false`.
+
+Owner approval recorded in this workspace: 2026-05-26. Supabase Support
+relocation verified from this workspace on 2026-05-27.
 
 After support-assisted relocation, rerun:
 
