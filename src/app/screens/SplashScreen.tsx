@@ -24,6 +24,7 @@ type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
 
 export function SplashScreen({ navigation }: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const { palette, motion, spacing, radii, typography } = useHungryTheme();
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
@@ -81,6 +82,14 @@ export function SplashScreen({ navigation }: Props) {
         return;
       }
 
+      if (!isAuthenticated) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+        });
+        return;
+      }
+
       if (!hasCompletedOnboarding) {
         navigation.reset({
           index: 0,
@@ -103,6 +112,7 @@ export function SplashScreen({ navigation }: Props) {
     return () => clearTimeout(timer);
   }, [
     hasCompletedOnboarding,
+    isAuthenticated,
     isAuthReady,
     motion.splashDot,
     motion.splashFast,

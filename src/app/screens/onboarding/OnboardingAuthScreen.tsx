@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { View, Animated, Pressable } from "react-native";
+import type { NavigationProp } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react-native";
@@ -8,11 +9,11 @@ import * as Haptics from "expo-haptics";
 
 import { AppText, Button, Input } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { getMockSignUpFailure } from "@/features/auth/mockAuth";
 import { validateEmail, validatePassword, validateRequired } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
-import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -23,6 +24,7 @@ import {
   getSignUpProviderSuccessMessage,
   type AuthProvider,
 } from "../auth/authCopy";
+import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "OnboardingAuth">;
@@ -38,7 +40,6 @@ export function OnboardingAuthScreen({ navigation }: Props) {
   const [tab, setTab] = useState<Tab>("signup");
   const [showPassword, setShowPassword] = useState(false);
 
-  const applyProfile = useProfileStore((s) => s.applyProfile);
   const showToast = useUIStore((s) => s.showToast);
   const completeAuth = useSessionStore((s) => s.completeAuth);
   const completeOnboarding = useSessionStore((s) => s.completeOnboarding);
@@ -71,6 +72,19 @@ export function OnboardingAuthScreen({ navigation }: Props) {
     completeOnboarding();
   };
 
+  const applySessionProfile = async (
+    sessionProfile: Parameters<typeof applySignedInProfile>[0],
+  ) => {
+    await applySignedInProfile(sessionProfile, {
+      onSyncWarning: () => {
+        showToast({
+          message: "Signed in, but your taste profile could not sync. Try updating it again later.",
+          tone: "warning",
+        });
+      },
+    });
+  };
+
   const handleSignUp = signUpForm.handleSubmit(async (values) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
@@ -83,10 +97,21 @@ export function OnboardingAuthScreen({ navigation }: Props) {
         );
         if (!session) {
           showToast({ message: AUTH_COPY.signUp.emailVerificationToast, tone: "success" });
-          navigation.navigate("OnboardingIntro1"); // fallback — email confirm required
+          navigation.getParent<NavigationProp<RootStackParamList>>()?.reset({
+            index: 0,
+            routes: [
+              {
+                name: "AuthStack",
+                params: {
+                  screen: "EmailVerification",
+                  params: { email: values.email, completedOnboarding: true },
+                },
+              },
+            ],
+          });
           return;
         }
-        applyProfile(session.profile);
+        await applySessionProfile(session.profile);
         completeAuth({ authProvider: "email", completedOnboarding: true, trackSignInEvent: false });
         finishOnboarding();
         return;
@@ -118,7 +143,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
       const dataSource = getConfiguredDataSource();
       if (dataSource === "supabase") {
         const session = await getHungryService().auth.signIn(values.email, values.password);
-        applyProfile(session.profile);
+        await applySessionProfile(session.profile);
         completeAuth({ authProvider: "email", completedOnboarding: true, trackSignInEvent: false });
         finishOnboarding();
         return;
@@ -139,7 +164,7 @@ export function OnboardingAuthScreen({ navigation }: Props) {
           provider === "google"
             ? await service.auth.signInWithGoogle()
             : await service.auth.signInWithApple();
-        applyProfile(session.profile);
+        await applySessionProfile(session.profile);
       }
       showToast({ message: getSignUpProviderSuccessMessage(provider), tone: "success" });
       completeAuth({ authProvider: provider, completedOnboarding: true, trackSignInEvent: false });

@@ -221,6 +221,8 @@ PODS:
     - ExpoModulesCore
   - ExpoAudio (55.0.14):
     - ExpoModulesCore
+  - ExpoCrypto (55.0.15):
+    - ExpoModulesCore
   - ExpoDomWebView (55.0.6):
     - ExpoModulesCore
   - ExpoFileSystem (55.0.22):
@@ -3507,6 +3509,7 @@ DEPENDENCIES:
   - expo-dev-menu-interface (from `../node_modules/expo-dev-menu-interface/ios`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
   - ExpoAudio (from `../node_modules/expo-audio/ios`)
+  - ExpoCrypto (from `../node_modules/expo-crypto/ios`)
   - "ExpoDomWebView (from `../node_modules/expo/node_modules/@expo/log-box/node_modules/@expo/dom-webview/ios`)"
   - ExpoFileSystem (from `../node_modules/expo/node_modules/expo-file-system/ios`)
   - ExpoFont (from `../node_modules/expo-font/ios`)
@@ -3663,6 +3666,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-asset/ios"
   ExpoAudio:
     :path: "../node_modules/expo-audio/ios"
+  ExpoCrypto:
+    :path: "../node_modules/expo-crypto/ios"
   ExpoDomWebView:
     :path: "../node_modules/expo/node_modules/@expo/log-box/node_modules/@expo/dom-webview/ios"
   ExpoFileSystem:
@@ -3895,6 +3900,7 @@ SPEC CHECKSUMS:
   expo-dev-menu-interface: 833795f4c98a674d36cbc12b11b21756c38e01e8
   ExpoAsset: 9d035bcc19d8688e9ddb2c579c50c8f83824188e
   ExpoAudio: bb9b02133e7ed48b18a58a5fad9a7a90289fa94d
+  ExpoCrypto: 3deb1f311979766b91f8ad2e1d1feb4699688fb4
   ExpoDomWebView: 317a0d188cfdb850fc6fd2a43a2fc132dfd171ee
   ExpoFileSystem: ce9db64ae67e6dcc8db42365e499f9fcc4fbe8ec
   ExpoFont: 21550be2946ea5bbf50f1a20b31facd19ba4150c

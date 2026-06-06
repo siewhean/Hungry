@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { createRootLinking, parseOrderDeepLinkQuery } from "@/app/navigation/linking";
 
-test("root linking config exposes dish, venue, and order entry points", () => {
+test("root linking config exposes public dish, venue, and order entry points", () => {
   const linking = createRootLinking("exp://127.0.0.1:8081/--/");
   const screens = linking.config.screens as Record<string, unknown>;
   const authStack = screens.AuthStack as { screens: Record<string, string> };
@@ -12,17 +12,7 @@ test("root linking config exposes dish, venue, and order entry points", () => {
   assert.equal(screens.DishDetail, "dish/:id");
   assert.equal(screens.StallDetail, "venue/:id");
   assert.equal(screens.Post, "order");
-  assert.deepEqual(screens.MerchantTabs, {
-    path: "merchant",
-    screens: {
-      Analytics: "analytics",
-      Dashboard: "",
-      Menu: "menu",
-      MerchantSettings: "settings",
-      Profile: "profile",
-      VerificationCentre: "verification",
-    },
-  });
+  assert.equal(screens.MerchantTabs, undefined);
 });
 
 test("order deep link parses venueId query parameter", () => {

@@ -19,9 +19,10 @@ export function getConfiguredDataSource(): HungryDataSource {
   if (configuredDataSourceOverride) {
     return configuredDataSourceOverride;
   }
+  const e2eSource = process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE?.trim().toLowerCase();
   const privateSource = process.env.HUNGRY_DATA_SOURCE?.trim().toLowerCase();
   const publicSource = process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE?.trim().toLowerCase();
-  const explicit = privateSource || publicSource;
+  const explicit = e2eSource || privateSource || publicSource;
   // If explicitly set, honour it (allows forcing mock even when credentials exist).
   if (explicit) return explicit === "supabase" ? "supabase" : "mock";
   // If not explicitly set but credentials are present, prefer supabase automatically.

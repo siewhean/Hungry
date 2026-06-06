@@ -4,8 +4,8 @@ import { Heart } from "lucide-react-native";
 
 import { AccessibleImage, AppText, Button, Card } from "@/components/ui";
 import { dataRepository } from "@/lib/services/serviceProvider";
-import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import { getOnboardingDishImageSource } from "./onboardingFoodImages";
@@ -14,9 +14,9 @@ type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileResul
 
 export function TasteProfileResultScreen({ navigation }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
-  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const hasSkippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
+  const showToast = useUIStore((state) => state.showToast);
   const dishes = dataRepository.listPopularNearby().slice(0, 4);
 
   return (
@@ -67,8 +67,14 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Save ${dish.name}`}
-                    accessibilityHint="Adds this dish to your favourites"
-                    onPress={() => toggleFavourite(dish)}
+                    accessibilityHint="Create or sign in to an account before saving this dish"
+                    onPress={() => {
+                      showToast({
+                        message: "Create or sign in to an account before saving dishes.",
+                        tone: "warning",
+                      });
+                      navigation.navigate("OnboardingAuth");
+                    }}
                     style={{ padding: spacing[1] }}
                   >
                     <Heart color={palette.orange} size={15} />

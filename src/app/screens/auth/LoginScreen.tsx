@@ -6,11 +6,11 @@ import { useState } from "react";
 
 import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { getMockLoginFailure } from "@/features/auth/mockAuth";
 import { validateEmail, validateRequired } from "@/features/auth/validation";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
-import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -30,7 +30,6 @@ export function LoginScreen({ navigation }: Props) {
   const { colorScheme, palette, spacing } = useHungryTheme();
   const oauthProvidersEnabled = FEATURE_FLAGS.oauthProvidersEnabled;
   const [showPassword, setShowPassword] = useState(false);
-  const applyProfile = useProfileStore((state) => state.applyProfile);
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const showToast = useUIStore((state) => state.showToast);
 
@@ -46,7 +45,13 @@ export function LoginScreen({ navigation }: Props) {
     try {
       if (getConfiguredDataSource() === "supabase") {
         const session = await getHungryService().auth.signIn(values.email, values.password);
-        applyProfile(session.profile);
+        await applySignedInProfile(session.profile, {
+          onSyncWarning: () =>
+            showToast({
+              message: "Signed in, but your taste profile could not sync. Try updating it later.",
+              tone: "warning",
+            }),
+        });
       } else {
         const failure = getMockLoginFailure(values.email, values.password);
         if (failure) {
@@ -107,7 +112,13 @@ export function LoginScreen({ navigation }: Props) {
         } else {
           session = await service.auth.signInWithApple();
         }
-        applyProfile(session.profile);
+        await applySignedInProfile(session.profile, {
+          onSyncWarning: () =>
+            showToast({
+              message: "Signed in, but your taste profile could not sync. Try updating it later.",
+              tone: "warning",
+            }),
+        });
       }
       completeAuth({ completedOnboarding: true, skippedTasteQuiz: true });
       showToast({ message: AUTH_COPY.login.providerSuccessToast, tone: "success" });

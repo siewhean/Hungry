@@ -96,6 +96,16 @@ function syncProfileForAuthState(isAuthenticated: boolean, userId?: string | nul
 function clearAccountScopedStores(): void {
   getMerchantStoreState().clearMerchant();
   useLocationStore.getState().resetLocationState();
+  const { useSocialStore } = require("./useSocialStore") as typeof import("./useSocialStore");
+  const { useActivityStore } = require("./useActivityStore") as typeof import("./useActivityStore");
+  const { usePublishedPostStore } =
+    require("./usePublishedPostStore") as typeof import("./usePublishedPostStore");
+  const { useStallInteractionStore } =
+    require("./useStallInteractionStore") as typeof import("./useStallInteractionStore");
+  useSocialStore.getState().clearAccountScopedState();
+  useActivityStore.getState().clearAccountScopedState();
+  usePublishedPostStore.getState().clearPosts();
+  useStallInteractionStore.getState()._reset();
 }
 
 function shouldEnablePostHogIdentity() {

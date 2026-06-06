@@ -1,35 +1,38 @@
 export type AppEnvironment = "development" | "staging" | "production";
 
-function resolveAppEnvironment(value: string | undefined): AppEnvironment {
+function resolveAppEnvironment(
+  value: string | undefined,
+  nodeEnv = process.env.NODE_ENV,
+): AppEnvironment {
   if (value === "staging") return "staging";
   if (value === "production") return "production";
-  return "development";
+  if (value === "development") return "development";
+  return nodeEnv === "development" ? "development" : "production";
 }
 
-export function resolveFeatureFlags(appEnvRaw = process.env.EXPO_PUBLIC_APP_ENV) {
-  const appEnv = resolveAppEnvironment(appEnvRaw?.trim().toLowerCase());
-  const merchantClaimCtaEnabled =
-    appEnv === "staging" || (typeof __DEV__ !== "undefined" && __DEV__ === true);
-
-  const merchantCentreEnabled = true;
-
-  const prototypeRoutesEnabled =
-    appEnv !== "production" || (typeof __DEV__ !== "undefined" && __DEV__ === true);
+export function resolveFeatureFlags(
+  appEnvRaw = process.env.EXPO_PUBLIC_APP_ENV,
+  nodeEnv = process.env.NODE_ENV,
+) {
+  const appEnv = resolveAppEnvironment(appEnvRaw?.trim().toLowerCase(), nodeEnv);
+  const prototypeRoutesEnabled = appEnv !== "production";
   const nonProductionSurfaceEnabled = prototypeRoutesEnabled;
+  const merchantClaimCtaEnabled = nonProductionSurfaceEnabled;
+  const merchantCentreEnabled = nonProductionSurfaceEnabled;
 
   return {
     readsEnabled: true,
     notificationsEnabled: false,
-    mockMapboxEnabled: false,
+    mockMapboxEnabled: process.env.EXPO_PUBLIC_MOCK_MAPBOX_ENABLED === "1",
     hungryWheelEnabled: true,
-    directMessagesEnabled: true,
-    commentsEnabled: true,
+    directMessagesEnabled: nonProductionSurfaceEnabled,
+    commentsEnabled: nonProductionSurfaceEnabled,
     oauthProvidersEnabled: nonProductionSurfaceEnabled,
     floorplansEnabled: false,
     craveEnabled: true,
-    gamificationEnabled: true,
-    collectionsEnabled: true,
-    storiesEnabled: true,
+    gamificationEnabled: nonProductionSurfaceEnabled,
+    collectionsEnabled: nonProductionSurfaceEnabled,
+    storiesEnabled: nonProductionSurfaceEnabled,
     merchantClaimCtaEnabled,
     merchantCentreEnabled,
     prototypeRoutesEnabled,

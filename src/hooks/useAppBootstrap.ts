@@ -138,6 +138,7 @@ export function useAppBootstrap() {
 
   useLayoutEffect(() => {
     if (!isUserMode) {
+      setIsDataSourceReady(false);
       const restoredMockSession =
         isAuthenticated &&
         authenticatedUserId &&
@@ -151,7 +152,17 @@ export function useAppBootstrap() {
       return;
     }
 
-    // User mode is production-only: force Supabase mode regardless of prior mock sessions.
+    const configuredDataSource = getConfiguredDataSource();
+    setIsDataSourceReady(false);
+
+    if (configuredDataSource === "mock") {
+      setMockServiceProvider();
+      syncProfile(isAuthenticated, authenticatedUserId);
+      setIsDataSourceReady(true);
+      return;
+    }
+
+    // Supabase-configured user mode uses live data instead of prior mock sessions.
     const hasValidSupabaseAuth = isAuthenticated && isUuidLikeAuthUserId(authenticatedUserId);
     setConfiguredDataSource("supabase");
     setSupabaseServiceProvider();
@@ -163,7 +174,20 @@ export function useAppBootstrap() {
     // provider swap, so user-mode entry screens do not briefly render
     // legacy mock profiles.
     syncProfile(hasValidSupabaseAuth, authenticatedUserId);
-    setIsDataSourceReady(true);
+
+    let active = true;
+    const { refreshSupabaseRepositoryCache } =
+      require("@/lib/services/supabase/supabaseRepository") as typeof import("@/lib/services/supabase/supabaseRepository");
+    void refreshSupabaseRepositoryCache()
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) {
+          setIsDataSourceReady(true);
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, [authDataSource, applyAuthStateFromSession, authenticatedUserId, isAuthenticated, isUserMode]);
 
   useEffect(() => {

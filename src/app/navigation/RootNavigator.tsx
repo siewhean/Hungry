@@ -20,6 +20,7 @@ import { FloatingToast } from "@/components/ui";
 import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
 
 import { useSessionStore } from "@/store/useSessionStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -34,6 +35,7 @@ const CredEarnedToastComponent =
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
+const isMockE2eDataSource = process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE === "mock";
 
 type RootRouteName = keyof RootStackParamList;
 type MainTabRouteName = keyof MainTabParamList;
@@ -409,6 +411,8 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const sessionExpired = useSessionStore((state) => state.sessionExpired);
   const dismissSessionExpiry = useSessionStore((state) => state.dismissSessionExpiry);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isMerchantMode = useMerchantStore((state) => state.account !== null);
   const resetScrollBack = useUIStore((state) => state.resetScrollBack);
   const isOffline = useUIStore((state) => state.isOffline);
 
@@ -475,6 +479,19 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 
     const rootState = navigationRef.getRootState();
     const currentTopRoute = rootState.routes[rootState.index]?.name;
+    if (
+      __DEV__ &&
+      currentTopRoute === "DeveloperLauncher" &&
+      isAuthenticated &&
+      hasCompletedOnboarding &&
+      !isDeveloperMode &&
+      !isMerchantMode &&
+      !isMockE2eDataSource
+    ) {
+      navigateHome();
+      return;
+    }
+
     if (currentTopRoute === "AuthStack") {
       if (isAuthenticated && !hasCompletedOnboarding) {
         navigationRef.resetRoot({
@@ -490,16 +507,16 @@ export function RootNavigator({ theme }: { theme: Theme }) {
     }
 
     if (currentTopRoute === "OnboardingStack" && hasCompletedOnboarding) {
-      if (isAuthenticated) {
-        navigateHome();
-      } else {
-        navigationRef.resetRoot({
-          index: 0,
-          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-        });
-      }
+      navigateHome();
     }
-  }, [hasCompletedOnboarding, isAuthenticated, isAuthReady, navigateHome]);
+  }, [
+    hasCompletedOnboarding,
+    isAuthenticated,
+    isAuthReady,
+    isDeveloperMode,
+    isMerchantMode,
+    navigateHome,
+  ]);
 
   useEffect(() => {
     if (!navigationRef.isReady()) {
@@ -613,10 +630,12 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
           <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
           <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
-          <RootStack.Screen
-            getComponent={loadMerchantClaimExplainerScreen}
-            name="MerchantClaimExplainer"
-          />
+          {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
+            <RootStack.Screen
+              getComponent={loadMerchantClaimExplainerScreen}
+              name="MerchantClaimExplainer"
+            />
+          ) : null}
           <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
           <RootStack.Screen getComponent={loadReviewStack} name="ReviewStack" />
           <RootStack.Screen getComponent={loadWheelStack} name="WheelStack" />
@@ -690,14 +709,18 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               <RootStack.Screen getComponent={loadCollectionDetailScreen} name="CollectionDetail" />
             </>
           ) : null}
-          <RootStack.Screen
-            getComponent={loadPortfolioPublicViewScreen}
-            name="PortfolioPublicView"
-          />
-          <RootStack.Screen
-            getComponent={loadAdminPortfolioFlagsScreen}
-            name="AdminPortfolioFlags"
-          />
+          {FEATURE_FLAGS.prototypeRoutesEnabled ? (
+            <>
+              <RootStack.Screen
+                getComponent={loadPortfolioPublicViewScreen}
+                name="PortfolioPublicView"
+              />
+              <RootStack.Screen
+                getComponent={loadAdminPortfolioFlagsScreen}
+                name="AdminPortfolioFlags"
+              />
+            </>
+          ) : null}
         </RootStack.Navigator>
       </NavigationContainer>
       <GlobalScrollBackButton />

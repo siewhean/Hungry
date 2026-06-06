@@ -28,13 +28,15 @@ test("Supabase auth bootstrap gates protected-route redirects until session rest
 
 test("Supabase auth responses hydrate the app profile store", () => {
   const profileStore = read("src/store/useProfileStore.ts");
+  const profileHelper = read("src/features/auth/applySignedInProfile.ts");
   const loginScreen = read("src/app/screens/auth/LoginScreen.tsx");
   const signUpScreen = read("src/app/screens/auth/SignUpScreen.tsx");
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
 
   assert.match(profileStore, /applyProfile: \(profile: UserProfile\) => void/);
-  assert.match(loginScreen, /applyProfile\(session\.profile\)/);
-  assert.match(signUpScreen, /applyProfile\(session\.profile\)/);
+  assert.match(profileHelper, /useProfileStore\.getState\(\)\.applyProfile\(mergedProfile\)/);
+  assert.match(loginScreen, /applySignedInProfile\(session\.profile/);
+  assert.match(signUpScreen, /applySignedInProfile\(session\.profile/);
   assert.match(bootstrap, /getHungryService\(\)\.profile\.getProfile\(\)/);
   assert.doesNotMatch(
     loginScreen,
@@ -72,6 +74,18 @@ test("restored mock sessions keep the mock provider instead of being rejected as
   assert.match(bootstrap, /const restoredMockSession =/);
   assert.match(bootstrap, /authDataSource === "mock"/);
   assert.match(bootstrap, /setMockServiceProvider\(\)/);
+});
+
+test("explicit mock data source keeps user-mode bootstrap on mock services for dev and E2E", () => {
+  const bootstrap = read("src/hooks/useAppBootstrap.ts");
+
+  assert.match(bootstrap, /const configuredDataSource = getConfiguredDataSource\(\)/);
+  assert.match(
+    bootstrap,
+    /if \(configuredDataSource === "mock"\) \{\s*setMockServiceProvider\(\);[\s\S]*setIsDataSourceReady\(true\);\s*return;\s*\}/,
+  );
+  assert.match(bootstrap, /setConfiguredDataSource\("supabase"\)/);
+  assert.match(bootstrap, /setSupabaseServiceProvider\(\)/);
 });
 
 test("Supabase null-session bootstrap events do not clear a restored app session", () => {

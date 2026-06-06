@@ -49,6 +49,15 @@ test("mode presets keep developer data mock-only and user data supabase-backed",
   assert.match(developerLauncher, /const enterDeveloperMode[\s\S]*setMockServiceProvider\(\)/);
   assert.match(developerLauncher, /const enterMerchantMode[\s\S]*setMockServiceProvider\(\)/);
   assert.match(developerLauncher, /const enterUserMode[\s\S]*setSupabaseServiceProvider\(\)/);
+  assert.match(developerLauncher, /const authenticatedUserId = useSessionStore/);
+  assert.match(developerLauncher, /isAuthenticated && isUuidLikeUserId\(authenticatedUserId\)/);
+  assert.match(developerLauncher, /\.auth\.getCurrentSession\(\)/);
+  assert.match(developerLauncher, /applyProfile\(session\.profile\)/);
+  assert.match(developerLauncher, /completeAuth\(\{[\s\S]*trackSignInEvent: false/);
+  assert.doesNotMatch(
+    developerLauncher,
+    /const enterUserMode = \(\) => \{[\s\S]*setSupabaseServiceProvider\(\);\s*setMerchantAccount\(null\);\s*clearSession\(\);\s*completeAuth\(\);/,
+  );
   assert.doesNotMatch(developerLauncher, /const enterUserMode[\s\S]*resetServiceProvider\(\)/);
 });
 

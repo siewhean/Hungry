@@ -74,7 +74,7 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
   );
   assert.match(
     home,
-    /getServiceProvider\(\)\.mode === "mock"[\s\S]*\? activityUpdates[\s\S]*: \[\.\.\.dbActivityEvents, \.\.\.activityUpdates\]/,
+    /serviceProviderMode === "mock"[\s\S]*\? activityUpdates[\s\S]*: \[\.\.\.dbActivityEvents, \.\.\.activityUpdates\]/,
   );
   assert.match(home, /void fetchActivityEvents\(\)/);
   assert.match(home, /getHungryService\(\)[\s\S]*\.chat\.listConversations\(\)/);
@@ -195,7 +195,8 @@ test("activity messages and update posts are functional routes, not static mocku
   assert.match(detail, /likeCount: 0/);
   assert.match(detail, /commentCount: 0/);
   assert.match(detail, /ReviewShareSheet/);
-  assert.match(detail, /incrementShare\(activeShareReview\.postId\)/);
+  assert.match(detail, /onShared=\{\(postId, channel\) => \{/);
+  assert.match(detail, /incrementShare\(postId, channel\)/);
   assert.doesNotMatch(detail, /likeCount: primaryDish\?\.reviews\.length/);
   assert.doesNotMatch(detail, /commentCount: primaryDish\?\.reviews\.length/);
   assert.doesNotMatch(detail, /localCommentCount/);

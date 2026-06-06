@@ -12,6 +12,15 @@ function read(relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
+function restoreEnv(name: string, value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env[name];
+    return;
+  }
+
+  process.env[name] = value;
+}
+
 test("getConfiguredDataSource prefers HUNGRY_DATA_SOURCE when set", () => {
   const previousPrivate = process.env.HUNGRY_DATA_SOURCE;
   const previousPublic = process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE;
@@ -23,8 +32,8 @@ test("getConfiguredDataSource prefers HUNGRY_DATA_SOURCE when set", () => {
   process.env.HUNGRY_DATA_SOURCE = "mock";
   assert.equal(getConfiguredDataSource(), "mock");
 
-  process.env.HUNGRY_DATA_SOURCE = previousPrivate;
-  process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = previousPublic;
+  restoreEnv("HUNGRY_DATA_SOURCE", previousPrivate);
+  restoreEnv("EXPO_PUBLIC_HUNGRY_DATA_SOURCE", previousPublic);
 });
 
 test("getConfiguredDataSource falls back to EXPO_PUBLIC_HUNGRY_DATA_SOURCE when private var blank", () => {
@@ -35,8 +44,23 @@ test("getConfiguredDataSource falls back to EXPO_PUBLIC_HUNGRY_DATA_SOURCE when 
   process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = "supabase";
   assert.equal(getConfiguredDataSource(), "supabase");
 
-  process.env.HUNGRY_DATA_SOURCE = previousPrivate;
-  process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = previousPublic;
+  restoreEnv("HUNGRY_DATA_SOURCE", previousPrivate);
+  restoreEnv("EXPO_PUBLIC_HUNGRY_DATA_SOURCE", previousPublic);
+});
+
+test("getConfiguredDataSource lets E2E public source override local dotenv defaults", () => {
+  const previousE2e = process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE;
+  const previousPrivate = process.env.HUNGRY_DATA_SOURCE;
+  const previousPublic = process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE;
+
+  process.env.EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE = "mock";
+  process.env.HUNGRY_DATA_SOURCE = "supabase";
+  process.env.EXPO_PUBLIC_HUNGRY_DATA_SOURCE = "supabase";
+  assert.equal(getConfiguredDataSource(), "mock");
+
+  restoreEnv("EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE", previousE2e);
+  restoreEnv("HUNGRY_DATA_SOURCE", previousPrivate);
+  restoreEnv("EXPO_PUBLIC_HUNGRY_DATA_SOURCE", previousPublic);
 });
 
 test("Supabase client persists auth sessions through secure storage with PKCE enabled", () => {

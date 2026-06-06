@@ -17,17 +17,19 @@ function protectedRoutesBlock(source: string): string {
   return match[1];
 }
 
-test("production route gates expose audited v1 surfaces and hide prototypes and floorplans", () => {
+test("production route gates keep advanced surfaces behind MVP-safe flags", () => {
   const flags = read("src/constants/featureFlags.ts");
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
+  const linking = read("src/app/navigation/linking.ts");
 
   assert.match(flags, /prototypeRoutesEnabled/);
-  assert.match(flags, /directMessagesEnabled: true/);
-  assert.match(flags, /gamificationEnabled: true/);
-  assert.match(flags, /collectionsEnabled: true/);
-  assert.match(flags, /storiesEnabled: true/);
-  assert.match(flags, /commentsEnabled: true/);
-  assert.match(flags, /const merchantCentreEnabled = true/);
+  assert.match(flags, /directMessagesEnabled: nonProductionSurfaceEnabled/);
+  assert.match(flags, /gamificationEnabled: nonProductionSurfaceEnabled/);
+  assert.match(flags, /collectionsEnabled: nonProductionSurfaceEnabled/);
+  assert.match(flags, /storiesEnabled: nonProductionSurfaceEnabled/);
+  assert.match(flags, /commentsEnabled: nonProductionSurfaceEnabled/);
+  assert.match(flags, /const merchantCentreEnabled = nonProductionSurfaceEnabled/);
+  assert.match(flags, /const merchantClaimCtaEnabled = nonProductionSurfaceEnabled/);
   assert.match(flags, /oauthProvidersEnabled: nonProductionSurfaceEnabled/);
   assert.match(flags, /floorplansEnabled: false/);
   assert.match(flags, /appEnv !== "production"/);
@@ -47,6 +49,8 @@ test("production route gates expose audited v1 surfaces and hide prototypes and 
   }
   assert.match(rootNavigator, /FEATURE_FLAGS\.merchantCentreEnabled \? \(/);
   assert.match(rootNavigator, /name="MerchantTabs"/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.merchantClaimCtaEnabled \? \(/);
+  assert.match(rootNavigator, /name="MerchantClaimExplainer"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.directMessagesEnabled \? \(/);
   assert.match(rootNavigator, /name="ChatDetail"/);
   assert.match(rootNavigator, /name="DirectMessages"/);
@@ -59,6 +63,18 @@ test("production route gates expose audited v1 surfaces and hide prototypes and 
   assert.match(rootNavigator, /FEATURE_FLAGS\.collectionsEnabled \? \(/);
   assert.match(rootNavigator, /name="CollectionList"/);
   assert.match(rootNavigator, /name="CollectionDetail"/);
+  assert.match(
+    rootNavigator,
+    /FEATURE_FLAGS\.prototypeRoutesEnabled \? \([\s\S]*name="PortfolioPublicView"/,
+  );
+  assert.match(
+    rootNavigator,
+    /FEATURE_FLAGS\.prototypeRoutesEnabled \? \([\s\S]*name="AdminPortfolioFlags"/,
+  );
+  assert.match(linking, /FEATURE_FLAGS\.prototypeRoutesEnabled/);
+  assert.match(linking, /FEATURE_FLAGS\.merchantCentreEnabled/);
+  assert.match(linking, /PortfolioPublicView/);
+  assert.match(linking, /MerchantTabs/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.floorplansEnabled \? \(/);
   assert.match(rootNavigator, /name="BuildingDrillDown"/);
   assert.match(rootNavigator, /name="BuildingDrillDownV2"/);
@@ -76,9 +92,11 @@ test("floorplan entry points are hidden behind the floorplans flag", () => {
   assert.match(developerLauncher, /Floorplan routes are disabled for this build\./);
 });
 
-test("signed-out consumers can browse public discovery and detail routes", () => {
+test("signed-out app entry starts at login while public routes stay unprotected", () => {
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
   const splash = read("src/app/screens/SplashScreen.tsx");
+  const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
+  const profileHome = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   const protectedRoutes = protectedRoutesBlock(rootNavigator);
 
   for (const publicRoute of [
@@ -105,8 +123,29 @@ test("signed-out consumers can browse public discovery and detail routes", () =>
     rootNavigator,
     /const PROTECTED_MAIN_TAB_ROUTES = new Set<MainTabRouteName>\(\["Profile"\]\)/,
   );
-  assert.doesNotMatch(splash, /!isAuthenticated[\s\S]*AuthStack/);
+  assert.match(splash, /const isAuthenticated = useSessionStore/);
+  assert.match(splash, /if \(!isAuthenticated\) \{[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/);
   assert.match(splash, /name: "MainTabs"[\s\S]*params: \{ screen: "Home" \}/);
+  assert.match(profileHome, /setReturnRoute\("Profile"\)/);
+  assert.match(
+    profileHome,
+    /rootNavigation\.reset\(\{[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/,
+  );
+  assert.doesNotMatch(profileHome, /Unlock your taste profile|Sign In \/ Create Account/);
+  assert.match(
+    rootNavigator,
+    /if \(currentTopRoute === "OnboardingStack" && hasCompletedOnboarding\) \{\s*navigateHome\(\);\s*\}/,
+  );
+  assert.match(rootNavigator, /const isDeveloperMode = useMerchantStore/);
+  assert.match(rootNavigator, /const isMerchantMode = useMerchantStore/);
+  assert.match(
+    rootNavigator,
+    /currentTopRoute === "DeveloperLauncher"[\s\S]*isAuthenticated[\s\S]*hasCompletedOnboarding[\s\S]*!isDeveloperMode[\s\S]*!isMerchantMode[\s\S]*navigateHome\(\)/,
+  );
+  assert.match(
+    developerLauncher,
+    /const resetToSignedOut = \(\) => \{[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/,
+  );
 });
 
 test("protected actions preserve return routes before auth", () => {

@@ -27,7 +27,7 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
     [
       /Login: undefined/,
       /SignUp: undefined/,
-      /EmailVerification: \{ email: string \} \| undefined/,
+      /EmailVerification: \{ email: string; completedOnboarding\?: boolean \} \| undefined/,
       /ForgotPassword: undefined/,
       /ResetPassword: \{ email\?: string; code\?: string \} \| undefined/,
       /TasteQuiz: \{ mode\?: "onboarding" \| "profile"; initialPhase\?: "taste" \| "dietary" \} \| undefined/,
@@ -259,7 +259,8 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /const gallery = useMemo\(\(\) => \(dish \? buildDishGallery\(dish\) : \[\]\), \[dish\]\)/,
       /<ImageCarousel images=\{gallery\} width=\{screenWidth\} height=\{screenWidth \* 0\.75\}>/,
       /dish\.tasteVector\[dimension\.key\]/,
-      /dish\.reviews\.map/,
+      /visibleReviews\.map/,
+      /getHungryService\(\)\s*\.reviews\.getReviewsForDish\(dish\.id\)/,
       /ReviewShareSheet/,
       /toggleFavourite\(dish\)/,
     ],
@@ -316,8 +317,11 @@ test("review tab covers loading state, review cards, and bite card icon/sheet bo
       /const commentSheet = commentsSheetRef\.current/,
       /openCommentsSheet\(\)/,
       /accessibilityLabel="Open review comments"/,
+      /const reviewReactionsEnabled = serviceProviderMode === "mock"/,
       /accessibilityLabel=\{interaction\.liked \? "Unlike review" : "Like review"\}/,
-      /accessibilityLabel=\{interaction\.saved \? "Unsave review" : "Save review"\}/,
+      /"Remove saved dish"/,
+      /"Save dish"/,
+      /saved: favouriteDishIds\.includes\(item\.dishId\)/,
       /<Send[\s\S]*<Bookmark[\s\S]*<CommentIcon[\s\S]*<Heart/,
       /justifyContent: "flex-end"/,
     ],
@@ -340,7 +344,9 @@ test("post composer supports long captions, tags, carousel media, publish, draft
   const composer = readRepoFile("src/app/screens/post/PostComposerScreenV2.tsx");
   const bottomBar = readRepoFile("src/features/post/components/ComposerBottomBar.tsx");
   const mediaManager = readRepoFile("src/features/post/components/MediaManager.tsx");
+  const postTab = readRepoFile("src/features/post/components/PostTab.tsx");
   const sharedMetadata = readRepoFile("src/features/post/components/SharedMetadata.tsx");
+  const statusOverlay = readRepoFile("src/features/post/components/StatusOverlay.tsx");
   const publishing = readRepoFile("src/features/post/publishing.ts");
   const store = readRepoFile("src/features/post/useComposerStore.ts");
 
@@ -360,7 +366,9 @@ test("post composer supports long captions, tags, carousel media, publish, draft
       /label="Save Draft"/,
       /setPublishingState\("draft"\)/,
       /label=\{getLabel\(\)\}/,
-      /await publishComposerPost\(\{ publishMode, routeDishId, routeVenueId \}\)/,
+      /const request = \{ publishMode, routeDishId, routeVenueId \}/,
+      /setLastPublishRequest\(request\)/,
+      /await publishComposerPost\(request\)/,
       /setPublishingState\("posting"\)/,
       /setPublishingState\("success"\)/,
       /setPublishingState\("error"\)/,
@@ -375,8 +383,22 @@ test("post composer supports long captions, tags, carousel media, publish, draft
       /allowsMultipleSelection: true/,
       /mediaTypes: ImagePicker\.MediaTypeOptions\.All/,
       /testID="post-composer-add-media"/,
+      /accessibilityLabel="Edit with AI"[\s\S]*onPress=\{\(\) => setEditingMediaId\(item\.id\)\}/,
+      /accessibilityLabel="Open video edit tools"[\s\S]*onPress=\{\(\) => setEditingMediaId\(item\.id\)\}/,
     ],
     "MediaManager validation and carousel media entry",
+  );
+  assertSourceIncludes(
+    postTab,
+    [
+      /const ctaButton = useComposerStore\(\(state\) => state\.ctaButton\)/,
+      /const setCTA = useComposerStore\(\(state\) => state\.setCTA\)/,
+      /text: "Order Now"[\s\S]*setCTA\("Order Now"\)/,
+      /text: "View Menu"[\s\S]*setCTA\("View Menu"\)/,
+      /text: "Book Table"[\s\S]*setCTA\("Book Table"\)/,
+      /text: "Remove CTA"[\s\S]*setCTA\(null\)/,
+    ],
+    "PostTab CTA selector",
   );
   assertSourceIncludes(
     sharedMetadata,
@@ -384,9 +406,24 @@ test("post composer supports long captions, tags, carousel media, publish, draft
     "SharedMetadata tags",
   );
   assertSourceIncludes(
+    statusOverlay,
+    [
+      /import \{ publishComposerPost \} from "\.\.\/publishing"/,
+      /const retryPublish = async \(\) =>/,
+      /await publishComposerPost\(lastPublishRequest\)/,
+      /label="Try Again"[\s\S]*void retryPublish\(\)/,
+      /isReviewOnlySuccess \? "Review saved" : "Shared!"/,
+      /label=\{isReviewOnlySuccess \? "Done" : "View Post"\}/,
+    ],
+    "StatusOverlay retry",
+  );
+  assertSourceIncludes(
     publishing,
     [
-      /const mediaUrls = media\.length \? media\.map\(\(item\) => item\.uri\) : \[fallbackImageUrl\]/,
+      /throw new Error\("Add a photo or video before publishing\."\)/,
+      /throw new Error\("Add a rating before publishing a review\."\)/,
+      /await service\.reviews\.submitReview\(/,
+      /const mediaUrls = media\.map\(\(item\) => item\.uri\)/,
       /caption = state\.postCaption\.trim\(\) \|\| state\.reviewCaption\.trim\(\) \|\| dish\.name/,
       /mediaUrls,/,
       /tags: \[\.\.\.state\.foodTags, \.\.\.state\.tasteTags\]/,
@@ -396,7 +433,15 @@ test("post composer supports long captions, tags, carousel media, publish, draft
   );
   assertSourceIncludes(
     store,
-    [/postCaption: ""/, /reviewCaption: ""/, /media: \[\]/, /foodTags: \[\]/, /tasteTags: \[\]/],
+    [
+      /postCaption: ""/,
+      /reviewCaption: ""/,
+      /media: \[\]/,
+      /foodTags: \[\]/,
+      /tasteTags: \[\]/,
+      /lastPublishRequest: null/,
+      /setLastPublishRequest:/,
+    ],
     "composer store initial state",
   );
 });
@@ -445,6 +490,7 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
       /label="Saved"/,
       /activeTab === "posts"/,
       /activeTab === "reviews"/,
+      /normalizedAuthorId[\s\S]*post\.authorId === normalizedAuthorId[\s\S]*normalizePersonName\(post\.authorName\) === normalizedAuthorName/,
     ],
     "UserProfileContent shared profile layout",
   );

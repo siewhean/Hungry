@@ -1,3 +1,5 @@
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+
 export function createRootLinking(prefix: string) {
   return {
     prefixes: [prefix, "hungry://", "https://hungry.sg"],
@@ -14,19 +16,25 @@ export function createRootLinking(prefix: string) {
         },
         DishDetail: "dish/:id",
         StallDetail: "venue/:id",
-        PortfolioPublicView: "portfolio/:portfolioId",
         Post: "order",
-        MerchantTabs: {
-          path: "merchant",
-          screens: {
-            Dashboard: "",
-            Menu: "menu",
-            Analytics: "analytics",
-            Profile: "profile",
-            VerificationCentre: "verification",
-            MerchantSettings: "settings",
-          },
-        },
+        ...(FEATURE_FLAGS.prototypeRoutesEnabled
+          ? { PortfolioPublicView: "portfolio/:portfolioId" }
+          : {}),
+        ...(FEATURE_FLAGS.merchantCentreEnabled
+          ? {
+              MerchantTabs: {
+                path: "merchant",
+                screens: {
+                  Dashboard: "",
+                  Menu: "menu",
+                  Analytics: "analytics",
+                  Profile: "profile",
+                  VerificationCentre: "verification",
+                  MerchantSettings: "settings",
+                },
+              },
+            }
+          : {}),
         WheelStack: {
           path: "join/:code",
           screens: {

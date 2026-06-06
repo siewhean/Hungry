@@ -17,12 +17,13 @@ test("full project audit P0: production feature flags and floorplan gating match
   const mapZoom = read("src/app/screens/discover/MapZoomedInScreen.tsx");
   const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
 
-  assert.equal(flags.directMessagesEnabled, true);
-  assert.equal(flags.gamificationEnabled, true);
-  assert.equal(flags.collectionsEnabled, true);
-  assert.equal(flags.storiesEnabled, true);
-  assert.equal(flags.commentsEnabled, true);
-  assert.equal(flags.merchantCentreEnabled, true);
+  assert.equal(flags.directMessagesEnabled, false);
+  assert.equal(flags.gamificationEnabled, false);
+  assert.equal(flags.collectionsEnabled, false);
+  assert.equal(flags.storiesEnabled, false);
+  assert.equal(flags.commentsEnabled, false);
+  assert.equal(flags.merchantCentreEnabled, false);
+  assert.equal(flags.merchantClaimCtaEnabled, false);
   assert.equal(flags.oauthProvidersEnabled, false);
   assert.equal(flags.floorplansEnabled, false);
 
