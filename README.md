@@ -39,9 +39,9 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 | Product                   | Hungry — dish-first food discovery                                                                                                                                                                                       |
 | Market                    | Singapore (hawker centres, food courts, restaurants)                                                                                                                                                                     |
 | Platform                  | iOS + Android (Expo SDK 55 / React Native 0.83.6)                                                                                                                                                                        |
-| Phase                     | Consumer mobile app, mock-first locally with Supabase-backed Full Audit V1 integrations                                                                                                                                  |
-| Production posture        | DMs, comments, stories, collections, gamification, and merchant beta are enabled in code for Full Audit V1; live Supabase chat, social/gamification, and OCR smokes pass, but release remains blocked until Android/EAS, store-console, production-secret, and owner-action gates pass |
-| Still production-disabled | OAuth providers, prototype routes, and indoor floorplans                                                                                                                                                                 |
+| Phase                     | Consumer mobile app, mock-first locally with Supabase-backed MVP integrations                                                                                                                                            |
+| Production posture        | MVP production defaults keep DMs, comments, stories, collections, gamification, merchant centre, merchant claim CTA, prototype routes, and floorplans disabled until separate launch gates pass                         |
+| Still production-disabled | OAuth providers, merchant centre, merchant claim CTA, direct messages, comments, stories, collections, gamification/passport, prototype routes, and indoor floorplans                                                    |
 | Core idea                 | Find the dish you want, then see which stall serves it — not the other way around                                                                                                                                        |
 | Taste model               | 6-axis vector: sweet · spicy · sour · salty · rich · aromatic                                                                                                                                                            |
 
@@ -87,15 +87,16 @@ The application uses feature flags to toggle functionality for development and r
 | Flag                                   | Description                                                                      | Default                                              |
 | -------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------- |
 | `HUNGRY_DATA_SOURCE`                   | Toggle between `mock` and `supabase` data layers.                                | `mock`                                               |
-| `FEATURE_FLAGS.directMessagesEnabled`  | Enable the Direct Messages tab and chat functionality.                           | `true` in Full Audit V1 production                   |
+| `FEATURE_FLAGS.directMessagesEnabled`  | Enable the Direct Messages tab and chat functionality.                           | `true` outside production, `false` in production     |
 | `FEATURE_FLAGS.prototypeRoutesEnabled` | Register V2/prototype routes outside production release builds.                  | `true` in development/staging, `false` in production |
-| `FEATURE_FLAGS.merchantCentreEnabled`  | Register merchant centre beta routes behind auth, role, and verification guards. | `true` in Full Audit V1 production                   |
-| `FEATURE_FLAGS.commentsEnabled`        | Enable community comments on posts and reviews.                                  | `true` in Full Audit V1 production                   |
+| `FEATURE_FLAGS.merchantCentreEnabled`  | Register merchant centre beta routes behind auth, role, and verification guards. | `true` outside production, `false` in production     |
+| `FEATURE_FLAGS.merchantClaimCtaEnabled` | Enable the consumer stall claim CTA.                                             | `true` outside production, `false` in production     |
+| `FEATURE_FLAGS.commentsEnabled`        | Enable community comments on posts and reviews.                                  | `true` outside production, `false` in production     |
 | `FEATURE_FLAGS.oauthProvidersEnabled`  | Enable Google/Apple OAuth provider buttons.                                      | `true` in development/staging, `false` in production |
 | `FEATURE_FLAGS.floorplansEnabled`      | Register indoor floorplan routes and entry points.                               | `false` in all environments until launch gates pass  |
-| `FEATURE_FLAGS.gamificationEnabled`    | Enable Passport and Missions surfaces.                                           | `true` in Full Audit V1 production                   |
-| `FEATURE_FLAGS.collectionsEnabled`     | Enable collection list/detail routes.                                            | `true` in Full Audit V1 production                   |
-| `FEATURE_FLAGS.storiesEnabled`         | Enable story viewer and story creation surfaces.                                 | `true` in Full Audit V1 production                   |
+| `FEATURE_FLAGS.gamificationEnabled`    | Enable Passport and Missions surfaces.                                           | `true` outside production, `false` in production     |
+| `FEATURE_FLAGS.collectionsEnabled`     | Enable collection list/detail routes.                                            | `true` outside production, `false` in production     |
+| `FEATURE_FLAGS.storiesEnabled`         | Enable story viewer and story creation surfaces.                                 | `true` outside production, `false` in production     |
 | `FEATURE_FLAGS.craveEnabled`           | Enable the "Daily Crave" swiping discovery mode.                                 | `true`                                               |
 | `FEATURE_FLAGS.readsEnabled`           | Enable the "Reads" (blog) tab.                                                   | `true`                                               |
 | `FEATURE_FLAGS.mockMapboxEnabled`      | Use a static fallback for the map in test environments.                          | `false`                                              |
@@ -134,7 +135,7 @@ To override these locally, you can use `.env.development` or modify the constant
 - Mock data lives exclusively in `src/lib/services/mock/data.ts`
 - Design tokens live exclusively in `src/theme/tokens.ts` — never hardcode values
 - The app runs fully without network or backend
-- Signed-out users can browse Home, Discover, Search, dish/stall details, Reads, and basic discovery/map surfaces
+- Cold-start signed-out users land on Login. Public discovery/detail routes remain unprotected for explicit public links or dev flows.
 - Protected actions route to auth and keep a return route: create post, review, save/favourite, messages/chat, profile-private pages, merchant tools, claim/order/cart
 - V2/prototype routes are registered only when `FEATURE_FLAGS.prototypeRoutesEnabled` is true; production builds keep unfinished prototype/design routes off the root navigator
 - `MerchantTabs` is registered only when `FEATURE_FLAGS.merchantCentreEnabled` is true
@@ -149,13 +150,13 @@ To override these locally, you can use `.env.development` or modify the constant
 - Root Expo scaffold, typed domain layer, Zustand stores, and mock repositories are in place
 - Discover, Search, Details, Auth, Onboarding, Profile, Review, Reads, and recovery flows are implemented in the mobile app shell
 - Review compose now supports real library photo attachments via `expo-image-picker` (dev client/native build required).
-- The current runtime shell is browse-first for public discovery surfaces. Signed-out users route through Splash into `MainTabs` and are redirected to auth only for protected actions.
+- The current runtime shell is Login-first for signed-out cold starts. Profile and protected actions redirect to auth; public discovery/detail route registrations remain available for explicit public entry points.
 - In `__DEV__`, app now boots into the Developer Launcher to speed QA state setup (signed out / onboarding incomplete / onboarding complete presets).
 - Developer Launcher Merchant Mode now seeds the dev merchant state and bypasses the merchant sign-in gate before opening MerchantTabs.
 - Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
 - Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and polygon-based building directory layouts (including Wisma and JEM mall-style floor overlays with vertical level switching).
 - **Design Specifications** — Comprehensive visual, UX, and accessibility specs for all remaining backlog items are now available in `docs/audit/`. These serve as the authoritative implementation guide for Batch 1–8.
-- Current Full Audit V1 status: source/static gates pass, Supabase migrations through `20260524032500_fix_upsert_stall_interaction_return_query.sql` are applied to linked Hungry staging, and the Supabase Advisor cleanup resolved app-owned public SECURITY DEFINER findings. The linked Security Advisor is still not clean: 9 findings remain for Supabase-owner PostGIS objects plus leaked-password protection. Expo Doctor now passes 18/18 after SDK 55 patch-version alignment; local TruffleHog now runs with 0 verified/unverified secrets. Prepared iOS Maestro smoke now passes on iPhone 17 Pro / iOS 26.1 when Metro runs in LAN mode with Watchman disabled and the smoke is given the generated LAN Metro URL. Live Supabase chat/DM smoke now passes through checked RPCs, Realtime delivery, direct-write denial, non-participant denial, and read receipts; live social/gamification smoke now passes report, moderation, block, FoodCred, stall interaction, and mission-progress checks; live OCR smoke now uploads a menu image, invokes `ingest-menu-photo`, reaches `succeeded`, and creates `dishes_draft` rows. Android/EAS proof is missing, and store/security owner gates remain open; see `tasks/verification.md`.
+- Current MVP status: local source gates pass for the MVP production baseline. Production flags hide advanced/social/gamification/merchant surfaces; signed-out cold starts show Login; protected actions route to Login with return routes; profile, favourites, reviews, search/detail, and public post reads/writes use Supabase service paths where applicable. Fresh iOS simulator build/install and prepared native smoke pass. Remaining blockers are external: Android/EAS proof remains outside this checkout, live mutation/cross-device proof needs approved accounts/devices, and the linked project still has six legacy payment/order SECURITY DEFINER RPC grants outside current repo source; see `tasks/verification.md`.
 
 ## Commands
 

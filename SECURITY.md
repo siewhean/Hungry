@@ -109,7 +109,12 @@ Linked Supabase Advisor state after `20260527144633` and `20260527145534`:
 - `Security Definer Function Executable` on app-owned authenticated RPC/helper functions
   - Status: Resolved in linked staging.
   - Rationale: `20260522142004_advisor_private_rpc_wrappers.sql` and `20260527144633_advisor_security_cleanup_public_rpc_wrappers.sql` move app-owned SECURITY DEFINER bodies into non-exposed `app_private` and preserve public RPC names as SECURITY INVOKER wrappers.
-  - Verification: `npm run audit:supabase:advisor-security:non-password` passes.
+  - Verification: app-owned findings are classified cleanly by `npm run audit:supabase:advisor-security`.
+
+- `Security Definer Function Executable` on linked legacy payment/order RPCs
+  - Status: External blocker.
+  - Rationale: linked Supabase still exposes legacy `release_reserved_order(...)` and `submit_payment_proof(...)` SECURITY DEFINER RPCs to `anon` / `authenticated`; these functions are outside the Hungry MVP repo source.
+  - Remediation: after owner approval, run `supabase/manual/legacy_payment_order_rpc_advisor_cleanup.sql` from a linked Supabase SQL session, then rerun `npm run audit:supabase:advisor-security:non-password`.
 
 - Performance Advisor policy warnings
   - Status: Resolved in linked staging.

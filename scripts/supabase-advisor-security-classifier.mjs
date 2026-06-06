@@ -118,6 +118,15 @@ function externalReason(finding) {
     return "Supabase Auth dashboard/Management API setting";
   }
 
+  if (
+    (finding.name === "anon_security_definer_function_executable" ||
+      finding.name === "authenticated_security_definer_function_executable") &&
+    metadata.schema === "public" &&
+    ["release_reserved_order", "submit_payment_proof"].includes(metadata.name)
+  ) {
+    return "legacy linked Supabase payment RPC outside Hungry MVP repo scope; requires explicit owner-approved revoke/drop";
+  }
+
   return null;
 }
 

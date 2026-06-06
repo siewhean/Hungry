@@ -134,8 +134,17 @@ test("native media picker smoke reaches the post composer gallery entry point", 
   assert.match(flow, /dev-button-launch-v2-composer/);
   assert.match(flow, /post-composer-screen/);
   assert.match(flow, /post-composer-add-media/);
+  assert.match(flow, /text: "Allow"/);
   assert.match(flow, /Don.t Allow/);
   assert.match(flow, /Permission Required/);
+  const addMediaIndex = flow.indexOf('id: "post-composer-add-media"');
+  const allowIndex = flow.indexOf('text: "Allow"');
+  const denialIndex = flow.indexOf('text: "Don’t Allow"');
+  const permissionRequiredIndex = flow.indexOf('assertVisible: "Permission Required"');
+  assert.ok(addMediaIndex >= 0);
+  assert.ok(allowIndex > addMediaIndex);
+  assert.ok(denialIndex > allowIndex);
+  assert.ok(permissionRequiredIndex > allowIndex);
 
   assert.match(composer, /testID="post-composer-screen"/);
   assert.match(mediaManager, /import \* as ImagePicker from "expo-image-picker"/);

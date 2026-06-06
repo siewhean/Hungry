@@ -3,7 +3,7 @@ import { assertNoCrashVisible, clickDevButton, resetAppState } from "./helpers/a
 
 const CONTENT_TIMEOUT_MS = 30_000;
 
-test.describe("guest browsing", () => {
+test.describe("signed-out entry", () => {
   test.beforeEach(async ({}, testInfo) => {
     test.skip(
       testInfo.project.name !== "chromium",
@@ -11,24 +11,14 @@ test.describe("guest browsing", () => {
     );
   });
 
-  test("signed-out users can browse home, discover, search, and detail surfaces", async ({
+  test("signed-out normal app flow starts at login while explicit public details remain openable", async ({
     page,
   }) => {
     await resetAppState(page);
     await clickDevButton(page, "Signed out", "Session presets");
 
     await page.getByRole("button", { name: "Open normal app flow" }).click();
-    await expect(page.getByText("Your Story", { exact: true }).first()).toBeVisible({
-      timeout: CONTENT_TIMEOUT_MS,
-    });
-
-    await page.getByRole("button", { name: "Discover" }).click();
-    await expect(page.getByText("Popular right now", { exact: true }).first()).toBeVisible({
-      timeout: CONTENT_TIMEOUT_MS,
-    });
-
-    await page.getByRole("button", { name: "Search dishes, stalls, or hawker centres" }).click();
-    await expect(page.getByPlaceholder("Laksa, satay, Tian Tian...").first()).toBeVisible({
+    await expect(page.getByText("Welcome back", { exact: true })).toBeVisible({
       timeout: CONTENT_TIMEOUT_MS,
     });
 
@@ -44,12 +34,8 @@ test.describe("guest browsing", () => {
   test("protected create action redirects guests to login", async ({ page }) => {
     await resetAppState(page);
     await clickDevButton(page, "Signed out", "Session presets");
-    await page.getByRole("button", { name: "Open normal app flow" }).click();
-    await expect(page.getByText("Your Story", { exact: true }).first()).toBeVisible({
-      timeout: CONTENT_TIMEOUT_MS,
-    });
 
-    await page.getByRole("button", { name: "Create post" }).click();
+    await clickDevButton(page, "Composer", "Core app flow");
     await expect(page.getByText("Welcome back", { exact: true })).toBeVisible({
       timeout: CONTENT_TIMEOUT_MS,
     });

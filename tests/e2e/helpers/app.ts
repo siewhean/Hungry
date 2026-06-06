@@ -15,7 +15,14 @@ function devButtonTestId(label: string) {
 
 const DEV_BUTTON_SECTIONS: Record<string, string> = {
   "Launch V2 Composer": "Post Composer V2 Settings",
+  "Seed sample media": "Post Composer V2 Settings",
 };
+
+type MockAccountPreset = "default" | "User A" | "User B";
+
+function authPresetLabel(account: MockAccountPreset = "default") {
+  return account === "default" ? "Auth + Onboard" : `Auth + Onboard ${account}`;
+}
 
 async function clearBrowserStorage(page: Page) {
   await page.evaluate(async () => {
@@ -89,9 +96,12 @@ export async function clickDevButton(page: Page, label: string, section?: string
   await button.click();
 }
 
-export async function startOnboardedMockSession(page: Page) {
+export async function startOnboardedMockSession(
+  page: Page,
+  account: MockAccountPreset = "default",
+) {
   await gotoLauncher(page);
-  await clickDevButton(page, "Auth + Onboard", "Session presets");
+  await clickDevButton(page, authPresetLabel(account), "Session presets");
   await expect(page.getByText("Authenticated").first()).toBeVisible();
 }
 
@@ -116,20 +126,33 @@ export async function createEmailAccountFromScratch(page: Page, prefix: string) 
   await expect(page.getByText("Verify your email", { exact: true }).first()).toBeVisible();
   await expect(page.getByText(user.email)).toBeVisible();
   await page.getByRole("button", { name: "I Verified My Email" }).click();
-  await expect(page.getByText("Start with the dish, not the brand")).toBeVisible();
+  await expect(page.getByText("Find the dish. Not just the restaurant.")).toBeVisible();
 
   return user;
 }
 
-export async function openComposerFromLauncher(page: Page) {
-  await startOnboardedMockSession(page);
+export async function openComposerFromLauncher(
+  page: Page,
+  options?: { seedMedia?: boolean; account?: MockAccountPreset; businessMode?: boolean },
+) {
+  await startOnboardedMockSession(page, options?.account);
+  if (options?.seedMedia) {
+    await clickDevButton(page, "Seed sample media");
+  }
+  if (options?.businessMode) {
+    await page.getByLabel("Enable business mode in composer").click();
+  }
   await clickDevButton(page, "Launch V2 Composer");
   await expect(page.getByText("New post", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Publish Both" }).first()).toBeVisible();
 }
 
-export async function publishPostFromComposer(page: Page, caption: string) {
-  await openComposerFromLauncher(page);
+export async function publishPostFromComposer(
+  page: Page,
+  caption: string,
+  options?: { account?: MockAccountPreset },
+) {
+  await openComposerFromLauncher(page, { seedMedia: true, account: options?.account });
   await page.getByPlaceholder(CAPTION_PLACEHOLDER).first().fill(caption);
   await page.getByRole("button", { name: "Publish Both" }).first().click();
   await expect(page.getByText("Shared!", { exact: true }).first()).toBeVisible();

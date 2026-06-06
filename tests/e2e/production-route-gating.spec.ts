@@ -25,9 +25,13 @@ test.describe("production route gating", () => {
     expect(flags).toContain("collectionsEnabled");
     expect(flags).toContain("storiesEnabled");
     expect(flags).toContain("commentsEnabled: nonProductionSurfaceEnabled");
+    expect(flags).toContain("directMessagesEnabled: nonProductionSurfaceEnabled");
+    expect(flags).toContain("const merchantCentreEnabled = nonProductionSurfaceEnabled");
+    expect(flags).toContain("const merchantClaimCtaEnabled = nonProductionSurfaceEnabled");
     expect(flags).toContain('appEnv !== "production"');
     expect(rootNavigator).toContain("FEATURE_FLAGS.prototypeRoutesEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.merchantCentreEnabled ? (");
+    expect(rootNavigator).toContain("FEATURE_FLAGS.merchantClaimCtaEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.directMessagesEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.storiesEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.gamificationEnabled ? (");
@@ -49,6 +53,8 @@ test.describe("production route gating", () => {
       "MissionsScreen",
       "CollectionList",
       "CollectionDetail",
+      "PortfolioPublicView",
+      "AdminPortfolioFlags",
     ]) {
       expect(rootNavigator).toContain(`name="${routeName}"`);
     }

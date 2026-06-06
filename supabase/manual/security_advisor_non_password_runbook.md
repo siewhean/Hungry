@@ -7,7 +7,7 @@ Project ref: `vlqfgmrsprbrgzteixsj`
 
 ## Current Live State
 
-Last refreshed: 2026-05-27
+Last refreshed: 2026-06-05
 
 Supabase Support relocated the existing PostGIS extension into the unexposed
 `extensions` schema. Linked object-state checks now show `postgis` in
@@ -15,9 +15,19 @@ Supabase Support relocated the existing PostGIS extension into the unexposed
 `extensions` rather than the exposed `public` schema.
 
 `npm run audit:supabase:advisor-security` confirms there are no unexpected
-app-owned Security Advisor findings. `npm run
-audit:supabase:advisor-security:non-password` passes, and the linked
-Performance Advisor reports no issues.
+app-owned Security Advisor findings. The hard non-password gate currently
+fails on six linked-project legacy payment/order RPC grants:
+
+- `anon` can execute `public.release_reserved_order(text, text, text, text)`
+- `anon` can execute `public.release_reserved_order(text, text)`
+- `anon` can execute `public.submit_payment_proof(text, text, text)`
+- `authenticated` can execute `public.release_reserved_order(text, text, text, text)`
+- `authenticated` can execute `public.release_reserved_order(text, text)`
+- `authenticated` can execute `public.submit_payment_proof(text, text, text)`
+
+These functions are not part of the Hungry MVP repo source. They require
+explicit owner approval before grants are revoked because they may belong to a
+retired linked payment/order flow.
 
 Remaining accepted Security Advisor finding:
 
@@ -29,19 +39,28 @@ app-owned schema/RLS blocker.
 
 ## Resolution Path
 
-1. Verify the non-password hard gate:
+1. Confirm the linked legacy payment/order RPCs are not required for any active
+   production flow.
+
+2. After owner approval, run:
+
+   ```bash
+   /opt/homebrew/bin/supabase db query --linked -f supabase/manual/legacy_payment_order_rpc_advisor_cleanup.sql -o table
+   ```
+
+3. Verify the non-password hard gate:
 
    ```bash
    npm run audit:supabase:advisor-security:non-password
    ```
 
-2. Verify the linked Performance Advisor:
+4. Verify the linked Performance Advisor:
 
    ```bash
    /opt/homebrew/bin/supabase db advisors --linked --type performance --level warn -o json
    ```
 
-3. Optional only: enable leaked-password protection if the owner later wants a
+5. Optional only: enable leaked-password protection if the owner later wants a
    completely empty Security Advisor result and has an eligible Supabase plan /
    Management API token:
 
@@ -49,7 +68,7 @@ app-owned schema/RLS blocker.
    npm run security:supabase:enable-leaked-password
    ```
 
-4. Optional full Security Advisor verification after enabling the Auth setting:
+6. Optional full Security Advisor verification after enabling the Auth setting:
 
    ```bash
    npm run audit:supabase:advisor-security
@@ -65,6 +84,9 @@ app-owned schema/RLS blocker.
   if they reappear. Prior probes showed `ERROR 42501: must be owner of table
 spatial_ref_sys` and `WARNING 01006: no privileges could be revoked for
 "st_estimatedextent"`.
+- Do not run `supabase/manual/legacy_payment_order_rpc_advisor_cleanup.sql`
+  without owner approval. It intentionally changes execute grants on linked
+  legacy payment/order functions outside the Hungry MVP source.
 
 ## Support Ticket References
 

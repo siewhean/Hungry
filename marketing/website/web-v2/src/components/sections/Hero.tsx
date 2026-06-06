@@ -86,6 +86,7 @@ export default function Hero() {
         <Image
           src={hero.atmosphere.src}
           alt=""
+          aria-hidden="true"
           className={`${styles.atmosphereImage} ${styles.parallaxSlow}`}
           fill
           priority

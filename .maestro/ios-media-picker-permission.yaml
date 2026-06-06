@@ -46,6 +46,8 @@ appId: ${APP_ID}
 - tapOn:
     id: "post-composer-add-media"
 - tapOn:
+    text: "Allow"
+- tapOn:
     text: "Don’t Allow"
     optional: true
 - tapOn:

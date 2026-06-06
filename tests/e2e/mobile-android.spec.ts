@@ -18,7 +18,7 @@ test.describe("mobile Android smoke", () => {
     await resetAppState(page);
     await startOnboardedMockSession(page);
     await clickDevButton(page, "Home", "Core app flow");
-    await expect(page.getByText("Your Story", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Chicken Rice", { exact: true }).first()).toBeVisible();
 
     await resetAppState(page);
     await startOnboardedMockSession(page);

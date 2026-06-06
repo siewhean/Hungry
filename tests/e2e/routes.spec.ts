@@ -7,7 +7,7 @@ import {
 } from "./helpers/app";
 
 const ROUTE_SMOKES = [
-  { label: "Home", expectedText: "Your Story" },
+  { label: "Home", expectedText: "Chicken Rice" },
   { label: "Discover", expectedText: "Popular right now" },
   { label: "Search", expectedPlaceholder: "Laksa, satay, Tian Tian..." },
   { label: "Dish V2", expectedText: "Chicken Rice" },

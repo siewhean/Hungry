@@ -13,17 +13,14 @@ test("marketing hero keeps decorative atmosphere image hidden from assistive tec
   const hero = read("marketing/website/web-v2/src/components/sections/Hero.tsx");
 
   assert.match(hero, /className=\{styles\.atmosphere\} aria-hidden="true"/);
-  assert.match(
-    hero,
-    /src=\{homepage\.hero\.atmosphere\.src\}[\s\S]*alt=""[\s\S]*aria-hidden="true"/,
-  );
+  assert.match(hero, /src=\{hero\.atmosphere\.src\}[\s\S]*alt=""[\s\S]*aria-hidden="true"/);
 });
 
 test("marketing hero food card images use descriptive content alt text", () => {
   const hero = read("marketing/website/web-v2/src/components/sections/Hero.tsx");
   const content = read("marketing/website/web-v2/src/content/site.ts");
 
-  assert.match(hero, /homepage\.hero\.foodCards\.map/);
+  assert.match(hero, /hero\.foodCards\.map/);
   assert.match(hero, /alt=\{card\.alt\}/);
 
   const altValues = Array.from(content.matchAll(/alt: "([^"]+)"/g)).map((match) => match[1]);
