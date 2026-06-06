@@ -107,6 +107,12 @@ const DEFAULT_FLAGS = {
 type FeatureFlags = typeof DEFAULT_FLAGS;
 type FlagKey = keyof FeatureFlags;
 
+function isUuidLikeUserId(value?: string | null): value is string {
+  return Boolean(
+    value?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i),
+  );
+}
+
 const FLAG_LABELS: Record<FlagKey, string> = {
   floorPlanViewer: "Floor Plan Viewer (SVG)",
   socialBites: "Social Bites feed",
@@ -355,8 +361,24 @@ function PostComposerSettingsContent({
   const { palette } = useHungryTheme();
   const { useComposerStore } =
     require("@/features/post/useComposerStore") as typeof import("@/features/post/useComposerStore");
+  const media = useComposerStore((state) => state.media);
+  const addMedia = useComposerStore((state) => state.addMedia);
   const isBusinessMode = useComposerStore((state) => state.isBusinessMode);
   const setIsBusinessMode = useComposerStore((state) => state.setIsBusinessMode);
+  const seedSampleMedia = () => {
+    const dish = getSampleDish();
+    if (!dish?.imageUrl) {
+      return;
+    }
+
+    addMedia([
+      {
+        id: `dev-sample-media-${Date.now()}`,
+        uri: dish.imageUrl,
+        type: "image",
+      },
+    ]);
+  };
 
   return (
     <>
@@ -375,6 +397,7 @@ function PostComposerSettingsContent({
           </AppText>
         </View>
         <Switch
+          accessibilityLabel="Enable business mode in composer"
           value={isBusinessMode}
           onValueChange={setIsBusinessMode}
           trackColor={{
@@ -384,6 +407,12 @@ function PostComposerSettingsContent({
           thumbColor={isBusinessMode ? palette.orange : palette.textMuted}
         />
       </View>
+      <DevButton
+        label={media.length > 0 ? "Sample media added" : "Seed sample media"}
+        onPress={seedSampleMedia}
+        variant="secondary"
+        style={{ marginTop: 8 }}
+      />
       <DevButton
         label="Launch V2 Composer"
         onPressIn={() => preloadRoute(navigation, "PostComposerV2", getSampleComposerParams())}
@@ -402,6 +431,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
 
   // Session
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const authenticatedUserId = useSessionStore((state) => state.authenticatedUserId);
   const completeAuth = useSessionStore((state) => state.completeAuth);
   const completeOnboarding = useSessionStore((state) => state.completeOnboarding);
   const clearSession = useSessionStore((state) => state.clearSession);
@@ -436,15 +466,44 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     setReturnRoute(undefined);
     hideReviewSuccess();
     showToast({ message: "Session reset to signed out.", tone: "info" });
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+    });
   };
-  const seedMockAuthProfile = async () => {
-    const session = await getHungryService().auth.signIn("weiming@example.sg", "dev-password");
+  const seedMockAuthProfile = async (profile?: { email: string; displayName: string }) => {
+    const session = profile
+      ? await getHungryService().auth.signUp(profile.email, "dev-password", profile.displayName)
+      : await getHungryService().auth.signIn("weiming@example.sg", "dev-password");
+    if (!session) {
+      throw new Error("Unable to seed mock auth profile.");
+    }
     applyProfile(session.profile);
+  };
+
+  const resetToNamedAuthComplete = (profile: { email: string; displayName: string }) => {
+    setMockServiceProvider();
+    clearSession();
+    setDeveloperMerchantMode(true);
+    setMerchantAccount(null);
+    void seedMockAuthProfile(profile).then(() => {
+      completeAuth();
+      completeOnboarding(false);
+      setReturnRoute(undefined);
+      hideReviewSuccess();
+      showToast({ message: `Session → ${profile.displayName}`, tone: "success" });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "DeveloperLauncher" }],
+      });
+    });
   };
 
   const resetToAuthIncomplete = () => {
     setMockServiceProvider();
     clearSession();
+    setDeveloperMerchantMode(true);
+    setMerchantAccount(null);
     void seedMockAuthProfile().then(() => {
       completeAuth();
       setReturnRoute(undefined);
@@ -453,17 +512,27 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         message: "Session → Authenticated (onboarding pending)",
         tone: "info",
       });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "DeveloperLauncher" }],
+      });
     });
   };
   const resetToAuthComplete = () => {
     setMockServiceProvider();
     clearSession();
+    setDeveloperMerchantMode(true);
+    setMerchantAccount(null);
     void seedMockAuthProfile().then(() => {
       completeAuth();
       completeOnboarding(false);
       setReturnRoute(undefined);
       hideReviewSuccess();
       showToast({ message: "Session → Fully authenticated", tone: "success" });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "DeveloperLauncher" }],
+      });
     });
   };
 
@@ -497,13 +566,45 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     setDeveloperMerchantMode(false);
     setSupabaseServiceProvider();
     setMerchantAccount(null);
-    clearSession();
-    completeAuth();
-    completeOnboarding(false);
     setReturnRoute(undefined);
     hideReviewSuccess();
-    showToast({ message: "Mode → User", tone: "info" });
-    navigation.navigate("MainTabs", { screen: "Home" });
+
+    if (isAuthenticated && isUuidLikeUserId(authenticatedUserId)) {
+      showToast({ message: "Mode → User", tone: "info" });
+      navigation.navigate("MainTabs", { screen: "Home" });
+      return;
+    }
+
+    void getHungryService()
+      .auth.getCurrentSession()
+      .then((session) => {
+        if (!session) {
+          clearSession();
+          showToast({ message: "Please sign in to enter User mode.", tone: "info" });
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+          });
+          return;
+        }
+
+        applyProfile(session.profile);
+        completeAuth({
+          completedOnboarding: true,
+          skippedTasteQuiz: true,
+          trackSignInEvent: false,
+        });
+        showToast({ message: "Mode → User", tone: "info" });
+        navigation.navigate("MainTabs", { screen: "Home" });
+      })
+      .catch(() => {
+        clearSession();
+        showToast({ message: "Please sign in to enter User mode.", tone: "info" });
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+        });
+      });
   };
 
   const openActivityInboxSmoke = () => {
@@ -751,6 +852,24 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
             <DevButton label="Signed out" onPress={resetToSignedOut} />
             <DevButton label="Auth only" onPress={resetToAuthIncomplete} />
             <DevButton label="Auth + Onboard" onPress={resetToAuthComplete} variant="primary" />
+            <DevButton
+              label="Auth + Onboard User A"
+              onPress={() =>
+                resetToNamedAuthComplete({
+                  email: "e2e-user-a@example.sg",
+                  displayName: "User A",
+                })
+              }
+            />
+            <DevButton
+              label="Auth + Onboard User B"
+              onPress={() =>
+                resetToNamedAuthComplete({
+                  email: "e2e-user-b@example.sg",
+                  displayName: "User B",
+                })
+              }
+            />
           </View>
         </CollapsibleSection>
 

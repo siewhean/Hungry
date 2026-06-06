@@ -131,23 +131,24 @@ export function MediaManager() {
         }}
       >
         {media.map((item) => (
-          <Pressable
-            key={item.id}
-            accessibilityRole="button"
-            accessibilityLabel="Edit selected media"
-            onPress={() => setEditingMediaId(item.id)}
-            style={[styles.mediaWrapper, { borderRadius: componentRadii.card }]}
-          >
-            {item.type === "video" ? (
-              <ComposerVideoPreview uri={item.uri} />
-            ) : (
-              <AccessibleImage
-                source={{ uri: item.uri }}
-                style={styles.media}
-                contentFit="cover"
-                decorative
-              />
-            )}
+          <View key={item.id} style={[styles.mediaWrapper, { borderRadius: componentRadii.card }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Edit selected media"
+              onPress={() => setEditingMediaId(item.id)}
+              style={styles.mediaTouchable}
+            >
+              {item.type === "video" ? (
+                <ComposerVideoPreview uri={item.uri} />
+              ) : (
+                <AccessibleImage
+                  source={{ uri: item.uri }}
+                  style={styles.media}
+                  contentFit="cover"
+                  decorative
+                />
+              )}
+            </Pressable>
             <IconButton
               variant="surface"
               size={28}
@@ -163,16 +164,20 @@ export function MediaManager() {
                 variant="surface"
                 size={28}
                 accessibilityLabel="Edit with AI"
+                onPress={() => setEditingMediaId(item.id)}
                 icon={<Wand2 size={14} color={palette.orange} />}
               />
-              <IconButton
-                variant="surface"
-                size={28}
-                accessibilityLabel="Trim video"
-                icon={<Scissors size={14} color={palette.text} />}
-              />
+              {item.type === "video" ? (
+                <IconButton
+                  variant="surface"
+                  size={28}
+                  accessibilityLabel="Open video edit tools"
+                  onPress={() => setEditingMediaId(item.id)}
+                  icon={<Scissors size={14} color={palette.text} />}
+                />
+              ) : null}
             </View>
-          </Pressable>
+          </View>
         ))}
 
         <Pressable
@@ -216,12 +221,16 @@ const styles = StyleSheet.create({
     position: "relative",
     overflow: "hidden",
   },
+  mediaTouchable: {
+    ...StyleSheet.absoluteFillObject,
+  },
   media: {
     width: "100%",
     height: "100%",
   },
   removeBtn: {
     position: "absolute",
+    zIndex: 2,
     top: 6,
     right: 6,
   },
@@ -230,6 +239,7 @@ const styles = StyleSheet.create({
     bottom: 6,
     right: 6,
     flexDirection: "row",
+    zIndex: 2,
   },
   videoBadge: {
     alignItems: "center",

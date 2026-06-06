@@ -24,6 +24,7 @@ interface ActivityState {
   sharePostToChat: (chatId: string, post: SharedPostPayload) => Promise<void>;
   addActivityUpdate: (update: Omit<ActivityUpdate, "id">) => void;
   fetchActivityEvents: () => Promise<void>;
+  clearAccountScopedState: () => void;
 }
 
 export const useActivityStore = create<ActivityState>()(
@@ -33,6 +34,13 @@ export const useActivityStore = create<ActivityState>()(
       sharedPostMessages: {},
       activityUpdates: [],
       dbActivityEvents: [],
+      clearAccountScopedState: () =>
+        set({
+          readActivityIds: [],
+          sharedPostMessages: {},
+          activityUpdates: [],
+          dbActivityEvents: [],
+        }),
       markActivityRead: (type, id) => {
         const readKey = getActivityReadKey(type, id);
         set((state) =>

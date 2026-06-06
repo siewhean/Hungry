@@ -3,6 +3,7 @@ import { Alert, Clipboard, Share, StyleSheet, View, ActivityIndicator } from "re
 import { CheckCircle2, AlertCircle, X, Calendar, Save } from "lucide-react-native";
 import { AppText, Button, IconButton } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { publishComposerPost } from "../publishing";
 import { useComposerStore } from "../useComposerStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -16,7 +17,29 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
   const publishingState = useComposerStore((state) => state.publishingState);
   const publishingError = useComposerStore((state) => state.publishingError);
   const setPublishingState = useComposerStore((state) => state.setPublishingState);
+  const setPublishingError = useComposerStore((state) => state.setPublishingError);
+  const lastPublishRequest = useComposerStore((state) => state.lastPublishRequest);
   const reset = useComposerStore((state) => state.reset);
+  const retryPublish = async () => {
+    if (!lastPublishRequest) {
+      setPublishingError("No publish request was found. Please review the post and try again.");
+      return;
+    }
+
+    setPublishingError(null);
+    setPublishingState("posting");
+    try {
+      await publishComposerPost(lastPublishRequest);
+      setPublishingState("success");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred while publishing your post. Please try again.";
+      setPublishingError(errorMessage);
+      setPublishingState("error");
+    }
+  };
   const shareErrorReport = async () => {
     const report = `Hungry Post Composer Error\nState: ${publishingState}\nError: ${
       publishingError || "Unable to publish post."
@@ -68,7 +91,7 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
           <View style={{ flex: 1, gap: spacing.sm }}>
             <AppText variant="bodySmallBold">Post Scheduled!</AppText>
             <AppText variant="micro" tone="secondary">
-              Your post will go live at the set time.
+              Your schedule time has been saved to this composer.
             </AppText>
           </View>
         </View>
@@ -81,6 +104,7 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
     publishingState === "uploading" ||
     publishingState === "processing" ||
     publishingState === "ai_processing";
+  const isReviewOnlySuccess = lastPublishRequest?.publishMode === "review";
 
   return (
     <View
@@ -129,13 +153,15 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
           <View style={styles.content}>
             <CheckCircle2 size={60} color={palette.success} />
             <View style={{ alignItems: "center", gap: spacing.sm }}>
-              <AppText variant="h2">Shared!</AppText>
+              <AppText variant="h2">{isReviewOnlySuccess ? "Review saved" : "Shared!"}</AppText>
               <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-                Your content is now live. Get ready for the cravings to start.
+                {isReviewOnlySuccess
+                  ? "Your review is saved to your profile and the dish details."
+                  : "Your content is now live. Get ready for the cravings to start."}
               </AppText>
             </View>
             <Button
-              label="View Post"
+              label={isReviewOnlySuccess ? "Done" : "View Post"}
               variant="primary"
               fullWidth
               onPress={() => {
@@ -184,7 +210,9 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
               label="Try Again"
               variant="primary"
               fullWidth
-              onPress={() => setPublishingState("posting")}
+              onPress={() => {
+                void retryPublish();
+              }}
             />
             <Button label="Send error" variant="secondary" fullWidth onPress={shareErrorReport} />
             <Button

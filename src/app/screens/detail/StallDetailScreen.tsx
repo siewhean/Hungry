@@ -163,6 +163,7 @@ function StallMenuDishCard({
 export function StallDetailScreen({ navigation, route }: Props) {
   const venueId = route.params?.venueId ?? route.params?.id ?? "";
   const repository = getDataRepository();
+  const serviceProviderMode = getServiceProvider().mode;
   const [isLoading, setIsLoading] = useState(true);
   const venue = repository.getVenueById(venueId);
 
@@ -172,7 +173,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
   }, [venueId]);
 
   const building = venue ? getBuildingById(venue.buildingId) : undefined;
-  const dishes = venue ? repository.listDishesByVenue(venue.id) : [];
+  const dishes = useMemo(
+    () => (venue ? repository.listDishesByVenue(venue.id) : []),
+    [repository, venue],
+  );
+  const dishIdsKey = useMemo(() => dishes.map((dish) => dish.id).join("|"), [dishes]);
   const leadDish = dishes[0];
 
   const profile = useProfileStore((state) => state.profile);
@@ -193,6 +198,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
   const [isClaimPending, setIsClaimPending] = useState(() => hasPendingClaimForProfile(profile.id));
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+  const [reviewsByDishId, setReviewsByDishId] = useState<Record<string, DishDetail["reviews"]>>({});
   const trackedStallViewId = useRef<string | null>(null);
   const detailSaveActions = useDetailSaveActions({
     navigation,
@@ -217,7 +223,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
       reviewId: `stall-${venue?.id ?? ""}`,
-      postId: venue?.id ?? "",
+      postId: "",
       title: venue?.name ?? "Stall",
       subtitle: `${building?.name ?? "Hungry"} · ${venue?.unitNumber ?? ""}`.trim(),
       imageUrl: leadDish?.imageUrl ?? "",
@@ -247,6 +253,47 @@ export function StallDetailScreen({ navigation, route }: Props) {
       userId: isAuthenticated ? profile.id : undefined,
     });
   }, [isAuthenticated, profile.id, venue]);
+
+  useEffect(() => {
+    let active = true;
+    if (!dishes.length) {
+      setReviewsByDishId({});
+      return () => {
+        active = false;
+      };
+    }
+
+    void Promise.all(
+      dishes.map(async (dish) => {
+        try {
+          const reviews = await getHungryService().reviews.getReviewsForDish(dish.id);
+          return [dish.id, reviews] as const;
+        } catch {
+          return [dish.id, serviceProviderMode === "mock" ? dish.reviews : []] as const;
+        }
+      }),
+    ).then((entries) => {
+      if (!active) return;
+      setReviewsByDishId(Object.fromEntries(entries));
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [dishIdsKey, dishes, serviceProviderMode]);
+
+  const reviewHydratedDishes = useMemo(
+    () =>
+      dishes.map((dish) => ({
+        ...dish,
+        reviews: reviewsByDishId[dish.id] ?? (serviceProviderMode === "mock" ? dish.reviews : []),
+      })),
+    [dishes, reviewsByDishId, serviceProviderMode],
+  );
+  const communityReviews = useMemo(
+    () => deriveStallCommunityReviews(reviewHydratedDishes),
+    [reviewHydratedDishes],
+  );
 
   const requireAuthForProtectedAction = (message: string) => {
     if (isAuthenticated) {
@@ -298,7 +345,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
     ? venue.operatingHours.split(" – ")[0]
     : "Hours unavailable";
 
-  const communityReviews = deriveStallCommunityReviews(dishes);
   const reviewedDishIds = profile.reviewedDishIds;
   const hasReviewedDishAtVenue = dishes.some((dish) => reviewedDishIds.includes(dish.id));
   const nextUnreviewedDish = dishes.find((dish) => !reviewedDishIds.includes(dish.id));
@@ -599,14 +645,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 />
               )}
 
-              <DetailSaveActionsCard
-                title="Save this stall"
-                body="Add this stall to your trying list or keep it in a private Hungry Portfolio."
-                onAddToChecklist={detailSaveActions.addToChecklist}
-                onAddToPortfolio={detailSaveActions.addToPortfolio}
-                isAddingToChecklist={detailSaveActions.isAddingToChecklist}
-                isAddingToPortfolio={detailSaveActions.isAddingToPortfolio}
-              />
+              {FEATURE_FLAGS.collectionsEnabled ? (
+                <DetailSaveActionsCard
+                  title="Save this stall"
+                  body="Add this stall to your trying list or keep it in a private Hungry Portfolio."
+                  onAddToChecklist={detailSaveActions.addToChecklist}
+                  onAddToPortfolio={detailSaveActions.addToPortfolio}
+                  isAddingToChecklist={detailSaveActions.isAddingToChecklist}
+                  isAddingToPortfolio={detailSaveActions.isAddingToPortfolio}
+                />
+              ) : null}
 
               {/* Attributes */}
               <View style={{ flexDirection: "row", gap: spacing[3] }}>
@@ -862,8 +910,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
             onDismiss={() => {
               setActiveShareReview(null);
             }}
-            onShared={(reviewId) => {
-              incrementShare(reviewId);
+            onShared={(postId, channel) => {
+              incrementShare(postId, channel);
             }}
           />
         </View>

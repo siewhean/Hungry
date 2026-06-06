@@ -34,6 +34,8 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
   const setIsSponsored = useComposerStore((state) => state.setIsSponsored);
   const setShowPreview = useComposerStore((state) => state.setShowPreview);
   const isBusinessMode = useComposerStore((state) => state.isBusinessMode);
+  const ctaButton = useComposerStore((state) => state.ctaButton);
+  const setCTA = useComposerStore((state) => state.setCTA);
 
   const [dialogConfig, setDialogConfig] = useState<{
     visible: boolean;
@@ -189,6 +191,8 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
 
           <View style={{ gap: semanticSpacing.inlineGaps }}>
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`${isSponsored ? "Disable" : "Enable"} sponsored label`}
               onPress={() => setIsSponsored(!isSponsored)}
               style={[
                 styles.toggleRow,
@@ -210,11 +214,13 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
             </Pressable>
 
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Add CTA Button"
               onPress={() => {
                 setDialogConfig({
                   visible: true,
-                  title: "CTA Selector",
-                  message: "Choose 'Order Now', 'View Menu', or 'Book Table'.",
+                  title: "Choose CTA",
+                  message: "Select the action shown on this post.",
                 });
               }}
               style={[
@@ -236,7 +242,7 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
                 }}
               >
                 <AppText variant="micro" tone="muted">
-                  None
+                  {ctaButton ?? "None"}
                 </AppText>
                 <ChevronRight size={14} color={palette.textMuted} />
               </View>
@@ -251,7 +257,12 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
           title={dialogConfig.title}
           message={dialogConfig.message}
           onClose={() => setDialogConfig(null)}
-          buttons={[{ text: "OK", style: "default", onPress: () => setDialogConfig(null) }]}
+          buttons={[
+            { text: "Order Now", style: "default", onPress: () => setCTA("Order Now") },
+            { text: "View Menu", style: "default", onPress: () => setCTA("View Menu") },
+            { text: "Book Table", style: "default", onPress: () => setCTA("Book Table") },
+            { text: "Remove CTA", style: "cancel", onPress: () => setCTA(null) },
+          ]}
         />
       )}
     </View>

@@ -6,7 +6,11 @@ import { Search } from "lucide-react-native";
 
 import { AppText, Avatar, Card, EmptyState, Input } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
@@ -45,6 +49,9 @@ function ProfileConnectionsScreen({ navigation }: Props) {
   const toggleAuthorFollow = useSocialStore((state) => state.toggleAuthorFollow);
   const toggleFollow = useSocialStore((state) => state.toggleFollow);
   const repository = getDataRepository();
+  const serviceProviderMode = getServiceProvider().mode;
+  const canUseAuthorFallbackFollow =
+    serviceProviderMode === "mock" || (typeof __DEV__ !== "undefined" && __DEV__);
   const [searchQuery, setSearchQuery] = useState("");
   const profile = useProfileStore((state) => state.profile);
   const targetUserId = route.params?.userId ?? profile.id;
@@ -229,9 +236,11 @@ function ProfileConnectionsScreen({ navigation }: Props) {
           }
         );
       });
-    const followedNames = Object.entries(followedAuthors)
-      .filter(([, isFollowing]) => isFollowing)
-      .map(([name]) => name.trim());
+    const followedNames = canUseAuthorFallbackFollow
+      ? Object.entries(followedAuthors)
+          .filter(([, isFollowing]) => isFollowing)
+          .map(([name]) => name.trim())
+      : [];
 
     const followedByName = followedNames
       .map((name) => {
@@ -258,7 +267,13 @@ function ProfileConnectionsScreen({ navigation }: Props) {
         return true;
       })
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [communityUsersByName, followedAuthors, followedUserIds, serviceFollowing]);
+  }, [
+    canUseAuthorFallbackFollow,
+    communityUsersByName,
+    followedAuthors,
+    followedUserIds,
+    serviceFollowing,
+  ]);
 
   const followerCandidates = useMemo<UserProfileItem[]>(() => {
     const all = [...serviceFollowers, ...Array.from(communityUsersByName.values())];
@@ -353,10 +368,14 @@ function ProfileConnectionsScreen({ navigation }: Props) {
                     <AppText variant="bodyBold">{person.name}</AppText>
                   </View>
                   {(() => {
+                    const canShowFollowButton =
+                      Boolean(person.userId) || canUseAuthorFallbackFollow;
                     const isFollowing =
                       Boolean(person.userId && followedUserIds[person.userId]) ||
-                      Boolean(followedAuthors[person.name]) ||
-                      Boolean(followedAuthors[normalizePersonName(person.name)]);
+                      (canUseAuthorFallbackFollow &&
+                        (Boolean(followedAuthors[person.name]) ||
+                          Boolean(followedAuthors[normalizePersonName(person.name)])));
+                    if (!canShowFollowButton) return null;
                     return (
                       <Pressable
                         accessibilityRole="button"

@@ -7,11 +7,9 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import type { DishDetail, StallPost, VenueSummary } from "@/types/domain";
-import { useComposerStore, type MediaItem } from "./useComposerStore";
+import { useComposerStore, type MediaItem, type PublishMode } from "./useComposerStore";
 
-type PublishMode = "both" | "post" | "review";
-
-interface PublishComposerPostOptions {
+export interface PublishComposerPostOptions {
   publishMode: PublishMode;
   routeDishId?: string;
   routeVenueId?: string;
@@ -59,8 +57,7 @@ function resolvePublishTarget(
 
   const routeDish = options.routeDishId ? repository.getDishById(options.routeDishId) : undefined;
   const venueDish = venue ? repository.listDishesByVenue(venue.id)[0] : undefined;
-  const fallbackDish = repository.listPopularNearby()[0];
-  const dish = routeDish ?? venueDish ?? fallbackDish;
+  const dish = routeDish ?? venueDish;
   const resolvedVenue = venue ?? (dish ? repository.getVenueById(dish.venueId) : undefined);
 
   if (!dish || !resolvedVenue) {
@@ -70,25 +67,25 @@ function resolvePublishTarget(
   return { dish, venue: resolvedVenue };
 }
 
-function resolveMedia(media: MediaItem[], fallbackImageUrl: string) {
-  const mediaUrls = media.length ? media.map((item) => item.uri) : [fallbackImageUrl];
+function resolveMedia(media: MediaItem[]) {
+  if (media.length === 0) {
+    throw new Error("Add a photo or video before publishing.");
+  }
+
+  const mediaUrls = media.map((item) => item.uri);
   const firstMedia = media[0];
-  const mediaTypes = media.length
-    ? media.map((item) => (item.type === "video" ? ("video" as const) : ("photo" as const)))
-    : [firstMedia?.type === "video" ? ("video" as const) : ("photo" as const)];
+  const mediaTypes = media.map((item) =>
+    item.type === "video" ? ("video" as const) : ("photo" as const),
+  );
   return {
     mediaType: firstMedia?.type === "video" ? ("video" as const) : ("photo" as const),
-    mediaUrl: mediaUrls[0] ?? fallbackImageUrl,
+    mediaUrl: mediaUrls[0] ?? "",
     mediaUrls,
     mediaTypes,
   };
 }
 
 export async function publishComposerPost(options: PublishComposerPostOptions) {
-  if (options.publishMode === "review") {
-    return undefined;
-  }
-
   const repository = getDataRepository();
   const service = getHungryService();
   const state = useComposerStore.getState();
@@ -99,9 +96,47 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
       ? repository.getProfile(true)
       : storedProfile;
   const { dish, venue } = resolvePublishTarget(repository, options);
-  const media = resolveMedia(state.media, dish.imageUrl);
+  const shouldPublishPost = options.publishMode === "both" || options.publishMode === "post";
+  const shouldSubmitReview =
+    options.publishMode === "review" ||
+    (options.publishMode === "both" && (state.rating > 0 || state.reviewCaption.trim().length > 0));
   const caption = state.postCaption.trim() || state.reviewCaption.trim() || dish.name;
   const rating = state.rating > 0 ? state.rating : dish.rating;
+  const media = shouldPublishPost ? resolveMedia(state.media) : null;
+  const applyReviewProfileState = () => {
+    const profileStore = useProfileStore.getState();
+    profileStore.addReviewedDish(dish.id);
+    profileStore.addReview(dish);
+    profileStore.recordReviewEntry(dish.id, {
+      rating: state.rating,
+      text: state.reviewCaption.trim() || state.postCaption.trim(),
+      tags: [...state.foodTags, ...state.tasteTags],
+    });
+  };
+
+  if (shouldSubmitReview) {
+    if (state.rating <= 0) {
+      throw new Error("Add a rating before publishing a review.");
+    }
+    await service.reviews.submitReview({
+      dishId: dish.id,
+      venueId: venue.id,
+      rating: state.rating,
+      text: state.reviewCaption.trim() || state.postCaption.trim(),
+      tags: [...state.foodTags, ...state.tasteTags],
+      photos: state.media.filter((item) => item.type === "image").map((item) => item.uri),
+    });
+  }
+
+  if (!shouldPublishPost) {
+    if (shouldSubmitReview) {
+      applyReviewProfileState();
+    }
+    return undefined;
+  }
+  if (!media) {
+    throw new Error("Add a photo or video before publishing.");
+  }
 
   const bite = await service.social.postBite({
     dishId: dish.id,
@@ -138,6 +173,9 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
     visibility: "public",
   };
 
+  if (shouldSubmitReview) {
+    applyReviewProfileState();
+  }
   usePublishedPostStore.getState().upsertPost(post);
   useSocialStore.getState().initializeInteractions([post]);
   return post;

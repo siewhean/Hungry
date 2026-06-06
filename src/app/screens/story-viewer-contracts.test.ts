@@ -258,7 +258,11 @@ test("Home feed contract: story carousel opens existing own story and separates 
     carouselSource,
     /accessibilityState=\{\{ selected: Boolean\(shouldShowUnseenRing\) \}\}/,
   );
-  assert.match(carouselSource, /accessibilityHint="Starts a new story"/);
+  assert.match(
+    carouselSource,
+    /story\.isOwn \? onAddStoryPress\?\.\(\) : onStoryPress\?\.\(story\)/,
+  );
+  assert.match(carouselSource, /pointerEvents="none"/);
   assert.match(carouselSource, /importantForAccessibility="no"/);
   assert.match(
     carouselSource,
@@ -266,7 +270,7 @@ test("Home feed contract: story carousel opens existing own story and separates 
   );
   assert.match(carouselSource, /onPressIn=\{\(\) => onStoryPressIn\?\.\(story\)\}/);
   assert.match(carouselSource, /export const CircleStoryCarousel = memo/);
-  assert.match(carouselSource, /event\.stopPropagation\(\)/);
+  assert.doesNotMatch(carouselSource, /event\.stopPropagation\(\)/);
   assert.match(addStorySource, /getHungryService\(\)\s*\.social\.listStoryGalleryAssets\(\)/);
   assert.doesNotMatch(addStorySource, /@\/lib\/services\/mock\/storyGalleryFixtures/);
   assert.doesNotMatch(addStorySource, /mockGalleryAssets/);

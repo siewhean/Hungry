@@ -24,8 +24,11 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.doesNotMatch(reviewFeed, /activeCommentBite/);
   assert.match(reviewFeed, /useSocialStore/);
   assert.match(reviewFeed, /initializeInteractions\(/);
+  assert.match(reviewFeed, /const reviewReactionsEnabled = serviceProviderMode === "mock"/);
+  assert.match(reviewFeed, /if \(reviewReactionsEnabled\) \{/);
   assert.match(reviewFeed, /toggleLike/);
-  assert.match(reviewFeed, /toggleSave/);
+  assert.match(reviewFeed, /toggleSave\(item\.review\.id\)/);
+  assert.match(reviewFeed, /saved: favouriteDishIds\.includes\(item\.dishId\)/);
   assert.match(reviewFeed, /incrementShare/);
   assert.match(reviewFeed, /ReviewCommentsSheet/);
   assert.match(reviewFeed, /ReviewShareSheet/);
@@ -44,10 +47,10 @@ test("Review feed cards do not render bottom bites sections", () => {
   );
   assert.match(reviewFeed, /\{reviewDate\}[\s\S]*<Send/);
   assert.match(reviewFeed, /accessibilityLabel="Share review"/);
-  assert.match(
-    reviewFeed,
-    /accessibilityLabel=\{interaction\.saved \? "Unsave review" : "Save review"\}/,
-  );
+  assert.match(reviewFeed, /"Unsave review"/);
+  assert.match(reviewFeed, /"Remove saved dish"/);
+  assert.match(reviewFeed, /"Save review"/);
+  assert.match(reviewFeed, /"Save dish"/);
   assert.match(reviewFeed, /accessibilityLabel="Open review comments"/);
   assert.match(
     reviewFeed,
@@ -56,6 +59,9 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.match(reviewFeed, /interaction\.commentCount > 0/);
   assert.match(reviewFeed, /interaction\.likeCount > 0/);
   assert.match(reviewFeed, /interaction\.shareCount > 0/);
+  assert.match(reviewFeed, /shareCount: 0/);
+  assert.match(reviewFeed, /postId: linkedPost\?\.id \?\? ""/);
+  assert.doesNotMatch(reviewFeed, /postId: linkedPost\?\.id \?\? item\.review\.id/);
   assert.match(reviewFeed, /commentCount: 0/);
   assert.match(reviewFeed, /likeCount: 0/);
   assert.doesNotMatch(reviewFeed, /commentCount: 1/);

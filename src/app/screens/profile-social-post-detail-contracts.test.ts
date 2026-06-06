@@ -17,7 +17,8 @@ test("profile social grid opens posts in a detail route", () => {
   assert.match(gridSource, /navigation\.navigate\("SocialPostDetail"/);
   assert.doesNotMatch(gridSource, /Navigation to social post detail coming soon/);
   assert.match(navTypesSource, /SocialPostDetail: \{ postId: string; type: "liked" \| "saved" \}/);
-  assert.match(stackSource, /name="SocialPostDetail" component=\{SocialPostDetailScreen\}/);
+  assert.match(stackSource, /FEATURE_FLAGS\.collectionsEnabled \? \(/);
+  assert.match(stackSource, /name="SocialPostDetail" getComponent=\{loadSocialPostDetailScreen\}/);
 });
 
 test("profile social post detail shows a continuous feed of the selected collection", () => {

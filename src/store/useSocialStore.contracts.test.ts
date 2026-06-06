@@ -23,14 +23,17 @@ test("social store contract: post interactions persist locally", () => {
   assert.match(source, /loadCommentsForPost: \(postId: string\) => Promise<void>/);
 });
 
-test("social store contract: UUID follows sync to service and retain local-name fallback", () => {
+test("social store contract: UUID follows sync to service while local-name fallback is dev/mock only", () => {
   const source = read("src/store/useSocialStore.ts");
   const homeSource = read("src/app/screens/home/HomeFeedScreen.tsx");
   const profileSource = read("src/app/screens/profile/ProfileHomeScreen.tsx");
+  const profileContentSource = read("src/app/screens/profile/UserProfileContent.tsx");
   const connectionsSource = read("src/app/screens/profile/ProfileConnectionsScreen.tsx");
 
   assert.match(source, /toggleAuthorFollow: \(authorName: string\) => void/);
   assert.match(source, /toggleFollow: \(userId: string\) => void/);
+  assert.match(source, /function canUseLocalAuthorFollowFallback\(\)/);
+  assert.match(source, /Author-name follow ignored because this author is not backed by Supabase/);
   assert.match(source, /followedAuthors: \{\}/);
   assert.match(source, /followedUserIds: \{\}/);
   assert.match(source, /\[authorName\]: !prev\.followedAuthors\[authorName\]/);
@@ -39,9 +42,14 @@ test("social store contract: UUID follows sync to service and retain local-name 
   assert.match(homeSource, /state\.followedAuthors/);
   assert.match(homeSource, /state\.followedUserIds/);
   assert.match(homeSource, /const followTargetId = item\.authorId/);
+  assert.match(homeSource, /const canUseAuthorFallbackFollow =/);
   assert.match(
     homeSource,
-    /followTargetId[\s\S]*\? Boolean\(followedUserIds\[followTargetId\]\)[\s\S]*: Boolean\(followedAuthors\[item\.authorName\]\)/,
+    /const canShowFollowButton = Boolean\(followTargetId\) \|\| canUseAuthorFallbackFollow/,
+  );
+  assert.match(
+    homeSource,
+    /followTargetId[\s\S]*\? Boolean\(followedUserIds\[followTargetId\]\)[\s\S]*: canUseAuthorFallbackFollow && Boolean\(followedAuthors\[item\.authorName\]\)/,
   );
   assert.match(
     homeSource,
@@ -52,18 +60,67 @@ test("social store contract: UUID follows sync to service and retain local-name 
   assert.match(connectionsSource, /const targetUserId = route\.params\?\.userId \?\? profile\.id/);
   assert.match(connectionsSource, /service\.listFollowers\(targetUserId\)/);
   assert.match(connectionsSource, /service\.listFollowing\(targetUserId\)/);
+  assert.match(connectionsSource, /const canUseAuthorFallbackFollow =/);
+  assert.match(connectionsSource, /const followedNames = canUseAuthorFallbackFollow/);
+  assert.match(
+    connectionsSource,
+    /const canShowFollowButton =\s*Boolean\(person\.userId\) \|\| canUseAuthorFallbackFollow/,
+  );
   assert.match(
     connectionsSource,
     /person\.userId[\s\S]*\? toggleFollow\(person\.userId\)[\s\S]*: toggleAuthorFollow\(person\.name\)/,
   );
+  assert.match(profileContentSource, /const canUseAuthorFallbackFollow =/);
+  assert.match(
+    profileContentSource,
+    /const canShowFollowButton = Boolean\(resolvedAuthorId\) \|\| canUseAuthorFallbackFollow/,
+  );
+  assert.match(
+    profileContentSource,
+    /resolvedAuthorId \? toggleFollow\(resolvedAuthorId\) : toggleAuthorFollow\(authorName\)/,
+  );
 });
 
-test("social store contract: like and save toggles keep local state even if sync fails", () => {
+test("social store contract: like and save toggles roll back failed Supabase sync", () => {
   const source = read("src/store/useSocialStore.ts");
 
   assert.match(source, /liked: isLiked/);
   assert.match(source, /saved: isSaved/);
-  assert.match(source, /kept optimistic state and will retry later/);
+  assert.match(source, /interactionStatesMatch/);
+  assert.match(source, /rolled back optimistic state/);
+});
+
+test("social store contract: real post shares sync to Supabase and unsupported ids no-op", () => {
+  const source = read("src/store/useSocialStore.ts");
+  const serviceTypes = read("src/lib/services/types.ts");
+  const mockService = read("src/lib/services/mock/mockService.ts");
+  const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
+  const reviewShareSheet = read("src/app/screens/review/ReviewShareSheet.tsx");
+  const reviewFeed = read("src/app/screens/review/ReviewFeedScreen.tsx");
+
+  assert.match(
+    serviceTypes,
+    /shareBite\(\s*biteId: string,\s*options\?: \{\s*channel\?: "in_app" \| "system_share" \| "copy_link"/,
+  );
+  assert.match(mockService, /async shareBite\(\)/);
+  assert.match(supabaseService, /async shareBite\(biteId, options\)/);
+  assert.match(supabaseService, /from\("post_shares"\)\.insert/);
+  assert.match(supabaseService, /share_channel: options\?\.channel \?\? "in_app"/);
+  assert.match(source, /incrementShare: \(postId: string, channel\?: ShareChannel\) => void/);
+  assert.match(source, /Post share ignored because this post is not backed by Supabase/);
+  assert.match(source, /isUuidPostId\(postId\)/);
+  assert.match(source, /social\.shareBite\(postId, \{ channel \}\)/);
+  assert.match(source, /rolled back optimistic state/);
+  assert.match(
+    reviewShareSheet,
+    /if \(activeReview\.postId\) \{\s*onShared\(activeReview\.postId, "in_app"\)/,
+  );
+  assert.match(reviewShareSheet, /onShared\(activeReview\.postId, "copy_link"\)/);
+  assert.match(reviewShareSheet, /onShared\(activeReview\.postId, "system_share"\)/);
+  assert.match(reviewFeed, /postId: linkedPost\?\.id \?\? ""/);
+  assert.match(reviewFeed, /shareCount: 0/);
+  assert.doesNotMatch(reviewFeed, /postId: linkedPost\?\.id \?\? item\.review\.id/);
+  assert.doesNotMatch(reviewFeed, /stallPosts\[0\]/);
 });
 
 test("profile grid contract: liked and saved posts read from the persisted social store", () => {
@@ -71,13 +128,28 @@ test("profile grid contract: liked and saved posts read from the persisted socia
   const gridSource = read("src/app/screens/profile/SocialGridScreen.tsx");
 
   assert.match(homeSource, /useSocialStore/);
-  assert.match(homeSource, /getHomeFeedBundle\(profile\)/);
+  assert.match(homeSource, /getHomeFeedBundle\(profile,\s*\{/);
+  assert.match(homeSource, /followedAuthors,/);
+  assert.match(homeSource, /followedUserIds,/);
   assert.match(homeSource, /\.\.\.bundle\.socialFeed/);
   assert.match(homeSource, /\.\.\.bundle\.sections\.flatMap\(\(section\) => section\.items\)/);
   assert.match(homeSource, /togglePostLike/);
   assert.match(homeSource, /togglePostSave/);
   assert.match(gridSource, /useSocialStore/);
   assert.match(gridSource, /type === "liked" \? interaction\.liked : interaction\.saved/);
+});
+
+test("public profile post history has a service-backed user post path", () => {
+  const serviceTypes = read("src/lib/services/types.ts");
+  const mockService = read("src/lib/services/mock/mockService.ts");
+  const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
+  const profileContent = read("src/app/screens/profile/UserProfileContent.tsx");
+
+  assert.match(serviceTypes, /listUserPosts\(userId: string\): Promise<Bite\[\]>/);
+  assert.match(mockService, /async listUserPosts\(userId: string\)/);
+  assert.match(supabaseService, /async listUserPosts\(userId: string\)/);
+  assert.match(profileContent, /service\s*\.\s*listUserPosts\(normalizedAuthorId\)/);
+  assert.match(profileContent, /biteToStallPost/);
 });
 
 test("social store contract: comments and replies update visible post counters", () => {

@@ -96,9 +96,11 @@ import { useActivityStore } from "@/store/useActivityStore";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useStoryStore } from "@/store/useStoryStore";
 import { useSocialStore, type SocialComment, type SocialReply } from "@/store/useSocialStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { StoryItem } from "@/types/domain";
 
@@ -204,6 +206,9 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const togglePostLike = useSocialStore((state) => state.toggleLike);
   const togglePostSave = useSocialStore((state) => state.toggleSave);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const showToast = useUIStore((state) => state.showToast);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const incrementPostShare = useSocialStore((state) => state.incrementShare);
   const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
@@ -215,6 +220,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const followedUserIds = useSocialStore((state) => state.followedUserIds);
   const toggleAuthorFollow = useSocialStore((state) => state.toggleAuthorFollow);
   const toggleFollow = useSocialStore((state) => state.toggleFollow);
+  const serviceProviderMode = getServiceProvider().mode;
   const readActivityIds = useActivityStore((state) => state.readActivityIds);
   const activityUpdates = useActivityStore((state) => state.activityUpdates);
   const dbActivityEvents = useActivityStore((state) => state.dbActivityEvents);
@@ -223,11 +229,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     () =>
       getActivityUnreadCount(
         readActivityIds,
-        getServiceProvider().mode === "mock"
+        serviceProviderMode === "mock"
           ? activityUpdates
           : [...dbActivityEvents, ...activityUpdates],
       ),
-    [readActivityIds, activityUpdates, dbActivityEvents],
+    [readActivityIds, activityUpdates, dbActivityEvents, serviceProviderMode],
   );
   const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled;
   const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
@@ -244,10 +250,20 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const isUserMode = !isDeveloperMode && !isMerchantMode;
   const shouldShowStories = storiesEnabled && !isUserMode;
 
+  const requireAuthForPostAction = useCallback(() => {
+    if (isAuthenticated) {
+      return true;
+    }
+    setReturnRoute({ name: "MainTabs", params: { screen: "Home" } });
+    showToast({ message: "Sign in to save or react to posts.", tone: "warning" });
+    navigation.navigate("AuthStack", { screen: "Login" });
+    return false;
+  }, [isAuthenticated, navigation, setReturnRoute, showToast]);
+
   useEffect(() => {
-    if (getServiceProvider().mode === "mock") return;
+    if (serviceProviderMode === "mock") return;
     void fetchActivityEvents();
-  }, [fetchActivityEvents]);
+  }, [fetchActivityEvents, serviceProviderMode]);
   const storyCarouselItems = useMemo<StoryItem[]>(() => {
     if (!storiesEnabled) {
       return [];
@@ -293,6 +309,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const [openingUnseenStoryDisplayName, setOpeningUnseenStoryDisplayName] = useState<string | null>(
     null,
   );
+  const feedRefreshSeedRef = useRef(0);
   const carouselScrollRefs = useRef<Record<string, ScrollView | null>>({});
   const commentsSheetRef = useRef<BottomSheetModal>(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
@@ -335,8 +352,25 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       profile.dietaryPreferences.join(","),
       tasteSignature,
       publishedPostsVersion,
+      Object.entries(followedAuthors)
+        .filter(([, isFollowing]) => isFollowing)
+        .map(([authorName]) => authorName)
+        .sort()
+        .join(","),
+      Object.entries(followedUserIds)
+        .filter(([, isFollowing]) => isFollowing)
+        .map(([userId]) => userId)
+        .sort()
+        .join(","),
     ].join("|");
-  }, [profile.dietaryPreferences, profile.id, profile.tasteVector, publishedPostsVersion]);
+  }, [
+    followedAuthors,
+    followedUserIds,
+    profile.dietaryPreferences,
+    profile.id,
+    profile.tasteVector,
+    publishedPostsVersion,
+  ]);
 
   const loadFeed = useCallback(
     async (options?: {
@@ -360,7 +394,11 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         setFeedState((current) => (current === "ready" && !options?.force ? current : "loading"));
       }
       try {
-        const bundle = await getHomeFeedBundle(profile);
+        const bundle = await getHomeFeedBundle(profile, {
+          followedAuthors,
+          followedUserIds,
+          refreshSeed: feedRefreshSeedRef.current,
+        });
         if (activeFeedLoadIdRef.current !== loadId) {
           return;
         }
@@ -384,7 +422,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         );
       }
     },
-    [initializeInteractions, profile, profileFeedKey],
+    [followedAuthors, followedUserIds, initializeInteractions, profile, profileFeedKey],
   );
 
   const hidePostFromCurrentFeed = useCallback((postId: string) => {
@@ -412,6 +450,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   const refreshHomeFeed = useCallback(async () => {
     setIsRefreshing(true);
     try {
+      feedRefreshSeedRef.current += 1;
       await loadFeed({ force: true, preserveReadyOnError: true, showLoading: false });
     } finally {
       setIsRefreshing(false);
@@ -578,7 +617,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       Alert.alert("Could not share post", "Please try again.");
       return;
     }
-    incrementPostShare(activeShareItem.id);
+    incrementPostShare(activeShareItem.id, "in_app");
     setActiveShareItem(null);
     setSelectedShareChatIds([]);
     shareSheetRef.current?.dismiss();
@@ -593,7 +632,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     if (!activeShareItem) return;
     const firstDish = activeShareItem.dishes[0]?.name ?? "Dish";
     Clipboard.setString(`${firstDish} - Hungry: ${activeShareItem.venue.name}`);
-  }, [activeShareItem]);
+    incrementPostShare(activeShareItem.id, "copy_link");
+  }, [activeShareItem, incrementPostShare]);
 
   const sharePostOutsideApp = useCallback(async () => {
     if (!activeShareItem) return;
@@ -602,7 +642,8 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         activeShareItem.venue.name
       }. ${activeShareItem.caption}`,
     });
-  }, [activeShareItem]);
+    incrementPostShare(activeShareItem.id, "system_share");
+  }, [activeShareItem, incrementPostShare]);
 
   const openUserProfile = useCallback(
     (authorName: string, authorAvatarUrl?: string, authorLocation?: string, authorId?: string) => {
@@ -673,6 +714,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
 
   const handlePostLike = useCallback(
     (item: HomeFeedItem) => {
+      if (!requireAuthForPostAction()) return;
       const wasLiked = useSocialStore.getState().interactions[item.id]?.liked;
       void togglePostLike(item.id);
       if (!wasLiked) {
@@ -681,11 +723,12 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         });
       }
     },
-    [recordPostDishInteraction, togglePostLike],
+    [recordPostDishInteraction, requireAuthForPostAction, togglePostLike],
   );
 
   const handlePostSave = useCallback(
     (item: HomeFeedItem) => {
+      if (!requireAuthForPostAction()) return;
       void togglePostSave(item.id);
       const primaryDish = item.dishes?.[0];
       if (primaryDish?.id) {
@@ -694,7 +737,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         });
       }
     },
-    [toggleFavourite, togglePostSave],
+    [requireAuthForPostAction, toggleFavourite, togglePostSave],
   );
 
   const handleCaptionTextLayout = useCallback(
@@ -1057,9 +1100,13 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
         const likeIconTargetTranslateY =
           imageHeight + spacing[3] + 32 + spacing[2] + 12 - heartOriginY;
         const followTargetId = item.authorId;
+        const isOwnAuthor = Boolean(followTargetId && followTargetId === profile.id);
+        const canUseAuthorFallbackFollow =
+          serviceProviderMode === "mock" || (typeof __DEV__ !== "undefined" && __DEV__);
+        const canShowFollowButton = Boolean(followTargetId) || canUseAuthorFallbackFollow;
         const isFollowingAuthor = followTargetId
           ? Boolean(followedUserIds[followTargetId])
-          : Boolean(followedAuthors[item.authorName]);
+          : canUseAuthorFallbackFollow && Boolean(followedAuthors[item.authorName]);
         const postAgeLabel = formatPostAge(item.createdAt);
         const mediaUrls =
           item.mediaType === "photo" && item.mediaUrls?.length ? item.mediaUrls : [item.mediaUrl];
@@ -1151,33 +1198,35 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               </View>
 
               <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`${isFollowingAuthor ? "Unfollow" : "Follow"} ${item.authorName}`}
-                  hitSlop={8}
-                  onPress={() =>
-                    followTargetId
-                      ? toggleFollow(followTargetId)
-                      : toggleAuthorFollow(item.authorName)
-                  }
-                  style={[
-                    styles.followButton,
-                    {
-                      backgroundColor: isFollowingAuthor ? themeTints.cardBg : palette.orange,
-                      borderColor: isFollowingAuthor ? palette.border : palette.orange,
-                    },
-                  ]}
-                >
-                  <AppText
-                    variant="micro"
-                    style={{
-                      color: isFollowingAuthor ? themeTints.text : palette.white,
-                      fontWeight: "800",
-                    }}
+                {!isOwnAuthor && canShowFollowButton ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`${isFollowingAuthor ? "Unfollow" : "Follow"} ${item.authorName}`}
+                    hitSlop={8}
+                    onPress={() =>
+                      followTargetId
+                        ? toggleFollow(followTargetId)
+                        : toggleAuthorFollow(item.authorName)
+                    }
+                    style={[
+                      styles.followButton,
+                      {
+                        backgroundColor: isFollowingAuthor ? themeTints.cardBg : palette.orange,
+                        borderColor: isFollowingAuthor ? palette.border : palette.orange,
+                      },
+                    ]}
                   >
-                    {isFollowingAuthor ? "Following" : "Follow"}
-                  </AppText>
-                </Pressable>
+                    <AppText
+                      variant="micro"
+                      style={{
+                        color: isFollowingAuthor ? themeTints.text : palette.white,
+                        fontWeight: "800",
+                      }}
+                    >
+                      {isFollowingAuthor ? "Following" : "Follow"}
+                    </AppText>
+                  </Pressable>
+                ) : null}
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Manage ${item.authorName}'s post`}
@@ -1842,6 +1891,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       handlePostSave,
       toggleAuthorFollow,
       toggleFollow,
+      serviceProviderMode,
       incrementPostShare,
       openShareSheet,
       navigation,
@@ -1852,6 +1902,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
       prefetchFeedCardRoute,
       prefetchMapRoute,
       prefetchUserProfileRoute,
+      profile.id,
       profile.leftHandedMode,
       palette.white,
       carouselIndexByPostId,

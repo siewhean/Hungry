@@ -29,9 +29,13 @@ test("checklist and portfolio Phase 3 screens are registered in profile navigati
     assert.match(
       profileStack,
       new RegExp(`name="${routeName}"`),
-      `${routeName} must be registered in ProfileStack`,
+      `${routeName} must be conditionally registered in ProfileStack`,
     );
   });
+  assert.match(profileStack, /FEATURE_FLAGS\.collectionsEnabled \? \(/);
+  assert.doesNotMatch(profileStack, /import \{ ChecklistsHomeScreen \}/);
+  assert.match(profileStack, /getComponent=\{loadChecklistsHomeScreen\}/);
+  assert.match(profileStack, /getComponent=\{loadPortfoliosHomeScreen\}/);
 
   [
     "src/app/screens/checklist/ChecklistsHomeScreen.tsx",

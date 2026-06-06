@@ -71,7 +71,7 @@ export function StallDetailScreenV2({ route }: Props) {
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
       reviewId: `stall-${venue?.id ?? ""}`,
-      postId: venue?.id ?? "",
+      postId: "",
       title: venue?.name ?? "Stall",
       subtitle:
         `${venue?.buildingId ?? ""}${venue?.unitNumber ? ` · ${venue.unitNumber}` : ""}`.trim(),
@@ -618,8 +618,8 @@ export function StallDetailScreenV2({ route }: Props) {
         onDismiss={() => {
           setActiveShareReview(null);
         }}
-        onShared={(reviewId) => {
-          incrementShare(reviewId);
+        onShared={(postId, channel) => {
+          incrementShare(postId, channel);
         }}
       />
     </Screen>

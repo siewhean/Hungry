@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, StyleSheet, Pressable, ScrollView } from "react-native";
 import { X, Check, Sun, Droplet, Wand2, Sparkles } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
+import { VideoView, useVideoPlayer } from "expo-video";
 import { AccessibleImage, AppText, IconButton, Badge, Dialog } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
@@ -11,6 +12,23 @@ const DEFAULT_ADJUSTMENTS = { brightness: 1, contrast: 1, saturation: 1 };
 interface Props {
   mediaId: string | null;
   onClose: () => void;
+}
+
+function MediaEditorVideoPreview({ uri }: { uri: string }) {
+  const player = useVideoPlayer(uri, (videoPlayer) => {
+    videoPlayer.loop = true;
+    videoPlayer.muted = true;
+    videoPlayer.play();
+  });
+
+  return (
+    <VideoView
+      player={player}
+      style={styles.mainImage}
+      contentFit="contain"
+      nativeControls={false}
+    />
+  );
 }
 
 export function MediaEditor({ mediaId, onClose }: Props) {
@@ -88,12 +106,16 @@ export function MediaEditor({ mediaId, onClose }: Props) {
 
       {/* Main Image View */}
       <View style={[styles.imageContainer, { backgroundColor: palette.mediaBackdrop }]}>
-        <AccessibleImage
-          source={{ uri: media.uri }}
-          style={styles.mainImage}
-          contentFit="contain"
-          accessibilityLabel="Selected media preview"
-        />
+        {media.type === "video" ? (
+          <MediaEditorVideoPreview uri={media.uri} />
+        ) : (
+          <AccessibleImage
+            source={{ uri: media.uri }}
+            style={styles.mainImage}
+            contentFit="contain"
+            accessibilityLabel="Selected media preview"
+          />
+        )}
 
         <View style={styles.floatingTools}>
           <Badge label="✨ AI ENHANCED" tone="orange" />
@@ -113,27 +135,46 @@ export function MediaEditor({ mediaId, onClose }: Props) {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ gap: 8 }}
           >
-            <Pressable onPress={handleAutoEnhance}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Auto-Enhance media"
+              onPress={handleAutoEnhance}
+            >
               <Badge label="Auto-Enhance" tone="orange" />
             </Pressable>
           </ScrollView>
         </View>
 
         <View style={styles.toolGroups}>
-          <Pressable onPress={handleFoodFilter} style={styles.toolItem}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Apply food filter"
+            onPress={handleFoodFilter}
+            style={styles.toolItem}
+          >
             <Wand2 size={24} color={palette.orange} />
             <AppText variant="micro" style={{ color: palette.orange }}>
               Filters
             </AppText>
           </Pressable>
-          <Pressable onPress={handleLightAdjustment} style={styles.toolItem}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Increase light adjustment"
+            onPress={handleLightAdjustment}
+            style={styles.toolItem}
+          >
             <Sun size={24} color={palette.text} />
             <AppText variant="micro">Light</AppText>
             <AppText variant="micro" tone="muted">
               {Math.round(adjustments.brightness * 100)}%
             </AppText>
           </Pressable>
-          <Pressable onPress={handleColourAdjustment} style={styles.toolItem}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Increase colour adjustment"
+            onPress={handleColourAdjustment}
+            style={styles.toolItem}
+          >
             <Droplet size={24} color={palette.text} />
             <AppText variant="micro">Colour</AppText>
             <AppText variant="micro" tone="muted">

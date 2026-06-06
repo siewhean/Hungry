@@ -12,7 +12,7 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { ArrowLeft, Heart, MapPinned, Search, X } from "lucide-react-native";
+import { ArrowLeft, MapPinned, MessageCircle, Search, X } from "lucide-react-native";
 import { FlashList } from "@shopify/flash-list";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -27,6 +27,7 @@ import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import {
   getSearchResults,
+  getSearchResultsAsync,
   sortSearchResults,
   type SearchSortMode,
   useSearchData,
@@ -60,7 +61,7 @@ type BrowseFeedItem = {
   authorName: string;
   authorAvatarUrl: string;
   distanceMeters: number;
-  likeCount: number;
+  reviewCount: number;
   dish: DishDetail;
   venue?: VenueSummary;
 };
@@ -83,7 +84,7 @@ function getStallBrowseSlides(item: BrowseFeedItem, venueDishes: DishDetail[]) {
     title: dish.name,
     imageUrl: dish.imageUrl,
     distanceMeters: dish.distanceMeters,
-    likeCount: dish.reviewCount,
+    reviewCount: dish.reviewCount,
     dish,
   }));
 }
@@ -177,12 +178,12 @@ function BrowseGridCard({
             </AppText>
           </View>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
-            <Heart color={palette.white} fill={palette.white} size={10} style={{ opacity: 0.82 }} />
+            <MessageCircle color={palette.white} size={10} style={{ opacity: 0.82 }} />
             <AppText
               variant="micro"
               style={{ color: palette.white, fontSize: 10, fontWeight: "700" }}
             >
-              {activeSlide.likeCount}
+              {activeSlide.reviewCount}
             </AppText>
           </View>
         </View>
@@ -343,7 +344,6 @@ function BrowseGridScreen({
     const emptyPostByVenueId = new Map<string, BrowseIndex["stallPosts"][number]>();
 
     return {
-      fallbackPost: browseIndex?.stallPosts[0],
       postByDishId: browseIndex?.postByDishId ?? emptyPostByDishId,
       postByVenueId: browseIndex?.postByVenueId ?? emptyPostByVenueId,
     };
@@ -353,12 +353,12 @@ function BrowseGridScreen({
       return [];
     }
 
-    const { fallbackPost, postByDishId, postByVenueId } = browsePostIndexes;
+    const { postByDishId, postByVenueId } = browsePostIndexes;
 
     if (shouldUseQueryScopedFeed) {
       if (isDishGrid) {
         return queryMatchedDishes.map((dish) => {
-          const post = postByDishId.get(dish.id) ?? postByVenueId.get(dish.venueId) ?? fallbackPost;
+          const post = postByDishId.get(dish.id) ?? postByVenueId.get(dish.venueId);
 
           return {
             id: `dish-${dish.id}`,
@@ -368,7 +368,7 @@ function BrowseGridScreen({
             authorName: post?.authorName ?? dish.venueName,
             authorAvatarUrl: post?.authorAvatarUrl ?? dish.imageUrl,
             distanceMeters: dish.distanceMeters,
-            likeCount: dish.reviewCount,
+            reviewCount: dish.reviewCount,
             dish,
           };
         });
@@ -384,8 +384,7 @@ function BrowseGridScreen({
 
       return Array.from(topDishByVenue.values()).map((topDish) => {
         const venue = browseIndex?.venueById.get(topDish.venueId);
-        const post =
-          postByVenueId.get(topDish.venueId) ?? postByDishId.get(topDish.id) ?? fallbackPost;
+        const post = postByVenueId.get(topDish.venueId) ?? postByDishId.get(topDish.id);
 
         return {
           id: `stall-${topDish.venueId}`,
@@ -395,7 +394,7 @@ function BrowseGridScreen({
           authorName: post?.authorName ?? venue?.name ?? topDish.venueName,
           authorAvatarUrl: post?.authorAvatarUrl ?? topDish.imageUrl,
           distanceMeters: topDish.distanceMeters,
-          likeCount: topDish.reviewCount,
+          reviewCount: topDish.reviewCount,
           dish: topDish,
           venue,
         };
@@ -404,7 +403,7 @@ function BrowseGridScreen({
 
     if (isDishGrid) {
       return browseDishes.map((dish) => {
-        const post = postByDishId.get(dish.id) ?? postByVenueId.get(dish.venueId) ?? fallbackPost;
+        const post = postByDishId.get(dish.id) ?? postByVenueId.get(dish.venueId);
 
         return {
           id: `dish-${dish.id}`,
@@ -414,7 +413,7 @@ function BrowseGridScreen({
           authorName: post?.authorName ?? dish.venueName,
           authorAvatarUrl: post?.authorAvatarUrl ?? dish.imageUrl,
           distanceMeters: dish.distanceMeters,
-          likeCount: dish.reviewCount,
+          reviewCount: dish.reviewCount,
           dish,
         };
       });
@@ -436,7 +435,7 @@ function BrowseGridScreen({
           return [];
         }
 
-        const post = postByVenueId.get(venue.id) ?? postByDishId.get(topDish.id) ?? fallbackPost;
+        const post = postByVenueId.get(venue.id) ?? postByDishId.get(topDish.id);
 
         return {
           id: `stall-${venue.id}`,
@@ -446,7 +445,7 @@ function BrowseGridScreen({
           authorName: post?.authorName ?? venue.name,
           authorAvatarUrl: post?.authorAvatarUrl ?? topDish.imageUrl,
           distanceMeters: topDish.distanceMeters,
-          likeCount: topDish.reviewCount,
+          reviewCount: topDish.reviewCount,
           dish: topDish,
           venue,
         };
@@ -884,9 +883,31 @@ export function SearchResultsScreen() {
   const sortMode: SearchSortMode = "best_match";
   const browseMode = route.params?.browseMode;
   const initialQuery = route.params?.initialQuery ?? "";
+  const [serviceResults, setServiceResults] = useState<DishDetail[] | null>(null);
+  useEffect(() => {
+    let active = true;
+    setServiceResults(null);
+    if (browseMode) {
+      return () => {
+        active = false;
+      };
+    }
+
+    void getSearchResultsAsync(filters, profile.tasteVector)
+      .then((results) => {
+        if (active) setServiceResults(results);
+      })
+      .catch(() => {
+        if (active) setServiceResults(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [browseMode, filters, profile.tasteVector]);
   const rawResults = useMemo(
-    () => getSearchResults(filters, profile.tasteVector),
-    [filters, profile.tasteVector],
+    () => serviceResults ?? getSearchResults(filters, profile.tasteVector),
+    [filters, profile.tasteVector, serviceResults],
   );
   const results = useMemo(
     () => sortSearchResults(rawResults, sortMode, profile.tasteVector),

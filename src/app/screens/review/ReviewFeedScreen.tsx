@@ -25,10 +25,16 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { promptBlockReviewAuthor, promptReportReview } from "@/lib/security/communitySafety";
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { useSocialStore, type InteractionState } from "@/store/useSocialStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "./ReviewShareSheet";
 import { listReviewFeedItems, type ReviewFeedItem } from "@/features/review/reviewFeed";
@@ -122,6 +128,7 @@ function ReviewCard({
   onSavePress,
   onSharePress,
   onLikePress,
+  reviewReactionsEnabled,
 }: {
   item: ReviewFeedItem;
   interaction: InteractionState;
@@ -131,6 +138,7 @@ function ReviewCard({
   onSavePress: (item: ReviewFeedItem) => void;
   onSharePress: (item: ReviewFeedItem) => void;
   onLikePress: (reviewId: string) => void;
+  reviewReactionsEnabled: boolean;
 }) {
   const { componentRadii, palette, radii, spacing, shadows, typography } = useHungryTheme();
   const CommentIcon = MessageCircle ?? MessageCircleMore;
@@ -392,7 +400,15 @@ function ReviewCard({
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={interaction.saved ? "Unsave review" : "Save review"}
+                accessibilityLabel={
+                  interaction.saved
+                    ? reviewReactionsEnabled
+                      ? "Unsave review"
+                      : "Remove saved dish"
+                    : reviewReactionsEnabled
+                      ? "Save review"
+                      : "Save dish"
+                }
                 onPress={() => onSavePress(item)}
                 style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
               >
@@ -417,23 +433,25 @@ function ReviewCard({
                   ) : null}
                 </Pressable>
               ) : null}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={interaction.liked ? "Unlike review" : "Like review"}
-                onPress={() => onLikePress(item.review.id)}
-                style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
-              >
-                <Heart
-                  color={interaction.liked ? palette.error : palette.text}
-                  fill={interaction.liked ? palette.error : "transparent"}
-                  size={22}
-                />
-                {interaction.likeCount > 0 ? (
-                  <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
-                    {interaction.likeCount}
-                  </AppText>
-                ) : null}
-              </Pressable>
+              {reviewReactionsEnabled ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={interaction.liked ? "Unlike review" : "Like review"}
+                  onPress={() => onLikePress(item.review.id)}
+                  style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
+                >
+                  <Heart
+                    color={interaction.liked ? palette.error : palette.text}
+                    fill={interaction.liked ? palette.error : "transparent"}
+                    size={22}
+                  />
+                  {interaction.likeCount > 0 ? (
+                    <AppText variant="micro" style={{ color: palette.text, fontWeight: "600" }}>
+                      {interaction.likeCount}
+                    </AppText>
+                  ) : null}
+                </Pressable>
+              ) : null}
             </View>
           </View>
         </View>
@@ -453,6 +471,7 @@ export function ReviewFeedScreen() {
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const repository = getDataRepository();
+  const serviceProviderMode = getServiceProvider().mode;
   const commentsEnabled = FEATURE_FLAGS.commentsEnabled;
   const interactions = useSocialStore((state) => state.interactions);
   const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
@@ -462,6 +481,10 @@ export function ReviewFeedScreen() {
   const toggleSave = useSocialStore((state) => state.toggleSave);
   const incrementShare = useSocialStore((state) => state.incrementShare);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
+  const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const showToast = useUIStore((state) => state.showToast);
 
   const [filterMode, setFilterMode] = useState<FilterMode>("recent");
   const [searchQuery, setSearchQuery] = useState("");
@@ -473,6 +496,8 @@ export function ReviewFeedScreen() {
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const commentInputRef = useRef<TextInput>(null);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
+  const [serviceReviewItems, setServiceReviewItems] = useState<ReviewFeedItem[] | null>(null);
+  const reviewReactionsEnabled = serviceProviderMode === "mock";
   const openCommentsSheet = useCallback(() => {
     const commentSheet = commentsSheetRef.current;
     if (!commentSheet) return;
@@ -513,9 +538,48 @@ export function ReviewFeedScreen() {
     [navigation],
   );
 
+  useEffect(() => {
+    if (serviceProviderMode === "mock") {
+      setServiceReviewItems(null);
+      return;
+    }
+
+    let active = true;
+    const dishes = repository
+      .listBuildings()
+      .flatMap((building) => repository.listVenuesByBuilding(building.id))
+      .flatMap((venue) => repository.listDishesByVenue(venue.id));
+
+    void Promise.all(
+      dishes.map(async (dish) => {
+        try {
+          const reviews = await getHungryService().reviews.getReviewsForDish(dish.id);
+          return reviews.map((review) => ({
+            review,
+            dish,
+            dishId: dish.id,
+            dishName: dish.name,
+            venueName: dish.venueName,
+            venueId: dish.venueId,
+          }));
+        } catch {
+          return [];
+        }
+      }),
+    ).then((groups) => {
+      if (!active) return;
+      setServiceReviewItems(groups.flat());
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [repository, serviceProviderMode]);
+
   // Gather reviews from all dishes
   const allReviews = useMemo<ReviewFeedItem[]>(() => {
-    const reviews = listReviewFeedItems(repository);
+    const reviews =
+      serviceProviderMode === "mock" ? listReviewFeedItems(repository) : (serviceReviewItems ?? []);
 
     // Sort
     if (filterMode === "top_rated") {
@@ -531,7 +595,7 @@ export function ReviewFeedScreen() {
     return [...reviews].sort(
       (a, b) => new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime(),
     );
-  }, [repository, filterMode]);
+  }, [repository, filterMode, serviceProviderMode, serviceReviewItems]);
 
   useEffect(() => {
     initializeInteractions(
@@ -577,12 +641,11 @@ export function ReviewFeedScreen() {
     (item: ReviewFeedItem) => {
       const linkedPost =
         stallPosts.find((post) => post.dishIds.includes(item.dishId)) ??
-        stallPosts.find((post) => post.venueId === item.venueId) ??
-        stallPosts[0];
+        stallPosts.find((post) => post.venueId === item.venueId);
       const linkedDish = item.dish.imageUrl ? item.dish : repository.getDishById(item.dishId);
       setActiveShareReview({
         reviewId: item.review.id,
-        postId: linkedPost?.id ?? item.review.id,
+        postId: linkedPost?.id ?? "",
         title: item.dishName,
         subtitle: `${item.venueName} · ${item.review.authorName}`,
         imageUrl: item.review.photos[0] ?? linkedDish?.imageUrl ?? linkedPost?.mediaUrl ?? "",
@@ -599,16 +662,34 @@ export function ReviewFeedScreen() {
 
   const handleSavePress = useCallback(
     (item: ReviewFeedItem) => {
-      void toggleSave(item.review.id);
+      if (!isAuthenticated) {
+        setReturnRoute({ name: "MainTabs", params: { screen: "Review" } });
+        showToast({ message: "Sign in to save reviews and dishes.", tone: "warning" });
+        navigation.navigate("AuthStack", { screen: "Login" });
+        return;
+      }
 
       const dish = repository.getDishById(item.dishId) ?? item.dish;
-      if (dish?.id) {
-        requestAnimationFrame(() => {
-          toggleFavourite(dish);
-        });
+      if (!dish?.id) return;
+
+      if (reviewReactionsEnabled) {
+        void toggleSave(item.review.id);
       }
+
+      requestAnimationFrame(() => {
+        toggleFavourite(dish);
+      });
     },
-    [repository, toggleFavourite, toggleSave],
+    [
+      isAuthenticated,
+      navigation,
+      repository,
+      setReturnRoute,
+      showToast,
+      toggleFavourite,
+      toggleSave,
+      reviewReactionsEnabled,
+    ],
   );
 
   const renderItem = useCallback(
@@ -621,6 +702,16 @@ export function ReviewFeedScreen() {
         shareCount: 0,
         commentCount: 0,
       };
+      const displayInteraction = reviewReactionsEnabled
+        ? baseInteraction
+        : {
+            ...baseInteraction,
+            liked: false,
+            likeCount: 0,
+            saved: favouriteDishIds.includes(item.dishId),
+            saveCount: 0,
+            shareCount: 0,
+          };
       const postComments = commentsByPostId[item.review.id] ?? [];
       const commentIds = new Set<string>(postComments.map((comment) => comment.id));
       const replyCount = Object.values(repliesByCommentId).reduce((acc, replies) => {
@@ -635,18 +726,20 @@ export function ReviewFeedScreen() {
       return (
         <ReviewCard
           item={item}
-          interaction={{ ...baseInteraction, commentCount: computedCommentCount }}
+          interaction={{ ...displayInteraction, commentCount: computedCommentCount }}
           commentsEnabled={commentsEnabled}
           onCommentPress={openReviewComments}
           onLikePress={(reviewId) => void toggleLike(reviewId)}
           onPressDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
           onSavePress={handleSavePress}
           onSharePress={openShareReview}
+          reviewReactionsEnabled={reviewReactionsEnabled}
         />
       );
     },
     [
       interactions,
+      favouriteDishIds,
       navigation,
       openReviewComments,
       openShareReview,
@@ -655,6 +748,7 @@ export function ReviewFeedScreen() {
       commentsByPostId,
       commentsEnabled,
       repliesByCommentId,
+      reviewReactionsEnabled,
     ],
   );
 

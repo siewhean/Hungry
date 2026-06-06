@@ -20,7 +20,7 @@ import {
   Trophy,
 } from "lucide-react-native";
 
-import { AccessibleImage, AppText, Card, Button, EmptyState } from "@/components/ui";
+import { AccessibleImage, AppText, Card, EmptyState } from "@/components/ui";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
 import { MissionBanner } from "@/components/gamification/MissionBanner";
 import { PassportCard } from "@/components/gamification/PassportCard";
@@ -114,6 +114,7 @@ export function ProfileHomeScreen({
   const headerActionSize = spacing[8] + spacing[2.5];
   const profile = useProfileStore((state) => state.profile);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const signOut = useSessionStore((state) => state.signOut);
   const merchantAccount = useMerchantStore((state) => state.account);
   const publishedPosts = usePublishedPostStore((state) => state.posts);
@@ -205,6 +206,18 @@ export function ProfileHomeScreen({
     prefetchMerchantTab("Dashboard", outlet?.id, merchantAccount?.id);
     preloadRoute(rootNavigation, "MerchantTabs");
   }, [merchantAccount, rootNavigation]);
+
+  useEffect(() => {
+    if (mode !== "self" || isAuthenticated) {
+      return;
+    }
+
+    setReturnRoute("Profile");
+    rootNavigation.reset({
+      index: 0,
+      routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+    });
+  }, [isAuthenticated, mode, rootNavigation, setReturnRoute]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -465,6 +478,10 @@ export function ProfileHomeScreen({
     );
   }
 
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <ProfileScreenShell
       title="Profile"
@@ -521,7 +538,7 @@ export function ProfileHomeScreen({
                   }}
                 />
               )}
-              {isAuthenticated && (
+              {isAuthenticated && FEATURE_FLAGS.collectionsEnabled && (
                 <MenuRow
                   label="Liked Content"
                   icon={<Heart size={20} color={palette.error} fill={palette.error} />}
@@ -543,7 +560,7 @@ export function ProfileHomeScreen({
                   }}
                 />
               )}
-              {isAuthenticated && (
+              {isAuthenticated && FEATURE_FLAGS.collectionsEnabled && (
                 <MenuRow
                   label="My Checklists"
                   icon={<Bookmark size={20} color={palette.orange} />}
@@ -554,7 +571,7 @@ export function ProfileHomeScreen({
                   }}
                 />
               )}
-              {isAuthenticated && (
+              {isAuthenticated && FEATURE_FLAGS.collectionsEnabled && (
                 <MenuRow
                   label="Hungry Portfolios"
                   icon={<BarChart3 size={20} color={palette.orange} />}
@@ -696,293 +713,272 @@ export function ProfileHomeScreen({
           </View>
         </View>
 
-        {!isAuthenticated ? (
-          <Card
-            style={{
-              gap: spacing[4],
-              padding: spacing[5],
-              backgroundColor: palette.bgSoft,
-              borderColor: palette.orange,
-              marginTop: spacing[5],
-            }}
-          >
-            <View style={{ gap: spacing[2] }}>
-              <AppText variant="h2">Unlock your taste profile</AppText>
-            </View>
-            <Button
-              label="Sign In / Create Account"
-              onPressIn={() => preloadRoute(rootNavigation, "AuthStack", { screen: "Login" })}
-              onPress={() => navigation.navigate("AuthStack" as any, { screen: "Login" })}
-            />
-          </Card>
-        ) : (
-          <View style={{ gap: spacing[4] }}>
-            <View style={{ flexDirection: "row", gap: spacing[2] }}>
-              <StatBlock
-                label="Followers"
-                value={profileFollowerCount}
-                icon={<Heart size={14} color={palette.orange} />}
-                onPress={() =>
-                  openProfileConnections("Followers", {
-                    userId: profile.id,
-                    userDisplayName: profile.displayName,
-                  })
-                }
-              />
-              <StatBlock
-                label="Following"
-                value={profileFollowingCount}
-                icon={<Send size={14} color={palette.orange} />}
-                onPress={() =>
-                  openProfileConnections("Following", {
-                    userId: profile.id,
-                    userDisplayName: profile.displayName,
-                  })
-                }
-              />
-            </View>
-            <View style={{ flexDirection: "row", gap: spacing[2] }}>
-              <StatBlock
-                label="Reviews"
-                value={profile.stats.dishesReviewed}
-                icon={<PencilLine size={14} color={palette.orange} />}
-                onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
-                onPress={() => navigation.navigate("ReviewHistory")}
-              />
-              <StatBlock
-                label="Stalls"
-                value={profile.stats.stallsVisited}
-                icon={<Utensils size={14} color={palette.orange} />}
-                onPressIn={() => preloadRoute(navigation, "VisitedStalls")}
-                onPress={() => navigation.navigate("VisitedStalls")}
-              />
-              <StatBlock
-                label="Saved"
-                value={profileStatSummary.saved}
-                icon={<Bookmark size={14} color={palette.orange} />}
-                onPressIn={() => preloadRoute(navigation, "Favourites")}
-                onPress={() => navigation.navigate("Favourites")}
-              />
-            </View>
-            {isAuthenticated && gamificationEnabled ? (
-              <>
-                <PassportCard
-                  onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
-                  onPress={() => rootNavigation.navigate("PassportScreen")}
-                />
-                <MissionBanner onPress={() => navigation.navigate("MissionsScreen" as any)} />
-              </>
-            ) : null}
-            <StallContributionCard
-              submissionCount={stallSubmissions.length}
-              menuSubmissionCount={
-                stallSubmissions.filter((submission) => submission.menuItems.length > 0).length
+        <View style={{ gap: spacing[4] }}>
+          <View style={{ flexDirection: "row", gap: spacing[2] }}>
+            <StatBlock
+              label="Followers"
+              value={profileFollowerCount}
+              icon={<Heart size={14} color={palette.orange} />}
+              onPress={() =>
+                openProfileConnections("Followers", {
+                  userId: profile.id,
+                  userDisplayName: profile.displayName,
+                })
               }
-              onPressIn={() => preloadRoute(navigation, "AddStall")}
-              onPress={() => navigation.navigate("AddStall")}
             />
-            {/* Taste Fingerprint Section */}
-            <View style={{ gap: spacing[4], marginTop: spacing[4] }}>
+            <StatBlock
+              label="Following"
+              value={profileFollowingCount}
+              icon={<Send size={14} color={palette.orange} />}
+              onPress={() =>
+                openProfileConnections("Following", {
+                  userId: profile.id,
+                  userDisplayName: profile.displayName,
+                })
+              }
+            />
+          </View>
+          <View style={{ flexDirection: "row", gap: spacing[2] }}>
+            <StatBlock
+              label="Reviews"
+              value={profile.stats.dishesReviewed}
+              icon={<PencilLine size={14} color={palette.orange} />}
+              onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
+              onPress={() => navigation.navigate("ReviewHistory")}
+            />
+            <StatBlock
+              label="Stalls"
+              value={profile.stats.stallsVisited}
+              icon={<Utensils size={14} color={palette.orange} />}
+              onPressIn={() => preloadRoute(navigation, "VisitedStalls")}
+              onPress={() => navigation.navigate("VisitedStalls")}
+            />
+            <StatBlock
+              label="Saved"
+              value={profileStatSummary.saved}
+              icon={<Bookmark size={14} color={palette.orange} />}
+              onPressIn={() => preloadRoute(navigation, "Favourites")}
+              onPress={() => navigation.navigate("Favourites")}
+            />
+          </View>
+          {isAuthenticated && gamificationEnabled ? (
+            <>
+              <PassportCard
+                onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
+                onPress={() => rootNavigation.navigate("PassportScreen")}
+              />
+              <MissionBanner onPress={() => navigation.navigate("MissionsScreen" as any)} />
+            </>
+          ) : null}
+          <StallContributionCard
+            submissionCount={stallSubmissions.length}
+            menuSubmissionCount={
+              stallSubmissions.filter((submission) => submission.menuItems.length > 0).length
+            }
+            onPressIn={() => preloadRoute(navigation, "AddStall")}
+            onPress={() => navigation.navigate("AddStall")}
+          />
+          {/* Taste Fingerprint Section */}
+          <View style={{ gap: spacing[4], marginTop: spacing[4] }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingHorizontal: spacing[1],
+              }}
+            >
+              <AppText variant="h2">Taste Fingerprint</AppText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Share Taste Fingerprint"
+                accessibilityHint="Opens sharing options for your Taste Fingerprint"
+                onPress={handleShareTaste}
+                style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+              >
+                <Send size={16} color={palette.orange} />
+                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                  SHARE
+                </AppText>
+              </Pressable>
+            </View>
+
+            <View
+              style={[
+                shadows.card,
+                {
+                  backgroundColor: palette.surface,
+                  borderRadius: componentRadii.card,
+                  padding: spacing[5],
+                  borderWidth: 1,
+                  borderColor: palette.border,
+                  gap: spacing[4],
+                },
+              ]}
+            >
               <View
                 style={{
                   flexDirection: "row",
-                  justifyContent: "space-between",
                   alignItems: "center",
-                  paddingHorizontal: spacing[1],
+                  gap: spacing[3],
                 }}
-              >
-                <AppText variant="h2">Taste Fingerprint</AppText>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Share Taste Fingerprint"
-                  accessibilityHint="Opens sharing options for your Taste Fingerprint"
-                  onPress={handleShareTaste}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-                >
-                  <Send size={16} color={palette.orange} />
-                  <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                    SHARE
-                  </AppText>
-                </Pressable>
-              </View>
-
-              <View
-                style={[
-                  shadows.card,
-                  {
-                    backgroundColor: palette.surface,
-                    borderRadius: componentRadii.card,
-                    padding: spacing[5],
-                    borderWidth: 1,
-                    borderColor: palette.border,
-                    gap: spacing[4],
-                  },
-                ]}
               >
                 <View
                   style={{
-                    flexDirection: "row",
+                    backgroundColor: palette.orangeLight,
+                    width: 40,
+                    height: 40,
+                    borderRadius: radii.pill,
                     alignItems: "center",
-                    gap: spacing[3],
+                    justifyContent: "center",
                   }}
                 >
-                  <View
-                    style={{
-                      backgroundColor: palette.orangeLight,
-                      width: 40,
-                      height: 40,
-                      borderRadius: radii.pill,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <BarChart3 size={20} color={palette.orange} />
-                  </View>
+                  <BarChart3 size={20} color={palette.orange} />
                 </View>
+              </View>
 
-                <View style={{ gap: spacing[2] }}>
-                  <TasteBar
-                    label="Spicy"
-                    value={profile.tasteVector.spicy}
-                    max={10}
-                    color={palette.orange}
-                  />
-                  <TasteBar
-                    label="Salty"
-                    value={profile.tasteVector.salty}
-                    max={10}
-                    color={palette.info}
-                  />
-                  <TasteBar
-                    label="Sweet"
-                    value={profile.tasteVector.sweet}
-                    max={10}
-                    color={palette.statusFast}
-                  />
-                </View>
+              <View style={{ gap: spacing[2] }}>
+                <TasteBar
+                  label="Spicy"
+                  value={profile.tasteVector.spicy}
+                  max={10}
+                  color={palette.orange}
+                />
+                <TasteBar
+                  label="Salty"
+                  value={profile.tasteVector.salty}
+                  max={10}
+                  color={palette.info}
+                />
+                <TasteBar
+                  label="Sweet"
+                  value={profile.tasteVector.sweet}
+                  max={10}
+                  color={palette.statusFast}
+                />
               </View>
             </View>
-            <View style={{ gap: spacing[4], marginTop: spacing[5] }}>
-              <AppText variant="h2">Posts</AppText>
-              <View
+          </View>
+          <View style={{ gap: spacing[4], marginTop: spacing[5] }}>
+            <AppText variant="h2">Posts</AppText>
+            <View
+              style={{
+                alignSelf: "stretch",
+                flexDirection: "row",
+                borderWidth: 1,
+                borderRadius: radii.pill,
+                borderColor: palette.border,
+                backgroundColor: palette.surface,
+                overflow: "hidden",
+              }}
+            >
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Show profile posts"
+                accessibilityState={{ selected: activeShareTab === "posts" }}
+                onPress={() => setActiveShareTab("posts")}
                 style={{
-                  alignSelf: "stretch",
-                  flexDirection: "row",
-                  borderWidth: 1,
-                  borderRadius: radii.pill,
-                  borderColor: palette.border,
-                  backgroundColor: palette.surface,
-                  overflow: "hidden",
+                  flex: 1,
+                  paddingVertical: spacing[2],
+                  alignItems: "center",
+                  backgroundColor: activeShareTab === "posts" ? palette.orange : "transparent",
                 }}
               >
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Show profile posts"
-                  accessibilityState={{ selected: activeShareTab === "posts" }}
-                  onPress={() => setActiveShareTab("posts")}
+                <AppText
                   style={{
-                    flex: 1,
-                    paddingVertical: spacing[2],
-                    alignItems: "center",
-                    backgroundColor: activeShareTab === "posts" ? palette.orange : "transparent",
+                    fontWeight: activeShareTab === "posts" ? 700 : 500,
+                    color: activeShareTab === "posts" ? palette.textOnOrange : palette.text,
                   }}
                 >
-                  <AppText
-                    style={{
-                      fontWeight: activeShareTab === "posts" ? 700 : 500,
-                      color: activeShareTab === "posts" ? palette.textOnOrange : palette.text,
-                    }}
-                  >
-                    Posts
-                  </AppText>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Show profile ${resolvedReviewSignalLabel.toLowerCase()}`}
-                  accessibilityState={{ selected: activeShareTab === "reviews" }}
-                  onPress={() => setActiveShareTab("reviews")}
+                  Posts
+                </AppText>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Show profile ${resolvedReviewSignalLabel.toLowerCase()}`}
+                accessibilityState={{ selected: activeShareTab === "reviews" }}
+                onPress={() => setActiveShareTab("reviews")}
+                style={{
+                  flex: 1,
+                  paddingVertical: spacing[2],
+                  alignItems: "center",
+                  backgroundColor: activeShareTab === "reviews" ? palette.orange : "transparent",
+                }}
+              >
+                <AppText
                   style={{
-                    flex: 1,
-                    paddingVertical: spacing[2],
-                    alignItems: "center",
-                    backgroundColor: activeShareTab === "reviews" ? palette.orange : "transparent",
+                    fontWeight: activeShareTab === "reviews" ? 700 : 500,
+                    color: activeShareTab === "reviews" ? palette.textOnOrange : palette.text,
                   }}
                 >
-                  <AppText
-                    style={{
-                      fontWeight: activeShareTab === "reviews" ? 700 : 500,
-                      color: activeShareTab === "reviews" ? palette.textOnOrange : palette.text,
-                    }}
-                  >
-                    {resolvedReviewSignalLabel}
-                  </AppText>
-                </Pressable>
-              </View>
-              {activeShareTab === "posts" ? (
-                sortedProfilePosts.length ? (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      flexWrap: "wrap",
-                      marginHorizontal: -spacing[4],
-                    }}
-                  >
-                    {sortedProfilePosts.map((post) => (
-                      <Pressable
-                        key={post.id}
-                        aria-label={`Open post ${post.caption || post.id}`}
-                        accessibilityLabel={`Open post ${post.caption || post.id}`}
-                        accessibilityRole="button"
-                        role="button"
-                        testID={`profile-post-tile-${post.id}`}
-                        style={{
-                          width: "33.333%",
-                          aspectRatio: 1,
-                        }}
-                        onPress={() =>
-                          rootNavigation.navigate("ActivityPostDetail", {
-                            postId: post.id,
-                          })
-                        }
-                      >
-                        <View style={{ flex: 1 }}>
-                          <AccessibleImage
-                            decorative
-                            source={{ uri: post.mediaUrl }}
-                            style={{ width: "100%", height: "100%" }}
-                            contentFit="cover"
-                          />
-                        </View>
-                      </Pressable>
-                    ))}
-                  </View>
-                ) : (
-                  <EmptyState
-                    title="No posts yet"
-                    body="Published posts will appear here."
-                    icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
-                  />
-                )
-              ) : sharedReviews.length ? (
-                <View style={{ gap: spacing[3] }}>
-                  {sharedReviews.map((item) => (
-                    <Card key={item.id} style={{ gap: spacing[3] }}>
-                      <View style={{ gap: spacing[1] }}>
-                        <AppText variant="bodyBold">{item.title}</AppText>
+                  {resolvedReviewSignalLabel}
+                </AppText>
+              </Pressable>
+            </View>
+            {activeShareTab === "posts" ? (
+              sortedProfilePosts.length ? (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    marginHorizontal: -spacing[4],
+                  }}
+                >
+                  {sortedProfilePosts.map((post) => (
+                    <Pressable
+                      key={post.id}
+                      aria-label={`Open post ${post.caption || post.id}`}
+                      accessibilityLabel={`Open post ${post.caption || post.id}`}
+                      accessibilityRole="button"
+                      role="button"
+                      testID={`profile-post-tile-${post.id}`}
+                      style={{
+                        width: "33.333%",
+                        aspectRatio: 1,
+                      }}
+                      onPress={() =>
+                        rootNavigation.navigate("ActivityPostDetail", {
+                          postId: post.id,
+                        })
+                      }
+                    >
+                      <View style={{ flex: 1 }}>
+                        <AccessibleImage
+                          decorative
+                          source={{ uri: post.mediaUrl }}
+                          style={{ width: "100%", height: "100%" }}
+                          contentFit="cover"
+                        />
                       </View>
-                    </Card>
+                    </Pressable>
                   ))}
                 </View>
               ) : (
                 <EmptyState
-                  title="No reviews yet"
-                  body="Reviews will appear here after they are published."
+                  title="No posts yet"
+                  body="Published posts will appear here."
                   icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
                 />
-              )}
-            </View>
+              )
+            ) : sharedReviews.length ? (
+              <View style={{ gap: spacing[3] }}>
+                {sharedReviews.map((item) => (
+                  <Card key={item.id} style={{ gap: spacing[3] }}>
+                    <View style={{ gap: spacing[1] }}>
+                      <AppText variant="bodyBold">{item.title}</AppText>
+                    </View>
+                  </Card>
+                ))}
+              </View>
+            ) : (
+              <EmptyState
+                title="No reviews yet"
+                body="Reviews will appear here after they are published."
+                icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
+              />
+            )}
           </View>
-        )}
+        </View>
 
         <BottomSheetModal
           ref={shareSheetRef}

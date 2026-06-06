@@ -293,7 +293,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const headerButtonBorder = palette.detailHeaderBorder;
   const shareReviewTarget = {
     reviewId: `dish-${dish.id}`,
-    postId: dish.id,
+    postId: "",
     title: dish.name,
     subtitle: `${venue.name} · ${venue.unitNumber}`,
     imageUrl: gallery[0] ?? dish.imageUrl,
@@ -939,8 +939,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             onDismiss={() => {
               setActiveShareReview(null);
             }}
-            onShared={(reviewId) => {
-              incrementShare(reviewId);
+            onShared={(postId, channel) => {
+              incrementShare(postId, channel);
             }}
           />
         </View>

@@ -28,6 +28,10 @@ const readinessSmokeScript = read("scripts/supabase-full-audit-v1-smoke.mjs");
 const socialGamificationSmokeScript = read("scripts/supabase-social-gamification-smoke.mjs");
 const advisorSecurityClassifierScript = read("scripts/supabase-advisor-security-classifier.mjs");
 const advisorSupportSnapshotScript = read("scripts/supabase-advisor-support-snapshot.mjs");
+const advisorNonPasswordRunbook = read("supabase/manual/security_advisor_non_password_runbook.md");
+const legacyPaymentOrderRpcCleanupSql = read(
+  "supabase/manual/legacy_payment_order_rpc_advisor_cleanup.sql",
+);
 const packageJson = JSON.parse(read("package.json")) as {
   scripts?: Record<string, string>;
 };
@@ -206,9 +210,41 @@ test("Supabase Security Advisor classifier fails new app-owned findings only", (
   assert.match(advisorSecurityClassifierScript, /postgis/);
   assert.match(advisorSecurityClassifierScript, /st_estimatedextent/);
   assert.match(advisorSecurityClassifierScript, /auth_leaked_password_protection/);
+  assert.match(advisorSecurityClassifierScript, /release_reserved_order/);
+  assert.match(advisorSecurityClassifierScript, /submit_payment_proof/);
+  assert.match(advisorSecurityClassifierScript, /legacy linked Supabase payment RPC/);
   assert.match(advisorSecurityClassifierScript, /unexpected app-owned Advisor findings/);
   assert.match(advisorSecurityClassifierScript, /--fail-on-external/);
   assert.match(advisorSecurityClassifierScript, /--ignore-leaked-password/);
+});
+
+test("legacy payment/order Advisor blocker has an owner-approved cleanup runbook", () => {
+  assert.match(advisorNonPasswordRunbook, /legacy payment\/order RPC grants/);
+  assert.match(advisorNonPasswordRunbook, /legacy_payment_order_rpc_advisor_cleanup\.sql/);
+  assert.match(advisorNonPasswordRunbook, /owner approval/i);
+  assert.match(advisorNonPasswordRunbook, /audit:supabase:advisor-security:non-password/);
+
+  for (const functionName of ["release_reserved_order", "submit_payment_proof"]) {
+    assert.match(legacyPaymentOrderRpcCleanupSql, new RegExp(functionName));
+  }
+
+  assert.match(
+    legacyPaymentOrderRpcCleanupSql,
+    /revoke all on function public\.release_reserved_order\(text, text, text, text\)/i,
+  );
+  assert.match(
+    legacyPaymentOrderRpcCleanupSql,
+    /revoke all on function public\.release_reserved_order\(text, text\)/i,
+  );
+  assert.match(
+    legacyPaymentOrderRpcCleanupSql,
+    /revoke all on function public\.submit_payment_proof\(text, text, text\)/i,
+  );
+  assert.match(legacyPaymentOrderRpcCleanupSql, /from public, anon, authenticated/i);
+  assert.match(legacyPaymentOrderRpcCleanupSql, /has_function_privilege\('anon'/i);
+  assert.match(legacyPaymentOrderRpcCleanupSql, /has_function_privilege\('authenticated'/i);
+  assert.match(legacyPaymentOrderRpcCleanupSql, /Do not run this file as an app migration/i);
+  assert.match(legacyPaymentOrderRpcCleanupSql, /Rollback/i);
 });
 
 test("Supabase Security Advisor support snapshot captures owner-blocker evidence", () => {

@@ -1,18 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PanResponder, Platform, Pressable, ScrollView, View } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import {
-  CheckCircle2,
-  Clock,
-  GripVertical,
-  ImagePlus,
-  Plus,
-  Store,
-  Trophy,
-  X,
-} from "lucide-react-native";
+import { Clock, GripVertical, ImagePlus, Plus, Store, X } from "lucide-react-native";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
@@ -33,7 +24,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useStallSubmissionStore } from "@/store/useStallSubmissionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import type { SubmitUserStallSubmissionInput, UserStallSubmission } from "@/types/domain";
+import type { SubmitUserStallSubmissionInput } from "@/types/domain";
 import { confirmGalleryAccess, isGalleryPermissionGranted } from "@/lib/permissions/gallery";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
@@ -214,40 +205,9 @@ function getDuplicateSlotsByDays(slots: TimeRange[]) {
   return duplicateSlotIds;
 }
 
-function buildSubmissionAchievements(submissions: UserStallSubmission[]) {
-  const submittedCount = submissions.length;
-  const withMenuCount = submissions.filter((submission) => submission.menuItems.length > 0).length;
-  return [
-    {
-      id: "first-find",
-      title: "First Find",
-      body: "Submit your first new stall.",
-      progress: Math.min(submittedCount, 1),
-      target: 1,
-    },
-    {
-      id: "menu-mapper",
-      title: "Menu Mapper",
-      body: "Add menu details for 3 discovered stalls.",
-      progress: Math.min(withMenuCount, 3),
-      target: 3,
-    },
-    {
-      id: "local-scout",
-      title: "Local Scout",
-      body: "Submit 5 useful stall leads.",
-      progress: Math.min(submittedCount, 5),
-      target: 5,
-    },
-  ];
-}
-
 export function AddStallScreen({ navigation }: Props) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const profile = useProfileStore((state) => state.profile);
-  const submissions = useStallSubmissionStore((state) => state.submissions);
-  const isLoaded = useStallSubmissionStore((state) => state.isLoaded);
-  const loadSubmissions = useStallSubmissionStore((state) => state.loadSubmissions);
   const submitStall = useStallSubmissionStore((state) => state.submitStall);
   const isSubmitting = useStallSubmissionStore((state) => state.isSubmitting);
   const showToast = useUIStore((state) => state.showToast);
@@ -287,18 +247,11 @@ export function AddStallScreen({ navigation }: Props) {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isPhotoDragging, setIsPhotoDragging] = useState(false);
 
-  const achievements = useMemo(() => buildSubmissionAchievements(submissions), [submissions]);
   const coverImage = selectedImages[0];
   const selectedImagesRef = useRef<SelectedStallImage[]>(selectedImages);
   const hasRequestedGalleryDialog = useRef(false);
   const dragSourceIndexRef = useRef<number>(-1);
   const dragTargetIndexRef = useRef<number>(-1);
-
-  useEffect(() => {
-    if (!isLoaded) {
-      void loadSubmissions();
-    }
-  }, [isLoaded, loadSubmissions]);
 
   useEffect(() => {
     selectedImagesRef.current = selectedImages;
@@ -571,11 +524,7 @@ export function AddStallScreen({ navigation }: Props) {
   };
 
   return (
-    <ProfileScreenShell
-      title="Add a stall"
-      subtitle="Submit a real stall lead for review."
-      testID="add-stall-screen"
-    >
+    <ProfileScreenShell title="Add a stall" testID="add-stall-screen">
       <Card style={{ gap: spacing[4], padding: spacing[4] }}>
         <View style={{ gap: spacing[1] }}>
           <AppText variant="h3">Photos</AppText>
@@ -1142,47 +1091,6 @@ export function AddStallScreen({ navigation }: Props) {
           autoCapitalize="none"
           keyboardType="url"
         />
-      </Card>
-
-      <Card style={{ gap: spacing[4], padding: spacing[4] }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-          <Trophy color={palette.orange} size={20} />
-          <AppText variant="h3">Scout achievements</AppText>
-        </View>
-        <View style={{ gap: spacing[2] }}>
-          {achievements.map((achievement) => {
-            const complete = achievement.progress >= achievement.target;
-            return (
-              <View
-                key={achievement.id}
-                style={{
-                  alignItems: "center",
-                  borderColor: complete ? palette.orange : palette.border,
-                  borderRadius: radii.md,
-                  borderWidth: 1,
-                  flexDirection: "row",
-                  gap: spacing[3],
-                  padding: spacing[3],
-                }}
-              >
-                {complete ? (
-                  <CheckCircle2 color={palette.orange} size={20} />
-                ) : (
-                  <Store color={palette.textMuted} size={20} />
-                )}
-                <View style={{ flex: 1, gap: spacing[0.5] }}>
-                  <AppText variant="bodySmallBold">{achievement.title}</AppText>
-                  <AppText variant="micro" tone="muted">
-                    {achievement.body}
-                  </AppText>
-                </View>
-                <AppText variant="micro" tone={complete ? "accent" : "muted"}>
-                  {achievement.progress}/{achievement.target}
-                </AppText>
-              </View>
-            );
-          })}
-        </View>
       </Card>
 
       <Button

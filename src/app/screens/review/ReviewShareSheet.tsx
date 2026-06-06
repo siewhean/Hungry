@@ -33,7 +33,7 @@ type ReviewShareSheetProps = {
   innerRef: RefObject<BottomSheetModal | null>;
   bottomInset: number;
   onDismiss: () => void;
-  onShared: (reviewId: string) => void;
+  onShared: (postId: string, channel: "in_app" | "system_share" | "copy_link") => void;
 };
 
 export function ReviewShareSheet({
@@ -104,7 +104,9 @@ export function ReviewShareSheet({
       showToast({ message: "Could not share review. Please try again.", tone: "error" });
       return;
     }
-    onShared(activeReview.reviewId);
+    if (activeReview.postId) {
+      onShared(activeReview.postId, "in_app");
+    }
     showToast({
       message: `Review shared with ${selectedChatIds.length} ${
         selectedChatIds.length === 1 ? "person" : "people"
@@ -117,7 +119,9 @@ export function ReviewShareSheet({
   const copyLink = useCallback(() => {
     if (!activeReview) return;
     Clipboard.setString(activeReview.link);
-    onShared(activeReview.reviewId);
+    if (activeReview.postId) {
+      onShared(activeReview.postId, "copy_link");
+    }
     showToast({ message: "Review link copied.", tone: "success" });
   }, [activeReview, onShared, showToast]);
 
@@ -127,7 +131,9 @@ export function ReviewShareSheet({
       message: `${activeReview.message}\n${activeReview.link}`,
       url: activeReview.link,
     });
-    onShared(activeReview.reviewId);
+    if (activeReview.postId) {
+      onShared(activeReview.postId, "system_share");
+    }
   }, [activeReview, onShared]);
 
   return (

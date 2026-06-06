@@ -34,6 +34,10 @@ let hapticsModule: HapticsModule | null | undefined;
 
 async function triggerLightImpact() {
   try {
+    const { useUIStore } = require("./useUIStore") as typeof import("./useUIStore");
+    if (!useUIStore.getState().hapticFeedbackEnabled) {
+      return;
+    }
     if (hapticsModule === undefined) {
       hapticsModule = await import("expo-haptics");
     }
@@ -44,9 +48,27 @@ async function triggerLightImpact() {
 }
 
 const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+type ShareChannel = "in_app" | "system_share" | "copy_link";
 
 function isUuidPostId(postId: string) {
   return UUID_V4_PATTERN.test(postId);
+}
+
+function canUseLocalAuthorFollowFallback() {
+  return getServiceProvider().mode === "mock" || (typeof __DEV__ !== "undefined" && __DEV__);
+}
+
+function interactionStatesMatch(left: InteractionState | undefined, right: InteractionState) {
+  if (!left) return false;
+  return (
+    left.liked === right.liked &&
+    left.saved === right.saved &&
+    left.savedAt === right.savedAt &&
+    left.likeCount === right.likeCount &&
+    left.saveCount === right.saveCount &&
+    left.shareCount === right.shareCount &&
+    left.commentCount === right.commentCount
+  );
 }
 
 interface SocialState {
@@ -60,12 +82,13 @@ interface SocialState {
   toggleSave: (postId: string) => void;
   toggleAuthorFollow: (authorName: string) => void;
   toggleFollow: (userId: string) => void;
-  incrementShare: (postId: string) => void;
+  incrementShare: (postId: string, channel?: ShareChannel) => void;
   addComment: (postId: string, comment: SocialComment) => void;
   addReply: (postId: string, reply: SocialReply) => void;
   loadCommentsForPost: (postId: string) => Promise<void>;
   setInteraction: (postId: string, state: InteractionState) => void;
   initializeInteractions: (items: any[]) => void;
+  clearAccountScopedState: () => void;
 }
 
 type ServiceComment = Awaited<
@@ -91,6 +114,15 @@ export const useSocialStore = create<SocialState>()(
       followedUserIds: {},
       commentsByPostId: {},
       repliesByCommentId: {},
+
+      clearAccountScopedState: () =>
+        set({
+          interactions: {},
+          followedAuthors: {},
+          followedUserIds: {},
+          commentsByPostId: {},
+          repliesByCommentId: {},
+        }),
 
       initializeInteractions: (items) => {
         const { commentsByPostId, repliesByCommentId, interactions } = get();
@@ -187,10 +219,16 @@ export const useSocialStore = create<SocialState>()(
             try {
               await getHungryService().social.reactToBite(postId, "craving");
             } catch (e) {
-              console.warn(
-                "Failed to sync liked post reaction; kept optimistic state and will retry later.",
-                e,
-              );
+              console.error("Failed to sync liked post reaction; rolled back optimistic state.", e);
+              set((prev) => {
+                if (!interactionStatesMatch(prev.interactions[postId], nextState)) return prev;
+                return {
+                  interactions: {
+                    ...prev.interactions,
+                    [postId]: current,
+                  },
+                };
+              });
             }
           })();
         }
@@ -198,6 +236,11 @@ export const useSocialStore = create<SocialState>()(
 
       toggleSave: (postId) => {
         void triggerLightImpact();
+        if (getServiceProvider().mode !== "mock" && !isUuidPostId(postId)) {
+          console.warn("Post save ignored because this post is not backed by Supabase.");
+          return;
+        }
+
         const { interactions } = get();
         const now = new Date().toISOString();
         const current = interactions[postId] ?? {
@@ -230,16 +273,26 @@ export const useSocialStore = create<SocialState>()(
             try {
               await getHungryService().social.reactToBite(postId, "save");
             } catch (e) {
-              console.warn(
-                "Failed to sync saved post reaction; kept optimistic state and will retry later.",
-                e,
-              );
+              console.error("Failed to sync saved post reaction; rolled back optimistic state.", e);
+              set((prev) => {
+                if (!interactionStatesMatch(prev.interactions[postId], nextState)) return prev;
+                return {
+                  interactions: {
+                    ...prev.interactions,
+                    [postId]: current,
+                  },
+                };
+              });
             }
           })();
         }
       },
 
       toggleAuthorFollow: (authorName) => {
+        if (!canUseLocalAuthorFollowFallback()) {
+          console.warn("Author-name follow ignored because this author is not backed by Supabase.");
+          return;
+        }
         set((prev) => ({
           followedAuthors: {
             ...prev.followedAuthors,
@@ -327,7 +380,12 @@ export const useSocialStore = create<SocialState>()(
         });
       },
 
-      incrementShare: (postId) => {
+      incrementShare: (postId, channel = "in_app") => {
+        if (getServiceProvider().mode !== "mock" && !isUuidPostId(postId)) {
+          console.warn("Post share ignored because this post is not backed by Supabase.");
+          return;
+        }
+
         const { interactions } = get();
         const current = interactions[postId] ?? {
           liked: false,
@@ -337,16 +395,36 @@ export const useSocialStore = create<SocialState>()(
           shareCount: 0,
           commentCount: 0,
         };
+        const nextState = {
+          ...current,
+          shareCount: current.shareCount + 1,
+        };
 
         set((prev) => ({
           interactions: {
             ...prev.interactions,
-            [postId]: {
-              ...current,
-              shareCount: current.shareCount + 1,
-            },
+            [postId]: nextState,
           },
         }));
+
+        if (isUuidPostId(postId)) {
+          void (async () => {
+            try {
+              await getHungryService().social.shareBite(postId, { channel });
+            } catch (e) {
+              console.error("Failed to sync shared post; rolled back optimistic state.", e);
+              set((prev) => {
+                if (!interactionStatesMatch(prev.interactions[postId], nextState)) return prev;
+                return {
+                  interactions: {
+                    ...prev.interactions,
+                    [postId]: current,
+                  },
+                };
+              });
+            }
+          })();
+        }
       },
 
       addComment: (postId, comment) => {

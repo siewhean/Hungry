@@ -1,4 +1,8 @@
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { biteToStallPost } from "@/lib/services/postTransforms";
 import { isContentHiddenForSession } from "@/lib/security/communitySafety";
 import type { DataRepository } from "@/lib/services/types";
@@ -16,6 +20,9 @@ export function mergeStallPosts(...postLists: StallPost[][]): StallPost[] {
 }
 
 export function listSharedStallPostsSync(repository: DataRepository = getDataRepository()) {
+  if (getServiceProvider().mode === "supabase") {
+    return mergeStallPosts(repository.listStallPosts());
+  }
   return mergeStallPosts(usePublishedPostStore.getState().posts, repository.listStallPosts());
 }
 
@@ -38,11 +45,14 @@ export async function listSharedStallPosts(repository: DataRepository = getDataR
     bitePosts = [];
   }
 
+  if (getServiceProvider().mode === "supabase") {
+    return mergeStallPosts(bitePosts, servicePosts, repository.listStallPosts());
+  }
+
   const localPublishedPosts = usePublishedPostStore.getState().posts;
   const localPublishedIds = new Set(localPublishedPosts.map((post) => post.id));
   bitePosts
     .filter((post) => !localPublishedIds.has(post.id))
     .forEach((post) => usePublishedPostStore.getState().upsertPost(post));
-
   return mergeStallPosts(localPublishedPosts, bitePosts, servicePosts, repository.listStallPosts());
 }

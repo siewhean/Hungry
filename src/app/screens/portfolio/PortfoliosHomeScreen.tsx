@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Plus, Search } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { PortfolioCard } from "@/components/portfolio";
@@ -25,6 +26,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
   const { portfolios, items, follows, isLoaded, loadPortfolios } = usePortfolioStore();
   const [activeTab, setActiveTab] = useState<PortfolioTab>("mine");
   const [query, setQuery] = useState("");
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     void loadPortfolios();
@@ -45,7 +47,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: palette.bg }}
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
       <View style={styles.header}>

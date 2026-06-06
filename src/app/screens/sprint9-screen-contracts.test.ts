@@ -134,7 +134,11 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{area\.name\}`\}/);
   assert.match(manualLocation, /accessibilityHint="Sets this as your Hungry discovery location"/);
   assert.match(tasteProfileResult, /accessibilityLabel=\{`Save \$\{dish\.name\}`\}/);
-  assert.match(tasteProfileResult, /accessibilityHint="Adds this dish to your favourites"/);
+  assert.match(
+    tasteProfileResult,
+    /accessibilityHint="Create or sign in to an account before saving this dish"/,
+  );
+  assert.match(tasteProfileResult, /navigation\.navigate\("OnboardingAuth"\)/);
   assert.match(
     tasteQuiz,
     /accessibilityRole="button"[\s\S]*accessibilityLabel=\{`\$\{labels\[index\]\} \$\{QUESTIONS\[currentKey\]\}`\}/,
@@ -223,7 +227,10 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(source, /togglePostSave/);
   assert.match(source, /addPostComment/);
   assert.match(source, /addPostReply/);
-  assert.match(source, /const bundle = await getHomeFeedBundle\(profile\)/);
+  assert.match(source, /const bundle = await getHomeFeedBundle\(profile,\s*\{/);
+  assert.match(source, /followedAuthors,/);
+  assert.match(source, /followedUserIds,/);
+  assert.match(source, /refreshSeed: feedRefreshSeedRef\.current/);
   assert.match(source, /\.\.\.bundle\.socialFeed/);
   assert.match(source, /\.\.\.bundle\.sections\.flatMap\(\(section\) => section\.items\)/);
   assert.match(source, /mode === "social" \? \(/);
@@ -233,7 +240,9 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(source, /openShareSheet\(item\)/);
   assert.match(source, /sendPostToHungryUsers/);
   assert.match(source, /sharePostToChat\(chatId,/);
-  assert.match(source, /incrementPostShare\(activeShareItem\.id\)/);
+  assert.match(source, /incrementPostShare\(activeShareItem\.id, "in_app"\)/);
+  assert.match(source, /incrementPostShare\(activeShareItem\.id, "copy_link"\)/);
+  assert.match(source, /incrementPostShare\(activeShareItem\.id, "system_share"\)/);
   assert.match(source, /const actionTargetName = item\.dishes\[0\]\?\.name \?\? item\.venue\.name/);
   assert.match(source, /accessibilityLabel=\{`Share \$\{actionTargetName\} in Hungry`\}/);
   assert.match(source, /accessibilityHint="Opens sharing options for this post"/);
@@ -313,9 +322,14 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   );
   assert.match(source, /const toggleFollow = useSocialStore\(\(state\) => state\.toggleFollow\)/);
   assert.match(source, /const followTargetId = item\.authorId/);
+  assert.match(source, /const canUseAuthorFallbackFollow =/);
   assert.match(
     source,
-    /followTargetId[\s\S]*\? Boolean\(followedUserIds\[followTargetId\]\)[\s\S]*: Boolean\(followedAuthors\[item\.authorName\]\)/,
+    /const canShowFollowButton = Boolean\(followTargetId\) \|\| canUseAuthorFallbackFollow/,
+  );
+  assert.match(
+    source,
+    /followTargetId[\s\S]*\? Boolean\(followedUserIds\[followTargetId\]\)[\s\S]*: canUseAuthorFallbackFollow && Boolean\(followedAuthors\[item\.authorName\]\)/,
   );
   assert.match(
     source,
@@ -447,8 +461,10 @@ test("Sprint 9 screen contract: Home feed supports pull-to-refresh without hidin
 
   assert.match(source, /RefreshControl/);
   assert.match(source, /const \[isRefreshing, setIsRefreshing\] = useState\(false\)/);
+  assert.match(source, /const feedRefreshSeedRef = useRef\(0\)/);
   assert.match(source, /const refreshHomeFeed = useCallback\(async \(\) =>/);
   assert.match(source, /setIsRefreshing\(true\)/);
+  assert.match(source, /feedRefreshSeedRef\.current \+= 1/);
   assert.match(
     source,
     /await loadFeed\(\{ force: true, preserveReadyOnError: true, showLoading: false \}\)/,

@@ -11,8 +11,13 @@ import {
 
 import { AccessibleImage, AppText, Avatar, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { listSharedStallPosts } from "@/features/social/sharedStallPosts";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
+import { biteToStallPost } from "@/lib/services/postTransforms";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
@@ -77,7 +82,12 @@ export function UserProfileContent({
   const repliesByCommentId = useSocialStore((state) => state.repliesByCommentId);
   const publishedPosts = usePublishedPostStore((state) => state.posts);
   const followedAuthors = useSocialStore((state) => state.followedAuthors);
+  const followedUserIds = useSocialStore((state) => state.followedUserIds);
   const toggleAuthorFollow = useSocialStore((state) => state.toggleAuthorFollow);
+  const toggleFollow = useSocialStore((state) => state.toggleFollow);
+  const serviceProviderMode = getServiceProvider().mode;
+  const canUseAuthorFallbackFollow =
+    serviceProviderMode === "mock" || (typeof __DEV__ !== "undefined" && __DEV__);
   const [activeTab, setActiveTab] = useState<"posts" | "reviews">("posts");
   const [posts, setPosts] = useState<StallPost[]>([]);
   const [followerCount, setFollowerCount] = useState<number>(0);
@@ -208,17 +218,32 @@ export function UserProfileContent({
 
   useEffect(() => {
     let isMounted = true;
-    void listSharedStallPosts(repository).then((sharedPosts) => {
+    void (async () => {
+      const service = getHungryService().social;
+      const [sharedPosts, authorPosts] = await Promise.all([
+        listSharedStallPosts(repository),
+        normalizedAuthorId
+          ? service
+              .listUserPosts(normalizedAuthorId)
+              .then((bites) =>
+                bites.map((bite) => biteToStallPost(bite, { authorAvatarUrl: bite.authorAvatar })),
+              )
+              .catch(() => [])
+          : Promise.resolve([]),
+      ]);
       if (!isMounted) return;
-      setPosts(
-        sharedPosts.filter((post) => normalizePersonName(post.authorName) === normalizedAuthorName),
+      const matchingSharedPosts = sharedPosts.filter((post) =>
+        normalizedAuthorId
+          ? post.authorId === normalizedAuthorId
+          : normalizePersonName(post.authorName) === normalizedAuthorName,
       );
-    });
+      setPosts(mergeStallPosts(authorPosts, matchingSharedPosts));
+    })();
 
     return () => {
       isMounted = false;
     };
-  }, [publishedPosts, repository, normalizedAuthorName]);
+  }, [publishedPosts, repository, normalizedAuthorId, normalizedAuthorName]);
 
   useEffect(() => {
     let isActive = true;
@@ -327,9 +352,11 @@ export function UserProfileContent({
     () => new Set(posts.map((post) => post.venueId).filter(Boolean)).size,
     [posts],
   );
-  const isFollowingAuthor = Boolean(
-    followedAuthors[authorName] || followedAuthors[normalizedAuthorName],
-  );
+  const isFollowingAuthor = resolvedAuthorId
+    ? Boolean(followedUserIds[resolvedAuthorId])
+    : canUseAuthorFallbackFollow &&
+      Boolean(followedAuthors[authorName] || followedAuthors[normalizedAuthorName]);
+  const canShowFollowButton = Boolean(resolvedAuthorId) || canUseAuthorFallbackFollow;
 
   const activeTitle = activeTab === "posts" ? "Post" : "Review";
   const activeItemsCount = activeTab === "posts" ? posts.length : userReviewItems.length;
@@ -424,35 +451,39 @@ export function UserProfileContent({
                 </AppText>
               </Pressable>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${isFollowingAuthor ? "Following" : "Follow"} ${authorName}`}
-              hitSlop={8}
-              onPress={() => toggleAuthorFollow(authorName)}
-              style={{
-                alignItems: "center",
-                borderRadius: componentRadii.button,
-                borderWidth: 1,
-                justifyContent: "center",
-                minHeight: 30,
-                minWidth: 92,
-                paddingHorizontal: spacing[3],
-                marginTop: spacing[1],
-                alignSelf: "flex-start",
-                backgroundColor: isFollowingAuthor ? palette.surface : palette.orange,
-                borderColor: isFollowingAuthor ? palette.border : palette.orange,
-              }}
-            >
-              <AppText
-                variant="micro"
+            {canShowFollowButton ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${isFollowingAuthor ? "Following" : "Follow"} ${authorName}`}
+                hitSlop={8}
+                onPress={() =>
+                  resolvedAuthorId ? toggleFollow(resolvedAuthorId) : toggleAuthorFollow(authorName)
+                }
                 style={{
-                  color: isFollowingAuthor ? palette.text : palette.white,
-                  fontWeight: "800",
+                  alignItems: "center",
+                  borderRadius: componentRadii.button,
+                  borderWidth: 1,
+                  justifyContent: "center",
+                  minHeight: 30,
+                  minWidth: 92,
+                  paddingHorizontal: spacing[3],
+                  marginTop: spacing[1],
+                  alignSelf: "flex-start",
+                  backgroundColor: isFollowingAuthor ? palette.surface : palette.orange,
+                  borderColor: isFollowingAuthor ? palette.border : palette.orange,
                 }}
               >
-                {isFollowingAuthor ? "Following" : "Follow"}
-              </AppText>
-            </Pressable>
+                <AppText
+                  variant="micro"
+                  style={{
+                    color: isFollowingAuthor ? palette.text : palette.white,
+                    fontWeight: "800",
+                  }}
+                >
+                  {isFollowingAuthor ? "Following" : "Follow"}
+                </AppText>
+              </Pressable>
+            ) : null}
           </View>
         </View>
 

@@ -17,6 +17,8 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, Button, HungryLogo } from "@/components/ui";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
 
@@ -31,6 +33,9 @@ export function CraveScreen() {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const profile = useProfileStore((state) => state.profile);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const showToast = useUIStore((state) => state.showToast);
 
   // Get a set of appealing dishes for swiping
   const [dishes, setDishes] = useState<DishDetail[]>(() => {
@@ -71,6 +76,18 @@ export function CraveScreen() {
   ).current;
 
   const swipeRight = () => {
+    if (!isAuthenticated) {
+      Animated.spring(position, {
+        toValue: { x: 0, y: 0 },
+        friction: 5,
+        useNativeDriver: true,
+      }).start();
+      setReturnRoute({ name: "Crave" });
+      showToast({ message: "Sign in to save dishes.", tone: "warning" });
+      navigation.navigate("AuthStack", { screen: "Login" });
+      return;
+    }
+
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     if (currentDish) toggleFavourite(currentDish);
 

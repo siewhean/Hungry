@@ -13,6 +13,7 @@ export type PublishingState =
   | "ai_processing";
 
 export type ComposerTab = "post" | "review";
+export type PublishMode = "both" | "post" | "review";
 
 export interface MediaItem {
   id: string;
@@ -64,6 +65,11 @@ interface ComposerState {
   previewPlatform: "hungry" | "instagram";
   editingMediaId: string | null;
   isAiProcessing: boolean;
+  lastPublishRequest: {
+    publishMode: PublishMode;
+    routeDishId?: string;
+    routeVenueId?: string;
+  } | null;
 
   // Actions
   addMedia: (items: MediaItem[]) => void;
@@ -89,6 +95,7 @@ interface ComposerState {
   setPreviewPlatform: (platform: "hungry" | "instagram") => void;
   setEditingMediaId: (id: string | null) => void;
   setPublishingError: (message: string | null) => void;
+  setLastPublishRequest: (request: ComposerState["lastPublishRequest"]) => void;
   setScheduledTime: (date: Date | null) => void;
   setIsBusinessMode: (isBusiness: boolean) => void;
   setCTA: (cta: string | null) => void;
@@ -134,6 +141,7 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
   previewPlatform: "hungry",
   editingMediaId: null,
   isAiProcessing: false,
+  lastPublishRequest: null,
 
   addMedia: (items) =>
     set((state) => ({ media: [...state.media, ...items], publishingState: "editing" })),
@@ -206,6 +214,7 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
   setPreviewPlatform: (previewPlatform) => set({ previewPlatform }),
   setEditingMediaId: (editingMediaId) => set({ editingMediaId }),
   setPublishingError: (publishingError) => set({ publishingError }),
+  setLastPublishRequest: (lastPublishRequest) => set({ lastPublishRequest }),
   setScheduledTime: (scheduledTime) => set({ scheduledTime }),
   setIsBusinessMode: (isBusinessMode) => set({ isBusinessMode }),
   setCTA: (ctaButton) => set({ ctaButton }),
@@ -279,5 +288,6 @@ export const useComposerStore = create<ComposerState>((set, get) => ({
       showPreview: false,
       isAiProcessing: false,
       publishingError: null,
+      lastPublishRequest: null,
     }),
 }));

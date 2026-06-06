@@ -91,7 +91,10 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
 
   assert.match(homeFeed, /export interface HomeFeedBundle/);
   assert.match(homeFeed, /export async function getHomeFeedBundle/);
-  assert.match(homeScreen, /getHomeFeedBundle\(profile\)/);
+  assert.match(homeScreen, /getHomeFeedBundle\(profile,\s*\{/);
+  assert.match(homeScreen, /followedAuthors,/);
+  assert.match(homeScreen, /followedUserIds,/);
+  assert.match(homeScreen, /refreshSeed: feedRefreshSeedRef\.current/);
   assert.doesNotMatch(homeScreen, /getHomeFeed\(profile\)/);
   assert.doesNotMatch(homeScreen, /getHomeSocialFeed\(profile\)/);
   assert.doesNotMatch(homeScreen, /useEffect\(\(\) => \{\s*void loadFeed\(\);/);

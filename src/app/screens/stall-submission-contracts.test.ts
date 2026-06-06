@@ -62,10 +62,8 @@ test("AddStall form requires stall name and image while preserving optional deta
     screen,
     /recordPassportContribution\(profile\.id, "stall_submitted", submission\.id\)/,
   );
-  assert.match(screen, /Scout achievements/);
-  assert.match(screen, /First Find/);
-  assert.match(screen, /Menu Mapper/);
-  assert.match(screen, /Local Scout/);
+  assert.match(screen, /Menu details/);
+  assert.match(screen, /Submit stall/);
 });
 
 test("Stall submission service and gamification contracts are shared", () => {

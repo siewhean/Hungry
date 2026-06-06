@@ -46,7 +46,7 @@ export const CircleStoryCarousel = memo(function CircleStoryCarousel({
             key={story.id}
             style={styles.item}
             onPressIn={() => onStoryPressIn?.(story)}
-            onPress={() => onStoryPress?.(story)}
+            onPress={() => (story.isOwn ? onAddStoryPress?.() : onStoryPress?.(story))}
             accessible
             accessibilityRole="button"
             accessibilityLabel={
@@ -110,21 +110,17 @@ export const CircleStoryCarousel = memo(function CircleStoryCarousel({
 
               {/* "Your story" + add icon */}
               {story.isOwn && (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Create a story"
-                  accessibilityHint="Starts a new story"
+                <View
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                  pointerEvents="none"
                   style={[
                     styles.addBadge,
                     { backgroundColor: palette.orange, borderColor: palette.bg },
                   ]}
-                  onPress={(event) => {
-                    event.stopPropagation();
-                    onAddStoryPress?.();
-                  }}
                 >
                   <Plus color={palette.white} size={12} strokeWidth={3} />
-                </Pressable>
+                </View>
               )}
 
               {/* Stall fork badge */}

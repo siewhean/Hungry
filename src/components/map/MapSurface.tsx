@@ -8,7 +8,6 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import MapboxGL from "@rnmapbox/maps";
 import { Utensils } from "lucide-react-native";
 
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -21,6 +20,10 @@ import { BuildingPin } from "./BuildingPin";
 const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
 let hasConfiguredMapboxToken = false;
+
+function getMapboxGL() {
+  return require("@rnmapbox/maps") as typeof import("@rnmapbox/maps");
+}
 
 export interface MapSurfaceMarker {
   id: string;
@@ -419,13 +422,14 @@ export function MapSurface({
   const shouldUseFallback = FEATURE_FLAGS.mockMapboxEnabled || !MAPBOX_ACCESS_TOKEN;
 
   useEffect(() => {
-    if (!MAPBOX_ACCESS_TOKEN || hasConfiguredMapboxToken) {
+    if (shouldUseFallback || !MAPBOX_ACCESS_TOKEN || hasConfiguredMapboxToken) {
       return;
     }
 
+    const MapboxGL = getMapboxGL();
     MapboxGL.setAccessToken(MAPBOX_ACCESS_TOKEN);
     hasConfiguredMapboxToken = true;
-  }, []);
+  }, [shouldUseFallback]);
 
   if (shouldUseFallback) {
     return (
@@ -460,6 +464,8 @@ export function MapSurface({
       </View>
     );
   }
+
+  const MapboxGL = getMapboxGL();
 
   return (
     <View

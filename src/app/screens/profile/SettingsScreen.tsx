@@ -26,6 +26,7 @@ import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { Button } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
@@ -56,34 +57,48 @@ export function SettingsScreen() {
 
   const themePreference = useUIStore((state) => state.themePreference);
   const setThemePreference = useUIStore((state) => state.setThemePreference);
+  const hapticFeedbackEnabled = useUIStore((state) => state.hapticFeedbackEnabled);
+  const setHapticFeedbackEnabled = useUIStore((state) => state.setHapticFeedbackEnabled);
+  const reducedMotionEnabled = useUIStore((state) => state.reducedMotionEnabled);
+  const setReducedMotionEnabled = useUIStore((state) => state.setReducedMotionEnabled);
+  const showLocationBadge = useUIStore((state) => state.showLocationBadge);
+  const setShowLocationBadge = useUIStore((state) => state.setShowLocationBadge);
+  const allowSearchHistory = useUIStore((state) => state.allowSearchHistory);
+  const setAllowSearchHistory = useUIStore((state) => state.setAllowSearchHistory);
+  const openToExternalApps = useUIStore((state) => state.openToExternalApps);
+  const setOpenToExternalApps = useUIStore((state) => state.setOpenToExternalApps);
+  const dietaryFiltersEnabled = useUIStore((state) => state.dietaryFiltersEnabled);
+  const setDietaryFiltersEnabled = useUIStore((state) => state.setDietaryFiltersEnabled);
+  const activityFeedEnabled = useUIStore((state) => state.activityFeedEnabled);
+  const setActivityFeedEnabled = useUIStore((state) => state.setActivityFeedEnabled);
+  const hideReviewedDishesFromFeed = useUIStore((state) => state.hideReviewedDishesFromFeed);
+  const setHideReviewedDishesFromFeed = useUIStore((state) => state.setHideReviewedDishesFromFeed);
+  const showOnlyFavoriteDishes = useUIStore((state) => state.showOnlyFavoriteDishes);
+  const setShowOnlyFavoriteDishes = useUIStore((state) => state.setShowOnlyFavoriteDishes);
+  const pushNotificationsEnabled = useUIStore((state) => state.pushNotificationsEnabled);
+  const setPushNotificationsEnabled = useUIStore((state) => state.setPushNotificationsEnabled);
+  const missionNotificationsEnabled = useUIStore((state) => state.missionNotificationsEnabled);
+  const setMissionNotificationsEnabled = useUIStore(
+    (state) => state.setMissionNotificationsEnabled,
+  );
+  const showCredTier = useUIStore((state) => state.showCredTier);
+  const setShowCredTier = useUIStore((state) => state.setShowCredTier);
+  const showPassportProgress = useUIStore((state) => state.showPassportProgress);
+  const setShowPassportProgress = useUIStore((state) => state.setShowPassportProgress);
+  const showProfileBadges = useUIStore((state) => state.showProfileBadges);
+  const setShowProfileBadges = useUIStore((state) => state.setShowProfileBadges);
 
   const profile = useProfileStore((state) => state.profile);
   const location = useLocationStore((state) => state.manualLocation);
   const locationPermission = useLocationStore((state) => state.permission);
   const isProfilePrivate = profile.profileVisibility === "private";
+  const showNotificationSettings = FEATURE_FLAGS.notificationsEnabled;
+  const showGamificationSettings = FEATURE_FLAGS.gamificationEnabled;
 
   const normalizedThemePreference: ThemePreference =
     themePreference === "system" || themePreference === "light" || themePreference === "dark"
       ? themePreference
       : "system";
-
-  // Notification / behavior settings
-  const [dietaryEnabled, setDietaryEnabled] = useState(true);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [missionNotifications, setMissionNotifications] = useState(true);
-  const [activityFeedEnabled, setActivityFeedEnabled] = useState(true);
-  const [hapticFeedback, setHapticFeedback] = useState(true);
-  const [showLocationBadge, setShowLocationBadge] = useState(true);
-  const [allowSearchHistory, setAllowSearchHistory] = useState(true);
-  const [openToExternalApps, setOpenToExternalApps] = useState(true);
-  const [hideReviewedDishesFromFeed, setHideReviewedDishesFromFeed] = useState(false);
-  const [analyticsSharing, setAnalyticsSharing] = useState(true);
-  const [showOnlyFavoriteDishes, setShowOnlyFavoriteDishes] = useState(false);
-
-  // Gamification settings
-  const [showCredTier, setShowCredTier] = useState(true);
-  const [showPassport, setShowPassport] = useState(true);
-  const [showBadges, setShowBadges] = useState(true);
 
   const [deletionRequested, setDeletionRequested] = useState(false);
 
@@ -299,24 +314,28 @@ export function SettingsScreen() {
           type="toggle"
           isEnabled={hideReviewedDishesFromFeed}
           onToggle={setHideReviewedDishesFromFeed}
-          isLast={false}
+          isLast={!showGamificationSettings}
         />
-        <SettingsRow
-          label="Show Food Cred tier"
-          icon={<Star size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={showCredTier}
-          onToggle={setShowCredTier}
-          isLast={false}
-        />
-        <SettingsRow
-          label="Show Passport progress"
-          icon={<Globe size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={showPassport}
-          onToggle={setShowPassport}
-          isLast
-        />
+        {showGamificationSettings ? (
+          <>
+            <SettingsRow
+              label="Show Food Cred tier"
+              icon={<Star size={20} color={palette.orange} />}
+              type="toggle"
+              isEnabled={showCredTier}
+              onToggle={setShowCredTier}
+              isLast={false}
+            />
+            <SettingsRow
+              label="Show Passport progress"
+              icon={<Globe size={20} color={palette.orange} />}
+              type="toggle"
+              isEnabled={showPassportProgress}
+              onToggle={setShowPassportProgress}
+              isLast
+            />
+          </>
+        ) : null}
       </SettingsSection>
 
       <SettingsSection title="Location & Discovery">
@@ -358,8 +377,8 @@ export function SettingsScreen() {
           label="Dietary filters"
           icon={<Shield size={20} color={palette.orange} />}
           type="toggle"
-          isEnabled={dietaryEnabled}
-          onToggle={setDietaryEnabled}
+          isEnabled={dietaryFiltersEnabled}
+          onToggle={setDietaryFiltersEnabled}
           isLast={false}
         />
         <SettingsRow
@@ -384,36 +403,34 @@ export function SettingsScreen() {
           type="toggle"
           isEnabled={showOnlyFavoriteDishes}
           onToggle={setShowOnlyFavoriteDishes}
-          isLast={false}
-        />
-      </SettingsSection>
-
-      <SettingsSection title="Notifications">
-        <SettingsRow
-          label="Push notifications"
-          icon={<Bell size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={notificationsEnabled}
-          onToggle={setNotificationsEnabled}
-          isLast={false}
-        />
-        <SettingsRow
-          label="Mission notifications"
-          icon={<Bell size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={missionNotifications}
-          onToggle={setMissionNotifications}
-          isLast={false}
-        />
-        <SettingsRow
-          label="Haptic feedback"
-          icon={<HandMetal size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={hapticFeedback}
-          onToggle={setHapticFeedback}
           isLast
         />
       </SettingsSection>
+
+      {showNotificationSettings || showGamificationSettings ? (
+        <SettingsSection title="Notifications">
+          {showNotificationSettings ? (
+            <SettingsRow
+              label="Push notifications"
+              icon={<Bell size={20} color={palette.orange} />}
+              type="toggle"
+              isEnabled={pushNotificationsEnabled}
+              onToggle={setPushNotificationsEnabled}
+              isLast={!showGamificationSettings}
+            />
+          ) : null}
+          {showGamificationSettings ? (
+            <SettingsRow
+              label="Mission notifications"
+              icon={<Bell size={20} color={palette.orange} />}
+              type="toggle"
+              isEnabled={missionNotificationsEnabled}
+              onToggle={setMissionNotificationsEnabled}
+              isLast
+            />
+          ) : null}
+        </SettingsSection>
+      ) : null}
 
       <SettingsSection title="App settings">
         <SettingsRow
@@ -430,13 +447,31 @@ export function SettingsScreen() {
           isLast={false}
         />
         <SettingsRow
-          label="Show badges on profile"
-          icon={<Star size={20} color={palette.orange} />}
+          label="Reduce motion"
+          icon={<Smartphone size={20} color={palette.orange} />}
           type="toggle"
-          isEnabled={showBadges}
-          onToggle={setShowBadges}
+          isEnabled={reducedMotionEnabled}
+          onToggle={setReducedMotionEnabled}
           isLast={false}
         />
+        <SettingsRow
+          label="Haptic feedback"
+          icon={<HandMetal size={20} color={palette.orange} />}
+          type="toggle"
+          isEnabled={hapticFeedbackEnabled}
+          onToggle={setHapticFeedbackEnabled}
+          isLast={false}
+        />
+        {showGamificationSettings ? (
+          <SettingsRow
+            label="Show badges on profile"
+            icon={<Star size={20} color={palette.orange} />}
+            type="toggle"
+            isEnabled={showProfileBadges}
+            onToggle={setShowProfileBadges}
+            isLast={false}
+          />
+        ) : null}
         <SettingsRow
           label="Open in external browsers"
           icon={<Globe size={20} color={palette.orange} />}
@@ -467,14 +502,6 @@ export function SettingsScreen() {
           label="Clear local cache"
           icon={<Database size={20} color={palette.orange} />}
           onPress={handleClearLocalData}
-          isLast={false}
-        />
-        <SettingsRow
-          label="Analytics sharing"
-          icon={<Globe size={20} color={palette.orange} />}
-          type="toggle"
-          isEnabled={analyticsSharing}
-          onToggle={setAnalyticsSharing}
           isLast={false}
         />
         <SettingsRow

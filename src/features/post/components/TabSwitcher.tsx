@@ -42,6 +42,9 @@ export function TabSwitcher() {
           ]}
         />
         <Pressable
+          accessibilityRole="tab"
+          accessibilityLabel="Post tab"
+          accessibilityState={{ selected: activeTab === "post" }}
           style={styles.tab}
           onPress={() => {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -59,6 +62,9 @@ export function TabSwitcher() {
           </AppText>
         </Pressable>
         <Pressable
+          accessibilityRole="tab"
+          accessibilityLabel="Review tab"
+          accessibilityState={{ selected: activeTab === "review" }}
           style={styles.tab}
           onPress={() => {
             void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

@@ -8,7 +8,11 @@ import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
 import { useFoodCredStore } from "@/store/useFoodCredStore";
@@ -19,6 +23,7 @@ import { useSocialStore } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
 import {
   AppText,
+  AccessibleImage,
   Badge,
   Button,
   Card,
@@ -29,12 +34,14 @@ import {
 } from "@/components/ui";
 import { DeliveryPlatformButton } from "@/components/dish/DeliveryPlatformButton";
 import { ImageCarousel } from "@/components/dish/ImageCarousel";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import {
   DetailSaveActionsCard,
   useDetailSaveActions,
 } from "@/features/checklistPortfolio/DetailSaveActions";
+import type { DishDetail } from "@/types/domain";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">;
 
@@ -49,6 +56,7 @@ type ReviewReply = {
 export function DishDetailScreen({ navigation, route }: Props) {
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const repository = getDataRepository();
+  const serviceProviderMode = getServiceProvider().mode;
   const deepLinkedDishId = route.params?.dishId ?? route.params?.id ?? "";
   const dish = repository.getDishById(deepLinkedDishId);
   const profile = useProfileStore((state) => state.profile);
@@ -74,6 +82,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
   >({});
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const [isTryingFood, setIsTryingFood] = useState(false);
+  const [loadedReviews, setLoadedReviews] = useState<DishDetail["reviews"] | null>(null);
   const detailSaveActions = useDetailSaveActions({
     navigation,
     target: { itemType: "dish", id: dish?.id ?? deepLinkedDishId, label: dish?.name ?? "Dish" },
@@ -91,7 +100,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
       reviewId: `dish-${dish?.id ?? ""}`,
-      postId: dish?.id ?? "",
+      postId: "",
       title: dish?.name ?? "Dish",
       subtitle: `${venue?.name ?? ""}${venue?.unitNumber ? ` · ${venue.unitNumber}` : ""}`,
       imageUrl: gallery[0] ?? dish?.imageUrl ?? "",
@@ -129,6 +138,29 @@ export function DishDetailScreen({ navigation, route }: Props) {
       userId: isAuthenticated ? profile.id : undefined,
     });
   }, [dish, isAuthenticated, profile.id]);
+
+  useEffect(() => {
+    let active = true;
+    setLoadedReviews(null);
+    if (!dish) {
+      return () => {
+        active = false;
+      };
+    }
+
+    void getHungryService()
+      .reviews.getReviewsForDish(dish.id)
+      .then((reviews) => {
+        if (active) setLoadedReviews(reviews);
+      })
+      .catch(() => {
+        if (active) setLoadedReviews(serviceProviderMode === "mock" ? dish.reviews : []);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [dish, serviceProviderMode]);
 
   const openShareSheet = () => {
     if (!dish || !venue) {
@@ -172,6 +204,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const isSaved = profile.favouriteDishIds.includes(dish.id);
   const isDishTried = profile.reviewedDishIds.includes(dish.id);
   const isVenueVisited = stallInteraction?.isTried ?? false;
+  const visibleReviews = loadedReviews ?? (serviceProviderMode === "mock" ? dish.reviews : []);
 
   const handleTryFood = async () => {
     if (isTryingFood) return;
@@ -356,14 +389,16 @@ export function DishDetailScreen({ navigation, route }: Props) {
                 </AppText>
               </View>
 
-              <DetailSaveActionsCard
-                title="Save this dish"
-                body="Add it to a checklist for later, or keep it in a private Hungry Portfolio."
-                onAddToChecklist={detailSaveActions.addToChecklist}
-                onAddToPortfolio={detailSaveActions.addToPortfolio}
-                isAddingToChecklist={detailSaveActions.isAddingToChecklist}
-                isAddingToPortfolio={detailSaveActions.isAddingToPortfolio}
-              />
+              {FEATURE_FLAGS.collectionsEnabled ? (
+                <DetailSaveActionsCard
+                  title="Save this dish"
+                  body="Add it to a checklist for later, or keep it in a private Hungry Portfolio."
+                  onAddToChecklist={detailSaveActions.addToChecklist}
+                  onAddToPortfolio={detailSaveActions.addToPortfolio}
+                  isAddingToChecklist={detailSaveActions.isAddingToChecklist}
+                  isAddingToPortfolio={detailSaveActions.isAddingToPortfolio}
+                />
+              ) : null}
 
               {/* Taste graph */}
               <View>
@@ -446,8 +481,8 @@ export function DishDetailScreen({ navigation, route }: Props) {
               {/* Reviews */}
               <View style={{ gap: spacing[4] }}>
                 <AppText variant="h2">Community Reviews</AppText>
-                {dish.reviews.length ? (
-                  dish.reviews.map((review) => (
+                {visibleReviews.length ? (
+                  visibleReviews.map((review) => (
                     <Card key={review.id} style={{ gap: spacing[2] }}>
                       <View
                         style={{
@@ -473,6 +508,25 @@ export function DishDetailScreen({ navigation, route }: Props) {
                       <AppText variant="bodySmall" tone="secondary">
                         {review.text}
                       </AppText>
+                      {review.photos.length > 0 ? (
+                        <View style={{ flexDirection: "row", gap: spacing[2] }}>
+                          {review.photos.slice(0, 3).map((photoUrl, index) => (
+                            <AccessibleImage
+                              key={`${review.id}-${photoUrl}`}
+                              source={{ uri: photoUrl }}
+                              style={{
+                                borderRadius: radii.md,
+                                height: 72,
+                                width: 72,
+                              }}
+                              contentFit="cover"
+                              accessibilityLabel={`Review photo ${index + 1} by ${
+                                review.authorName
+                              }`}
+                            />
+                          ))}
+                        </View>
+                      ) : null}
 
                       <View
                         style={{
@@ -661,8 +715,8 @@ export function DishDetailScreen({ navigation, route }: Props) {
             onDismiss={() => {
               setActiveShareReview(null);
             }}
-            onShared={(reviewId) => {
-              incrementShare(reviewId);
+            onShared={(postId, channel) => {
+              incrementShare(postId, channel);
             }}
           />
         </View>

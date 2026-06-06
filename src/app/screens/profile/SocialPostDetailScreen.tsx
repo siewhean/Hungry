@@ -411,9 +411,8 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
         bottomInset={insets.bottom}
         innerRef={shareSheetRef}
         onDismiss={() => setActiveShareReview(null)}
-        onShared={() => {
-          if (!activeShareReview) return;
-          incrementShare(activeShareReview.postId);
+        onShared={(postId, channel) => {
+          incrementShare(postId, channel);
         }}
       />
     </Screen>

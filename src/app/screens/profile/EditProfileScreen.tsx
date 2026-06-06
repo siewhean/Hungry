@@ -46,8 +46,7 @@ const EDITABLE_DIETARY_OPTIONS: { label: string; value: DietaryFlag }[] = [
 
 export function EditProfileScreen({ navigation }: Props) {
   const profile = useProfileStore((state) => state.profile);
-  const updateProfile = useProfileStore((state) => state.updateProfile);
-  const setDietaryPreferences = useProfileStore((state) => state.setDietaryPreferences);
+  const applyProfile = useProfileStore((state) => state.applyProfile);
   const showToast = useUIStore((state) => state.showToast);
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const [displayName, setDisplayName] = useState(profile.displayName);
@@ -57,6 +56,7 @@ export function EditProfileScreen({ navigation }: Props) {
   );
   const [avatarUri, setAvatarUri] = useState<string | undefined>(undefined);
   const [isSaving, setIsSaving] = useState(false);
+  const avatarPreviewUri = avatarUri ?? profile.avatarUrl;
 
   const handlePickAvatar = async () => {
     const shouldRequestPermission = await confirmGalleryAccess({
@@ -140,9 +140,9 @@ export function EditProfileScreen({ navigation }: Props) {
               overflow: "hidden",
             }}
           >
-            {avatarUri ? (
+            {avatarPreviewUri ? (
               <AccessibleImage
-                source={{ uri: avatarUri }}
+                source={{ uri: avatarPreviewUri }}
                 style={{ height: "100%", width: "100%" }}
                 contentFit="cover"
                 accessibilityLabel="Profile avatar preview"
@@ -222,14 +222,13 @@ export function EditProfileScreen({ navigation }: Props) {
           void (async () => {
             setIsSaving(true);
             try {
-              await getHungryService().profile.updateProfile({
+              const savedProfile = await getHungryService().profile.updateProfile({
                 displayName,
                 email,
                 avatarUrl: avatarUri,
+                dietaryPreferences,
               });
-              await getHungryService().profile.updateDietaryPreferences(dietaryPreferences);
-              updateProfile({ displayName, email, avatarUrl: avatarUri });
-              setDietaryPreferences(dietaryPreferences);
+              applyProfile(savedProfile);
               showToast({ message: "Profile updated.", tone: "success" });
               navigation.goBack();
             } catch {

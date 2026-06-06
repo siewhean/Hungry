@@ -1,4 +1,8 @@
-import { getDataRepository, getSimilarityScore } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getSimilarityScore,
+} from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import type {
@@ -25,6 +29,14 @@ export function useSearchData() {
 
 export function getSearchResults(filters: SearchFilters, tasteVector = filters.tasteValues) {
   return getDataRepository().searchDishes(filters, tasteVector);
+}
+
+export async function getSearchResultsAsync(
+  filters: SearchFilters,
+  tasteVector = filters.tasteValues,
+) {
+  const results = await getHungryService().discovery.searchDishes(filters, tasteVector);
+  return results.map((result) => result.dish);
 }
 
 export function sortSearchResults(
