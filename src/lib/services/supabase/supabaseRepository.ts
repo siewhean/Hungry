@@ -1,6 +1,13 @@
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
-import type { BuildingDetail, DataRepository, SearchResult } from "@/lib/services/types";
+import type {
+  BuildingDetail,
+  DataRepository,
+  DiscoveryLocationFeed,
+  DiscoveryLocationFeedRequest,
+  SearchResult,
+  VenueLocationSearchRequest,
+} from "@/lib/services/types";
 import type {
   BlogPost,
   BuildingSummary,
@@ -115,7 +122,7 @@ function mapTasteVector(row?: Row): TasteVector | undefined {
 }
 
 let hydrated = false;
-let hydrating = false;
+let hydrationPromise: Promise<void> | null = null;
 let hydratedAt = 0;
 
 // Supabase mode must not silently read from mock datasets.
@@ -150,7 +157,7 @@ function mapVenue(row: Row): VenueSummary {
     name: toString(row.name),
     unitNumber: toString(row.unit_number),
     floor: toString(row.floor),
-    isOpen: toBool(row.is_open, true),
+    isOpen: toBool(row.is_open, false),
     liveCrowd: (toString(row.live_crowd) as VenueSummary["liveCrowd"]) || undefined,
     topDishId: toString(row.top_dish_id),
     operatingHours: toString(row.operating_hours),
@@ -216,7 +223,7 @@ function mapRpcDish(row: Row): DishDetail {
     name: toString(row.venue_name),
     unitNumber: toString(row.unit_number),
     floor: toString(row.floor),
-    isOpen: true,
+    isOpen: toBool(row.is_open, false),
     liveCrowd: (toString(row.live_crowd) as VenueSummary["liveCrowd"]) || undefined,
     topDishId: "",
     operatingHours: "",
@@ -250,7 +257,7 @@ function mapRpcVenue(row: Row): VenueSummary {
     name: toString(row.name),
     unitNumber: toString(row.unit_number),
     floor: toString(row.floor),
-    isOpen: toBool(row.is_open, true),
+    isOpen: toBool(row.is_open, false),
     liveCrowd: (toString(row.live_crowd) as VenueSummary["liveCrowd"]) || undefined,
     topDishId: toString(row.top_dish_id),
     operatingHours: toString(row.operating_hours),
@@ -262,6 +269,49 @@ function mapRpcVenue(row: Row): VenueSummary {
       affiliateEligible: toBool(delivery.affiliateEligible ?? delivery.affiliate_eligible),
     })),
   };
+}
+
+function mapDiscoveryFeedVenue(row: Row): VenueSummary {
+  return {
+    id: toString(row.venue_id),
+    buildingId: toString(row.building_id),
+    name: toString(row.venue_name, toString(row.name)),
+    unitNumber: toString(row.unit_number),
+    floor: toString(row.floor),
+    isOpen: toBool(row.is_open, false),
+    liveCrowd: undefined,
+    topDishId: toString(row.top_dish_id),
+    operatingHours: "",
+    closureNotice: undefined,
+    deliveryLinks: [],
+  };
+}
+
+function mapDiscoveryFeedDish(row: Row, venue: VenueSummary): DishDetail | undefined {
+  const dishId = toString(row.top_dish_id);
+  const dishName = toString(row.top_dish_name);
+  if (!dishId || !dishName) return undefined;
+  const imageUrl = toString(row.top_dish_image);
+  return mapDish(
+    {
+      id: dishId,
+      venue_id: venue.id,
+      building_id: venue.buildingId,
+      name: dishName,
+      image_url: imageUrl,
+      distance_meters: row.distance_meters,
+      rating_avg: 0,
+      review_count: 0,
+      price: row.top_dish_price,
+      price_range: "",
+      live_crowd: row.live_crowd,
+      taste_tags: row.cuisine_tags,
+      must_order: true,
+      availability_flags: [],
+    },
+    venue,
+    { gallery: imageUrl ? [imageUrl] : [], dietaryFlags: [] },
+  );
 }
 
 function mapUserFoodCred(row: Row): UserFoodCred {
@@ -474,129 +524,131 @@ function buildDishPresentationMap(
 
 async function refreshCache(force = false): Promise<void> {
   if (!isSupabaseConfigured()) return;
-  if (hydrating) return;
   if (!force && hydrated && Date.now() - hydratedAt < REFRESH_TTL_MS) return;
+  if (hydrationPromise) return hydrationPromise;
 
   const client = getSupabaseClient();
   if (!client) return;
-  hydrating = true;
-  try {
-    const [
-      buildingsResult,
-      venuesResult,
-      dishesResult,
-      dishImagesResult,
-      dishTasteVectorsResult,
-      dishDietaryFlagsResult,
-      dietaryFlagsResult,
-      blogResult,
-      stallResult,
-      postsResult,
-      postMediaResult,
-    ] = await Promise.all([
-      client.from("buildings").select("*"),
-      client.from("venues").select("*"),
-      client.from("dishes").select("*"),
-      client.from("dish_images").select("dish_id,url,sort_order").order("sort_order"),
-      client.from("dish_taste_vectors").select("dish_id,sweet,spicy,sour,salty,rich,aromatic"),
-      client.from("dish_dietary_flags").select("dish_id,dietary_flag_id"),
-      client.from("dietary_flags").select("id,slug"),
-      client.from("blog_posts").select("*"),
-      client.from("stall_posts").select("*"),
-      client
-        .from("posts")
-        .select("*")
-        .eq("status", "published")
-        .is("deleted_at", null)
-        .order("published_at", { ascending: false })
-        .order("created_at", { ascending: false }),
-      client.from("post_media").select("*").order("sort_order", { ascending: true }),
-    ]);
+  hydrationPromise = (async () => {
+    try {
+      const [
+        buildingsResult,
+        venuesResult,
+        dishesResult,
+        dishImagesResult,
+        dishTasteVectorsResult,
+        dishDietaryFlagsResult,
+        dietaryFlagsResult,
+        blogResult,
+        stallResult,
+        postsResult,
+        postMediaResult,
+      ] = await Promise.all([
+        client.from("buildings").select("*"),
+        client.from("venues").select("*"),
+        client.from("dishes").select("*"),
+        client.from("dish_images").select("dish_id,url,sort_order").order("sort_order"),
+        client.from("dish_taste_vectors").select("dish_id,sweet,spicy,sour,salty,rich,aromatic"),
+        client.from("dish_dietary_flags").select("dish_id,dietary_flag_id"),
+        client.from("dietary_flags").select("id,slug"),
+        client.from("blog_posts").select("*"),
+        client.from("stall_posts").select("*"),
+        client
+          .from("posts")
+          .select("*")
+          .eq("status", "published")
+          .is("deleted_at", null)
+          .order("published_at", { ascending: false })
+          .order("created_at", { ascending: false }),
+        client.from("post_media").select("*").order("sort_order", { ascending: true }),
+      ]);
 
-    if (Array.isArray(buildingsResult.data) && !buildingsResult.error) {
-      cachedBuildings = (buildingsResult.data as unknown as Row[]).map(mapBuilding);
-    }
-    let mappedVenues = cachedVenues;
-    if (Array.isArray(venuesResult.data) && !venuesResult.error) {
-      mappedVenues = (venuesResult.data as unknown as Row[]).map(mapVenue);
-      cachedVenues = mappedVenues;
-    }
-    if (Array.isArray(dishesResult.data) && !dishesResult.error) {
-      const imageRows =
-        Array.isArray(dishImagesResult.data) && !dishImagesResult.error
-          ? (dishImagesResult.data as unknown as Row[])
-          : [];
-      const tasteVectorRows =
-        Array.isArray(dishTasteVectorsResult.data) && !dishTasteVectorsResult.error
-          ? (dishTasteVectorsResult.data as unknown as Row[])
-          : [];
-      const dishDietaryFlagRows =
-        Array.isArray(dishDietaryFlagsResult.data) && !dishDietaryFlagsResult.error
-          ? (dishDietaryFlagsResult.data as unknown as Row[])
-          : [];
-      const dietaryFlagRows =
-        Array.isArray(dietaryFlagsResult.data) && !dietaryFlagsResult.error
-          ? (dietaryFlagsResult.data as unknown as Row[])
-          : [];
-      const presentationByDishId = buildDishPresentationMap(
-        imageRows,
-        tasteVectorRows,
-        dishDietaryFlagRows,
-        dietaryFlagRows,
-      );
-      cachedDishes = (dishesResult.data as unknown as Row[]).map((row) =>
-        mapDish(
-          row,
-          mappedVenues.find((venue) => venue.id === toString(row.venue_id)),
-          presentationByDishId.get(toString(row.id)),
-        ),
-      );
-    }
-    if (Array.isArray(blogResult.data) && !blogResult.error) {
-      cachedBlogPosts = (blogResult.data as unknown as Row[]).map(mapBlogPost);
-    }
-    const legacyStallPosts =
-      Array.isArray(stallResult.data) && !stallResult.error
-        ? (stallResult.data as unknown as Row[]).map(mapStallPost)
-        : cachedStallPosts;
-    if (Array.isArray(postsResult.data) && !postsResult.error) {
-      const postRows = postsResult.data as unknown as Row[];
-      const postMediaRows =
-        Array.isArray(postMediaResult.data) && !postMediaResult.error
-          ? (postMediaResult.data as unknown as Row[])
-          : [];
-      const mediaByPostId = groupRowsByStringKey(postMediaRows, "post_id");
-      const postStallPosts = postRows.map((row) => {
-        const venue = mappedVenues.find((item) => item.id === toString(row.venue_id));
-        const dish = cachedDishes.find((item) => item.id === toString(row.dish_id));
-        const building = cachedBuildings.find(
-          (item) =>
-            item.id === toString(row.building_id) ||
-            item.id === venue?.buildingId ||
-            item.id === dish?.buildingId,
+      if (Array.isArray(buildingsResult.data) && !buildingsResult.error) {
+        cachedBuildings = (buildingsResult.data as unknown as Row[]).map(mapBuilding);
+      }
+      let mappedVenues = cachedVenues;
+      if (Array.isArray(venuesResult.data) && !venuesResult.error) {
+        mappedVenues = (venuesResult.data as unknown as Row[]).map(mapVenue);
+        cachedVenues = mappedVenues;
+      }
+      if (Array.isArray(dishesResult.data) && !dishesResult.error) {
+        const imageRows =
+          Array.isArray(dishImagesResult.data) && !dishImagesResult.error
+            ? (dishImagesResult.data as unknown as Row[])
+            : [];
+        const tasteVectorRows =
+          Array.isArray(dishTasteVectorsResult.data) && !dishTasteVectorsResult.error
+            ? (dishTasteVectorsResult.data as unknown as Row[])
+            : [];
+        const dishDietaryFlagRows =
+          Array.isArray(dishDietaryFlagsResult.data) && !dishDietaryFlagsResult.error
+            ? (dishDietaryFlagsResult.data as unknown as Row[])
+            : [];
+        const dietaryFlagRows =
+          Array.isArray(dietaryFlagsResult.data) && !dietaryFlagsResult.error
+            ? (dietaryFlagsResult.data as unknown as Row[])
+            : [];
+        const presentationByDishId = buildDishPresentationMap(
+          imageRows,
+          tasteVectorRows,
+          dishDietaryFlagRows,
+          dietaryFlagRows,
         );
-        return mapPostRowToStallPost(
-          row,
-          mediaByPostId.get(toString(row.id)) ?? [],
-          venue,
-          building,
-          dish,
+        cachedDishes = (dishesResult.data as unknown as Row[]).map((row) =>
+          mapDish(
+            row,
+            mappedVenues.find((venue) => venue.id === toString(row.venue_id)),
+            presentationByDishId.get(toString(row.id)),
+          ),
         );
-      });
-      const publishedIds = new Set(postStallPosts.map((post) => post.id));
-      cachedStallPosts = [
-        ...postStallPosts,
-        ...legacyStallPosts.filter((post) => !publishedIds.has(post.id)),
-      ].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
-    } else {
-      cachedStallPosts = legacyStallPosts;
-    }
+      }
+      if (Array.isArray(blogResult.data) && !blogResult.error) {
+        cachedBlogPosts = (blogResult.data as unknown as Row[]).map(mapBlogPost);
+      }
+      const legacyStallPosts =
+        Array.isArray(stallResult.data) && !stallResult.error
+          ? (stallResult.data as unknown as Row[]).map(mapStallPost)
+          : cachedStallPosts;
+      if (Array.isArray(postsResult.data) && !postsResult.error) {
+        const postRows = postsResult.data as unknown as Row[];
+        const postMediaRows =
+          Array.isArray(postMediaResult.data) && !postMediaResult.error
+            ? (postMediaResult.data as unknown as Row[])
+            : [];
+        const mediaByPostId = groupRowsByStringKey(postMediaRows, "post_id");
+        const postStallPosts = postRows.map((row) => {
+          const venue = mappedVenues.find((item) => item.id === toString(row.venue_id));
+          const dish = cachedDishes.find((item) => item.id === toString(row.dish_id));
+          const building = cachedBuildings.find(
+            (item) =>
+              item.id === toString(row.building_id) ||
+              item.id === venue?.buildingId ||
+              item.id === dish?.buildingId,
+          );
+          return mapPostRowToStallPost(
+            row,
+            mediaByPostId.get(toString(row.id)) ?? [],
+            venue,
+            building,
+            dish,
+          );
+        });
+        const publishedIds = new Set(postStallPosts.map((post) => post.id));
+        cachedStallPosts = [
+          ...postStallPosts,
+          ...legacyStallPosts.filter((post) => !publishedIds.has(post.id)),
+        ].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
+      } else {
+        cachedStallPosts = legacyStallPosts;
+      }
 
-    hydrated = true;
-    hydratedAt = Date.now();
-  } finally {
-    hydrating = false;
-  }
+      hydrated = true;
+      hydratedAt = Date.now();
+    } finally {
+      hydrationPromise = null;
+    }
+  })();
+  return hydrationPromise;
 }
 
 function ensureHydrated(): void {
@@ -662,12 +714,64 @@ export async function searchDishesViaRpc(
     p_cursor_score: null,
     p_cursor_id: null,
     p_venue_id: null,
+    p_area_name: null,
+    p_cuisine_tags: null,
+    p_max_price: null,
+    p_open_only: false,
   });
   if (!rows) return undefined;
   return rows.map((row) => ({
     dish: mapRpcDish(row),
     score: toNumber(row.rank_score, similarityScoreFallback(mapRpcDish(row), tasteProfile)),
   }));
+}
+
+export async function listDiscoveryFeedByLocationViaRpc(
+  request: DiscoveryLocationFeedRequest,
+): Promise<DiscoveryLocationFeed | undefined> {
+  const rows = await rpcRows("get_discovery_feed_by_location", {
+    p_area_name: request.areaName?.trim() || null,
+    p_lat: request.lat ?? null,
+    p_lng: request.lng ?? null,
+    p_radius_meters: request.radiusMeters ?? null,
+    p_limit: request.limit ?? null,
+  });
+  if (!rows) return undefined;
+
+  const venues = rows.map(mapDiscoveryFeedVenue);
+  const results = rows
+    .map((row, index) => {
+      const venue = venues[index];
+      const dish = mapDiscoveryFeedDish(row, venue);
+      return dish
+        ? {
+            dish,
+            score: toNumber(row.rank_score),
+          }
+        : undefined;
+    })
+    .filter((result): result is SearchResult => Boolean(result));
+
+  return { venues, results };
+}
+
+export async function searchVenuesByLocationViaRpc(
+  request: VenueLocationSearchRequest,
+): Promise<VenueSummary[] | undefined> {
+  const rows = await rpcRows("search_venues_by_location", {
+    p_query: request.query?.trim() || null,
+    p_area_name: request.areaName?.trim() || null,
+    p_lat: request.lat ?? null,
+    p_lng: request.lng ?? null,
+    p_radius_meters: request.radiusMeters ?? null,
+    p_limit: request.limit ?? null,
+  });
+  return rows?.map((row) =>
+    mapRpcVenue({
+      ...row,
+      delivery_links: [],
+    }),
+  );
 }
 
 export async function getDishByIdViaRpc(dishId: string): Promise<DishDetail | undefined> {
@@ -770,6 +874,10 @@ export async function listPopularNearbyViaRpc(
     p_cursor_score: null,
     p_cursor_id: null,
     p_venue_id: null,
+    p_area_name: null,
+    p_cuisine_tags: null,
+    p_max_price: null,
+    p_open_only: false,
   });
   return rows?.map(mapRpcDish);
 }

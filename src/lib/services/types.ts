@@ -469,6 +469,23 @@ export interface SearchResult {
   score: number;
 }
 
+export interface DiscoveryLocationFeedRequest {
+  areaName?: string;
+  lat?: number;
+  lng?: number;
+  radiusMeters?: number;
+  limit?: number;
+}
+
+export interface DiscoveryLocationFeed {
+  venues: VenueSummary[];
+  results: SearchResult[];
+}
+
+export interface VenueLocationSearchRequest extends DiscoveryLocationFeedRequest {
+  query?: string;
+}
+
 // ─── Session Types ────────────────────────────────────────────────────────────
 
 export interface Session {
@@ -697,6 +714,10 @@ export interface HungryService {
     }): Promise<void>;
     listDishesByVenue(venueId: string): Promise<DishDetail[]>;
     listPopularNearby(lat?: number, lng?: number): Promise<DishDetail[]>;
+    listDiscoveryFeedByLocation(
+      request: DiscoveryLocationFeedRequest,
+    ): Promise<DiscoveryLocationFeed | undefined>;
+    searchVenuesByLocation(request: VenueLocationSearchRequest): Promise<VenueSummary[] | undefined>;
     searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]>;
     decideForMe(
       tasteProfile: TasteVector,
@@ -727,8 +748,17 @@ export interface HungryService {
   // Social (Bites)
   social: {
     getBitesFeed(lat?: number, lng?: number): Promise<Bite[]>;
+    listUserPosts(userId: string): Promise<Bite[]>;
     postBite(draft: BiteDraft): Promise<Bite>;
     reactToBite(biteId: string, reaction: "craving" | "save"): Promise<void>;
+    shareBite(
+      biteId: string,
+      options?: {
+        channel?: "in_app" | "system_share" | "copy_link";
+        targetConversationId?: string;
+        targetUserId?: string;
+      },
+    ): Promise<void>;
 
     // Stories
     getStories(): Promise<Story[]>;

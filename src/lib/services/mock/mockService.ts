@@ -627,6 +627,15 @@ if (typeof __DEV__ !== "undefined" && __DEV__) {
 
 // ─── Mock session ─────────────────────────────────────────────────────────────
 
+function mockUserIdFromEmail(email: string): string {
+  const slug = email
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return `user-${slug || "mock"}`;
+}
+
 function mockSession(profile: UserProfile): Session {
   return {
     userId: profile.id,
@@ -1301,7 +1310,7 @@ export const hungryService: HungryService = {
       _isAuthenticated = true;
       _profile = {
         ...userProfile,
-        id: `user-${Date.now()}`,
+        id: mockUserIdFromEmail(email),
         email,
         displayName: name,
         favouriteDishIds: [],
@@ -1479,6 +1488,27 @@ export const hungryService: HungryService = {
       return resolve([...dishes].sort((a, b) => a.distanceMeters - b.distanceMeters).slice(0, 6));
     },
 
+    async listDiscoveryFeedByLocation(request) {
+      const nearbyVenues = venues.slice(0, request.limit ?? 20);
+      return resolve({
+        venues: nearbyVenues,
+        results: nearbyVenues
+          .map((venue) => {
+            const dish = dishes.find((item) => item.id === venue.topDishId);
+            return dish ? { dish, score: dish.rating / 5 } : undefined;
+          })
+          .filter((result): result is SearchResult => Boolean(result)),
+      });
+    },
+
+    async searchVenuesByLocation(request) {
+      const query = request.query?.trim().toLowerCase();
+      const scopedVenues = query
+        ? venues.filter((venue) => venue.name.toLowerCase().includes(query))
+        : venues;
+      return resolve(scopedVenues.slice(0, request.limit ?? 30));
+    },
+
     async searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]> {
       const results = mockRepository.searchDishes(filters, tasteProfile);
       return resolve(
@@ -1600,6 +1630,11 @@ export const hungryService: HungryService = {
       return resolve([...MOCK_BITES_FEED]);
     },
 
+    async listUserPosts(userId: string) {
+      await hydrateSocial();
+      return resolve(MOCK_BITES_FEED.filter((bite) => bite.authorId === userId));
+    },
+
     async postBite(draft: BiteDraft) {
       await hydrateSocial();
       const venue = venues.find((v) => v.id === draft.venueId);
@@ -1668,6 +1703,10 @@ export const hungryService: HungryService = {
       });
       void saveMockState("bite_reactions", serializable);
 
+      return resolve(undefined);
+    },
+
+    async shareBite() {
       return resolve(undefined);
     },
 

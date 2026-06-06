@@ -706,7 +706,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /getHungryService\(\)[\s\S]*\.discovery\.countVenuesInArea\([\s\S]*discoverLocationLatitude,[\s\S]*discoverLocationLongitude,[\s\S]*DISCOVER_AREA_RADIUS_METERS/,
+    /const discoveryService = getHungryService\(\)\.discovery[\s\S]*discoveryService\.countVenuesInArea\([\s\S]*discoverLocationLatitude,[\s\S]*discoverLocationLongitude,[\s\S]*DISCOVER_AREA_RADIUS_METERS/,
   );
   assert.match(
     discover,

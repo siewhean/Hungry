@@ -17,11 +17,13 @@ import {
   getBuildingDetailViaRpc,
   getVenueByIdViaRpc,
   listBuildingsViaRpc,
+  listDiscoveryFeedByLocationViaRpc,
   listDishesByVenueViaRpc,
   listPopularNearbyViaRpc,
   listVenuesByBuildingViaRpc,
   refreshSupabaseRepositoryCache,
   searchDishesViaRpc,
+  searchVenuesByLocationViaRpc,
   supabaseRepository,
 } from "@/lib/services/supabase/supabaseRepository";
 import { getSupabaseClient } from "@/lib/services/supabase/client";
@@ -535,6 +537,20 @@ async function ensureCurrentUserProfileRow(client: SupabaseClient): Promise<void
   }
 }
 
+async function fetchFavouriteDishIdsForUser(
+  client: SupabaseClient,
+  userId: string,
+): Promise<string[]> {
+  const { data, error } = await client
+    .from("user_favourite_dishes")
+    .select("dish_id")
+    .eq("user_id", userId);
+  if (error || !Array.isArray(data)) return [];
+  return (data as Row[])
+    .map((row) => asString(row.dish_id))
+    .filter((dishId): dishId is string => Boolean(dishId));
+}
+
 async function fetchUserProfile(client: SupabaseClient, userId: string, email?: string) {
   const { data } = await client.from("user_profiles").select("*").eq("id", userId).maybeSingle();
   const { data: privacyData } = await client
@@ -544,7 +560,7 @@ async function fetchUserProfile(client: SupabaseClient, userId: string, email?: 
     .maybeSingle();
   const row = (data ?? {}) as Row;
   const privacyRow = (privacyData ?? {}) as Row;
-  const favouriteDishIds = asStringArray(row.favourite_dish_ids);
+  const favouriteDishIds = await fetchFavouriteDishIdsForUser(client, userId);
   const reviewedDishIds = asStringArray(row.reviewed_dish_ids);
   const accountVisibility = asString(privacyRow.account_visibility);
   return {
@@ -726,6 +742,75 @@ async function uploadReviewPhotos(
     uploaded.push(asset.publicUrl);
   }
   return uploaded;
+}
+
+async function mapSupabaseReviewRows(
+  client: SupabaseClient,
+  rows: Row[],
+): Promise<DishDetail["reviews"]> {
+  const reviewIds = rows.map((row) => asString(row.id)).filter((id): id is string => Boolean(id));
+  const userIds = rows
+    .map((row) => asString(row.user_id))
+    .filter((id): id is string => Boolean(id));
+  const photosByReviewId = new Map<string, string[]>();
+  const namesByUserId = new Map<string, string>();
+  const avatarsByUserId = new Map<string, string>();
+
+  if (reviewIds.length > 0) {
+    const { data: photoRows } = await client
+      .from("review_photos")
+      .select("review_id,url,sort_order")
+      .in("review_id", reviewIds)
+      .order("sort_order", { ascending: true });
+
+    if (Array.isArray(photoRows)) {
+      (photoRows as Row[]).forEach((photoRow) => {
+        const reviewId = asString(photoRow.review_id);
+        const url = asString(photoRow.url);
+        if (!reviewId || !url) return;
+        photosByReviewId.set(reviewId, [...(photosByReviewId.get(reviewId) ?? []), url]);
+      });
+    }
+  }
+
+  if (userIds.length > 0) {
+    const { data: profileRows } = await client
+      .from("public_profiles")
+      .select("id,display_name,avatar_url")
+      .in("id", Array.from(new Set(userIds)));
+
+    if (Array.isArray(profileRows)) {
+      (profileRows as Row[]).forEach((profileRow) => {
+        const userId = asString(profileRow.id);
+        const displayName = asString(profileRow.display_name);
+        const avatarUrl = asString(profileRow.avatar_url);
+        if (!userId) return;
+        if (displayName) namesByUserId.set(userId, displayName);
+        if (avatarUrl) avatarsByUserId.set(userId, avatarUrl);
+      });
+    }
+  }
+
+  return rows.map((row) => {
+    const id = asString(row.id) ?? `${Date.now()}`;
+    const userId = asString(row.user_id);
+    return {
+      id,
+      dishId: asString(row.dish_id),
+      venueId: asString(row.venue_id),
+      authorName:
+        (userId ? namesByUserId.get(userId) : undefined) ??
+        asString(row.author_name) ??
+        "Hungry User",
+      authorAvatarUrl: (userId ? avatarsByUserId.get(userId) : undefined) ?? undefined,
+      rating: asNumber(row.rating) ?? 0,
+      createdAt: asString(row.created_at) ?? new Date().toISOString(),
+      text: asString(row.text) ?? "",
+      tags: asStringArray(row.tags),
+      wouldRecommend: asBoolean(row.would_recommend) ?? true,
+      photos: photosByReviewId.get(id) ?? [],
+    };
+  });
 }
 
 async function uploadAvatarIfNeeded(
@@ -2809,6 +2894,14 @@ export const supabaseService: HungryService = {
       return (await listPopularNearbyViaRpc(lat, lng)) ?? supabaseRepository.listPopularNearby();
     },
 
+    async listDiscoveryFeedByLocation(request) {
+      return listDiscoveryFeedByLocationViaRpc(request);
+    },
+
+    async searchVenuesByLocation(request) {
+      return searchVenuesByLocationViaRpc(request);
+    },
+
     async searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]> {
       const rpcResults = await searchDishesViaRpc(filters, tasteProfile);
       if (rpcResults) return rpcResults;
@@ -2833,25 +2926,33 @@ export const supabaseService: HungryService = {
 
   reviews: {
     async getReviewsForDish(dishId) {
-      return supabaseRepository.getDishById(dishId)?.reviews ?? [];
+      const client = requireSupabaseClient();
+      const { data, error } = await client
+        .from("reviews")
+        .select(
+          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
+        )
+        .eq("dish_id", dishId)
+        .order("created_at", { ascending: false });
+      if (error || !Array.isArray(data)) {
+        return [];
+      }
+      return mapSupabaseReviewRows(client, data as Row[]);
     },
 
     async getUserReviews(userId) {
       const client = requireSupabaseClient();
-      const { data, error } = await client.from("reviews").select("*").eq("user_id", userId);
+      const { data, error } = await client
+        .from("reviews")
+        .select(
+          "id,user_id,dish_id,venue_id,author_name,rating,created_at,text,tags,would_recommend",
+        )
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
       if (error || !Array.isArray(data)) {
         return [];
       }
-      return (data as Row[]).map((row) => ({
-        id: asString(row.id) ?? `${Date.now()}`,
-        authorName: asString(row.author_name) ?? "Hungry User",
-        rating: asNumber(row.rating) ?? 0,
-        createdAt: asString(row.created_at) ?? new Date().toISOString(),
-        text: asString(row.text) ?? "",
-        tags: asStringArray(row.tags),
-        wouldRecommend: asBoolean(row.would_recommend) ?? true,
-        photos: asStringArray(row.photos),
-      }));
+      return mapSupabaseReviewRows(client, data as Row[]);
     },
 
     async submitReview(draft: SubmitReviewInput) {
@@ -2978,14 +3079,7 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) return [];
-      const { data, error } = await client
-        .from("user_favourite_dishes")
-        .select("dish_id")
-        .eq("user_id", userId);
-      if (error || !Array.isArray(data)) return [];
-      return (data as Row[])
-        .map((row) => asString(row.dish_id))
-        .filter((dishId): dishId is string => Boolean(dishId));
+      return fetchFavouriteDishIdsForUser(client, userId);
     },
 
     async updateTasteVector(vector: TasteVector) {
@@ -3048,6 +3142,12 @@ export const supabaseService: HungryService = {
       const rpcBites = await fetchHomeSocialFeedBitesViaRpc(client);
       if (rpcBites) return rpcBites;
       return fetchPublishedPostBites(client);
+    },
+
+    async listUserPosts(userId: string) {
+      const client = requireSupabaseClient();
+      const bites = await fetchPublishedPostBites(client);
+      return bites.filter((bite) => bite.authorId === userId);
     },
 
     async postBite(draft: BiteDraft) {
@@ -3202,6 +3302,20 @@ export const supabaseService: HungryService = {
         return;
       }
       const { error } = await client.from(table).insert({ post_id: biteId, user_id: userId });
+      if (error) throw error;
+    },
+
+    async shareBite(biteId, options) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to share.");
+      const { error } = await client.from("post_shares").insert({
+        post_id: biteId,
+        user_id: userId,
+        share_channel: options?.channel ?? "in_app",
+        target_conversation_id: options?.targetConversationId ?? null,
+        target_user_id: options?.targetUserId ?? null,
+      });
       if (error) throw error;
     },
 

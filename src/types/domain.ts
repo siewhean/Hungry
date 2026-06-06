@@ -51,7 +51,18 @@ export type HawkerTasteTag =
   | "sedap" // deeply delicious, umami-rich
   | "power"; // exceptionally strong flavor, standout dish
 
-export type BuildingType = "hawker_centre" | "food_court" | "restaurant" | "mall";
+export type BuildingType =
+  | "hawker_centre"
+  | "food_court"
+  | "restaurant"
+  | "mall"
+  | "mixed_development"
+  | "cafe"
+  | "bar_bistro"
+  | "chain_outlet"
+  | "standalone"
+  | "kopitiam"
+  | "other";
 export type DeliveryPlatform = "grabfood" | "foodpanda";
 export type DietaryFlag =
   | "halal"
@@ -209,7 +220,10 @@ export interface DishSummary {
 
 export interface Review {
   id: string;
+  dishId?: string;
+  venueId?: string;
   authorName: string;
+  authorAvatarUrl?: string;
   rating: number;
   createdAt: string;
   text: string;

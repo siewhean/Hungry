@@ -57,7 +57,7 @@ import {
   getHungryService,
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
-import type { Bite, DataRepository } from "@/lib/services/types";
+import type { Bite, DataRepository, DiscoveryLocationFeed } from "@/lib/services/types";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
@@ -68,7 +68,13 @@ import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { useHungryTheme } from "@/theme";
-import type { DietaryFlag, DishDetail, SearchCategory, VenueSummary } from "@/types/domain";
+import type {
+  BuildingSummary,
+  DietaryFlag,
+  DishDetail,
+  SearchCategory,
+  VenueSummary,
+} from "@/types/domain";
 import { isVenueOpenFromHours } from "@/utils/stallStatus";
 
 type DiscoverChipId = "dietary" | "spicy" | "halal" | "late" | "cheap";
@@ -1011,6 +1017,8 @@ export function DiscoverHomeScreen() {
   const repository = getDataRepository();
   const isSupabaseDataSource = getServiceProvider().mode === "supabase";
   const [supabaseDiscoverAreaCount, setSupabaseDiscoverAreaCount] = useState<number | null>(null);
+  const [supabaseDiscoveryFeed, setSupabaseDiscoveryFeed] =
+    useState<DiscoveryLocationFeed | null>(null);
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   const {
     componentSizes,
@@ -1134,6 +1142,8 @@ export function DiscoverHomeScreen() {
   const [activeDiscoverChipIds, setActiveDiscoverChipIds] = useState<DiscoverChipId[]>([]);
   const [isPopularFoodFilterSkeletonPending, setIsPopularFoodFilterSkeletonPending] =
     useState(false);
+  const supabaseFeedVenues = supabaseDiscoveryFeed?.venues ?? [];
+  const supabaseFeedResults = supabaseDiscoveryFeed?.results ?? [];
   const deferredDiscoverChipIds = useDeferredValue(activeDiscoverChipIds);
   const deferredDiscoverChipSet = useMemo(
     () => new Set<DiscoverChipId>(deferredDiscoverChipIds),
@@ -1168,31 +1178,49 @@ export function DiscoverHomeScreen() {
   useEffect(() => {
     if (!isSupabaseDataSource) {
       setSupabaseDiscoverAreaCount(null);
+      setSupabaseDiscoveryFeed(null);
       return;
     }
 
     let isActive = true;
     setSupabaseDiscoverAreaCount(null);
-    void getHungryService()
-      .discovery.countVenuesInArea(
+    setSupabaseDiscoveryFeed(null);
+    const discoveryService = getHungryService().discovery;
+    void Promise.all([
+      discoveryService.countVenuesInArea(
         discoverLocationLatitude,
         discoverLocationLongitude,
         DISCOVER_AREA_RADIUS_METERS,
-      )
-      .then((venueCount) => {
+      ),
+      discoveryService.listDiscoveryFeedByLocation({
+        areaName: discoverLocationLabel,
+        lat: discoverLocationLatitude,
+        lng: discoverLocationLongitude,
+        radiusMeters: DISCOVER_AREA_RADIUS_METERS,
+        limit: 50,
+      }),
+    ])
+      .then(([venueCount, discoveryFeed]) => {
         if (!isActive) return;
         setSupabaseDiscoverAreaCount(typeof venueCount === "number" ? venueCount : null);
+        setSupabaseDiscoveryFeed(discoveryFeed ?? null);
       })
       .catch(() => {
         if (isActive) {
           setSupabaseDiscoverAreaCount(null);
+          setSupabaseDiscoveryFeed(null);
         }
       });
 
     return () => {
       isActive = false;
     };
-  }, [discoverLocationLatitude, discoverLocationLongitude, isSupabaseDataSource]);
+  }, [
+    discoverLocationLabel,
+    discoverLocationLatitude,
+    discoverLocationLongitude,
+    isSupabaseDataSource,
+  ]);
 
   const themeTints = useMemo(() => {
     const isDark = colorScheme === "dark";
@@ -1340,27 +1368,41 @@ export function DiscoverHomeScreen() {
   // Tab press-to-top behavior intentionally disabled for bottom navigation.
 
   const areaVenues = useMemo(() => {
+    if (isSupabaseDataSource) {
+      const uniqueVenues = new Map(supabaseFeedVenues.map((venue) => [venue.id, venue]));
+      return Array.from(uniqueVenues.values());
+    }
     const scopedVenues = areaBuildings.flatMap((building) =>
       repository.listVenuesByBuilding(building.id),
     );
     const uniqueVenues = new Map(scopedVenues.map((venue) => [venue.id, venue]));
     return Array.from(uniqueVenues.values());
-  }, [areaBuildings, repository]);
-  const areaDishes = useMemo(
-    () => areaVenues.flatMap((venue) => repository.listDishesByVenue(venue.id)),
-    [areaVenues, repository],
-  );
+  }, [areaBuildings, isSupabaseDataSource, repository, supabaseFeedVenues]);
+  const areaDishes = useMemo(() => {
+    if (isSupabaseDataSource) {
+      const uniqueDishes = new Map(supabaseFeedResults.map((result) => [result.dish.id, result.dish]));
+      return Array.from(uniqueDishes.values());
+    }
+    return areaVenues.flatMap((venue) => repository.listDishesByVenue(venue.id));
+  }, [areaVenues, isSupabaseDataSource, repository, supabaseFeedResults]);
   const allDiscoverVenues = useMemo(() => {
+    if (isSupabaseDataSource) {
+      const uniqueVenues = new Map(supabaseFeedVenues.map((venue) => [venue.id, venue]));
+      return Array.from(uniqueVenues.values());
+    }
     const discoveredVenues = repository
       .listBuildings()
       .flatMap((building) => repository.listVenuesByBuilding(building.id));
     const uniqueVenues = new Map(discoveredVenues.map((venue) => [venue.id, venue]));
     return Array.from(uniqueVenues.values());
-  }, [repository]);
-  const allDiscoverDishes = useMemo(
-    () => allDiscoverVenues.flatMap((venue) => repository.listDishesByVenue(venue.id)),
-    [allDiscoverVenues, repository],
-  );
+  }, [isSupabaseDataSource, repository, supabaseFeedVenues]);
+  const allDiscoverDishes = useMemo(() => {
+    if (isSupabaseDataSource) {
+      const uniqueDishes = new Map(supabaseFeedResults.map((result) => [result.dish.id, result.dish]));
+      return Array.from(uniqueDishes.values());
+    }
+    return allDiscoverVenues.flatMap((venue) => repository.listDishesByVenue(venue.id));
+  }, [allDiscoverVenues, isSupabaseDataSource, repository, supabaseFeedResults]);
   const areaDishPool = areaDishes.length ? areaDishes : allDiscoverDishes;
   const currentHour = new Date().getHours();
   const isLateNightMakanVisible = currentHour >= 21 || currentHour < 4;
@@ -1576,8 +1618,30 @@ export function DiscoverHomeScreen() {
   const shouldShowPopularFoodSkeleton = showPopularFoodSkeleton || showPopularFoodFilterSkeleton;
   const showDiscoverFilterRailSkeleton = showPopularFoodFilterSkeleton;
   const unfilteredAreaStallCards = useMemo(
-    () =>
-      areaBuildings
+    () => {
+      if (isSupabaseDataSource) {
+        const dishesByVenueId = new Map(supabaseFeedResults.map((result) => [result.dish.venueId, result.dish]));
+        return supabaseFeedVenues.map((venue) => {
+          const building =
+            areaBuildings.find((item) => item.id === venue.buildingId) ??
+            ({
+              id: venue.buildingId || `area-${discoverLocationLabel}`,
+              name: discoverLocationLabel,
+              type: "hawker_centre",
+              coordinate: {
+                latitude: discoverLocationLatitude,
+                longitude: discoverLocationLongitude,
+              },
+              floors: [],
+              venueCount: supabaseFeedVenues.length,
+              isClosedToday: false,
+              heroDishId: venue.topDishId,
+            } satisfies BuildingSummary);
+          return { building, venue, topDish: dishesByVenueId.get(venue.id) };
+        });
+      }
+
+      return areaBuildings
         .map((building) => {
           const venues = repository.listVenuesByBuilding(building.id);
           const venue = venues[0];
@@ -1585,11 +1649,21 @@ export function DiscoverHomeScreen() {
           return venue ? { building, venue, topDish } : null;
         })
         .filter(Boolean) as {
-        building: any;
+        building: BuildingSummary;
         venue: VenueSummary;
         topDish: DishDetail | undefined;
-      }[],
-    [areaBuildings, repository],
+      }[];
+    },
+    [
+      areaBuildings,
+      discoverLocationLabel,
+      discoverLocationLatitude,
+      discoverLocationLongitude,
+      isSupabaseDataSource,
+      repository,
+      supabaseFeedResults,
+      supabaseFeedVenues,
+    ],
   );
   const areaStallCards = useMemo(
     () =>
