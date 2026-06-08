@@ -77,6 +77,7 @@ EXPECTED_COLUMNS = [
     "Google Photo Last Refreshed",
     "Menu Source",
     "Menu Items",
+    "Dishes Image URL",
 ]
 
 VALID_STALL_TYPES = {

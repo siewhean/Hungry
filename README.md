@@ -121,6 +121,7 @@ To override these locally, you can use `.env.development` or modify the constant
 | Reads (feature-flagged)             | Done                                                                                       |
 | Offline + NotFound states           | Done                                                                                       |
 | Marketing launch kit                | Done                                                                                       |
+| Excel Ingestion & ETL Migration     | Done                                                                                       |
 | Typecheck                           | Passing                                                                                    |
 | Expo Doctor                         | Passing 18/18 after SDK 55 patch-version alignment; rerun before RC if dependencies change |
 | Agent harness docs                  | Done                                                                                       |
@@ -156,7 +157,7 @@ To override these locally, you can use `.env.development` or modify the constant
 - Mock discovery data now includes a broader set of Singapore hawker centres and food courts with expanded stall/dish coverage
 - Maps now include a Figma-shaped `Maps` tab, a real `MapZoomedIn` route, and polygon-based building directory layouts (including Wisma and JEM mall-style floor overlays with vertical level switching).
 - **Design Specifications** — Comprehensive visual, UX, and accessibility specs for all remaining backlog items are now available in `docs/audit/`. These serve as the authoritative implementation guide for Batch 1–8.
-- Current MVP status: local source gates pass for the MVP production baseline. Production flags hide advanced/social/gamification/merchant surfaces; signed-out cold starts show Login; protected actions route to Login with return routes; profile, favourites, reviews, search/detail, and public post reads/writes use Supabase service paths where applicable. Fresh iOS simulator build/install and prepared native smoke pass. Remaining blockers are external: Android/EAS proof remains outside this checkout, live mutation/cross-device proof needs approved accounts/devices, and the linked project still has six legacy payment/order SECURITY DEFINER RPC grants outside current repo source; see `tasks/verification.md`.
+- Current MVP status: local source gates pass for the MVP production baseline. Production flags hide advanced/social/gamification/merchant surfaces; signed-out cold starts show Login; protected actions route to Login with return routes; profile, favourites, reviews, search/detail, and public post reads/writes use Supabase service paths where applicable; Excel workbook ingestion (35,909 rows) is fully validated and staged, and promotion ETL migration is verified locally. Fresh iOS simulator build/install and prepared native smoke pass. Remaining blockers are external: Android/EAS proof remains outside this checkout, live mutation/cross-device proof needs approved accounts/devices, and the linked project still has six legacy payment/order SECURITY DEFINER RPC grants outside current repo source; see `tasks/verification.md`.
 
 ## Commands
 

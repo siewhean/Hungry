@@ -1,17 +1,23 @@
 # Frontend Design Overhaul — Batched Implementation Plan for Codex
 
-> Branch: `frontend-design-overhaul`  
-> Purpose: Summary of the latest review plus batch-by-batch recommendations, implementation steps, and a Codex prompt.
+> **Branch:** `frontend-design-overhaul`  
+> **Purpose:** Convert the latest app review into an actionable batch-by-batch implementation plan.  
+> **Primary goal:** Preserve the strong design/product work while reducing merge risk, production risk, and release risk.
 
 ---
 
-## Executive Summary
+## 1. Short Summary of the Review
 
-The `frontend-design-overhaul` branch is much stronger than the earliest version of the overhaul, but it has widened again and should not be merged as one unreviewed block.
+The `frontend-design-overhaul` branch is significantly stronger than the earliest version of the overhaul, but it has widened again and should not be merged as one unreviewed block.
 
-The branch now mixes mobile app UI, auth UI, merchant screens, gamification/passport assets, marketing web assets, CI/security changes, iOS native changes, tests, scripts, and many image assets.
+Current branch characteristics from the latest review:
 
-Latest grade:
+- It is a strong staging/design-overhaul branch.
+- It improves visual quality, navigation safety, feature-flag safety, CI, app polish, Discover/Search, Dish Detail, reviews, gamification, and merchant prototype surfaces.
+- It is now broad again: mobile app code, auth UI, merchant screens, gamification/passport assets, marketing web assets, CI/security changes, iOS native changes, and many tests/assets are mixed together.
+- The app direction is strong, but the branch should be treated as a release-candidate integration branch or split into focused PRs.
+
+Overall latest grade:
 
 | Area | Grade |
 |---|---:|
@@ -27,19 +33,44 @@ Latest grade:
 | Scope control | C |
 | Merge readiness | C+ |
 | Production readiness | C+ |
-| Overall | B- / B |
+| Overall branch grade | B- / B |
 
-Main recommendation: treat this branch as a release-candidate integration branch, not a simple feature branch. Split it into focused batches or enforce full release-candidate QA before merging.
+Main recommendation:
+
+**Do not merge the whole branch as one PR unless it is treated as a formal release-candidate integration branch with full QA. Prefer splitting into focused batches and landing each safely.**
 
 ---
 
-## Batch 0 — Baseline Verification and Branch Hygiene
+## 2. Implementation Strategy
 
-**Goal:** Confirm the real branch state before modifying anything.
+Work in batches. Each batch should be independently reviewable, testable, and reversible.
 
-**Recommendations:** Rebase or merge latest `main`, resolve drift, run all quality gates, and record results.
+General rules for Codex:
 
-**Implementation:**
+1. Do not add new features while doing cleanup.
+2. Preserve the visual direction unless a change is required for safety, performance, or production readiness.
+3. Keep production routes safe by default.
+4. Put unfinished surfaces behind feature flags.
+5. Record exact verification commands and results in `tasks/todo.md` or a session log.
+6. Keep app, web, native, assets, security, and merchant work separated where possible.
+
+---
+
+# Batch 0 — Baseline Verification and Branch Hygiene
+
+## Goal
+
+Establish the real current state before changing anything.
+
+## Why this matters
+
+The branch has moved several times. Before implementing fixes, Codex should confirm whether `frontend-design-overhaul` is still 15 commits ahead / 1 behind and whether `main` already contains some of the work.
+
+## Implementation
+
+1. Rebase or merge latest `main` into `frontend-design-overhaul`.
+2. Resolve the 1-commit drift.
+3. Run the baseline commands before making code changes:
 
 ```bash
 npm run typecheck
@@ -49,39 +80,121 @@ npm run test
 npx expo-doctor --non-interactive
 ```
 
-**Improve:** Record every result with date, actor, failing command, cause, and next step in `tasks/todo.md`.
+4. Record results in `tasks/todo.md` session log.
+5. Identify whether the branch is intended as:
+   - focused PR branch, or
+   - release-candidate integration branch.
 
-**Done:** Branch is current with `main`, baseline results are logged, and failures are explained.
+## Files likely touched
 
----
+- `tasks/todo.md`
+- possibly conflict files from rebase/merge
 
-## Batch 1 — Split Scope and Remove Merge Noise
+## Done criteria
 
-**Goal:** Reduce merge risk by separating unrelated workstreams.
-
-**Recommendations:** Split into focused PRs:
-
-1. App shell/navigation
-2. Consumer UX
-3. Merchant prototype
-4. Gamification/passport
-5. Marketing web
-6. Native/iOS
-7. CI/security
-
-**Implementation:** Move unrelated web, native, generated assets, security docs, and merchant prototype work out of the mobile app PR unless intentionally part of a release-candidate branch.
-
-**Improve:** Add a PR map that lists exactly which files belong to which PR.
-
-**Done:** Each PR has one purpose and is independently reviewable.
+- Branch is up to date with `main`.
+- Baseline verification is recorded.
+- Any failing command is documented with cause and next fix.
 
 ---
 
-## Batch 2 — Navigation, Feature Flags, and Route Safety
+# Batch 1 — Split Scope and Remove Merge Noise
 
-**Goal:** Make production route exposure minimal and intentional.
+## Goal
 
-**Recommendations:** Add or verify these flags:
+Reduce branch risk by separating unrelated workstreams.
+
+## Current issue
+
+The branch includes app code, auth UI, CI, iOS changes, security docs, marketing web assets, food/passport assets, merchant screens, search/profile/reviews, tests, and generated images.
+
+## Implementation
+
+Split into separate PRs or commits:
+
+1. **App shell/navigation PR**
+   - `RootNavigator.tsx`
+   - `SwipeableTabNavigator.tsx`
+   - feature flags
+   - navigation tests
+
+2. **Consumer UX PR**
+   - Home
+   - Discover
+   - Search
+   - Dish detail
+   - Stall detail
+   - Review feed
+
+3. **Merchant prototype PR**
+   - `MerchantTabs.tsx`
+   - merchant screens
+   - merchant readiness
+   - merchant tests
+
+4. **Gamification/passport PR**
+   - Passport/Missions
+   - passport assets
+   - gamification tests
+
+5. **Marketing web PR**
+   - `marketing/website/**`
+   - web food images
+   - web deploy/build changes
+
+6. **Native/iOS/build PR**
+   - `ios/**`
+   - `app.json`
+   - Podfile / Podfile.lock
+   - native build scripts
+
+7. **Security/CI PR**
+   - `.github/workflows/ci.yml`
+   - `SECURITY.md`
+   - security reports
+   - security tests
+
+## Cleanup checklist
+
+Remove or move out of the mobile app PR:
+
+- unrelated marketing website images
+- unnecessary generated artifacts
+- local-only logs
+- one-off scripts not used by CI or app
+- native project changes unless required for the mobile app PR
+
+## Done criteria
+
+- Each PR has one clear purpose.
+- Mobile app PR no longer carries unrelated web/native/generated changes.
+- Review burden is reduced.
+
+---
+
+# Batch 2 — Navigation, Feature Flags, and Route Safety
+
+## Goal
+
+Make route exposure safe in production and predictable in staging/dev.
+
+## Current strengths
+
+- `prototypeRoutesEnabled` exists.
+- `merchantCentreEnabled` exists.
+- `directMessagesEnabled` is false by default.
+- `RootNavigator` protects Profile and action-heavy routes.
+
+## Current concerns
+
+- Root navigator is very large.
+- Passport/Missions/Collections are registered outside the prototype route block.
+- It is unclear whether gamification is production-ready.
+- Need production deep-link tests.
+
+## Implementation
+
+1. Add or verify these flags in `src/constants/featureFlags.ts`:
 
 ```ts
 gamificationEnabled
@@ -92,195 +205,680 @@ directMessagesEnabled
 commentsEnabled
 ```
 
-**Implementation:** Gate unfinished or non-launch-ready routes such as Passport, Missions, Collections, StoryViewer, AddStory, V2 prototypes, MerchantTabs, and DirectMessages.
+2. Gate these routes if not production-ready:
 
-**Tests to add:**
+- `PassportScreen`
+- `MissionsScreen`
+- `CollectionList`
+- `CollectionDetail`
+- `StoryViewer`
+- `AddStory` if stories are not launch-ready
 
-- production cannot access prototype routes
-- production cannot access merchant centre
-- production cannot access DMs
-- protected routes redirect to Login and preserve return route
+3. Add production flag tests:
 
-**Improve:** Add production, staging, and development feature-flag tests plus deep-link tests.
+- production must not register prototype routes
+- production must not register merchant routes
+- production must not register DMs
+- production must not register gamification if `gamificationEnabled === false`
 
-**Done:** Route exposure is intentional and tested.
+4. Add deep-link contract tests:
 
----
+- prototype route deep links should not resolve in production
+- merchant route deep links should not resolve in production
+- protected routes should redirect to Login and preserve return route
 
-## Batch 3 — App Shell and Tab Navigation QA
+## Files likely touched
 
-**Goal:** Keep the new tab shell while proving stability.
+- `src/constants/featureFlags.ts`
+- `src/constants/featureFlags.test.ts`
+- `src/app/navigation/RootNavigator.tsx`
+- `src/app/navigation/nav-route-contracts.test.ts`
+- `src/app/production-readiness-contracts.test.ts`
 
-**Recommendations:** Verify the bottom-positioned Material Top Tab setup, center create action, Profile auth gate, and swipe interactions.
+## Done criteria
 
-**Implementation:** Add tests for signed-out create, signed-in create, signed-out Profile, and signed-out browsing of Home/Discover/Review.
-
-**Manual QA:** iOS/Android tab taps, swipes, horizontal carousels, and back behavior after Login/composer redirects.
-
-**Improve:** Add Maestro smoke tests and measure first tab switch performance.
-
-**Done:** No swipe conflicts, auth redirects work, and no startup regression appears.
-
----
-
-## Batch 4 — Core Consumer UX: Home, Discover, Search
-
-**Goal:** Make the core browse loop launch-ready.
-
-**Recommendations:** Improve empty states, search recovery, prefetching, analytics, and asset performance.
-
-**Implementation:** Add no-data states for nearby stalls, popular dishes, collections, and search results. Add analytics for discover opened, chip tapped, search launched, quick bite tapped, and collection opened.
-
-**Improve:** Compress unused/large `src/assets/discover/*.png` images and validate scroll performance.
-
-**Done:** Signed-out user can browse Home → Discover → Search → Detail, empty states are graceful, and asset usage is justified.
+- Production route surface is minimal and intentional.
+- All non-launch-ready features are gated.
+- Tests prove route safety.
 
 ---
 
-## Batch 5 — Detail Screens and Data Trust
+# Batch 3 — App Shell and Tab Navigation QA
 
-**Goal:** Ensure detail screens only show data-backed claims.
+## Goal
 
-**Recommendations:** Audit Dish Detail and Stall Detail for hardcoded ratings, review counts, hours, distance, verification, wait time, regulatory labels, and delivery availability.
+Keep the new tab shell while proving it is stable across devices.
 
-**Implementation:** Bind claims to real data, hide missing data, or show neutral unavailable states. Fix save semantics so labels match behavior.
+## Current strengths
 
-**Tests:** Missing dish, missing stall, no reviews, no delivery links, closed venue.
+- Center create button is strong UX.
+- Deferred tab loading and skeleton placeholders improve performance.
+- Preload warmup is thoughtful.
 
-**Improve:** Add source/freshness labels for menu and review data.
+## Current concerns
 
-**Done:** No fake trust claims remain and missing data is handled honestly.
+- Material Top Tabs are used as bottom tabs.
+- Swipe gestures may conflict with horizontal carousels.
+- The app uses many horizontal rails.
 
----
+## Implementation
 
-## Batch 6 — Reviews, Comments, Posts, and Social Safety
+1. Keep deferred tab loading but audit for flicker.
+2. Confirm `spacing[0.5]` exists in the theme scale.
+3. Add tests for:
+   - signed-out create button redirects to Login
+   - signed-in create opens correct composer based on feature flag
+   - Profile tab redirects signed-out users to Login
+   - Home/Discover/Review remain browseable signed-out
 
-**Goal:** Make social features safe enough for staged beta.
+4. Manual QA matrix:
+   - iOS tab taps
+   - iOS tab swipes
+   - Android tab taps
+   - Android tab swipes
+   - horizontal carousels inside Home/Discover/Review
+   - back button behavior after composer/login redirects
 
-**Recommendations:** Keep DMs disabled in production. Consider disabling comments in production until moderation is backend-ready.
+## Files likely touched
 
-**Implementation:** Implement or document report review, report comment, block user, hide content threshold, and admin review queue.
+- `src/app/navigation/SwipeableTabNavigator.tsx`
+- `src/app/navigation/nav-route-contracts.test.ts`
+- `src/app/native-smoke-contracts.test.ts`
+- `src/theme/tokens.ts`
 
-**Improve:** Remove seeded/social counts if they appear real. Use backend-backed counts or neutral defaults.
+## Done criteria
 
-**Done:** Unsafe social features are gated, report/block are not just decorative, and unmoderated DMs are not public.
-
----
-
-## Batch 7 — Merchant Mode and Merchant Readiness
-
-**Goal:** Keep merchant mode useful for staging without shipping it publicly too early.
-
-**Recommendations:** Keep `merchantCentreEnabled` false in production.
-
-**Implementation:** Add tests for production access blocked, staging/dev access allowed, non-merchant gate, unverified merchant limits, and verified merchant access.
-
-**Improve:** Add a merchant readiness checklist covering editable fields, persistence, RLS, image upload, menu editor, OCR drafts, and customer inbox moderation.
-
-**Done:** Merchant mode is staging/dev safe and production users cannot reach it.
-
----
-
-## Batch 8 — Gamification and Passport
-
-**Goal:** Make Passport/Missions a polished retention layer without distracting from discovery.
-
-**Recommendations:** Add `gamificationEnabled` if Passport/Missions are not production-ready.
-
-**Implementation:** Gate Passport/Missions if needed, add accessibility labels, audit passport asset sizes, and make achievements data-backed.
-
-**Tests:** Passport route gating, badge asset mapping, mission progress calculation.
-
-**Improve:** Avoid fake progress and tie missions to real app events.
-
-**Done:** Gamification exposure is intentional and not misleading.
+- No swipe conflict on main screens.
+- Create/Profile auth redirects work.
+- No startup regression from deferred loading.
 
 ---
 
-## Batch 9 — Maps and Floorplan Pipeline
+# Batch 4 — Core Consumer UX: Home, Discover, Search
 
-**Goal:** Finish floorplan QA before treating indoor maps as production-ready.
+## Goal
 
-**Recommendations:** Close geometry validation, visual overlay QA, and map tap accuracy QA.
+Make the core browse loop launch-ready.
 
-**Implementation:** Validate no self-intersections, no degenerate polygons, polygons inside outline, and tenant overlap <= 5%. Generate QA overlay and sample at least 20 stall polygons.
+## Sections covered
 
-**Improve:** Add fallback to generic layout if floorplan data is invalid.
+- Home feed
+- Discover
+- Search
+- Browse dishes/stalls
+- Quick Bites
+- Collections
 
-**Done:** Geometry passes, overlay exists, tap accuracy is documented, and invalid floorplans cannot crash the app.
+## Current strengths
+
+- Discover is richer and more personalized.
+- Search history and moving placeholders improve UX.
+- Prefetching and image assets make browsing feel more premium.
+
+## Current concerns
+
+- Discover is now complex and performance-sensitive.
+- Many new local image assets may increase bundle size.
+- Search relevance still needs real-world validation.
+- Empty states and no-result flows need polish.
+
+## Implementation
+
+1. Add no-data states for:
+   - no nearby stalls
+   - no popular dishes
+   - no collections
+   - no search results
+
+2. Add performance checks for Discover:
+   - render cost
+   - image loading
+   - scroll smoothness
+   - first tab switch to Discover
+
+3. Add analytics events:
+   - discover opened
+   - intent chip tapped
+   - search launched from Discover
+   - quick bite tapped
+   - collection opened
+
+4. Add prefetch validation:
+   - pressing popular dish warms Dish Detail
+   - pressing stall warms Stall Detail
+
+5. Bundle-size audit:
+   - review all `src/assets/discover/*.png`
+   - keep only assets used by app
+   - compress large images
+   - consider remote/CDN assets if bundle grows too much
+
+## Files likely touched
+
+- `src/app/screens/home/HomeFeedScreen.tsx`
+- `src/app/screens/discover/DiscoverHomeScreen.tsx`
+- `src/app/screens/discover/DiscoverHomeScreenV2.tsx`
+- `src/app/screens/discover/QuickBitesScreen.tsx`
+- `src/app/screens/search/DishSearchScreen.tsx`
+- `src/app/screens/search/SearchResultsScreen.tsx`
+- `src/features/navigation/prefetch.ts`
+- `src/assets/discover/**`
+
+## Done criteria
+
+- Signed-out user can browse from Home → Discover → Search → Detail.
+- Empty states are graceful.
+- No obvious scroll/performance issues.
+- Asset usage is justified.
 
 ---
 
-## Batch 10 — Supabase, OCR, Claim Flow, and Supply Priming
+# Batch 5 — Detail Screens and Data Trust
 
-**Goal:** Close backend/supply gates that affect frontend release confidence.
+## Goal
 
-**Recommendations:** Run OCR staging smoke and verify draft dishes never leak to consumer screens.
+Ensure dish/stall detail screens only show data-backed claims.
 
-**Implementation:** Upload menu photo, trigger OCR, extract dishes, verify `dishes_draft`, verify ops queue access, and measure latency under 30 seconds.
+## Current strengths
 
-**Improve:** Add UI states for upload failed, OCR pending, OCR failed, and low confidence extraction.
+- Dish Detail V2 is now default for `DishDetail`.
+- Stall Detail V2 is prototype-gated.
+- Hardcoded trust claims were reduced.
 
-**Done:** OCR smoke passes, draft dishes remain private, and ops access is admin-gated.
+## Current concerns
+
+- Need final trust audit across both V1 and V2 detail screens.
+- Save semantics need clarity: saving stall vs saving top dish.
+- Review counts and ratings must come from real data.
+
+## Implementation
+
+1. Audit all detail screens for hardcoded factual claims:
+   - ratings
+   - review counts
+   - operating hours
+   - distance
+   - verification status
+   - wait time
+   - NEA/regulatory labels
+   - delivery availability
+
+2. For each claim:
+   - bind to real data, or
+   - hide the claim, or
+   - label as unavailable.
+
+3. Fix save semantics:
+   - if the UI says “Save stall”, implement saved stalls;
+   - if saving a dish, label as “Save dish” or “Save top dish”.
+
+4. Missing entity handling:
+   - no `return null`
+   - always render `EmptyState`, `NotFound`, or safe fallback
+
+5. Add tests:
+   - missing dish ID
+   - missing stall ID
+   - no reviews
+   - no delivery links
+   - closed venue
+
+## Files likely touched
+
+- `src/app/screens/detail/DishDetailScreen.tsx`
+- `src/app/screens/detail/DishDetailScreenV2.tsx`
+- `src/app/screens/detail/StallDetailScreen.tsx`
+- `src/app/screens/detail/StallDetailScreenV2.tsx`
+- `src/store/useProfileStore.ts`
+- `src/types/domain.ts`
+
+## Done criteria
+
+- No fake trust claims remain.
+- Missing data is handled honestly.
+- Save actions match their labels.
 
 ---
 
-## Batch 11 — Auth and Onboarding Polish
+# Batch 6 — Reviews, Comments, Posts, and Social Safety
 
-**Goal:** Ensure auth changes improve conversion without breaking session flow.
+## Goal
 
-**Recommendations:** Manually QA login, signup, email verification, forgot/reset password, wrong password, and return route after protected actions.
+Make social features safe enough for staged beta.
 
-**Implementation:** Disable or label provider buttons if provider login is not real. Verify SecureStore token storage and sign-out state clearing.
+## Current strengths
 
-**Improve:** Add auth flow tests and clearer error copy.
+- Review Feed V2 is complete per task contract.
+- Report/block actions exist.
+- Comments and sharing are integrated.
 
-**Done:** Auth flows pass on device, no dead provider buttons exist, and return route behavior works.
+## Current concerns
+
+- Comments are enabled.
+- Social interactions may still be local/mock-backed.
+- Moderation workflow is incomplete.
+- DMs are disabled but code exists.
+
+## Implementation
+
+1. Keep `directMessagesEnabled = false` in production.
+2. Consider setting `commentsEnabled = false` in production until backend moderation is ready.
+3. Implement or document moderation flows:
+   - report review
+   - report comment
+   - block user
+   - hide content after threshold
+   - admin review queue
+
+4. Review Feed count integrity:
+   - do not seed interaction counts from ratings if shown as real counts
+   - use backend counts or neutral defaults
+
+5. Post Composer V2:
+   - keep prototype-gated unless media upload, draft persistence, moderation, and publishing are real
+   - clearly mark AI Creator Suite as mock/staging if not real
+
+## Files likely touched
+
+- `src/app/screens/review/ReviewFeedScreen.tsx`
+- `src/app/screens/review/ReviewFeedScreenV2.tsx`
+- `src/components/social/ReviewCommentsSheet.tsx`
+- `src/app/screens/post/PostComposerScreenV2.tsx`
+- `src/features/post/useComposerStore.ts`
+- `src/constants/featureFlags.ts`
+- `src/lib/security/communitySafety.ts`
+
+## Done criteria
+
+- Unsafe social features are gated.
+- Report/block flows are not just UI decoration.
+- Public launch does not expose unmoderated DMs.
 
 ---
 
-## Batch 12 — Native/iOS and Build Configuration
+# Batch 7 — Merchant Mode and Merchant Readiness
 
-**Goal:** Ensure native changes are intentional and build-safe.
+## Goal
 
-**Recommendations:** Split native/iOS changes into a dedicated PR if possible.
+Keep merchant mode useful for staging without accidentally shipping it as a full public merchant portal.
 
-**Implementation:** Run:
+## Current strengths
+
+- Merchant centre is gated by feature flag.
+- Merchant screens are more complete.
+- Merchant access gate exists.
+
+## Current concerns
+
+- Merchant Mode is a large product surface.
+- Merchant Portal was originally future-gated.
+- It overlaps with a possible standalone web merchant portal.
+
+## Implementation
+
+1. Keep `merchantCentreEnabled` false in production.
+2. Add merchant route tests:
+   - production cannot access MerchantTabs
+   - staging/dev can access MerchantTabs
+   - non-merchant users see access gate
+   - unverified merchants only see allowed screens
+   - verified merchants can access dashboard/menu/analytics/profile
+
+3. Add merchant readiness checklist:
+   - editable fields
+   - data persistence
+   - RLS/authorization
+   - image upload pipeline
+   - menu editor safety
+   - OCR draft promotion rules
+   - customer inbox moderation
+
+4. Add copy labels that indicate staging/beta if needed.
+
+## Files likely touched
+
+- `src/app/navigation/MerchantTabs.tsx`
+- `src/app/screens/merchant/**`
+- `src/features/merchant/merchantReadiness.ts`
+- `src/app/merchant-coverage-contracts.test.ts`
+- `src/app/screens/merchant-screen-contracts.test.ts`
+- `src/constants/featureFlags.ts`
+
+## Done criteria
+
+- Merchant mode is safe in staging/dev.
+- Production users cannot accidentally reach it.
+- Merchant launch gaps are documented.
+
+---
+
+# Batch 8 — Gamification and Passport
+
+## Goal
+
+Make Passport/Missions a polished retention layer without distracting from core discovery.
+
+## Current strengths
+
+- Passport assets and components look like a strong brand differentiator.
+- Food passport concept matches Hungry well.
+
+## Current concerns
+
+- Passport/Missions routes appear production-registered outside prototype flag.
+- Need clarity on whether gamification is launch-ready.
+- Asset size and accessibility need review.
+
+## Implementation
+
+1. Add `gamificationEnabled` flag if Passport/Missions are not production-ready.
+2. Gate routes if needed:
+   - `PassportScreen`
+   - `MissionsScreen`
+3. Add accessibility labels for stamps/badges.
+4. Audit asset sizes in:
+   - `src/assets/gamification/passport/**`
+5. Ensure achievements are data-backed:
+   - no fake progress unless clearly demo-only
+   - missions should reflect actual app events
+6. Add tests for:
+   - passport route gating
+   - badge asset mapping
+   - mission progress calculation
+
+## Files likely touched
+
+- `src/app/navigation/RootNavigator.tsx`
+- `src/constants/featureFlags.ts`
+- `src/app/screens/profile/PassportScreen.tsx`
+- `src/app/screens/profile/MissionsScreen.tsx`
+- `src/components/gamification/**`
+- `src/constants/passportConfig.ts`
+- `src/components/gamification/passport-production-contracts.test.ts`
+
+## Done criteria
+
+- Gamification route exposure is intentional.
+- Passport assets are optimized.
+- Achievements are not misleading.
+
+---
+
+# Batch 9 — Maps and Floorplan Pipeline
+
+## Goal
+
+Finish floorplan QA before treating realistic indoor maps as production-ready.
+
+## Current strengths
+
+- Canonical floorplan contract exists.
+- Polygon extraction pipeline is implemented for `hc-maxwell:L1`.
+- Tests and schema validation are present.
+
+## Current open items
+
+- Geometry validation still open.
+- Visual overlay QA still open.
+- Map tap accuracy QA still open.
+
+## Implementation
+
+1. Run geometry validation:
+   - no self-intersections
+   - no degenerate polygons
+   - all polygons inside outline
+   - tenant overlap <= 5%
+
+2. Generate visual overlay artifact:
+
+```bash
+python3 scripts/floorplan/render_qa_overlay.py ...
+```
+
+3. Manual QA:
+   - sample at least 20 stall polygons
+   - ensure tap opens correct stall >= 95%
+   - check zoom/pan performance
+
+4. Add app fallback:
+   - if floorplan source invalid, fall back to safe generic layout
+   - never crash on bad geometry
+
+## Files likely touched
+
+- `scripts/floorplan/**`
+- `data/floorplans/hc-maxwell/**`
+- `src/components/map/FloorPlanViewer.tsx`
+- `src/components/map/SkiaFloorplanViewer.tsx`
+- `src/lib/geo/**`
+- `output/qa/floorplans/**`
+
+## Done criteria
+
+- Geometry validation passes.
+- Overlay QA artifact exists.
+- Tap accuracy is documented.
+- App has safe fallback for invalid floorplans.
+
+---
+
+# Batch 10 — Supabase, OCR, Claim Flow, and Supply Priming
+
+## Goal
+
+Close the remaining backend/supply done gates that affect frontend release confidence.
+
+## Current strengths
+
+- Supabase provisioning is documented as complete.
+- Claim CTA telemetry and insert were verified.
+- Single-claim enforcement exists.
+- OCR pipeline components exist.
+
+## Current open item
+
+- OCR e2e staging smoke within 30 seconds is still open.
+
+## Implementation
+
+1. Run OCR staging smoke:
+   - upload menu photo
+   - trigger OCR
+   - extract dishes
+   - verify `dishes_draft` rows
+   - verify ops queue access
+   - measure latency under 30s
+
+2. Add error state handling in UI:
+   - upload failed
+   - OCR pending
+   - OCR failed
+   - extraction confidence low
+
+3. Verify ops access security:
+   - JWT/admin gate works
+   - non-admin cannot read queue
+
+4. Confirm consumer screens never show `dishes_draft` rows.
+
+## Files likely touched
+
+- `supabase/functions/**`
+- `supabase/migrations/**`
+- `supabase/smoke/**`
+- `src/lib/services/supabase/**`
+- `src/app/screens/review/QuickReviewSheet.tsx`
+- `src/app/screens/merchant/OCRDraftScreen.tsx`
+
+## Done criteria
+
+- OCR smoke passes in staging.
+- No draft dishes leak to consumers.
+- Ops queue access is secure.
+
+---
+
+# Batch 11 — Auth and Onboarding Polish
+
+## Goal
+
+Ensure auth changes improve conversion without breaking session flow.
+
+## Current change area
+
+The branch modifies auth shell, login, signup, forgot/reset password, verification, and provider buttons.
+
+## Implementation
+
+1. Manual QA:
+   - login success
+   - login wrong password
+   - sign up
+   - email verification
+   - forgot password
+   - reset password
+   - auth return route after protected action
+
+2. Verify OAuth/provider buttons:
+   - if real provider login is not implemented, buttons must be disabled or clearly labelled
+   - do not show non-functional provider buttons
+
+3. Confirm session security:
+   - SecureStore usage for tokens
+   - sign out clears private persisted state
+
+4. Add copy tests if auth copy is centralized.
+
+## Files likely touched
+
+- `src/app/screens/auth/**`
+- `src/app/screens/auth/authCopy.ts`
+- `src/app/screens/auth/AuthProviderButton.tsx`
+- `src/store/useSessionStore.ts`
+
+## Done criteria
+
+- Auth flows pass on device.
+- No dead provider buttons.
+- Return route behavior works.
+
+---
+
+# Batch 12 — Native/iOS and Build Configuration
+
+## Goal
+
+Ensure native changes are intentional and build-safe.
+
+## Current issue
+
+The branch modifies iOS project files, Podfile, Podfile.lock, and app config.
+
+## Implementation
+
+1. Split native changes into a dedicated PR if possible.
+2. Run:
 
 ```bash
 npm run ios
 npx expo-doctor --non-interactive
 ```
 
-Verify pods, app build, Sentry config, Expo config, icon, and splash assets.
+3. Verify:
+   - iOS pods install
+   - app builds
+   - Sentry config does not break local builds
+   - Expo config fields are intentional
+   - icon/splash assets resolve
 
-**Improve:** Document why Podfile, Podfile.lock, and Xcode files changed.
+4. Document why each native change is needed.
 
-**Done:** iOS build passes and native changes are documented.
+## Files likely touched
+
+- `ios/**`
+- `app.json`
+- `App.tsx`
+- `package.json`
+- `scripts/run-expo.cjs`
+
+## Done criteria
+
+- iOS build passes.
+- Native changes are documented.
+- No accidental local-machine paths or secrets.
 
 ---
 
-## Batch 13 — Assets, Bundle Size, and Licensing
+# Batch 13 — Assets, Bundle Size, and Licensing
 
-**Goal:** Keep visual quality without bloating the app or introducing licensing risk.
+## Goal
 
-**Recommendations:** Inventory app assets, marketing web assets, generated passport assets, and unused assets.
+Keep visual quality without bloating the mobile app or introducing licensing risk.
 
-**Implementation:** Separate web-only assets from mobile, compress images, document licensing/source, measure bundle impact, and remove unused files.
+## Current issue
 
-**Improve:** Add an asset manifest and mark generated vs hand-authored assets.
+The branch adds many food images, logo assets, passport assets, and marketing images.
 
-**Done:** No unused large assets are in the mobile app and bundle impact is acceptable.
+## Implementation
+
+1. Inventory all added assets:
+   - app assets
+   - marketing web assets
+   - generated passport assets
+   - unused assets
+
+2. Separate web assets from mobile assets.
+3. Compress mobile images.
+4. Confirm asset licensing/source.
+5. Measure app bundle impact.
+6. Remove unused files.
+
+## Files likely touched
+
+- `src/assets/discover/**`
+- `src/assets/gamification/passport/**`
+- `assets/images/**`
+- `marketing/website/web-v2/public/images/**`
+- `scripts/generate-passport-assets.mjs`
+
+## Done criteria
+
+- No unused large assets in mobile app.
+- Asset source/licensing is documented.
+- Bundle size impact is acceptable.
 
 ---
 
-## Batch 14 — CI, Security, and Release Gates
+# Batch 14 — CI, Security, and Release Gates
 
-**Goal:** Make CI and release checks enforce quality.
+## Goal
 
-**Recommendations:** Ensure CI checks typecheck, lint, format, tests, Expo Doctor, and security scans where appropriate.
+Make CI and release checks enforce quality without blocking valid work unnecessarily.
 
-**Implementation:** Add or verify:
+## Current strengths
+
+CI now runs:
+
+- typecheck
+- lint
+- format check
+- tests
+- Expo Doctor
+- optional EAS build gate
+
+Package scripts include:
+
+- e2e
+- native smoke
+- Supabase chat smoke
+- npm audit
+- gitleaks
+- trufflehog
+
+## Implementation
+
+1. Add security job to CI or separate workflow:
 
 ```bash
 npm run security:audit
@@ -288,37 +886,66 @@ npm run security:gitleaks
 npm run security:trufflehog
 ```
 
-**Improve:** Document branch protection, required secrets, and EAS skip behavior when `EXPO_TOKEN` is missing.
+2. Add branch protection recommendations:
+   - typecheck required
+   - lint required
+   - test required
+   - expo-doctor required
+   - security scan required before production release
 
-**Done:** CI gates are clear and release cannot proceed without minimum checks.
+3. Ensure CI does not silently skip critical gates.
+4. Document EAS build skip behavior when `EXPO_TOKEN` is missing.
+
+## Files likely touched
+
+- `.github/workflows/ci.yml`
+- `.github/workflows/security.yml`
+- `package.json`
+- `SECURITY.md`
+- `security_report.md`
+
+## Done criteria
+
+- CI gates are clear.
+- Security checks are documented.
+- Release cannot proceed without minimum quality gates.
 
 ---
 
-## Batch 15 — Production Release Candidate Checklist
+# Batch 15 — Production Release Candidate Checklist
 
-**Goal:** Decide whether the branch is a release candidate or a set of feature PRs.
+## Goal
 
-**Required checks before public launch:**
+Decide whether this branch is a release candidate or a set of feature PRs.
 
-- iOS build passes
-- Android build passes
-- Fresh install QA passes
-- Signed-out browse QA passes
-- Auth flows pass
-- Create post protected action works
-- Review flow works
-- Discover/Search/Detail works
-- Offline route works
-- Feature flags verified in production mode
-- Merchant centre inaccessible in production
-- Prototype routes inaccessible in production
-- DMs inaccessible in production
-- OCR staging smoke complete or feature hidden
-- Floorplan QA complete or feature hidden
-- Asset bundle size acceptable
-- Privacy/security open actions documented
+## Required release-candidate checks
 
-**Done:** Branch is either split into smaller PRs or accepted as a release candidate with full QA evidence.
+Before public launch:
+
+- [ ] iOS build passes.
+- [ ] Android build passes.
+- [ ] Fresh install QA passes.
+- [ ] Signed-out browse QA passes.
+- [ ] Auth flows pass.
+- [ ] Create post protected action works.
+- [ ] Review flow works.
+- [ ] Discover/Search/Detail works.
+- [ ] Offline route works.
+- [ ] Feature flags verified in production mode.
+- [ ] Merchant centre inaccessible in production.
+- [ ] Prototype routes inaccessible in production.
+- [ ] DMs inaccessible in production.
+- [ ] OCR staging smoke complete or feature hidden.
+- [ ] Floorplan QA complete or feature hidden.
+- [ ] Asset bundle size acceptable.
+- [ ] Privacy/security open actions documented.
+
+## Done criteria
+
+Either:
+
+1. Branch is split into smaller PRs, or
+2. Branch is accepted as a release candidate with full QA evidence.
 
 ---
 
@@ -355,6 +982,8 @@ npm run security:trufflehog
 ---
 
 # Codex Prompt
+
+Use this prompt to implement the plan:
 
 ```text
 You are working on the `frontend-design-overhaul` branch of the Hungry repository.
@@ -483,9 +1112,9 @@ Final response should include:
 
 # Final Recommendation
 
-Treat `frontend-design-overhaul` as a release-candidate integration branch, not a simple feature branch.
+Treat `frontend-design-overhaul` as a **release-candidate integration branch**, not a simple feature branch.
 
-Safest path:
+The app is better because of this work, but the safest path is:
 
 1. Land navigation/feature flag safety first.
 2. Land core consumer UX next.

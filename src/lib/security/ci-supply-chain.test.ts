@@ -64,7 +64,9 @@ test("release checklist includes the Supabase Advisor regression guard", () => {
   const packageJson = read("package.json");
   const advisorClassifier = read("scripts/supabase-advisor-security-classifier.mjs");
   const releaseGates = read("references/release-gates.md");
-  const auditStatus = read("tasks/Roadmap/claude-full-project-audit-implementation-status.md");
+  const auditStatus = read(
+    "tasks/Roadmap/Archive/claude-full-project-audit-implementation-status.md",
+  );
   const releaseEvidenceExample = read("tasks/release-evidence/full-audit-v1.example.env");
 
   assert.match(packageJson, /"audit:supabase:advisor-security"/);

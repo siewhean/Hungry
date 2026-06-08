@@ -16,7 +16,7 @@ const groups = [
     maxTotalMiB: 6,
     maxLargestFileMiB: 1,
     source:
-      "Generated bitmap food art and app-card artwork; provenance is recorded in tasks/asset-provenance.md.",
+      "Generated bitmap food art and app-card artwork; provenance is recorded in tasks/release-evidence/asset-provenance.md.",
   },
   {
     key: "passport",
@@ -35,7 +35,7 @@ const groups = [
     scanDirs: ["src", "tasks"],
     maxTotalMiB: 15,
     maxLargestFileMiB: 0.8,
-    provenancePath: "tasks/asset-provenance.md",
+    provenancePath: "tasks/release-evidence/asset-provenance.md",
     requiredProvenancePatterns: [
       /Generated with the built-in image generation workflow as professional restaurant-style generated food photography/,
       /No homemade photos, casual phone shots, stock providers, or scraped food photos are allowed/,

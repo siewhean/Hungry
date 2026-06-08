@@ -4,7 +4,15 @@ import { resolve } from "node:path";
 import test from "node:test";
 
 const migrationSql = readFileSync(
-  resolve(process.cwd(), "supabase/migrations/20260606120000_database_excel_integration_foundation.sql"),
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20260606120000_database_excel_integration_foundation.sql",
+  ),
+  "utf8",
+);
+
+const promotionSql = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260608190000_promote_staging_to_production.sql"),
   "utf8",
 );
 
@@ -23,6 +31,11 @@ const importScript = readFileSync(
   "utf8",
 );
 
+const validatorTest = readFileSync(
+  resolve(process.cwd(), "scripts/__tests__/validate_excel.test.py"),
+  "utf8",
+);
+
 const packageJson = readFileSync(resolve(process.cwd(), "package.json"), "utf8");
 const envExample = readFileSync(resolve(process.cwd(), ".env.example"), "utf8");
 const repositorySource = readFileSync(
@@ -35,6 +48,14 @@ const serviceSource = readFileSync(
 );
 const discoverSource = readFileSync(
   resolve(process.cwd(), "src/app/screens/discover/DiscoverHomeScreen.tsx"),
+  "utf8",
+);
+const quickBitesSource = readFileSync(
+  resolve(process.cwd(), "src/app/screens/discover/QuickBitesScreen.tsx"),
+  "utf8",
+);
+const discoverBitesSource = readFileSync(
+  resolve(process.cwd(), "src/features/discover/bites.ts"),
   "utf8",
 );
 
@@ -71,7 +92,10 @@ test("database Excel foundation migration extends catalog and staging tables saf
     const [table, name] = column.split(".");
     assert.match(
       migrationSql,
-      new RegExp(`alter\\s+table\\s+${escapeRegExp(table)}[\\s\\S]*?add\\s+column\\s+if\\s+not\\s+exists\\s+${escapeRegExp(name)}\\b`, "i"),
+      new RegExp(
+        `alter\\s+table\\s+${escapeRegExp(table)}[\\s\\S]*?add\\s+column\\s+if\\s+not\\s+exists\\s+${escapeRegExp(name)}\\b`,
+        "i",
+      ),
       `${column} should be added with if-not-exists`,
     );
   }
@@ -110,10 +134,22 @@ test("new public read tables use RLS and restricted writes", () => {
     );
   }
 
-  assert.match(migrationSql, /create\s+policy\s+"public_select_areas"[\s\S]*for\s+select\s+to\s+anon,\s+authenticated\s+using\s+\(true\)/i);
-  assert.match(migrationSql, /create\s+policy\s+"areas_service_role_all"[\s\S]*for\s+all\s+to\s+service_role/i);
-  assert.match(migrationSql, /create\s+policy\s+"public_select_venue_images"[\s\S]*for\s+select\s+to\s+anon,\s+authenticated\s+using\s+\(true\)/i);
-  assert.match(migrationSql, /create\s+policy\s+"venue_images_service_role_all"[\s\S]*for\s+all\s+to\s+service_role/i);
+  assert.match(
+    migrationSql,
+    /create\s+policy\s+"public_select_areas"[\s\S]*for\s+select\s+to\s+anon,\s+authenticated\s+using\s+\(true\)/i,
+  );
+  assert.match(
+    migrationSql,
+    /create\s+policy\s+"areas_service_role_all"[\s\S]*for\s+all\s+to\s+service_role/i,
+  );
+  assert.match(
+    migrationSql,
+    /create\s+policy\s+"public_select_venue_images"[\s\S]*for\s+select\s+to\s+anon,\s+authenticated\s+using\s+\(true\)/i,
+  );
+  assert.match(
+    migrationSql,
+    /create\s+policy\s+"venue_images_service_role_all"[\s\S]*for\s+all\s+to\s+service_role/i,
+  );
 });
 
 test("location RPCs support named areas and live discovery feed without definer privileges", () => {
@@ -136,8 +172,14 @@ test("location RPCs support named areas and live discovery feed without definer 
   assert.match(migrationSql, /p_cuisine_tags\s+text\[\]\s+default\s+null/i);
   assert.match(migrationSql, /p_max_price\s+numeric\s+default\s+null/i);
   assert.match(migrationSql, /p_open_only\s+boolean\s+default\s+false/i);
-  assert.match(migrationSql, /grant\s+execute\s+on\s+function\s+public\.get_discovery_feed_by_location[\s\S]*to\s+anon,\s+authenticated/i);
-  assert.match(migrationSql, /grant\s+execute\s+on\s+function\s+public\.search_venues_by_location[\s\S]*to\s+anon,\s+authenticated/i);
+  assert.match(
+    migrationSql,
+    /grant\s+execute\s+on\s+function\s+public\.get_discovery_feed_by_location[\s\S]*to\s+anon,\s+authenticated/i,
+  );
+  assert.match(
+    migrationSql,
+    /grant\s+execute\s+on\s+function\s+public\.search_venues_by_location[\s\S]*to\s+anon,\s+authenticated/i,
+  );
 });
 
 test("Excel scripts are staging-only, schema-aware, and service-role guarded", () => {
@@ -158,11 +200,17 @@ test("Excel scripts are staging-only, schema-aware, and service-role guarded", (
   assert.match(importScript, /"status":\s+"completed"/);
   assert.match(importScript, /if\s+any\(item\["severity"\]\s+==\s+"error"/);
   assert.doesNotMatch(importScript, /insert\s+into\s+(buildings|venues|dishes)\b/i);
+
+  assert.match(validatorTest, /validate_row/);
+  assert.match(validatorTest, /missing_stall_name/);
+  assert.match(validatorTest, /invalid_latitude/);
+  assert.match(validatorTest, /duplicate_source_key/);
 });
 
 test("repo wiring exposes validation, import, smoke checks, and app discovery RPCs", () => {
   for (const scriptName of [
     "data:excel:validate",
+    "data:excel:test",
     "data:excel:import",
     "smoke:database:location",
     "smoke:database:search",
@@ -184,10 +232,18 @@ test("repo wiring exposes validation, import, smoke checks, and app discovery RP
   assert.match(repositorySource, /rpcRows\("get_discovery_feed_by_location"/);
   assert.match(repositorySource, /export\s+async\s+function\s+searchVenuesByLocationViaRpc/i);
   assert.match(repositorySource, /rpcRows\("search_venues_by_location"/);
+  assert.match(repositorySource, /p_lat:\s+filters\.latitude\s+\?\?\s+null/);
+  assert.match(repositorySource, /p_lng:\s+filters\.longitude\s+\?\?\s+null/);
+  assert.match(repositorySource, /p_max_price:\s+filters\.maxPrice\s+\?\?\s+null/);
   assert.match(serviceSource, /async\s+listDiscoveryFeedByLocation\(request\)/);
   assert.match(serviceSource, /async\s+searchVenuesByLocation\(request\)/);
   assert.match(discoverSource, /listDiscoveryFeedByLocation\(\{/);
   assert.match(discoverSource, /supabaseDiscoveryFeed\?\.venues/);
+  assert.match(quickBitesSource, /getServiceProvider\(\)\.mode\s+===\s+"supabase"/);
+  assert.match(quickBitesSource, /getDiscoverBitesFromSearch\(collection/);
+  assert.match(discoverBitesSource, /getHungryService\(\)\.discovery\.searchDishes/);
+  assert.match(discoverBitesSource, /latitude:\s+options\.latitude/);
+  assert.match(discoverBitesSource, /maxPrice/);
 });
 
 test("database Excel smoke SQL checks the live contract", () => {
@@ -201,4 +257,25 @@ test("database Excel smoke SQL checks the live contract", () => {
   }
   assert.match(smokeSql, /raise\s+exception\s+'database_excel_integration_smoke_failed/i);
   assert.match(smokeSql, /has_function_privilege/);
+});
+
+test("database Excel promotion migration implements staging promotion and fallback logic", () => {
+  assert.match(
+    promotionSql,
+    /create\s+or\s+replace\s+function\s+public\.promote_staging_to_production/i,
+  );
+  assert.match(promotionSql, /insert\s+into\s+buildings\b/i);
+  assert.match(promotionSql, /insert\s+into\s+venues\b/i);
+  assert.match(promotionSql, /insert\s+into\s+dishes\b/i);
+  assert.match(promotionSql, /insert\s+into\s+dish_taste_vectors\b/i);
+  assert.match(promotionSql, /insert\s+into\s+venue_delivery_links\b/i);
+  assert.match(promotionSql, /update\s+buildings\b/i);
+  assert.match(promotionSql, /update\s+venues\b/i);
+  assert.match(promotionSql, /update\s+staging_food_businesses\b/i);
+
+  // Assert fallback imagery update
+  assert.match(
+    promotionSql,
+    /coalesce\(nullif\(top_dish\.image_url,\s*'\s*'\),\s*nullif\(v\.image_url,\s*'\s*'\),\s*nullif\(b\.image_url,\s*'\s*'\)\)/i,
+  );
 });

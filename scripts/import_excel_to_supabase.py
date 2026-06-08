@@ -72,6 +72,7 @@ STAGING_COLUMNS = [
     "contact",
     "instagram",
     "image_url",
+    "dishes_image_url",
     "building_name",
     "building_display_name",
     "unit_number",
@@ -249,6 +250,7 @@ def build_staging_values(row: dict[str, Any], issues: list[dict[str, Any]]) -> d
             "price_text": clean(row.get("Price")),
             "price_min_sgd": str(price_min) if price_min is not None else None,
             "price_max_sgd": str(price_max) if price_max is not None else None,
+            "dishes_image_url": clean(row.get("Dishes Image URL")),
         },
         "validation": {
             "status": "invalid" if has_errors else "valid",
@@ -282,6 +284,7 @@ def build_staging_values(row: dict[str, Any], issues: list[dict[str, Any]]) -> d
         "contact": clean(row.get("Contact")),
         "instagram": clean(row.get("Instagram")),
         "image_url": clean(row.get("Image URL")),
+        "dishes_image_url": clean(row.get("Dishes Image URL")),
         "building_name": clean(row.get("Hawker Centre / Building")),
         "building_display_name": clean(row.get("Building Name")),
         "unit_number": clean(row.get("Unit No.")),

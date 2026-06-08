@@ -663,10 +663,22 @@ async function rpcRows(functionName: string, args: Row): Promise<Row[] | undefin
   if (!client) return undefined;
   const { data, error } = await client.rpc(functionName, args);
   if (error || !Array.isArray(data)) {
-    if (error) console.warn(`Supabase discovery RPC ${functionName} failed`, error.message);
+    if (error && !isExpectedDiscoveryRpcError(error)) {
+      console.warn(`Supabase discovery RPC ${functionName} failed`, error.message);
+    }
     return undefined;
   }
   return data as unknown as Row[];
+}
+
+function isExpectedDiscoveryRpcError(error: { code?: unknown; message?: unknown }): boolean {
+  const message = String(error.message ?? "").toLowerCase();
+  const code = String(error.code ?? "");
+  return (
+    code === "42883" ||
+    message.includes("does not exist") ||
+    message.includes('type "geography" does not exist')
+  );
 }
 
 export async function countVenuesInAreaViaRpc(
@@ -688,7 +700,11 @@ export async function countVenuesInAreaViaRpc(
   });
 
   if (error) {
-    console.warn("Supabase discovery RPC count_venues_in_area failed", error.message);
+    if (!isExpectedDiscoveryRpcError(error)) {
+      console.warn("Supabase discovery RPC count_venues_in_area failed", error.message);
+    } else {
+      console.debug("Supabase discovery RPC count_venues_in_area unavailable", error.message);
+    }
     return undefined;
   }
 
@@ -706,18 +722,18 @@ export async function searchDishesViaRpc(
 ): Promise<SearchResult[] | undefined> {
   const rows = await rpcRows("search_dishes", {
     p_query: filters.query.trim() || null,
-    p_lat: null,
-    p_lng: null,
+    p_lat: filters.latitude ?? null,
+    p_lng: filters.longitude ?? null,
     p_radius_meters: filters.radius || null,
     p_dietary_flags: filters.dietaryFlags,
     p_limit: 20,
     p_cursor_score: null,
     p_cursor_id: null,
     p_venue_id: null,
-    p_area_name: null,
-    p_cuisine_tags: null,
-    p_max_price: null,
-    p_open_only: false,
+    p_area_name: filters.areaName ?? null,
+    p_cuisine_tags: filters.cuisineTags ?? null,
+    p_max_price: filters.maxPrice ?? null,
+    p_open_only: filters.openOnly ?? false,
   });
   if (!rows) return undefined;
   return rows.map((row) => ({
