@@ -21,13 +21,23 @@ const RATE_LIMIT_REDIS_TOKEN =
   process.env.UPSTASH_REDIS_REST_TOKEN?.trim() ||
   "";
 
+// Basic IPv4 and IPv6 pattern — rejects crafted keys like "scope:attacker"
+const SAFE_IP_RE = /^[0-9a-fA-F:.]{2,45}$/;
+
+function sanitizeIp(raw: string | null | undefined): string {
+  if (!raw) return "unknown";
+  const first = raw.split(",")[0]?.trim() ?? "";
+  return SAFE_IP_RE.test(first) ? first : "unknown";
+}
+
 function getClientIp(request: NextRequest) {
   return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
+    sanitizeIp(request.headers.get("x-forwarded-for")) ||
+    sanitizeIp(request.headers.get("x-real-ip")) ||
     "unknown"
   );
 }
+
 
 export function clientRequestKey(request: NextRequest, scope: string) {
   return `${scope}:${getClientIp(request)}`;
@@ -35,6 +45,15 @@ export function clientRequestKey(request: NextRequest, scope: string) {
 
 export function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
+}
+
+export function requireJsonRequest(request: NextRequest) {
+  const contentType = request.headers.get("content-type")?.toLowerCase() ?? "";
+  if (!contentType.includes("application/json")) {
+    return jsonError("Request must use JSON.", 415);
+  }
+
+  return null;
 }
 
 function rateLimitResponse(resetAt: number) {

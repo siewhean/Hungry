@@ -106,8 +106,33 @@
 }
 
 @media (max-width: 767px) {
+  .section {
+    padding: var(--space-12) 0;
+  }
+
+  .header {
+    margin-bottom: var(--space-8);
+  }
+
+  .eyebrow {
+    margin-bottom: var(--space-3);
+  }
+
+  .header h2 {
+    margin-bottom: var(--space-4);
+  }
+
   .card {
+    padding: var(--space-6);
     min-height: auto;
+  }
+
+  .icon {
+    margin-bottom: var(--space-5);
+  }
+
+  .note {
+    margin-top: var(--space-6);
   }
 }
 

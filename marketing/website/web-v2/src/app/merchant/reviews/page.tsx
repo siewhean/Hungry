@@ -223,9 +223,9 @@ export default function MerchantReviewsPage() {
               )}
 
               {!review.flagged && (
-                <button 
-                  onClick={() => setReportingReview(review)} 
-                  className={`${styles.rowAction} ${styles.rowActionDanger}`} 
+                <button
+                  onClick={() => setReportingReview(review)}
+                  className={`${styles.rowAction} ${styles.rowActionDanger}`}
                   style={{ marginLeft: replyingTo === review.id ? 0 : "auto", display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px" }}
                 >
                   <AlertTriangle size={12} /> Flag Review
@@ -239,7 +239,14 @@ export default function MerchantReviewsPage() {
       {/* Flag Review Modal Overlay */}
       {reportingReview && (
         <div className={styles.modalOverlay} onClick={() => setReportingReview(null)}>
-          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()} style={{ maxWidth: "450px" }}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Flag review"
+            style={{ maxWidth: "450px" }}
+          >
             <div className={styles.modalHeader}>
               <h3 style={{ color: "var(--color-error)", display: "flex", alignItems: "center", gap: "6px" }}>
                 <AlertTriangle size={18} /> Flag Review by {reportingReview.author}?

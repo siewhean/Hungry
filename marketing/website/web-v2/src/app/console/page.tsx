@@ -14,7 +14,10 @@ import {
   X,
   CheckCircle,
 } from "lucide-react";
-import { readConsolePrototypeString } from "@/lib/console/prototypeStorage";
+import {
+  getConsolePrototypeFallback,
+  readConsolePrototypeString,
+} from "@/lib/console/prototypeStorage";
 import styles from "./console.module.css";
 
 function ConsoleLineChart({ points }: { points: number[] }) {
@@ -33,12 +36,12 @@ function ConsoleLineChart({ points }: { points: number[] }) {
     const relativeX = e.clientX - rect.left;
     const pctX = relativeX / rect.width;
     const viewBoxX = pctX * w;
-    
+
     const idx = Math.min(points.length - 1, Math.max(0, Math.round(viewBoxX / step)));
-    
+
     const activeX = idx * step;
     const activeY = h - (points[idx] / max) * h;
-    
+
     const tooltipX = (activeX / w) * rect.width;
     const tooltipY = (activeY / h) * rect.height - 38;
 
@@ -177,32 +180,40 @@ const initialClaims: MockClaim[] = [
   { id: "CLM-106", stallName: "Maxwell Fuzhou Oyster Cake", applicant: "Sarah Tan", type: "Stall Claim", status: "pending", submitted: "2 days ago" },
 ];
 
+const initialAlerts: AlertItem[] = [
+  {
+    id: "alert-sentry",
+    type: "critical",
+    title: "Sentry: Elevated error rate in app build v1.10.4 (iOS)",
+    description: "Network Timeout exceptions increased by 14% among foodie users in Clementi region.",
+    actionLabel: "Triage in Sentry",
+    actionHref: "https://sentry.io",
+  },
+  {
+    id: "alert-queue",
+    type: "warning",
+    title: "Pending Verification Queue Backlog",
+    description: "Merchant outlet claims are synced from Supabase when the console database is configured.",
+    actionLabel: "Review Claims",
+    actionHref: "/console/merchant-applications",
+  },
+];
+
+const initialRequestVolumePoints = [12420, 13180, 11950, 14210, 15842, 13900, 14842];
+
 export default function ConsoleOverview() {
   const [role, setRole] = useState<string>("Admin");
-  const [feedbackCount, setFeedbackCount] = useState<number>(3);
+  const [localFeedbackCount, setLocalFeedbackCount] = useState<number>(() =>
+    getConsolePrototypeFallback(3, 0)
+  );
   const [isProd, setIsProd] = useState<boolean>(() =>
     readConsolePrototypeString("env") === "production"
   );
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [summary, setSummary] = useState<ConsoleSummaryApiResponse | null>(null);
-  const [alerts, setAlerts] = useState<AlertItem[]>([
-    {
-      id: "alert-sentry",
-      type: "critical",
-      title: "Sentry: Elevated error rate in app build v1.10.4 (iOS)",
-      description: "Network Timeout exceptions increased by 14% among foodie users in Clementi region.",
-      actionLabel: "Triage in Sentry",
-      actionHref: "https://sentry.io",
-    },
-    {
-      id: "alert-queue",
-      type: "warning",
-      title: "Pending Verification Queue Backlog",
-      description: "Merchant outlet claims are synced from Supabase when the console database is configured.",
-      actionLabel: "Review Claims",
-      actionHref: "/console/merchant-applications",
-    },
-  ]);
+  const [alerts, setAlerts] = useState<AlertItem[]>(() =>
+    getConsolePrototypeFallback(initialAlerts, [])
+  );
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -259,16 +270,26 @@ export default function ConsoleOverview() {
 
   const handleResolveQuick = () => {
     if (feedbackCount > 0) {
-      setFeedbackCount((prev) => prev - 1);
+      setLocalFeedbackCount((prev) => prev - 1);
       showToast("Feedback resolved", "success");
     }
   };
 
-  // Env-aware KPI values
-  const pendingClaimsCount = summary?.counts?.pendingVerifications ?? initialClaims.length;
-  const activeUsers = summary?.counts?.users?.toLocaleString() ?? (isProd ? "142,820" : "14,842");
-  const activeMerchants = summary?.counts?.activeMerchants?.toLocaleString() ?? (isProd ? "3,420" : "342");
-  const slaRate = isProd ? "99.1%" : "98.4%";
+  const visibleClaims = getConsolePrototypeFallback(initialClaims, []);
+  const requestVolumePoints = getConsolePrototypeFallback(initialRequestVolumePoints, []);
+  const pendingClaimsCount = summary?.counts?.pendingVerifications ?? visibleClaims.length;
+  const activeUsersCount = summary?.counts?.users ?? getConsolePrototypeFallback(14842, 0);
+  const activeMerchantsCount = summary?.counts?.activeMerchants ?? getConsolePrototypeFallback(342, 0);
+  const feedbackCount = summary?.counts?.openReports ?? localFeedbackCount;
+  const activeUsers = activeUsersCount.toLocaleString();
+  const activeMerchants = activeMerchantsCount.toLocaleString();
+  const slaRate = getConsolePrototypeFallback("98.4%", "Live data unavailable");
+  const consoleDataLabel = summary?.configured
+    ? "Supabase data"
+    : isProd
+      ? "Live data unavailable"
+      : "Prototype fallback";
+  const flagRolloutLabel = getConsolePrototypeFallback("3 active rollouts", "Live config required");
 
   return (
     <div>
@@ -278,12 +299,12 @@ export default function ConsoleOverview() {
           <h2 id="console-workspace-title">Operating state across app, merchants, and trust queues.</h2>
           <p>
             The console front-loads the decisions that need attention now: claim queues, feedback,
-            release health, and rollout controls. Each metric links back to an operating surface.
+            release health, and rollout controls. Each metric links back to the page that owns it.
           </p>
           <div className={styles.statusStrip} aria-label="Current console status">
             <span className={styles.statusPill}>
               <span className={styles.statusPillDot} />
-              {summary?.configured ? "Supabase data" : isProd ? "Production fallback" : "Staging fallback"}
+              {consoleDataLabel}
             </span>
             <span className={styles.statusPill}>Role: {role}</span>
             <span className={styles.statusPill}>{alerts.length} active alerts</span>
@@ -317,7 +338,7 @@ export default function ConsoleOverview() {
       <div className={styles.headerTitleArea}>
         <div>
           <h1>Hungry Console</h1>
-          <p>Run Hungry from one place: app, website, merchants, trust queues, releases, notifications, and product operations.</p>
+          <p>Run the app, website, merchants, trust queues, releases, and notifications from Hungry Console.</p>
         </div>
         <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "center" }}>
           <div
@@ -400,22 +421,28 @@ export default function ConsoleOverview() {
         <div className={styles.kpiCard}>
           <span className={styles.kpiLabel}>Active Foodies (7D)</span>
           <span className={styles.kpiValue}>{activeUsers}</span>
-          <span className={`${styles.kpiTrend} ${styles.trendUp}`}>+12.4% vs last week</span>
+          <span className={`${styles.kpiTrend} ${summary?.configured ? styles.trendUp : styles.trendNeutral}`}>
+            {summary?.configured ? "Synced from console summary" : "Awaiting live summary"}
+          </span>
         </div>
         <div className={styles.kpiCard}>
           <span className={styles.kpiLabel}>Active Merchants</span>
           <span className={styles.kpiValue}>{activeMerchants}</span>
-          <span className={`${styles.kpiTrend} ${styles.trendUp}`}>+4 new outlets today</span>
+          <span className={`${styles.kpiTrend} ${summary?.configured ? styles.trendUp : styles.trendNeutral}`}>
+            {summary?.configured ? "Synced from console summary" : "Awaiting live summary"}
+          </span>
         </div>
         <div className={styles.kpiCard}>
           <span className={styles.kpiLabel}>Pending Claims</span>
           <span className={styles.kpiValue}>{pendingClaimsCount}</span>
-          <span className={`${styles.kpiTrend} ${styles.trendNeutral}`}>Steady review rate</span>
+          <span className={`${styles.kpiTrend} ${styles.trendNeutral}`}>Merchant ownership queue</span>
         </div>
         <div className={styles.kpiCard}>
           <span className={styles.kpiLabel}>SLA Resolution</span>
           <span className={styles.kpiValue}>{slaRate}</span>
-          <span className={`${styles.kpiTrend} ${styles.trendUp}`}>Above 95.0% target</span>
+          <span className={`${styles.kpiTrend} ${styles.trendNeutral}`}>
+            {summary?.configured ? "Requires observability feed" : "No fallback metric"}
+          </span>
         </div>
       </div>
 
@@ -424,7 +451,16 @@ export default function ConsoleOverview() {
         <div className={styles.chartHeader}>
           <span className={styles.chartTitle}>System Request Volume (7D WAU)</span>
         </div>
-        <ConsoleLineChart points={[12420, 13180, 11950, 14210, 15842, 13900, 14842]} />
+        {requestVolumePoints.length > 0 ? (
+          <ConsoleLineChart points={requestVolumePoints} />
+        ) : (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyStateTitle}>Live request volume unavailable</div>
+            <div className={styles.emptyStateDesc}>
+              Connect the observability feed before showing production traffic charts.
+            </div>
+          </div>
+        )}
       </div>
 
       {/* SPLIT DASHBOARD GRID */}
@@ -456,29 +492,42 @@ export default function ConsoleOverview() {
                   </tr>
                 </thead>
                 <tbody>
-                  {initialClaims.map((claim) => (
-                    <tr key={claim.id}>
-                      <td style={{ fontWeight: "700", fontFamily: "var(--font-mono)", color: "var(--color-primary)" }}>{claim.id}</td>
-                      <td>{claim.stallName}</td>
-                      <td>{claim.applicant}</td>
-                      <td>{claim.type}</td>
-                      <td>
-                        <span className={`${styles.badge} ${claim.status === "pending" ? styles.badgePending : styles.badgeNew}`}>
-                          {claim.status === "pending" ? "Pending" : "In Review"}
-                        </span>
-                      </td>
-                      <td style={{ color: "var(--color-text-muted)", fontSize: "var(--font-size-xs)" }}>{claim.submitted}</td>
-                      <td>
-                        <Link
-                          href="/console/merchant-applications"
-                          className={styles.rowAction}
-                          style={{ fontSize: "var(--font-size-xs)" }}
-                        >
-                          Review
-                        </Link>
+                  {visibleClaims.length > 0 ? (
+                    visibleClaims.map((claim) => (
+                      <tr key={claim.id}>
+                        <td style={{ fontWeight: "700", fontFamily: "var(--font-mono)", color: "var(--color-primary)" }}>{claim.id}</td>
+                        <td>{claim.stallName}</td>
+                        <td>{claim.applicant}</td>
+                        <td>{claim.type}</td>
+                        <td>
+                          <span className={`${styles.badge} ${claim.status === "pending" ? styles.badgePending : styles.badgeNew}`}>
+                            {claim.status === "pending" ? "Pending" : "In Review"}
+                          </span>
+                        </td>
+                        <td style={{ color: "var(--color-text-muted)", fontSize: "var(--font-size-xs)" }}>{claim.submitted}</td>
+                        <td>
+                          <Link
+                            href="/console/merchant-applications"
+                            className={styles.rowAction}
+                            style={{ fontSize: "var(--font-size-xs)" }}
+                          >
+                            Review
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7}>
+                        <div className={styles.emptyState}>
+                          <div className={styles.emptyStateTitle}>No live merchant review queue data available</div>
+                          <div className={styles.emptyStateDesc}>
+                            The queue will populate after Supabase-backed merchant applications are available.
+                          </div>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -504,7 +553,7 @@ export default function ConsoleOverview() {
                 <Zap size={20} style={{ color: "var(--color-accent)" }} />
                 <h4>Configure Flags</h4>
                 <span style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)" }}>
-                  3 active rollouts
+                  {flagRolloutLabel}
                 </span>
               </Link>
             </div>

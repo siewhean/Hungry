@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { CheckCircle, MessageSquare, AlertTriangle, X, Mail, Send } from "lucide-react";
-import { readConsolePrototypeStorage, writeConsolePrototypeStorage } from "@/lib/console/prototypeStorage";
+import { CheckCircle, MessageSquare, AlertTriangle, X, Mail, Send, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { redactEmail } from "@/lib/console/redaction";
+import { getConsolePrototypeFallback, readConsolePrototypeStorage, writeConsolePrototypeStorage } from "@/lib/console/prototypeStorage";
 import styles from "../console.module.css";
 
 type FeedbackStatus = "open" | "escalated" | "resolved";
@@ -62,17 +63,46 @@ const EMAIL_TEMPLATES = [
 
 export default function UserFeedback() {
   const [feedback, setFeedback] = useState<MockFeedback[]>(() => {
-    return readConsolePrototypeStorage("console_feedback", initialFeedback);
+    return readConsolePrototypeStorage("console_feedback", getConsolePrototypeFallback(initialFeedback, []));
   });
 
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const [replyTarget, setReplyTarget] = useState<MockFeedback | null>(null);
-  
+
   // Structured Responder States
   const [selectedTemplateIndex, setSelectedTemplateIndex] = useState<number>(0);
   const [replySubject, setReplySubject] = useState("");
   const [replyText, setReplyText] = useState("");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortField, setSortField] = useState("submittedAt");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const renderSortHeader = (label: string, field: string) => {
+    const isActive = sortField === field;
+    return (
+      <th onClick={() => handleSort(field)} style={{ cursor: "pointer", userSelect: "none" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span>{label}</span>
+          {isActive ? (
+            sortDirection === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+          ) : (
+            <ArrowUpDown size={12} style={{ opacity: 0.3 }} />
+          )}
+        </div>
+      </th>
+    );
+  };
 
   const saveFeedback = (updated: MockFeedback[]) => {
     setFeedback(updated);
@@ -84,10 +114,28 @@ export default function UserFeedback() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const filtered = feedback.filter((f) => {
-    if (activeTab === "all") return true;
-    return f.status === activeTab;
-  });
+  const filtered = React.useMemo(() => {
+    const list = feedback.filter((f) => {
+      const matchTab = activeTab === "all" || f.status === activeTab;
+      const matchSearch = !searchQuery ||
+        f.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        f.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        f.message.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchCategory = categoryFilter === "all" || f.category === categoryFilter;
+      return matchTab && matchSearch && matchCategory;
+    });
+
+    list.sort((a, b) => {
+      const fieldA = a[sortField as keyof MockFeedback] ?? "";
+      const fieldB = b[sortField as keyof MockFeedback] ?? "";
+
+      if (fieldA < fieldB) return sortDirection === "asc" ? -1 : 1;
+      if (fieldA > fieldB) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  }, [feedback, activeTab, searchQuery, categoryFilter, sortField, sortDirection]);
 
   const tabs: { key: TabFilter; label: string }[] = [
     { key: "all", label: "All" },
@@ -123,13 +171,13 @@ export default function UserFeedback() {
     if (!replyTarget) return;
     setSelectedTemplateIndex(index);
     const tmpl = EMAIL_TEMPLATES[index];
-    
+
     // Parse placeholders
     const excerpt = replyTarget.message.length > 35 ? replyTarget.message.substring(0, 35) + "..." : replyTarget.message;
     const parsedSubject = tmpl.subject
       .replace(/{id}/g, replyTarget.id)
       .replace(/{category}/g, replyTarget.category);
-      
+
     const parsedBody = tmpl.body
       .replace(/{user}/g, replyTarget.user)
       .replace(/{excerpt}/g, excerpt);
@@ -140,26 +188,26 @@ export default function UserFeedback() {
 
   const handleSendReply = () => {
     if (!replyTarget) return;
-    
-    const updated = feedback.map((f) => 
-      f.id === replyTarget.id 
-        ? { ...f, status: "resolved" as const, adminReply: replyText, resolvedAt: new Date().toLocaleDateString("en-SG") } 
+
+    const updated = feedback.map((f) =>
+      f.id === replyTarget.id
+        ? { ...f, status: "resolved" as const, adminReply: replyText, resolvedAt: new Date().toLocaleDateString("en-SG") }
         : f
     );
     saveFeedback(updated);
 
     // Trigger admin action event
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("consoleAdminAction", { 
-        detail: { 
-          action: "feedback reply sent", 
-          target: replyTarget.user, 
-          notes: `Sent email subject: "${replySubject}" and resolved ticket ${replyTarget.id}` 
-        } 
+      window.dispatchEvent(new CustomEvent("consoleAdminAction", {
+        detail: {
+          action: "feedback reply sent",
+          target: replyTarget.user,
+          notes: `Sent email subject: "${replySubject}" and resolved ticket ${replyTarget.id}`
+        }
       }));
     }
 
-    showToast(`Support email successfully sent to ${replyTarget.email}`, "success");
+    showToast(`Support email queued for ${replyTarget.user}`, "success");
     setReplyTarget(null);
     setReplyText("");
   };
@@ -204,16 +252,42 @@ export default function UserFeedback() {
           <h2>Feedback Queue ({feedback.filter((f) => f.status === "open").length} Open)</h2>
         </div>
 
+        {/* Filters */}
+        <div className={styles.filterBar} style={{ marginBottom: "var(--space-4)" }}>
+          <div className={styles.filterSearchWrapper} style={{ flex: "1 1 220px", maxWidth: "360px" }}>
+            <Search size={15} style={{ color: "var(--color-text-muted)", marginRight: "8px" }} />
+            <input
+              type="search"
+              placeholder="Search feedback..."
+              className={styles.filterSearchInput}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <select
+            className={styles.filterSelect}
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="all">All Categories</option>
+            <option value="bug">Bug</option>
+            <option value="UX issue">UX issue</option>
+            <option value="data issue">Data issue</option>
+            <option value="opening-hours issue">Opening-hours issue</option>
+            <option value="feature request">Feature request</option>
+          </select>
+        </div>
+
         <div className={styles.queueTableWrapper}>
           <table className={styles.queueTable}>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>User Details</th>
-                <th>Category</th>
-                <th>Message</th>
-                <th>Status</th>
-                <th>Received</th>
+                {renderSortHeader("ID", "id")}
+                {renderSortHeader("User Details", "user")}
+                {renderSortHeader("Category", "category")}
+                {renderSortHeader("Message", "message")}
+                {renderSortHeader("Status", "status")}
+                {renderSortHeader("Received", "submittedAt")}
                 <th>Actions</th>
               </tr>
             </thead>
@@ -226,7 +300,12 @@ export default function UserFeedback() {
                     <td style={{ fontWeight: "700", fontFamily: "var(--font-mono)", color: "var(--color-primary)" }}>{item.id}</td>
                     <td style={{ fontWeight: "600" }}>
                       <div>{item.user}</div>
-                      <div style={{ fontSize: "10px", color: "var(--color-text-muted)", fontFamily: "var(--font-mono)" }}>{item.email}</div>
+                      <div
+                        style={{ fontSize: "10px", color: "var(--color-text-muted)", fontFamily: "var(--font-mono)" }}
+                        title="Email redacted by default for privacy."
+                      >
+                        {redactEmail(item.email)}
+                      </div>
                     </td>
                     <td>
                       <span className={styles.badge} style={{ borderRadius: "var(--radius-full)", backgroundColor: catColor.bg, color: catColor.text }}>
@@ -293,7 +372,13 @@ export default function UserFeedback() {
       {/* SUPPORT OUTBOX RESOLVER RESOLUTION EMAIL FORM MODAL */}
       {replyTarget && (
         <div className={styles.modalOverlay}>
-          <div className={styles.modalCard} style={{ maxWidth: "560px" }}>
+          <div
+            className={styles.modalCard}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Reply to user feedback"
+            style={{ maxWidth: "560px" }}
+          >
             <div className={styles.modalHeader}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
                 <Mail size={20} style={{ color: "var(--color-primary)" }} />
@@ -303,18 +388,18 @@ export default function UserFeedback() {
                 Drafting resolution email. Send action will deliver email and mark feedback as Resolved.
               </p>
             </div>
-            
+
             <div className={styles.modalBody} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: "10px", fontSize: "var(--font-size-sm)", alignItems: "center" }}>
                 <span style={{ color: "var(--color-text-secondary)", fontWeight: "600" }}>From:</span>
                 <input type="text" className={styles.formInput} style={{ background: "var(--color-bg-soft)", opacity: 0.8 }} value="support@hungry.sg" disabled />
 
                 <span style={{ color: "var(--color-text-secondary)", fontWeight: "600" }}>To:</span>
-                <input type="text" className={styles.formInput} style={{ background: "var(--color-bg-soft)", opacity: 0.8 }} value={`${replyTarget.user} <${replyTarget.email}>`} disabled />
+                <input type="text" className={styles.formInput} style={{ background: "var(--color-bg-soft)", opacity: 0.8 }} value={`${replyTarget.user} <${redactEmail(replyTarget.email)}>`} disabled />
 
                 <span style={{ color: "var(--color-text-secondary)", fontWeight: "600" }}>Template:</span>
-                <select 
-                  className={styles.formInput} 
+                <select
+                  className={styles.formInput}
                   style={{ width: "100%", padding: "6px", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)", background: "var(--color-bg)" }}
                   value={selectedTemplateIndex}
                   onChange={(e) => handleTemplateChange(parseInt(e.target.value))}
@@ -325,12 +410,12 @@ export default function UserFeedback() {
                 </select>
 
                 <span style={{ color: "var(--color-text-secondary)", fontWeight: "600" }}>Subject:</span>
-                <input 
-                  type="text" 
-                  className={styles.formInput} 
-                  value={replySubject} 
+                <input
+                  type="text"
+                  className={styles.formInput}
+                  value={replySubject}
                   onChange={(e) => setReplySubject(e.target.value)}
-                  placeholder="Subject line..." 
+                  placeholder="Subject line..."
                 />
               </div>
 

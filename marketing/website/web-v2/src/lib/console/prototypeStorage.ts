@@ -1,9 +1,14 @@
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
 const PROTOTYPE_STORAGE_ENABLED =
-  process.env.NODE_ENV !== "production" ||
-  process.env.NEXT_PUBLIC_HUNGRY_CONSOLE_PROTOTYPE_STORAGE === "1";
+  !IS_PRODUCTION && process.env.NEXT_PUBLIC_HUNGRY_CONSOLE_PROTOTYPE_STORAGE !== "0";
 
 export function isConsolePrototypeStorageEnabled() {
   return PROTOTYPE_STORAGE_ENABLED;
+}
+
+export function getConsolePrototypeFallback<T>(fallback: T, productionFallback: T): T {
+  return IS_PRODUCTION ? productionFallback : fallback;
 }
 
 export function readConsolePrototypeStorage<T>(key: string, fallback: T): T {

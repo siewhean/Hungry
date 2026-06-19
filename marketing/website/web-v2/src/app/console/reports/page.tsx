@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { CheckCircle } from "lucide-react";
-import { readConsolePrototypeStorage, writeConsolePrototypeStorage } from "@/lib/console/prototypeStorage";
+import { CheckCircle, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { getConsolePrototypeFallback, readConsolePrototypeStorage, writeConsolePrototypeStorage } from "@/lib/console/prototypeStorage";
 import styles from "../console.module.css";
 
 interface MockReport {
@@ -36,7 +36,7 @@ const INFRACTION_REASONS = [
 
 export default function ModerationReports() {
   const [reports, setReports] = useState<MockReport[]>(() => {
-    return readConsolePrototypeStorage("console_reports", initialReports);
+    return readConsolePrototypeStorage("console_reports", getConsolePrototypeFallback(initialReports, []));
   });
 
   const [activeReport, setActiveReport] = useState<MockReport | null>(null);
@@ -46,6 +46,63 @@ export default function ModerationReports() {
   const [infractionReason, setInfractionReason] = useState(INFRACTION_REASONS[0]);
   const [notes, setNotes] = useState("");
   const [toast, setToast] = useState<{ message: string; type: "success" | "info" | "error" } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("pending");
+  const [sortField, setSortField] = useState("reportedAt");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const renderSortHeader = (label: string, field: string) => {
+    const isActive = sortField === field;
+    return (
+      <th onClick={() => handleSort(field)} style={{ cursor: "pointer", userSelect: "none" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span>{label}</span>
+          {isActive ? (
+            sortDirection === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+          ) : (
+            <ArrowUpDown size={12} style={{ opacity: 0.3 }} />
+          )}
+        </div>
+      </th>
+    );
+  };
+
+  const processedReports = React.useMemo(() => {
+    const list = reports.filter((r) => {
+      const matchSearch = !searchQuery ||
+        r.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.reportedEntity.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.reportedUsername.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.reporter.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.content.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchCategory = categoryFilter === "all" || r.category === categoryFilter;
+      const matchStatus = statusFilter === "all" || r.status === statusFilter;
+
+      return matchSearch && matchCategory && matchStatus;
+    });
+
+    list.sort((a, b) => {
+      const fieldA = a[sortField as keyof MockReport] ?? "";
+      const fieldB = b[sortField as keyof MockReport] ?? "";
+
+      if (fieldA < fieldB) return sortDirection === "asc" ? -1 : 1;
+      if (fieldA > fieldB) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  }, [reports, searchQuery, categoryFilter, statusFilter, sortField, sortDirection]);
 
   const saveReports = (updated: MockReport[]) => {
     setReports(updated);
@@ -79,7 +136,7 @@ export default function ModerationReports() {
     if (hideContent) finalAction += "[Content Hidden] ";
     if (issueWarning) finalAction += "[Formal Warning Issued] ";
     if (suspendUser) finalAction += "[Account Suspended] ";
-    
+
     const nextStatus: MockReport["status"] = hideContent ? "hidden" : "dismissed";
     const updatedReports = reports.map((r) =>
       r.id === activeReport.id ? { ...r, status: nextStatus, infractionReason, actionTaken: finalAction } : r
@@ -122,22 +179,59 @@ export default function ModerationReports() {
         <div className={styles.sectionHeaderRow}>
           <h2>Moderation Reports Queue ({reports.filter(r => r.status === "pending").length} Open)</h2>
         </div>
+
+        {/* Filters */}
+        <div className={styles.filterBar} style={{ marginBottom: "var(--space-4)" }}>
+          <div className={styles.filterSearchWrapper} style={{ flex: "1 1 220px", maxWidth: "360px" }}>
+            <Search size={15} style={{ color: "var(--color-text-muted)", marginRight: "8px" }} />
+            <input
+              type="search"
+              placeholder="Search reports..."
+              className={styles.filterSearchInput}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <select
+            className={styles.filterSelect}
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="all">All Categories</option>
+            <option value="Fake Review">Fake Review</option>
+            <option value="Abusive Text">Abusive Text</option>
+            <option value="Duplicate Stall">Duplicate Stall</option>
+            <option value="Wrong Price">Wrong Price</option>
+            <option value="Safety Concern">Safety Concern</option>
+          </select>
+          <select
+            className={styles.filterSelect}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="hidden">Hidden</option>
+            <option value="dismissed">Dismissed</option>
+          </select>
+        </div>
+
         <div className={styles.queueTableWrapper}>
           <table className={styles.queueTable}>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Reported Item / Creator</th>
-                <th>Category</th>
-                <th>Report Details / Content Preview</th>
-                <th>Reporter</th>
-                <th>Status</th>
-                <th>Date</th>
+                {renderSortHeader("ID", "id")}
+                {renderSortHeader("Reported Item / Creator", "reportedEntity")}
+                {renderSortHeader("Category", "category")}
+                {renderSortHeader("Report Details / Content Preview", "content")}
+                {renderSortHeader("Reporter", "reporter")}
+                {renderSortHeader("Status", "status")}
+                {renderSortHeader("Date", "reportedAt")}
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {reports.map((report) => (
+              {processedReports.map((report) => (
                 <tr key={report.id} style={{ cursor: "pointer" }} onClick={() => handleOpenModeration(report)}>
                   <td style={{ fontWeight: "700", fontFamily: "var(--font-mono)", color: "var(--color-primary)" }}>{report.id}</td>
                   <td>
@@ -162,9 +256,9 @@ export default function ModerationReports() {
                   <td style={{ fontSize: "var(--font-size-xs)" }}>{report.reportedAt}</td>
                   <td>
                     {report.status === "pending" ? (
-                      <div style={{ display: "flex", gap: "6px" }} onClick={(e) => e.stopPropagation()}>
-                        <button className={styles.actionButtonSecondary} onClick={() => handleOpenModeration(report)}>Moderate</button>
-                        <button className={styles.actionButtonDanger} onClick={(e) => handleQuickDismiss(report.id, e)}>Dismiss</button>
+                      <div style={{ display: "flex", gap: "6px", width: "max-content" }} onClick={(e) => e.stopPropagation()}>
+                        <button className={`${styles.rowAction} ${styles.rowActionSecondary}`} onClick={() => handleOpenModeration(report)}>Moderate</button>
+                        <button className={`${styles.rowAction} ${styles.rowActionDanger}`} onClick={(e) => handleQuickDismiss(report.id, e)}>Dismiss</button>
                       </div>
                     ) : (
                       <span style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)" }}>Resolved</span>
@@ -179,7 +273,13 @@ export default function ModerationReports() {
 
       {activeReport && (
         <div className={styles.modalOverlay}>
-          <div className={styles.modalCard} style={{ maxWidth: "560px" }}>
+          <div
+            className={styles.modalCard}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Resolve report"
+            style={{ maxWidth: "560px" }}
+          >
             <div className={styles.modalHeader}>
               <h3>Moderation Decisions Hub</h3>
               <p>Resolving Report: <strong>{activeReport.id}</strong></p>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { writeMerchantAuditLog } from "@/lib/merchantPortal/audit";
 import { clientRequestKey, jsonError, requireRateLimit } from "@/lib/security/api";
 import { getBooleanField, getStringField, readJsonObject, validationErrorResponse } from "@/lib/security/validation";
 import { supabaseFetch } from "@/lib/supabase/server";
@@ -67,6 +68,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       prefer: "return=minimal",
     });
 
+    await writeMerchantAuditLog({
+      action: "menu_dish_updated",
+      metadata: { fields: Object.keys(payload).sort() },
+      overview,
+      targetId: dishId,
+      targetType: "dish",
+    });
+
     return NextResponse.json(await getMerchantPortalOverview(accessToken));
   } catch (error) {
     const validationResponse = validationErrorResponse(error);
@@ -99,6 +108,12 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
         venue_id: overview.outlet.venueId ? `eq.${overview.outlet.venueId}` : undefined,
       },
       prefer: "return=minimal",
+    });
+    await writeMerchantAuditLog({
+      action: "menu_dish_deleted",
+      overview,
+      targetId: dishId,
+      targetType: "dish",
     });
     return NextResponse.json(await getMerchantPortalOverview(accessToken));
   } catch (error) {

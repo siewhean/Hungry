@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import type { StoryScreen } from "@/content/site";
 import { DiscoveryPhoneMockup, type DiscoveryPhoneMockupScreen } from "./DiscoveryPhoneMockup";
 import styles from "./StickyScreenStory.module.css";
@@ -28,44 +26,60 @@ export function StickyScreenStory({
   const [activeIndex, setActiveIndex] = useState(0);
 
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
+    let cleanup: (() => void) | undefined;
+    let cancelled = false;
 
-    const ctx = gsap.context(() => {
-      const updateActiveStep = () => {
-        const viewportAnchor = window.innerHeight * 0.52;
-        let closestIndex = 0;
-        let closestDistance = Number.POSITIVE_INFINITY;
+    void Promise.all([import("gsap"), import("gsap/ScrollTrigger")]).then(
+      ([gsapModule, scrollTriggerModule]) => {
+        if (cancelled) return;
 
-        stepRefs.current.forEach((step, index) => {
-          if (!step) return;
+        const gsap = gsapModule.default;
+        const ScrollTrigger = scrollTriggerModule.ScrollTrigger;
+        gsap.registerPlugin(ScrollTrigger);
 
-          const rect = step.getBoundingClientRect();
-          const stepAnchor = rect.top + rect.height * 0.42;
-          const distance = Math.abs(stepAnchor - viewportAnchor);
+        const updateActiveStep = () => {
+          const viewportAnchor = window.innerHeight * 0.52;
+          let closestIndex = 0;
+          let closestDistance = Number.POSITIVE_INFINITY;
 
-          if (distance < closestDistance) {
-            closestDistance = distance;
-            closestIndex = index;
-          }
-        });
+          stepRefs.current.forEach((step, index) => {
+            if (!step) return;
 
-        setActiveIndex((current) => (current === closestIndex ? current : closestIndex));
-      };
+            const rect = step.getBoundingClientRect();
+            const stepAnchor = rect.top + rect.height * 0.42;
+            const distance = Math.abs(stepAnchor - viewportAnchor);
 
-      ScrollTrigger.create({
-        trigger: rootRef.current,
-        start: "top bottom",
-        end: "bottom top",
-        onEnter: updateActiveStep,
-        onEnterBack: updateActiveStep,
-        onUpdate: updateActiveStep,
-        onRefresh: updateActiveStep,
-      });
+            if (distance < closestDistance) {
+              closestDistance = distance;
+              closestIndex = index;
+            }
+          });
 
-      updateActiveStep();
-    }, rootRef);
+          setActiveIndex((current) => (current === closestIndex ? current : closestIndex));
+        };
 
-    return () => ctx.revert();
+        const ctx = gsap.context(() => {
+          ScrollTrigger.create({
+            trigger: rootRef.current,
+            start: "top bottom",
+            end: "bottom top",
+            onEnter: updateActiveStep,
+            onEnterBack: updateActiveStep,
+            onUpdate: updateActiveStep,
+            onRefresh: updateActiveStep,
+          });
+
+          updateActiveStep();
+        }, rootRef);
+
+        cleanup = () => ctx.revert();
+      },
+    );
+
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
   }, [screens.length]);
 
   return (
@@ -83,7 +97,6 @@ export function StickyScreenStory({
                   isActive={index === activeIndex}
                   animateContent={animateContent}
                 />
-                <figcaption>{screen.stat}</figcaption>
               </figure>
             </div>
           ))}

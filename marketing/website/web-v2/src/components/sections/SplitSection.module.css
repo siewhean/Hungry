@@ -146,3 +146,30 @@
     transform: none;
   }
 }
+
+@media (max-width: 760px) {
+  .section {
+    padding: var(--space-12) 0;
+  }
+
+  .header {
+    margin-bottom: var(--space-8);
+  }
+
+  .header h2 {
+    margin-bottom: var(--space-4);
+  }
+
+  .grid {
+    gap: var(--space-5);
+  }
+
+  .cardContent {
+    padding: var(--space-6);
+  }
+
+  .cardContent h3,
+  .cardContent p {
+    margin-bottom: var(--space-4);
+  }
+}

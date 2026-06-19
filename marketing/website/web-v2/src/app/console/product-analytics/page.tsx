@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { ExternalLink } from "lucide-react";
+import { getConsolePrototypeFallback } from "@/lib/console/prototypeStorage";
 import styles from "../console.module.css";
 
 function InteractiveLineChart({ points, labels, yLabel = "Value" }: { points: number[]; labels: string[]; yLabel?: string }) {
@@ -20,12 +21,12 @@ function InteractiveLineChart({ points, labels, yLabel = "Value" }: { points: nu
     const relativeX = e.clientX - rect.left;
     const pctX = relativeX / rect.width;
     const viewBoxX = pctX * w;
-    
+
     const idx = Math.min(points.length - 1, Math.max(0, Math.round(viewBoxX / step)));
-    
+
     const activeX = idx * step;
     const activeY = h - (points[idx] / max) * h * 0.8 - 10;
-    
+
     const tooltipX = (activeX / w) * rect.width;
     const tooltipY = (activeY / h) * rect.height - 38;
 
@@ -135,10 +136,10 @@ function InteractiveBarChart({ data, yLabel = "Count" }: { data: { label: string
     const svgEl = e.currentTarget.ownerSVGElement;
     if (!svgEl) return;
     const svgRect = svgEl.getBoundingClientRect();
-    
+
     const x = rect.left - svgRect.left + rect.width;
     const y = rect.top - svgRect.top + rect.height / 2 - 16;
-    
+
     setHoveredIdx(idx);
     setTooltipPos({ x, y, val, label });
   };
@@ -244,10 +245,10 @@ function InteractiveStackedBar({ segments }: { segments: { name: string; pct: nu
     const svgEl = e.currentTarget.ownerSVGElement;
     if (!svgEl) return;
     const svgRect = svgEl.getBoundingClientRect();
-    
+
     const x = rect.left - svgRect.left + rect.width / 2;
     const y = rect.top - svgRect.top - 36;
-    
+
     setHoveredIdx(idx);
     setTooltipPos({ x, y, name, val, pct });
   };
@@ -268,7 +269,7 @@ function InteractiveStackedBar({ segments }: { segments: { name: string; pct: nu
       <svg viewBox="0 0 600 40" style={{ width: "100%", height: "50px", overflow: "visible" }}>
         {segmentsWithOffsets.map((s, idx) => {
           const isHovered = hoveredIdx === idx;
-          
+
           const colors = ["var(--color-primary)", "var(--color-accent)", "var(--color-success)", "var(--color-border-strong)"];
           const hoverColors = ["var(--color-primary-dark)", "#E09315", "#3E6411", "#BCAF9F"];
           const fill = isHovered ? hoverColors[idx % colors.length] : colors[idx % colors.length];
@@ -341,6 +342,35 @@ type TabName = "overview" | "foodies" | "merchants" | "website" | "releases" | "
 
 export default function ProductAnalytics() {
   const [activeTab, setActiveTab] = useState<TabName>("overview");
+  const prototypeAnalyticsEnabled = getConsolePrototypeFallback(true, false);
+
+  if (!prototypeAnalyticsEnabled) {
+    return (
+      <div>
+        <div className={styles.headerTitleArea}>
+          <div>
+            <h1>Product analysis</h1>
+            <p>Track growth, discovery quality, merchant adoption, website conversion, and release health in one view.</p>
+            <p style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)", marginTop: "var(--space-1)", fontFamily: "var(--font-mono)" }}>
+              Production analytics require the server-backed analytics warehouse or PostHog reporting connection.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <a href="https://posthog.com" target="_blank" rel="noopener noreferrer" className={styles.actionButtonSecondary}>
+              <ExternalLink size={16} />
+              Open PostHog workspace
+            </a>
+          </div>
+        </div>
+        <div className={styles.emptyState}>
+          <div className={styles.emptyStateTitle}>Live product analytics unavailable</div>
+          <div className={styles.emptyStateDesc}>
+            Connect the analytics warehouse or PostHog dashboards before showing production growth, release, feature-flag, or funnel metrics.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Mock metric aggregates
   const mockOverviewMetrics = [
@@ -379,37 +409,37 @@ export default function ProductAnalytics() {
 
       {/* METRIC SUBNAVIGATION TABS */}
       <div className={styles.analyticsTabs}>
-        <button 
+        <button
           className={`${styles.analyticsTab} ${activeTab === "overview" ? styles.analyticsTabActive : ""}`}
           onClick={() => setActiveTab("overview")}
         >
           Executive Overview
         </button>
-        <button 
+        <button
           className={`${styles.analyticsTab} ${activeTab === "foodies" ? styles.analyticsTabActive : ""}`}
           onClick={() => setActiveTab("foodies")}
         >
           Foodie Analytics
         </button>
-        <button 
+        <button
           className={`${styles.analyticsTab} ${activeTab === "merchants" ? styles.analyticsTabActive : ""}`}
           onClick={() => setActiveTab("merchants")}
         >
           Merchant Analytics
         </button>
-        <button 
+        <button
           className={`${styles.analyticsTab} ${activeTab === "website" ? styles.analyticsTabActive : ""}`}
           onClick={() => setActiveTab("website")}
         >
           Website Traffic
         </button>
-        <button 
+        <button
           className={`${styles.analyticsTab} ${activeTab === "releases" ? styles.analyticsTabActive : ""}`}
           onClick={() => setActiveTab("releases")}
         >
           Releases & Stability
         </button>
-        <button 
+        <button
           className={`${styles.analyticsTab} ${activeTab === "flags" ? styles.analyticsTabActive : ""}`}
           onClick={() => setActiveTab("flags")}
         >
@@ -437,14 +467,14 @@ export default function ProductAnalytics() {
               </div>
             </div>
             <div style={{ marginTop: "24px" }}>
-              <InteractiveLineChart 
-                points={[34200, 36800, 35900, 38400, 40100, 41500, 42800]} 
-                labels={["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Today"]} 
-                yLabel="Sessions" 
+              <InteractiveLineChart
+                points={[34200, 36800, 35900, 38400, 40100, 41500, 42800]}
+                labels={["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Today"]}
+                yLabel="Sessions"
               />
             </div>
           </div>
- 
+
           {/* Metric Overview Grid */}
           <div className={styles.metricsOverviewGrid}>
             {mockOverviewMetrics.map((metric) => (
@@ -457,13 +487,13 @@ export default function ProductAnalytics() {
               </div>
             ))}
           </div>
- 
+
           {/* Website Waitlist Funnel */}
           <div className={styles.dashboardSectionCard}>
             <div className={styles.sectionHeaderRow}>
               <h2>Acquisition & Activation Funnels</h2>
             </div>
-            
+
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--font-size-sm)", fontWeight: "700", marginBottom: "12px" }}>
@@ -480,7 +510,7 @@ export default function ProductAnalytics() {
           </div>
         </div>
       )}
- 
+
       {activeTab === "foodies" && (
         <div className={styles.dashboardSectionCard}>
           <div className={styles.sectionHeaderRow}>
@@ -535,7 +565,7 @@ export default function ProductAnalytics() {
           </div>
         </div>
       )}
- 
+
       {activeTab === "merchants" && (
         <div className={styles.dashboardSectionCard}>
           <div className={styles.sectionHeaderRow}>
@@ -597,7 +627,7 @@ export default function ProductAnalytics() {
             <div>
               <h2 style={{ marginBottom: "var(--space-1)" }}>PostHog deep dive</h2>
               <p style={{ color: "var(--color-text-secondary)", fontSize: "var(--font-size-sm)", maxWidth: "640px" }}>
-                Hungry Console surfaces the KPIs the team checks every day. Open PostHog when you need funnels, cohorts, trends, replays, event breakdowns, or feature-flag impact.
+                Hungry Console shows the KPIs the team checks every day. Open PostHog when you need funnels, cohorts, trends, replays, event breakdowns, or feature-flag impact.
               </p>
             </div>
             <div style={{ display: "flex", gap: "var(--space-2)", flexShrink: 0 }}>
@@ -624,10 +654,10 @@ export default function ProductAnalytics() {
                   ["Merchant activation funnel", "Tracks claim/application, verification, profile update, menu update, and first reply."],
                   ["Website conversion", "Best view for homepage, merchant page, and waitlist CTA performance."],
                   ["Search and discovery", "Helps product teams understand demand, discovery friction, and top search patterns."],
-                  ["Merchant Mode usage", "Best operational lens on profile updates, menu edits, promotions, and AI usage."],
+                  ["Merchant Mode usage", "Best view of profile updates, menu edits, promotions, and AI usage."],
                   ["Retention cohorts", "Needed to compare sticky user and merchant behaviours over time."],
                   ["Notifications and campaigns", "Ties messaging activity to opens, taps, and downstream engagement."],
-                  ["Feature flags and experiments", "Useful when a rollout or experiment needs product and ops context."],
+                  ["Feature flags and experiments", "Useful when a rollout or experiment needs product and ops review."],
                   ["Error and issue correlation", "Helps correlate spikes in feedback, reports, and errors with releases or flags."],
                 ].map(([label, purpose]) => (
                   <tr key={label}>
@@ -687,7 +717,7 @@ export default function ProductAnalytics() {
           </div>
         </div>
       )}
- 
+
       {activeTab === "releases" && (
         <div className={styles.dashboardSectionCard}>
           <div className={styles.sectionHeaderRow}>
@@ -695,10 +725,10 @@ export default function ProductAnalytics() {
           </div>
           <div style={{ marginBottom: "24px" }}>
             <span style={{ fontSize: "var(--font-size-xs)", fontFamily: "var(--font-mono)", color: "var(--color-text-muted)" }}>Crash-Free Users Trend (Last 7 Days)</span>
-            <InteractiveLineChart 
-              points={[99.95, 99.97, 99.98, 99.99, 99.92, 99.94, 99.98]} 
-              labels={["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Today"]} 
-              yLabel="%" 
+            <InteractiveLineChart
+              points={[99.95, 99.97, 99.98, 99.99, 99.92, 99.94, 99.98]}
+              labels={["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Today"]}
+              yLabel="%"
             />
           </div>
           <div className={styles.queueTableWrapper}>

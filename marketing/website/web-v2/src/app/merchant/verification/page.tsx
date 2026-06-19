@@ -6,6 +6,7 @@ import { CheckCircle, Clock, FileText, Scan, Upload, Video, X } from "lucide-rea
 import styles from "../../console/console.module.css";
 import { merchantMutationFetch } from "@/lib/merchantPortal/csrf";
 import { parseMerchantPortalJson } from "@/lib/merchantPortal/fetch";
+import { getConsolePrototypeFallback } from "@/lib/console/prototypeStorage";
 import {
   isMerchantVerified,
   readMerchantVerificationState,
@@ -23,15 +24,15 @@ export default function MerchantVerificationPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [singpassModalOpen, setSingpassModalOpen] = useState(false);
   const [singpassStep, setSingpassStep] = useState<"qr" | "loading" | "details" | "done">("qr");
+  const corppassPrototypeEnabled = getConsolePrototypeFallback(true, false);
   const isVerified = isMerchantVerified(verificationState);
 
-  // Mock ACRA details retrieved via Singpass
-  const mockAcraDetails = {
-    uen: "202408124N",
-    entityName: "MAXWELL FUZHOU OYSTER CAKE PTE. LTD.",
-    entityType: "EXEMPT PRIVATE COMPANY LIMITED BY SHARES",
-    regDate: "12 March 2024",
-    address: "1 KADAYANALLUR STREET, #01-08 MAXWELL FOOD CENTRE, SINGAPORE 069184"
+  const prototypeAcraDetails = {
+    uen: "PROTOTYPE-UEN",
+    entityName: "PROTOTYPE MERCHANT ENTITY",
+    entityType: "Prototype entity type",
+    regDate: "Prototype registration date",
+    address: "Prototype registered address"
   };
 
   const toastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -89,11 +90,19 @@ export default function MerchantVerificationPage() {
   };
 
   const handleSingpassVerifyTrigger = () => {
+    if (!corppassPrototypeEnabled) {
+      showToast("Corppass integration is not connected in production.");
+      return;
+    }
     setSingpassStep("qr");
     setSingpassModalOpen(true);
   };
 
   const handleSimulateQRScan = () => {
+    if (!corppassPrototypeEnabled) {
+      showToast("Corppass integration is not connected in production.");
+      return;
+    }
     setSingpassStep("loading");
     setTimeout(() => {
       setSingpassStep("details");
@@ -101,6 +110,10 @@ export default function MerchantVerificationPage() {
   };
 
   const handleAuthorizeMyInfo = async () => {
+    if (!corppassPrototypeEnabled) {
+      showToast("Corppass integration is not connected in production.");
+      return;
+    }
     setSingpassStep("done");
     try {
       const response = await merchantMutationFetch("/api/merchant/verification", {
@@ -130,7 +143,9 @@ export default function MerchantVerificationPage() {
     business: "Basic UEN details, stall name, and cuisine registry matching.",
     documents: "Business licence from SFA/NEA uploaded and reviewed.",
     walkaround: "Physical stall walkaround evidence reviewed by Hungry Ops.",
-    corppass: "Secure credentials validation via MyInfo Corppass.",
+    corppass: corppassPrototypeEnabled
+      ? "Prototype credential validation through a non-production Corppass flow."
+      : "Corppass validation requires the live integration to be connected.",
   };
 
   const statusCopy: Record<MerchantVerificationStepStatus, string> = {
@@ -207,7 +222,7 @@ export default function MerchantVerificationPage() {
             <div className={styles.verificationActionIcon}><Upload size={20} /></div>
             <div className={styles.verificationActionCopy}>
               <strong>Submit evidence for review</strong>
-              <span>Hungry Ops reviews your files and unlocks the merchant dashboard after approval.</span>
+              <span>Hungry Ops reviews your files. Once approved, your merchant dashboard opens.</span>
             </div>
             <button
               type="button"
@@ -289,23 +304,36 @@ export default function MerchantVerificationPage() {
               Corppass completed
             </span>
           ) : (
-            <button type="button" onClick={handleSingpassVerifyTrigger} className={styles.actionButton}>
-              Connect Singpass
+            <button
+              type="button"
+              onClick={handleSingpassVerifyTrigger}
+              className={styles.actionButton}
+              aria-disabled={!corppassPrototypeEnabled}
+              title={
+                corppassPrototypeEnabled
+                  ? "Open prototype Corppass flow"
+                  : "Corppass integration is not connected in production"
+              }
+            >
+              {corppassPrototypeEnabled ? "Open prototype Corppass flow" : "Corppass unavailable"}
             </button>
           )}
         </div>
       </div>
 
-      {/* Singpass Corppass Mock Modal Overlay */}
-      {singpassModalOpen && (
+      {/* Prototype Singpass Corppass Modal Overlay */}
+      {corppassPrototypeEnabled && singpassModalOpen && (
         <div className={styles.modalOverlay} onClick={() => setSingpassModalOpen(false)} style={{ zIndex: 1200 }}>
-          <div 
-            className={styles.modalCard} 
-            onClick={(e) => e.stopPropagation()} 
-            style={{ 
-              maxWidth: "480px", 
-              borderRadius: "16px", 
-              border: "1px solid #E5E7EB", 
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Connect Singpass"
+            style={{
+              maxWidth: "480px",
+              borderRadius: "16px",
+              border: "1px solid #E5E7EB",
               boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
               overflow: "hidden",
               padding: 0
@@ -317,8 +345,8 @@ export default function MerchantVerificationPage() {
                 <span style={{ fontWeight: 900, fontSize: "20px", letterSpacing: "-1px" }}>singpass</span>
                 <span style={{ fontSize: "10px", borderLeft: "1px solid rgba(255,255,255,0.4)", paddingLeft: "8px", color: "rgba(255,255,255,0.8)" }}>Corppass</span>
               </div>
-              <button 
-                onClick={() => setSingpassModalOpen(false)} 
+              <button
+                onClick={() => setSingpassModalOpen(false)}
                 style={{ background: "none", border: "none", color: "white", cursor: "pointer", padding: 0 }}
               >
                 <X size={20} />
@@ -331,10 +359,10 @@ export default function MerchantVerificationPage() {
                 <div style={{ textAlign: "center" }}>
                   <h4 style={{ fontWeight: 800, fontSize: "16px", marginBottom: "6px" }}>Log In with Singpass App</h4>
                   <p style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)", marginBottom: "20px" }}>
-                    Verify your Singapore corporate profile seamlessly via Corppass MyInfo.
+                    Verify your Singapore corporate profile with Corppass MyInfo.
                   </p>
-                  
-                  {/* Mock QR Container */}
+
+                  {/* Prototype QR Container */}
                   <div style={{ border: "1px solid #E5E7EB", padding: "16px", borderRadius: "12px", width: "180px", margin: "0 auto 20px", backgroundColor: "#F9FAFB", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
                     {/* Simulated SVG QR code */}
                     <svg width="120" height="120" viewBox="0 0 100 100" style={{ shapeRendering: "crispEdges" }}>
@@ -343,16 +371,16 @@ export default function MerchantVerificationPage() {
                       <rect x="0" y="0" width="30" height="30" fill="black" />
                       <rect x="5" y="5" width="20" height="20" fill="white" />
                       <rect x="10" y="10" width="10" height="10" fill="black" />
-                      
+
                       <rect x="70" y="0" width="30" height="30" fill="black" />
                       <rect x="75" y="5" width="20" height="20" fill="white" />
                       <rect x="80" y="10" width="10" height="10" fill="black" />
-                      
+
                       <rect x="0" y="70" width="30" height="30" fill="black" />
                       <rect x="5" y="75" width="20" height="20" fill="white" />
                       <rect x="10" y="80" width="10" height="10" fill="black" />
-                      
-                      {/* Random pixel chunks */}
+
+                      {/* Sample pixel chunks */}
                       <rect x="40" y="15" width="15" height="10" fill="black" />
                       <rect x="55" y="40" width="15" height="25" fill="black" />
                       <rect x="15" y="45" width="20" height="10" fill="black" />
@@ -362,12 +390,12 @@ export default function MerchantVerificationPage() {
                     <span style={{ fontSize: "10px", color: "var(--color-text-muted)" }}>ID: CRP-819A-981L</span>
                   </div>
 
-                  <button 
-                    onClick={handleSimulateQRScan} 
-                    className={styles.actionButton} 
+                  <button
+                    onClick={handleSimulateQRScan}
+                    className={styles.actionButton}
                     style={{ width: "100%", backgroundColor: "#D32F2F", border: "none", color: "white", fontWeight: 700, padding: "12px", borderRadius: "var(--radius-md)" }}
                   >
-                    Simulate Mobile App QR Scan
+                    Continue prototype QR scan
                   </button>
                 </div>
               )}
@@ -378,7 +406,7 @@ export default function MerchantVerificationPage() {
                   <Scan size={36} className={styles.animateSpin} style={{ color: "#D32F2F", margin: "0 auto 16px" }} />
                   <h4 style={{ fontWeight: 800, fontSize: "16px", marginBottom: "6px" }}>Authenticating with Corppass...</h4>
                   <p style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)" }}>
-                    Retrieving linked entity details securely via government API integration.
+                    Loading a prototype credential payload for this non-production flow.
                   </p>
                 </div>
               )}
@@ -387,45 +415,45 @@ export default function MerchantVerificationPage() {
               {singpassStep === "details" && (
                 <div>
                   <div style={{ display: "flex", gap: "8px", alignItems: "center", color: "#15803D", backgroundColor: "#DCFCE7", padding: "10px 14px", borderRadius: "8px", marginBottom: "16px", fontSize: "var(--font-size-xs)", fontWeight: 600 }}>
-                    <CheckCircle size={16} /> Credential Match Found
+                    <CheckCircle size={16} /> Prototype credential match
                   </div>
 
-                  <h4 style={{ fontWeight: 800, fontSize: "15px", marginBottom: "12px", borderBottom: "1px solid #E5E7EB", paddingBottom: "6px" }}>ACRA Business Profile Details</h4>
-                  
+                  <h4 style={{ fontWeight: 800, fontSize: "15px", marginBottom: "12px", borderBottom: "1px solid #E5E7EB", paddingBottom: "6px" }}>Prototype business profile details</h4>
+
                   <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "12px", marginBottom: "24px" }}>
                     <div style={{ display: "grid", gridTemplateColumns: "100px 1fr" }}>
                       <span style={{ color: "var(--color-text-muted)" }}>UEN:</span>
-                      <strong style={{ fontFamily: "var(--font-mono)" }}>{mockAcraDetails.uen}</strong>
+                      <strong style={{ fontFamily: "var(--font-mono)" }}>{prototypeAcraDetails.uen}</strong>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "100px 1fr" }}>
                       <span style={{ color: "var(--color-text-muted)" }}>Entity Name:</span>
-                      <strong style={{ textTransform: "uppercase" }}>{mockAcraDetails.entityName}</strong>
+                      <strong style={{ textTransform: "uppercase" }}>{prototypeAcraDetails.entityName}</strong>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "100px 1fr" }}>
                       <span style={{ color: "var(--color-text-muted)" }}>Type:</span>
-                      <span>{mockAcraDetails.entityType}</span>
+                      <span>{prototypeAcraDetails.entityType}</span>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "100px 1fr" }}>
                       <span style={{ color: "var(--color-text-muted)" }}>Constitution:</span>
-                      <span>{mockAcraDetails.regDate}</span>
+                      <span>{prototypeAcraDetails.regDate}</span>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "100px 1fr" }}>
                       <span style={{ color: "var(--color-text-muted)" }}>Address:</span>
-                      <span style={{ color: "var(--color-text-secondary)" }}>{mockAcraDetails.address}</span>
+                      <span style={{ color: "var(--color-text-secondary)" }}>{prototypeAcraDetails.address}</span>
                     </div>
                   </div>
 
                   <div style={{ display: "flex", gap: "8px" }}>
-                    <button 
-                      onClick={() => setSingpassStep("qr")} 
-                      className={styles.actionButtonSecondary} 
+                    <button
+                      onClick={() => setSingpassStep("qr")}
+                      className={styles.actionButtonSecondary}
                       style={{ flexGrow: 1, padding: "10px" }}
                     >
                       Back
                     </button>
-                    <button 
-                      onClick={handleAuthorizeMyInfo} 
-                      className={styles.actionButton} 
+                    <button
+                      onClick={handleAuthorizeMyInfo}
+                      className={styles.actionButton}
                       style={{ flexGrow: 2, backgroundColor: "#D32F2F", border: "none", color: "white", padding: "10px" }}
                     >
                       Authorize & Share details

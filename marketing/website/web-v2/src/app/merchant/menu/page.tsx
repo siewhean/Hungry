@@ -599,7 +599,7 @@ export default function MerchantMenuPage() {
                       <div className={styles.dishCardName} style={{ margin: 0, fontWeight: 700 }}>{dish.name}</div>
                       <div className={styles.dishCardPrice} style={{ fontFamily: "var(--font-mono)", color: "var(--color-primary)", fontWeight: 700 }}>{dish.price}</div>
                     </div>
-                    
+
                     <div style={{ display: "flex", gap: "var(--space-2)", margin: "4px 0 8px 0" }}>
                       <span style={{ fontSize: "var(--font-size-xs)", backgroundColor: "var(--color-bg-soft)", padding: "2px 6px", borderRadius: "var(--radius-sm)", color: "var(--color-text-secondary)" }}>
                         {dish.category}
@@ -716,7 +716,7 @@ export default function MerchantMenuPage() {
                       </span>
                       {dish.isFeatured && <span className={`${styles.dishTag} ${styles.dishTagFeatured}`}>Featured</span>}
                     </div>
-                    
+
                     <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
                       <button className={styles.rowAction} onClick={() => toggleSoldOut(dish.id)} style={{ flexGrow: 1, fontSize: "var(--font-size-xs)" }}>
                         {dish.isSoldOut ? "Available" : "Sold Out"}
@@ -742,7 +742,14 @@ export default function MerchantMenuPage() {
       {/* Category Management Modal */}
       {manageCategoriesOpen && (
         <div className={styles.modalOverlay} onClick={() => setManageCategoriesOpen(false)}>
-          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px" }}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Manage menu sections"
+            style={{ maxWidth: "500px" }}
+          >
             <div className={styles.modalHeader}>
               <h3>Manage Menu Sections</h3>
             </div>
@@ -816,7 +823,14 @@ export default function MerchantMenuPage() {
       {/* Delete Category Confirmation Modal */}
       {deletingCat && (
         <div className={styles.modalOverlay} onClick={() => setDeletingCat(null)}>
-          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()} style={{ maxWidth: "450px" }}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Delete menu section"
+            style={{ maxWidth: "450px" }}
+          >
             <div className={styles.modalHeader}>
               <h3 style={{ color: "var(--color-error)" }}>Delete Category &quot;{deletingCat}&quot;?</h3>
             </div>
@@ -852,7 +866,14 @@ export default function MerchantMenuPage() {
       {/* Preset Image Gallery Picker Overlay */}
       {imagePickerOpen && (
         <div className={styles.modalOverlay} onClick={() => setImagePickerOpen(false)} style={{ zIndex: 1100 }}>
-          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px" }}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Select dish photo"
+            style={{ maxWidth: "600px" }}
+          >
             <div className={styles.modalHeader}>
               <h3>Select Premium Hawker Dish Photo</h3>
             </div>
@@ -914,7 +935,14 @@ export default function MerchantMenuPage() {
       {/* Add Dish modal */}
       {addModalOpen && (
         <div className={styles.modalOverlay} onClick={() => setAddModalOpen(false)}>
-          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px", maxHeight: "90vh", overflowY: "auto" }}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Add new dish"
+            style={{ maxWidth: "600px", maxHeight: "90vh", overflowY: "auto" }}
+          >
             <div className={styles.modalHeader}>
               <h3>Add New Dish</h3>
             </div>
@@ -1067,7 +1095,14 @@ export default function MerchantMenuPage() {
       {/* Edit modal */}
       {editDish && (
         <div className={styles.modalOverlay} onClick={() => setEditDish(null)}>
-          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()} style={{ maxWidth: "600px", maxHeight: "90vh", overflowY: "auto" }}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Edit dish"
+            style={{ maxWidth: "600px", maxHeight: "90vh", overflowY: "auto" }}
+          >
             <div className={styles.modalHeader}>
               <h3>Edit — {editDish.name}</h3>
             </div>
@@ -1225,7 +1260,13 @@ export default function MerchantMenuPage() {
       {/* Delete confirm */}
       {confirmDelete && (
         <div className={styles.modalOverlay} onClick={() => setConfirmDelete(null)}>
-          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Delete dish"
+          >
             <div className={styles.modalHeader}><h3>Delete Dish?</h3></div>
             <div className={styles.modalBody}>This will remove the dish from your menu. This cannot be undone.</div>
             <div className={styles.modalFooter}>

@@ -1,15 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import { Check, X, ExternalLink, UserCheck, CheckCircle, FileText, Building, Video, Award, FileCheck } from "lucide-react";
+import { Check, X, ExternalLink, UserCheck, CheckCircle, FileText, Building, Video, Award, FileCheck, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import styles from "../console.module.css";
+import { redactContact, redactIdentifier } from "@/lib/console/redaction";
 import {
-  DEMO_MERCHANT_ID,
-  DEMO_MERCHANT_NAME,
+  PROTOTYPE_MERCHANT_ID,
+  PROTOTYPE_MERCHANT_NAME,
   updateMerchantVerificationStatus,
   type MerchantVerificationStepStatus,
 } from "@/lib/merchantVerification";
-import { readConsolePrototypeStorage, writeConsolePrototypeStorage } from "@/lib/console/prototypeStorage";
+import { getConsolePrototypeFallback, readConsolePrototypeStorage, writeConsolePrototypeStorage } from "@/lib/console/prototypeStorage";
 
 type AppStatus = "pending" | "approved" | "rejected" | "more_info" | "in_review";
 
@@ -88,20 +89,20 @@ const initialApplications: ClaimApplication[] = [
     walkaroundStatus: "verified"
   },
   {
-    id: "CLM-106",
-    stallName: "Maxwell Fuzhou Oyster Cake",
-    applicant: "Sarah Tan",
-    contact: "sarah.tan@gmail.com",
+    id: PROTOTYPE_MERCHANT_ID,
+    stallName: PROTOTYPE_MERCHANT_NAME,
+    applicant: "Prototype Applicant",
+    contact: "prototype@example.com",
     evidenceType: "SFA License Upload",
-    evidenceUrl: "/evidence/license_sarah.pdf",
+    evidenceUrl: "/evidence/prototype-license.pdf",
     privacySetting: "exact",
     status: "pending",
     submittedAt: "2 days ago",
-    acraName: "MAXWELL FUZHOU FOOD PARTNERS",
-    uen: "53182294M",
-    sfaLicenceNo: "SE22104M",
+    acraName: "PROTOTYPE MERCHANT ENTITY",
+    uen: "PROTOTYPE-UEN",
+    sfaLicenceNo: "PROTOTYPE-LICENCE",
     sfaExpiry: "2027-02-18",
-    verificationLink: "https://www.google.com/search?q=maxwell+fuzhou+oyster+cake",
+    verificationLink: "https://www.google.com/search?q=singapore+hawker+stall+verification",
     applicantRole: "Managing Director",
     walkaroundStatus: "pending"
   },
@@ -137,7 +138,7 @@ type TabFilter = "all" | "pending" | "in_review" | "approved" | "rejected";
 
 export default function MerchantApplications() {
   const [applications, setApplications] = useState<ClaimApplication[]>(() => {
-    return readConsolePrototypeStorage("console_merchant_applications", initialApplications);
+    return readConsolePrototypeStorage("console_merchant_applications", getConsolePrototypeFallback(initialApplications, []));
   });
 
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
@@ -147,6 +148,34 @@ export default function MerchantApplications() {
   const [infoMessage, setInfoMessage] = useState("");
   const [notes, setNotes] = useState("");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState("submittedAt");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const renderSortHeader = (label: string, field: string) => {
+    const isActive = sortField === field;
+    return (
+      <th onClick={() => handleSort(field)} style={{ cursor: "pointer", userSelect: "none" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span>{label}</span>
+          {isActive ? (
+            sortDirection === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+          ) : (
+            <ArrowUpDown size={12} style={{ opacity: 0.3 }} />
+          )}
+        </div>
+      </th>
+    );
+  };
 
   const saveApplications = (updated: ClaimApplication[]) => {
     setApplications(updated);
@@ -163,7 +192,7 @@ export default function MerchantApplications() {
       corppass?: MerchantVerificationStepStatus;
     } = {}
   ) => {
-    if (!app || (app.id !== DEMO_MERCHANT_ID && app.stallName !== DEMO_MERCHANT_NAME)) return;
+    if (!app || (app.id !== PROTOTYPE_MERCHANT_ID && app.stallName !== PROTOTYPE_MERCHANT_NAME)) return;
 
     updateMerchantVerificationStatus(status, {
       updatedBy: "Hungry Console",
@@ -185,11 +214,51 @@ export default function MerchantApplications() {
     { key: "rejected", label: "Rejected" },
   ];
 
-  const filtered = applications.filter((a) => {
-    if (activeTab === "all") return true;
-    if (activeTab === "pending") return a.status === "pending" || a.status === "more_info";
-    return a.status === activeTab;
-  });
+  const filtered = React.useMemo(() => {
+    const list = applications.filter((a) => {
+      const matchTab = activeTab === "all" || (activeTab === "pending" ? (a.status === "pending" || a.status === "more_info") : a.status === activeTab);
+      const matchSearch = !searchQuery ||
+        a.stallName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        a.applicant.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        a.id.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchTab && matchSearch;
+    });
+
+    list.sort((a, b) => {
+      const fieldA = a[sortField as keyof ClaimApplication] ?? "";
+      const fieldB = b[sortField as keyof ClaimApplication] ?? "";
+
+      if (fieldA < fieldB) return sortDirection === "asc" ? -1 : 1;
+      if (fieldA > fieldB) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  }, [applications, activeTab, searchQuery, sortField, sortDirection]);
+
+  const pendingCount = applications.filter((app) => app.status === "pending" || app.status === "more_info").length;
+  const verifiedWalkaroundCount = applications.filter((app) => app.walkaroundStatus === "verified").length;
+  const approvedCount = applications.filter((app) => app.status === "approved").length;
+  const verificationVisuals = [
+    {
+      label: "Documents",
+      value: pendingCount,
+      note: "Licence and ownership evidence",
+      icon: FileText,
+    },
+    {
+      label: "Walkaround",
+      value: verifiedWalkaroundCount,
+      note: "Physical stall proof reviewed",
+      icon: Video,
+    },
+    {
+      label: "Approval",
+      value: approvedCount,
+      note: "Merchant access ready",
+      icon: CheckCircle,
+    },
+  ] as const;
 
   const handleApprove = (id: string) => {
     const updated = applications.map((a) => (a.id === id ? { ...a, status: "approved" as AppStatus, walkaroundStatus: "verified" as const } : a));
@@ -266,6 +335,36 @@ export default function MerchantApplications() {
         </div>
       </div>
 
+      <section className={styles.applicationVisualPanel} aria-label="Merchant verification overview">
+        <div className={styles.applicationVisualCopy}>
+          <span className={styles.applicationVisualEyebrow}>Verification desk</span>
+          <h2>Review every merchant claim from one clear queue.</h2>
+          <p>
+            Documents, walkaround proof, and approval state are shown as a staged review flow so ops can see what needs action without relying on old screenshots.
+          </p>
+        </div>
+        <div className={styles.applicationVisualFlow}>
+          {verificationVisuals.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <div className={styles.applicationVisualStep} key={item.label}>
+                <div className={styles.applicationVisualIcon}>
+                  <Icon size={22} aria-hidden />
+                </div>
+                <div>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                  <p>{item.note}</p>
+                </div>
+                {index < verificationVisuals.length - 1 && (
+                  <div className={styles.applicationVisualConnector} aria-hidden />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       {/* TABS */}
       <div className={styles.dashboardSectionCard}>
         <div className={styles.tabNav}>
@@ -294,17 +393,31 @@ export default function MerchantApplications() {
           <h2>Review Applications</h2>
         </div>
 
+        {/* Filter bar */}
+        <div className={styles.filterBar} style={{ marginBottom: "var(--space-4)" }}>
+          <div className={styles.filterSearchWrapper} style={{ flex: "1 1 220px", maxWidth: "360px" }}>
+            <Search size={15} style={{ color: "var(--color-text-muted)", marginRight: "8px" }} />
+            <input
+              type="search"
+              placeholder="Search stall, applicant, UEN..."
+              className={styles.filterSearchInput}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+
         <div className={styles.queueTableWrapper}>
           <table className={styles.queueTable}>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Stall Name</th>
-                <th>Applicant Details</th>
-                <th>Evidence Submitted</th>
-                <th>Location Privacy</th>
-                <th>Status</th>
-                <th>Submitted</th>
+                {renderSortHeader("ID", "id")}
+                {renderSortHeader("Stall Name", "stallName")}
+                {renderSortHeader("Applicant Details", "applicant")}
+                {renderSortHeader("Evidence Submitted", "evidenceType")}
+                {renderSortHeader("Location Privacy", "privacySetting")}
+                {renderSortHeader("Status", "status")}
+                {renderSortHeader("Submitted", "submittedAt")}
                 <th>Actions</th>
               </tr>
             </thead>
@@ -318,7 +431,7 @@ export default function MerchantApplications() {
                     <td>
                       <div>{app.applicant}</div>
                       <div style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)" }}>
-                        {app.applicantRole} · {app.contact}
+                        {app.applicantRole} · <span title="Contact redacted by default for privacy.">{redactContact(app.contact)}</span>
                       </div>
                     </td>
                     <td>
@@ -344,9 +457,9 @@ export default function MerchantApplications() {
                     <td style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)" }}>{app.submittedAt}</td>
                     <td>
                       {(app.status === "pending" || app.status === "in_review" || app.status === "more_info") ? (
-                        <div style={{ display: "flex", gap: "6px" }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: "flex", gap: "6px", width: "max-content" }} onClick={(e) => e.stopPropagation()}>
                           <button
-                            className={styles.rowActionPrimary}
+                            className={`${styles.rowAction} ${styles.rowActionPrimary}`}
                             style={{ fontSize: "var(--font-size-xs)", padding: "4px 8px" }}
                             onClick={() => handleApprove(app.id)}
                           >
@@ -360,7 +473,7 @@ export default function MerchantApplications() {
                             Request Info
                           </button>
                           <button
-                            className={styles.rowActionDanger}
+                            className={`${styles.rowAction} ${styles.rowActionDanger}`}
                             style={{ fontSize: "var(--font-size-xs)", padding: "4px 8px" }}
                             onClick={() => setRejectTarget(app)}
                           >
@@ -393,13 +506,18 @@ export default function MerchantApplications() {
       {selectedApp && (
         <>
           <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", zIndex: 100 }} onClick={() => setSelectedApp(null)} />
-          <div className={styles.drawerPanel}>
+          <div
+            className={styles.drawerPanel}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Merchant application details"
+          >
             <div className={styles.drawerHeader}>
               <div>
                 <h2 style={{ margin: 0, fontSize: "var(--font-size-lg)" }}>{selectedApp.stallName}</h2>
                 <p style={{ margin: 0, fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)", marginTop: "4px", fontFamily: "var(--font-mono)" }}>{selectedApp.id}</p>
               </div>
-              <button className={styles.drawerCloseBtn} onClick={() => setSelectedApp(null)}>
+              <button className={styles.drawerCloseBtn} onClick={() => setSelectedApp(null)} aria-label="Close merchant application details">
                 <X size={20} />
               </button>
             </div>
@@ -412,7 +530,7 @@ export default function MerchantApplications() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-2)", fontSize: "var(--font-size-sm)" }}>
                   <div><span style={{ color: "var(--color-text-secondary)" }}>Name:</span> <strong style={{ color: "var(--color-text)" }}>{selectedApp.applicant}</strong></div>
                   <div><span style={{ color: "var(--color-text-secondary)" }}>Role:</span> <strong style={{ color: "var(--color-text)" }}>{selectedApp.applicantRole}</strong></div>
-                  <div><span style={{ color: "var(--color-text-secondary)" }}>Contact:</span> <strong style={{ color: "var(--color-text)" }}>{selectedApp.contact}</strong></div>
+                  <div><span style={{ color: "var(--color-text-secondary)" }}>Contact:</span> <strong style={{ color: "var(--color-text)" }} title="Contact redacted by default for privacy.">{redactContact(selectedApp.contact)}</strong></div>
                   <div><span style={{ color: "var(--color-text-secondary)" }}>Submitted:</span> <strong style={{ color: "var(--color-text)" }}>{selectedApp.submittedAt}</strong></div>
                 </div>
               </div>
@@ -425,7 +543,7 @@ export default function MerchantApplications() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", fontSize: "var(--font-size-sm)" }}>
                   <div><span style={{ color: "var(--color-text-secondary)" }}>Registered Name:</span> <strong style={{ color: "var(--color-text)" }}>{selectedApp.acraName}</strong></div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-2)" }}>
-                    <div><span style={{ color: "var(--color-text-secondary)" }}>UEN:</span> <strong style={{ color: "var(--color-text)", fontFamily: "var(--font-mono)" }}>{selectedApp.uen}</strong></div>
+                    <div><span style={{ color: "var(--color-text-secondary)" }}>UEN:</span> <strong style={{ color: "var(--color-text)", fontFamily: "var(--font-mono)" }} title="Identifier redacted by default for privacy.">{redactIdentifier(selectedApp.uen, 3, 2)}</strong></div>
                     <div><span style={{ color: "var(--color-text-secondary)" }}>Status:</span> <span className={styles.badge} style={{ backgroundColor: "#ECFDF5", color: "#065F46", borderRadius: "var(--radius-full)" }}>Live</span></div>
                   </div>
                 </div>
@@ -438,7 +556,7 @@ export default function MerchantApplications() {
                 </h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", fontSize: "var(--font-size-sm)" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-2)" }}>
-                    <div><span style={{ color: "var(--color-text-secondary)" }}>Licence No:</span> <strong style={{ color: "var(--color-text)", fontFamily: "var(--font-mono)" }}>{selectedApp.sfaLicenceNo}</strong></div>
+                    <div><span style={{ color: "var(--color-text-secondary)" }}>Licence No:</span> <strong style={{ color: "var(--color-text)", fontFamily: "var(--font-mono)" }} title="Identifier redacted by default for privacy.">{redactIdentifier(selectedApp.sfaLicenceNo, 2, 2)}</strong></div>
                     <div><span style={{ color: "var(--color-text-secondary)" }}>Expiry:</span> <strong style={{ color: "var(--color-text)" }}>{selectedApp.sfaExpiry}</strong></div>
                   </div>
                   <div><span style={{ color: "var(--color-text-secondary)" }}>Evidence Type:</span> <strong style={{ color: "var(--color-text)" }}>{selectedApp.evidenceType}</strong></div>
@@ -529,13 +647,13 @@ export default function MerchantApplications() {
 
               {(selectedApp.status === "pending" || selectedApp.status === "in_review" || selectedApp.status === "more_info") && (
                 <div style={{ marginTop: "var(--space-3)", display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-                  <button className={styles.rowActionPrimary} onClick={() => { handleApprove(selectedApp.id); }}>
+                  <button className={`${styles.rowAction} ${styles.rowActionPrimary}`} onClick={() => { handleApprove(selectedApp.id); }}>
                     <Check size={14} /> Approve &amp; Sync Badge
                   </button>
                   <button className={styles.rowAction} onClick={() => { setInfoModal(selectedApp); setSelectedApp(null); }}>
                     Request More Info
                   </button>
-                  <button className={styles.rowActionDanger} onClick={() => { setRejectTarget(selectedApp); setSelectedApp(null); }}>
+                  <button className={`${styles.rowAction} ${styles.rowActionDanger}`} onClick={() => { setRejectTarget(selectedApp); setSelectedApp(null); }}>
                     <X size={14} /> Reject Claim
                   </button>
                 </div>
@@ -548,7 +666,12 @@ export default function MerchantApplications() {
       {/* REQUEST INFO MODAL */}
       {infoModal && (
         <div className={styles.modalOverlay}>
-          <div className={styles.modalCard}>
+          <div
+            className={styles.modalCard}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Request more information"
+          >
             <div className={styles.modalHeader}>
               <h3>Request More Info</h3>
               <p style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)", marginTop: "4px" }}>
@@ -578,7 +701,12 @@ export default function MerchantApplications() {
       {/* REJECT CONFIRMATION MODAL */}
       {rejectTarget && (
         <div className={styles.modalOverlay}>
-          <div className={styles.modalCard}>
+          <div
+            className={styles.modalCard}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Reject merchant application"
+          >
             <div className={styles.modalHeader}>
               <h3>Reject Application?</h3>
             </div>

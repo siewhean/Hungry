@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
   BookOpen,
@@ -21,7 +20,12 @@ import {
 } from "lucide-react";
 import styles from "./DiscoveryPhoneMockup.module.css";
 
-export type DiscoveryPhoneMockupScreen = "discover" | "stall-detail" | "stall-menu" | "review-feed";
+export type DiscoveryPhoneMockupScreen =
+  | "discover"
+  | "dish-detail"
+  | "stall-detail"
+  | "stall-menu"
+  | "review-feed";
 
 const popularDishes = [
   { name: "Laksa", image: "/images/food/laksa-topdown.png", active: true },
@@ -86,6 +90,7 @@ const reviewCards = [
 
 const screenLabels = {
   discover: "Hungry discovery page on iPhone",
+  "dish-detail": "Hungry dish details page on iPhone",
   "stall-detail": "Hungry stall details page on iPhone",
   "stall-menu": "Hungry stall menu section on iPhone",
   "review-feed": "Hungry review feed with mock contents on iPhone",
@@ -239,6 +244,64 @@ function StallDetailContent() {
   );
 }
 
+function DishDetailContent() {
+  return (
+    <div className={styles.dishPreview}>
+      <div className={styles.appTopBar}>
+        <span>
+          <ArrowLeft size={18} />
+        </span>
+        <span>
+          <Heart size={18} />
+        </span>
+      </div>
+
+      <div className={styles.dishHeroImage}>
+        <Image src="/images/food/laksa-topdown.png" alt="" fill sizes="260px" />
+      </div>
+
+      <section className={styles.dishIntro}>
+        <p className={styles.locationEyebrow}>Chinatown Complex · #02-12</p>
+        <h2>Laksa</h2>
+        <p>Rich coconut broth, prawns, fishcake, and sambal from Ah Heng Curry.</p>
+        <div className={styles.infoPillRow}>
+          <span>Open now</span>
+          <span>4.8 ★</span>
+          <span>$5.20</span>
+        </div>
+      </section>
+
+      <div className={styles.infoCard}>
+        <Utensils size={18} />
+        <div>
+          <strong>Dish details</strong>
+          <p>Spicy, rich, aromatic. Good for lunch or dinner, with queue notes before you go.</p>
+        </div>
+      </div>
+
+      <section className={styles.signatureStrip}>
+        <div className={styles.sectionHeaderCompact}>
+          <h3>Nearby places</h3>
+          <span>View stalls</span>
+        </div>
+        <div className={styles.dishPlaceList}>
+          {stallDishes.slice(0, 2).map((dish) => (
+            <article className={styles.dishPlaceCard} key={dish.name}>
+              <span>
+                <Image src={dish.image} alt="" fill sizes="56px" />
+              </span>
+              <div>
+                <strong>{dish.name}</strong>
+                <p>Open · 8-12 min walk · {dish.price}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function StallMenuContent() {
   return (
     <div className={styles.menuPreview}>
@@ -285,7 +348,7 @@ function ReviewFeedContent() {
     <div className={styles.reviewPreview}>
       <section className={styles.reviewHeader}>
         <p className={styles.locationEyebrow}>Review</p>
-        <h2>Dish proof from foodies</h2>
+        <h2>Dish notes from foodies</h2>
         <p>Mock community content attached to real dishes and stalls.</p>
       </section>
 
@@ -330,6 +393,8 @@ function ReviewFeedContent() {
 
 function getContent(screen: DiscoveryPhoneMockupScreen) {
   switch (screen) {
+    case "dish-detail":
+      return <DishDetailContent />;
     case "stall-detail":
       return <StallDetailContent />;
     case "stall-menu":
@@ -346,70 +411,104 @@ type DiscoveryPhoneMockupProps = {
   screen?: DiscoveryPhoneMockupScreen;
   isActive?: boolean;
   animateContent?: boolean;
+  screenshotSrc?: string;
+  screenshotAlt?: string;
 };
 
+function normalizeScreen(screen: DiscoveryPhoneMockupScreen | undefined): DiscoveryPhoneMockupScreen {
+  return screen ?? "discover";
+}
+
 export function DiscoveryPhoneMockup({
-  screen = "discover",
+  screen: rawScreen = "discover",
   isActive = false,
   animateContent = false,
+  screenshotSrc,
+  screenshotAlt,
 }: DiscoveryPhoneMockupProps) {
+  const screen = normalizeScreen(rawScreen);
   const activeTab = screen === "review-feed" ? "Review" : "Discover";
   const isDiscover = screen === "discover";
-  const contentClassName = `${styles.content} ${isDiscover ? styles.discoveryContent : styles.productContent}`;
+  const hasScreenshot = Boolean(screenshotSrc);
+  const contentClassName = `${styles.content} ${
+    hasScreenshot ? styles.screenshotContent : isDiscover ? styles.discoveryContent : styles.productContent
+  }`;
 
   return (
-    <div className={styles.device} aria-label={screenLabels[screen]}>
-      <span className={styles.sideButtonTop} aria-hidden="true" />
-      <span className={styles.sideButtonMid} aria-hidden="true" />
-      <span className={styles.sideButtonLow} aria-hidden="true" />
+    <div className={styles.deviceWrapper}>
+      <div className={styles.device} aria-label={screenLabels[screen]}>
+        <span className={styles.sideButtonTop} aria-hidden="true" />
+        <span className={styles.sideButtonMid} aria-hidden="true" />
+        <span className={styles.sideButtonLow} aria-hidden="true" />
+        <span className={styles.sideButtonRight} aria-hidden="true" />
+        <span className={styles.sideButtonRightLow} aria-hidden="true" />
 
-      <div className={styles.screen}>
-        <div className={styles.statusBar} aria-hidden="true">
-          <span className={styles.time}>1:42</span>
-          <span className={styles.island} />
-          <span className={styles.statusIcons}>
-            <span className={styles.signalDots}>••••</span>
-            <span className={styles.wifi} />
-            <span className={styles.battery} />
-          </span>
-        </div>
+        <div className={styles.screen}>
+          {/* Always-on physical overlays for iPhone 17 Pro */}
+          <div className={styles.dynamicIsland} aria-hidden="true" />
+          <div className={styles.homeIndicator} aria-hidden="true" />
 
-        <AnimatePresence initial={false} mode="wait">
-          {(!animateContent || isActive) ? (
-            <motion.div
-              key={`content-${screen}-${isActive ? "active" : "hidden"}`}
-              className={contentClassName}
-              aria-label={screenLabels[screen]}
-              initial={animateContent ? { opacity: 0 } : undefined}
-              animate={animateContent ? { opacity: 1 } : undefined}
-              exit={animateContent ? { opacity: 0 } : undefined}
-              transition={animateContent ? { duration: 0.4, ease: "easeInOut" } : undefined}
+          {screenshotSrc && (!animateContent || isActive) ? (
+            /*
+             * Full-bleed screenshot: the real app screenshot fills the entire
+             * phone screen (status bar, content, and nav all included in the image).
+             * z-index 5 sits above the HTML statusBar and bottomNav layers.
+             */
+            <div
+              className={styles.screenshotWrapper}
+              aria-label={screenshotAlt ?? screenLabels[screen]}
             >
-              {getContent(screen)}
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+              <Image
+                src={screenshotSrc}
+                alt={screenshotAlt ?? screenLabels[screen]}
+                fill
+                sizes="(max-width: 980px) 20rem, 22rem"
+                className={styles.screenCaptureImage}
+                priority={isActive}
+              />
+            </div>
+          ) : (
+            /* Coded UI fallback with HTML chrome */
+            <>
+              <div className={styles.statusBar} aria-hidden="true">
+                <span className={styles.time}>1:42</span>
+                <span className={styles.islandPlaceholder} />
+                <span className={styles.statusIcons}>
+                  <span className={styles.signalDots}>••••</span>
+                  <span className={styles.wifi} />
+                  <span className={styles.battery} />
+                </span>
+              </div>
 
-        <div className={styles.bottomNav} aria-hidden="true">
-          <span>
-            <Home size={24} />
-            Home
-          </span>
-          <span className={activeTab === "Discover" ? styles.activeNav : undefined}>
-            <Compass size={25} />
-            Discover
-          </span>
-          <span className={styles.addButton}>
-            <Plus size={34} />
-          </span>
-          <span className={activeTab === "Review" ? styles.activeNav : undefined}>
-            <BookOpen size={24} />
-            Review
-          </span>
-          <span>
-            <User size={24} />
-            Profile
-          </span>
+              {(!animateContent || isActive) ? (
+                <div className={contentClassName} aria-label={screenLabels[screen]}>
+                  {getContent(screen)}
+                </div>
+              ) : null}
+
+              <div className={styles.bottomNav} aria-hidden="true">
+                <span>
+                  <Home size={24} />
+                  Home
+                </span>
+                <span className={activeTab === "Discover" ? styles.activeNav : undefined}>
+                  <Compass size={25} />
+                  Discover
+                </span>
+                <span className={styles.addButton}>
+                  <Plus size={34} />
+                </span>
+                <span className={activeTab === "Review" ? styles.activeNav : undefined}>
+                  <BookOpen size={24} />
+                  Review
+                </span>
+                <span>
+                  <User size={24} />
+                  Profile
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

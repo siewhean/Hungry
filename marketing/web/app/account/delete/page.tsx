@@ -22,7 +22,7 @@ const sections = [
     body: (
       <p>
         Email hello@hungry.sg from the email address linked to your Hungry account with the subject
-        "Account deletion". We may ask for verification before processing the request.
+        &quot;Account deletion&quot;. We may ask for verification before processing the request.
       </p>
     ),
   },

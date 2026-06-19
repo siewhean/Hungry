@@ -21,10 +21,12 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
+        disallow: ["/api/", "/console/", "/merchant/", "/_next/"],
       },
       ...aiAndSearchCrawlers.map((userAgent) => ({
         userAgent,
         allow: "/",
+        disallow: ["/api/", "/console/", "/merchant/", "/_next/"],
       })),
     ],
     sitemap: absoluteUrl("/sitemap.xml"),

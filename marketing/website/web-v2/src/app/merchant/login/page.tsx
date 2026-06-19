@@ -37,7 +37,7 @@ export default function MerchantLoginPage() {
   };
 
   return (
-    <div className={styles.loginShell}>
+    <main className={styles.loginShell} id="main-content" tabIndex={-1}>
       {/* LEFT: Login card */}
       <div className={styles.loginLeft}>
         <div className={styles.loginCard}>
@@ -139,6 +139,6 @@ export default function MerchantLoginPage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

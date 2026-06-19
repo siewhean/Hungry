@@ -18,10 +18,11 @@ import {
 } from "lucide-react";
 import styles from "../console.module.css";
 import {
-  DEMO_MERCHANT_NAME,
+  PROTOTYPE_MERCHANT_NAME,
   updateMerchantVerificationStatus,
 } from "@/lib/merchantVerification";
-import { readConsolePrototypeStorage, writeConsolePrototypeStorage } from "@/lib/console/prototypeStorage";
+import { redactIdentifier } from "@/lib/console/redaction";
+import { getConsolePrototypeFallback, readConsolePrototypeStorage, writeConsolePrototypeStorage } from "@/lib/console/prototypeStorage";
 
 type VerificationStatus =
   | "verified"
@@ -62,7 +63,7 @@ const initialMockMerchants: Merchant[] = [
   { id: "M-001", name: "Old Airport Road Lor Mee", type: "Hawker Stall", location: "Old Airport Road Food Centre, #01-12", cuisine: "Hokkien", verificationStatus: "verified", accountStatus: "active", dishCount: 8, rating: 4.7, joinedDate: "Mar 2024", lastActive: "Today", teamSize: 2, uen: "202408101C", registeredEntity: "OLD AIRPORT ROAD LOR MEE PTE. LTD.", lat: 1.3082, lng: 103.8858, auditLog: ["System initialized - Mar 2024", "Verified by ops - Apr 2024"] },
   { id: "M-002", name: "Ah Seng Braised Duck", type: "Hawker Stall", location: "Toa Payoh Lorong 8, #01-05", cuisine: "Teochew", verificationStatus: "in_review", accountStatus: "active", dishCount: 5, rating: 4.4, joinedDate: "Apr 2024", lastActive: "2 days ago", teamSize: 1, uen: "202409021Z", registeredEntity: "AH SENG DUCK SPECIALIST", lat: 1.3384, lng: 103.8502, auditLog: ["System initialized - Apr 2024", "Application received - Apr 2024"] },
   { id: "M-003", name: "Grain & Grind", type: "Cafe", location: "Tiong Bahru Plaza, #02-18", cuisine: "Western / Coffee", verificationStatus: "verified", accountStatus: "active", dishCount: 22, rating: 4.6, joinedDate: "Jan 2024", lastActive: "Today", teamSize: 4, uen: "202302482E", registeredEntity: "GRAIN & GRIND CAFE PTE. LTD.", lat: 1.2863, lng: 103.8271, auditLog: ["System initialized - Jan 2024"] },
-  { id: "M-004", name: "Maxwell Fuzhou Oyster Cake", type: "Hawker Stall", location: "Maxwell Food Centre, #01-28", cuisine: "Fujian", verificationStatus: "rejected", accountStatus: "active", dishCount: 3, rating: 4.1, joinedDate: "May 2024", lastActive: "1 week ago", teamSize: 1, uen: "202410291K", registeredEntity: "MAXWELL OYSTER BAKERY", lat: 1.2804, lng: 103.8448, auditLog: ["System initialized - May 2024", "Rejected due to missing SFA license - May 2024"] },
+  { id: "M-004", name: PROTOTYPE_MERCHANT_NAME, type: "Hawker Stall", location: "Prototype Food Centre, #01-28", cuisine: "Prototype cuisine", verificationStatus: "rejected", accountStatus: "active", dishCount: 3, rating: 4.1, joinedDate: "May 2024", lastActive: "1 week ago", teamSize: 1, uen: "PROTOTYPE-UEN", registeredEntity: "PROTOTYPE MERCHANT ENTITY", lat: 1.2804, lng: 103.8448, auditLog: ["System initialized - May 2024", "Rejected due to missing SFA license - May 2024"] },
   { id: "M-005", name: "Betsy's Kitchen", type: "Home-Based", location: "Buona Vista (Approximate)", cuisine: "Peranakan", verificationStatus: "more_info_needed", accountStatus: "active", dishCount: 12, rating: 4.8, joinedDate: "Feb 2024", lastActive: "3 days ago", teamSize: 1, uen: "53491823B", registeredEntity: "BETSY HOME KITCHEN ENTERPRISE", lat: 1.3062, lng: 103.7906, auditLog: ["System initialized - Feb 2024"] },
   { id: "M-006", name: "Spice Garden Restaurant", type: "Restaurant", location: "Orchard Gateway, #03-11", cuisine: "Indian", verificationStatus: "verified", accountStatus: "warned", dishCount: 41, rating: 3.9, joinedDate: "Nov 2023", lastActive: "Yesterday", teamSize: 6, uen: "202309123M", registeredEntity: "SPICE GARDEN CATERING PTE. LTD.", lat: 1.3009, lng: 103.8394, auditLog: ["System initialized - Nov 2023", "Warned for low rating - May 2024"] },
   { id: "M-007", name: "Koh Family Noodles", type: "Food Court", location: "Jurong Point, Level 2", cuisine: "Cantonese", verificationStatus: "not_started", accountStatus: "active", dishCount: 0, rating: 0, joinedDate: "May 2024", lastActive: "5 days ago", teamSize: 1, uen: "53489124L", registeredEntity: "KOH FAMILY NOODLES", lat: 1.3396, lng: 103.7067, auditLog: ["System initialized - May 2024"] },
@@ -85,7 +86,7 @@ const accountStatusConfig: Record<AccountStatus, { bg: string; color: string }> 
 
 export default function MerchantsPage() {
   const [merchants, setMerchants] = React.useState<Merchant[]>(() => {
-    return readConsolePrototypeStorage("console_merchants", initialMockMerchants);
+    return readConsolePrototypeStorage("console_merchants", getConsolePrototypeFallback(initialMockMerchants, []));
   });
 
   const [search, setSearch] = useState("");
@@ -139,7 +140,7 @@ export default function MerchantsPage() {
 
   const handleSelectMerchant = (m: Merchant) => {
     setSelectedMerchant(m);
-    setEditUen(m.uen || "");
+    setEditUen("");
     setEditEntity(m.registeredEntity || "");
     setEditLat(m.lat !== undefined ? String(m.lat) : "");
     setEditLng(m.lng !== undefined ? String(m.lng) : "");
@@ -150,17 +151,18 @@ export default function MerchantsPage() {
     if (!selectedMerchant) return;
     const parsedLat = parseFloat(editLat);
     const parsedLng = parseFloat(editLng);
-    
+
     const updated = merchants.map((m) => {
       if (m.id === selectedMerchant.id) {
         const logs = [...(m.auditLog || [])];
-        if (m.uen !== editUen) logs.push(`UEN updated to ${editUen} - Today`);
+        const nextUen = editUen.trim() || m.uen;
+        if (editUen.trim() && m.uen !== nextUen) logs.push("UEN updated - Today");
         if (m.registeredEntity !== editEntity) logs.push(`Registered Entity updated to ${editEntity} - Today`);
         if (m.lat !== parsedLat || m.lng !== parsedLng) logs.push(`GPS Coordinates updated to ${parsedLat}, ${parsedLng} - Today`);
-        
+
         return {
           ...m,
-          uen: editUen,
+          uen: nextUen,
           registeredEntity: editEntity,
           lat: isNaN(parsedLat) ? undefined : parsedLat,
           lng: isNaN(parsedLng) ? undefined : parsedLng,
@@ -169,7 +171,7 @@ export default function MerchantsPage() {
       }
       return m;
     });
-    
+
     saveMerchants(updated);
     const syncObj = updated.find(m => m.id === selectedMerchant.id);
     if (syncObj) {
@@ -189,7 +191,7 @@ export default function MerchantsPage() {
       }
       return m;
     });
-    
+
     saveMerchants(updated);
     const syncObj = updated.find(m => m.id === selectedMerchant.id);
     if (syncObj) {
@@ -244,7 +246,7 @@ export default function MerchantsPage() {
     if (syncObj) {
       setSelectedMerchant(syncObj);
     }
-    if (merchant?.name === DEMO_MERCHANT_NAME) {
+    if (merchant?.name === PROTOTYPE_MERCHANT_NAME) {
       updateMerchantVerificationStatus("approved", {
         updatedBy: "Hungry Console",
         message: "Hungry Ops granted verification from the merchant account record. Your full merchant dashboard is now available.",
@@ -343,7 +345,7 @@ export default function MerchantsPage() {
         <div className={styles.kpiCard}>
           <span className={styles.kpiLabel}>Verified</span>
           <span className={styles.kpiValue} style={{ color: "#059669" }}>{verifiedCount}</span>
-          <span className={`${styles.kpiTrend} ${styles.trendUp}`}>{Math.round((verifiedCount / merchants.length) * 100)}% verification rate</span>
+          <span className={`${styles.kpiTrend} ${styles.trendUp}`}>{merchants.length > 0 ? Math.round((verifiedCount / merchants.length) * 100) : 0}% verification rate</span>
         </div>
         <div className={styles.kpiCard}>
           <span className={styles.kpiLabel}>In Review</span>
@@ -505,13 +507,18 @@ export default function MerchantsPage() {
             style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.4)", zIndex: 100 }}
             onClick={() => setSelectedMerchant(null)}
           />
-          <div className={styles.drawerPanel}>
+          <div
+            className={styles.drawerPanel}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Merchant details"
+          >
             <div className={styles.drawerHeader}>
               <div>
                 <h2 style={{ margin: 0, fontSize: "var(--font-size-lg)" }}>{selectedMerchant.name}</h2>
                 <p style={{ margin: 0, fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)", marginTop: "4px" }}>{selectedMerchant.id}</p>
               </div>
-              <button className={styles.drawerCloseBtn} onClick={() => setSelectedMerchant(null)}>
+              <button className={styles.drawerCloseBtn} onClick={() => setSelectedMerchant(null)} aria-label="Close merchant details">
                 <X size={20} />
               </button>
             </div>
@@ -564,23 +571,27 @@ export default function MerchantsPage() {
               {/* Regulatory & GPS Details */}
               <div style={{ margin: "var(--space-4) 0", borderTop: "1px solid var(--color-border)", paddingTop: "var(--space-4)" }}>
                 <h3 style={{ fontSize: "var(--font-size-sm)", color: "var(--color-text-secondary)", marginBottom: "var(--space-3)" }}>Business Credentials</h3>
-                
+
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
                   <div>
                     <label style={{ display: "block", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", color: "var(--color-text-muted)", marginBottom: "4px" }}>UEN Registration</label>
-                    <input 
-                      type="text" 
-                      value={editUen} 
-                      onChange={(e) => setEditUen(e.target.value)} 
+                    <div style={{ fontSize: "11px", color: "var(--color-text-muted)", fontFamily: "var(--font-mono)", marginBottom: "4px" }}>
+                      Current: {redactIdentifier(selectedMerchant.uen, 3, 2)}
+                    </div>
+                    <input
+                      type="text"
+                      value={editUen}
+                      onChange={(e) => setEditUen(e.target.value)}
+                      placeholder="Enter replacement UEN only"
                       style={{ width: "100%", padding: "6px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)", background: "var(--color-bg)", fontSize: "var(--font-size-sm)" }}
                     />
                   </div>
                   <div>
                     <label style={{ display: "block", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", color: "var(--color-text-muted)", marginBottom: "4px" }}>ACRA Registered Entity</label>
-                    <input 
-                      type="text" 
-                      value={editEntity} 
-                      onChange={(e) => setEditEntity(e.target.value)} 
+                    <input
+                      type="text"
+                      value={editEntity}
+                      onChange={(e) => setEditEntity(e.target.value)}
                       style={{ width: "100%", padding: "6px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)", background: "var(--color-bg)", fontSize: "var(--font-size-sm)" }}
                     />
                   </div>
@@ -597,26 +608,26 @@ export default function MerchantsPage() {
                   <div style={{ display: "flex", gap: "10px" }}>
                     <div style={{ flex: 1 }}>
                       <label style={{ display: "block", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", color: "var(--color-text-muted)", marginBottom: "4px" }}>Latitude</label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         step="0.000001"
-                        value={editLat} 
-                        onChange={(e) => setEditLat(e.target.value)} 
+                        value={editLat}
+                        onChange={(e) => setEditLat(e.target.value)}
                         style={{ width: "100%", padding: "6px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)", background: "var(--color-bg)", fontSize: "var(--font-size-sm)" }}
                       />
                     </div>
                     <div style={{ flex: 1 }}>
                       <label style={{ display: "block", fontSize: "10px", fontWeight: "bold", textTransform: "uppercase", color: "var(--color-text-muted)", marginBottom: "4px" }}>Longitude</label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         step="0.000001"
-                        value={editLng} 
-                        onChange={(e) => setEditLng(e.target.value)} 
+                        value={editLng}
+                        onChange={(e) => setEditLng(e.target.value)}
                         style={{ width: "100%", padding: "6px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)", background: "var(--color-bg)", fontSize: "var(--font-size-sm)" }}
                       />
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={handleSaveBusinessDetails}
                     className={styles.actionButtonSecondary}
                     style={{ marginTop: "8px", width: "100%" }}
@@ -628,7 +639,7 @@ export default function MerchantsPage() {
 
               <div style={{ margin: "var(--space-4) 0", borderTop: "1px solid var(--color-border)", paddingTop: "var(--space-4)" }}>
                 <h3 style={{ fontSize: "var(--font-size-sm)", color: "var(--color-text-secondary)", marginBottom: "var(--space-3)" }}>Compliance Audit Trail</h3>
-                
+
                 <div style={{ maxHeight: "120px", overflowY: "auto", border: "1px solid var(--color-border)", borderRadius: "var(--radius-sm)", padding: "8px", background: "var(--color-bg-soft)", display: "flex", flexDirection: "column", gap: "6px", marginBottom: "10px" }}>
                   {selectedMerchant.auditLog && selectedMerchant.auditLog.length > 0 ? (
                     selectedMerchant.auditLog.map((log, index) => (
@@ -642,16 +653,16 @@ export default function MerchantsPage() {
                 </div>
 
                 <div style={{ display: "flex", gap: "8px" }}>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     placeholder="New audit action/note..."
                     value={newAuditNote}
                     onChange={(e) => setNewAuditNote(e.target.value)}
                     style={{ flex: 1, padding: "6px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)", background: "var(--color-bg)", fontSize: "var(--font-size-sm)" }}
                   />
-                  <button 
+                  <button
                     onClick={handleAddAuditNote}
-                    className={styles.rowActionPrimary}
+                    className={`${styles.rowAction} ${styles.rowActionPrimary}`}
                     style={{ padding: "6px 12px" }}
                   >
                     Add
@@ -680,7 +691,7 @@ export default function MerchantsPage() {
                 </a>
                 {selectedMerchant.verificationStatus !== "verified" && (
                   <button
-                    className={styles.rowActionPrimary}
+                    className={`${styles.rowAction} ${styles.rowActionPrimary}`}
                     onClick={() => handleVerify(selectedMerchant.id)}
                   >
                     <ShieldCheck size={14} /> Grant Verification
@@ -704,7 +715,7 @@ export default function MerchantsPage() {
                   </button>
                 ) : (
                   <button
-                    className={styles.rowActionDanger}
+                    className={`${styles.rowAction} ${styles.rowActionDanger}`}
                     onClick={() => { setSuspendTarget(selectedMerchant); }}
                   >
                     Suspend Account
@@ -719,7 +730,12 @@ export default function MerchantsPage() {
       {/* SUSPEND CONFIRMATION MODAL */}
       {suspendTarget && (
         <div className={styles.modalOverlay}>
-          <div className={styles.modalCard}>
+          <div
+            className={styles.modalCard}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Suspend merchant account"
+          >
             <div className={styles.modalHeader}>
               <h3>Suspend Account?</h3>
             </div>

@@ -11,31 +11,34 @@ export const revalidate = 3600;
 
 const proofPoints = [
   "See dish photos before you queue.",
-  "Check menus, reviews, and open status together.",
-  "Find food by craving, not only by venue.",
+  "Check menu, reviews, and open status together.",
+  "Search by craving, not just by venue.",
 ] as const;
 
 const featureCards = [
   {
     title: "Search by dish",
     description:
-      "Find laksa, chicken rice, or late-night food without opening every venue page first.",
-    image: "/images/screens/foodies-screen.png",
-    alt: "Hungry discovery screen showing dish-first search results",
+      "Find laksa, chicken rice, or late-night food without opening every stall page first.",
+    image: "/images/food/dishes-wide.png",
+    alt: "A spread of Singapore dishes for dish-first food discovery",
+    imageMode: "cover",
   },
   {
     title: "Compare before leaving",
     description:
-      "Check photos, menus, ratings, and open status together before making the trip.",
-    image: "/images/screens/app-showcase.png",
-    alt: "Hungry app screenshots showing discovery and dish detail features",
+      "Check photos, menus, ratings, and open status before making the trip.",
+    image: "/images/people/maxwell-hawker-centre-diners.jpg",
+    alt: "Diners comparing food choices at a Singapore hawker centre",
+    imageMode: "cover",
   },
   {
-    title: "Choose from a local view",
+    title: "Choose from what is nearby",
     description:
-      "See nearby dishes, stalls, and saved options in one flow built around the meal.",
-    image: "/images/screens/foodies-screen.png",
-    alt: "Hungry mobile interface for nearby dish discovery",
+      "See nearby dishes, stalls, and saved places from the same screen.",
+    image: "/images/food/stalls-restaurants-wide.png",
+    alt: "Illustrated nearby stalls and restaurants for local food discovery",
+    imageMode: "cover",
   },
 ] as const;
 
@@ -49,8 +52,8 @@ export default function ForFoodies() {
               <span className={styles.eyebrow}>For Singapore foodies</span>
               <h1>Decide what to eat with less guessing.</h1>
               <p>
-                Hungry brings nearby dishes, real photos, menus, reviews, and open status into one
-                local guide before hunger turns into extra searching.
+                Hungry shows nearby dishes, real photos, menus, reviews, and open status before
+                hunger turns into scrolling.
               </p>
               <div className={styles.proofList}>
                 {proofPoints.map((point) => (
@@ -92,17 +95,21 @@ export default function ForFoodies() {
         <div className="container-wide">
           <Reveal className={styles.sectionHeader}>
             <span className={styles.eyebrow}>Foodie features</span>
-            <h2 id="foodie-features-title">One clearer flow for the way Singapore eats.</h2>
+            <h2 id="foodie-features-title">A simpler way to choose in Singapore.</h2>
             <p>
-              From hawker stalls to late-night restaurants, Hungry helps foodies compare the dish,
-              the menu, and the trip before deciding.
+              From hawker stalls to late-night restaurants, Hungry helps you compare the dish and
+              the trip before deciding.
             </p>
           </Reveal>
 
           <div className={styles.featureGrid}>
             {featureCards.map((card, index) => (
               <Reveal as="article" className={styles.featureCard} delay={index * 0.08} key={card.title}>
-                <div className={styles.featureImageWrap}>
+                <div
+                  className={`${styles.featureImageWrap} ${
+                    (card.imageMode as string) === "phone" ? styles.featureImagePhone : styles.featureImageCover
+                  }`}
+                >
                   <Image
                     src={card.image}
                     alt={card.alt}

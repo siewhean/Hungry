@@ -68,8 +68,8 @@
 .headline {
   display: grid;
   gap: var(--space-1);
-  max-width: min(100%, 17ch);
-  font-size: clamp(3.1rem, 5.9vw, 5.8rem);
+  max-width: min(100%, 22ch);
+  font-size: clamp(3.1rem, 5.6vw, 5.4rem);
   line-height: 0.94;
   letter-spacing: 0;
   color: var(--color-text-primary);
@@ -170,12 +170,12 @@
 .visualContent {
   --hero-phone-width: min(
     100%,
-    30rem,
-    calc((100svh - var(--announcement-height) - var(--header-height) - var(--space-8)) * 0.462)
+    22rem,
+    calc((100svh - var(--announcement-height) - var(--header-height) - var(--space-16)) * 0.39)
   );
 
   position: relative;
-  min-height: clamp(34rem, 66vw, 50rem);
+  min-height: clamp(29rem, 48vw, 39rem);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -200,8 +200,8 @@
 
 .phoneMockup {
   width: var(--hero-phone-width);
-  min-width: min(17rem, 100%);
-  aspect-ratio: 390 / 844;
+  min-width: min(15.75rem, 100%);
+  aspect-ratio: 393 / 852;
   filter: drop-shadow(0 28px 52px rgb(26 46 68 / 0.26));
   pointer-events: auto;
   transform-origin: center;
@@ -213,21 +213,30 @@
   top: 50%;
   z-index: 4;
   width: var(--hero-phone-width);
-  min-width: min(17rem, 100%);
-  aspect-ratio: 390 / 844;
+  min-width: min(15.75rem, 100%);
+  aspect-ratio: 393 / 852;
   translate: -50% -50%;
   pointer-events: none;
 }
 
 .foodCard {
   position: absolute;
-  width: clamp(7.5rem, 44%, 13rem);
+  width: clamp(6.25rem, 38%, 10.5rem);
   aspect-ratio: 1;
   border: 8px solid color-mix(in srgb, var(--color-surface) 82%, transparent);
   border-radius: 50%;
   box-shadow: var(--shadow-float);
   overflow: hidden;
   pointer-events: auto;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.foodCard:nth-child(odd):hover {
+  transform: scale(1.06) rotate(-2deg);
+}
+
+.foodCard:nth-child(even):hover {
+  transform: scale(1.06) rotate(2deg);
 }
 
 .foodCardImage {
@@ -255,8 +264,8 @@
   left: 50%;
   top: 50%;
   width: var(--hero-phone-width);
-  min-width: min(17rem, 100%);
-  aspect-ratio: 390 / 844;
+  min-width: min(15.75rem, 100%);
+  aspect-ratio: 393 / 852;
   translate: -50% -50%;
   pointer-events: none;
 }
@@ -266,37 +275,46 @@
   z-index: 6;
   display: inline-flex;
   align-items: center;
-  min-height: 2.8rem;
+  min-height: 2.1rem;
   border-radius: var(--radius-full);
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-1) var(--space-3);
   border: 1px solid var(--color-border);
   background: color-mix(in srgb, var(--color-surface) 88%, transparent);
   color: var(--color-text-primary);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: 800;
   box-shadow: var(--shadow-lg);
   backdrop-filter: blur(14px);
   pointer-events: auto;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.floatChip:hover {
+  transform: translateY(-4px) scale(1.03);
+}
+
+.floatChip:active {
+  transform: scale(0.97);
 }
 
 .chip1 {
-  top: 25%;
-  left: -38%;
+  top: 20%;
+  left: -45%;
 }
 
 .chip2 {
   top: 38%;
-  right: -34%;
+  right: -20%;
 }
 
 .chip3 {
-  left: -30%;
-  bottom: 0;
+  left: -18%;
+  bottom: 7%;
 }
 
 .chip4 {
-  right: -28%;
-  bottom: 22%;
+  right: -14%;
+  bottom: 27%;
 }
 
 .orange {
@@ -319,20 +337,42 @@
   color: var(--color-text-primary);
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1120px) {
   .heroContainer {
-    grid-template-columns: minmax(22rem, 0.88fr) minmax(23rem, 1fr);
+    grid-template-columns: minmax(34rem, 1.2fr) minmax(22rem, 0.8fr);
+    gap: clamp(var(--space-12), 5vw, var(--space-20));
+  }
+
+  .visualContent {
+    justify-content: center;
   }
 }
 
-@media (max-width: 899px) {
+@media (min-width: 1120px) and (max-width: 1320px) {
+  .headline {
+    font-size: clamp(3.1rem, 4.5vw, 4.2rem);
+    max-width: min(100%, 22ch);
+  }
+}
+
+@media (max-width: 1119px) {
+  .heroSection {
+    min-height: auto;
+  }
+
   .heroContainer {
     gap: clamp(var(--space-8), 7vw, var(--space-16));
   }
 
+  .textContent {
+    max-width: 44rem;
+  }
+
   .visualContent {
+    width: min(100%, 42rem);
+    justify-self: center;
     margin-top: var(--space-2);
-    min-height: clamp(38rem, 92vw, 54rem);
+    min-height: clamp(30rem, 72vw, 38rem);
   }
 
   .phoneWrapper {
@@ -352,16 +392,24 @@
 }
 
 @media (max-width: 760px) {
-  .heroSection {
-    min-height: calc(100svh - var(--announcement-height));
+  .heroContainer {
+    gap: var(--space-8);
+    padding-top: var(--space-8);
+    padding-bottom: var(--space-12);
   }
 
-  .heroContainer {
-    padding-top: var(--space-10);
+  .textContent {
+    gap: var(--space-4);
   }
 
   .headline {
-    font-size: clamp(2.65rem, 12.2vw, 5.2rem);
+    font-size: clamp(2.45rem, 10.5vw, 3.35rem);
+    line-height: 1.02;
+    max-width: min(100%, 12ch);
+  }
+
+  .headlineLine {
+    white-space: normal;
   }
 
   .ctas {
@@ -374,21 +422,21 @@
   }
 
   .visualContent {
-    --hero-phone-width: min(82vw, 24rem, calc((100svh - var(--announcement-height) - var(--space-8)) * 0.462));
+    --hero-phone-width: min(76vw, 20.5rem, calc((100svh - var(--announcement-height) - var(--space-8)) * 0.462));
 
-    min-height: clamp(46rem, 185vw, 56rem);
+    min-height: clamp(34rem, 136vw, 43rem);
   }
 
   .phoneMockup {
-    min-width: min(15.5rem, 82vw);
+    min-width: min(15rem, 76vw);
   }
 
   .foodOrbit {
-    min-width: min(15.5rem, 82vw);
+    min-width: min(15rem, 76vw);
   }
 
   .chipLayer {
-    min-width: min(15.5rem, 82vw);
+    min-width: min(15rem, 76vw);
   }
 
   .foodCard1 {

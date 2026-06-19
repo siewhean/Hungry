@@ -18,8 +18,21 @@ Implemented in this pass:
 - LLM context files: `public/llms.txt` and `public/llms-full.txt`
 - Local readiness check: `npm run seo:audit`
 
+Implemented in the 2026-06-07 expansion:
+
+- Singapore hub: `/singapore`
+- Area pages: `/singapore/[area]/food`
+- MRT pages: `/singapore/mrt/[station]/food`
+- Dish pages: `/dishes/[dishSlug]`
+- Dish + area pages: `/singapore/[area]/[dish]`
+- Hawker-centre pages: `/hawker-centres/[centreSlug]`
+- Mall food pages: `/malls/[mallSlug]/food`
+- Guide pages: `/guides/[guideSlug]` and `/singapore/[guideSlug]`
+- Dedicated sitemap and structured-data validation scripts
+
 Known next opportunity:
 
+- Wire source-backed public stall pages before indexing `/stalls/[stallSlug]`.
 - Add dedicated topic pages for high-intent queries such as "Singapore food discovery app", "hawker food discovery Singapore", "food app for hawker stalls", and "food business discovery Singapore".
 
 ## Architecture
@@ -137,7 +150,19 @@ Status: implemented in `web-v2`.
 
 ### P1 - Content Expansion
 
-Add static pages for the highest-intent discovery queries:
+Status: partially implemented for Singapore-first discovery pages.
+
+Added:
+
+- 10 area pages
+- 10 MRT food pages
+- 20 dish + area pages
+- 6 dish pages
+- 4 hawker-centre pages
+- 3 mall food pages
+- 5 guide/dietary/budget/late-night pages
+
+Next, add static pages for the highest-intent product/category queries:
 
 - `/singapore-food-discovery-app`
 - `/hawker-food-discovery-singapore`

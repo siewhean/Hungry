@@ -16,6 +16,7 @@ import {
   Eye,
   Trash2,
 } from "lucide-react";
+import { getConsolePrototypeFallback } from "@/lib/console/prototypeStorage";
 import styles from "../console.module.css";
 
 type NotifStatus = "draft" | "scheduled" | "sent" | "cancelled" | "failed";
@@ -202,10 +203,13 @@ const typeConfig: Record<
 };
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>(() =>
+    getConsolePrototypeFallback(mockNotifications, [])
+  );
   const [filterStatus, setFilterStatus] = useState<NotifStatus | "all">("all");
   const [showCompose, setShowCompose] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const notificationActionsEnabled = getConsolePrototypeFallback(true, false);
 
   // Draft compose state
   const [draftTitle, setDraftTitle] = useState("");
@@ -219,6 +223,10 @@ export default function NotificationsPage() {
   };
 
   const handleSaveDraft = () => {
+    if (!notificationActionsEnabled) {
+      showToast("Notification backend is not connected in production.", "error");
+      return;
+    }
     if (!draftTitle.trim() || !draftBody.trim()) {
       showToast("Title and Body are required", "error");
       return;
@@ -228,12 +236,12 @@ export default function NotificationsPage() {
       title: draftTitle,
       body: draftBody,
       type: draftType,
-      audience: draftAudience === "all_foodies" ? "All active users" : 
-                draftAudience === "all_merchants" ? "All merchants" : 
+      audience: draftAudience === "all_foodies" ? "All active users" :
+                draftAudience === "all_merchants" ? "All merchants" :
                 draftAudience === "incomplete_profiles" ? "Merchants with incomplete profiles" :
                 draftAudience === "internal" ? "Internal team only" : "Users near new stalls",
-      estimatedReach: draftAudience === "all_foodies" ? 14800 : 
-                      draftAudience === "all_merchants" ? 342 : 
+      estimatedReach: draftAudience === "all_foodies" ? 14800 :
+                      draftAudience === "all_merchants" ? 342 :
                       draftAudience === "incomplete_profiles" ? 38 :
                       draftAudience === "internal" ? 5 : 4200,
       status: "draft",
@@ -249,6 +257,10 @@ export default function NotificationsPage() {
   };
 
   const handlePublishNow = () => {
+    if (!notificationActionsEnabled) {
+      showToast("Notification backend is not connected in production.", "error");
+      return;
+    }
     if (!draftTitle.trim() || !draftBody.trim()) {
       showToast("Title and Body are required", "error");
       return;
@@ -258,12 +270,12 @@ export default function NotificationsPage() {
       title: draftTitle,
       body: draftBody,
       type: draftType,
-      audience: draftAudience === "all_foodies" ? "All active users" : 
-                draftAudience === "all_merchants" ? "All merchants" : 
+      audience: draftAudience === "all_foodies" ? "All active users" :
+                draftAudience === "all_merchants" ? "All merchants" :
                 draftAudience === "incomplete_profiles" ? "Merchants with incomplete profiles" :
                 draftAudience === "internal" ? "Internal team only" : "Users near new stalls",
-      estimatedReach: draftAudience === "all_foodies" ? 14800 : 
-                      draftAudience === "all_merchants" ? 342 : 
+      estimatedReach: draftAudience === "all_foodies" ? 14800 :
+                      draftAudience === "all_merchants" ? 342 :
                       draftAudience === "incomplete_profiles" ? 38 :
                       draftAudience === "internal" ? 5 : 4200,
       status: "sent",
@@ -286,20 +298,32 @@ export default function NotificationsPage() {
   };
 
   const handleSchedule = (id: string) => {
-    setNotifications(prev => 
+    if (!notificationActionsEnabled) {
+      showToast("Notification backend is not connected in production.", "error");
+      return;
+    }
+    setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, status: "scheduled", scheduledFor: "Scheduled for tomorrow, 9:00 AM" } : n)
     );
     showToast("Campaign scheduled successfully", "success");
   };
 
   const handleCancel = (id: string) => {
-    setNotifications(prev => 
+    if (!notificationActionsEnabled) {
+      showToast("Notification backend is not connected in production.", "error");
+      return;
+    }
+    setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, status: "cancelled", scheduledFor: null } : n)
     );
     showToast("Scheduled campaign cancelled", "info");
   };
 
   const handleDelete = (id: string) => {
+    if (!notificationActionsEnabled) {
+      showToast("Notification backend is not connected in production.", "error");
+      return;
+    }
     setNotifications(prev => prev.filter(n => n.id !== id));
     showToast("Draft deleted successfully", "error");
   };
@@ -331,8 +355,20 @@ export default function NotificationsPage() {
         </div>
         <button
           className={styles.actionButton}
-          onClick={() => setShowCompose(true)}
+          onClick={() => {
+            if (!notificationActionsEnabled) {
+              showToast("Notification backend is not connected in production.", "error");
+              return;
+            }
+            setShowCompose(true);
+          }}
           id="compose-notification-btn"
+          aria-disabled={!notificationActionsEnabled}
+          title={
+            notificationActionsEnabled
+              ? "Compose notification"
+              : "Notification backend is not connected in production"
+          }
         >
           <Plus size={16} />
           Compose Notification
@@ -392,7 +428,8 @@ export default function NotificationsPage() {
             <h4>App-wide push notifications require 2-step approval</h4>
             <p>
               Any notification sent to all users must be confirmed by a second
-              admin. Draft and preview before submitting for approval.
+              admin. Production sends require the server-backed notification
+              service to be connected.
             </p>
           </div>
         </div>
@@ -444,7 +481,7 @@ export default function NotificationsPage() {
 
       {/* NOTIFICATION LIST */}
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
-        {filtered.map((notif) => {
+        {filtered.length > 0 ? filtered.map((notif) => {
           const sCfg = statusConfig[notif.status];
           const tCfg = typeConfig[notif.type];
           return (
@@ -544,8 +581,8 @@ export default function NotificationsPage() {
                 {/* Actions */}
                 <div style={{ display: "flex", gap: "var(--space-2)", flexShrink: 0 }}>
                   {notif.status === "draft" && (
-                    <button 
-                      className={styles.actionButton} 
+                    <button
+                      className={styles.actionButton}
                       style={{ fontSize: "var(--font-size-xs)", padding: "var(--space-2) var(--space-4)" }}
                       onClick={() => handleSchedule(notif.id)}
                     >
@@ -554,8 +591,8 @@ export default function NotificationsPage() {
                     </button>
                   )}
                   {notif.status === "scheduled" && (
-                    <button 
-                      className={styles.actionButtonDanger} 
+                    <button
+                      className={styles.actionButtonDanger}
                       style={{ fontSize: "var(--font-size-xs)", padding: "var(--space-2) var(--space-4)" }}
                       onClick={() => handleCancel(notif.id)}
                     >
@@ -600,7 +637,14 @@ export default function NotificationsPage() {
               </div>
             </div>
           );
-        })}
+        }) : (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyStateTitle}>No notification campaigns available</div>
+            <div className={styles.emptyStateDesc}>
+              Connect the notification service before sending or displaying production campaigns.
+            </div>
+          </div>
+        )}
       </div>
 
       {/* COMPOSE MODAL */}
@@ -609,6 +653,9 @@ export default function NotificationsPage() {
           <div
             className={styles.modalCard}
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Compose notification"
             style={{ maxWidth: "560px" }}
           >
             <div className={styles.modalHeader}>

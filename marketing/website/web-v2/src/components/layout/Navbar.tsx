@@ -1,40 +1,38 @@
-import Link from "next/link";
 import { HungryWordmark } from "@/components/brand/HungryWordmark";
+import { siteNav } from "@/content/site";
+import { SamePageLink } from "./SamePageLink";
 import styles from "./Navbar.module.css";
-
-const navItems = [
-  { label: "For Foodies", href: "/for-foodies" },
-  { label: "For Merchants", href: "/for-merchants" },
-  { label: "About", href: "/#hawker-culture" },
-] as const;
 
 export default function Navbar() {
   return (
     <header className={styles.navbarWrapper}>
       <div className={`container-wide ${styles.navbar}`}>
-        <Link
+        <SamePageLink
           href="/"
           className={styles.logo}
         >
           <HungryWordmark />
-        </Link>
+        </SamePageLink>
 
         <nav className={styles.navLinks} aria-label="Primary navigation">
-          {navItems.map((item) => (
-            <Link
+          {siteNav.map((item) => (
+            <SamePageLink
               href={item.href}
               className={styles.navLink}
               key={item.label}
             >
               {item.label}
-            </Link>
+            </SamePageLink>
           ))}
         </nav>
 
         <div className={styles.actions}>
-          <Link href="/join-waitlist" className={styles.ctaButton}>
+          <SamePageLink
+            href="/join-waitlist"
+            className={styles.ctaButton}
+          >
             Join Waitlist
-          </Link>
+          </SamePageLink>
         </div>
       </div>
     </header>

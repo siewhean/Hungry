@@ -166,7 +166,13 @@ export default function MerchantSettingsPage() {
       {/* Invite modal */}
       {inviteOpen && (
         <div className={styles.modalOverlay} onClick={() => setInviteOpen(false)}>
-          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Invite team member"
+          >
             <div className={styles.modalHeader}><h3>Invite Team Member</h3></div>
             <div className={styles.modalBody}>
               <div className={styles.formRow}>
@@ -194,7 +200,13 @@ export default function MerchantSettingsPage() {
       {/* Deactivate confirm modal */}
       {deactivateOpen && (
         <div className={styles.modalOverlay} onClick={() => setDeactivateOpen(false)}>
-          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Deactivate account"
+          >
             <div className={styles.modalHeader}><h3 style={{ color: "#DC2626" }}>Deactivate Account</h3></div>
             <div className={styles.modalBody}>
               <p style={{ marginBottom: "var(--space-4)" }}>

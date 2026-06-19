@@ -373,6 +373,7 @@
 
 .finalCopy p {
   color: color-mix(in srgb, var(--color-white) 78%, transparent);
+  margin-bottom: var(--space-8);
   max-width: 720px;
 }
 

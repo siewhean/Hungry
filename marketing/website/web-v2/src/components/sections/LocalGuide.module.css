@@ -156,10 +156,29 @@
 }
 
 @media (max-width: 819px) {
+  .section {
+    padding: var(--space-12) 0;
+  }
+
   .shell {
     border-left: 0;
     border-radius: var(--radius-2xl);
     border-right: 0;
+    padding-bottom: var(--space-6);
+    padding-top: var(--space-8);
+  }
+
+  .header {
+    margin-bottom: var(--space-8);
+  }
+
+  .grid {
+    gap: var(--space-4);
+    grid-auto-rows: minmax(240px, auto);
+  }
+
+  .card {
+    min-height: 240px;
   }
 
   .map .overlay,

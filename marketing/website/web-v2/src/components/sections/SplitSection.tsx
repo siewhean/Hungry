@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { homepage } from "@/content/site";
 import { Reveal } from "@/components/motion/Reveal";
+import { trackWebsiteEvent } from "@/lib/analytics/websiteEvents";
 import styles from "./SplitSection.module.css";
 
 export default function SplitSection() {
@@ -28,7 +31,18 @@ export default function SplitSection() {
                 <span className={styles.cardEyebrow}>{audience.eyebrow}</span>
                 <h3>{audience.title}</h3>
                 <p>{audience.description}</p>
-                <Link href={audience.cta.href} className={styles.cardCta}>
+                <Link
+                  href={audience.cta.href}
+                  className={styles.cardCta}
+                  onClick={() =>
+                    trackWebsiteEvent("website_cta_clicked", {
+                      cta_label: audience.cta.label,
+                      cta_destination: audience.cta.href,
+                      cta_section: "audiences",
+                      audience: audience.title.toLowerCase(),
+                    })
+                  }
+                >
                   {audience.cta.label}
                   <ArrowUpRight size={18} />
                 </Link>

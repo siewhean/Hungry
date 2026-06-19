@@ -19,6 +19,7 @@
   grid-template-columns: minmax(0, 1fr);
   max-width: 1200px;
   margin: 0 auto;
+  width: min(calc(100% - clamp(var(--space-8), 6vw, var(--space-20))), 1200px);
 }
 
 @media (min-width: 960px) {
@@ -200,6 +201,18 @@ select.input {
   font-size: var(--font-size-sm);
 }
 
+.fieldError {
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  margin-top: calc(var(--space-3) * -1);
+}
+
+.input[aria-invalid="true"] {
+  border-color: color-mix(in srgb, var(--color-error) 72%, var(--color-border-strong));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-error) 12%, transparent);
+}
+
 .primaryCta,
 .secondaryCta {
   align-items: center;
@@ -255,6 +268,23 @@ select.input {
   margin: 0;
 }
 
+.successContainer {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  width: min(100%, 1200px);
+}
+
+.successCard {
+  max-width: 520px;
+  text-align: center;
+  width: min(100%, 520px);
+}
+
+.successCard .iconWrap {
+  justify-self: center;
+}
+
 .waitlist {
   padding: var(--space-24) 0;
   min-height: calc(100svh - var(--header-height));
@@ -271,4 +301,24 @@ select.input {
   .heroCopy {
     max-width: none;
   }
+}
+
+.successHeading {
+  color: var(--color-text-primary);
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.15;
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+.privacyLink {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity 0.15s ease;
+}
+
+.privacyLink:hover,
+.privacyLink:focus-visible {
+  opacity: 0.75;
 }

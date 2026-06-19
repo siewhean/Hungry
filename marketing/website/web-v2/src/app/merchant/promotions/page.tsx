@@ -392,7 +392,14 @@ export default function MerchantPromotionsPage() {
       {/* Create Promotion modal */}
       {createOpen && (
         <div className={styles.modalOverlay} onClick={() => setCreateOpen(false)}>
-          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()} style={{ maxWidth: "550px", maxHeight: "90vh", overflowY: "auto" }}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Create promotion"
+            style={{ maxWidth: "550px", maxHeight: "90vh", overflowY: "auto" }}
+          >
             <div className={styles.modalHeader}><h3>Create Promotion</h3></div>
             <div className={styles.modalBody}>
               {/* Title */}
@@ -450,25 +457,25 @@ export default function MerchantPromotionsPage() {
                   {availableDishes.map(dish => {
                     const isChecked = form.targetDishes.includes(dish);
                     return (
-                      <label 
-                        key={dish} 
-                        style={{ 
-                          display: "flex", 
-                          alignItems: "center", 
-                          gap: "8px", 
-                          fontSize: "var(--font-size-xs)", 
-                          cursor: "pointer", 
-                          padding: "6px 10px", 
-                          borderRadius: "var(--radius-sm)", 
+                      <label
+                        key={dish}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          fontSize: "var(--font-size-xs)",
+                          cursor: "pointer",
+                          padding: "6px 10px",
+                          borderRadius: "var(--radius-sm)",
                           backgroundColor: isChecked ? "var(--color-bg-soft)" : "var(--color-bg-muted)",
                           border: `1px solid ${isChecked ? "var(--color-primary)" : "var(--color-border)"}`,
                           fontWeight: isChecked ? 700 : 500
                         }}
                       >
-                        <input 
-                          type="checkbox" 
-                          checked={isChecked} 
-                          onChange={() => handleTargetDishToggle(dish)} 
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleTargetDishToggle(dish)}
                         />
                         {dish}
                       </label>

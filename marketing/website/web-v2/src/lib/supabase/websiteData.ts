@@ -7,6 +7,7 @@ import {
   supabaseFetchOnDemand,
   type SupabaseUser,
 } from "./server";
+import { redactEmail } from "@/lib/console/redaction";
 
 export type WaitlistAudience = "foodie" | "merchant" | "both";
 
@@ -18,6 +19,20 @@ export type WebsiteWaitlistInput = {
   metadata?: Record<string, unknown>;
   name?: string;
   source: "web_v2" | "marketing_web" | "merchant_portal" | "console" | "unknown";
+};
+
+export type ConsoleWaitlistEntry = {
+  audience: WaitlistAudience | "both";
+  businessName?: string;
+  email: string;
+  emailRedacted: boolean;
+  establishmentType?: string;
+  id: string;
+  metadata?: Record<string, unknown> | null;
+  submittedAt: string;
+  name?: string;
+  source: "web_v2" | "marketing_web" | "merchant_portal" | "console" | "unknown";
+  updatedAt: string;
 };
 
 export type ConsoleMerchant = {
@@ -117,6 +132,33 @@ function normalizeEmail(email: string) {
 function sanitizeText(value?: string) {
   const trimmed = value?.trim();
   return trimmed ? trimmed.slice(0, 240) : undefined;
+}
+
+function sanitizeConsoleMetadata(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+
+  const metadata: Record<string, unknown> = {};
+  for (const [key, rawValue] of Object.entries(value)) {
+    const normalizedKey = key.toLowerCase();
+    if (
+      normalizedKey.includes("email") ||
+      normalizedKey.includes("phone") ||
+      normalizedKey.includes("token") ||
+      normalizedKey.includes("secret")
+    ) {
+      metadata[key] = "[redacted]";
+      continue;
+    }
+
+    if (typeof rawValue === "string") {
+      metadata[key] = EMAIL_REGEX.test(rawValue.trim()) ? redactEmail(rawValue) : rawValue;
+      continue;
+    }
+
+    metadata[key] = rawValue;
+  }
+
+  return metadata;
 }
 
 function money(value?: number) {
@@ -258,6 +300,43 @@ export async function getConsoleSummary() {
       totalWaitlist,
       users,
     },
+  };
+}
+
+export async function listConsoleWaitlistEntries(): Promise<{
+  configured: boolean;
+  entries: ConsoleWaitlistEntry[];
+}> {
+  if (!isSupabaseServiceConfigured()) {
+    return { configured: false, entries: [] };
+  }
+
+  const { data: rows } = await supabaseFetchOnDemand<Row[]>("rest/v1/website_waitlist_entries", {
+    params: {
+      order: "submitted_at.desc",
+      select:
+        "id,audience,business_name,email,establishment_type,metadata,name,source,submitted_at,updated_at",
+      limit: 500,
+    },
+    serviceRole: true,
+  });
+  const safeRows = rows ?? [];
+
+  return {
+    configured: true,
+    entries: safeRows.map((row) => ({
+      audience: (asString(row.audience) as WaitlistAudience | "both") ?? "foodie",
+      businessName: asString(row.business_name),
+      email: redactEmail(asString(row.email)),
+      emailRedacted: true,
+      establishmentType: asString(row.establishment_type),
+      id: asString(row.id) ?? "",
+      metadata: sanitizeConsoleMetadata(row.metadata),
+      name: asString(row.name),
+      source: (asString(row.source) as ConsoleWaitlistEntry["source"]) ?? "web_v2",
+      submittedAt: asString(row.submitted_at) ?? new Date().toISOString(),
+      updatedAt: asString(row.updated_at) ?? "",
+    })),
   };
 }
 

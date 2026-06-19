@@ -11,8 +11,8 @@ export default function FoodCarousel() {
           <span className={styles.eyebrow}>Singapore eating culture</span>
           <h2>Built for the way Singapore eats.</h2>
           <p>
-            Hawker stalls, kopitiam staples, cafes, restaurants, and small food makers can all sit
-            in one dish-led discovery flow.
+            Hawker stalls, kopitiam staples, cafes, restaurants, and small food makers all belong
+            in the same search.
           </p>
         </Reveal>
       </div>

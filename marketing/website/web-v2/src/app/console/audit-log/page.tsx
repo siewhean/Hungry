@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { User, Calendar, Search, Download, CheckCircle } from "lucide-react";
+import { User, Calendar, Search, Download, CheckCircle, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import styles from "../console.module.css";
 
 
@@ -29,6 +29,34 @@ export default function AuditLog() {
   const [actionFilter, setActionFilter] = useState("all");
   const [toast, setToast] = useState<string | null>(null);
   const toastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [sortField, setSortField] = useState("timestamp");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const renderSortHeader = (label: string, field: string) => {
+    const isActive = sortField === field;
+    return (
+      <th onClick={() => handleSort(field)} style={{ cursor: "pointer", userSelect: "none" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span>{label}</span>
+          {isActive ? (
+            sortDirection === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+          ) : (
+            <ArrowUpDown size={12} style={{ opacity: 0.3 }} />
+          )}
+        </div>
+      </th>
+    );
+  };
 
   const showToast = (msg: string) => {
     if (toastRef.current) clearTimeout(toastRef.current);
@@ -58,11 +86,33 @@ export default function AuditLog() {
 
   const ACTION_TYPES = ["all", "merchant approved", "feature flag changed", "content hidden", "report dismissed", "admin permission changed"];
 
-  const filtered = logs.filter((l) => {
-    const matchSearch = !search || l.actor.toLowerCase().includes(search.toLowerCase()) || l.notes.toLowerCase().includes(search.toLowerCase()) || l.target.toLowerCase().includes(search.toLowerCase());
-    const matchAction = actionFilter === "all" || l.action === actionFilter;
-    return matchSearch && matchAction;
-  });
+  const filtered = React.useMemo(() => {
+    const list = logs.filter((l) => {
+      const matchSearch = !search || l.actor.toLowerCase().includes(search.toLowerCase()) || l.notes.toLowerCase().includes(search.toLowerCase()) || l.target.toLowerCase().includes(search.toLowerCase()) || l.id.toLowerCase().includes(search.toLowerCase());
+      const matchAction = actionFilter === "all" || l.action === actionFilter;
+      return matchSearch && matchAction;
+    });
+
+    list.sort((a, b) => {
+      const fieldA = a[sortField as keyof AuditEntry] ?? "";
+      const fieldB = b[sortField as keyof AuditEntry] ?? "";
+
+      if (sortField === "timestamp") {
+        const order = ["Just now", "10 mins ago", "1 hour ago", "3 hours ago", "1 day ago"];
+        const idxA = order.indexOf(fieldA as string);
+        const idxB = order.indexOf(fieldB as string);
+        if (idxA !== -1 && idxB !== -1) {
+          return sortDirection === "asc" ? idxB - idxA : idxA - idxB;
+        }
+      }
+
+      if (fieldA < fieldB) return sortDirection === "asc" ? -1 : 1;
+      if (fieldA > fieldB) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  }, [logs, search, actionFilter, sortField, sortDirection]);
 
 
   return (
@@ -99,13 +149,13 @@ export default function AuditLog() {
           <table className={styles.queueTable}>
             <thead>
               <tr>
-                <th>Log ID</th>
-                <th>Operator (Actor)</th>
-                <th>Role Group</th>
-                <th>Action</th>
-                <th>Target Entity</th>
-                <th>Operational Notes</th>
-                <th>Timestamp</th>
+                {renderSortHeader("Log ID", "id")}
+                {renderSortHeader("Operator (Actor)", "actor")}
+                {renderSortHeader("Role Group", "role")}
+                {renderSortHeader("Action", "action")}
+                {renderSortHeader("Target Entity", "target")}
+                {renderSortHeader("Operational Notes", "notes")}
+                {renderSortHeader("Timestamp", "timestamp")}
               </tr>
             </thead>
             <tbody>

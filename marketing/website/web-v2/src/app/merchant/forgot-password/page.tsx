@@ -46,7 +46,7 @@ export default function MerchantForgotPasswordPage() {
   };
 
   return (
-    <div className={styles.loginShell}>
+    <main className={styles.loginShell} id="main-content" tabIndex={-1}>
       <div className={styles.loginLeft}>
         <div className={styles.loginCard}>
           <div className={styles.loginLogo}>Hungry</div>
@@ -133,6 +133,6 @@ export default function MerchantForgotPasswordPage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

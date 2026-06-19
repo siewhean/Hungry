@@ -1,60 +1,152 @@
-.device {
-  position: relative;
+.deviceWrapper {
   container-type: inline-size;
+  position: relative;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 393 / 852;
+  margin: 0 auto;
+}
+
+.device {
+  --bezel-width: 1.6cqw;
+  --screen-radius: calc(12.5cqw - var(--bezel-width));
+
+  position: relative;
   width: 100%;
   height: 100%;
-  aspect-ratio: 71.5 / 149.6;
-  border: 4px solid #101010;
-  border-radius: clamp(2rem, 4.2vw, 3.75rem);
-  background: #101010;
+  aspect-ratio: 393 / 852;
+  border-radius: 12.5cqw;
+  background: #111112; /* Matte space grey chassis */
   color: var(--color-text-primary);
+  box-shadow:
+    0 0 0 0.45cqw #2d2d30, /* Titanium outer frame rim */
+    0 0 0 0.9cqw #09090b, /* Deep black chassis border */
+    0 1.5cqw 4.5cqw -1cqw rgb(0 0 0 / 0.35); /* Premium drop shadow */
+  overflow: visible;
+  box-sizing: border-box;
 }
 
 .device::before {
   content: "";
   position: absolute;
-  inset: -1px;
-  border: 1px solid rgb(255 255 255 / 0.24);
+  inset: 0;
   border-radius: inherit;
   pointer-events: none;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06) inset;
+  z-index: 10;
 }
 
 .sideButtonTop,
 .sideButtonMid,
 .sideButtonLow {
   position: absolute;
-  left: -8px;
-  width: 3px;
+  left: -0.8cqw;
+  width: 0.8cqw;
   border-radius: 999px 0 0 999px;
   background: #2c2c2c;
-  box-shadow: -1px 0 0 rgb(255 255 255 / 0.22) inset;
+  box-shadow: -0.2cqw 0 0 rgb(255 255 255 / 0.22) inset;
+}
+
+.sideButtonRight {
+  position: absolute;
+  right: -0.8cqw;
+  width: 0.8cqw;
+  border-radius: 0 999px 999px 0;
+  background: #2c2c2c;
+  box-shadow: 0.2cqw 0 0 rgb(255 255 255 / 0.22) inset;
+}
+
+.sideButtonRightLow {
+  position: absolute;
+  right: -0.3cqw;
+  width: 0.3cqw;
+  border-radius: 0 999px 999px 0;
+  background: #1e1e1e;
+  box-shadow: 0.1cqw 0 0 rgb(255 255 255 / 0.15) inset;
 }
 
 .sideButtonTop {
-  top: 16%;
-  height: 3.8rem;
+  top: 36cqw;
+  height: 8cqw;
 }
 
 .sideButtonMid {
-  top: 26%;
-  height: 5.8rem;
+  top: 52cqw;
+  height: 14cqw;
 }
 
 .sideButtonLow {
-  top: 37%;
-  height: 5.8rem;
+  top: 70cqw;
+  height: 14cqw;
+}
+
+.sideButtonRight {
+  top: 48cqw;
+  height: 18cqw;
+}
+
+.sideButtonRightLow {
+  top: 72cqw;
+  height: 15cqw;
 }
 
 .screen {
   --phone-unit: clamp(0.58rem, 3.62cqw, 0.99rem);
 
   position: absolute;
-  inset: 5px;
+  inset: var(--bezel-width);
   overflow: hidden;
-  border-radius: clamp(1.78rem, 3.7vw, 3.35rem);
+  border-radius: var(--screen-radius);
   background: var(--color-white);
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08) inset;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.05) inset;
   font-size: var(--phone-unit);
+
+  /* Force GPU stacking context to fix browser corner bleed bugs */
+  isolation: isolate;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+/* Always-on overlays for screen */
+.dynamicIsland {
+  position: absolute;
+  top: 1.1cqw;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28cqw;
+  height: 7.5cqw;
+  border-radius: 999px;
+  background: #000000;
+  z-index: 12;
+  pointer-events: none;
+}
+
+.homeIndicator {
+  position: absolute;
+  bottom: 2cqw;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36cqw;
+  height: 1.2cqw;
+  background: #000000;
+  border-radius: 999px;
+  z-index: 12;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* Full-bleed real app screenshot: covers the entire phone screen */
+.screenshotWrapper {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  border-radius: inherit;
+  isolation: isolate;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
 .statusBar {
@@ -77,11 +169,10 @@
   letter-spacing: 0;
 }
 
-.island {
+.islandPlaceholder {
   width: 6.9em;
   height: 2.04em;
-  border-radius: 999px;
-  background: #000;
+  visibility: hidden;
 }
 
 .statusIcons {
@@ -155,7 +246,19 @@
   background: var(--color-white);
 }
 
+.screenshotContent {
+  position: relative;
+  padding: 0;
+  background: var(--color-white);
+}
+
+.screenCaptureImage {
+  object-fit: cover;
+  object-position: top center;
+}
+
 .detailPreview,
+.dishPreview,
 .menuPreview,
 .reviewPreview {
   display: flex;
@@ -206,7 +309,17 @@
   box-shadow: var(--shadow-sm);
 }
 
+.dishHeroImage {
+  position: relative;
+  height: 10.1em;
+  overflow: hidden;
+  border-radius: 1.28em;
+  background: var(--color-bg-soft);
+  box-shadow: var(--shadow-sm);
+}
+
 .stallHeroImage::after,
+.dishHeroImage::after,
 .signatureCard::after {
   content: "";
   position: absolute;
@@ -215,13 +328,16 @@
 }
 
 .stallHeroImage img,
+.dishHeroImage img,
 .signatureCard img,
 .menuDishImage img,
+.dishPlaceCard img,
 .reviewPhoto img {
   object-fit: cover;
 }
 
 .stallIntro,
+.dishIntro,
 .menuHeader,
 .reviewHeader {
   display: grid;
@@ -229,6 +345,7 @@
 }
 
 .stallIntro h2,
+.dishIntro h2,
 .menuHeader h2,
 .reviewHeader h2 {
   margin: 0;
@@ -239,16 +356,19 @@
 }
 
 .stallIntro p,
+.dishIntro p,
 .menuHeader p,
 .reviewHeader p,
 .infoCard p,
 .menuDishCard p,
+.dishPlaceCard p,
 .reviewBody p {
   margin: 0;
   color: var(--color-text-secondary);
 }
 
 .stallIntro p:not(.locationEyebrow),
+.dishIntro p:not(.locationEyebrow),
 .menuHeader p:not(.locationEyebrow),
 .reviewHeader p:not(.locationEyebrow) {
   font-size: 0.82em;
@@ -347,6 +467,53 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.52em;
+}
+
+.dishPlaceList {
+  display: grid;
+  gap: 0.5em;
+}
+
+.dishPlaceCard {
+  display: grid;
+  grid-template-columns: 3.5em minmax(0, 1fr);
+  gap: 0.58em;
+  align-items: center;
+  padding: 0.56em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: 1em;
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.dishPlaceCard > span {
+  position: relative;
+  display: block;
+  width: 3.5em;
+  height: 3.5em;
+  overflow: hidden;
+  border-radius: 0.86em;
+  background: var(--color-bg-soft);
+}
+
+.dishPlaceCard strong {
+  display: block;
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: 0.76em;
+  line-height: 1.16;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dishPlaceCard p {
+  margin-top: 0.16em;
+  overflow: hidden;
+  font-size: 0.65em;
+  font-weight: 700;
+  line-height: 1.22;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .signatureCard {
@@ -727,6 +894,7 @@
   position: relative;
   display: flex;
   align-items: end;
+  min-width: 0;
   min-height: 5.95em;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
@@ -749,12 +917,13 @@
 .categoryTile span {
   position: relative;
   z-index: 1;
-  max-width: 9ch;
+  max-width: 100%;
   padding: 0.84em 0.9em;
   color: var(--color-white);
-  font-size: 1.08em;
+  font-size: 0.98em;
   font-weight: 900;
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
 .quickBites {

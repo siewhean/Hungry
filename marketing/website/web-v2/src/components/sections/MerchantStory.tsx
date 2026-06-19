@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, BadgeCheck } from "lucide-react";
 import { merchantPage } from "@/content/site";
+import { trackWebsiteEvent } from "@/lib/analytics/websiteEvents";
 import { Reveal } from "../../components/motion/Reveal";
 import { AppScreenshotFrame } from "../../components/home/AppScreenshotFrame";
 import styles from "./MerchantStory.module.css";
@@ -51,24 +51,24 @@ export default function MerchantStory() {
             ))}
           </div>
 
-          <Link className={styles.cta} href="/join-waitlist?audience=merchant">
+          <Link
+            className={styles.cta}
+            href="/join-waitlist?audience=merchant"
+            onClick={() =>
+              trackWebsiteEvent("website_cta_clicked", {
+                cta_label: "Join merchant waitlist",
+                cta_destination: "/join-waitlist?audience=merchant",
+                cta_section: "merchant-story",
+              })
+            }
+          >
             Join merchant waitlist
             <ArrowRight aria-hidden size={20} />
           </Link>
         </Reveal>
 
         <Reveal className={styles.visual} delay={0.12}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              className={styles.screenWrap}
-              exit={{ opacity: 0, scale: 0.98, y: 16 }}
-              id="merchant-proof-panel"
-              initial={{ opacity: 0, scale: 1.02, y: 18 }}
-              key={active.title}
-              role="tabpanel"
-              transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
-            >
+          <div className={styles.screenWrap} id="merchant-proof-panel" key={active.title} role="tabpanel">
               <AppScreenshotFrame
                 alt={`${active.title} screen`}
                 label={active.title}
@@ -79,8 +79,7 @@ export default function MerchantStory() {
                 <BadgeCheck aria-hidden size={20} />
                 <p>{active.description}</p>
               </div>
-            </motion.div>
-          </AnimatePresence>
+          </div>
         </Reveal>
       </div>
     </section>

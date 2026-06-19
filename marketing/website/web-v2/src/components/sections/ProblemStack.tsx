@@ -13,8 +13,8 @@ export default function ProblemStack() {
           <span className={styles.eyebrow}>The gap</span>
           <h2>Food discovery still feels too much like guesswork.</h2>
           <p>
-            Singapore has the depth. Hungry makes the decision layer clearer: what is worth eating,
-            what is open, and what the food actually looks like.
+            Singapore has the food. Hungry makes the hard part simpler: what looks good, what is
+            open, and whether the trip is worth it.
           </p>
         </Reveal>
 
@@ -44,10 +44,9 @@ export default function ProblemStack() {
             <div className={styles.solutionIcon}>
               <Utensils aria-hidden size={24} />
             </div>
-            <h3>Hungry connects craving, proof, and merchant updates.</h3>
+            <h3>Hungry connects cravings, photos, and merchant updates.</h3>
             <p>
-              The result is a product story that feels local, useful, and alive instead of another
-              static restaurant directory.
+              It should feel local and useful, not like another static restaurant directory.
             </p>
           </Reveal>
         </div>

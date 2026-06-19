@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { AlertTriangle, ShieldCheck, Check, Users, Settings } from "lucide-react";
-import { readConsolePrototypeStorage, writeConsolePrototypeStorage } from "@/lib/console/prototypeStorage";
+import { getConsolePrototypeFallback, readConsolePrototypeStorage, writeConsolePrototypeStorage } from "@/lib/console/prototypeStorage";
 import styles from "../console.module.css";
 
 interface FeatureFlag {
@@ -28,7 +28,7 @@ const AUDIENCE_OPTIONS = ["All Foodies", "Power Foodies", "Beta Merchants", "Pil
 
 export default function FeatureFlags() {
   const [flags, setFlags] = useState<FeatureFlag[]>(() => {
-    return readConsolePrototypeStorage("console_feature_flags", initialFlags);
+    return readConsolePrototypeStorage("console_feature_flags", getConsolePrototypeFallback(initialFlags, []));
   });
 
   const [activeModalFlag, setActiveModalFlag] = useState<FeatureFlag | null>(null);
@@ -57,10 +57,10 @@ export default function FeatureFlags() {
     setFlags(updated);
     writeConsolePrototypeStorage("console_feature_flags", updated);
     showToast(`Flag '${flag.key}' state toggled to ${isChecked ? "active" : "disabled"}`, "info");
-    
+
     // Dispatch general event
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("consoleAdminAction", { 
+      window.dispatchEvent(new CustomEvent("consoleAdminAction", {
         detail: {
           action: "feature flag toggle",
           target: flag.name,
@@ -86,10 +86,10 @@ export default function FeatureFlags() {
 
   const confirmChange = () => {
     if (!activeModalFlag) return;
-    
-    const updated = flags.map(flag => 
-      flag.key === activeModalFlag.key 
-        ? { ...flag, enabled: toggleVal, rolloutPercent: sliderVal, audiences: selectedAudiences } 
+
+    const updated = flags.map(flag =>
+      flag.key === activeModalFlag.key
+        ? { ...flag, enabled: toggleVal, rolloutPercent: sliderVal, audiences: selectedAudiences }
         : flag
     );
 
@@ -99,12 +99,12 @@ export default function FeatureFlags() {
     // Track in audit log
     if (typeof window !== "undefined") {
       const orig = flags.find(f => f.key === activeModalFlag.key);
-      const auditEvent = new CustomEvent("consoleAdminAction", { 
+      const auditEvent = new CustomEvent("consoleAdminAction", {
         detail: {
           action: "feature flag changed",
           target: activeModalFlag.name,
           notes: `Flag '${activeModalFlag.key}' changed: [Enabled: ${orig?.enabled} -> ${toggleVal}], [Rollout: ${orig?.rolloutPercent}% -> ${sliderVal}%], [Audiences: ${orig?.audiences?.join(", ")} -> ${selectedAudiences.join(", ")}]. Reason: ${auditReason || "Routine deployment"}`
-        } 
+        }
       });
       window.dispatchEvent(auditEvent);
     }
@@ -167,17 +167,17 @@ export default function FeatureFlags() {
                       {flag.enabled ? "Active" : "Disabled"}
                     </span>
                     <label className={styles.toggleSwitch}>
-                      <input 
-                        type="checkbox" 
-                        checked={flag.enabled} 
+                      <input
+                        type="checkbox"
+                        checked={flag.enabled}
                         onChange={(e) => handleToggleClick(flag, e)}
                       />
                       <span className={styles.slider} />
                     </label>
                   </div>
-                  
-                  <button 
-                    className={styles.rowAction} 
+
+                  <button
+                    className={styles.rowAction}
                     style={{ display: "flex", alignItems: "center", gap: "4px", padding: "6px 12px" }}
                     onClick={() => handleEditClick(flag)}
                   >
@@ -193,11 +193,11 @@ export default function FeatureFlags() {
                   <span style={{ fontSize: "var(--font-size-xs)", fontWeight: "700", color: "var(--color-text-secondary)", width: "100px" }}>
                     Rollout: <span style={{ fontFamily: "var(--font-mono)", color: "var(--color-primary)" }}>{flag.rolloutPercent}%</span>
                   </span>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="100" 
-                    value={flag.rolloutPercent} 
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={flag.rolloutPercent}
                     title={`${flag.name} Rollout Slider`}
                     className={styles.rolloutSlider}
                     onChange={(e) => handleSliderChange(flag, parseInt(e.target.value))}
@@ -211,9 +211,9 @@ export default function FeatureFlags() {
                   <span style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)", fontWeight: "600", marginRight: "4px" }}>Targeting:</span>
                   {flag.audiences && flag.audiences.length > 0 ? (
                     flag.audiences.map(aud => (
-                      <span 
-                        key={aud} 
-                        className={styles.badge} 
+                      <span
+                        key={aud}
+                        className={styles.badge}
                         style={{ borderRadius: "var(--radius-full)", fontSize: "10px", padding: "2px 8px", backgroundColor: "var(--color-bg-warm)", color: "var(--color-text-primary)" }}
                       >
                         {aud}
@@ -232,7 +232,13 @@ export default function FeatureFlags() {
       {/* CONFIRM ACTION & CONFIGS MODAL */}
       {activeModalFlag && (
         <div className={styles.modalOverlay}>
-          <div className={styles.modalCard} style={{ maxWidth: "540px" }}>
+          <div
+            className={styles.modalCard}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Configure remote rollout"
+            style={{ maxWidth: "540px" }}
+          >
             <div className={styles.modalHeader}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
                 <ShieldCheck size={20} style={{ color: "var(--color-primary)" }} />
@@ -249,9 +255,9 @@ export default function FeatureFlags() {
                 <div>
                   <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "var(--color-text-muted)", textTransform: "uppercase", marginBottom: "4px" }}>Status</label>
                   <label className={styles.toggleSwitch}>
-                    <input 
-                      type="checkbox" 
-                      checked={toggleVal} 
+                    <input
+                      type="checkbox"
+                      checked={toggleVal}
                       onChange={(e) => setToggleVal(e.target.checked)}
                     />
                     <span className={styles.slider} />
@@ -259,11 +265,11 @@ export default function FeatureFlags() {
                 </div>
                 <div>
                   <label style={{ display: "block", fontSize: "11px", fontWeight: "700", color: "var(--color-text-muted)", textTransform: "uppercase", marginBottom: "4px" }}>Rollout Percentage ({sliderVal}%)</label>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="100" 
-                    value={sliderVal} 
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={sliderVal}
                     title="Edit Rollout Percent"
                     onChange={(e) => setSliderVal(parseInt(e.target.value))}
                     style={{ width: "100%", accentColor: "var(--color-primary)", cursor: "pointer" }}
@@ -279,7 +285,7 @@ export default function FeatureFlags() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px", backgroundColor: "var(--color-bg-soft)", padding: "12px", borderRadius: "var(--radius-md)" }}>
                   {AUDIENCE_OPTIONS.map((aud) => (
                     <label key={aud} style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "var(--font-size-sm)", cursor: "pointer" }}>
-                      <input 
+                      <input
                         type="checkbox"
                         checked={selectedAudiences.includes(aud)}
                         onChange={() => handleAudienceCheckbox(aud)}
@@ -296,8 +302,8 @@ export default function FeatureFlags() {
                 <label style={{ fontSize: "var(--font-size-xs)", fontWeight: "700", color: "var(--color-text-secondary)" }}>
                   Change Description * (Mandatory for deployment audit)
                 </label>
-                <textarea 
-                  className={styles.rolloutInput} 
+                <textarea
+                  className={styles.rolloutInput}
                   style={{ width: "100%", height: "70px", textAlign: "left", padding: "8px", fontSize: "var(--font-size-sm)" }}
                   placeholder="Explain the purpose of this remote configuration rollout change..."
                   value={auditReason}
@@ -307,13 +313,13 @@ export default function FeatureFlags() {
             </div>
 
             <div className={styles.modalFooter}>
-              <button 
+              <button
                 className={styles.actionButtonSecondary}
                 onClick={() => setActiveModalFlag(null)}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className={styles.actionButton}
                 disabled={!auditReason.trim()}
                 style={{ opacity: auditReason.trim() ? 1 : 0.5, cursor: auditReason.trim() ? "pointer" : "not-allowed" }}

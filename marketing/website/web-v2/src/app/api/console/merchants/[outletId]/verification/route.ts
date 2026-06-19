@@ -25,6 +25,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
   try {
     const { outletId } = await context.params;
+
+    // Validate outletId is a safe UUID before passing to service-role queries
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!UUID_RE.test(outletId ?? "")) {
+      return jsonError("Invalid outlet ID.", 400);
+    }
+
     const body = await readJsonObject(request);
     const status = getStringField(body, "status", { fallback: "verified", max: 40 }) ?? "verified";
     if (!allowedStatuses.has(status)) {

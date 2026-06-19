@@ -1,12 +1,16 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ArrowRight, ChefHat, Store } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { trackWebsiteEvent } from "@/lib/analytics/websiteEvents";
 import styles from "./page.module.css";
 
 type Audience = "foodie" | "merchant";
 type BusinessType = "restaurant" | "cafe" | "home_based" | "hawker" | "food_court" | "other";
+type FieldErrors = Partial<
+  Record<"businessName" | "businessType" | "email" | "otherBusinessType", string>
+>;
 
 const audienceOptions = [
   {
@@ -33,78 +37,92 @@ const businessTypeOptions: readonly { label: string; value: BusinessType }[] = [
 const audienceCopy: Record<Audience, { title: string; description: string; button: string; success: string }> =
   {
     foodie: {
-      title: "Join the foodie waitlist",
+      title: "Join as a foodie",
       description:
-        "Get early access when Hungry opens for food discovery across Singapore.",
+        "Get an email when Hungry opens for early food discovery in Singapore.",
       button: "Join foodie waitlist",
-      success: "You're on the foodie waitlist. We'll email you when early access opens.",
+      success: "You are on the foodie waitlist. We will email you when early access opens.",
     },
     merchant: {
-      title: "Join the merchant waitlist",
+      title: "Join as a merchant",
       description:
-        "Get updates when Merchant Mode opens for Singapore food businesses.",
+        "Get an email when Merchant Mode opens for Singapore food businesses.",
       button: "Join merchant waitlist",
-      success: "You're on the merchant waitlist. We'll email you when Merchant Mode opens.",
+      success: "You are on the merchant waitlist. We will email you when Merchant Mode opens.",
     },
   };
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type JoinWaitlistFormProps = {
   initialAudience: Audience;
 };
 
-const merchantTransitionVariants = {
-  enter: (direction: 1 | -1) => ({
-    opacity: 0,
-    y: direction === 1 ? -18 : 18,
-    height: 0,
-  }),
-  visible: {
-    opacity: 1,
-    y: 0,
-    height: "auto",
-  },
-  exit: (direction: 1 | -1) => ({
-    opacity: 0,
-    y: direction === 1 ? 18 : -18,
-    height: 0,
-  }),
-};
-
 export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormProps) {
   const [audience, setAudience] = useState<Audience>(initialAudience);
-  const [transitionDirection, setTransitionDirection] = useState<1 | -1>(1);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [businessName, setBusinessName] = useState("");
   const [businessType, setBusinessType] = useState<BusinessType | "">("");
   const [otherBusinessType, setOtherBusinessType] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const selectedCopy = useMemo(() => audienceCopy[audience], [audience]);
+  const clearFieldError = (field: keyof FieldErrors) => {
+    setFieldErrors((current) => {
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const event =
+      audience === "merchant" ? "website_merchant_interest_started" : "website_waitlist_started";
+
+    trackWebsiteEvent(event, {
+      audience,
+      source: "join_waitlist",
+      route: "/join-waitlist",
+    });
+  }, [audience]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
-    if (!email.trim()) {
-      return;
+    const nextErrors: FieldErrors = {};
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      nextErrors.email = "Enter your email address.";
+    } else if (!emailPattern.test(trimmedEmail)) {
+      nextErrors.email = "Enter a valid email address.";
     }
 
-    if (audience === "merchant") {
-      if (!businessType) {
-        setStatus("error");
-        setErrorMessage("Select the type of food business you are applying for.");
-        return;
-      }
+    if (audience === "merchant" && !businessName.trim()) {
+      nextErrors.businessName = "Enter your business name.";
+    }
 
-      if (businessType === "other" && !otherBusinessType.trim()) {
-        setStatus("error");
-        setErrorMessage("Specify your food business type.");
-        return;
-      }
+    if (audience === "merchant" && !businessType) {
+      nextErrors.businessType = "Select your food business type.";
+    }
+
+    if (audience === "merchant" && businessType === "other" && !otherBusinessType.trim()) {
+      nextErrors.otherBusinessType = "Specify your food business type.";
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      setStatus("error");
+      setErrorMessage("Check the highlighted fields and try again.");
+      return;
     }
 
     setStatus("loading");
     setErrorMessage("");
+    setFieldErrors({});
 
     try {
       const establishmentType =
@@ -114,7 +132,13 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
             : businessType
           : undefined;
       const response = await fetch("/api/waitlist", {
-        body: JSON.stringify({ audience, email, establishmentType, name }),
+        body: JSON.stringify({
+          audience,
+          businessName: audience === "merchant" ? businessName.trim() : undefined,
+          email: trimmedEmail,
+          establishmentType,
+          name: name.trim(),
+        }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
@@ -122,6 +146,17 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
       if (!response.ok) {
         throw new Error(payload.error ?? "Unable to join waitlist.");
       }
+
+      trackWebsiteEvent(
+        audience === "merchant"
+          ? "website_merchant_interest_submitted"
+          : "website_waitlist_submitted",
+        {
+          audience,
+          source: "join_waitlist",
+          route: "/join-waitlist",
+        },
+      );
       setStatus("success");
     } catch (error) {
       setStatus("error");
@@ -133,26 +168,18 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
     return (
       <main className={styles.main}>
         <section className={styles.waitlist}>
-          <div className={styles.containerWide}>
-            <div className={styles.waitlistCard}>
+          <div className={`${styles.containerWide} ${styles.successContainer}`}>
+            <div className={`${styles.waitlistCard} ${styles.successCard}`}>
               <div className={styles.iconWrap}>
-                <span>Success</span>
+                <span aria-hidden>✓</span>
               </div>
-              <p className={styles.successMessage}>{selectedCopy.success}</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setStatus("idle");
-                  setErrorMessage("");
-                  setEmail("");
-                  setName("");
-                  setBusinessType("");
-                  setOtherBusinessType("");
-                }}
-                className={styles.secondaryCta}
-              >
-                Add another submission
-              </button>
+              <h1 className={styles.successHeading}>You are on the list</h1>
+              <p className={styles.successMessage} role="status">
+                {selectedCopy.success}
+              </p>
+              <Link href="/" className={styles.secondaryCta}>
+                Go back to home page
+              </Link>
             </div>
           </div>
         </section>
@@ -166,9 +193,10 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
         <div className={styles.containerWide}>
           <div className={styles.heroCopy}>
             <span className={styles.eyebrow}>Hungry early access</span>
-            <h1>Choose your Hungry updates.</h1>
+            <h1>Tell us how you want to use Hungry.</h1>
             <p>
-              Hungry is launching in stages. Join as a foodie for early access, or as a merchant for Merchant Mode updates.
+              Join as a foodie if you want early access. Join as a merchant if you want to list a
+              food business.
             </p>
           </div>
 
@@ -187,10 +215,15 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                       if (option.id === audience) {
                         return;
                       }
-                      setTransitionDirection(option.id === "merchant" ? 1 : -1);
                       setAudience(option.id);
                       setStatus("idle");
                       setErrorMessage("");
+                      setFieldErrors({});
+                      if (option.id === "foodie") {
+                        setBusinessName("");
+                        setBusinessType("");
+                        setOtherBusinessType("");
+                      }
                     }}
                     role="tab"
                     aria-selected={isActive}
@@ -201,11 +234,9 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                 );
               })}
             </div>
-            <motion.div
+            <div
               className={styles.cardContent}
               role="tabpanel"
-              layout="position"
-              transition={{ layout: { duration: 0.28, ease: "easeInOut" } }}
             >
               <h2>{selectedCopy.title}</h2>
               <p>{selectedCopy.description}</p>
@@ -219,7 +250,7 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                   value={name}
                   onChange={(event) => setName(event.target.value)}
                   type="text"
-                  placeholder="How should we address you?"
+                  placeholder="What should we call you?"
                 />
 
                 <label className={styles.label} htmlFor="waitlist-email">
@@ -229,75 +260,143 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                   id="waitlist-email"
                   className={styles.input}
                   value={email}
-                  onChange={(event) => setEmail(event.target.value)}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    if (fieldErrors.email) {
+                      clearFieldError("email");
+                    }
+                  }}
                   type="email"
                   required
                   placeholder="you@example.com"
+                  aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={fieldErrors.email ? "waitlist-email-error" : undefined}
                 />
+                {fieldErrors.email ? (
+                  <div className={styles.fieldError} id="waitlist-email-error" role="alert">
+                    {fieldErrors.email}
+                  </div>
+                ) : null}
 
-                <AnimatePresence
-                  mode="wait"
-                  initial={false}
-                  custom={transitionDirection}
-                >
-                  {audience === "merchant" ? (
-                    <motion.div
-                      key="merchant-extra"
-                      className={styles.merchantTransition}
-                      layout="position"
-                      variants={merchantTransitionVariants}
-                      custom={transitionDirection}
-                      initial="enter"
-                      animate="visible"
-                      exit="exit"
-                      transition={{ duration: 0.28, ease: "easeInOut" }}
-                    >
-                      <label className={styles.label} htmlFor="waitlist-business-type">
-                        Food business type
-                      </label>
-                      <select
-                        id="waitlist-business-type"
-                        className={styles.input}
-                        value={businessType}
-                        onChange={(event) => {
-                          const value = event.target.value as BusinessType | "";
-                          setBusinessType(value);
-                          if (value !== "other") {
-                            setOtherBusinessType("");
-                          }
-                        }}
-                        required
+                {audience === "merchant" ? (
+                  <div key="merchant-extra" className={styles.merchantTransition}>
+                    <label className={styles.label} htmlFor="waitlist-business-name">
+                      Business name
+                    </label>
+                    <input
+                      id="waitlist-business-name"
+                      className={styles.input}
+                      value={businessName}
+                      onChange={(event) => {
+                        setBusinessName(event.target.value);
+                        if (fieldErrors.businessName) {
+                          clearFieldError("businessName");
+                        }
+                      }}
+                      type="text"
+                      required
+                      placeholder="Your business name"
+                      aria-invalid={Boolean(fieldErrors.businessName)}
+                      aria-describedby={
+                        fieldErrors.businessName ? "waitlist-business-name-error" : undefined
+                      }
+                    />
+                    {fieldErrors.businessName ? (
+                      <div
+                        className={styles.fieldError}
+                        id="waitlist-business-name-error"
+                        role="alert"
                       >
-                        <option value="">Select business type</option>
-                        {businessTypeOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                        {fieldErrors.businessName}
+                      </div>
+                    ) : null}
 
-                      {businessType === "other" ? (
-                        <>
-                          <label className={styles.label} htmlFor="waitlist-business-type-other">
-                            Specify business type
-                          </label>
-                          <input
-                            id="waitlist-business-type-other"
-                            className={styles.input}
-                            value={otherBusinessType}
-                            onChange={(event) => setOtherBusinessType(event.target.value)}
-                            type="text"
-                            required
-                            placeholder="Tell us what type of food business you run"
-                          />
-                        </>
-                      ) : null}
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
+                    <label className={styles.label} htmlFor="waitlist-business-type">
+                      Food business type
+                    </label>
+                    <select
+                      id="waitlist-business-type"
+                      className={styles.input}
+                      value={businessType}
+                      onChange={(event) => {
+                        const value = event.target.value as BusinessType | "";
+                        setBusinessType(value);
+                        if (fieldErrors.businessType) {
+                          clearFieldError("businessType");
+                        }
+                        if (value !== "other") {
+                          setOtherBusinessType("");
+                          clearFieldError("otherBusinessType");
+                        }
+                      }}
+                      required
+                      aria-invalid={Boolean(fieldErrors.businessType)}
+                      aria-describedby={
+                        fieldErrors.businessType ? "waitlist-business-type-error" : undefined
+                      }
+                    >
+                      <option value="">Select business type</option>
+                      {businessTypeOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    {fieldErrors.businessType ? (
+                      <div
+                        className={styles.fieldError}
+                        id="waitlist-business-type-error"
+                        role="alert"
+                      >
+                        {fieldErrors.businessType}
+                      </div>
+                    ) : null}
+
+                    {businessType === "other" ? (
+                      <>
+                        <label className={styles.label} htmlFor="waitlist-business-type-other">
+                          Tell us the business type
+                        </label>
+                        <input
+                          id="waitlist-business-type-other"
+                          className={styles.input}
+                          value={otherBusinessType}
+                          onChange={(event) => {
+                            setOtherBusinessType(event.target.value);
+                            if (fieldErrors.otherBusinessType) {
+                              clearFieldError("otherBusinessType");
+                            }
+                          }}
+                          type="text"
+                          required
+                          placeholder="For example, supper pop-up or catering"
+                          aria-invalid={Boolean(fieldErrors.otherBusinessType)}
+                          aria-describedby={
+                            fieldErrors.otherBusinessType
+                              ? "waitlist-business-type-other-error"
+                              : undefined
+                          }
+                        />
+                        {fieldErrors.otherBusinessType ? (
+                          <div
+                            className={styles.fieldError}
+                            id="waitlist-business-type-other-error"
+                            role="alert"
+                          >
+                            {fieldErrors.otherBusinessType}
+                          </div>
+                        ) : null}
+                      </>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 <div className={styles.fieldMeta}>
-                  We&apos;ll only email you about the updates you selected.
+                  We will only email you about the list you selected.{" "}
+                  <Link href="/privacy" className={styles.privacyLink}>
+                    Privacy Policy
+                  </Link>
+                  .
                 </div>
 
                 {status === "error" ? (
@@ -311,7 +410,7 @@ export default function JoinWaitlistForm({ initialAudience }: JoinWaitlistFormPr
                   <ArrowRight aria-hidden size={18} />
                 </button>
               </form>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>

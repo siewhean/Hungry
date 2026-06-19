@@ -65,9 +65,11 @@ select {
   line-height: var(--button-line-height) !important;
   letter-spacing: var(--button-letter-spacing) !important;
   min-height: var(--button-min-height) !important;
+  max-width: 100%;
   padding: var(--button-padding-block) var(--button-padding-inline) !important;
   text-align: center;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 :where(
@@ -98,6 +100,29 @@ h1, h2, h3, h4, h5, h6 {
 :focus-visible {
   outline: 3px solid color-mix(in srgb, var(--color-primary) 72%, white);
   outline-offset: 4px;
+}
+
+.skipLink {
+  background: var(--color-ink-deep);
+  border-radius: var(--radius-full);
+  color: var(--color-white);
+  font-weight: 900;
+  left: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  position: fixed;
+  text-decoration: none;
+  top: -6rem;
+  transition: top 160ms ease;
+  z-index: 10000;
+}
+
+a.skipLink:focus,
+a.skipLink:focus-visible {
+  top: var(--space-4) !important;
+}
+
+[tabindex="-1"]:focus {
+  outline: none;
 }
 
 /* Utilities */
@@ -131,6 +156,19 @@ h1, h2, h3, h4, h5, h6 {
     padding-left: var(--space-8);
     padding-right: var(--space-8);
   }
+}
+
+/* Screen-reader-only: visually hidden but accessible to assistive technology */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

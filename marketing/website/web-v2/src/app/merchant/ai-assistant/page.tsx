@@ -13,13 +13,13 @@ interface ChatMessage {
 
 const PRESET_RESPONSES: Record<string, string> = {
   "Write a dish description for my signature oyster cake":
-    "Here's a description for your Fuzhou Oyster Cake:\n\n\"Our signature oyster cake is a Fuzhou treasure — a crispy, golden shell filled with plump oysters, minced pork, and fresh vegetables. Hand-made daily using a recipe passed down through generations, each cake is fried to order for that perfect crunch. A Maxwell Food Centre institution since 1982.\"",
+    "Try this:\n\n\"Crisp Fuzhou oyster cake, fried to order with oysters, minced pork, and fresh vegetables inside. Made daily at Maxwell Food Centre.\"",
   "Suggest promotion ideas for this weekend":
-    "Here are 3 promotion ideas for this weekend:\n\n1. **Weekend Bundle** — Buy any 2 items, get a free barley water. Great for families.\n\n2. **Early Bird Special** — First 30 customers each day get 10% off. Creates buzz and drives early queue traffic.\n\n3. **Social Share Reward** — Show us your Instagram story and get an extra oyster cake on us. Boosts your organic reach.",
+    "A few simple options:\n\n1. Weekend bundle: buy any 2 items and get a barley water.\n\n2. Early queue offer: first 30 customers get 10% off.\n\n3. Add-on special: oyster cake with lor mee for a fixed combo price.",
   "Help me respond to a negative review":
-    "Here's a professional response template:\n\n\"Thank you for your honest feedback, [name]. We're truly sorry to hear that your experience didn't meet our standards — that's never what we want. We'd love the opportunity to make it right. Please reach out to us directly and we'll do our best to resolve this. Your satisfaction matters to us greatly.\"",
+    "Try this:\n\n\"Hi [name], thanks for letting us know. Sorry the meal did not turn out the way it should have. Please message us with your visit details so we can check what happened and make it right.\"",
   "Create my weekly special":
-    "Here's a weekly special concept:\n\n**Maxwell Monday Special** — Every Monday only: Oyster Cake + Lor Mee combo at S$6 (usual S$6.50). Perfect for the start-of-week crowd and gives your regulars a reason to visit specifically on Mondays. Announce it on your Hungry profile every Sunday evening.",
+    "Weekly special idea:\n\nMaxwell Monday combo: oyster cake with lor mee for S$6 every Monday. Add it to your Hungry profile on Sunday evening so regulars see it before lunch.",
 };
 
 const PRESETS = Object.keys(PRESET_RESPONSES);
@@ -39,7 +39,7 @@ export default function MerchantAiAssistantPage() {
     {
       id: "init",
       role: "assistant",
-      text: "Hi! I'm your Hungry AI Assistant. I can help you write dish descriptions, plan promotions, respond to reviews, and more. Try one of the prompts below or type your own question.",
+      text: "Hi, I can help with dish descriptions, promotions, and review replies. Pick a prompt below or type your own question.",
       time: now(),
     },
   ]);
@@ -59,7 +59,7 @@ export default function MerchantAiAssistantPage() {
     setThinking(true);
     await new Promise((r) => setTimeout(r, 1200));
     const responseText = PRESET_RESPONSES[text] ||
-      "That's a great question! Based on your stall's profile and recent performance, I'd suggest focusing on what makes Maxwell Fuzhou Oyster Cake unique — your heritage, your handmade process, and the loyal community you've built. Would you like me to help craft specific content around that?";
+      "I would focus on what makes the stall specific: the dish, how it is made, and what regulars come back for. Tell me the dish or promotion you want to write about.";
     const assistantMsg: ChatMessage = { id: nextMessageId("a"), role: "assistant", text: responseText, time: now() };
     setMessages((p) => [...p, assistantMsg]);
     setThinking(false);

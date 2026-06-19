@@ -12,7 +12,7 @@ export const consoleScaffoldPages: Record<string, ConsoleScaffoldCopy> = {
     slug: "overview",
     title: "Hungry Console",
     intro:
-      "Run Hungry from one place: app, website, merchants, trust queues, releases, notifications, and product operations.",
+      "Run the app, website, merchants, trust queues, releases, and notifications from Hungry Console.",
     primaryActions: ["Review inbox", "Check product analysis", "Send test notification"],
     emptyState: "No critical alerts right now.",
   },
@@ -20,7 +20,7 @@ export const consoleScaffoldPages: Record<string, ConsoleScaffoldCopy> = {
     slug: "search",
     title: "Console search",
     intro:
-      "Search users, stalls, dishes, claims, feedback, reports, releases, and audit history from one operator surface.",
+      "Search users, stalls, dishes, claims, feedback, reports, releases, and audit history.",
     primaryActions: ["Search all records", "Open recent result", "Filter by source"],
     emptyState: "No matching console records yet.",
   },
@@ -52,7 +52,7 @@ export const consoleScaffoldPages: Record<string, ConsoleScaffoldCopy> = {
     slug: "activity",
     title: "Activity stream",
     intro:
-      "Track cross-surface actions from users, merchants, console operators, campaigns, and system jobs.",
+      "Track actions from users, merchants, console operators, campaigns, and system jobs.",
     primaryActions: ["Filter activity", "Open linked record", "Export slice"],
     emptyState: "No activity exists for the selected filters.",
   },
@@ -60,7 +60,7 @@ export const consoleScaffoldPages: Record<string, ConsoleScaffoldCopy> = {
     slug: "messages",
     title: "Messages",
     intro:
-      "Monitor support conversations, merchant replies, escalation threads, and delivery status for operational messages.",
+      "Monitor support conversations, merchant replies, escalations, and message delivery.",
     primaryActions: ["Open thread", "Assign owner", "Escalate"],
     emptyState: "No message threads need action right now.",
   },
@@ -91,7 +91,7 @@ export const consoleScaffoldPages: Record<string, ConsoleScaffoldCopy> = {
     slug: "app-config",
     title: "App configuration",
     intro:
-      "Review remote configuration, kill switches, public copy toggles, onboarding defaults, and operational app settings.",
+      "Review remote configuration, kill switches, public copy toggles, onboarding defaults, and app settings.",
     primaryActions: ["Review config", "Compare environments", "Open change history"],
     emptyState: "No configuration changes need approval.",
   },
@@ -107,7 +107,7 @@ export const consoleScaffoldPages: Record<string, ConsoleScaffoldCopy> = {
     slug: "issues",
     title: "Issues",
     intro:
-      "Connect support feedback, reports, release regressions, Sentry issues, and operational follow-ups in one triage view.",
+      "Review support feedback, reports, release regressions, Sentry issues, and follow-ups in one triage view.",
     primaryActions: ["Triage issue", "Assign owner", "Link evidence"],
     emptyState: "No open issues in this view.",
   },
@@ -164,7 +164,7 @@ export const productAnalyticsScaffoldPages: Record<string, ConsoleScaffoldCopy> 
   acquisition: {
     slug: "acquisition",
     title: "Acquisition",
-    intro: "Summarise acquisition source, campaign, landing page, referral, and waitlist quality signals.",
+    intro: "Summarise acquisition source, campaign, landing page, referral, and waitlist quality.",
     primaryActions: ["Compare channels", "Open campaign dashboard", "Export source mix"],
     emptyState: "No acquisition data for the selected filters.",
   },
@@ -199,7 +199,7 @@ export const productAnalyticsScaffoldPages: Record<string, ConsoleScaffoldCopy> 
   notifications: {
     slug: "notifications",
     title: "Notifications and campaigns",
-    intro: "Tie messaging activity to opens, taps, downstream engagement, unsubscribes, and operational sends.",
+    intro: "Connect messaging activity to opens, taps, engagement, unsubscribes, and system sends.",
     primaryActions: ["Open campaign dashboard", "Compare sends", "Review delivery"],
     emptyState: "No notification metrics for this slice.",
   },
@@ -235,7 +235,7 @@ export const productAnalyticsScaffoldPages: Record<string, ConsoleScaffoldCopy> 
     slug: "posthog",
     title: "PostHog deep dive",
     intro:
-      "Hungry Console surfaces the KPIs the team checks every day. Open PostHog when you need funnels, cohorts, trends, replays, event breakdowns, or feature-flag impact.",
+      "Hungry Console shows the KPIs the team checks every day. Open PostHog when you need funnels, cohorts, trends, replays, event breakdowns, or feature-flag impact.",
     primaryActions: ["Open PostHog workspace", "View saved dashboards"],
     emptyState: "No PostHog dashboard has been linked for this environment.",
   },

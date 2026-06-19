@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { writeMerchantAuditLog } from "@/lib/merchantPortal/audit";
 import { clientRequestKey, jsonError, requireRateLimit } from "@/lib/security/api";
 import { getStringField, readJsonObject, validationErrorResponse } from "@/lib/security/validation";
 import { supabaseFetch } from "@/lib/supabase/server";
@@ -40,6 +41,14 @@ export async function POST(request: NextRequest) {
       method: "POST",
       params: { on_conflict: "outlet_id" },
       prefer: "resolution=merge-duplicates,return=minimal",
+    });
+
+    await writeMerchantAuditLog({
+      action: "merchant_verification_submitted",
+      metadata: { method },
+      overview,
+      targetId: overview.outlet.id,
+      targetType: "merchant_verification",
     });
 
     return NextResponse.json(await getMerchantPortalOverview(accessToken));

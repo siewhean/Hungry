@@ -7,11 +7,9 @@ import {
   ArrowRight,
   MapPin,
   Star,
-  Clock,
   Storefront,
   Quotes,
   Heart,
-  MagnifyingGlass,
   CheckCircle,
 } from "@phosphor-icons/react";
 import gsap from "gsap";
@@ -53,8 +51,8 @@ export default function Home() {
       });
 
       // 2. Reveal on Scroll for standard sections
-      const revealElements = gsap.utils.toArray(".reveal-on-scroll");
-      revealElements.forEach((el: any) => {
+      const revealElements = gsap.utils.toArray<Element>(".reveal-on-scroll");
+      revealElements.forEach((el) => {
         gsap.fromTo(
           el,
           { opacity: 0, y: 40 },
@@ -73,7 +71,7 @@ export default function Home() {
 
       // 3. Sticky Product Showcase
       if (showcaseRef.current && showcaseStickyRef.current) {
-        const steps = gsap.utils.toArray(".showcase-step");
+        const steps = gsap.utils.toArray<Element>(".showcase-step");
 
         ScrollTrigger.create({
           trigger: showcaseRef.current,
@@ -83,7 +81,7 @@ export default function Home() {
           scrub: true,
         });
 
-        steps.forEach((step: any, i) => {
+        steps.forEach((step, i) => {
           ScrollTrigger.create({
             trigger: step,
             start: "top center",

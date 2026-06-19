@@ -1,4 +1,5 @@
 import {
+  getConsolePrototypeFallback,
   readConsolePrototypeStorage,
   readConsolePrototypeString,
   writeConsolePrototypeStorage,
@@ -46,14 +47,14 @@ export interface MerchantVerificationState {
 export const MERCHANT_VERIFICATION_STORAGE_KEY = "merchant_verification_state";
 export const MERCHANT_VERIFIED_LEGACY_KEY = "merchant_verified";
 export const MERCHANT_VERIFICATION_EVENT = "merchantVerificationChanged";
-export const DEMO_MERCHANT_ID = "CLM-106";
-export const DEMO_MERCHANT_NAME = "Maxwell Fuzhou Oyster Cake";
+export const PROTOTYPE_MERCHANT_ID = "prototype-merchant";
+export const PROTOTYPE_MERCHANT_NAME = "Prototype Stall";
 
 const nowIso = () => new Date().toISOString();
 
-export const defaultMerchantVerificationState = (): MerchantVerificationState => ({
-  merchantId: DEMO_MERCHANT_ID,
-  stallName: DEMO_MERCHANT_NAME,
+const prototypeMerchantVerificationState = (): MerchantVerificationState => ({
+  merchantId: PROTOTYPE_MERCHANT_ID,
+  stallName: PROTOTYPE_MERCHANT_NAME,
   status: "pending",
   updatedAt: nowIso(),
   updatedBy: "Hungry Console",
@@ -65,6 +66,27 @@ export const defaultMerchantVerificationState = (): MerchantVerificationState =>
     { key: "corppass", label: "Singpass Corppass", status: "not_started", updatedAt: nowIso() },
   ],
 });
+
+const productionMerchantVerificationState = (): MerchantVerificationState => ({
+  merchantId: "merchant-verification-unavailable",
+  stallName: "Your Stall",
+  status: "pending",
+  updatedAt: nowIso(),
+  updatedBy: "Hungry",
+  message: "We could not load live verification details for this merchant session. Upload evidence or contact support if this continues.",
+  steps: [
+    { key: "business", label: "Business information", status: "pending", updatedAt: nowIso() },
+    { key: "documents", label: "SFA / NEA licence", status: "pending", updatedAt: nowIso() },
+    { key: "walkaround", label: "Physical stall walkthrough", status: "pending", updatedAt: nowIso() },
+    { key: "corppass", label: "Singpass Corppass", status: "not_started", updatedAt: nowIso() },
+  ],
+});
+
+export const defaultMerchantVerificationState = (): MerchantVerificationState =>
+  getConsolePrototypeFallback(
+    prototypeMerchantVerificationState(),
+    productionMerchantVerificationState(),
+  );
 
 export const isMerchantVerified = (state: MerchantVerificationState): boolean =>
   state.status === "approved";

@@ -16,9 +16,8 @@ export const footerLinks = {
     { label: "Hawker Culture", href: "/#hawker-culture" },
   ],
   connect: [
-    { label: "Merchant Interest", href: "/join-waitlist?audience=merchant" },
     { label: "Join Waitlist", href: "/join-waitlist" },
-    { label: "Contact", href: "mailto:hello@hungry.sg" },
+    { label: "Contact", href: "/contact" },
   ],
 } as const;
 
@@ -78,12 +77,12 @@ export type StoryScreen = ImageAsset & {
 
 export const homepage = {
   hero: {
-    eyebrow: "Hungry? Don't know where to eat?",
-    lines: ["Find your next", "makan place"],
-    proof: "Find your favourite food instantly",
-    body: "Hungry brings menus, dish photos, reviews, opening hours, and stall details into an app for foodies and merchants.",
+    eyebrow: "For hungry days in Singapore",
+    lines: ["Know what to eat.", "Before you leave."],
+    proof: "Find the dish. Check the stall. Skip the wasted trip.",
+    body: "Hungry keeps menus, dish photos, reviews, hours, and stall details together, so you can decide faster.",
     primaryCta: { label: "Join Waitlist", href: "/join-waitlist" },
-    secondaryCta: { label: "Register Interest", href: "/for-merchants" },
+    secondaryCta: { label: "Explore Foodies", href: "/for-foodies" },
     atmosphere: {
       src: "/images/food/stalls-restaurants-wide.png",
       alt: "Warm local food discovery scene with dishes and stalls",
@@ -109,23 +108,23 @@ export const homepage = {
   audiences: [
     {
       title: "For foodies",
-      eyebrow: "Explore local cravings using real food proof",
+      eyebrow: "Choose with real dish photos",
       description:
-        "See what people are eating, compare real dish photos, and check whether a stall is worth the trip before you leave.",
+        "See what people are eating, compare dish photos, and decide if a stall is worth the trip.",
       image: {
-        src: "/images/people/maxwell-hawker-centre-diners.jpg",
-        alt: "People eating at Maxwell Food Centre in Singapore",
+        src: "/images/people/singapore-yusheng-restaurant-diners.jpg",
+        alt: "Families dining at a Singapore restaurant in Suntec City",
       },
-      cta: { label: "Join Waitlist", href: "/join-waitlist" },
+      cta: { label: "Explore Foodies", href: "/for-foodies" },
     },
     {
       title: "For merchants",
       eyebrow: "Share your stall",
       description:
-        "Keep dishes, photos, menus, hours, and profile details visible when nearby diners are deciding what to eat next.",
+        "Keep your dishes, photos, menu, hours, and stall details visible when nearby diners are choosing lunch or dinner.",
       image: {
-        src: "/images/people/hawker-cooking.jpg",
-        alt: "Close-up of a Singapore hawker cooking at a stall",
+        src: "/images/people/singapore-hawker-stall-cooking.jpg",
+        alt: "Close-up of a hawker cooking food at a Singapore stall",
       },
       cta: { label: "Register Interest", href: "/for-merchants" },
     },
@@ -137,12 +136,12 @@ export const homepage = {
     "Smaller merchants lack a simple way to show what they actually serve today.",
   ],
   localGuide: {
-    title: "Your personal local guide",
+    title: "A local guide that starts with food",
     description: "",
     cards: [
       {
         title: "Discover nearby food",
-        description: "See nearby stalls, restaurants, and dishes without switching between apps.",
+        description: "See nearby stalls, restaurants, and dishes without bouncing between apps.",
         icon: "explore",
         variant: "map",
         image: {
@@ -163,70 +162,70 @@ export const homepage = {
       {
         title: "Know what is open",
         description:
-          "Check clearer hours and live context before making the trip across the neighbourhood.",
+          "Check hours and open status before crossing the neighbourhood.",
         icon: "open",
         variant: "plain",
         image: {
-          src: "/images/people/hawker-cooking.jpg",
-          alt: "Singapore hawker stall in service for opening-hours discovery",
+          src: "/images/people/singapore-hawker-stall-cooking.jpg",
+          alt: "Singapore hawker stall preparing food during service",
         },
       },
       {
         title: "See menus before you go",
         description:
-          "Browse visual menus with actual dish photos so you know what to order before you queue.",
+          "Browse menus with dish photos, prices, and availability before you queue.",
         icon: "menu",
         variant: "open",
         image: {
-          src: "/images/food/dishes-wide.png",
-          alt: "Singapore dishes laid out visually for menu browsing",
+          src: "/images/screens/menu-management.png",
+          alt: "Hungry visual menu screen with dish photos, prices, and availability",
         },
       },
     ],
   },
   productStory: [
     {
-      eyebrow: "Browse",
-      title: "Choose with real dish context.",
+      eyebrow: "Discover",
+      title: "Start with what is nearby.",
       description:
-        "Nearby dishes, food photos, open status, and stall details sit in one decision view.",
+        "Open Hungry and see nearby dishes, search, popular picks, quick actions, and quick bites in one screen.",
       stat: "Discover",
-      src: "/images/screens/foodies-screen.png",
-      alt: "Hungry visual foodie discovery interface",
+      src: "",
+      alt: "Hungry Discover page shown inside an iPhone 17 frame",
     },
     {
-      eyebrow: "Compare",
-      title: "Stop jumping between menus and reviews.",
+      eyebrow: "Stall details",
+      title: "Open the stall before you go.",
       description:
-        "Dish photos, menus, ratings, open status, and saved places stay in one flow.",
-      stat: "Shortlist",
-      src: "/images/screens/app-showcase.png",
-      alt: "Hungry app screens showing discovery and dish details",
+        "Check the address, open status, distance, photos, and signature dishes before you head over.",
+      stat: "Stall",
+      src: "/images/screens/stall-detail.png",
+      alt: "Hungry stall detail page shown inside an iPhone 17 frame",
     },
     {
-      eyebrow: "Operate",
-      title: "Keep menu details current.",
+      eyebrow: "Menu",
+      title: "Check the menu.",
       description:
-        "Merchants update dishes, prices, photos, and availability from one surface.",
+        "See dish photos, names, descriptions, prices, and availability without digging through old menu photos.",
       stat: "Menu",
-      src: "/images/screens/menu-management.png",
-      alt: "Hungry menu management interface",
+      src: "/images/screens/dish-detail.png",
+      alt: "Hungry dish detail page shown inside an iPhone 17 frame",
     },
     {
-      eyebrow: "Stay current",
-      title: "Prevent wasted trips.",
+      eyebrow: "Reviews",
+      title: "Read what others ate.",
       description:
-        "Opening-hour tools make closures, rest days, and regular hours easier to trust.",
-      stat: "Hours",
-      src: "/images/screens/opening-hours.png",
-      alt: "Hungry opening hours editor interface",
+        "Reviews stay tied to dishes, so a good rating comes with the food people actually ordered.",
+      stat: "Reviews",
+      src: "",
+      alt: "Hungry review feed with mock content shown inside an iPhone 17 frame",
     },
   ] satisfies StoryScreen[],
   cultureCards: [
     {
       title: "Hawker stalls",
       description:
-        "Heritage dishes and everyday favourites surfaced by what people actually crave.",
+        "Everyday favourites show up by dish, not just by stall name.",
       image: {
         src: "/images/food/stalls-restaurants-wide.png",
         alt: "Hawker and restaurant food discovery scene",
@@ -234,7 +233,7 @@ export const homepage = {
     },
     {
       title: "Kopitiam staples",
-      description: "From kopi runs to late lunches, quick meals become easier to compare nearby.",
+      description: "Compare quick meals nearby, from kopi runs to late lunches.",
       image: {
         src: "/images/food/laksa-topdown.png",
         alt: "Local noodle dish representing kopitiam food discovery",
@@ -242,7 +241,7 @@ export const homepage = {
     },
     {
       title: "Cafes and bakes",
-      description: "Neighbourhood cafes and home-based makers can be discovered alongside stalls.",
+      description: "Neighbourhood cafes and home-based makers sit beside hawker stalls.",
       image: {
         src: "/images/food/bak-chor-mee-topdown.png",
         alt: "Local noodle dish representing neighbourhood food discovery",
@@ -251,7 +250,7 @@ export const homepage = {
     {
       title: "Restaurants",
       description:
-        "Restaurant dishes sit in the same decision flow as hawker favourites and hidden gems.",
+        "Restaurant dishes appear beside hawker favourites, so the choice is about the meal.",
       image: {
         src: "/images/food/dishes-wide.png",
         alt: "Restaurant and dish discovery image collage",
@@ -261,81 +260,80 @@ export const homepage = {
   community: [
     {
       title: "Dish reviews",
-      description: "Feedback stays with the dish, not hidden on a separate page.",
+      description: "Feedback stays with the dish.",
     },
     {
       title: "Local rankings",
       description:
-        "Nearby saves and ratings help people compare real options faster.",
+        "Nearby saves and ratings make shortlisting less painful.",
     },
     {
-      title: "Photo proof",
+      title: "Food photos",
       description:
-        "Actual food photos answer questions a category label cannot.",
+        "Food photos answer questions that category labels cannot.",
     },
   ],
 } as const;
 
 export const merchantPage = {
   hero: {
-    title: "Make your food easier to choose before customers arrive.",
+    title: "Help diners choose your food before they arrive.",
     description:
-      "Hungry helps diners see your dishes, menu, hours, and profile details while they are deciding what to eat nearby.",
+      "Hungry shows your dishes, menu, hours, and stall details while nearby diners are still deciding where to eat.",
     cta: { label: "Register Merchant Interest", href: "/join-waitlist?audience=merchant" },
-    secondaryCta: { label: "See merchant tools", href: "#merchant-tools" },
     image: {
       src: "/images/people/hawker-cooking.jpg",
       alt: "Singapore hawker stall owner cooking at the counter",
     },
   },
   benefits: {
-    title: "Solve the gaps that lose hungry diners.",
+    title: "Fix the gaps that cost you diners.",
     description:
-      "A clear merchant profile gives customers the proof they need before they walk over.",
+      "A clear profile answers the questions people ask before they walk over.",
     items: [
       {
         title: "Show the dish first",
         description:
-          "Turn signature dishes into visual reasons to visit, not just a venue name in a list.",
+          "Put your signature dishes where people can see them, not behind a stall name.",
         icon: "visibility",
       },
       {
         title: "Keep stall information accurate",
         description:
-          "Keep menus, prices, opening hours, photos, and other stall details current before stale information costs a visit.",
+          "Update menus, prices, hours, photos, and stall details before old information costs a visit.",
         icon: "menu",
       },
       {
         title: "Help diners know your stall",
         description:
-          "Show what you serve, when you are open, where to find you, and why your stall is worth visiting.",
+          "Show what you serve, when you open, and where to find you.",
         icon: "hours",
       },
       {
         title: "See what diners care about",
         description:
-          "Use dish views, profile interest, and review signals to understand what customers check before visiting.",
+          "See which dishes, photos, and reviews people check before visiting.",
         icon: "analytics",
       },
       {
         title: "Customer replies",
         description:
-          "Keep review follow-ups and diner questions visible so your team can respond before trust is lost.",
+          "Keep review replies and diner questions together, so your team can respond faster.",
         icon: "replies",
       },
       {
         title: "Promotions",
         description:
-          "Highlight seasonal dishes, discounts, or limited-time items when nearby diners are choosing what to eat.",
+          "Show seasonal dishes, discounts, or limited-time items while nearby diners are choosing.",
         icon: "promotions",
       },
     ],
   },
   workflow: {
-    eyebrow: "Merchant workflow",
-    title: "Make every dish easier to find before a diner arrives.",
+    eyebrow: "Merchant tools",
+    title: "Make each dish easier to find.",
     description:
-      "Keep menus, hours, and profile details current so customers see what is available today.",
+      "Keep menus, hours, and profile details current, so customers know what is available today.",
     steps: [
       {
         title: "Claim the profile",
@@ -351,14 +349,14 @@ export const merchantPage = {
       },
       {
         title: "Show what is open",
-        description: "Make opening hours and special closures clearer for diners planning a trip.",
+        description: "Keep regular hours and special closures clear.",
         image: "/images/screens/opening-hours.png",
       },
     ],
   },
   featureProof: {
-    title: "Merchant tools for daily customer questions",
-    description: "Profile, menu, and opening-hour screens keep customer-facing details current.",
+    title: "Tools for the questions diners ask every day",
+    description: "Profile, menu, and opening-hour screens keep public details current.",
     items: [
       {
         title: "Profile readiness",
@@ -387,28 +385,28 @@ export const merchantPage = {
     ],
   },
   previewFeatures: {
-    title: "Preview the merchant flow before onboarding.",
+    title: "Preview the merchant tools before onboarding.",
     description:
-      "Hungry gives stall teams a focused place to manage customer-facing details before diners arrive.",
+      "Hungry gives stall teams a clear place to manage the details diners see.",
     items: [
       {
         title: "Dashboard overview",
-        description: "See profile readiness, menu status, views, and review tasks in one place.",
+        description: "See profile readiness, menu status, views, and review tasks together.",
       },
       {
         title: "Customer-facing preview",
-        description: "Check how your stall and dishes appear to foodies before publishing changes.",
+        description: "Check how your stall and dishes look before publishing changes.",
       },
       {
         title: "Operational prompts",
-        description: "Spot missing photos, stale hours, and unreplied reviews before they hurt visits.",
+        description: "Spot missing photos, stale hours, and unreplied reviews early.",
       },
     ],
   },
   verification: {
     title: "Verify the stall before it goes live.",
     description:
-      "A simple verification journey protects diners and gives merchants a clear path to launch.",
+      "Verification keeps fake listings out and gives real merchants a clear launch path.",
     steps: [
       {
         title: "Submit business details",
@@ -420,14 +418,14 @@ export const merchantPage = {
       },
       {
         title: "Get reviewed",
-        description: "Hungry Console reviews the claim and updates the verification status.",
+        description: "Hungry Console reviews the claim and updates the status.",
       },
     ],
   },
   profileMgmt: {
     title: "Keep the business profile accurate.",
     description:
-      "Make core stall details clear for diners comparing nearby options.",
+      "Make the basic stall details easy to trust.",
     items: [
       {
         title: "Location and hours",
@@ -435,18 +433,18 @@ export const merchantPage = {
       },
       {
         title: "Photos and cover image",
-        description: "Show a professional first impression with current stall and food images.",
+        description: "Use current stall and food photos, not a blank profile.",
       },
       {
         title: "Profile completeness",
-        description: "See what is missing before customers rely on incomplete information.",
+        description: "See missing fields before customers hit them.",
       },
     ],
   },
   menuMgmt: {
-    title: "Manage dishes without hiding the details diners need.",
+    title: "Manage dishes without losing the details.",
     description:
-      "Keep dish names, prices, images, categories, and availability ready for discovery.",
+      "Keep dish names, prices, photos, categories, and availability ready for customers.",
     features: [
       {
         title: "Dish catalogue",
@@ -454,18 +452,18 @@ export const merchantPage = {
       },
       {
         title: "Availability control",
-        description: "Mark dishes active or unavailable so customers do not make wasted trips.",
+        description: "Mark dishes active or unavailable before someone makes a wasted trip.",
       },
       {
         title: "Menu preview",
-        description: "Review the menu as customers see it before saving changes.",
+        description: "Review the menu as customers see it before saving.",
       },
     ],
   },
   customerInbox: {
     title: "Respond where customer questions arrive.",
     description:
-      "Keep review and enquiry follow-up connected to the stall profile.",
+      "Keep reviews and enquiries tied to the stall profile.",
     features: [
       {
         title: "Unreplied review queue",
@@ -477,18 +475,18 @@ export const merchantPage = {
       },
       {
         title: "Low-rating attention",
-        description: "Surface urgent feedback so teams can respond quickly.",
+        description: "Flag urgent feedback so teams can respond quickly.",
       },
     ],
   },
   analytics: {
-    title: "Understand what diners view before they visit.",
+    title: "See what diners check before they visit.",
     description:
-      "Use stall, dish, review, and promotion signals to improve the customer journey.",
+      "Use stall, dish, review, and promotion data to improve the listing.",
     metrics: [
       {
         title: "Dish views",
-        description: "See which dishes attract attention and which need stronger photos or copy.",
+        description: "See which dishes get attention and which need better photos or copy.",
       },
       {
         title: "Review trends",
@@ -503,7 +501,7 @@ export const merchantPage = {
   promotions: {
     title: "Promote the right item at the right time.",
     description:
-      "Create simple promotions that stay tied to real menu items and availability windows.",
+      "Create simple promotions tied to real menu items and dates.",
     features: [
       {
         title: "Menu item promotions",
@@ -511,7 +509,7 @@ export const merchantPage = {
       },
       {
         title: "Scheduled visibility",
-        description: "Set start and end dates so expired promotions do not appear active.",
+        description: "Set start and end dates so expired promotions disappear.",
       },
       {
         title: "Performance view",
@@ -520,17 +518,17 @@ export const merchantPage = {
     ],
   },
   aiAssistant: {
-    title: "Turn merchant data into practical next steps.",
+    title: "Turn merchant data into next steps.",
     description:
-      "Rule-based insights help teams act on views, reviews, menu quality, and promotion signals.",
+      "Rule-based insights point out issues in views, reviews, menu quality, and promotions.",
     features: [
       {
         title: "Photo improvement prompts",
-        description: "Spot high-view dishes that may need clearer images or descriptions.",
+        description: "Spot high-view dishes that need clearer images or descriptions.",
       },
       {
         title: "Review theme detection",
-        description: "Highlight repeated customer comments such as wait time or missing details.",
+        description: "Highlight repeated comments about wait time, missing details, or service.",
       },
       {
         title: "Weekly summary",
@@ -539,13 +537,13 @@ export const merchantPage = {
     ],
   },
   creatorTypes: {
-    title: "Different food businesses, same customer problem.",
-    description: "People need to know what you serve, when you are open, and why it is worth the trip.",
+    title: "Different food businesses, same diner questions.",
+    description: "People want to know what you serve, when you open, and whether the trip is worth it.",
     items: [
       {
         title: "Hawker stalls",
         description:
-          "Show signature dishes clearly so locals can find the stall before they arrive.",
+          "Show signature dishes clearly so locals can find you before they arrive.",
         image: {
           src: "/images/food/stalls-restaurants-wide.png",
           alt: "Bustling Singapore hawker stall scene",
@@ -563,10 +561,10 @@ export const merchantPage = {
       },
       {
         title: "Restaurants",
-        description: "Help diners compare full menus by dish, photo, and availability.",
+        description: "Let diners compare your menu by dish, photo, and availability.",
         image: {
-          src: "/images/food/dishes-wide.png",
-          alt: "Restaurant dishes presented for discovery",
+          src: "/images/food/chili-crab-topdown.png",
+          alt: "Singapore chilli crab dish for restaurant menu discovery",
         },
         size: "small",
       },
@@ -582,9 +580,9 @@ export const merchantPage = {
     ],
   },
   finalCta: {
-    title: "Ready to make your menu easier to find?",
+    title: "Want diners to find your menu faster?",
     description:
-      "Join the merchant waitlist and we will follow up when onboarding opens.",
+      "Join the merchant waitlist. We will follow up when onboarding opens.",
     cta: { label: "Register Merchant Interest", href: "/join-waitlist?audience=merchant" },
   },
 } as const;

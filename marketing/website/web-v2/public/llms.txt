@@ -8,6 +8,13 @@
 - For Foodies: https://hungry.sg/for-foodies
 - For Merchants: https://hungry.sg/for-merchants
 - Join Waitlist: https://hungry.sg/join-waitlist
+- Singapore Food Hub: https://hungry.sg/singapore
+- Jurong East Food: https://hungry.sg/singapore/jurong-east/food
+- Chinatown Food: https://hungry.sg/singapore/chinatown/food
+- Chicken Rice: https://hungry.sg/dishes/chicken-rice
+- First-Timer Singapore Food Guide: https://hungry.sg/guides/what-to-eat-in-singapore-first-time
+- Halal Food Discovery: https://hungry.sg/singapore/halal-food
+- Late-Night Supper: https://hungry.sg/singapore/late-night-supper
 - Privacy Policy: https://hungry.sg/privacy
 - Terms of Service: https://hungry.sg/terms
 - Account Deletion: https://hungry.sg/account/delete
@@ -15,6 +22,8 @@
 ## Product Summary
 
 Hungry is built for Singapore food discovery across hawker stalls, kopitiam stalls, food courts, restaurants, cafes, bakeries, and home-based food businesses. The product is dish-first: people can search by craving or dish, compare nearby food options, and check details before making the trip.
+
+Hungry public SEO pages are Singapore-first and source-conscious. They should not be summarized as ranked restaurant lists unless the visible page includes real ranking data. Ratings, review counts, opening hours, and verification labels are intentionally omitted where source-backed data is not visible.
 
 ## Best Description
 

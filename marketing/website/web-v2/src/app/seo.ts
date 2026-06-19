@@ -1,4 +1,24 @@
 import type { Metadata } from "next";
+import {
+  dishAreaPages,
+  getArea,
+  getDish,
+  guidePath,
+  seoAreas,
+  seoDishes,
+  seoGuides,
+  seoPlaces,
+  SEO_LAST_UPDATED,
+} from "@/lib/seo/content";
+import { createSeoMetadata, type SeoRouteMetadata } from "@/lib/seo/pageMetadata";
+import {
+  hasIndexableAreaData,
+  hasIndexableDishAreaData,
+  hasIndexableDishData,
+  hasIndexableGuideData,
+  hasIndexablePlaceData,
+} from "@/lib/seo/noindex";
+import { buildGlobalGraph } from "@/lib/seo/schema";
 
 const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hungry.sg";
 
@@ -7,7 +27,7 @@ export const siteConfig = {
   url: rawSiteUrl.replace(/\/$/, ""),
   title: "Hungry - Singapore Food Discovery",
   description:
-    "Hungry is a Singapore food discovery app for diners and food businesses — discover dishes faster and manage menus, photos, hours, and profiles with Merchant Mode.",
+    "Hungry helps Singapore diners find dishes faster and helps food businesses keep menus, photos, hours, and profiles up to date.",
   locale: "en_SG",
   language: "en-SG",
   contactEmail: "hello@hungry.sg",
@@ -21,14 +41,14 @@ export const siteConfig = {
     "restaurant discovery Singapore",
     "food business discovery Singapore",
   ],
-} as const;
+};
 
-export const publicRoutes = [
+const staticPublicRoutes = [
   {
     path: "/",
     title: "Hungry | Decide what to eat next in Singapore",
     description:
-      "The food discovery app for Singapore. Find hawker food, cafes, restaurants, and home-based food businesses by dish, craving, and local context.",
+      "Find hawker food, cafes, restaurants, and home-based food businesses in Singapore by dish, craving, and area.",
     priority: 1,
     lastModified: "2026-05-24",
   },
@@ -36,7 +56,7 @@ export const publicRoutes = [
     path: "/for-foodies",
     title: "Hungry for Foodies | Singapore Food Discovery",
     description:
-      "Join the Hungry waitlist for a Singapore food discovery app that helps foodies compare dishes, photos, menus, reviews, and opening status before the trip.",
+      "Join the Hungry waitlist to compare dishes, photos, menus, reviews, and opening status before making the trip.",
     priority: 0.9,
     lastModified: "2026-05-24",
   },
@@ -44,15 +64,23 @@ export const publicRoutes = [
     path: "/for-merchants",
     title: "Hungry for Merchants | Merchant Mode for Singapore food businesses",
     description:
-      "Join the Hungry merchant waitlist for Merchant Mode — manage menus, photos, opening hours, verification, customer replies, promotions, and performance.",
+      "Join the Hungry merchant waitlist to manage menus, photos, opening hours, verification, customer replies, promotions, and performance.",
     priority: 0.9,
     lastModified: "2026-06-01",
+  },
+  {
+    path: "/about",
+    title: "About Hungry | Singapore Food Discovery",
+    description:
+      "Learn how Hungry helps Singapore diners choose what to eat and helps food businesses keep dish information discoverable.",
+    priority: 0.6,
+    lastModified: "2026-06-18",
   },
   {
     path: "/join-waitlist",
     title: "Hungry waitlist | Foodie early access and Merchant Mode updates",
     description:
-      "Join the Hungry waitlist for foodie early access or Merchant Mode updates for Singapore food businesses.",
+      "Join the Hungry waitlist for foodie early access or merchant onboarding updates.",
     priority: 0.9,
     lastModified: "2026-06-01",
   },
@@ -77,7 +105,88 @@ export const publicRoutes = [
     priority: 0.5,
     lastModified: "2026-05-18",
   },
-] as const;
+  {
+    path: "/contact",
+    title: "Contact Hungry | Support, Privacy and Merchant Help",
+    description:
+      "Contact Hungry for support, privacy, account deletion, waitlist, and merchant questions.",
+    priority: 0.4,
+    lastModified: "2026-06-18",
+  },
+] satisfies SeoRouteMetadata[];
+
+const seoContentRoutes = [
+  {
+    path: "/singapore",
+    title: "Singapore Food Discovery by Dish, Area and MRT | Hungry",
+    description:
+      "Browse Hungry pages for Singapore areas, MRT food searches, hawker centres, dishes, dietary needs, budget meals, and late-night supper.",
+    priority: 0.95,
+    lastModified: SEO_LAST_UPDATED,
+  },
+  ...seoAreas.map((area) => ({
+    path: `/singapore/${area.slug}/food`,
+    title: `${area.name} Food Guide: Dishes, Places and MRT Context | Hungry`,
+    description: area.summary,
+    priority: 0.82,
+    lastModified: SEO_LAST_UPDATED,
+    noindex: !hasIndexableAreaData(area),
+  })),
+  ...seoAreas.map((area) => ({
+    path: `/singapore/mrt/${area.slug}/food`,
+    title: `Food Near ${area.mrtStation} MRT: Dish-First Singapore Guide | Hungry`,
+    description: `Find dishes, nearby places, and related Singapore area links around ${area.mrtStation} MRT.`,
+    priority: 0.74,
+    lastModified: SEO_LAST_UPDATED,
+    noindex: !hasIndexableAreaData(area),
+  })),
+  ...seoDishes.map((dish) => ({
+    path: `/dishes/${dish.slug}`,
+    title: `${dish.name} in Singapore: Dish-First Food Discovery | Hungry`,
+    description: dish.summary,
+    priority: 0.78,
+    lastModified: SEO_LAST_UPDATED,
+    noindex: !hasIndexableDishData(dish),
+  })),
+  ...dishAreaPages.map((page) => {
+    const area = getArea(page.areaSlug);
+    const dish = getDish(page.dishSlug);
+
+    if (!area || !dish) {
+      throw new Error(`Invalid SEO dish-area route ${page.areaSlug}/${page.dishSlug}`);
+    }
+
+    return {
+      path: `/singapore/${area.slug}/${dish.slug}`,
+      title: `${dish.name} Near ${area.name}: Singapore Dish Discovery | Hungry`,
+      description: page.summary,
+      priority: 0.68,
+      lastModified: SEO_LAST_UPDATED,
+      noindex: !hasIndexableDishAreaData(page),
+    };
+  }),
+  ...seoPlaces.map((place) => ({
+    path:
+      place.type === "hawker_centre"
+        ? `/hawker-centres/${place.slug}`
+        : `/malls/${place.slug}/food`,
+    title: `${place.name}: Food Discovery Context | Hungry`,
+    description: place.description,
+    priority: place.type === "hawker_centre" ? 0.72 : 0.66,
+    lastModified: SEO_LAST_UPDATED,
+    noindex: !hasIndexablePlaceData(place),
+  })),
+  ...seoGuides.map((guide) => ({
+    path: guidePath(guide),
+    title: `${guide.title} | Hungry`,
+    description: guide.description,
+    priority: guide.guideType === "tourist" ? 0.8 : 0.7,
+    lastModified: SEO_LAST_UPDATED,
+    noindex: !hasIndexableGuideData(guide),
+  })),
+] satisfies SeoRouteMetadata[];
+
+export const publicRoutes: SeoRouteMetadata[] = [...staticPublicRoutes, ...seoContentRoutes];
 
 export type PublicRoute = (typeof publicRoutes)[number];
 
@@ -90,35 +199,7 @@ export function absoluteUrl(path: string) {
 }
 
 export function createPageMetadata(route: PublicRoute): Metadata {
-  return {
-    title: {
-      absolute: route.title,
-    },
-    description: route.description,
-    alternates: {
-      canonical: route.path,
-    },
-    openGraph: {
-      type: "website",
-      locale: siteConfig.locale,
-      url: route.path,
-      siteName: siteConfig.name,
-      title: route.title,
-      description: route.description,
-      images: [
-        {
-          url: siteConfig.openGraphImage,
-          alt: "Hungry Singapore food discovery app preview",
-        },
-      ],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: route.title,
-      description: route.description,
-      images: [siteConfig.openGraphImage],
-    },
-  };
+  return createSeoMetadata(route, siteConfig);
 }
 
 export function routeMetadata(path: PublicRoute["path"]) {
@@ -131,56 +212,4 @@ export function routeMetadata(path: PublicRoute["path"]) {
   return createPageMetadata(route);
 }
 
-export const hungryJsonLd = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "Organization",
-      "@id": `${siteConfig.url}/#organization`,
-      name: siteConfig.name,
-      url: siteConfig.url,
-      email: siteConfig.contactEmail,
-      description: siteConfig.description,
-      areaServed: {
-        "@type": "Country",
-        name: "Singapore",
-      },
-      knowsAbout: [
-        "Singapore food discovery",
-        "hawker stalls",
-        "food courts",
-        "restaurant discovery",
-        "dish-first food search",
-        "merchant menu visibility",
-      ],
-    },
-    {
-      "@type": "WebSite",
-      "@id": `${siteConfig.url}/#website`,
-      name: siteConfig.name,
-      url: siteConfig.url,
-      inLanguage: siteConfig.language,
-      description: siteConfig.description,
-      publisher: {
-        "@id": `${siteConfig.url}/#organization`,
-      },
-    },
-    {
-      "@type": "MobileApplication",
-      "@id": `${siteConfig.url}/#mobile-application`,
-      name: siteConfig.name,
-      url: siteConfig.url,
-      applicationCategory: "Food & Drink",
-      operatingSystem: "iOS, Android",
-      description:
-        "A coming-soon Singapore food discovery app built around dishes, cravings, merchant profiles, menus, photos, reviews, and local food context.",
-      publisher: {
-        "@id": `${siteConfig.url}/#organization`,
-      },
-      areaServed: {
-        "@type": "Country",
-        name: "Singapore",
-      },
-    },
-  ],
-} as const;
+export const hungryJsonLd = buildGlobalGraph(siteConfig);

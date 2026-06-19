@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { clientRequestKey, jsonError, requireRateLimit } from "@/lib/security/api";
+import { clientRequestKey, jsonError, requireJsonRequest, requireRateLimit } from "@/lib/security/api";
 import { getStringField, readJsonObject, validationErrorResponse } from "@/lib/security/validation";
 import { submitWebsiteWaitlist, type WaitlistAudience } from "@/lib/supabase/websiteData";
 
@@ -11,6 +11,9 @@ function normalizeAudience(value: unknown): WaitlistAudience {
 }
 
 export async function POST(request: NextRequest) {
+  const blockedContentType = requireJsonRequest(request);
+  if (blockedContentType) return blockedContentType;
+
   const rateLimited = await requireRateLimit(request, {
     key: clientRequestKey(request, "waitlist"),
     limit: 8,
@@ -20,15 +23,31 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await readJsonObject(request);
+    const audience = normalizeAudience(body.audience ?? body.joining_as);
+    const businessName =
+      getStringField(body, "businessName", { max: 160 }) ??
+      getStringField(body, "business_name", { max: 160 });
+    const establishmentType =
+      getStringField(body, "establishmentType", { max: 80 }) ??
+      getStringField(body, "establishment_type", { max: 80 });
+
+    if (audience === "merchant" && !businessName) {
+      return jsonError("Enter your business name.", 400);
+    }
+
+    if (audience === "merchant" && !establishmentType) {
+      return jsonError("Select your food business type.", 400);
+    }
+
+    if (audience === "merchant" && establishmentType?.toLowerCase() === "other") {
+      return jsonError("Specify your food business type.", 400);
+    }
+
     const result = await submitWebsiteWaitlist({
-      audience: normalizeAudience(body.audience ?? body.joining_as),
-      businessName:
-        getStringField(body, "businessName", { max: 160 }) ??
-        getStringField(body, "business_name", { max: 160 }),
+      audience,
+      businessName,
       email: getStringField(body, "email", { max: 254, required: true, transform: "lower-trim" }) ?? "",
-      establishmentType:
-        getStringField(body, "establishmentType", { max: 80 }) ??
-        getStringField(body, "establishment_type", { max: 80 }),
+      establishmentType,
       metadata: {
         referrer: request.headers.get("referer") ?? undefined,
         userAgent: request.headers.get("user-agent") ?? undefined,

@@ -37,9 +37,45 @@
   line-height: 1.55;
 }
 
+.storyPlaceholder {
+  width: 100%;
+  min-height: 56vh;
+}
+
+.staticPhoneImage {
+  border: 8px solid var(--color-text-primary);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-lg);
+  object-fit: cover;
+  object-position: top center;
+}
+
 @media (min-width: 980px) {
   .header {
     margin-left: calc(42% + var(--space-6));
+    margin-bottom: var(--space-20);
     max-width: min(52rem, calc(58% - var(--space-6)));
+  }
+}
+
+@media (max-width: 760px) {
+  .section {
+    padding: var(--space-12) 0 var(--space-10);
+  }
+
+  .header {
+    margin-bottom: var(--space-8);
+  }
+
+  .eyebrow {
+    margin-bottom: var(--space-3);
+  }
+
+  .header h2 {
+    margin-bottom: var(--space-4);
+  }
+
+  .storyPlaceholder {
+    min-height: 42vh;
   }
 }

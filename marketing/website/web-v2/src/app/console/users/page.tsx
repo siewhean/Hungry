@@ -11,8 +11,12 @@ import {
   ShieldAlert,
   CheckCircle,
   Download,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from "lucide-react";
-import { readConsolePrototypeStorage, writeConsolePrototypeStorage } from "@/lib/console/prototypeStorage";
+import { redactEmail } from "@/lib/console/redaction";
+import { getConsolePrototypeFallback, readConsolePrototypeStorage, writeConsolePrototypeStorage } from "@/lib/console/prototypeStorage";
 import styles from "../console.module.css";
 
 type AccountStatus = "active" | "warned" | "suspended" | "deleted";
@@ -57,14 +61,46 @@ type TabFilter = "all" | "active" | "warned" | "suspended";
 
 export default function UsersPage() {
   const [users, setUsers] = React.useState<AppUser[]>(() => {
-    return readConsolePrototypeStorage("console_users", initialUsers);
+    return readConsolePrototypeStorage("console_users", getConsolePrototypeFallback(initialUsers, []));
   });
+  const userActionsEnabled = getConsolePrototypeFallback(true, false);
+  const userSourceLabel = getConsolePrototypeFallback("Prototype dataset", "Live user data unavailable");
 
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [suspendTarget, setSuspendTarget] = useState<AppUser | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+
+  // Sorting and Filtering states
+  const [platformFilter, setPlatformFilter] = useState("all");
+  const [sortField, setSortField] = useState("joinedDate");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const renderSortHeader = (label: string, field: string) => {
+    const isActive = sortField === field;
+    return (
+      <th onClick={() => handleSort(field)} style={{ cursor: "pointer", userSelect: "none" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span>{label}</span>
+          {isActive ? (
+            sortDirection === "asc" ? <ArrowUp size={12} /> : <ArrowDown size={12} />
+          ) : (
+            <ArrowUpDown size={12} style={{ opacity: 0.3 }} />
+          )}
+        </div>
+      </th>
+    );
+  };
 
   // Expanded Row Editor states
   const [editFoodCred, setEditFoodCred] = useState<number>(0);
@@ -93,6 +129,10 @@ export default function UsersPage() {
   };
 
   const handleUpdateUserMetrics = (userId: string) => {
+    if (!userActionsEnabled) {
+      showToast("User management backend is not connected in production.", "error");
+      return;
+    }
     const updated = users.map((u) => {
       if (u.id === userId) {
         return {
@@ -110,6 +150,10 @@ export default function UsersPage() {
 
   const handleWarn = (id: string, name: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!userActionsEnabled) {
+      showToast("User management backend is not connected in production.", "error");
+      return;
+    }
     const updated = users.map((u) => (u.id === id ? { ...u, accountStatus: "warned" as AccountStatus } : u));
     saveUsers(updated);
     showToast(`Warning issued to ${name}`, "info");
@@ -117,6 +161,10 @@ export default function UsersPage() {
 
   const handleUnsuspend = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!userActionsEnabled) {
+      showToast("User management backend is not connected in production.", "error");
+      return;
+    }
     const updated = users.map((u) => (u.id === id ? { ...u, accountStatus: "active" as AccountStatus } : u));
     saveUsers(updated);
     showToast("Account activated successfully", "success");
@@ -124,6 +172,11 @@ export default function UsersPage() {
 
   const confirmSuspend = () => {
     if (!suspendTarget) return;
+    if (!userActionsEnabled) {
+      showToast("User management backend is not connected in production.", "error");
+      setSuspendTarget(null);
+      return;
+    }
     const updated = users.map((u) => (u.id === suspendTarget.id ? { ...u, accountStatus: "suspended" as AccountStatus } : u));
     saveUsers(updated);
     showToast(`${suspendTarget.displayName} has been suspended`, "error");
@@ -131,21 +184,54 @@ export default function UsersPage() {
   };
 
   const handleExport = () => {
-    showToast("Exporting user list...", "info");
+    showToast(
+      userActionsEnabled ? "Exporting user list..." : "User export backend is not connected in production.",
+      userActionsEnabled ? "info" : "error",
+    );
   };
 
-  const filtered = users.filter((u) => {
-    const matchSearch =
-      u.displayName.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase()) ||
-      u.id.toLowerCase().includes(search.toLowerCase());
-    const matchTab = activeTab === "all" || u.accountStatus === activeTab;
-    return matchSearch && matchTab;
-  });
+  const filtered = React.useMemo(() => {
+    const list = users.filter((u) => {
+      const matchSearch =
+        u.displayName.toLowerCase().includes(search.toLowerCase()) ||
+        u.id.toLowerCase().includes(search.toLowerCase());
+      const matchTab = activeTab === "all" || u.accountStatus === activeTab;
+      const matchPlatform = platformFilter === "all" || u.platform === platformFilter;
+      return matchSearch && matchTab && matchPlatform;
+    });
+
+    list.sort((a, b) => {
+      const fieldA = a[sortField as keyof AppUser] ?? "";
+      const fieldB = b[sortField as keyof AppUser] ?? "";
+
+      if (sortField === "joinedDate") {
+        const parseDate = (dStr: string) => {
+          const parts = dStr.split(" ");
+          const months = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+          if (parts.length === 2) {
+            const m = months[parts[0] as keyof typeof months] ?? 0;
+            const y = parseInt(parts[1]);
+            return new Date(y, m, 1).getTime();
+          }
+          return 0;
+        };
+        const timeA = parseDate(fieldA as string);
+        const timeB = parseDate(fieldB as string);
+        return sortDirection === "asc" ? timeA - timeB : timeB - timeA;
+      }
+
+      if (fieldA < fieldB) return sortDirection === "asc" ? -1 : 1;
+      if (fieldA > fieldB) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return list;
+  }, [users, search, activeTab, platformFilter, sortField, sortDirection]);
 
   const activeCount = users.filter((u) => u.accountStatus === "active").length;
   const warnedCount = users.filter((u) => u.accountStatus === "warned").length;
   const suspendedCount = users.filter((u) => u.accountStatus === "suspended").length;
+  const activeRate = users.length > 0 ? Math.round((activeCount / users.length) * 100) : 0;
 
   const tabs: { key: TabFilter; label: string; count: number }[] = [
     { key: "all", label: "All", count: users.length },
@@ -172,12 +258,14 @@ export default function UsersPage() {
         <div className={styles.kpiCard}>
           <span className={styles.kpiLabel}>Total Users</span>
           <span className={styles.kpiValue}>{users.length}</span>
-          <span className={`${styles.kpiTrend} ${styles.trendNeutral}`}>Mock dataset</span>
+          <span className={`${styles.kpiTrend} ${styles.trendNeutral}`}>{userSourceLabel}</span>
         </div>
         <div className={styles.kpiCard}>
           <span className={styles.kpiLabel}>Active</span>
           <span className={styles.kpiValue} style={{ color: "#059669" }}>{activeCount}</span>
-          <span className={`${styles.kpiTrend} ${styles.trendUp}`}>{Math.round((activeCount / users.length) * 100)}% healthy</span>
+          <span className={`${styles.kpiTrend} ${users.length > 0 ? styles.trendUp : styles.trendNeutral}`}>
+            {users.length > 0 ? `${activeRate}% healthy` : "Awaiting live user data"}
+          </span>
         </div>
         <div className={styles.kpiCard}>
           <span className={styles.kpiLabel}>Warned</span>
@@ -212,12 +300,21 @@ export default function UsersPage() {
             <Search size={16} className={styles.searchIcon} />
             <input
               type="text"
-              placeholder="Search by username, email, or ID..."
+              placeholder="Search by username or ID..."
               className={styles.filterSearchInput}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+          <select
+            className={styles.filterSelect}
+            value={platformFilter}
+            onChange={(e) => setPlatformFilter(e.target.value)}
+          >
+            <option value="all">All Platforms</option>
+            <option value="iOS">iOS</option>
+            <option value="Android">Android</option>
+          </select>
           <span style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)", marginLeft: "auto" }}>
             {filtered.length} result{filtered.length !== 1 ? "s" : ""}
           </span>
@@ -230,13 +327,13 @@ export default function UsersPage() {
           <table className={styles.queueTable}>
             <thead>
               <tr>
-                <th>User</th>
-                <th>Platform</th>
-                <th>Reviews</th>
-                <th>Posts</th>
-                <th>Reports Against</th>
-                <th>Status</th>
-                <th>Last Active</th>
+                {renderSortHeader("User", "displayName")}
+                {renderSortHeader("Platform", "platform")}
+                {renderSortHeader("Reviews", "reviewCount")}
+                {renderSortHeader("Posts", "postCount")}
+                {renderSortHeader("Reports Against", "reportsAgainst")}
+                {renderSortHeader("Status", "accountStatus")}
+                {renderSortHeader("Last Active", "lastActive")}
                 <th>Actions</th>
               </tr>
             </thead>
@@ -257,7 +354,7 @@ export default function UsersPage() {
                           <div>
                             <div style={{ fontWeight: "700", fontSize: "var(--font-size-sm)" }}>{user.displayName}</div>
                             <div style={{ fontSize: "var(--font-size-xs)", color: "var(--color-text-muted)", fontFamily: "var(--font-mono)" }}>
-                              {user.id} · {user.email}
+                              {user.id} · <span title="Email redacted by default for privacy.">{redactEmail(user.email)}</span>
                             </div>
                           </div>
                         </div>
@@ -296,7 +393,7 @@ export default function UsersPage() {
                       </td>
                       <td style={{ color: "var(--color-text-muted)", fontSize: "var(--font-size-xs)" }}>{user.lastActive}</td>
                       <td>
-                        <div style={{ display: "flex", gap: "var(--space-2)" }}>
+                        <div style={{ display: "flex", gap: "var(--space-2)", width: "max-content" }}>
                           {user.accountStatus !== "warned" && user.accountStatus !== "suspended" && (
                             <button
                               className={styles.rowAction}
@@ -316,13 +413,13 @@ export default function UsersPage() {
                               <CheckCircle size={13} />
                             </button>
                           ) : (
-                            <button
-                              title="Suspend account"
-                              className={styles.rowActionDanger}
-                              onClick={(e) => { e.stopPropagation(); setSuspendTarget(user); }}
-                            >
-                              <Ban size={13} />
-                            </button>
+                             <button
+                               title="Suspend account"
+                               className={`${styles.rowAction} ${styles.rowActionDanger}`}
+                               onClick={(e) => { e.stopPropagation(); setSuspendTarget(user); }}
+                             >
+                               <Ban size={13} />
+                             </button>
                           )}
                         </div>
                       </td>
@@ -363,22 +460,22 @@ export default function UsersPage() {
                                 <div>
                                   <label style={{ display: "block", fontSize: "10px", color: "var(--color-text-muted)", fontWeight: "bold", marginBottom: "4px" }}>FoodCred Balance</label>
                                   <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                                    <input 
+                                    <input
                                       type="number"
                                       value={editFoodCred}
                                       onChange={(e) => setEditFoodCred(parseInt(e.target.value) || 0)}
                                       style={{ width: "90px", padding: "4px 8px", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)", background: "var(--color-bg)", fontSize: "var(--font-size-sm)" }}
                                     />
-                                    <button 
-                                      className={styles.rowAction} 
-                                      style={{ padding: "4px 8px" }} 
+                                    <button
+                                      className={styles.rowAction}
+                                      style={{ padding: "4px 8px" }}
                                       onClick={() => setEditFoodCred(prev => prev + 50)}
                                     >
                                       +50
                                     </button>
-                                    <button 
-                                      className={styles.rowAction} 
-                                      style={{ padding: "4px 8px" }} 
+                                    <button
+                                      className={styles.rowAction}
+                                      style={{ padding: "4px 8px" }}
                                       onClick={() => setEditFoodCred(prev => Math.max(0, prev - 50))}
                                     >
                                       -50
@@ -400,7 +497,7 @@ export default function UsersPage() {
                                 <div style={{ display: "flex", gap: "10px" }}>
                                   <div style={{ flex: 1 }}>
                                     <label style={{ display: "block", fontSize: "9px", color: "var(--color-text-muted)", marginBottom: "2px" }}>Reports Received</label>
-                                    <input 
+                                    <input
                                       type="number"
                                       value={editReportsAgainst}
                                       onChange={(e) => setEditReportsAgainst(parseInt(e.target.value) || 0)}
@@ -409,7 +506,7 @@ export default function UsersPage() {
                                   </div>
                                   <div style={{ flex: 1 }}>
                                     <label style={{ display: "block", fontSize: "9px", color: "var(--color-text-muted)", marginBottom: "2px" }}>Reports Made</label>
-                                    <input 
+                                    <input
                                       type="number"
                                       value={editReportsMade}
                                       onChange={(e) => setEditReportsMade(parseInt(e.target.value) || 0)}
@@ -417,14 +514,14 @@ export default function UsersPage() {
                                     />
                                   </div>
                                 </div>
-                                
-                                <button 
-                                  className={styles.rowActionPrimary}
-                                  style={{ padding: "6px 12px", width: "100%", fontSize: "var(--font-size-xs)", fontWeight: "700", marginTop: "4px" }}
-                                  onClick={() => handleUpdateUserMetrics(user.id)}
-                                >
-                                  Save User Metrics & FoodCred
-                                </button>
+
+                                <button
+                                   className={`${styles.rowAction} ${styles.rowActionPrimary}`}
+                                   style={{ padding: "6px 12px", width: "100%", fontSize: "var(--font-size-xs)", fontWeight: "700", marginTop: "4px" }}
+                                   onClick={() => handleUpdateUserMetrics(user.id)}
+                                 >
+                                   Save User Metrics & FoodCred
+                                 </button>
                               </div>
                             </div>
 
@@ -491,7 +588,12 @@ export default function UsersPage() {
       {/* SUSPEND CONFIRMATION MODAL */}
       {suspendTarget && (
         <div className={styles.modalOverlay}>
-          <div className={styles.modalCard}>
+          <div
+            className={styles.modalCard}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Suspend user account"
+          >
             <div className={styles.modalHeader}>
               <h3>Suspend Account?</h3>
             </div>

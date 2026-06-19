@@ -70,19 +70,12 @@ export default function ForMerchants() {
               {merchantPage.hero.cta.label}
               <ArrowRight aria-hidden size={20} />
             </Link>
-            <Link
-              href={merchantPage.hero.secondaryCta.href}
-              className={styles.secondaryCtaLink}
-              prefetch
-            >
-              {merchantPage.hero.secondaryCta.label}
-            </Link>
           </div>
         </Reveal>
       </section>
 
       {/* 2. Spacing / Benefits Section */}
-      <section className={styles.benefits} id="merchant-tools">
+      <section className={styles.benefits} id="merchant-advantage">
         <div className="container-wide">
           <Reveal className={styles.sectionHeader}>
             <span className={styles.eyebrow}>Merchant advantage</span>

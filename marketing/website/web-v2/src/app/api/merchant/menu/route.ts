@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { writeMerchantAuditLog } from "@/lib/merchantPortal/audit";
 import { clientRequestKey, jsonError, requireRateLimit } from "@/lib/security/api";
 import { getBooleanField, getStringField, readJsonObject, validationErrorResponse } from "@/lib/security/validation";
 import { supabaseFetch } from "@/lib/supabase/server";
@@ -50,6 +51,7 @@ export async function POST(request: NextRequest) {
     if (!overview.outlet.venueId || !overview.outlet.buildingId) {
       throw new Error("Merchant outlet is not linked to an app venue/building.");
     }
+    const dishId = `web-${crypto.randomUUID()}`;
 
     await supabaseFetch("rest/v1/dishes", {
       accessToken,
@@ -57,7 +59,7 @@ export async function POST(request: NextRequest) {
         availability_flags: flagsFromBody(body),
         building_id: overview.outlet.buildingId,
         description: getStringField(body, "description", { max: 1_200 }) ?? "",
-        id: `web-${overview.outlet.id}-${Date.now()}`,
+        id: dishId,
         image_url: getStringField(body, "imageUrl", { max: 2_048 }) ?? null,
         name,
         price: priceToNumber(body.price),
@@ -67,6 +69,14 @@ export async function POST(request: NextRequest) {
       },
       method: "POST",
       prefer: "return=minimal",
+    });
+
+    await writeMerchantAuditLog({
+      action: "menu_dish_created",
+      metadata: { hasImage: Boolean(getStringField(body, "imageUrl", { max: 2_048 })), name },
+      overview,
+      targetId: dishId,
+      targetType: "dish",
     });
 
     return NextResponse.json(await getMerchantPortalOverview(accessToken), { status: 201 });

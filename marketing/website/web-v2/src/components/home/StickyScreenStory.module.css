@@ -45,31 +45,16 @@
 
 .screenLayer > figure {
   height: 100%;
-  max-width: 100%;
+  width: auto;
+  max-width: min(22rem, 100%);
+  max-height: 100%;
   display: flex;
   justify-content: center;
 }
 
 .phonePreviewFrame {
   position: relative;
-  aspect-ratio: 71.5 / 149.6;
-  width: min(22rem, calc((100svh - var(--space-18)) * 0.44), 100%);
-  max-height: 82svh;
-}
-
-.phonePreviewFrame figcaption {
-  position: absolute;
-  left: var(--space-4);
-  bottom: var(--space-4);
-  z-index: 4;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-full);
-  background: var(--color-ink-deep);
-  color: var(--color-white);
-  font-family: var(--font-mono);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-  box-shadow: var(--shadow-sm);
+  aspect-ratio: 393 / 852;
 }
 
 .active {
@@ -124,16 +109,21 @@
   padding: var(--space-8) 0 var(--space-8) var(--space-12);
   color: color-mix(in srgb, var(--color-text-secondary) 35%, var(--color-text-muted));
   transition:
-    border-color 160ms var(--ease-out),
-    opacity 160ms var(--ease-out),
-    color 160ms var(--ease-out);
-  opacity: 0.18;
+    border-color 180ms var(--ease-out),
+    opacity 220ms var(--ease-out),
+    transform 260ms var(--ease-out),
+    color 180ms var(--ease-out);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px);
 }
 
 .stepActive {
   border-color: var(--color-primary);
   opacity: 1;
   color: var(--color-text-primary);
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .eyebrow {
@@ -185,6 +175,7 @@
   .copyRail {
     grid-column: 2;
     padding-top: 0;
+    transform: translateY(calc(-1 * clamp(3rem, 6svh, 5rem)));
   }
 
   .step {
@@ -207,6 +198,7 @@
 
   .deviceDeck {
     width: min(100%, 24rem);
+    aspect-ratio: 393 / 852;
     margin: 0 auto;
     border-radius: var(--radius-xl);
   }
@@ -246,9 +238,11 @@
   }
 
   .deviceDeck {
-    width: min(100%, 21rem);
-    aspect-ratio: 71.5 / 149.6;
-    height: min(70svh, 640px);
+    height: 100%;
+    max-height: min(70svh, 640px);
+    width: auto;
+    max-width: min(21rem, 100%);
+    aspect-ratio: 393 / 852;
     min-height: auto;
     border-radius: var(--radius-xl);
     display: flex;
@@ -257,24 +251,28 @@
   }
 
   .phonePreviewFrame {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
+    max-width: min(21rem, 100%);
   }
 
   .screenLayer > figure {
-    width: 100%;
+    width: auto;
   }
 
   .copyRail {
     grid-column: 2;
     align-self: stretch;
+    padding-top: clamp(9rem, 23svh, 13rem);
     padding-bottom: 14vh;
   }
 
   .step {
     min-height: min(480px, max(340px, calc(62svh - var(--header-height))));
     padding: var(--space-8) 0 var(--space-8) clamp(var(--space-10), 5vw, var(--space-16));
+    transform: translateY(0);
+  }
+
+  .stepActive {
+    transform: translateY(0);
   }
 }
 

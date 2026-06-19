@@ -14,6 +14,7 @@ export function HungryWordmark({ className = "" }: HungryWordmarkProps) {
       alt="Hungry"
       className={`object-contain ${className}`}
       height={HUNGRY_LOGO_HEIGHT}
+      loading="eager"
       priority={false}
       style={{ width: `${HUNGRY_LOGO_WIDTH}px`, height: `${HUNGRY_LOGO_HEIGHT}px` }}
       src={logoPath}

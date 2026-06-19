@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { writeMerchantAuditLog } from "@/lib/merchantPortal/audit";
 import { clientRequestKey, jsonError, requireRateLimit } from "@/lib/security/api";
 import { getStringField, readJsonObject, validationErrorResponse } from "@/lib/security/validation";
 import { supabaseFetch } from "@/lib/supabase/server";
@@ -89,6 +90,17 @@ export async function PATCH(request: NextRequest) {
         prefer: "return=minimal",
       });
     }
+
+    await writeMerchantAuditLog({
+      action: "merchant_profile_updated",
+      metadata: {
+        outletFields: Object.keys(outletPayload).sort(),
+        venueFields: Object.keys(venuePayload).sort(),
+      },
+      overview,
+      targetId: overview.outlet.id,
+      targetType: "merchant_outlet",
+    });
 
     return NextResponse.json(await getMerchantPortalOverview(accessToken));
   } catch (error) {
