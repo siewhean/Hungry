@@ -1,8 +1,8 @@
 # 🔥 Hungry — State of the Union: Architectural Audit Report
 
-> **Date:** 2026-04-13  
-> **Auditor:** Chief of Staff / Principal Technical Advisor  
-> **Scope:** End-to-end codebase audit, backlog hygiene, production transition strategy  
+> **Date:** 2026-04-13
+> **Auditor:** Chief of Staff / Principal Technical Advisor
+> **Scope:** End-to-end codebase audit, backlog hygiene, production transition strategy
 > **Verdict:** ⛔ **NOT PRODUCTION-READY** — Critical regressions, architectural leaks, and unfinished features
 
 ---
@@ -254,7 +254,7 @@ Phase 1: SDK Installation + Init
 2. Create: `src/lib/analytics/posthogSink.ts`
    - Initialize PostHog client with project API key from env
    - Implement sink that maps AnalyticsEventRecord → PostHog.capture()
-3. Wire: In `App.tsx` bootstrap, call `setAnalyticsSink(posthogSink)` 
+3. Wire: In `App.tsx` bootstrap, call `setAnalyticsSink(posthogSink)`
    to replace the mock console sink. Single line change.
 4. Env: Add `EXPO_PUBLIC_POSTHOG_API_KEY` and `EXPO_PUBLIC_POSTHOG_HOST` to `.env`
 
@@ -344,7 +344,7 @@ Step 7: Media Pipeline
 - Signed upload URLs from server (never direct client upload)
 ```
 
-**Database Already Designed:** The [backend-architecture.md](file:///Users/Siew%20Hean/Documents/GitHub/Hungry/.claude/worktrees/recursing-moser/tasks/backend-architecture.md) contains a production-grade PostgreSQL schema with 30+ tables, PostGIS indexing, pgvector HNSW indexes for taste matching, full commerce flow, and messaging support. This is ready to deploy.
+**Database Already Designed:** The [backend-architecture.md](file:///Users/Siew%20Hean/Documents/GitHub/Hungry/.claude/worktrees/recursing-moser/tasks/Roadmap/Database/backend-architecture.md) contains a production-grade PostgreSQL schema with 30+ tables, PostGIS indexing, pgvector HNSW indexes for taste matching, full commerce flow, and messaging support. This is ready to deploy.
 
 ---
 
@@ -388,7 +388,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npx expo-doctor --non-interactive
-  
+
   build-preview:
     needs: quality
     if: github.ref == 'refs/heads/main'

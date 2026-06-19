@@ -702,8 +702,8 @@ create policy "anon_read_areas" on areas for select to anon, authenticated using
 | 17 | Performance indexes | 5 |
 | 18 | `package.json` new scripts | 1 |
 | 19 | `.env.example` new keys | 1 |
-| 20 | `tasks/Roadmap/database-excel-import-report.md` | 1 |
-| 21 | `tasks/Roadmap/database-query-performance-report.md` | 5 |
+| 20 | `tasks/Roadmap/Database/database-excel-import-report.md` | 1 |
+| 21 | `tasks/Roadmap/Database/database-query-performance-report.md` | 5 |
 
 ---
 

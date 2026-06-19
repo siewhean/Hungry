@@ -1,7 +1,7 @@
 # Full Audit V1 PR Split Manifest
 
-Date: 2026-05-24  
-Branch: `frontend-design-overhaul`  
+Date: 2026-05-24
+Branch: `frontend-design-overhaul`
 Source: `git status --porcelain=v1 -z` on the current checkout
 
 ## Current Dirty Tree Shape
@@ -41,7 +41,7 @@ Owns:
 - `scripts/run-trufflehog.mjs`
 - `scripts/supabase-neutral-audit.mjs`
 - `scripts/trufflehog-exclude-paths.txt`
-- `tasks/asset-provenance.md`
+- `tasks/release-evidence/asset-provenance.md`
 - `src/assets/discover/**`
 - `src/assets/gamification/passport/**`
 
@@ -286,9 +286,9 @@ Owns:
 - `tasks/screens.md`
 - `tasks/todo.md`
 - `tasks/lessons.md`
-- `tasks/Roadmap/claude-full-project-audit.md`
-- `tasks/Roadmap/claude-full-project-audit-implementation-status.md`
-- `tasks/Roadmap/claude-full-project-audit-pr-split-manifest.md`
+- `tasks/Roadmap/Archive/claude-full-project-audit.md`
+- `tasks/Roadmap/Archive/claude-full-project-audit-implementation-status.md`
+- `tasks/Roadmap/Archive/claude-full-project-audit-pr-split-manifest.md`
 - `tasks/Roadmap/Frontend/frontend-design-overhaul-batched-implementation-plan.md`
 
 Verify:
@@ -314,8 +314,8 @@ Owns deletions:
 
 Owns tracked secret redactions:
 - `design/archive/figma-concept/README.md`
-- `tasks/Roadmap/production-infrastructure.md`
-- `tasks/Roadmap/state_of_the_union.md`
+- `tasks/Roadmap/Scaling/production-infrastructure.md`
+- `tasks/Roadmap/Archive/state_of_the_union.md`
 
 Verify:
 - `git ls-files 'test*'`

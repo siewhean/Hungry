@@ -1,8 +1,8 @@
 # Hungry Merchant Mode Production Readiness Audit
 
-**Repository:** `siewhean/Hungry`  
-**Branch reviewed:** `frontend-design-overhaul`  
-**Audit date:** 2026-05-25  
+**Repository:** `siewhean/Hungry`
+**Branch reviewed:** `frontend-design-overhaul`
+**Audit date:** 2026-05-25
 **Audit type:** Static repository audit from GitHub branch files, service contracts, Supabase service code, migrations, and security documentation. I did not run the app, run migrations, or execute the full test suite locally in this environment.
 
 ---
@@ -311,7 +311,8 @@ Acceptance criteria:
 
 - `MERCH-P0-PROMO-01` landed the validation half of P0-4: title/description length, date parsing/order, non-negative prices, discount range and price consistency, existing-menu-item dish selection, active availability, builder error surfacing, mock/Supabase service validation, and Supabase check constraints.
 - Follow-up hardening closed the QA gaps in that validation slice: dates now reject invalid calendar rollover and unqualified datetimes, existing-menu-item targets are checked against the merchant outlet menu in mock/Supabase services and by a Supabase trigger, mock/Supabase final-price rules now agree when the original price is `0`, and Supabase partial price updates write the derived `final_price`.
-- Remaining P0-4 work is customer-visible surfacing and metrics: active promotions must render on customer stall/dish/discovery surfaces only inside their valid window, expired/scheduled promotions must hide from active customer surfaces, and promotion impressions/clicks/saves/views must write real analytics events.
+- 2026-06-07 follow-up implemented the customer-visible repo side of P0-4 for customer detail surfaces: active promotions are filtered through a shared valid-window helper, `DishDetailScreen` and `StallDetailScreen` render active promotion cards with original/final pricing, expired/scheduled/unavailable promotions are hidden, and customer promotion impression, dish-view, profile-visit, click, and save events are recorded through the merchant action analytics service. Supabase support is represented by `list_customer_active_promotions(...)` in migration `20260607120000_customer_active_promotions.sql`, and mock/Supabase services expose `discovery.listActivePromotionsForTarget(...)`.
+- Remaining P0-4 work is external/live proof and broader placement: apply the new migration to the target Supabase project, run customer-mode stall/dish smoke with real merchant promotions, verify analytics rows update live, and decide whether Discover/feed/search should carry promotional placements for MVP.
 
 ---
 

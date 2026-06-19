@@ -58,7 +58,7 @@ user_taste_vectors (pgvector)
 
 ## 2. Data Modeling & Schema
 
-### 2.1 Existing Tables (already in `tasks/backend-architecture.md`)
+### 2.1 Existing Tables (already in `tasks/Roadmap/Database/backend-architecture.md`)
 
 ```sql
 -- Already defined — do not re-create

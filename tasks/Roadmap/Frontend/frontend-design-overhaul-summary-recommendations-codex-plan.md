@@ -1,7 +1,7 @@
 # Frontend Design Overhaul — Summary, Recommendations, Batch Plan, and Codex Prompt
 
-> Branch reviewed: `frontend-design-overhaul`  
-> Latest observed compare: **43 commits ahead / 1 commit behind `main`**  
+> Branch reviewed: `frontend-design-overhaul`
+> Latest observed compare: **43 commits ahead / 1 commit behind `main`**
 > Purpose: Give Codex a clear, batch-by-batch plan to improve, split, verify, and safely merge the branch.
 
 ---
@@ -738,8 +738,8 @@ You are working on the `frontend-design-overhaul` branch of the Hungry repositor
 Your task is to implement the recommendations from the latest frontend-design-overhaul review. Treat this as a release-candidate cleanup and hardening pass, not a feature expansion pass.
 
 Start by reading:
-- `tasks/Roadmap/frontend-design-overhaul-summary-recommendations-codex-plan.md`
-- `tasks/Roadmap/frontend-design-overhaul-batched-implementation-plan.md`
+- `tasks/Roadmap/Frontend/frontend-design-overhaul-summary-recommendations-codex-plan.md`
+- `tasks/Roadmap/Frontend/frontend-design-overhaul-batched-implementation-plan.md`
 - `tasks/todo.md`
 - `src/constants/featureFlags.ts`
 - `src/app/navigation/RootNavigator.tsx`

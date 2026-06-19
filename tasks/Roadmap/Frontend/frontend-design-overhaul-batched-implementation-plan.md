@@ -1,7 +1,7 @@
 # Frontend Design Overhaul — Batched Implementation Plan for Codex
 
-> **Branch:** `frontend-design-overhaul`  
-> **Purpose:** Convert the latest app review into an actionable batch-by-batch implementation plan.  
+> **Branch:** `frontend-design-overhaul`
+> **Purpose:** Convert the latest app review into an actionable batch-by-batch implementation plan.
 > **Primary goal:** Preserve the strong design/product work while reducing merge risk, production risk, and release risk.
 
 ---
@@ -991,7 +991,7 @@ You are working on the `frontend-design-overhaul` branch of the Hungry repositor
 Your job is to turn the latest review into a safe, batch-by-batch implementation plan and execute the recommendations without adding unrelated new features.
 
 Start by reading:
-- `tasks/Roadmap/frontend-design-overhaul-batched-implementation-plan.md`
+- `tasks/Roadmap/Frontend/frontend-design-overhaul-batched-implementation-plan.md`
 - `tasks/todo.md`
 - `src/constants/featureFlags.ts`
 - `src/app/navigation/RootNavigator.tsx`

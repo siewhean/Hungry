@@ -41,8 +41,8 @@ The backlog (`tasks/todo.md`) is in reasonable shape for sprint work but missing
 
 | File | Reason |
 |------|--------|
-| `tasks/Roadmap/mvp_audit_and_v1_roadmap.md` | Superseded by v2 |
-| `tasks/Roadmap/mvp_audit_and_v2_roadmap.md` | Superseded by state-of-union + active sprint plans |
+| `tasks/Roadmap/Archive/mvp_audit_and_v1_roadmap.md` | Superseded by v2 |
+| `tasks/Roadmap/Archive/mvp_audit_and_v2_roadmap.md` | Superseded by state-of-union + active sprint plans |
 
 **Empty directories to remove:**
 
@@ -99,7 +99,7 @@ The `data/` folder contains a `singapore_food_businesses_canonical.csv` at ~160 
 - Three dead screen files in `src/app/screens/discover/` reduce navigability for AI agents doing navigation or screen audits
 - `data/` folder has a 160 MB CSV; inflates clone times
 - `docs/audit/` and `docs/handoff/` appear empty; either populate or remove
-- `tasks/Roadmap/mvp_audit_and_v1_roadmap.md` and `mvp_audit_and_v2_roadmap.md` are historical artifacts creating noise when AI agents scan the Roadmap folder
+- `tasks/Roadmap/Archive/mvp_audit_and_v1_roadmap.md` and `mvp_audit_and_v2_roadmap.md` are historical artifacts creating noise when AI agents scan the Roadmap folder
 
 **AI agent digestibility rating: 7 / 10.** Main issues are the dead screens and absent linting config. Everything else is well-structured.
 
@@ -244,8 +244,8 @@ Four new lessons have been appended to capture recurring patterns not yet record
 | Document | Purpose |
 |----------|---------|
 | `tasks/Roadmap/backend-migration-plan.md` | Sprint 5 Supabase DDL, auth, RLS, media pipeline, testing plan |
-| `tasks/Roadmap/production-infrastructure.md` | Env strategy, CI/CD, Sentry, PostHog, App Store checklist |
-| `tasks/Roadmap/AI Food Recommendation Engine Design.md` | Taste vector schema, recommendation algorithm, Edge Function API |
+| `tasks/Roadmap/Scaling/production-infrastructure.md` | Env strategy, CI/CD, Sentry, PostHog, App Store checklist |
+| `tasks/Roadmap/AI/AI Food Recommendation Engine Design.md` | Taste vector schema, recommendation algorithm, Edge Function API |
 | `tasks/todo.md` | Live backlog — source of truth for all sprint work |
 | `tasks/lessons.md` | Correction registry — read at session start |
 | `tasks/environment.md` | Stack versions, path aliases, commands |

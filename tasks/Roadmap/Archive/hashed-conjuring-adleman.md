@@ -53,7 +53,7 @@ Do not reopen Sprint 7 carryover blocks in planning docs. Keep Sprint 7 represen
 
 | File | Change |
 |------|--------|
-| `tasks/Roadmap/hashed-conjuring-adleman.md` | Restore full planning context and update Sprint 7 status to closed |
+| `tasks/Roadmap/Archive/hashed-conjuring-adleman.md` | Restore full planning context and update Sprint 7 status to closed |
 | `tasks/Roadmap/war-room-report-2026-04-16.md` | Add Sprint 7 supersession note and close stale P0 items |
 
 ## Reusable Code Already in the Tree
