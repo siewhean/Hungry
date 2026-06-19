@@ -1,6 +1,13 @@
-import { getDataRepository } from "@/lib/services/serviceProvider";
+import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import type { Bite, DataRepository } from "@/lib/services/types";
-import type { DishDetail, StallPost } from "@/types/domain";
+import type {
+  DietaryFlag,
+  DishDetail,
+  SearchCategory,
+  StallPost,
+  TasteVector,
+} from "@/types/domain";
 
 export type DiscoverCollection =
   | "quickBites"
@@ -22,6 +29,22 @@ export const DISCOVER_CUISINE_FILTERS = [
   "Spicy",
   "Dessert",
 ];
+
+const COLLECTION_SEARCH_CATEGORIES: Record<DiscoverCollection, SearchCategory[]> = {
+  quickBites: ["local favourites"],
+  trending: ["local favourites"],
+  editorChoice: ["local favourites"],
+  budget: ["local favourites"],
+  lateNight: ["late night"],
+};
+
+const COLLECTION_SEARCH_QUERY: Record<DiscoverCollection, string> = {
+  quickBites: "",
+  trending: "",
+  editorChoice: "",
+  budget: "",
+  lateNight: "late night",
+};
 
 function slugifyId(value: string) {
   return value
@@ -99,6 +122,39 @@ export function getDiscoverBites(repository: DataRepository = getDataRepository(
   return listRepositoryDishes(repository).map((dish, index) =>
     dishToBite(dish, findPostForDish(posts, dish), index),
   );
+}
+
+export async function getDiscoverBitesFromSearch(
+  collection: DiscoverCollection,
+  options: {
+    latitude?: number;
+    longitude?: number;
+    radiusMeters?: number;
+    tasteVector?: TasteVector;
+    dietaryFlags?: DietaryFlag[];
+  } = {},
+): Promise<Bite[]> {
+  const tasteVector = options.tasteVector ?? NEUTRAL_TASTE_VECTOR;
+  const maxPrice = collection === "budget" ? 8 : undefined;
+  const results = await getHungryService().discovery.searchDishes(
+    {
+      query: COLLECTION_SEARCH_QUERY[collection],
+      categories: COLLECTION_SEARCH_CATEGORIES[collection],
+      dietaryFlags: options.dietaryFlags ?? [],
+      tasteValues: tasteVector,
+      radius: options.radiusMeters ?? 3000,
+      latitude: options.latitude,
+      longitude: options.longitude,
+      maxPrice,
+      openOnly: collection === "lateNight" ? false : undefined,
+    },
+    tasteVector,
+  );
+
+  return results
+    .map((result) => result.dish)
+    .filter((dish) => (maxPrice ? dish.price <= maxPrice : true))
+    .map((dish, index) => dishToBite(dish, undefined, index));
 }
 
 export function syncBiteWithDish(

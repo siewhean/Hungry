@@ -22,6 +22,7 @@ import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { REVIEW_TEXT_MAX_LENGTH } from "@/lib/security/inputSanitization";
@@ -33,6 +34,9 @@ export function ReviewScreen({ navigation, route }: Props) {
   const repository = getDataRepository();
   const { palette, radii, spacing, shadows } = useHungryTheme();
   const rootNavigation = navigation.getParent()?.getParent();
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isUserMode = !isMerchantMode && !isDeveloperMode;
 
   // Store state
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -262,14 +266,16 @@ export function ReviewScreen({ navigation, route }: Props) {
               <StarRating value={draft.rating} onChange={actions.setRating} />
             </View>
 
-            <View style={{ gap: spacing[3] }}>
-              <AppText variant="h3">Taste Tags</AppText>
-              <ChipGroup
-                options={REVIEW_TAGS.map((tag) => ({ id: tag, label: tag }))}
-                selectedIds={draft.selectedTags}
-                onSelect={actions.toggleTag}
-              />
-            </View>
+            {!isUserMode && (
+              <View style={{ gap: spacing[3] }}>
+                <AppText variant="h3">Taste Tags</AppText>
+                <ChipGroup
+                  options={REVIEW_TAGS.map((tag) => ({ id: tag, label: tag }))}
+                  selectedIds={draft.selectedTags}
+                  onSelect={actions.toggleTag}
+                />
+              </View>
+            )}
 
             <View style={{ gap: spacing[3] }}>
               <AppText variant="h3">Recommendation</AppText>

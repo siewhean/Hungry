@@ -32,7 +32,9 @@ test("stall detail V2 handles missing data and uses real venue/dish values", () 
     legacyStall,
     /const isVenueOpen = isVenueOpenFromHours\(venue\.operatingHours, venue\.isOpen\)/,
   );
-  assert.match(legacyStall, /const operatingHoursLabel = venue\.operatingHours/);
+  assert.match(legacyStall, /formatWeeklyOperatingHours\(venue\.operatingHours\)/);
+  assert.match(legacyStall, /weeklyOperatingHours\.map/);
+  assert.doesNotMatch(legacyStall, /venue\.operatingHours\.split\(" – "\)/);
   assert.doesNotMatch(legacyStall, /Open Now/);
   assert.doesNotMatch(legacyStall, /Check Map/);
 });

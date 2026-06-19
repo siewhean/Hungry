@@ -31,13 +31,17 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
-import { useSocialStore, type InteractionState } from "@/store/useSocialStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSocialStore, type InteractionState } from "@/store/useSocialStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "./ReviewShareSheet";
-import { listReviewFeedItems, type ReviewFeedItem } from "@/features/review/reviewFeed";
+import {
+  listReviewFeedItems,
+  makeReviewInteractionId,
+  type ReviewFeedItem,
+} from "@/features/review/reviewFeed";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -137,7 +141,7 @@ function ReviewCard({
   onPressDish: (dishId: string) => void;
   onSavePress: (item: ReviewFeedItem) => void;
   onSharePress: (item: ReviewFeedItem) => void;
-  onLikePress: (reviewId: string) => void;
+  onLikePress: (item: ReviewFeedItem) => void;
   reviewReactionsEnabled: boolean;
 }) {
   const { componentRadii, palette, radii, spacing, shadows, typography } = useHungryTheme();
@@ -400,15 +404,7 @@ function ReviewCard({
               </Pressable>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={
-                  interaction.saved
-                    ? reviewReactionsEnabled
-                      ? "Unsave review"
-                      : "Remove saved dish"
-                    : reviewReactionsEnabled
-                      ? "Save review"
-                      : "Save dish"
-                }
+                accessibilityLabel={interaction.saved ? "Remove saved dish" : "Save dish"}
                 onPress={() => onSavePress(item)}
                 style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
               >
@@ -437,7 +433,7 @@ function ReviewCard({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={interaction.liked ? "Unlike review" : "Like review"}
-                  onPress={() => onLikePress(item.review.id)}
+                  onPress={() => onLikePress(item)}
                   style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
                 >
                   <Heart
@@ -480,8 +476,8 @@ export function ReviewFeedScreen() {
   const toggleLike = useSocialStore((state) => state.toggleLike);
   const toggleSave = useSocialStore((state) => state.toggleSave);
   const incrementShare = useSocialStore((state) => state.incrementShare);
-  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);
+  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
@@ -554,13 +550,19 @@ export function ReviewFeedScreen() {
       dishes.map(async (dish) => {
         try {
           const reviews = await getHungryService().reviews.getReviewsForDish(dish.id);
-          return reviews.map((review) => ({
+          return reviews.map((review, reviewIndex) => ({
             review,
             dish,
             dishId: dish.id,
             dishName: dish.name,
             venueName: dish.venueName,
             venueId: dish.venueId,
+            interactionId: makeReviewInteractionId(
+              dish.id,
+              review.id,
+              reviewIndex,
+              `${dish.id}::${review.createdAt}::${review.text}`,
+            ),
           }));
         } catch {
           return [];
@@ -600,7 +602,7 @@ export function ReviewFeedScreen() {
   useEffect(() => {
     initializeInteractions(
       allReviews.map((item) => ({
-        id: item.review.id,
+        id: item.interactionId,
         commentCount: 0,
         likeCount: 0,
         savedCount: 0,
@@ -664,37 +666,32 @@ export function ReviewFeedScreen() {
     (item: ReviewFeedItem) => {
       if (!isAuthenticated) {
         setReturnRoute({ name: "MainTabs", params: { screen: "Review" } });
-        showToast({ message: "Sign in to save reviews and dishes.", tone: "warning" });
+        showToast({ message: "Sign in to save this dish.", tone: "warning" });
         navigation.navigate("AuthStack", { screen: "Login" });
         return;
       }
 
-      const dish = repository.getDishById(item.dishId) ?? item.dish;
-      if (!dish?.id) return;
-
-      if (reviewReactionsEnabled) {
-        void toggleSave(item.review.id);
+      if (serviceProviderMode === "mock") {
+        void toggleSave(item.interactionId);
+        return;
       }
 
-      requestAnimationFrame(() => {
-        toggleFavourite(dish);
-      });
+      toggleFavourite(item.dish);
     },
     [
       isAuthenticated,
       navigation,
-      repository,
+      serviceProviderMode,
       setReturnRoute,
       showToast,
       toggleFavourite,
       toggleSave,
-      reviewReactionsEnabled,
     ],
   );
 
   const renderItem = useCallback(
     ({ item }: { item: ReviewFeedItem }) => {
-      const baseInteraction = interactions[item.review.id] ?? {
+      const baseInteraction = interactions[item.interactionId] ?? {
         liked: false,
         saved: false,
         likeCount: 0,
@@ -709,7 +706,7 @@ export function ReviewFeedScreen() {
             liked: false,
             likeCount: 0,
             saved: favouriteDishIds.includes(item.dishId),
-            saveCount: 0,
+            saveCount: baseInteraction.saveCount,
             shareCount: 0,
           };
       const postComments = commentsByPostId[item.review.id] ?? [];
@@ -729,7 +726,11 @@ export function ReviewFeedScreen() {
           interaction={{ ...displayInteraction, commentCount: computedCommentCount }}
           commentsEnabled={commentsEnabled}
           onCommentPress={openReviewComments}
-          onLikePress={(reviewId) => void toggleLike(reviewId)}
+          onLikePress={(targetItem) => {
+            if (reviewReactionsEnabled) {
+              void toggleLike(targetItem.interactionId);
+            }
+          }}
           onPressDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
           onSavePress={handleSavePress}
           onSharePress={openShareReview}
@@ -752,10 +753,7 @@ export function ReviewFeedScreen() {
     ],
   );
 
-  const keyExtractor = useCallback(
-    (item: ReviewFeedItem) => `${item.review.id}-${item.dishId}`,
-    [],
-  );
+  const keyExtractor = useCallback((item: ReviewFeedItem) => item.interactionId, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>

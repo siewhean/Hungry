@@ -34,7 +34,6 @@ import { useHungryTheme } from "@/theme";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useStoryStore } from "@/store/useStoryStore";
 import { useSocialStore } from "@/store/useSocialStore";
-import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -84,6 +83,27 @@ function mergeFollowerNames(
   return names;
 }
 
+function haveEqualPosts(left: StallPost[], right: StallPost[]) {
+  if (left.length !== right.length) return false;
+
+  for (let i = 0; i < left.length; i += 1) {
+    const lhs = left[i];
+    const rhs = right[i];
+
+    if (
+      lhs.id !== rhs.id ||
+      lhs.authorId !== rhs.authorId ||
+      lhs.authorName !== rhs.authorName ||
+      lhs.createdAt !== rhs.createdAt ||
+      lhs.venueId !== rhs.venueId
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 type ProfileHomeProps = {
   navigation: any;
   route?: ProfileRouteParams;
@@ -109,6 +129,7 @@ export function ProfileHomeScreen({
   const viewerAuthorAvatarUrl =
     mode === "other" ? (authorAvatarUrl ?? route?.params?.authorAvatarUrl) : undefined;
   const viewerAuthorId = mode === "other" ? (authorId ?? route?.params?.authorId) : undefined;
+  const isOtherUserProfile = mode === "other";
 
   const { colorScheme, componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
   const headerActionSize = spacing[8] + spacing[2.5];
@@ -117,7 +138,6 @@ export function ProfileHomeScreen({
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const signOut = useSessionStore((state) => state.signOut);
   const merchantAccount = useMerchantStore((state) => state.account);
-  const publishedPosts = usePublishedPostStore((state) => state.posts);
   const followedAuthors = useSocialStore((state) => state.followedAuthors);
   const followedUserIds = useSocialStore((state) => state.followedUserIds);
   const reviewEntries = useProfileStore((state) => state.reviewEntries);
@@ -175,6 +195,15 @@ export function ProfileHomeScreen({
     [navigation, rootNavigation],
   );
   const [activeShareTab, setActiveShareTab] = useState<"posts" | "reviews">("posts");
+  const handleReviewsCardPress = useCallback(() => {
+    if (isOtherUserProfile) {
+      setActiveShareTab((current) => (current === "reviews" ? current : "reviews"));
+      return;
+    }
+
+    preloadRoute(navigation, "ReviewHistory");
+    navigation.navigate("ReviewHistory");
+  }, [isOtherUserProfile, navigation]);
   const avatarSize = spacing[20];
   const avatarInitials = useMemo(
     () =>
@@ -261,13 +290,12 @@ export function ProfileHomeScreen({
       try {
         const posts = await listSharedStallPosts();
         if (!isMounted) return;
-        setProfilePosts(
-          posts.filter(
-            (post) =>
-              post.authorId === profile.id ||
-              post.authorName.toLowerCase() === profile.displayName.toLowerCase(),
-          ),
+        const nextPosts = posts.filter(
+          (post) =>
+            post.authorId === profile.id ||
+            post.authorName.toLowerCase() === profile.displayName.toLowerCase(),
         );
+        setProfilePosts((current) => (haveEqualPosts(current, nextPosts) ? current : nextPosts));
       } catch (error) {
         console.error("Failed to load profile posts:", error);
         if (isMounted) {
@@ -281,7 +309,7 @@ export function ProfileHomeScreen({
     return () => {
       isMounted = false;
     };
-  }, [isAuthenticated, profile.displayName, profile.id, publishedPosts]);
+  }, [isAuthenticated, profile.displayName, profile.id]);
 
   const sortedProfilePosts = useMemo(() => {
     return [...profilePosts].sort((a, b) => {
@@ -743,8 +771,10 @@ export function ProfileHomeScreen({
               label="Reviews"
               value={profile.stats.dishesReviewed}
               icon={<PencilLine size={14} color={palette.orange} />}
-              onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
-              onPress={() => navigation.navigate("ReviewHistory")}
+              onPressIn={() =>
+                !isOtherUserProfile ? preloadRoute(navigation, "ReviewHistory") : undefined
+              }
+              onPress={handleReviewsCardPress}
             />
             <StatBlock
               label="Stalls"
@@ -753,13 +783,15 @@ export function ProfileHomeScreen({
               onPressIn={() => preloadRoute(navigation, "VisitedStalls")}
               onPress={() => navigation.navigate("VisitedStalls")}
             />
-            <StatBlock
-              label="Saved"
-              value={profileStatSummary.saved}
-              icon={<Bookmark size={14} color={palette.orange} />}
-              onPressIn={() => preloadRoute(navigation, "Favourites")}
-              onPress={() => navigation.navigate("Favourites")}
-            />
+            {!isOtherUserProfile ? (
+              <StatBlock
+                label="Saved"
+                value={profileStatSummary.saved}
+                icon={<Bookmark size={14} color={palette.orange} />}
+                onPressIn={() => preloadRoute(navigation, "Favourites")}
+                onPress={() => navigation.navigate("Favourites")}
+              />
+            ) : null}
           </View>
           {isAuthenticated && gamificationEnabled ? (
             <>

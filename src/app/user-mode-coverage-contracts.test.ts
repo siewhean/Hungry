@@ -487,7 +487,6 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
       /label="Following"/,
       /label="Reviews"/,
       /label="Stalls"/,
-      /label="Saved"/,
       /activeTab === "posts"/,
       /activeTab === "reviews"/,
       /normalizedAuthorId[\s\S]*post\.authorId === normalizedAuthorId[\s\S]*normalizePersonName\(post\.authorName\) === normalizedAuthorName/,

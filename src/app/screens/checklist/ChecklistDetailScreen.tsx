@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Plus } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { ChecklistItemRow } from "@/components/checklist";
@@ -37,6 +38,8 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
   const checklistItems = items[checklistId] ?? [];
   const [draftName, setDraftName] = useState(checklist?.name ?? "");
   const [labels, setLabels] = useState<Record<string, string>>({});
+  const insets = useSafeAreaInsets();
+  const topSpacing = Math.max(insets.top, spacing[4]);
 
   useEffect(() => {
     void loadChecklists();
@@ -101,7 +104,16 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
 
   if (!checklist) {
     return (
-      <View style={[styles.centered, { backgroundColor: palette.bg, padding: spacing[5] }]}>
+      <View
+        style={[
+          styles.centered,
+          {
+            backgroundColor: palette.bg,
+            padding: spacing[5],
+            paddingTop: Math.max(topSpacing, spacing[5]),
+          },
+        ]}
+      >
         <AppText variant="h2">Checklist not found</AppText>
         <Button
           label="Go back"
@@ -114,7 +126,7 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: palette.bg }}
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: topSpacing }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
       <View style={styles.header}>

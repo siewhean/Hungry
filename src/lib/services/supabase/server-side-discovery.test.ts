@@ -23,8 +23,21 @@ const discoverAreaCountSmokeSql = readFileSync(
   "utf8",
 );
 
+const provenanceGuardrailSql = readFileSync(
+  resolve(
+    process.cwd(),
+    "supabase/migrations/20260610120000_catalog_display_provenance_guardrails.sql",
+  ),
+  "utf8",
+);
+
 const repositorySource = readFileSync(
   resolve(process.cwd(), "src/lib/services/supabase/supabaseRepository.ts"),
+  "utf8",
+);
+
+const discoverSource = readFileSync(
+  resolve(process.cwd(), "src/app/screens/discover/DiscoverHomeScreen.tsx"),
   "utf8",
 );
 
@@ -162,18 +175,47 @@ test("Discover area count uses exact RPC before location-scoped building fallbac
   );
 
   assert.match(repositorySource, /export\s+async\s+function\s+countVenuesInAreaViaRpc/i);
+  assert.match(
+    repositorySource,
+    /\.from\("venues"\)[\s\S]*?\.ilike\("planning_area",\s*normalizedAreaName\)/,
+  );
   assert.match(repositorySource, /client\.rpc\("count_venues_in_area"/);
   const countServiceBlock =
-    /async\s+countVenuesInArea\(lat,\s*lng,\s*radiusMeters\)[\s\S]*?\n    },/.exec(
+    /async\s+countVenuesInArea\(lat,\s*lng,\s*radiusMeters,\s*areaName\)[\s\S]*?\n    },/.exec(
       serviceSource,
     )?.[0];
   assert.ok(countServiceBlock, "countVenuesInArea service method should be detectable");
-  assert.match(countServiceBlock, /await\s+countVenuesInAreaViaRpc\(lat,\s*lng,\s*radiusMeters\)/);
+  assert.match(
+    countServiceBlock,
+    /await\s+countVenuesInAreaViaRpc\(lat,\s*lng,\s*radiusMeters,\s*areaName\)/,
+  );
   assert.match(countServiceBlock, /await\s+listBuildingsViaRpc\(lat,\s*lng,\s*radiusMeters\)/);
   assert.doesNotMatch(countServiceBlock, /supabaseRepository\.listBuildings\(\)/);
 
   assert.match(discoverAreaCountSmokeSql, /count_venues_in_area/);
   assert.match(discoverAreaCountSmokeSql, /nearby_venue_count/);
+});
+
+test("Discover feed ratings are sourced from the same dish aggregates as details", () => {
+  assert.match(provenanceGuardrailSql, /top_dish_rating\s+numeric/i);
+  assert.match(provenanceGuardrailSql, /top_dish_review_count\s+integer/i);
+  assert.match(provenanceGuardrailSql, /top_dish\.rating_avg\s+as\s+top_dish_rating/i);
+  assert.match(provenanceGuardrailSql, /top_dish\.review_count\s+as\s+top_dish_review_count/i);
+  assert.match(repositorySource, /rating_avg:\s+row\.top_dish_rating/);
+  assert.match(repositorySource, /review_count:\s+row\.top_dish_review_count/);
+  assert.match(
+    repositorySource,
+    /const imageUrl = gallery\[0\] \|\| toString\(row\.image_url\) \|\| "";/,
+  );
+  assert.match(
+    serviceSource,
+    /const imageUrl = gallery\[0\] \?\? asString\(row\.image_url\) \?\? "";/,
+  );
+  assert.match(
+    discoverSource,
+    /const normalizedRating = Number\.isFinite\(dish\.rating\) \? dish\.rating : 0;/,
+  );
+  assert.doesNotMatch(discoverSource, /dish\.rating > 0 \? dish\.rating : 4/);
 });
 
 test("server-side discovery smoke SQL checks functions, grants, indexes, and sample calls", () => {

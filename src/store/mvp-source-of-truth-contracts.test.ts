@@ -188,6 +188,7 @@ test("signed-in onboarding merges guest taste and dietary choices into the Supab
 
 test("favourite hydration reads the user_favourite_dishes join table", () => {
   const service = read("src/lib/services/supabase/supabaseService.ts");
+  const profileStore = read("src/store/useProfileStore.ts");
 
   assert.match(service, /async function fetchFavouriteDishIdsForUser/);
   assert.match(service, /\.from\("user_favourite_dishes"\)[\s\S]*\.select\("dish_id"\)/);
@@ -196,6 +197,9 @@ test("favourite hydration reads the user_favourite_dishes join table", () => {
     /const favouriteDishIds = await fetchFavouriteDishIdsForUser\(client, userId\)/,
   );
   assert.match(service, /return fetchFavouriteDishIdsForUser\(client, userId\)/);
+  assert.match(profileStore, /\.profile\.getFavouriteDishIds\(\)/);
+  assert.match(profileStore, /favouriteDishIds: ids/);
+  assert.match(profileStore, /favouritesCount: ids\.length/);
 });
 
 test("Supabase review reads hydrate review_photos and public profile names and avatars", () => {
@@ -245,12 +249,13 @@ test("Supabase review feed does not send review ids through post reaction writes
   const reviewFeed = read("src/app/screens/review/ReviewFeedScreen.tsx");
 
   assert.match(reviewFeed, /const reviewReactionsEnabled = serviceProviderMode === "mock"/);
-  assert.match(reviewFeed, /"Unsave review"/);
   assert.match(reviewFeed, /"Remove saved dish"/);
-  assert.match(reviewFeed, /"Save review"/);
   assert.match(reviewFeed, /"Save dish"/);
+  assert.doesNotMatch(reviewFeed, /"Unsave review"/);
+  assert.doesNotMatch(reviewFeed, /"Save review"/);
   assert.match(reviewFeed, /\{reviewReactionsEnabled \? \(/);
-  assert.match(reviewFeed, /if \(reviewReactionsEnabled\) \{[\s\S]*toggleSave\(item\.review\.id\)/);
+  assert.match(reviewFeed, /toggleSave\(item\.interactionId\)/);
+  assert.match(reviewFeed, /toggleFavourite\(item\.dish\)/);
   assert.match(reviewFeed, /saved: favouriteDishIds\.includes\(item\.dishId\)/);
   assert.doesNotMatch(reviewFeed, /void toggleSave\(item\.review\.id\);\s*const dish/);
 });
@@ -323,7 +328,7 @@ test("social store rolls back failed production reactions instead of persisting 
   assert.match(source, /interactionStatesMatch/);
   assert.match(source, /social\.reactToBite\(postId, "craving"\)/);
   assert.match(source, /social\.reactToBite\(postId, "save"\)/);
-  assert.match(source, /Post save ignored because this post is not backed by Supabase\./);
+  assert.doesNotMatch(source, /Post save ignored because this post is not backed by Supabase\./);
   assert.match(source, /rolled back optimistic state/);
   assert.match(source, /clearAccountScopedState/);
   assert.doesNotMatch(source, /kept optimistic state and will retry later/);

@@ -142,8 +142,7 @@ function buildPostHogIdentityProperties() {
     has_taste_profile: Boolean(profile?.tasteVector),
     dietary_preference_count: profile?.dietaryPreferences?.length ?? 0,
     location_source: location.manualLocation ? "manual" : location.permission,
-    latitude: location.currentLocation.latitude,
-    longitude: location.currentLocation.longitude,
+    has_precise_location: Boolean(location.currentLocation),
   };
 }
 

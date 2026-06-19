@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Search } from "lucide-react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
@@ -68,6 +69,8 @@ function getFieldError(parser: (value: string) => string | undefined, value: str
 export function ChecklistItemPickerScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
   const { checklistId, mode } = route.params;
+  const insets = useSafeAreaInsets();
+  const topSpacing = Math.max(insets.top, spacing[4]);
   const addItem = useChecklistStore((state) => state.addItem);
   const [query, setQuery] = useState("");
   const [customText, setCustomText] = useState("");
@@ -172,7 +175,7 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: palette.bg }}
+      style={{ flex: 1, backgroundColor: palette.bg, paddingTop: topSpacing }}
       contentContainerStyle={[styles.content, { gap: spacing[4], padding: spacing[4] }]}
     >
       <View style={styles.header}>

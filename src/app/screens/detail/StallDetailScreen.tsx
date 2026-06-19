@@ -39,6 +39,13 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
+import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
+import {
+  buildMapsSearchUrl,
+  formatFoodCentreLocation,
+  formatFullStallAddress,
+  formatWeeklyOperatingHours,
+} from "@/features/detail/stallLocation";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
@@ -52,14 +59,14 @@ import {
   CyclingGridImage,
   CYCLING_GRID_IMAGE_INTERVAL_MS,
 } from "@/components/discover/CyclingGridImage";
-import type { DishDetail } from "@/types/domain";
+import { CustomerPromotionCard } from "@/components/promotion/CustomerPromotionCard";
+import type { DishDetail, MerchantPromotion } from "@/types/domain";
 import {
   DetailSaveActionsCard,
   useDetailSaveActions,
 } from "@/features/checklistPortfolio/DetailSaveActions";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
-
 function StallDetailSkeleton() {
   const { spacing, radii, palette } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
@@ -165,18 +172,49 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const repository = getDataRepository();
   const serviceProviderMode = getServiceProvider().mode;
   const [isLoading, setIsLoading] = useState(true);
-  const venue = repository.getVenueById(venueId);
+  const cachedVenue = repository.getVenueById(venueId);
+  const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
+  const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
+  const venue = hydratedVenue ?? cachedVenue;
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, [venueId]);
 
+  useEffect(() => {
+    let active = true;
+    setHydratedVenue(undefined);
+    setHasLoadedVenueDetail(Boolean(cachedVenue));
+    if (!venueId || cachedVenue) {
+      return () => {
+        active = false;
+      };
+    }
+
+    void getHungryService()
+      .discovery.getVenue(venueId)
+      .then((nextVenue) => {
+        if (!active) return;
+        setHydratedVenue(nextVenue);
+        setHasLoadedVenueDetail(true);
+      })
+      .catch(() => {
+        if (active) setHasLoadedVenueDetail(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [cachedVenue, venueId]);
+
   const building = venue ? getBuildingById(venue.buildingId) : undefined;
-  const dishes = useMemo(
+  const cachedDishes = useMemo(
     () => (venue ? repository.listDishesByVenue(venue.id) : []),
     [repository, venue],
   );
+  const [hydratedDishes, setHydratedDishes] = useState<DishDetail[] | undefined>();
+  const dishes = hydratedDishes ?? cachedDishes;
   const dishIdsKey = useMemo(() => dishes.map((dish) => dish.id).join("|"), [dishes]);
   const leadDish = dishes[0];
 
@@ -199,7 +237,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [isClaimPending, setIsClaimPending] = useState(() => hasPendingClaimForProfile(profile.id));
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const [reviewsByDishId, setReviewsByDishId] = useState<Record<string, DishDetail["reviews"]>>({});
+  const [activePromotions, setActivePromotions] = useState<MerchantPromotion[]>([]);
   const trackedStallViewId = useRef<string | null>(null);
+  const trackedPromotionEvents = useRef<Set<string>>(new Set());
   const detailSaveActions = useDetailSaveActions({
     navigation,
     target: {
@@ -209,16 +249,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
       venueId: venue?.id ?? venueId,
     },
   });
-  const stallAddress = venue
-    ? [
-        venue.unitNumber,
-        building?.name,
-        building?.address,
-        building?.postalCode ? `Singapore ${building.postalCode}` : undefined,
-      ]
-        .filter(Boolean)
-        .join(", ")
-    : "";
+  const foodCentreLocation = formatFoodCentreLocation(building);
+  const stallAddress = venue ? formatFullStallAddress(venue, building) : "";
 
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
@@ -241,6 +273,35 @@ export function StallDetailScreen({ navigation, route }: Props) {
   ]);
 
   useEffect(() => {
+    let active = true;
+    setHydratedDishes(undefined);
+    if (!venue?.id) {
+      return () => {
+        active = false;
+      };
+    }
+
+    if (cachedDishes.length > 0) {
+      return () => {
+        active = false;
+      };
+    }
+
+    void getHungryService()
+      .discovery.listDishesByVenue(venue.id)
+      .then((nextDishes) => {
+        if (active) setHydratedDishes(nextDishes);
+      })
+      .catch(() => {
+        if (active) setHydratedDishes([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [cachedDishes.length, venue?.id]);
+
+  useEffect(() => {
     setIsClaimPending(hasPendingClaimForProfile(profile.id));
   }, [profile.id]);
 
@@ -253,6 +314,52 @@ export function StallDetailScreen({ navigation, route }: Props) {
       userId: isAuthenticated ? profile.id : undefined,
     });
   }, [isAuthenticated, profile.id, venue]);
+
+  useEffect(() => {
+    let active = true;
+    if (!venue) {
+      setActivePromotions([]);
+      return () => {
+        active = false;
+      };
+    }
+
+    void getHungryService()
+      .discovery.listActivePromotionsForTarget({ venueId: venue.id })
+      .then((promotions) => {
+        if (active) setActivePromotions(promotions);
+      })
+      .catch(() => {
+        if (active) setActivePromotions([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [venue]);
+
+  useEffect(() => {
+    if (!venue || activePromotions.length === 0) return;
+    activePromotions.forEach((promotion) => {
+      const eventKey = `${venue.id}:${promotion.id}`;
+      if (trackedPromotionEvents.current.has(eventKey)) return;
+      trackedPromotionEvents.current.add(eventKey);
+      void getHungryService().discovery.recordMerchantActionEvent({
+        eventType: "promotion_impression",
+        promotionId: promotion.id,
+        venueId: venue.id,
+        dishId: promotion.targetDishId,
+        userId: isAuthenticated ? profile.id : undefined,
+      });
+      void getHungryService().discovery.recordMerchantActionEvent({
+        eventType: "promotion_profile_visit",
+        promotionId: promotion.id,
+        venueId: venue.id,
+        dishId: promotion.targetDishId,
+        userId: isAuthenticated ? profile.id : undefined,
+      });
+    });
+  }, [activePromotions, isAuthenticated, profile.id, venue]);
 
   useEffect(() => {
     let active = true;
@@ -309,7 +416,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     return false;
   };
 
-  if (isLoading) {
+  if (isLoading || (Boolean(venueId) && !venue && !hasLoadedVenueDetail)) {
     return <StallDetailSkeleton />;
   }
 
@@ -341,9 +448,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     : null;
   const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
   const operatingStatusLabel = isVenueOpen ? "Open now" : (venue.closureNotice ?? "Closed now");
-  const operatingHoursLabel = venue.operatingHours?.trim()
-    ? venue.operatingHours.split(" – ")[0]
-    : "Hours unavailable";
+  const weeklyOperatingHours = formatWeeklyOperatingHours(venue.operatingHours);
 
   const reviewedDishIds = profile.reviewedDishIds;
   const hasReviewedDishAtVenue = dishes.some((dish) => reviewedDishIds.includes(dish.id));
@@ -390,6 +495,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
       screen: "ReviewMain",
       params: { venueId: venue.id, dishId: targetDishId },
     });
+  };
+
+  const openStallMaps = () => {
+    if (!stallAddress) return;
+    void openTrustedMapsUrl(buildMapsSearchUrl(stallAddress));
   };
 
   const submitReviewReply = (reviewId: string) => {
@@ -623,7 +733,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       textTransform: "uppercase",
                     }}
                   >
-                    {building?.name ?? "Food Centre"}
+                    {foodCentreLocation || building?.name || "Food Centre"}
                   </AppText>
                 </View>
                 <AppText variant="h1" style={{ fontSize: 28 }}>
@@ -657,34 +767,81 @@ export function StallDetailScreen({ navigation, route }: Props) {
               ) : null}
 
               {/* Attributes */}
-              <View style={{ flexDirection: "row", gap: spacing[3] }}>
+              <View
+                style={{ flexDirection: "row", gap: spacing[3], justifyContent: "space-between" }}
+              >
                 <Card style={{ flex: 1, padding: spacing[4], gap: spacing[1] }}>
                   <AppText variant="micro" tone="secondary" style={{ letterSpacing: 0.5 }}>
-                    OPERATING
+                    OPERATING HOURS
                   </AppText>
                   <AppText variant="bodyLarge" style={{ fontWeight: "700" }}>
                     {operatingStatusLabel}
                   </AppText>
-                  <AppText variant="micro" tone="secondary">
-                    {operatingHoursLabel}
-                  </AppText>
+                  <View style={{ gap: spacing[0.5] }}>
+                    {weeklyOperatingHours.map((line) => (
+                      <AppText key={line} variant="micro" tone="secondary">
+                        {line}
+                      </AppText>
+                    ))}
+                  </View>
                 </Card>
               </View>
 
               {/* Address */}
               <View style={{ gap: spacing[3] }}>
                 <AppText variant="h2">Address</AppText>
-                <Card style={{ padding: spacing[4], gap: spacing[2] }}>
-                  <View style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}>
-                    <MapPin color={palette.orange} size={18} />
-                    <AppText variant="body" tone="secondary" style={{ flex: 1 }}>
-                      {stallAddress}
-                    </AppText>
-                  </View>
+                <Card style={{ padding: 0, gap: spacing[2] }}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open maps for ${stallAddress}`}
+                    onPress={openStallMaps}
+                    style={({ pressed }) => [
+                      {
+                        padding: spacing[4],
+                        opacity: pressed ? 0.8 : 1,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
+                    >
+                      <MapPin color={palette.orange} size={18} />
+                      <AppText variant="body" tone="secondary" style={{ flex: 1 }}>
+                        {stallAddress}
+                      </AppText>
+                    </View>
+                  </Pressable>
                 </Card>
               </View>
 
               <PopularVisitorsSection venueId={venue.id} horizontalPadding={0} />
+
+              {activePromotions.length > 0 ? (
+                <View style={{ gap: spacing[3] }}>
+                  <AppText variant="h2">Active promotions</AppText>
+                  {activePromotions.map((promotion) => (
+                    <CustomerPromotionCard
+                      key={promotion.id}
+                      promotion={promotion}
+                      ctaLabel={promotion.targetDishId ? "View dish" : undefined}
+                      onPress={
+                        promotion.targetDishId
+                          ? () => {
+                              void getHungryService().discovery.recordMerchantActionEvent({
+                                eventType: "promotion_click",
+                                promotionId: promotion.id,
+                                venueId: venue.id,
+                                dishId: promotion.targetDishId,
+                                userId: isAuthenticated ? profile.id : undefined,
+                              });
+                              navigation.navigate("DishDetail", { dishId: promotion.targetDishId });
+                            }
+                          : undefined
+                      }
+                    />
+                  ))}
+                </View>
+              ) : null}
 
               {/* Menu */}
               <View style={{ gap: spacing[4] }}>

@@ -15,7 +15,6 @@ test.describe("signed-out entry", () => {
     page,
   }) => {
     await resetAppState(page);
-    await clickDevButton(page, "Signed out", "Session presets");
 
     await page.getByRole("button", { name: "Open normal app flow" }).click();
     await expect(page.getByText("Welcome back", { exact: true })).toBeVisible({
@@ -23,7 +22,6 @@ test.describe("signed-out entry", () => {
     });
 
     await resetAppState(page);
-    await clickDevButton(page, "Signed out", "Session presets");
     await clickDevButton(page, "Dish V2", "Core app flow");
     await expect(page.getByText("Chicken Rice", { exact: true }).first()).toBeVisible({
       timeout: CONTENT_TIMEOUT_MS,
@@ -33,7 +31,6 @@ test.describe("signed-out entry", () => {
 
   test("protected create action redirects guests to login", async ({ page }) => {
     await resetAppState(page);
-    await clickDevButton(page, "Signed out", "Session presets");
 
     await clickDevButton(page, "Composer", "Core app flow");
     await expect(page.getByText("Welcome back", { exact: true })).toBeVisible({

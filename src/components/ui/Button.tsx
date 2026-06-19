@@ -168,6 +168,8 @@ export function Button({
             flexDirection: "row",
             alignItems: "center",
             gap: spacing[2],
+            minWidth: 0,
+            flexShrink: 1,
           }}
         >
           {leftIcon}
@@ -178,7 +180,7 @@ export function Button({
                 ? "inverse"
                 : "default"
             }
-            style={labelTextStyle}
+            style={[{ flexShrink: 1, minWidth: 0, textAlign: "center" }, ...labelTextStyle]}
             numberOfLines={labelNumberOfLines}
             ellipsizeMode={labelEllipsizeMode}
           >

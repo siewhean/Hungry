@@ -32,12 +32,31 @@ const scheduledRoutePreloads = new Set<string>();
 const scheduledBrowseResultPrefetches = new Set<string>();
 const PREFETCH_IDLE_TIMEOUT_MS = 700;
 const PREFETCH_FALLBACK_DELAY_MS = 160;
+const MAX_IDLE_PREFETCH_WORK_PER_TICK = 8;
+let pendingIdlePrefetchWorkCount = 0;
 
 function schedulePrefetchWork(callback: () => void) {
-  return scheduleIdleWork(callback, {
+  if (pendingIdlePrefetchWorkCount >= MAX_IDLE_PREFETCH_WORK_PER_TICK) {
+    return;
+  }
+
+  pendingIdlePrefetchWorkCount += 1;
+  let didComplete = false;
+  const cancel = scheduleIdleWork(callback, {
     timeout: PREFETCH_IDLE_TIMEOUT_MS,
     fallbackDelayMs: PREFETCH_FALLBACK_DELAY_MS,
+    onComplete: () => {
+      didComplete = true;
+      pendingIdlePrefetchWorkCount = Math.max(0, pendingIdlePrefetchWorkCount - 1);
+    },
   });
+
+  return () => {
+    cancel();
+    if (!didComplete) {
+      pendingIdlePrefetchWorkCount = Math.max(0, pendingIdlePrefetchWorkCount - 1);
+    }
+  };
 }
 
 function getRoutePreloadKey(routeName: string, params?: object) {

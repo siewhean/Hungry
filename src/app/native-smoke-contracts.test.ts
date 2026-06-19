@@ -8,11 +8,14 @@ function read(pathFromRepoRoot: string): string {
 }
 
 test("native Maestro smoke scripts are skip-safe and target the Hungry app id", () => {
+  const appJson = read("app.json");
   const packageJson = read("package.json");
   const metroConfig = read("metro.config.js");
   const runner = read("scripts/run-maestro-smoke.mjs");
   const preparedRunner = read("scripts/prepare-maestro-smoke.mjs");
 
+  assert.match(appJson, /"@rnmapbox\/maps"/);
+  assert.match(appJson, /"RNMapboxMapsVersion": "11\.18\.2"/);
   assert.match(packageJson, /"smoke:native": "node scripts\/run-maestro-smoke\.mjs ios"/);
   assert.match(packageJson, /"smoke:native:ios": "node scripts\/run-maestro-smoke\.mjs ios"/);
   assert.match(
@@ -91,14 +94,14 @@ test("native activity smoke exposes the audited direct-message tab", () => {
   assert.match(flow, /waitForAnimationToEnd:\n\s+timeout: 3000/);
   assert.match(
     flow,
-    /extendedWaitUntil:\n\s+visible:\n\s+id: "activity-tab-updates"\n\s+timeout: 30000/,
+    /extendedWaitUntil:\n\s+visible:\n\s+id: "activity-tab-messages"\n\s+timeout: 30000/,
   );
   assert.match(home, /testID="home-activity-inbox-button"/);
   const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
   assert.match(developerLauncher, /label="Activity"[\s\S]*onPress=\{openActivityInboxSmoke\}/);
   assert.match(
     developerLauncher,
-    /openActivityInboxSmoke[\s\S]*navigation\.navigate\("ActivityInbox", \{ initialTab: "updates" \}\)/,
+    /openActivityInboxSmoke[\s\S]*navigation\.navigate\("ActivityInbox", \{ initialTab: "messages" \}\)/,
   );
   assert.match(flow, /assertVisible:\n\s+id: "activity-tab-messages"/);
   assert.match(flow, /activity-tab-messages/);
@@ -134,7 +137,7 @@ test("native media picker smoke reaches the post composer gallery entry point", 
   assert.match(flow, /dev-button-launch-v2-composer/);
   assert.match(flow, /post-composer-screen/);
   assert.match(flow, /post-composer-add-media/);
-  assert.match(flow, /text: "Allow"/);
+  assert.match(flow, /text: "Allow"\n\s+optional: true/);
   assert.match(flow, /Don.t Allow/);
   assert.match(flow, /Permission Required/);
   const addMediaIndex = flow.indexOf('id: "post-composer-add-media"');

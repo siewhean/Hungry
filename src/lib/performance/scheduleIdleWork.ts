@@ -7,12 +7,16 @@ type IdleGlobals = {
 
 export function scheduleIdleWork(
   callback: () => void,
-  options?: { timeout?: number; fallbackDelayMs?: number },
+  options?: { timeout?: number; fallbackDelayMs?: number; onComplete?: () => void },
 ): () => void {
   const globals = globalThis as IdleGlobals;
   if (typeof globals.requestIdleCallback === "function") {
     const handle = globals.requestIdleCallback(() => {
-      callback();
+      try {
+        callback();
+      } finally {
+        options?.onComplete?.();
+      }
     }, options);
     return () => {
       globals.cancelIdleCallback?.(handle);
@@ -20,7 +24,11 @@ export function scheduleIdleWork(
   }
 
   const handle = setTimeout(() => {
-    callback();
+    try {
+      callback();
+    } finally {
+      options?.onComplete?.();
+    }
   }, options?.fallbackDelayMs ?? 0);
 
   return () => {

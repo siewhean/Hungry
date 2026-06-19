@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, FlatList, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ChecklistCard } from "@/components/checklist";
 import { useChecklistStore } from "@/store/useChecklistStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -17,6 +18,8 @@ export function ChecklistsHomeScreen() {
   const { checklists, items, isLoaded, loadChecklists, createChecklist } = useChecklistStore();
   const { isAuthenticated } = useSessionStore();
   const [isCreating, setIsCreating] = useState(false);
+  const insets = useSafeAreaInsets();
+  const topSpacing = Math.max(insets.top, theme.spacing[4]);
 
   useEffect(() => {
     if (isAuthenticated && !isLoaded) {
@@ -38,7 +41,9 @@ export function ChecklistsHomeScreen() {
 
   if (!isAuthenticated) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.palette.bg }]}>
+      <View
+        style={[styles.container, { backgroundColor: theme.palette.bg, paddingTop: topSpacing }]}
+      >
         <AppText variant="body" style={styles.emptyText}>
           Sign in to create checklists
         </AppText>
@@ -48,7 +53,9 @@ export function ChecklistsHomeScreen() {
 
   if (!isLoaded) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.palette.bg }]}>
+      <View
+        style={[styles.container, { backgroundColor: theme.palette.bg, paddingTop: topSpacing }]}
+      >
         <AppText variant="body" style={styles.emptyText}>
           Loading...
         </AppText>
@@ -57,7 +64,7 @@ export function ChecklistsHomeScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.palette.bg }]}>
+    <View style={[styles.container, { backgroundColor: theme.palette.bg, paddingTop: topSpacing }]}>
       <View style={styles.header}>
         <AppText variant="h2">My Checklists</AppText>
         <Button

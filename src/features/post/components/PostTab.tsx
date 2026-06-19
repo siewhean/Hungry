@@ -17,6 +17,7 @@ import { AppText, Input, Card, Badge, IconButton, Button, Dialog } from "@/compo
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
 import { spacing, semanticSpacing } from "@/theme/tokens";
+import { useMerchantStore } from "@/store/useMerchantStore";
 
 export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
   const { componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
@@ -36,6 +37,9 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
   const isBusinessMode = useComposerStore((state) => state.isBusinessMode);
   const ctaButton = useComposerStore((state) => state.ctaButton);
   const setCTA = useComposerStore((state) => state.setCTA);
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const shouldShowBusinessFeatures = isBusinessMode && (isMerchantMode || isDeveloperMode);
 
   const [dialogConfig, setDialogConfig] = useState<{
     visible: boolean;
@@ -175,7 +179,7 @@ export function PostTab({ onOpenMusic }: { onOpenMusic?: () => void }) {
       </Pressable>
 
       {/* Business Features */}
-      {isBusinessMode && (
+      {shouldShowBusinessFeatures && (
         <View style={styles.section}>
           <View
             style={{

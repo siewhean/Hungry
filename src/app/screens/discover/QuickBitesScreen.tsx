@@ -38,11 +38,14 @@ import { useHungryTheme } from "@/theme";
 import { useLocationStore } from "@/store/useLocationStore";
 import { getHomeBitesFeed } from "@/features/home/bites";
 import type { Bite } from "@/lib/services/types";
+import { getServiceProvider } from "@/lib/services/serviceProvider";
 import { useSearchStore } from "@/store/useSearchStore";
+import { useProfileStore } from "@/store/useProfileStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import {
   DISCOVER_CUISINE_FILTERS,
   getDiscoverBiteCollection,
+  getDiscoverBitesFromSearch,
   getDiscoverBiteDistance,
   getDiscoverBites,
   type DiscoverCollection,
@@ -208,6 +211,8 @@ export function QuickBitesScreen() {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const currentLocation = useLocationStore((state) => state.currentLocation);
+  const tasteVector = useProfileStore((state) => state.profile.tasteVector);
+  const dietaryPreferences = useProfileStore((state) => state.profile.dietaryPreferences);
   const collection: DiscoverCollection = route.params?.collection ?? "quickBites";
   const collectionCopy = COLLECTION_COPY[collection];
   const fallbackBites = useMemo(() => getDiscoverBites(), []);
@@ -274,7 +279,20 @@ export function QuickBitesScreen() {
   useEffect(() => {
     // Sync with location and real feed if available
     const loadBites = async () => {
+      const isSupabaseDataSource = getServiceProvider().mode === "supabase";
       try {
+        if (isSupabaseDataSource) {
+          const liveBites = await getDiscoverBitesFromSearch(collection, {
+            latitude: currentLocation.latitude,
+            longitude: currentLocation.longitude,
+            radiusMeters: 3000,
+            tasteVector,
+            dietaryFlags: dietaryPreferences,
+          });
+          setBites(liveBites);
+          return;
+        }
+
         const feed = await getHomeBitesFeed(currentLocation.latitude, currentLocation.longitude);
         if (feed && feed.length > 0) {
           const feedIds = new Set(feed.map((bite) => bite.id));
@@ -283,11 +301,11 @@ export function QuickBitesScreen() {
           setBites(fallbackBites);
         }
       } catch {
-        setBites(fallbackBites);
+        setBites(isSupabaseDataSource ? [] : fallbackBites);
       }
     };
     void loadBites();
-  }, [currentLocation, fallbackBites]);
+  }, [collection, currentLocation, dietaryPreferences, fallbackBites, tasteVector]);
 
   const collectionBites = useMemo(() => {
     return getDiscoverBiteCollection(collection, bites);

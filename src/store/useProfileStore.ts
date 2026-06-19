@@ -152,6 +152,8 @@ const FEEDBACK_CONFIDENCE_DELTAS: Record<ExplicitFeedbackEvent["type"], number> 
   dismissed: 0.01,
 };
 
+const pendingFavouriteDishToggles = new Set<string>();
+
 function clampConfidence(value: number) {
   return Math.max(0, Math.min(1, Number(value.toFixed(3))));
 }
@@ -357,7 +359,39 @@ export const useProfileStore = create<ProfileState>()(
         }),
       syncProfile: (isAuthenticated, userId) => {
         const currentProfile = get().profile;
+        const authenticatedUserId =
+          isAuthenticated && userId && getServiceProvider().mode !== "mock" ? userId : null;
+        const rehydrateFavouriteDishIds = () => {
+          if (!authenticatedUserId) return;
+          const targetUserId = authenticatedUserId;
+          void getHungryService()
+            .profile.getFavouriteDishIds()
+            .then((ids) => {
+              const session = getSessionStoreState();
+              if (!session.isAuthenticated || session.authenticatedUserId !== targetUserId) {
+                return;
+              }
+              set((state) => {
+                if (state.profile.id !== targetUserId) return {};
+                return {
+                  profile: withNeutralTasteProfile({
+                    ...state.profile,
+                    favouriteDishIds: ids,
+                    stats: {
+                      ...state.profile.stats,
+                      favouritesCount: ids.length,
+                    },
+                  }),
+                };
+              });
+            })
+            .catch((error) => {
+              console.warn("Failed to rehydrate favourite dish IDs", error);
+            });
+        };
+
         if (isAuthenticated && userId && currentProfile.id === userId) {
+          rehydrateFavouriteDishIds();
           return;
         }
 
@@ -369,12 +403,18 @@ export const useProfileStore = create<ProfileState>()(
           ),
           tasteProfile: NEUTRAL_TASTE_PROFILE,
         });
+        rehydrateFavouriteDishIds();
       },
       toggleFavourite: (dish) => {
+        const dishId = dish.id;
+        if (pendingFavouriteDishToggles.has(dishId)) {
+          return;
+        }
         if (!getSessionStoreState().isAuthenticated) {
           console.warn("Favourite toggle ignored because the user is signed out.");
           return;
         }
+        pendingFavouriteDishToggles.add(dishId);
         const previousSnapshot = {
           profile: get().profile,
           tasteProfile: get().tasteProfile,
@@ -383,10 +423,10 @@ export const useProfileStore = create<ProfileState>()(
         let recordedEvent: TasteInteractionEvent | undefined;
         let interactionInput: RecordTasteInteractionInput | undefined;
         set((state) => {
-          const isFavourite = state.profile.favouriteDishIds.includes(dish.id);
+          const isFavourite = state.profile.favouriteDishIds.includes(dishId);
           const nextIds = isFavourite
-            ? state.profile.favouriteDishIds.filter((id) => id !== dish.id)
-            : [...state.profile.favouriteDishIds, dish.id];
+            ? state.profile.favouriteDishIds.filter((id) => id !== dishId)
+            : [...state.profile.favouriteDishIds, dishId];
           const feedbackType: ExplicitFeedbackEvent["type"] = isFavourite ? "unsaved" : "saved";
           const updatedTasteVector = processExplicitFeedback(state.profile.tasteVector, {
             type: feedbackType,
@@ -433,12 +473,17 @@ export const useProfileStore = create<ProfileState>()(
         if (getServiceProvider().mode !== "mock") {
           const optimisticProfile = get().profile;
           void getHungryService()
-            .profile.toggleFavourite(dish.id)
+            .profile.toggleFavourite(dishId)
             .catch((error) => {
               console.error("Failed to sync favourite toggle", error);
               if (get().profile !== optimisticProfile) return;
               set(previousSnapshot);
+            })
+            .finally(() => {
+              pendingFavouriteDishToggles.delete(dishId);
             });
+        } else {
+          pendingFavouriteDishToggles.delete(dishId);
         }
       },
       updateProfile: (next) => {

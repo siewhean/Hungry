@@ -208,7 +208,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const STALL_SHOWCASE_CARD_LIMIT = 30/);
   assert.match(discover, /const STALL_SHOWCASE_FALLBACK_IMAGES = \[/);
   assert.match(discover, /function buildStallShowcaseCardsFromVenues/);
-  assert.match(discover, /repository: DataRepository/);
+  assert.match(discover, /repositoryLookup: Pick<DiscoverRepositoryLookup/);
   assert.match(
     discover,
     /const uniqueVenues = Array\.from\(new Map\(venues\.map\(\(venue\) => \[venue\.id, venue\]\)\)\.values\(\)\)/,
@@ -271,7 +271,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const showcaseVenuePool = \[\.\.\.areaVenues, \.\.\.allDiscoverVenues\]/);
   assert.match(
     discover,
-    /return buildStallShowcaseCardsFromVenues\(showcaseVenuePool, repository\)/,
+    /return buildStallShowcaseCardsFromVenues\(showcaseVenuePool, repositoryLookup\)/,
   );
   assert.match(
     discover,
@@ -468,7 +468,10 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /Always a classic|Comfort bowl/);
   assert.doesNotMatch(discover, /setTimeout\(\(\) => setIsLoading\(false\), 800\)/);
   assert.doesNotMatch(discover, /isDiscoverFiltering \? \(\s*<PopularFoodStyleSkeleton/);
-  assert.match(discover, /const showDiscoverFilterRailSkeleton = showPopularFoodFilterSkeleton/);
+  assert.match(
+    discover,
+    /const showDiscoverFilterRailSkeleton =[\s\S]*showPopularFoodFilterSkeleton \|\| showInitialDiscoverSkeleton/,
+  );
   assert.match(discover, /chipId === "dietary"[\s\S]*discoverDietaryFlags\.some/);
   assert.match(discover, /chipId === "halal"[\s\S]*dietaryFlags\.includes\("halal"\)/);
   assert.match(discover, /chipId === "spicy"[\s\S]*tasteVector\.spicy >= 6/);
@@ -575,8 +578,25 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /setIsPopularFoodFilterSkeletonPending\(true\)/);
   assert.match(
     discover,
-    /const shouldShowPopularFoodSkeleton = showPopularFoodSkeleton \|\| showPopularFoodFilterSkeleton/,
+    /const shouldShowPopularFoodSkeleton =[\s\S]*showPopularFoodSkeleton \|\| showPopularFoodFilterSkeleton \|\| showInitialDiscoverSkeleton/,
   );
+  assert.match(discover, /function DiscoverDishImagePlaceholder\(/);
+  assert.match(discover, /backgroundColor: palette\.surfaceRaised/);
+  assert.match(discover, /<Utensils color=\{palette\.orange\} size=\{iconSize\} \/>/);
+  assert.match(discover, /function DiscoverBiteImage\(\{ bite, height \}/);
+  assert.match(discover, /bite\.photoUrl[\s\S]*source=\{\{ uri: bite\.photoUrl \}\}/);
+  assert.match(
+    discover,
+    /<DiscoverDishImagePlaceholder[\s\S]*accessibilityLabel=\{`\$\{bite\.dishName\} photo unavailable`\}/,
+  );
+  assert.match(discover, /<DiscoverBiteImage bite=\{bite\} height=\{discoverRailImageHeight\} \/>/);
+  assert.match(
+    discover,
+    /topDish\?\.imageUrl \? \([\s\S]*source=\{\{ uri: topDish\.imageUrl \}\}[\s\S]*\) : \([\s\S]*<DiscoverDishImagePlaceholder/,
+  );
+  assert.doesNotMatch(discover, /const DISCOVER_DISH_PLACEHOLDER_IMAGES/);
+  assert.doesNotMatch(discover, /getDiscoverDishPlaceholderSource/);
+  assert.doesNotMatch(discover, /source=\{\{ uri: topDish\?\.imageUrl \}\}/);
   assert.match(
     discover,
     /\{shouldShowPopularFoodSkeleton \? \([\s\S]*<PopularFoodStyleSkeleton \/>/,
@@ -586,7 +606,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /updateSearchQuery\(item\.query\)/);
   assert.match(discover, /rememberSearch\(item\.query\)/);
   assert.match(discover, /navigation\.navigate\("SearchResults", \{/);
-  assert.match(discover, /places in this area/);
+  assert.match(discover, /places to eat in this area/);
   assert.match(
     discover,
     /contentContainerStyle=\{\{\s*gap: discoverSectionGap,\s*paddingHorizontal: semanticSpacing\.screenEdge,\s*\}\}/,
@@ -706,7 +726,13 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /const discoveryService = getHungryService\(\)\.discovery[\s\S]*discoveryService\.countVenuesInArea\([\s\S]*discoverLocationLatitude,[\s\S]*discoverLocationLongitude,[\s\S]*DISCOVER_AREA_RADIUS_METERS/,
+    /const \[isSupabaseDiscoveryFeedLoading, setIsSupabaseDiscoveryFeedLoading\] = useState\(false\)/,
+  );
+  assert.match(discover, /setIsSupabaseDiscoveryFeedLoading\(true\)/);
+  assert.match(discover, /setIsSupabaseDiscoveryFeedLoading\(false\)/);
+  assert.match(
+    discover,
+    /const discoveryService = getHungryService\(\)\.discovery[\s\S]*discoveryService\.countVenuesInArea\([\s\S]*discoverLocationLatitude,[\s\S]*discoverLocationLongitude,[\s\S]*DISCOVER_AREA_RADIUS_METERS,[\s\S]*discoverLocationLabel/,
   );
   assert.match(
     discover,
@@ -714,7 +740,19 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /const discoverAreaCount = supabaseDiscoverAreaCount \?\? areaVenues\.length/,
+    /const showInitialDiscoverSkeleton = isSupabaseDataSource && isSupabaseDiscoveryFeedLoading/,
+  );
+  assert.match(
+    discover,
+    /const showDiscoverFilterRailSkeleton =[\s\S]*showPopularFoodFilterSkeleton \|\| showInitialDiscoverSkeleton/,
+  );
+  assert.match(
+    discover,
+    /const discoverAreaCount = isSupabaseDataSource[\s\S]*\? supabaseDiscoverAreaCount[\s\S]*: areaVenues\.length/,
+  );
+  assert.match(
+    discover,
+    /discoverAreaCount === null \? \([\s\S]*<Skeleton width=\{150\} height=\{14\} borderRadius=\{radii\.sm\} \/>/,
   );
   assert.match(
     discover,

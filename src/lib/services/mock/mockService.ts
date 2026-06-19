@@ -105,6 +105,7 @@ import {
 import type { ExplicitFeedbackEvent } from "@/lib/ai/tasteEngine";
 import { applyVerificationSubmission } from "@/features/merchant/verificationStateMachine";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
+import { filterCustomerVisiblePromotions } from "@/features/merchant/customerPromotions";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import { loadMockState, saveMockState } from "./persistence";
 import { biteToStallPost } from "@/lib/services/postTransforms";
@@ -904,6 +905,15 @@ function getPromotionAnalyticsValue(
   return { impressions: 1200, clicks: 96, saves: 24, profileVisits: 48, dishViews: 132 };
 }
 
+function getPromotionOutletVenueId(promotion: MerchantPromotion): string | undefined {
+  if (promotion.targetDishId) {
+    return dishes.find((dish) => dish.id === promotion.targetDishId)?.venueId;
+  }
+  const outlet = merchantAccount.outlets.find((item) => item.id === promotion.outletId);
+  const signatureDishId = outlet?.signatureDishIds[0];
+  return signatureDishId ? dishes.find((dish) => dish.id === signatureDishId)?.venueId : undefined;
+}
+
 function getAIInsightsForOutlet(
   outletId: string,
   types?: AIBusinessInsight["type"][],
@@ -1389,7 +1399,14 @@ export const hungryService: HungryService = {
       return resolve([...buildings]);
     },
 
-    async countVenuesInArea(lat?, lng?, radiusMeters?) {
+    async countVenuesInArea(lat?, lng?, radiusMeters?, areaName?) {
+      const normalizedAreaName = areaName?.trim().toLowerCase();
+      if (normalizedAreaName) {
+        return resolve(
+          venues.filter((venue) => venue.planningArea?.trim().toLowerCase() === normalizedAreaName)
+            .length,
+        );
+      }
       const scopedBuildings =
         typeof lat === "number" && typeof lng === "number"
           ? getNearestBuildings(lat, lng, radiusMeters ? radiusMeters / 1000 : 3, 14)
@@ -1436,6 +1453,13 @@ export const hungryService: HungryService = {
 
     async getDish(id) {
       return resolve(dishes.find((d) => d.id === id));
+    },
+
+    async listActivePromotionsForTarget(input) {
+      const promotions = _merchantPromotions.filter(
+        (promotion) => getPromotionOutletVenueId(promotion) === input.venueId,
+      );
+      return resolve(clone(filterCustomerVisiblePromotions(promotions, { dishId: input.dishId })));
     },
 
     async recordDishView(dishId, context) {

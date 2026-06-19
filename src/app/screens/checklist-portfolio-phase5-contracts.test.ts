@@ -255,7 +255,7 @@ test("Phase 5 has a Supabase smoke check for checklist portfolio passport contro
 });
 
 test("Phase 5 documentation covers user, admin, and service usage", () => {
-  const guide = read("tasks/checklist-portfolio-passport-guide.md");
+  const guide = read("tasks/Roadmap/Gamification/checklist-portfolio-passport-guide.md");
 
   assert.match(guide, /User Guide: Checklists/);
   assert.match(guide, /User Guide: Portfolios/);

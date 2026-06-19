@@ -39,6 +39,19 @@ test("analytics privacy scrubber redacts PII and rounds coordinates", () => {
   assert.equal(sanitized.longitude, 103.988);
 });
 
+test("PostHog identity properties do not include precise coordinates", () => {
+  const sessionStore = readRepoFile("src/store/useSessionStore.ts");
+  const identityBuilder = sessionStore.slice(
+    sessionStore.indexOf("function buildPostHogIdentityProperties"),
+    sessionStore.indexOf("export const useSessionStore"),
+  );
+
+  assert.doesNotMatch(identityBuilder, /latitude/);
+  assert.doesNotMatch(identityBuilder, /longitude/);
+  assert.match(identityBuilder, /has_precise_location/);
+  assert.match(identityBuilder, /location_source/);
+});
+
 test("analytics tracking sanitizes before buffering or sink dispatch", () => {
   const seen: unknown[] = [];
   setAnalyticsSink((event) => seen.push(event));
@@ -100,8 +113,11 @@ test("auth token storage allows plaintext fallback only behind explicit guard", 
 
 test("media upload validation rejects unsafe MIME and signed URL failure", async () => {
   assert.throws(
-    () => assertValidMenuPhotoUpload({ mimeType: "image/webp", fileSizeBytes: 1024 }),
+    () => assertValidMenuPhotoUpload({ mimeType: "image/svg+xml", fileSizeBytes: 1024 }),
     /image\/jpeg/,
+  );
+  assert.doesNotThrow(() =>
+    assertValidMenuPhotoUpload({ mimeType: "image/webp", fileSizeBytes: 1024 }),
   );
 
   const previousFetch = globalThis.fetch;
@@ -182,6 +198,11 @@ test("safe linking routes delivery and article opens through allowlisted helpers
 test("ingest-menu-photo requires auth and verifies submission ownership", () => {
   const source = readRepoFile("supabase/functions/ingest-menu-photo/index.ts");
 
+  assert.match(source, /ALLOWED_OCR_IMAGE_TYPES/);
+  assert.match(source, /assertValidOcrImageType\(imageResponse\)/);
+  assert.match(source, /Processing failed\. Please try again\./);
+  assert.match(source, /console\.error\("OCR pipeline error"/);
+  assert.doesNotMatch(source, /ocr_error: message\.slice/);
   assert.match(source, /function bytesToBase64\(bytes: Uint8Array\)/);
   assert.match(source, /bytesToBase64\(imageBytes\)/);
   assert.doesNotMatch(source, /btoa\(String\.fromCharCode\(\.\.\.imageBytes\)\)/);
@@ -194,6 +215,61 @@ test("ingest-menu-photo requires auth and verifies submission ownership", () => 
   assert.match(source, /\.in\("ocr_status", \["pending", "failed"\]\)/);
   assert.match(source, /INGEST_MENU_PHOTO_ALLOWED_ORIGINS/);
   assert.doesNotMatch(source, /"Access-Control-Allow-Origin": "\*"/);
+});
+
+test("guest session function rate-limits by device and client IP with generic server errors", () => {
+  const source = readRepoFile("supabase/functions/guest-sessions/index.ts");
+
+  assert.match(source, /MAX_SESSIONS_PER_DEVICE_PER_HOUR/);
+  assert.match(source, /MAX_SESSIONS_PER_IP_PER_HOUR/);
+  assert.match(source, /function getClientIp\(request: Request\)/);
+  assert.match(source, /cf-connecting-ip/);
+  assert.match(source, /\.eq\("client_ip", clientIp\)/);
+  assert.match(source, /client_ip: clientIp/);
+  assert.match(source, /server_misconfigured/);
+  assert.doesNotMatch(source, /message: countError\.message/);
+  assert.doesNotMatch(source, /message: error\?\.message/);
+});
+
+test("security audit migration privatizes review media and adds owner-scoped policies", () => {
+  const migration = readRepoFile(
+    "supabase/migrations/20260607090000_security_audit_remediation.sql",
+  );
+
+  assert.match(migration, /add column if not exists client_ip text/);
+  assert.match(migration, /idx_guest_sessions_client_ip_created_at/);
+  assert.match(migration, /add column if not exists storage_bucket text/);
+  assert.match(migration, /add column if not exists storage_path text/);
+  assert.match(migration, /public = false/);
+  assert.match(migration, /where id in \('menu-photos', 'review-media'\)/);
+  assert.match(migration, /drop policy if exists "public_select_review_photos"/);
+  assert.match(migration, /review_photos_insert_own_review/);
+  assert.match(migration, /r\.user_id = auth\.uid\(\)/);
+  assert.match(migration, /user_profiles_anon_deny/);
+  assert.match(migration, /using \(false\)/);
+  assert.match(migration, /review_media_select_signed_public_reviews/);
+  assert.match(migration, /rp\.storage_path = storage\.objects\.name/);
+});
+
+test("review photo writes persist storage paths and reads resolve signed URLs", () => {
+  const service = readRepoFile("src/lib/services/supabase/supabaseService.ts");
+
+  assert.match(service, /bucket: "review-media"/);
+  assert.match(service, /storage_bucket: "review-media"/);
+  assert.match(service, /storage_path: asset\.path/);
+  assert.match(service, /\.select\("review_id,url,storage_bucket,storage_path,sort_order"\)/);
+  assert.match(service, /createSignedStorageUrl\(client, bucket, path\)/);
+  assert.doesNotMatch(service, /uploadedPhotoUrls/);
+});
+
+test("marketing website ships a content security policy header", () => {
+  const config = readRepoFile("marketing/website/web-v2/next.config.ts");
+
+  assert.match(config, /Content-Security-Policy/);
+  assert.match(config, /default-src 'self'/);
+  assert.match(config, /frame-ancestors 'none'/);
+  assert.match(config, /object-src 'none'/);
+  assert.match(config, /upgrade-insecure-requests/);
 });
 
 test("app security hardening migration restricts ops RPCs and verification evidence metadata", () => {

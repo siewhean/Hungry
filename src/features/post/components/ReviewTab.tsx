@@ -6,6 +6,7 @@ import { AppText, Input, Badge } from "@/components/ui";
 import { StarRating } from "@/components/review";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore } from "../useComposerStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { spacing, semanticSpacing } from "@/theme/tokens";
 
 const HASHTAG_SUGGESTIONS = [
@@ -23,6 +24,10 @@ export function ReviewTab() {
   const { componentRadii, palette } = useHungryTheme();
   const reviewCaption = useComposerStore((state) => state.reviewCaption);
   const postCaption = useComposerStore((state) => state.postCaption);
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isUserMode = !isMerchantMode && !isDeveloperMode;
+  const shouldShowHashtagSuggestions = !isUserMode;
   const setCaption = useComposerStore((state) => state.setCaption);
   const rating = useComposerStore((state) => state.rating);
   const setRating = useComposerStore((state) => state.setRating);
@@ -138,29 +143,31 @@ export function ReviewTab() {
       </View>
 
       {/* AI Suggestions */}
-      <View style={styles.section}>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: semanticSpacing.inlineGaps,
-            marginBottom: semanticSpacing.componentGap,
-          }}
-        >
-          <Sparkles size={16} color={palette.orange} />
-          <AppText variant="bodySmallBold">AI Hashtag Suggestions</AppText>
-        </View>
-        <View style={[styles.chipRow, { gap: semanticSpacing.inlineGaps }]}>
-          {hashtagSuggestions.map((tag) => (
-            <Pressable key={tag} onPress={() => handleAddHashtag(tag)}>
-              <Badge label={tag} tone="neutral" />
+      {shouldShowHashtagSuggestions && (
+        <View style={styles.section}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: semanticSpacing.inlineGaps,
+              marginBottom: semanticSpacing.componentGap,
+            }}
+          >
+            <Sparkles size={16} color={palette.orange} />
+            <AppText variant="bodySmallBold">AI Hashtag Suggestions</AppText>
+          </View>
+          <View style={[styles.chipRow, { gap: semanticSpacing.inlineGaps }]}>
+            {hashtagSuggestions.map((tag) => (
+              <Pressable key={tag} onPress={() => handleAddHashtag(tag)}>
+                <Badge label={tag} tone="neutral" />
+              </Pressable>
+            ))}
+            <Pressable onPress={handleRefreshHashtags}>
+              <Badge label="Refresh" tone="orange" />
             </Pressable>
-          ))}
-          <Pressable onPress={handleRefreshHashtags}>
-            <Badge label="Refresh" tone="orange" />
-          </Pressable>
+          </View>
         </View>
-      </View>
+      )}
     </View>
   );
 }

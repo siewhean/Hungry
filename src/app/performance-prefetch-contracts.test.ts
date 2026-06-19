@@ -23,6 +23,10 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.match(rootNavigator, /getComponent=\{loadDeveloperLauncherScreen\}/);
   assert.match(rootNavigator, /QuickReviewModalHost/);
   assert.match(rootNavigator, /ReviewSuccessModalHost/);
+  assert.doesNotMatch(rootNavigator, /import \* as CredEarnedToastModule/);
+  assert.match(rootNavigator, /function CredEarnedToastHost/);
+  assert.match(rootNavigator, /FEATURE_FLAGS\.gamificationEnabled/);
+  assert.match(rootNavigator, /require\("@\/components\/gamification\/CredEarnedToast"\)/);
 
   assert.doesNotMatch(tabs, /import \{ DiscoverHomeScreen \}/);
   assert.doesNotMatch(tabs, /import \{ ReviewFeedScreen \}/);
@@ -91,6 +95,10 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
 
   assert.match(homeFeed, /export interface HomeFeedBundle/);
   assert.match(homeFeed, /export async function getHomeFeedBundle/);
+  assert.match(homeFeed, /const HOME_FEED_BUNDLE_CACHE_TTL_MS = 5_000/);
+  assert.match(homeFeed, /const homeFeedBundleCache = new Map/);
+  assert.match(homeFeed, /export function getHomeFeedBundleCacheKey/);
+  assert.match(homeFeed, /export function clearHomeFeedBundleCache/);
   assert.match(homeScreen, /getHomeFeedBundle\(profile,\s*\{/);
   assert.match(homeScreen, /followedAuthors,/);
   assert.match(homeScreen, /followedUserIds,/);
@@ -106,6 +114,10 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
   assert.doesNotMatch(homeScreen, /const publishedPosts = usePublishedPostStore/);
   assert.match(discover, /getDiscoverBites\(repository\)/);
   assert.match(discover, /getDiscoverBiteCollections\(discoverBaseBites, repository\)/);
+  assert.match(discover, /const repositoryLookup = useMemo<DiscoverRepositoryLookup>/);
+  assert.match(discover, /const dishById = new Map<string, DishDetail \| undefined>\(\)/);
+  assert.match(discover, /const dishesByVenue = new Map<string, DishDetail\[\]>\(\)/);
+  assert.match(discover, /const venuesByBuilding = new Map<string, VenueSummary\[\]>\(\)/);
   assert.match(discover, /const discoverDishById = useMemo/);
   assert.match(discover, /discoverDishById\.get\(bite\.dishId\)/);
   assert.doesNotMatch(discover, /getDiscoverBiteCollection\("quickBites"/);
@@ -135,6 +147,8 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   );
   assert.match(prefetch, /function schedulePrefetchWork/);
   assert.match(prefetch, /const PREFETCH_FALLBACK_DELAY_MS = 160/);
+  assert.match(prefetch, /const MAX_IDLE_PREFETCH_WORK_PER_TICK = 8/);
+  assert.match(prefetch, /pendingIdlePrefetchWorkCount/);
   assert.match(prefetch, /const scheduledRoutePreloads = new Set<string>\(\)/);
   assert.match(prefetch, /const scheduledBrowseResultPrefetches = new Set<string>\(\)/);
   assert.match(prefetch, /export function prefetchDishDetail/);
@@ -198,6 +212,10 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.doesNotMatch(zoomableMedia, /from "expo-video"/);
   assert.match(zoomableMedia, /require\("\.\/ZoomableVideo"\)/);
   assert.match(zoomableVideo, /from "expo-video"/);
+
+  const scheduler = read("src/lib/performance/scheduleIdleWork.ts");
+  assert.match(scheduler, /onComplete\?: \(\) => void/);
+  assert.match(scheduler, /options\?\.onComplete\?\.\(\)/);
 });
 
 test("remaining high-traffic profile, developer, and merchant links prefetch on intent", () => {

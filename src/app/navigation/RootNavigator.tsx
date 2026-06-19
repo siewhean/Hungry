@@ -1,5 +1,5 @@
 import * as Linking from "expo-linking";
-import { useCallback, useEffect, useMemo, type ComponentType } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import {
   NavigationContainer,
@@ -27,11 +27,6 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
 import { createRootLinking } from "./linking";
-import * as CredEarnedToastModule from "@/components/gamification/CredEarnedToast";
-
-const CredEarnedToastComponent =
-  (CredEarnedToastModule as { CredEarnedToast?: ComponentType }).CredEarnedToast ??
-  (CredEarnedToastModule as { default?: ComponentType }).default;
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -404,6 +399,17 @@ function ReviewSuccessModalHost({ onOpenHistory }: { onOpenHistory: () => void }
   return <ReviewSuccessModal onOpenHistory={onOpenHistory} />;
 }
 
+function CredEarnedToastHost() {
+  if (!FEATURE_FLAGS.gamificationEnabled) {
+    return null;
+  }
+
+  const { CredEarnedToast } =
+    require("@/components/gamification/CredEarnedToast") as typeof import("@/components/gamification/CredEarnedToast");
+
+  return <CredEarnedToast />;
+}
+
 export function RootNavigator({ theme }: { theme: Theme }) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
@@ -417,7 +423,17 @@ export function RootNavigator({ theme }: { theme: Theme }) {
   const isOffline = useUIStore((state) => state.isOffline);
 
   const prefix = Linking.createURL("/");
-  const linking = useMemo(() => createRootLinking(prefix), [prefix]);
+  const linking = useMemo(
+    () =>
+      createRootLinking(prefix, () => {
+        const state = useSessionStore.getState();
+        return {
+          isAuthReady: state.isAuthReady,
+          isAuthenticated: state.isAuthenticated,
+        };
+      }),
+    [prefix],
+  );
 
   const navigateHome = useCallback(() => {
     const returnRoute = useSessionStore.getState().returnRoute;
@@ -634,6 +650,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             <RootStack.Screen
               getComponent={loadMerchantClaimExplainerScreen}
               name="MerchantClaimExplainer"
+              options={{
+                presentation: "transparentModal",
+                animation: "fade",
+                contentStyle: { backgroundColor: "transparent" },
+              }}
             />
           ) : null}
           <RootStack.Screen component={BlogPostRouteScreen} name="BlogPost" />
@@ -727,7 +748,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       <QuickReviewModalHost />
       <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
       <FloatingToast />
-      {CredEarnedToastComponent ? <CredEarnedToastComponent /> : null}
+      <CredEarnedToastHost />
     </>
   );
 }

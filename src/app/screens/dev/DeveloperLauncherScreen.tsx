@@ -616,7 +616,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     completeOnboarding(false);
     setReturnRoute(undefined);
     hideReviewSuccess();
-    navigation.navigate("ActivityInbox", { initialTab: "updates" });
+    navigation.navigate("ActivityInbox", { initialTab: "messages" });
   };
 
   const openBuilding = (buildingId: string) => {
@@ -722,7 +722,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         />
         <DevButton
           label="Activity"
-          onPressIn={() => preloadRoute(navigation, "ActivityInbox", { initialTab: "updates" })}
+          onPressIn={() => preloadRoute(navigation, "ActivityInbox", { initialTab: "messages" })}
           onPress={openActivityInboxSmoke}
         />
 

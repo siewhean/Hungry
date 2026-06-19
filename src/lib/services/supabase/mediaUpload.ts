@@ -10,7 +10,12 @@ export interface MenuPhotoValidationInput {
   fileSizeBytes?: number;
 }
 
-const ALLOWED_MENU_PHOTO_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/heic"]);
+const ALLOWED_MENU_PHOTO_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/heic",
+  "image/webp",
+]);
 const ALLOWED_IMAGE_UPLOAD_MIME_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -224,6 +229,6 @@ export function assertValidMenuPhotoUpload(input: MenuPhotoValidationInput): voi
     throw new Error("Menu photo exceeds 10MB limit.");
   }
   if (input.mimeType && !ALLOWED_MENU_PHOTO_MIME_TYPES.has(input.mimeType)) {
-    throw new Error("Menu photo must be image/jpeg, image/png, or image/heic.");
+    throw new Error("Menu photo must be image/jpeg, image/png, image/heic, or image/webp.");
   }
 }

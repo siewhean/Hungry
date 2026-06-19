@@ -147,6 +147,7 @@ function mapBuilding(row: Row): BuildingSummary {
     venueCount: toNumber(row.venue_count),
     isClosedToday: toBool(row.is_closed_today),
     heroDishId: toString(row.hero_dish_id),
+    planningArea: toString(row.planning_area) || undefined,
   };
 }
 
@@ -163,12 +164,13 @@ function mapVenue(row: Row): VenueSummary {
     operatingHours: toString(row.operating_hours),
     closureNotice: toString(row.closure_notice) || undefined,
     deliveryLinks: [],
+    planningArea: toString(row.planning_area) || undefined,
   };
 }
 
 function mapDish(row: Row, venue?: VenueSummary, presentation?: DishPresentation): DishDetail {
   const gallery = presentation?.gallery ?? [];
-  const imageUrl = toString(row.image_url) || gallery[0] || "";
+  const imageUrl = gallery[0] || toString(row.image_url) || "";
   return {
     id: toString(row.id),
     venueId: toString(row.venue_id),
@@ -268,6 +270,7 @@ function mapRpcVenue(row: Row): VenueSummary {
       webUrl: toString(delivery.webUrl, toString(delivery.web_url)),
       affiliateEligible: toBool(delivery.affiliateEligible ?? delivery.affiliate_eligible),
     })),
+    planningArea: toString(row.planning_area) || undefined,
   };
 }
 
@@ -284,6 +287,7 @@ function mapDiscoveryFeedVenue(row: Row): VenueSummary {
     operatingHours: "",
     closureNotice: undefined,
     deliveryLinks: [],
+    planningArea: toString(row.planning_area) || undefined,
   };
 }
 
@@ -300,8 +304,8 @@ function mapDiscoveryFeedDish(row: Row, venue: VenueSummary): DishDetail | undef
       name: dishName,
       image_url: imageUrl,
       distance_meters: row.distance_meters,
-      rating_avg: 0,
-      review_count: 0,
+      rating_avg: row.top_dish_rating,
+      review_count: row.top_dish_review_count,
       price: row.top_dish_price,
       price_range: "",
       live_crowd: row.live_crowd,
@@ -685,13 +689,31 @@ export async function countVenuesInAreaViaRpc(
   lat?: number,
   lng?: number,
   radiusMeters?: number,
+  areaName?: string,
 ): Promise<number | undefined> {
-  if (!isSupabaseConfigured() || typeof lat !== "number" || typeof lng !== "number") {
+  if (!isSupabaseConfigured()) {
     return undefined;
   }
 
   const client = getSupabaseClient();
   if (!client) return undefined;
+
+  const normalizedAreaName = areaName?.trim();
+  if (normalizedAreaName) {
+    const { count, error } = await client
+      .from("venues")
+      .select("id", { count: "exact", head: true })
+      .ilike("planning_area", normalizedAreaName);
+
+    if (!error && typeof count === "number") return count;
+    if (error) {
+      console.warn("Supabase venue planning-area count failed", error.message);
+    }
+  }
+
+  if (typeof lat !== "number" || typeof lng !== "number") {
+    return undefined;
+  }
 
   const { data, error } = await client.rpc("count_venues_in_area", {
     p_lat: lat,

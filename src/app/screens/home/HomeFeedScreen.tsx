@@ -1003,6 +1003,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
   );
 
   const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
+  const activityInitialTab = directMessagesEnabled ? "messages" : "updates";
 
   const renderActivityButton = useCallback(
     () => (
@@ -1011,8 +1012,10 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
           accessibilityLabel="Open activity inbox"
           accessibilityHint="Shows messages, comments, likes, and shares"
           icon={<Bell color={palette.text} size={22} />}
-          onPress={() => navigation.navigate("ActivityInbox", { initialTab: "updates" })}
-          onPressIn={() => preloadRoute(navigation, "ActivityInbox", { initialTab: "updates" })}
+          onPress={() => navigation.navigate("ActivityInbox", { initialTab: activityInitialTab })}
+          onPressIn={() =>
+            preloadRoute(navigation, "ActivityInbox", { initialTab: activityInitialTab })
+          }
           size={headerActionSize}
           testID="home-activity-inbox-button"
           variant="ghost"
@@ -1028,6 +1031,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
     ),
     [
       activityUnreadCount,
+      activityInitialTab,
       navigation,
       palette.error,
       palette.text,
@@ -1997,12 +2001,7 @@ export function HomeFeedScreen({ mode = "social" }: HomeFeedScreenProps) {
               renderItem={({ item, index }) => renderFeedCard(item, "social", index)}
               // @ts-ignore
               estimatedItemSize={500}
-              ListEmptyComponent={
-                <EmptyState
-                  title="No food stories yet"
-                  body="Nothing to show right now. Try Discover to find dishes nearby."
-                />
-              }
+              ListEmptyComponent={<EmptyState title="No posts yet" body="Be the first to post." />}
               contentContainerStyle={{
                 gap: spacing[2],
                 paddingBottom: spacing[16] + insets.bottom + spacing[6],

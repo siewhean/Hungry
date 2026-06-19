@@ -117,6 +117,7 @@ export interface BuildingSummary {
   venueCount: number;
   isClosedToday: boolean;
   heroDishId: string;
+  planningArea?: string;
 }
 
 export interface VenueSummary {
@@ -132,6 +133,7 @@ export interface VenueSummary {
   closureNotice?: string;
   deliveryLinks: DeliveryLink[];
   verificationStatus?: VerificationStatus;
+  planningArea?: string;
 }
 
 export type UserStallSubmissionStatus =
@@ -378,6 +380,12 @@ export interface SearchFilters {
   dietaryFlags: DietaryFlag[];
   tasteValues: TasteVector;
   radius: number;
+  latitude?: number;
+  longitude?: number;
+  areaName?: string;
+  cuisineTags?: string[];
+  maxPrice?: number;
+  openOnly?: boolean;
 }
 
 export interface StallPost {

@@ -51,6 +51,7 @@ export const buildings: BuildingSummary[] = [
     venueCount: 42,
     isClosedToday: false,
     heroDishId: "dish-chicken-rice",
+    planningArea: "Chinatown",
   },
   {
     id: "building-amoy",
@@ -61,6 +62,7 @@ export const buildings: BuildingSummary[] = [
     venueCount: 38,
     isClosedToday: false,
     heroDishId: "dish-ban-mian",
+    planningArea: "Chinatown",
   },
   {
     id: "building-lau-pa-sat",
@@ -71,6 +73,7 @@ export const buildings: BuildingSummary[] = [
     venueCount: 54,
     isClosedToday: false,
     heroDishId: "dish-satay",
+    planningArea: "Chinatown",
   },
   {
     id: "building-313",
@@ -81,6 +84,7 @@ export const buildings: BuildingSummary[] = [
     venueCount: 62,
     isClosedToday: false,
     heroDishId: "dish-japanese-curry",
+    planningArea: "Orchard",
   },
 ];
 
@@ -109,6 +113,7 @@ export const venues: VenueSummary[] = [
         affiliateEligible: true,
       },
     ],
+    planningArea: "Chinatown",
   },
   {
     id: "venue-ban-mian",
@@ -121,6 +126,7 @@ export const venues: VenueSummary[] = [
     topDishId: "dish-ban-mian",
     operatingHours: "11:00 AM – 3:00 PM",
     deliveryLinks: [],
+    planningArea: "Chinatown",
   },
   {
     id: "venue-satay-street",
@@ -140,6 +146,7 @@ export const venues: VenueSummary[] = [
         affiliateEligible: false,
       },
     ],
+    planningArea: "Chinatown",
   },
   {
     id: "venue-japanese-curry",
@@ -151,6 +158,7 @@ export const venues: VenueSummary[] = [
     topDishId: "dish-japanese-curry",
     operatingHours: "11:00 AM – 10:00 PM",
     deliveryLinks: [],
+    planningArea: "Orchard",
   },
   {
     id: "venue-maxwell-porridge",
@@ -162,6 +170,7 @@ export const venues: VenueSummary[] = [
     topDishId: "dish-teochew-porridge",
     operatingHours: "6:00 PM – 4:00 AM",
     deliveryLinks: [],
+    planningArea: "Chinatown",
   },
   {
     id: "venue-fish-soup",
@@ -175,6 +184,7 @@ export const venues: VenueSummary[] = [
     operatingHours: "9:00 AM – 3:00 PM",
     closureNotice: "Closed today for scheduled cleaning. Reopens tomorrow.",
     deliveryLinks: [],
+    planningArea: "Chinatown",
   },
   {
     id: "venue-pasta-express",
@@ -187,6 +197,7 @@ export const venues: VenueSummary[] = [
     topDishId: "dish-truffle-tagliatelle",
     operatingHours: "11:00 AM – 9:00 PM",
     deliveryLinks: [],
+    planningArea: "Chinatown",
   },
   {
     id: "venue-napoli-pizza",
@@ -199,6 +210,7 @@ export const venues: VenueSummary[] = [
     topDishId: "dish-burrata-pizza",
     operatingHours: "12:00 PM – 10:00 PM",
     deliveryLinks: [],
+    planningArea: "Chinatown",
   },
 ];
 
@@ -1098,8 +1110,15 @@ export const merchantPromotions: MerchantPromotion[] = [
     outletId: "outlet-wonton-mee",
     title: "Lunch Hour Special",
     description: "Get a free drink with any wonton mee order between 11am–1pm.",
-    startDate: "2026-04-28T03:00:00Z",
-    endDate: "2026-05-05T07:00:00Z",
+    targetDishId: "dish-chicken-rice",
+    promotionItemType: "existing_menu_item",
+    startDate: "2026-06-01T03:00:00Z",
+    endDate: "2026-12-31T07:00:00Z",
+    originalPrice: 5.5,
+    promotionalPrice: 4.8,
+    finalPrice: 4.8,
+    discountPercentage: 13,
+    isAvailable: true,
     targetAudience: ["nearby_users", "saved_stall_users"],
     status: "active",
     createdAt: "2026-04-27T08:00:00Z",

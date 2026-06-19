@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Pressable, View } from "react-native";
-import {
-  Bookmark,
-  Heart,
-  MessageCircleMore,
-  PencilLine,
-  Send,
-  Utensils,
-} from "lucide-react-native";
+import { Heart, MessageCircleMore, PencilLine, Send, Utensils } from "lucide-react-native";
 
 import { AccessibleImage, AppText, Avatar, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
@@ -18,7 +11,6 @@ import {
   getHungryService,
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
-import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
 import type { StallPost } from "@/types/domain";
@@ -47,20 +39,22 @@ function normalizePersonName(name: string) {
   return name.trim().toLowerCase();
 }
 
-function mergeFollowerNames(
-  users: { name: string; userId?: string }[],
-  targetName: string,
-): Set<string> {
-  const normalizedTarget = normalizePersonName(targetName);
-  const names = new Set<string>();
-
-  users.forEach((user) => {
-    const normalized = normalizePersonName(user.name);
-    if (!normalized || normalized === normalizedTarget) return;
-    names.add(normalized);
-  });
-
-  return names;
+function haveSamePosts(left: StallPost[], right: StallPost[]) {
+  if (left.length !== right.length) return false;
+  for (let i = 0; i < left.length; i += 1) {
+    const a = left[i];
+    const b = right[i];
+    if (
+      a.id !== b.id ||
+      a.authorId !== b.authorId ||
+      a.authorName !== b.authorName ||
+      a.createdAt !== b.createdAt ||
+      a.venueId !== b.venueId
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function toEpochMs(value: string) {
@@ -80,7 +74,6 @@ export function UserProfileContent({
   const rootNavigation = getRootNavigation(navigation);
   const commentsByPostId = useSocialStore((state) => state.commentsByPostId);
   const repliesByCommentId = useSocialStore((state) => state.repliesByCommentId);
-  const publishedPosts = usePublishedPostStore((state) => state.posts);
   const followedAuthors = useSocialStore((state) => state.followedAuthors);
   const followedUserIds = useSocialStore((state) => state.followedUserIds);
   const toggleAuthorFollow = useSocialStore((state) => state.toggleAuthorFollow);
@@ -90,41 +83,27 @@ export function UserProfileContent({
     serviceProviderMode === "mock" || (typeof __DEV__ !== "undefined" && __DEV__);
   const [activeTab, setActiveTab] = useState<"posts" | "reviews">("posts");
   const [posts, setPosts] = useState<StallPost[]>([]);
-  const [followerCount, setFollowerCount] = useState<number>(0);
-  const [followingCount, setFollowingCount] = useState<number>(0);
   const [chatProfilesByName, setChatProfilesByName] = useState<Record<string, UserProfileItem>>({});
-  const [serviceFollowers, setServiceFollowers] = useState<UserProfileItem[]>([]);
-  const localFollowerNames = useMemo(() => {
-    const names = [
-      ...Object.values(commentsByPostId)
-        .flat()
-        .map((comment) => ({ name: comment.authorName, userId: comment.userId })),
-      ...Object.values(repliesByCommentId)
-        .flat()
-        .map((reply) => ({ name: reply.authorName, userId: reply.userId })),
-      ...repository
-        .listStallPosts()
-        .map((post) => ({ name: post.authorName, userId: post.authorId })),
-      ...Object.values(serviceFollowers).map((user) => ({ name: user.name, userId: user.userId })),
-      ...Object.values(chatProfilesByName).map((user) => ({
-        name: user.name,
-        userId: user.userId,
-      })),
-    ];
 
-    return mergeFollowerNames(names, authorName);
-  }, [
-    authorName,
-    chatProfilesByName,
-    commentsByPostId,
-    repository,
-    repliesByCommentId,
-    serviceFollowers,
-  ]);
+  const normalizedAuthorId = authorId?.trim();
+  const resolvedAuthorId = useMemo(
+    () =>
+      normalizedAuthorId ??
+      posts.find((post) => normalizePersonName(post.authorName) === normalizedAuthorName)?.authorId,
+    [normalizedAuthorId, normalizedAuthorName, posts],
+  );
 
   const openProfileConnections = useCallback(
-    (target: "Followers" | "Following", params: { userId?: string; userDisplayName?: string }) => {
+    (target: "Followers" | "Following", userId?: string) => {
+      const targetUserId = userId || resolvedAuthorId;
+
+      if (!targetUserId) {
+        return;
+      }
+
       const routeNames = navigation?.getState?.()?.routeNames ?? [];
+      const params = { userId: targetUserId, userDisplayName: authorName };
+
       if (routeNames.includes(target)) {
         navigation.navigate(target, params);
         return;
@@ -135,17 +114,8 @@ export function UserProfileContent({
         params: { screen: target, params },
       });
     },
-    [navigation, rootNavigation],
+    [authorName, navigation, resolvedAuthorId, rootNavigation],
   );
-
-  const normalizedAuthorId = authorId?.trim();
-  const resolvedAuthorId = useMemo(
-    () =>
-      normalizedAuthorId ??
-      posts.find((post) => normalizePersonName(post.authorName) === normalizedAuthorName)?.authorId,
-    [normalizedAuthorId, normalizedAuthorName, posts],
-  );
-  const followerLookupId = resolvedAuthorId || "_followers-fallback";
 
   useEffect(() => {
     let isActive = true;
@@ -192,31 +162,6 @@ export function UserProfileContent({
   }, []);
 
   useEffect(() => {
-    let isActive = true;
-    const service = getHungryService().social;
-    void service
-      .listFollowers(followerLookupId)
-      .then((followersList) => {
-        if (!isActive) return;
-        setServiceFollowers(
-          followersList.map((user) => ({
-            userId: user.userId,
-            name: user.displayName,
-            avatarUrl: user.avatarUrl ?? "",
-          })),
-        );
-      })
-      .catch(() => {
-        if (!isActive) return;
-        setServiceFollowers([]);
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [followerLookupId]);
-
-  useEffect(() => {
     let isMounted = true;
     void (async () => {
       const service = getHungryService().social;
@@ -237,42 +182,14 @@ export function UserProfileContent({
           ? post.authorId === normalizedAuthorId
           : normalizePersonName(post.authorName) === normalizedAuthorName,
       );
-      setPosts(mergeStallPosts(authorPosts, matchingSharedPosts));
+      const nextPosts = mergeStallPosts(authorPosts, matchingSharedPosts);
+      setPosts((current) => (haveSamePosts(current, nextPosts) ? current : nextPosts));
     })();
 
     return () => {
       isMounted = false;
     };
-  }, [publishedPosts, repository, normalizedAuthorId, normalizedAuthorName]);
-
-  useEffect(() => {
-    let isActive = true;
-    const service = getHungryService().social;
-
-    void Promise.all([
-      service.listFollowers(followerLookupId),
-      service.listFollowing(followerLookupId),
-    ])
-      .then(([followersList, followingList]) => {
-        if (!isActive) return;
-        const followersFromService = mergeFollowerNames(
-          followersList.map((user) => ({ name: user.displayName, userId: user.userId })),
-          authorName,
-        );
-        const nextFollowerCount = new Set([...followersFromService, ...localFollowerNames]).size;
-        setFollowerCount(nextFollowerCount);
-        setFollowingCount(followingList.length);
-      })
-      .catch(() => {
-        if (!isActive) return;
-        setFollowerCount(localFollowerNames.size);
-        setFollowingCount(0);
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [followerLookupId, localFollowerNames, authorName]);
+  }, [repository, normalizedAuthorId, normalizedAuthorName]);
 
   const resolvedAuthorAvatarUrl = useMemo(() => {
     if (authorAvatarUrl?.trim()) return authorAvatarUrl.trim();
@@ -393,64 +310,6 @@ export function UserProfileContent({
 
           <View style={{ flex: 1, gap: spacing[1] }}>
             <AppText variant="h1">{authorName}</AppText>
-            <View style={{ flexDirection: "row", gap: spacing[2] }}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`View followers for ${authorName}`}
-                disabled={!resolvedAuthorId}
-                onPress={() =>
-                  resolvedAuthorId &&
-                  openProfileConnections("Followers", {
-                    userId: resolvedAuthorId,
-                    userDisplayName: authorName,
-                  })
-                }
-                style={{
-                  alignItems: "center",
-                  backgroundColor: palette.surface,
-                  borderRadius: componentRadii.button,
-                  borderColor: palette.border,
-                  borderWidth: 1,
-                  minHeight: 28,
-                  justifyContent: "center",
-                  paddingHorizontal: spacing[2],
-                  paddingVertical: spacing[0.5],
-                  opacity: resolvedAuthorId ? 1 : 0.6,
-                }}
-              >
-                <AppText variant="micro" style={{ color: palette.text }}>
-                  Followers: {followerCount}
-                </AppText>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`View users followed by ${authorName}`}
-                disabled={!resolvedAuthorId}
-                onPress={() =>
-                  resolvedAuthorId &&
-                  openProfileConnections("Following", {
-                    userId: resolvedAuthorId,
-                    userDisplayName: authorName,
-                  })
-                }
-                style={{
-                  alignItems: "center",
-                  backgroundColor: palette.surface,
-                  borderRadius: componentRadii.button,
-                  borderColor: palette.border,
-                  borderWidth: 1,
-                  minHeight: 28,
-                  justifyContent: "center",
-                  paddingHorizontal: spacing[2],
-                  paddingVertical: spacing[0.5],
-                  opacity: resolvedAuthorId ? 1 : 0.6,
-                }}
-              >
-                <AppText variant="micro" style={{ color: palette.text }}>
-                  Following: {followingCount}
-                </AppText>
-              </Pressable>
-            </View>
             {canShowFollowButton ? (
               <Pressable
                 accessibilityRole="button"
@@ -487,45 +346,35 @@ export function UserProfileContent({
           </View>
         </View>
 
-        <View style={{ flexDirection: "row", gap: spacing[2] }}>
-          <StatBlock
-            icon={<Heart color={palette.orange} size={14} />}
-            label="Followers"
-            value={followerCount}
-            onPress={() =>
-              resolvedAuthorId &&
-              openProfileConnections("Followers", {
-                userId: resolvedAuthorId,
-                userDisplayName: authorName,
-              })
-            }
-          />
-          <StatBlock
-            icon={<Send color={palette.orange} size={14} />}
-            label="Following"
-            value={followingCount}
-            onPress={() =>
-              resolvedAuthorId &&
-              openProfileConnections("Following", {
-                userId: resolvedAuthorId,
-                userDisplayName: authorName,
-              })
-            }
-          />
-        </View>
-
-        <View style={{ flexDirection: "row", gap: spacing[2] }}>
-          <StatBlock
-            icon={<PencilLine color={palette.orange} size={14} />}
-            label="Reviews"
-            value={reviewCount}
-          />
-          <StatBlock
-            icon={<Utensils color={palette.orange} size={14} />}
-            label="Stalls"
-            value={stallsCount}
-          />
-          <StatBlock icon={<Bookmark color={palette.orange} size={14} />} label="Saved" value={0} />
+        <View style={{ gap: spacing[4] }}>
+          <View style={{ flexDirection: "row", gap: spacing[2] }}>
+            <StatBlock
+              icon={<Heart color={palette.orange} size={14} />}
+              label="Followers"
+              value={isFollowingAuthor ? 1 : 0}
+              onPress={() => openProfileConnections("Followers", resolvedAuthorId)}
+            />
+            <StatBlock
+              icon={<Send color={palette.orange} size={14} />}
+              label="Following"
+              value={0}
+              onPress={() => openProfileConnections("Following", resolvedAuthorId)}
+            />
+          </View>
+          <View style={{ flexDirection: "row", gap: spacing[2] }}>
+            <StatBlock
+              icon={<PencilLine color={palette.orange} size={14} />}
+              label="Reviews"
+              value={reviewCount}
+              onPress={() => setActiveTab("reviews")}
+            />
+            <StatBlock
+              icon={<Utensils color={palette.orange} size={14} />}
+              label="Stalls"
+              value={stallsCount}
+              onPress={() => navigation.navigate("VisitedStalls")}
+            />
+          </View>
         </View>
 
         <View style={{ gap: spacing[4], marginTop: spacing[2] }}>

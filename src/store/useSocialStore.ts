@@ -236,11 +236,6 @@ export const useSocialStore = create<SocialState>()(
 
       toggleSave: (postId) => {
         void triggerLightImpact();
-        if (getServiceProvider().mode !== "mock" && !isUuidPostId(postId)) {
-          console.warn("Post save ignored because this post is not backed by Supabase.");
-          return;
-        }
-
         const { interactions } = get();
         const now = new Date().toISOString();
         const current = interactions[postId] ?? {

@@ -21,6 +21,7 @@ import { POST_CAPTION_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputS
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Post">;
@@ -57,6 +58,10 @@ export function PostComposerScreen({ navigation, route }: Props) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isUserMode = !isMerchantMode && !isDeveloperMode;
+  const shouldShowComposerBusinessFeatures = !isUserMode;
   const repository = getDataRepository();
   const [caption, setCaption] = useState("");
   const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
@@ -260,9 +265,11 @@ export function PostComposerScreen({ navigation, route }: Props) {
                       <AppText variant="bodySmall" tone="secondary">
                         {itemVenue?.name ?? item.venueName}
                       </AppText>
-                      <AppText variant="micro" tone="secondary">
-                        {item.tasteTags.slice(0, 3).join(" · ")}
-                      </AppText>
+                      {shouldShowComposerBusinessFeatures && (
+                        <AppText variant="micro" tone="secondary">
+                          {item.tasteTags.slice(0, 3).join(" · ")}
+                        </AppText>
+                      )}
                     </View>
                     <Button
                       label="Choose"
@@ -278,7 +285,7 @@ export function PostComposerScreen({ navigation, route }: Props) {
               );
             })
           ) : (
-            <EmptyState title="No dishes found" body="Try a dish name, stall name, or taste tag." />
+            <EmptyState title="No dishes found" body="Try a dish name or stall name." />
           )}
         </View>
       </Screen>
@@ -370,11 +377,13 @@ export function PostComposerScreen({ navigation, route }: Props) {
             maxLength={POST_CAPTION_MAX_LENGTH}
             onChangeText={(value) => setCaption(sanitizeFreeText(value, POST_CAPTION_MAX_LENGTH))}
           />
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-            {dish.tasteTags.slice(0, 3).map((tag) => (
-              <Badge key={tag} label={tag} tone="neutral" />
-            ))}
-          </View>
+          {shouldShowComposerBusinessFeatures && (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+              {dish.tasteTags.slice(0, 3).map((tag) => (
+                <Badge key={tag} label={tag} tone="neutral" />
+              ))}
+            </View>
+          )}
         </View>
       </Card>
       <Button

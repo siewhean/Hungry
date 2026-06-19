@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import type { ColorValue } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,6 +7,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
   ArrowLeft,
   Bookmark,
+  ChevronDown,
+  ChevronUp,
   Clock3,
   CheckCircle,
   MapPin,
@@ -137,6 +139,21 @@ function parseListedHours(raw: string): ListedHoursRow[] {
   return rows.length ? rows : [{ days: "All days", hours: normalized }];
 }
 
+function getTodayLabel(): DayName {
+  const now = new Date();
+  const dayIndex = now.getDay(); // 0 = Sunday, 6 = Saturday
+  return DAY_ORDER[(dayIndex + 6) % 7];
+}
+
+function getTodayRows(rows: ListedHoursRow[]): ListedHoursRow[] {
+  const today = getTodayLabel();
+  const todayRows = rows.filter((row) => row.days === today || row.days === "All days");
+  if (todayRows.length > 0) {
+    return todayRows;
+  }
+  return rows.length ? [rows[0]] : [];
+}
+
 type Props = NativeStackScreenProps<RootStackParamList, "DishDetail" | "DishDetailV2">;
 
 type Attribute = {
@@ -177,7 +194,10 @@ function getSignatureDishes(currentDish: DishDetail, venueDishes: DishDetail[]) 
 export function DishDetailScreenV2({ navigation, route }: Props) {
   const repository = getDataRepository();
   const dishId = route.params?.dishId ?? route.params?.id ?? "";
-  const dish = repository.getDishById(dishId);
+  const cachedDish = repository.getDishById(dishId);
+  const [hydratedDish, setHydratedDish] = useState<DishDetail | undefined>();
+  const [hasLoadedDishDetail, setHasLoadedDishDetail] = useState(Boolean(cachedDish));
+  const dish = hydratedDish ?? cachedDish;
   const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
   const waitEstimateDisclosure = getDataTrustDisclosure("waitEstimate");
   const { width } = useWindowDimensions();
@@ -194,15 +214,19 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const markTried = useStallInteractionStore((state) => state.markTried);
   const incrementShare = useSocialStore((state) => state.incrementShare);
   const [tasteProfileOpen, setTasteProfileOpen] = useState(false);
+  const [operatingHoursOpen, setOperatingHoursOpen] = useState(false);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const lastRecordedDishViewId = useRef<string | null>(null);
   const [isTryingFood, setIsTryingFood] = useState(false);
 
-  const venue = useMemo(
+  const cachedVenue = useMemo(
     () => (dish ? repository.getVenueById(dish.venueId) : undefined),
     [dish, repository],
   );
+  const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
+  const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
+  const venue = hydratedVenue ?? cachedVenue;
 
   const gallery = useMemo(() => (dish ? buildDishGallery(dish) : []), [dish]);
   const heroImage = gallery[0] ?? dish?.imageUrl;
@@ -219,6 +243,59 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     [dish, venueDishes],
   );
   const listedHours = useMemo(() => (venue ? parseListedHours(venue.operatingHours) : []), [venue]);
+  const currentDayRows = useMemo(() => getTodayRows(listedHours), [listedHours]);
+
+  useEffect(() => {
+    let active = true;
+    setHydratedDish(undefined);
+    setHasLoadedDishDetail(Boolean(cachedDish));
+    if (!dishId || cachedDish) {
+      return () => {
+        active = false;
+      };
+    }
+
+    void getHungryService()
+      .discovery.getDish(dishId)
+      .then((nextDish) => {
+        if (!active) return;
+        setHydratedDish(nextDish);
+        setHasLoadedDishDetail(true);
+      })
+      .catch(() => {
+        if (active) setHasLoadedDishDetail(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [cachedDish, dishId]);
+
+  useEffect(() => {
+    let active = true;
+    setHydratedVenue(undefined);
+    setHasLoadedVenueDetail(Boolean(cachedVenue));
+    if (!dish?.venueId || cachedVenue) {
+      return () => {
+        active = false;
+      };
+    }
+
+    void getHungryService()
+      .discovery.getVenue(dish.venueId)
+      .then((nextVenue) => {
+        if (!active) return;
+        setHydratedVenue(nextVenue);
+        setHasLoadedVenueDetail(true);
+      })
+      .catch(() => {
+        if (active) setHasLoadedVenueDetail(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [cachedVenue, dish?.venueId]);
 
   useEffect(() => {
     if (!dish || lastRecordedDishViewId.current === dish.id) return;
@@ -228,7 +305,31 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     });
   }, [dish, isAuthenticated, profile.id]);
 
-  if (!dish || !venue || !heroImage) {
+  const isDetailLoading =
+    (Boolean(dishId) && !dish && !hasLoadedDishDetail) ||
+    (Boolean(dish?.venueId) && !venue && !hasLoadedVenueDetail);
+
+  if (isDetailLoading) {
+    return (
+      <SafeAreaView
+        style={{
+          alignItems: "center",
+          backgroundColor: palette.bg,
+          flex: 1,
+          justifyContent: "center",
+          padding: spacing[6],
+        }}
+        edges={["top", "left", "right"]}
+      >
+        <ActivityIndicator color={palette.orange} />
+        <AppText variant="bodySmall" tone="secondary" style={{ marginTop: spacing[3] }}>
+          Loading dish details...
+        </AppText>
+      </SafeAreaView>
+    );
+  }
+
+  if (!dish || !venue) {
     return (
       <FeedErrorBoundary
         title="Dish details unavailable"
@@ -425,12 +526,34 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             contentContainerStyle={{ paddingBottom: insets.bottom + 104 }}
           >
             <View style={{ height: heroHeight }}>
-              <AccessibleImage
-                source={{ uri: heroImage }}
-                contentFit="cover"
-                style={{ flex: 1 }}
-                accessibilityLabel={`${dish.name} photo`}
-              />
+              {heroImage ? (
+                <AccessibleImage
+                  source={{ uri: heroImage }}
+                  contentFit="cover"
+                  style={{ flex: 1 }}
+                  accessibilityLabel={`${dish.name} photo`}
+                />
+              ) : (
+                <View
+                  accessibilityRole="image"
+                  accessibilityLabel={`${dish.name} photo unavailable`}
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: palette.surfaceRaised,
+                    flex: 1,
+                    justifyContent: "center",
+                    padding: spacing[6],
+                  }}
+                >
+                  <Utensils color={palette.orange} size={44} />
+                  <AppText variant="h2" style={{ marginTop: spacing[3], textAlign: "center" }}>
+                    {dish.name}
+                  </AppText>
+                  <AppText tone="secondary" style={{ marginTop: spacing[1], textAlign: "center" }}>
+                    {venue.name}
+                  </AppText>
+                </View>
+              )}
               <LinearGradient
                 colors={heroGradientColors}
                 locations={[0, 0.58, 1]}
@@ -617,10 +740,27 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                 ) : null}
               </View>
 
-              <View style={{ gap: spacing[3] }}>
+              <Pressable
+                onPress={() => setOperatingHoursOpen((current) => !current)}
+                accessibilityRole="button"
+                accessibilityLabel="Toggle opening hours"
+                style={({ pressed }) => [
+                  {
+                    gap: spacing[3],
+                    opacity: pressed ? 0.95 : 1,
+                  },
+                ]}
+              >
                 <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
                   <Clock3 color={palette.orange} size={20} />
-                  <AppText variant="h2">Listed Opening Hours</AppText>
+                  <AppText variant="h2" style={{ flex: 1 }}>
+                    Opening Hours
+                  </AppText>
+                  {operatingHoursOpen ? (
+                    <ChevronUp color={palette.textSecondary} size={22} />
+                  ) : (
+                    <ChevronDown color={palette.textSecondary} size={22} />
+                  )}
                 </View>
                 <View
                   style={{
@@ -632,10 +772,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     padding: spacing[4],
                   }}
                 >
-                  <AppText style={{ fontWeight: "800" }}>Listed hours from venue</AppText>
                   {listedHours.length ? (
                     <View style={{ gap: spacing[2], marginTop: spacing[1] }}>
-                      {listedHours.map((row) => (
+                      {(operatingHoursOpen ? listedHours : currentDayRows).map((row) => (
                         <View
                           key={`${row.days}-${row.hours}`}
                           style={{
@@ -660,7 +799,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     <AppText tone="secondary">{venue.closureNotice}</AppText>
                   ) : null}
                 </View>
-              </View>
+              </Pressable>
 
               <View style={{ gap: spacing[3] }}>
                 <View

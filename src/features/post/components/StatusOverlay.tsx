@@ -5,6 +5,7 @@ import { AppText, Button, IconButton } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { publishComposerPost } from "../publishing";
 import { useComposerStore } from "../useComposerStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface StatusOverlayProps {
@@ -20,6 +21,9 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
   const setPublishingError = useComposerStore((state) => state.setPublishingError);
   const lastPublishRequest = useComposerStore((state) => state.lastPublishRequest);
   const reset = useComposerStore((state) => state.reset);
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isUserMode = !isMerchantMode && !isDeveloperMode;
   const retryPublish = async () => {
     if (!lastPublishRequest) {
       setPublishingError("No publish request was found. Please review the post and try again.");
@@ -139,12 +143,16 @@ export function StatusOverlay({ onFinish }: StatusOverlayProps) {
                   : publishingState === "uploading"
                     ? "Uploading Media..."
                     : publishingState === "ai_processing"
-                      ? "AI Creator Suite..."
+                      ? isUserMode
+                        ? "Processing..."
+                        : "AI Creator Suite..."
                       : "Processing Media..."}
               </AppText>
               <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
                 {publishingState === "ai_processing"
-                  ? "Our AI is working its magic to make your post stand out."
+                  ? isUserMode
+                    ? "Your post is being processed."
+                    : "Our AI is working its magic to make your post stand out."
                   : "Hold tight, we're making your food look amazing for the community."}
               </AppText>
             </View>

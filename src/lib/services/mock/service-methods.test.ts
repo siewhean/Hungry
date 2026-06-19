@@ -750,6 +750,46 @@ test("merchant promotion analytics returns analytics and rejects missing promoti
   );
 });
 
+test("customer active promotions only expose active in-window offers for the current dish", async () => {
+  const dish = dishes.find((item) => item.id === "dish-chicken-rice");
+  assert.ok(dish, "Expected chicken rice fixture dish");
+
+  const activePromotions = await hungryService.discovery.listActivePromotionsForTarget({
+    venueId: dish.venueId,
+    dishId: dish.id,
+  });
+
+  assert.ok(
+    activePromotions.some((promotion) => promotion.id === "promo-1"),
+    "Expected active promotion to appear on matching customer detail surfaces",
+  );
+  assert.equal(
+    activePromotions.some((promotion) => promotion.id === "promo-2"),
+    false,
+    "Scheduled promotions should not appear as customer-active offers",
+  );
+  assert.equal(
+    activePromotions.some((promotion) => promotion.id === "promo-3"),
+    false,
+    "Expired promotions should not appear as customer-active offers",
+  );
+  assert.ok(
+    activePromotions.every(
+      (promotion) => !promotion.targetDishId || promotion.targetDishId === dish.id,
+    ),
+  );
+
+  const otherDish = dishes.find((item) => item.id !== dish.id && item.venueId !== dish.venueId);
+  assert.ok(otherDish, "Expected another fixture dish");
+  assert.deepEqual(
+    await hungryService.discovery.listActivePromotionsForTarget({
+      venueId: otherDish.venueId,
+      dishId: otherDish.id,
+    }),
+    [],
+  );
+});
+
 test("merchant popular visitor pins stay review-backed, capped, reorderable, and venue-filtered", async () => {
   const outletId = "outlet-wonton-mee";
   const venueId = `mock-venue-${outletId}`;

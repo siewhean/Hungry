@@ -19,6 +19,7 @@ export function StallHeader({ venue }: StallHeaderProps) {
       <View style={{ gap: spacing[2] }}>
         <AppText variant="h2">{venue.name}</AppText>
         <AppText variant="bodySmall" tone="secondary">
+          {venue.planningArea ? `${venue.planningArea} · ` : ""}
           {venue.unitNumber} · {venue.floor}
         </AppText>
       </View>

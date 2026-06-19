@@ -5,6 +5,7 @@ import * as Haptics from "expo-haptics";
 
 import { AppText, Badge, Button, Card } from "@/components/ui";
 import { useUIStore } from "@/store/useUIStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 
 interface ReviewSuccessModalProps {
@@ -15,6 +16,9 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const payload = useUIStore((state) => state.reviewSuccess);
   const hideReviewSuccess = useUIStore((state) => state.hideReviewSuccess);
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const shouldShowComposerTags = isMerchantMode || isDeveloperMode;
 
   useEffect(() => {
     if (payload) {
@@ -82,7 +86,9 @@ export function ReviewSuccessModal({ onOpenHistory }: ReviewSuccessModalProps) {
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
             <Badge label={`${payload?.rating ?? 0}/5 rating`} tone="orange" />
-            <Badge label={`${payload?.tagCount ?? 0} taste tags`} tone="amber" />
+            {shouldShowComposerTags && (
+              <Badge label={`${payload?.tagCount ?? 0} taste tags`} tone="amber" />
+            )}
             <Badge label={`+${payload?.pointsEarned ?? 0} points`} tone="success" />
           </View>
 

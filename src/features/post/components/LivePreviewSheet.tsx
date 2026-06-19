@@ -6,6 +6,7 @@ import { AccessibleImage, AppText, IconButton, HungryLogo, Badge } from "@/compo
 import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
 import { useComposerStore } from "../useComposerStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -24,6 +25,10 @@ export function LivePreviewSheet() {
   const tasteTags = useComposerStore((state) => state.tasteTags);
   const rating = useComposerStore((state) => state.rating);
   const showFoodContextOverlay = useComposerStore((state) => state.showFoodContextOverlay);
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isUserMode = !isMerchantMode && !isDeveloperMode;
+  const shouldShowTasteTags = !isUserMode;
 
   if (!showPreview) return null;
 
@@ -235,7 +240,7 @@ export function LivePreviewSheet() {
                   {captionToDisplay}
                 </AppText>
 
-                {tasteTags.length > 0 && (
+                {shouldShowTasteTags && tasteTags.length > 0 && (
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
                     {tasteTags.map((tag) => (
                       <AppText key={tag} variant="micro" style={{ color: palette.orange }}>
@@ -308,7 +313,9 @@ export function LivePreviewSheet() {
                 </View>
                 <AppText style={{ fontSize: 13, color: palette.text }}>
                   <AppText style={{ fontWeight: "600" }}>your_account</AppText> {captionToDisplay}
-                  {tasteTags.map((tag) => ` #${tag.toLowerCase().replace(/\s+/g, "")}`).join("")}
+                  {shouldShowTasteTags
+                    ? tasteTags.map((tag) => ` #${tag.toLowerCase().replace(/\s+/g, "")}`).join("")
+                    : ""}
                 </AppText>
               </View>
             </View>

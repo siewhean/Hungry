@@ -678,6 +678,7 @@ export interface HungryService {
       lat?: number,
       lng?: number,
       radiusMeters?: number,
+      areaName?: string,
     ): Promise<number | undefined>;
     getBuildingDetail(id: string): Promise<BuildingDetail | undefined>;
     getFloorPlan(buildingId: string, floor: string): Promise<FloorPlan | undefined>;
@@ -685,6 +686,10 @@ export interface HungryService {
     getVenue(id: string): Promise<VenueSummary | undefined>;
     listVenuesByBuilding(buildingId: string): Promise<VenueSummary[]>;
     getDish(id: string): Promise<DishDetail | undefined>;
+    listActivePromotionsForTarget(input: {
+      venueId: string;
+      dishId?: string;
+    }): Promise<MerchantPromotion[]>;
     recordDishView(
       dishId: string,
       context?: { sessionId?: string; userId?: string },
@@ -717,7 +722,9 @@ export interface HungryService {
     listDiscoveryFeedByLocation(
       request: DiscoveryLocationFeedRequest,
     ): Promise<DiscoveryLocationFeed | undefined>;
-    searchVenuesByLocation(request: VenueLocationSearchRequest): Promise<VenueSummary[] | undefined>;
+    searchVenuesByLocation(
+      request: VenueLocationSearchRequest,
+    ): Promise<VenueSummary[] | undefined>;
     searchDishes(filters: SearchFilters, tasteProfile: TasteVector): Promise<SearchResult[]>;
     decideForMe(
       tasteProfile: TasteVector,

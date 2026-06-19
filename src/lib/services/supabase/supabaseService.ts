@@ -39,6 +39,7 @@ import type {
   BiteDraft,
   BlockUserRequest,
   BuildingDetail,
+  DiscoveryLocationFeed,
   ChatConversation,
   ChatMessage,
   ChatParticipant,
@@ -91,6 +92,7 @@ import type {
   TasteInteractionEvent,
   TasteInteractionType,
   TasteVector,
+  VenueSummary,
   Story,
   StoryContent,
   UserStallSubmission,
@@ -598,6 +600,56 @@ async function getCurrentUserProfileOrGuest(): Promise<UserProfile> {
 
 const STORY_TTL_MS = 24 * 60 * 60 * 1000;
 
+function clampRadiusMeters(radiusMeters?: number): number {
+  if (typeof radiusMeters !== "number" || !Number.isFinite(radiusMeters))
+    return Number.MAX_SAFE_INTEGER;
+  return radiusMeters > 0 ? radiusMeters : Number.MAX_SAFE_INTEGER;
+}
+
+function getFallbackDiscoveryFeed(request: {
+  areaName?: string;
+  lat?: number;
+  lng?: number;
+  radiusMeters?: number;
+  limit?: number;
+}): DiscoveryLocationFeed {
+  const limit = request.limit ?? 20;
+  const fallbackFilters: SearchFilters = {
+    query: "",
+    categories: [],
+    dietaryFlags: [],
+    tasteValues: NEUTRAL_TASTE_VECTOR,
+    radius: clampRadiusMeters(request.radiusMeters),
+    latitude: request.lat,
+    longitude: request.lng,
+    areaName: request.areaName,
+    openOnly: false,
+  };
+
+  const fallbackDishes = supabaseRepository
+    .searchDishes(fallbackFilters, NEUTRAL_TASTE_VECTOR)
+    .slice(0, limit);
+
+  const venueById = new Map<string, VenueSummary>();
+  const discoveryVenues: VenueSummary[] = [];
+
+  for (const dish of fallbackDishes) {
+    const venue = supabaseRepository.getVenueById(dish.venueId);
+    if (venue && !venueById.has(venue.id)) {
+      venueById.set(venue.id, venue);
+      discoveryVenues.push(venue);
+    }
+  }
+
+  return {
+    venues: discoveryVenues,
+    results: fallbackDishes.map((dish) => ({
+      dish,
+      score: dish.rating / 5,
+    })),
+  };
+}
+
 function cloneStory(story: Story): Story {
   return {
     ...story,
@@ -723,8 +775,8 @@ async function uploadReviewPhotos(
   userId: string,
   reviewId: string,
   photos: string[],
-): Promise<string[]> {
-  const uploaded: string[] = [];
+): Promise<Row[]> {
+  const uploaded: Row[] = [];
   for (let index = 0; index < photos.length; index += 1) {
     const uri = photos[index];
     if (!uri) continue;
@@ -739,7 +791,11 @@ async function uploadReviewPhotos(
       path,
       uri,
     });
-    uploaded.push(asset.publicUrl);
+    uploaded.push({
+      url: asset.path,
+      storage_bucket: "review-media",
+      storage_path: asset.path,
+    });
   }
   return uploaded;
 }
@@ -759,17 +815,24 @@ async function mapSupabaseReviewRows(
   if (reviewIds.length > 0) {
     const { data: photoRows } = await client
       .from("review_photos")
-      .select("review_id,url,sort_order")
+      .select("review_id,url,storage_bucket,storage_path,sort_order")
       .in("review_id", reviewIds)
       .order("sort_order", { ascending: true });
 
     if (Array.isArray(photoRows)) {
-      (photoRows as Row[]).forEach((photoRow) => {
+      for (const photoRow of photoRows as Row[]) {
         const reviewId = asString(photoRow.review_id);
-        const url = asString(photoRow.url);
-        if (!reviewId || !url) return;
-        photosByReviewId.set(reviewId, [...(photosByReviewId.get(reviewId) ?? []), url]);
-      });
+        if (!reviewId) continue;
+        const bucket = asString(photoRow.storage_bucket) || "review-media";
+        const path = asString(photoRow.storage_path);
+        const legacyUrl = asString(photoRow.url);
+        const displayUrl =
+          path && bucket === "review-media"
+            ? ((await createSignedStorageUrl(client, bucket, path)) ?? legacyUrl)
+            : legacyUrl;
+        if (!displayUrl) continue;
+        photosByReviewId.set(reviewId, [...(photosByReviewId.get(reviewId) ?? []), displayUrl]);
+      }
     }
   }
 
@@ -1938,7 +2001,7 @@ async function getMerchantOutletRow(client: SupabaseClient, outletId: string): P
 
 function mapSupabaseDish(row: Row, venue?: Row, presentation?: DishPresentation): DishDetail {
   const gallery = presentation?.gallery ?? [];
-  const imageUrl = asString(row.image_url) ?? gallery[0] ?? "";
+  const imageUrl = gallery[0] ?? asString(row.image_url) ?? "";
   return {
     id: asString(row.id) ?? "",
     venueId: asString(row.venue_id) ?? asString(venue?.id) ?? "",
@@ -2783,12 +2846,15 @@ export const supabaseService: HungryService = {
       );
     },
 
-    async countVenuesInArea(lat, lng, radiusMeters) {
-      const exactCount = await countVenuesInAreaViaRpc(lat, lng, radiusMeters);
+    async countVenuesInArea(lat, lng, radiusMeters, areaName) {
+      const exactCount = await countVenuesInAreaViaRpc(lat, lng, radiusMeters, areaName);
       if (typeof exactCount === "number") return exactCount;
 
       const locationBuildings = await listBuildingsViaRpc(lat, lng, radiusMeters);
-      return locationBuildings?.reduce((total, building) => total + building.venueCount, 0);
+      if (locationBuildings) {
+        return locationBuildings.reduce((total, building) => total + building.venueCount, 0);
+      }
+      return undefined;
     },
 
     async getBuildingDetail(id) {
@@ -2838,6 +2904,17 @@ export const supabaseService: HungryService = {
 
     async getDish(id) {
       return (await getDishByIdViaRpc(id)) ?? supabaseRepository.getDishById(id);
+    },
+
+    async listActivePromotionsForTarget(input) {
+      const client = getSupabaseClient();
+      if (!client) return [];
+      const { data, error } = await client.rpc("list_customer_active_promotions", {
+        p_venue_id: input.venueId,
+        p_dish_id: input.dishId ?? null,
+      });
+      if (error) return [];
+      return (Array.isArray(data) ? (data as Row[]) : []).map(mapPromotion);
     },
 
     async recordDishView(dishId, context) {
@@ -2895,7 +2972,9 @@ export const supabaseService: HungryService = {
     },
 
     async listDiscoveryFeedByLocation(request) {
-      return listDiscoveryFeedByLocationViaRpc(request);
+      const rpcFeed = await listDiscoveryFeedByLocationViaRpc(request);
+      if (rpcFeed) return rpcFeed;
+      return getFallbackDiscoveryFeed(request);
     },
 
     async searchVenuesByLocation(request) {
@@ -2977,12 +3056,14 @@ export const supabaseService: HungryService = {
         throw error ?? new Error("Review insert failed.");
       }
 
-      const uploadedPhotoUrls = await uploadReviewPhotos(client, userId, data.id, draft.photos);
-      if (uploadedPhotoUrls.length > 0) {
+      const uploadedPhotos = await uploadReviewPhotos(client, userId, data.id, draft.photos);
+      if (uploadedPhotos.length > 0) {
         const { error: photoInsertError } = await client.from("review_photos").insert(
-          uploadedPhotoUrls.map((url, index) => ({
+          uploadedPhotos.map((photo, index) => ({
             review_id: data.id,
-            url,
+            url: photo.url,
+            storage_bucket: photo.storage_bucket,
+            storage_path: photo.storage_path,
             sort_order: index,
           })),
         );
@@ -3058,19 +3139,26 @@ export const supabaseService: HungryService = {
 
       const { data } = await client
         .from("user_favourite_dishes")
-        .select("id")
+        .select("user_id,dish_id")
         .eq("user_id", userId)
         .eq("dish_id", dishId)
         .maybeSingle();
 
-      if (data?.id) {
-        const { error } = await client.from("user_favourite_dishes").delete().eq("id", data.id);
+      if (data?.dish_id === dishId) {
+        const { error } = await client
+          .from("user_favourite_dishes")
+          .delete()
+          .eq("user_id", userId)
+          .eq("dish_id", dishId);
         if (error) throw error;
         return false;
       }
       const { error } = await client
         .from("user_favourite_dishes")
-        .insert({ user_id: userId, dish_id: dishId });
+        .upsert(
+          { user_id: userId, dish_id: dishId },
+          { onConflict: "user_id,dish_id", ignoreDuplicates: true },
+        );
       if (error) throw error;
       return true;
     },

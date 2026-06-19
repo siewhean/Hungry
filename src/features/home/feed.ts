@@ -24,6 +24,59 @@ export interface HomeFeedOptions {
   refreshSeed?: number;
 }
 
+const HOME_FEED_BUNDLE_CACHE_TTL_MS = 5_000;
+const homeFeedBundleCache = new Map<
+  string,
+  { createdAt: number; promise: Promise<HomeFeedBundle> }
+>();
+const repositoryCacheIds = new WeakMap<object, number>();
+let nextRepositoryCacheId = 1;
+
+function getRepositoryCacheId(repository: object) {
+  const cachedId = repositoryCacheIds.get(repository);
+  if (cachedId) {
+    return cachedId;
+  }
+  const id = nextRepositoryCacheId;
+  nextRepositoryCacheId += 1;
+  repositoryCacheIds.set(repository, id);
+  return id;
+}
+
+function sortedEnabledKeys(record?: Record<string, boolean>) {
+  return Object.keys(record ?? {})
+    .filter((key) => record?.[key])
+    .sort();
+}
+
+function getProfileTasteKey(profile: UserProfile) {
+  return Object.entries(profile.tasteVector)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key}:${value}`)
+    .join("|");
+}
+
+export function getHomeFeedBundleCacheKey(
+  profile: UserProfile,
+  options?: HomeFeedOptions,
+  repository = getDataRepository(),
+) {
+  return JSON.stringify({
+    dietary: [...profile.dietaryPreferences].sort(),
+    followedAuthors: sortedEnabledKeys(options?.followedAuthors),
+    followedUserIds: sortedEnabledKeys(options?.followedUserIds),
+    profileId: profile.id,
+    repository: getRepositoryCacheId(repository),
+    refreshSeed: options?.refreshSeed ?? 0,
+    taste: getProfileTasteKey(profile),
+    tasteProfile: profile.tasteProfile?.neophiliaIndex ?? null,
+  });
+}
+
+export function clearHomeFeedBundleCache() {
+  homeFeedBundleCache.clear();
+}
+
 function rankHomeFeedItems(items: HomeFeedItem[], profile: UserProfile): HomeFeedItem[] {
   const candidateDishes = items.map((item) => item.dishes[0]).filter(Boolean) as DishDetail[];
   const ranked = runRecommendationPipeline(candidateDishes, {
@@ -71,8 +124,10 @@ function orderHomeSocialFeed(
   return [...rotateFeedGroup(followed, refreshSeed), ...rotateFeedGroup(unfollowed, refreshSeed)];
 }
 
-async function buildHomeFeedItems(profile: UserProfile): Promise<HomeFeedItem[]> {
-  const repository = getDataRepository();
+async function buildHomeFeedItems(
+  profile: UserProfile,
+  repository = getDataRepository(),
+): Promise<HomeFeedItem[]> {
   const postsById = new Map<string, StallPost>();
   for (const post of await listSharedStallPosts(repository)) {
     postsById.set(post.id, post);
@@ -153,7 +208,34 @@ export async function getHomeFeedBundle(
   profile: UserProfile,
   options?: HomeFeedOptions,
 ): Promise<HomeFeedBundle> {
-  const allPosts = await buildHomeFeedItems(profile);
+  const repository = getDataRepository();
+  const cacheKey = getHomeFeedBundleCacheKey(profile, options, repository);
+  const cached = homeFeedBundleCache.get(cacheKey);
+  const cacheAgeMs = cached ? Date.now() - cached.createdAt : Number.POSITIVE_INFINITY;
+  if (cached && cacheAgeMs < HOME_FEED_BUNDLE_CACHE_TTL_MS) {
+    return cached.promise;
+  }
+
+  const promise = buildHomeFeedBundle(profile, options, repository);
+  homeFeedBundleCache.set(cacheKey, {
+    createdAt: Date.now(),
+    promise,
+  });
+
+  try {
+    return await promise;
+  } catch (error) {
+    homeFeedBundleCache.delete(cacheKey);
+    throw error;
+  }
+}
+
+async function buildHomeFeedBundle(
+  profile: UserProfile,
+  options?: HomeFeedOptions,
+  repository = getDataRepository(),
+): Promise<HomeFeedBundle> {
+  const allPosts = await buildHomeFeedItems(profile, repository);
   const now = Date.now();
   const socialFeed = orderHomeSocialFeed(allPosts, now, options);
 

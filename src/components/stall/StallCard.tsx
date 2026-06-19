@@ -34,6 +34,7 @@ export function StallCard({ venue, topDish, onPress }: StallCardProps) {
           <View style={{ gap: spacing[1] }}>
             <AppText variant="h3">{venue.name}</AppText>
             <AppText variant="bodySmall" tone="secondary">
+              {venue.planningArea ? `${venue.planningArea} · ` : ""}
               {venue.unitNumber} · {venue.floor}
             </AppText>
           </View>

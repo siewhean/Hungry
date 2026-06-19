@@ -54,7 +54,7 @@ test("web Merchant Portal login rejects cross-site and non-JSON cookie-setting r
 });
 
 test("web Merchant Portal sign-up and forgot-password are safe public auth routes", () => {
-  const layout = read("marketing/website/web-v2/src/app/merchant/layout.tsx");
+  const clientLayout = read("marketing/website/web-v2/src/app/merchant/MerchantClientLayout.tsx");
   const loginPage = read("marketing/website/web-v2/src/app/merchant/login/page.tsx");
   const signupPage = read("marketing/website/web-v2/src/app/merchant/signup/page.tsx");
   const forgotPage = read("marketing/website/web-v2/src/app/merchant/forgot-password/page.tsx");
@@ -64,9 +64,9 @@ test("web Merchant Portal sign-up and forgot-password are safe public auth route
   );
   const supabaseServer = read("marketing/website/web-v2/src/lib/supabase/server.ts");
 
-  assert.match(layout, /MERCHANT_AUTH_ROUTES/);
-  assert.match(layout, /"\/merchant\/signup"/);
-  assert.match(layout, /"\/merchant\/forgot-password"/);
+  assert.match(clientLayout, /MERCHANT_AUTH_ROUTES/);
+  assert.match(clientLayout, /"\/merchant\/signup"/);
+  assert.match(clientLayout, /"\/merchant\/forgot-password"/);
   assert.match(loginPage, /href="\/merchant\/signup"/);
   assert.match(loginPage, /href="\/merchant\/forgot-password"/);
 
@@ -91,7 +91,7 @@ test("web Merchant Portal sign-up and forgot-password are safe public auth route
 
 test("web Merchant Portal mutation callers attach the CSRF header helper", () => {
   for (const page of [
-    "layout.tsx",
+    "MerchantClientLayout.tsx",
     "page.tsx",
     "profile/page.tsx",
     "menu/page.tsx",

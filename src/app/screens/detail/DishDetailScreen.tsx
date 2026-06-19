@@ -1,8 +1,8 @@
-import { Animated, View, useWindowDimensions, Pressable } from "react-native";
+import { ActivityIndicator, Animated, View, useWindowDimensions, Pressable } from "react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Send, Star } from "lucide-react-native";
+import { MapPin, Send, Star } from "lucide-react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -41,7 +41,15 @@ import {
   DetailSaveActionsCard,
   useDetailSaveActions,
 } from "@/features/checklistPortfolio/DetailSaveActions";
-import type { DishDetail } from "@/types/domain";
+import { CustomerPromotionCard } from "@/components/promotion/CustomerPromotionCard";
+import { getBuildingById } from "@/lib/geo/singaporeBuildings";
+import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
+import {
+  buildMapsSearchUrl,
+  formatFoodCentreLocation,
+  formatFullStallAddress,
+} from "@/features/detail/stallLocation";
+import type { DishDetail, MerchantPromotion } from "@/types/domain";
 
 type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">;
 
@@ -58,7 +66,10 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const repository = getDataRepository();
   const serviceProviderMode = getServiceProvider().mode;
   const deepLinkedDishId = route.params?.dishId ?? route.params?.id ?? "";
-  const dish = repository.getDishById(deepLinkedDishId);
+  const cachedDish = repository.getDishById(deepLinkedDishId);
+  const [hydratedDish, setHydratedDish] = useState<DishDetail | undefined>();
+  const [hasLoadedDishDetail, setHasLoadedDishDetail] = useState(Boolean(cachedDish));
+  const dish = hydratedDish ?? cachedDish;
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const addReviewedDish = useProfileStore((state) => state.addReviewedDish);
@@ -73,6 +84,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const scrollY = useRef(new Animated.Value(0)).current;
   const lastTrackedDishId = useRef<string | null>(null);
+  const trackedPromotionEvents = useRef<Set<string>>(new Set());
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const incrementShare = useSocialStore((state) => state.incrementShare);
   const [activeReplyReviewId, setActiveReplyReviewId] = useState<string | null>(null);
@@ -83,15 +95,22 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const [isTryingFood, setIsTryingFood] = useState(false);
   const [loadedReviews, setLoadedReviews] = useState<DishDetail["reviews"] | null>(null);
+  const [activePromotions, setActivePromotions] = useState<MerchantPromotion[]>([]);
   const detailSaveActions = useDetailSaveActions({
     navigation,
     target: { itemType: "dish", id: dish?.id ?? deepLinkedDishId, label: dish?.name ?? "Dish" },
   });
 
-  const venue = useMemo(
+  const cachedVenue = useMemo(
     () => (dish ? repository.getVenueById(dish.venueId) : undefined),
     [dish, repository],
   );
+  const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
+  const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
+  const venue = hydratedVenue ?? cachedVenue;
+  const building = dish ? getBuildingById(dish.buildingId) : undefined;
+  const foodCentreLocation = formatFoodCentreLocation(building);
+  const fullStallAddress = venue ? formatFullStallAddress(venue, building) : "";
   const tasteMatch = useMemo(
     () => (dish ? getTasteSimilarityWithDish(profile, dish) : 0),
     [profile, dish],
@@ -118,6 +137,58 @@ export function DishDetailScreen({ navigation, route }: Props) {
     if (scores.length === 0) return 0;
     return Math.max(...scores);
   }, [dish]);
+
+  useEffect(() => {
+    let active = true;
+    setHydratedDish(undefined);
+    setHasLoadedDishDetail(Boolean(cachedDish));
+    if (!deepLinkedDishId || cachedDish) {
+      return () => {
+        active = false;
+      };
+    }
+
+    void getHungryService()
+      .discovery.getDish(deepLinkedDishId)
+      .then((nextDish) => {
+        if (!active) return;
+        setHydratedDish(nextDish);
+        setHasLoadedDishDetail(true);
+      })
+      .catch(() => {
+        if (active) setHasLoadedDishDetail(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [cachedDish, deepLinkedDishId]);
+
+  useEffect(() => {
+    let active = true;
+    setHydratedVenue(undefined);
+    setHasLoadedVenueDetail(Boolean(cachedVenue));
+    if (!dish?.venueId || cachedVenue) {
+      return () => {
+        active = false;
+      };
+    }
+
+    void getHungryService()
+      .discovery.getVenue(dish.venueId)
+      .then((nextVenue) => {
+        if (!active) return;
+        setHydratedVenue(nextVenue);
+        setHasLoadedVenueDetail(true);
+      })
+      .catch(() => {
+        if (active) setHasLoadedVenueDetail(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [cachedVenue, dish?.venueId]);
 
   useEffect(() => {
     if (!dish || lastTrackedDishId.current === dish.id) {
@@ -162,6 +233,52 @@ export function DishDetailScreen({ navigation, route }: Props) {
     };
   }, [dish, serviceProviderMode]);
 
+  useEffect(() => {
+    let active = true;
+    if (!dish) {
+      setActivePromotions([]);
+      return () => {
+        active = false;
+      };
+    }
+
+    void getHungryService()
+      .discovery.listActivePromotionsForTarget({ venueId: dish.venueId, dishId: dish.id })
+      .then((promotions) => {
+        if (active) setActivePromotions(promotions);
+      })
+      .catch(() => {
+        if (active) setActivePromotions([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [dish]);
+
+  useEffect(() => {
+    if (!dish || activePromotions.length === 0) return;
+    activePromotions.forEach((promotion) => {
+      const eventKey = `${dish.id}:${promotion.id}`;
+      if (trackedPromotionEvents.current.has(eventKey)) return;
+      trackedPromotionEvents.current.add(eventKey);
+      void getHungryService().discovery.recordMerchantActionEvent({
+        eventType: "promotion_impression",
+        promotionId: promotion.id,
+        venueId: dish.venueId,
+        dishId: dish.id,
+        userId: isAuthenticated ? profile.id : undefined,
+      });
+      void getHungryService().discovery.recordMerchantActionEvent({
+        eventType: "promotion_dish_view",
+        promotionId: promotion.id,
+        venueId: dish.venueId,
+        dishId: dish.id,
+        userId: isAuthenticated ? profile.id : undefined,
+      });
+    });
+  }, [activePromotions, dish, isAuthenticated, profile.id]);
+
   const openShareSheet = () => {
     if (!dish || !venue) {
       return;
@@ -178,6 +295,35 @@ export function DishDetailScreen({ navigation, route }: Props) {
       shareSheetRef.current?.present();
     });
   };
+
+  const openStallMaps = () => {
+    if (!fullStallAddress) return;
+    void openTrustedMapsUrl(buildMapsSearchUrl(fullStallAddress));
+  };
+
+  const isDetailLoading =
+    (Boolean(deepLinkedDishId) && !dish && !hasLoadedDishDetail) ||
+    (Boolean(dish?.venueId) && !venue && !hasLoadedVenueDetail);
+
+  if (isDetailLoading) {
+    return (
+      <SafeAreaView
+        style={{
+          alignItems: "center",
+          backgroundColor: palette.bg,
+          flex: 1,
+          justifyContent: "center",
+          padding: spacing[6],
+        }}
+        edges={["top", "left", "right"]}
+      >
+        <ActivityIndicator color={palette.orange} />
+        <AppText variant="bodySmall" tone="secondary" style={{ marginTop: spacing[3] }}>
+          Loading dish details...
+        </AppText>
+      </SafeAreaView>
+    );
+  }
 
   if (!dish || !venue) {
     return (
@@ -384,10 +530,54 @@ export function DishDetailScreen({ navigation, route }: Props) {
                     {venue.name} · {venue.unitNumber}
                   </AppText>
                 </Pressable>
+                {foodCentreLocation ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open maps for ${fullStallAddress}`}
+                    onPress={openStallMaps}
+                    hitSlop={8}
+                    style={({ pressed }) => [
+                      {
+                        alignItems: "flex-start",
+                        flexDirection: "row",
+                        gap: spacing[1.5],
+                        opacity: pressed ? 0.8 : 1,
+                      },
+                    ]}
+                  >
+                    <MapPin color={palette.orange} size={16} />
+                    <AppText variant="bodySmall" tone="secondary" style={{ flex: 1 }}>
+                      {foodCentreLocation}
+                    </AppText>
+                  </Pressable>
+                ) : null}
                 <AppText variant="price" style={{ fontSize: 20, color: palette.orange }}>
                   {dish.priceRange}
                 </AppText>
               </View>
+
+              {activePromotions.length > 0 ? (
+                <View style={{ gap: spacing[3] }}>
+                  <AppText variant="h3">Active promotion</AppText>
+                  {activePromotions.map((promotion) => (
+                    <CustomerPromotionCard
+                      key={promotion.id}
+                      promotion={promotion}
+                      ctaLabel="View stall"
+                      onPress={() => {
+                        void getHungryService().discovery.recordMerchantActionEvent({
+                          eventType: "promotion_click",
+                          promotionId: promotion.id,
+                          venueId: dish.venueId,
+                          dishId: dish.id,
+                          userId: isAuthenticated ? profile.id : undefined,
+                        });
+                        navigation.navigate("StallDetail", { venueId: dish.venueId });
+                      }}
+                    />
+                  ))}
+                </View>
+              ) : null}
 
               {FEATURE_FLAGS.collectionsEnabled ? (
                 <DetailSaveActionsCard
@@ -669,6 +859,15 @@ export function DishDetailScreen({ navigation, route }: Props) {
                     venueId: dish.venueId,
                     dishId: dish.id,
                     userId: profile.id,
+                  });
+                  activePromotions.forEach((promotion) => {
+                    void getHungryService().discovery.recordMerchantActionEvent({
+                      eventType: "promotion_save",
+                      promotionId: promotion.id,
+                      venueId: dish.venueId,
+                      dishId: dish.id,
+                      userId: profile.id,
+                    });
                   });
                 }
                 showToast({

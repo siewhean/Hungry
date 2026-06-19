@@ -152,6 +152,15 @@ test("public profile post history has a service-backed user post path", () => {
   assert.match(profileContent, /biteToStallPost/);
 });
 
+test("public profile does not expose the current user's saved card", () => {
+  const profileHome = read("src/app/screens/profile/ProfileHomeScreen.tsx");
+  const profileContent = read("src/app/screens/profile/UserProfileContent.tsx");
+
+  assert.match(profileHome, /!\s*isOtherUserProfile \? \([\s\S]*label="Saved"/);
+  assert.doesNotMatch(profileContent, /label="Saved"/);
+  assert.doesNotMatch(profileContent, /navigation\.navigate\("Favourites"\)/);
+});
+
 test("social store contract: comments and replies update visible post counters", () => {
   const source = read("src/store/useSocialStore.ts");
   const homeSource = read("src/app/screens/home/HomeFeedScreen.tsx");

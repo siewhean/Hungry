@@ -11,7 +11,7 @@ const resultScreenPath = path.join(
 );
 const tasteQuizPath = path.join(repoRoot, "src/lib/ai/tasteQuiz.ts");
 const assetDir = path.join(repoRoot, "src/assets/onboarding/food");
-const provenancePath = path.join(repoRoot, "tasks/asset-provenance.md");
+const provenancePath = path.join(repoRoot, "tasks/release-evidence/asset-provenance.md");
 
 function readPngSize(filePath: string): { width: number; height: number } {
   const buffer = fs.readFileSync(filePath);

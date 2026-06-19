@@ -62,7 +62,15 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
   const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
 
   assert.match(home, /<Bell color=\{palette\.text\} size=\{22\}/);
-  assert.match(home, /navigation\.navigate\("ActivityInbox", \{ initialTab: "updates" \}\)/);
+  assert.match(home, /const activityInitialTab = directMessagesEnabled \? "messages" : "updates"/);
+  assert.match(
+    home,
+    /navigation\.navigate\("ActivityInbox", \{ initialTab: activityInitialTab \}\)/,
+  );
+  assert.match(
+    home,
+    /preloadRoute\(navigation, "ActivityInbox", \{ initialTab: activityInitialTab \}\)/,
+  );
   assert.match(home, /import \{ getActivityUnreadCount \} from "@\/features\/home\/activity"/);
   assert.match(
     home,
@@ -110,7 +118,7 @@ test("home bell opens activity inbox and gates messages by feature flag", () => 
     activity,
     /FEATURE_FLAGS\.directMessagesEnabled\s+\? \["messages", "updates"\]\s+: \["updates"\]/,
   );
-  assert.match(activity, /route\.params\?\.initialTab === "messages"/);
+  assert.match(activity, /route\.params\?\.initialTab \?\? "messages"/);
   assert.match(activity, /getHungryService\(\)[\s\S]*\.chat[\s\S]*\.listConversations\(\)/);
   assert.match(activity, /type \{ ChatConversation \}/);
   assert.match(activity, /conversation\.unreadCount/);

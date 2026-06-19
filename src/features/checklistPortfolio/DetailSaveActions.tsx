@@ -236,22 +236,26 @@ export function DetailSaveActionsCard({
         <Button
           label="Add to Checklist"
           variant="secondary"
+          size="sm"
           fullWidth={false}
           loading={isAddingToChecklist}
           onPress={onAddToChecklist}
-          leftIcon={<ListPlus color={palette.text} size={16} />}
-          style={{ flex: 1 }}
-          labelNumberOfLines={2}
+          leftIcon={<ListPlus color={palette.text} size={14} />}
+          style={{ flex: 1, minWidth: 0 }}
+          labelNumberOfLines={1}
+          labelEllipsizeMode="tail"
         />
         <Button
           label="Add to Portfolio"
           variant="secondary"
+          size="sm"
           fullWidth={false}
           loading={isAddingToPortfolio}
           onPress={onAddToPortfolio}
-          leftIcon={<Plus color={palette.text} size={16} />}
-          style={{ flex: 1 }}
-          labelNumberOfLines={2}
+          leftIcon={<Plus color={palette.text} size={14} />}
+          style={{ flex: 1, minWidth: 0 }}
+          labelNumberOfLines={1}
+          labelEllipsizeMode="tail"
         />
       </View>
     </Card>

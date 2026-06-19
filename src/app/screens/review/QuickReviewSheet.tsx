@@ -14,6 +14,7 @@ import { TasteTagGrid } from "@/components/review/TasteTagGrid";
 import { ReviewProgressBar } from "@/components/review/ReviewProgressBar";
 import { ReviewSuccessCard } from "@/components/review/ReviewSuccessCard";
 import { useGamificationStore, POINTS_PER_ACTION } from "@/store/useGamificationStore";
+import { useMerchantStore } from "@/store/useMerchantStore";
 
 interface QuickReviewSheetProps {
   venueId: string;
@@ -41,6 +42,11 @@ export const QuickReviewSheet = ({
     tierName: tier().name,
     progress: levelProgress(),
   };
+  const isMerchantMode = useMerchantStore((state) => Boolean(state.account));
+  const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
+  const isUserMode = !isMerchantMode && !isDeveloperMode;
+  const totalSteps = isUserMode ? 3 : 4;
+  const successStep = isUserMode ? 3 : 4;
 
   const [step, setStep] = useState(initialDishId ? 2 : 1);
   const [dishes, setDishes] = useState<DishSummary[]>([]);
@@ -116,7 +122,7 @@ export const QuickReviewSheet = ({
 
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       awardPoints("quickReview");
-      setStep(4); // Go to success step
+      setStep(successStep); // Go to success step
     } finally {
       setIsSubmitting(false);
     }
@@ -127,7 +133,7 @@ export const QuickReviewSheet = ({
     return (
       <View style={{ flex: 1 }}>
         <View style={{ paddingBottom: spacing[4] }}>
-          <ReviewProgressBar currentStep={1} totalSteps={4} />
+          <ReviewProgressBar currentStep={1} totalSteps={totalSteps} />
           <View style={{ marginTop: spacing[4], alignItems: "center" }}>
             <AppText variant="h2" style={{ fontWeight: "900", marginBottom: spacing[1] }}>
               Which dish?
@@ -191,7 +197,7 @@ export const QuickReviewSheet = ({
   if (step === 2) {
     return (
       <View style={{ flex: 1, paddingBottom: spacing[6] }}>
-        <ReviewProgressBar currentStep={2} totalSteps={4} />
+        <ReviewProgressBar currentStep={2} totalSteps={totalSteps} />
 
         <View style={{ marginTop: spacing[4], alignItems: "center", marginBottom: spacing[6] }}>
           <AppText variant="h2" style={{ fontWeight: "900", marginBottom: spacing[1] }}>
@@ -248,7 +254,7 @@ export const QuickReviewSheet = ({
               style={{ flex: 0, paddingHorizontal: spacing[4] }}
             />
             <Button
-              label="Next → Tags"
+              label={isUserMode ? "Next → Review" : "Next → Tags"}
               onPress={() => setStep(3)}
               disabled={rating === 0}
               style={{ flex: 1 }}
@@ -260,11 +266,11 @@ export const QuickReviewSheet = ({
   }
 
   // Step 3: Taste Tags
-  if (step === 3) {
+  if (step === 3 && !isUserMode) {
     return (
       <View style={{ flex: 1 }}>
         <View style={{ paddingBottom: spacing[4] }}>
-          <ReviewProgressBar currentStep={3} totalSteps={4} />
+          <ReviewProgressBar currentStep={3} totalSteps={totalSteps} />
           <View
             style={{
               marginTop: spacing[3],
@@ -398,9 +404,11 @@ export const QuickReviewSheet = ({
   }
 
   // Step 4: Success
+  if (step !== successStep) return null;
+
   return (
     <View style={{ flex: 1, paddingBottom: spacing[6] }}>
-      <ReviewProgressBar currentStep={4} totalSteps={4} />
+      <ReviewProgressBar currentStep={successStep} totalSteps={totalSteps} />
 
       <View style={{ marginTop: spacing[6] }}>
         <ReviewSuccessCard

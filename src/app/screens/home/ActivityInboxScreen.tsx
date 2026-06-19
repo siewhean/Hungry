@@ -43,10 +43,9 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
   const tabs: ActivityTab[] = FEATURE_FLAGS.directMessagesEnabled
     ? ["messages", "updates"]
     : ["updates"];
-  const initialTab =
-    FEATURE_FLAGS.directMessagesEnabled && route.params?.initialTab === "messages"
-      ? "messages"
-      : "updates";
+  const initialTab: ActivityTab = FEATURE_FLAGS.directMessagesEnabled
+    ? (route.params?.initialTab ?? "messages")
+    : "updates";
   const [activeTab, setActiveTab] = useState<ActivityTab>(initialTab);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [isMessagesLoading, setIsMessagesLoading] = useState(true);

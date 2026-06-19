@@ -6,10 +6,12 @@ import {
   TextInput,
   View,
   useWindowDimensions,
+  type StyleProp,
   type GestureResponderEvent,
   type LayoutChangeEvent,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
+  type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -57,7 +59,12 @@ import {
   getHungryService,
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
-import type { Bite, DataRepository, DiscoveryLocationFeed } from "@/lib/services/types";
+import type {
+  Bite,
+  DataRepository,
+  DiscoveryLocationFeed,
+  SearchResult,
+} from "@/lib/services/types";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
@@ -91,6 +98,8 @@ const INTENT_CHIPS: readonly {
 ] as const;
 
 const DISCOVER_DIETARY_FALLBACKS: readonly DietaryFlag[] = ["halal", "vegetarian", "pork_free"];
+const DISCOVER_STALL_INITIAL_VISIBLE_COUNT = 10;
+const DISCOVER_STALL_SHOW_MORE_COUNT = 20;
 
 const STALLS_CARD_GRAPHIC = require("../../../assets/discover/stalls-restaurants-card-wide.png");
 const DISHES_CARD_GRAPHIC = require("../../../assets/discover/dishes-card-wide.png");
@@ -123,6 +132,11 @@ type DiscoverStallShowcaseCard = {
   products: DishDetail[];
 };
 
+type DiscoverRepositoryLookup = Pick<
+  DataRepository,
+  "getDishById" | "listDishesByVenue" | "listVenuesByBuilding"
+>;
+
 const STALL_SHOWCASE_CARD_LIMIT = 30;
 const STALL_SHOWCASE_IMAGE_REPEAT_BUFFER = 2;
 const DISCOVER_AREA_RADIUS_METERS = 3000;
@@ -135,13 +149,13 @@ const STALL_SHOWCASE_FALLBACK_IMAGES = [
 
 function buildStallShowcaseCardsFromVenues(
   venues: VenueSummary[],
-  repository: DataRepository,
+  repositoryLookup: Pick<DiscoverRepositoryLookup, "getDishById" | "listDishesByVenue">,
 ): DiscoverStallShowcaseCard[] {
   const uniqueVenues = Array.from(new Map(venues.map((venue) => [venue.id, venue])).values());
 
   return uniqueVenues.flatMap((venue) => {
-    const venueDishes = repository.listDishesByVenue(venue.id);
-    const topDish = repository.getDishById(venue.topDishId);
+    const venueDishes = repositoryLookup.listDishesByVenue(venue.id);
+    const topDish = repositoryLookup.getDishById(venue.topDishId);
     const heroCandidates = [
       ...(topDish ? [topDish] : []),
       ...venueDishes.filter((dish) => dish.id !== topDish?.id),
@@ -207,6 +221,36 @@ function buildLoopingStallShowcaseImageSources(
     { length: Math.max(minimumFrameCount, sources.length) },
     (_, index) => sources[index % sources.length],
   );
+}
+
+function searchResultToDiscoverBite(result: SearchResult, index: number): Bite {
+  const { dish, score } = result;
+  const createdAt = new Date(Date.now() - (index + 1) * 15 * 60_000).toISOString();
+  const normalizedRating = Number.isFinite(dish.rating) ? dish.rating : 0;
+  const reviewCount = Number.isFinite(dish.reviewCount) ? dish.reviewCount : 0;
+
+  return {
+    id: `discover-${dish.id}`,
+    authorId: `venue-${dish.venueId}`,
+    authorName: dish.venueName,
+    authorAvatar: dish.imageUrl,
+    dishId: dish.id,
+    dishName: dish.name,
+    venueId: dish.venueId,
+    venueName: dish.venueName,
+    unitNumber: dish.unitNumber,
+    buildingId: dish.buildingId,
+    buildingName: dish.venueName,
+    photoUrl: dish.imageUrl,
+    caption: dish.description ?? dish.name,
+    tasteStamp: dish.tasteVector,
+    cravingCount: Math.max(reviewCount, Math.round((score || normalizedRating) * 10)),
+    savedCount: Math.max(0, Math.floor(reviewCount / 4)),
+    rating: normalizedRating,
+    price: dish.price,
+    expiresAt: new Date(new Date(createdAt).getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    createdAt,
+  };
 }
 
 const POPULAR_FOOD_STYLES: readonly PopularFoodStyle[] = [
@@ -276,6 +320,59 @@ function DiscoverSearchPlaceholder() {
         ...typography.body,
         textAlignVertical: "center",
       }}
+    />
+  );
+}
+
+function DiscoverDishImagePlaceholder({
+  accessibilityLabel,
+  iconSize,
+  style,
+}: {
+  accessibilityLabel: string;
+  iconSize: number;
+  style: StyleProp<ViewStyle>;
+}) {
+  const { palette } = useHungryTheme();
+
+  return (
+    <View
+      accessibilityRole="image"
+      accessibilityLabel={accessibilityLabel}
+      style={[
+        {
+          alignItems: "center",
+          backgroundColor: palette.surfaceRaised,
+          justifyContent: "center",
+          overflow: "hidden",
+        },
+        style,
+      ]}
+    >
+      <Utensils color={palette.orange} size={iconSize} />
+    </View>
+  );
+}
+
+function DiscoverBiteImage({ bite, height }: { bite: Bite; height: number }) {
+  if (bite.photoUrl) {
+    return (
+      <AccessibleImage
+        source={{ uri: bite.photoUrl }}
+        style={{ height, width: "100%" }}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        transition={120}
+        decorative
+      />
+    );
+  }
+
+  return (
+    <DiscoverDishImagePlaceholder
+      accessibilityLabel={`${bite.dishName} photo unavailable`}
+      iconSize={36}
+      style={{ height, width: "100%" }}
     />
   );
 }
@@ -949,6 +1046,7 @@ function VerticalStallShowcaseSection({
                               numberOfLines={1}
                               style={{ color: palette.textSecondary, flexShrink: 0 }}
                             >
+                              {card.venue.planningArea ? `${card.venue.planningArea} · ` : ""}
                               {card.venue.unitNumber}
                             </AppText>
                           </View>
@@ -1015,10 +1113,47 @@ export function DiscoverHomeScreen() {
   const isTabSwipeLockedRef = useRef(false);
   const popularFoodFilterSkeletonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const repository = getDataRepository();
+  const repositoryLookup = useMemo<DiscoverRepositoryLookup>(() => {
+    const dishById = new Map<string, DishDetail | undefined>();
+    const dishesByVenue = new Map<string, DishDetail[]>();
+    const venuesByBuilding = new Map<string, VenueSummary[]>();
+
+    return {
+      getDishById: (dishId: string) => {
+        if (!dishById.has(dishId)) {
+          dishById.set(dishId, repository.getDishById(dishId));
+        }
+        return dishById.get(dishId);
+      },
+      listDishesByVenue: (venueId: string) => {
+        const cached = dishesByVenue.get(venueId);
+        if (cached) {
+          return cached;
+        }
+        const dishes = repository.listDishesByVenue(venueId);
+        dishesByVenue.set(venueId, dishes);
+        dishes.forEach((dish) => {
+          dishById.set(dish.id, dish);
+        });
+        return dishes;
+      },
+      listVenuesByBuilding: (buildingId: string) => {
+        const cached = venuesByBuilding.get(buildingId);
+        if (cached) {
+          return cached;
+        }
+        const venues = repository.listVenuesByBuilding(buildingId);
+        venuesByBuilding.set(buildingId, venues);
+        return venues;
+      },
+    };
+  }, [repository]);
   const isSupabaseDataSource = getServiceProvider().mode === "supabase";
   const [supabaseDiscoverAreaCount, setSupabaseDiscoverAreaCount] = useState<number | null>(null);
-  const [supabaseDiscoveryFeed, setSupabaseDiscoveryFeed] =
-    useState<DiscoveryLocationFeed | null>(null);
+  const [supabaseDiscoveryFeed, setSupabaseDiscoveryFeed] = useState<DiscoveryLocationFeed | null>(
+    null,
+  );
+  const [isSupabaseDiscoveryFeedLoading, setIsSupabaseDiscoveryFeedLoading] = useState(false);
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   const {
     componentSizes,
@@ -1142,8 +1277,15 @@ export function DiscoverHomeScreen() {
   const [activeDiscoverChipIds, setActiveDiscoverChipIds] = useState<DiscoverChipId[]>([]);
   const [isPopularFoodFilterSkeletonPending, setIsPopularFoodFilterSkeletonPending] =
     useState(false);
+  const [visibleAreaStallCount, setVisibleAreaStallCount] = useState(
+    DISCOVER_STALL_INITIAL_VISIBLE_COUNT,
+  );
   const supabaseFeedVenues = supabaseDiscoveryFeed?.venues ?? [];
   const supabaseFeedResults = supabaseDiscoveryFeed?.results ?? [];
+  const supabaseDiscoverBites = useMemo(
+    () => supabaseFeedResults.map(searchResultToDiscoverBite),
+    [supabaseFeedResults],
+  );
   const deferredDiscoverChipIds = useDeferredValue(activeDiscoverChipIds);
   const deferredDiscoverChipSet = useMemo(
     () => new Set<DiscoverChipId>(deferredDiscoverChipIds),
@@ -1176,13 +1318,19 @@ export function DiscoverHomeScreen() {
     manualLocation ?? getNearestSingaporeArea(discoverLocationLatitude, discoverLocationLongitude);
 
   useEffect(() => {
+    setVisibleAreaStallCount(DISCOVER_STALL_INITIAL_VISIBLE_COUNT);
+  }, [discoverLocationLabel, activeDiscoverChipSignature]);
+
+  useEffect(() => {
     if (!isSupabaseDataSource) {
       setSupabaseDiscoverAreaCount(null);
       setSupabaseDiscoveryFeed(null);
+      setIsSupabaseDiscoveryFeedLoading(false);
       return;
     }
 
     let isActive = true;
+    setIsSupabaseDiscoveryFeedLoading(true);
     setSupabaseDiscoverAreaCount(null);
     setSupabaseDiscoveryFeed(null);
     const discoveryService = getHungryService().discovery;
@@ -1191,6 +1339,7 @@ export function DiscoverHomeScreen() {
         discoverLocationLatitude,
         discoverLocationLongitude,
         DISCOVER_AREA_RADIUS_METERS,
+        discoverLocationLabel,
       ),
       discoveryService.listDiscoveryFeedByLocation({
         areaName: discoverLocationLabel,
@@ -1204,11 +1353,13 @@ export function DiscoverHomeScreen() {
         if (!isActive) return;
         setSupabaseDiscoverAreaCount(typeof venueCount === "number" ? venueCount : null);
         setSupabaseDiscoveryFeed(discoveryFeed ?? null);
+        setIsSupabaseDiscoveryFeedLoading(false);
       })
       .catch(() => {
         if (isActive) {
           setSupabaseDiscoverAreaCount(null);
           setSupabaseDiscoveryFeed(null);
+          setIsSupabaseDiscoveryFeedLoading(false);
         }
       });
 
@@ -1373,18 +1524,20 @@ export function DiscoverHomeScreen() {
       return Array.from(uniqueVenues.values());
     }
     const scopedVenues = areaBuildings.flatMap((building) =>
-      repository.listVenuesByBuilding(building.id),
+      repositoryLookup.listVenuesByBuilding(building.id),
     );
     const uniqueVenues = new Map(scopedVenues.map((venue) => [venue.id, venue]));
     return Array.from(uniqueVenues.values());
-  }, [areaBuildings, isSupabaseDataSource, repository, supabaseFeedVenues]);
+  }, [areaBuildings, isSupabaseDataSource, repositoryLookup, supabaseFeedVenues]);
   const areaDishes = useMemo(() => {
     if (isSupabaseDataSource) {
-      const uniqueDishes = new Map(supabaseFeedResults.map((result) => [result.dish.id, result.dish]));
+      const uniqueDishes = new Map(
+        supabaseFeedResults.map((result) => [result.dish.id, result.dish]),
+      );
       return Array.from(uniqueDishes.values());
     }
-    return areaVenues.flatMap((venue) => repository.listDishesByVenue(venue.id));
-  }, [areaVenues, isSupabaseDataSource, repository, supabaseFeedResults]);
+    return areaVenues.flatMap((venue) => repositoryLookup.listDishesByVenue(venue.id));
+  }, [areaVenues, isSupabaseDataSource, repositoryLookup, supabaseFeedResults]);
   const allDiscoverVenues = useMemo(() => {
     if (isSupabaseDataSource) {
       const uniqueVenues = new Map(supabaseFeedVenues.map((venue) => [venue.id, venue]));
@@ -1392,17 +1545,19 @@ export function DiscoverHomeScreen() {
     }
     const discoveredVenues = repository
       .listBuildings()
-      .flatMap((building) => repository.listVenuesByBuilding(building.id));
+      .flatMap((building) => repositoryLookup.listVenuesByBuilding(building.id));
     const uniqueVenues = new Map(discoveredVenues.map((venue) => [venue.id, venue]));
     return Array.from(uniqueVenues.values());
-  }, [isSupabaseDataSource, repository, supabaseFeedVenues]);
+  }, [isSupabaseDataSource, repository, repositoryLookup, supabaseFeedVenues]);
   const allDiscoverDishes = useMemo(() => {
     if (isSupabaseDataSource) {
-      const uniqueDishes = new Map(supabaseFeedResults.map((result) => [result.dish.id, result.dish]));
+      const uniqueDishes = new Map(
+        supabaseFeedResults.map((result) => [result.dish.id, result.dish]),
+      );
       return Array.from(uniqueDishes.values());
     }
-    return allDiscoverVenues.flatMap((venue) => repository.listDishesByVenue(venue.id));
-  }, [allDiscoverVenues, isSupabaseDataSource, repository, supabaseFeedResults]);
+    return allDiscoverVenues.flatMap((venue) => repositoryLookup.listDishesByVenue(venue.id));
+  }, [allDiscoverVenues, isSupabaseDataSource, repositoryLookup, supabaseFeedResults]);
   const areaDishPool = areaDishes.length ? areaDishes : allDiscoverDishes;
   const currentHour = new Date().getHours();
   const isLateNightMakanVisible = currentHour >= 21 || currentHour < 4;
@@ -1503,27 +1658,34 @@ export function DiscoverHomeScreen() {
     [deferredDiscoverChipSet, discoverDietaryFlags],
   );
   const areaVenueIds = useMemo(() => new Set(areaVenues.map((venue) => venue.id)), [areaVenues]);
-  const discoverBaseBites = useMemo(
-    () =>
-      getDiscoverBites(repository).filter(
+  const discoverBaseBites = useMemo(() => {
+    if (isSupabaseDataSource) {
+      return supabaseDiscoverBites.filter(
         (bite) => !areaVenueIds.size || areaVenueIds.has(bite.venueId),
-      ),
-    [areaVenueIds, repository],
-  );
+      );
+    }
+
+    return getDiscoverBites(repository).filter(
+      (bite) => !areaVenueIds.size || areaVenueIds.has(bite.venueId),
+    );
+  }, [areaVenueIds, isSupabaseDataSource, repository, supabaseDiscoverBites]);
   const discoverBiteCollections = useMemo(
     () => getDiscoverBiteCollections(discoverBaseBites, repository),
     [discoverBaseBites, repository],
   );
   const discoverDishById = useMemo(() => {
     const dishById = new Map<string, DishDetail>();
+    supabaseFeedResults.forEach((result) => {
+      dishById.set(result.dish.id, result.dish);
+    });
     discoverBaseBites.forEach((bite) => {
-      const dish = repository.getDishById(bite.dishId);
+      const dish = repositoryLookup.getDishById(bite.dishId);
       if (dish) {
         dishById.set(bite.dishId, dish);
       }
     });
     return dishById;
-  }, [discoverBaseBites, repository]);
+  }, [discoverBaseBites, repositoryLookup, supabaseFeedResults]);
   const getBiteDish = useCallback(
     (bite: Bite) => discoverDishById.get(bite.dishId),
     [discoverDishById],
@@ -1536,10 +1698,18 @@ export function DiscoverHomeScreen() {
     () => discoverBiteCollections.trending.slice(0, 6),
     [discoverBiteCollections.trending],
   );
-  const unfilteredEditorChoiceCards = useMemo(
-    () => discoverBiteCollections.editorChoice.slice(0, 6),
-    [discoverBiteCollections.editorChoice],
-  );
+  const unfilteredEditorChoiceCards = useMemo(() => {
+    const editorChoice = discoverBiteCollections.editorChoice.slice(0, 6);
+    if (editorChoice.length || !isSupabaseDataSource) {
+      return editorChoice;
+    }
+
+    return discoverBiteCollections.trending.slice(0, 6);
+  }, [
+    discoverBiteCollections.editorChoice,
+    discoverBiteCollections.trending,
+    isSupabaseDataSource,
+  ]);
   const unfilteredBudgetCards = useMemo(
     () => discoverBiteCollections.budget.slice(0, 6),
     [discoverBiteCollections.budget],
@@ -1593,7 +1763,7 @@ export function DiscoverHomeScreen() {
   const unfilteredPopularFoodStyleItems = useMemo(
     () =>
       POPULAR_FOOD_STYLES.map((style) => {
-        const dish = style.dishId ? repository.getDishById(style.dishId) : undefined;
+        const dish = style.dishId ? repositoryLookup.getDishById(style.dishId) : undefined;
         return {
           ...style,
           imageSource: style.imageSource ?? dish?.imageUrl ?? style.fallbackImageUrl,
@@ -1601,7 +1771,7 @@ export function DiscoverHomeScreen() {
           dish,
         };
       }).filter((style): style is PopularFoodStyleItemData => Boolean(style.imageSource)),
-    [repository],
+    [repositoryLookup],
   );
   const popularFoodStyleItems = useMemo(
     () =>
@@ -1615,69 +1785,89 @@ export function DiscoverHomeScreen() {
   const isWaitingForPopularFoodStyles = !isDiscoverFiltering && popularFoodStyleItems.length === 0;
   const showPopularFoodSkeleton = useDelayedLoadingSkeleton(isWaitingForPopularFoodStyles);
   const showPopularFoodFilterSkeleton = isPopularFoodFilterPending;
-  const shouldShowPopularFoodSkeleton = showPopularFoodSkeleton || showPopularFoodFilterSkeleton;
-  const showDiscoverFilterRailSkeleton = showPopularFoodFilterSkeleton;
-  const unfilteredAreaStallCards = useMemo(
-    () => {
-      if (isSupabaseDataSource) {
-        const dishesByVenueId = new Map(supabaseFeedResults.map((result) => [result.dish.venueId, result.dish]));
-        return supabaseFeedVenues.map((venue) => {
-          const building =
-            areaBuildings.find((item) => item.id === venue.buildingId) ??
-            ({
-              id: venue.buildingId || `area-${discoverLocationLabel}`,
-              name: discoverLocationLabel,
-              type: "hawker_centre",
-              coordinate: {
-                latitude: discoverLocationLatitude,
-                longitude: discoverLocationLongitude,
-              },
-              floors: [],
-              venueCount: supabaseFeedVenues.length,
-              isClosedToday: false,
-              heroDishId: venue.topDishId,
-            } satisfies BuildingSummary);
-          return { building, venue, topDish: dishesByVenueId.get(venue.id) };
-        });
-      }
+  const showInitialDiscoverSkeleton = isSupabaseDataSource && isSupabaseDiscoveryFeedLoading;
+  const shouldShowPopularFoodSkeleton =
+    showPopularFoodSkeleton || showPopularFoodFilterSkeleton || showInitialDiscoverSkeleton;
+  const showDiscoverFilterRailSkeleton =
+    showPopularFoodFilterSkeleton || showInitialDiscoverSkeleton;
+  const unfilteredAreaStallCards = useMemo(() => {
+    if (isSupabaseDataSource) {
+      const dishesByVenueId = new Map(
+        supabaseFeedResults.map((result) => [result.dish.venueId, result.dish]),
+      );
+      return supabaseFeedVenues.map((venue) => {
+        const building =
+          areaBuildings.find((item) => item.id === venue.buildingId) ??
+          ({
+            id: venue.buildingId || `area-${discoverLocationLabel}`,
+            name: discoverLocationLabel,
+            type: "hawker_centre",
+            coordinate: {
+              latitude: discoverLocationLatitude,
+              longitude: discoverLocationLongitude,
+            },
+            floors: [],
+            venueCount: supabaseFeedVenues.length,
+            isClosedToday: false,
+            heroDishId: venue.topDishId,
+          } satisfies BuildingSummary);
+        return { building, venue, topDish: dishesByVenueId.get(venue.id) };
+      });
+    }
 
-      return areaBuildings
-        .map((building) => {
-          const venues = repository.listVenuesByBuilding(building.id);
-          const venue = venues[0];
-          const topDish = venue ? repository.getDishById(venue.topDishId) : undefined;
-          return venue ? { building, venue, topDish } : null;
-        })
-        .filter(Boolean) as {
-        building: BuildingSummary;
-        venue: VenueSummary;
-        topDish: DishDetail | undefined;
-      }[];
-    },
-    [
-      areaBuildings,
-      discoverLocationLabel,
-      discoverLocationLatitude,
-      discoverLocationLongitude,
-      isSupabaseDataSource,
-      repository,
-      supabaseFeedResults,
-      supabaseFeedVenues,
-    ],
-  );
+    return areaBuildings
+      .map((building) => {
+        const venues = repositoryLookup.listVenuesByBuilding(building.id);
+        const venue = venues[0];
+        const topDish = venue ? repositoryLookup.getDishById(venue.topDishId) : undefined;
+        return venue ? { building, venue, topDish } : null;
+      })
+      .filter(Boolean) as {
+      building: BuildingSummary;
+      venue: VenueSummary;
+      topDish: DishDetail | undefined;
+    }[];
+  }, [
+    areaBuildings,
+    discoverLocationLabel,
+    discoverLocationLatitude,
+    discoverLocationLongitude,
+    isSupabaseDataSource,
+    repositoryLookup,
+    supabaseFeedResults,
+    supabaseFeedVenues,
+  ]);
+  const allAreaStallCards = useMemo(() => {
+    const filteredCards = isDiscoverFiltering
+      ? unfilteredAreaStallCards.filter(({ venue, topDish }) =>
+          matchesDiscoverChipSelection(topDish, [venue.name]),
+        )
+      : unfilteredAreaStallCards;
+
+    return [...filteredCards].sort((a, b) => {
+      const bScore = (b.topDish?.rating ?? 0) * 100 + (b.topDish?.reviewCount ?? 0);
+      const aScore = (a.topDish?.rating ?? 0) * 100 + (a.topDish?.reviewCount ?? 0);
+      return bScore - aScore;
+    });
+  }, [isDiscoverFiltering, matchesDiscoverChipSelection, unfilteredAreaStallCards]);
   const areaStallCards = useMemo(
-    () =>
-      isDiscoverFiltering
-        ? unfilteredAreaStallCards.filter(({ venue, topDish }) =>
-            matchesDiscoverChipSelection(topDish, [venue.name]),
-          )
-        : unfilteredAreaStallCards,
-    [isDiscoverFiltering, matchesDiscoverChipSelection, unfilteredAreaStallCards],
+    () => allAreaStallCards.slice(0, visibleAreaStallCount),
+    [allAreaStallCards, visibleAreaStallCount],
   );
+  const hasMoreAreaStalls = areaStallCards.length < allAreaStallCards.length;
+  const nextAreaStallRevealCount = Math.min(
+    DISCOVER_STALL_SHOW_MORE_COUNT,
+    Math.max(0, allAreaStallCards.length - areaStallCards.length),
+  );
+  const handleShowMoreAreaStalls = useCallback(() => {
+    setVisibleAreaStallCount((count) =>
+      Math.min(count + DISCOVER_STALL_SHOW_MORE_COUNT, allAreaStallCards.length),
+    );
+  }, [allAreaStallCards.length]);
   const unfilteredStallShowcaseCards = useMemo(() => {
     const showcaseVenuePool = [...areaVenues, ...allDiscoverVenues];
-    return buildStallShowcaseCardsFromVenues(showcaseVenuePool, repository);
-  }, [allDiscoverVenues, areaVenues, repository]);
+    return buildStallShowcaseCardsFromVenues(showcaseVenuePool, repositoryLookup);
+  }, [allDiscoverVenues, areaVenues, repositoryLookup]);
   const stallShowcaseCards = useMemo(() => {
     const filteredCards = isDiscoverFiltering
       ? unfilteredStallShowcaseCards.filter(({ venue, heroDish, products }) =>
@@ -1693,7 +1883,7 @@ export function DiscoverHomeScreen() {
 
     return extendStallShowcaseCards(filteredCards);
   }, [isDiscoverFiltering, matchesDiscoverChipSelection, unfilteredStallShowcaseCards]);
-  const discoverAreaCount = supabaseDiscoverAreaCount ?? areaVenues.length;
+  const discoverAreaCount = isSupabaseDataSource ? supabaseDiscoverAreaCount : areaVenues.length;
   const handleDecideForMe = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const radiusMeters = 500;
@@ -1707,7 +1897,7 @@ export function DiscoverHomeScreen() {
 
     const cachedDishIds = getCachedRecommendationSlate(geoCell);
     const cachedDishes = (cachedDishIds ?? [])
-      .map((dishId) => repository.getDishById(dishId))
+      .map((dishId) => repositoryLookup.getDishById(dishId))
       .filter((dish): dish is DishDetail => Boolean(dish));
 
     let picked = repository.getDecideForMe(profile.tasteVector, {
@@ -1959,9 +2149,13 @@ export function DiscoverHomeScreen() {
               <AppText variant="h1" style={{ color: themeTints.text }} numberOfLines={1}>
                 {discoverLocationLabel}
               </AppText>
-              <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                {`${discoverAreaCount} places in this area`}
-              </AppText>
+              {discoverAreaCount === null ? (
+                <Skeleton width={150} height={14} borderRadius={radii.sm} />
+              ) : (
+                <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                  {`${discoverAreaCount} places to eat in this area`}
+                </AppText>
+              )}
             </View>
             {isUserMode ? null : (
               <View style={{ marginTop: -spacing[0.5] }}>
@@ -2449,17 +2643,10 @@ export function DiscoverHomeScreen() {
                     },
                   ]}
                 >
-                  <AccessibleImage
-                    source={{ uri: bite.photoUrl }}
-                    style={{ height: discoverRailImageHeight, width: "100%" }}
-                    contentFit="cover"
-                    cachePolicy="memory-disk"
-                    transition={120}
-                    decorative
-                  />
+                  <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
                     <AppText
-                      variant="bodyBold"
+                      variant="bodySmallBold"
                       numberOfLines={1}
                       style={{ color: themeTints.text }}
                     >
@@ -2566,19 +2753,20 @@ export function DiscoverHomeScreen() {
                     },
                   ]}
                 >
-                  <AccessibleImage
-                    source={{ uri: bite.photoUrl }}
-                    style={{ height: discoverRailImageHeight, width: "100%" }}
-                    contentFit="cover"
-                    cachePolicy="memory-disk"
-                    transition={120}
-                    decorative
-                  />
+                  <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                    <AppText variant="h3" numberOfLines={1} style={{ color: themeTints.text }}>
+                    <AppText
+                      variant="bodySmallBold"
+                      numberOfLines={1}
+                      style={{ color: themeTints.text }}
+                    >
                       {bite.dishName}
                     </AppText>
-                    <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                    <AppText
+                      variant="micro"
+                      style={{ color: themeTints.secondaryText }}
+                      numberOfLines={1}
+                    >
                       {bite.venueName}
                     </AppText>
                     <View
@@ -2697,14 +2885,7 @@ export function DiscoverHomeScreen() {
                     },
                   ]}
                 >
-                  <AccessibleImage
-                    source={{ uri: bite.photoUrl }}
-                    style={{ height: discoverRailImageHeight, width: "100%" }}
-                    contentFit="cover"
-                    cachePolicy="memory-disk"
-                    transition={120}
-                    decorative
-                  />
+                  <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
                   {/* Editor badge overlay */}
                   <View
                     style={{
@@ -2722,10 +2903,18 @@ export function DiscoverHomeScreen() {
                     </AppText>
                   </View>
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                    <AppText variant="h3" numberOfLines={1} style={{ color: themeTints.text }}>
+                    <AppText
+                      variant="bodySmallBold"
+                      numberOfLines={1}
+                      style={{ color: themeTints.text }}
+                    >
                       {bite.dishName}
                     </AppText>
-                    <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                    <AppText
+                      variant="micro"
+                      style={{ color: themeTints.secondaryText }}
+                      numberOfLines={1}
+                    >
                       {bite.venueName}
                     </AppText>
                     <View
@@ -2838,17 +3027,10 @@ export function DiscoverHomeScreen() {
                     },
                   ]}
                 >
-                  <AccessibleImage
-                    source={{ uri: bite.photoUrl }}
-                    style={{ height: discoverRailImageHeight, width: "100%" }}
-                    contentFit="cover"
-                    cachePolicy="memory-disk"
-                    transition={120}
-                    decorative
-                  />
+                  <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
                     <AppText
-                      variant="bodyBold"
+                      variant="bodySmallBold"
                       numberOfLines={1}
                       style={{ color: themeTints.text }}
                     >
@@ -2958,16 +3140,13 @@ export function DiscoverHomeScreen() {
                       },
                     ]}
                   >
-                    <AccessibleImage
-                      source={{ uri: bite.photoUrl }}
-                      style={{ height: discoverRailImageHeight, width: "100%" }}
-                      contentFit="cover"
-                      cachePolicy="memory-disk"
-                      transition={120}
-                      decorative
-                    />
+                    <DiscoverBiteImage bite={bite} height={discoverRailImageHeight} />
                     <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                      <AppText variant="h3" numberOfLines={1} style={{ color: themeTints.text }}>
+                      <AppText
+                        variant="bodySmallBold"
+                        numberOfLines={1}
+                        style={{ color: themeTints.text }}
+                      >
                         {bite.dishName}
                       </AppText>
                       <AppText
@@ -3075,14 +3254,22 @@ export function DiscoverHomeScreen() {
                       borderColor: palette.orange,
                     }}
                   >
-                    <AccessibleImage
-                      source={{ uri: topDish?.imageUrl }}
-                      style={{ borderRadius: radii.pill, height: 48, width: 48 }}
-                      contentFit="cover"
-                      cachePolicy="memory-disk"
-                      transition={120}
-                      decorative
-                    />
+                    {topDish?.imageUrl ? (
+                      <AccessibleImage
+                        source={{ uri: topDish.imageUrl }}
+                        style={{ borderRadius: radii.pill, height: 48, width: 48 }}
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                        transition={120}
+                        decorative
+                      />
+                    ) : (
+                      <DiscoverDishImagePlaceholder
+                        accessibilityLabel={`${topDish?.name ?? venue.name} photo unavailable`}
+                        iconSize={20}
+                        style={{ borderRadius: radii.pill, height: 48, width: 48 }}
+                      />
+                    )}
                   </View>
                   <View style={{ flex: 1, gap: 2 }}>
                     <AppText
@@ -3097,6 +3284,7 @@ export function DiscoverHomeScreen() {
                       style={{ color: themeTints.secondaryText }}
                       numberOfLines={1}
                     >
+                      {venue.planningArea ? `${venue.planningArea} · ` : ""}
                       {venue.unitNumber} · {venue.operatingHours.split(" – ")[0]}
                     </AppText>
                   </View>
@@ -3112,6 +3300,33 @@ export function DiscoverHomeScreen() {
                 minHeight={discoverRailReservedHeight}
               />
             )}
+            {hasMoreAreaStalls ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Show ${nextAreaStallRevealCount} more stalls in ${discoverLocationLabel}`}
+                onPress={handleShowMoreAreaStalls}
+                style={[
+                  shadows.card,
+                  {
+                    alignItems: "center",
+                    alignSelf: "stretch",
+                    backgroundColor: themeTints.cardBg,
+                    borderColor: palette.border,
+                    borderRadius: componentRadii.button,
+                    borderWidth: themeTints.isDark ? 0 : 1,
+                    flexDirection: "row",
+                    gap: spacing[2],
+                    justifyContent: "center",
+                    paddingVertical: spacing[3],
+                  },
+                ]}
+              >
+                <AppText variant="bodySmall" tone="accent" style={{ fontWeight: "800" }}>
+                  Show {nextAreaStallRevealCount} more
+                </AppText>
+                <ChevronRight color={palette.orange} size={18} />
+              </Pressable>
+            ) : null}
           </View>
         </View>
 

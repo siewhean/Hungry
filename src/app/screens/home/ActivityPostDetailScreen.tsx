@@ -155,7 +155,7 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   return (
     <Screen
       title="Activity post"
-      subtitle={update ? `${update.actorName} · ${kindLabel}` : "Food update"}
+      subtitle={update ? `${update.actorName} · ${kindLabel}` : undefined}
       fullWidth
       contentContainerStyle={{ paddingHorizontal: 0 }}
     >
@@ -223,6 +223,22 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
               {venue ? `${venue.name} · ${venue.floor} ${venue.unitNumber}` : post.authorLocation}
             </AppText>
           </View>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Manage ${post.authorName}'s post`}
+            hitSlop={10}
+            onPress={() =>
+              promptPostSafetyActions({
+                postId: post.id,
+                authorName: post.authorName,
+                label: "post",
+              })
+            }
+            style={[styles.imageMenuButton, { right: spacing[2], top: spacing[2] }]}
+          >
+            <MoreHorizontal color={palette.white} size={24} />
+          </Pressable>
         </View>
 
         <View
@@ -246,21 +262,6 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
             </View>
 
             <View style={styles.inlineActionsRow}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Manage ${post.authorName}'s post`}
-                hitSlop={10}
-                onPress={() =>
-                  promptPostSafetyActions({
-                    postId: post.id,
-                    authorName: post.authorName,
-                    label: "post",
-                  })
-                }
-                style={styles.inlineAction}
-              >
-                <MoreHorizontal color={palette.text} size={24} />
-              </Pressable>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Share post"
@@ -431,6 +432,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     gap: 4,
+  },
+  imageMenuButton: {
+    position: "absolute",
+    zIndex: 5,
   },
   commentsSection: {
     borderTopWidth: 1,
