@@ -23,6 +23,10 @@ appId: ${APP_ID}
           point: "50%,34%"
       - inputText: "${METRO_URL}"
       - tapOn: "Connect"
+- extendedWaitUntil:
+    visible: "Continue"
+    timeout: 60000
+- tapOn: "Continue"
 - tapOn:
     text: "Close"
     optional: true
@@ -41,7 +45,9 @@ appId: ${APP_ID}
     timeout: 3000
 - extendedWaitUntil:
     visible:
-      id: "activity-tab-updates"
+      id: "activity-tab-messages"
     timeout: 30000
 - assertVisible:
     id: "activity-tab-messages"
+- assertVisible:
+    id: "activity-tab-updates"

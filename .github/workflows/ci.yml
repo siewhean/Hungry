@@ -44,6 +44,21 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: Scaling readiness static contracts
+        run: node --import tsx --test src/app/scaling-readiness-contracts.test.ts
+
+      - name: Scaling readiness scaffold validation
+        run: npm run scaling:validate
+
+      - name: Website SEO static validation
+        run: |
+          if [ -f marketing/website/web-v2/package.json ] && [ -f marketing/website/web-v2/package-lock.json ]; then
+            npm ci --prefix marketing/website/web-v2
+            npm --prefix marketing/website/web-v2 run predeploy:local
+          else
+            echo "web-v2 package files missing; skipping website static validation."
+          fi
+
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 

@@ -28,7 +28,8 @@ run_step "5) Edge Function static checks" npm run check:edge-functions
 run_step "6) Asset audit" npm run audit:assets
 run_step "7) TruffleHog filesystem scan" npm run security:trufflehog
 run_step "8) npm audit" npm run security:audit
-run_step "9) Expo Doctor" env CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .
+run_step "9) Website static predeploy gates" npm run website:predeploy:local
+run_step "10) Expo Doctor" env EXPO_NO_DOTENV=1 CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .
 
 echo
 echo "[Hungry] Native proof status"
