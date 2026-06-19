@@ -78,6 +78,7 @@ EXPECTED_COLUMNS = [
     "Menu Source",
     "Menu Items",
     "Dishes Image URL",
+    "Area",
 ]
 
 VALID_STALL_TYPES = {
@@ -241,6 +242,40 @@ def validate_row(row: dict[str, Any], duplicate_counts: Counter[str]) -> list[di
         issues.append(issue(row_number, "invalid_google_review_count", "Google Review Count must be non-negative.", "warning"))
     if google_price_level is not None and not 0 <= google_price_level <= 4:
         issues.append(issue(row_number, "invalid_google_price_level", "Google Price Level must be 0 to 4.", "warning"))
+
+    # Data Quality & Coverage checks
+    coverage_status = clean(row.get("Coverage Status"))
+    menu_source = clean(row.get("Menu Source"))
+    image_url = clean(row.get("Image URL"))
+    dishes_image_url = clean(row.get("Dishes Image URL"))
+
+    if coverage_status == "Non-Consumer":
+        issues.append(issue(row_number, "non_consumer_entity", f"Stall is flagged as non-consumer: {name}.", "warning"))
+
+    if menu_source and ("Cuisine Category Seed" in menu_source or "category_seed" in menu_source):
+        issues.append(issue(row_number, "generic_menu_fallback", "Stall uses generic menu fallback seed.", "warning"))
+
+    generic_storefronts = {
+        "photo-1517248135467-4c7edcad34c4", "photo-1552566626-52f8b828add9",
+        "photo-1554118811-1e0d58224f24", "photo-1514933651103-005eec06c04b",
+        "photo-1569058242253-92a9c755a0ec", "photo-1555396273-367ea4eb4db5"
+    }
+    if image_url:
+        for img_id in generic_storefronts:
+            if img_id in image_url:
+                issues.append(issue(row_number, "generic_storefront_image", f"Stall uses generic storefront image: {image_url}.", "warning"))
+                break
+
+    generic_dishes = {
+        "photo-1546069901-ba9599a7e63c", "photo-1507133750040-4a8f57021571",
+        "photo-1568901346375-23c9450c58cd", "photo-1534080391025-09795d197a5b",
+        "photo-1509440159596-0249088772ff", "photo-1585938338392-50a592202c7b"
+    }
+    if dishes_image_url:
+        for img_id in generic_dishes:
+            if img_id in dishes_image_url:
+                issues.append(issue(row_number, "generic_dish_image", f"Stall uses generic dish image: {dishes_image_url}.", "warning"))
+                break
 
     key = dedupe_key(row)
     if key and duplicate_counts[key] > 1:

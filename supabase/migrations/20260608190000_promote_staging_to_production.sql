@@ -1,6 +1,96 @@
 -- Migration to promote validated staging food business records to production tables.
 -- Safe to re-run.
 
+-- 0. Redefine merchant catalog write guards to allow service_role and system/superuser bypass.
+create or replace function enforce_merchant_venue_update_guard()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  if auth.role() = 'service_role' or current_user not in ('authenticated', 'anon') then
+    return new;
+  end if;
+
+  if auth.uid() is null then
+    raise exception 'authentication required' using errcode = '42501';
+  end if;
+
+  if not merchant_can_manage_venue(old.id) then
+    raise exception 'not authorized to update venue' using errcode = '42501';
+  end if;
+
+  if new.id is distinct from old.id
+    or new.hygiene_grade is distinct from old.hygiene_grade
+    or new.is_open is distinct from old.is_open
+    or new.top_dish_id is distinct from old.top_dish_id
+    or new.closure_notice is distinct from old.closure_notice
+    or new.live_crowd is distinct from old.live_crowd
+    or new.created_at is distinct from old.created_at then
+    raise exception 'merchant venue updates are limited to profile fields' using errcode = '42501';
+  end if;
+
+  return new;
+end;
+$$;
+
+create or replace function enforce_merchant_dish_write_guard()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  if auth.role() = 'service_role' or current_user not in ('authenticated', 'anon') then
+    return new;
+  end if;
+
+  if auth.uid() is null then
+    raise exception 'authentication required' using errcode = '42501';
+  end if;
+
+  if tg_op = 'INSERT' then
+    if not merchant_outlet_matches_catalog_link(new.venue_id, new.building_id) then
+      raise exception 'dish insert must match a managed merchant outlet' using errcode = '42501';
+    end if;
+
+    if new.distance_meters is distinct from 0
+      or new.rating_avg is distinct from 0
+      or new.review_count is distinct from 0
+      or new.live_crowd is not null then
+      raise exception 'merchant dish inserts cannot set aggregate or live fields' using errcode = '42501';
+    end if;
+
+    return new;
+  end if;
+
+  if tg_op = 'UPDATE' then
+    if not merchant_can_manage_venue(old.venue_id) then
+      raise exception 'not authorized to update dish' using errcode = '42501';
+    end if;
+
+    if new.id is distinct from old.id
+      or new.venue_id is distinct from old.venue_id
+      or new.distance_meters is distinct from old.distance_meters
+      or new.rating_avg is distinct from old.rating_avg
+      or new.review_count is distinct from old.review_count
+      or new.live_crowd is distinct from old.live_crowd
+      or new.created_at is distinct from old.created_at then
+      raise exception 'merchant dish updates cannot change identity, aggregate, or live fields' using errcode = '42501';
+    end if;
+
+    if not merchant_outlet_matches_catalog_link(new.venue_id, new.building_id) then
+      raise exception 'dish building must match a managed merchant outlet' using errcode = '42501';
+    end if;
+
+    return new;
+  end if;
+
+  return new;
+end;
+$$;
+
 -- 1. Update get_discovery_feed_by_location function to handle empty string fallbacks correctly.
 create or replace function public.get_discovery_feed_by_location(
   p_area_name text default null,
@@ -467,6 +557,21 @@ set search_path = public, extensions
 as $$
 begin
   -- 4.1. Deduplicate and insert buildings.
+  with unique_buildings as (
+    select distinct on (lower(trim(coalesce(building_name, 'Standalone'))), lower(trim(coalesce(postal_code, ''))))
+      'bld-' || md5(lower(trim(coalesce(building_name, 'Standalone'))) || ':' || lower(trim(coalesce(postal_code, '')))) as id,
+      coalesce(nullif(trim(building_name), ''), 'Standalone') as name,
+      coalesce(latitude, 1.3521) as latitude,
+      coalesce(longitude, 103.8198) as longitude,
+      coalesce(address, '') as address,
+      coalesce(postal_code, '') as postal_code,
+      coalesce(region, '') as region,
+      coalesce(confidence, 0.850) as source_confidence,
+      image_url
+    from staging_food_businesses
+    where import_run_id = p_import_run_id
+      and validation_status = 'valid'
+  )
   insert into buildings (
     id,
     name,
@@ -483,30 +588,37 @@ begin
     source_confidence,
     image_url
   )
-  select distinct on (coalesce(building_name, 'Standalone'), coalesce(postal_code, ''))
-    'bld-' || md5(lower(trim(coalesce(building_name, 'Standalone'))) || ':' || lower(trim(coalesce(postal_code, '')))) as id,
-    coalesce(nullif(trim(building_name), ''), 'Standalone') as name,
+  select
+    id,
+    name,
     case
-      when lower(coalesce(building_name, '')) like '%hawker%' or lower(coalesce(building_name, '')) like '%food centre%' or lower(coalesce(building_name, '')) like '%market%' then 'hawker_centre'::text
-      when lower(coalesce(building_name, '')) like '%food court%' or lower(coalesce(building_name, '')) like '%kopitiam%' or lower(coalesce(building_name, '')) like '%foodare%' or lower(coalesce(building_name, '')) like '%food junction%' or lower(coalesce(building_name, '')) like '%koufu%' then 'food_court'::text
-      when lower(coalesce(building_name, '')) like '%mall%' or lower(coalesce(building_name, '')) like '%plaza%' or lower(coalesce(building_name, '')) like '%square%' or lower(coalesce(building_name, '')) like '%point%' or lower(coalesce(building_name, '')) like '%shopping%' or lower(coalesce(building_name, '')) like '%hub%' or lower(coalesce(building_name, '')) like '%atria%' then 'mall'::text
-      when building_name is null or trim(building_name) = '' or lower(trim(building_name)) = 'standalone' then 'standalone'::text
+      when lower(name) like '%hawker%' or lower(name) like '%food centre%' or lower(name) like '%market%' then 'hawker_centre'::text
+      when lower(name) like '%food court%' or lower(name) like '%kopitiam%' or lower(name) like '%foodare%' or lower(name) like '%food junction%' or lower(name) like '%koufu%' then 'food_court'::text
+      when lower(name) like '%open-air%' or lower(name) like '%street food%' then 'hawker_centre'::text
+      when lower(name) like '%mall%' or lower(name) like '%plaza%' or lower(name) like '%square%' or lower(name) like '%point%' or lower(name) like '%shopping%' or lower(name) like '%hub%' or lower(name) like '%atria%' then 'mall'::text
+      when name = 'Standalone' then 'standalone'::text
       else 'other'::text
     end as building_type,
-    coalesce(latitude, 1.3521) as latitude,
-    coalesce(longitude, 103.8198) as longitude,
-    coalesce(address, '') as address,
-    coalesce(postal_code, '') as postal_code,
-    coalesce(region, '') as region,
-    coalesce(planning_area, '') as planning_area,
-    business_id,
-    licence_no,
+    latitude,
+    longitude,
+    address,
+    postal_code,
+    region,
+    coalesce(
+      (
+        select name
+        from areas a
+        order by a.center_location <-> st_setsrid(st_makepoint(longitude, latitude), 4326)::geography
+        limit 1
+      ),
+      ''
+    ) as planning_area,
+    null::text as business_id,
+    null::text as licence_no,
     'spreadsheet' as source_type,
-    coalesce(confidence, 0.850) as source_confidence,
+    source_confidence,
     image_url
-  from staging_food_businesses
-  where import_run_id = p_import_run_id
-    and validation_status = 'valid'
+  from unique_buildings
   on conflict (id) do update set
     name = coalesce(buildings.name, excluded.name),
     building_type = coalesce(buildings.building_type, excluded.building_type),
@@ -547,49 +659,58 @@ begin
     source_confidence,
     last_verified_at
   )
-  select
-    'ven-' || business_id as id,
-    'bld-' || md5(lower(trim(coalesce(building_name, 'Standalone'))) || ':' || lower(trim(coalesce(postal_code, '')))) as building_id,
-    business_name as name,
-    coalesce(unit_number, '') as unit_number,
+  select distinct on (s.business_id)
+    'ven-' || s.business_id as id,
+    'bld-' || md5(lower(trim(coalesce(s.building_name, 'Standalone'))) || ':' || lower(trim(coalesce(s.postal_code, '')))) as building_id,
+    s.business_name as name,
+    coalesce(s.unit_number, '') as unit_number,
     case
-      when unit_number ~ '^#[0-9]+-' then
-        'L' || cast(cast(regexp_replace(unit_number, '^#([0-9]+)-.*$', '\1') as integer) as text)
-      when unit_number ~* '^#B([0-9]+)-' then
-        'B' || regexp_replace(unit_number, '^#B([0-9]+)-.*$', '\1', 'i')
-      when unit_number ~* '^#L([0-9]+)-' then
-        'L' || regexp_replace(unit_number, '^#L([0-9]+)-.*$', '\1', 'i')
+      when s.unit_number ~ '^#[0-9]+-' then
+        'L' || cast(cast(regexp_replace(s.unit_number, '^#([0-9]+)-.*$', '\1') as integer) as text)
+      when s.unit_number ~* '^#B([0-9]+)-' then
+        'B' || regexp_replace(s.unit_number, '^#B([0-9]+)-.*$', '\1', 'i')
+      when s.unit_number ~* '^#L([0-9]+)-' then
+        'L' || regexp_replace(s.unit_number, '^#L([0-9]+)-.*$', '\1', 'i')
       else 'L1'
     end as floor,
-    coalesce(nullif(upper(hygiene_grade), ''), 'A') as hygiene_grade,
-    true as is_open,
-    coalesce(opening_hours_text, '') as operating_hours,
-    business_id,
-    stall_id,
-    licence_no,
-    case when cuisine is not null and trim(cuisine) <> '' then string_to_array(cuisine, ',') else '{}'::text[] end as cuisine_tags,
-    coalesce(dietary_options, '{}'::text[]) as dietary_tags,
-    image_url,
-    coalesce(latitude, google_latitude) as latitude,
-    coalesce(longitude, google_longitude) as longitude,
-    coalesce(address, '') as address,
-    coalesce(postal_code, '') as postal_code,
-    coalesce(planning_area, '') as planning_area,
-    google_place_id,
-    google_rating,
-    google_review_count,
+    coalesce(nullif(upper(s.hygiene_grade), ''), 'A') as hygiene_grade,
+    case when s.coverage_status = 'Closed' or s.coverage_status = 'Permanently Closed' or s.notes ~* 'permanently closed' then false else true end as is_open,
+    coalesce(s.opening_hours_text, '') as operating_hours,
+    s.business_id,
+    s.stall_id,
+    s.licence_no,
+    case when s.cuisine is not null and trim(s.cuisine) <> '' then string_to_array(s.cuisine, ',') else '{}'::text[] end as cuisine_tags,
+    coalesce(s.dietary_options, '{}'::text[]) as dietary_tags,
+    s.image_url,
+    coalesce(s.latitude, s.google_latitude) as latitude,
+    coalesce(s.longitude, s.google_longitude) as longitude,
+    coalesce(s.address, '') as address,
+    coalesce(s.postal_code, '') as postal_code,
+    coalesce(
+      (
+        select planning_area
+        from buildings b
+        where b.id = 'bld-' || md5(lower(trim(coalesce(s.building_name, 'Standalone'))) || ':' || lower(trim(coalesce(s.postal_code, ''))))
+      ),
+      ''
+    ) as planning_area,
+    s.google_place_id,
+    s.google_rating,
+    s.google_review_count,
     'spreadsheet' as source_type,
-    coalesce(confidence, 0.850) as source_confidence,
-    coalesce(last_verified_date, now()::date) as last_verified_at
-  from staging_food_businesses
-  where import_run_id = p_import_run_id
-    and validation_status = 'valid'
+    coalesce(s.confidence, 0.850) as source_confidence,
+    coalesce(s.last_verified_date, now()::date) as last_verified_at
+  from staging_food_businesses s
+  where s.import_run_id = p_import_run_id
+    and s.validation_status = 'valid'
+  order by s.business_id, s.confidence desc, s.last_verified_date desc nulls last
   on conflict (id) do update set
     building_id = excluded.building_id,
     name = excluded.name,
     unit_number = excluded.unit_number,
     floor = excluded.floor,
     hygiene_grade = excluded.hygiene_grade,
+    is_open = excluded.is_open,
     operating_hours = excluded.operating_hours,
     cuisine_tags = excluded.cuisine_tags,
     dietary_tags = excluded.dietary_tags,
@@ -621,7 +742,7 @@ begin
     source_type,
     source_confidence
   )
-  select
+  select distinct on (business_id, signature_dish)
     'dsh-' || md5(business_id || ':' || coalesce(signature_dish, 'Signature')) as id,
     'ven-' || business_id as venue_id,
     'bld-' || md5(lower(trim(coalesce(building_name, 'Standalone'))) || ':' || lower(trim(coalesce(postal_code, '')))) as building_id,
@@ -639,6 +760,7 @@ begin
     and validation_status = 'valid'
     and signature_dish is not null
     and trim(signature_dish) <> ''
+  order by business_id, signature_dish, confidence desc
   on conflict (id) do update set
     venue_id = excluded.venue_id,
     building_id = excluded.building_id,
@@ -663,7 +785,7 @@ begin
     aromatic,
     vector
   )
-  select
+  select distinct on (business_id, signature_dish)
     'dsh-' || md5(business_id || ':' || coalesce(signature_dish, 'Signature')) as dish_id,
     5.00 as sweet,
     5.00 as spicy,
@@ -701,53 +823,48 @@ begin
   on conflict (venue_id, platform) do nothing;
 
   -- 4.6. Dynamic aggregations & updates.
-  -- Update buildings.floors to contain all unique floors from its venues.
-  update buildings b
-  set floors = coalesce(
-    (
-      select array_agg(distinct floor order by floor)
-      from venues v
-      where v.building_id = b.id
-        and v.floor <> ''
-    ),
-    '{}'::text[]
-  )
-  where b.id in (
-    select distinct 'bld-' || md5(lower(trim(coalesce(building_name, 'Standalone'))) || ':' || lower(trim(coalesce(postal_code, ''))))
-    from staging_food_businesses
-    where import_run_id = p_import_run_id
-      and validation_status = 'valid'
-  );
-
-  -- Update buildings.venue_count.
-  update buildings b
-  set venue_count = (
-    select count(*)
+  -- Update buildings.floors and buildings.venue_count together.
+  with stats as (
+    select
+      v.building_id,
+      coalesce(array_agg(distinct v.floor order by v.floor) filter (where v.floor <> ''), '{}'::text[]) as floors_arr,
+      count(*) as v_count
     from venues v
-    where v.building_id = b.id
+    where v.building_id in (
+      select distinct 'bld-' || md5(lower(trim(coalesce(building_name, 'Standalone'))) || ':' || lower(trim(coalesce(postal_code, ''))))
+      from staging_food_businesses
+      where import_run_id = p_import_run_id
+        and validation_status = 'valid'
+    )
+    group by v.building_id
   )
-  where b.id in (
-    select distinct 'bld-' || md5(lower(trim(coalesce(building_name, 'Standalone'))) || ':' || lower(trim(coalesce(postal_code, ''))))
-    from staging_food_businesses
-    where import_run_id = p_import_run_id
-      and validation_status = 'valid'
-  );
+  update buildings b
+  set
+    floors = s.floors_arr,
+    venue_count = s.v_count,
+    updated_at = now()
+  from stats s
+  where b.id = s.building_id;
 
   -- Update venues.top_dish_id.
-  update venues v
-  set top_dish_id = (
-    select d.id
-    from dishes d
-    where d.venue_id = v.id
-    order by d.must_order desc, d.is_featured desc, d.rating_avg desc, d.id
-    limit 1
+  with top_dishes as (
+    select distinct on (venue_id)
+      venue_id,
+      id as top_dish_id
+    from dishes
+    where venue_id in (
+      select distinct 'ven-' || business_id
+      from staging_food_businesses
+      where import_run_id = p_import_run_id
+        and validation_status = 'valid'
+    )
+    order by venue_id, must_order desc, is_featured desc, rating_avg desc, id
   )
-  where v.id in (
-    select distinct 'ven-' || business_id
-    from staging_food_businesses
-    where import_run_id = p_import_run_id
-      and validation_status = 'valid'
-  );
+  update venues v
+  set top_dish_id = td.top_dish_id,
+      updated_at = now()
+  from top_dishes td
+  where v.id = td.venue_id;
 
   -- Update validation_status to 'promoted'.
   update staging_food_businesses

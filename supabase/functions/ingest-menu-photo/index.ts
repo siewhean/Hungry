@@ -11,6 +11,8 @@ interface ExtractionDish {
   extraction_confidence: number;
 }
 
+const ALLOWED_OCR_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/heic", "image/webp"]);
+
 const BASE_CORS_HEADERS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -160,6 +162,13 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(chunks.join(""));
 }
 
+function assertValidOcrImageType(response: Response): void {
+  const contentType = response.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase();
+  if (!contentType || !ALLOWED_OCR_IMAGE_TYPES.has(contentType)) {
+    throw new Error(`invalid_ocr_image_type:${contentType ?? "missing"}`);
+  }
+}
+
 async function runLlmExtraction(apiKey: string, text: string): Promise<ExtractionDish[] | null> {
   if (!apiKey) return null;
   const response = await fetch(
@@ -239,9 +248,11 @@ Deno.serve(async (request) => {
   const visionApiKey = Deno.env.get("GOOGLE_CLOUD_VISION_API_KEY") ?? "";
   const llmApiKey = Deno.env.get("GEMINI_API_KEY") ?? "";
   if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+    console.error("ingest-menu-photo missing Supabase environment");
     return toJson(500, { error: "missing_supabase_env" }, allowedOrigin);
   }
   if (!visionApiKey) {
+    console.error("ingest-menu-photo missing Google Vision API key");
     return toJson(500, { error: "missing_vision_api_key" }, allowedOrigin);
   }
 
@@ -335,6 +346,7 @@ Deno.serve(async (request) => {
     if (!imageResponse.ok) {
       throw new Error(`image_fetch_failed:${imageResponse.status}`);
     }
+    assertValidOcrImageType(imageResponse);
     const imageBytes = new Uint8Array(await imageResponse.arrayBuffer());
     const imageBase64 = bytesToBase64(imageBytes);
 
@@ -412,12 +424,12 @@ Deno.serve(async (request) => {
 
     return toJson(200, { ok: true, submissionId, extracted: extracted.length }, allowedOrigin);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "unknown_error";
+    console.error("OCR pipeline error", error);
     await client
       .from("menu_photo_submissions")
       .update({
         ocr_status: "failed",
-        ocr_error: message.slice(0, 500),
+        ocr_error: "Processing failed. Please try again.",
         processed_at: new Date().toISOString(),
       })
       .eq("id", submissionId);

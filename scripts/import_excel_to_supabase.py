@@ -79,6 +79,7 @@ STAGING_COLUMNS = [
     "address",
     "postal_code",
     "region",
+    "planning_area",
     "location_text",
     "location_key",
     "latitude",
@@ -232,6 +233,7 @@ def build_staging_values(row: dict[str, Any], issues: list[dict[str, Any]]) -> d
             "latitude": latitude,
             "longitude": longitude,
             "region": clean(row.get("Region")),
+            "planning_area": clean(row.get("Area")),
         },
         "google": {
             "place_id": clean(row.get("Google Place ID")),
@@ -291,6 +293,7 @@ def build_staging_values(row: dict[str, Any], issues: list[dict[str, Any]]) -> d
         "address": clean(row.get("Address")),
         "postal_code": normalized_postal(row.get("Postal Code")),
         "region": clean(row.get("Region")),
+        "planning_area": clean(row.get("Area")),
         "location_text": clean(row.get("Location")),
         "location_key": clean(row.get("Location Key")),
         "latitude": latitude,
