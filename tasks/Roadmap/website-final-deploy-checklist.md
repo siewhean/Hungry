@@ -71,7 +71,7 @@ Current decision: **No-Go for production deploy** until the unchecked P0 gates a
 ## 2026-06-19 Vercel Deployment Evidence
 
 - [x] Vercel project linked: `siewheans-projects/hungry-web-v2` (`prj_MVmdMlCMMNX4fI3YMY8dJPQWuCJq`)
-- [x] Production envs set for site URL, Supabase public/service-role access, PostHog public config, Sentry auth token, merchant origin, deployment env, and generated console token.
+- [ ] Production envs set for site URL, Supabase public/service-role access, PostHog public config, Sentry auth token, merchant origin, deployment env, and `HUNGRY_CONSOLE_USERNAME` / `HUNGRY_CONSOLE_PASSWORD`.
 - [x] Production deploy succeeded: `dpl_tqJsCyKY6ktgbhHCVZXzVzf4pipJ`
 - [x] Live Vercel URL: `https://hungry-web-v2.vercel.app`
 - [x] Runtime smoke: homepage `200` with security headers.

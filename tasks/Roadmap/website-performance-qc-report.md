@@ -9,9 +9,9 @@ Date: 2026-06-18
 - Existing image-heavy pages use local assets and Next/Image patterns in core public sections.
 - Security and SEO validators are lightweight and CI-safe.
 - Public Lighthouse was captured locally against the rebuilt production server on `http://localhost:3004`.
-- Authenticated console Lighthouse was captured locally against `http://localhost:3005` with a temporary console token cookie.
+- Authenticated console Lighthouse should now be captured with `HUNGRY_CONSOLE_USERNAME` and `HUNGRY_CONSOLE_PASSWORD`, which the QC wrapper passes as HTTP Basic Auth headers.
 - A cold homepage run scored lower on performance because of first-load LCP; a warmed rerun recovered above 90.
-- Added `marketing/website/web-v2/scripts/lighthouse-qc.mjs` as repeatable `npm run perf:lighthouse` tooling. It runs public Lighthouse checks by default and can include authenticated merchant/console routes when token cookies are supplied.
+- Added `marketing/website/web-v2/scripts/lighthouse-qc.mjs` as repeatable `npm run perf:lighthouse` tooling. It runs public Lighthouse checks by default and can include authenticated merchant/console routes when credentials are supplied.
 
 ## Local Lighthouse Results
 

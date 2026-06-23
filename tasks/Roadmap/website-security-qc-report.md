@@ -6,7 +6,7 @@ Date: 2026-06-18
 
 - Added `marketing/website/web-v2/src/proxy.ts` using the Next 16 proxy convention.
 - Proxy gates `/merchant/**` private pages by `hungry_merchant_access_token`.
-- Proxy gates `/console/**` pages by console token/header/cookie and keeps the no-token bypass out of production.
+- Proxy gates `/console/**` pages and `/api/console/**` by env-backed HTTP Basic Auth, and fails closed when the console username/password are missing.
 - Added security headers in `marketing/website/web-v2/next.config.ts`:
   - `Content-Security-Policy`
   - `Content-Security-Policy-Report-Only`
@@ -22,7 +22,7 @@ Date: 2026-06-18
   - `/api/console/**`
 - Proxy-generated merchant/console redirects and JSON denials also set no-store/noindex headers.
 - Extended `marketing/website/web-v2/scripts/security-route-contracts.mjs` to assert proxy coverage.
-- Added `marketing/website/web-v2/scripts/deployment-env-contracts.mjs` to fail closed when staging/production lacks a strong console token or configured Supabase admin bearer path.
+- Added `marketing/website/web-v2/scripts/deployment-env-contracts.mjs` to fail closed when staging/production lacks `HUNGRY_CONSOLE_USERNAME` and `HUNGRY_CONSOLE_PASSWORD`.
 - Added `marketing/website/web-v2/scripts/private-route-qc.mjs` to verify unauthenticated merchant/console denial and optionally exercise authenticated merchant/console page/API access when staging tokens are provided.
 - Added server-side console waitlist redaction. Waitlist emails and sensitive metadata are masked by default before API responses reach the console UI.
 - Added a service-role client exposure contract. `SUPABASE_SERVICE_ROLE_KEY` and `HUNGRY_SUPABASE_SERVICE_ROLE_KEY` are rejected anywhere under `web-v2/src` except `src/lib/supabase/server.ts`.

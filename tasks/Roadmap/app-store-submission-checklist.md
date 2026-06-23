@@ -5,10 +5,13 @@ Verdict: **No-Go** until owner-provided store-console and legal evidence exists.
 
 | Check | Status | Evidence / required action |
 |---|---:|---|
+| ASO metadata drafts | repo-drafted | `tasks/Roadmap/app-store-submission-qc-report.md`; `tasks/Roadmap/google-play-submission-qc-report.md`; owner approval required |
+| Reviewer notes template | repo-drafted | `tasks/Roadmap/app-store-google-play-prelaunch-qaqc-checklist.md`; final account/backend details required |
 | App Store metadata complete | pending | App Store Connect proof required |
 | Play Store metadata complete | pending | Play Console proof required |
 | Screenshots accurate | pending | current app screenshots for launch scope required |
 | App description accurate | pending | must match production-enabled feature flags |
+| Screenshot/image rights checked | pending | no real personal data, no unlicensed imagery, no unsupported feature screenshots |
 | Support URL works | pending | public URL proof required |
 | Privacy URL works | pending | public URL proof required |
 | Account deletion URL works | pending | public URL proof required |
@@ -22,6 +25,7 @@ Verdict: **No-Go** until owner-provided store-console and legal evidence exists.
 | Google Data Safety matches app | pending | owner/legal review required |
 | Account deletion policy completed | pending | Apple + Google account deletion proof required |
 | Age rating/category correct | pending | owner confirmation required |
+| UGC terms/report/block/moderation evidence | pending | required if posts/reviews/comments/profiles are public in submitted build |
 | Location/photo/camera/microphone copy accurate | source present | final store form still pending |
 
 ## Policy References
