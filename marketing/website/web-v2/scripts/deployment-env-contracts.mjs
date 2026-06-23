@@ -34,12 +34,16 @@ function serviceRoleKey() {
   return value("SUPABASE_SERVICE_ROLE_KEY") || value("HUNGRY_SUPABASE_SERVICE_ROLE_KEY");
 }
 
-function consoleToken() {
-  return value("HUNGRY_CONSOLE_API_TOKEN") || value("HUNGRY_CONSOLE_ADMIN_TOKEN");
+function consoleUsername() {
+  return value("HUNGRY_CONSOLE_USERNAME") || value("HUNGRY_CONSOLE_BASIC_AUTH_USERNAME");
+}
+
+function consolePassword() {
+  return value("HUNGRY_CONSOLE_PASSWORD") || value("HUNGRY_CONSOLE_BASIC_AUTH_PASSWORD");
 }
 
 function isLikelyWeakSecret(secret) {
-  if (secret.length < 32) return true;
+  if (secret.length < 12) return true;
   return /^(local|test|dev|demo|changeme|password|secret|token|hungry)/i.test(secret);
 }
 
@@ -74,6 +78,10 @@ if (process.env.HUNGRY_ALLOW_UNPROTECTED_CONSOLE_API === "1") {
   failures.push("HUNGRY_ALLOW_UNPROTECTED_CONSOLE_API must not be enabled for staging/production.");
 }
 
+if (hasAny(["HUNGRY_CONSOLE_API_TOKEN", "HUNGRY_CONSOLE_ADMIN_TOKEN"])) {
+  failures.push("Console token auth is deprecated; use HUNGRY_CONSOLE_USERNAME and HUNGRY_CONSOLE_PASSWORD.");
+}
+
 requireHttpsUrl("NEXT_PUBLIC_SITE_URL", value("NEXT_PUBLIC_SITE_URL"));
 requireHttpsUrl("Supabase URL", publicSupabaseUrl());
 
@@ -81,18 +89,15 @@ if (!publicSupabaseAnonKey()) {
   failures.push("A Supabase anon/publishable key is required for staging/production website forms.");
 }
 
-const token = consoleToken();
-const hasStrongConsoleToken = token.length > 0 && !isLikelyWeakSecret(token);
-const hasSupabaseAdminAuthPath = publicSupabaseUrl() && publicSupabaseAnonKey() && serviceRoleKey();
+const username = consoleUsername();
+const password = consolePassword();
 
-if (!hasStrongConsoleToken && !hasSupabaseAdminAuthPath) {
-  failures.push(
-    "Console access requires either a strong HUNGRY_CONSOLE_API_TOKEN/HUNGRY_CONSOLE_ADMIN_TOKEN or a configured Supabase admin bearer path.",
-  );
+if (!username || !password) {
+  failures.push("Console access requires HUNGRY_CONSOLE_USERNAME and HUNGRY_CONSOLE_PASSWORD.");
 }
 
-if (token && isLikelyWeakSecret(token)) {
-  failures.push("Console token is present but too short or appears to be a placeholder.");
+if (password && isLikelyWeakSecret(password)) {
+  failures.push("Console password is present but too short or appears to be a placeholder.");
 }
 
 if (hasAny(["SUPABASE_SERVICE_ROLE_KEY", "HUNGRY_SUPABASE_SERVICE_ROLE_KEY"]) && serviceRoleKey().length < 32) {

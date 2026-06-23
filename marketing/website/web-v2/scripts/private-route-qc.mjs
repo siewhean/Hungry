@@ -1,12 +1,14 @@
 const baseUrl = process.env.WEBSITE_BASE_URL || "http://127.0.0.1:3000";
 const requireAuthenticatedProof = process.env.HUNGRY_REQUIRE_PRIVATE_ROUTE_QC === "1";
 const merchantAccessToken = process.env.HUNGRY_MERCHANT_ACCESS_TOKEN?.trim() || "";
-const consoleToken =
-  process.env.HUNGRY_CONSOLE_API_TOKEN?.trim() ||
-  process.env.HUNGRY_CONSOLE_ADMIN_TOKEN?.trim() ||
+const consoleUsername =
+  process.env.HUNGRY_CONSOLE_USERNAME?.trim() ||
+  process.env.HUNGRY_CONSOLE_BASIC_AUTH_USERNAME?.trim() ||
   "";
-const consoleAdminBearerToken = process.env.HUNGRY_CONSOLE_ADMIN_BEARER_TOKEN?.trim() || "";
-const consoleNonAdminBearerToken = process.env.HUNGRY_CONSOLE_NON_ADMIN_BEARER_TOKEN?.trim() || "";
+const consolePassword =
+  process.env.HUNGRY_CONSOLE_PASSWORD?.trim() ||
+  process.env.HUNGRY_CONSOLE_BASIC_AUTH_PASSWORD?.trim() ||
+  "";
 const failures = [];
 
 function routeUrl(path) {
@@ -17,6 +19,10 @@ function cookieHeader(cookies) {
   return Object.entries(cookies)
     .map(([name, value]) => `${name}=${encodeURIComponent(value)}`)
     .join("; ");
+}
+
+function basicAuthorization(username, password) {
+  return `Basic ${Buffer.from(`${username}:${password}`, "utf8").toString("base64")}`;
 }
 
 async function request(path, init = {}) {
@@ -59,21 +65,23 @@ async function expectJsonDenied(path, expectedStatuses = [401, 403, 503]) {
   expect(hasPrivateHeaders(response), `${path}: expected no-store/noindex headers on private API denial.`);
 }
 
-async function expectPageOk(path, cookies) {
+function authHeaders(cookiesOrHeaders) {
+  return "cookie" in cookiesOrHeaders || "authorization" in cookiesOrHeaders
+    ? cookiesOrHeaders
+    : { cookie: cookieHeader(cookiesOrHeaders) };
+}
+
+async function expectPageOk(path, cookiesOrHeaders) {
+  const headers = authHeaders(cookiesOrHeaders);
   const response = await request(path, {
-    headers: {
-      cookie: cookieHeader(cookies),
-    },
+    headers,
   });
   expect(response.status === 200, `${path}: expected authenticated page status 200, got ${response.status}`);
   expect(hasPrivateHeaders(response), `${path}: expected no-store/noindex headers on authenticated private page.`);
 }
 
 async function expectApiOk(path, cookiesOrHeaders) {
-  const headers =
-    "cookie" in cookiesOrHeaders || "authorization" in cookiesOrHeaders
-      ? cookiesOrHeaders
-      : { cookie: cookieHeader(cookiesOrHeaders) };
+  const headers = authHeaders(cookiesOrHeaders);
   const response = await request(path, {
     headers: {
       accept: "application/json",
@@ -84,24 +92,28 @@ async function expectApiOk(path, cookiesOrHeaders) {
   expect(hasPrivateHeaders(response), `${path}: expected no-store/noindex headers on authenticated private API.`);
 }
 
-async function expectApiDeniedWithBearer(path, bearerToken) {
+async function expectDeniedWithInvalidBasic(path) {
   const response = await request(path, {
     headers: {
       accept: "application/json",
-      authorization: `Bearer ${bearerToken}`,
+      authorization: basicAuthorization("wrong-user", "wrong-password"),
     },
   });
   expect(
-    response.status === 401 || response.status === 403,
-    `${path}: expected non-admin bearer denial, got ${response.status}`,
+    response.status === 401,
+    `${path}: expected invalid Basic Auth denial, got ${response.status}`,
   );
   expect(hasPrivateHeaders(response), `${path}: expected no-store/noindex headers on non-admin denial.`);
+  expect(
+    response.headers.get("www-authenticate")?.includes("Basic"),
+    `${path}: expected Basic Auth challenge on invalid credentials.`,
+  );
 }
 
 await expectRedirect("/merchant", "/merchant/login");
 await expectRedirect("/merchant/menu", "/merchant/login");
-await expectRedirect("/console", "/");
-await expectRedirect("/console/waitlist", "/");
+await expectJsonDenied("/console", [401, 503]);
+await expectJsonDenied("/console/waitlist", [401, 503]);
 await expectJsonDenied("/api/merchant/session", [401]);
 await expectJsonDenied("/api/merchant/overview", [401]);
 await expectJsonDenied("/api/console/waitlist", [401, 503]);
@@ -116,21 +128,16 @@ if (merchantAccessToken) {
   failures.push("HUNGRY_MERCHANT_ACCESS_TOKEN is required when HUNGRY_REQUIRE_PRIVATE_ROUTE_QC=1.");
 }
 
-if (consoleToken) {
-  const consoleCookies = { hungry_console_api_token: consoleToken };
-  await expectPageOk("/console", consoleCookies);
-  await expectPageOk("/console/waitlist", consoleCookies);
-  await expectApiOk("/api/console/waitlist", consoleCookies);
-} else if (consoleAdminBearerToken) {
-  await expectApiOk("/api/console/waitlist", { authorization: `Bearer ${consoleAdminBearerToken}` });
+if (consoleUsername && consolePassword) {
+  const authorization = basicAuthorization(consoleUsername, consolePassword);
+  await expectPageOk("/console", { authorization });
+  await expectPageOk("/console/waitlist", { authorization });
+  await expectApiOk("/api/console/waitlist", { authorization });
+  await expectDeniedWithInvalidBasic("/api/console/waitlist");
 } else if (requireAuthenticatedProof) {
   failures.push(
-    "HUNGRY_CONSOLE_API_TOKEN/HUNGRY_CONSOLE_ADMIN_TOKEN or HUNGRY_CONSOLE_ADMIN_BEARER_TOKEN is required when HUNGRY_REQUIRE_PRIVATE_ROUTE_QC=1.",
+    "HUNGRY_CONSOLE_USERNAME and HUNGRY_CONSOLE_PASSWORD are required when HUNGRY_REQUIRE_PRIVATE_ROUTE_QC=1.",
   );
-}
-
-if (consoleNonAdminBearerToken) {
-  await expectApiDeniedWithBearer("/api/console/waitlist", consoleNonAdminBearerToken);
 }
 
 if (failures.length > 0) {
@@ -145,13 +152,8 @@ if (merchantAccessToken) {
 } else {
   console.log("Authenticated merchant route/API QC skipped: HUNGRY_MERCHANT_ACCESS_TOKEN is not set.");
 }
-if (consoleToken || consoleAdminBearerToken) {
+if (consoleUsername && consolePassword) {
   console.log("Authenticated console route/API QC passed.");
 } else {
-  console.log("Authenticated console route/API QC skipped: console token/admin bearer token is not set.");
-}
-if (consoleNonAdminBearerToken) {
-  console.log("Non-admin console bearer denial QC passed.");
-} else {
-  console.log("Non-admin console bearer denial QC skipped: HUNGRY_CONSOLE_NON_ADMIN_BEARER_TOKEN is not set.");
+  console.log("Authenticated console route/API QC skipped: console username/password is not set.");
 }

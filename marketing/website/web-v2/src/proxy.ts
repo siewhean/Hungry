@@ -1,8 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import {
+  consoleBasicAuthChallengeHeader,
+  validateConsoleBasicAuth,
+} from "@/lib/security/consoleBasicAuth";
+
 const MERCHANT_ACCESS_COOKIE = "hungry_merchant_access_token";
-const CONSOLE_TOKEN_COOKIE = "hungry_console_api_token";
-const CONSOLE_TOKEN_HEADER = "x-hungry-console-token";
 
 const merchantAuthRoutes = new Set([
   "/merchant/forgot-password",
@@ -40,27 +43,24 @@ function redirectOrJson(request: NextRequest, redirectPath: string, message: str
   return applyPrivateResponseHeaders(NextResponse.redirect(url));
 }
 
-function configuredConsoleToken() {
-  return (
-    process.env.HUNGRY_CONSOLE_API_TOKEN?.trim() ||
-    process.env.HUNGRY_CONSOLE_ADMIN_TOKEN?.trim() ||
-    ""
-  );
-}
+function consoleBasicAuthDenied(request: NextRequest) {
+  const result = validateConsoleBasicAuth(request);
+  if (result.valid) return null;
 
-function hasConsolePageAccess(request: NextRequest) {
-  const configuredToken = configuredConsoleToken();
-  const providedToken =
-    request.headers.get(CONSOLE_TOKEN_HEADER)?.trim() ||
-    request.cookies.get(CONSOLE_TOKEN_COOKIE)?.value.trim() ||
-    "";
-  const bearerToken = request.headers.get("authorization")?.trim();
+  const configured = result.configured;
+  const status = configured ? 401 : 503;
+  const message = configured
+    ? "Console username and password are required."
+    : "Console username and password are not configured.";
+  const response = wantsJson(request)
+    ? NextResponse.json({ configured, error: message }, { status })
+    : new NextResponse(message, { status });
 
-  if (configuredToken) {
-    return providedToken === configuredToken || bearerToken === `Bearer ${configuredToken}`;
+  if (configured) {
+    response.headers.set("WWW-Authenticate", consoleBasicAuthChallengeHeader());
   }
 
-  return process.env.NODE_ENV !== "production" || process.env.HUNGRY_ALLOW_UNPROTECTED_CONSOLE_API === "1";
+  return applyPrivateResponseHeaders(response);
 }
 
 export function proxy(request: NextRequest) {
@@ -74,11 +74,16 @@ export function proxy(request: NextRequest) {
     }
   }
 
-  if (pathname.startsWith("/console") && !hasConsolePageAccess(request)) {
-    return redirectOrJson(request, "/", "Console access is not authorized.");
+  if (pathname.startsWith("/console") || pathname.startsWith("/api/console")) {
+    const denied = consoleBasicAuthDenied(request);
+    if (denied) return denied;
   }
 
-  if (pathname.startsWith("/merchant") || pathname.startsWith("/console")) {
+  if (
+    pathname.startsWith("/merchant") ||
+    pathname.startsWith("/console") ||
+    pathname.startsWith("/api/console")
+  ) {
     return applyPrivateResponseHeaders(NextResponse.next());
   }
 

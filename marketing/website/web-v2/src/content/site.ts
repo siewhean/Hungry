@@ -1,7 +1,7 @@
 export const siteNav = [
-  { label: "For Foodies", href: "/for-foodies" },
-  { label: "For Merchants", href: "/for-merchants" },
-  { label: "About", href: "/#hawker-culture" },
+  { label: "Discover Food", href: "/for-foodies" },
+  { label: "For Business", href: "/for-merchants" },
+  { label: "Our Story", href: "/#hawker-culture" },
 ] as const;
 
 export const footerLinks = {
@@ -11,8 +11,8 @@ export const footerLinks = {
     { label: "Account Deletion", href: "/account/delete" },
   ],
   discover: [
-    { label: "For Foodies", href: "/for-foodies" },
-    { label: "For Merchants", href: "/for-merchants" },
+    { label: "Discover Food", href: "/for-foodies" },
+    { label: "For Business", href: "/for-merchants" },
     { label: "Hawker Culture", href: "/#hawker-culture" },
   ],
   connect: [
@@ -80,7 +80,7 @@ export const homepage = {
     eyebrow: "For hungry days in Singapore",
     lines: ["Know what to eat.", "Before you leave."],
     proof: "Find the dish. Check the stall. Skip the wasted trip.",
-    body: "Hungry keeps menus, dish photos, reviews, hours, and stall details together, so you can decide faster.",
+    body: "The only app that lets you discover local stalls by their best dishes, check live opening hours, and see the menu—before you leave your seat.",
     primaryCta: { label: "Join Waitlist", href: "/join-waitlist" },
     secondaryCta: { label: "Explore Foodies", href: "/for-foodies" },
     atmosphere: {

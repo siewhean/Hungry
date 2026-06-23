@@ -10,9 +10,13 @@ const routes = (process.env.HUNGRY_LIGHTHOUSE_ROUTES || "/,/for-foodies,/for-mer
   .filter(Boolean);
 const requireAuthenticated = process.env.HUNGRY_REQUIRE_AUTHENTICATED_LIGHTHOUSE === "1";
 const merchantAccessToken = process.env.HUNGRY_MERCHANT_ACCESS_TOKEN?.trim() || "";
-const consoleToken =
-  process.env.HUNGRY_CONSOLE_API_TOKEN?.trim() ||
-  process.env.HUNGRY_CONSOLE_ADMIN_TOKEN?.trim() ||
+const consoleUsername =
+  process.env.HUNGRY_CONSOLE_USERNAME?.trim() ||
+  process.env.HUNGRY_CONSOLE_BASIC_AUTH_USERNAME?.trim() ||
+  "";
+const consolePassword =
+  process.env.HUNGRY_CONSOLE_PASSWORD?.trim() ||
+  process.env.HUNGRY_CONSOLE_BASIC_AUTH_PASSWORD?.trim() ||
   "";
 const outputDir = process.env.HUNGRY_LIGHTHOUSE_OUTPUT_DIR || join(tmpdir(), "hungry-web-v2-lighthouse");
 const failures = [];
@@ -33,6 +37,10 @@ function routeSlug(route) {
   return normalized || "home";
 }
 
+function basicAuthorization(username, password) {
+  return `Basic ${Buffer.from(`${username}:${password}`, "utf8").toString("base64")}`;
+}
+
 function headersForRoute(route) {
   if (route.startsWith("/merchant") && !["/merchant/login", "/merchant/signup", "/merchant/forgot-password"].includes(route)) {
     if (!merchantAccessToken) return undefined;
@@ -40,8 +48,8 @@ function headersForRoute(route) {
   }
 
   if (route.startsWith("/console")) {
-    if (!consoleToken) return undefined;
-    return { Cookie: `hungry_console_api_token=${encodeURIComponent(consoleToken)}` };
+    if (!consoleUsername || !consolePassword) return undefined;
+    return { Authorization: basicAuthorization(consoleUsername, consolePassword) };
   }
 
   return undefined;

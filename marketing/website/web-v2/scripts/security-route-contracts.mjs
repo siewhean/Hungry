@@ -77,8 +77,11 @@ for (const header of requiredHeaders) {
 
 assertContains("src/proxy.ts", 'matcher: ["/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)"]', "Security proxy matcher failed");
 assertContains("src/proxy.ts", "hungry_merchant_access_token", "Merchant page proxy cookie contract failed");
-assertContains("src/proxy.ts", "hungry_console_api_token", "Console page proxy cookie contract failed");
-assertContains("src/proxy.ts", "NODE_ENV !== \"production\"", "Console dev bypass production fence failed");
+assertContains("src/proxy.ts", "validateConsoleBasicAuth", "Console page proxy basic-auth contract failed");
+assertContains("src/proxy.ts", "consoleBasicAuthChallengeHeader", "Console page proxy challenge contract failed");
+assertContains("src/proxy.ts", 'pathname.startsWith("/api/console")', "Console API proxy basic-auth contract failed");
+assertNotContains("src/proxy.ts", "NODE_ENV !== \"production\"", "Console must not have a dev bypass");
+assertNotContains("src/proxy.ts", "HUNGRY_ALLOW_UNPROTECTED_CONSOLE_API", "Console must not have an unprotected bypass");
 assertContains("src/proxy.ts", "applyPrivateResponseHeaders", "Private proxy response header contract failed");
 assertContains("src/proxy.ts", "no-store, no-cache, must-revalidate, proxy-revalidate", "Private proxy cache contract failed");
 assertContains("src/proxy.ts", "noindex, nofollow, noarchive", "Private proxy indexing contract failed");
@@ -101,8 +104,13 @@ for (const route of mutationRoutes) {
 }
 
 assertContains("src/app/api/console/summary/route.ts", "../_auth", "Console auth import contract failed");
-assertContains("src/app/api/console/_auth.ts", "website_console_admins", "Console admin role contract failed");
-assertContains("src/app/api/console/_auth.ts", "isSupabaseServiceConfigured", "Console service-role auth contract failed");
+assertContains("src/lib/security/consoleBasicAuth.ts", "HUNGRY_CONSOLE_USERNAME", "Console username env contract failed");
+assertContains("src/lib/security/consoleBasicAuth.ts", "HUNGRY_CONSOLE_PASSWORD", "Console password env contract failed");
+assertContains("src/lib/security/consoleBasicAuth.ts", "constantTimeEquals", "Console credential comparison contract failed");
+assertContains("src/app/api/console/_auth.ts", "validateConsoleBasicAuth", "Console API basic-auth contract failed");
+assertContains("src/app/api/console/_auth.ts", "consoleBasicAuthChallengeHeader", "Console API challenge contract failed");
+assertNotContains("src/app/api/console/_auth.ts", "HUNGRY_CONSOLE_API_TOKEN", "Console API token bypass must not be used");
+assertNotContains("src/app/api/console/_auth.ts", "HUNGRY_ALLOW_UNPROTECTED_CONSOLE_API", "Console API must not have an unprotected bypass");
 assertContains("src/app/api/console/summary/route.ts", "await requireConsoleApiAccess(request)", "Console API auth contract failed");
 assertContains("src/app/api/console/merchants/route.ts", "await requireConsoleApiAccess(request)", "Console API auth contract failed");
 assertContains(

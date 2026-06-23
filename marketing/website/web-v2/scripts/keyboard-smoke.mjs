@@ -28,14 +28,22 @@ const authenticatedMerchantRoutes = [
 ];
 const authenticatedConsoleRoutes = ["/console", "/console/waitlist"];
 const merchantAccessToken = process.env.HUNGRY_MERCHANT_ACCESS_TOKEN?.trim() || "";
-const consoleToken =
-  process.env.HUNGRY_CONSOLE_API_TOKEN?.trim() ||
-  process.env.HUNGRY_CONSOLE_ADMIN_TOKEN?.trim() ||
+const consoleUsername =
+  process.env.HUNGRY_CONSOLE_USERNAME?.trim() ||
+  process.env.HUNGRY_CONSOLE_BASIC_AUTH_USERNAME?.trim() ||
+  "";
+const consolePassword =
+  process.env.HUNGRY_CONSOLE_PASSWORD?.trim() ||
+  process.env.HUNGRY_CONSOLE_BASIC_AUTH_PASSWORD?.trim() ||
   "";
 const failures = [];
 
 function routeUrl(route) {
   return new URL(route, baseUrl).toString();
+}
+
+function basicAuthorization(username, password) {
+  return `Basic ${Buffer.from(`${username}:${password}`, "utf8").toString("base64")}`;
 }
 
 const browser = await chromium.launch({ headless: true });
@@ -121,17 +129,13 @@ if (merchantAccessToken) {
   await context.close();
 }
 
-if (consoleToken) {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-  await context.addCookies([
-    {
-      domain: new URL(baseUrl).hostname,
-      name: "hungry_console_api_token",
-      path: "/",
-      sameSite: "Lax",
-      value: consoleToken,
+if (consoleUsername && consolePassword) {
+  const context = await browser.newContext({
+    extraHTTPHeaders: {
+      Authorization: basicAuthorization(consoleUsername, consolePassword),
     },
-  ]);
+    viewport: { width: 1280, height: 900 },
+  });
 
   for (const route of authenticatedConsoleRoutes) {
     const page = await context.newPage();
@@ -176,8 +180,8 @@ if (merchantAccessToken) {
 } else {
   console.log("Authenticated merchant keyboard smoke skipped: HUNGRY_MERCHANT_ACCESS_TOKEN is not set.");
 }
-if (consoleToken) {
+if (consoleUsername && consolePassword) {
   console.log(`Authenticated console keyboard smoke passed for ${authenticatedConsoleRoutes.length} pages.`);
 } else {
-  console.log("Authenticated console keyboard smoke skipped: HUNGRY_CONSOLE_API_TOKEN is not set.");
+  console.log("Authenticated console keyboard smoke skipped: HUNGRY_CONSOLE_USERNAME/PASSWORD is not set.");
 }

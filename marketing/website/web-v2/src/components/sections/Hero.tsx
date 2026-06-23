@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { ArrowRight } from "lucide-react";
 import { DiscoveryPhoneMockup } from "../home/DiscoveryPhoneMockup";
 import { homepage } from "@/content/site";
 import { trackWebsiteEvent } from "@/lib/analytics/websiteEvents";
@@ -136,7 +137,8 @@ export default function Hero() {
                 })
               }
             >
-              {hero.primaryCta.label}
+              <span className={styles.ctaText}>{hero.primaryCta.label}</span>
+              <ArrowRight size={20} strokeWidth={2.5} className={styles.ctaIcon} />
             </Link>
             <Link
               href={hero.secondaryCta.href}

@@ -44,13 +44,13 @@
   --font-size-lg: 1.125rem;
   --font-size-xl: 1.35rem;
   --button-font-family: var(--font-body);
-  --button-font-size: var(--font-size-md);
+  --button-font-size: var(--font-size-lg);
   --button-font-weight: 800;
   --button-line-height: 1.1;
   --button-letter-spacing: 0;
-  --button-min-height: 3rem;
-  --button-padding-block: var(--space-3);
-  --button-padding-inline: var(--space-6);
+  --button-min-height: 3.6rem;
+  --button-padding-block: var(--space-4);
+  --button-padding-inline: var(--space-8);
   --button-gap: var(--space-2);
   --button-radius: var(--radius-full);
   --button-background: var(--color-primary);

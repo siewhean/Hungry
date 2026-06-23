@@ -3,7 +3,7 @@
     radial-gradient(circle at 16% 10%, color-mix(in srgb, var(--color-orange-light) 55%, transparent), transparent 26%),
     linear-gradient(180deg, var(--color-white) 0%, var(--color-bg) 100%);
   border-top: 1px solid var(--color-border);
-  padding: var(--space-24) 0;
+  padding: var(--space-32) 0;
 }
 
 .shell {

@@ -42,8 +42,7 @@ Database-backed waitlist, Console, and Merchant Portal routes require the shared
 - `NEXT_PUBLIC_SUPABASE_URL` or `EXPO_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, or the Expo public anon key equivalents
 - `SUPABASE_SERVICE_ROLE_KEY` or `HUNGRY_SUPABASE_SERVICE_ROLE_KEY` for Console reads/admin writes and waitlist upserts
-- `HUNGRY_CONSOLE_API_TOKEN` or `HUNGRY_CONSOLE_ADMIN_TOKEN` for production Console API access. The token can be supplied by `x-hungry-console-token`, `Authorization: Bearer ...`, or a `hungry_console_api_token` secure cookie. Production blocks service-role Console APIs when no token is configured.
-- Supabase Auth bearer tokens can also access Console APIs when the user is listed as `active` with role `admin` or `ops` in `public.website_console_admins`. The shared Console token should be kept only for automation or break-glass access.
+- `HUNGRY_CONSOLE_USERNAME` and `HUNGRY_CONSOLE_PASSWORD` for Console access. Store these as deployment secrets and local `.env.local` values only; never commit real credentials. Console pages and `/api/console/*` fail closed when either value is missing.
 - Optional durable rate limiting uses an Upstash Redis REST-compatible store:
   - `HUNGRY_RATE_LIMIT_REDIS_REST_URL` / `HUNGRY_RATE_LIMIT_REDIS_REST_TOKEN`
   - or `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
