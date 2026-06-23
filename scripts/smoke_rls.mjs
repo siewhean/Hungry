@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+import { loadProjectEnv } from "./load-project-env.mjs";
+
+loadProjectEnv();
+
 const SUPABASE_URL =
   process.env.HUNGRY_SUPABASE_SMOKE_URL ||
   process.env.HUNGRY_SUPABASE_IMPORT_URL ||

@@ -57,6 +57,7 @@ export default defineConfig({
         env: {
           ...process.env,
           CI: "1",
+          HUNGRY_EXPO_E2E_WEBSERVER: "1",
           HUNGRY_DATA_SOURCE: "mock",
           EXPO_PUBLIC_HUNGRY_DATA_SOURCE: "mock",
           EXPO_PUBLIC_HUNGRY_E2E_DATA_SOURCE: "mock",

@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+import { loadProjectEnv } from "./load-project-env.mjs";
+
+loadProjectEnv();
+
 const SUPABASE_URL =
   process.env.HUNGRY_SUPABASE_SMOKE_URL ||
   process.env.HUNGRY_SUPABASE_IMPORT_URL ||
@@ -19,7 +23,11 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
   skip("Missing Supabase smoke URL or anon key.");
 }
 
-async function search(query) {
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function searchOnce(query, overrides = {}) {
   const response = await fetch(`${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/rpc/search_dishes`, {
     method: "POST",
     headers: {
@@ -39,6 +47,7 @@ async function search(query) {
       p_cuisine_tags: null,
       p_max_price: null,
       p_open_only: false,
+      ...overrides,
     }),
   });
   const text = await response.text();
@@ -49,14 +58,61 @@ async function search(query) {
   return Array.isArray(data) ? data : [];
 }
 
+async function search(query, overrides = {}) {
+  try {
+    return await searchOnce(query, overrides);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes('"code":"57014"')) {
+      throw error;
+    }
+    await sleep(500);
+    return searchOnce(query, overrides);
+  }
+}
+
 const results = [];
 for (const query of queries) {
   const rows = await search(query);
   results.push({ query, count: rows.length, firstDish: rows[0]?.name ?? null });
 }
 
+const filteredChecks = [
+  {
+    name: "price filter",
+    rows: await search("chicken rice", { p_max_price: 10 }),
+  },
+  {
+    name: "open-only filter",
+    rows: await search("chicken rice", { p_open_only: true }),
+  },
+  {
+    name: "invalid explicit area",
+    rows: await search("chicken rice", { p_area_name: "__invalid_area__" }),
+    expectedCount: 0,
+  },
+];
+
 const empty = results.filter((result) => result.count === 0);
-console.log(JSON.stringify({ status: empty.length ? "failed" : "passed", results }, null, 2));
-if (empty.length) {
+const failedFilteredChecks = filteredChecks.filter(
+  (check) => typeof check.expectedCount === "number" && check.rows.length !== check.expectedCount,
+);
+console.log(
+  JSON.stringify(
+    {
+      status: empty.length || failedFilteredChecks.length ? "failed" : "passed",
+      results,
+      filteredChecks: filteredChecks.map((check) => ({
+        name: check.name,
+        count: check.rows.length,
+        firstDish: check.rows[0]?.name ?? null,
+        expectedCount: check.expectedCount,
+      })),
+    },
+    null,
+    2,
+  ),
+);
+if (empty.length || failedFilteredChecks.length) {
   process.exit(1);
 }

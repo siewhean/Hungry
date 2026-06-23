@@ -10,22 +10,57 @@ const DEFAULT_METRO_URL = "exp://localhost:8081";
 const METRO_STATUS_TIMEOUT_MS = 1500;
 
 const FLOW_MAP = {
+  "ios-launch": [".maestro/ios-app-launch-smoke.yaml"],
+  "ios-auth": [".maestro/ios-auth-smoke.yaml"],
+  "ios-guest": [".maestro/ios-guest-browse-smoke.yaml"],
+  "ios-location-denied": [".maestro/ios-location-denied-smoke.yaml"],
+  "ios-review-post": [".maestro/ios-review-post-smoke.yaml"],
   "ios-chat": [".maestro/ios-chat-smoke.yaml"],
   "ios-media": [".maestro/ios-media-picker-permission.yaml"],
-  ios: [".maestro/ios-chat-smoke.yaml", ".maestro/ios-media-picker-permission.yaml"],
-  all: [".maestro/ios-chat-smoke.yaml", ".maestro/ios-media-picker-permission.yaml"],
+  ios: [
+    ".maestro/ios-app-launch-smoke.yaml",
+    ".maestro/ios-guest-browse-smoke.yaml",
+    ".maestro/ios-auth-smoke.yaml",
+    ".maestro/ios-location-denied-smoke.yaml",
+    ".maestro/ios-media-picker-permission.yaml",
+    ".maestro/ios-review-post-smoke.yaml",
+    ".maestro/ios-chat-smoke.yaml",
+  ],
+  "android-launch": [".maestro/android-app-launch-smoke.yaml"],
+  "android-guest": [".maestro/android-guest-browse-smoke.yaml"],
+  "android-media": [".maestro/android-media-permission-smoke.yaml"],
+  android: [
+    ".maestro/android-app-launch-smoke.yaml",
+    ".maestro/android-guest-browse-smoke.yaml",
+    ".maestro/android-media-permission-smoke.yaml",
+  ],
+  all: [
+    ".maestro/ios-app-launch-smoke.yaml",
+    ".maestro/ios-guest-browse-smoke.yaml",
+    ".maestro/ios-auth-smoke.yaml",
+    ".maestro/ios-location-denied-smoke.yaml",
+    ".maestro/ios-media-picker-permission.yaml",
+    ".maestro/ios-review-post-smoke.yaml",
+    ".maestro/ios-chat-smoke.yaml",
+    ".maestro/android-app-launch-smoke.yaml",
+    ".maestro/android-guest-browse-smoke.yaml",
+    ".maestro/android-media-permission-smoke.yaml",
+  ],
 };
 
 function fail(message) {
   throw new Error(`[maestro-smoke] ${message}`);
 }
 
-function getAppId() {
+function getAppId(target) {
   if (process.env.HUNGRY_NATIVE_APP_ID?.trim()) {
     return process.env.HUNGRY_NATIVE_APP_ID.trim();
   }
 
   const appJson = JSON.parse(readFileSync(resolve(process.cwd(), "app.json"), "utf8"));
+  if (target.startsWith("android")) {
+    return appJson.expo?.android?.package ?? appJson.expo?.ios?.bundleIdentifier ?? "";
+  }
   return appJson.expo?.ios?.bundleIdentifier ?? appJson.expo?.android?.package ?? "";
 }
 
@@ -101,7 +136,7 @@ async function main() {
     fail(`unknown target "${target}". Use one of: ${Object.keys(FLOW_MAP).join(", ")}`);
   }
 
-  const appId = getAppId();
+  const appId = getAppId(target);
   const metroUrl = getMetroUrl();
   if (!appId) {
     fail("could not determine native app id from HUNGRY_NATIVE_APP_ID or app.json");

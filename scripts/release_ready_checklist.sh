@@ -61,8 +61,13 @@ echo
 if [[ ! -f "${RELEASE_EVIDENCE_FILE}" ]]; then
   echo "[Hungry] Release remains No-Go until these external blockers have evidence:"
   echo "- Android/EAS build or device smoke proof"
+  echo "- iOS EAS/TestFlight or device smoke proof"
   echo "- production secret verification for EAS/store release environments"
   echo "- public privacy/account-deletion URL reachability and store-console metadata"
+  echo "- App Store Connect and Google Play Console metadata/Data Safety proof"
+  echo "- owner-approved ASO metadata, reviewer notes, screenshot/image rights, and store policy checklist"
+  echo "- Sentry staging crash capture and native iOS/Android Maestro smoke proof"
+  echo "- UGC moderation/report/block proof for any public user-generated content"
   echo "- Supabase owner/dashboard actions for leaked-password protection and remaining Advisor findings"
   echo "- pushed GitHub CI evidence for the merchant-catalog E2E gate"
   echo "- dirty-worktree reconciliation before merge or public-release claims"
@@ -78,8 +83,21 @@ fi
 echo "[Hungry] Checking external release evidence in ${RELEASE_EVIDENCE_FILE}"
 missing=0
 require_evidence "ANDROID_EAS_PROOF" "Android/EAS build or device smoke proof" || missing=1
+require_evidence "IOS_EAS_PROOF" "iOS EAS/TestFlight or device smoke proof" || missing=1
 require_evidence "PRODUCTION_SECRET_PROOF" "production secret verification for EAS/store release environments" || missing=1
 require_evidence "STORE_CONSOLE_PROOF" "public privacy/account-deletion URL reachability and store-console metadata" || missing=1
+require_evidence "APP_STORE_CONNECT_PROOF" "App Store Connect metadata/privacy proof" || missing=1
+require_evidence "PLAY_CONSOLE_PROOF" "Google Play metadata/Data Safety proof" || missing=1
+require_evidence "ASO_METADATA_APPROVAL_PROOF" "owner-approved final ASO metadata" || missing=1
+require_evidence "REVIEWER_NOTES_APPROVAL_PROOF" "owner-approved reviewer notes and demo access instructions" || missing=1
+require_evidence "STORE_SCREENSHOT_RIGHTS_PROOF" "final screenshot accuracy, privacy, and image-rights approval" || missing=1
+require_evidence "STORE_POLICY_CHECKLIST_APPROVAL_PROOF" "owner/legal approval of store policy checklist" || missing=1
+require_evidence "PUBLIC_PRIVACY_URL_PROOF" "public privacy policy URL proof" || missing=1
+require_evidence "PUBLIC_ACCOUNT_DELETION_URL_PROOF" "public account deletion URL proof" || missing=1
+require_evidence "SENTRY_STAGING_CRASH_PROOF" "Sentry staging crash capture" || missing=1
+require_evidence "NATIVE_MAESTRO_IOS_PROOF" "iOS Maestro/native smoke proof" || missing=1
+require_evidence "NATIVE_MAESTRO_ANDROID_PROOF" "Android Maestro/native smoke proof" || missing=1
+require_evidence "UGC_MODERATION_PROOF" "UGC moderation/report/block proof" || missing=1
 require_evidence "SUPABASE_OWNER_PROOF" "Supabase owner/dashboard actions for leaked-password protection and remaining Advisor findings" || missing=1
 require_evidence "PUSHED_CI_PROOF" "pushed GitHub CI evidence for the merchant-catalog E2E gate" || missing=1
 require_evidence "DIRTY_WORKTREE_RECONCILED" "dirty-worktree reconciliation before merge or public-release claims" || missing=1

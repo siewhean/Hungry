@@ -5,8 +5,21 @@ import { readRepoFile } from "@/test/sourceContracts";
 
 const REQUIRED_RELEASE_EVIDENCE_KEYS = [
   "ANDROID_EAS_PROOF",
+  "IOS_EAS_PROOF",
   "PRODUCTION_SECRET_PROOF",
   "STORE_CONSOLE_PROOF",
+  "APP_STORE_CONNECT_PROOF",
+  "PLAY_CONSOLE_PROOF",
+  "ASO_METADATA_APPROVAL_PROOF",
+  "REVIEWER_NOTES_APPROVAL_PROOF",
+  "STORE_SCREENSHOT_RIGHTS_PROOF",
+  "STORE_POLICY_CHECKLIST_APPROVAL_PROOF",
+  "PUBLIC_PRIVACY_URL_PROOF",
+  "PUBLIC_ACCOUNT_DELETION_URL_PROOF",
+  "SENTRY_STAGING_CRASH_PROOF",
+  "NATIVE_MAESTRO_IOS_PROOF",
+  "NATIVE_MAESTRO_ANDROID_PROOF",
+  "UGC_MODERATION_PROOF",
   "SUPABASE_OWNER_PROOF",
   "PUSHED_CI_PROOF",
   "DIRTY_WORKTREE_RECONCILED",
@@ -27,11 +40,31 @@ test("release evidence template and final checklist keep public launch blocked u
 
   for (const key of [
     "ANDROID_EAS_PROOF",
+    "IOS_EAS_PROOF",
     "STORE_CONSOLE_PROOF",
+    "APP_STORE_CONNECT_PROOF",
+    "PLAY_CONSOLE_PROOF",
+    "ASO_METADATA_APPROVAL_PROOF",
+    "REVIEWER_NOTES_APPROVAL_PROOF",
+    "STORE_SCREENSHOT_RIGHTS_PROOF",
+    "STORE_POLICY_CHECKLIST_APPROVAL_PROOF",
+    "PUBLIC_PRIVACY_URL_PROOF",
+    "PUBLIC_ACCOUNT_DELETION_URL_PROOF",
+    "SENTRY_STAGING_CRASH_PROOF",
+    "NATIVE_MAESTRO_IOS_PROOF",
+    "NATIVE_MAESTRO_ANDROID_PROOF",
+    "UGC_MODERATION_PROOF",
     "SUPABASE_OWNER_PROOF",
     "DIRTY_WORKTREE_RECONCILED",
   ]) {
-    assert.match(finalChecklist, new RegExp(`${key}=0`));
+    if (
+      key === "ANDROID_EAS_PROOF" ||
+      key === "STORE_CONSOLE_PROOF" ||
+      key === "SUPABASE_OWNER_PROOF" ||
+      key === "DIRTY_WORKTREE_RECONCILED"
+    ) {
+      assert.match(finalChecklist, new RegExp(`${key}=0`));
+    }
     assert.match(releaseScript, new RegExp(`require_evidence "${key}"`));
   }
 });
