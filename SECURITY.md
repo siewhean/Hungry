@@ -112,9 +112,9 @@ Linked Supabase Advisor state after `20260527144633` and `20260527145534`:
   - Verification: app-owned findings are classified cleanly by `npm run audit:supabase:advisor-security`.
 
 - `Security Definer Function Executable` on linked legacy payment/order RPCs
-  - Status: External blocker.
-  - Rationale: linked Supabase still exposes legacy `release_reserved_order(...)` and `submit_payment_proof(...)` SECURITY DEFINER RPCs to `anon` / `authenticated`; these functions are outside the Hungry MVP repo source.
-  - Remediation: after owner approval, run `supabase/manual/legacy_payment_order_rpc_advisor_cleanup.sql` from a linked Supabase SQL session, then rerun `npm run audit:supabase:advisor-security:non-password`.
+  - Status: Resolved in linked staging on 2026-06-24.
+  - Rationale: owner-approved cleanup revoked `anon` / `authenticated` execute on legacy `release_reserved_order(...)` and `submit_payment_proof(...)` SECURITY DEFINER RPCs while preserving service-role/manual recovery.
+  - Verification: `supabase/manual/legacy_payment_order_rpc_advisor_cleanup.sql` applied through the linked Supabase CLI, followed by `npm run audit:supabase:advisor-security:non-password`.
 
 - Performance Advisor policy warnings
   - Status: Resolved in linked staging.

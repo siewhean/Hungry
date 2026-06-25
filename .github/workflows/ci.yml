@@ -83,7 +83,11 @@ jobs:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
           if [ -z "${SUPABASE_ACCESS_TOKEN}" ] || [ -z "${SUPABASE_DB_PASSWORD}" ]; then
-            echo "Supabase credentials not configured; skipping migration dry run."
+            if [ "${GITHUB_EVENT_NAME}" = "push" ] && [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+              echo "Supabase credentials are required for main-branch migration dry-run proof."
+              exit 1
+            fi
+            echo "Supabase credentials not configured; skipping migration dry run for non-release context."
             exit 0
           fi
           npx supabase db push --dry-run -p "${SUPABASE_DB_PASSWORD}"
@@ -114,8 +118,8 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           if [ -z "${EXPO_TOKEN}" ]; then
-            echo "EXPO_TOKEN not configured; skipping EAS account validation."
-            exit 0
+            echo "EXPO_TOKEN is required for main-branch EAS account validation."
+            exit 1
           fi
           npx --yes eas-cli@18.12.3 whoami --non-interactive
 
@@ -127,7 +131,7 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         run: |
           if [ -z "${EXPO_TOKEN}" ]; then
-            echo "EXPO_TOKEN not configured; skipping EAS build gate."
-            exit 0
+            echo "EXPO_TOKEN is required for main-branch EAS build gate."
+            exit 1
           fi
           npx --yes eas-cli@18.12.3 build --platform all --profile preview --non-interactive --no-wait

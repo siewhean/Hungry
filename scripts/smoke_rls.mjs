@@ -48,22 +48,81 @@ const writeVenueImage = await fetch(`${baseUrl}/rest/v1/venue_images`, {
 
 const writeStatuses = [writeArea.status, writeVenueImage.status];
 const writesRejected = writeStatuses.every((status) => [401, 403, 404, 405].includes(status));
+const deniedStatuses = new Set([401, 403, 404, 405]);
+const serviceOnlyTables = [
+  "activity_events",
+  "app_ops_admins",
+  "app_ops_audit_events",
+  "app_ops_rate_limits",
+  "app_user_rate_limits",
+  "dishes_draft",
+  "guest_sessions",
+  "menu_photo_submissions",
+  "merchant_claim_interests",
+  "merchant_popular_visitor_pins",
+  "website_console_admins",
+  "website_console_audit_events",
+];
+
+async function restRequest(table, init) {
+  const response = await fetch(`${baseUrl}/rest/v1/${table}`, init);
+  const body = await response.text();
+  let rows = null;
+  if (response.ok && body) {
+    try {
+      const parsed = JSON.parse(body);
+      rows = Array.isArray(parsed) ? parsed.length : null;
+    } catch {
+      rows = null;
+    }
+  }
+  return {
+    body,
+    ok: response.ok,
+    rows,
+    status: response.status,
+    table,
+  };
+}
+
+const serviceOnlyResults = [];
+for (const table of serviceOnlyTables) {
+  const read = await restRequest(`${table}?select=*&limit=1`, { headers });
+  const write = await restRequest(table, {
+    body: JSON.stringify({}),
+    headers: { ...headers, Prefer: "return=minimal" },
+    method: "POST",
+  });
+  serviceOnlyResults.push({
+    read: read.status,
+    rows: read.rows,
+    table,
+    write: write.status,
+  });
+}
+
+const serviceOnlyDenied = serviceOnlyResults.every(
+  (result) =>
+    (deniedStatuses.has(result.read) || (result.read === 200 && result.rows === 0)) &&
+    deniedStatuses.has(result.write),
+);
 
 console.log(
   JSON.stringify(
     {
-      status: writesRejected ? "passed" : "failed",
+      status: writesRejected && serviceOnlyDenied ? "passed" : "failed",
       areasReadStatus: readAreas.status,
       anonWriteStatuses: {
         areas: writeArea.status,
         venue_images: writeVenueImage.status,
       },
+      serviceOnlyTables: serviceOnlyResults,
     },
     null,
     2,
   ),
 );
 
-if (!writesRejected) {
+if (!writesRejected || !serviceOnlyDenied) {
   process.exit(1);
 }

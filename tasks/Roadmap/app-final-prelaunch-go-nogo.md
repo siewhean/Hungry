@@ -1,6 +1,6 @@
 # App Final Prelaunch Go / No-Go
 
-Updated: 2026-06-21  
+Updated: 2026-06-24
 Final status: **No-Go**
 
 ## Store-Readiness Repo-Side Status
@@ -26,15 +26,15 @@ Repo-complete means the repository now has the draft/checklist/template surface 
 | lint | pass |
 | format check | pass |
 | unit/integration tests | pass: 533 total / 531 passing / 2 skipped |
-| Playwright e2e | not rerun in full; repo-side webServer prompt blocker fixed, sandbox localhost bind remains environment-limited |
+| Playwright e2e | repo-side webServer prompt blocker fixed; page-agent and feature/prefetch E2E contracts pass in focused Chromium coverage |
 | merchant catalog e2e | pass when run with localhost bind access; sandbox bind remains environment-limited |
-| Expo Doctor | blocked: compatible `CI=1 npx expo-doctor .` reaches the CLI, but remote Expo API / React Native Directory checks fail in this environment and the app-config common-issues warning remains |
+| Expo Doctor | pass: `EXPO_NO_DOTENV=1 CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` passed 18/18 |
 | asset audit | pass |
 | Supabase static audit | pass |
 | edge function check | pass |
-| database smoke scripts | skipped: missing Supabase smoke URL / anon key |
+| database smoke scripts | pass: live location, search, RLS, full-audit, social/gamification, chat, OCR, and canonical food-business staging smokes passed with project env/service-role smoke opt-in |
 | security scans | pass: npm audit 0 vulnerabilities, gitleaks pass, TruffleHog pass |
-| release ready local | not rerun after latest Expo config/report updates; previous run passed source/static checks before older npm-audit network blocker |
+| release ready local | pass: `npm run release:ready:local` passed after clearing corrupt `/tmp/hungry-npm-cache` |
 
 ## External Required Evidence Blocking Store Submission
 
@@ -49,16 +49,16 @@ Repo-complete means the repository now has the draft/checklist/template surface 
 | store policy checklist owner/legal approval | missing |
 | iOS EAS/TestFlight artifact | missing |
 | Android EAS/AAB/pre-launch report | missing |
-| live Supabase RLS/storage smoke | missing |
-| Supabase Advisor owner proof | missing |
-| Sentry staging crash capture | missing |
+| live Supabase RLS/storage smoke | pass for current service-role smoke scope; final cross-device reviewer proof still pending |
+| Supabase Advisor owner proof | pass for app-owned SQL/advisor findings; Supabase Auth leaked-password dashboard proof remains missing |
+| Sentry staging crash capture | pass |
 | full-platform UGC moderation smoke | missing |
 | merchant/admin RBAC live smoke | missing |
 | legal/privacy sign-off | missing |
 
 ## Verdict
 
-Hungry is not store-submission ready until all repo-local gates pass and every external evidence item above is attached. The repo-side store-submission drafts are ready for owner review, but public submission remains blocked by store-console, legal/privacy, EAS/TestFlight/Play, live Supabase, monitoring, UGC, and runtime smoke proof. This report is intentionally conservative for Apple and Google review.
+Hungry is not store-submission ready until all repo-local gates pass and every external evidence item above is attached. The repo-side store-submission drafts and current local/Supabase/iOS simulator/Sentry proof are ready for owner review, but public submission remains blocked by store-console, legal/privacy, final EAS/TestFlight/Play artifacts, UGC/store policy approval, and dirty-worktree/CI proof. This report is intentionally conservative for Apple and Google review.
 
 ## Safe Deployment Handoff
 
@@ -89,12 +89,12 @@ Expo config coexistence check: `app.config.js` intentionally imports and clones 
 - `npm run check:edge-functions` -> pass.
 - `npm run security:gitleaks` -> pass, no leaks found.
 - `npm run security:trufflehog` -> pass, 0 verified and 0 unverified secrets.
-- `npm run smoke:database:location` / `search` / `rls` -> skipped without Supabase smoke env.
+- `npm run smoke:database:location` / `search` / `rls` -> pass with loaded Hungry project env.
 - `npm audit --audit-level=moderate` -> pass, found 0 vulnerabilities.
-- `EXPO_NO_DOTENV=1 CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` -> blocked with 15/18 checks passed; failures are Expo API fetch `getaddrinfo ENOTFOUND exp.host`, React Native Directory response, and the app-config common-issues warning despite default dynamic config matching `app.json`.
+- `EXPO_NO_DOTENV=1 CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` -> pass, 18/18 checks passed.
 - Repo-side Expo webServer prompt blocker -> fixed in `scripts/run-expo.cjs`; sandbox localhost bind can still return `EPERM`.
 - Elevated `E2E_PORT=8082 npm run test:e2e:merchant-catalog -- --reporter=line` -> pass, 1/1.
-- `npm run release:ready:local` -> previous run passed typecheck/tests/static checks/edge/assets/TruffleHog before failing at an older npm-audit DNS blocker; rerun after npm-audit recovery is still pending because Expo Doctor remains blocked.
+- `npm run release:ready:local` -> pass after clearing corrupt `/tmp/hungry-npm-cache`.
 - Current store-readiness repo-side pass -> `bash -n scripts/release_ready_checklist.sh` pass; focused prelaunch/release-evidence contracts pass 6/6; touched-file `git diff --check` pass.
 
 ## Current Store Draft Evidence

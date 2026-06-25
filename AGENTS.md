@@ -97,20 +97,22 @@ Level 4 — Current Sprint Goal
 
 ## 5. Feature Flag Registry
 
-| Flag | Full Audit V1 production default | Meaning |
+| Flag | Current production default | Meaning |
 | --- | --- | --- |
-| `directMessagesEnabled` | `true` | Direct Messages tab and chat surfaces |
-| `commentsEnabled` | `true` | Community comments on posts/reviews |
-| `storiesEnabled` | `true` | Story viewer and story creation |
-| `collectionsEnabled` | `true` | Collection list/detail routes |
-| `gamificationEnabled` | `true` | Passport, Missions, and FoodCred surfaces |
-| `merchantCentreEnabled` | `true` | Merchant beta routes behind auth/role/verification checks |
+| `directMessagesEnabled` | `false` | Direct Messages tab and chat surfaces |
+| `commentsEnabled` | `false` | Community comments on posts/reviews |
+| `storiesEnabled` | `false` | Story viewer and story creation |
+| `collectionsEnabled` | `false` | Collection list/detail routes |
+| `gamificationEnabled` | `false` | Passport, Missions, and FoodCred surfaces |
+| `merchantCentreEnabled` | `false` | Merchant beta routes behind auth/role/verification checks |
 | `oauthProvidersEnabled` | `false` | Google/Apple OAuth provider buttons stay disabled until live credentials are verified |
 | `prototypeRoutesEnabled` | `false` | Prototype-only routes stay hidden in production |
 | `floorplansEnabled` | `false` | Indoor floorplan routes and entry points stay hidden in production |
 | `readsEnabled` | `true` | Reads tab is visible |
 | `notificationsEnabled` | `false` | Push notifications disabled |
 | `mockMapboxEnabled` | `false` | Use real Mapbox SDK; `true` = mock surface |
+| `hungryWheelEnabled` | `true` | Hungry Wheel entry is visible |
+| `craveEnabled` | `true` | Crave flow is visible |
 
 Source: `src/constants/featureFlags.ts`
 

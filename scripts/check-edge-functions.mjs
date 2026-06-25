@@ -26,6 +26,10 @@ for (const entry of fs.readdirSync(functionsDir, { withFileTypes: true })) {
   }
 
   const source = fs.readFileSync(indexPath, "utf8");
+  if (/\/\/\s*@ts-nocheck/.test(source)) {
+    addFinding(indexPath, "must not disable TypeScript checking with @ts-nocheck");
+  }
+
   if (!/Deno\.serve\s*\(/.test(source)) {
     addFinding(indexPath, "missing Deno.serve handler");
   }

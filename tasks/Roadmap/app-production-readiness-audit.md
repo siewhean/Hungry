@@ -1,123 +1,128 @@
 # Hungry Mobile App Production Readiness Audit
 
-Updated: 2026-06-19
-Target: public Apple App Store and Google Play launch
-Verdict: **No-Go** until all P0 repo-local gates and external proof gates pass.
+Updated: 2026-06-25
+Branch: `codex/release-blockers-unblocked` (frontend-design-overhaul tip)
+Verdict: **No-Go — Go Candidate on repo-local gates** until external build/store/legal proof is complete.
 
-## Evidence Snapshot
+## Local Gate Snapshot (2026-06-25)
 
-| Area | Evidence | Status |
+| Gate | Command | Status |
 |---|---|---|
-| Branch | `frontend-design-overhaul...origin/frontend-design-overhaul [ahead 1]` | Dirty, must reconcile before public release |
-| Dirty worktree | Many modified/untracked mobile, Supabase, data, website, and task files | Release blocker until reviewed/staged/committed or intentionally excluded |
-| App config | `app.json` | iOS/Android identifiers and permissions present |
-| EAS config | `eas.json` | Preview and production profiles exist |
-| Feature flags | `src/constants/featureFlags.ts` | Production disables experimental/social/merchant/prototype surfaces |
-| Deep links | `src/app/navigation/linking.ts` | Public dish/stall links, protected action redirect, unsafe param rejection |
-| Release wrapper | `scripts/release_ready_checklist.sh` | Local gates plus external evidence keys |
-| Current external blockers | `tasks/release-evidence/full-audit-v1.example.env` and final checklist | Prepared iOS smoke proof is now recorded; EAS, Supabase, store, legal, CI, secret, monitoring, and dirty-worktree proof keys remain `0` |
-| 2026-06-19 local gates | typecheck, lint, format, tests, static audits, edge checks, asset audit, npm audit, gitleaks, trufflehog, Expo Doctor, focused native-smoke contract | Repo-local gates pass except linked Advisor/live proof |
-| Supabase dry-run | `/opt/homebrew/bin/supabase db push --dry-run` | Would push four pending migrations; production was not mutated |
-| Native smoke | `npm run smoke:native:ios:prepared` | Passed on iPhone 17 Pro simulator with LAN Metro after Expo dev-client onboarding handling |
-| EAS preview | `npx --yes eas-cli@18.12.3 build --profile preview --platform all --non-interactive` | Prior Android build errored on missing Mapbox Maven config; source fix added. Fresh EAS upload/build requires explicit owner approval; iOS failed due missing internal-distribution credentials |
-| Final QA/QC agent | `.github/agents/hungry-qa-qc.agent.md` independent pass | No new repo-local P0 code defect found; public launch remains No-Go |
+| TypeScript | `npm run typecheck` | ✅ pass (0 errors) |
+| Lint | `npm run lint` | ✅ pass (0 warnings) |
+| Tests | `npm run test` | ✅ 541 pass / 2 skipped / 0 fail |
+| Assets | `npm run audit:assets` | ✅ pass |
+| Supabase static | `npm run audit:supabase:static` | ✅ pass |
+| Edge functions | `npm run check:edge-functions` | ✅ pass |
+| Security audit | `npm run security:audit` | ✅ 0 vulnerabilities |
+| Expo Doctor | `npx expo-doctor` | ✅ 18/18 checks pass |
+| Release rehearsal | `npm run release:ready:local` | ✅ all local gates pass |
+| Playwright page-agent | five page-agent specs plus feature-flag/prefetch specs | ✅ 13/13 pass |
+| iOS native prepared smoke | `npm run smoke:native:ios:prepared` | ✅ pass on iPhone 17 Pro simulator |
+| Website production runtime | `https://usehungry.com` | ✅ public routes 200; console Basic Auth enforced |
+| Sentry unresolved queue | `npm run monitoring:sentry:unresolved` | ✅ pass: no unresolved issues after cleanup |
+
+## Fixes Applied (2026-06-25)
+
+| Fix | File | Risk removed |
+|---|---|---|
+| `PostComposerScreen` wrapped in `FeedErrorBoundary` | `src/app/screens/post/PostComposerScreen.tsx` | Render errors during composition crash the navigator; now shows recoverable error UI |
+| Android camera/photo permissions added | `app.json` | Play Store review rejection for missing manifest permissions (`CAMERA`, `READ_MEDIA_IMAGES`, `READ_MEDIA_VIDEO`, `READ_EXTERNAL_STORAGE`) |
 
 ## Route Inventory
 
 | Route | Screen | Public/private | Auth required | Feature flag | Production enabled? | Deep link? | Risk | Fix |
 |---|---|---|---:|---|---:|---:|---|---|
-| `Splash` | Splash | public shell | no | none | yes | no | startup crash | local/native smoke |
-| `AuthStack/Login` | Login | public auth | no | none | yes | yes `/login` | auth failure | auth tests/smoke |
-| `AuthStack/SignUp` | SignUp | public auth | no | none | yes | yes `/signup` | signup/email proof | auth tests/smoke |
+| `Splash` | SplashScreen | public shell | no | none | yes | no | startup crash | local/native smoke |
+| `AuthStack/Login` | Login | public auth | no | none | yes | yes | auth failure | auth tests/smoke |
+| `AuthStack/SignUp` | SignUp | public auth | no | none | yes | yes | signup proof | auth tests/smoke |
 | `AuthStack/EmailVerification` | EmailVerification | public auth | no | none | yes | no | callback drift | auth callback tests |
-| `AuthStack/ForgotPassword` | ForgotPassword | public auth | no | none | yes | yes `/forgot-password` | email provider proof | external SMTP proof |
-| `AuthStack/ResetPassword` | ResetPassword | public auth | no | none | yes | yes `/auth/callback` | token leak/expired code | invalid callback tests |
-| `OnboardingStack/*` | Onboarding screens | public onboarding | no | none | yes | no | incomplete onboarding | screen QC |
+| `AuthStack/ForgotPassword` | ForgotPassword | public auth | no | none | yes | yes | email provider | external SMTP proof |
+| `AuthStack/ResetPassword` | ResetPassword | public auth | no | none | yes | yes `/auth/callback` | token leak/expired | invalid callback tests |
+| `OnboardingStack/*` | Onboarding | public | no | none | yes | no | incomplete flow | screen QC |
 | `MainTabs/Home` | HomeFeed | public browse | no | none | yes | no | feed crash/offline | screen QC |
-| `MainTabs/Discover` | Discover | public browse | no | none | yes | no | location denied | location smoke |
+| `MainTabs/Discover` | DiscoverHome | public browse | no | none | yes | no | location denied | location smoke |
 | `MainTabs/Review` | Review tab | mixed | yes for submit | none | yes | no | protected action bypass | auth redirect tests |
-| `MainTabs/Profile` | Profile stack | private for own profile | yes | none | yes | no | private data leak | auth/security tests |
-| `StallDetail` | StallDetailScreen | public detail | no | none | yes | yes `/venue/:id` | missing data crash | not-found/skeleton tests |
-| `DishDetail` | DishDetailScreenV2 | public detail | no | none | yes | yes `/dish/:id` | missing data crash | not-found/skeleton tests |
+| `MainTabs/Profile` | Profile stack | private | yes | none | yes | no | private data leak | auth/security tests |
+| `StallDetail` | StallDetailScreen | public detail | no | none | yes | yes `/venue/:id` | missing data crash | skeleton/not-found tests |
+| `DishDetail` | DishDetailScreenV2 | public detail | no | none | yes | yes `/dish/:id` | missing data crash | skeleton/not-found tests |
 | `SearchHome` | SearchHome | public browse | no | none | yes | no | no-result state | search QC |
-| `SearchResults` | SearchResults | public browse | no | none | yes | no | filter/query drift | search contracts |
+| `SearchResults` | SearchResults | public browse | no | none | yes | no | filter drift | search contracts |
 | `BrowseDishes` | BrowseDishes | public browse | no | none | yes | no | stale mock fallback | data source audit |
 | `BrowseStalls` | BrowseStalls | public browse | no | none | yes | no | stale mock fallback | data source audit |
 | `TasteFilter` | TasteFilter | public browse | no | none | yes | no | filter state drift | screen QC |
-| `DiscoverMap` | HomeMap | public map | no | none | yes | no | Mapbox token/runtime | permission/offline smoke |
-| `QuickBites` | QuickBites | public browse | no | none | yes | no | missing dish id | detail hydration tests |
-| `Post` | Post composer | private action | yes | none | yes | yes `/order` redirects | unauth publish | protected-action tests |
-| `ReviewStack` | Review flow | private action | yes | none | yes | no | unauth publish | protected-action tests |
-| `ActivityInbox` | Activity updates | private | yes | none | yes | no | social data leak | auth/security tests |
-| `ActivityPostDetail` | Activity post detail | private | yes | none | yes | no | social data leak | auth/security tests |
-| `EditProfile` | EditProfile | private | yes | none | yes | no | profile mutation leak | auth/RLS smoke |
+| `DiscoverMap` | HomeMap | public map | no | none | yes | no | Mapbox token | permission/offline smoke |
+| `QuickBites` | QuickBites | public browse | no | none | yes | no | missing dish id | hydration tests |
+| `Post` | PostComposerScreen | private | yes | none | yes | no | unauth publish; crash isolation | ✅ FeedErrorBoundary fixed |
+| `ReviewStack` | Review flow | private | yes | none | yes | no | unauth publish | protected-action tests |
+| `ActivityInbox` | Activity | private | yes | none | yes | no | data leak | auth/security tests |
+| `ActivityPostDetail` | Activity post detail | private | yes | none | yes | no | data leak | auth/security tests |
+| `EditProfile` | EditProfile | private | yes | none | yes | no | mutation leak | auth/RLS smoke |
 | `Favourites` | Favourites | private | yes | none | yes | no | other-user data | auth/RLS smoke |
 | `ReviewHistory` | ReviewHistory | private | yes | none | yes | no | other-user data | auth/RLS smoke |
 | `Settings` | Settings | private | yes | none | yes | no | deletion/logout gaps | auth/deletion smoke |
-| `WheelStack/*` | Decide wheel | public/shared | mixed | `hungryWheelEnabled` | yes | yes `/join/:code` | shared code abuse | join-code validation |
-| `Crave` | Crave | public browse | no | `craveEnabled` | yes | no | unproven MVP scope | QC or disable if not launch-approved |
-| `BlogPost` | Reads | public content | no | `readsEnabled` | yes | no | unsafe external link | safe-link tests |
-| `MusicSelection` | MusicSelection | private flow | yes | none | yes | no | unclear launch scope | QC or disable if not launch-approved |
-| `MerchantClaimExplainer` | Claim CTA | private/merchant | yes | `merchantClaimCtaEnabled` | no | no | unfinished merchant flow | keep production-disabled |
-| `ChatDetail` | Chat | private social | yes | `directMessagesEnabled` | no | no | moderation/realtime risk | keep production-disabled |
-| `DirectMessages` | DirectMessages | private social | yes | `directMessagesEnabled` | no | no | moderation/realtime risk | keep production-disabled |
-| `BuildingDrillDown` | Floorplan | public map | no | `floorplansEnabled` | no | no | floorplan QA incomplete | keep production-disabled |
-| `DishDetailV2` | Prototype detail | public prototype | no | `prototypeRoutesEnabled` | no | no | duplicate route drift | keep production-disabled |
-| `StallDetailV2` | Prototype stall | public prototype | no | `prototypeRoutesEnabled` | no | no | duplicate route drift | keep production-disabled |
-| `BuildingDrillDownV2` | Prototype floorplan | public prototype | no | `prototypeRoutesEnabled` + `floorplansEnabled` | no | no | geometry QA incomplete | keep disabled |
-| `VenueDirectory` | Prototype directory | public prototype | no | `prototypeRoutesEnabled` + `floorplansEnabled` | no | no | geometry QA incomplete | keep disabled |
-| `SplashV2` | Prototype splash | public prototype | no | `prototypeRoutesEnabled` | no | no | stale UX | keep disabled |
-| `DesignGallery` | Developer gallery | dev only | no | `prototypeRoutesEnabled` | no | no | debug surface | keep disabled |
-| `PostComposerV2` | Prototype composer | private prototype | yes | `prototypeRoutesEnabled` | no | no | duplicate publish path | keep disabled |
-| `MerchantTabs/*` | Merchant centre | merchant private | yes | `merchantCentreEnabled` | no | yes only when enabled | merchant RBAC risk | keep disabled until merchant QA |
-| `StoryViewer` | Stories | social public | mixed | `storiesEnabled` | no | no | moderation/storage risk | keep disabled |
-| `AddStory` | Add story | private social | yes | `storiesEnabled` | no | no | moderation/storage risk | keep disabled |
-| `PassportScreen` | Passport | private gamification | yes | `gamificationEnabled` | no | no | unfinished data backing | keep disabled |
-| `MissionsScreen` | Missions | private gamification | yes | `gamificationEnabled` | no | no | unfinished data backing | keep disabled |
-| `CollectionList` | Collections | mixed | yes | `collectionsEnabled` | no | no | launch scope risk | keep disabled |
-| `CollectionDetail` | Collection detail | mixed | yes | `collectionsEnabled` | no | no | launch scope risk | keep disabled |
-| `PortfolioPublicView` | Public portfolio | public prototype | no | `prototypeRoutesEnabled` | no | yes only when enabled | stale public access | keep disabled |
-| `AdminPortfolioFlags` | Admin flags | admin prototype | yes | `prototypeRoutesEnabled` | no | no | admin exposure | keep disabled |
-| `Offline` | Offline state | public shell | no | none | yes | no | blank offline UX | screen QC |
-| `NotFound` | NotFound | public shell | no | none | yes | no | unsafe missing params | screen QC |
+| `WheelStack/*` | Decide wheel | mixed | mixed | `hungryWheelEnabled` | yes | yes `/join/:code` | code abuse | join-code validation |
+| `Crave` | Crave | public | no | `craveEnabled` | yes | no | MVP scope | QC |
+| `BlogPost` | Reads | public | no | `readsEnabled` | yes | no | external link | safe-link tests |
+| `MusicSelection` | MusicSelection | private | yes | none | yes | no | launch scope | QC or disable |
+| `MerchantClaimExplainer` | Claim CTA | private | yes | `merchantClaimCtaEnabled` | **no** | no | unfinished flow | disabled ✅ |
+| `ChatDetail` | Chat | private | yes | `directMessagesEnabled` | **no** | no | moderation risk | disabled ✅ |
+| `DirectMessages` | DMs | private | yes | `directMessagesEnabled` | **no** | no | moderation risk | disabled ✅ |
+| `BuildingDrillDown` | Floorplan | public | no | `floorplansEnabled` | **no** | no | incomplete QA | disabled ✅ |
+| `DishDetailV2` | Prototype | public | no | `prototypeRoutesEnabled` | **no** | no | duplicate route | disabled ✅ |
+| `StallDetailV2` | Prototype stall | public | no | `prototypeRoutesEnabled` | **no** | no | duplicate route | disabled ✅ |
+| `BuildingDrillDownV2` | Prototype floorplan | public | no | `prototypeRoutesEnabled`+`floorplansEnabled` | **no** | no | incomplete | disabled ✅ |
+| `VenueDirectory` | Prototype dir | public | no | `prototypeRoutesEnabled`+`floorplansEnabled` | **no** | no | incomplete | disabled ✅ |
+| `SplashV2` | Prototype splash | public | no | `prototypeRoutesEnabled` | **no** | no | stale UX | disabled ✅ |
+| `DesignGallery` | Dev gallery | dev | no | `prototypeRoutesEnabled` | **no** | no | debug surface | disabled ✅ |
+| `PostComposerV2` | Prototype composer | private | yes | `prototypeRoutesEnabled` | **no** | no | duplicate publish | disabled ✅ |
+| `MerchantTabs/*` | Merchant centre | merchant | yes | `merchantCentreEnabled` | **no** | no | RBAC risk | disabled ✅ |
+| `StoryViewer` | Stories | mixed | mixed | `storiesEnabled` | **no** | no | moderation risk | disabled ✅ |
+| `AddStory` | Add story | private | yes | `storiesEnabled` | **no** | no | moderation risk | disabled ✅ |
+| `PassportScreen` | Passport | private | yes | `gamificationEnabled` | **no** | no | data backing | disabled ✅ |
+| `MissionsScreen` | Missions | private | yes | `gamificationEnabled` | **no** | no | data backing | disabled ✅ |
+| `CollectionList` | Collections | mixed | yes | `collectionsEnabled` | **no** | no | launch scope | disabled ✅ |
+| `CollectionDetail` | Collection detail | mixed | yes | `collectionsEnabled` | **no** | no | launch scope | disabled ✅ |
+| `PortfolioPublicView` | Public portfolio | public | no | `prototypeRoutesEnabled` | **no** | no | stale access | disabled ✅ |
+| `AdminPortfolioFlags` | Admin flags | admin | yes | `prototypeRoutesEnabled` | **no** | no | admin exposure | disabled ✅ |
+| `Offline` | Offline | public shell | no | none | yes | no | blank UX | screen QC |
+| `NotFound` | NotFound | public shell | no | none | yes | no | safe missing route | screen QC |
 
 ## Data Source Audit
 
 | Feature | Current data source | Canonical source | Local cache? | Risk | Fix |
 |---|---|---|---:|---|---|
-| Profile | `useProfileStore` + service | Supabase `user_profiles` | yes | stale profile | keep Supabase sync as canonical |
+| Profile | `useProfileStore` + service | Supabase `user_profiles` | yes | stale profile | keep Supabase canonical |
 | Avatar | profile/media service | Supabase Storage + profile row | yes | private URL leak | signed/private media checks |
-| Taste profile | profile/service | Supabase user taste/profile tables | yes | guest overwrites | merge only meaningful guest values |
+| Taste profile | profile/service | Supabase user taste tables | yes | guest overwrites | merge only meaningful guest values |
 | Dietary preferences | profile/service | Supabase profile | yes | stale filters | service-backed sync |
-| Favourites | profile/service | Supabase `user_favourite_dishes` | optimistic | rehydration drift | keep login/app restore tests |
+| Favourites | profile/service | Supabase `user_favourite_dishes` | optimistic | rehydration drift | login/app restore tests |
 | Reviews | review service | Supabase `reviews` | optimistic | local-only review | reject mock fallback in production |
-| Review photos | media upload service | Supabase Storage | yes | MIME/path abuse | signed upload and ownership tests |
-| Posts | post service | Supabase `posts` | optimistic | local-only post | production publish through service only |
-| Post media | media upload service | Supabase Storage + `post_media` | yes | MIME/path abuse | signed upload and ownership tests |
+| Review photos | media upload service | Supabase Storage | yes | MIME/path abuse | signed upload + ownership tests ✅ |
+| Posts | post service | Supabase `posts` | optimistic | local-only post | service-backed publish |
+| Post media | media upload service | Supabase Storage + `post_media` | yes | MIME/path abuse | signed upload + ownership tests ✅ |
 | Likes/saves | social service | Supabase post engagement tables | optimistic | fake counts | UUID-backed writes only |
-| Comments | social service if enabled | Supabase comments | optimistic | moderation gap | production disabled unless safety proof |
-| Activity | activity service | Supabase activity if enabled | cache | missing table/safe fallback | keep honest error/empty state |
-| Merchant claims | merchant service | Supabase merchant claim tables | no | unfinished flow | production disabled |
-| Discovery/search/detail | repository/service | Supabase RPCs/tables | read cache | mock fallback claims | production source audits |
+| Comments | social service if enabled | Supabase comments | optimistic | moderation gap | **production disabled** ✅ |
+| Activity | activity service | Supabase activity | cache | safe fallback | honest error/empty state |
+| Merchant claims | merchant service | Supabase merchant tables | no | unfinished flow | **production disabled** ✅ |
+| Discovery/search/detail | repository/service | Supabase RPCs/tables | read cache | mock fallback | production source audits |
 
-## P0 Blockers
+## P0 Blockers — Remaining
 
-- Dirty worktree not reconciled.
-- Linked Supabase project is behind local migrations:
-  - `20260610120000_catalog_display_provenance_guardrails.sql`
-  - `20260611000000_add_staging_planning_area.sql`
-  - `20260611113000_discovery_feed_rating_sync.sql`
-  - `20260619110000_release_advisor_security_cleanup.sql`
-- Linked Supabase Advisor still reports app-owned function hardening findings until the pending migrations are applied and rechecked.
-- Android/EAS proof is incomplete: Android preview build `6cb95ee3-b795-489b-98d5-1b8f26b175c1` errored on missing Mapbox Maven config; source fix added, but fresh EAS upload/build needs explicit owner approval before artifact proof can be collected.
-- iOS EAS preview is blocked by missing internal-distribution credentials in non-interactive mode.
-- Full iOS release build proof is still pending, but prepared iOS native smoke now passes on a booted iPhone 17 Pro simulator with LAN Metro.
-- Heavy build/cache gates are fragile on this machine; generated cache cleanup restored free disk from about 263 MiB, but current free space after reruns is about 4.8 GiB and more headroom is still recommended for EAS/native work.
-- Production/staging secret proof missing.
-- Store-console metadata/Data Safety/privacy labels/demo account proof missing.
-- Live multi-user RLS/storage/Edge Function smoke missing.
-- Sentry staging crash/source-map/release proof missing.
-- Legal/privacy sign-off missing.
+| Blocker | Owner | Required |
+|---|---|---|
+| Dirty worktree not reconciled | Engineering | `git commit` or intentional stash before release tag |
+| Android install smoke | Engineering/Owner | Android EAS preview build `b04ac43f-9a06-43f9-9f38-709cbc17e418` is finished, but no Android emulator/device is attached for install smoke |
+| iOS EAS preview blocked — missing internal-distribution credentials | Owner | configure ASC credentials for non-interactive EAS |
+| iOS production build proof | Owner | TestFlight smoke |
+| Android production build proof | Owner | Play internal track smoke |
+| Production secret proof (`PRODUCTION_SECRET_PROOF=0`) | Owner | verify all env vars in EAS secret scope |
+| Store-console metadata / Data Safety / privacy labels | Owner | App Store Connect + Play Console setup |
+| Supabase Auth leaked-password protection | Owner | upgrade to Supabase Pro or higher, then enable leaked-password protection; Management API returned 402 on current plan |
+| Sentry source map proof for production build | Engineering | EAS production build with `SENTRY_AUTH_TOKEN`; unresolved issue queue is currently clean |
+| Legal/privacy sign-off | Owner/Legal | privacy policy + ToS + account deletion URL live |
+| VoiceOver/TalkBack manual smoke | QA | iOS VoiceOver + Android TalkBack sessions |
+| Demo account for store review | Owner | reviewer credentials or approved demo mode |
 
 ## Policy References
 
