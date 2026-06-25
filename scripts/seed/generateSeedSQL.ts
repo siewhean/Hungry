@@ -78,11 +78,6 @@ const dietarySlugs = Array.from(
   ]),
 ).sort();
 
-const dietaryIdBySlug = new Map<string, string>();
-for (const slug of dietarySlugs) {
-  dietaryIdBySlug.set(slug, toSqlUuidFromSeed(`dietary:${slug}`));
-}
-
 const profileId = toSqlUuidFromSeed(`profile:${userProfile.id}:${userProfile.email}`);
 
 const seedSqlParts: string[] = [];
@@ -91,14 +86,9 @@ seedSqlParts.push("begin;");
 // Non-destructive seed: uses ON CONFLICT DO NOTHING so it can be re-run safely.
 
 seedSqlParts.push(
-  insertStatement(
-    "dietary_flags",
-    ["id", "slug", "name"],
-    dietarySlugs.map((slug) => {
-      const id = dietaryIdBySlug.get(slug);
-      return `(${toSqlValue(id ?? null)}, ${toSqlValue(slug)}, ${toSqlValue(slug.replace(/_/g, " "))})`;
-    }),
-  ),
+  `insert into dietary_flags (slug, name) values\n${dietarySlugs
+    .map((slug) => `(${toSqlValue(slug)}, ${toSqlValue(slug.replace(/_/g, " "))})`)
+    .join(",\n")}\non conflict (slug) do update\nset name = excluded.name;`,
 );
 
 seedSqlParts.push(
@@ -220,16 +210,11 @@ seedSqlParts.push(
 );
 
 seedSqlParts.push(
-  insertStatement(
-    "dish_dietary_flags",
-    ["dish_id", "dietary_flag_id"],
-    dishes.flatMap((dish) =>
-      (dish.dietaryFlags ?? [])
-        .map((flag) => dietaryIdBySlug.get(flag))
-        .filter((id): id is string => Boolean(id))
-        .map((dietaryId) => `(${toSqlValue(dish.id)}, ${toSqlValue(dietaryId)})`),
-    ),
-  ),
+  `insert into dish_dietary_flags (dish_id, dietary_flag_id)\nselect seed.dish_id, df.id\nfrom (values\n${dishes
+    .flatMap((dish) =>
+      (dish.dietaryFlags ?? []).map((flag) => `(${toSqlValue(dish.id)}, ${toSqlValue(flag)})`),
+    )
+    .join(",\n")}\n) as seed(dish_id, dietary_slug)\njoin dietary_flags df on df.slug = seed.dietary_slug\non conflict do nothing;`,
 );
 
 seedSqlParts.push(

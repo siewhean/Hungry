@@ -2,12 +2,13 @@
 
 begin;
 
-insert into dietary_flags (id, slug, name) values
-('44512507-9048-4855-b486-9e368bd0d15c', 'allium_free', 'allium free'),
-('c27f18e6-815b-4adf-b0c0-9f960d6bfc22', 'halal', 'halal'),
-('560753d6-819a-4391-80ff-9259fa448c64', 'pork_free', 'pork free'),
-('34809192-fd8d-4d3d-9609-25ecebf8069f', 'vegetarian', 'vegetarian')
-on conflict do nothing;
+insert into dietary_flags (slug, name) values
+('allium_free', 'allium free'),
+('halal', 'halal'),
+('pork_free', 'pork free'),
+('vegetarian', 'vegetarian')
+on conflict (slug) do update
+set name = excluded.name;
 
 insert into buildings (id, slug, name, building_type, latitude, longitude, floors, venue_count, is_closed_today, hero_dish_id) values
 ('building-maxwell', 'maxwell', 'Maxwell Food Centre', 'hawker_centre', 1.2806, 103.8448, ARRAY['L1']::text[], 42, false, 'dish-chicken-rice'),
@@ -37,7 +38,9 @@ insert into venues (id, building_id, name, unit_number, floor, is_open, top_dish
 ('venue-satay-street', 'building-lau-pa-sat', 'Satay Street Classics', '#01-22', 'L1', true, 'dish-satay', '4:30 PM – 11:00 PM', null, 'medium'),
 ('venue-japanese-curry', 'building-313', 'Monster Curry', '#04-16', 'L4', true, 'dish-japanese-curry', '11:00 AM – 10:00 PM', null, null),
 ('venue-maxwell-porridge', 'building-maxwell', 'Night Owl Teochew Porridge', '#02-21', 'L1', false, 'dish-teochew-porridge', '6:00 PM – 4:00 AM', null, null),
-('venue-fish-soup', 'building-amoy', 'Ah Seng Fish Soup', '#02-77', 'L2', true, 'dish-fish-soup', '9:00 AM – 3:00 PM', 'Closed today for scheduled cleaning. Reopens tomorrow.', 'low')
+('venue-fish-soup', 'building-amoy', 'Ah Seng Fish Soup', '#02-77', 'L2', true, 'dish-fish-soup', '9:00 AM – 3:00 PM', 'Closed today for scheduled cleaning. Reopens tomorrow.', 'low'),
+('venue-pasta-express', 'building-maxwell', 'Pasta Express Maxwell', '#01-12', 'L1', true, 'dish-truffle-tagliatelle', '11:00 AM – 9:00 PM', null, 'medium'),
+('venue-napoli-pizza', 'building-lau-pa-sat', 'Napoli Pizza LPS', '#01-45', 'L1', true, 'dish-burrata-pizza', '12:00 PM – 10:00 PM', null, 'low')
 on conflict do nothing;
 
 insert into venue_delivery_links (id, venue_id, platform, native_url, web_url, affiliate_eligible) values
@@ -47,23 +50,36 @@ insert into venue_delivery_links (id, venue_id, platform, native_url, web_url, a
 on conflict do nothing;
 
 insert into dishes (id, venue_id, building_id, name, description, image_url, distance_meters, rating_avg, review_count, price, price_range, live_crowd, taste_tags, must_order, availability_flags) values
-('dish-chicken-rice', 'venue-tian-tian', 'building-maxwell', 'Chicken Rice', null, 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 180, 4.8, 118, 5.5, 'S$5.50 – S$7.00', 'high', ARRAY['Fragrant', 'Comforting', 'Juicy']::text[], true, ARRAY['Delivery available']::text[]),
+('dish-chicken-rice', 'venue-tian-tian', 'building-maxwell', 'Chicken Rice', null, 'https://upload.wikimedia.org/wikipedia/commons/7/71/Hainanese_Chicken_Rice.jpg', 180, 4.8, 118, 5.5, 'S$5.50 – S$7.00', 'high', ARRAY['Fragrant', 'Comforting', 'Juicy']::text[], true, ARRAY['Delivery available']::text[]),
 ('dish-ban-mian', 'venue-ban-mian', 'building-amoy', 'Sliced Fish Ban Mian', null, 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 220, 4.9, 84, 6.5, 'S$6.50 – S$9.00', null, ARRAY['Umami', 'Clean', 'Fresh']::text[], true, ARRAY['Lunch rush only']::text[]),
 ('dish-satay', 'venue-satay-street', 'building-lau-pa-sat', 'Chicken Satay (10 sticks)', null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 450, 4.6, 210, 8, 'S$8.00 – S$12.00', 'medium', ARRAY['Smoky', 'Nutty', 'Sweet']::text[], false, ARRAY['After 4:30 PM']::text[]),
 ('dish-japanese-curry', 'venue-japanese-curry', 'building-313', 'Monster Combo Curry', null, 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 1400, 4.4, 320, 28, 'S$24.00 – S$32.00', null, ARRAY['Rich', 'Spicy', 'Hearty']::text[], false, ARRAY['Dine-in only']::text[]),
 ('dish-laksa', 'venue-tian-tian', 'building-maxwell', 'Signature Laksa', null, 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 210, 4.5, 72, 6, 'S$6.00 – S$7.50', 'medium', ARRAY['Spicy', 'Rich', 'Creamy']::text[], false, ARRAY['Fresh catch daily']::text[]),
-('dish-kaya-toast', 'venue-fish-soup', 'building-amoy', 'Kaya Toast Set', null, 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 240, 4.7, 156, 4.5, 'S$4.50 – S$6.00', null, ARRAY['Sweet', 'Crunchy', 'Buttery']::text[], true, ARRAY['Morning only']::text[])
+('dish-fish-soup', 'venue-fish-soup', 'building-amoy', 'Sliced Fish Soup', null, 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=800', 240, 4.6, 98, 6.8, 'S$6.80 – S$8.80', 'low', ARRAY['Clean', 'Fresh', 'Gingery']::text[], true, ARRAY['Lunch only']::text[]),
+('dish-kaya-toast', 'venue-fish-soup', 'building-amoy', 'Kaya Toast Set', null, 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 240, 4.7, 156, 4.5, 'S$4.50 – S$6.00', null, ARRAY['Sweet', 'Crunchy', 'Buttery']::text[], true, ARRAY['Morning only']::text[]),
+('dish-pandan-cake', 'venue-tian-tian', 'building-maxwell', 'Pandan Cake', null, 'https://images.unsplash.com/photo-1621236378699-8597fac6bb4d?auto=format&fit=crop&q=80&w=800', 180, 4.4, 36, 2.8, 'S$2.80', 'medium', ARRAY['Fragrant', 'Soft', 'Sweet']::text[], false, ARRAY['Dessert']::text[]),
+('dish-wagyu-burger', 'venue-japanese-curry', 'building-313', 'Wagyu Burger', null, 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=800', 1400, 4.5, 92, 14.8, 'S$14.80', 'medium', ARRAY['Juicy', 'Rich', 'Savoury']::text[], false, ARRAY['Lunch and dinner']::text[]),
+('dish-salmon-don', 'venue-pasta-express', 'building-maxwell', 'Salmon Don', null, 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=800', 190, 4.6, 64, 12.8, 'S$12.80', 'low', ARRAY['Fresh', 'Clean', 'Umami']::text[], false, ARRAY['Limited bowls daily']::text[]),
+('dish-mala-xiang-guo', 'venue-japanese-curry', 'building-313', 'Mala Xiang Guo', null, 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&q=80&w=800', 1400, 4.4, 118, 9.8, 'S$9.80 – S$15.00', 'high', ARRAY['Spicy', 'Numbing', 'Aromatic']::text[], false, ARRAY['Customisable spice']::text[]),
+('dish-truffle-tagliatelle', 'venue-pasta-express', 'building-maxwell', 'Wild Truffle Tagliatelle', 'Handmade egg pasta, seasonal black truffle, parmigiano-reggiano emulsion.', 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80', 190, 4.9, 45, 28, 'S$28.00', null, ARRAY['Rich', 'Earthy', 'Creamy']::text[], true, ARRAY['Popular']::text[]),
+('dish-burrata-pizza', 'venue-napoli-pizza', 'building-lau-pa-sat', 'Burrata & Prosciutto Pizza', 'Wood-fired crust, creamy burrata, 24-month aged prosciutto di parma.', 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80', 460, 4.7, 89, 24, 'S$24.00', null, ARRAY['Fresh', 'Salty', 'Creamy']::text[], false, ARRAY['Dinner special']::text[])
 on conflict do nothing;
 
 insert into dish_images (id, dish_id, url, sort_order) values
-('385985da-4ba3-4122-bd85-77812a32feb4', 'dish-chicken-rice', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 0),
+('5c7cf2d4-0246-4099-bfbe-ea3772039eaa', 'dish-chicken-rice', 'https://upload.wikimedia.org/wikipedia/commons/7/71/Hainanese_Chicken_Rice.jpg', 0),
 ('cb833cee-24f0-419d-9904-a2027c4f933c', 'dish-chicken-rice', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 1),
 ('fd365f98-2fef-4218-a998-e6c9bb29bfea', 'dish-ban-mian', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 0),
 ('5adc6186-a6f3-4adf-98c9-ebce3350718a', 'dish-ban-mian', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 1),
 ('e383996e-182f-4ec1-8189-57825034ae84', 'dish-satay', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 0),
 ('64061ce8-7eb5-4b9c-a8a5-a7533ada265f', 'dish-japanese-curry', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 0),
 ('17e40de5-1e79-43b8-b3fe-289fb8aa30a4', 'dish-laksa', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 0),
-('0d4eb4d1-79e9-42b9-87ac-30d10089bc3e', 'dish-kaya-toast', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 0)
+('681b9eb7-f86b-4129-bc3a-2f76b43ebb2c', 'dish-fish-soup', 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=800', 0),
+('9881d7f9-7418-4acd-8b33-69cfc80e73b1', 'dish-fish-soup', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 1),
+('0d4eb4d1-79e9-42b9-87ac-30d10089bc3e', 'dish-kaya-toast', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 0),
+('d82c87c5-344f-4165-8c88-8a693acf273b', 'dish-pandan-cake', 'https://images.unsplash.com/photo-1621236378699-8597fac6bb4d?auto=format&fit=crop&q=80&w=800', 0),
+('005e4573-15bd-4f8e-aed0-c8a1d87fb5db', 'dish-wagyu-burger', 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=800', 0),
+('79c5c9ee-e844-46a1-86bc-e0aa5e7c5439', 'dish-salmon-don', 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=800', 0),
+('f0b3ec56-ebc9-439f-8eb8-3da845751889', 'dish-mala-xiang-guo', 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&q=80&w=800', 0)
 on conflict do nothing;
 
 insert into dish_taste_vectors (dish_id, sweet, spicy, sour, salty, rich, aromatic, vector) values
@@ -72,16 +88,31 @@ insert into dish_taste_vectors (dish_id, sweet, spicy, sour, salty, rich, aromat
 ('dish-satay', 8, 4, 1, 5, 7, 9, '[8,4,1,5,7,9]'::vector),
 ('dish-japanese-curry', 4, 7, 3, 6, 9, 8, '[4,7,3,6,9,8]'::vector),
 ('dish-laksa', 2, 8, 3, 6, 9, 7, '[2,8,3,6,9,7]'::vector),
-('dish-kaya-toast', 9, 0, 0, 4, 8, 9, '[9,0,0,4,8,9]'::vector)
+('dish-fish-soup', 1, 1, 2, 5, 3, 7, '[1,1,2,5,3,7]'::vector),
+('dish-kaya-toast', 9, 0, 0, 4, 8, 9, '[9,0,0,4,8,9]'::vector),
+('dish-pandan-cake', 7, 0, 1, 1, 4, 8, '[7,0,1,1,4,8]'::vector),
+('dish-wagyu-burger', 3, 2, 2, 7, 9, 6, '[3,2,2,7,9,6]'::vector),
+('dish-salmon-don', 2, 1, 3, 5, 5, 4, '[2,1,3,5,5,4]'::vector),
+('dish-mala-xiang-guo', 1, 10, 2, 8, 7, 9, '[1,10,2,8,7,9]'::vector),
+('dish-truffle-tagliatelle', 1, 1, 2, 5, 9, 9, '[1,1,2,5,9,9]'::vector),
+('dish-burrata-pizza', 2, 1, 3, 7, 8, 6, '[2,1,3,7,8,6]'::vector)
 on conflict do nothing;
 
-insert into dish_dietary_flags (dish_id, dietary_flag_id) values
-('dish-chicken-rice', '560753d6-819a-4391-80ff-9259fa448c64'),
-('dish-ban-mian', '560753d6-819a-4391-80ff-9259fa448c64'),
-('dish-ban-mian', '44512507-9048-4855-b486-9e368bd0d15c'),
-('dish-satay', '560753d6-819a-4391-80ff-9259fa448c64'),
-('dish-satay', 'c27f18e6-815b-4adf-b0c0-9f960d6bfc22'),
-('dish-kaya-toast', '34809192-fd8d-4d3d-9609-25ecebf8069f')
+insert into dish_dietary_flags (dish_id, dietary_flag_id)
+select seed.dish_id, df.id
+from (values
+('dish-chicken-rice', 'pork_free'),
+('dish-ban-mian', 'pork_free'),
+('dish-ban-mian', 'allium_free'),
+('dish-satay', 'pork_free'),
+('dish-satay', 'halal'),
+('dish-fish-soup', 'pork_free'),
+('dish-kaya-toast', 'vegetarian'),
+('dish-pandan-cake', 'vegetarian'),
+('dish-salmon-don', 'pork_free'),
+('dish-truffle-tagliatelle', 'vegetarian')
+) as seed(dish_id, dietary_slug)
+join dietary_flags df on df.slug = seed.dietary_slug
 on conflict do nothing;
 
 insert into user_profiles (id, display_name, email, dietary_preferences, favourite_dish_ids, reviewed_dish_ids, taste_profile, dishes_reviewed, stalls_visited, favourites_count, sweet, spicy, sour, salty, rich, aromatic) values
@@ -104,20 +135,30 @@ on conflict do nothing;
 -- review_photos: no rows
 
 insert into blog_posts (id, title, excerpt, area, source_name, source_logo, image_url, url, related_venue_id) values
-('blog-1', '10 Best Chicken Rice Stalls in 2026', 'From Michelin stars to neighborhood secrets, here are the ones you can''t miss.', 'Islandwide', 'Hungry Guide', 'H', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 'https://hungry.sg/blog/best-chicken-rice', 'venue-tian-tian'),
+('blog-1', '10 Best Chicken Rice Stalls in 2026', 'From Michelin stars to neighborhood secrets, here are the ones you can''t miss.', 'Islandwide', 'Hungry Guide', 'H', 'https://upload.wikimedia.org/wikipedia/commons/7/71/Hainanese_Chicken_Rice.jpg', 'https://hungry.sg/blog/best-chicken-rice', 'venue-tian-tian'),
 ('blog-2', 'Amoy Street vs Maxwell: The Ultimate Food Centre Showdown', 'Which one truly has the best variety for your lunch break?', 'CBD', 'Foodie SG', 'F', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'https://hungry.sg/blog/food-centre-showdown', null)
 on conflict do nothing;
 
 insert into stall_posts (id, venue_id, building_id, author_name, author_location, author_avatar_url, media_type, media_url, caption, dish_ids, created_at) values
-('post-1', 'venue-tian-tian', 'building-maxwell', 'Sarah Lim', 'Maxwell Food Centre', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'photo', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 'The rice is so fragrant! Totally worth the 20-minute wait.', ARRAY['dish-chicken-rice']::text[], '2026-03-31T22:00:00.000Z'),
-('post-2', 'venue-ban-mian', 'building-amoy', 'Tan Ah Teck', 'Amoy Street', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 'photo', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'Found this hidden gem. The fish slices are huge!', ARRAY['dish-ban-mian']::text[], '2026-03-31T19:00:00.000Z'),
-('post-3', 'venue-satay-street', 'building-lau-pa-sat', 'Emma Watson', 'Lau Pa Sat', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'photo', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'Satay by the street. Best vibe in Singapore.', ARRAY['dish-satay']::text[], '2026-03-31T12:00:00.000Z')
+('post-1', 'venue-tian-tian', 'building-maxwell', 'Sarah Lim', 'Maxwell Food Centre', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'photo', 'https://upload.wikimedia.org/wikipedia/commons/7/71/Hainanese_Chicken_Rice.jpg', 'The rice is so fragrant! Totally worth the 20-minute wait.', ARRAY['dish-chicken-rice']::text[], '2026-03-31T22:00:00.000Z'),
+('post-2', 'venue-ban-mian', 'building-amoy', 'Tan Ah Teck', 'Amoy Street', 'https://upload.wikimedia.org/wikipedia/commons/7/71/Hainanese_Chicken_Rice.jpg', 'photo', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'Found this hidden gem. The fish slices are huge!', ARRAY['dish-ban-mian']::text[], '2026-03-31T19:00:00.000Z'),
+('post-3', 'venue-satay-street', 'building-lau-pa-sat', 'Emma Watson', 'Lau Pa Sat', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'photo', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'Satay by the street. Best vibe in Singapore.', ARRAY['dish-satay']::text[], '2026-03-31T12:00:00.000Z'),
+('post-4', 'venue-japanese-curry', 'building-313', 'Monster Curry 313', '313@Somerset', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 'photo', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 'Combo plate day: crispy cutlet, omelette, sausage and a deep curry gravy that keeps its spice without going flat. Best shared by two unless you are arriving properly hungry after shopping.', ARRAY['dish-japanese-curry']::text[], '2026-03-31T00:00:00.000Z'),
+('post-5', 'venue-fish-soup', 'building-amoy', 'Mira Chen', 'Amoy Street Food Centre', 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=800', 'photo', 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=800', 'One of those bowls that looks simple until the first spoonful: clean soup, tender fish, enough ginger to lift everything, and no heavy after-lunch slump before the next meeting.', ARRAY['dish-fish-soup']::text[], '2026-03-31T00:00:00.000Z'),
+('post-6', 'venue-pasta-express', 'building-maxwell', 'Pasta Express Maxwell', 'Maxwell Food Centre', 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80', 'photo', 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80', 'Fresh tagliatelle tossed to order with a glossy parmigiano emulsion and black truffle. Rich enough for a slow dinner, but the portion still feels balanced when you want something polished around Maxwell.', ARRAY['dish-truffle-tagliatelle']::text[], '2026-03-30T00:00:00.000Z'),
+('post-7', 'venue-japanese-curry', 'building-313', 'Jun Park', '313@Somerset', 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&q=80&w=800', 'photo', 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&q=80&w=800', 'Ordered medium spice and still got that proper tingling finish. The dry wok aroma is the main reason to come back, especially if you choose crunchy lotus root, mushrooms and a bit of beef.', ARRAY['dish-mala-xiang-guo']::text[], '2026-03-29T00:00:00.000Z'),
+('post-8', 'venue-napoli-pizza', 'building-lau-pa-sat', 'Alicia Tan', 'Lau Pa Sat', 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80', 'photo', 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80', 'The crust has a good chew, the burrata lands creamy without making the slice soggy, and the prosciutto gives it enough salt to keep cutting through each bite. Better as a table order than a solo plate.', ARRAY['dish-burrata-pizza']::text[], '2026-03-28T00:00:00.000Z')
 on conflict do nothing;
 
 insert into bites (id, author_id, author_name, author_avatar, dish_id, dish_name, venue_id, venue_name, unit_number, building_id, building_name, photo_url, caption, sweet, spicy, sour, salty, rich, aromatic, craving_count, saved_count, rating, price, expires_at, created_at) values
-('585a2ed6-455c-4e89-9757-aa4b2d011ca5', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Sarah Lim', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'dish-chicken-rice', 'Chicken Rice', 'venue-tian-tian', 'Tian Tian Chicken Rice', '#01-10', 'building-maxwell', 'Maxwell Food Centre', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 'The rice is so fragrant! Totally worth the 20-minute wait.', 3, 2, 1, 7, 6, 9, 0, 0, 4.8, 5.5, '2026-04-07T22:00:00.000Z', '2026-03-31T22:00:00.000Z'),
-('f603f90a-736a-446a-84ec-3c32edac8cde', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Tan Ah Teck', 'https://images.unsplash.com/photo-1591814441349-7ed4299c1cc2?auto=format&fit=crop&q=80&w=800', 'dish-ban-mian', 'Sliced Fish Ban Mian', 'venue-ban-mian', 'Han Kee Fish Soup', '#02-129', 'building-amoy', 'Amoy Street Food Centre', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'Found this hidden gem. The fish slices are huge!', 1, 1, 2, 6, 4, 8, 0, 0, 4.9, 6.5, '2026-04-07T19:00:00.000Z', '2026-03-31T19:00:00.000Z'),
-('cde30d04-bc61-4f78-a112-6d69ebf4550c', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Emma Watson', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'dish-satay', 'Chicken Satay (10 sticks)', 'venue-satay-street', 'Satay Street Classics', '#01-22', 'building-lau-pa-sat', 'Lau Pa Sat', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'Satay by the street. Best vibe in Singapore.', 8, 4, 1, 5, 7, 9, 0, 0, 4.6, 8, '2026-04-07T12:00:00.000Z', '2026-03-31T12:00:00.000Z')
+('585a2ed6-455c-4e89-9757-aa4b2d011ca5', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Sarah Lim', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'dish-chicken-rice', 'Chicken Rice', 'venue-tian-tian', 'Tian Tian Chicken Rice', '#01-10', 'building-maxwell', 'Maxwell Food Centre', 'https://upload.wikimedia.org/wikipedia/commons/7/71/Hainanese_Chicken_Rice.jpg', 'The rice is so fragrant! Totally worth the 20-minute wait.', 3, 2, 1, 7, 6, 9, 0, 0, 4.8, 5.5, '2026-04-07T22:00:00.000Z', '2026-03-31T22:00:00.000Z'),
+('f603f90a-736a-446a-84ec-3c32edac8cde', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Tan Ah Teck', 'https://upload.wikimedia.org/wikipedia/commons/7/71/Hainanese_Chicken_Rice.jpg', 'dish-ban-mian', 'Sliced Fish Ban Mian', 'venue-ban-mian', 'Han Kee Fish Soup', '#02-129', 'building-amoy', 'Amoy Street Food Centre', 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800', 'Found this hidden gem. The fish slices are huge!', 1, 1, 2, 6, 4, 8, 0, 0, 4.9, 6.5, '2026-04-07T19:00:00.000Z', '2026-03-31T19:00:00.000Z'),
+('cde30d04-bc61-4f78-a112-6d69ebf4550c', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Emma Watson', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'dish-satay', 'Chicken Satay (10 sticks)', 'venue-satay-street', 'Satay Street Classics', '#01-22', 'building-lau-pa-sat', 'Lau Pa Sat', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800', 'Satay by the street. Best vibe in Singapore.', 8, 4, 1, 5, 7, 9, 0, 0, 4.6, 8, '2026-04-07T12:00:00.000Z', '2026-03-31T12:00:00.000Z'),
+('bd5d7db4-7c90-4953-b806-2f7759514ac4', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Monster Curry 313', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 'dish-japanese-curry', 'Monster Combo Curry', 'venue-japanese-curry', 'Monster Curry', '#04-16', 'building-313', '313@Somerset', 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=800', 'Combo plate day: crispy cutlet, omelette, sausage and a deep curry gravy that keeps its spice without going flat. Best shared by two unless you are arriving properly hungry after shopping.', 4, 7, 3, 6, 9, 8, 0, 0, 4.4, 28, '2026-04-07T00:00:00.000Z', '2026-03-31T00:00:00.000Z'),
+('e4464c4e-ee2c-4767-b998-7bbfb9fbf836', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Mira Chen', 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=800', 'dish-fish-soup', 'Sliced Fish Soup', 'venue-fish-soup', 'Ah Seng Fish Soup', '#02-77', 'building-amoy', 'Amoy Street Food Centre', 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=800', 'One of those bowls that looks simple until the first spoonful: clean soup, tender fish, enough ginger to lift everything, and no heavy after-lunch slump before the next meeting.', 1, 1, 2, 5, 3, 7, 0, 0, 4.6, 6.8, '2026-04-07T00:00:00.000Z', '2026-03-31T00:00:00.000Z'),
+('c2cf5a82-c8e6-4dc3-ae19-e82764335b69', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Pasta Express Maxwell', 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80', 'dish-truffle-tagliatelle', 'Wild Truffle Tagliatelle', 'venue-pasta-express', 'Pasta Express Maxwell', '#01-12', 'building-maxwell', 'Maxwell Food Centre', 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80', 'Fresh tagliatelle tossed to order with a glossy parmigiano emulsion and black truffle. Rich enough for a slow dinner, but the portion still feels balanced when you want something polished around Maxwell.', 1, 1, 2, 5, 9, 9, 0, 0, 4.9, 28, '2026-04-06T00:00:00.000Z', '2026-03-30T00:00:00.000Z'),
+('691e43e3-e33f-4e96-81c0-37f06c9d10af', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Jun Park', 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&q=80&w=800', 'dish-mala-xiang-guo', 'Mala Xiang Guo', 'venue-japanese-curry', 'Monster Curry', '#04-16', 'building-313', '313@Somerset', 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&q=80&w=800', 'Ordered medium spice and still got that proper tingling finish. The dry wok aroma is the main reason to come back, especially if you choose crunchy lotus root, mushrooms and a bit of beef.', 1, 10, 2, 8, 7, 9, 0, 0, 4.4, 9.8, '2026-04-05T00:00:00.000Z', '2026-03-29T00:00:00.000Z'),
+('288aef36-ba39-4313-9226-012f9ec568d5', '6037d90c-9935-49d2-8206-d28cd11aa7e6', 'Alicia Tan', 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80', 'dish-burrata-pizza', 'Burrata & Prosciutto Pizza', 'venue-napoli-pizza', 'Napoli Pizza LPS', '#01-45', 'building-lau-pa-sat', 'Lau Pa Sat', 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80', 'The crust has a good chew, the burrata lands creamy without making the slice soggy, and the prosciutto gives it enough salt to keep cutting through each bite. Better as a table order than a solo plate.', 2, 1, 3, 7, 8, 6, 0, 0, 4.7, 24, '2026-04-04T00:00:00.000Z', '2026-03-28T00:00:00.000Z')
 on conflict do nothing;
 
 commit;
