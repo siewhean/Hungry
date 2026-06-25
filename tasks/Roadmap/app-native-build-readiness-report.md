@@ -14,6 +14,7 @@ Verdict: **Partial / No-Go for public launch** until iOS and Android external bu
 | EAS project id | `6d724772-04c3-4823-91bc-a1f7604c9f15` | present ✅ |
 | EAS preview profile | `eas.json` | present, `HUNGRY_DATA_SOURCE=supabase` ✅ |
 | EAS production profile | `eas.json` | present, `EXPO_PUBLIC_APP_ENV=production` ✅ |
+| EAS secret scope | `eas env:list preview/production` | required Supabase, Sentry, PostHog, Mapbox, auth redirect, and data-source variables configured; sensitive/secret values hidden ✅ |
 | iOS native workspace | `ios/Hungry.xcworkspace` | present ✅ |
 | Android native project | not present locally | EAS/generation proof required |
 | iOS privacy manifest | `ios/Hungry/PrivacyInfo.xcprivacy` | present ✅ |
@@ -38,7 +39,7 @@ Verdict: **Partial / No-Go for public launch** until iOS and Android external bu
 | iOS media smoke | included in prepared smoke | ✅ pass |
 | iOS activity/chat smoke | included in prepared smoke | ✅ pass |
 | EAS preview all-platform build | `eas build --profile preview --platform all` | partial pass: Android preview build `b04ac43f-9a06-43f9-9f38-709cbc17e418` finished with APK artifact; iOS blocked by missing internal-distribution credentials |
-| EAS production all-platform build | `eas build --profile production --platform all` | pending after preview |
+| EAS production all-platform build | `eas build --profile production --platform all` | pending artifacts; secret scope is configured |
 | TestFlight smoke | App Store Connect/TestFlight evidence | pending owner |
 | Play internal track smoke | Play Console evidence | pending owner |
 | Release build not debuggable | native/EAS artifact inspection | pending |
@@ -50,6 +51,7 @@ Verdict: **Partial / No-Go for public launch** until iOS and Android external bu
 - Android camera/photo permissions fixed 2026-06-25: `CAMERA`, `READ_MEDIA_IMAGES`, `READ_MEDIA_VIDEO`, `READ_EXTERNAL_STORAGE` added to `app.json` Android permissions array. `expo-image-picker` plugin may inject some of these, but explicit declaration is required for Play Store review compliance.
 - XcodeBuildMCP: workspace `ios/Hungry.xcworkspace`, scheme `Hungry`, booted simulator required.
 - Android proof must come from EAS or a generated Android project (no local Android project present).
+- 2026-06-25: EAS preview and production environment lists confirm release secrets/config are configured for Supabase, Sentry, PostHog, Mapbox, auth redirect, and data source. `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` already existed as secret variables from 2026-04-19; EAS rejected visibility downgrade, which is expected.
 - 2026-06-25: Android preview build `b04ac43f-9a06-43f9-9f38-709cbc17e418` is `FINISHED`, profile `preview`, distribution `INTERNAL`, app version `0.1.0`, build version `1`, commit `7548fff5c8ffde70da1ed96bc0c3981871d26df4`, artifact `https://expo.dev/artifacts/eas/M18CC0geG-qnXty9SelRSuzcmXr-x2NcKx6ZOjk-7Is.apk`.
 - 2026-06-19: added `@rnmapbox/maps` Expo config plugin to resolve Mapbox Maven repository in EAS prebuild.
 - 2026-06-25: prepared Maestro smoke passes on iPhone 17 Pro simulator using Expo dev-client onboarding/manual URL handling.

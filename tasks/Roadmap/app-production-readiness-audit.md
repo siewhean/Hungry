@@ -1,7 +1,7 @@
 # Hungry Mobile App Production Readiness Audit
 
 Updated: 2026-06-25
-Branch: `codex/release-blockers-unblocked` (frontend-design-overhaul tip)
+Branch: `frontend-design-overhaul-no-large` (frontend-design-overhaul release-candidate tip)
 Verdict: **No-Go — Go Candidate on repo-local gates** until external build/store/legal proof is complete.
 
 ## Local Gate Snapshot (2026-06-25)
@@ -21,6 +21,7 @@ Verdict: **No-Go — Go Candidate on repo-local gates** until external build/sto
 | iOS native prepared smoke | `npm run smoke:native:ios:prepared` | ✅ pass on iPhone 17 Pro simulator |
 | Website production runtime | `https://usehungry.com` | ✅ public routes 200; console Basic Auth enforced |
 | Sentry unresolved queue | `npm run monitoring:sentry:unresolved` | ✅ pass: no unresolved issues after cleanup |
+| PR CI/Security | GitHub PR #31 | ✅ pass for release-candidate commit `53a14848` |
 
 ## Fixes Applied (2026-06-25)
 
@@ -55,16 +56,16 @@ Verdict: **No-Go — Go Candidate on repo-local gates** until external build/sto
 | `QuickBites` | QuickBites | public browse | no | none | yes | no | missing dish id | hydration tests |
 | `Post` | PostComposerScreen | private | yes | none | yes | no | unauth publish; crash isolation | ✅ FeedErrorBoundary fixed |
 | `ReviewStack` | Review flow | private | yes | none | yes | no | unauth publish | protected-action tests |
-| `ActivityInbox` | Activity | private | yes | none | yes | no | data leak | auth/security tests |
+| `ActivityInbox` | Activity updates | private | yes | none | yes | no | data leak | auth/security tests |
 | `ActivityPostDetail` | Activity post detail | private | yes | none | yes | no | data leak | auth/security tests |
 | `EditProfile` | EditProfile | private | yes | none | yes | no | mutation leak | auth/RLS smoke |
 | `Favourites` | Favourites | private | yes | none | yes | no | other-user data | auth/RLS smoke |
 | `ReviewHistory` | ReviewHistory | private | yes | none | yes | no | other-user data | auth/RLS smoke |
 | `Settings` | Settings | private | yes | none | yes | no | deletion/logout gaps | auth/deletion smoke |
-| `WheelStack/*` | Decide wheel | mixed | mixed | `hungryWheelEnabled` | yes | yes `/join/:code` | code abuse | join-code validation |
-| `Crave` | Crave | public | no | `craveEnabled` | yes | no | MVP scope | QC |
+| `WheelStack/*` | Decide wheel | public/shared | mixed | `hungryWheelEnabled` | yes | yes `/join/:code` | code abuse | join-code validation |
+| `Crave` | Crave | public browse | no | `craveEnabled` | yes | no | MVP scope | QC |
 | `BlogPost` | Reads | public | no | `readsEnabled` | yes | no | external link | safe-link tests |
-| `MusicSelection` | MusicSelection | private | yes | none | yes | no | launch scope | QC or disable |
+| `MusicSelection` | MusicSelection | private flow | yes | none | yes | no | launch scope | QC or disable |
 | `MerchantClaimExplainer` | Claim CTA | private | yes | `merchantClaimCtaEnabled` | **no** | no | unfinished flow | disabled ✅ |
 | `ChatDetail` | Chat | private | yes | `directMessagesEnabled` | **no** | no | moderation risk | disabled ✅ |
 | `DirectMessages` | DMs | private | yes | `directMessagesEnabled` | **no** | no | moderation risk | disabled ✅ |
@@ -107,18 +108,26 @@ Verdict: **No-Go — Go Candidate on repo-local gates** until external build/sto
 | Merchant claims | merchant service | Supabase merchant tables | no | unfinished flow | **production disabled** ✅ |
 | Discovery/search/detail | repository/service | Supabase RPCs/tables | read cache | mock fallback | production source audits |
 
+## P0 Blockers — Resolved Or Accepted 2026-06-25
+
+| Item | Status | Evidence |
+|---|---|---|
+| Dirty worktree reconciliation | ✅ resolved | current branch is clean; unsafe delivery-app enrichment search tweak is intentionally stashed as `defer unsafe delivery-app enrichment search tweak` |
+| Production EAS secret proof | ✅ resolved | EAS preview/production env list confirms required Supabase, Sentry, PostHog, Mapbox, auth redirect, and data-source variables are configured with sensitive/secret values hidden |
+| UGC moderation proof | ✅ resolved | report/hide/block source paths and Supabase social governance contracts passed |
+| SEC-06 merchant runtime proof | ✅ launch waiver | merchant centre remains disabled in production (`merchantCentreEnabled=false`), so verified/unverified merchant runtime smoke is deferred until merchant centre launch |
+| Supabase Auth leaked-password protection | ✅ accepted risk | Management API returned 402 on current Supabase plan; owner accepted documented risk for public-launch candidate and should enable after Supabase Pro upgrade |
+| Pushed CI proof | ✅ resolved | PR #31 CI and Security workflows passed for release-candidate commit `53a14848` |
+
 ## P0 Blockers — Remaining
 
 | Blocker | Owner | Required |
 |---|---|---|
-| Dirty worktree not reconciled | Engineering | `git commit` or intentional stash before release tag |
 | Android install smoke | Engineering/Owner | Android EAS preview build `b04ac43f-9a06-43f9-9f38-709cbc17e418` is finished, but no Android emulator/device is attached for install smoke |
 | iOS EAS preview blocked — missing internal-distribution credentials | Owner | configure ASC credentials for non-interactive EAS |
 | iOS production build proof | Owner | TestFlight smoke |
 | Android production build proof | Owner | Play internal track smoke |
-| Production secret proof (`PRODUCTION_SECRET_PROOF=0`) | Owner | verify all env vars in EAS secret scope |
 | Store-console metadata / Data Safety / privacy labels | Owner | App Store Connect + Play Console setup |
-| Supabase Auth leaked-password protection | Owner | upgrade to Supabase Pro or higher, then enable leaked-password protection; Management API returned 402 on current plan |
 | Sentry source map proof for production build | Engineering | EAS production build with `SENTRY_AUTH_TOKEN`; unresolved issue queue is currently clean |
 | Legal/privacy sign-off | Owner/Legal | privacy policy + ToS + account deletion URL live |
 | VoiceOver/TalkBack manual smoke | QA | iOS VoiceOver + Android TalkBack sessions |

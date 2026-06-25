@@ -15,7 +15,7 @@ Verdict: **Partial / No-Go for public launch** until live Supabase, store-consol
 | Media upload validation | `src/lib/services/supabase/mediaUpload.ts` | MIME/signature/size validation source-tested ✅ |
 | Deep link safety | `src/app/navigation/linking.ts` | Unsafe params rejected, protected links redirect ✅ |
 | Service-role exposure | `SECURITY.md`, static scans | App source does not include service-role keys ✅ |
-| UGC safety | `communitySafety` service and Supabase tests | Source-backed for reports/blocks; social surfaces production-gated ✅ |
+| UGC safety | `communitySafety` service and Supabase tests | Source-backed for reports/hide/block; focused contracts passed 2026-06-25 ✅ |
 | Error boundary — Post composer | `PostComposerScreen.tsx` | **Fixed 2026-06-25** — FeedErrorBoundary added ✅ |
 | Android camera permissions | `app.json` | **Fixed 2026-06-25** — CAMERA, READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_EXTERNAL_STORAGE added ✅ |
 | Sentry DSN validation | `App.tsx` `isUsableSentryDsn()` | Hardened to reject placeholder/invalid DSN strings ✅ |
@@ -50,13 +50,17 @@ Verdict: **Partial / No-Go for public launch** until live Supabase, store-consol
 - 0 npm vulnerabilities ✅
 - Historical `.env.local` leak acknowledged; credentials rotated ✅
 
+## Accepted Risk
+
+| Item | Risk | Acceptance | Follow-up |
+|---|---|---|---|
+| Supabase Auth leaked-password dashboard protection | Users can choose passwords found in breach corpuses until the dashboard feature is enabled | Owner accepted as a documented release-candidate risk on 2026-06-25 because the Management API returned 402 on the current Supabase plan | Upgrade to Supabase Pro or higher, enable leaked-password protection, and rerun auth/security proof before broad public launch scale-up |
+
 ## P0 Security Gaps
 
 | Gap | Risk | Owner | Required fix/proof |
 |---|---|---|---|
-| Dirty worktree | unreviewed changes in release candidate | Engineering | reconcile before release tag |
 | Live RLS/storage reviewer cross-device proof | service-role smoke passed; reviewer/staging account proof needed | Engineering/Ops | attach reviewer/staging account smoke evidence |
-| Supabase Auth leaked-password dashboard | Auth warning outside SQL advisor scope | Owner/Ops | enable dashboard setting |
 | Public privacy/account-deletion URL | store rejection risk | Owner/Web/Ops | reachable URLs and policy consistency proof |
 | App Store/Play metadata | store rejection risk | Owner | screenshots, labels, Data Safety, demo notes |
 | Biometric re-auth for destructive actions | medium hardening item | Engineering | pre-launch hardening task |

@@ -29,7 +29,7 @@ const REQUIRED_RELEASE_EVIDENCE_KEYS = [
   "MERCH_P0_ANALYTICS_PROOF",
 ] as const;
 
-test("release evidence template and final checklist keep public launch blocked until proof exists", () => {
+test("release evidence template and final checklist keep public launch blocked until all proof exists", () => {
   const example = readRepoFile("tasks/release-evidence/full-audit-v1.example.env");
   const finalChecklist = readRepoFile("tasks/Roadmap/app-final-go-no-go-checklist.md");
   const releaseScript = readRepoFile("scripts/release_ready_checklist.sh");
@@ -41,6 +41,7 @@ test("release evidence template and final checklist keep public launch blocked u
   for (const key of [
     "ANDROID_EAS_PROOF",
     "IOS_EAS_PROOF",
+    "PRODUCTION_SECRET_PROOF",
     "STORE_CONSOLE_PROOF",
     "APP_STORE_CONNECT_PROOF",
     "PLAY_CONSOLE_PROOF",
@@ -55,16 +56,30 @@ test("release evidence template and final checklist keep public launch blocked u
     "NATIVE_MAESTRO_ANDROID_PROOF",
     "UGC_MODERATION_PROOF",
     "SUPABASE_OWNER_PROOF",
+    "PUSHED_CI_PROOF",
     "DIRTY_WORKTREE_RECONCILED",
   ]) {
-    if (
-      key === "ANDROID_EAS_PROOF" ||
-      key === "STORE_CONSOLE_PROOF" ||
-      key === "SUPABASE_OWNER_PROOF" ||
-      key === "DIRTY_WORKTREE_RECONCILED"
-    ) {
-      assert.match(finalChecklist, new RegExp(`${key}=0`));
-    }
     assert.match(releaseScript, new RegExp(`require_evidence "${key}"`));
+  }
+
+  for (const key of [
+    "IOS_EAS_PROOF",
+    "STORE_CONSOLE_PROOF",
+    "APP_STORE_CONNECT_PROOF",
+    "PLAY_CONSOLE_PROOF",
+    "NATIVE_MAESTRO_ANDROID_PROOF",
+  ]) {
+    assert.match(finalChecklist, new RegExp(`${key}=0`));
+  }
+
+  for (const key of [
+    "ANDROID_EAS_PROOF",
+    "PRODUCTION_SECRET_PROOF",
+    "UGC_MODERATION_PROOF",
+    "SUPABASE_OWNER_PROOF",
+    "PUSHED_CI_PROOF",
+    "DIRTY_WORKTREE_RECONCILED",
+  ]) {
+    assert.match(finalChecklist, new RegExp(`${key}=1`));
   }
 });

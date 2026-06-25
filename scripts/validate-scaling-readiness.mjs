@@ -27,22 +27,22 @@ const loadScripts = {
 };
 
 const requiredReports = [
-  "tasks/Roadmap/scaling-baseline-audit.md",
-  "tasks/Roadmap/feature-flag-release-matrix.md",
-  "tasks/Roadmap/database-scaling-readiness-report.md",
-  "tasks/Roadmap/database-query-performance-report.md",
-  "tasks/Roadmap/service-layer-scaling-audit.md",
-  "tasks/Roadmap/public-website-scaling-report.md",
-  "tasks/Roadmap/mobile-scaling-qa-report.md",
-  "tasks/Roadmap/merchant-portal-scaling-qa-report.md",
-  "tasks/Roadmap/admin-dashboard-scaling-qa-report.md",
-  "tasks/Roadmap/background-jobs-scaling-plan.md",
-  "tasks/Roadmap/observability-runbook.md",
-  "tasks/Roadmap/incident-response-plan.md",
-  "tasks/Roadmap/scaling-load-test-results.md",
-  "tasks/Roadmap/release-rollout-and-rollback-plan.md",
-  "tasks/Roadmap/production-release-checklist.md",
-  "tasks/Roadmap/post-launch-scaling-review.md",
+  "tasks/Roadmap/Scaling/scaling-baseline-audit.md",
+  "tasks/Roadmap/Scaling/feature-flag-release-matrix.md",
+  "tasks/Roadmap/Database/database-scaling-readiness-report.md",
+  "tasks/Roadmap/Database/database-query-performance-report.md",
+  "tasks/Roadmap/Scaling/service-layer-scaling-audit.md",
+  "tasks/Roadmap/Scaling/public-website-scaling-report.md",
+  "tasks/Roadmap/Scaling/mobile-scaling-qa-report.md",
+  "tasks/Roadmap/Merchant Portal/merchant-portal-scaling-qa-report.md",
+  "tasks/Roadmap/Scaling/admin-dashboard-scaling-qa-report.md",
+  "tasks/Roadmap/Scaling/background-jobs-scaling-plan.md",
+  "tasks/Roadmap/Scaling/observability-runbook.md",
+  "tasks/Roadmap/Scaling/incident-response-plan.md",
+  "tasks/Roadmap/Scaling/scaling-load-test-results.md",
+  "tasks/Roadmap/Scaling/release-rollout-and-rollback-plan.md",
+  "tasks/Roadmap/Scaling/production-release-checklist.md",
+  "tasks/Roadmap/Scaling/post-launch-scaling-review.md",
 ];
 
 function validateReports() {
@@ -50,13 +50,13 @@ function validateReports() {
     assert.equal(exists(report), true, `${report} is missing`);
   }
 
-  const baseline = read("tasks/Roadmap/scaling-baseline-audit.md");
+  const baseline = read("tasks/Roadmap/Scaling/scaling-baseline-audit.md");
   assert.match(baseline, /repo-local scaling foundation only/i);
   assert.match(baseline, /No production Supabase migration was applied/i);
   assert.match(baseline, /marketing\/website\/web-v2/);
   assert.match(baseline, /marketing\/web/);
 
-  const plan = read("tasks/Roadmap/scaling-implementation-test-qaqc-plan.md");
+  const plan = read("tasks/Roadmap/Scaling/scaling-implementation-test-qaqc-plan.md");
   assert.doesNotMatch(plan, /\.k6\.ts/);
   assert.doesNotMatch(plan, /cd marketing\/web &&/);
   assert.match(plan, /cd marketing\/website\/web-v2 && npm run build/);

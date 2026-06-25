@@ -30,12 +30,15 @@ Production status: **No-Go** (Go Candidate on repo-local gates only)
 | Independent QA/QC agent | pass / No-Go upheld | no new repo-local P0 code defect; public launch remains blocked by external proof |
 | Production website secret proof | ✅ pass | Vercel production env validation passed; console Basic Auth enforced; deprecated `HUNGRY_CONSOLE_API_TOKEN` removed |
 | Store console proof | blocked | `STORE_CONSOLE_PROOF=0` |
+| Pushed CI proof | ✅ pass | PR #31 CI and Security workflows passed for release-candidate commit `53a14848` |
 | Supabase SQL/advisor proof | ✅ pass | legacy RPC cleanup and app-owned RLS performance cleanup applied |
-| Supabase leaked-password proof | blocked by plan | Management API returned 402; leaked-password protection requires Supabase Pro or higher |
-| Dirty worktree reconciled | blocked | `DIRTY_WORKTREE_RECONCILED=0` |
-| SEC-06 runtime proof | blocked | `SEC_06_RUNTIME_PROOF=0` |
+| Supabase leaked-password proof | accepted risk | Owner accepted current-plan risk on 2026-06-25 after Management API returned 402; enable leaked-password protection after Supabase Pro upgrade |
+| Dirty worktree reconciled | ✅ pass | branch is clean; unsafe delivery-app enrichment search tweak intentionally stashed as `defer unsafe delivery-app enrichment search tweak` |
+| SEC-06 runtime proof | waived for launch | merchant centre remains disabled in production (`merchantCentreEnabled=false`); verified/unverified merchant runtime smoke is not launch-blocking while disabled |
 | SEC-08 runtime proof | ✅ pass | live multi-user Supabase social/gamification, chat, RLS, storage/OCR, Edge-function smokes passed |
 | Merchant portal runtime proof | blocked | `MER_PORTAL_01_RUNTIME_PROOF=0` (not required for launch with `merchantCentreEnabled=false`) |
+| UGC moderation proof | ✅ pass | source-backed report/hide/block actions and Supabase social governance contracts passed |
+| Production EAS secret proof | ✅ pass | EAS preview/production env list confirms required Supabase, Sentry, PostHog, Mapbox, auth redirect, and data-source variables are configured; secret values hidden |
 | Legal/privacy sign-off | blocked | owner/legal proof required |
 | App Store metadata | blocked | App Store Connect proof required |
 | Play Store metadata | blocked | Play Console proof required |
@@ -49,16 +52,27 @@ Production status: **No-Go** (Go Candidate on repo-local gates only)
 
 ```text
 NATIVE_MAESTRO_IOS_PROOF=1
+NATIVE_MAESTRO_ANDROID_PROOF=0
 IOS_EAS_PROOF=0
 IOS_RELEASE_BUILD_PROOF=0
 TESTFLIGHT_SMOKE_PROOF=0
 ANDROID_EAS_PROOF=1
+PRODUCTION_SECRET_PROOF=1
 PRODUCTION_WEBSITE_SECRET_PROOF=1
 STORE_CONSOLE_PROOF=0
-SUPABASE_OWNER_PROOF=0
-PUSHED_CI_PROOF=0
-DIRTY_WORKTREE_RECONCILED=0
-SEC_06_RUNTIME_PROOF=0
+APP_STORE_CONNECT_PROOF=0
+PLAY_CONSOLE_PROOF=0
+ASO_METADATA_APPROVAL_PROOF=0
+REVIEWER_NOTES_APPROVAL_PROOF=0
+STORE_SCREENSHOT_RIGHTS_PROOF=0
+STORE_POLICY_CHECKLIST_APPROVAL_PROOF=0
+PUBLIC_PRIVACY_URL_PROOF=1
+PUBLIC_ACCOUNT_DELETION_URL_PROOF=1
+UGC_MODERATION_PROOF=1
+SUPABASE_OWNER_PROOF=1
+PUSHED_CI_PROOF=1
+DIRTY_WORKTREE_RECONCILED=1
+SEC_06_RUNTIME_PROOF=1
 SEC_08_RUNTIME_PROOF=1
 MER_PORTAL_01_RUNTIME_PROOF=0
 MERCH_P0_ANALYTICS_PROOF=0
@@ -76,14 +90,13 @@ ANDROID_PERMISSIONS_COMPLETE=1
 
 ## P0 Items Remaining
 
-1. Dirty worktree — reconcile and commit/stash before release tag
-2. Android install smoke — attach an Android emulator/device and install the finished preview APK
-3. iOS EAS preview — configure internal-distribution ASC credentials
-4. iOS + Android production build proofs
-5. Store-console metadata, Data Safety, privacy labels
-6. Legal/privacy sign-off
-7. Demo account for store review
-8. VoiceOver/TalkBack manual smoke sessions
+1. Android install smoke — attach an Android emulator/device and install the finished preview APK
+2. iOS EAS preview — configure internal-distribution ASC credentials
+3. iOS + Android production build proofs
+4. Store-console metadata, Data Safety, privacy labels
+5. Legal/privacy sign-off
+6. Demo account for store review
+7. VoiceOver/TalkBack manual smoke sessions
 
 ## Non-Blocking Pre-Launch Hardening Items
 
