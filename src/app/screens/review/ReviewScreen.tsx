@@ -263,7 +263,7 @@ export function ReviewScreen({ navigation, route }: Props) {
           <View style={{ gap: spacing[4] }}>
             <View style={{ gap: spacing[2] }}>
               <AppText variant="h3">Overall Rating</AppText>
-              <StarRating value={draft.rating} onChange={actions.setRating} />
+              <StarRating value={draft.rating} onChange={actions.setRating} editable />
             </View>
 
             {!isUserMode && (

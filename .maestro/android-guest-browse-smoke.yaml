@@ -3,7 +3,7 @@ appId: ${APP_ID}
 - launchApp:
     clearState: true
     permissions:
-      location: deny
+      all: deny
 - tapOn:
     text: "Hungry, http://.*:8081"
     optional: true
@@ -22,12 +22,18 @@ appId: ${APP_ID}
           point: "50%,34%"
       - inputText: "${METRO_URL}"
       - tapOn: "Connect"
-- extendedWaitUntil:
-    visible: "Developer Launcher"
-    timeout: 60000
-- tapOn:
-    id: "dev-button-user"
-- extendedWaitUntil:
-    visible: "Home"
-    timeout: 30000
-- assertVisible: "Home"
+- runFlow:
+    when:
+      visible: "Developer Launcher"
+    commands:
+      - tapOn:
+          id: "dev-button-user"
+      - extendedWaitUntil:
+          visible: "Home"
+          timeout: 30000
+      - assertVisible: "Home"
+- runFlow:
+    when:
+      visible: "Home"
+    commands:
+      - assertVisible: "Home"

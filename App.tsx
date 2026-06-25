@@ -12,7 +12,20 @@ const appEnv =
   process.env.EXPO_PUBLIC_APP_ENV ??
   (typeof __DEV__ !== "undefined" && __DEV__ ? "development" : "production");
 const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
-const shouldEnableSentry = Boolean(sentryDsn);
+function isUsableSentryDsn(value?: string): value is string {
+  if (!value || value.includes("${") || value.includes("your-")) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" && parsed.hostname.includes("sentry.io");
+  } catch {
+    return false;
+  }
+}
+
+const shouldEnableSentry = isUsableSentryDsn(sentryDsn);
 const globalForSentry = globalThis as typeof globalThis & {
   __hungrySentryInitialized?: boolean;
 };

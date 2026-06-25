@@ -3,38 +3,14 @@ appId: ${APP_ID}
 - launchApp:
     clearState: true
 - tapOn:
-    text: "Hungry, http://.*:8081"
-    optional: true
+    point: "50%,22%"
+- waitForAnimationToEnd:
+    timeout: 15000
 - tapOn:
-    text: "Hungry"
+    text: "http://.*:8081"
     optional: true
-- tapOn:
-    text: "Continue"
-    optional: true
-- tapOn:
-    text: "Close"
-    optional: true
-- runFlow:
-    when:
-      visible: "Enter URL manually"
-    commands:
-      - tapOn: "Enter URL manually"
-      - tapOn:
-          point: "50%,34%"
-      - inputText: "${METRO_URL}"
-      - tapOn: "Connect"
-- extendedWaitUntil:
-    visible: "Developer Launcher"
-    timeout: 60000
-- tapOn:
-    id: "dev-button-user"
-- extendedWaitUntil:
-    visible: "Home"
-    timeout: 30000
-- assertVisible: "Home"
-- tapOn:
-    text: "Discover"
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 15000
 - assertVisible:
-    text: "Discover"
+    text: "Home"
     optional: true

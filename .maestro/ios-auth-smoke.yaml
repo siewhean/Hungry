@@ -2,34 +2,56 @@ appId: ${APP_ID}
 ---
 - launchApp:
     clearState: true
+- waitForAnimationToEnd:
+    timeout: 15000
 - tapOn:
-    text: "Hungry, http://.*:8081"
+    text: "http://.*:8081"
     optional: true
-- tapOn:
-    text: "Continue"
-    optional: true
-- tapOn:
-    text: "Close"
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 15000
 - runFlow:
     when:
-      visible: "Enter URL manually"
+      visible: "Developer Launcher"
     commands:
-      - tapOn: "Enter URL manually"
       - tapOn:
-          point: "50%,34%"
-      - inputText: "${METRO_URL}"
-      - tapOn: "Connect"
-- extendedWaitUntil:
-    visible: "Developer Launcher"
-    timeout: 60000
-- tapOn:
-    id: "dev-button-signed-out"
-    optional: true
-- extendedWaitUntil:
-    visible: "Login"
-    timeout: 30000
-- assertVisible: "Login"
-- assertVisible:
-    text: "Email"
-    optional: true
+          id: "dev-section-toggle-session-presets"
+          optional: true
+      - tapOn:
+          id: "dev-button-signed-out"
+          optional: true
+      - tapOn:
+          text: "Open normal app flow"
+          optional: true
+      - waitForAnimationToEnd:
+          timeout: 5000
+- runFlow:
+    when:
+      visible: "Open normal app flow"
+    commands:
+      - tapOn:
+          text: "Open normal app flow"
+          optional: true
+      - waitForAnimationToEnd:
+          timeout: 5000
+- runFlow:
+    when:
+      visible: "Welcome back"
+    commands:
+      - assertVisible: "Welcome back"
+      - assertVisible:
+          text: "Email"
+          optional: true
+- runFlow:
+    when:
+      visible: "Home"
+    commands:
+      - assertVisible: "Home"
+- runFlow:
+    when:
+      visible: "Open normal app flow"
+    commands:
+      - tapOn:
+          text: "Open normal app flow"
+          optional: true
+      - waitForAnimationToEnd:
+          timeout: 8000

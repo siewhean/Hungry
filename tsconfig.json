@@ -10,5 +10,12 @@
       ]
     }
   },
-  "exclude": ["node_modules", "store-layout-editor", ".claude", "claude-mem", "marketing"]
+  "exclude": [
+    "node_modules",
+    "store-layout-editor",
+    ".claude",
+    "claude-mem",
+    "marketing",
+    "supabase/functions"
+  ]
 }

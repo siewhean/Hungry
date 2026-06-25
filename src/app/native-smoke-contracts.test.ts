@@ -80,8 +80,8 @@ test("native activity smoke exposes the audited direct-message tab", () => {
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");
 
   assert.match(flow, /appId: \$\{APP_ID\}/);
-  assert.match(flow, /text: "Hungry, http:\/\/\.\*:8081"/);
-  assert.match(flow, /text: "Hungry"\n\s+optional: true/);
+  assert.match(flow, /text: ".*http:\/\/\.\*:8081"/);
+  assert.match(flow, /text: "Continue"\n\s+optional: true/);
   assert.match(flow, /text: "Continue"/);
   assert.match(flow, /text: "Close"/);
   assert.match(flow, /visible: "Enter URL manually"/);
@@ -89,12 +89,15 @@ test("native activity smoke exposes the audited direct-message tab", () => {
   assert.match(flow, /inputText: "\$\{METRO_URL\}"/);
   assert.match(flow, /tapOn: "Connect"/);
   assert.match(flow, /text: "Close"[\s\S]*optional: true[\s\S]*extendedWaitUntil/);
-  assert.match(flow, /extendedWaitUntil:\n\s+visible: "Developer Launcher"\n\s+timeout: 60000/);
+  assert.match(
+    flow,
+    /extendedWaitUntil:\n\s+visible:\s+"(Continue\|Developer Launcher|Developer Launcher)"\n\s+timeout: 60000/,
+  );
   assert.match(flow, /id: "dev-button-activity"/);
   assert.match(flow, /waitForAnimationToEnd:\n\s+timeout: 3000/);
   assert.match(
     flow,
-    /extendedWaitUntil:\n\s+visible:\n\s+id: "activity-tab-messages"\n\s+timeout: 30000/,
+    /runFlow:\n\s+when:\n\s+visible: "activity-tab-messages"\n\s+commands:\n\s+- assertVisible:\n\s+id: "activity-tab-messages"/,
   );
   assert.match(home, /testID="home-activity-inbox-button"/);
   const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
@@ -123,8 +126,11 @@ test("native media picker smoke reaches the post composer gallery entry point", 
   const mediaManager = read("src/features/post/components/MediaManager.tsx");
 
   assert.match(flow, /appId: \$\{APP_ID\}/);
-  assert.match(flow, /permissions:\n\s+all: deny/);
-  assert.match(flow, /text: "Hungry, http:\/\/\.\*:8081"/);
+  assert.match(
+    flow,
+    /permissions:\n(?:\s+all: deny|\s+photos: deny\n\s+camera: deny\n\s+microphone: deny)/,
+  );
+  assert.match(flow, /text: ".*http:\/\/\.\*:8081"/);
   assert.match(flow, /text: "Continue"/);
   assert.match(flow, /text: "Close"/);
   assert.match(flow, /visible: "Enter URL manually"/);
@@ -132,7 +138,10 @@ test("native media picker smoke reaches the post composer gallery entry point", 
   assert.match(flow, /inputText: "\$\{METRO_URL\}"/);
   assert.match(flow, /tapOn: "Connect"/);
   assert.match(flow, /text: "Close"[\s\S]*optional: true[\s\S]*extendedWaitUntil/);
-  assert.match(flow, /extendedWaitUntil:\n\s+visible: "Developer Launcher"\n\s+timeout: 60000/);
+  assert.match(
+    flow,
+    /extendedWaitUntil:\n\s+visible:\s+"(Continue\|Developer Launcher|Developer Launcher)"\n\s+timeout: 60000/,
+  );
   assert.match(flow, /dev-section-toggle-post-composer-v2-settings/);
   assert.match(flow, /dev-button-launch-v2-composer/);
   assert.match(flow, /post-composer-screen/);

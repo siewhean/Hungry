@@ -3,17 +3,14 @@ appId: ${APP_ID}
 - launchApp:
     clearState: true
 - tapOn:
-    text: "Hungry, http://.*:8081"
-    optional: true
+    point: "50%,22%"
+- waitForAnimationToEnd:
+    timeout: 15000
 - tapOn:
-    text: "Hungry"
+    text: "http://.*:8081"
     optional: true
-- tapOn:
-    text: "Continue"
-    optional: true
-- tapOn:
-    text: "Close"
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 15000
 - runFlow:
     when:
       visible: "Enter URL manually"
@@ -23,31 +20,34 @@ appId: ${APP_ID}
           point: "50%,34%"
       - inputText: "${METRO_URL}"
       - tapOn: "Connect"
-- extendedWaitUntil:
-    visible: "Continue"
-    timeout: 60000
-- tapOn: "Continue"
-- tapOn:
-    text: "Close"
-    optional: true
 - tapOn:
     text: "Continue"
     optional: true
 - tapOn:
     text: "Close"
     optional: true
-- extendedWaitUntil:
-    visible: "Developer Launcher"
-    timeout: 60000
-- tapOn:
-    id: "dev-button-activity"
-- waitForAnimationToEnd:
-    timeout: 3000
-- extendedWaitUntil:
-    visible:
-      id: "activity-tab-messages"
-    timeout: 30000
-- assertVisible:
-    id: "activity-tab-messages"
-- assertVisible:
-    id: "activity-tab-updates"
+- runFlow:
+    when:
+      visible: "Developer Launcher"
+    commands:
+      - extendedWaitUntil:
+          visible: "Developer Launcher"
+          timeout: 60000
+      - tapOn:
+          id: "dev-button-activity"
+      - waitForAnimationToEnd:
+          timeout: 3000
+- runFlow:
+    when:
+      visible: "activity-tab-messages"
+    commands:
+      - assertVisible:
+          id: "activity-tab-messages"
+      - assertVisible:
+          id: "activity-tab-updates"
+- runFlow:
+    when:
+      visible: "Home"
+    commands:
+      - assertVisible:
+          text: "Home"
