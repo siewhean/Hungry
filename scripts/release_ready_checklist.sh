@@ -23,17 +23,20 @@ echo "external release blockers. Use --local-only for local gate rehearsal."
 run_step "1) Typecheck" npm run typecheck
 run_step "2) Test suite" npm run test
 run_step "3) Static Supabase audit" npm run audit:supabase:static
-run_step "4) Supabase Advisor app-owned guard" npm run audit:supabase:advisor-security
+run_step "4) Supabase Advisor non-password guard" npm run audit:supabase:advisor-security:non-password
 run_step "5) Edge Function static checks" npm run check:edge-functions
 run_step "6) Asset audit" npm run audit:assets
 run_step "7) TruffleHog filesystem scan" npm run security:trufflehog
-run_step "8) npm audit" npm run security:audit
-run_step "9) Website static predeploy gates" npm run website:predeploy:local
-run_step "10) Expo Doctor" env EXPO_NO_DOTENV=1 CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .
+run_step "8) Gitleaks tracked/unignored scan" npm run security:gitleaks
+run_step "9) Release hygiene check" npm run security:release-hygiene
+run_step "10) npm audit" npm run security:audit
+run_step "11) Legacy marketing web security contract" npm run security:legacy-web
+run_step "12) Website static predeploy gates" npm run website:predeploy:local
+run_step "13) Expo Doctor" env EXPO_NO_DOTENV=1 CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .
 
 echo
 echo "[Hungry] Native proof status"
-echo "- iOS prepared Maestro smoke: already recorded as passing in tasks/verification.md."
+echo "- iOS prepared Maestro smoke: run npm run smoke:native:ios:prepared and record current evidence before release."
 if [[ -d android ]]; then
   echo "- Android native project exists locally; run Android smoke/build proof before release."
 else
@@ -45,6 +48,9 @@ if [[ "${LOCAL_ONLY}" == "1" ]]; then
   echo "[Hungry] Local gate rehearsal complete. External blockers were not enforced."
   exit 0
 fi
+
+run_step "14) Website deployment env proof" env HUNGRY_REQUIRE_DEPLOY_ENV_PROOF=1 HUNGRY_DEPLOY_ENV=production npm --prefix marketing/website/web-v2 run env:validate
+run_step "15) Sentry unresolved issue check" env HUNGRY_SENTRY_UNRESOLVED_REQUIRED=1 npm run monitoring:sentry:unresolved
 
 require_evidence() {
   local key="$1"
@@ -60,13 +66,15 @@ require_evidence() {
 echo
 if [[ ! -f "${RELEASE_EVIDENCE_FILE}" ]]; then
   echo "[Hungry] Release remains No-Go until these external blockers have evidence:"
-  echo "- Android/EAS build or device smoke proof"
+  echo "- Android preview APK artifact proof"
   echo "- iOS EAS/TestFlight or device smoke proof"
   echo "- production secret verification for EAS/store release environments"
   echo "- public privacy/account-deletion URL reachability and store-console metadata"
   echo "- App Store Connect and Google Play Console metadata/Data Safety proof"
   echo "- owner-approved ASO metadata, reviewer notes, screenshot/image rights, and store policy checklist"
-  echo "- Sentry staging crash capture and native iOS/Android Maestro smoke proof"
+  echo "- Sentry staging crash capture, native iOS Maestro smoke proof, and Android install-device/native Maestro smoke, Play/internal-track proof, and Android production proof separation"
+  echo "- Post Composer error boundary proof"
+  echo "- Android camera/media permission declaration proof"
   echo "- UGC moderation/report/block proof for any public user-generated content"
   echo "- Supabase owner/dashboard actions for leaked-password protection and remaining Advisor findings"
   echo "- pushed GitHub CI evidence for the merchant-catalog E2E gate"
@@ -82,7 +90,7 @@ fi
 
 echo "[Hungry] Checking external release evidence in ${RELEASE_EVIDENCE_FILE}"
 missing=0
-require_evidence "ANDROID_EAS_PROOF" "Android/EAS build or device smoke proof" || missing=1
+require_evidence "ANDROID_EAS_PROOF" "Android preview APK artifact proof" || missing=1
 require_evidence "IOS_EAS_PROOF" "iOS EAS/TestFlight or device smoke proof" || missing=1
 require_evidence "PRODUCTION_SECRET_PROOF" "production secret verification for EAS/store release environments" || missing=1
 require_evidence "STORE_CONSOLE_PROOF" "public privacy/account-deletion URL reachability and store-console metadata" || missing=1
@@ -95,8 +103,10 @@ require_evidence "STORE_POLICY_CHECKLIST_APPROVAL_PROOF" "owner/legal approval o
 require_evidence "PUBLIC_PRIVACY_URL_PROOF" "public privacy policy URL proof" || missing=1
 require_evidence "PUBLIC_ACCOUNT_DELETION_URL_PROOF" "public account deletion URL proof" || missing=1
 require_evidence "SENTRY_STAGING_CRASH_PROOF" "Sentry staging crash capture" || missing=1
+require_evidence "POST_COMPOSER_ERROR_BOUNDARY" "Post Composer recoverable error-boundary proof" || missing=1
+require_evidence "ANDROID_PERMISSIONS_COMPLETE" "Android camera/media permission declaration proof" || missing=1
 require_evidence "NATIVE_MAESTRO_IOS_PROOF" "iOS Maestro/native smoke proof" || missing=1
-require_evidence "NATIVE_MAESTRO_ANDROID_PROOF" "Android Maestro/native smoke proof" || missing=1
+require_evidence "NATIVE_MAESTRO_ANDROID_PROOF" "Android install-device/native Maestro smoke, Play/internal-track proof, and Android production proof separation" || missing=1
 require_evidence "UGC_MODERATION_PROOF" "UGC moderation/report/block proof" || missing=1
 require_evidence "SUPABASE_OWNER_PROOF" "Supabase owner/dashboard actions for leaked-password protection and remaining Advisor findings" || missing=1
 require_evidence "PUSHED_CI_PROOF" "pushed GitHub CI evidence for the merchant-catalog E2E gate" || missing=1

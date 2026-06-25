@@ -24,9 +24,21 @@ test("public-launch readiness report bundle exists and keeps a no-go verdict unt
 
   const finalChecklist = readRepoFile("tasks/Roadmap/app-final-go-no-go-checklist.md");
   assert.match(finalChecklist, /Production status:\s+\*\*No-Go\*\*/i);
-  assert.match(finalChecklist, /ANDROID_EAS_PROOF=0/);
+  assert.match(finalChecklist, /ANDROID_EAS_PROOF=1/);
+  assert.match(finalChecklist, /Android\/EAS proof\s+\|\s+.*preview artifact pass/i);
+  assert.match(
+    finalChecklist,
+    /does not prove install\/device\/internal-track\/production readiness/,
+  );
+  assert.match(finalChecklist, /NATIVE_MAESTRO_ANDROID_PROOF=0/);
+  assert.match(finalChecklist, /PRODUCTION_SECRET_PROOF=0/);
   assert.match(finalChecklist, /STORE_CONSOLE_PROOF=0/);
-  assert.match(finalChecklist, /SUPABASE_OWNER_PROOF=0/);
+  assert.match(finalChecklist, /APP_STORE_CONNECT_PROOF=0/);
+  assert.match(finalChecklist, /PLAY_CONSOLE_PROOF=0/);
+  assert.match(finalChecklist, /STORE_POLICY_CHECKLIST_APPROVAL_PROOF=0/);
+  assert.match(finalChecklist, /VoiceOver\/TalkBack smoke\s+\|\s+blocked/i);
+  assert.match(finalChecklist, /Production monitoring proof\s+\|\s+blocked/i);
+  assert.match(finalChecklist, /ROLLBACK_REHEARSAL_PROOF=0/);
 });
 
 test("production feature flags keep public-launch P0 experimental surfaces disabled", () => {
