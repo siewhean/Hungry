@@ -66,13 +66,15 @@ require_evidence() {
 echo
 if [[ ! -f "${RELEASE_EVIDENCE_FILE}" ]]; then
   echo "[Hungry] Release remains No-Go until these external blockers have evidence:"
-  echo "- Android/EAS build or device smoke proof"
+  echo "- Android preview APK artifact proof"
   echo "- iOS EAS/TestFlight or device smoke proof"
   echo "- production secret verification for EAS/store release environments"
   echo "- public privacy/account-deletion URL reachability and store-console metadata"
   echo "- App Store Connect and Google Play Console metadata/Data Safety proof"
   echo "- owner-approved ASO metadata, reviewer notes, screenshot/image rights, and store policy checklist"
-  echo "- Sentry staging crash capture and native iOS/Android Maestro smoke proof"
+  echo "- Sentry staging crash capture, native iOS Maestro smoke proof, and Android install-device/native Maestro smoke, Play/internal-track proof, and Android production proof separation"
+  echo "- Post Composer error boundary proof"
+  echo "- Android camera/media permission declaration proof"
   echo "- UGC moderation/report/block proof for any public user-generated content"
   echo "- Supabase owner/dashboard actions for leaked-password protection and remaining Advisor findings"
   echo "- pushed GitHub CI evidence for the merchant-catalog E2E gate"
@@ -88,7 +90,7 @@ fi
 
 echo "[Hungry] Checking external release evidence in ${RELEASE_EVIDENCE_FILE}"
 missing=0
-require_evidence "ANDROID_EAS_PROOF" "Android/EAS build or device smoke proof" || missing=1
+require_evidence "ANDROID_EAS_PROOF" "Android preview APK artifact proof" || missing=1
 require_evidence "IOS_EAS_PROOF" "iOS EAS/TestFlight or device smoke proof" || missing=1
 require_evidence "PRODUCTION_SECRET_PROOF" "production secret verification for EAS/store release environments" || missing=1
 require_evidence "STORE_CONSOLE_PROOF" "public privacy/account-deletion URL reachability and store-console metadata" || missing=1
@@ -101,8 +103,10 @@ require_evidence "STORE_POLICY_CHECKLIST_APPROVAL_PROOF" "owner/legal approval o
 require_evidence "PUBLIC_PRIVACY_URL_PROOF" "public privacy policy URL proof" || missing=1
 require_evidence "PUBLIC_ACCOUNT_DELETION_URL_PROOF" "public account deletion URL proof" || missing=1
 require_evidence "SENTRY_STAGING_CRASH_PROOF" "Sentry staging crash capture" || missing=1
+require_evidence "POST_COMPOSER_ERROR_BOUNDARY" "Post Composer recoverable error-boundary proof" || missing=1
+require_evidence "ANDROID_PERMISSIONS_COMPLETE" "Android camera/media permission declaration proof" || missing=1
 require_evidence "NATIVE_MAESTRO_IOS_PROOF" "iOS Maestro/native smoke proof" || missing=1
-require_evidence "NATIVE_MAESTRO_ANDROID_PROOF" "Android Maestro/native smoke proof" || missing=1
+require_evidence "NATIVE_MAESTRO_ANDROID_PROOF" "Android install-device/native Maestro smoke, Play/internal-track proof, and Android production proof separation" || missing=1
 require_evidence "UGC_MODERATION_PROOF" "UGC moderation/report/block proof" || missing=1
 require_evidence "SUPABASE_OWNER_PROOF" "Supabase owner/dashboard actions for leaked-password protection and remaining Advisor findings" || missing=1
 require_evidence "PUSHED_CI_PROOF" "pushed GitHub CI evidence for the merchant-catalog E2E gate" || missing=1

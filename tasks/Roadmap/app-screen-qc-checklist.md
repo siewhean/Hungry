@@ -1,7 +1,7 @@
 # Hungry App Screen QC Checklist
 
 Updated: 2026-06-25
-Verdict: **Partial**. Source coverage exists for core MVP screens; full public-launch QC still requires iOS and Android runtime proof.
+Verdict: **Partial / No-Go**. Source coverage exists for core MVP screens; repo-local iOS runtime smoke and Android EAS artifact proof now exist, but public-launch QC still requires Android install/device smoke, iOS external build proof, manual accessibility proof, and owner/store-console evidence.
 
 ## QC Table
 
@@ -43,11 +43,37 @@ Verdict: **Partial**. Source coverage exists for core MVP screens; full public-l
 
 ## Runtime Acceptance Requirements
 
-- iOS simulator/device smoke (prepared Maestro smoke passes ✅ as of 2026-06-19).
-- Android emulator/device or EAS internal proof (in progress, pending artifact).
+- iOS simulator smoke: prepared Maestro smoke passes ✅ as of 2026-06-25 (`tasks/verification.md`; `tasks/Roadmap/app-native-build-readiness-report.md`).
+- Android EAS artifact proof: preview build `b04ac43f-9a06-43f9-9f38-709cbc17e418` finished with APK artifact ✅ (`tasks/verification.md`; `tasks/Roadmap/app-native-build-readiness-report.md`).
+- Android emulator/device install smoke: **pending** — no Android device/emulator attached in local evidence.
 - Manual VoiceOver and TalkBack smoke.
 - Location denied and media denied proof.
 - No terminal/simulator console errors during smoke pass.
+
+## Runtime Evidence Refresh
+
+| Platform / gate | Current evidence | Status |
+|---|---|---:|
+| iOS prepared simulator smoke | `npm run smoke:native:ios:prepared` passed chat/activity/media flows on iPhone 17 Pro simulator with LAN Metro; release evidence key `NATIVE_MAESTRO_IOS_PROOF=1`. | pass |
+| iOS external build/TestFlight | iOS EAS preview remains blocked by missing internal-distribution credentials; release evidence key `IOS_EAS_PROOF=0`. | blocked |
+| Android EAS preview artifact | Build `b04ac43f-9a06-43f9-9f38-709cbc17e418` finished; APK artifact URL is recorded in `tasks/Roadmap/app-native-build-readiness-report.md`. | pass |
+| Android install/device smoke | Local evidence says no Android emulator/device is attached, so APK install and device smoke remain pending. | pending |
+| Android permissions | `CAMERA`, `READ_MEDIA_IMAGES`, `READ_MEDIA_VIDEO`, and `READ_EXTERNAL_STORAGE` are recorded as added in `tasks/Roadmap/app-native-build-readiness-report.md`; release evidence key `ANDROID_PERMISSIONS_COMPLETE=1`. | pass |
+| Post composer error boundary | `PostComposerScreen` has `FeedErrorBoundary` coverage recorded in `tasks/Roadmap/app-final-go-no-go-checklist.md`; release evidence key `POST_COMPOSER_ERROR_BOUNDARY=1`. | pass |
+
+## Readiness Dependency Matrix
+
+| Dependency | Proof key / evidence | Current state | Blocks |
+|---|---|---|---|
+| Repo-local source/runtime gates | `tasks/verification.md` 2026-06-25 release blockers full proof refresh | Go Candidate locally | Does not clear public launch without external proofs |
+| iOS native simulator smoke | `NATIVE_MAESTRO_IOS_PROOF=1` | pass | none for repo-local QC |
+| iOS external build proof | `IOS_EAS_PROOF=0` | blocked by internal-distribution credentials | App Store/TestFlight readiness |
+| Android EAS artifact | `ANDROID_EAS_PROOF=1`; build `b04ac43f-9a06-43f9-9f38-709cbc17e418` | artifact exists | APK install/device smoke still required |
+| Android install/device smoke | local Android device/emulator proof | pending | Google Play/internal-device readiness |
+| Android permission manifest completeness | `ANDROID_PERMISSIONS_COMPLETE=1` | pass | store declaration still must match final binary |
+| Post composer crash containment | `POST_COMPOSER_ERROR_BOUNDARY=1` | pass | none for this checklist |
+| Manual accessibility | VoiceOver/TalkBack owner QA | pending | public-launch QC sign-off |
+| Store/legal/owner evidence | store console, legal/privacy, demo account, pushed CI | pending/blocked | final Go |
 
 ## Source Coverage Verified
 

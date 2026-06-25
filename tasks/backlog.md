@@ -14,20 +14,21 @@
   Gitleaks, TruffleHog, Supabase location/search/RLS/full-audit smokes, mobile web smokes, and
   `release:ready:local` pass. Direct iOS guest browse and prepared iOS media permission smokes
   pass. Remaining blockers are external/tooling release artifacts: full iOS prepared suite is
-  blocked by Maestro/XCUITest driver instability after app launch, Android installed-app proof needs
-  global Maestro or EAS artifact install, and store-console/legal/Sentry/production deployment
-  evidence remains missing.
+  blocked by Maestro/XCUITest driver instability after app launch, Android EAS preview APK artifact
+  exists, but Android install/device smoke, Play/internal-track proof, Android production proof, and
+  store-console/legal/Sentry/production deployment evidence remain missing.
 
 - `APP-PROD-READY-01` — Repo-local public-launch readiness hardening in progress; public launch
   remains No-Go. 2026-06-19 added the nine mobile production-readiness reports, route/source/release
   contracts, Home activity inbox DM-gated default, Expo dependency override cleanup, and
   `20260619110000_release_advisor_security_cleanup.sql` to address linked Supabase Advisor function
   findings. Local type/lint/format/test/static/security/asset/Expo Doctor gates pass. Remaining
-  blockers: Android EAS preview build `a3b557d8-1922-4369-9546-ad6f96b09396` is running
-  without final artifact/install proof, iOS EAS preview lacks internal-distribution credentials,
-  dirty worktree reconciliation is incomplete, Supabase Auth leaked-password dashboard proof is
-  still open, and store-console/legal/Sentry proof is still
-  missing. Linked Supabase legacy RPC cleanup, app-owned Advisor cleanup, live data/RLS/social/
+  blockers: Android EAS preview build `b04ac43f-9a06-43f9-9f38-709cbc17e418` finished with a
+  preview APK artifact, but Android install/device smoke, internal-track smoke, and production
+  build proof remain pending; iOS EAS preview lacks internal-distribution credentials, dirty
+  worktree reconciliation is incomplete, Supabase Auth leaked-password dashboard proof is still
+  open, and store-console/legal proof is still missing. Linked Supabase legacy RPC cleanup,
+  app-owned Advisor cleanup, live data/RLS/social/
   chat/OCR smokes, iOS prepared Maestro smoke, and local release rehearsal now pass.
 
 - `TASKS-CLEANUP-01` — Complete. 2026-06-07 tasks folder cleanup kept canonical live
@@ -42,7 +43,8 @@
   scaffold validation when `k6` is not locally installed. Production flags remain MVP-safe, advanced
   surfaces stay gated, Supabase remains canonical for shared data, `marketing/website/web-v2`
   is the active website, and `marketing/web` is documented as legacy. Local release gates and live
-  Supabase smoke pass; external blockers remain Android/EAS artifact proof, production
+  Supabase smoke pass; Android EAS preview APK artifact proof exists; external blockers remain
+  Android install/device smoke, Play/internal-track proof, Android production proof, production
   Sentry observability proof, real load-test evidence, and rollback rehearsal.
 
 - `MVP-BASIC-01` — Repo-local complete with external blockers. MVP Basic Features production
@@ -58,7 +60,8 @@
   Local source/type/lint/format/test/E2E/static Supabase/Edge/security/release gates pass, and the
   post-Create-tab release rerun passed. Fresh iOS simulator build/install and prepared native smoke
   also pass. The owner-approved legacy payment/order RPC cleanup has been applied to linked Supabase.
-  External proof remains open for final Android/EAS artifact/install, store-console/legal/Sentry
+  Android EAS preview APK artifact proof exists; external proof remains open for Android
+  install/device smoke, Play/internal-track proof, Android production proof, store-console/legal/Sentry
   evidence, and any live cross-device smoke not covered by the current service-role smoke scripts.
 
 - `AUTH-PERSIST-01` — Complete. 2026-05-27 auth persistence fix now waits for Zustand

@@ -16,11 +16,11 @@ Verdict: **Partial / No-Go for public launch** until live Supabase, store-consol
 | Deep link safety | `src/app/navigation/linking.ts` | Unsafe params rejected, protected links redirect ✅ |
 | Service-role exposure | `SECURITY.md`, static scans | App source does not include service-role keys ✅ |
 | UGC safety | `communitySafety` service and Supabase tests | Source-backed for reports/blocks; social surfaces production-gated ✅ |
-| Error boundary — Post composer | `PostComposerScreen.tsx` | **Fixed 2026-06-25** — FeedErrorBoundary added ✅ |
-| Android camera permissions | `app.json` | **Fixed 2026-06-25** — CAMERA, READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_EXTERNAL_STORAGE added ✅ |
+| Error boundary — Post composer | `src/app/screens/post/PostComposerScreen.tsx` | `POST_COMPOSER_ERROR_BOUNDARY=1` — fixed source proof: FeedErrorBoundary wraps the composer ✅ |
+| Android camera/media permissions | `app.json` | `ANDROID_PERMISSIONS_COMPLETE=1` — fixed config proof: CAMERA, READ_MEDIA_IMAGES, READ_MEDIA_VIDEO, READ_EXTERNAL_STORAGE present ✅ |
 | Sentry DSN validation | `App.tsx` `isUsableSentryDsn()` | Hardened to reject placeholder/invalid DSN strings ✅ |
-| Sentry unresolved issues | External Sentry dashboard | Cleared 28 release/smoke groups; unresolved queue = 0 ✅ |
-| PostHog analytics | `src/lib/analytics/posthogSink.ts` | Staging event proof pass ✅ |
+| Sentry unresolved issues | `tasks/verification.md` | Local record says 28 release/smoke groups were cleared; live dashboard not rechecked in this lane |
+| PostHog analytics | `src/lib/analytics/posthogSink.ts`, `tasks/verification.md` | Staging event proof recorded; production monitoring proof remains part of launch closeout |
 
 ## Key Security Controls Verified
 
@@ -36,9 +36,9 @@ Verdict: **Partial / No-Go for public launch** until live Supabase, store-consol
 - No HTTP fallback or downgrade ✅
 
 ### Backend
-- RLS: 127 tables confirmed enabled ✅
+- RLS: 127 tables recorded enabled in local/live service-role gates; reviewer-account proof remains pending below
 - No anon write policies ✅
-- Signed upload URLs only ✅
+- Signed upload URLs source path present; storage reviewer proof remains pending below
 - Magic byte validation on all uploads ✅
 - MIME allowlist enforced ✅
 - Edge functions: API-key protected, JWT-verified, rate-limited ✅
@@ -48,17 +48,17 @@ Verdict: **Partial / No-Go for public launch** until live Supabase, store-consol
 - `MAPBOX_SECRET_TOKEN` server-only ✅
 - gitleaks + trufflehog in CI ✅
 - 0 npm vulnerabilities ✅
-- Historical `.env.local` leak acknowledged; credentials rotated ✅
+- Historical `.env.local` leak acknowledged; rotation is recorded, and Supabase leaked-password protection remains a blocker/waiver item below
 
 ## P0 Security Gaps
 
 | Gap | Risk | Owner | Required fix/proof |
 |---|---|---|---|
 | Dirty worktree | unreviewed changes in release candidate | Engineering | reconcile before release tag |
-| Live RLS/storage reviewer cross-device proof | service-role smoke passed; reviewer/staging account proof needed | Engineering/Ops | attach reviewer/staging account smoke evidence |
-| Supabase Auth leaked-password dashboard | Auth warning outside SQL advisor scope | Owner/Ops | enable dashboard setting |
-| Public privacy/account-deletion URL | store rejection risk | Owner/Web/Ops | reachable URLs and policy consistency proof |
-| App Store/Play metadata | store rejection risk | Owner | screenshots, labels, Data Safety, demo notes |
+| Live RLS/storage reviewer cross-device proof | service-role smoke passed; reviewer/staging account and private-storage proof still needed | Engineering/Ops | attach reviewer/staging account smoke evidence |
+| Supabase Auth leaked-password dashboard | Auth warning outside SQL advisor scope | Owner/Ops | enable dashboard setting or document an explicit launch waiver/blocker |
+| Public privacy/account-deletion URL | legal/privacy and store rejection risk | Owner/Web/Ops | reachable URLs and policy consistency proof |
+| App Store/Play metadata | store-console rejection risk | Owner | screenshots, labels, Data Safety, demo notes |
 | Biometric re-auth for destructive actions | medium hardening item | Engineering | pre-launch hardening task |
 
 ## Required Checks (Current Pass Status)

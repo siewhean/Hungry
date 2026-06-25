@@ -1,7 +1,18 @@
 # Hungry App Accessibility QC Report
 
 Updated: 2026-06-25
-Verdict: **Partial**. Source contracts and accessible labels exist in key flows; reduce-motion support present in PassportScreen and search placeholder. Public launch requires manual iOS VoiceOver and Android TalkBack proof.
+Verdict: **Partial / No-Go**. Source contracts and accessible labels exist in key flows; reduce-motion support present in PassportScreen and search placeholder. Public launch requires manual iOS VoiceOver and Android TalkBack proof.
+
+## Readiness Index
+
+| Bundle dependency | Status | Local proof | Readiness impact |
+|---|---:|---|---|
+| Source accessibility contracts | Partial | `accessibility-contrast.test.ts`; `accessibility-primitives-contracts.test.ts`; `accessible-image-contracts.test.ts` | Source-level coverage exists, but runtime screen-reader proof is still missing. |
+| Post Composer error boundary | Ready | `tasks/Roadmap/app-final-go-no-go-checklist.md` release key `POST_COMPOSER_ERROR_BOUNDARY=1`; checklist gate "PostComposerScreen error boundary" fixed 2026-06-25 | Removes the known composer crash-safety dependency from this accessibility QC bundle. |
+| Android permissions declaration | Ready | `tasks/Roadmap/app-final-go-no-go-checklist.md` release key `ANDROID_PERMISSIONS_COMPLETE=1`; checklist gate "Android permissions" fixed 2026-06-25 | Removes the known Android camera/photo permission declaration dependency; Android install smoke remains outside this report and is still pending in the final Go/No-Go checklist. |
+| iOS VoiceOver manual smoke | Blocked | This report's Manual Smoke Required table; final checklist gate "VoiceOver/TalkBack smoke" blocked | No-Go until onboarding, auth, search, detail, save, review, post composer, profile, and settings are manually tested with VoiceOver. |
+| Android TalkBack manual smoke | Blocked | This report's Manual Smoke Required table; final checklist gate "VoiceOver/TalkBack smoke" blocked | No-Go until the same launch-critical flows are manually tested with TalkBack. |
+| Motion/accessibility runtime proof | Partial / blocked | Reduce Motion Gap below: 22 unguarded Reanimated calls; Required Evidence includes feed, carousel, and composer Reduce Motion check plus 200% text-size proof | No-Go for accessibility sign-off until runtime motion/text-size evidence is attached or accepted as a documented pre-launch risk. |
 
 ## Source Checks
 

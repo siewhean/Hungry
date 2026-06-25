@@ -1,7 +1,7 @@
 # Hungry App Performance QC Report
 
 Updated: 2026-06-25
-Verdict: **Partial**. Source-level performance patterns exist; device/runtime metrics are still required before public launch.
+Verdict: **Partial / No-Go for public launch**. Source-level performance patterns and several QC gates pass; unmeasured device/runtime performance metrics are still blockers.
 
 ## Targets and Current Proof
 
@@ -13,7 +13,7 @@ Verdict: **Partial**. Source-level performance patterns exist; device/runtime me
 | Detail load | under 300ms p95 staging | pending staging metrics |
 | Feed first page | under 700ms p95 staging | pending staging metrics |
 | Image upload failure | under 2% staging smoke | pending staging smoke |
-| Crash-free sessions | 99%+ before public launch | pending Sentry proof |
+| Crash-free sessions | 99%+ before public launch | partial: Sentry staging crash proof passes, but crash-free session rate is still unmeasured |
 | 30-minute session | no crash/memory leak | pending runtime smoke |
 
 ## Source Evidence
@@ -30,6 +30,18 @@ Verdict: **Partial**. Source-level performance patterns exist; device/runtime me
 | Console.log in production | 0 `console.log` in `src/` production code | source-verified ✅ |
 | Component memoization | 529 React.memo/useMemo/useCallback usages | reasonable density |
 
+## Runtime and QC Evidence
+
+| Gate | Local evidence | Status |
+|---|---|---|
+| Sentry staging crash proof | `tasks/verification.md` 2026-06-25 row; `tasks/Roadmap/app-final-go-no-go-checklist.md` `SENTRY_STAGING_CRASH_PROOF=1` | ✅ pass: unresolved queue clean |
+| Playwright page-agent + feature/prefetch coverage | `tasks/verification.md` 2026-06-25 row | ✅ pass: 13/13 documented |
+| iOS prepared native smoke | `tasks/verification.md`; `tasks/Roadmap/app-native-build-readiness-report.md` | ✅ pass: `npm run smoke:native:ios:prepared` |
+| Android preview APK | `tasks/Roadmap/app-native-build-readiness-report.md` | partial: preview build `b04ac43f-9a06-43f9-9f38-709cbc17e418` finished with APK artifact |
+| Android install smoke | `tasks/Roadmap/app-native-build-readiness-report.md` | pending: no Android device/emulator attached |
+| PostComposerScreen error boundary | `tasks/Roadmap/app-final-go-no-go-checklist.md` | ✅ pass: `POST_COMPOSER_ERROR_BOUNDARY=1` |
+| Android permissions completeness | `tasks/Roadmap/app-final-go-no-go-checklist.md`; `tasks/Roadmap/app-native-build-readiness-report.md` | ✅ pass: `ANDROID_PERMISSIONS_COMPLETE=1` |
+
 ## Known Performance Risks
 
 | Risk | Severity | Status |
@@ -38,6 +50,7 @@ Verdict: **Partial**. Source-level performance patterns exist; device/runtime me
 | `DiscoverHomeScreen.tsx` at 3,352 lines / `HomeFeedScreen.tsx` at 2,674 lines | medium | complex files; extract sub-feature components before v1.1 |
 | 49 KB `src/lib/services/mock/data.ts` bundled in production JS | medium | mock data bundled even when `HUNGRY_DATA_SOURCE=supabase`; gate behind `__DEV__` |
 | 22 Reanimated animations not gated by `reduceMotion` | low | accessibility + battery concern; `useReduceMotion()` hook hardening item |
+| p95/load/memory/bundle runtime measurements | high | pending measured staging/device proof; do not treat source coverage as performance pass |
 
 ## Required Runtime Proof
 
@@ -46,5 +59,6 @@ Verdict: **Partial**. Source-level performance patterns exist; device/runtime me
 - Staging Supabase search/detail timing sample (p50, p95)
 - Feed scroll and repeated detail navigation session (30 min, no crash)
 - Media upload success/failure smoke (upload retry and error recovery)
-- Sentry performance/crash monitoring proof from staging build
+- Sentry performance/crash monitoring trend proof from staging build; crash-capture proof passes, but trend metrics remain pending
 - Memory profiling for HomeFeed and DiscoverHome (Flipper recommended)
+- Android install smoke for finished preview APK

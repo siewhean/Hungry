@@ -17,7 +17,7 @@ This checklist is the canonical release gate for Apple App Store and Google Play
 9. `npm run security:audit` passes.
 10. `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` passes.
 11. `npm run smoke:native:ios:prepared` passes on a prepared simulator/device.
-12. Android/EAS build or device smoke proof is attached.
+12. Android evidence is attached separately: preview APK artifact proof, install/device smoke proof, Play internal-track proof, and production proof.
 13. Live Supabase behavior smokes pass for chat/DM, social/gamification, Full Audit V1 readiness, and OCR.
 
 ## Required Product/Policy Gates
