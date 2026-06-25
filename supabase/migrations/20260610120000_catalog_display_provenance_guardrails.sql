@@ -146,6 +146,8 @@ $$;
 
 -- App-facing discovery feed: keep venue identity visible, but only expose
 -- approved menu items and approved images.
+drop function if exists public.get_discovery_feed_by_location(text, double precision, double precision, integer, integer);
+
 create or replace function public.get_discovery_feed_by_location(
   p_area_name text default null,
   p_lat double precision default null,
