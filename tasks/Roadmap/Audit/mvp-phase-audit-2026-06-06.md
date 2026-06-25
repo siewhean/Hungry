@@ -313,7 +313,7 @@ This section was stale in the first draft of the audit. Current repo evidence sh
 
 - `tasks/verification.md` records final E2E/release closeout, source-truth QA follow-up, release reruns, linked Supabase full-audit smoke, Expo Doctor, iOS native smoke, and native-smoke status QA on 2026-06-05.
 - `tasks/todo.md` marks Phase 9 as "Pass with external blockers".
-- `tasks/backlog.md` records the remaining blockers as external: owner-approved linked legacy payment/order RPC cleanup, Android/EAS proof, and live mutation/cross-device proof with approved accounts/devices.
+- `tasks/backlog.md` records the remaining blockers as external: Android/EAS artifact/install proof and any live mutation/cross-device proof not covered by current service-role smoke scripts. The owner-approved linked legacy payment/order RPC cleanup was applied on 2026-06-24.
 
 The repo-local P0 favourite rehydration gap identified by this audit was fixed on 2026-06-06 and verified with focused store/source contracts plus TypeScript.
 
@@ -444,7 +444,7 @@ Do not use `npx expo-doctor --non-interactive` for this repo; the current projec
 - [x] Review/post/profile/settings source paths — covered by MVP source-truth contracts and previous E2E/release records
 - [ ] Live save/relogin proof across devices/accounts — external, requires approved accounts/devices
 - [ ] Android/EAS proof — external
-- [ ] Owner-approved linked legacy payment/order RPC cleanup — external Supabase action
+- [x] Owner-approved linked legacy payment/order RPC cleanup — applied to linked Supabase on 2026-06-24
 
 ---
 

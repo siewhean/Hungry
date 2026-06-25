@@ -1,4 +1,3 @@
-// @ts-nocheck
 /* eslint-disable import/no-unresolved */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 
@@ -109,14 +108,12 @@ Deno.serve(async (request) => {
       });
       if (completeError) throw completeError;
 
-      results.push({ requestId, userId, status: "completed" });
+      results.push({ requestId, status: "completed" });
     } catch (error) {
       await markFailure(client, requestId, userId, workerId, error);
       results.push({
         requestId,
-        userId,
         status: "failed",
-        error: String((error as { message?: unknown } | null)?.message ?? error),
       });
     }
   }
