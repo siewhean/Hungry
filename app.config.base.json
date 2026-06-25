@@ -5,6 +5,11 @@
     "version": "0.1.0",
     "runtimeVersion": "0.1.0",
     "icon": "./assets/images/Logo/hungry_logo_icon_transparent.png",
+    "splash": {
+      "image": "./assets/images/Logo/hungry_logo_icon_transparent.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "updates": {
       "enabled": false
     },
@@ -35,8 +40,12 @@
     "android": {
       "package": "app.hungry.mobile",
       "permissions": [
+        "android.permission.CAMERA",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO"
       ]
     },
     "experiments": {

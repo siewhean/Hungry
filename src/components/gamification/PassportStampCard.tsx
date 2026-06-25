@@ -11,6 +11,7 @@ import { useEffect } from "react";
 
 import { AppText } from "@/components/ui/AppText";
 import { PassportStampBadge } from "@/components/gamification/PassportStampBadge";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useHungryTheme } from "@/theme";
 import type {
   EarnedPassportStamp,
@@ -37,13 +38,15 @@ export function PassportStampCard({
   reduceMotion = false,
 }: PassportStampCardProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
+  const prefersReducedMotion = useReduceMotion();
+  const shouldReduceMotion = reduceMotion || prefersReducedMotion;
   const progressFraction =
     nextStamp && nextStamp.stamp.id === stamp.id ? nextStamp.progressFraction : earned ? 1 : 0;
   const stampScale = useSharedValue(1);
   const stampRotate = useSharedValue(0);
 
   useEffect(() => {
-    if (!celebrating || reduceMotion) {
+    if (!celebrating || shouldReduceMotion) {
       stampScale.value = 1;
       stampRotate.value = 0;
       return;
@@ -56,7 +59,7 @@ export function PassportStampCard({
       withTiming(-6, { duration: 120, easing: Easing.out(Easing.cubic) }),
       withSpring(-2, { damping: 14, stiffness: 180 }),
     );
-  }, [celebrating, reduceMotion, stampRotate, stampScale]);
+  }, [celebrating, shouldReduceMotion, stampRotate, stampScale]);
 
   const stampAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: stampScale.value }, { rotate: `${stampRotate.value}deg` }],

@@ -186,7 +186,7 @@ test("Supabase merchant analytics foundation uses RPC-backed dynamic events and 
   const serviceTypes = read("src/lib/services/types.ts");
   const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
   const stallDetailV2 = read("src/app/screens/detail/StallDetailScreenV2.tsx");
-  const dishDetail = read("src/app/screens/detail/DishDetailScreen.tsx");
+  const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   const dishDetailV2 = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
   assert.match(migration, /create table if not exists public\.merchant_analytics_events/);

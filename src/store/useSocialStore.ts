@@ -28,6 +28,19 @@ export interface SocialReply extends SocialComment {
   parentCommentId: string;
 }
 
+type InteractionSeed = {
+  id: string;
+  commentCount?: number;
+  likeCount?: number;
+  savedCount?: number;
+  interaction?: {
+    savedAt?: string;
+  };
+  dishes?: {
+    reviews?: { id: string }[];
+  }[];
+};
+
 type HapticsModule = typeof import("expo-haptics");
 
 let hapticsModule: HapticsModule | null | undefined;
@@ -87,7 +100,7 @@ interface SocialState {
   addReply: (postId: string, reply: SocialReply) => void;
   loadCommentsForPost: (postId: string) => Promise<void>;
   setInteraction: (postId: string, state: InteractionState) => void;
-  initializeInteractions: (items: any[]) => void;
+  initializeInteractions: (items: InteractionSeed[]) => void;
   clearAccountScopedState: () => void;
 }
 

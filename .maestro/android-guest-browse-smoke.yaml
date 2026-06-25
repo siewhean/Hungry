@@ -22,11 +22,17 @@ appId: ${APP_ID}
           point: "50%,34%"
       - inputText: "${METRO_URL}"
       - tapOn: "Connect"
+- tapOn:
+    text: "Continue"
+    optional: true
+- tapOn:
+    text: "Close"
+    optional: true
 - extendedWaitUntil:
     visible: "Developer Launcher"
     timeout: 60000
 - tapOn:
-    id: "dev-button-user"
+    id: "dev-button-developer"
 - extendedWaitUntil:
     visible: "Home"
     timeout: 30000

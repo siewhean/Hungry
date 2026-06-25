@@ -1,6 +1,6 @@
 # App Final Prelaunch Go / No-Go
 
-Updated: 2026-06-21  
+Updated: 2026-06-25
 Final status: **No-Go**
 
 ## Store-Readiness Repo-Side Status
@@ -28,7 +28,7 @@ Repo-complete means the repository now has the draft/checklist/template surface 
 | unit/integration tests | pass: 533 total / 531 passing / 2 skipped |
 | Playwright e2e | not rerun in full; repo-side webServer prompt blocker fixed, sandbox localhost bind remains environment-limited |
 | merchant catalog e2e | pass when run with localhost bind access; sandbox bind remains environment-limited |
-| Expo Doctor | blocked: compatible `CI=1 npx expo-doctor .` reaches the CLI, but remote Expo API / React Native Directory checks fail in this environment and the app-config common-issues warning remains |
+| Expo Doctor | pass: compatible `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` reports 18/18 |
 | asset audit | pass |
 | Supabase static audit | pass |
 | edge function check | pass |
@@ -76,7 +76,7 @@ Separate website visual/content group, if the owner wants it committed later:
 git add marketing/website/web-v2/src/components/sections/Hero.module.css marketing/website/web-v2/src/components/sections/Hero.tsx marketing/website/web-v2/src/components/sections/LocalGuide.module.css marketing/website/web-v2/src/content/site.ts marketing/website/web-v2/src/styles/tokens.css
 ```
 
-Expo config coexistence check: `app.config.js` intentionally imports and clones `app.json`, then strips development-only or unjustified release settings only for `EXPO_PUBLIC_APP_ENV=production`; `app.json` remains the static base config for development and shared metadata.
+Expo config coexistence check: `app.config.js` intentionally imports and clones `app.config.base.json`, then strips development-only or unjustified release settings only for `EXPO_PUBLIC_APP_ENV=production`; the base config remains the static source for development and shared metadata.
 
 ## Latest Command Evidence
 
@@ -91,10 +91,10 @@ Expo config coexistence check: `app.config.js` intentionally imports and clones 
 - `npm run security:trufflehog` -> pass, 0 verified and 0 unverified secrets.
 - `npm run smoke:database:location` / `search` / `rls` -> skipped without Supabase smoke env.
 - `npm audit --audit-level=moderate` -> pass, found 0 vulnerabilities.
-- `EXPO_NO_DOTENV=1 CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` -> blocked with 15/18 checks passed; failures are Expo API fetch `getaddrinfo ENOTFOUND exp.host`, React Native Directory response, and the app-config common-issues warning despite default dynamic config matching `app.json`.
+- `CI=1 NPM_CONFIG_CACHE=/tmp/hungry-npm-cache npx expo-doctor .` -> pass with 18/18 checks after the base config split removed the app-config coexistence warning.
 - Repo-side Expo webServer prompt blocker -> fixed in `scripts/run-expo.cjs`; sandbox localhost bind can still return `EPERM`.
 - Elevated `E2E_PORT=8082 npm run test:e2e:merchant-catalog -- --reporter=line` -> pass, 1/1.
-- `npm run release:ready:local` -> previous run passed typecheck/tests/static checks/edge/assets/TruffleHog before failing at an older npm-audit DNS blocker; rerun after npm-audit recovery is still pending because Expo Doctor remains blocked.
+- `npm run release:ready:local` -> previous run passed typecheck/tests/static checks/edge/assets/TruffleHog before failing at an older npm-audit DNS blocker; full wrapper rerun remains pending, but the standalone Expo Doctor blocker is now resolved.
 - Current store-readiness repo-side pass -> `bash -n scripts/release_ready_checklist.sh` pass; focused prelaunch/release-evidence contracts pass 6/6; touched-file `git diff --check` pass.
 
 ## Current Store Draft Evidence

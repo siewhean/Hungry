@@ -21,9 +21,24 @@ import {
 } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import {
+  DetailSaveActionsCard,
+  useDetailSaveActions,
+} from "@/features/checklistPortfolio/DetailSaveActions";
 import { buildDishGallery } from "@/features/detail/detailTransforms";
+import {
+  buildMapsSearchUrl,
+  formatFoodCentreLocation,
+  formatFullStallAddress,
+} from "@/features/detail/stallLocation";
+import { getBuildingById } from "@/lib/geo/singaporeBuildings";
+import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { useProfileStore, getTasteSimilarityWithDish } from "@/store/useProfileStore";
 import { useFoodCredStore } from "@/store/useFoodCredStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
@@ -305,6 +320,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     });
   }, [dish, isAuthenticated, profile.id]);
 
+  const detailSaveActions = useDetailSaveActions({
+    navigation,
+    target: {
+      itemType: "dish",
+      id: dish?.id ?? dishId,
+      label: dish?.name ?? "Dish",
+      venueId: dish?.venueId,
+    },
+  });
+
   const isDetailLoading =
     (Boolean(dishId) && !dish && !hasLoadedDishDetail) ||
     (Boolean(dish?.venueId) && !venue && !hasLoadedVenueDetail);
@@ -333,7 +358,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     return (
       <FeedErrorBoundary
         title="Dish details unavailable"
-        body="Couldn't load this dish - try again."
+        body="Couldn't load this dish — try again."
       >
         <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["top"]}>
           <EmptyState
@@ -349,8 +374,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
   const dominantTaste = getDominantTaste(dish);
   const isSaved = profile.favouriteDishIds.includes(dish.id);
+  const serviceProviderMode = getServiceProvider().mode;
+  const visibleReviews = serviceProviderMode === "mock" ? dish.reviews : [];
   const waitTime = formatWaitTime(venue.liveCrowd ?? dish.liveCrowd);
   const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
+  const building = getBuildingById(venue.buildingId);
+  const foodCentreLocation = formatFoodCentreLocation(building);
+  const fullStallAddress = formatFullStallAddress(venue, building);
   const attributes: Attribute[] = [
     {
       label: "Taste Intensity",
@@ -460,6 +490,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     });
   };
 
+  const handleOpenMaps = () => {
+    void openTrustedMapsUrl(buildMapsSearchUrl(fullStallAddress));
+  };
+
   const isDishTried = profile.reviewedDishIds.includes(dish.id);
   const isVenueVisited = stallInteraction?.isTried ?? false;
 
@@ -518,7 +552,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   };
 
   return (
-    <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish - try again.">
+    <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
       <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
           <ScrollView
@@ -599,6 +633,22 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     </AppText>
                   </View>
                 </Pressable>
+
+                <View
+                  style={{
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    borderRadius: componentRadii.card,
+                    borderWidth: 1,
+                    gap: spacing[2],
+                    padding: spacing[4],
+                  }}
+                >
+                  <AppText variant="h3">Location</AppText>
+                  <AppText tone="secondary">{foodCentreLocation}</AppText>
+                  <AppText tone="secondary">{fullStallAddress}</AppText>
+                  <Button label="Open in Maps" variant="secondary" onPress={handleOpenMaps} />
+                </View>
 
                 <View
                   style={{
@@ -684,6 +734,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   </View>
                 ))}
               </View>
+
+              <DetailSaveActionsCard
+                title="Save this dish"
+                body="Add it to your checklist or private Hungry portfolio."
+                onAddToChecklist={detailSaveActions.addToChecklist}
+                onAddToPortfolio={detailSaveActions.addToPortfolio}
+                isAddingToChecklist={detailSaveActions.isAddingToChecklist}
+                isAddingToPortfolio={detailSaveActions.isAddingToPortfolio}
+              />
 
               <View style={{ gap: spacing[3] }}>
                 <Button
@@ -897,8 +956,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   <Sparkles color={palette.orange} size={20} />
                   <AppText variant="h2">From the Community</AppText>
                 </View>
-                {dish.reviews.length ? (
-                  dish.reviews.slice(0, 3).map((review) => (
+                {visibleReviews.length ? (
+                  visibleReviews.slice(0, 3).map((review) => (
                     <View
                       key={review.id}
                       style={{

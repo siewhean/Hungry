@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Pressable, View } from "react-native";
+import type { NavigationProp } from "@react-navigation/native";
 import { Heart, MessageCircleMore, PencilLine, Send, Utensils } from "lucide-react-native";
 
+import type { ProfileStackParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, Avatar, Card, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
@@ -17,7 +19,7 @@ import type { StallPost } from "@/types/domain";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
 type UserProfileContentProps = {
-  navigation: any;
+  navigation: NavigationProp<RootStackParamList & ProfileStackParamList>;
   authorName: string;
   authorAvatarUrl?: string;
   authorId?: string;

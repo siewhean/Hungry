@@ -105,7 +105,7 @@ function DishCard({
           <AppText
             numberOfLines={1}
             style={{
-              color: "#FFFFFF",
+              color: palette.textOnDark,
               fontFamily: "Nunito_700Bold",
               fontSize: 13,
               lineHeight: 18,
@@ -142,7 +142,7 @@ function DishCard({
             justifyContent: "center",
           }}
         >
-          {isSelected && <Check size={13} color="#FFFFFF" strokeWidth={3} />}
+          {isSelected && <Check size={13} color={palette.textOnDark} strokeWidth={3} />}
         </View>
       </Pressable>
     </Animated.View>

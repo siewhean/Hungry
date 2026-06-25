@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Clock3, MapPinned } from "lucide-react-native";
 
 import type { VenueSummary, DishSummary } from "@/types/domain";
-import { useHungryTheme } from "@/theme";
+import { useHungryTheme, type HungryTheme } from "@/theme";
 import { isVenueOpenFromHours } from "@/utils/stallStatus";
 import { AppText, Badge, Card } from "../ui";
 
@@ -61,7 +61,7 @@ export function StallCard({ venue, topDish, onPress }: StallCardProps) {
   );
 }
 
-const createStyles = (spacing: any) =>
+const createStyles = (spacing: HungryTheme["spacing"]) =>
   StyleSheet.create({
     row: {
       flexDirection: "row",

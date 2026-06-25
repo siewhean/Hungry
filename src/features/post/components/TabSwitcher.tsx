@@ -1,7 +1,6 @@
 import React from "react";
 import { View, Pressable, StyleSheet } from "react-native";
 import * as Haptics from "expo-haptics";
-import Animated, { useAnimatedStyle, withSpring } from "react-native-reanimated";
 import { AppText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useComposerStore, ComposerTab } from "../useComposerStore";

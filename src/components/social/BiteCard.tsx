@@ -18,6 +18,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { AccessibleImage, AppText } from "@/components/ui";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
@@ -58,6 +59,7 @@ export function BiteCard({
   onCommentPress,
 }: BiteCardProps) {
   const { componentRadii, palette, radii, spacing, motion } = useHungryTheme();
+  const reduceMotion = useReduceMotion();
   const imageHeight = Math.round(width * 0.76);
 
   const heartScale = useSharedValue(0);
@@ -67,6 +69,10 @@ export function BiteCard({
   }));
 
   const playHeartAnimation = () => {
+    if (reduceMotion) {
+      heartScale.value = 0;
+      return;
+    }
     heartScale.value = withSequence(
       withSpring(1.5, { damping: 12, stiffness: 200 }),
       withDelay(500, withSpring(0)),

@@ -450,7 +450,7 @@ test("store policy controls cover account deletion, UGC moderation, and location
   const webV2DeletePage = readRepoFile("marketing/website/web-v2/src/app/account/delete/page.tsx");
   const webDeletePage = readRepoFile("marketing/web/app/account/delete/page.tsx");
   const locationScreen = readRepoFile("src/app/screens/onboarding/LocationPermissionScreen.tsx");
-  const appConfig = readRepoFile("app.json");
+  const appConfig = readRepoFile("app.config.base.json");
 
   assert.match(migration, /account_deletion_requests/);
   assert.match(migration, /content_reports/);

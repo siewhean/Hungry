@@ -8,7 +8,7 @@ function read(path: string) {
 }
 
 test("detail screens show full food-centre location, weekly hours, and maps action", () => {
-  const dishDetail = read("src/app/screens/detail/DishDetailScreen.tsx");
+  const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
   const locationHelpers = read("src/features/detail/stallLocation.ts");
   const safeLinking = read("src/lib/security/safeLinking.ts");

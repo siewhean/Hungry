@@ -48,6 +48,9 @@ import type {
   ExplicitFeedbackInput,
   HungryService,
   ImplicitSignalInput,
+  ChecklistItemCreateInput,
+  PortfolioCreateInput,
+  PortfolioItemCreateInput,
   PortfolioMutationOptions,
   QuizAnswer,
   RankedRecommendation,
@@ -103,6 +106,34 @@ import type {
 } from "@/types/domain";
 
 type Row = Record<string, unknown>;
+type PortfolioFilters = {
+  userId?: string;
+  visibility?: string;
+  type?: string;
+};
+type PortfolioFlagFilters = {
+  status?: string;
+};
+type ActivityEventRow = {
+  id: string;
+  actor?:
+    | {
+        id?: string;
+        display_name?: string | null;
+        avatar_url?: string | null;
+      }
+    | {
+        id?: string;
+        display_name?: string | null;
+        avatar_url?: string | null;
+      }[]
+    | null;
+  event_type: "new_like" | "new_comment" | "new_reply" | "new_follower";
+  target_type: "post" | "comment" | "profile";
+  target_id: string;
+  read_at?: string | null;
+  created_at: string;
+};
 type DishPresentation = {
   gallery: string[];
   dietaryFlags: DietaryFlag[];
@@ -4006,7 +4037,7 @@ export const supabaseService: HungryService = {
         .select("blocked_user_key, reason, created_at")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data || []).map((row: any) => ({
+      return (data || []).map((row: Row) => ({
         blockedUserKey: row.blocked_user_key as string,
         reason: row.reason as string | undefined,
         createdAt: row.created_at as string,
@@ -6074,7 +6105,7 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
-    async addChecklistItem(input: any) {
+    async addChecklistItem(input: ChecklistItemCreateInput) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
       const { data, error } = await client
@@ -6106,7 +6137,7 @@ export const supabaseService: HungryService = {
       return (data || []).map((row) => mapChecklistItem(row as Row));
     },
 
-    async updateChecklistItem(id: string, updates: any) {
+    async updateChecklistItem(id: string, updates: Partial<ChecklistItemCreateInput>) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
       const payload: Row = {};
@@ -6153,7 +6184,7 @@ export const supabaseService: HungryService = {
   // ── Portfolio ───────────────────────────────────────────────────────────────
 
   portfolio: {
-    async createPortfolio(input: any) {
+    async createPortfolio(input: PortfolioCreateInput) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
       const userId = await getCurrentSupabaseUserId();
@@ -6173,7 +6204,7 @@ export const supabaseService: HungryService = {
       return mapPortfolio(data as Row);
     },
 
-    async getPortfolios(filters?: any) {
+    async getPortfolios(filters?: PortfolioFilters) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
       let query = client.from("portfolios").select("*");
@@ -6203,7 +6234,11 @@ export const supabaseService: HungryService = {
       return mapPortfolio(data as Row);
     },
 
-    async updatePortfolio(id: string, updates: any, options?: PortfolioMutationOptions) {
+    async updatePortfolio(
+      id: string,
+      updates: Partial<PortfolioCreateInput>,
+      options?: PortfolioMutationOptions,
+    ) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
       const payload: Row = {};
@@ -6242,7 +6277,7 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
-    async addPortfolioItem(input: any, options?: PortfolioMutationOptions) {
+    async addPortfolioItem(input: PortfolioItemCreateInput, options?: PortfolioMutationOptions) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
       const { data, error } = await client.rpc("add_portfolio_item_with_passport", {
@@ -6278,7 +6313,11 @@ export const supabaseService: HungryService = {
       return (data || []).map((row) => mapPortfolioItem(row as Row));
     },
 
-    async updatePortfolioItem(id: string, updates: any, options?: PortfolioMutationOptions) {
+    async updatePortfolioItem(
+      id: string,
+      updates: Partial<PortfolioItemCreateInput>,
+      options?: PortfolioMutationOptions,
+    ) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
       const { error } = await client.rpc("update_portfolio_item_with_version", {
@@ -6319,7 +6358,7 @@ export const supabaseService: HungryService = {
     async addPortfolioCollaborator(
       portfolioId: string,
       userId: string,
-      role: any,
+      role: "viewer" | "editor",
       options?: PortfolioMutationOptions,
     ) {
       const client = getSupabaseClient();
@@ -6427,7 +6466,7 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
-    async getPortfolioFlags(filters?: any) {
+    async getPortfolioFlags(filters?: PortfolioFlagFilters) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
       let query = client.from("portfolio_flags").select("*");
@@ -6458,7 +6497,7 @@ export const supabaseService: HungryService = {
       if (error) throw error;
     },
 
-    async searchPortfolios(query: string, filters?: any) {
+    async searchPortfolios(query: string, filters?: PortfolioFilters) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
       const { data, error } = await client.rpc("search_portfolios", {
@@ -6539,17 +6578,20 @@ export const supabaseService: HungryService = {
         .limit(50);
       if (isMissingActivityEventsSchemaError(error)) return [];
       if (error) throw error;
-      return (data || []).map((row: any) => ({
-        id: row.id as string,
-        actorId: row.actor?.id as string,
-        actorName: (row.actor?.display_name as string) ?? "Unknown",
-        actorAvatarUrl: row.actor?.avatar_url as string | undefined,
-        eventType: row.event_type as "new_like" | "new_comment" | "new_reply" | "new_follower",
-        targetType: row.target_type as "post" | "comment" | "profile",
-        targetId: row.target_id as string,
-        readAt: row.read_at as string | undefined,
-        createdAt: row.created_at as string,
-      }));
+      return ((data || []) as ActivityEventRow[]).map((row) => {
+        const actor = Array.isArray(row.actor) ? row.actor[0] : row.actor;
+        return {
+          id: row.id,
+          actorId: actor?.id ?? "",
+          actorName: actor?.display_name ?? "Unknown",
+          actorAvatarUrl: actor?.avatar_url ?? undefined,
+          eventType: row.event_type,
+          targetType: row.target_type,
+          targetId: row.target_id,
+          readAt: row.read_at ?? undefined,
+          createdAt: row.created_at,
+        };
+      });
     },
 
     async markActivityRead(eventId: string) {

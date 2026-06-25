@@ -1,6 +1,7 @@
 // https://docs.expo.dev/guides/using-eslint/
 const { defineConfig } = require('eslint/config');
 const expoConfig = require("eslint-config-expo/flat");
+const reactNativeA11y = require("eslint-plugin-react-native-a11y");
 
 module.exports = defineConfig([
   expoConfig,
@@ -22,6 +23,9 @@ module.exports = defineConfig([
       "ios/**",
       "android/**",
     ],
+    plugins: {
+      "react-native-a11y": reactNativeA11y,
+    },
     rules: {
       // The app intentionally lazy-loads many navigation screens with require().
       // Keep syntax/type checks active without warning on that routing pattern.
@@ -36,6 +40,7 @@ module.exports = defineConfig([
       "import/no-duplicates": "off",
       "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-useless-constructor": "off",
+      "react-native-a11y/has-accessibility-props": "warn",
     },
   }
 ]);

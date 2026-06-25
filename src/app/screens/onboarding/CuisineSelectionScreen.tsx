@@ -108,7 +108,7 @@ function CuisineCard({
             bottom: 12,
             left: 12,
             right: 40,
-            color: "#FFFFFF",
+            color: palette.textOnDark,
             fontFamily: "Nunito_700Bold",
             fontSize: 14,
             lineHeight: 19,
@@ -132,7 +132,7 @@ function CuisineCard({
             justifyContent: "center",
           }}
         >
-          {isSelected && <Check size={13} color="#FFFFFF" strokeWidth={3} />}
+          {isSelected && <Check size={13} color={palette.textOnDark} strokeWidth={3} />}
         </View>
       </Pressable>
     </Animated.View>

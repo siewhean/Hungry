@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Alert, Clipboard, Pressable, Share, View } from "react-native";
+import type { NavigationProp } from "@react-navigation/native";
 import {
   ChevronRight,
   Settings,
@@ -53,6 +54,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { StallPost } from "@/types/domain";
 import { UserProfileContent } from "./UserProfileContent";
+import type { ProfileStackParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 
 type ProfileRouteParams = {
   params?: {
@@ -105,7 +107,7 @@ function haveEqualPosts(left: StallPost[], right: StallPost[]) {
 }
 
 type ProfileHomeProps = {
-  navigation: any;
+  navigation: NavigationProp<RootStackParamList & ProfileStackParamList>;
   route?: ProfileRouteParams;
   mode?: "self" | "other";
   authorName?: string;

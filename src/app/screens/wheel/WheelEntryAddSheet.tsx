@@ -8,7 +8,7 @@
  *   4. Favourites — from profile favourite dish IDs
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { FlatList, Modal, Pressable, ScrollView, View, Alert } from "react-native";
 import { X, Search, Compass, Heart, Plus, ShieldAlert, Sparkles } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
@@ -18,7 +18,7 @@ import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
-import type { SearchCategory, VenueSummary, DishDetail } from "@/types/domain";
+import type { SearchCategory, VenueSummary, DishDetail, TasteVector } from "@/types/domain";
 
 const CATEGORIES: SearchCategory[] = [
   "local favourites",
@@ -35,12 +35,12 @@ interface Props {
   onClose: () => void;
 }
 
-function calculateMatchScore(dish: DishDetail | undefined, userTaste: any): number {
+function calculateMatchScore(dish: DishDetail | undefined, userTaste?: TasteVector): number {
   if (!dish || !userTaste) return 0;
   let score = 0;
-  const keys = Object.keys(userTaste) as (keyof typeof userTaste)[];
+  const keys = Object.keys(userTaste) as (keyof TasteVector)[];
   keys.forEach((key) => {
-    const dishVal = (dish.tasteVector as any)[key] || 0;
+    const dishVal = dish.tasteVector[key] || 0;
     const userVal = userTaste[key] || 0;
     score += dishVal * userVal;
   });
@@ -276,7 +276,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
     [allVenues, tab, profile, repository],
   );
 
-  const tabs: { id: Tab; label: string; icon: any }[] = [
+  const tabs: { id: Tab; label: string; icon: ReactNode }[] = [
     { id: "search", label: "Search", icon: <Search size={14} /> },
     { id: "random", label: "Surprise", icon: <Compass size={14} /> },
     { id: "category", label: "Crave", icon: <Plus size={14} /> },

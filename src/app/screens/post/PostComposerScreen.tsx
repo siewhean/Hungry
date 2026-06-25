@@ -11,6 +11,7 @@ import {
   Button,
   Card,
   EmptyState,
+  FeedErrorBoundary,
   Input,
   Screen,
 } from "@/components/ui";
@@ -231,167 +232,179 @@ export function PostComposerScreen({ navigation, route }: Props) {
 
   if (!dish) {
     return (
-      <Screen
-        title="Create post"
-        subtitle="Choose the dish this post is about, then add your photo or video."
+      <FeedErrorBoundary
+        title="Post composer failed"
+        body="We hit a snag loading the post composer. Please try again."
+        screenName="PostComposerScreen"
       >
-        <View style={{ gap: spacing[3] }}>
-          <Input
-            label="Find dish"
-            placeholder="Search dishes, stalls, or tags"
-            value={dishSearchQuery}
-            onChangeText={setDishSearchQuery}
-            accessibilityLabel="Find a dish to post about"
-          />
-          {filteredDishes.length ? (
-            filteredDishes.map((item) => {
-              const itemVenue = repository.getVenueById(item.venueId);
-              return (
-                <Card key={item.id}>
-                  <View style={{ flexDirection: "row", gap: spacing[3], alignItems: "center" }}>
-                    <AccessibleImage
-                      source={{ uri: item.imageUrl }}
-                      style={{
-                        width: 72,
-                        height: 72,
-                        borderRadius: componentRadii.card,
-                        backgroundColor: palette.bgSoft,
-                      }}
-                      contentFit="cover"
-                      accessibilityLabel={`${item.name} dish photo`}
-                    />
-                    <View style={{ flex: 1, gap: spacing[1] }}>
-                      <AppText variant="bodyBold">{item.name}</AppText>
-                      <AppText variant="bodySmall" tone="secondary">
-                        {itemVenue?.name ?? item.venueName}
-                      </AppText>
-                      {shouldShowComposerBusinessFeatures && (
-                        <AppText variant="micro" tone="secondary">
-                          {item.tasteTags.slice(0, 3).join(" · ")}
+        <Screen
+          title="Create post"
+          subtitle="Choose the dish this post is about, then add your photo or video."
+        >
+          <View style={{ gap: spacing[3] }}>
+            <Input
+              label="Find dish"
+              placeholder="Search dishes, stalls, or tags"
+              value={dishSearchQuery}
+              onChangeText={setDishSearchQuery}
+              accessibilityLabel="Find a dish to post about"
+            />
+            {filteredDishes.length ? (
+              filteredDishes.map((item) => {
+                const itemVenue = repository.getVenueById(item.venueId);
+                return (
+                  <Card key={item.id}>
+                    <View style={{ flexDirection: "row", gap: spacing[3], alignItems: "center" }}>
+                      <AccessibleImage
+                        source={{ uri: item.imageUrl }}
+                        style={{
+                          width: 72,
+                          height: 72,
+                          borderRadius: componentRadii.card,
+                          backgroundColor: palette.bgSoft,
+                        }}
+                        contentFit="cover"
+                        accessibilityLabel={`${item.name} dish photo`}
+                      />
+                      <View style={{ flex: 1, gap: spacing[1] }}>
+                        <AppText variant="bodyBold">{item.name}</AppText>
+                        <AppText variant="bodySmall" tone="secondary">
+                          {itemVenue?.name ?? item.venueName}
                         </AppText>
-                      )}
+                        {shouldShowComposerBusinessFeatures && (
+                          <AppText variant="micro" tone="secondary">
+                            {item.tasteTags.slice(0, 3).join(" · ")}
+                          </AppText>
+                        )}
+                      </View>
+                      <Button
+                        label="Choose"
+                        size="sm"
+                        fullWidth={false}
+                        onPress={() => {
+                          setSelectedDishId(item.id);
+                          setSelectedVenueId(item.venueId);
+                        }}
+                      />
                     </View>
-                    <Button
-                      label="Choose"
-                      size="sm"
-                      fullWidth={false}
-                      onPress={() => {
-                        setSelectedDishId(item.id);
-                        setSelectedVenueId(item.venueId);
-                      }}
-                    />
-                  </View>
-                </Card>
-              );
-            })
-          ) : (
-            <EmptyState title="No dishes found" body="Try a dish name or stall name." />
-          )}
-        </View>
-      </Screen>
+                  </Card>
+                );
+              })
+            ) : (
+              <EmptyState title="No dishes found" body="Try a dish name or stall name." />
+            )}
+          </View>
+        </Screen>
+      </FeedErrorBoundary>
     );
   }
 
   return (
-    <Screen
-      title="Create post"
-      subtitle="Share a quick dish update without turning the app into a creator platform."
+    <FeedErrorBoundary
+      title="Post composer failed"
+      body="We hit a snag loading the post composer. Please try again."
+      screenName="PostComposerScreen"
     >
-      <Card>
-        <View style={{ gap: spacing[3] }}>
-          <Badge label="Photo or video" tone="neutral" />
-          <AppText variant="h3">{dish.name}</AppText>
-          <AppText tone="secondary">{venue?.name ?? "Nearby stall"}</AppText>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: spacing[2] }}
-          >
-            {selectedMedia.map((item) => (
+      <Screen
+        title="Create post"
+        subtitle="Share a quick dish update without turning the app into a creator platform."
+      >
+        <Card>
+          <View style={{ gap: spacing[3] }}>
+            <Badge label="Photo or video" tone="neutral" />
+            <AppText variant="h3">{dish.name}</AppText>
+            <AppText tone="secondary">{venue?.name ?? "Nearby stall"}</AppText>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: spacing[2] }}
+            >
+              {selectedMedia.map((item) => (
+                <Pressable
+                  key={item.id}
+                  accessibilityRole="button"
+                  accessibilityLabel="Remove selected media"
+                  onPress={() => handleRemoveMedia(item.id)}
+                  style={{
+                    width: 128,
+                    height: 128,
+                    borderRadius: componentRadii.card,
+                    overflow: "hidden",
+                    backgroundColor: palette.bgSoft,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {item.type === "video" ? (
+                    <View style={{ alignItems: "center", gap: spacing[1] }}>
+                      <Video size={24} color={palette.textMuted} />
+                      <AppText variant="bodySmall" tone="secondary">
+                        Video selected
+                      </AppText>
+                    </View>
+                  ) : (
+                    <AccessibleImage
+                      source={{ uri: item.uri }}
+                      style={{ height: "100%", width: "100%" }}
+                      contentFit="cover"
+                      accessibilityLabel="Selected post image"
+                    />
+                  )}
+                </Pressable>
+              ))}
               <Pressable
-                key={item.id}
                 accessibilityRole="button"
-                accessibilityLabel="Remove selected media"
-                onPress={() => handleRemoveMedia(item.id)}
+                accessibilityLabel={selectedMedia.length ? "Replace post media" : "Add post media"}
+                onPress={() => {
+                  void handlePickMedia();
+                }}
                 style={{
                   width: 128,
                   height: 128,
                   borderRadius: componentRadii.card,
-                  overflow: "hidden",
+                  borderWidth: 1,
+                  borderColor: palette.border,
                   backgroundColor: palette.bgSoft,
                   alignItems: "center",
                   justifyContent: "center",
+                  gap: spacing[1],
                 }}
               >
-                {item.type === "video" ? (
-                  <View style={{ alignItems: "center", gap: spacing[1] }}>
-                    <Video size={24} color={palette.textMuted} />
-                    <AppText variant="bodySmall" tone="secondary">
-                      Video selected
-                    </AppText>
-                  </View>
+                {selectedMedia.length ? (
+                  <Plus size={24} color={palette.orange} />
                 ) : (
-                  <AccessibleImage
-                    source={{ uri: item.uri }}
-                    style={{ height: "100%", width: "100%" }}
-                    contentFit="cover"
-                    accessibilityLabel="Selected post image"
-                  />
+                  <Camera size={24} color={palette.orange} />
                 )}
+                <AppText variant="bodySmall" style={{ color: palette.orange, fontWeight: "800" }}>
+                  {selectedMedia.length ? "Replace" : "Add media"}
+                </AppText>
               </Pressable>
-            ))}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={selectedMedia.length ? "Replace post media" : "Add post media"}
-              onPress={() => {
-                void handlePickMedia();
-              }}
-              style={{
-                width: 128,
-                height: 128,
-                borderRadius: componentRadii.card,
-                borderWidth: 1,
-                borderColor: palette.border,
-                backgroundColor: palette.bgSoft,
-                alignItems: "center",
-                justifyContent: "center",
-                gap: spacing[1],
-              }}
-            >
-              {selectedMedia.length ? (
-                <Plus size={24} color={palette.orange} />
-              ) : (
-                <Camera size={24} color={palette.orange} />
-              )}
-              <AppText variant="bodySmall" style={{ color: palette.orange, fontWeight: "800" }}>
-                {selectedMedia.length ? "Replace" : "Add media"}
-              </AppText>
-            </Pressable>
-          </ScrollView>
-          <Input
-            label="Caption"
-            multiline
-            numberOfLines={5}
-            placeholder="What makes this worth the queue?"
-            value={caption}
-            maxLength={POST_CAPTION_MAX_LENGTH}
-            onChangeText={(value) => setCaption(sanitizeFreeText(value, POST_CAPTION_MAX_LENGTH))}
-          />
-          {shouldShowComposerBusinessFeatures && (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-              {dish.tasteTags.slice(0, 3).map((tag) => (
-                <Badge key={tag} label={tag} tone="neutral" />
-              ))}
-            </View>
-          )}
-        </View>
-      </Card>
-      <Button
-        label="Publish post"
-        loading={isPublishing}
-        disabled={selectedMedia.length === 0}
-        onPress={handlePublish}
-      />
-    </Screen>
+            </ScrollView>
+            <Input
+              label="Caption"
+              multiline
+              numberOfLines={5}
+              placeholder="What makes this worth the queue?"
+              value={caption}
+              maxLength={POST_CAPTION_MAX_LENGTH}
+              onChangeText={(value) => setCaption(sanitizeFreeText(value, POST_CAPTION_MAX_LENGTH))}
+            />
+            {shouldShowComposerBusinessFeatures && (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+                {dish.tasteTags.slice(0, 3).map((tag) => (
+                  <Badge key={tag} label={tag} tone="neutral" />
+                ))}
+              </View>
+            )}
+          </View>
+        </Card>
+        <Button
+          label="Publish post"
+          loading={isPublishing}
+          disabled={selectedMedia.length === 0}
+          onPress={handlePublish}
+        />
+      </Screen>
+    </FeedErrorBoundary>
   );
 }

@@ -1,4 +1,12 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ComponentProps,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronRight, MapPin, Minus, Plus, RotateCcw, Search } from "lucide-react-native";
@@ -513,7 +521,7 @@ export function BuildingDrillDownScreen({ navigation, route }: Props) {
   }, [floorDirectory, activeStallId]);
 
   const renderBackdrop = useCallback(
-    (props: any) => (
+    (props: ComponentProps<typeof BottomSheetBackdrop>) => (
       <BottomSheetBackdrop
         {...props}
         disappearsOnIndex={-1}

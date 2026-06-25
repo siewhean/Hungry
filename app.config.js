@@ -1,4 +1,4 @@
-const baseConfig = require("./app.json").expo;
+const baseConfig = require("./app.config.base.json").expo;
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -25,8 +25,8 @@ function withoutPlugins(plugins, blockedNames) {
   return plugins.filter((plugin) => !blockedNames.has(pluginName(plugin)));
 }
 
-module.exports = ({ config } = {}) => {
-  const resolvedConfig = clone(config && Object.keys(config).length ? config : baseConfig);
+module.exports = () => {
+  const resolvedConfig = clone(baseConfig);
   const appEnv = resolveAppEnv();
   const isProduction = appEnv === "production";
 

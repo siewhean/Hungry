@@ -91,8 +91,14 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
   if (path === "auth/reset/success") {
     return createState("AuthStack", { screen: "ResetPasswordSuccess" });
   }
-  if (parts[0] === "dish") return createState("DishDetail", { id: decodePathSegment(parts[1]) });
-  if (parts[0] === "venue") return createState("StallDetail", { id: decodePathSegment(parts[1]) });
+  if (parts[0] === "dish") {
+    const id = decodePathSegment(parts[1]);
+    return id ? createState("DishDetail", { id }) : undefined;
+  }
+  if (parts[0] === "venue") {
+    const id = decodePathSegment(parts[1]);
+    return id ? createState("StallDetail", { id }) : undefined;
+  }
   if (path === "order") return createState("Post", parseOrderDeepLinkQuery(rawPath));
   if (FEATURE_FLAGS.prototypeRoutesEnabled && parts[0] === "portfolio") {
     return createState("PortfolioPublicView", { portfolioId: decodePathSegment(parts[1]) });

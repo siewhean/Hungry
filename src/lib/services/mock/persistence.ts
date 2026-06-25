@@ -13,7 +13,7 @@ function getBrowserStorage(): Storage | null {
   }
 }
 
-export async function saveMockState(key: string, value: any) {
+export async function saveMockState(key: string, value: unknown) {
   if (typeof window === "undefined") return;
   const storageKey = getMockKey(key);
   try {

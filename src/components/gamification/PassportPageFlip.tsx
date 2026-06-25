@@ -9,6 +9,8 @@ import Animated, {
 } from "react-native-reanimated";
 import { useEffect } from "react";
 
+import { useReduceMotion } from "@/hooks/useReduceMotion";
+
 interface PassportPageFlipProps {
   pageKey: string | number;
   reduceMotion?: boolean;
@@ -19,10 +21,12 @@ export function PassportPageFlip({
   pageKey,
   reduceMotion = false,
 }: PropsWithChildren<PassportPageFlipProps>) {
+  const prefersReducedMotion = useReduceMotion();
+  const shouldReduceMotion = reduceMotion || prefersReducedMotion;
   const turn = useSharedValue(1);
 
   useEffect(() => {
-    if (reduceMotion) {
+    if (shouldReduceMotion) {
       turn.value = 1;
       return;
     }
@@ -31,11 +35,11 @@ export function PassportPageFlip({
       duration: 520,
       easing: Easing.out(Easing.cubic),
     });
-  }, [pageKey, reduceMotion, turn]);
+  }, [pageKey, shouldReduceMotion, turn]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    opacity: reduceMotion ? 1 : interpolate(turn.value, [0, 0.18, 1], [0.86, 1, 1]),
-    transform: reduceMotion
+    opacity: shouldReduceMotion ? 1 : interpolate(turn.value, [0, 0.18, 1], [0.86, 1, 1]),
+    transform: shouldReduceMotion
       ? []
       : [
           { perspective: 900 },

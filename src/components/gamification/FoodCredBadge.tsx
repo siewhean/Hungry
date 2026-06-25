@@ -13,6 +13,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-na
 import { useEffect } from "react";
 
 import { useHungryTheme } from "@/theme";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { AppText } from "@/components/ui/AppText";
 import { useFoodCredStore, FOOD_CRED_LEVELS } from "@/store/useFoodCredStore";
 import { resolveFoodCredLevel, resolveLevelProgress } from "@/constants/foodCredConfig";
@@ -27,6 +28,7 @@ interface FoodCredBadgeProps {
 export function FoodCredBadge({ size = "md", showPoints = false, style }: FoodCredBadgeProps) {
   const { palette, radii, spacing, typography } = useHungryTheme();
   const totalPoints = useFoodCredStore((s) => s.totalPoints);
+  const reduceMotion = useReduceMotion();
   const currentLevel = resolveFoodCredLevel(totalPoints);
   const levelProgress = resolveLevelProgress(totalPoints);
   const isMaxLevel = currentLevel.index >= FOOD_CRED_LEVELS.length - 1;
@@ -35,8 +37,10 @@ export function FoodCredBadge({ size = "md", showPoints = false, style }: FoodCr
   // Animate progress bar fill
   const progressWidth = useSharedValue(0);
   useEffect(() => {
-    progressWidth.value = withSpring(levelProgress, { damping: 18, stiffness: 120 });
-  }, [levelProgress, progressWidth]);
+    progressWidth.value = reduceMotion
+      ? levelProgress
+      : withSpring(levelProgress, { damping: 18, stiffness: 120 });
+  }, [levelProgress, progressWidth, reduceMotion]);
 
   const progressStyle = useAnimatedStyle(() => ({
     width: `${Math.min(progressWidth.value * 100, 100)}%`,

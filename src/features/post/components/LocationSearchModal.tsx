@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, type ComponentProps } from "react";
 import { View, StyleSheet, Pressable, Platform, FlatList, Dimensions } from "react-native";
 import { MapPin, Search, X } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
@@ -137,7 +137,7 @@ export function LocationSearchModal({ innerRef }: LocationSearchModalProps) {
   }, [selectedLoc]);
 
   const renderBackdrop = useCallback(
-    (props: any) => (
+    (props: ComponentProps<typeof BottomSheetBackdrop>) => (
       <BottomSheetBackdrop
         {...props}
         disappearsOnIndex={-1}

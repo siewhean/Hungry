@@ -57,7 +57,10 @@ function getAppId(target) {
     return process.env.HUNGRY_NATIVE_APP_ID.trim();
   }
 
-  const appJson = JSON.parse(readFileSync(resolve(process.cwd(), "app.json"), "utf8"));
+  const configPath = existsSync(resolve(process.cwd(), "app.config.base.json"))
+    ? "app.config.base.json"
+    : "app.json";
+  const appJson = JSON.parse(readFileSync(resolve(process.cwd(), configPath), "utf8"));
   if (target.startsWith("android")) {
     return appJson.expo?.android?.package ?? appJson.expo?.ios?.bundleIdentifier ?? "";
   }
@@ -139,7 +142,7 @@ async function main() {
   const appId = getAppId(target);
   const metroUrl = getMetroUrl();
   if (!appId) {
-    fail("could not determine native app id from HUNGRY_NATIVE_APP_ID or app.json");
+    fail("could not determine native app id from HUNGRY_NATIVE_APP_ID or Expo config");
   }
 
   if (!hasMaestro()) {

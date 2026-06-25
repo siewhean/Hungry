@@ -71,7 +71,8 @@ Configured in: `tsconfig.json` + `babel.config.js`
 /
 ├── App.tsx                        # Root component — loads fonts, theme, navigator
 ├── index.ts                       # Expo entry point
-├── app.json                       # Expo app config
+├── app.config.js                  # Expo dynamic app config
+├── app.config.base.json           # Expo base config consumed by app.config.js
 ├── tsconfig.json                  # TypeScript config
 ├── babel.config.js                # Babel config (path aliases)
 ├── AGENTS.md                      # Master harness dictionary ← you are here

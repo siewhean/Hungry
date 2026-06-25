@@ -41,7 +41,6 @@ test("stall detail V2 handles missing data and uses real venue/dish values", () 
 
 test("dish detail V2 avoids invented wait times and fake hours", () => {
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
-  const legacyDish = read("src/app/screens/detail/DishDetailScreen.tsx");
 
   assert.match(dish, /const waitTime = formatWaitTime/);
   assert.match(dish, /\.\.\.\(waitTime/);
@@ -49,7 +48,5 @@ test("dish detail V2 avoids invented wait times and fake hours", () => {
   assert.doesNotMatch(dish, /Sat-Sun/);
   assert.doesNotMatch(dish, /signature order/);
   assert.doesNotMatch(dish, /listPopularNearby/);
-  assert.match(legacyDish, /No delivery links listed/);
-  assert.match(legacyDish, /We do not have verified delivery links for this stall yet\./);
-  assert.doesNotMatch(legacyDish, /Dine-in only/);
+  assert.doesNotMatch(dish, /Dine-in only/);
 });

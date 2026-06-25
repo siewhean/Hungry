@@ -244,7 +244,7 @@ test("discover and search keep user mode map-free while browse grids open matchi
 });
 
 test("dish and stall details expose correct detail surfaces without user-mode map/cart regressions", () => {
-  const dishDetail = readRepoFile("src/app/screens/detail/DishDetailScreen.tsx");
+  const dishDetail = readRepoFile("src/app/screens/detail/DishDetailScreenV2.tsx");
   const stallDetail = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
   const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
   const userModeStallPress = segmentBetween(
@@ -257,14 +257,16 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
     dishDetail,
     [
       /const gallery = useMemo\(\(\) => \(dish \? buildDishGallery\(dish\) : \[\]\), \[dish\]\)/,
-      /<ImageCarousel images=\{gallery\} width=\{screenWidth\} height=\{screenWidth \* 0\.75\}>/,
+      /const heroImage = gallery\[0\] \?\? dish\?\.imageUrl/,
+      /source=\{\{ uri: heroImage \}\}/,
       /dish\.tasteVector\[dimension\.key\]/,
-      /visibleReviews\.map/,
-      /getHungryService\(\)\s*\.reviews\.getReviewsForDish\(dish\.id\)/,
+      /visibleReviews\.slice\(0, 3\)\.map/,
+      /serviceProviderMode === "mock" \? dish\.reviews : \[\]/,
+      /discovery\.getDish\(dishId\)/,
       /ReviewShareSheet/,
       /toggleFavourite\(dish\)/,
     ],
-    "DishDetailScreen",
+    "DishDetailScreenV2",
   );
   assertSourceIncludes(
     stallDetail,

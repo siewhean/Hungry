@@ -11,7 +11,7 @@
  */
 
 import { useState, useMemo } from "react";
-import { Pressable, ScrollView, Switch, View } from "react-native";
+import { Pressable, ScrollView, Switch, View, type StyleProp, type ViewStyle } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ChevronDown, ChevronRight, Wifi, WifiOff, Zap } from "lucide-react-native";
 
@@ -214,7 +214,7 @@ function DevButton({
   onPress: () => void;
   onPressIn?: () => void;
   variant?: "secondary" | "primary" | "ghost" | "destructive";
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }) {
   return (
     <Button

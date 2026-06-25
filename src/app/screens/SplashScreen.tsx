@@ -17,7 +17,7 @@ import Constants from "expo-constants";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
 import { useSessionStore } from "@/store/useSessionStore";
-import { useHungryTheme } from "@/theme";
+import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AppText } from "@/components/ui";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
@@ -181,12 +181,7 @@ const createStyles = ({
   typography,
   spacing,
   radii,
-}: {
-  palette: any;
-  typography: any;
-  spacing: any;
-  radii: any;
-}) =>
+}: Pick<HungryTheme, "palette" | "typography" | "spacing" | "radii">) =>
   StyleSheet.create({
     root: {
       flex: 1,

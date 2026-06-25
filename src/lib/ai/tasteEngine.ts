@@ -10,6 +10,7 @@
  */
 
 import type { TasteVector, DietaryFlag, DishSummary, HawkerTasteTag } from "@/types/domain";
+import { tasteAxisColors } from "@/theme/tokens";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // EXTENDED RECOMMENDATION PIPELINE
@@ -231,14 +232,7 @@ export const TASTE_LABELS: Record<keyof TasteVector, string> = {
   aromatic: "Aromatic",
 };
 
-export const TASTE_COLORS: Record<keyof TasteVector, string> = {
-  sweet: "#F59E0B",
-  spicy: "#EF4444",
-  sour: "#84CC16",
-  salty: "#60A5FA",
-  rich: "#A855F7",
-  aromatic: "#10B981",
-};
+export const TASTE_COLORS: Record<keyof TasteVector, string> = tasteAxisColors;
 
 // ─── Pipeline Types ───────────────────────────────────────────────────────────
 

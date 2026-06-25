@@ -1718,7 +1718,7 @@ export const hungryService: HungryService = {
       }
 
       // Persist (convert Sets to Arrays for JSON)
-      const serializable: any = {};
+      const serializable: Record<string, { cravings: string[]; saves: string[] }> = {};
       Object.keys(_biteReactions).forEach((id) => {
         serializable[id] = {
           cravings: Array.from(_biteReactions[id].cravings),

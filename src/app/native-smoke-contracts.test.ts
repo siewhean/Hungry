@@ -8,7 +8,7 @@ function read(pathFromRepoRoot: string): string {
 }
 
 test("native Maestro smoke scripts are skip-safe and target the Hungry app id", () => {
-  const appJson = read("app.json");
+  const appJson = read("app.config.base.json");
   const packageJson = read("package.json");
   const metroConfig = read("metro.config.js");
   const runner = read("scripts/run-maestro-smoke.mjs");
@@ -55,6 +55,7 @@ test("native Maestro smoke scripts are skip-safe and target the Hungry app id", 
   assert.match(runner, /HUNGRY_NATIVE_SMOKE_METRO_STATUS_URL/);
   assert.match(runner, /maestro", \["--version"\]/);
   assert.match(runner, /skipped; Maestro CLI is not installed or not on PATH/);
+  assert.match(runner, /app\.config\.base\.json/);
   assert.match(runner, /appJson\.expo\?\.ios\?\.bundleIdentifier/);
   assert.match(runner, /APP_ID=\$\{appId\}/);
   assert.match(runner, /replaceAll\("\$\{METRO_URL\}", metroUrl\)/);

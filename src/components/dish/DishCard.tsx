@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Heart } from "lucide-react-native";
 
 import type { DishDetail } from "@/types/domain";
-import { useHungryTheme } from "@/theme";
+import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AccessibleImage, AppText, Badge, Card } from "../ui";
 
 interface DishCardProps {
@@ -105,7 +105,7 @@ export function DishCard({
   );
 }
 
-const createStyles = (spacing: any) =>
+const createStyles = (spacing: HungryTheme["spacing"]) =>
   StyleSheet.create({
     content: {
       alignItems: "flex-start",

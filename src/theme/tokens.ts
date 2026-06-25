@@ -153,6 +153,15 @@ export const colors = {
   },
 } as const;
 
+export const tasteAxisColors = {
+  sweet: "#F59E0B",
+  spicy: "#EF4444",
+  sour: "#84CC16",
+  salty: "#60A5FA",
+  rich: "#A855F7",
+  aromatic: "#10B981",
+} as const;
+
 export const contrastRatios = {
   light: {
     textOnBg: 13.83,

@@ -139,237 +139,243 @@ export function ReviewScreen({ navigation, route }: Props) {
   if (!isAuthenticated) return null;
 
   return (
-    <Screen title="Create Post" subtitle="Share your latest meal with the community." scroll>
-      <FeedErrorBoundary
-        title="Review editor failed"
-        body="We hit a snag loading the editor. Please try again."
-      >
-        <View style={{ gap: spacing[6], paddingBottom: spacing[20] }}>
-          {/* 1. Media Picker & Reels */}
-          <MediaPicker
-            photos={draft.photos}
-            videoUri={draft.videoUri}
-            filterId={draft.filterId}
-            onAddPhoto={actions.addPhoto}
-            onRemovePhoto={actions.removePhoto}
-            onSetVideo={actions.setVideoUri}
-            onSetFilter={actions.setFilterId}
-          />
+    <FeedErrorBoundary
+      title="Review editor failed"
+      body="We hit a snag loading the review editor. Please try again."
+      screenName="ReviewScreen"
+    >
+      <Screen title="Create Post" subtitle="Share your latest meal with the community." scroll>
+        <FeedErrorBoundary
+          title="Review editor failed"
+          body="We hit a snag loading the editor. Please try again."
+        >
+          <View style={{ gap: spacing[6], paddingBottom: spacing[20] }}>
+            {/* 1. Media Picker & Reels */}
+            <MediaPicker
+              photos={draft.photos}
+              videoUri={draft.videoUri}
+              filterId={draft.filterId}
+              onAddPhoto={actions.addPhoto}
+              onRemovePhoto={actions.removePhoto}
+              onSetVideo={actions.setVideoUri}
+              onSetFilter={actions.setFilterId}
+            />
 
-          {/* 2. Music Picker (Navigation Button) */}
-          <View style={{ gap: spacing[3] }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-              <Music size={18} color={palette.orange} />
-              <AppText variant="h3">Music</AppText>
-            </View>
+            {/* 2. Music Picker (Navigation Button) */}
+            <View style={{ gap: spacing[3] }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                <Music size={18} color={palette.orange} />
+                <AppText variant="h3">Music</AppText>
+              </View>
 
-            {draft.musicId ? (
-              <Card
-                style={{
-                  padding: spacing[3],
-                  backgroundColor: palette.orangeLight,
-                  borderColor: palette.orange,
-                }}
-              >
-                <View
+              {draft.musicId ? (
+                <Card
                   style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
+                    padding: spacing[3],
+                    backgroundColor: palette.orangeLight,
+                    borderColor: palette.orange,
                   }}
                 >
-                  <View style={{ flex: 1 }}>
-                    <AppText variant="bodyBold">
-                      {TRENDING_MUSIC.find((m) => m.id === draft.musicId)?.title ??
-                        "Selected Track"}
-                    </AppText>
-                    <AppText variant="micro" tone="secondary">
-                      {TRENDING_MUSIC.find((m) => m.id === draft.musicId)?.artist ?? "Artist"}
-                    </AppText>
-                  </View>
-                  <Button
-                    label="Change"
-                    variant="ghost"
-                    size="sm"
-                    onPress={() => navigation.navigate("MusicSelection" as any)}
-                  />
-                </View>
-              </Card>
-            ) : (
-              <Button
-                label="Add Music"
-                variant="secondary"
-                onPress={() => navigation.navigate("MusicSelection" as any)}
-                leftIcon={<Music size={18} color={palette.text} />}
-              />
-            )}
-          </View>
-
-          {/* 3. Location & Food Selection */}
-          <View style={{ gap: spacing[3] }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-              <MapPin size={18} color={palette.orange} />
-              <AppText variant="h3">Where did you eat?</AppText>
-            </View>
-
-            {selectedDish ? (
-              <Card
-                style={{
-                  padding: spacing[3],
-                  backgroundColor: palette.bgSoft,
-                  borderColor: palette.orange,
-                }}
-              >
-                <View style={{ flexDirection: "row", gap: spacing[3], alignItems: "center" }}>
-                  <AccessibleImage
-                    source={{ uri: selectedDish.imageUrl }}
-                    style={{ width: 60, height: 60, borderRadius: radii.md }}
-                    accessibilityLabel={`${selectedDish.name} photo`}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <AppText style={{ fontWeight: "700" }}>{selectedDish.name}</AppText>
-                    <AppText variant="bodySmall" tone="secondary">
-                      {selectedVenue?.name}
-                    </AppText>
-                  </View>
-                  <Button label="Change" variant="ghost" onPress={() => setIsSearching(true)} />
-                </View>
-              </Card>
-            ) : (
-              <Button
-                label="Select Stall & Dish"
-                variant="secondary"
-                onPress={() => setIsSearching(true)}
-                leftIcon={<Search size={18} color={palette.text} />}
-              />
-            )}
-          </View>
-
-          {/* 4. Caption / Review Text */}
-          <View style={{ gap: spacing[3] }}>
-            <AppText variant="h3">Caption</AppText>
-            <Input
-              placeholder="What made this dish special?"
-              multiline
-              numberOfLines={4}
-              maxLength={REVIEW_TEXT_MAX_LENGTH}
-              value={draft.text}
-              onChangeText={actions.setText}
-              style={{ minHeight: 100 }}
-            />
-          </View>
-
-          {/* 5. Rating & Tags */}
-          <View style={{ gap: spacing[4] }}>
-            <View style={{ gap: spacing[2] }}>
-              <AppText variant="h3">Overall Rating</AppText>
-              <StarRating value={draft.rating} onChange={actions.setRating} />
-            </View>
-
-            {!isUserMode && (
-              <View style={{ gap: spacing[3] }}>
-                <AppText variant="h3">Taste Tags</AppText>
-                <ChipGroup
-                  options={REVIEW_TAGS.map((tag) => ({ id: tag, label: tag }))}
-                  selectedIds={draft.selectedTags}
-                  onSelect={actions.toggleTag}
-                />
-              </View>
-            )}
-
-            <View style={{ gap: spacing[3] }}>
-              <AppText variant="h3">Recommendation</AppText>
-              <View style={{ flexDirection: "row", gap: spacing[3] }}>
-                <Button
-                  label="Recommend"
-                  variant={draft.recommend ? "primary" : "secondary"}
-                  onPress={() => actions.setRecommend(true)}
-                  style={{ flex: 1 }}
-                />
-                <Button
-                  label="Skip"
-                  variant={!draft.recommend ? "primary" : "secondary"}
-                  onPress={() => actions.setRecommend(false)}
-                  style={{ flex: 1 }}
-                />
-              </View>
-            </View>
-          </View>
-
-          <Button
-            label="Publish Review"
-            onPress={handleSubmit}
-            loading={actions.isSubmitting}
-            disabled={!selectedDish || !draft.rating}
-          />
-        </View>
-      </FeedErrorBoundary>
-
-      {/* Search Modal Overlay */}
-      {isSearching && (
-        <View style={StyleSheet.absoluteFill}>
-          <View
-            style={{ flex: 1, backgroundColor: palette.bg, padding: spacing[4], paddingTop: 60 }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: spacing[3],
-                marginBottom: spacing[4],
-              }}
-            >
-              <Input
-                placeholder="Search stalls..."
-                value={query}
-                onChangeText={setQuery}
-                style={{ flex: 1 }}
-                autoFocus
-              />
-              <Button label="Close" variant="ghost" onPress={() => setIsSearching(false)} />
-            </View>
-
-            <FlatList
-              data={venues}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => {
-                const dishes = repository.listDishesByVenue(item.id);
-                return (
-                  <Pressable
-                    onPress={() => {
-                      if (dishes[0]) {
-                        actions.selectDish(item.id, dishes[0].id);
-                        setIsSearching(false);
-                      }
-                    }}
+                  <View
                     style={{
-                      paddingVertical: spacing[3],
-                      borderBottomWidth: 1,
-                      borderBottomColor: palette.border,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
                     }}
                   >
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                      }}
-                    >
-                      <View>
-                        <AppText style={{ fontWeight: "600" }}>{item.name}</AppText>
-                        <AppText variant="bodySmall" tone="secondary">
-                          {item.unitNumber}
-                        </AppText>
-                      </View>
-                      <ChevronRight size={18} color={palette.textMuted} />
+                    <View style={{ flex: 1 }}>
+                      <AppText variant="bodyBold">
+                        {TRENDING_MUSIC.find((m) => m.id === draft.musicId)?.title ??
+                          "Selected Track"}
+                      </AppText>
+                      <AppText variant="micro" tone="secondary">
+                        {TRENDING_MUSIC.find((m) => m.id === draft.musicId)?.artist ?? "Artist"}
+                      </AppText>
                     </View>
-                  </Pressable>
-                );
-              }}
+                    <Button
+                      label="Change"
+                      variant="ghost"
+                      size="sm"
+                      onPress={() => navigation.navigate("MusicSelection" as any)}
+                    />
+                  </View>
+                </Card>
+              ) : (
+                <Button
+                  label="Add Music"
+                  variant="secondary"
+                  onPress={() => navigation.navigate("MusicSelection" as any)}
+                  leftIcon={<Music size={18} color={palette.text} />}
+                />
+              )}
+            </View>
+
+            {/* 3. Location & Food Selection */}
+            <View style={{ gap: spacing[3] }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+                <MapPin size={18} color={palette.orange} />
+                <AppText variant="h3">Where did you eat?</AppText>
+              </View>
+
+              {selectedDish ? (
+                <Card
+                  style={{
+                    padding: spacing[3],
+                    backgroundColor: palette.bgSoft,
+                    borderColor: palette.orange,
+                  }}
+                >
+                  <View style={{ flexDirection: "row", gap: spacing[3], alignItems: "center" }}>
+                    <AccessibleImage
+                      source={{ uri: selectedDish.imageUrl }}
+                      style={{ width: 60, height: 60, borderRadius: radii.md }}
+                      accessibilityLabel={`${selectedDish.name} photo`}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <AppText style={{ fontWeight: "700" }}>{selectedDish.name}</AppText>
+                      <AppText variant="bodySmall" tone="secondary">
+                        {selectedVenue?.name}
+                      </AppText>
+                    </View>
+                    <Button label="Change" variant="ghost" onPress={() => setIsSearching(true)} />
+                  </View>
+                </Card>
+              ) : (
+                <Button
+                  label="Select Stall & Dish"
+                  variant="secondary"
+                  onPress={() => setIsSearching(true)}
+                  leftIcon={<Search size={18} color={palette.text} />}
+                />
+              )}
+            </View>
+
+            {/* 4. Caption / Review Text */}
+            <View style={{ gap: spacing[3] }}>
+              <AppText variant="h3">Caption</AppText>
+              <Input
+                placeholder="What made this dish special?"
+                multiline
+                numberOfLines={4}
+                maxLength={REVIEW_TEXT_MAX_LENGTH}
+                value={draft.text}
+                onChangeText={actions.setText}
+                style={{ minHeight: 100 }}
+              />
+            </View>
+
+            {/* 5. Rating & Tags */}
+            <View style={{ gap: spacing[4] }}>
+              <View style={{ gap: spacing[2] }}>
+                <AppText variant="h3">Overall Rating</AppText>
+                <StarRating value={draft.rating} onChange={actions.setRating} />
+              </View>
+
+              {!isUserMode && (
+                <View style={{ gap: spacing[3] }}>
+                  <AppText variant="h3">Taste Tags</AppText>
+                  <ChipGroup
+                    options={REVIEW_TAGS.map((tag) => ({ id: tag, label: tag }))}
+                    selectedIds={draft.selectedTags}
+                    onSelect={actions.toggleTag}
+                  />
+                </View>
+              )}
+
+              <View style={{ gap: spacing[3] }}>
+                <AppText variant="h3">Recommendation</AppText>
+                <View style={{ flexDirection: "row", gap: spacing[3] }}>
+                  <Button
+                    label="Recommend"
+                    variant={draft.recommend ? "primary" : "secondary"}
+                    onPress={() => actions.setRecommend(true)}
+                    style={{ flex: 1 }}
+                  />
+                  <Button
+                    label="Skip"
+                    variant={!draft.recommend ? "primary" : "secondary"}
+                    onPress={() => actions.setRecommend(false)}
+                    style={{ flex: 1 }}
+                  />
+                </View>
+              </View>
+            </View>
+
+            <Button
+              label="Publish Review"
+              onPress={handleSubmit}
+              loading={actions.isSubmitting}
+              disabled={!selectedDish || !draft.rating}
             />
           </View>
-        </View>
-      )}
-    </Screen>
+        </FeedErrorBoundary>
+
+        {/* Search Modal Overlay */}
+        {isSearching && (
+          <View style={StyleSheet.absoluteFill}>
+            <View
+              style={{ flex: 1, backgroundColor: palette.bg, padding: spacing[4], paddingTop: 60 }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: spacing[3],
+                  marginBottom: spacing[4],
+                }}
+              >
+                <Input
+                  placeholder="Search stalls..."
+                  value={query}
+                  onChangeText={setQuery}
+                  style={{ flex: 1 }}
+                  autoFocus
+                />
+                <Button label="Close" variant="ghost" onPress={() => setIsSearching(false)} />
+              </View>
+
+              <FlatList
+                data={venues}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => {
+                  const dishes = repository.listDishesByVenue(item.id);
+                  return (
+                    <Pressable
+                      onPress={() => {
+                        if (dishes[0]) {
+                          actions.selectDish(item.id, dishes[0].id);
+                          setIsSearching(false);
+                        }
+                      }}
+                      style={{
+                        paddingVertical: spacing[3],
+                        borderBottomWidth: 1,
+                        borderBottomColor: palette.border,
+                      }}
+                    >
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                        }}
+                      >
+                        <View>
+                          <AppText style={{ fontWeight: "600" }}>{item.name}</AppText>
+                          <AppText variant="bodySmall" tone="secondary">
+                            {item.unitNumber}
+                          </AppText>
+                        </View>
+                        <ChevronRight size={18} color={palette.textMuted} />
+                      </View>
+                    </Pressable>
+                  );
+                }}
+              />
+            </View>
+          </View>
+        )}
+      </Screen>
+    </FeedErrorBoundary>
   );
 }
