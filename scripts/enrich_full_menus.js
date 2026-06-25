@@ -6,15 +6,14 @@ const https = require('https');
 const INPUT_PATH = path.join(__dirname, '..', 'data', 'stalls_to_enrich.json');
 const OUTPUT_PATH = path.join(__dirname, '..', 'data', 'menu_enrichment_results.json');
 
-const CONCURRENCY = 15; // Concurrent workers
+const CONCURRENCY = 3; // Concurrent workers
 const SAVE_INTERVAL = 10; // Save to disk every 10 stalls
 
 // Load environment variables
-const ANTHROPIC_AUTH_TOKEN = process.env.ANTHROPIC_AUTH_TOKEN;
-const ANTHROPIC_BASE_URL = process.env.ANTHROPIC_BASE_URL || 'https://api.lingshi.chat';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-async function searchYahoo(page, query) {
-    const searchUrl = `https://search.yahoo.com/search?p=${encodeURIComponent(query)}`;
+async function searchDuckDuckGo(page, query) {
+    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
     try {
         await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
 
@@ -23,8 +22,17 @@ async function searchYahoo(page, query) {
             const anchors = Array.from(document.querySelectorAll('a'));
             for (const a of anchors) {
                 const href = a.href || '';
+                // DuckDuckGo redirects links via their own tracker, e.g. //duckduckgo.com/l/?uddg=https://food.grab.com...
                 if (href.includes('food.grab.com/sg/en/restaurant/')) {
-                    return href;
+                    // Extract the actual URL if it's wrapped in uddg=
+                    try {
+                        const urlObj = new URL(href, window.location.origin);
+                        const uddg = urlObj.searchParams.get('uddg');
+                        if (uddg) return decodeURIComponent(uddg);
+                        return href;
+                    } catch (e) {
+                        return href;
+                    }
                 }
             }
             return null;
@@ -88,7 +96,10 @@ async function scrapeGrabMenu(page, url, coords) {
                         name = name.slice(0, -desc.length).trim();
                     }
 
-                    const imageUrl = imgEl ? (imgEl.src || imgEl.getAttribute('src') || '') : '';
+                    let imageUrl = imgEl ? (imgEl.src || imgEl.getAttribute('src') || '') : '';
+                    if (imageUrl && (imageUrl.includes('placeholder') || imageUrl.includes('unsplash') || imageUrl.includes('default') || imageUrl.includes('blank') || imageUrl.endsWith('.svg'))) {
+                        imageUrl = '';
+                    }
 
                     results.push({
                         name,
@@ -108,35 +119,31 @@ async function scrapeGrabMenu(page, url, coords) {
     }
 }
 
-function callClaudeAPI(stallName, cuisine, building) {
+function callGeminiAPI(stallName, cuisine, building) {
     return new Promise((resolve, reject) => {
-        if (!ANTHROPIC_AUTH_TOKEN) {
-            return reject(new Error("ANTHROPIC_AUTH_TOKEN not set"));
+        if (!GEMINI_API_KEY) {
+            return reject(new Error("GEMINI_API_KEY not set"));
         }
 
         const payload = {
-            model: "claude-sonnet-4-5",
-            messages: [{
-                role: "user",
-                content: `You are a Singaporean food guide. Generate an extensive, realistic menu of 10-15 dishes for a stall named "${stallName}" serving "${cuisine || 'Local'}" cuisine at "${building || 'Singapore Food Centre'}".
-For each dish, provide:
-1. "name": The clean dish name (e.g. "Hainanese Chicken Rice").
-2. "price": A realistic price in SGD (e.g. 5.50).
-3. "description": A short appetizing description.
-4. "imageUrl": A specific, high-quality, real Unsplash food image URL (e.g., "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=60") matching this type of food. Avoid generic placeholder images. Ensure each dish has a unique and relevant Unsplash photo ID.
-
-Output the response as a JSON array of objects with keys: name, price, description, imageUrl. Do not include markdown code block formatting or any other text, just the raw JSON array.`
+            contents: [{
+                parts: [{
+                    text: `You are a Singaporean food guide. Generate an extensive, realistic menu of 10-15 dishes for a stall named "${stallName}" serving "${cuisine || 'Local'}" cuisine at "${building || 'Singapore Food Centre'}".\nFor each dish, provide:\n1. "name": The clean dish name (e.g. "Hainanese Chicken Rice").\n2. "price": A realistic price in SGD (e.g. 5.50).\n3. "description": A short appetizing description.\n4. "imageUrl": A specific, high-quality, real Unsplash food image URL (e.g., "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=60") matching this type of food. Avoid generic placeholder images. Ensure each dish has a unique and relevant Unsplash photo ID.\n\nOutput the response as a JSON array of objects with keys: name, price, description, imageUrl. Do not include markdown code block formatting or any other text, just the raw JSON array.`
+                }]
             }],
-            max_tokens: 1500
+            generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 1500,
+                responseMimeType: "application/json"
+            }
         };
 
         const postData = JSON.stringify(payload);
         const options = {
-            hostname: ANTHROPIC_BASE_URL.replace('https://', ''),
-            path: '/v1/chat/completions',
+            hostname: 'generativelanguage.googleapis.com',
+            path: `/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${ANTHROPIC_AUTH_TOKEN}`,
                 'Content-Type': 'application/json',
                 'Content-Length': Buffer.byteLength(postData)
             },
@@ -148,11 +155,14 @@ Output the response as a JSON array of objects with keys: name, price, descripti
             res.on('data', (chunk) => body += chunk);
             res.on('end', () => {
                 if (res.statusCode !== 200) {
-                    return reject(new Error(`Claude API HTTP ${res.statusCode}: ${body}`));
+                    return reject(new Error(`Gemini API HTTP ${res.statusCode}: ${body}`));
                 }
                 try {
                     const parsed = JSON.parse(body);
-                    const textContent = parsed.choices[0].message.content.trim();
+                    if (!parsed.candidates || parsed.candidates.length === 0) {
+                         return reject(new Error(`Gemini returned no candidates: ${body}`));
+                    }
+                    const textContent = parsed.candidates[0].content.parts[0].text.trim();
 
                     // Clean up markdown block if model output it
                     let cleanJson = textContent;
@@ -163,7 +173,7 @@ Output the response as a JSON array of objects with keys: name, price, descripti
                     const dishes = JSON.parse(cleanJson);
                     resolve(dishes);
                 } catch (e) {
-                    reject(new Error(`Failed to parse Claude response: ${e.message}\nResponse body: ${body}`));
+                    reject(new Error(`Failed to parse Gemini response: ${e.message}\nResponse body: ${body}`));
                 }
             });
         });
@@ -171,7 +181,7 @@ Output the response as a JSON array of objects with keys: name, price, descripti
         req.on('error', (e) => reject(e));
         req.on('timeout', () => {
             req.destroy();
-            reject(new Error("Claude API request timeout"));
+            reject(new Error("Gemini API request timeout"));
         });
         req.write(postData);
         req.end();
@@ -251,9 +261,9 @@ async function main() {
                 dishes: []
             };
 
-            // Step 1: Search Yahoo for GrabFood
+            // Step 1: Search DuckDuckGo for GrabFood
             const searchQuery = `GrabFood Singapore ${stall.stall_name} ${stall.building || stall.address}`;
-            const grabUrl = await searchYahoo(page, searchQuery);
+            const grabUrl = await searchDuckDuckGo(page, searchQuery);
 
             if (grabUrl) {
                 console.log(`   -> Found GrabFood URL: ${grabUrl}`);
@@ -267,26 +277,11 @@ async function main() {
                 }
             }
 
-            // Step 3: Fallback to Claude AI menu generation if GrabFood scraping failed or was not found
-            if (result.dishes.length === 0) {
-                console.log(`   -> Fallback: Generating menu with Claude AI for ${stall.stall_name}...`);
-                try {
-                    const generated = await callClaudeAPI(stall.stall_name, stall.existing_menu || stall.stall_name, stall.building || stall.address);
-                    if (generated && generated.length > 0) {
-                        console.log(`   -> Successfully generated ${generated.length} dishes via Claude.`);
-                        result.source = "claude-fallback";
-                        result.dishes = generated;
-                    }
-                } catch (e) {
-                    console.error(`   -> Claude generation failed: ${e.message}`);
-                }
-            }
-
-            // If we have dishes, save them
+            // Step 3: Check if we have dishes
             if (result.dishes.length > 0) {
                 resultsMap.set(stall.uri, result);
             } else {
-                console.error(`   -> Failed to enrich stall ${stall.stall_name}. No dishes generated.`);
+                console.error(`   -> Failed to enrich stall ${stall.stall_name}. GrabFood scraper returned no dishes.`);
             }
 
             completedCount++;

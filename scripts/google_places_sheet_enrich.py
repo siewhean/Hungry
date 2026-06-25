@@ -606,9 +606,14 @@ def run_passes(payload: dict[str, Any]) -> dict[str, Any]:
         distance_m = best_debug.get("distanceM")
 
         accept_by_proximity = False
-        if postal_norm and postal_hit and distance_m is not None:
+        if distance_m is not None:
             try:
-                if float(distance_m) <= 250.0 and addr_sim >= 0.35 and name_sim >= 0.55:
+                d = float(distance_m)
+                # If we have a postal match, distance can be up to 250m.
+                if postal_norm and postal_hit and d <= 250.0 and addr_sim >= 0.35 and name_sim >= 0.55:
+                    accept_by_proximity = True
+                # If we have no postal code, distance must be within 150m and name must be somewhat similar.
+                elif d <= 150.0 and name_sim >= 0.55:
                     accept_by_proximity = True
             except Exception:
                 accept_by_proximity = False

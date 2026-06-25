@@ -29,8 +29,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -66,8 +65,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/85-redhill-teochewfishballnoodles",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -107,8 +105,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/business-lunch"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -123,7 +120,7 @@
     "unit_number": "#01-50",
     "floor_level": "01",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "Making quality coffee approachable and accessible to all.",
     "halal": false,
     "opening_hours": null,
@@ -139,8 +136,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/alchemist",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -171,8 +167,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/arteastiq-depatio",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -210,8 +205,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -244,8 +238,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/spicymala"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -280,8 +273,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -312,8 +304,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/bengawan-solo",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -345,8 +336,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -377,8 +367,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/boost-juice-bars",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -414,8 +403,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/breadtalk",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -456,8 +444,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -488,8 +475,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/cafe-meal-muji-1879113828",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -524,8 +510,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/cajun-on-wheels",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -567,8 +552,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/business-lunch"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -600,8 +584,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/supermarketandspecialtymart",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -633,8 +616,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/chagee",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -672,8 +654,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -688,7 +669,7 @@
     "unit_number": "#B2-56",
     "floor_level": "B2",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store",
     "description": "",
     "halal": false,
     "opening_hours": null,
@@ -704,7 +685,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
       ],
-      "storeStatus": "New Store"
+      "storeStatus": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store"
     }
   },
   {
@@ -739,8 +720,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -775,8 +755,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/vietnamesecuisine"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -792,7 +771,7 @@
     "unit_number": "#B1-08",
     "floor_level": "B1",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "DaXi",
     "halal": false,
     "opening_hours": null,
@@ -809,8 +788,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -856,8 +834,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/business-lunch"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -893,8 +870,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -909,7 +885,7 @@
     "unit_number": "#B2-38",
     "floor_level": "B2",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "Hailing all the way from South Korea, Eat Pizza cooks up piping hot pizza a la minute, made to your order in as short as 5 minutes. Its pizzas are fast, convenient and tasty, created to be grab-and-go in a long rectangular shape of a fulfilling 25cm. The special shape makes it convenient to eat with one hand when alone and great for sharing to try a multitude of flavours when with a group of friends. Flavours come in over 10 enticing variations, including Sweet Potato Pizza, Crispy Potato Bacon Pizza and house signature Hot Spicy Chicken Pizza. Every outlet boasts its own exclusive flavors, with PLQ offering the unique taste of Kimchi Bulgogi and 313 featuring the delectable Triple Cheese. Every pizza is made with high protein dough and extra virgin olive oil, topped with 100% natural cheese and only the freshest, primest ingredients. ",
     "halal": false,
     "opening_hours": null,
@@ -925,8 +901,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/eat-pizza",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -941,7 +916,7 @@
     "unit_number": "#06-K5",
     "floor_level": "06",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "",
     "halal": false,
     "opening_hours": null,
@@ -956,8 +931,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/eighteen-plum",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -988,8 +962,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/emicakes",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1022,8 +995,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1062,8 +1034,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/chocolatescandiesanddelicatessen",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1094,8 +1065,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/five-guys",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1130,8 +1100,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1168,8 +1137,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/go-ang-pratunam-chickenrice",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1205,8 +1173,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/business-lunch",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1245,8 +1212,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1279,8 +1245,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/spicymala"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1313,8 +1278,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1332,7 +1296,7 @@
     "unit_number": "#B2-01",
     "floor_level": "B2",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "KE MING 克茗冰室",
     "halal": false,
     "opening_hours": null,
@@ -1351,8 +1315,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -1395,8 +1358,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1429,8 +1391,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1463,8 +1424,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1502,8 +1462,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1543,8 +1502,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodcourt",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1575,8 +1533,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/le-shrimp-ramen",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1593,7 +1550,7 @@
     "unit_number": "#B2-08",
     "floor_level": "B2",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "Founded in 2009 in Spain, llaollao is natural Frozen Yogurt. One of the healthiest and most recommended foods worldwide, thanks to its healthy properties and high nutritional value. At llaollao, the brand is widely accepted for its extraordinary taste with the customers being the inventors of their own creation thanks to our infinite combination of toppings.",
     "halal": false,
     "opening_hours": null,
@@ -1611,8 +1568,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -1629,7 +1585,7 @@
     "unit_number": "#B2-64",
     "floor_level": "B2",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "luckin coffee",
     "halal": false,
     "opening_hours": null,
@@ -1648,8 +1604,39 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/luckin-coffee",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
+      ]
+    }
+  },
+  {
+    "operator": "capitaland",
+    "mall": "plazasingapura",
+    "name": "M'Burger Inn",
+    "is_fnb": true,
+    "category": [
+      "foodandbeverage"
+    ],
+    "food_types": [],
+    "unit_number": "#B2-47",
+    "floor_level": "B2",
+    "location_note": "",
+    "store_status": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store",
+    "description": "M'Burger Inn",
+    "halal": false,
+    "opening_hours": null,
+    "page_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/m-burger-inn",
+    "entity_name": "m_burger_inn",
+    "raw": {
+      "shortdescription": "M'Burger Inn",
+      "unitnumber": [
+        "capitalanddatabasemanagement:sg/tenant-unit-numbers/plazasingapura/unit-b2-47"
       ],
-      "storeStatus": "New Store"
+      "entityname": "m_burger_inn",
+      "jcr:title": "M'Burger Inn",
+      "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/m-burger-inn",
+      "marketingcategory": [
+        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
+      ],
+      "storeStatus": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store"
     }
   },
   {
@@ -1667,7 +1654,7 @@
     "unit_number": "#03-79",
     "floor_level": "03",
     "location_note": "",
-    "store_status": "",
+    "store_status": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/temporarily-closed",
     "description": "Mamma Mia! Trattoria E Caffe ",
     "halal": false,
     "opening_hours": null,
@@ -1688,7 +1675,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
       ],
-      "storeStatus": ""
+      "storeStatus": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/temporarily-closed"
     }
   },
   {
@@ -1721,8 +1708,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1769,8 +1755,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1800,8 +1785,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/menya-kokoro",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1845,8 +1829,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1863,7 +1846,7 @@
     "unit_number": "#B2-41",
     "floor_level": "B2",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "munchi PANCAKES",
     "halal": false,
     "opening_hours": null,
@@ -1881,8 +1864,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -1917,8 +1899,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/chocolatescandiesanddelicatessen"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1949,8 +1930,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/nam-kee",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -1967,7 +1947,7 @@
     "unit_number": "#03-80",
     "floor_level": "03",
     "location_note": "",
-    "store_status": "",
+    "store_status": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/temporarily-closed",
     "description": "Nana's Green Tea offers casual dining & exemplifies the health benefits & the exquisite aroma of Uji tea by infusing it into our selection of both sweet & savory dishes through unconventional culinary methods that still preserve the best of Japan's culinary traditions.",
     "halal": false,
     "opening_hours": null,
@@ -1987,7 +1967,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
       ],
-      "storeStatus": null
+      "storeStatus": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/temporarily-closed"
     }
   },
   {
@@ -2030,8 +2010,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2062,8 +2041,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/nanjing-impressions",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2099,8 +2077,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/nine-fresh",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2135,8 +2112,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2177,8 +2153,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2193,7 +2168,7 @@
     "unit_number": "#01-55",
     "floor_level": "01",
     "location_note": "",
-    "store_status": "Temporarily Closed",
+    "store_status": "",
     "description": "",
     "halal": false,
     "opening_hours": null,
@@ -2208,8 +2183,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/paper-rice-vietnamesekitchen",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/vietnamesecuisine"
-      ],
-      "storeStatus": "Temporarily Closed"
+      ]
     }
   },
   {
@@ -2226,7 +2200,7 @@
     "unit_number": "#03-21",
     "floor_level": "03",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "PaperBakes",
     "halal": false,
     "opening_hours": null,
@@ -2245,8 +2219,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/paperbakes",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -2277,8 +2250,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/pawa-bakery",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2308,8 +2280,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/pm-by-pizza-maruchegobyseoulyummy",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2346,8 +2317,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/secret-recipe",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2382,42 +2352,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration"
-      ],
-      "storeStatus": null
-    }
-  },
-  {
-    "operator": "capitaland",
-    "mall": "plazasingapura",
-    "name": "Snackz It! 可口味",
-    "is_fnb": true,
-    "category": [
-      "foodkiosklightbites",
-      "snacks"
-    ],
-    "food_types": [],
-    "unit_number": "#B2-46",
-    "floor_level": "B2",
-    "location_note": "",
-    "store_status": "",
-    "description": "No more travelling to Taiwan just for their Giant Fried Chicken or Oyster Mee Sua because the food kiosk Snackz It brings it right to Singapore for you. Serving your favorite Taiwanese night market signatures & snacks like Tempura & Sweet Potato Fritters.",
-    "halal": false,
-    "opening_hours": null,
-    "page_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/t-snackzitkekouwei-plazasingapura",
-    "entity_name": "t-snackzitkekouwei-plazasingapura",
-    "raw": {
-      "shortdescription": "No more travelling to Taiwan just for their Giant Fried Chicken or Oyster Mee Sua because the food kiosk Snackz It brings it right to Singapore for you. Serving your favorite Taiwanese night market signatures & snacks like Tempura & Sweet Potato Fritters.",
-      "unitnumber": [
-        "capitalanddatabasemanagement:sg/tenant-unit-numbers/plazasingapura/unit-b2-46"
-      ],
-      "entityname": "t-snackzitkekouwei-plazasingapura",
-      "jcr:title": "Snackz It! 可口味",
-      "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/t-snackzitkekouwei-plazasingapura",
-      "marketingcategory": [
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2467,8 +2402,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/chocolatescandiesanddelicatessen",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2485,7 +2419,7 @@
     "unit_number": "#04-65",
     "floor_level": "04",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "Steak 99 bring affordability with innovative lava stone cookware, offering a healthier and flavourful grilling experience.",
     "halal": false,
     "opening_hours": null,
@@ -2504,8 +2438,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/steak-99",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -2542,8 +2475,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/stuff-d",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2574,51 +2506,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/suki-ya",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
-    }
-  },
-  {
-    "operator": "capitaland",
-    "mall": "plazasingapura",
-    "name": "SUKIYA",
-    "is_fnb": true,
-    "category": [
-      "fastfood",
-      "restaurant",
-      "birthday-celebration",
-      "party-friendly-for->10pax"
-    ],
-    "food_types": [
-      "capitalanddatabasemanagement:dropdown-tags/food-types/healthier-food-and-drink-available"
-    ],
-    "unit_number": "#B1-07",
-    "floor_level": "B1",
-    "location_note": "",
-    "store_status": "",
-    "description": "SUKIYA is Japan’s leading Gyudon restaurant chain with over 2,600 outlets worldwide. The 1st SUKIYA restaurant was opened in Yokohama, Japan in 1982. It has become a well-loved brand to many, over the past years. SUKIYA has expanded outside of Japan from 2008. There are over 600 stores in East Asia, South-east Asia & Latin America now. SUKIYA’s mission is to serve authentic Japanese food with reliable quality at affordable prices throughout the world. To achieve this, the brand adheres to the use of safe and high-quality ingredients and provide reasonable-priced meals at convenient locations.",
-    "halal": false,
-    "opening_hours": null,
-    "page_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/sukiya",
-    "entity_name": "sukiya_105465862",
-    "raw": {
-      "shortdescription": "SUKIYA is Japan’s leading Gyudon restaurant chain with over 2,600 outlets worldwide. The 1st SUKIYA restaurant was opened in Yokohama, Japan in 1982. It has become a well-loved brand to many, over the past years. SUKIYA has expanded outside of Japan from 2008. There are over 600 stores in East Asia, South-east Asia & Latin America now. SUKIYA’s mission is to serve authentic Japanese food with reliable quality at affordable prices throughout the world. To achieve this, the brand adheres to the use of safe and high-quality ingredients and provide reasonable-priced meals at convenient locations.",
-      "unitnumber": [
-        "capitalanddatabasemanagement:sg/tenant-unit-numbers/plazasingapura/unit-b1-07"
-      ],
-      "entityname": "sukiya_105465862",
-      "jcr:title": "SUKIYA",
-      "foodTypes": [
-        "capitalanddatabasemanagement:dropdown-tags/food-types/healthier-food-and-drink-available"
-      ],
-      "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/sukiya",
-      "marketingcategory": [
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2669,8 +2557,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/business-lunch"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2701,8 +2588,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/talad-thai-banana",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -2733,8 +2619,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/tamoya-udon",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2771,8 +2656,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/the-coffee-bean-tealeaf",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2812,8 +2696,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2846,8 +2729,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/japanesecuisine"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -2882,8 +2764,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -2903,7 +2784,7 @@
     "unit_number": "#02-K1-TO-K6",
     "floor_level": "02",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "Tim Hortons",
     "halal": false,
     "opening_hours": null,
@@ -2925,8 +2806,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -2957,41 +2837,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/tiong-bahru-bakery",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery"
-      ],
-      "storeStatus": ""
-    }
-  },
-  {
-    "operator": "capitaland",
-    "mall": "plazasingapura",
-    "name": "Tokyo Shokudo",
-    "is_fnb": true,
-    "category": [
-      "restaurant"
-    ],
-    "food_types": [],
-    "unit_number": "#02-35",
-    "floor_level": "02",
-    "location_note": "",
-    "store_status": "",
-    "description": "Tokyo Shokudo",
-    "halal": true,
-    "opening_hours": null,
-    "page_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/tokyo-shokudo",
-    "entity_name": "tokyo_shokudo_2099404075",
-    "raw": {
-      "shortdescription": "Tokyo Shokudo",
-      "unitnumber": [
-        "capitalanddatabasemanagement:sg/tenant-unit-numbers/plazasingapura/unit-02-35"
-      ],
-      "acceptsHalalCertified": "capitalanddatabasemanagement:dropdown-tags/optionsyesno/yes",
-      "entityname": "tokyo_shokudo_2099404075",
-      "jcr:title": "Tokyo Shokudo",
-      "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/tokyo-shokudo",
-      "marketingcategory": [
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -3024,8 +2870,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -3056,8 +2901,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/tsukada-nojo",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -3074,7 +2918,7 @@
     "unit_number": "#B2-44",
     "floor_level": "B2",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "Tsuzumi Dango つづみ団子",
     "halal": false,
     "opening_hours": null,
@@ -3092,8 +2936,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/japanesesnacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -3126,8 +2969,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -3168,8 +3010,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -3207,8 +3048,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/ya-kun-kaya-toast",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -3226,7 +3066,7 @@
     "unit_number": "#B1-01",
     "floor_level": "B1",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store",
     "description": "Yakiniku Shokudo",
     "halal": true,
     "opening_hours": null,
@@ -3248,7 +3088,38 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
       ],
-      "storeStatus": "New Store"
+      "storeStatus": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store"
+    }
+  },
+  {
+    "operator": "capitaland",
+    "mall": "plazasingapura",
+    "name": "YEAH GELATO 野人先生",
+    "is_fnb": true,
+    "category": [
+      "cafeanddessertbar"
+    ],
+    "food_types": [],
+    "unit_number": "#01-K1",
+    "floor_level": "01",
+    "location_note": "",
+    "store_status": "",
+    "description": "YEAH GELATO 野人先生",
+    "halal": false,
+    "opening_hours": null,
+    "page_url": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/yeah-gelato-",
+    "entity_name": "yeah_gelato_",
+    "raw": {
+      "shortdescription": "YEAH GELATO 野人先生",
+      "unitnumber": [
+        "capitalanddatabasemanagement:sg/tenant-unit-numbers/plazasingapura/unit-01-k1"
+      ],
+      "entityname": "yeah_gelato_",
+      "jcr:title": "YEAH GELATO 野人先生",
+      "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/yeah-gelato-",
+      "marketingcategory": [
+        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
+      ]
     }
   },
   {
@@ -3278,8 +3149,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/ygf-malatang",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -3315,8 +3185,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/plazasingapura/en/stores/yole-0-sugar-added",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -3346,8 +3215,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/108-matcha-saro",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -3377,8 +3245,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/a-hot-hideout",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -3416,8 +3283,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/business-lunch",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -3452,8 +3318,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/alley-wei-teppan-yaki",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -3469,7 +3334,7 @@
     "unit_number": "#B1-K5A",
     "floor_level": "B1",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "Auntie Anne's is a food kiosk that serves light bites of soft pretzels made with delicious dough, twisted & baked to a golden brown. From the classic cinnamon sugar flavor to savory delights like Garlic & Parmesan and Pepperoni, satisfy your hunger pangs.",
     "halal": false,
     "opening_hours": null,
@@ -3486,8 +3351,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -3522,8 +3386,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -3538,7 +3401,7 @@
     "unit_number": "#B1-01",
     "floor_level": "B1",
     "location_note": "",
-    "store_status": "Opening Soon",
+    "store_status": "",
     "description": "",
     "halal": false,
     "opening_hours": null,
@@ -3553,8 +3416,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/beryl-s",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": "Opening Soon"
+      ]
     }
   },
   {
@@ -3585,8 +3447,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/beutea",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -3625,8 +3486,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -3657,8 +3517,37 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/boost-juice-bars",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
+      ]
+    }
+  },
+  {
+    "operator": "capitaland",
+    "mall": "bugisjunction",
+    "name": "BU ER CLASSMATE",
+    "is_fnb": true,
+    "category": [
+      "snacks"
+    ],
+    "food_types": [],
+    "unit_number": "#B1-KIO-10-TO-11",
+    "floor_level": "B1",
+    "location_note": "",
+    "store_status": "",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "page_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/bu-er-classmate",
+    "entity_name": "bu_er_classmate",
+    "raw": {
+      "unitnumber": [
+        "capitalanddatabasemanagement:sg/tenant-unit-numbers/bugisjunction/b1-kio-10-to-11"
       ],
-      "storeStatus": null
+      "entityname": "bu_er_classmate",
+      "jcr:title": "BU ER CLASSMATE",
+      "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/bu-er-classmate",
+      "marketingcategory": [
+        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
+      ]
     }
   },
   {
@@ -3688,8 +3577,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/bulgogi-syo",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/korean"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -3730,8 +3618,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -3761,8 +3648,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/cai-ca",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -3797,39 +3683,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
-    }
-  },
-  {
-    "operator": "capitaland",
-    "mall": "bugisjunction",
-    "name": "Chou Niang",
-    "is_fnb": true,
-    "category": [
-      "foodandbeverage"
-    ],
-    "food_types": [],
-    "unit_number": "#B1-KIO-10-TO-11",
-    "floor_level": "B1",
-    "location_note": "",
-    "store_status": "",
-    "description": "",
-    "halal": false,
-    "opening_hours": null,
-    "page_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/chou-niang",
-    "entity_name": "chou_niang",
-    "raw": {
-      "unitnumber": [
-        "capitalanddatabasemanagement:sg/tenant-unit-numbers/bugisjunction/b1-kio-10-to-11"
-      ],
-      "entityname": "chou_niang",
-      "jcr:title": "Chou Niang",
-      "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/chou-niang",
-      "marketingcategory": [
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -3860,8 +3714,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/crystal-jade-la-mianxiaolongbao",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -3876,7 +3729,7 @@
     "unit_number": "#B1-K08",
     "floor_level": "B1",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "",
     "halal": false,
     "opening_hours": null,
@@ -3891,8 +3744,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/dabba-street",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -3929,8 +3781,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/korean",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -3947,7 +3798,7 @@
     "unit_number": "#04-06",
     "floor_level": "04",
     "location_note": "",
-    "store_status": "Temporarily Closed",
+    "store_status": "",
     "description": "Eighteen Chefs is the place to go for affordable Western cuisine with a local twist. As the cherry on top, students, NSFs and senior citizens get to enjoy discounts when dining at this casual Western restaurant!",
     "halal": true,
     "opening_hours": null,
@@ -3967,8 +3818,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/eighteen-chefs",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": "Temporarily Closed"
+      ]
     }
   },
   {
@@ -4008,8 +3858,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4039,8 +3888,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/fore-coffee",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -4080,8 +3928,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4117,8 +3964,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/business-lunch",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4148,8 +3994,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/gochiya",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -4188,8 +4033,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/chocolatescandiesanddelicatessen",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4221,8 +4065,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4235,7 +4078,9 @@
       "foodkiosklightbites",
       "snacks"
     ],
-    "food_types": [],
+    "food_types": [
+      "capitalanddatabasemanagement:dropdown-tags/food-types/halal-certified"
+    ],
     "unit_number": "#B1-K06",
     "floor_level": "B1",
     "location_note": "",
@@ -4252,13 +4097,15 @@
       ],
       "entityname": "hokkaido_baked_chees_1021673707",
       "jcr:title": "Hokkaido Baked Cheese Tart",
+      "foodTypes": [
+        "capitalanddatabasemanagement:dropdown-tags/food-types/halal-certified"
+      ],
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/hokkaido-baked-cheesetart",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4291,8 +4138,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4327,8 +4173,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4358,8 +4203,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/irvins",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4391,8 +4235,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4424,8 +4267,38 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast"
+      ]
+    }
+  },
+  {
+    "operator": "capitaland",
+    "mall": "bugisjunction",
+    "name": "Kai Oh Don海王",
+    "is_fnb": true,
+    "category": [
+      "foodandbeverage"
+    ],
+    "food_types": [],
+    "unit_number": "#03-30B",
+    "floor_level": "03",
+    "location_note": "",
+    "store_status": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "page_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/kaiohdon",
+    "entity_name": "kaiohdon",
+    "raw": {
+      "unitnumber": [
+        "capitalanddatabasemanagement:sg/tenant-unit-numbers/bugisjunction/03-30b"
       ],
-      "storeStatus": null
+      "entityname": "kaiohdon",
+      "jcr:title": "Kai Oh Don海王",
+      "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/kaiohdon",
+      "marketingcategory": [
+        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
+      ],
+      "storeStatus": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store"
     }
   },
   {
@@ -4470,8 +4343,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4491,7 +4363,7 @@
     "unit_number": "#B1-03B",
     "floor_level": "B1",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "",
     "halal": true,
     "opening_hours": null,
@@ -4513,8 +4385,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -4544,8 +4415,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/lavender",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -4576,8 +4446,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/t-lenuchefwaisnoodlebar-bugisjunction",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4610,8 +4479,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/japanesecuisine"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4641,8 +4509,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/malaysia-boleh-",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodcourt"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4672,8 +4539,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/maru-mochi",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -4718,8 +4584,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4755,8 +4620,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/miam-miam",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4772,7 +4636,7 @@
     "unit_number": "#03-30C",
     "floor_level": "03",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "Mincheng Bibimbap 민정비빔밥 敏丁拌饭 is a renowned establishment specializing in Chinese Korean ethnic cuisine, offering a unique blend of flavors that reflect the rich culinary heritage of the Yanbian Korean Autonomous Prefecture in China. Since its inception in 2008, Mincheng has expanded globally with over 400 outlets worldwide.   Our menu boasts a diverse range of dishes, with the iconic Mincheng Bibimbap taking center stage. In addition to this signature dish, we offer Stone Plate series and a selection of savory soups inspired by Chinese Korean traditions. Complementing these are complimentary offerings like Rice Kimchi and seaweed soup, ensuring a complete and satisfying dining experience. Explore the flavours of Chinese Korean cuisine today.",
     "halal": false,
     "opening_hours": null,
@@ -4789,8 +4653,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -4820,8 +4683,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/mm-",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -4852,8 +4714,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/monster-curry",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -4897,8 +4758,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -4931,8 +4791,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -4967,8 +4826,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5007,8 +4865,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/nando-s",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5038,8 +4895,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/niku-iku",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -5070,8 +4926,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/nunsaram-korean-dessertcafe",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5112,8 +4967,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5144,8 +4998,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/oriental-kopi",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5185,8 +5038,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5216,8 +5068,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/pho-vietz",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -5260,8 +5111,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5291,8 +5141,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/san-ren-xing",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5329,8 +5178,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/seoul-garden",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5365,8 +5213,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/shinfuni",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5410,8 +5257,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5450,8 +5296,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/stuff-d",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5500,8 +5345,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5534,8 +5378,39 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood"
+      ]
+    }
+  },
+  {
+    "operator": "capitaland",
+    "mall": "bugisjunction",
+    "name": "Sushi Zushi",
+    "is_fnb": true,
+    "category": [
+      "restaurant"
+    ],
+    "food_types": [],
+    "unit_number": "#B1-K21-K22",
+    "floor_level": "B1",
+    "location_note": "",
+    "store_status": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store",
+    "description": "Fresh sushi and handrolls for everyone",
+    "halal": false,
+    "opening_hours": null,
+    "page_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/sushi-zushi",
+    "entity_name": "sushi_zushi_538964511",
+    "raw": {
+      "shortdescription": "Fresh sushi and handrolls for everyone",
+      "unitnumber": [
+        "capitalanddatabasemanagement:sg/tenant-unit-numbers/bugisjunction/unit-b1-k21-k22"
       ],
-      "storeStatus": null
+      "entityname": "sushi_zushi_538964511",
+      "jcr:title": "Sushi Zushi",
+      "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/sushi-zushi",
+      "marketingcategory": [
+        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
+      ],
+      "storeStatus": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store"
     }
   },
   {
@@ -5586,8 +5461,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/business-lunch"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5618,8 +5492,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/tangled-fresh-pastatogo",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5654,8 +5527,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5685,8 +5557,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/thachang-sg",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -5727,8 +5598,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5771,8 +5641,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5811,8 +5680,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5852,8 +5720,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5890,40 +5757,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/japanesecuisine",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
-    }
-  },
-  {
-    "operator": "capitaland",
-    "mall": "bugisjunction",
-    "name": "TORI SANWA 鶏三和",
-    "is_fnb": true,
-    "category": [
-      "japanesecuisine"
-    ],
-    "food_types": [],
-    "unit_number": "#B1-K21-K22",
-    "floor_level": "B1",
-    "location_note": "",
-    "store_status": "",
-    "description": "Hailing from Nagoya, TORI SANWA is known for their delicious chicken dishes. Be sure to try their top dishes: Aburi Oyako Don, Oyako Don, Negi Shio Tori Soba, Chicken Teriyaki Hitsumabushi, Chicken Karaage Rice Set",
-    "halal": false,
-    "opening_hours": null,
-    "page_url": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/tori-sanwa-145869509",
-    "entity_name": "tori_sanwa__145869509",
-    "raw": {
-      "shortdescription": "Hailing from Nagoya, TORI SANWA is known for their delicious chicken dishes. Be sure to try their top dishes: Aburi Oyako Don, Oyako Don, Negi Shio Tori Soba, Chicken Teriyaki Hitsumabushi, Chicken Karaage Rice Set",
-      "unitnumber": [
-        "capitalanddatabasemanagement:sg/tenant-unit-numbers/bugisjunction/unit-b1-k21-k22"
-      ],
-      "entityname": "tori_sanwa__145869509",
-      "jcr:title": "TORI SANWA 鶏三和",
-      "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/tori-sanwa-145869509",
-      "marketingcategory": [
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/japanesecuisine"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -5954,8 +5788,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/tori-q",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -5994,8 +5827,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/wok-hey",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6026,8 +5858,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/xiaolongkan-hotpot",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6069,14 +5900,13 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
     "operator": "capitaland",
     "mall": "bugisjunction",
-    "name": "YANG'S DUMPLINGS",
+    "name": "YANG'S DUMPLING",
     "is_fnb": true,
     "category": [
       "restaurant"
@@ -6085,7 +5915,7 @@
     "unit_number": "#B1-05",
     "floor_level": "B1",
     "location_note": "",
-    "store_status": "Opening Soon",
+    "store_status": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store",
     "description": "",
     "halal": false,
     "opening_hours": null,
@@ -6096,12 +5926,12 @@
         "capitalanddatabasemanagement:sg/tenant-unit-numbers/bugisjunction/unit-b1-05"
       ],
       "entityname": "yang_s_dumplings",
-      "jcr:title": "YANG'S DUMPLINGS",
+      "jcr:title": "YANG'S DUMPLING",
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/yang-s-dumplings",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
       ],
-      "storeStatus": "Opening Soon"
+      "storeStatus": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store"
     }
   },
   {
@@ -6139,8 +5969,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/bugisjunction/en/stores/yoshinoya",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6173,8 +6002,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6207,8 +6035,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/singapore-local-delights"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6243,8 +6070,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/ajumma-s",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6284,8 +6110,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6316,8 +6141,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/anjappar",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6355,8 +6179,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/wine"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -6387,8 +6210,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/bao-s-pastry-",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -6427,8 +6249,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6467,8 +6288,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "apitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6499,8 +6319,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/brotzeit",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6530,8 +6349,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/buta-kizoku",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/japanesecuisine"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -6550,7 +6368,7 @@
     "unit_number": "#01-11",
     "floor_level": "01",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "Cat & the Fiddle",
     "halal": true,
     "opening_hours": null,
@@ -6572,39 +6390,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration"
-      ],
-      "storeStatus": "New Store"
-    }
-  },
-  {
-    "operator": "capitaland",
-    "mall": "westgate",
-    "name": "CHAFFIC",
-    "is_fnb": true,
-    "category": [
-      "cafeanddessertbar"
-    ],
-    "food_types": [],
-    "unit_number": "#B1-24A",
-    "floor_level": "B1",
-    "location_note": "",
-    "store_status": "",
-    "description": "",
-    "halal": false,
-    "opening_hours": null,
-    "page_url": "https://www.capitaland.com/sg/malls/westgate/en/stores/chaffic",
-    "entity_name": "chaffic",
-    "raw": {
-      "unitnumber": [
-        "capitalanddatabasemanagement:sg/tenant-unit-numbers/westgate/b1-24a"
-      ],
-      "entityname": "chaffic",
-      "jcr:title": "CHAFFIC",
-      "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/chaffic",
-      "marketingcategory": [
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6648,8 +6434,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/chocolatescandiesanddelicatessen",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6686,8 +6471,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6718,8 +6502,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/collin-s",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6756,8 +6539,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/curry-times",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6787,8 +6569,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/donq-diter",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -6818,8 +6599,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/eat-",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -6849,8 +6629,41 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/eighteen-plum",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
+      ]
+    }
+  },
+  {
+    "operator": "capitaland",
+    "mall": "westgate",
+    "name": "Epid’or",
+    "is_fnb": true,
+    "category": [
+      "bakeryandconfectionery",
+      "breakfast"
+    ],
+    "food_types": [],
+    "unit_number": "#B1-24A",
+    "floor_level": "B1",
+    "location_note": "",
+    "store_status": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/opening-soon",
+    "description": "The aroma from Epid’or bakery tempts you with freshly baked bread, cakes and other confectionery delights.",
+    "halal": false,
+    "opening_hours": null,
+    "page_url": "https://www.capitaland.com/sg/malls/westgate/en/stores/epid-or",
+    "entity_name": "epid_or",
+    "raw": {
+      "shortdescription": "The aroma from Epid’or bakery tempts you with freshly baked bread, cakes and other confectionery delights.",
+      "unitnumber": [
+        "capitalanddatabasemanagement:sg/tenant-unit-numbers/westgate/b1-24a"
       ],
-      "storeStatus": ""
+      "entityname": "epid_or",
+      "jcr:title": "Epid’or",
+      "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/epid-or",
+      "marketingcategory": [
+        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
+        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast"
+      ],
+      "storeStatus": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/opening-soon"
     }
   },
   {
@@ -6889,8 +6702,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6929,8 +6741,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -6962,8 +6773,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodcourt"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -6995,8 +6805,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7030,40 +6839,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
-    }
-  },
-  {
-    "operator": "capitaland",
-    "mall": "westgate",
-    "name": "Giraffa",
-    "is_fnb": true,
-    "category": [
-      "japanesesnacks"
-    ],
-    "food_types": [],
-    "unit_number": "#02-05A",
-    "floor_level": "02",
-    "location_note": "",
-    "store_status": "",
-    "description": "Original cheese curry bread from Kamakura",
-    "halal": false,
-    "opening_hours": null,
-    "page_url": "https://www.capitaland.com/sg/malls/westgate/en/stores/giraffa",
-    "entity_name": "giraffa",
-    "raw": {
-      "shortdescription": "Original cheese curry bread from Kamakura",
-      "unitnumber": [
-        "capitalanddatabasemanagement:sg/tenant-unit-numbers/westgate/02-05a"
-      ],
-      "entityname": "giraffa",
-      "jcr:title": "Giraffa",
-      "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/giraffa",
-      "marketingcategory": [
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/japanesesnacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7093,8 +6869,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/gochi-so-shokudo",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7132,8 +6907,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/green-delights",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7173,8 +6947,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/greendot",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7212,8 +6985,37 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration"
+      ]
+    }
+  },
+  {
+    "operator": "capitaland",
+    "mall": "westgate",
+    "name": "Gyukatsu 99",
+    "is_fnb": true,
+    "category": [
+      "restaurant"
+    ],
+    "food_types": [],
+    "unit_number": "#03-09",
+    "floor_level": "03",
+    "location_note": "",
+    "store_status": "",
+    "description": "",
+    "halal": false,
+    "opening_hours": null,
+    "page_url": "https://www.capitaland.com/sg/malls/westgate/en/stores/gyukatsu-99",
+    "entity_name": "gyukatsu_99",
+    "raw": {
+      "unitnumber": [
+        "capitalanddatabasemanagement:sg/tenant-unit-numbers/westgate/unit-03-09"
       ],
-      "storeStatus": ""
+      "entityname": "gyukatsu_99",
+      "jcr:title": "Gyukatsu 99",
+      "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/gyukatsu-99",
+      "marketingcategory": [
+        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
+      ]
     }
   },
   {
@@ -7244,39 +7046,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/heytea",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
-    }
-  },
-  {
-    "operator": "capitaland",
-    "mall": "westgate",
-    "name": "Hundred Acre Creamery",
-    "is_fnb": true,
-    "category": [
-      "cafeanddessertbar"
-    ],
-    "food_types": [],
-    "unit_number": "#04-07",
-    "floor_level": "04",
-    "location_note": "",
-    "store_status": "",
-    "description": "",
-    "halal": false,
-    "opening_hours": null,
-    "page_url": "https://www.capitaland.com/sg/malls/westgate/en/stores/hundred-acre-creamery",
-    "entity_name": "hundred_acre_creamer",
-    "raw": {
-      "unitnumber": [
-        "capitalanddatabasemanagement:sg/tenant-unit-numbers/westgate/04-07"
-      ],
-      "entityname": "hundred_acre_creamer",
-      "jcr:title": "Hundred Acre Creamery",
-      "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/hundred-acre-creamery",
-      "marketingcategory": [
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -7314,14 +7084,13 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/japanesecuisine"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
     "operator": "capitaland",
     "mall": "westgate",
-    "name": "Ji De Chi 记得吃",
+    "name": "Ji De Chi Dessert",
     "is_fnb": true,
     "category": [
       "cafeanddessertbar"
@@ -7342,12 +7111,11 @@
         "capitalanddatabasemanagement:sg/tenant-unit-numbers/westgate/b2-07"
       ],
       "entityname": "ji_de_chi_",
-      "jcr:title": "Ji De Chi 记得吃",
+      "jcr:title": "Ji De Chi Dessert",
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/ji-de-chi-",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7390,8 +7158,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7426,8 +7193,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/kind-kones",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -7465,8 +7231,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7499,40 +7264,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
-    }
-  },
-  {
-    "operator": "capitaland",
-    "mall": "westgate",
-    "name": "LE Congee & Noodle House",
-    "is_fnb": true,
-    "category": [
-      "restaurant"
-    ],
-    "food_types": [],
-    "unit_number": "#02-14",
-    "floor_level": "02",
-    "location_note": "",
-    "store_status": "",
-    "description": "LE Congee & Noodle House",
-    "halal": false,
-    "opening_hours": null,
-    "page_url": "https://www.capitaland.com/sg/malls/westgate/en/stores/le-congee-noodlehouse",
-    "entity_name": "le_congee_noodle_hou",
-    "raw": {
-      "shortdescription": "LE Congee & Noodle House",
-      "unitnumber": [
-        "capitalanddatabasemanagement:sg/tenant-unit-numbers/westgate/02-14"
-      ],
-      "entityname": "le_congee_noodle_hou",
-      "jcr:title": "LE Congee & Noodle House",
-      "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/le-congee-noodlehouse",
-      "marketingcategory": [
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7573,8 +7305,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7610,8 +7341,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/luckin-coffee",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -7646,8 +7376,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/chocolatescandiesanddelicatessen",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7687,8 +7416,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7721,8 +7449,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -7752,8 +7479,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/mini-one",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -7784,8 +7510,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/mr-coconut",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7816,8 +7541,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/mun-zuk",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7855,8 +7579,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/my-kampung",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -7894,8 +7617,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -7910,7 +7632,7 @@
     "unit_number": "#B1-28",
     "floor_level": "B1",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "",
     "halal": false,
     "opening_hours": null,
@@ -7925,8 +7647,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/next-shikaku",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -7941,7 +7662,7 @@
     "unit_number": "#02-07",
     "floor_level": "02",
     "location_note": "",
-    "store_status": "Opening Soon",
+    "store_status": "",
     "description": "",
     "halal": false,
     "opening_hours": null,
@@ -7956,8 +7677,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/niku-niku-oh-kome",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": "Opening Soon"
+      ]
     }
   },
   {
@@ -7992,8 +7712,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8008,7 +7727,7 @@
     "unit_number": "#03-07",
     "floor_level": "03",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store",
     "description": "",
     "halal": false,
     "opening_hours": null,
@@ -8024,7 +7743,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
       ],
-      "storeStatus": "New Store"
+      "storeStatus": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store"
     }
   },
   {
@@ -8055,8 +7774,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/oriental-kopi",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -8087,8 +7805,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/paradise-dynasty",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8118,8 +7835,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/paradise-hotpot",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -8150,8 +7866,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/playmade-by-",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8190,14 +7905,13 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
     "operator": "capitaland",
     "mall": "westgate",
-    "name": "PUTIEN Restaurant",
+    "name": "PUTIEN",
     "is_fnb": true,
     "category": [
       "restaurant",
@@ -8224,7 +7938,7 @@
         "capitalanddatabasemanagement:sg/tenant-unit-numbers/westgate/unit-03-08"
       ],
       "entityname": "pu_tien_restaurant",
-      "jcr:title": "PUTIEN Restaurant",
+      "jcr:title": "PUTIEN",
       "foodTypes": [
         "capitalanddatabasemanagement:dropdown-tags/food-types/vegan-choices"
       ],
@@ -8235,8 +7949,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/business-lunch",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8272,8 +7985,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/rotiboy",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -8311,8 +8023,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/chocolatescandiesanddelicatessen",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8343,8 +8054,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/sagye-lite",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -8388,8 +8098,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/business-lunch"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -8422,8 +8131,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8465,8 +8173,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8498,8 +8205,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/spicymala"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8549,8 +8255,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/chocolatescandiesanddelicatessen",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8588,8 +8293,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8620,47 +8324,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/sushi-zushi-charcoalgrillsushiya",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
-    }
-  },
-  {
-    "operator": "capitaland",
-    "mall": "westgate",
-    "name": "Tai Chong Kok",
-    "is_fnb": true,
-    "category": [
-      "bakeryandconfectionery",
-      "snacks"
-    ],
-    "food_types": [
-      "capitalanddatabasemanagement:dropdown-tags/food-types/vegan-choices"
-    ],
-    "unit_number": "#B2-05",
-    "floor_level": "B2",
-    "location_note": "",
-    "store_status": "",
-    "description": "Tai Chong Kok is one of the few bakeries in Singapore that use 100% pure lotus seeds with no preservatives added to produce fresh lotus paste for mooncakes by hand. Only premium ingredients are used to produce authentic Cantonese confectionery, renowned for their genuine taste of tradition.",
-    "halal": false,
-    "opening_hours": null,
-    "page_url": "https://www.capitaland.com/sg/malls/westgate/en/stores/tai-chong-kok",
-    "entity_name": "t-taichongkok-westgate",
-    "raw": {
-      "shortdescription": "Tai Chong Kok is one of the few bakeries in Singapore that use 100% pure lotus seeds with no preservatives added to produce fresh lotus paste for mooncakes by hand. Only premium ingredients are used to produce authentic Cantonese confectionery, renowned for their genuine taste of tradition.",
-      "unitnumber": [
-        "capitalanddatabasemanagement:sg/tenant-unit-numbers/westgate/unit-b2-05"
-      ],
-      "entityname": "t-taichongkok-westgate",
-      "jcr:title": "Tai Chong Kok",
-      "foodTypes": [
-        "capitalanddatabasemanagement:dropdown-tags/food-types/vegan-choices"
-      ],
-      "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/tai-chong-kok",
-      "marketingcategory": [
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8694,8 +8358,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8730,8 +8393,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8777,46 +8439,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
-    }
-  },
-  {
-    "operator": "capitaland",
-    "mall": "westgate",
-    "name": "Tokyo Shokudo",
-    "is_fnb": true,
-    "category": [
-      "foodandbeverage"
-    ],
-    "food_types": [
-      "capitalanddatabasemanagement:dropdown-tags/food-types/halal-certified"
-    ],
-    "unit_number": "#03-09",
-    "floor_level": "03",
-    "location_note": "",
-    "store_status": "",
-    "description": "Tokyo Shokudo",
-    "halal": true,
-    "opening_hours": null,
-    "page_url": "https://www.capitaland.com/sg/malls/westgate/en/stores/tokyo-shokudo",
-    "entity_name": "tokyo_shokudo_1077224648",
-    "raw": {
-      "shortdescription": "Tokyo Shokudo",
-      "unitnumber": [
-        "capitalanddatabasemanagement:sg/tenant-unit-numbers/westgate/unit-03-09"
-      ],
-      "acceptsHalalCertified": "capitalanddatabasemanagement:dropdown-tags/optionsyesno/yes",
-      "entityname": "tokyo_shokudo_1077224648",
-      "jcr:title": "Tokyo Shokudo",
-      "foodTypes": [
-        "capitalanddatabasemanagement:dropdown-tags/food-types/halal-certified"
-      ],
-      "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/tokyo-shokudo",
-      "marketingcategory": [
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8852,14 +8475,13 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/tongue-tip-lanzhoubeefnoodles",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
     "operator": "capitaland",
     "mall": "westgate",
-    "name": "Tonkatsu Bistro by Ma Maison",
+    "name": "Tonkatsu by Ma Maison",
     "is_fnb": true,
     "category": [
       "restaurant"
@@ -8880,12 +8502,11 @@
         "capitalanddatabasemanagement:sg/tenant-unit-numbers/westgate/unit-04-06"
       ],
       "entityname": "t-tonkatsubymamaison-westgate",
-      "jcr:title": "Tonkatsu Bistro by Ma Maison",
+      "jcr:title": "Tonkatsu by Ma Maison",
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/tonkatsu-bistro-bymamaison",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8900,7 +8521,7 @@
     "unit_number": "#B2-08",
     "floor_level": "B2",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "",
     "description": "",
     "halal": false,
     "opening_hours": null,
@@ -8915,8 +8536,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/wang-fu-dim-sum",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": "New Store"
+      ]
     }
   },
   {
@@ -8951,8 +8571,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/pubbarclub",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/wine"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -8983,8 +8602,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/xi-men-jie",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9014,8 +8632,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/xiang-xiang-hunan-cu-1060202806",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -9056,8 +8673,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -9092,8 +8708,39 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/business-lunch"
+      ]
+    }
+  },
+  {
+    "operator": "capitaland",
+    "mall": "westgate",
+    "name": "YEAH GELATO 野人先生",
+    "is_fnb": true,
+    "category": [
+      "cafeanddessertbar"
+    ],
+    "food_types": [],
+    "unit_number": "#02-05A",
+    "floor_level": "02",
+    "location_note": "",
+    "store_status": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/opening-soon",
+    "description": "YEAH GELATO 野人先生",
+    "halal": false,
+    "opening_hours": null,
+    "page_url": "https://www.capitaland.com/sg/malls/westgate/en/stores/yeah-gelato-1679426171",
+    "entity_name": "yeah_gelato__1679426171",
+    "raw": {
+      "shortdescription": "YEAH GELATO 野人先生",
+      "unitnumber": [
+        "capitalanddatabasemanagement:sg/tenant-unit-numbers/westgate/02-05a"
       ],
-      "storeStatus": null
+      "entityname": "yeah_gelato__1679426171",
+      "jcr:title": "YEAH GELATO 野人先生",
+      "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/yeah-gelato-1679426171",
+      "marketingcategory": [
+        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
+      ],
+      "storeStatus": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/opening-soon"
     }
   },
   {
@@ -9123,8 +8770,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/ygf-malatang-",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -9160,8 +8806,39 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/t-yole-westgate",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
+      ]
+    }
+  },
+  {
+    "operator": "capitaland",
+    "mall": "westgate",
+    "name": "Yuen Kee Dumpling",
+    "is_fnb": true,
+    "category": [
+      "foodandbeverage"
+    ],
+    "food_types": [],
+    "unit_number": "#B2-K9-TO-K11",
+    "floor_level": "B2",
+    "location_note": "",
+    "store_status": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store",
+    "description": "Founded in 2012, Yuen Kee Dumpling is a brand under China Yuanji Food Group Co., Ltd., specializing in handmade Cantonese dumplings and wontons. With a focus on freshness and quality, each dumpling is freshly wrapped and cooked, combining tender fillings with soft, chewy skins.  Known for signature items like the Shrimp and Crab Roe Pork Wonton, Yuen Kee has earned a strong reputation for flavor and craftsmanship. The brand has grown to over 4,000 locations worldwide, expanding to international markets like Singapore in 2024, where it continues to receive high praise.  Rooted in tradition and driven by passion, Yuen Kee remains committed to celebrating dumpling culture while giving back to the community.",
+    "halal": false,
+    "opening_hours": null,
+    "page_url": "https://www.capitaland.com/sg/malls/westgate/en/stores/yuen-kee-dumpling",
+    "entity_name": "yuen_kee_dumpling_82145319",
+    "raw": {
+      "shortdescription": "Founded in 2012, Yuen Kee Dumpling is a brand under China Yuanji Food Group Co., Ltd., specializing in handmade Cantonese dumplings and wontons. With a focus on freshness and quality, each dumpling is freshly wrapped and cooked, combining tender fillings with soft, chewy skins.  Known for signature items like the Shrimp and Crab Roe Pork Wonton, Yuen Kee has earned a strong reputation for flavor and craftsmanship. The brand has grown to over 4,000 locations worldwide, expanding to international markets like Singapore in 2024, where it continues to receive high praise.  Rooted in tradition and driven by passion, Yuen Kee remains committed to celebrating dumpling culture while giving back to the community.",
+      "unitnumber": [
+        "capitalanddatabasemanagement:sg/tenant-unit-numbers/westgate/b2-k9-to-k11"
       ],
-      "storeStatus": null
+      "entityname": "yuen_kee_dumpling_82145319",
+      "jcr:title": "Yuen Kee Dumpling",
+      "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/yuen-kee-dumpling",
+      "marketingcategory": [
+        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
+      ],
+      "storeStatus": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store"
     }
   },
   {
@@ -9192,8 +8869,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/westgate/en/stores/zus-coffee",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -9228,8 +8904,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/chocolatescandiesanddelicatessen",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9260,8 +8935,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/bengawan-solo",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9301,8 +8975,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "apitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9317,7 +8990,7 @@
     "unit_number": "#01-33A",
     "floor_level": "01",
     "location_note": "",
-    "store_status": "Opening Soon",
+    "store_status": "",
     "description": "",
     "halal": false,
     "opening_hours": null,
@@ -9332,8 +9005,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/casa-vostra",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": "Opening Soon"
+      ]
     }
   },
   {
@@ -9364,8 +9036,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/cellarbration",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/wine"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9396,8 +9067,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/cut-butchery",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9443,8 +9113,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/business-lunch"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9486,8 +9155,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/dough-culture",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9526,8 +9194,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/chocolatescandiesanddelicatessen",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9563,8 +9230,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/fei-siong",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9606,8 +9272,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9647,8 +9312,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9683,8 +9347,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9716,8 +9379,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/ging-sun-ho-kingofbun",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -9756,49 +9418,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/chocolatescandiesanddelicatessen"
-      ],
-      "storeStatus": null
-    }
-  },
-  {
-    "operator": "capitaland",
-    "mall": "tampinesmall",
-    "name": "J.Co",
-    "is_fnb": true,
-    "category": [
-      "bakeryandconfectionery",
-      "cafeanddessertbar",
-      "chocolatescandiesanddelicatessen",
-      "foodkiosklightbites",
-      "snacks"
-    ],
-    "food_types": [],
-    "unit_number": "#01-38",
-    "floor_level": "01",
-    "location_note": "",
-    "store_status": "",
-    "description": "J.Co is an international premium donuts and coffee brand, offering unique flavours of donuts & beverages to our customers. Try the Tira Miss U donut at this confectionery store!",
-    "halal": true,
-    "opening_hours": null,
-    "page_url": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/j-co",
-    "entity_name": "j_co",
-    "raw": {
-      "shortdescription": "J.Co is an international premium donuts and coffee brand, offering unique flavours of donuts & beverages to our customers. Try the Tira Miss U donut at this confectionery store!",
-      "unitnumber": [
-        "capitalanddatabasemanagement:sg/tenant-unit-numbers/tampinesmall/unit-01-38"
-      ],
-      "acceptsHalalCertified": "capitalanddatabasemanagement:dropdown-tags/optionsyesno/no",
-      "entityname": "j_co",
-      "jcr:title": "J.Co",
-      "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/j-co",
-      "marketingcategory": [
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/chocolatescandiesanddelicatessen",
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
-        "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9834,8 +9454,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/kenangan-coffee",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9880,8 +9499,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9919,8 +9537,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9960,8 +9577,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodcourt",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -9992,8 +9608,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/kuan-zhai-alley-",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -10026,8 +9641,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -10064,8 +9678,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/lee-wee-brothersfoodstuff",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10096,8 +9709,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/legendary-hong-kong",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10140,8 +9752,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10173,8 +9784,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/lola-s",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10205,8 +9815,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/mango-ice-",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/cafeanddessertbar"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10249,8 +9858,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10291,8 +9899,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10335,8 +9942,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/breakfast",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10380,8 +9986,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/business-lunch",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10419,8 +10024,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/chocolatescandiesanddelicatessen",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10456,8 +10060,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/saap-saap-thai-xkaffetoast",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -10488,8 +10091,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/seorae-jib-pochakoreanstreetfooddining",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10532,8 +10134,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10574,8 +10175,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10590,7 +10190,7 @@
     "unit_number": "#04-19",
     "floor_level": "04",
     "location_note": "",
-    "store_status": "New Store",
+    "store_status": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store",
     "description": "Steak 99 Plus enhances the Steak 99 experience with more selection and innovative lava stone cookware, creating a healthier and more flavourful way to enjoy every meal.",
     "halal": false,
     "opening_hours": null,
@@ -10607,7 +10207,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
       ],
-      "storeStatus": "New Store"
+      "storeStatus": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store"
     }
   },
   {
@@ -10644,8 +10244,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/stuff-d",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10681,8 +10280,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/super-sushi",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/japanesecuisine"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10713,8 +10311,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/sushi-zanmai",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10765,8 +10362,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/party-friendly-for->10pax",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/business-lunch"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10804,8 +10400,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10820,7 +10415,7 @@
     "unit_number": "#B1-K19",
     "floor_level": "B1",
     "location_note": "",
-    "store_status": "Opening Soon",
+    "store_status": "",
     "description": "Talad Thai Banana is an Authentic Thai recipe crafted with love. Our main outlet is at Thai Supermarket — our unique batter is made from the freshest ingredients prepared daily with love and good intentions. All products are vegetarian friendly and in fresh batches daily.",
     "halal": false,
     "opening_hours": null,
@@ -10836,8 +10431,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/talad-thai-banana",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites"
-      ],
-      "storeStatus": "Opening Soon"
+      ]
     }
   },
   {
@@ -10870,8 +10464,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/singapore-local-delights"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10914,8 +10507,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/foodkiosklightbites",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/seafood"
-      ],
-      "storeStatus": ""
+      ]
     }
   },
   {
@@ -10953,8 +10545,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/toast-box",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/bakeryandconfectionery"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -10991,8 +10582,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/tokyo-shokudo",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -11025,8 +10615,7 @@
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -11044,14 +10633,14 @@
     "unit_number": "#04-23",
     "floor_level": "04",
     "location_note": "",
-    "store_status": "Opening Soon",
-    "description": "Wingstop is dedicated to Serving the World Flavor through an unparalleled guest experience and offering of classic wings, boneless wings and tenders, always cooked to order and hand-sauced-and-tossed in fans’ choice of 9 bold, distinctive flavors – including local favorite Kecap Manis. Wingstop’s menu also features signature sides including Voodoo fries, hand-breaded mushroom fritters, and our famous freshly-made ranch dip.",
+    "store_status": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store",
+    "description": "Wingstop, founded in 1994 in Dallas, operates over 2,000 locations worldwide and opened in Singapore in 2013. Known as The Wing Experts, it serves freshly cooked wings in 10 bold flavours, including the Singapore-exclusive Kecap Manis, alongside signature sides and dips.  For more information visit www.wingstop.com.sg and follow @wingstopsg on Instagram, Facebook and Tiktok.",
     "halal": true,
     "opening_hours": null,
     "page_url": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/wingstop",
     "entity_name": "wingstop_298463450",
     "raw": {
-      "shortdescription": "Wingstop is dedicated to Serving the World Flavor through an unparalleled guest experience and offering of classic wings, boneless wings and tenders, always cooked to order and hand-sauced-and-tossed in fans’ choice of 9 bold, distinctive flavors – including local favorite Kecap Manis. Wingstop’s menu also features signature sides including Voodoo fries, hand-breaded mushroom fritters, and our famous freshly-made ranch dip.",
+      "shortdescription": "Wingstop, founded in 1994 in Dallas, operates over 2,000 locations worldwide and opened in Singapore in 2013. Known as The Wing Experts, it serves freshly cooked wings in 10 bold flavours, including the Singapore-exclusive Kecap Manis, alongside signature sides and dips.  For more information visit www.wingstop.com.sg and follow @wingstopsg on Instagram, Facebook and Tiktok.",
       "unitnumber": [
         "capitalanddatabasemanagement:sg/tenant-unit-numbers/tampinesmall/unit-04-23-24-25"
       ],
@@ -11066,7 +10655,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/fastfood",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
       ],
-      "storeStatus": "Opening Soon"
+      "storeStatus": "capitalanddatabasemanagement:dropdown-tags/store-tenants/status/new-store"
     }
   },
   {
@@ -11100,8 +10689,7 @@
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/chocolatescandiesanddelicatessen",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/snacks",
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/birthday-celebration"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -11132,8 +10720,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/yeah-gelato-1628031659",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -11163,8 +10750,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/ygf-malatang",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage/restaurant"
-      ],
-      "storeStatus": null
+      ]
     }
   },
   {
@@ -11200,8 +10786,7 @@
       "pagePath": "https://www.capitaland.com/sg/malls/tampinesmall/en/stores/t-yole-tampinesmall",
       "marketingcategory": [
         "capitalanddatabasemanagement:sg/tenant-categories/foodandbeverage"
-      ],
-      "storeStatus": null
+      ]
     }
   }
 ]
