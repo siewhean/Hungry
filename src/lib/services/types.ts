@@ -322,6 +322,13 @@ export interface Bite {
   buildingName: string;
   photoUrl: string;
   mediaUrls?: string[];
+  imageSourceType?:
+    | "dish"
+    | "dish_image"
+    | "venue"
+    | "building"
+    | "representative_dish"
+    | "local_fallback";
   mediaType?: "photo" | "video";
   mediaTypes?: ("photo" | "video")[];
   showFoodContextOverlay?: boolean;

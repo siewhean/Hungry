@@ -1,33 +1,76 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getDiscoverBiteCollections, resolveDiscoverFoodImageUrl } from "@/features/discover/bites";
+import {
+  getDiscoverBiteCollections,
+  getDiscoverCardImage,
+  isUsableDiscoverImageUrl,
+} from "@/features/discover/bites";
 import type { Bite } from "@/lib/services/types";
+import { readRepoFile } from "@/test/sourceContracts";
 
 const HUNGRY_LOGO_IMAGE_URL =
   "https://raw.githubusercontent.com/siewhean/Hungry/main/assets/images/Logo/hungry_logo_icon_transparent.png";
 
-test("Discover food rails replace missing Supabase photos with food imagery", () => {
-  const fallback = resolveDiscoverFoodImageUrl(undefined, "Hainanese Chicken Rice");
+test("getDiscoverCardImage uses approved dish candidate priority before stall fallbacks", () => {
+  const image = getDiscoverCardImage([
+    { imageUrl: "https://example.com/dish-image.jpg", imageSourceType: "dish_image" },
+    { imageUrl: "https://example.com/dish.jpg", imageSourceType: "dish" },
+    { imageUrl: "https://example.com/representative.jpg", imageSourceType: "representative_dish" },
+    { imageUrl: "https://example.com/venue.jpg", imageSourceType: "venue" },
+    { imageUrl: "https://example.com/building.jpg", imageSourceType: "building" },
+  ]);
 
-  assert.match(fallback, /^https?:\/\//);
-  assert.notEqual(fallback, HUNGRY_LOGO_IMAGE_URL);
+  assert.equal(image.imageUrl, "https://example.com/dish-image.jpg");
+  assert.equal(image.imageSourceType, "dish_image");
+  assert.deepEqual(image.candidateUrls, [
+    "https://example.com/dish-image.jpg",
+    "https://example.com/dish.jpg",
+    "https://example.com/representative.jpg",
+    "https://example.com/venue.jpg",
+    "https://example.com/building.jpg",
+  ]);
 });
 
-test("Discover food rails choose dish-specific fallbacks for common live Supabase menu rows", () => {
-  const curryPuffFallback = resolveDiscoverFoodImageUrl(undefined, "Curry Puff");
-  const friedChickenFallback = resolveDiscoverFoodImageUrl(undefined, "Original Recipe Chicken");
-  const toastFallback = resolveDiscoverFoodImageUrl(undefined, "Kaya Toast");
-  const kopiFallback = resolveDiscoverFoodImageUrl(undefined, "Kopi O");
+test("getDiscoverCardImage uses stall card priority and de-duplicates candidates", () => {
+  const image = getDiscoverCardImage([
+    { imageUrl: "https://example.com/venue.jpg", imageSourceType: "venue" },
+    { imageUrl: "https://example.com/building.jpg", imageSourceType: "building" },
+    { imageUrl: "https://example.com/venue.jpg", imageSourceType: "representative_dish" },
+    { imageUrl: "https://example.com/dish.jpg", imageSourceType: "representative_dish" },
+  ]);
 
-  assert.match(curryPuffFallback, /1509440159596/);
-  assert.match(friedChickenFallback, /1562967916/);
-  assert.match(toastFallback, /1525351484163/);
-  assert.match(kopiFallback, /1544787219/);
-  assert.notEqual(curryPuffFallback, friedChickenFallback);
+  assert.equal(image.imageUrl, "https://example.com/venue.jpg");
+  assert.equal(image.imageSourceType, "venue");
+  assert.deepEqual(image.candidateUrls, [
+    "https://example.com/venue.jpg",
+    "https://example.com/building.jpg",
+    "https://example.com/dish.jpg",
+  ]);
 });
 
-test("Discover food collections keep live-style missing-image bites visible in every primary rail", () => {
+test("Discover image helper rejects demo providers, logo placeholders, malformed URLs, and blanks", () => {
+  const rejected = [
+    "",
+    "   ",
+    HUNGRY_LOGO_IMAGE_URL,
+    `${HUNGRY_LOGO_IMAGE_URL},${HUNGRY_LOGO_IMAGE_URL}`,
+    "https://images.unsplash.com/photo-demo",
+    "https://source.unsplash.com/random/food",
+    "https://picsum.photos/300",
+    "https://upload.wikimedia.org/wikipedia/commons/7/71/Hainanese_Chicken_Rice.jpg",
+    "file:///tmp/food.jpg",
+    "not-a-url",
+  ];
+
+  rejected.forEach((imageUrl) => {
+    assert.equal(isUsableDiscoverImageUrl(imageUrl), false, imageUrl);
+  });
+
+  assert.equal(isUsableDiscoverImageUrl("https://example.com/catalog/food.jpg"), true);
+});
+
+test("Discover food collections keep image-less live bites visible with local fallback state", () => {
   const liveStyleBites = [
     createBite({
       id: "bite-curry-puff",
@@ -56,30 +99,29 @@ test("Discover food collections keep live-style missing-image bites visible in e
   for (const collectionName of ["quickBites", "trending", "editorChoice", "budget"] as const) {
     assert.ok(collections[collectionName].length > 0, `${collectionName} should not be empty`);
     assert.ok(
-      collections[collectionName].every((bite) => /^https?:\/\//.test(bite.photoUrl)),
-      `${collectionName} should resolve food image URLs`,
+      collections[collectionName].every(
+        (bite) => bite.photoUrl === "" && bite.imageSourceType === "local_fallback",
+      ),
+      `${collectionName} should leave image-less rows on local fallback`,
     );
   }
 });
 
-test("Discover food rails reject logo placeholders and malformed comma-joined URLs", () => {
-  const logoFallback = resolveDiscoverFoodImageUrl(HUNGRY_LOGO_IMAGE_URL, "Pandan Chiffon Cake");
-  const malformedFallback = resolveDiscoverFoodImageUrl(
-    `${HUNGRY_LOGO_IMAGE_URL},${HUNGRY_LOGO_IMAGE_URL}`,
-    "Flosss Bun",
-  );
+test("Discover source does not hardcode demo image URL fallbacks", () => {
+  const discoverBites = readRepoFile("src/features/discover/bites.ts");
+  const discoverHome = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
 
-  assert.match(logoFallback, /^https?:\/\//);
-  assert.match(malformedFallback, /^https?:\/\//);
-  assert.notEqual(logoFallback, HUNGRY_LOGO_IMAGE_URL);
-  assert.notEqual(malformedFallback, HUNGRY_LOGO_IMAGE_URL);
-  assert.doesNotMatch(malformedFallback, /,/);
-});
+  assert.doesNotMatch(discoverBites, /DISCOVER_FOOD_FALLBACK_IMAGES/);
+  assert.doesNotMatch(discoverBites, /resolveDiscoverFoodImageUrl/);
+  assert.doesNotMatch(discoverHome, /resolveDiscoverFoodImageUrl/);
 
-test("Discover food rails keep usable approved food URLs unchanged", () => {
-  const sourceUrl = "https://example.com/food.jpg";
-
-  assert.equal(resolveDiscoverFoodImageUrl(sourceUrl, "Laksa"), sourceUrl);
+  for (const source of [discoverBites, discoverHome]) {
+    assert.doesNotMatch(source, /https:\/\/images\.unsplash\.com/);
+    assert.doesNotMatch(source, /https:\/\/source\.unsplash\.com/);
+    assert.doesNotMatch(source, /https:\/\/picsum\.photos/);
+    assert.doesNotMatch(source, /https:\/\/upload\.wikimedia\.org/);
+    assert.doesNotMatch(source, /Hainanese_Chicken_Rice\.jpg/);
+  }
 });
 
 function createBite(overrides: Partial<Bite>): Bite {

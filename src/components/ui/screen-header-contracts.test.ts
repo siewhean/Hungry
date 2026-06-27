@@ -204,7 +204,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(discover, /type DiscoverStallShowcaseCard = \{/);
   assert.match(discover, /id: string/);
-  assert.match(discover, /imageSource: string \| number/);
+  assert.match(discover, /imageSource: ImageSourcePropType/);
   assert.match(discover, /const STALL_SHOWCASE_CARD_LIMIT = 30/);
   assert.match(discover, /const STALL_SHOWCASE_FALLBACK_IMAGES = \[/);
   assert.match(discover, /function buildStallShowcaseCardsFromVenues/);
@@ -216,7 +216,8 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /return uniqueVenues\.flatMap\(\(venue\) =>/);
   assert.match(discover, /const heroCandidates = \[/);
   assert.match(discover, /return heroCandidates\.map\(\(heroDish, heroIndex\) =>/);
-  assert.match(discover, /imageSource:\s*heroDish\.imageUrl \|\|/);
+  assert.match(discover, /const image = getDiscoverCardImage\(\[/);
+  assert.match(discover, /\.\.\.getDishImageCandidates\(heroDish\)/);
   assert.match(
     discover,
     /STALL_SHOWCASE_FALLBACK_IMAGES\[heroIndex % STALL_SHOWCASE_FALLBACK_IMAGES\.length\]/,
@@ -364,7 +365,11 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /opacity,\s*transform: \[\{ translateX \}\]/);
   assert.match(discover, /imageRailSources\.map\(\(imageSource, imageIndex\) =>/);
   assert.match(discover, /transform: \[\{ translateX: imageTranslateX \}\]/);
-  assert.match(discover, /typeof imageSource === "string"/);
+  assert.match(discover, /source=\{imageSource\}/);
+  assert.match(
+    discover,
+    /flatMap\(\(product\) => getDiscoverCardImage\(getDishImageCandidates\(product\)\)\.candidateUrls\)/,
+  );
   assert.match(
     discover,
     /bottom: spacing\[2\],[\s\S]*right: spacing\[2\],[\s\S]*<Star color=\{palette\.amber\} size=\{11\} fill=\{palette\.amber\} \/>[\s\S]*\{card\.heroDish\.rating\.toFixed\(1\)\}/,
@@ -570,8 +575,9 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /imageSource: POPULAR_BAK_CHOR_MEE_GRAPHIC/);
   assert.match(
     discover,
-    /source=\{typeof imageSource === "string" \? \{ uri: imageSource \} : imageSource\}/,
+    /imageSource: image\.imageUrl \? \{ uri: image\.imageUrl \} : style\.imageSource/,
   );
+  assert.match(discover, /source=\{imageSource\}/);
   assert.match(discover, /<MemoFoodStyleButton[\s\S]*imageSource=\{item\.imageSource\}/);
   assert.match(discover, /const showPopularFoodFilterSkeleton = isPopularFoodFilterPending/);
   assert.match(discover, /POPULAR_FOOD_FILTER_SKELETON_MIN_MS = 1200/);
@@ -584,16 +590,15 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /backgroundColor: palette\.surfaceRaised/);
   assert.match(discover, /<Utensils color=\{palette\.orange\} size=\{iconSize\} \/>/);
   assert.match(discover, /function DiscoverBiteImage\(\{ bite, height \}/);
-  assert.match(discover, /bite\.photoUrl[\s\S]*source=\{\{ uri: bite\.photoUrl \}\}/);
+  assert.match(discover, /\[bite\.photoUrl, \.\.\.\(bite\.mediaUrls \?\? \[\]\)\]/);
+  assert.match(discover, /source=\{\{ uri: activeImageUrl \}\}/);
   assert.match(
     discover,
     /<DiscoverDishImagePlaceholder[\s\S]*accessibilityLabel=\{`\$\{bite\.dishName\} photo unavailable`\}/,
   );
   assert.match(discover, /<DiscoverBiteImage bite=\{bite\} height=\{discoverRailImageHeight\} \/>/);
-  assert.match(
-    discover,
-    /topDish\?\.imageUrl \? \([\s\S]*source=\{\{ uri: topDish\.imageUrl \}\}[\s\S]*\) : \([\s\S]*<DiscoverDishImagePlaceholder/,
-  );
+  assert.match(discover, /function DiscoverStallThumbnail\(/);
+  assert.match(discover, /<DiscoverStallThumbnail topDish=\{topDish\} venue=\{venue\} \/>/);
   assert.doesNotMatch(discover, /const DISCOVER_DISH_PLACEHOLDER_IMAGES/);
   assert.doesNotMatch(discover, /getDiscoverDishPlaceholderSource/);
   assert.doesNotMatch(discover, /source=\{\{ uri: topDish\?\.imageUrl \}\}/);
@@ -821,15 +826,17 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
   );
   assert.match(targetCardsBlock, /accessibilityLabel="Browse stalls and restaurants"/);
   assert.match(targetCardsBlock, /accessibilityLabel="Browse dishes"/);
-  assert.match(targetCardsBlock, /source=\{STALLS_CARD_GRAPHIC\}/);
-  assert.match(targetCardsBlock, /source=\{DISHES_CARD_GRAPHIC\}/);
+  assert.match(discover, /const stallsCategoryImageSource = useMemo/);
+  assert.match(discover, /const dishesCategoryImageSource = useMemo/);
+  assert.match(targetCardsBlock, /source=\{stallsCategoryImageSource\}/);
+  assert.match(targetCardsBlock, /source=\{dishesCategoryImageSource\}/);
   assert.match(
     targetCardsBlock,
-    /source=\{STALLS_CARD_GRAPHIC\}[\s\S]*style=\{\{ aspectRatio: 1\.55, width: "100%" \}\}[\s\S]*contentFit="cover"/,
+    /source=\{stallsCategoryImageSource\}[\s\S]*style=\{\{ aspectRatio: 1\.55, width: "100%" \}\}[\s\S]*contentFit="cover"/,
   );
   assert.match(
     targetCardsBlock,
-    /source=\{DISHES_CARD_GRAPHIC\}[\s\S]*style=\{\{ aspectRatio: 1\.55, width: "100%" \}\}[\s\S]*contentFit="cover"/,
+    /source=\{dishesCategoryImageSource\}[\s\S]*style=\{\{ aspectRatio: 1\.55, width: "100%" \}\}[\s\S]*contentFit="cover"/,
   );
   assert.doesNotMatch(targetCardsBlock, /aspectRatio: 1\.75/);
   assert.doesNotMatch(targetCardsBlock, /aspectRatio: 1\.8/);
@@ -919,13 +926,15 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   );
   assert.match(quickBites, /export const COLLECTION_COPY/);
   assert.match(quickBites, /getDiscoverBites/);
+  assert.match(quickBites, /function getQuickBiteCycleFrames/);
+  assert.match(quickBites, /images=\{cycleFrames\.map\(\(frame\) => frame\.imageUrl\)\}/);
+  assert.match(quickBites, /const activeSlide = cycleFrames\[activeIndex\]\?\.item/);
   assert.match(discoverBites, /export function getDiscoverBiteCollection/);
   assert.match(discoverBites, /export function syncBiteWithDish/);
   assert.match(discoverBites, /dishName: dish\.name/);
-  assert.match(
-    discoverBites,
-    /photoUrl: resolveDiscoverFoodImageUrl\(dish\.imageUrl, dish\.name\)/,
-  );
+  assert.match(discoverBites, /export function getDiscoverCardImage/);
+  assert.match(discoverBites, /photoUrl: image\.imageUrl/);
+  assert.match(discoverBites, /imageSourceType: image\.imageSourceType/);
   assert.match(discoverBites, /price: dish\.price/);
   assert.match(discoverBites, /rating: dish\.rating/);
   assert.match(discoverBites, /venueName: dish\.venueName/);

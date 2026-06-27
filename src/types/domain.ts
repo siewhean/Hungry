@@ -118,6 +118,7 @@ export interface BuildingSummary {
   isClosedToday: boolean;
   heroDishId: string;
   planningArea?: string;
+  imageUrl?: string;
 }
 
 export interface VenueSummary {
@@ -134,6 +135,7 @@ export interface VenueSummary {
   deliveryLinks: DeliveryLink[];
   verificationStatus?: VerificationStatus;
   planningArea?: string;
+  imageUrl?: string;
 }
 
 export type UserStallSubmissionStatus =

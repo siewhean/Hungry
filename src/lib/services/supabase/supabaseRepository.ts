@@ -187,6 +187,7 @@ function mapBuilding(row: Row): BuildingSummary {
     isClosedToday: toBool(row.is_closed_today),
     heroDishId: toString(row.hero_dish_id),
     planningArea: toString(row.planning_area) || undefined,
+    imageUrl: catalogDisplayImageUrl(row) || undefined,
   };
 }
 
@@ -204,6 +205,7 @@ function mapVenue(row: Row): VenueSummary {
     closureNotice: toString(row.closure_notice) || undefined,
     deliveryLinks: [],
     planningArea: toString(row.planning_area) || undefined,
+    imageUrl: catalogDisplayImageUrl(row) || undefined,
   };
 }
 
@@ -327,6 +329,7 @@ function mapDiscoveryFeedVenue(row: Row): VenueSummary {
     closureNotice: undefined,
     deliveryLinks: [],
     planningArea: toString(row.planning_area) || undefined,
+    imageUrl: toString(row.venue_image_url) || toString(row.building_image_url) || undefined,
   };
 }
 
@@ -334,7 +337,16 @@ function mapDiscoveryFeedDish(row: Row, venue: VenueSummary): DishDetail | undef
   const dishId = toString(row.top_dish_id);
   const dishName = toString(row.top_dish_name);
   if (!dishId || !dishName) return undefined;
-  const imageUrl = toString(row.top_dish_image);
+  const gallery = [
+    toString(row.top_dish_image),
+    toString(row.top_dish_catalog_image),
+    toString(row.representative_dish_image),
+    toString(row.venue_image_url),
+    toString(row.building_image_url),
+  ].filter(
+    (imageUrl, index, imageUrls) => imageUrl.length > 0 && imageUrls.indexOf(imageUrl) === index,
+  );
+  const imageUrl = gallery[0] ?? "";
   return mapDish(
     {
       id: dishId,
@@ -353,7 +365,7 @@ function mapDiscoveryFeedDish(row: Row, venue: VenueSummary): DishDetail | undef
       availability_flags: [],
     },
     venue,
-    { gallery: imageUrl ? [imageUrl] : [], dietaryFlags: [] },
+    { gallery, dietaryFlags: [] },
   );
 }
 

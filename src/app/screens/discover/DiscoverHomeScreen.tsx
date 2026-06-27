@@ -6,6 +6,7 @@ import {
   TextInput,
   View,
   useWindowDimensions,
+  type ImageSourcePropType,
   type StyleProp,
   type GestureResponderEvent,
   type LayoutChangeEvent,
@@ -46,7 +47,9 @@ import {
 import {
   getDiscoverBiteCollections,
   getDiscoverBites,
-  resolveDiscoverFoodImageUrl,
+  getDiscoverCardImage,
+  getDishImageCandidates,
+  type DiscoverCardImageCandidate,
 } from "@/features/discover/bites";
 import {
   prefetchDishDetail,
@@ -118,13 +121,12 @@ type PopularFoodStyle = {
   query: string;
   dishId?: string;
   imageSource?: number;
-  fallbackImageUrl?: string;
   trending?: boolean;
 };
 
 type PopularFoodStyleItemData = PopularFoodStyle & {
   dish: DishDetail | undefined;
-  imageSource: string | number;
+  imageSource: ImageSourcePropType;
   imageUrl: string | undefined;
 };
 
@@ -132,7 +134,7 @@ type DiscoverStallShowcaseCard = {
   id: string;
   venue: VenueSummary;
   heroDish: DishDetail;
-  imageSource: string | number;
+  imageSource: ImageSourcePropType;
   products: DishDetail[];
 };
 
@@ -170,14 +172,18 @@ function buildStallShowcaseCardsFromVenues(
         0,
         4,
       );
+      const image = getDiscoverCardImage([
+        ...getDishImageCandidates(heroDish),
+        { imageUrl: venue.imageUrl, imageSourceType: "venue" },
+      ]);
 
       return {
         id: `${venue.id}-${heroDish.id}-${heroIndex}`,
         venue,
         heroDish,
-        imageSource:
-          heroDish.imageUrl ||
-          STALL_SHOWCASE_FALLBACK_IMAGES[heroIndex % STALL_SHOWCASE_FALLBACK_IMAGES.length],
+        imageSource: image.imageUrl
+          ? { uri: image.imageUrl }
+          : STALL_SHOWCASE_FALLBACK_IMAGES[heroIndex % STALL_SHOWCASE_FALLBACK_IMAGES.length],
         products,
       };
     });
@@ -203,13 +209,14 @@ function getStallShowcaseImageSources(card: DiscoverStallShowcaseCard) {
   const sources = [
     card.imageSource,
     ...card.products
-      .map((product) => product.imageUrl)
-      .filter((imageUrl): imageUrl is string => Boolean(imageUrl)),
+      .flatMap((product) => getDiscoverCardImage(getDishImageCandidates(product)).candidateUrls)
+      .map((imageUrl) => ({ uri: imageUrl })),
   ];
-  const uniqueSources = new Map<string, string | number>();
+  const uniqueSources = new Map<string, ImageSourcePropType>();
 
   sources.forEach((source) => {
-    uniqueSources.set(String(source), source);
+    const key = typeof source === "number" ? String(source) : JSON.stringify(source);
+    uniqueSources.set(key, source);
   });
 
   return Array.from(uniqueSources.values());
@@ -232,13 +239,13 @@ function searchResultToDiscoverBite(result: SearchResult, index: number): Bite {
   const createdAt = new Date(Date.now() - (index + 1) * 15 * 60_000).toISOString();
   const normalizedRating = Number.isFinite(dish.rating) ? dish.rating : 0;
   const reviewCount = Number.isFinite(dish.reviewCount) ? dish.reviewCount : 0;
-  const photoUrl = resolveDiscoverFoodImageUrl(dish.imageUrl, dish.name);
+  const image = getDiscoverCardImage(getDishImageCandidates(dish));
 
   return {
     id: `discover-${dish.id}`,
     authorId: `venue-${dish.venueId}`,
     authorName: dish.venueName,
-    authorAvatar: photoUrl,
+    authorAvatar: image.imageUrl,
     dishId: dish.id,
     dishName: dish.name,
     venueId: dish.venueId,
@@ -246,7 +253,9 @@ function searchResultToDiscoverBite(result: SearchResult, index: number): Bite {
     unitNumber: dish.unitNumber,
     buildingId: dish.buildingId,
     buildingName: dish.venueName,
-    photoUrl,
+    photoUrl: image.imageUrl,
+    mediaUrls: image.candidateUrls,
+    imageSourceType: image.imageSourceType,
     caption: dish.description ?? dish.name,
     tasteStamp: dish.tasteVector,
     cravingCount: Math.max(reviewCount, Math.round((score || normalizedRating) * 10)),
@@ -360,14 +369,34 @@ function DiscoverDishImagePlaceholder({
 }
 
 function DiscoverBiteImage({ bite, height }: { bite: Bite; height: number }) {
-  if (bite.photoUrl) {
+  const imageUrls = useMemo(
+    () =>
+      [bite.photoUrl, ...(bite.mediaUrls ?? [])].filter(
+        (imageUrl, index, imageUrls) =>
+          imageUrl.trim().length > 0 && imageUrls.indexOf(imageUrl) === index,
+      ),
+    [bite.mediaUrls, bite.photoUrl],
+  );
+  const [failedUrls, setFailedUrls] = useState<readonly string[]>([]);
+  const activeImageUrl = imageUrls.find((imageUrl) => !failedUrls.includes(imageUrl));
+
+  useEffect(() => {
+    setFailedUrls([]);
+  }, [imageUrls.join("\u001f")]);
+
+  if (activeImageUrl) {
     return (
       <AccessibleImage
-        source={{ uri: bite.photoUrl }}
+        source={{ uri: activeImageUrl }}
         style={{ height, width: "100%" }}
         contentFit="cover"
         cachePolicy="memory-disk"
         transition={120}
+        onError={() => {
+          setFailedUrls((current) =>
+            current.includes(activeImageUrl) ? current : [...current, activeImageUrl],
+          );
+        }}
         decorative
       />
     );
@@ -379,6 +408,48 @@ function DiscoverBiteImage({ bite, height }: { bite: Bite; height: number }) {
       iconSize={36}
       style={{ height, width: "100%" }}
     />
+  );
+}
+
+function DiscoverStallThumbnail({
+  topDish,
+  venue,
+}: {
+  topDish: DishDetail | undefined;
+  venue: VenueSummary;
+}) {
+  const { palette, radii } = useHungryTheme();
+  const image = getDiscoverCardImage([
+    { imageUrl: venue.imageUrl, imageSourceType: "venue" },
+    ...(topDish ? getDishImageCandidates(topDish, "representative_dish") : []),
+  ]);
+
+  return (
+    <View
+      style={{
+        padding: 2,
+        borderRadius: radii.pill,
+        borderWidth: 2,
+        borderColor: palette.orange,
+      }}
+    >
+      {image.imageUrl ? (
+        <AccessibleImage
+          source={{ uri: image.imageUrl }}
+          style={{ borderRadius: radii.pill, height: 48, width: 48 }}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          transition={120}
+          decorative
+        />
+      ) : (
+        <DiscoverDishImagePlaceholder
+          accessibilityLabel={`${topDish?.name ?? venue.name} photo unavailable`}
+          iconSize={20}
+          style={{ borderRadius: radii.pill, height: 48, width: 48 }}
+        />
+      )}
+    </View>
   );
 }
 
@@ -416,7 +487,7 @@ function FoodStyleButton({
   onPressIn,
   onPress,
 }: {
-  imageSource: string | number;
+  imageSource: ImageSourcePropType;
   label: string;
   trending?: boolean;
   onPressIn?: () => void;
@@ -451,7 +522,7 @@ function FoodStyleButton({
         ]}
       >
         <AccessibleImage
-          source={typeof imageSource === "string" ? { uri: imageSource } : imageSource}
+          source={imageSource}
           style={{ width: "100%", height: "100%", borderRadius: radii.pill }}
           contentFit="cover"
           cachePolicy="memory-disk"
@@ -957,9 +1028,7 @@ function VerticalStallShowcaseSection({
                           {imageRailSources.map((imageSource, imageIndex) => (
                             <AccessibleImage
                               key={`${card.id}-image-${imageIndex}`}
-                              source={
-                                typeof imageSource === "string" ? { uri: imageSource } : imageSource
-                              }
+                              source={imageSource}
                               style={{ height: "100%", width: columnCardWidth }}
                               contentFit="cover"
                               cachePolicy="memory-disk"
@@ -1564,6 +1633,30 @@ export function DiscoverHomeScreen() {
     return allDiscoverVenues.flatMap((venue) => repositoryLookup.listDishesByVenue(venue.id));
   }, [allDiscoverVenues, isSupabaseDataSource, repositoryLookup, supabaseFeedResults]);
   const areaDishPool = areaDishes.length ? areaDishes : allDiscoverDishes;
+  const stallsCategoryImageSource = useMemo((): ImageSourcePropType => {
+    const image = getDiscoverCardImage([
+      ...areaVenues.map(
+        (venue): DiscoverCardImageCandidate => ({
+          imageUrl: venue.imageUrl,
+          imageSourceType: "venue",
+        }),
+      ),
+      ...areaBuildings.map(
+        (building): DiscoverCardImageCandidate => ({
+          imageUrl: building.imageUrl,
+          imageSourceType: "building",
+        }),
+      ),
+      ...areaDishPool.flatMap((dish) => getDishImageCandidates(dish, "representative_dish")),
+    ]);
+    return image.imageUrl ? { uri: image.imageUrl } : STALLS_CARD_GRAPHIC;
+  }, [areaBuildings, areaDishPool, areaVenues]);
+  const dishesCategoryImageSource = useMemo((): ImageSourcePropType => {
+    const image = getDiscoverCardImage(
+      areaDishPool.flatMap((dish) => getDishImageCandidates(dish)),
+    );
+    return image.imageUrl ? { uri: image.imageUrl } : DISHES_CARD_GRAPHIC;
+  }, [areaDishPool]);
   const currentHour = new Date().getHours();
   const isLateNightMakanVisible = currentHour >= 21 || currentHour < 4;
   const discoverDietaryFlags = useMemo(
@@ -1768,15 +1861,20 @@ export function DiscoverHomeScreen() {
   const unfilteredPopularFoodStyleItems = useMemo(
     () =>
       POPULAR_FOOD_STYLES.map((style) => {
-        const dish = style.dishId ? repositoryLookup.getDishById(style.dishId) : undefined;
+        const normalizedQuery = style.query.toLowerCase();
+        const dish =
+          areaDishPool.find((candidate) =>
+            candidate.name.toLowerCase().includes(normalizedQuery),
+          ) ?? (style.dishId ? repositoryLookup.getDishById(style.dishId) : undefined);
+        const image = getDiscoverCardImage(dish ? getDishImageCandidates(dish) : []);
         return {
           ...style,
-          imageSource: style.imageSource ?? dish?.imageUrl ?? style.fallbackImageUrl,
-          imageUrl: dish?.imageUrl ?? style.fallbackImageUrl,
+          imageSource: image.imageUrl ? { uri: image.imageUrl } : style.imageSource,
+          imageUrl: image.imageUrl || undefined,
           dish,
         };
       }).filter((style): style is PopularFoodStyleItemData => Boolean(style.imageSource)),
-    [repositoryLookup],
+    [areaDishPool, repositoryLookup],
   );
   const popularFoodStyleItems = useMemo(
     () =>
@@ -2063,7 +2161,9 @@ export function DiscoverHomeScreen() {
       prefetchStallDetail(card.venue.id, repository);
       prefetchDishDetail(card.heroDish.id, repository);
       prefetchImages(
-        card.products.map((product) => product.imageUrl),
+        card.products.flatMap(
+          (product) => getDiscoverCardImage(getDishImageCandidates(product)).candidateUrls,
+        ),
         4,
       );
       if (isUserMode) {
@@ -2422,7 +2522,7 @@ export function DiscoverHomeScreen() {
             >
               <View>
                 <AccessibleImage
-                  source={STALLS_CARD_GRAPHIC}
+                  source={stallsCategoryImageSource}
                   style={{ aspectRatio: 1.55, width: "100%" }}
                   contentFit="cover"
                   cachePolicy="memory-disk"
@@ -2479,7 +2579,7 @@ export function DiscoverHomeScreen() {
             >
               <View>
                 <AccessibleImage
-                  source={DISHES_CARD_GRAPHIC}
+                  source={dishesCategoryImageSource}
                   style={{ aspectRatio: 1.55, width: "100%" }}
                   contentFit="cover"
                   cachePolicy="memory-disk"
@@ -3251,31 +3351,7 @@ export function DiscoverHomeScreen() {
                     },
                   ]}
                 >
-                  <View
-                    style={{
-                      padding: 2,
-                      borderRadius: radii.pill,
-                      borderWidth: 2,
-                      borderColor: palette.orange,
-                    }}
-                  >
-                    {topDish?.imageUrl ? (
-                      <AccessibleImage
-                        source={{ uri: topDish.imageUrl }}
-                        style={{ borderRadius: radii.pill, height: 48, width: 48 }}
-                        contentFit="cover"
-                        cachePolicy="memory-disk"
-                        transition={120}
-                        decorative
-                      />
-                    ) : (
-                      <DiscoverDishImagePlaceholder
-                        accessibilityLabel={`${topDish?.name ?? venue.name} photo unavailable`}
-                        iconSize={20}
-                        style={{ borderRadius: radii.pill, height: 48, width: 48 }}
-                      />
-                    )}
-                  </View>
+                  <DiscoverStallThumbnail topDish={topDish} venue={venue} />
                   <View style={{ flex: 1, gap: 2 }}>
                     <AppText
                       variant="bodySmall"

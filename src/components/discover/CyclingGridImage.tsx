@@ -40,14 +40,16 @@ export function CyclingGridImage({
   const isUserDraggingRef = useRef(false);
   const dragFallbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [failedUrls, setFailedUrls] = useState<readonly string[]>([]);
   const [layoutWidth, setLayoutWidth] = useState(0);
   const imageSignature = images.join("\u001f");
   const safeImages = useMemo(
-    () => imageSignature.split("\u001f").filter((image) => image.trim().length > 0),
-    [imageSignature],
+    () =>
+      imageSignature
+        .split("\u001f")
+        .filter((image) => image.trim().length > 0 && !failedUrls.includes(image)),
+    [failedUrls, imageSignature],
   );
-  const firstImageKey = safeImages[0] ?? "";
-
   const commitIndex = useCallback(
     (nextIndex: number) => {
       const normalizedIndex = Math.max(0, Math.min(nextIndex, safeImages.length - 1));
@@ -64,11 +66,22 @@ export function CyclingGridImage({
   );
 
   useEffect(() => {
+    setFailedUrls([]);
     activeIndexRef.current = 0;
     setActiveIndex(0);
     scrollRef.current?.scrollTo({ animated: false, x: 0, y: 0 });
     onActiveIndexChange?.(0);
-  }, [firstImageKey, onActiveIndexChange, safeImages.length]);
+  }, [imageSignature, onActiveIndexChange]);
+
+  useEffect(() => {
+    if (activeIndex >= safeImages.length && safeImages.length > 0) {
+      commitIndex(0);
+    }
+  }, [activeIndex, commitIndex, safeImages.length]);
+
+  const handleImageError = useCallback((imageUrl: string) => {
+    setFailedUrls((current) => (current.includes(imageUrl) ? current : [...current, imageUrl]));
+  }, []);
 
   const measureFullVisibility = useCallback((callback: (isFullyVisible: boolean) => void) => {
     const node = containerRef.current;
@@ -251,6 +264,7 @@ export function CyclingGridImage({
                 accessibilityLabel={`${accessibilityLabel} ${index + 1} of ${safeImages.length}`}
                 style={StyleSheet.absoluteFill}
                 contentFit="cover"
+                onError={() => handleImageError(imageUrl)}
               />
             </View>
           ))}
@@ -261,6 +275,7 @@ export function CyclingGridImage({
           accessibilityLabel={accessibilityLabel}
           style={StyleSheet.absoluteFill}
           contentFit="cover"
+          onError={() => handleImageError(activeImage)}
         />
       )}
     </View>

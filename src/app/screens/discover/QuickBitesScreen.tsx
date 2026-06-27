@@ -8,7 +8,7 @@ import {
   Animated,
   type ViewToken,
 } from "react-native";
-import { ArrowLeft, MapPinned, Heart } from "lucide-react-native";
+import { ArrowLeft, MapPinned, Heart, Utensils } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -54,6 +54,65 @@ import {
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type QuickBitesRoute = RouteProp<RootStackParamList, "QuickBites">;
 type QuickBiteGridItem = Bite & { distance: number };
+type QuickBiteCycleFrame = {
+  imageUrl: string;
+  item: QuickBiteGridItem;
+};
+
+function QuickBiteImagePlaceholder({ height }: { height: number }) {
+  const { palette } = useHungryTheme();
+
+  return (
+    <View
+      accessibilityRole="image"
+      accessibilityLabel="Food photo unavailable"
+      style={{
+        alignItems: "center",
+        backgroundColor: palette.surfaceRaised,
+        height,
+        justifyContent: "center",
+        width: "100%",
+      }}
+    >
+      <Utensils color={palette.orange} size={28} />
+    </View>
+  );
+}
+
+function QuickBiteCarouselImage({ bite }: { bite: Bite }) {
+  const imageUrls = useMemo(
+    () =>
+      [bite.photoUrl, ...(bite.mediaUrls ?? [])].filter(
+        (imageUrl, index, imageUrls) =>
+          imageUrl.trim().length > 0 && imageUrls.indexOf(imageUrl) === index,
+      ),
+    [bite.mediaUrls, bite.photoUrl],
+  );
+  const [failedUrls, setFailedUrls] = useState<readonly string[]>([]);
+  const activeImageUrl = imageUrls.find((imageUrl) => !failedUrls.includes(imageUrl));
+
+  useEffect(() => {
+    setFailedUrls([]);
+  }, [imageUrls.join("\u001f")]);
+
+  if (!activeImageUrl) {
+    return <QuickBiteImagePlaceholder height={104} />;
+  }
+
+  return (
+    <AccessibleImage
+      source={{ uri: activeImageUrl }}
+      style={{ height: 104, width: "100%" }}
+      contentFit="cover"
+      onError={() => {
+        setFailedUrls((current) =>
+          current.includes(activeImageUrl) ? current : [...current, activeImageUrl],
+        );
+      }}
+      decorative
+    />
+  );
+}
 
 function getQuickBiteCycleSlides(item: QuickBiteGridItem, items: QuickBiteGridItem[]) {
   const crossStallSlides = items.filter(
@@ -62,6 +121,19 @@ function getQuickBiteCycleSlides(item: QuickBiteGridItem, items: QuickBiteGridIt
   const fallbackSlides = items.filter((candidate) => candidate.id !== item.id);
 
   return [item, ...crossStallSlides, ...fallbackSlides].slice(0, 4);
+}
+
+function getQuickBiteImageUrls(item: Bite) {
+  return [item.photoUrl, ...(item.mediaUrls ?? [])].filter(
+    (imageUrl, index, imageUrls) =>
+      imageUrl.trim().length > 0 && imageUrls.indexOf(imageUrl) === index,
+  );
+}
+
+function getQuickBiteCycleFrames(slides: QuickBiteGridItem[]): QuickBiteCycleFrame[] {
+  return slides.flatMap((slide) =>
+    getQuickBiteImageUrls(slide).map((imageUrl) => ({ imageUrl, item: slide })),
+  );
 }
 
 function QuickBiteGridCard({
@@ -83,17 +155,18 @@ function QuickBiteGridCard({
 }) {
   const { palette } = useHungryTheme();
   const slides = useMemo(() => getQuickBiteCycleSlides(item, allItems), [allItems, item]);
+  const cycleFrames = useMemo(() => getQuickBiteCycleFrames(slides), [slides]);
   const [activeIndex, setActiveIndex] = useState(0);
-  const activeSlide = slides[activeIndex] ?? item;
+  const activeSlide = cycleFrames[activeIndex]?.item ?? slides[activeIndex] ?? item;
   const handleActiveIndexChange = useCallback((nextIndex: number) => {
     setActiveIndex(nextIndex);
   }, []);
 
   useEffect(() => {
-    if (activeIndex >= slides.length) {
+    if (activeIndex >= Math.max(cycleFrames.length, slides.length)) {
       setActiveIndex(0);
     }
-  }, [activeIndex, slides.length]);
+  }, [activeIndex, cycleFrames.length, slides.length]);
 
   return (
     <Pressable
@@ -108,8 +181,9 @@ function QuickBiteGridCard({
         borderColor: palette.border,
       }}
     >
+      <QuickBiteImagePlaceholder height={itemWidth * 1.35} />
       <CyclingGridImage
-        images={slides.map((slide) => slide.photoUrl)}
+        images={cycleFrames.map((frame) => frame.imageUrl)}
         cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
         isAutoCycleActive={isAutoCycleActive}
         startDelayMs={(index % 4) * 350}
@@ -394,12 +468,7 @@ export function QuickBitesScreen() {
                   },
                 ]}
               >
-                <AccessibleImage
-                  source={{ uri: bite.photoUrl }}
-                  style={{ height: 104, width: "100%" }}
-                  contentFit="cover"
-                  decorative
-                />
+                <QuickBiteCarouselImage bite={bite} />
                 <View style={{ padding: spacing[2], gap: 2 }}>
                   <AppText variant="bodySmallBold" numberOfLines={1}>
                     {bite.dishName}
