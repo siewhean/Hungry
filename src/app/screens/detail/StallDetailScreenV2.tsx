@@ -12,7 +12,11 @@ import type {
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
 import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
 import { useCartStore } from "@/store/useCartStore";
@@ -51,11 +55,16 @@ function formatVenueStatus(venue: VenueSummary) {
 export function StallDetailScreenV2({ route }: Props) {
   const navigation = useNavigation<RootNavigation>();
   const repository = getDataRepository();
+  const serviceProviderMode = getServiceProvider().mode;
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
 
   const venueId = route.params?.venueId ?? route.params?.id ?? "";
-  const venue = useMemo(() => repository.getVenueById(venueId), [venueId, repository]);
-  const dishes = useMemo(() => repository.listDishesByVenue(venueId), [venueId, repository]);
+  const cachedVenue = useMemo(() => repository.getVenueById(venueId), [venueId, repository]);
+  const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
+  const venue = hydratedVenue ?? cachedVenue;
+  const cachedDishes = useMemo(() => repository.listDishesByVenue(venueId), [venueId, repository]);
+  const [hydratedDishes, setHydratedDishes] = useState<typeof cachedDishes>();
+  const dishes = hydratedDishes ?? (serviceProviderMode === "supabase" ? [] : cachedDishes);
   const leadDish = dishes[0];
 
   const insets = useSafeAreaInsets();
@@ -68,6 +77,52 @@ export function StallDetailScreenV2({ route }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const trackedStallViewId = useRef<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setHydratedVenue(undefined);
+    if (!venueId || serviceProviderMode !== "supabase") {
+      return () => {
+        active = false;
+      };
+    }
+
+    void getHungryService()
+      .discovery.getVenue(venueId)
+      .then((nextVenue) => {
+        if (active) setHydratedVenue(nextVenue);
+      })
+      .catch(() => {
+        if (active) setHydratedVenue(undefined);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [serviceProviderMode, venueId]);
+
+  useEffect(() => {
+    let active = true;
+    setHydratedDishes(undefined);
+    if (!venueId || serviceProviderMode !== "supabase") {
+      return () => {
+        active = false;
+      };
+    }
+
+    void getHungryService()
+      .discovery.listDishesByVenue(venueId)
+      .then((nextDishes) => {
+        if (active) setHydratedDishes(nextDishes);
+      })
+      .catch(() => {
+        if (active) setHydratedDishes([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [serviceProviderMode, venueId]);
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
       reviewId: `stall-${venue?.id ?? ""}`,
@@ -395,35 +450,45 @@ export function StallDetailScreenV2({ route }: Props) {
               Their dishes
             </AppText>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[3] }}
-          >
-            {dishes.map((dish) => (
-              <Card key={dish.id} style={{ width: 140, padding: 0, overflow: "hidden" }}>
-                <AccessibleImage
-                  source={{ uri: dish.imageUrl }}
-                  style={{ width: "100%", height: 95, backgroundColor: palette.bgSoft }}
-                  contentFit="cover"
-                  decorative
-                />
-                <View style={{ padding: spacing[2] }}>
-                  <AppText variant="bodySmallBold" numberOfLines={1}>
-                    {dish.name}
-                  </AppText>
-                  <AppText variant="micro" tone="secondary">
-                    {dish.reviewCount > 0
-                      ? `${dish.rating.toFixed(1)} · ${dish.reviewCount} listed reviews`
-                      : "No reviews yet"}
-                  </AppText>
-                  <AppText variant="bodySmallBold" tone="accent" style={{ marginTop: 2 }}>
-                    S${dish.price.toFixed(2)}
-                  </AppText>
-                </View>
-              </Card>
-            ))}
-          </ScrollView>
+          {dishes.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: spacing[4], gap: spacing[3] }}
+            >
+              {dishes.map((dish) => (
+                <Card key={dish.id} style={{ width: 140, padding: 0, overflow: "hidden" }}>
+                  <AccessibleImage
+                    source={{ uri: dish.imageUrl }}
+                    style={{ width: "100%", height: 95, backgroundColor: palette.bgSoft }}
+                    contentFit="cover"
+                    decorative
+                  />
+                  <View style={{ padding: spacing[2] }}>
+                    <AppText variant="bodySmallBold" numberOfLines={1}>
+                      {dish.name}
+                    </AppText>
+                    <AppText variant="micro" tone="secondary">
+                      {dish.reviewCount > 0
+                        ? `${dish.rating.toFixed(1)} · ${dish.reviewCount} listed reviews`
+                        : "No reviews yet"}
+                    </AppText>
+                    <AppText variant="bodySmallBold" tone="accent" style={{ marginTop: 2 }}>
+                      S${dish.price.toFixed(2)}
+                    </AppText>
+                  </View>
+                </Card>
+              ))}
+            </ScrollView>
+          ) : (
+            <Card
+              style={{ padding: spacing[4], marginHorizontal: spacing[4], alignItems: "center" }}
+            >
+              <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
+                No menu available for this stall yet.
+              </AppText>
+            </Card>
+          )}
         </View>
 
         {/* Delivery Row */}

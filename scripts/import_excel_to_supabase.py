@@ -3,7 +3,7 @@
 
 Default mode writes deterministic SQL to /tmp. Live REST apply is guarded by
 HUNGRY_ALLOW_SERVICE_ROLE_IMPORT=1 and import-specific service-role env vars.
-This script never promotes rows into production catalog tables.
+Production menu-item promotion is opt-in via --promote-production-menu-items.
 """
 
 from __future__ import annotations
@@ -301,7 +301,7 @@ def build_staging_values(row: dict[str, Any], issues: list[dict[str, Any]]) -> d
         "source_type_label": clean(row.get("Source Type")),
         "source_url": clean(row.get("Source URL")),
         "last_verified_date": parse_date(row.get("Last Verified Date")),
-        "coverage_status": clean(row.get("Coverage Status")),
+        "coverage_status": "partial" if clean(row.get("Coverage Status")) == "Active" else clean(row.get("Coverage Status")),
         "notes": clean(row.get("Notes")),
         "google_place_id": clean(row.get("Google Place ID")),
         "google_name": clean(row.get("Google Display Name")),
@@ -356,7 +356,15 @@ def issue_sql(import_run_id: str, row: dict[str, Any], item: dict[str, Any]) -> 
     ) + ")"
 
 
-def import_run_payload(import_run_id: str, digest: str, total_rows: int, staged_rows: int, rejected_rows: int, limited: bool) -> dict[str, Any]:
+def import_run_payload(
+    import_run_id: str,
+    digest: str,
+    total_rows: int,
+    staged_rows: int,
+    rejected_rows: int,
+    limited: bool,
+    promote_menu_items: bool = False,
+) -> dict[str, Any]:
     return {
         "id": import_run_id,
         "source_slug": SOURCE_SLUG,
@@ -371,7 +379,8 @@ def import_run_payload(import_run_id: str, digest: str, total_rows: int, staged_
             "workbook_sha256": digest,
             "generator": "scripts/import_excel_to_supabase.py",
             "limited": limited,
-            "staging_only": True,
+            "staging_only": not promote_menu_items,
+            "promote_menu_items_to_dishes": promote_menu_items,
         },
         "completed_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -451,6 +460,25 @@ def rest_request(base_url: str, service_key: str, method: str, table: str, query
         raise SystemExit(f"Supabase REST {method} {table} failed: {exc.reason}") from exc
 
 
+def rpc_request(base_url: str, service_key: str, function_name: str, body: dict[str, Any]) -> Any:
+    endpoint = f"{base_url}/rest/v1/rpc/{function_name}"
+    data = json.dumps(json_ready(body)).encode("utf-8")
+    req = request.Request(endpoint, data=data, method="POST")
+    req.add_header("apikey", service_key)
+    req.add_header("Authorization", f"Bearer {service_key}")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Prefer", "return=representation")
+    try:
+        with request.urlopen(req, timeout=120) as response:
+            payload = response.read().decode("utf-8", "replace")
+            return json.loads(payload) if payload else None
+    except error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", "replace")
+        raise SystemExit(f"Supabase RPC {function_name} failed: {exc.code} {detail}") from exc
+    except error.URLError as exc:
+        raise SystemExit(f"Supabase RPC {function_name} failed: {exc.reason}") from exc
+
+
 def upsert_import_run(base_url: str, service_key: str, run_payload: dict[str, Any]) -> None:
     rest_request(
         base_url,
@@ -478,7 +506,15 @@ def require_import_env() -> tuple[str, str]:
     return url.rstrip("/"), key
 
 
-def apply_to_supabase(import_run_id: str, run_payload: dict[str, Any], staged_values: list[dict[str, Any]], rows: list[dict[str, Any]], issues_by_row: dict[int, list[dict[str, Any]]], batch_size: int) -> None:
+def apply_to_supabase(
+    import_run_id: str,
+    run_payload: dict[str, Any],
+    staged_values: list[dict[str, Any]],
+    rows: list[dict[str, Any]],
+    issues_by_row: dict[int, list[dict[str, Any]]],
+    batch_size: int,
+    promote_menu_items: bool,
+) -> None:
     base_url, service_key = require_import_env()
     started_at = datetime.now(timezone.utc).isoformat()
     running_payload = {
@@ -516,6 +552,17 @@ def apply_to_supabase(import_run_id: str, run_payload: dict[str, Any], staged_va
                 })
         for start in range(0, len(rest_errors), batch_size):
             rest_request(base_url, service_key, "POST", "staging_import_errors", body=rest_errors[start : start + batch_size])
+        if promote_menu_items:
+            promoted_count = rpc_request(
+                base_url,
+                service_key,
+                "promote_staging_menu_items_to_dishes",
+                {"p_import_run_id": import_run_id},
+            )
+            completed_payload["metadata"] = {
+                **completed_payload.get("metadata", {}),
+                "promoted_menu_item_dishes": promoted_count,
+            }
     except SystemExit as exc:
         failed_payload = {
             **running_payload,
@@ -540,6 +587,11 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--batch-size", type=int, default=500)
     parser.add_argument("--apply-supabase", action="store_true")
+    parser.add_argument(
+        "--promote-production-menu-items",
+        action="store_true",
+        help="After staging via REST, promote parsed menu items into canonical dishes with display disabled until review.",
+    )
     args = parser.parse_args()
 
     headers, rows = load_workbook_rows(args.workbook, args.sheet, args.limit)
@@ -559,12 +611,28 @@ def main() -> int:
 
     digest = file_hash(args.workbook)
     limited = args.limit is not None
-    import_run_id = str(uuid.uuid5(IMPORT_UUID_NAMESPACE, f"{SOURCE_SLUG}:{digest}:{args.sheet}:{args.limit or 'all'}"))
+    import_run_id = str(uuid.uuid4())
     rejected_rows = len(rows) - len(staged_values)
-    run_payload = import_run_payload(import_run_id, digest, len(rows), len(staged_values), rejected_rows, limited)
+    run_payload = import_run_payload(
+        import_run_id,
+        digest,
+        len(rows),
+        len(staged_values),
+        rejected_rows,
+        limited,
+        args.promote_production_menu_items,
+    )
     write_sql(args.output, import_run_id, digest, rows, staged_values, issues_by_row, args.batch_size, limited)
     if args.apply_supabase:
-        apply_to_supabase(import_run_id, run_payload, staged_values, rows, issues_by_row, args.batch_size)
+        apply_to_supabase(
+            import_run_id,
+            run_payload,
+            staged_values,
+            rows,
+            issues_by_row,
+            args.batch_size,
+            args.promote_production_menu_items,
+        )
 
     summary = {
         "workbook": str(args.workbook),
@@ -575,6 +643,7 @@ def main() -> int:
         "skipped_rows": rejected_rows,
         "output": str(args.output),
         "applied": args.apply_supabase,
+        "promoted_menu_items": args.promote_production_menu_items,
     }
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0

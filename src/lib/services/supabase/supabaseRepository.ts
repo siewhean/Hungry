@@ -99,6 +99,45 @@ function toStringArray(value: unknown): string[] {
   return [];
 }
 
+function isCatalogDeliveryAppUrl(value: string): boolean {
+  const normalized = value.toLowerCase();
+  return (
+    normalized.includes("grab.com") ||
+    normalized.includes("foodpanda.") ||
+    normalized.includes("deliveroo.")
+  );
+}
+
+function isCatalogMenuDisplayable(row: Row): boolean {
+  const rightsStatus = toString(row.menu_rights_status, "unverified");
+  const sourceUrl = toString(row.menu_source_url);
+  return (
+    toBool(row.menu_approved_for_display) &&
+    ["merchant_owned", "operator_owned", "user_submitted", "permitted_api", "licensed"].includes(
+      rightsStatus,
+    ) &&
+    (rightsStatus === "licensed" || !isCatalogDeliveryAppUrl(sourceUrl))
+  );
+}
+
+function catalogDisplayImageUrl(row: Row, urlKey = "image_url"): string {
+  const url = toString(row[urlKey]).trim();
+  if (!url) return "";
+  const rightsStatus = toString(row.media_rights_status, "unverified");
+  const sourceUrl = toString(row.media_source_url);
+  if (!toBool(row.media_approved_for_display)) return "";
+  if (
+    !["merchant_owned", "operator_owned", "user_submitted", "permitted_api", "licensed"].includes(
+      rightsStatus,
+    )
+  ) {
+    return "";
+  }
+  if (url.toLowerCase().includes("images.unsplash.com")) return "";
+  if (isCatalogDeliveryAppUrl(`${url} ${sourceUrl}`) && rightsStatus !== "licensed") return "";
+  return url;
+}
+
 function toRecord(value: unknown): Row {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Row) : {};
 }
@@ -170,7 +209,7 @@ function mapVenue(row: Row): VenueSummary {
 
 function mapDish(row: Row, venue?: VenueSummary, presentation?: DishPresentation): DishDetail {
   const gallery = presentation?.gallery ?? [];
-  const imageUrl = gallery[0] || toString(row.image_url) || "";
+  const imageUrl = gallery[0] || catalogDisplayImageUrl(row) || "";
   return {
     id: toString(row.id),
     venueId: toString(row.venue_id),
@@ -501,7 +540,7 @@ function buildDishPresentationMap(
     .sort((left, right) => toNumber(left.sort_order) - toNumber(right.sort_order))
     .forEach((row) => {
       const dishId = toString(row.dish_id);
-      const url = toString(row.url);
+      const url = catalogDisplayImageUrl(row, "url");
       if (!dishId || !url) return;
       const presentation = ensurePresentation(dishId);
       if (!presentation.gallery.includes(url)) presentation.gallery.push(url);
@@ -551,7 +590,12 @@ async function refreshCache(force = false): Promise<void> {
         client.from("buildings").select("*"),
         client.from("venues").select("*"),
         client.from("dishes").select("*"),
-        client.from("dish_images").select("dish_id,url,sort_order").order("sort_order"),
+        client
+          .from("dish_images")
+          .select(
+            "dish_id,url,sort_order,media_approved_for_display,media_rights_status,media_source_url",
+          )
+          .order("sort_order"),
         client.from("dish_taste_vectors").select("dish_id,sweet,spicy,sour,salty,rich,aromatic"),
         client.from("dish_dietary_flags").select("dish_id,dietary_flag_id"),
         client.from("dietary_flags").select("id,slug"),
@@ -598,13 +642,15 @@ async function refreshCache(force = false): Promise<void> {
           dishDietaryFlagRows,
           dietaryFlagRows,
         );
-        cachedDishes = (dishesResult.data as unknown as Row[]).map((row) =>
-          mapDish(
-            row,
-            mappedVenues.find((venue) => venue.id === toString(row.venue_id)),
-            presentationByDishId.get(toString(row.id)),
-          ),
-        );
+        cachedDishes = (dishesResult.data as unknown as Row[])
+          .filter(isCatalogMenuDisplayable)
+          .map((row) =>
+            mapDish(
+              row,
+              mappedVenues.find((venue) => venue.id === toString(row.venue_id)),
+              presentationByDishId.get(toString(row.id)),
+            ),
+          );
       }
       if (Array.isArray(blogResult.data) && !blogResult.error) {
         cachedBlogPosts = (blogResult.data as unknown as Row[]).map(mapBlogPost);

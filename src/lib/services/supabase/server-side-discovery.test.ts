@@ -205,7 +205,7 @@ test("Discover feed ratings are sourced from the same dish aggregates as details
   assert.match(repositorySource, /review_count:\s+row\.top_dish_review_count/);
   assert.match(
     repositorySource,
-    /const imageUrl = gallery\[0\] \|\| toString\(row\.image_url\) \|\| "";/,
+    /const imageUrl = gallery\[0\] \|\| catalogDisplayImageUrl\(row\) \|\| "";/,
   );
   assert.match(
     serviceSource,

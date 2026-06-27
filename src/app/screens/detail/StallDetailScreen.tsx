@@ -214,7 +214,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     [repository, venue],
   );
   const [hydratedDishes, setHydratedDishes] = useState<DishDetail[] | undefined>();
-  const dishes = hydratedDishes ?? cachedDishes;
+  const dishes = hydratedDishes ?? (serviceProviderMode === "supabase" ? [] : cachedDishes);
   const dishIdsKey = useMemo(() => dishes.map((dish) => dish.id).join("|"), [dishes]);
   const leadDish = dishes[0];
 
@@ -281,7 +281,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
       };
     }
 
-    if (cachedDishes.length > 0) {
+    if (cachedDishes.length > 0 && serviceProviderMode !== "supabase") {
       return () => {
         active = false;
       };
@@ -299,7 +299,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [cachedDishes.length, venue?.id]);
+  }, [cachedDishes.length, serviceProviderMode, venue?.id]);
 
   useEffect(() => {
     setIsClaimPending(hasPendingClaimForProfile(profile.id));
@@ -846,24 +846,48 @@ export function StallDetailScreen({ navigation, route }: Props) {
               {/* Menu */}
               <View style={{ gap: spacing[4] }}>
                 <AppText variant="h2">Menu</AppText>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    flexWrap: "wrap",
-                    gap: spacing[3],
-                  }}
-                >
-                  {dishes.map((dish, index) => (
-                    <StallMenuDishCard
-                      key={dish.id}
-                      dish={dish}
-                      dishes={dishes}
-                      index={index}
-                      width={(screenWidth - spacing[5] * 2 - spacing[3]) / 2}
-                      onPress={openMenuDish}
-                    />
-                  ))}
-                </View>
+                {dishes.length > 0 ? (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      gap: spacing[3],
+                    }}
+                  >
+                    {dishes.map((dish, index) => (
+                      <StallMenuDishCard
+                        key={dish.id}
+                        dish={dish}
+                        dishes={dishes}
+                        index={index}
+                        width={(screenWidth - spacing[5] * 2 - spacing[3]) / 2}
+                        onPress={openMenuDish}
+                      />
+                    ))}
+                  </View>
+                ) : (
+                  <Card style={{ padding: spacing[4], alignItems: "center" }}>
+                    <AppText
+                      variant="body"
+                      tone="secondary"
+                      style={{ textAlign: "center", marginBottom: spacing[2] }}
+                    >
+                      No menu available for this stall yet.
+                    </AppText>
+                    {isAuthenticated && (
+                      <Button
+                        label="Add a menu photo"
+                        variant="secondary"
+                        onPress={() =>
+                          navigation.navigate("ReviewStack", {
+                            screen: "ReviewMain",
+                            params: { venueId: venue.id },
+                          })
+                        }
+                      />
+                    )}
+                  </Card>
+                )}
               </View>
 
               {/* Community Reviews */}

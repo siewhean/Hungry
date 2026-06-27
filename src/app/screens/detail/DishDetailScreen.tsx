@@ -68,8 +68,10 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const deepLinkedDishId = route.params?.dishId ?? route.params?.id ?? "";
   const cachedDish = repository.getDishById(deepLinkedDishId);
   const [hydratedDish, setHydratedDish] = useState<DishDetail | undefined>();
-  const [hasLoadedDishDetail, setHasLoadedDishDetail] = useState(Boolean(cachedDish));
-  const dish = hydratedDish ?? cachedDish;
+  const [hasLoadedDishDetail, setHasLoadedDishDetail] = useState(
+    serviceProviderMode === "supabase" ? false : Boolean(cachedDish),
+  );
+  const dish = hydratedDish ?? (serviceProviderMode === "supabase" ? undefined : cachedDish);
   const profile = useProfileStore((state) => state.profile);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const addReviewedDish = useProfileStore((state) => state.addReviewedDish);
@@ -141,8 +143,8 @@ export function DishDetailScreen({ navigation, route }: Props) {
   useEffect(() => {
     let active = true;
     setHydratedDish(undefined);
-    setHasLoadedDishDetail(Boolean(cachedDish));
-    if (!deepLinkedDishId || cachedDish) {
+    setHasLoadedDishDetail(serviceProviderMode === "supabase" ? false : Boolean(cachedDish));
+    if (!deepLinkedDishId || (cachedDish && serviceProviderMode !== "supabase")) {
       return () => {
         active = false;
       };
@@ -162,7 +164,7 @@ export function DishDetailScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [cachedDish, deepLinkedDishId]);
+  }, [cachedDish, deepLinkedDishId, serviceProviderMode]);
 
   useEffect(() => {
     let active = true;

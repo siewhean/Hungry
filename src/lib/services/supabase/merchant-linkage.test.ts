@@ -45,7 +45,10 @@ test("Supabase repository reads dish metadata from normalized catalog tables", (
   const repository = read("src/lib/services/supabase/supabaseRepository.ts");
 
   assert.match(repository, /from\("dishes"\)\.select\("\*"\)/);
-  assert.match(repository, /from\("dish_images"\)\.select\("dish_id,url,sort_order"\)/);
+  assert.match(
+    repository,
+    /from\("dish_images"\)[\s\S]*media_approved_for_display,media_rights_status,media_source_url/,
+  );
   assert.match(repository, /from\("dish_taste_vectors"\)/);
   assert.match(repository, /from\("dish_dietary_flags"\)/);
   assert.match(repository, /from\("dietary_flags"\)/);
