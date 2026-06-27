@@ -43,7 +43,11 @@ import {
   Screen,
   Skeleton,
 } from "@/components/ui";
-import { getDiscoverBiteCollections, getDiscoverBites } from "@/features/discover/bites";
+import {
+  getDiscoverBiteCollections,
+  getDiscoverBites,
+  resolveDiscoverFoodImageUrl,
+} from "@/features/discover/bites";
 import {
   prefetchDishDetail,
   prefetchBrowseResults,
@@ -228,12 +232,13 @@ function searchResultToDiscoverBite(result: SearchResult, index: number): Bite {
   const createdAt = new Date(Date.now() - (index + 1) * 15 * 60_000).toISOString();
   const normalizedRating = Number.isFinite(dish.rating) ? dish.rating : 0;
   const reviewCount = Number.isFinite(dish.reviewCount) ? dish.reviewCount : 0;
+  const photoUrl = resolveDiscoverFoodImageUrl(dish.imageUrl, dish.name);
 
   return {
     id: `discover-${dish.id}`,
     authorId: `venue-${dish.venueId}`,
     authorName: dish.venueName,
-    authorAvatar: dish.imageUrl,
+    authorAvatar: photoUrl,
     dishId: dish.id,
     dishName: dish.name,
     venueId: dish.venueId,
@@ -241,7 +246,7 @@ function searchResultToDiscoverBite(result: SearchResult, index: number): Bite {
     unitNumber: dish.unitNumber,
     buildingId: dish.buildingId,
     buildingName: dish.venueName,
-    photoUrl: dish.imageUrl,
+    photoUrl,
     caption: dish.description ?? dish.name,
     tasteStamp: dish.tasteVector,
     cravingCount: Math.max(reviewCount, Math.round((score || normalizedRating) * 10)),

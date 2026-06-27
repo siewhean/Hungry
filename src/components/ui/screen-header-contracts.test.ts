@@ -922,11 +922,14 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   assert.match(discoverBites, /export function getDiscoverBiteCollection/);
   assert.match(discoverBites, /export function syncBiteWithDish/);
   assert.match(discoverBites, /dishName: dish\.name/);
-  assert.match(discoverBites, /photoUrl: dish\.imageUrl/);
+  assert.match(
+    discoverBites,
+    /photoUrl: resolveDiscoverFoodImageUrl\(dish\.imageUrl, dish\.name\)/,
+  );
   assert.match(discoverBites, /price: dish\.price/);
   assert.match(discoverBites, /rating: dish\.rating/);
   assert.match(discoverBites, /venueName: dish\.venueName/);
-  assert.match(discoverBites, /const bitesWithImages = syncedBites\.map/);
+  assert.match(discoverBites, /const bitesWithImages = syncedBites[\s\S]*\.map/);
   assert.doesNotMatch(quickBites, /mockDishes/);
   assert.doesNotMatch(quickBites, /DISH_IMAGE_URLS/);
   assert.match(quickBites, /const list = collectionBites\s*\.filter/);
