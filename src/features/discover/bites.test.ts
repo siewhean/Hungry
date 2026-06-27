@@ -107,6 +107,38 @@ test("Discover food collections keep image-less live bites visible with local fa
   }
 });
 
+test("Discover food collections prioritise real Supabase images before local fallbacks", () => {
+  const fallbackBite = createBite({
+    id: "bite-fallback",
+    dishId: "supabase-fallback",
+    dishName: "Fallback Dish",
+    price: 6,
+    rating: 4.8,
+    cravingCount: 100,
+    photoUrl: "",
+    imageSourceType: "local_fallback",
+  });
+  const imageBite = createBite({
+    id: "bite-real-image",
+    dishId: "supabase-real-image",
+    dishName: "Real Image Dish",
+    price: 6,
+    rating: 4.5,
+    cravingCount: 10,
+    photoUrl: "https://example.com/approved-menu-image.jpg",
+    imageSourceType: "dish_image",
+  });
+
+  const collections = getDiscoverBiteCollections([fallbackBite, imageBite], {
+    getDishById: () => undefined,
+  } as never);
+
+  for (const collectionName of ["quickBites", "trending", "editorChoice", "budget"] as const) {
+    assert.equal(collections[collectionName][0]?.id, "bite-real-image", collectionName);
+    assert.equal(collections[collectionName][1]?.id, "bite-fallback", collectionName);
+  }
+});
+
 test("Discover source does not hardcode demo image URL fallbacks", () => {
   const discoverBites = readRepoFile("src/features/discover/bites.ts");
   const discoverHome = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");

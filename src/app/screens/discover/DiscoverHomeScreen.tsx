@@ -1421,7 +1421,7 @@ export function DiscoverHomeScreen() {
         lat: discoverLocationLatitude,
         lng: discoverLocationLongitude,
         radiusMeters: DISCOVER_AREA_RADIUS_METERS,
-        limit: 50,
+        limit: 100,
       }),
     ])
       .then(([venueCount, discoveryFeed]) => {

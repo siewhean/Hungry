@@ -970,14 +970,22 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
     /<View style=\{styles\.titleRow\}>[\s\S]*navigation\.goBack\(\)[\s\S]*\{collectionCopy\.title\}[\s\S]*<ExpandableSearchLauncher/,
   );
   assert.match(quickBites, /titleRow: \{[\s\S]*flexDirection: "row"[\s\S]*marginBottom: 8/);
-  assert.match(discoverBites, /budget: bitesWithImages\.filter\(\(bite\) => bite\.price < 8\)/);
   assert.match(
     discoverBites,
-    /editorChoice: bitesWithImages\.filter\(\(bite\) => bite\.rating >= 4\.4\)/,
+    /const imagePriorityBites = sortBitesByImagePriority\(bitesWithImages\)/,
+  );
+  assert.match(discoverBites, /quickBites: imagePriorityBites/);
+  assert.match(
+    discoverBites,
+    /budget: sortBitesByImagePriority\(bitesWithImages\.filter\(\(bite\) => bite\.price < 8\)\)/,
   );
   assert.match(
     discoverBites,
-    /trending: \[\.\.\.bitesWithImages\]\.sort\(\(a, b\) => b\.cravingCount - a\.cravingCount\)/,
+    /editorChoice: sortBitesByImagePriority\(\s*bitesWithImages\.filter\(\(bite\) => bite\.rating >= 4\.4\),?\s*\)/,
+  );
+  assert.match(
+    discoverBites,
+    /trending: \[\.\.\.bitesWithImages\]\.sort\(\(a, b\) => \{[\s\S]*hasRealDiscoverBiteImage\(b\)[\s\S]*b\.cravingCount - a\.cravingCount/,
   );
   assert.match(discoverBites, /const lateNight = syncedBites/);
   assert.match(quickBites, /return getDiscoverBiteCollection\(collection, bites\)/);

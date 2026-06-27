@@ -138,6 +138,19 @@ export function getDishImageCandidates(
   ];
 }
 
+function hasRealDiscoverBiteImage(bite: Bite) {
+  return bite.imageSourceType !== "local_fallback" && isUsableDiscoverImageUrl(bite.photoUrl);
+}
+
+function sortBitesByImagePriority<T extends Bite>(bites: readonly T[]) {
+  return [...bites].sort((left, right) => {
+    const imagePriority =
+      Number(hasRealDiscoverBiteImage(right)) - Number(hasRealDiscoverBiteImage(left));
+    if (imagePriority !== 0) return imagePriority;
+    return 0;
+  });
+}
+
 function slugifyId(value: string) {
   return value
     .trim()
@@ -336,6 +349,7 @@ export function getDiscoverBiteCollections(
     };
   });
   const bitesWithImages = syncedBites.map(({ bite }) => bite);
+  const imagePriorityBites = sortBitesByImagePriority(bitesWithImages);
 
   const lateNight = syncedBites
     .filter(({ bite, dish }) => {
@@ -349,10 +363,15 @@ export function getDiscoverBiteCollections(
     .map(({ bite }) => bite);
 
   return {
-    quickBites: bitesWithImages,
-    budget: bitesWithImages.filter((bite) => bite.price < 8),
-    editorChoice: bitesWithImages.filter((bite) => bite.rating >= 4.4),
-    trending: [...bitesWithImages].sort((a, b) => b.cravingCount - a.cravingCount),
-    lateNight,
+    quickBites: imagePriorityBites,
+    budget: sortBitesByImagePriority(bitesWithImages.filter((bite) => bite.price < 8)),
+    editorChoice: sortBitesByImagePriority(bitesWithImages.filter((bite) => bite.rating >= 4.4)),
+    trending: [...bitesWithImages].sort((a, b) => {
+      const imagePriority =
+        Number(hasRealDiscoverBiteImage(b)) - Number(hasRealDiscoverBiteImage(a));
+      if (imagePriority !== 0) return imagePriority;
+      return b.cravingCount - a.cravingCount;
+    }),
+    lateNight: sortBitesByImagePriority(lateNight),
   };
 }

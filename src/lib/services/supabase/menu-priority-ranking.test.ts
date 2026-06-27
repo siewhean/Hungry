@@ -11,6 +11,10 @@ const menuPriorityIndexableFixMigration = readRepoFile(
   "supabase/migrations/20260627232500_menu_priority_discovery_candidate_prefilter.sql",
 );
 
+const discoveryImagePriorityMigration = readRepoFile(
+  "supabase/migrations/20260628001000_discovery_image_priority.sql",
+);
+
 const searchMigration = readRepoFile(
   "supabase/migrations/20260621114541_search_dishes_restore_fast_guarded.sql",
 );
@@ -42,6 +46,25 @@ test("Discovery feed prioritises stalls with approved priced menu coverage", () 
     /where\s+d\.venue_id\s*=\s*cv\.id\s+and\s+d\.price\s*>\s*0\s+and\s+public\.catalog_menu_is_displayable/i,
   );
   assert.match(menuPriorityIndexableFixMigration, /order\s+by\s+candidates\.rank_score\s+desc/i);
+});
+
+test("Discovery feed prioritises image-backed dishes and rows when approved images exist", () => {
+  assert.match(
+    discoveryImagePriorityMigration,
+    /exists\s*\([\s\S]*from\s+dish_images\s+di[\s\S]*catalog_display_image_url\([\s\S]*di\.url[\s\S]*\)\s+is\s+not\s+null[\s\S]*\)\s+desc/i,
+  );
+  assert.match(
+    discoveryImagePriorityMigration,
+    /catalog_display_image_url\(\s*d\.image_url,[\s\S]*d\.media_approved_for_display,[\s\S]*d\.media_rights_status,[\s\S]*d\.media_source_url[\s\S]*\)\s+is\s+not\s+null\)\s+desc/i,
+  );
+  assert.match(
+    discoveryImagePriorityMigration,
+    /where\s+di\.dish_id\s*=\s*top_dish\.id[\s\S]*catalog_display_image_url\([\s\S]*di\.url[\s\S]*\)\s+is\s+not\s+null[\s\S]*order\s+by\s+di\.sort_order/i,
+  );
+  assert.match(
+    discoveryImagePriorityMigration,
+    /order\s+by\s+\(nullif\(trim\(candidates\.top_dish_image\),\s*''\)\s+is\s+not\s+null\)\s+desc,[\s\S]*candidates\.rank_score\s+desc/i,
+  );
 });
 
 test("Search remains menu-backed instead of surfacing unapproved menu rows", () => {
