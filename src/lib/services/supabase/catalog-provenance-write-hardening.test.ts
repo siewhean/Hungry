@@ -85,7 +85,7 @@ test("frontend Supabase menu reads prefer display-safe service data", () => {
 
   assert.match(
     stallDetail,
-    /hydratedDishes\s+\?\?\s+\(serviceProviderMode\s+===\s+"supabase"\s+\?\s+\[\]\s+:\s+cachedDishes\)/,
+    /hydratedDishes\s+\?\?\s+\(serviceProviderMode\s+===\s+"supabase"\s+\?\s+(?:\[\]|EMPTY_DISHES)\s+:\s+cachedDishes\)/,
   );
   assert.match(
     stallDetail,
