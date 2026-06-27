@@ -1,4 +1,6 @@
-const { chromium } = require('playwright');
+const { chromium } = require('playwright-extra');
+const stealth = require('puppeteer-extra-plugin-stealth')();
+chromium.use(stealth);
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
@@ -6,34 +8,80 @@ const https = require('https');
 const INPUT_PATH = path.join(__dirname, '..', 'data', 'stalls_to_enrich.json');
 const OUTPUT_PATH = path.join(__dirname, '..', 'data', 'menu_enrichment_results.json');
 
-const CONCURRENCY = 15; // Concurrent workers
+const CONCURRENCY = 3; // Concurrent workers
 const SAVE_INTERVAL = 10; // Save to disk every 10 stalls
 
 // Load environment variables
-const ANTHROPIC_AUTH_TOKEN = process.env.ANTHROPIC_AUTH_TOKEN;
-const ANTHROPIC_BASE_URL = process.env.ANTHROPIC_BASE_URL || 'https://api.lingshi.chat';
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-async function searchYahoo(page, query) {
-    const searchUrl = `https://search.yahoo.com/search?p=${encodeURIComponent(query)}`;
-    try {
-        await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
+const SEARCH_ENGINES = [
+    (query) => `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
+    (query) => `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`,
+    (query) => `https://search.yahoo.com/search?p=${encodeURIComponent(query)}`,
+    (query) => `https://www.google.com/search?q=${encodeURIComponent(query)}`
+];
 
-        // Extract GrabFood link
-        const grabUrl = await page.evaluate(() => {
-            const anchors = Array.from(document.querySelectorAll('a'));
-            for (const a of anchors) {
-                const href = a.href || '';
-                if (href.includes('food.grab.com/sg/en/restaurant/')) {
-                    return href;
-                }
+let engineIndex = 0;
+
+async function searchWeb(page, query, stallName) {
+    let errorCount = 0;
+    for (let i = 0; i < SEARCH_ENGINES.length; i++) {
+        const engineUrl = SEARCH_ENGINES[engineIndex](query);
+        engineIndex = (engineIndex + 1) % SEARCH_ENGINES.length;
+
+        try {
+            await page.goto(engineUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
+
+            const title = await page.title();
+            if (title.toLowerCase().includes('captcha') || title.toLowerCase().includes('sorry') || title.toLowerCase().includes('verify')) {
+                console.log(`[Search] Engine blocked (Title: ${title}), trying next...`);
+                errorCount++;
+                continue;
             }
-            return null;
-        });
-        return grabUrl;
-    } catch (e) {
-        console.error(`[Search Error] Failed searching for "${query}": ${e.message}`);
-        return null;
+
+            const grabUrl = await page.evaluate((sName) => {
+                const anchors = Array.from(document.querySelectorAll('a'));
+
+                const stopWords = ['the', 'and', 'for', 'pte', 'ltd', 'inc', 'co', 'cafe', 'restaurant', 'stall', 'food', 'court', 'delivery'];
+
+                // Get the very first significant word of the stall name
+                const words = (sName || '').toLowerCase().split(' ')
+                    .map(w => w.replace(/[^a-z0-9]/g, ''))
+                    .filter(w => w.length > 2 && !stopWords.includes(w));
+
+                const stallFirstWord = words.length > 0 ? words[0] : (sName || '').toLowerCase().split(' ')[0].replace(/[^a-z0-9]/g, '');
+
+                for (const a of anchors) {
+                    const href = (a.href || '').toLowerCase();
+                    if (href.includes('food.grab.com/sg/en/restaurant/')) {
+                        // Extract the slug (e.g., from .../restaurant/sushi-express-jurong/...)
+                        const parts = href.split('/restaurant/');
+                        if (parts.length > 1) {
+                            const slug = parts[1].split('/')[0]; // "sushi-express-jurong"
+
+                            // Get the very first significant word of the URL slug
+                            const slugWords = slug.split('-').filter(w => w.length > 2 && !stopWords.includes(w));
+                            const slugFirstWord = slugWords.length > 0 ? slugWords[0] : slug.split('-')[0];
+
+                            // The first significant word of the slug MUST match the first significant word of the stall!
+                            if (slugFirstWord === stallFirstWord) {
+                                return a.href;
+                            }
+                        }
+                    }
+                }
+                return null;
+            }, stallName);
+
+            if (grabUrl) return { url: grabUrl, blocked: false };
+
+        } catch (e) {
+            console.log(`[Search Error] ${e.message}, trying next...`);
+            errorCount++;
+        }
     }
+    // If every single engine we tried threw an error or blocked us, we didn't get a real search result.
+    return { url: null, blocked: errorCount >= SEARCH_ENGINES.length };
 }
 
 async function scrapeGrabMenu(page, url, coords) {
@@ -88,7 +136,10 @@ async function scrapeGrabMenu(page, url, coords) {
                         name = name.slice(0, -desc.length).trim();
                     }
 
-                    const imageUrl = imgEl ? (imgEl.src || imgEl.getAttribute('src') || '') : '';
+                    let imageUrl = imgEl ? (imgEl.src || imgEl.getAttribute('src') || '') : '';
+                    if (imageUrl && (imageUrl.includes('placeholder') || imageUrl.includes('unsplash') || imageUrl.includes('default') || imageUrl.includes('blank') || imageUrl.endsWith('.svg'))) {
+                        imageUrl = '';
+                    }
 
                     results.push({
                         name,
@@ -108,35 +159,31 @@ async function scrapeGrabMenu(page, url, coords) {
     }
 }
 
-function callClaudeAPI(stallName, cuisine, building) {
+function callGeminiAPI(stallName, cuisine, building) {
     return new Promise((resolve, reject) => {
-        if (!ANTHROPIC_AUTH_TOKEN) {
-            return reject(new Error("ANTHROPIC_AUTH_TOKEN not set"));
+        if (!GEMINI_API_KEY) {
+            return reject(new Error("GEMINI_API_KEY not set"));
         }
 
         const payload = {
-            model: "claude-sonnet-4-5",
-            messages: [{
-                role: "user",
-                content: `You are a Singaporean food guide. Generate an extensive, realistic menu of 10-15 dishes for a stall named "${stallName}" serving "${cuisine || 'Local'}" cuisine at "${building || 'Singapore Food Centre'}".
-For each dish, provide:
-1. "name": The clean dish name (e.g. "Hainanese Chicken Rice").
-2. "price": A realistic price in SGD (e.g. 5.50).
-3. "description": A short appetizing description.
-4. "imageUrl": A specific, high-quality, real Unsplash food image URL (e.g., "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=60") matching this type of food. Avoid generic placeholder images. Ensure each dish has a unique and relevant Unsplash photo ID.
-
-Output the response as a JSON array of objects with keys: name, price, description, imageUrl. Do not include markdown code block formatting or any other text, just the raw JSON array.`
+            contents: [{
+                parts: [{
+                    text: `You are a Singaporean food guide. Generate an extensive, realistic menu of 10-15 dishes for a stall named "${stallName}" serving "${cuisine || 'Local'}" cuisine at "${building || 'Singapore Food Centre'}".\nFor each dish, provide:\n1. "name": The clean dish name (e.g. "Hainanese Chicken Rice").\n2. "price": A realistic price in SGD (e.g. 5.50).\n3. "description": A short appetizing description.\n4. "imageUrl": A specific, high-quality, real Unsplash food image URL (e.g., "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=60") matching this type of food. Avoid generic placeholder images. Ensure each dish has a unique and relevant Unsplash photo ID.\n\nOutput the response as a JSON array of objects with keys: name, price, description, imageUrl. Do not include markdown code block formatting or any other text, just the raw JSON array.`
+                }]
             }],
-            max_tokens: 1500
+            generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 1500,
+                responseMimeType: "application/json"
+            }
         };
 
         const postData = JSON.stringify(payload);
         const options = {
-            hostname: ANTHROPIC_BASE_URL.replace('https://', ''),
-            path: '/v1/chat/completions',
+            hostname: 'generativelanguage.googleapis.com',
+            path: `/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${ANTHROPIC_AUTH_TOKEN}`,
                 'Content-Type': 'application/json',
                 'Content-Length': Buffer.byteLength(postData)
             },
@@ -148,11 +195,14 @@ Output the response as a JSON array of objects with keys: name, price, descripti
             res.on('data', (chunk) => body += chunk);
             res.on('end', () => {
                 if (res.statusCode !== 200) {
-                    return reject(new Error(`Claude API HTTP ${res.statusCode}: ${body}`));
+                    return reject(new Error(`Gemini API HTTP ${res.statusCode}: ${body}`));
                 }
                 try {
                     const parsed = JSON.parse(body);
-                    const textContent = parsed.choices[0].message.content.trim();
+                    if (!parsed.candidates || parsed.candidates.length === 0) {
+                         return reject(new Error(`Gemini returned no candidates: ${body}`));
+                    }
+                    const textContent = parsed.candidates[0].content.parts[0].text.trim();
 
                     // Clean up markdown block if model output it
                     let cleanJson = textContent;
@@ -163,7 +213,7 @@ Output the response as a JSON array of objects with keys: name, price, descripti
                     const dishes = JSON.parse(cleanJson);
                     resolve(dishes);
                 } catch (e) {
-                    reject(new Error(`Failed to parse Claude response: ${e.message}\nResponse body: ${body}`));
+                    reject(new Error(`Failed to parse Gemini response: ${e.message}\nResponse body: ${body}`));
                 }
             });
         });
@@ -171,7 +221,7 @@ Output the response as a JSON array of objects with keys: name, price, descripti
         req.on('error', (e) => reject(e));
         req.on('timeout', () => {
             req.destroy();
-            reject(new Error("Claude API request timeout"));
+            reject(new Error("Gemini API request timeout"));
         });
         req.write(postData);
         req.end();
@@ -201,8 +251,30 @@ async function main() {
         }
     }
 
-    // Filter remaining stalls
-    let remainingStalls = stalls.filter(s => !resultsMap.has(s.uri));
+    let attemptedSet = new Set();
+    if (fs.existsSync('data/grab_attempted.json')) {
+        try {
+            const arr = JSON.parse(fs.readFileSync('data/grab_attempted.json', 'utf-8'));
+            attemptedSet = new Set(arr);
+        } catch(e) {}
+    }
+
+    // Filter remaining stalls (skip if successfully scraped OR already attempted)
+    let successNames = new Set();
+    for (const item of resultsMap.values()) {
+        if (item.dishes && item.dishes.length > 0 && item.stall_name) {
+            successNames.add(item.stall_name.toLowerCase().trim());
+        }
+    }
+
+    let remainingStalls = stalls.filter(s => {
+        if (resultsMap.has(s.uri)) return false;
+        if (attemptedSet.has(s.uri)) return false;
+        if (s.stall_name && successNames.has(s.stall_name.toLowerCase().trim())) {
+            return false; // Skip because another branch of this chain already has a menu!
+        }
+        return true;
+    });
     console.log(`Remaining stalls to process: ${remainingStalls.length}`);
 
     // Limit processing count if argument is passed, e.g. --limit 10
@@ -251,9 +323,10 @@ async function main() {
                 dishes: []
             };
 
-            // Step 1: Search Yahoo for GrabFood
+            // Step 1: Search Bing for GrabFood
             const searchQuery = `GrabFood Singapore ${stall.stall_name} ${stall.building || stall.address}`;
-            const grabUrl = await searchYahoo(page, searchQuery);
+            let searchResult = await searchWeb(page, searchQuery, stall.stall_name);
+            let grabUrl = searchResult.url;
 
             if (grabUrl) {
                 console.log(`   -> Found GrabFood URL: ${grabUrl}`);
@@ -267,28 +340,27 @@ async function main() {
                 }
             }
 
-            // Step 3: Fallback to Claude AI menu generation if GrabFood scraping failed or was not found
-            if (result.dishes.length === 0) {
-                console.log(`   -> Fallback: Generating menu with Claude AI for ${stall.stall_name}...`);
-                try {
-                    const generated = await callClaudeAPI(stall.stall_name, stall.existing_menu || stall.stall_name, stall.building || stall.address);
-                    if (generated && generated.length > 0) {
-                        console.log(`   -> Successfully generated ${generated.length} dishes via Claude.`);
-                        result.source = "claude-fallback";
-                        result.dishes = generated;
-                    }
-                } catch (e) {
-                    console.error(`   -> Claude generation failed: ${e.message}`);
-                }
-            }
-
-            // If we have dishes, save them
+            // Step 3: Check if we have dishes
             if (result.dishes.length > 0) {
                 resultsMap.set(stall.uri, result);
-            } else {
-                console.error(`   -> Failed to enrich stall ${stall.stall_name}. No dishes generated.`);
             }
 
+            // Add to attempted list so we don't infinitely retry failures
+            // ONLY if the search engine wasn't actively blocking us.
+            // If it blocked us, we want to try this stall again on the next run!
+            if (!searchResult.blocked) {
+                let attempted = [];
+                try { if (fs.existsSync('data/grab_attempted.json')) attempted = JSON.parse(fs.readFileSync('data/grab_attempted.json', 'utf8')); } catch(e){}
+                attempted.push(stall.uri);
+                fs.writeFileSync('data/grab_attempted.json', JSON.stringify(attempted));
+            } else {
+                console.log(`   -> Skipping caching as failure for ${stall.stall_name} because search engine blocked us.`);
+            }
+
+            // Skip missing menus
+            if (!grabUrl) {
+                console.log(`   -> Failed to enrich stall ${stall.stall_name}. No URL found via search.`);
+            }
             completedCount++;
             if (completedCount % SAVE_INTERVAL === 0) {
                 saveResults();
