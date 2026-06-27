@@ -25,7 +25,6 @@ export type ConsoleWaitlistEntry = {
   audience: WaitlistAudience | "both";
   businessName?: string;
   email: string;
-  emailRedacted: boolean;
   establishmentType?: string;
   id: string;
   metadata?: Record<string, unknown> | null;
@@ -327,8 +326,7 @@ export async function listConsoleWaitlistEntries(): Promise<{
     entries: safeRows.map((row) => ({
       audience: (asString(row.audience) as WaitlistAudience | "both") ?? "foodie",
       businessName: asString(row.business_name),
-      email: redactEmail(asString(row.email)),
-      emailRedacted: true,
+      email: asString(row.email) ?? "",
       establishmentType: asString(row.establishment_type),
       id: asString(row.id) ?? "",
       metadata: sanitizeConsoleMetadata(row.metadata),
@@ -338,6 +336,26 @@ export async function listConsoleWaitlistEntries(): Promise<{
       updatedAt: asString(row.updated_at) ?? "",
     })),
   };
+}
+
+export async function clearConsoleWaitlistEntries(): Promise<{ deleted: number }> {
+  if (!isSupabaseServiceConfigured()) {
+    return { deleted: 0 };
+  }
+
+  const preCount = await supabaseCount("website_waitlist_entries", {}, { serviceRole: true });
+
+  await supabaseFetchOnDemand<unknown>("rest/v1/website_waitlist_entries", {
+    method: "DELETE",
+    params: {
+      id: "is.not.null",
+    },
+    prefer: "return=minimal",
+    serviceRole: true,
+  });
+
+  const postCount = await supabaseCount("website_waitlist_entries", {}, { serviceRole: true });
+  return { deleted: Math.max(0, preCount - postCount) };
 }
 
 export async function listConsoleMerchants(): Promise<{
@@ -357,14 +375,15 @@ export async function listConsoleMerchants(): Promise<{
     },
     serviceRole: true,
   });
+  const outletRows = Array.isArray(outlets) ? outlets : [];
 
   const accountIds = Array.from(
-    new Set(outlets.map((outlet) => asString(outlet.merchant_account_id)).filter(Boolean)),
+    new Set(outletRows.map((outlet) => asString(outlet.merchant_account_id)).filter(Boolean)),
   ) as string[];
   const venueIds = Array.from(
-    new Set(outlets.map((outlet) => asString(outlet.venue_id)).filter(Boolean)),
+    new Set(outletRows.map((outlet) => asString(outlet.venue_id)).filter(Boolean)),
   ) as string[];
-  const outletIds = Array.from(new Set(outlets.map((outlet) => asString(outlet.id)).filter(Boolean))) as string[];
+  const outletIds = Array.from(new Set(outletRows.map((outlet) => asString(outlet.id)).filter(Boolean))) as string[];
 
   const [accountsResult, venuesResult, verificationsResult, dishCounts] = await Promise.all([
     accountIds.length
@@ -402,16 +421,19 @@ export async function listConsoleMerchants(): Promise<{
     ),
   ]);
 
-  const accountsById = new Map(accountsResult.data.map((row) => [asString(row.id), row]));
-  const venuesById = new Map(venuesResult.data.map((row) => [asString(row.id), row]));
+  const accountRows = Array.isArray(accountsResult.data) ? accountsResult.data : [];
+  const venueRows = Array.isArray(venuesResult.data) ? venuesResult.data : [];
+  const verificationRows = Array.isArray(verificationsResult.data) ? verificationsResult.data : [];
+  const accountsById = new Map(accountRows.map((row) => [asString(row.id), row]));
+  const venuesById = new Map(venueRows.map((row) => [asString(row.id), row]));
   const verificationsByOutletId = new Map(
-    verificationsResult.data.map((row) => [asString(row.outlet_id), row]),
+    verificationRows.map((row) => [asString(row.outlet_id), row]),
   );
   const dishCountByVenueId = new Map(dishCounts);
 
   return {
     configured: true,
-    merchants: outlets.map((outlet) => {
+    merchants: outletRows.map((outlet) => {
       const account = accountsById.get(asString(outlet.merchant_account_id));
       const venue = venuesById.get(asString(outlet.venue_id));
       const verification = verificationsByOutletId.get(asString(outlet.id));

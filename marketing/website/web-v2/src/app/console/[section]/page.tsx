@@ -1,6 +1,4 @@
-import { notFound } from "next/navigation";
-import ConsoleScaffoldPage from "../ConsoleScaffoldPage";
-import { consoleScaffoldPages } from "../consoleScaffoldCopy";
+import ConsoleRoutePage from "../ConsoleRoutePage";
 
 type ConsoleSectionPageProps = {
   params: Promise<{ section: string }>;
@@ -8,9 +6,5 @@ type ConsoleSectionPageProps = {
 
 export default async function ConsoleSectionPage({ params }: ConsoleSectionPageProps) {
   const { section } = await params;
-  const copy = consoleScaffoldPages[section];
-
-  if (!copy) notFound();
-
-  return <ConsoleScaffoldPage copy={copy} basePath="/console" />;
+  return <ConsoleRoutePage section={section} />;
 }

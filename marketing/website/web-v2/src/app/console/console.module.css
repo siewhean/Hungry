@@ -980,6 +980,39 @@
   word-break: break-word;
 }
 
+.waitlistEmailCell {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  text-align: left;
+  font: inherit;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0;
+  cursor: copy;
+}
+
+.waitlistEmailCell:hover {
+  text-decoration: underline;
+}
+
+.waitlistEmailCell:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.waitlistEmailAction {
+  color: var(--color-text-secondary);
+  text-wrap: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+}
+
 .waitlistTable th:nth-child(1),
 .waitlistTable th:nth-child(2),
 .waitlistTable td:nth-child(1),
@@ -3160,5 +3193,414 @@ input:checked + .slider::before {
   .dishCard:hover,
   .notificationButton:hover {
     transform: none;
+  }
+}
+
+.operatorName {
+  color: var(--color-white);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  line-height: 1.2;
+  margin-bottom: var(--space-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operatorDetail,
+.sidebarFooterNote {
+  color: color-mix(in srgb, var(--color-white) 62%, transparent);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.topBarButton,
+.routeSecondaryButton,
+.routeDangerButton {
+  align-items: center;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  gap: var(--space-2);
+  justify-content: center;
+  min-height: 44px;
+  padding: var(--space-3) var(--space-5);
+  transition:
+    background-color var(--duration-fast) var(--ease-press),
+    border-color var(--duration-fast) var(--ease-press),
+    color var(--duration-fast) var(--ease-press),
+    transform var(--duration-fast) var(--ease-press);
+}
+
+.topBarButton,
+.routeSecondaryButton {
+  background: var(--console-surface-raised);
+  border: 1px solid var(--console-line);
+  color: var(--color-text-primary);
+}
+
+.routeDangerButton {
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--console-surface-raised));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 42%, var(--console-line));
+  color: var(--color-primary);
+}
+
+.topBarButton:hover,
+.routeSecondaryButton:hover,
+.routeDangerButton:hover {
+  transform: translateY(-1px);
+}
+
+.topBarButton:disabled,
+.routeSecondaryButton:disabled,
+.routeDangerButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  transform: none;
+}
+
+.routeShell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: var(--space-8);
+  width: 100%;
+}
+
+.routeHeader {
+  align-items: flex-start;
+  display: flex;
+  gap: var(--space-6);
+  justify-content: space-between;
+}
+
+.routeEyebrow {
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  margin: 0 0 var(--space-2);
+  text-transform: uppercase;
+}
+
+.routeTitleRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.routeTitleRow h1 {
+  color: var(--color-text-primary);
+  font-size: clamp(2rem, 4vw, 4.2rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 0.98;
+  margin: 0;
+}
+
+.routeStatus,
+.routeSourceChip,
+.routeRecordStatus {
+  border-radius: var(--radius-full);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  padding: var(--space-2) var(--space-3);
+  text-transform: uppercase;
+}
+
+.routeStatusReady {
+  background: color-mix(in srgb, var(--color-success) 14%, var(--console-surface-raised));
+  color: var(--color-success);
+}
+
+.routeStatusPartial {
+  background: color-mix(in srgb, var(--color-warning) 15%, var(--console-surface-raised));
+  color: #9a5a00;
+}
+
+.routePurpose {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-md);
+  line-height: 1.65;
+  margin: var(--space-4) 0 0;
+  max-width: 760px;
+}
+
+.routeActions,
+.routeInlineActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+.routeWarningList,
+.routeErrorState,
+.routeEmptyState,
+.routeLoadingState,
+.routeAdminForm,
+.routeRecordCard,
+.routeMetricCard {
+  background: var(--console-surface-raised);
+  border: 1px solid var(--console-line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.routeWarningList {
+  color: #8a4f00;
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+}
+
+.routeWarningList p,
+.routeErrorState,
+.routeEmptyState p,
+.routeAdminForm p,
+.routeMetricDetail,
+.routeRecordSubtitle {
+  margin: 0;
+}
+
+.routeErrorState {
+  border-color: color-mix(in srgb, var(--color-danger) 38%, var(--console-line));
+  color: var(--color-danger);
+  font-weight: 800;
+  padding: var(--space-4) var(--space-5);
+}
+
+.routeLoadingState,
+.routeEmptyState {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-md);
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.routeEmptyState h2,
+.routeAdminForm h2 {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-xl);
+  margin: 0 0 var(--space-2);
+}
+
+.routeSourceGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.routeSourceChip {
+  align-items: center;
+  background: var(--console-surface-raised);
+  border: 1px solid var(--console-line);
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  gap: var(--space-2);
+  text-transform: none;
+}
+
+.routeMetricGrid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.routeMetricCard {
+  padding: var(--space-5);
+}
+
+.routeMetricLabel {
+  color: var(--color-text-muted);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-2);
+  text-transform: uppercase;
+}
+
+.routeMetricValue {
+  color: var(--color-text-primary);
+  display: block;
+  font-size: clamp(1.7rem, 3vw, 2.6rem);
+  line-height: 1;
+}
+
+.routeMetricDetail {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  margin-top: var(--space-3);
+}
+
+.routeAdminForm {
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+.routeFieldRow {
+  align-items: end;
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(180px, 1.2fr) minmax(240px, 1.4fr) minmax(130px, 0.6fr) auto;
+}
+
+.routeFieldRow label {
+  color: var(--color-text-secondary);
+  display: grid;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: var(--space-2);
+}
+
+.routeTextInput,
+.routeSelectInput {
+  background: var(--console-surface);
+  border: 1px solid var(--console-line);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  font: inherit;
+  min-height: 46px;
+  padding: var(--space-3) var(--space-4);
+  width: 100%;
+}
+
+.routeTextInput:focus,
+.routeSelectInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgb(232 83 30 / 0.16);
+  outline: none;
+}
+
+.routeToolbar {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 800;
+  gap: var(--space-3);
+  justify-content: space-between;
+  text-transform: uppercase;
+}
+
+.routeRecordsGrid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.routeRecordCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+.routeRecordHeader,
+.routeRecordFooter {
+  align-items: flex-start;
+  display: flex;
+  gap: var(--space-3);
+  justify-content: space-between;
+}
+
+.routeRecordTitle {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-lg);
+  font-weight: 900;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.routeRecordSubtitle {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  margin-top: var(--space-2);
+}
+
+.routeRecordStatus {
+  background: var(--console-bg-soft);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.routeRecordMeta {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  margin: 0;
+}
+
+.routeRecordMeta div {
+  background: var(--console-bg-warm);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.routeRecordMeta dt {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 900;
+  margin-bottom: var(--space-1);
+  text-transform: uppercase;
+}
+
+.routeRecordMeta dd {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.routeRecordFooter {
+  border-top: 1px solid var(--console-line);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  padding-top: var(--space-3);
+}
+
+.routeRecordFooter code {
+  max-width: 46%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 900px) {
+  .routeShell {
+    padding: var(--space-5);
+  }
+
+  .routeHeader {
+    flex-direction: column;
+  }
+
+  .routeActions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .routeFieldRow {
+    grid-template-columns: 1fr;
   }
 }

@@ -1,65 +1,26 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard,
-  BarChart2,
-  UserCheck,
-  Inbox,
-  Sliders,
-  ClipboardList,
-  Search,
-  ShieldAlert,
-  LogOut,
-  Menu,
-  X,
-  Store,
-  Users,
-  Bell,
-  ExternalLink,
   ChevronLeft,
   ChevronRight,
-  Users2
+  ExternalLink,
+  LogOut,
+  Menu,
+  Search,
+  X,
 } from "lucide-react";
+import { getConsoleRouteGroups, type ConsoleRole } from "@/lib/console/routeRegistry";
 import styles from "./console.module.css";
 
-interface SidebarRoute {
-  label: string;
-  href: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-}
-
-const operationalRoutes: SidebarRoute[] = [
-  { label: "Overview", href: "/console", icon: LayoutDashboard },
-  { label: "Search", href: "/console/search", icon: Search },
-  { label: "Unified Inbox", href: "/console/inbox", icon: Inbox },
-  { label: "Merchants", href: "/console/merchants", icon: Store },
-  { label: "Stall Submissions", href: "/console/stall-submissions", icon: ClipboardList },
-  { label: "Users", href: "/console/users", icon: Users },
-  { label: "Waitlist", href: "/console/waitlist", icon: Users2 },
-  { label: "Merchant Claims", href: "/console/merchant-applications", icon: UserCheck },
-  { label: "User Feedback", href: "/console/feedback", icon: Inbox },
-  { label: "Moderation Queue", href: "/console/reports", icon: ShieldAlert },
-  { label: "Content Review", href: "/console/content", icon: ClipboardList },
-  { label: "Notifications", href: "/console/notifications", icon: Bell },
-  { label: "Activity", href: "/console/activity", icon: BarChart2 },
-  { label: "Messages", href: "/console/messages", icon: Inbox },
-  { label: "Releases", href: "/console/releases", icon: ClipboardList },
-];
-
-const configRoutes: SidebarRoute[] = [
-  { label: "Product Analytics", href: "/console/product-analytics", icon: BarChart2 },
-  { label: "Feature Flags", href: "/console/feature-flags", icon: Sliders },
-  { label: "Experiments", href: "/console/experiments", icon: Sliders },
-  { label: "App Config", href: "/console/app-config", icon: Sliders },
-  { label: "Data Quality", href: "/console/data-quality", icon: ClipboardList },
-  { label: "Issues", href: "/console/issues", icon: ShieldAlert },
-  { label: "Audit Log", href: "/console/audit-log", icon: ClipboardList },
-  { label: "Team", href: "/console/team", icon: Users },
-  { label: "Settings", href: "/console/settings", icon: Sliders },
-];
+type ConsoleActorView = {
+  authMode: "supabase" | "basic";
+  email: string;
+  role: ConsoleRole;
+  status: "active" | "suspended";
+};
 
 export default function ConsoleClientLayout({
   children,
@@ -68,8 +29,8 @@ export default function ConsoleClientLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [activeRole, setActiveRole] = useState<string>("Admin");
-  const [environment, setEnvironment] = useState<string>("staging");
+  const [actor, setActor] = useState<ConsoleActorView | null>(null);
+  const [authError, setAuthError] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
   const [isMobileViewport, setIsMobileViewport] = useState<boolean>(false);
@@ -91,24 +52,35 @@ export default function ConsoleClientLayout({
     };
   }, []);
 
-  // Dynamic console operator actions
-  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const role = e.target.value;
-    setActiveRole(role);
-    // Emit event to update sub-screens dynamically if listening
-    if (typeof window !== "undefined") {
-      const event = new CustomEvent("consoleRoleChanged", { detail: role });
-      window.dispatchEvent(event);
-    }
-  };
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/console/me", { credentials: "include" })
+      .then(async (response) => {
+        if (!response.ok) {
+          const data = await response.json().catch(() => null);
+          throw new Error(data?.error ?? "Console access denied.");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (!cancelled) {
+          setActor(data.actor ?? null);
+          setAuthError("");
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setActor(null);
+          setAuthError(error instanceof Error ? error.message : "Console access denied.");
+        }
+      });
 
-  const handleEnvChange = (env: string) => {
-    setEnvironment(env);
-    if (typeof window !== "undefined") {
-      const event = new CustomEvent("consoleEnvChanged", { detail: env });
-      window.dispatchEvent(event);
-    }
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const routeGroups = useMemo(() => getConsoleRouteGroups(actor?.role), [actor?.role]);
 
   const handleExitConsole = async () => {
     try {
@@ -116,6 +88,13 @@ export default function ConsoleClientLayout({
     } catch {
       window.location.href = "/";
     }
+  };
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    router.push(query ? `/console/search?q=${encodeURIComponent(query)}` : "/console/search");
+    closeMobileSidebar();
   };
 
   const isLinkActive = (href: string) => {
@@ -126,7 +105,7 @@ export default function ConsoleClientLayout({
   };
 
   const toggleMobileSidebar = () => {
-    setIsMobileSidebarOpen(prev => !prev);
+    setIsMobileSidebarOpen((prev) => !prev);
   };
 
   const closeMobileSidebar = () => {
@@ -143,15 +122,15 @@ export default function ConsoleClientLayout({
     }
   };
 
-  const startSidebarResize = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const startSidebarResize = (event: React.MouseEvent<HTMLButtonElement>) => {
     if (isMobileViewport) return;
-    resizeStartX.current = e.clientX;
+    resizeStartX.current = event.clientX;
     resizeStartWidth.current = sidebarWidth;
     setIsSidebarResizing(true);
     document.body.style.userSelect = "none";
 
-    const onMouseMove = (event: MouseEvent) => {
-      const deltaX = event.clientX - resizeStartX.current;
+    const onMouseMove = (mouseEvent: MouseEvent) => {
+      const deltaX = mouseEvent.clientX - resizeStartX.current;
       const nextWidth = Math.min(420, Math.max(92, Math.round(resizeStartWidth.current + deltaX)));
       setSidebarWidth(nextWidth);
       setIsSidebarCollapsed(nextWidth <= 120);
@@ -169,12 +148,11 @@ export default function ConsoleClientLayout({
   };
 
   const isSidebarHiddenFromA11y = isMobileViewport && !isMobileSidebarOpen;
-  const sidebarAccessibilityProps: React.HTMLAttributes<HTMLElement> =
+  const sidebarAccessibilityProps: React.HTMLAttributes<HTMLElement> & { inert?: boolean } =
     isSidebarHiddenFromA11y ? { "aria-hidden": true, inert: true } : {};
 
   return (
     <div className={styles.consoleLayout}>
-      {/* SIDEBAR OVERLAY BACKDROP FOR MOBILE */}
       {isMobileSidebarOpen && (
         <div
           className={styles.sidebarOverlay}
@@ -183,7 +161,6 @@ export default function ConsoleClientLayout({
         />
       )}
 
-      {/* LEFT SIDEBAR NAVIGATION */}
       <aside
         className={`${styles.sidebar} ${isMobileSidebarOpen ? styles.sidebarOpen : ""} ${!isMobileViewport && isSidebarCollapsed ? styles.sidebarCollapsed : ""} ${isSidebarResizing ? styles.sidebarResizing : ""}`}
         style={{ "--console-sidebar-width": `${sidebarWidth}px` } as React.CSSProperties}
@@ -199,6 +176,7 @@ export default function ConsoleClientLayout({
               className={styles.sidebarCollapseBtn}
               onClick={toggleSidebarSize}
               aria-label={isSidebarCollapsed ? "Expand navigation sidebar" : "Collapse navigation sidebar"}
+              type="button"
             >
               {isSidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
             </button>
@@ -207,87 +185,58 @@ export default function ConsoleClientLayout({
               className={styles.sidebarCloseBtn}
               onClick={closeMobileSidebar}
               aria-label="Close navigation sidebar"
+              type="button"
             >
               <X size={20} />
             </button>
           )}
         </div>
 
-        {/* STAFF OPERATOR INFO & ROLE SELECTOR */}
         <div className={styles.operatorBlock}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <span className={styles.sidebarMetaPill}>Active Operator</span>
-            <span style={{ fontSize: "var(--font-size-sm)", fontWeight: "700", color: "#FFF" }}>
-              Hean (Hungry Ops)
-            </span>
-            <select
-              className={styles.operatorRoleSelect}
-              value={activeRole}
-              onChange={handleRoleChange}
-              title="Operator Role Selector"
-            >
-              <option value="Owner">Owner (All Controls)</option>
-              <option value="Admin">Admin (Moderation / Claims)</option>
-              <option value="Developer">Developer (Flags / Health)</option>
-              <option value="Support">Support (Feedback / Inbox)</option>
-              <option value="Growth">Growth (Analytics / Notifications)</option>
-            </select>
-          </div>
+          <span className={styles.sidebarMetaPill}>Authenticated Operator</span>
+          <span className={styles.operatorName}>
+            {actor?.email ?? (authError ? "Access pending" : "Resolving session")}
+          </span>
+          <span className={styles.operatorDetail}>
+            {actor ? `${actor.role.toUpperCase()} via ${actor.authMode}` : authError || "Checking Supabase access"}
+          </span>
         </div>
 
-        {/* SIDEBAR NAVIGATION ITEMS */}
         <nav className={styles.sidebarNav} aria-label="Console Navigation">
-          <div className={styles.navSectionTitle}>Operations</div>
-          {operationalRoutes.map((route) => {
-            const Icon = route.icon;
-            const active = isLinkActive(route.href);
-            return (
-              <Link
-                key={route.label}
-                href={route.href}
-                className={`${styles.sidebarLink} ${active ? styles.sidebarLinkActive : ""}`}
-                onClick={closeMobileSidebar}
-              >
-                <Icon size={16} />
-                <span className={styles.sidebarLinkLabel}>{route.label}</span>
-              </Link>
-            );
-          })}
-
-          <div className={styles.navSectionTitle}>Configuration</div>
-          {configRoutes.map((route) => {
-            const Icon = route.icon;
-            const active = isLinkActive(route.href);
-            return (
-              <Link
-                key={route.label}
-                href={route.href}
-                className={`${styles.sidebarLink} ${active ? styles.sidebarLinkActive : ""}`}
-                onClick={closeMobileSidebar}
-              >
-                <Icon size={16} />
-                <span className={styles.sidebarLinkLabel}>{route.label}</span>
-              </Link>
-            );
-          })}
+          {(["Operations", "Platform"] as const).map((group) => (
+            <React.Fragment key={group}>
+              {routeGroups[group].length ? <div className={styles.navSectionTitle}>{group}</div> : null}
+              {routeGroups[group].map((route) => {
+                const Icon = route.icon;
+                const active = isLinkActive(route.href);
+                return (
+                  <Link
+                    key={route.section}
+                    href={route.href}
+                    className={`${styles.sidebarLink} ${active ? styles.sidebarLinkActive : ""}`}
+                    onClick={closeMobileSidebar}
+                  >
+                    <Icon size={16} />
+                    <span className={styles.sidebarLinkLabel}>{route.label}</span>
+                  </Link>
+                );
+              })}
+            </React.Fragment>
+          ))}
         </nav>
 
-        {/* SIDEBAR FOOTER */}
         <div className={styles.sidebarFooter}>
           <Link
-            href="/merchant"
+            href="/for-merchants"
             target="_blank"
             rel="noopener noreferrer"
             className={styles.sidebarLink}
-            style={{ padding: "var(--space-2) 0", color: "rgba(255,255,255,0.55)" }}
             prefetch={false}
           >
             <ExternalLink size={14} />
-            <span className={styles.sidebarLinkLabel} style={{ fontSize: "var(--font-size-xs)" }}>
-              Open Merchant Mode
-            </span>
+            <span className={styles.sidebarLinkLabel}>Open public site</span>
           </Link>
-          <div style={{ marginTop: "var(--space-2)", color: "rgba(255,255,255,0.3)" }}>Ver: 2.10.4-beta · Expo SDK 55</div>
+          <div className={styles.sidebarFooterNote}>Supabase gated · audited mutations</div>
         </div>
         {!isMobileViewport ? (
           <button
@@ -303,70 +252,38 @@ export default function ConsoleClientLayout({
         ) : null}
       </aside>
 
-      {/* MAIN LAYOUT BLOCK */}
       <div className={styles.mainContainer}>
-        {/* TOP INTERACTIVE CONTROL BAR */}
         <header className={styles.topBar}>
-          {/* Hamburger toggle button for mobile/tablet */}
           <button
             className={styles.hamburgerBtn}
             onClick={toggleMobileSidebar}
             aria-label="Open navigation sidebar"
+            type="button"
           >
             <Menu size={22} />
           </button>
 
-          {/* Global search mockup */}
-          <div className={styles.searchBarWrapper}>
+          <form className={styles.searchBarWrapper} onSubmit={handleSearchSubmit}>
             <Search size={16} className={styles.searchIcon} />
             <input
-              type="text"
-              placeholder="Search users, stalls, dishes, claims, or feedback..."
+              type="search"
+              placeholder="Search users, stalls, dishes, claims, reports, or audit events..."
               className={styles.searchBarInput}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(event) => setSearchQuery(event.target.value)}
               aria-label="Search Hungry Console"
             />
-          </div>
+          </form>
 
-          {/* Staging/Prod Switcher */}
           <div className={styles.topBarActions}>
-            <span className={styles.envSwitcherLabel}>
-              Target Env:
-            </span>
-            <div style={{ display: "flex", gap: "4px" }}>
-              {(["production", "staging", "preview"] as const).map((env) => {
-                const isActive = environment === env;
-                const indClass =
-                  env === "production" ? styles.envProd :
-                  env === "staging" ? styles.envStaging :
-                  styles.envPreview;
-
-                return (
-                  <button
-                    key={env}
-                    className={`${styles.envSwitcher} ${isActive ? "" : styles.envSwitcherInactive}`}
-                    style={{
-                      opacity: isActive ? 1 : 0.44,
-                      backgroundColor: isActive ? "var(--color-ink-deep)" : "transparent",
-                      border: isActive ? "none" : "1px solid var(--color-border-strong)",
-                      color: isActive ? "white" : "var(--color-text-secondary)"
-                    }}
-                    onClick={() => handleEnvChange(env)}
-                  >
-                    <span className={`${styles.envIndicator} ${indClass}`} />
-                    {env === "production" ? "PROD" : env === "staging" ? "STAGING" : "PREV"}
-                  </button>
-                );
-              })}
-            </div>
-
+            {actor ? (
+              <span className={styles.sidebarMetaPill}>{actor.role}</span>
+            ) : null}
             <div className={styles.topBarDivider} />
             <button
               type="button"
               onClick={handleExitConsole}
-              className={styles.sidebarLink}
-              style={{ color: "var(--color-primary)", padding: "var(--space-2) var(--space-4)", border: "none", background: "transparent", cursor: "pointer" }}
+              className={styles.topBarButton}
               aria-label="Exit Hungry Console"
             >
               <LogOut size={16} />
@@ -375,8 +292,13 @@ export default function ConsoleClientLayout({
           </div>
         </header>
 
-        {/* PAGE CONTENT CONTAINER */}
         <main className={styles.contentShell} id="main-content" tabIndex={-1}>
+          {authError ? (
+            <div className={styles.routeErrorState}>
+              <strong>Console access is blocked.</strong>
+              <span>{authError}</span>
+            </div>
+          ) : null}
           {children}
         </main>
       </div>

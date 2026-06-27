@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { clientRequestKey, jsonError, requireRateLimit } from "@/lib/security/api";
 import { getStringField, readJsonObject, validationErrorResponse } from "@/lib/security/validation";
+import { recordConsoleAuditEvent } from "@/lib/supabase/consoleData";
 import { supabaseFetch } from "@/lib/supabase/server";
-import { requireConsoleApiAccess, requireConsoleMutationProtection } from "../../../_auth";
+import {
+  isConsoleAuthResponse,
+  requireConsoleApiAccess,
+  requireConsoleMutationProtection,
+  requireConsoleRole,
+} from "../../../_auth";
 
 type RouteContext = {
   params: Promise<{ outletId: string }>;
@@ -12,8 +18,10 @@ type RouteContext = {
 const allowedStatuses = new Set(["verified", "in_review", "rejected", "more_info_needed", "draft", "submitted"]);
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const unauthorized = await requireConsoleApiAccess(request);
-  if (unauthorized) return unauthorized;
+  const auth = await requireConsoleApiAccess(request);
+  if (isConsoleAuthResponse(auth)) return auth;
+  const roleBlocked = requireConsoleRole(auth, "ops");
+  if (roleBlocked) return roleBlocked;
   const blocked = requireConsoleMutationProtection(request);
   if (blocked) return blocked;
   const rateLimited = await requireRateLimit(request, {
@@ -53,17 +61,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       serviceRole: true,
     });
 
-    await supabaseFetch("rest/v1/website_console_audit_events", {
-      body: {
-        action: "merchant_verification_updated",
-        actor_email: "hungry_console",
-        metadata: { outletId, status },
-        target_id: outletId,
-        target_type: "merchant_outlet",
-      },
-      method: "POST",
-      prefer: "return=minimal",
-      serviceRole: true,
+    await recordConsoleAuditEvent(auth, {
+      action: "merchant_verification_updated",
+      metadata: { outletId, status },
+      targetId: outletId,
+      targetType: "merchant_outlet",
     });
 
     return NextResponse.json({ ok: true });
