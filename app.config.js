@@ -25,10 +25,31 @@ function withoutPlugins(plugins, blockedNames) {
   return plugins.filter((plugin) => !blockedNames.has(pluginName(plugin)));
 }
 
+function withSentryPluginEnv(plugins) {
+  return plugins.map((plugin) => {
+    if (pluginName(plugin) !== "@sentry/react-native/expo") {
+      return plugin;
+    }
+
+    const existingOptions = Array.isArray(plugin) && plugin[1] ? plugin[1] : {};
+    const options = {
+      ...existingOptions,
+      url: existingOptions.url || "https://sentry.io/",
+      organization: process.env.SENTRY_ORG || existingOptions.organization,
+      project: process.env.SENTRY_PROJECT || existingOptions.project,
+    };
+
+    return ["@sentry/react-native/expo", options];
+  });
+}
+
 module.exports = ({ config } = {}) => {
-  const resolvedConfig = clone(config && Object.keys(config).length ? config : baseConfig);
+  const sourceConfig = config && Object.keys(config).length ? config : baseConfig;
+  const resolvedConfig = sourceConfig === config ? { ...config } : clone(baseConfig);
   const appEnv = resolveAppEnv();
   const isProduction = appEnv === "production";
+
+  resolvedConfig.plugins = withSentryPluginEnv(resolvedConfig.plugins || []);
 
   if (hasExplicitAppEnv()) {
     resolvedConfig.extra = {
@@ -43,7 +64,7 @@ module.exports = ({ config } = {}) => {
 
   resolvedConfig.plugins = withoutPlugins(
     resolvedConfig.plugins || [],
-    new Set(["expo-dev-client", "expo-audio"])
+    new Set(["expo-dev-client", "expo-audio"]),
   );
 
   resolvedConfig.ios = {
