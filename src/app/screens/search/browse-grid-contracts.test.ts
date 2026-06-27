@@ -48,6 +48,9 @@ test("Two-column image grids cycle images every four seconds with page-scoped sl
   assert.match(cyclingImage, /const DEFAULT_CYCLE_MS = 4000/);
   assert.match(cyclingImage, /<ScrollView[\s\S]*horizontal[\s\S]*pagingEnabled/);
   assert.match(cyclingImage, /scrollRef\.current\?\.scrollTo/);
+  assert.match(cyclingImage, /const onActiveIndexChangeRef = useRef\(onActiveIndexChange\)/);
+  assert.match(cyclingImage, /onActiveIndexChangeRef\.current = onActiveIndexChange/);
+  assert.match(cyclingImage, /onActiveIndexChangeRef\.current\?\.\(normalizedIndex\)/);
   assert.match(cyclingImage, /measureInWindow/);
   assert.match(cyclingImage, /isFullyVisible/);
   assert.match(cyclingImage, /onMomentumScrollEnd=\{handleScrollEnd\}/);

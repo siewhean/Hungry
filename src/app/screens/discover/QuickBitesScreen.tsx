@@ -89,11 +89,12 @@ function QuickBiteCarouselImage({ bite }: { bite: Bite }) {
     [bite.mediaUrls, bite.photoUrl],
   );
   const [failedUrls, setFailedUrls] = useState<readonly string[]>([]);
+  const imageSignature = imageUrls.join("\u001f");
   const activeImageUrl = imageUrls.find((imageUrl) => !failedUrls.includes(imageUrl));
 
   useEffect(() => {
     setFailedUrls([]);
-  }, [imageUrls.join("\u001f")]);
+  }, [imageSignature]);
 
   if (!activeImageUrl) {
     return <QuickBiteImagePlaceholder height={104} />;

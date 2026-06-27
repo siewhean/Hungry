@@ -103,6 +103,8 @@ type ReviewReply = {
   createdAt: string;
 };
 
+const EMPTY_DISHES: DishDetail[] = [];
+
 function getStallDishCycleSlides(dish: DishDetail, dishes: DishDetail[]) {
   return [dish, ...dishes.filter((candidate) => candidate.id !== dish.id)].slice(0, 4);
 }
@@ -214,7 +216,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
     [repository, venue],
   );
   const [hydratedDishes, setHydratedDishes] = useState<DishDetail[] | undefined>();
-  const dishes = hydratedDishes ?? (serviceProviderMode === "supabase" ? [] : cachedDishes);
+  const dishes =
+    hydratedDishes ?? (serviceProviderMode === "supabase" ? EMPTY_DISHES : cachedDishes);
   const dishIdsKey = useMemo(() => dishes.map((dish) => dish.id).join("|"), [dishes]);
   const leadDish = dishes[0];
 
@@ -249,22 +252,27 @@ export function StallDetailScreen({ navigation, route }: Props) {
       venueId: venue?.id ?? venueId,
     },
   });
-  const foodCentreLocation = formatFoodCentreLocation(building);
-  const stallAddress = venue ? formatFullStallAddress(venue, building) : "";
+  const buildingLocation = {
+    name: venue?.buildingName ?? building?.name,
+    address: venue?.address ?? (building as { address?: string } | undefined)?.address,
+    postalCode: venue?.postalCode ?? (building as { postalCode?: string } | undefined)?.postalCode,
+  };
+  const foodCentreLocation = formatFoodCentreLocation(buildingLocation);
+  const stallAddress = venue ? formatFullStallAddress(venue, buildingLocation) : "";
 
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
       reviewId: `stall-${venue?.id ?? ""}`,
       postId: "",
       title: venue?.name ?? "Stall",
-      subtitle: `${building?.name ?? "Hungry"} · ${venue?.unitNumber ?? ""}`.trim(),
+      subtitle: `${buildingLocation.name ?? "Hungry"} · ${venue?.unitNumber ?? ""}`.trim(),
       imageUrl: leadDish?.imageUrl ?? "",
       authorName: profile.displayName,
-      message: `Check out ${venue?.name ?? "this stall"} at ${building?.name ?? "Hungry"}!`,
+      message: `Check out ${venue?.name ?? "this stall"} at ${buildingLocation.name ?? "Hungry"}!`,
       link: `https://hungry.sg/stall/${venue?.id ?? ""}`,
     };
   }, [
-    building?.name,
+    buildingLocation.name,
     leadDish?.imageUrl,
     profile.displayName,
     venue?.id,
@@ -733,7 +741,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       textTransform: "uppercase",
                     }}
                   >
-                    {foodCentreLocation || building?.name || "Food Centre"}
+                    {foodCentreLocation || buildingLocation.name || "Food Centre"}
                   </AppText>
                 </View>
                 <AppText variant="h1" style={{ fontSize: 28 }}>

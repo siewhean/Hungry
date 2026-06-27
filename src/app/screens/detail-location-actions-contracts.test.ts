@@ -13,8 +13,9 @@ test("detail screens show full food-centre location, weekly hours, and maps acti
   const locationHelpers = read("src/features/detail/stallLocation.ts");
   const safeLinking = read("src/lib/security/safeLinking.ts");
 
-  assert.match(dishDetail, /formatFoodCentreLocation\(building\)/);
-  assert.match(dishDetail, /formatFullStallAddress\(venue, building\)/);
+  assert.match(dishDetail, /venue\?\.buildingName \?\? building\?\.name/);
+  assert.match(dishDetail, /formatFoodCentreLocation\(buildingLocation\)/);
+  assert.match(dishDetail, /formatFullStallAddress\(venue, buildingLocation\)/);
   assert.match(dishDetail, /openTrustedMapsUrl\(buildMapsSearchUrl\(fullStallAddress\)\)/);
 
   assert.match(stallDetail, /formatWeeklyOperatingHours\(venue\.operatingHours\)/);

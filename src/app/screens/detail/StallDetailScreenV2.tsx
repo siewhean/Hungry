@@ -52,6 +52,10 @@ function formatVenueStatus(venue: VenueSummary) {
   return `Listed hours: ${venue.operatingHours}`;
 }
 
+function formatBuildingLabel(venue: VenueSummary) {
+  return venue.buildingName ?? venue.buildingId.replace("hc-", "").replace("-", " ");
+}
+
 export function StallDetailScreenV2({ route }: Props) {
   const navigation = useNavigation<RootNavigation>();
   const repository = getDataRepository();
@@ -128,21 +132,17 @@ export function StallDetailScreenV2({ route }: Props) {
       reviewId: `stall-${venue?.id ?? ""}`,
       postId: "",
       title: venue?.name ?? "Stall",
-      subtitle:
-        `${venue?.buildingId ?? ""}${venue?.unitNumber ? ` · ${venue.unitNumber}` : ""}`.trim(),
+      subtitle: `${venue ? formatBuildingLabel(venue) : ""}${
+        venue?.unitNumber ? ` · ${venue.unitNumber}` : ""
+      }`.trim(),
       imageUrl: leadDish?.imageUrl ?? "",
       authorName: profile.displayName,
-      message: `Check out ${venue?.name ?? "this stall"} at ${venue?.buildingId ?? "Hungry"}!`,
+      message: `Check out ${venue?.name ?? "this stall"} at ${
+        venue ? formatBuildingLabel(venue) : "Hungry"
+      }!`,
       link: `https://hungry.sg/stall/${venue?.id ?? ""}`,
     };
-  }, [
-    leadDish?.imageUrl,
-    profile.displayName,
-    venue?.buildingId,
-    venue?.id,
-    venue?.name,
-    venue?.unitNumber,
-  ]);
+  }, [leadDish?.imageUrl, profile.displayName, venue]);
 
   const openShareSheet = () => {
     if (!venue) {
@@ -188,6 +188,7 @@ export function StallDetailScreenV2({ route }: Props) {
 
   const isSaved = leadDish ? profile.favouriteDishIds.includes(leadDish.id) : false;
   const deliveryLinks = venue.deliveryLinks ?? [];
+  const buildingLabel = formatBuildingLabel(venue);
   const distanceLabel = formatDistance(leadDish?.distanceMeters);
   const statusLabel = formatVenueStatus(venue);
   const isVenueOpen = isVenueOpenFromHours(venue.operatingHours, venue.isOpen);
@@ -364,7 +365,7 @@ export function StallDetailScreenV2({ route }: Props) {
             {venue.name}
           </AppText>
           <AppText variant="bodySmall" tone="inverse" style={{ opacity: 0.9 }}>
-            {venue.buildingId.replace("hc-", "").replace("-", " ")}
+            {buildingLabel}
           </AppText>
         </View>
       </View>
@@ -381,13 +382,7 @@ export function StallDetailScreenV2({ route }: Props) {
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
               <MapPin size={14} color={palette.textMuted} />
               <AppText variant="bodySmall" tone="secondary">
-                {[
-                  venue.unitNumber,
-                  venue.buildingId.replace("hc-", "").replace("-", " "),
-                  distanceLabel,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
+                {[venue.unitNumber, buildingLabel, distanceLabel].filter(Boolean).join(" · ")}
               </AppText>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>

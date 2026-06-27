@@ -36,6 +36,7 @@ export function CyclingGridImage({
 }: CyclingGridImageProps) {
   const containerRef = useRef<View | null>(null);
   const scrollRef = useRef<ScrollView | null>(null);
+  const onActiveIndexChangeRef = useRef(onActiveIndexChange);
   const activeIndexRef = useRef(0);
   const isUserDraggingRef = useRef(false);
   const dragFallbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -50,6 +51,11 @@ export function CyclingGridImage({
         .filter((image) => image.trim().length > 0 && !failedUrls.includes(image)),
     [failedUrls, imageSignature],
   );
+
+  useEffect(() => {
+    onActiveIndexChangeRef.current = onActiveIndexChange;
+  }, [onActiveIndexChange]);
+
   const commitIndex = useCallback(
     (nextIndex: number) => {
       const normalizedIndex = Math.max(0, Math.min(nextIndex, safeImages.length - 1));
@@ -60,9 +66,9 @@ export function CyclingGridImage({
 
       activeIndexRef.current = normalizedIndex;
       setActiveIndex(normalizedIndex);
-      onActiveIndexChange?.(normalizedIndex);
+      onActiveIndexChangeRef.current?.(normalizedIndex);
     },
-    [onActiveIndexChange, safeImages.length],
+    [safeImages.length],
   );
 
   useEffect(() => {
@@ -70,8 +76,8 @@ export function CyclingGridImage({
     activeIndexRef.current = 0;
     setActiveIndex(0);
     scrollRef.current?.scrollTo({ animated: false, x: 0, y: 0 });
-    onActiveIndexChange?.(0);
-  }, [imageSignature, onActiveIndexChange]);
+    onActiveIndexChangeRef.current?.(0);
+  }, [imageSignature]);
 
   useEffect(() => {
     if (activeIndex >= safeImages.length && safeImages.length > 0) {

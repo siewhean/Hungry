@@ -111,8 +111,13 @@ export function DishDetailScreen({ navigation, route }: Props) {
   const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
   const venue = hydratedVenue ?? cachedVenue;
   const building = dish ? getBuildingById(dish.buildingId) : undefined;
-  const foodCentreLocation = formatFoodCentreLocation(building);
-  const fullStallAddress = venue ? formatFullStallAddress(venue, building) : "";
+  const buildingLocation = {
+    name: venue?.buildingName ?? building?.name,
+    address: venue?.address ?? (building as { address?: string } | undefined)?.address,
+    postalCode: venue?.postalCode ?? (building as { postalCode?: string } | undefined)?.postalCode,
+  };
+  const foodCentreLocation = formatFoodCentreLocation(buildingLocation);
+  const fullStallAddress = venue ? formatFullStallAddress(venue, buildingLocation) : "";
   const tasteMatch = useMemo(
     () => (dish ? getTasteSimilarityWithDish(profile, dish) : 0),
     [profile, dish],

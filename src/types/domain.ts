@@ -136,6 +136,9 @@ export interface VenueSummary {
   verificationStatus?: VerificationStatus;
   planningArea?: string;
   imageUrl?: string;
+  buildingName?: string;
+  address?: string;
+  postalCode?: string;
 }
 
 export type UserStallSubmissionStatus =
