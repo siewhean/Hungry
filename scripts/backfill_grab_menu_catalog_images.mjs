@@ -303,7 +303,7 @@ export function buildCatalogRows(dishRows, matchVenue, options = {}) {
         availability_flags: [],
         must_order: false,
         is_featured: false,
-        source_type: "grabfood_menu_item",
+        source_type: "scraped_menu_item",
         source_confidence: 0.95,
         menu_approved_for_display: approveLicensedGrabMedia,
         menu_rights_status: approveLicensedGrabMedia ? "licensed" : "unverified",
