@@ -325,6 +325,16 @@ function mapRpcVenue(row: Row): VenueSummary {
   };
 }
 
+function mapLocationSearchVenue(row: Row): VenueSummary {
+  return {
+    ...mapRpcVenue({
+      ...row,
+      delivery_links: [],
+    }),
+    logoUrl: toString(row.logo_url) || undefined,
+  };
+}
+
 function mapDiscoveryFeedVenue(row: Row): VenueSummary {
   return {
     id: toString(row.venue_id),
@@ -874,12 +884,7 @@ export async function searchVenuesByLocationViaRpc(
     p_radius_meters: request.radiusMeters ?? null,
     p_limit: request.limit ?? null,
   });
-  return rows?.map((row) =>
-    mapRpcVenue({
-      ...row,
-      delivery_links: [],
-    }),
-  );
+  return rows?.map(mapLocationSearchVenue);
 }
 
 export async function getDishByIdViaRpc(dishId: string): Promise<DishDetail | undefined> {

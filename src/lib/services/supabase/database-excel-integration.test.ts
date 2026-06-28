@@ -16,6 +16,11 @@ const promotionSql = readFileSync(
   "utf8",
 );
 
+const searchVenueLogoSql = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260628093552_search_venues_location_logo_url.sql"),
+  "utf8",
+);
+
 const smokeSql = readFileSync(
   resolve(process.cwd(), "supabase/smoke/database_excel_integration.sql"),
   "utf8",
@@ -232,6 +237,8 @@ test("repo wiring exposes validation, import, smoke checks, and app discovery RP
   assert.match(repositorySource, /rpcRows\("get_discovery_feed_by_location"/);
   assert.match(repositorySource, /export\s+async\s+function\s+searchVenuesByLocationViaRpc/i);
   assert.match(repositorySource, /rpcRows\("search_venues_by_location"/);
+  assert.match(repositorySource, /mapLocationSearchVenue/);
+  assert.match(repositorySource, /logoUrl:\s*toString\(row\.logo_url\)\s*\|\|\s*undefined/);
   assert.match(repositorySource, /p_lat:\s+filters\.latitude\s+\?\?\s+null/);
   assert.match(repositorySource, /p_lng:\s+filters\.longitude\s+\?\?\s+null/);
   assert.match(repositorySource, /p_max_price:\s+filters\.maxPrice\s+\?\?\s+null/);
@@ -244,6 +251,19 @@ test("repo wiring exposes validation, import, smoke checks, and app discovery RP
   assert.match(discoverBitesSource, /getHungryService\(\)\.discovery\.searchDishes/);
   assert.match(discoverBitesSource, /latitude:\s+options\.latitude/);
   assert.match(discoverBitesSource, /maxPrice/);
+});
+
+test("location stall search exposes logo URLs for BrowseStalls", () => {
+  assert.match(
+    searchVenueLogoSql,
+    /drop\s+function\s+if\s+exists\s+public\.search_venues_by_location/i,
+  );
+  assert.match(searchVenueLogoSql, /returns\s+table\s*\([\s\S]*logo_url\s+text/i);
+  assert.match(searchVenueLogoSql, /nullif\(trim\(v\.logo_url\),\s*''\)\s+as\s+logo_url/i);
+  assert.match(
+    searchVenueLogoSql,
+    /grant\s+execute\s+on\s+function\s+public\.search_venues_by_location[\s\S]*to\s+anon,\s+authenticated/i,
+  );
 });
 
 test("database Excel smoke SQL checks the live contract", () => {
