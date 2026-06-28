@@ -44,6 +44,7 @@ import {
   Screen,
   Skeleton,
 } from "@/components/ui";
+import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import {
   getDiscoverBiteCollections,
   getDiscoverBites,
@@ -414,35 +415,14 @@ function DiscoverBiteImage({ bite, height }: { bite: Bite; height: number }) {
 }
 
 function DiscoverStallThumbnail({ venue }: { venue: VenueSummary }) {
-  const { palette, radii } = useHungryTheme();
-  const logoUrl = venue.logoUrl?.trim();
-
   return (
-    <View
-      style={{
-        padding: 2,
-        borderRadius: radii.pill,
-        borderWidth: 2,
-        borderColor: palette.orange,
-      }}
-    >
-      {logoUrl ? (
-        <AccessibleImage
-          source={{ uri: logoUrl }}
-          accessibilityLabel={`${venue.name} stall logo`}
-          style={{ borderRadius: radii.pill, height: 48, width: 48 }}
-          contentFit="contain"
-          cachePolicy="memory-disk"
-          transition={120}
-        />
-      ) : (
-        <DiscoverDishImagePlaceholder
-          accessibilityLabel={`${venue.name} stall logo unavailable`}
-          iconSize={20}
-          style={{ borderRadius: radii.pill, height: 48, width: 48 }}
-        />
-      )}
-    </View>
+    <StallLogoMark
+      borderWidth={2}
+      imageSize={48}
+      logoUrl={venue.logoUrl}
+      name={venue.name}
+      size={56}
+    />
   );
 }
 

@@ -22,7 +22,6 @@ import {
   MessageCircleMore,
   Send,
   Star,
-  Utensils,
 } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -38,6 +37,7 @@ import {
   Input,
   Skeleton,
 } from "@/components/ui";
+import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import { deriveStallCommunityReviews } from "@/features/detail/detailTransforms";
 import {
   hasPendingClaimForProfile,
@@ -175,45 +175,6 @@ function inferDishCategory(dish: DishDetail) {
 
 function getStallDishCycleSlides(dish: DishDetail, dishes: DishDetail[]) {
   return [dish, ...dishes.filter((candidate) => candidate.id !== dish.id)].slice(0, 4);
-}
-
-function StallLogoMark({ logoUrl, name }: { logoUrl?: string; name: string }) {
-  const { palette, radii } = useHungryTheme();
-  const [logoFailed, setLogoFailed] = useState(false);
-  const normalizedLogoUrl = logoUrl?.trim();
-  const shouldShowLogo = Boolean(normalizedLogoUrl) && !logoFailed;
-
-  useEffect(() => {
-    setLogoFailed(false);
-  }, [normalizedLogoUrl]);
-
-  return (
-    <View
-      style={{
-        alignItems: "center",
-        backgroundColor: palette.surfaceRaised,
-        borderColor: palette.orange,
-        borderRadius: radii.pill,
-        borderWidth: 3,
-        height: 64,
-        justifyContent: "center",
-        overflow: "hidden",
-        width: 64,
-      }}
-    >
-      {shouldShowLogo ? (
-        <AccessibleImage
-          source={{ uri: normalizedLogoUrl }}
-          accessibilityLabel={`${name} stall logo`}
-          contentFit="contain"
-          onError={() => setLogoFailed(true)}
-          style={{ height: 52, width: 52 }}
-        />
-      ) : (
-        <Utensils color={palette.orange} size={30} />
-      )}
-    </View>
-  );
 }
 
 function StallMenuDishCard({
