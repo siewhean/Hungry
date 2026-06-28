@@ -413,18 +413,9 @@ function DiscoverBiteImage({ bite, height }: { bite: Bite; height: number }) {
   );
 }
 
-function DiscoverStallThumbnail({
-  topDish,
-  venue,
-}: {
-  topDish: DishDetail | undefined;
-  venue: VenueSummary;
-}) {
+function DiscoverStallThumbnail({ venue }: { venue: VenueSummary }) {
   const { palette, radii } = useHungryTheme();
-  const image = getDiscoverCardImage([
-    { imageUrl: venue.imageUrl, imageSourceType: "venue" },
-    ...(topDish ? getDishImageCandidates(topDish, "representative_dish") : []),
-  ]);
+  const logoUrl = venue.logoUrl?.trim();
 
   return (
     <View
@@ -435,18 +426,18 @@ function DiscoverStallThumbnail({
         borderColor: palette.orange,
       }}
     >
-      {image.imageUrl ? (
+      {logoUrl ? (
         <AccessibleImage
-          source={{ uri: image.imageUrl }}
+          source={{ uri: logoUrl }}
+          accessibilityLabel={`${venue.name} stall logo`}
           style={{ borderRadius: radii.pill, height: 48, width: 48 }}
-          contentFit="cover"
+          contentFit="contain"
           cachePolicy="memory-disk"
           transition={120}
-          decorative
         />
       ) : (
         <DiscoverDishImagePlaceholder
-          accessibilityLabel={`${topDish?.name ?? venue.name} photo unavailable`}
+          accessibilityLabel={`${venue.name} stall logo unavailable`}
           iconSize={20}
           style={{ borderRadius: radii.pill, height: 48, width: 48 }}
         />
@@ -3359,7 +3350,7 @@ export function DiscoverHomeScreen() {
                     },
                   ]}
                 >
-                  <DiscoverStallThumbnail topDish={topDish} venue={venue} />
+                  <DiscoverStallThumbnail venue={venue} />
                   <View style={{ flex: 1, gap: 2 }}>
                     <AppText
                       variant="bodySmall"

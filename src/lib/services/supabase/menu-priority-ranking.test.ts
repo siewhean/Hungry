@@ -15,6 +15,10 @@ const discoveryImagePriorityMigration = readRepoFile(
   "supabase/migrations/20260628001000_discovery_image_priority.sql",
 );
 
+const discoveryVenueLogoMigration = readRepoFile(
+  "supabase/migrations/20260628070000_discovery_feed_venue_logo.sql",
+);
+
 const searchMigration = readRepoFile(
   "supabase/migrations/20260621114541_search_dishes_restore_fast_guarded.sql",
 );
@@ -64,6 +68,25 @@ test("Discovery feed prioritises image-backed dishes and rows when approved imag
   assert.match(
     discoveryImagePriorityMigration,
     /order\s+by\s+\(nullif\(trim\(candidates\.top_dish_image\),\s*''\)\s+is\s+not\s+null\)\s+desc,[\s\S]*candidates\.rank_score\s+desc/i,
+  );
+});
+
+test("Discovery feed exposes venue logo separately from food imagery", () => {
+  assert.match(
+    discoveryVenueLogoMigration,
+    /drop\s+function\s+if\s+exists\s+public\.get_discovery_feed_by_location/i,
+  );
+  assert.match(discoveryVenueLogoMigration, /returns\s+table\s*\([\s\S]*venue_logo_url\s+text/i);
+  assert.match(discoveryVenueLogoMigration, /v\.logo_url\s+as\s+venue_logo_url/i);
+  assert.match(discoveryVenueLogoMigration, /candidates\.venue_logo_url/);
+  assert.match(discoveryVenueLogoMigration, /top_dish_image\s+text/i);
+  assert.match(
+    discoveryVenueLogoMigration,
+    /grant\s+execute\s+on\s+function\s+public\.get_discovery_feed_by_location[\s\S]*to\s+anon,\s+authenticated/i,
+  );
+  assert.doesNotMatch(
+    discoveryVenueLogoMigration,
+    /venue_logo_url\s+as\s+top_dish_image|top_dish_image\s+as\s+venue_logo_url/i,
   );
 });
 

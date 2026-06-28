@@ -606,7 +606,12 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(discover, /<DiscoverBiteImage bite=\{bite\} height=\{discoverRailImageHeight\} \/>/);
   assert.match(discover, /function DiscoverStallThumbnail\(/);
-  assert.match(discover, /<DiscoverStallThumbnail topDish=\{topDish\} venue=\{venue\} \/>/);
+  assert.match(discover, /const logoUrl = venue\.logoUrl\?\.trim\(\)/);
+  assert.match(discover, /source=\{\{ uri: logoUrl \}\}/);
+  assert.match(discover, /accessibilityLabel=\{`\$\{venue\.name\} stall logo`\}/);
+  assert.match(discover, /<DiscoverStallThumbnail venue=\{venue\} \/>/);
+  assert.doesNotMatch(discover, /<DiscoverStallThumbnail topDish=\{topDish\} venue=\{venue\} \/>/);
+  assert.doesNotMatch(discover, /getDishImageCandidates\(topDish,\s*"representative_dish"\)/);
   assert.doesNotMatch(discover, /const DISCOVER_DISH_PLACEHOLDER_IMAGES/);
   assert.doesNotMatch(discover, /getDiscoverDishPlaceholderSource/);
   assert.doesNotMatch(discover, /source=\{\{ uri: topDish\?\.imageUrl \}\}/);
