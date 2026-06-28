@@ -202,6 +202,14 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /Stalls in \{discoverLocationLabel\}[\s\S]*areaStallCards\.length \? \([\s\S]*areaStallCards\.map[\s\S]*\) : isDiscoverFiltering \?/,
   );
+  assert.match(
+    discover,
+    /import \{ dedupeNearestVenueCandidates \} from "@\/features\/search\/venueDedupe"/,
+  );
+  assert.match(
+    discover,
+    /const nearestChainCards = dedupeNearestVenueCandidates\([\s\S]*filteredCards,[\s\S]*\(card\) => card\.venue,[\s\S]*\(card\) => card\.topDish\?\.distanceMeters/,
+  );
   assert.match(discover, /type DiscoverStallShowcaseCard = \{/);
   assert.match(discover, /id: string/);
   assert.match(discover, /imageSource: ImageSourcePropType/);

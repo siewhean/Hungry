@@ -24,7 +24,14 @@ test("Browse Stalls uses the active repository before showing empty state", () =
   assert.match(source, /const queryMatchedDishes = useMemo/);
   assert.match(source, /searchBrowseDishes\(browseIndex/);
   assert.match(source, /const buildStallItems =/);
-  assert.match(source, /return buildStallItems\(browseVenues\)/);
+  assert.match(
+    source,
+    /import \{ dedupeNearestVenueCandidates \} from "@\/features\/search\/venueDedupe"/,
+  );
+  assert.match(
+    source,
+    /return dedupeNearestVenueCandidates\([\s\S]*buildStallItems\(browseVenues\)/,
+  );
   assert.match(source, /export function BrowseStallsScreen\(\)/);
   assert.match(source, /return <BrowseGridScreen mode="stalls" \/>/);
 });

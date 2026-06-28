@@ -44,6 +44,7 @@ import {
   searchBrowseDishes,
   type BrowseIndex,
 } from "@/features/search/browseIndex";
+import { dedupeNearestVenueCandidates } from "@/features/search/venueDedupe";
 import { getDataRepository } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -382,7 +383,7 @@ function BrowseGridScreen({
         }
       });
 
-      return Array.from(topDishByVenue.values()).map((topDish) => {
+      const stallItems = Array.from(topDishByVenue.values()).map((topDish) => {
         const venue = browseIndex?.venueById.get(topDish.venueId);
         const post = postByVenueId.get(topDish.venueId) ?? postByDishId.get(topDish.id);
 
@@ -399,6 +400,12 @@ function BrowseGridScreen({
           venue,
         };
       });
+
+      return dedupeNearestVenueCandidates(
+        stallItems,
+        (item) => item.venue,
+        (item) => item.distanceMeters,
+      );
     }
 
     if (isDishGrid) {
@@ -451,7 +458,11 @@ function BrowseGridScreen({
         };
       });
 
-    return buildStallItems(browseVenues);
+    return dedupeNearestVenueCandidates(
+      buildStallItems(browseVenues),
+      (item) => item.venue,
+      (item) => item.distanceMeters,
+    );
   }, [
     browseDishes,
     browsePostIndexes,

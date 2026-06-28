@@ -51,6 +51,7 @@ import {
   getDishImageCandidates,
   type DiscoverCardImageCandidate,
 } from "@/features/discover/bites";
+import { dedupeNearestVenueCandidates } from "@/features/search/venueDedupe";
 import {
   prefetchDishDetail,
   prefetchBrowseResults,
@@ -1948,7 +1949,13 @@ export function DiscoverHomeScreen() {
         )
       : unfilteredAreaStallCards;
 
-    return [...filteredCards].sort((a, b) => {
+    const nearestChainCards = dedupeNearestVenueCandidates(
+      filteredCards,
+      (card) => card.venue,
+      (card) => card.topDish?.distanceMeters,
+    );
+
+    return [...nearestChainCards].sort((a, b) => {
       const bScore = (b.topDish?.rating ?? 0) * 100 + (b.topDish?.reviewCount ?? 0);
       const aScore = (a.topDish?.rating ?? 0) * 100 + (a.topDish?.reviewCount ?? 0);
       return bScore - aScore;
