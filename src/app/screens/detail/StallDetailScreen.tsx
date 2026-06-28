@@ -1,9 +1,19 @@
-import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  useWindowDimensions,
+} from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState, useRef, useMemo } from "react";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  ChevronRight,
   ChevronLeft,
   CircleHelp,
   Heart,
@@ -12,6 +22,7 @@ import {
   MessageCircleMore,
   Send,
   Star,
+  Utensils,
 } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
@@ -22,6 +33,7 @@ import {
   FeedErrorBoundary,
   Button,
   Card,
+  Chip,
   IconButton,
   Input,
   Skeleton,
@@ -67,6 +79,23 @@ import {
 } from "@/features/checklistPortfolio/DetailSaveActions";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
+const INITIAL_MENU_ITEM_COUNT = 10;
+const MENU_ITEM_BATCH_SIZE = 10;
+const MENU_LOAD_THRESHOLD_PX = 280;
+const ALL_MENU_CATEGORY = "All";
+const MENU_CATEGORY_ORDER = [
+  "Popular",
+  "Rice",
+  "Noodles",
+  "Chicken",
+  "Seafood",
+  "Vegetarian",
+  "Drinks",
+  "Dessert",
+  "Sets",
+  "Sides",
+];
+
 function StallDetailSkeleton() {
   const { spacing, radii, palette } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
@@ -75,6 +104,9 @@ function StallDetailSkeleton() {
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
       <Skeleton width="100%" height={screenWidth * 0.75} borderRadius={0} />
       <View style={{ padding: spacing[4], gap: spacing[6], marginTop: 20 }}>
+        <AppText variant="bodyBold" tone="secondary">
+          Loading stall
+        </AppText>
         <View style={{ gap: spacing[1] }}>
           <Skeleton width={150} height={20} />
           <Skeleton width="70%" height={34} />
@@ -105,8 +137,83 @@ type ReviewReply = {
 
 const EMPTY_DISHES: DishDetail[] = [];
 
+function formatMenuCategoryLabel(value: string) {
+  return value
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function inferDishCategory(dish: DishDetail) {
+  const name = dish.name.toLowerCase();
+  if (dish.mustOrder) return "Popular";
+  if (/(rice|nasi|biryani|donburi|porridge|congee)/.test(name)) return "Rice";
+  if (/(noodle|mee|hor fun|kway teow|ramen|pasta|spaghetti|bee hoon|udon|soba)/.test(name)) {
+    return "Noodles";
+  }
+  if (/(chicken|ayam|wing|drumstick)/.test(name)) return "Chicken";
+  if (/(fish|prawn|crab|seafood|squid|sotong|salmon)/.test(name)) return "Seafood";
+  if (/(vegetarian|vegan|tofu|mushroom|salad)/.test(name)) return "Vegetarian";
+  if (/(coffee|tea|milo|juice|drink|latte|smoothie|water|soda|kopi|teh)/.test(name)) {
+    return "Drinks";
+  }
+  if (/(cake|dessert|ice cream|pudding|waffle|tart|muffin|sweet)/.test(name)) return "Dessert";
+  if (/(set|combo|meal|bundle|platter|party)/.test(name)) return "Sets";
+  if (/(side|fries|snack|soup|egg|toast|bread)/.test(name)) return "Sides";
+
+  const dietaryLabels = dish.dietaryFlags ?? [];
+  if (dietaryLabels.some((label) => /vegetarian|vegan/i.test(label))) return "Vegetarian";
+
+  const availabilityCategory = (dish.availabilityFlags ?? [])
+    .map(formatMenuCategoryLabel)
+    .find((tag) => tag.length > 0);
+  if (availabilityCategory) return availabilityCategory;
+
+  return "Menu";
+}
+
 function getStallDishCycleSlides(dish: DishDetail, dishes: DishDetail[]) {
   return [dish, ...dishes.filter((candidate) => candidate.id !== dish.id)].slice(0, 4);
+}
+
+function StallLogoMark({ logoUrl, name }: { logoUrl?: string; name: string }) {
+  const { palette, radii } = useHungryTheme();
+  const [logoFailed, setLogoFailed] = useState(false);
+  const normalizedLogoUrl = logoUrl?.trim();
+  const shouldShowLogo = Boolean(normalizedLogoUrl) && !logoFailed;
+
+  useEffect(() => {
+    setLogoFailed(false);
+  }, [normalizedLogoUrl]);
+
+  return (
+    <View
+      style={{
+        alignItems: "center",
+        backgroundColor: palette.surfaceRaised,
+        borderColor: palette.orange,
+        borderRadius: radii.pill,
+        borderWidth: 3,
+        height: 64,
+        justifyContent: "center",
+        overflow: "hidden",
+        width: 64,
+      }}
+    >
+      {shouldShowLogo ? (
+        <AccessibleImage
+          source={{ uri: normalizedLogoUrl }}
+          accessibilityLabel={`${name} stall logo`}
+          contentFit="contain"
+          onError={() => setLogoFailed(true)}
+          style={{ height: 52, width: 52 }}
+        />
+      ) : (
+        <Utensils color={palette.orange} size={30} />
+      )}
+    </View>
+  );
 }
 
 function StallMenuDishCard({
@@ -241,6 +348,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const [reviewsByDishId, setReviewsByDishId] = useState<Record<string, DishDetail["reviews"]>>({});
   const [activePromotions, setActivePromotions] = useState<MerchantPromotion[]>([]);
+  const [activeMenuCategory, setActiveMenuCategory] = useState(ALL_MENU_CATEGORY);
+  const [visibleMenuItemCount, setVisibleMenuItemCount] = useState(INITIAL_MENU_ITEM_COUNT);
+  const contentBodyLayoutRef = useRef<{ y: number; height: number } | null>(null);
+  const menuSectionLayoutRef = useRef<{ y: number; height: number } | null>(null);
   const trackedStallViewId = useRef<string | null>(null);
   const trackedPromotionEvents = useRef<Set<string>>(new Set());
   const detailSaveActions = useDetailSaveActions({
@@ -409,6 +520,40 @@ export function StallDetailScreen({ navigation, route }: Props) {
     () => deriveStallCommunityReviews(reviewHydratedDishes),
     [reviewHydratedDishes],
   );
+  const menuCategoryByDishId = useMemo(() => {
+    return Object.fromEntries(dishes.map((dish) => [dish.id, inferDishCategory(dish)]));
+  }, [dishes]);
+  const menuCategories = useMemo(() => {
+    const categorySet = new Set(Object.values(menuCategoryByDishId));
+    const sortedCategories = [...categorySet].sort((left, right) => {
+      const leftIndex = MENU_CATEGORY_ORDER.indexOf(left);
+      const rightIndex = MENU_CATEGORY_ORDER.indexOf(right);
+      if (leftIndex === -1 && rightIndex === -1) return left.localeCompare(right);
+      if (leftIndex === -1) return 1;
+      if (rightIndex === -1) return -1;
+      return leftIndex - rightIndex;
+    });
+    return [ALL_MENU_CATEGORY, ...sortedCategories];
+  }, [menuCategoryByDishId]);
+  const filteredMenuDishes = useMemo(() => {
+    if (activeMenuCategory === ALL_MENU_CATEGORY) return dishes;
+    return dishes.filter((dish) => menuCategoryByDishId[dish.id] === activeMenuCategory);
+  }, [activeMenuCategory, dishes, menuCategoryByDishId]);
+  const visibleMenuDishes = useMemo(
+    () => filteredMenuDishes.slice(0, visibleMenuItemCount),
+    [filteredMenuDishes, visibleMenuItemCount],
+  );
+  const hasMoreMenuItems = visibleMenuDishes.length < filteredMenuDishes.length;
+
+  useEffect(() => {
+    setVisibleMenuItemCount(INITIAL_MENU_ITEM_COUNT);
+  }, [activeMenuCategory, venue?.id]);
+
+  useEffect(() => {
+    if (!menuCategories.includes(activeMenuCategory)) {
+      setActiveMenuCategory(ALL_MENU_CATEGORY);
+    }
+  }, [activeMenuCategory, menuCategories]);
 
   const requireAuthForProtectedAction = (message: string) => {
     if (isAuthenticated) {
@@ -508,6 +653,32 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const openStallMaps = () => {
     if (!stallAddress) return;
     void openTrustedMapsUrl(buildMapsSearchUrl(stallAddress));
+  };
+
+  const handleContentBodyLayout = (event: LayoutChangeEvent) => {
+    const { y, height } = event.nativeEvent.layout;
+    contentBodyLayoutRef.current = { y, height };
+  };
+
+  const handleMenuSectionLayout = (event: LayoutChangeEvent) => {
+    const { y, height } = event.nativeEvent.layout;
+    menuSectionLayoutRef.current = { y, height };
+  };
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    if (!hasMoreMenuItems) return;
+    const contentBodyLayout = contentBodyLayoutRef.current;
+    const menuSectionLayout = menuSectionLayoutRef.current;
+    if (!contentBodyLayout || !menuSectionLayout) return;
+    const { contentOffset, layoutMeasurement } = event.nativeEvent;
+    const viewportBottom = contentOffset.y + layoutMeasurement.height;
+    const menuSectionBottom = contentBodyLayout.y + menuSectionLayout.y + menuSectionLayout.height;
+    if (viewportBottom < menuSectionBottom - MENU_LOAD_THRESHOLD_PX) return;
+    setVisibleMenuItemCount((current) =>
+      current !== visibleMenuItemCount
+        ? current
+        : Math.min(current + MENU_ITEM_BATCH_SIZE, filteredMenuDishes.length),
+    );
   };
 
   const submitReviewReply = (reviewId: string) => {
@@ -697,6 +868,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
           <ScrollView
             showsVerticalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={120}
             contentContainerStyle={{ paddingBottom: insets.bottom + spacing[8] }}
           >
             {/* Hero image */}
@@ -716,6 +889,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
             </View>
 
             <View
+              onLayout={handleContentBodyLayout}
               style={{
                 gap: spacing[6],
                 paddingHorizontal: spacing[3],
@@ -723,34 +897,31 @@ export function StallDetailScreen({ navigation, route }: Props) {
               }}
             >
               {/* Header Content */}
-              <View style={{ gap: spacing[1] }}>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: spacing[2],
-                    marginBottom: spacing[1],
-                  }}
-                >
-                  <MapPin color={palette.orange} size={14} />
-                  <AppText
-                    variant="micro"
-                    style={{
-                      color: palette.orange,
-                      fontWeight: "700",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    {foodCentreLocation || buildingLocation.name || "Food Centre"}
+              <Card
+                style={{
+                  alignItems: "center",
+                  flexDirection: "row",
+                  gap: spacing[3],
+                  padding: spacing[3],
+                }}
+              >
+                <StallLogoMark logoUrl={venue.logoUrl} name={venue.name} />
+                <View style={{ flex: 1, gap: spacing[1] }}>
+                  <AppText variant="h2" numberOfLines={1}>
+                    {venue.name}
+                  </AppText>
+                  <AppText variant="bodyLarge" tone="secondary" numberOfLines={1}>
+                    {[
+                      foodCentreLocation || buildingLocation.name || "Food Centre",
+                      venue.unitNumber,
+                      distanceLabel,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </AppText>
                 </View>
-                <AppText variant="h1" style={{ fontSize: 28 }}>
-                  {venue.name}
-                </AppText>
-                <AppText variant="bodyLarge" tone="secondary">
-                  {[venue.unitNumber, distanceLabel].filter(Boolean).join(" · ")}
-                </AppText>
-              </View>
+                <ChevronRight color={palette.textMuted} size={24} />
+              </Card>
 
               {/* Save / Visited / Add-to-List */}
               {isAuthenticated && venue && (
@@ -852,26 +1023,60 @@ export function StallDetailScreen({ navigation, route }: Props) {
               ) : null}
 
               {/* Menu */}
-              <View style={{ gap: spacing[4] }}>
-                <AppText variant="h2">Menu</AppText>
+              <View onLayout={handleMenuSectionLayout} style={{ gap: spacing[4] }}>
+                <View style={{ gap: spacing[1] }}>
+                  <AppText variant="h2">Menu</AppText>
+                  {filteredMenuDishes.length > 0 ? (
+                    <AppText variant="bodySmall" tone="secondary">
+                      Showing {visibleMenuDishes.length} of {filteredMenuDishes.length} items
+                    </AppText>
+                  ) : null}
+                </View>
                 {dishes.length > 0 ? (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      flexWrap: "wrap",
-                      gap: spacing[3],
-                    }}
-                  >
-                    {dishes.map((dish, index) => (
-                      <StallMenuDishCard
-                        key={dish.id}
-                        dish={dish}
-                        dishes={dishes}
-                        index={index}
-                        width={(screenWidth - spacing[5] * 2 - spacing[3]) / 2}
-                        onPress={openMenuDish}
-                      />
-                    ))}
+                  <View style={{ gap: spacing[4] }}>
+                    {menuCategories.length > 2 ? (
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ gap: spacing[2], paddingRight: spacing[2] }}
+                      >
+                        {menuCategories.map((category) => (
+                          <Chip
+                            key={category}
+                            label={category}
+                            selected={activeMenuCategory === category}
+                            accessibilityLabel={`Filter menu by ${category}`}
+                            onPress={() => setActiveMenuCategory(category)}
+                          />
+                        ))}
+                      </ScrollView>
+                    ) : null}
+                    {visibleMenuDishes.length > 0 ? (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          flexWrap: "wrap",
+                          gap: spacing[3],
+                        }}
+                      >
+                        {visibleMenuDishes.map((dish, index) => (
+                          <StallMenuDishCard
+                            key={dish.id}
+                            dish={dish}
+                            dishes={filteredMenuDishes}
+                            index={index}
+                            width={(screenWidth - spacing[5] * 2 - spacing[3]) / 2}
+                            onPress={openMenuDish}
+                          />
+                        ))}
+                      </View>
+                    ) : (
+                      <Card style={{ padding: spacing[4], alignItems: "center" }}>
+                        <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
+                          No items in this category yet.
+                        </AppText>
+                      </Card>
+                    )}
                   </View>
                 ) : (
                   <Card style={{ padding: spacing[4], alignItems: "center" }}>

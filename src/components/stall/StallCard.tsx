@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, View } from "react-native";
+import { Image } from "expo-image";
 import { Clock3, MapPinned } from "lucide-react-native";
 
 import type { VenueSummary, DishSummary } from "@/types/domain";
@@ -31,13 +32,28 @@ export function StallCard({ venue, topDish, onPress }: StallCardProps) {
         ]}
       >
         <View style={{ flex: 1, gap: spacing[2] }}>
-          <View style={{ gap: spacing[1] }}>
-            <AppText variant="h3">{venue.name}</AppText>
-            <AppText variant="bodySmall" tone="secondary">
-              {venue.planningArea ? `${venue.planningArea} · ` : ""}
-              {venue.unitNumber} · {venue.floor}
-            </AppText>
+          <View style={[styles.row, { gap: spacing[3], alignItems: "center" }]}>
+            {venue.logoUrl ? (
+              <Image
+                source={{ uri: venue.logoUrl }}
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: palette.surfaceRaised,
+                }}
+                contentFit="contain"
+              />
+            ) : null}
+            <View style={{ gap: spacing[1], flex: 1 }}>
+              <AppText variant="h3">{venue.name}</AppText>
+              <AppText variant="bodySmall" tone="secondary">
+                {venue.planningArea ? `${venue.planningArea} · ` : ""}
+                {venue.unitNumber} · {venue.floor}
+              </AppText>
+            </View>
           </View>
+
           <View style={styles.metaRow}>
             <Badge label={isOpenNow ? "Open" : "Closed"} tone={isOpenNow ? "success" : "warning"} />
           </View>

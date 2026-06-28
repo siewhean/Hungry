@@ -206,6 +206,7 @@ function mapVenue(row: Row): VenueSummary {
     deliveryLinks: [],
     planningArea: toString(row.planning_area) || undefined,
     imageUrl: catalogDisplayImageUrl(row) || undefined,
+    logoUrl: toString(row.logo_url) || undefined,
     buildingName: toString(row.building_name) || undefined,
     address: toString(row.address) || undefined,
     postalCode: toString(row.postal_code) || undefined,
@@ -317,6 +318,7 @@ function mapRpcVenue(row: Row): VenueSummary {
     })),
     planningArea: toString(row.planning_area, toString(building.planningArea)) || undefined,
     imageUrl: catalogDisplayImageUrl(row) || undefined,
+    logoUrl: toString(row.logo_url) || undefined,
     buildingName: toString(row.building_name, toString(building.name)) || undefined,
     address: toString(row.address, toString(building.address)) || undefined,
     postalCode: toString(row.postal_code, toString(building.postalCode)) || undefined,
@@ -338,6 +340,7 @@ function mapDiscoveryFeedVenue(row: Row): VenueSummary {
     deliveryLinks: [],
     planningArea: toString(row.planning_area) || undefined,
     imageUrl: toString(row.venue_image_url) || toString(row.building_image_url) || undefined,
+    logoUrl: toString(row.venue_logo_url, toString(row.logo_url)) || undefined,
     buildingName: toString(row.building_name) || undefined,
   };
 }

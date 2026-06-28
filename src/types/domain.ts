@@ -119,6 +119,7 @@ export interface BuildingSummary {
   heroDishId: string;
   planningArea?: string;
   imageUrl?: string;
+  logoUrl?: string;
 }
 
 export interface VenueSummary {
@@ -136,6 +137,7 @@ export interface VenueSummary {
   verificationStatus?: VerificationStatus;
   planningArea?: string;
   imageUrl?: string;
+  logoUrl?: string;
   buildingName?: string;
   address?: string;
   postalCode?: string;

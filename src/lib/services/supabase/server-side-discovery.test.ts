@@ -31,6 +31,11 @@ const provenanceGuardrailSql = readFileSync(
   "utf8",
 );
 
+const venueLogoDetailReadsSql = readFileSync(
+  resolve(process.cwd(), "supabase/migrations/20260628063500_venue_logo_detail_reads.sql"),
+  "utf8",
+);
+
 const repositorySource = readFileSync(
   resolve(process.cwd(), "src/lib/services/supabase/supabaseRepository.ts"),
   "utf8",
@@ -154,6 +159,28 @@ test("Supabase discovery service uses RPC-first read paths with cache fallback",
   assert.match(serviceSource, /await\s+listDishesByVenueViaRpc\(venueId\)/);
   assert.match(serviceSource, /await\s+listPopularNearbyViaRpc\(lat,\s*lng\)/);
   assert.match(serviceSource, /\?\?\s+supabaseRepository\./);
+});
+
+test("venue detail reads expose logo URLs for Stall Detail hero identity", () => {
+  assert.match(venueLogoDetailReadsSql, /alter\s+table\s+public\.venues[\s\S]*logo_url\s+text/i);
+  assert.match(
+    venueLogoDetailReadsSql,
+    /drop\s+function\s+if\s+exists\s+public\.get_venue_detail\(text\)/i,
+  );
+  assert.match(venueLogoDetailReadsSql, /returns\s+table\s*\([\s\S]*logo_url\s+text/i);
+  assert.match(venueLogoDetailReadsSql, /\bv\.logo_url\b/);
+  assert.match(venueLogoDetailReadsSql, /security\s+invoker/i);
+  assert.match(
+    venueLogoDetailReadsSql,
+    /grant\s+execute\s+on\s+function\s+public\.get_venue_detail\(text\)\s+to\s+anon,\s+authenticated/i,
+  );
+
+  assert.match(repositorySource, /logoUrl:\s*toString\(row\.logo_url\)\s*\|\|\s*undefined/);
+  assert.match(
+    repositorySource,
+    /logoUrl:\s*toString\(row\.venue_logo_url,\s*toString\(row\.logo_url\)\)\s*\|\|\s*undefined/,
+  );
+  assert.match(serviceSource, /await\s+getVenueByIdViaRpc\(id\)/);
 });
 
 test("Discover area count uses exact RPC before location-scoped building fallback", () => {
