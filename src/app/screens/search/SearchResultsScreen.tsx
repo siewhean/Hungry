@@ -220,9 +220,11 @@ function BrowseGridLoadingState({ itemWidth }: { itemWidth: number }) {
 }
 
 function BrowseGridScreen({
+  initialFoodTypeTag,
   mode,
   initialSearchQuery = "",
 }: {
+  initialFoodTypeTag?: string;
   mode: "dishes" | "stalls";
   initialSearchQuery?: string;
 }) {
@@ -239,7 +241,8 @@ function BrowseGridScreen({
   );
   const searchInputRef = useRef<TextInput | null>(null);
   const normalizedQuery = searchQuery.trim().toLowerCase();
-  const shouldUseQueryScopedFeed = normalizedQuery.length > 0;
+  const normalizedFoodTypeTag = initialFoodTypeTag?.trim().toLowerCase() ?? "";
+  const shouldUseQueryScopedFeed = normalizedQuery.length > 0 || normalizedFoodTypeTag.length > 0;
   const lastRecordedBrowseQueryRef = useRef("");
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const profile = useProfileStore((state) => state.profile);
@@ -301,10 +304,17 @@ function BrowseGridScreen({
 
     return searchBrowseDishes(browseIndex, {
       dietaryFlags: profile.dietaryPreferences,
-      query: searchQuery,
+      foodTypeTag: normalizedFoodTypeTag || undefined,
+      query: normalizedFoodTypeTag ? undefined : searchQuery,
       radiusMeters: 100000,
     });
-  }, [browseIndex, profile.dietaryPreferences, searchQuery, shouldUseQueryScopedFeed]);
+  }, [
+    browseIndex,
+    normalizedFoodTypeTag,
+    profile.dietaryPreferences,
+    searchQuery,
+    shouldUseQueryScopedFeed,
+  ]);
   const allDishes = useMemo(
     () => (browseIndex && !shouldUseQueryScopedFeed ? browseIndex.allDishes : []),
     [browseIndex, shouldUseQueryScopedFeed],
@@ -809,7 +819,10 @@ function BrowseGridScreen({
               options={BROWSE_FILTER_OPTIONS}
               selectedId={selectedFilter}
               onSelect={setSelectedFilter}
-              gap={spacing[2]}
+              style={{ marginLeft: 0 }}
+              gap={spacing[3]}
+              edgePadding={spacing[4]}
+              contentContainerStyle={{ paddingVertical: spacing[3] }}
             />
           </View>
         </View>
@@ -894,6 +907,7 @@ export function SearchResultsScreen() {
   const sortMode: SearchSortMode = "best_match";
   const browseMode = route.params?.browseMode;
   const initialQuery = route.params?.initialQuery ?? "";
+  const foodTypeTag = route.params?.foodTypeTag;
   const [serviceResults, setServiceResults] = useState<DishDetail[] | null>(null);
   useEffect(() => {
     let active = true;
@@ -954,7 +968,13 @@ export function SearchResultsScreen() {
   );
 
   if (browseMode) {
-    return <BrowseGridScreen mode={browseMode} initialSearchQuery={initialQuery} />;
+    return (
+      <BrowseGridScreen
+        mode={browseMode}
+        initialFoodTypeTag={foodTypeTag}
+        initialSearchQuery={initialQuery}
+      />
+    );
   }
 
   return (
