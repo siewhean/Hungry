@@ -44,6 +44,7 @@ export function DishSearchScreen() {
   const selectedCategories = useSearchStore((state) => state.filters.categories);
   const toggleCategory = useSearchStore((state) => state.toggleCategory);
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
+  const [searchText, setSearchText] = useState("");
   const collections = getDiscoverStallCollections(profile, filters.query).slice(0, 4);
   const entryY = useRef(new Animated.Value(-28)).current;
   const entryOpacity = useRef(new Animated.Value(0)).current;
@@ -103,10 +104,13 @@ export function DishSearchScreen() {
           leftIcon={<SearchIcon color={palette.textMuted} size={18} />}
           placeholder="Laksa, satay, Tian Tian..."
           accessibilityLabel="Search dishes, stalls, or hawker centres"
-          value={filters.query}
-          onChangeText={updateQuery}
+          value={searchText}
+          onChangeText={(text) => {
+            setSearchText(text);
+            updateQuery(text);
+          }}
           onSubmitEditing={() => {
-            const trimmedQuery = filters.query.trim();
+            const trimmedQuery = searchText.trim();
             if (trimmedQuery) {
               rememberSearch(trimmedQuery);
             }
