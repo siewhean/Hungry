@@ -402,6 +402,10 @@ class IncrementalSyncTests(unittest.TestCase):
             / "supabase/migrations/20260710130000_enrichment_incremental_sync_indexes.sql"
         ).read_text(encoding="utf-8")
         normalized = " ".join(migration.lower().split())
+        self.assertIn("alter table public.venues add column if not exists updated_at", normalized)
+        self.assertIn("alter table public.dishes add column if not exists updated_at", normalized)
+        self.assertIn("create trigger trg_venues_updated_at", normalized)
+        self.assertIn("create trigger trg_dishes_updated_at", normalized)
         self.assertIn("on public.venues (updated_at, id)", normalized)
         self.assertIn("on public.dishes (updated_at, id)", normalized)
 

@@ -27,6 +27,8 @@ test("workflow schedules review only and requires explicit manual apply confirma
   assert.ok(workflowSource.includes("github.actor != github.repository_owner"));
   assert.equal(workflowSource.includes("vars.HUNGRY_SCHEDULED_ENRICHMENT_MODE == 'apply'"), false);
   assert.ok(workflowSource.includes("github.event_name == 'schedule'"));
+  assert.equal(workflowSource.match(/--limit=\"\$\{ENRICHMENT_LIMIT\}\"/g)?.length, 2);
+  assert.equal(workflowSource.match(/--workers=\"\$\{ENRICHMENT_WORKERS\}\"/g)?.length, 2);
 });
 
 

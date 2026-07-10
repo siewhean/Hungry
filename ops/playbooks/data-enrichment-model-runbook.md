@@ -14,6 +14,12 @@ Keep these data surfaces consistent:
 
 Supabase is the structured write target. Excel is the local master snapshot. The app catalog is generated from Excel and must not be manually edited.
 
+Install the pinned Python workbook dependencies once per environment:
+
+```bash
+python3 -m pip install -r scripts/requirements-data-enrichment.txt
+```
+
 ## Non-Negotiable Rules
 
 | Rule | Detail |
