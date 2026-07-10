@@ -409,6 +409,18 @@ class IncrementalSyncTests(unittest.TestCase):
         self.assertIn("on public.venues (updated_at, id)", normalized)
         self.assertIn("on public.dishes (updated_at, id)", normalized)
 
+    def test_live_followup_replays_cursor_triggers_and_preserves_merchant_guards(self) -> None:
+        migration = (
+            Path(__file__).resolve().parents[1]
+            / "supabase/migrations/20260710133000_enrichment_cursor_live_followup.sql"
+        ).read_text(encoding="utf-8")
+        normalized = " ".join(migration.lower().split())
+        self.assertIn("add column if not exists updated_at", normalized)
+        self.assertIn("create trigger trg_venues_updated_at", normalized)
+        self.assertIn("create trigger trg_dishes_updated_at", normalized)
+        self.assertIn("current_user in ('postgres', 'supabase_admin', 'service_role')", normalized)
+        self.assertIn("if auth.uid() is null then raise exception 'authentication required'", normalized)
+
 
 if __name__ == "__main__":
     unittest.main()
