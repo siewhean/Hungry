@@ -6,6 +6,14 @@
 
 ## Current Focus
 
+- `MAIN-FDO-RECONCILE-01` — Done. Reconciled `frontend-design-overhaul` onto the current `main`
+  baseline with the FDO UI/UX and Passport implementation authoritative. Restored selected
+  nonvisual safety fixes and added the lazy Excel repository/provider path. Published the
+  deterministic reconciled workbook and rights-safe generated catalog after identity-first
+  deduplication, conflict/orphan quarantine, and display-approval validation. No live Supabase
+  writes were performed. Local code, data, dependency, security, and iOS runtime gates pass;
+  independent final QA and the main-target PR are the remaining delivery controls.
+
 - `DATA-ENRICH-ROADMAP-01` — Done. 2026-07-10 completed the audited R1–R14 enrichment
   roadmap: pending backfills were applied; checkpointed/batched writes and provenance-safe chain
   propagation are in place; the core scraper now uses shared Grab/Oddle/Foodpanda/Deliveroo
